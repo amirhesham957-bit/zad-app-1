@@ -87,6 +87,19 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `فاكر ميعاد ${title}؟ ${mins !== null && mins <= 90 ? `فاضل ${mins} دقيقة بس` : `هو ${when}`}${place ? ` في ${place}` : ""}. يلا جهّز نفسك، وماتتأخرش عليا!`,
       };
     }
+    case "back_home_spent": {
+      const total = typeof facts.spent_total === "number" ? facts.spent_total : 0;
+      const currency = str(facts.currency, 10);
+      const where = Array.isArray(facts.merchants) && facts.merchants.length
+        ? String(facts.merchants[0])
+        : Array.isArray(facts.stores) && facts.stores.length ? String(facts.stores[0]) : "";
+      const amount = `${Math.round(total)}${currency ? ` ${currency}` : ""}`;
+      return {
+        title: "🏠 رجعت بالسلامة",
+        text: `صرفت ${amount} وإنت برّه${where ? ` (أكتر حاجة في ${where})` : ""}.`,
+        speech: `رجعت أخيرًا! وحشتني. روحت فين بقى؟ أنا شايفة إنك صرفت ${amount}${where ? ` في ${where}` : ""}… كان يستاهل؟`,
+      };
+    }
     case "morning_greeting": {
       const meds = Array.isArray(facts.meds_today) ? (facts.meds_today as Array<{ name?: string }>).map((m) => m?.name).filter(Boolean) : [];
       const appts = Array.isArray(facts.appointments_today) ? (facts.appointments_today as Array<{ title?: string }>).map((a) => a?.title).filter(Boolean) : [];
@@ -334,4 +347,36 @@ export async function tasbihaFacts(sb: SupabaseClient, userId: string, localDate
   if (!tree) return null; // مالوش شجرة = مش بيستخدم التسبيحة، مفيش تذكير
   if (String(tree.last_tasbih_at ?? "").slice(0, 10) === localDate) return null; // سبّح خلاص
   return { local_date: localDate, tree_name: tree.tree_name, streak_days: tree.streak_days ?? 0 };
+}
+
+
+/** أقل غياب يتحسب "خروجة": أقل من كده غالبًا نزل تحت البيت أو الـgeofence اتهزّ. */
+export const MIN_OUTING_MS = 45 * 60 * 1000;
+/** أطول غياب منطقي — أكتر من كده غالبًا حدث رجوع اتفقد (سفر/موبايل مقفول)، مش خروجة واحدة. */
+export const MAX_OUTING_MS = 18 * 60 * 60 * 1000;
+
+/**
+ * صافية: من معاملات المصروف ووصولات المحلات في نافذة الخروجة → ملخص "روحت فين وصرفت إيه".
+ * الأماكن من اسم التاجر (أعلى مبلغ الأول) ومن وصف store_arrival («وصول لـ«كارفور» (…)»).
+ */
+export function summarizeOuting(
+  expenses: Array<{ amount: number | string | null; title?: string | null; merchant_name?: string | null; currency?: string | null }>,
+  arrivals: Array<{ task_description?: string | null }>,
+): { spent_total: number; currency: string | null; merchants: string[]; stores: string[] } {
+  let total = 0;
+  const byPlace = new Map<string, number>();
+  let currency: string | null = null;
+  for (const e of expenses) {
+    const amount = Math.abs(Number(e.amount ?? 0));
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    total += amount;
+    currency = currency ?? (e.currency ?? null);
+    const place = String(e.merchant_name || e.title || "").trim().slice(0, 60);
+    if (place) byPlace.set(place, (byPlace.get(place) ?? 0) + amount);
+  }
+  const merchants = [...byPlace.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p]) => p);
+  const stores = [...new Set(arrivals
+    .map((a) => /«([^»]{1,60})»/.exec(String(a.task_description ?? ""))?.[1]?.trim())
+    .filter((x): x is string => !!x))].slice(0, 3);
+  return { spent_total: Math.round(total * 100) / 100, currency, merchants, stores };
 }

@@ -951,5 +951,16 @@
     "title",
     "updated_at",
     "user_id"
+  ],
+  "zad_place_visits": [
+    "created_at",
+    "currency",
+    "id",
+    "left_at",
+    "merchants",
+    "returned_at",
+    "spent_total",
+    "stores",
+    "user_id"
   ]
 }

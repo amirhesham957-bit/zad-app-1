@@ -172,3 +172,21 @@ Deno.test("tasbiha reminder is skipped once the user has done tasbih today", asy
   assertEquals(updates[0].values.status, "skipped");
   assertStringIncludes(momentFallback("tasbiha_reminder", { streak_days: 4 }).speech, "4 يوم");
 });
+
+Deno.test("an outing summary adds expenses, ranks places by spend and reads store arrivals", async () => {
+  const { summarizeOuting } = await import("./voiceMoments.ts");
+  const out = summarizeOuting(
+    [
+      { amount: 120, merchant_name: "كارفور", currency: "EGP" },
+      { amount: 230.5, merchant_name: "كارفور" },
+      { amount: 40, title: "قهوة" },
+      { amount: 0, title: "إعلان بنك" },
+    ],
+    [{ task_description: "وصول لـ«كارفور المعادي» (grocery)" }, { task_description: "كلام تاني" }],
+  );
+  assertEquals(out.spent_total, 390.5);
+  assertEquals(out.currency, "EGP");
+  assertEquals(out.merchants, ["كارفور", "قهوة"]);
+  assertEquals(out.stores, ["كارفور المعادي"]);
+  assertStringIncludes(momentFallback("back_home_spent", { ...out }).speech, "391");
+});

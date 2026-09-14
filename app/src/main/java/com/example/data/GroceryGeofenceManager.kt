@@ -145,6 +145,18 @@ object GroceryGeofenceManager {
                 )
             }
         }
+        // البيت (لو اتعلّم من عينات الليل) — خروج ودخول، عشان "رجعت! روحت فين وصرفت إيه".
+        // إحداثياته على الموبايل بس ([HomePlace]).
+        HomePlace.homeLocation(context)?.let { (homeLat, homeLon) ->
+            geofences.add(
+                Geofence.Builder()
+                    .setRequestId(HomePlace.GEOFENCE_ID)
+                    .setCircularRegion(homeLat, homeLon, HomePlace.RADIUS_METERS)
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+                    .build()
+            )
+        }
         if (geofences.isEmpty()) {
             Log.d(TAG, "refreshGeofences() → no nearby supermarkets/pharmacies found")
             return@withContext true

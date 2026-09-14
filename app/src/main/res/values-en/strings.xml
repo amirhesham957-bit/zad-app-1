@@ -1015,7 +1015,7 @@
 
     <!-- Location Alerts (opt-in real background geofencing — separate from the manual search above) -->
     <string name="location_alerts_toggle_label">Smart alerts when you\'re near a store</string>
-    <string name="location_alerts_toggle_hint">Zad automatically reminds you about your grocery or medicine shortages when you\'re near a supermarket or pharmacy — requires background location permission, and you can turn it off anytime.</string>
+    <string name="location_alerts_toggle_hint">Zad reminds you of pantry or medicine shortages when you are near a supermarket or pharmacy, and learns where home is (kept on your phone only) so it can tell you what you spent while you were out — needs background location, and you can turn it off anytime.</string>
     <string name="location_alerts_open_settings">Open Settings</string>
     <string name="location_alerts_settings_hint">Android doesn\'t allow requesting background location permission from within the app — choose \"Allow all the time\" from settings.</string>
     <string name="location_alerts_enabled_hint">Enabled — you\'ll get alerts when you\'re near a store</string>

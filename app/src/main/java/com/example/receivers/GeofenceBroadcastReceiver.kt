@@ -38,9 +38,24 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             Log.e(TAG, "onReceive() geofence error code=${event.errorCode}")
             return
         }
-        if (event.geofenceTransition != Geofence.GEOFENCE_TRANSITION_ENTER) return
+        val allIds = event.triggeringGeofences?.map { it.requestId } ?: return
 
-        val triggeringIds = event.triggeringGeofences?.map { it.requestId } ?: return
+        // البيت: خروج بيسجّل الوقت على الموبايل، ورجوع بعد خروجة حقيقية بيسأل العقل
+        // "روحت فين وصرفت إيه" (PlaceEventWorker). التسجيل الأول بيطلق ENTER وهو في البيت
+        // أصلاً — مفيش خروج متسجل، فبيتجاهل.
+        if (com.example.data.HomePlace.GEOFENCE_ID in allIds) {
+            val appContext = context.applicationContext
+            when (event.geofenceTransition) {
+                Geofence.GEOFENCE_TRANSITION_EXIT -> com.example.data.HomePlace.onLeftHome(appContext)
+                Geofence.GEOFENCE_TRANSITION_ENTER ->
+                    com.example.data.HomePlace.onBackHome(appContext)?.let { leftAt ->
+                        com.example.workers.PlaceEventWorker.enqueue(appContext, leftAt)
+                    }
+            }
+        }
+
+        if (event.geofenceTransition != Geofence.GEOFENCE_TRANSITION_ENTER) return
+        val triggeringIds = allIds - com.example.data.HomePlace.GEOFENCE_ID
         if (triggeringIds.isEmpty()) return
 
         val pendingResult = goAsync()

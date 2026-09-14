@@ -313,6 +313,19 @@ class MainActivity : ComponentActivity() {
             geofenceRefreshRequest
         )
 
+        // عينة مكان البيت كل ليلة ~٣ الصبح (HomePlace) — نفس شرط تنبيهات الموقع، والإحداثيات
+        // على الموبايل بس. تعريف البيت هو اللي بيخلّي "رجعت! صرفت إيه" ممكنة.
+        var next3am = now.withHour(3).withMinute(0).withSecond(0).withNano(0)
+        if (now.isAfter(next3am)) next3am = next3am.plusDays(1)
+        val homeSampleRequest = PeriodicWorkRequestBuilder<com.example.workers.HomeSampleWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(java.time.Duration.between(now, next3am).toMinutes(), TimeUnit.MINUTES)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "ZadHomeSampleWorker",
+            ExistingPeriodicWorkPolicy.KEEP,
+            homeSampleRequest
+        )
+
         // Start real-time chat notification service
         try {
             startService(Intent(this, com.example.services.ChatNotificationService::class.java))

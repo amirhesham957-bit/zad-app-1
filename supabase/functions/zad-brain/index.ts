@@ -73,7 +73,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { pushToDevice, pushToTelegram } from "./push.ts";
-import { CLIENT_MOMENTS, morningFacts, processVoiceMoments, tasbihaFacts } from "./voiceMoments.ts";
+import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -955,6 +955,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     dataErrors.push({ source: "مواعيدك" });
   }
 
+  // خروجات آخر ٧ أيام (من غير إحداثيات) — العقل يعرف "خرج امبارح وصرف ٣٥٠ في كارفور".
+  const { data: outingRows } = await sb.from("zad_place_visits")
+    .select("left_at,returned_at,spent_total,currency,merchants,stores")
+    .eq("user_id", userId).gte("returned_at", new Date(Date.now() - 7 * 86400000).toISOString())
+    .order("returned_at", { ascending: false }).limit(10);
+
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
   for (const sub of subRes.data ?? []) {
     if (sub.renewal_date) upcoming.push({ type: "subscription", name: sub.title, when: sub.renewal_date });
@@ -1119,6 +1125,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
+    // خروجاته من البيت آخر أسبوع (وقت + صرف + محلات) — لو فعّل تنبيهات الموقع.
+    recent_outings: (outingRows ?? []) as Array<Record<string, unknown>>,
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين
     // "مفيش مصاريف" و"مقدرتش أقرا المصاريف"، والعقل كان بيقول الأولانية وهو يقصد التانية.
     data_errors: dataErrors,
@@ -5746,6 +5754,55 @@ Deno.serve(async (req: Request) => {
     // لحظة صوت بيطلبها التطبيق نفسه: العميل صحى (أول فتح للقفل الصبح) أو ميعاد تذكير
     // التسبيحة. الهوية من JWT المستخدم بس، واللحظة من قايمة ثابتة، ومرة واحدة في اليوم
     // المحلي (dedupe_key). بتتعالج على طول عشان "صباح الخير" تتقال وهو ماسك الموبايل.
+    // رجع البيت (geofence البيت على الموبايل — مكان البيت نفسه مابيوصلش السيرفر). بنحسب صرف
+    // نافذة الخروجة والمحلات اللي دخلها، بنسجل الخروجة (من غير إحداثيات)، ولو صرف حاجة زاد
+    // بتقوله بصوتها "رجعت! روحت فين وصرفت إيه". مابنتكلمش على خروجة من غير صرف — ده تطفّل.
+    if (body.action === "place_event") {
+      const placeUserId = await resolveRequestUserId(req, body);
+      if (!placeUserId) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const leftAt = new Date(String(body.left_at ?? ""));
+      const returnedAt = new Date();
+      const away = returnedAt.getTime() - leftAt.getTime();
+      if (String(body.event) !== "back_home" || Number.isNaN(leftAt.getTime()) || away < MIN_OUTING_MS || away > MAX_OUTING_MS) {
+        return new Response(JSON.stringify({ ok: false, error: "invalid outing" }), { status: 400, headers: CORS_HEADERS });
+      }
+      const sbPlace = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const [expRes, arrRes] = await Promise.all([
+        sbPlace.from("zad_transactions").select("amount,title,merchant_name,currency")
+          .eq("user_id", placeUserId).eq("txn_kind", "expense")
+          .gte("created_at", leftAt.toISOString()).lte("created_at", returnedAt.toISOString()).limit(100),
+        sbPlace.from("agent_tasks").select("task_description")
+          .eq("user_id", placeUserId).eq("kind", "store_arrival")
+          .gte("created_at", leftAt.toISOString()).lte("created_at", returnedAt.toISOString()).limit(20),
+      ]);
+      const outing = summarizeOuting(
+        (expRes.data ?? []) as Array<{ amount: number; title: string; merchant_name: string | null; currency: string | null }>,
+        (arrRes.data ?? []) as Array<{ task_description: string | null }>,
+      );
+      const { error: visitErr } = await sbPlace.from("zad_place_visits").upsert({
+        user_id: placeUserId, left_at: leftAt.toISOString(), returned_at: returnedAt.toISOString(),
+        spent_total: outing.spent_total, currency: outing.currency, merchants: outing.merchants, stores: outing.stores,
+      }, { onConflict: "user_id,left_at", ignoreDuplicates: true });
+      if (visitErr) console.error("[place_event] visit insert failed:", visitErr.message);
+      if (outing.spent_total <= 0) {
+        return new Response(JSON.stringify({ ok: true, status: "no_spend", ...outing }), { headers: CORS_HEADERS });
+      }
+      await sbPlace.from("zad_voice_moments").upsert({
+        user_id: placeUserId, moment: "back_home_spent",
+        facts: { ...outing, minutes_away: Math.round(away / 60000) },
+        dedupe_key: `back_home:${leftAt.toISOString()}`,
+      }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+      const summary = await processVoiceMoments(sbPlace, {
+        compose: async (system, user) =>
+          (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
+        pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbPlace, userId, title, text, data, dataOnly),
+        pushTelegram: (userId, title, text, voice, m, speech) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech),
+      }, 5, placeUserId);
+      return new Response(JSON.stringify({ ok: true, status: "processed", ...outing, ...summary }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "moment_event") {
       const eventUserId = await resolveRequestUserId(req, body);
       if (!eventUserId) {
