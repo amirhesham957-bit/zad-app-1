@@ -2064,4 +2064,9 @@
     <string name="week_share_footer">زاد — صاحبتك في إدارة البيت</string>
     <string name="week_share_cta">نزّل زاد وجرّب أسبوع معاها</string>
     <string name="week_share_action">شارك أسبوعك</string>
+    <string name="leaderboard_share_title">بستان عيلتنا</string>
+    <string name="leaderboard_share_subtitle">ترتيب التسبيح في العيلة</string>
+    <string name="leaderboard_share_streak">🔥 %1$d يوم ورا بعض</string>
+    <string name="leaderboard_share_cta">مين هيسبقنا الأسبوع ده؟</string>
+    <string name="leaderboard_share_action">شارك الترتيب</string>
 </resources>

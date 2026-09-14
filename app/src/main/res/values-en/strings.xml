@@ -2053,4 +2053,9 @@
     <string name="week_share_footer">Zad — your home companion</string>
     <string name="week_share_cta">Get Zad and try a week with her</string>
     <string name="week_share_action">Share your week</string>
+    <string name="leaderboard_share_title">Our family garden</string>
+    <string name="leaderboard_share_subtitle">Family tasbih ranking</string>
+    <string name="leaderboard_share_streak">🔥 %1$d days in a row</string>
+    <string name="leaderboard_share_cta">Who will beat us this week?</string>
+    <string name="leaderboard_share_action">Share the ranking</string>
 </resources>

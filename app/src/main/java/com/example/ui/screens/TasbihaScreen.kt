@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.animation.core.*
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -1037,6 +1038,10 @@ private fun TreeMiniCard(
 
 @Composable
 private fun FamilyGardenTab(familyMembers: List<FamilyMemberWithTasbiha>) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val streaks = remember(familyMembers) {
+        familyMembers.associate { m -> m.member.id to (m.trees.maxOfOrNull { it.streakDays } ?: 0) }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = ZadHubListBottomPadding)
@@ -1049,14 +1054,26 @@ private fun FamilyGardenTab(familyMembers: List<FamilyMemberWithTasbiha>) {
                     stringResource(R.string.leaderboard_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = onSurface
+                    color = onSurface,
+                    modifier = Modifier.weight(1f)
                 )
+                // ترتيب العيلة كصورة تتشير — «مين هيسبقنا الأسبوع ده؟»
+                if (familyMembers.isNotEmpty()) {
+                    FilledTonalButton(
+                        onClick = { com.example.share.LeaderboardShareCard.share(context, com.example.data.TasbihaLeaderboard.entries(familyMembers)) },
+                        modifier = Modifier.heightIn(min = 44.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.leaderboard_share_action))
+                    }
+                }
             }
             Spacer(Modifier.height(16.dp))
         }
 
-        items(familyMembers) { memberData ->
-            FamilyMemberTreeCard(memberData)
+        itemsIndexed(familyMembers) { index, memberData ->
+            FamilyMemberTreeCard(memberData, rank = index + 1, streakDays = streaks[memberData.member.id] ?: 0)
             Spacer(Modifier.height(8.dp))
         }
 
@@ -1064,7 +1081,7 @@ private fun FamilyGardenTab(familyMembers: List<FamilyMemberWithTasbiha>) {
 }
 
 @Composable
-private fun FamilyMemberTreeCard(memberData: FamilyMemberWithTasbiha) {
+private fun FamilyMemberTreeCard(memberData: FamilyMemberWithTasbiha, rank: Int = 0, streakDays: Int = 0) {
     com.example.ui.components.ZadListCard(contentPadding = 0.dp) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -1079,12 +1096,23 @@ private fun FamilyMemberTreeCard(memberData: FamilyMemberWithTasbiha) {
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(memberData.member.alias, fontWeight = FontWeight.Bold, color = onSurface)
+                    Text(
+                        if (rank in 1..3) "${com.example.data.TasbihaLeaderboard.medal(rank)} ${memberData.member.alias}" else memberData.member.alias,
+                        fontWeight = FontWeight.Bold,
+                        color = onSurface
+                    )
                     Text(
                         stringResource(R.string.member_trees_and_mature, memberData.trees.size, memberData.matureTrees),
                         style = MaterialTheme.typography.bodySmall,
                         color = onSurfaceVariant
                     )
+                    if (streakDays > 0) {
+                        Text(
+                            stringResource(R.string.leaderboard_share_streak, streakDays),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = primary
+                        )
+                    }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("${memberData.totalScore}", fontWeight = FontWeight.Bold, color = primary, fontSize = 20.sp)
