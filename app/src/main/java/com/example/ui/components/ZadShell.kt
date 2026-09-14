@@ -91,6 +91,7 @@ object ZadRoutes {
     const val KNOWLEDGE_MAP = "knowledge_map"
     const val DEALS = "deals"
     const val PREMIUM_PLANS = "premium_plans"
+    const val APPOINTMENTS = "appointments"
 }
 
 /** The mockup's per-screen H1 (`STRINGS.titles`). */
@@ -112,6 +113,7 @@ fun zadScreenTitle(route: String?): String = stringResource(
         ZadRoutes.STATEMENT -> R.string.statement_import_title
         ZadRoutes.KNOWLEDGE_MAP -> R.string.knowledge_map_title
         ZadRoutes.PREMIUM_PLANS -> R.string.premium_plans_title
+        ZadRoutes.APPOINTMENTS -> R.string.appointments_title
         else -> R.string.screen_title_home
     }
 )

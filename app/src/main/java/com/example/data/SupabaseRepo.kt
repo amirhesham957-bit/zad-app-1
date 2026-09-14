@@ -1288,6 +1288,76 @@ object SupabaseRepo {
         }
     }
 
+    // ── مواعيد العميل (zad_appointments) ──────────────────────────────────────
+    // بترجع null لو القراءة فشلت (مش emptyList): الشاشة لازم تفرّق بين "مفيش مواعيد"
+    // و"مقدرتش أجيبها" — نفس درس data_errors في العقل.
+    suspend fun getAppointments(): List<ZadAppointment>? = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return null
+        val since = java.time.Instant.now().minus(java.time.Duration.ofDays(14)).toString()
+        client.postgrest["zad_appointments"].select {
+            filter {
+                eq("user_id", userId)
+                neq("status", "cancelled")
+                gte("starts_at", since)
+            }
+            order("starts_at", io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+            limit(200L)
+        }.decodeList<ZadAppointment>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getAppointments() FAILED: ${e.message}")
+        null
+    }
+
+    suspend fun addAppointment(
+        title: String,
+        kind: String,
+        startsAtIso: String,
+        placeLabel: String?,
+        remindMinutesBefore: Int,
+        recurrence: String,
+    ): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        // JSON صريح مش data class: created_at/updated_at ليهم default في الجدول ومش nullable،
+        // و`id` بيتولّد هناك.
+        client.postgrest["zad_appointments"].insert(
+            buildJsonObject {
+                put("user_id", userId)
+                put("title", title.trim().take(160))
+                put("kind", if (kind in APPOINTMENT_KINDS) kind else "personal")
+                put("starts_at", startsAtIso)
+                put("place_label", placeLabel?.trim()?.takeIf { it.isNotEmpty() }?.take(120))
+                put("remind_minutes_before", remindMinutesBefore.coerceIn(0, 10080))
+                put("recurrence", recurrence)
+                put("source", "app")
+            }
+        )
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "addAppointment() FAILED: ${e.message}")
+        false
+    }
+
+    suspend fun setAppointmentStatus(id: String, status: String): Boolean = try {
+        client.postgrest["zad_appointments"].update(
+            buildJsonObject {
+                put("status", status)
+                put("updated_at", java.time.Instant.now().toString())
+            }
+        ) { filter { eq("id", id) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "setAppointmentStatus() FAILED: ${e.message}")
+        false
+    }
+
+    suspend fun deleteAppointment(id: String): Boolean = try {
+        client.postgrest["zad_appointments"].delete { filter { eq("id", id) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "deleteAppointment() FAILED: ${e.message}")
+        false
+    }
+
     suspend fun getObligations(): List<ZadObligation> {
         return try {
             val userId = client.auth.currentUserOrNull()?.id

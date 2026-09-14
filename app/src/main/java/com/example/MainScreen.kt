@@ -264,6 +264,7 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
             "notifications" -> ZadRoutes.NOTIFICATIONS
             "profile" -> ZadRoutes.PROFILE
             "statement" -> ZadRoutes.STATEMENT
+            "appointments" -> ZadRoutes.APPOINTMENTS
             else -> null
         }
         // القايمة البيضا دي تالت حارس بعد validators.ts والـrepo، فأي شاشة السيرفر
@@ -555,6 +556,12 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
                             )
                         }
                         composable(ZadRoutes.TASBIHA) { TasbihaScreen(viewModel = familyViewModel) }
+                        composable(ZadRoutes.APPOINTMENTS) {
+                            com.example.ui.screens.AppointmentsScreen(
+                                onOpenVoice = { showVoiceSheet = true },
+                                onOpenObligations = { go(ZadRoutes.BUDGET) },
+                            )
+                        }
                         composable(ZadRoutes.FAMILY) {
                             // وضع الأطفال: FamilyScreen وحدها بلا أي تبويبات — نفس القيد
                             // القديم بالظبط (route != FAMILY ممنوع لغير home)، مفيش تسريب

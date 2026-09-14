@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.Hub
@@ -81,12 +82,14 @@ internal data class ZadSectionEntry(
 internal val zadAppSections: List<ZadSectionEntry> = listOf(
     ZadSectionEntry(ZadRoutes.INVENTORY, Icons.Default.Inventory2, R.string.nav_inventory, ZadSectionAccent.Emerald),
     ZadSectionEntry(ZadRoutes.SHOPPING, Icons.Default.ShoppingCart, R.string.nav_shopping, ZadSectionAccent.Amber),
+    // مواعيدي تالت قسم: طلب صريح إنها "ميزة مخصصة للحاجات المهمة" (٢٠٢٦-٠٩-١٤).
+    ZadSectionEntry(ZadRoutes.APPOINTMENTS, Icons.Default.EventNote, R.string.appointments_title, ZadSectionAccent.Teal),
     ZadSectionEntry(ZadRoutes.FAMILY, Icons.Default.FamilyRestroom, R.string.nav_family, ZadSectionAccent.Violet),
     ZadSectionEntry(ZadRoutes.BUDGET, Icons.Default.BarChart, R.string.nav_budget, ZadSectionAccent.Blue),
     ZadSectionEntry(ZadRoutes.SUBS, Icons.Default.CreditCard, R.string.subscriptions_title, ZadSectionAccent.Indigo),
     ZadSectionEntry(ZadRoutes.PHARMACY, Icons.Default.LocalPharmacy, R.string.nav_pharmacy, ZadSectionAccent.Rose),
-    ZadSectionEntry(ZadRoutes.MAINTENANCE, Icons.Default.Build, R.string.nav_maintenance, ZadSectionAccent.Brown),
     ZadSectionEntry(ZadRoutes.TASBIHA, Icons.Default.Yard, R.string.tasbiha_short_label, ZadSectionAccent.Green),
+    ZadSectionEntry(ZadRoutes.MAINTENANCE, Icons.Default.Build, R.string.nav_maintenance, ZadSectionAccent.Brown),
     ZadSectionEntry(ZadRoutes.ASSISTANT, Icons.Default.Psychology, R.string.screen_title_assistant, ZadSectionAccent.Teal),
     ZadSectionEntry(ZadRoutes.KNOWLEDGE_MAP, Icons.Default.Hub, R.string.knowledge_map_title, ZadSectionAccent.Blue),
     ZadSectionEntry(ZadRoutes.NOTIFICATIONS, Icons.Default.Notifications, R.string.notifications_title, ZadSectionAccent.Amber),

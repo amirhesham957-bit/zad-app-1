@@ -569,7 +569,7 @@ export const APP_COMMAND_SCREENS = [
   "inventory", "shopping", "pharmacy", "budget", "tasks", "family",
   "maintenance", "subscriptions", "debts", "obligations", "insights",
   "camera", "camera_receipt", "home", "tasbiha", "notifications",
-  "profile", "statement",
+  "profile", "statement", "appointments",
 ] as const;
 export const APP_COMMAND_ACTIONS = [
   "open",            // افتح الشاشة

@@ -54,7 +54,7 @@
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APP_COMMAND_SCREENS } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext } from "./shared.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
@@ -3886,7 +3886,9 @@ const CHAT_TOOLS: ToolDef[] = [
       properties: {
         screen: {
           type: "string",
-          enum: ["inventory", "shopping", "pharmacy", "budget", "tasks", "family", "maintenance", "subscriptions", "debts", "obligations", "insights"],
+          // نفس قايمة المحقّق بالظبط — كانت ١١ شاشة هنا مقابل ١٨ مسموحين، فالموديل ماكانش
+          // يعرف إنه يقدر يفتح التسبيحة ولا الإشعارات ولا المواعيد.
+          enum: [...APP_COMMAND_SCREENS],
         },
         action: { type: "string", enum: ["open", "add_item", "highlight"] },
         highlight_name: { type: "string", description: "اسم العنصر المطلوب تظليله لو action=highlight/add_item" },
