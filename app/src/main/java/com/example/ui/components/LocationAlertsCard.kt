@@ -64,7 +64,7 @@ import com.example.ui.theme.*
  * مفعّلة (بدل ما يختفي تماماً)، عشان المستخدم يقدر يوقفها من غير الشاشة اللي اتشالت.
  */
 @Composable
-fun LocationAlertsCard(dismissed: Boolean, onDismiss: () -> Unit) {
+fun LocationAlertsCard(dismissed: Boolean, onDismiss: () -> Unit, showDismiss: Boolean = true) {
     val context = LocalContext.current
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -239,8 +239,10 @@ fun LocationAlertsCard(dismissed: Boolean, onDismiss: () -> Unit) {
                     Text(stringResource(label), fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss, contentPadding = PaddingValues(4.dp)) {
-                    Text(stringResource(R.string.dismiss_action), fontSize = 11.sp, color = onSurfaceVariant)
+                if (showDismiss) {
+                    TextButton(onClick = onDismiss, contentPadding = PaddingValues(4.dp)) {
+                        Text(stringResource(R.string.dismiss_action), fontSize = 11.sp, color = onSurfaceVariant)
+                    }
                 }
             }
         }

@@ -425,6 +425,12 @@ fun ProfileScreen(
             }
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                // «إنت مين عند زاد» + إذن الموقع — كانوا مدفونين (شاشة الذاكرة / كارت اتشال من الرئيسية).
+                com.example.ui.components.CustomerProfileSection(fallbackName = userNameState)
+                Spacer(Modifier.height(12.dp))
+                com.example.ui.components.LocationAlertsCard(dismissed = false, onDismiss = {}, showDismiss = false)
+                Spacer(Modifier.height(20.dp))
+
                 // ── Settings, as the mockup's single grouped card ────────────────
                 // Was ten separate 16dp cards, each with its own 44dp gradient icon
                 // tile in a different colour pair. Ten gradients in one scroll is the

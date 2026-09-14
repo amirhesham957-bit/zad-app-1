@@ -545,6 +545,29 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
+                // «التطبيق مايعرفش أنا مين» (تجربة حقيقية ٢٠٢٦-٠٩-١٤): الملف كان مدفون في شاشة الذاكرة.
+                com.example.ui.components.WhoAreYouCard(fallbackName = userNameState)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // تنبيهات الأماكن («لما أروح الصيدلية فكّرني»، تحذير منطقة التسوق) محتاجة إذن الموقع،
+                // والكارت الوحيد اللي بيطلبه اتشال من هنا في 91a5907f — فالتطبيق ماكانش بيطلب الإذن
+                // خالص. مفتاح تجاهل جديد: اللي داس «تجاهل» زمان كان قبل ما الميزات دي تتبني.
+                var locationAlertsCardDismissed by remember {
+                    mutableStateOf(context.getSharedPreferences("zad_prefs", android.content.Context.MODE_PRIVATE)
+                        .getBoolean("location_alerts_card_dismissed_v2", false))
+                }
+                if (!locationAlertsCardDismissed && !com.example.data.GroceryGeofenceManager.isEnabled(context)) {
+                    com.example.ui.components.LocationAlertsCard(
+                        dismissed = false,
+                        onDismiss = {
+                            locationAlertsCardDismissed = true
+                            context.getSharedPreferences("zad_prefs", android.content.Context.MODE_PRIVATE)
+                                .edit().putBoolean("location_alerts_card_dismissed_v2", true).apply()
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 // مرحلة ٣ — سؤال متابعة مخزون تفاعلي (أعلى مرشّح بس، عشان مايبقاش إلحاح)
                 inventoryCheckIns.firstOrNull()?.let { candidate ->
                     com.example.ui.components.InventoryCheckInCard(

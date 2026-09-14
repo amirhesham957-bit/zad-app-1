@@ -1396,6 +1396,22 @@ object SupabaseRepo {
         null
     }
 
+    /**
+     * نفس القراءة بس بتفرّق «مفيش ملف لسه» (success(null)) عن «القراءة فشلت» (failure). الحفظ upsert
+     * كامل، فلو فتحنا الفورم فاضية بعد قراءة فاشلة كنا هنمسح بيانات موجودة.
+     */
+    suspend fun loadCustomerProfile(): Result<ZadCustomerProfile?> = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        Result.success(
+            client.postgrest["zad_customer_profile"].select {
+                filter { eq("user_id", userId) }
+            }.decodeSingleOrNull<ZadCustomerProfile>()
+        )
+    } catch (e: Exception) {
+        Log.e(TAG, "loadCustomerProfile() FAILED: ${e.message}")
+        Result.failure(e)
+    }
+
     /** upsert كامل من شاشة الملف: الحقول الفاضية بتتبعت null صريح (العميل مسحها). */
     suspend fun saveCustomerProfile(profile: ZadCustomerProfile): Boolean = try {
         val userId = client.auth.currentUserOrNull()?.id ?: error("no session")

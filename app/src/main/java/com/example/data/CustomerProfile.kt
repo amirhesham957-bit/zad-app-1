@@ -28,6 +28,13 @@ data class ZadCustomerProfile(
     val notes: String? = null,
 )
 
+/**
+ * «زاد لسه ميعرفش إنت مين»: الاسم والنوع هما أقل حاجة عشان يخاطبك صح (راجل/ست) وينادِيك باسمك.
+ * كارت الرئيسية بيظهر بسببهم بس — مش بسبب كل خانة فاضية، عشان مايبقاش استمارة.
+ */
+fun needsIntroduction(profile: ZadCustomerProfile?): Boolean =
+    profile == null || profile.preferredName.isNullOrBlank() || profile.gender == null
+
 object CustomerProfileOptions {
     val GENDERS = listOf("male", "female")
     val ROLES = listOf("father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other")

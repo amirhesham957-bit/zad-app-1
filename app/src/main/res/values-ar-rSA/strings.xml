@@ -2085,4 +2085,7 @@
     <string name="voice_hold_to_talk">اضغط مع الاستمرار وتكلم</string>
     <string name="voice_release_to_send">أسمعك… فك عشان أرد</string>
     <string name="voice_hold_to_interrupt">اضغط وتكلم عشان تقاطعني</string>
+    <string name="who_are_you_title">عرّفني على نفسك</string>
+    <string name="who_are_you_body">اسمك، وتبيني أكلمك بصيغة رجّال ولا حرمة، وشغلك وموعد راتبك — عشان أكلمك صح وأتذكرك.</string>
+    <string name="who_are_you_cta">يلا نتعرّف</string>
 </resources>

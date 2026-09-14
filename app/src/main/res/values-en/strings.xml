@@ -2150,4 +2150,7 @@ or enter the code: %2$s</string>
     <string name="voice_hold_to_talk">Hold to talk</string>
     <string name="voice_release_to_send">Listening… release to send</string>
     <string name="voice_hold_to_interrupt">Hold and talk to interrupt</string>
+    <string name="who_are_you_title">Tell me about you</string>
+    <string name="who_are_you_body">Your name, how you\'d like to be addressed, your work and payday — so I talk to you right and remember you.</string>
+    <string name="who_are_you_cta">Let\'s do it</string>
 </resources>
