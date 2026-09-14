@@ -19,7 +19,8 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
-import { alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice } from "./voiceAlert.ts";
+import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice } from "./voiceAlert.ts";
+import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
@@ -213,8 +214,23 @@ function runInBackground(task: Promise<unknown>): void {
   if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(guarded);
 }
 
-async function deliverVoiceAlert(chatId: number, title: string, body: string): Promise<void> {
-  const pcm = await synthesizeAlertPcm(alertSpeechText(title, body), geminiKeysFromEnv());
+async function deliverVoiceAlert(
+  sb: SupabaseClient,
+  userId: string,
+  chatId: number,
+  title: string,
+  body: string,
+  emotion: VoiceEmotion,
+  speech?: string,
+): Promise<void> {
+  // لهجة الحساب نفسه — نفس مصدر المكالمة الحية وقراءة الإشعارات.
+  let country: string | null = null;
+  try {
+    const { data } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    country = (data as { country?: string | null } | null)?.country ?? null;
+  } catch (_e) { /* من غير لهجة */ }
+  const text = speech?.trim() ? alertSpeechText("", speech) : alertSpeechText(title, body);
+  const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion, country });
   if (!pcm) return; // السبب اتسجّل جوه synthesizeAlertPcm — النص وصل خلاص.
   await sendTelegramVoice(chatId, pcmToMp3(pcm));
   console.log(`[voiceAlert] delivered ${pcm.byteLength} bytes PCM as voice note`);
@@ -2010,8 +2026,10 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
+        // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
+        speech?: string;
       };
       if (!user_id || !title || !body) {
         return new Response(JSON.stringify({ ok: false, reason: "missing user_id/title/body" }), { status: 400 });
@@ -2029,7 +2047,9 @@ Deno.serve(async (req: Request) => {
       await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.
       const voice = wantsVoice(payload);
-      if (voice) runInBackground(deliverVoiceAlert(chatId, title, body));
+      if (voice) {
+        runInBackground(deliverVoiceAlert(sb, user_id, chatId, title, body, alertEmotion(payload, `${title} ${body}`), typeof speech === "string" ? speech : undefined));
+      }
       return new Response(JSON.stringify({ ok: true, delivered: true, voice: voice ? "queued" : "none" }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("realtime_push failed:", e);

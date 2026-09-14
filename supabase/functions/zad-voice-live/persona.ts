@@ -1,3 +1,5 @@
+import { VOICE_EMOTIONAL_RANGE } from "../_shared/zadVoice.ts";
+
 // persona.ts — نسخة مقصودة من zad-brain/persona.ts (بند 33.3). نفس نمط entitlement.ts:
 // كل فانكشن مستقل في المشروع ده، مفيش استيراد بين فانكشنز، فالمنطق الصغير المشترك
 // بيتنسخ بدل ما يتوصّل بمسار نسبي هش وقت النشر.
@@ -58,5 +60,5 @@ export const VOICE_IDENTITY_LINE =
 
 export function buildVoiceSystemInstruction(country: unknown): string {
   const profile = conversationProfile(country);
-  return [VOICE_IDENTITY_LINE, profile.instruction, VOICE_TONE_INSTRUCTION].join("\n\n");
+  return [VOICE_IDENTITY_LINE, profile.instruction, VOICE_TONE_INSTRUCTION, VOICE_EMOTIONAL_RANGE].join("\n\n");
 }

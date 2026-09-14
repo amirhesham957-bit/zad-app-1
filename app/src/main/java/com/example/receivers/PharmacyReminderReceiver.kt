@@ -147,7 +147,7 @@ class PharmacyReminderReceiver : BroadcastReceiver() {
 
     private fun speakReminder(context: Context, itemName: String, pendingResult: PendingResult) {
         // صوت زاد البشري (ElevenLabs عبر السيرفر) بدل TTS الآلي — نفس الصوت في كل التطبيق.
-        com.example.voice.ZadAlertSpeaker.speakAlert(context, context.getString(R.string.pharmacy_reminder_voice_text, itemName)) {
+        com.example.voice.ZadAlertSpeaker.speakAlert(context, context.getString(R.string.pharmacy_reminder_voice_text, itemName), moment = "dose_due") {
             pendingResult.finish()
         }
     }

@@ -98,9 +98,10 @@ Deno.test("a proactive task id rides along so the bot can attach dismiss buttons
 Deno.test("a critical alert asks the bot for a voice note; others do not", async () => {
   const seen: { url?: string; init?: RequestInit }[] = [];
   await withEnv({ ZAD_REALTIME_PUSH_SECRET: SECRET, SUPABASE_URL: BASE }, async () => {
-    await pushToTelegram("u", "🔔 زاد لاحظ إن إشعارات البنك وقفت", "b", fakeFetch(200, '{"ok":true,"delivered":true}', seen), "t1", true);
+    await pushToTelegram("u", "🔔 زاد لاحظ إن إشعارات البنك وقفت", "b", fakeFetch(200, '{"ok":true,"delivered":true}', seen), "t1", true, "listener_gap_alert");
     await pushToTelegram("u", "📋 ملخص البيت من زاد", "b", fakeFetch(200, '{"ok":true,"delivered":true}', seen), "t2");
   });
   assertEquals(JSON.parse(String(seen[0].init?.body)).voice, true);
+  assertEquals(JSON.parse(String(seen[0].init?.body)).moment, "listener_gap_alert");
   assertEquals(JSON.parse(String(seen[1].init?.body)).voice, undefined);
 });

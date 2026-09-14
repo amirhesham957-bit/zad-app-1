@@ -102,6 +102,7 @@ class ZadNaturalVoiceEngine(private val context: Context) {
     // ولسه بتتنفذ ممكن تسحب الـfocus بتاع جيل أحدث لسه بيتكلم فعليًا (finding حقيقي
     // في المراجعة: abandonAudioFocus كان عام مش مربوط بجيل معيّن).
     @Volatile private var audioFocusOwnerGeneration: Long = -1L
+    @Volatile private var activeMoment: String? = null
     @Volatile private var completion: (() -> Unit)? = null
     @Volatile private var failedCompletion: (() -> Unit)? = null
     private var audioFocusRequest: AudioFocusRequest? = null
@@ -180,9 +181,13 @@ class ZadNaturalVoiceEngine(private val context: Context) {
     fun speakHumanLike(
         text: String,
         onDone: (() -> Unit)? = null,
-        onFailed: (() -> Unit)? = null
+        onFailed: (() -> Unit)? = null,
+        /** اللحظة (dose_due، dose_missed، morning_greeting...) — السيرفر بيحوّلها لمشاعر
+         *  الصوت من `_shared/zadVoice.ts`. null = المشاعر بتتستنتج من النص. */
+        moment: String? = null
     ) {
         stopInternal()
+        activeMoment = moment
         if (text.isBlank()) {
             onDone?.invoke()
             return
@@ -365,6 +370,7 @@ class ZadNaturalVoiceEngine(private val context: Context) {
                     put("payload", JSONObject().apply {
                         put("text", text)
                         put("persona", persona.id)
+                        activeMoment?.let { put("moment", it) }
                         put("locale", MarketPrefs.getMarket(context).localeTag)
                         // لهجة العميل توصل للـ style prompt — الصوت ينطق بنفس
                         // لهجته مش فصحى محايدة (المصري «إزيك»، الخليجي «شخبارك»...)

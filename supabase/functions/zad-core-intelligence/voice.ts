@@ -23,17 +23,21 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
+import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, type VoiceEmotion } from "../_shared/zadVoice.ts";
+
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
 
-export const VOICE_IDS: Record<string, string> = {
-  sarah_warm: "Aoede",
-  karim_pro: "Charon",
-  pet_mascot: "Leda",
-};
+/** نفس جدول الشخصيات المشترك (`_shared/zadVoice.ts`) — سارة/كريم/الأليف → صوت جيميناي. */
+export const VOICE_IDS: Record<string, string> = PERSONA_VOICES;
 
 export interface ValidVoiceRequest {
   text: string;
   voiceId: string;
+  /** مشاعر الأداء — من `emotion` صريحة أو من `moment` (دوا اتفوّت، صباح الخير...)،
+   *  وإلا بتتستنتج من النص. */
+  emotion?: VoiceEmotion;
+  /** بلد الحساب (zad_users.country) — السيرفر بيملاه، مش الجهاز. */
+  country?: string | null;
 }
 
 /** تعليمات لهجة اختيارية قادمة من جهاز العميل (مصري/سعودي/...) */
@@ -55,9 +59,12 @@ export function validateVoicePayload(payload: unknown): ValidVoiceRequest | null
   const row = payload as Record<string, unknown>;
   const text = typeof row.text === "string" ? row.text.trim() : "";
   const persona = typeof row.persona === "string" ? row.persona : "";
-  const voiceId = VOICE_IDS[persona];
+  const voiceId = Object.hasOwn(VOICE_IDS, persona) ? VOICE_IDS[persona] : undefined;
   if (!text || text.length > 1200 || !voiceId) return null;
-  return { text, voiceId };
+  const emotion = isVoiceEmotion(row.emotion)
+    ? row.emotion
+    : (typeof row.moment === "string" ? emotionForMoment(row.moment, text) : undefined);
+  return { text, voiceId, ...(emotion ? { emotion } : {}) };
 }
 
 /** استخراج تعليمات اللهجة من الـ payload (اختياري — للتوافق مع الإصدارات القديمة). */
@@ -65,23 +72,6 @@ export function extractDialectHint(payload: unknown): string {
   if (!payload || typeof payload !== "object") return "";
   const d = (payload as Record<string, unknown>).dialect_instruction;
   return typeof d === "string" && d.length < 120 ? d.trim() : "";
-}
-
-/**
- * تعليمات الأسلوب حسب محتوى النص — دي ميزة Gemini الفعلية (style prompting):
- * بدل نبرة واحدة ثابتة، الصوت بيحس بالمعلومة/التحذير/التهنئة.
- */
-function stylePrompt(text: string): string {
-  if (/[🚨⚠️]|خطر|انتبه|تجاوزت|فاقد/.test(text)) {
-    return "اقرأ بنبرة هادئة لكن جادة ومقلقة قليلاً، بإيقاع أبطأ شوية، كأخت بتقول لأخوها حاجة مهمة.";
-  }
-  if (/[🎉✅⭐🌸]|مبروك|أحسنت|ممتاز|تم/.test(text)) {
-    return "اقرأ بنبرة دافئة مبتهجة وواثقة فيها طاقة شبابية، وكأنك بنت بتشارك صاحبها فرحة حقيقية وبتضحك من قلبك.";
-  }
-  if (/دوا|جرعة|دكتور|صيدلية|حرارة|ضغط|سكري/.test(text)) {
-    return "اقرأ بعناية ولطف، بوضوح تام في أسماء الأدوية والمواعيد، دون استعجال، كأنك فاكرة معاه ده مهم لصحته.";
-  }
-  return "اقرأ بصوت بنت شبابية حرة دافئة طبيعية، عفوية زي ما بنت بتتكلم مع صاحبها المقرب على التليفون — فيها حياة وإحساس، مش قارئة نص.";
 }
 
 /**
@@ -136,12 +126,11 @@ export async function requestGeminiVoice(
   model: string = GEMINI_TTS_MODEL,
 ): Promise<Response> {
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
-  const dialectLine = dialectInstruction ? `\n${dialectInstruction}، مع الحفاظ على الطبيعية التامة.` : "";
-  // Gemini TTS quirk (googleapis/js-genai#1058): the internal prompt classifier رفض
-  // أي نص شكله "طلب نص" وردّ 400 "Model tried to generate text". الحل المعتمد:
-  // تعليمة صريحة قبل النص + سطر أمر توليد الصوت بعد النص — كلهم في part واحد.
-  const ttsDirective = "اقرأ النص التالي بصوت واضح وطبيعي — ولّد الصوت فقط من دون أي نص مكتوب.";
-  const closingDirective = "\n\nالآن ولّد الصوت لهذا النص.";
+  // البلد من الحساب هو المصدر. تلميح الجهاز القديم (مصري/سعودي بس) احتياطي لنسخ التطبيق
+  // اللي لسه مابتبعتش emotion — وبرومبت الأداء نفسه في `_shared/zadVoice.ts` (نفس صوت
+  // ومشاعر تليجرام والمكالمة).
+  const country = input.country ?? legacyDialectCountry(dialectInstruction);
+  const prompt = buildTtsPrompt({ text: input.text, emotion: input.emotion, country });
   const res = await fetcher(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -152,7 +141,7 @@ export async function requestGeminiVoice(
       },
       body: JSON.stringify({
         contents: [{
-          parts: [{ text: `${ttsDirective}${dialectLine}\n\n${stylePrompt(input.text)}\n\n${input.text}${closingDirective}` }],
+          parts: [{ text: prompt }],
         }],
         generationConfig: {
           responseModalities: ["AUDIO"],
@@ -184,4 +173,11 @@ export async function requestGeminiVoice(
     status: 200,
     headers: { "Content-Type": "audio/pcm" },
   });
+}
+
+/** تلميح اللهجة اللي نسخ التطبيق القديمة بتبعته نص عربي → كود بلد. */
+export function legacyDialectCountry(dialectInstruction: string): string | null {
+  if (/مصري/.test(dialectInstruction)) return "EG";
+  if (/سعودي/.test(dialectInstruction)) return "SA";
+  return null;
 }

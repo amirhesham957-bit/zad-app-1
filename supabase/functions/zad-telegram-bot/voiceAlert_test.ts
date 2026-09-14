@@ -65,3 +65,21 @@ Deno.test("key pool matches the other functions: numbered keys first, legacy fal
   assertEquals(geminiKeysFromEnv((n) => env[n]), ["a", "c"]);
   assertEquals(geminiKeysFromEnv((n) => ({ GEMINI_API_KEY: "legacy" } as Record<string, string>)[n]), ["legacy"]);
 });
+
+Deno.test("alert emotion: explicit emotion, then the moment, then the text", async () => {
+  const { alertEmotion } = await import("./voiceAlert.ts");
+  assertEquals(alertEmotion({ emotion: "sulky", moment: "budget_100" }, ""), "sulky");
+  assertEquals(alertEmotion({ moment: "budget_100" }, "⛔ وصلت لحد ميزانيتك"), "sad");
+  assertEquals(alertEmotion({}, "⛔ وصلت لحد ميزانيتك"), "worried");
+});
+
+Deno.test("voice note prompt carries the account accent and the emotion", async () => {
+  let prompt = "";
+  const fetcher = ((_u: string, init: RequestInit) => {
+    prompt = JSON.parse(String(init.body)).contents[0].parts[0].text;
+    return Promise.resolve(Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: btoa("x") } }] } }] }));
+  }) as typeof fetch;
+  await synthesizeAlertPcm("كده برضه؟", ["k"], fetcher, { emotion: "reproachful", country: "EG" });
+  assert(prompt.includes("Egyptian"));
+  assert(prompt.includes("reproachful"));
+});

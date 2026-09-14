@@ -195,6 +195,9 @@ export async function pushToTelegram(
   dismissTaskId?: string,
   // تنبيه حرج: البوت بيبعت فويس بصوت زاد بعد النص (zad-telegram-bot/voiceAlert.ts).
   voice = false,
+  // اسم اللحظة (listener_gap_alert، dose_missed...) — البوت بيحوّله لمشاعر الصوت من
+  // `_shared/zadVoice.ts`، فنفس الموقف بيتقال بنفس الإحساس في كل القنوات.
+  moment?: string,
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -211,6 +214,7 @@ export async function pushToTelegram(
         user_id: userId, title, body: body.slice(0, 3500),
         ...(dismissTaskId ? { dismiss_task_id: dismissTaskId } : {}),
         ...(voice ? { voice: true } : {}),
+        ...(voice && moment ? { moment } : {}),
       }),
     });
     const text = await res.text();

@@ -21,3 +21,11 @@ Deno.test("voice system instruction asks for speech-sized turns and follows dial
   const sa = buildVoiceSystemInstruction("SA");
   assertMatch(sa, /سعودية\/خليجية/);
 });
+
+Deno.test("live call carries the shared emotional range, and still discloses it is an AI", async () => {
+  const { VOICE_EMOTIONAL_RANGE } = await import("../_shared/zadVoice.ts");
+  const text = buildVoiceSystemInstruction("EG");
+  assertMatch(text, /بتتقمصي/);
+  assertMatch(text, /مساعدة ذكاء اصطناعي/);
+  assertEquals(text.includes(VOICE_EMOTIONAL_RANGE), true);
+});

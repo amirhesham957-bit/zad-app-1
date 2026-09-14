@@ -14,16 +14,23 @@
 //   كلام = ~0.4 ثانية CPU، والنص مقصوص عشان يفضل تحت ده بكتير.
 
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
+import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
 
 export const ALERT_TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
-/** نفس صوت سارة في `zad-core-intelligence/voice.ts` (VOICE_IDS.sarah_warm) والمكالمة الحية. */
-export const ALERT_VOICE_NAME = "Aoede";
+/** نفس صوت سارة في كل القنوات (`_shared/zadVoice.ts`). */
+export const ALERT_VOICE_NAME = DEFAULT_VOICE;
 export const ALERT_SPEECH_MAX_CHARS = 320;
 const PCM_SAMPLE_RATE = 24_000;
 
 /** طلب realtime_push عايز فويس؟ `true` صريحة بس — أي قيمة تانية = نص بس زي الأول. */
 export function wantsVoice(payload: unknown): boolean {
   return !!payload && typeof payload === "object" && (payload as { voice?: unknown }).voice === true;
+}
+
+/** مشاعر الفويس: `emotion` صريحة، وإلا `moment` (budget_100، dose_missed...)، وإلا من النص. */
+export function alertEmotion(payload: unknown, text: string): VoiceEmotion {
+  const row = (payload && typeof payload === "object" ? payload : {}) as { emotion?: unknown; moment?: unknown };
+  return isVoiceEmotion(row.emotion) ? row.emotion : emotionForMoment(row.moment, text);
 }
 
 /**
@@ -75,13 +82,11 @@ export async function synthesizeAlertPcm(
   text: string,
   apiKeys: string[],
   fetcher: typeof fetch = fetch,
+  style: { emotion?: VoiceEmotion; country?: string | null } = {},
 ): Promise<Uint8Array | null> {
   if (!text || apiKeys.length === 0) return null;
   const attempts: string[] = [];
-  const prompt =
-    "اقرأ النص التالي بصوت واضح وطبيعي — ولّد الصوت فقط من دون أي نص مكتوب.\n\n" +
-    "اقرأ بنبرة هادئة لكن جادة، بإيقاع أبطأ شوية، كأخت بتنبّه أخوها لحاجة مهمة تخص فلوسه — من غير تهويل.\n\n" +
-    `${text}\n\nالآن ولّد الصوت لهذا النص.`;
+  const prompt = buildTtsPrompt({ text, emotion: style.emotion, country: style.country });
   for (let ki = 0; ki < apiKeys.length; ki++) {
     for (const model of ALERT_TTS_MODELS) {
       try {

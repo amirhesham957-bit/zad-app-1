@@ -975,6 +975,14 @@ Deno.serve(async (req: Request) => {
       const voiceRequest = validateVoicePayload(payload);
       if (!voiceRequest) return jsonResponse({ error: "invalid voice request" }, 400);
       if (!GEMINI_API_KEY) return jsonResponse({ error: "voice provider unavailable" }, 503);
+      // لهجة الصوت من بلد الحساب — نفس مصدر المكالمة الحية وفويس تليجرام. الجهاز كان بيبعت
+      // مصري/سعودي بس، وأي بلد تاني كان بيتقري من غير لهجة. فشل القراءة = من غير لهجة، مش خطأ.
+      try {
+        const { data: voiceUser } = await supabase.from("zad_users").select("country").eq("id", caller.user.id).maybeSingle();
+        voiceRequest.country = (voiceUser as { country?: string | null } | null)?.country ?? null;
+      } catch (_e) {
+        voiceRequest.country = null;
+      }
 
       const upstream = await requestGeminiVoiceWithPool(voiceRequest, GEMINI_KEYS, fetch, extractDialectHint(payload));
       if (!upstream.ok || !upstream.body) {

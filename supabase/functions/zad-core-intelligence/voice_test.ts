@@ -60,3 +60,25 @@ Deno.test("Gemini TTS surfaces provider errors without leaking the key", async (
   });
   assertEquals([400, 429, 502].includes(response.status) || response.status === 200, true);
 });
+
+Deno.test("voice payload carries the moment's emotion, or an explicit one", async () => {
+  const { validateVoicePayload, legacyDialectCountry } = await import("./voice.ts");
+  assertEquals(validateVoicePayload({ text: "خد دواك", persona: "sarah_warm", moment: "dose_missed" })?.emotion, "reproachful");
+  assertEquals(validateVoicePayload({ text: "هاي", persona: "sarah_warm", emotion: "sulky" })?.emotion, "sulky");
+  assertEquals(validateVoicePayload({ text: "هاي", persona: "sarah_warm", emotion: "invented" })?.emotion, undefined);
+  assertEquals(legacyDialectCountry("تحدث باللهجة المصرية العامية"), "EG");
+  assertEquals(legacyDialectCountry(""), null);
+});
+
+Deno.test("TTS prompt uses the account accent and the chosen emotion", async () => {
+  const { requestGeminiVoice } = await import("./voice.ts");
+  let body = "";
+  const fetcher = ((_u: string, init: RequestInit) => {
+    body = String(init.body);
+    return Promise.resolve(Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: btoa("x") } }] } }] }));
+  }) as typeof fetch;
+  await requestGeminiVoice({ text: "صباح الخير", voiceId: "Aoede", emotion: "cheerful", country: "SA" }, "k", fetcher);
+  const prompt = JSON.parse(body).contents[0].parts[0].text as string;
+  assertEquals(prompt.includes("Saudi"), true);
+  assertEquals(prompt.includes("bubbly"), true);
+});
