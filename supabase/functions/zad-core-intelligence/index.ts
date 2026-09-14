@@ -5,6 +5,7 @@ import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
 import { isServiceRoleToken, providerHealth } from "./providerHealth.ts";
+import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestGeminiVoiceWithPool, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 
@@ -942,7 +943,13 @@ Deno.serve(async (req: Request) => {
       // البوابة (verify_jwt = true) اتحققت من توقيع التوكن قبل ما يوصل هنا؛ بنقرا الدور منه
       // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
-      return jsonResponse(await providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())));
+      const geminiKeys = [1, 2, 3, 4, 5].map((i) => Deno.env.get(`ZAD_API_KEY_${i}`)).filter((k): k is string => !!k);
+      const [keysReport, tts, pipeline] = await Promise.all([
+        providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
+        ttsHealth(geminiKeys.length ? geminiKeys : [Deno.env.get("GEMINI_API_KEY") ?? ""].filter(Boolean)),
+        pipelineHealth(supabase),
+      ]);
+      return jsonResponse({ ...keysReport, tts, pipeline });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
