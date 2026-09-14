@@ -1988,5 +1988,10 @@
     <string name="telegram_prompt_benefit_alerts">Alerts you to running-low items and upcoming bills</string>
     <string name="telegram_prompt_benefit_forecast">Sends your home summary and spending forecast</string>
     <string name="telegram_prompt_benefit_log">Log an expense with a single message</string>
+    <string name="telegram_prompt_benefit_voice">Voice notes in Zad\'s voice for what matters: a missed dose, an appointment coming up, a budget at risk</string>
+    <string name="telegram_prompt_without_link">⚠️ Without linking, reports and voice alerts will not reach you outside the app — Zad stays half-working.</string>
+    <string name="telegram_banner_title">Link Telegram so Zad can reach you</string>
+    <string name="telegram_banner_body">Reports, bank confirmations and Zad\'s voice notes (good morning, medicine, appointments) all arrive on Telegram. Without linking, they will not reach you.</string>
+    <string name="telegram_banner_link">Link now</string>
     <string name="telegram_prompt_later">Not now</string>
 </resources>

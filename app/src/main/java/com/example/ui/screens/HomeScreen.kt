@@ -293,14 +293,22 @@ fun HomeScreen(
     var showTelegramSheet by remember { mutableStateOf(false) } // بوت تليجرام — اتنقل من البروفايل للرئيسية
     // تنبيه ربط تليجرام أول دخول (TelegramLinkPrompt): الفحص المحلي الأول، ونداء الشبكة بس
     // لو التنبيه مستحق. حالة ربط مش معروفة (من غير نت) = مانعرضش — عميل مربوط مايتسألش.
+    val coroutineScopeForTelegram = rememberCoroutineScope()
     var telegramPromptDue by remember { mutableStateOf(false) }
+    var telegramBannerVisible by remember { mutableStateOf(com.example.data.TelegramLinkPrompt.bannerVisible(context)) }
     LaunchedEffect(Unit) {
-        if (!com.example.data.TelegramLinkPrompt.isDue(context)) return@LaunchedEffect
+        val promptDue = com.example.data.TelegramLinkPrompt.isDue(context)
+        // نداء الشبكة بس لو الشيت مستحق أو حالة الربط المحفوظة قدمت (٦ ساعات) — مش كل فتح.
+        if (!promptDue && !com.example.data.TelegramLinkPrompt.isStatusStale(context)) return@LaunchedEffect
         when (com.example.data.SupabaseRepo.telegramLinkStatus()) {
-            false -> telegramPromptDue = true
+            false -> {
+                com.example.data.TelegramLinkPrompt.recordStatus(context, linked = false)
+                if (promptDue) telegramPromptDue = true
+            }
             true -> com.example.data.TelegramLinkPrompt.recordLinked(context)
             null -> Unit
         }
+        telegramBannerVisible = com.example.data.TelegramLinkPrompt.bannerVisible(context)
     }
     var selectedRecipeTitle by remember { mutableStateOf<String?>(null) }
     var showRecipeDialog by remember { mutableStateOf(false) }
@@ -634,6 +642,22 @@ fun HomeScreen(
 
                 // ── مجتمع زاد على تليجرام — تحت الاختصارات مباشرة (كان آخر الشاشة بعد كل الكروت،
                 // فماكانش حد بيوصله) ──
+                // الحساب مش مربوط بالبوت: بانر بيقول الخسارة بوضوح (مفيش تقارير ولا فويسات برّه
+                // التطبيق) وبيفتح الربط على طول. بيختفي ٣ أيام بس لو اتقفل.
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = telegramBannerVisible && !isChild,
+                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut(),
+                ) {
+                    com.example.ui.components.TelegramLinkBanner(
+                        onLink = { showTelegramSheet = true },
+                        onSnooze = {
+                            com.example.data.TelegramLinkPrompt.snoozeBanner(context)
+                            telegramBannerVisible = false
+                        },
+                        modifier = Modifier.padding(bottom = 16.dp),
+                    )
+                }
                 com.example.ui.components.AppearOnEntry(delayMs = 80) {
                     com.example.ui.components.ZadTelegramCommunityCard()
                 }
@@ -1016,7 +1040,16 @@ fun HomeScreen(
 } // closes Box
 
     if (showTelegramSheet) {
-        com.example.ui.components.TelegramBotSheet(onDismiss = { showTelegramSheet = false })
+        com.example.ui.components.TelegramBotSheet(onDismiss = {
+            showTelegramSheet = false
+            // بعد ما يقفل شيت الربط: اتأكد تاني من الحالة عشان البانر يختفي لو اتربط فعلاً.
+            coroutineScopeForTelegram.launch {
+                if (com.example.data.SupabaseRepo.telegramLinkStatus() == true) {
+                    com.example.data.TelegramLinkPrompt.recordLinked(context)
+                    telegramBannerVisible = false
+                }
+            }
+        })
     }
 
     // الطفل مابيربطش بوت بيأكد حركات بنكية، وماينفعش شيت فوق شيت الرصيد لو العميل فتحه.

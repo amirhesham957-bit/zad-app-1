@@ -34,4 +34,24 @@ class TelegramLinkPromptTest {
         // recordLinked بيكتب MAX_SHOWS — نفس الحالة دي.
         assertFalse(TelegramLinkPrompt.shouldShow(TelegramLinkPrompt.MAX_SHOWS, lastShownAtMs = null, nowMs = 0L))
     }
+
+    @Test
+    fun bannerStaysUntilLinked_andSnoozeHidesItForThreeDaysOnly() {
+        val now = 1_800_000_000_000L
+        assertTrue(TelegramLinkPrompt.shouldShowBanner(linked = false, hiddenUntilMs = 0L, nowMs = now))
+        assertFalse(TelegramLinkPrompt.shouldShowBanner(linked = true, hiddenUntilMs = 0L, nowMs = now))
+        // حالة مش معروفة (من غير نت) = مايظهرش — عميل مربوط مايتسألش بالغلط
+        assertFalse(TelegramLinkPrompt.shouldShowBanner(linked = null, hiddenUntilMs = 0L, nowMs = now))
+        val hiddenUntil = now + TelegramLinkPrompt.BANNER_SNOOZE_MS
+        assertFalse(TelegramLinkPrompt.shouldShowBanner(false, hiddenUntil, now + 1))
+        assertTrue(TelegramLinkPrompt.shouldShowBanner(false, hiddenUntil, hiddenUntil))
+    }
+
+    @Test
+    fun linkStatusIsRecheckedAtMostEverySixHours() {
+        val now = 1_800_000_000_000L
+        assertTrue(TelegramLinkPrompt.statusStale(null, now))
+        assertFalse(TelegramLinkPrompt.statusStale(now - 60_000L, now))
+        assertTrue(TelegramLinkPrompt.statusStale(now - TelegramLinkPrompt.STATUS_RECHECK_MS, now))
+    }
 }

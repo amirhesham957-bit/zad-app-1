@@ -1999,5 +1999,10 @@
     <string name="telegram_prompt_benefit_alerts">ينبهك بالنواقص والفواتير اللي قربت</string>
     <string name="telegram_prompt_benefit_forecast">يبعتلك ملخص البيت وتوقع الصرف</string>
     <string name="telegram_prompt_benefit_log">تسجل مصروفك برسالة واحدة</string>
+    <string name="telegram_prompt_benefit_voice">ينبهك بفويس بصوت زاد للحاجات المهمة: دوا اتفوّت، ميعاد قرّب، ميزانية في خطر</string>
+    <string name="telegram_prompt_without_link">⚠️ من غير الربط مش هتوصلك التقارير ولا التنبيهات الصوتية برّه التطبيق — تجربة زاد بتبقى ناقصة.</string>
+    <string name="telegram_banner_title">اربط تليجرام عشان زاد توصلك</string>
+    <string name="telegram_banner_body">التقارير وتأكيد حركات البنك وفويسات زاد (صباح الخير، الدوا، المواعيد) كلها بتوصل على تليجرام. من غير الربط مش هتوصلك.</string>
+    <string name="telegram_banner_link">اربط دلوقتي</string>
     <string name="telegram_prompt_later">مش دلوقتي</string>
 </resources>

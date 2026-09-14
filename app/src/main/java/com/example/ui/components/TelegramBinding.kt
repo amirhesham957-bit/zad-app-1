@@ -6,11 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
@@ -378,6 +380,7 @@ fun TelegramLinkPromptSheet(onDismiss: () -> Unit) {
                     R.string.telegram_prompt_benefit_alerts,
                     R.string.telegram_prompt_benefit_forecast,
                     R.string.telegram_prompt_benefit_log,
+                    R.string.telegram_prompt_benefit_voice,
                 ).forEach { benefit ->
                     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(
@@ -391,8 +394,63 @@ fun TelegramLinkPromptSheet(onDismiss: () -> Unit) {
                     }
                 }
             }
+            // الخسارة صريحة: عميل قال "مش دلوقتي" من غير ما يعرف إن التقارير والفويسات
+            // مابتوصلش برّه التطبيق من غير الربط.
+            Text(
+                stringResource(R.string.telegram_prompt_without_link),
+                style = Typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = dangerColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(dangerColor.copy(alpha = 0.08f))
+                    .padding(12.dp)
+            )
             TelegramBindingSection()
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Text(stringResource(R.string.telegram_prompt_later), color = onSurfaceVariant)
+            }
+        }
+    }
+}
+
+/**
+ * بانر الرئيسية للحساب اللي مش مربوط بالبوت ([com.example.data.TelegramLinkPrompt.bannerVisible]).
+ * جملة الخسارة + زرار ربط + تأجيل ٣ أيام. لون علامة تليجرام على الأيقونة والزرار بس —
+ * النص والخلفية توكنات الثيم.
+ */
+@Composable
+fun TelegramLinkBanner(onLink: () -> Unit, onSnooze: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(surface)
+            .border(1.dp, BrandTelegram.copy(alpha = 0.45f), shape)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(BrandTelegram.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = BrandTelegram, modifier = Modifier.size(20.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.telegram_banner_title), style = Typography.titleSmall, fontWeight = FontWeight.Bold, color = onSurface)
+                Text(stringResource(R.string.telegram_banner_body), style = Typography.bodySmall, color = onSurfaceVariant)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = onLink,
+                colors = ButtonDefaults.buttonColors(containerColor = BrandTelegram, contentColor = onPrimary),
+                modifier = Modifier.weight(1f).heightIn(min = 44.dp)
+            ) { Text(stringResource(R.string.telegram_banner_link), fontWeight = FontWeight.Bold) }
+            TextButton(onClick = onSnooze, modifier = Modifier.heightIn(min = 44.dp)) {
                 Text(stringResource(R.string.telegram_prompt_later), color = onSurfaceVariant)
             }
         }
