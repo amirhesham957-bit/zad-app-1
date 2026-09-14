@@ -2117,4 +2117,20 @@
     <string name="profile_dialect_tr">Türkçe</string>
     <string name="profile_dialect_en">English</string>
     <string name="profile_save_failed">Couldn\'t save your profile — try again</string>
+    <string name="orb_picker_title">Dress up Zad</string>
+    <string name="orb_picker_menu_subtitle">Every family member who joins unlocks something new for Zad</string>
+    <string name="orb_picker_next">%1$d more family members to unlock “%2$s”</string>
+    <string name="orb_picker_all_unlocked">Everything unlocked — your whole family is on Zad 🎉</string>
+    <string name="orb_picker_needs">Needs %1$d in the family</string>
+    <string name="orb_picker_invite">Invite your family</string>
+    <string name="orb_picker_create_family">Create your family on Zad</string>
+    <string name="orb_accessory_none">None</string>
+    <string name="orb_accessory_bow">Bow</string>
+    <string name="orb_accessory_glasses">Glasses</string>
+    <string name="orb_accessory_flower">Flower</string>
+    <string name="orb_accessory_crown">Crown</string>
+    <string name="orb_invite_message">🌱 Join our family on Zad — we run the home and money together
+
+Join here: %1$s
+or enter the code: %2$s</string>
 </resources>

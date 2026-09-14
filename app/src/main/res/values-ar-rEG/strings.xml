@@ -2063,4 +2063,20 @@
     <string name="profile_dialect_tr">Türkçe</string>
     <string name="profile_dialect_en">English</string>
     <string name="profile_save_failed">مقدرناش نحفظ الملف — جرب تاني</string>
+    <string name="orb_picker_title">زيّن زاد</string>
+    <string name="orb_picker_menu_subtitle">كل ما عيلتك تنضم لزاد، زاد بتتزيّن</string>
+    <string name="orb_picker_next">فاضل %1$d من عيلتك ينضموا وتفتح «%2$s»</string>
+    <string name="orb_picker_all_unlocked">فتحت كل الزينة — عيلتك كلها في زاد 🎉</string>
+    <string name="orb_picker_needs">محتاج %1$d في العيلة</string>
+    <string name="orb_picker_invite">ادعي عيلتك</string>
+    <string name="orb_picker_create_family">اعمل عيلتك في زاد</string>
+    <string name="orb_accessory_none">من غير</string>
+    <string name="orb_accessory_bow">فيونكة</string>
+    <string name="orb_accessory_glasses">نضارة</string>
+    <string name="orb_accessory_flower">وردة</string>
+    <string name="orb_accessory_crown">تاج</string>
+    <string name="orb_invite_message">🌱 تعالى انضم لعيلتنا على زاد — بنظبط البيت والفلوس سوا
+
+ادخل من هنا: %1$s
+أو اكتب الكود: %2$s</string>
 </resources>

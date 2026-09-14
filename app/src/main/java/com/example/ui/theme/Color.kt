@@ -276,6 +276,16 @@ val ZadEmeraldAccent = Color(0xFF10B981)
 val ZadMintAccent = Color(0xFF6EE7B7)
 val ZadDarkSlate = Color(0xFF0F172A)
 val ZadHeartYellow = Color(0xFFFFF176)
+
+// زينة كورة زاد (OrbAccessory) — ألوان رسم الكائن نفسه، مش ألوان واجهة.
+val ZadOrbBowPink = Color(0xFFFF6FA5)
+val ZadOrbBowPinkDeep = Color(0xFFD9467E)
+val ZadOrbGlassesFrame = Color(0xFF2B2B3A)
+val ZadOrbCrownGold = Color(0xFFFFC53D)
+val ZadOrbCrownGoldDeep = Color(0xFFE09A12)
+val ZadOrbCrownGem = Color(0xFFE5484D)
+val ZadOrbFlowerPetal = Color(0xFFFFFFFF)
+val ZadOrbFlowerCenter = Color(0xFFFFC53D)
 val ZadHeartRed = Color(0xFFDC2626)
 
 // =========================================================================

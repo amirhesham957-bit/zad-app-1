@@ -327,6 +327,8 @@ class MainActivity : ComponentActivity() {
         )
         // رمضان: «فاضل ٢٠ دقيقة على الفطار» — من مكان البيت على الموبايل (IftarScheduler).
         com.example.workers.IftarScheduler.scheduleNext(this)
+        // زينة كورة زاد المختارة (بتتفتح بدعوة العيلة).
+        com.example.data.OrbAccessoryStore.load(this)
 
         // Start real-time chat notification service
         try {

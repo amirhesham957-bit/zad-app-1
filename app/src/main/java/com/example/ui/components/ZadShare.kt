@@ -11,6 +11,10 @@ import android.util.Log
 object ZadShare {
     fun appLink(context: Context): String = "https://play.google.com/store/apps/details?id=${context.packageName}"
 
+    /** دعوة للعيلة بالكود — نفس الروابط اللي شاشة العيلة بتبعتها. */
+    fun familyInviteText(context: Context, inviteCode: String): String =
+        context.getString(com.example.R.string.orb_invite_message, "https://zad.app/invite?code=$inviteCode", inviteCode)
+
     fun shareText(context: Context, text: String, chooserTitle: String) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"

@@ -143,6 +143,8 @@ fun ProfileScreen(
     var showRegionalSettings by remember { mutableStateOf(false) }
     // حلقة الأهداف — زر "هدف جديد" يفتح حوار بيبعت الهدف للعقل (set_life_goal).
     var showNewGoalDialog by remember { mutableStateOf(false) }
+    // زيّن زاد — الزينة بتتفتح بعدد أفراد العيلة (OrbAccessory).
+    var showOrbPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(showSaveSuccess) {
         if (showSaveSuccess) {
@@ -230,6 +232,27 @@ fun ProfileScreen(
                     showNewGoalDialog = false
                 }
             }
+        )
+    }
+    if (showOrbPicker) {
+        val active = familyState as? com.example.ui.viewmodels.FamilyState.Active
+        val inviteCode = active?.familyGroup?.inviteCode?.takeIf { it.isNotBlank() }
+        val orbContext = androidx.compose.ui.platform.LocalContext.current
+        val inviteTitle = stringResource(R.string.orb_picker_invite)
+        com.example.ui.components.OrbAccessoryPickerDialog(
+            familySize = active?.members?.size?.coerceAtLeast(1) ?: 1,
+            inviteCode = inviteCode,
+            onInvite = {
+                if (inviteCode != null) {
+                    com.example.ui.components.ZadShare.shareText(
+                        orbContext, com.example.ui.components.ZadShare.familyInviteText(orbContext, inviteCode), inviteTitle
+                    )
+                } else {
+                    showOrbPicker = false
+                    navController?.navigate(com.example.ui.components.ZadRoutes.FAMILY)
+                }
+            },
+            onDismiss = { showOrbPicker = false },
         )
     }
     if (showRegionalSettings) {
@@ -482,6 +505,11 @@ fun ProfileScreen(
                         title = stringResource(R.string.new_life_goal_title),
                         subtitle = stringResource(R.string.new_life_goal_subtitle),
                         onClick = { showNewGoalDialog = true }
+                    )
+                    com.example.ui.components.ZadMenuRow(
+                        title = stringResource(R.string.orb_picker_title),
+                        subtitle = stringResource(R.string.orb_picker_menu_subtitle),
+                        onClick = { showOrbPicker = true }
                     )
                     com.example.ui.components.ZadMenuRow(
                         title = stringResource(R.string.terms_of_service_menu_title),

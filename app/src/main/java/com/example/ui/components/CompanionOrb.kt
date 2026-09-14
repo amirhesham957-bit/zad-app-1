@@ -209,8 +209,11 @@ fun CompanionOrb(
      * نداء** — التعليق فوقهم كان بيشاور على `FloatingMascotCompanion` وهو مابقاش
      * موجود. البارامتر ده بيوصّلهم.
      */
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    /** الزينة — null = اختيار العميل المحفوظ (OrbAccessoryStore)؛ قيمة صريحة للمعاينة في شاشة الاختيار. */
+    accessory: com.example.data.OrbAccessory? = null,
 ) {
+    val effectiveAccessory = accessory ?: com.example.data.OrbAccessoryStore.current
     // اللمسة بتولّد نفس الإشارتين اللي البارامترات الخارجية بتولّدهم، فالمسارين
     // بيروحوا لنفس المكان ومفيش منطق متكرر.
     var tapPulse by remember { mutableStateOf(0L) }
@@ -488,6 +491,9 @@ fun CompanionOrb(
                 audioLevel = level,
                 phase = blobPhase,
             )
+
+            // 8b. الزينة — جوه نفس التحويل عشان تتنطط وتتمط مع الجسم.
+            drawOrbAccessory(effectiveAccessory, center, radius)
         }
 
         // 9. احتفال: نجوم دهبي صغيرة بتلف حوالين الكورة.
@@ -624,4 +630,70 @@ fun companionStateForMessage(text: String): CompanionState = when {
     alertToneWords.any { text.contains(it) } -> CompanionState.Alert
     happyToneWords.any { text.contains(it) } -> CompanionState.Happy
     else -> CompanionState.Idle
+}
+
+/** زينة الكورة. كل المقاسات نسبة من نص القطر عشان تبان صح على 40dp و120dp. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOrbAccessory(
+    accessory: com.example.data.OrbAccessory,
+    center: Offset,
+    radius: Float,
+) {
+    when (accessory) {
+        com.example.data.OrbAccessory.NONE -> Unit
+        com.example.data.OrbAccessory.BOW -> {
+            // فيونكة فوق-يمين: جناحين بيضاويين وعقدة.
+            val knot = center + Offset(radius * 0.48f, -radius * 0.80f)
+            for (dir in listOf(-1f, 1f)) {
+                withTransform({ rotate(dir * 28f, pivot = knot) }) {
+                    drawOval(
+                        color = ZadOrbBowPink,
+                        topLeft = knot + Offset(if (dir < 0) -radius * 0.56f else 0f, -radius * 0.19f),
+                        size = androidx.compose.ui.geometry.Size(radius * 0.56f, radius * 0.38f),
+                    )
+                }
+            }
+            drawCircle(ZadOrbBowPinkDeep, radius * 0.12f, knot)
+        }
+        com.example.data.OrbAccessory.GLASSES -> {
+            // نضارة على نفس مكان العيون (drawCompanionEyes: ±0.36r، y = -0.06r).
+            val y = center.y - radius * 0.06f
+            val lens = radius * 0.2f
+            val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = radius * 0.055f)
+            val left = Offset(center.x - radius * 0.36f, y)
+            val right = Offset(center.x + radius * 0.36f, y)
+            drawCircle(Color.White.copy(alpha = 0.18f), lens, left)
+            drawCircle(Color.White.copy(alpha = 0.18f), lens, right)
+            drawCircle(ZadOrbGlassesFrame, lens, left, style = stroke)
+            drawCircle(ZadOrbGlassesFrame, lens, right, style = stroke)
+            drawLine(ZadOrbGlassesFrame, left + Offset(lens, 0f), right - Offset(lens, 0f), strokeWidth = radius * 0.05f)
+        }
+        com.example.data.OrbAccessory.FLOWER -> {
+            // وردة فوق-شمال: خمس بتلات حوالين نص دهبي.
+            val c = center + Offset(-radius * 0.55f, -radius * 0.72f)
+            for (i in 0 until 5) {
+                val a = (i * 72f - 90f) * (Math.PI / 180.0).toFloat()
+                drawCircle(ZadOrbFlowerPetal, radius * 0.11f, c + Offset(cos(a) * radius * 0.13f, sin(a) * radius * 0.13f))
+            }
+            drawCircle(ZadOrbFlowerCenter, radius * 0.08f, c)
+        }
+        com.example.data.OrbAccessory.CROWN -> {
+            // تاج صغير فوق الراس بتلات سنون وجوهرة.
+            val base = center.y - radius * 0.80f
+            val w = radius * 0.86f
+            val h = radius * 0.50f
+            val left = center.x - w / 2f
+            val path = Path().apply {
+                moveTo(left, base)
+                lineTo(left, base - h * 0.6f)
+                lineTo(left + w * 0.25f, base - h * 0.25f)
+                lineTo(left + w * 0.5f, base - h)
+                lineTo(left + w * 0.75f, base - h * 0.25f)
+                lineTo(left + w, base - h * 0.6f)
+                lineTo(left + w, base)
+                close()
+            }
+            drawPath(path, Brush.verticalGradient(listOf(ZadOrbCrownGold, ZadOrbCrownGoldDeep), startY = base - h, endY = base))
+            drawCircle(ZadOrbCrownGem, radius * 0.08f, Offset(center.x, base - h * 0.32f))
+        }
+    }
 }
