@@ -20,6 +20,7 @@ import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
+import { resolveDialect } from "../_shared/dialect.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
@@ -906,9 +907,10 @@ bot.command("tahlil", async (ctx) => {
   const notice = errorReason
     ? `⚠️ ${userFacingFailure(errorReason)}، فده تحليل مبدئي من البيانات المسجّلة:\n\n`
     : "";
-  const context = buildAgentContext(await fetchAgentContext(sb, userId));
+  const agentInput = await fetchAgentContext(sb, userId);
+  const context = buildAgentContext(agentInput);
   const answer = await askZad(
-    agentSystemPrompt(),
+    agentSystemPrompt(resolveDialect({ country: agentInput.country, currency: agentInput.currency })),
     `${context}\n\n=== سؤال العميل ===\n${analysisPrompt}`,
   );
   await ctx.reply(answer ? clampForTelegram(notice + answer) : clampForTelegram(notice + "معلش، التحليل مش متاح دلوقتي — جرب كمان شوية."));
@@ -1231,9 +1233,10 @@ bot.on("message:text", async (ctx) => {
     ? `⚠️ ${userFacingFailure(errorReason)}. اللي تحت رد قراءة من بياناتك المسجّلة — لو كنت طالب تعديل أو إضافة أو تذكير، **هو ماتسجّلش**، جرب تاني كمان شوية.\n\n`
     : "";
 
-  const context = buildAgentContext(await fetchAgentContext(sb, userId));
+  const agentInput = await fetchAgentContext(sb, userId);
+  const context = buildAgentContext(agentInput);
   const answer = await askZad(
-    agentSystemPrompt(),
+    agentSystemPrompt(resolveDialect({ text: ctx.message.text, country: agentInput.country, currency: agentInput.currency })),
     `${context}\n\n=== سؤال العميل ===\n${ctx.message.text}`,
   );
 
