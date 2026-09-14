@@ -242,8 +242,12 @@ Standing rules:
   the app's most-visited screen — despite `docs/agent/AUDIT.md` flagging it as this
   rule's worst violation by call frequency. What that decision did not have was the cost
   measurement. Measured 2026-09-04: **313 `zad-brain` invocations in 24h against zero
-  recorded agent turns in the same window** — i.e. the entire spend was screen-entry
-  refreshes, not customer intent — while one user reached **192,841 of the 200,000
+  recorded agent turns in the same window** — attributed at the time to screen-entry
+  refreshes. ⚠️ **Corrected 2026-09-12/13 by a timestamp analysis of the same 24h:**
+  312 of those calls sat on cron grids (`agent-tasks-processor` every 5 min = 288,
+  `agent-proactive-scan-hourly` at :07 = 24) and only one was off-grid, so the
+  guard below is still right but was not the main cost; the 5-minute cron now checks
+  the queue in SQL first and calls nothing when it is empty (`94e47f72`). Meanwhile one user reached **192,841 of the 200,000
   daily token cap (96%) in a single day**, at ~12,700-14,800 tokens per chat turn. Note
   `LaunchedEffect(Unit)` re-runs on every re-entry into composition, so "every open"
   meant every return to the tab, not the first open of a session. The five calls now go
