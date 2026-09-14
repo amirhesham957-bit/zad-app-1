@@ -42,6 +42,15 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildVoiceSystemInstruction } from "./persona.ts";
 import { formatVoiceContext, loadVoiceContext } from "./context.ts";
 import { describeVoiceProposal, isConfirmRequired, VOICE_TOOL_USAGE_INSTRUCTION, VOICE_TOOLS } from "./tools.ts";
+import {
+  CLOSE_ENTITLEMENT,
+  CLOSE_PROVIDER_UNAVAILABLE,
+  CLOSE_UNAUTHORIZED,
+  clientCloseForUpstream,
+  closeReason,
+  frameToText,
+  normalizeClientFrame,
+} from "./protocol.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -83,7 +92,12 @@ function nextGeminiKey(): string | null {
 }
 
 /** أقل نسخة كافية من resolveAuthedUserId (zad-brain/auth.ts) — بدون فرع service-role
- *  عن قصد: جلسة صوتية حية لازم تكون مستخدم حقيقي، مفيش سيناريو cron/بوت هنا. */
+ *  عن قصد: جلسة صوتية حية لازم تكون مستخدم حقيقي، مفيش سيناريو cron/بوت هنا.
+ *
+ *  ⚠️ كان فيه فرع "ضيف": لو التوكن = anon key (موجود جوه الـAPK نفسه)، الفانكشن كانت
+ *  بتصدّق هيدر `x-user-id` وتنفّذ أدوات zad-brain بمفتاح الخدمة باسم أي مستخدم يتكتب في
+ *  الهيدر ده — يعني أي حد معاه الـAPK يقدر يسجّل مصروفات في حساب غيره. اتشال (٢٠٢٦-٠٩-١٤):
+ *  الهوية من JWT المستخدم بس، ومن غير جلسة = إغلاق بـ4401 ورسالة "سجّل دخول". */
 async function resolveUserId(req: Request): Promise<string | null> {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
@@ -91,17 +105,26 @@ async function resolveUserId(req: Request): Promise<string | null> {
   try {
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const { data, error } = await sb.auth.getUser(token);
-    if (!error && data?.user?.id) return data.user.id;
-    // دعم المستخدمين الضيوف ومفتاح anon key بدون تعطيل الاتصال
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    if ((anonKey && token === anonKey) || (SERVICE_ROLE_KEY && token === SERVICE_ROLE_KEY)) {
-      const explicitUser = req.headers.get("x-user-id");
-      return explicitUser?.trim() || "guest_voice_user";
-    }
-    return null;
+    return !error && data?.user?.id ? data.user.id : null;
   } catch {
     return null;
   }
+}
+
+/** رفض بعد الـupgrade مش قبله: بوابة Supabase بتحوّل أي رد مش 101 على طلب WebSocket
+ *  لفشل عام (اتقاس 502 من غير body)، فالعميل ماكانش بيعرف إن السبب رصيد أو تسجيل دخول.
+ *  كود الإغلاق التطبيقي بيوصل سليم لأنه جوه اتصال اتفتح فعلاً. */
+function rejectAfterUpgrade(req: Request, code: number, reason: string, logDetail: string): Response {
+  console.warn(`[voice-live] rejected ${code} ${reason}: ${logDetail}`);
+  const { socket, response } = Deno.upgradeWebSocket(req);
+  socket.onopen = () => {
+    try {
+      socket.close(code, closeReason(reason));
+    } catch (e) {
+      console.error("[voice-live] closing rejected socket failed:", e);
+    }
+  };
+  return response;
 }
 
 /** نفس entitlement.ts's consume() بالظبط (zad-brain) — نسخة مقصودة، مفيش استيراد بين
@@ -134,27 +157,18 @@ Deno.serve(async (req) => {
 
   const userId = await resolveUserId(req);
   if (!userId) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return rejectAfterUpgrade(req, CLOSE_UNAUTHORIZED, "unauthorized", "no valid user JWT");
   }
 
   const geminiKey = nextGeminiKey();
   if (!geminiKey) {
-    return new Response(JSON.stringify({ error: "voice provider not configured" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
+    return rejectAfterUpgrade(req, CLOSE_PROVIDER_UNAVAILABLE, "provider_not_configured", "no Gemini keys in env");
   }
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const entitlement = await consumeVoiceEntitlement(sb, userId);
   if (!entitlement.allowed) {
-    return new Response(JSON.stringify({ error: "entitlement_denied", reason: entitlement.reason }), {
-      status: 402,
-      headers: { "Content-Type": "application/json" },
-    });
+    return rejectAfterUpgrade(req, CLOSE_ENTITLEMENT, entitlement.reason || "entitlement_denied", `user ${userId}`);
   }
 
   // بند 33.3 — نفس مصدر اللهجة اللي buildChatSystemPrompt بيقراه (zad_users.country)،
@@ -287,6 +301,7 @@ Deno.serve(async (req) => {
     const geminiUrl =
       `wss://${GEMINI_LIVE_HOST}${GEMINI_LIVE_PATH}?key=${encodeURIComponent(geminiKey)}`;
     geminiSocket = new WebSocket(geminiUrl);
+    geminiSocket.binaryType = "arraybuffer";
 
     geminiSocket.onopen = () => {
       const setup = {
@@ -311,37 +326,47 @@ Deno.serve(async (req) => {
     };
 
     geminiSocket.onmessage = (event) => {
-      // بند 33.2 — كل رسالة في البروتوكول ده JSON نصي (حتى الصوت جوه inlineData base64،
-      // مفيش binary frames خام). لو فيها toolCall بنعترضها بدل ما نمررها زي ما هي —
-      // العميل مش محتاج يشوف تفاصيل الأداة، رد جيميناي الصوتي هو اللي بيوصله.
-      if (typeof event.data === "string") {
-        let parsed: { toolCall?: { functionCalls?: Array<{ id: string; name: string; args?: Record<string, unknown> }> } } | null = null;
-        try {
-          parsed = JSON.parse(event.data);
-        } catch {
-          // مش JSON صالح — نادر جداً في البروتوكول ده، نمررها زي ما هي بدل ما نرميها.
-        }
-        const calls = parsed?.toolCall?.functionCalls;
-        if (Array.isArray(calls) && calls.length > 0) {
-          handleToolCall(calls).catch((e) => console.error("zad-voice-live: handleToolCall failed:", e));
-          return;
-        }
+      // بند 33.2 — الرسايل JSON (حتى الصوت جوه inlineData base64)، بس ممكن توصل كفريم
+      // binary مش نص (protocol.ts: frameToText). بتتحوّل لنص الأول، عشان الـtoolCall
+      // يتعترض في الحالتين، والعميل ياخد دايمًا فريم نصي — مالوش handler للبايتات.
+      const text = frameToText(event.data);
+      if (text === null) {
+        console.warn("[voice-live] dropping non-JSON upstream frame of type", typeof event.data);
+        return;
       }
-      if (clientSocket.readyState === WebSocket.OPEN) clientSocket.send(event.data);
+      let parsed: { toolCall?: { functionCalls?: Array<{ id: string; name: string; args?: Record<string, unknown> }> } } | null = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        // مش JSON صالح — نادر جداً في البروتوكول ده، نمررها زي ما هي بدل ما نرميها.
+      }
+      const calls = parsed?.toolCall?.functionCalls;
+      if (Array.isArray(calls) && calls.length > 0) {
+        handleToolCall(calls).catch((e) => console.error("zad-voice-live: handleToolCall failed:", e));
+        return;
+      }
+      if (clientSocket.readyState === WebSocket.OPEN) clientSocket.send(text);
     };
     geminiSocket.onerror = (event) => {
       console.error("zad-voice-live: gemini socket error for user", userId, event);
     };
     geminiSocket.onclose = (event) => {
-      closeBoth(event.code === 1000 ? 1000 : 1011, "gemini session ended");
+      // سبب جيميناي (حصة، موديل مش متاح، setup مرفوض) كان بيتبدّل بـ1011 عام ويضيع —
+      // ده السطر الوحيد اللي بيقول ليه المكالمة وقفت، فبيتسجّل ويوصل للعميل.
+      if (event.code !== 1000) {
+        console.warn(`[voice-live] upstream closed ${event.code} "${event.reason}" model=${VOICE_LIVE_MODEL} user=${userId}`);
+      }
+      const out = clientCloseForUpstream(event.code, event.reason);
+      closeBoth(out.code, out.reason);
     };
   };
 
   clientSocket.onmessage = (event) => {
+    const frame = typeof event.data === "string" ? normalizeClientFrame(event.data) : event.data;
     if (geminiSocket && geminiSocket.readyState === WebSocket.OPEN) {
-      geminiSocket.send(event.data);
+      geminiSocket.send(frame);
     } else {
-      pendingFromClient.push(event.data);
+      pendingFromClient.push(frame);
     }
   };
   clientSocket.onerror = (event) => {

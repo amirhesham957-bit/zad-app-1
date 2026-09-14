@@ -163,15 +163,14 @@ object ZadVoiceController {
     }
 
     private suspend fun connect(onError: (String) -> Unit) {
-        val session = SupabaseRepo.client.auth.currentSessionOrNull()
-        val token = session?.accessToken?.takeIf { it.isNotBlank() }
-            ?: SupabaseRepo.client.supabaseKey
-            ?: BuildConfig.SUPABASE_ANON_KEY
-
-        val cachedId = appContext?.let { com.example.data.CurrentUser.get(it) }
-        val userId = SupabaseRepo.client.auth.currentUserOrNull()?.id
-            ?: cachedId?.takeIf { it.isNotBlank() }
-            ?: "guest_voice_user"
+        // الهوية من JWT المستخدم بس. كان فيه fallback على الـanon key + هيدر x-user-id،
+        // والسيرفر كان بيصدّقه وينفّذ أدوات باسم أي حساب — اتقفل من الناحيتين (٢٠٢٦-٠٩-١٤).
+        val token = SupabaseRepo.client.auth.currentSessionOrNull()?.accessToken?.takeIf { it.isNotBlank() }
+        if (token == null) {
+            failSession(liveVoiceCloseMessage(LIVE_CLOSE_UNAUTHORIZED, "") ?: "محتاج تسجّل دخول")
+            onError("no_session")
+            return
+        }
 
         val baseUrl = if (BuildConfig.SUPABASE_URL.isNotBlank() && !BuildConfig.SUPABASE_URL.contains("your-project-ref")) {
             BuildConfig.SUPABASE_URL
@@ -189,7 +188,6 @@ object ZadVoiceController {
             .url(wsUrl)
             .addHeader("Authorization", "Bearer $token")
             .addHeader("apikey", apiKey)
-            .addHeader("x-user-id", userId)
             .build()
 
         webSocket = wsClient.newWebSocket(request, object : WebSocketListener() {
@@ -202,13 +200,26 @@ object ZadVoiceController {
                 handleServerFrame(text)
             }
 
+            // السيرفر بيحوّل الفريمات لنص، بس نسخة سيرفر أقدم أو وسيط ممكن يعدّي بايتات —
+            // من غير الـoverride ده OkHttp بيرميها بصمت، والصوت بيختفي من غير أي خطأ.
+            override fun onMessage(webSocket: WebSocket, bytes: okio.ByteString) {
+                handleServerFrame(bytes.utf8())
+            }
+
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(code, reason)
+                webSocket.close(1000, null)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 Log.d(tag, "zad-voice-live closed: $code $reason")
-                teardown(toIdle = true)
+                val message = liveVoiceCloseMessage(code, reason)
+                if (message != null && this@ZadVoiceController.webSocket === webSocket) {
+                    // رفض أو انقطاع من المزوّد: الحالة لازم تقول السبب، مش ترجع Idle ساكتة.
+                    Log.w(tag, "zad-voice-live rejected/ended: $code $reason")
+                    failSession(message)
+                } else {
+                    teardown(toIdle = true)
+                }
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -377,13 +388,12 @@ object ZadVoiceController {
     private fun sendAudioChunk(ws: WebSocket, pcm: ByteArray) {
         if (!sessionActive.get() || webSocket !== ws) return
         val b64 = Base64.encodeToString(pcm, Base64.NO_WRAP)
+        // `realtimeInput.audio` هو الحقل الحالي؛ `mediaChunks` مهجور في Live API.
         val frame = JSONObject().apply {
             put("realtimeInput", JSONObject().apply {
-                put("mediaChunks", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("mimeType", "audio/pcm;rate=$inputSampleRate")
-                        put("data", b64)
-                    })
+                put("audio", JSONObject().apply {
+                    put("mimeType", "audio/pcm;rate=$inputSampleRate")
+                    put("data", b64)
                 })
             })
         }
@@ -606,6 +616,33 @@ object ZadVoiceController {
             _scope = null
         }
     }
+}
+
+/** أكواد الإغلاق التطبيقية من `zad-voice-live/protocol.ts` — نفس الأرقام بالحرف. */
+internal const val LIVE_CLOSE_UNAUTHORIZED = 4401
+internal const val LIVE_CLOSE_ENTITLEMENT = 4402
+internal const val LIVE_CLOSE_UPSTREAM_ENDED = 4502
+internal const val LIVE_CLOSE_PROVIDER_UNAVAILABLE = 4503
+
+/**
+ * رسالة للمستخدم لكل إغلاق مش طبيعي، أو null لو المكالمة خلصت عادي (1000/1001).
+ *
+ * قبل كده أي رفض من السيرفر كان بيوصل "تعذّر الاتصال" بس — والسبب الحقيقي اللي
+ * وقّف المساعد على جهاز حقيقي (رصيد صوت = صفر) ماكانش ليه أي أثر لا في التطبيق ولا
+ * في اللوج. الفرز هنا هو اللي بيخلّي كل سبب يبان باسمه.
+ */
+internal fun liveVoiceCloseMessage(code: Int, reason: String): String? = when (code) {
+    1000, 1001 -> null
+    LIVE_CLOSE_UNAUTHORIZED -> "محتاج تسجّل دخول تاني عشان تكلم زاد"
+    LIVE_CLOSE_ENTITLEMENT -> "خلص رصيدك من المكالمات الصوتية"
+    LIVE_CLOSE_PROVIDER_UNAVAILABLE -> "الخدمة الصوتية مش متاحة دلوقتي، جرّب تاني بعد شوية"
+    LIVE_CLOSE_UPSTREAM_ENDED ->
+        if (reason.contains("quota", ignoreCase = true) || reason.contains("exhausted", ignoreCase = true)) {
+            "زاد عليه ضغط كبير دلوقتي، جرّب تاني بعد دقيقة"
+        } else {
+            "المكالمة وقفت من عند الخدمة الصوتية، اضغط المايك تاني"
+        }
+    else -> "انقطع الاتصال بالمساعد الصوتي، اضغط المايك تاني"
 }
 
 /**
