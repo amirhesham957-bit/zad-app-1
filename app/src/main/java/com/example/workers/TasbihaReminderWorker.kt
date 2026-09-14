@@ -42,8 +42,17 @@ class TasbihaReminderWorker(
                 return Result.success()
             }
 
-            showNotification()
-            Log.d("ZadTasbihaReminder", "reminder sent")
+            // بصوت زاد (لحظة من السيرفر: FCM بيتقال + فويس تليجرام). الإشعار النصي القديم بقى
+            // احتياطي بس لو السيرفر مش متاح — عشان التذكير يوصل في كل الأحوال.
+            val voiced = try {
+                val res = SupabaseRepo.callEdgeFunction("zad-brain", mapOf("action" to "moment_event", "moment" to "tasbiha_reminder"))
+                res["ok"] == true
+            } catch (e: Exception) {
+                Log.w("ZadTasbihaReminder", "voice moment failed, falling back to text: ${e.message}")
+                false
+            }
+            if (!voiced) showNotification()
+            Log.d("ZadTasbihaReminder", "reminder sent (voiced=$voiced)")
             return Result.success()
         } catch (e: Exception) {
             Log.e("ZadTasbihaReminder", "failed", e)

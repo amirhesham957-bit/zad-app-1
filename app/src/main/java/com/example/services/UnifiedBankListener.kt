@@ -132,6 +132,8 @@ class UnifiedBankListener : NotificationListenerService() {
     )
 
     override fun onDestroy() {
+        wakeReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        wakeReceiver = null
         super.onDestroy()
         serviceScope.cancel()
     }
@@ -141,8 +143,19 @@ class UnifiedBankListener : NotificationListenerService() {
      * ومعاه أي إشعار لسه ظاهر في الشريط وقتها (مش تاريخ كامل — أندرويد مالوش history لإشعارات
      * اتشالت قبل كده). ده بيمسك على الأقل إشعارات بنكية جاية النهاردة قبل ما المستخدم يفعّل الصلاحية.
      */
+    /** "صحي من النوم" — شوف [com.example.data.WakeGreeting]. */
+    private var wakeReceiver: android.content.BroadcastReceiver? = null
+
     override fun onListenerConnected() {
         super.onListenerConnected()
+        if (wakeReceiver == null) {
+            wakeReceiver = try {
+                com.example.data.WakeGreeting.register(this)
+            } catch (e: Exception) {
+                Log.w("UnifiedBankListener", "wake receiver registration failed: ${e.message}")
+                null
+            }
+        }
         // علامة إن السيرفس عايش فعلاً — مش إن الصلاحية ممنوحة. الاتنين كانوا بيتخلطوا في
         // الواجهة، وده اللي خلّى بانر "تمام" يظهر لتطبيق أعمى.
         BankReadingStatus.recordListenerConnected(applicationContext)

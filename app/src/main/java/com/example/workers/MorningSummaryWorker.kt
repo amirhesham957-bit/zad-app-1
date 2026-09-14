@@ -84,8 +84,11 @@ class MorningSummaryWorker(
                 }
             }
 
-            showNotification("$greeting ملخص زاد اليومي", body)
-            Log.d("ZadMorningWorker", "Morning summary sent — score=${report.healthScore}")
+            // الإشعار الصباحي المحلي اتشال (٢٠٢٦-٠٩-١٤): كان بيتبعت الساعة ٧ حتى والعميل نايم،
+            // وبيقول "صباح الجمعة المبارك" السبت والحد كمان (dayOfWeek 5..7). صباح الخير بقت لحظة
+            // صوت من السيرفر وقت ما العميل يصحى فعلاً (WakeGreeting) أو الساعة ١٠ احتياطي،
+            // وفيها أدوية ومواعيد النهارده والرصيد. الـworker ده فضل لتشغيل العقل اليومي بس.
+            Log.d("ZadMorningWorker", "Morning report computed — score=${report.healthScore}; greeting is server-side now (${greeting.length}/${body.length})")
 
             // zad-brain (the server-side "brain" that emits insights to zad_insights,
             // read on Home/bell/voice) was fully built and deployed but never actually

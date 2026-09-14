@@ -169,6 +169,7 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   back_home_spent: "playful",
   place_reminder: "playful",
   goal_achieved: "proud",
+  tasbiha_reminder: "playful",
   ignored_days: "sulky",
 };
 

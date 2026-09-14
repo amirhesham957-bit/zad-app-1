@@ -20,6 +20,8 @@ function fakeSb(tables: Record<string, Row[]>) {
       order: () => q,
       limit: () => Promise.resolve({ data: rows(), error: null }),
       maybeSingle: () => Promise.resolve({ data: rows()[0] ?? null, error: null }),
+      // الـbuilder الحقيقي بتاع supabase-js قابل للـawait مباشرة بعد eq().
+      then: (resolve: (v: unknown) => unknown) => resolve({ data: rows(), error: null }),
       update: (values: Row) => ({
         eq: (_c: string, id: unknown) => { updates.push({ table, values, id }); return Promise.resolve({ error: null }); },
       }),
@@ -135,4 +137,38 @@ Deno.test("a cancelled appointment is not reminded", async () => {
   assertEquals(res.skipped, 1);
   assertEquals(sent, 0);
   assertEquals(updates[0].values.status, "skipped");
+});
+
+Deno.test("only morning and tasbiha moments can be requested by the app itself", async () => {
+  const { CLIENT_MOMENTS } = await import("./voiceMoments.ts");
+  assertEquals([...CLIENT_MOMENTS].sort(), ["morning_greeting", "tasbiha_reminder"]);
+  assert(!CLIENT_MOMENTS.has("budget_100"));
+  assert(!CLIENT_MOMENTS.has("dose_missed"));
+});
+
+Deno.test("morning fallback greets with today's medicine and appointment", () => {
+  const m = momentFallback("morning_greeting", {
+    meds_today: [{ name: "كونكور", times: "08:00" }], appointments_today: [{ title: "البنك" }],
+  });
+  assertStringIncludes(m.speech, "صباح");
+  assertStringIncludes(m.speech, "كونكور");
+  assertStringIncludes(m.speech, "البنك");
+  assertStringIncludes(momentFallback("morning_greeting", {}).text, "صباح الخير");
+});
+
+Deno.test("tasbiha reminder is skipped once the user has done tasbih today", async () => {
+  const { sb, updates } = fakeSb({
+    zad_voice_moments: [{ id: "t1", user_id: "u1", moment: "tasbiha_reminder", status: "pending", attempts: 0,
+      created_at: new Date().toISOString(), facts: { local_date: "2026-09-14", streak_days: 4 } }],
+    family_tasbiha: [{ user_id: "u1", last_tasbih_at: "2026-09-14T17:02:00" }],
+    zad_users: [{ id: "u1", country: "EG" }],
+  });
+  const res = await processVoiceMoments(sb, {
+    compose: () => Promise.resolve("{}"),
+    pushDevice: () => Promise.resolve("sent"),
+    pushTelegram: () => Promise.resolve("delivered"),
+  });
+  assertEquals(res.skipped, 1);
+  assertEquals(updates[0].values.status, "skipped");
+  assertStringIncludes(momentFallback("tasbiha_reminder", { streak_days: 4 }).speech, "4 يوم");
 });

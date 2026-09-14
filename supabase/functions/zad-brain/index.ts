@@ -73,7 +73,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { pushToDevice, pushToTelegram } from "./push.ts";
-import { processVoiceMoments } from "./voiceMoments.ts";
+import { CLIENT_MOMENTS, morningFacts, processVoiceMoments, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -5743,6 +5743,50 @@ Deno.serve(async (req: Request) => {
     // user_id من جسم الطلب (سلوك قديم، بيتنادى من workers ومن الكلاينت بجلسته)؛ المسار
     // ده بيكتب معاملات مالية، فبياخد الهوية من الـ JWT بس. لو أخدها من الجسم كان أي حد
     // معاه توكن صالح يقدر يكتب في دفتر أي مستخدم تاني بمجرد إنه يبعت الـ id بتاعه.
+    // لحظة صوت بيطلبها التطبيق نفسه: العميل صحى (أول فتح للقفل الصبح) أو ميعاد تذكير
+    // التسبيحة. الهوية من JWT المستخدم بس، واللحظة من قايمة ثابتة، ومرة واحدة في اليوم
+    // المحلي (dedupe_key). بتتعالج على طول عشان "صباح الخير" تتقال وهو ماسك الموبايل.
+    if (body.action === "moment_event") {
+      const eventUserId = await resolveRequestUserId(req, body);
+      if (!eventUserId) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const moment = String(body.moment ?? "");
+      if (!CLIENT_MOMENTS.has(moment)) {
+        return new Response(JSON.stringify({ ok: false, error: "moment not allowed" }), { status: 400, headers: CORS_HEADERS });
+      }
+      const sbEvent = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: tzRow } = await sbEvent.rpc("zad_market_timezone", {
+        p_country: ((await sbEvent.from("zad_users").select("country").eq("id", eventUserId).maybeSingle()).data as { country?: string } | null)?.country ?? null,
+      });
+      const local = localNowContext(typeof tzRow === "string" ? tzRow : "UTC");
+      const hour = Number(local.time.slice(0, 2));
+      let facts: Record<string, unknown> | null = null;
+      if (moment === "morning_greeting") {
+        if (hour < 4 || hour >= 12) {
+          return new Response(JSON.stringify({ ok: true, status: "outside_morning" }), { headers: CORS_HEADERS });
+        }
+        facts = await morningFacts(sbEvent, eventUserId, local);
+      } else {
+        facts = await tasbihaFacts(sbEvent, eventUserId, local.date);
+        if (!facts) return new Response(JSON.stringify({ ok: true, status: "not_needed" }), { headers: CORS_HEADERS });
+      }
+      const dedupeKey = `${moment === "morning_greeting" ? "morning" : "tasbiha"}:${local.date}`;
+      const { error: insErr } = await sbEvent.from("zad_voice_moments")
+        .upsert({ user_id: eventUserId, moment, facts, dedupe_key: dedupeKey }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+      if (insErr) {
+        console.error("[moment_event] insert failed:", insErr.message);
+        return new Response(JSON.stringify({ ok: false, error: "record_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const summary = await processVoiceMoments(sbEvent, {
+        compose: async (system, user) =>
+          (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
+        pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbEvent, userId, title, text, data, dataOnly),
+        pushTelegram: (userId, title, text, voice, m, speech) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech),
+      }, 5, eventUserId);
+      return new Response(JSON.stringify({ ok: true, status: "processed", ...summary }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {
       const authedUserId = await resolveRequestUserId(req, body);
       if (!authedUserId) {
