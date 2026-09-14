@@ -56,7 +56,7 @@ val ZadIosSurface = Color(0xFFFFFFFF)      // Pure elevated glass cards
 val ZadIosSurfaceVariant = Color(0xFFEDEFE9) // Rounded container pills, icon backdrops
 val ZadIosOutline = Color(0xFFE0E3DA)      // Thin hairline borders (0.5.dp)
 val ZadNeutralDark = Color(0xFF1F1F14)     // High-contrast, pure text legibility
-val ZadNeutralMuted = Color(0xFF6E7166)    // Secondary muted labels
+val ZadNeutralMuted = Color(0xFF5F6258)    // Secondary muted labels — 5.9:1 on canvas (كان 6E7166 = 4.72، على الحافة؛ WcagContrastTest)
 
 // --- 3. Raw values the ColorScheme is built from (never theme-aware) ---
 // ZadTheme.kt builds ZadColorScheme outside any composable, so it must use these,

@@ -141,7 +141,9 @@ data class ZadExtendedColors(
 val ZadExtendedColorsLight = ZadExtendedColors(
     success = Color(0xFF238652),
     info = Color(0xFF2B6CB0),
-    textTertiary = Color(0xFF9EA197),
+    // كان 9EA197 = 2.49:1 على الخلفية — نص مايتقريش (WCAG AA عايز 4.5). 6E7065 = 4.78:1،
+    // ولسه أفتح من onSurfaceVariant فالتلات أوزان محافظين على ترتيبهم (WcagContrastTest).
+    textTertiary = Color(0xFF6E7065),
     primaryDark = ZadForestEmeraldDark,
     primaryLight = ZadForestEmeraldLight,
     secondaryDark = ZadMustardDark,
@@ -197,7 +199,8 @@ val ZadExtendedColorsLight = ZadExtendedColors(
 val ZadExtendedColorsDark = ZadExtendedColors(
     success = Color(0xFF4FBF87),
     info = Color(0xFF7FB3E8),
-    textTertiary = Color(0xFF7F847A),
+    // كان 7F847A = 4.46:1 على الكروت — تحت الحد بسنة. 8E9388 = 5.43:1.
+    textTertiary = Color(0xFF8E9388),
     primaryDark = Color(0xFF3E8F68),
     primaryLight = Color(0xFF95D9B5),
     secondaryDark = Color(0xFFC08A2C),

@@ -738,10 +738,10 @@ fun ZadMoreSheet(onDismiss: () -> Unit, onNavigate: (String) -> Unit) {
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(entry.bg),
+                                    .background(entry.accent.containerColor),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(entry.icon, contentDescription = null, tint = entry.fg, modifier = Modifier.size(18.dp))
+                                Icon(entry.icon, contentDescription = null, tint = entry.accent.contentColor, modifier = Modifier.size(18.dp))
                             }
                             Text(
                                 stringResource(entry.labelRes),

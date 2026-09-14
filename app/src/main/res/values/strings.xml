@@ -1658,6 +1658,10 @@
     <string name="price_report_send">أرسل السعر</string>
     <string name="price_board_title">لوحة الأسعار</string>
     <string name="price_report_new">سجّل سعر جديد</string>
+    <string name="price_board_your_contributions">مساهماتك</string>
+    <string name="price_board_empty_title">لسه مفيش مساهمات</string>
+    <string name="price_board_empty_subtitle">سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.</string>
+    <string name="price_report_first">سجّل أول سعر</string>
     <string name="price_top_contributors">أكثر المشاركين 🏆</string>
     <string name="market_ticker_contribute">ساهم بسعر</string>
     <string name="weekly_spend_chart_title">مصروف الأسبوع</string>

@@ -1655,6 +1655,10 @@
     <string name="price_report_send">Send price</string>
     <string name="price_board_title">Price board</string>
     <string name="price_report_new">Report a new price</string>
+    <string name="price_board_your_contributions">Your contributions</string>
+    <string name="price_board_empty_title">No contributions yet</string>
+    <string name="price_board_empty_subtitle">Report the first price you saw at the market — it shows up here and helps your neighbours find the cheapest place.</string>
+    <string name="price_report_first">Report the first price</string>
     <string name="price_top_contributors">Top contributors 🏆</string>
     <string name="market_ticker_contribute">Add a price</string>
     <string name="weekly_spend_chart_title">This week\'s spending</string>

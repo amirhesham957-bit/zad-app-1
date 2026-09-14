@@ -74,26 +74,25 @@ internal data class ZadSectionEntry(
     val route: String,
     val icon: ImageVector,
     val labelRes: Int,
-    val bg: Color,
-    val fg: Color,
+    val accent: ZadSectionAccent,
 )
 
 /** بالترتيب اللي بيظهر بيه — أول [HOME_SECTIONS_COLLAPSED_COUNT] هما الأكتر استخدامًا. */
 internal val zadAppSections: List<ZadSectionEntry> = listOf(
-    ZadSectionEntry(ZadRoutes.INVENTORY, Icons.Default.Inventory2, R.string.nav_inventory, Color(0xFFE3F4EC), Color(0xFF047857)),
-    ZadSectionEntry(ZadRoutes.SHOPPING, Icons.Default.ShoppingCart, R.string.nav_shopping, Color(0xFFFCEEE3), Color(0xFFB45309)),
-    ZadSectionEntry(ZadRoutes.FAMILY, Icons.Default.FamilyRestroom, R.string.nav_family, Color(0xFFF1EAFB), Color(0xFF6D28D9)),
-    ZadSectionEntry(ZadRoutes.BUDGET, Icons.Default.BarChart, R.string.nav_budget, Color(0xFFE8F1FC), Color(0xFF1D4ED8)),
-    ZadSectionEntry(ZadRoutes.SUBS, Icons.Default.CreditCard, R.string.subscriptions_title, Color(0xFFEDEBFC), Color(0xFF4338CA)),
-    ZadSectionEntry(ZadRoutes.PHARMACY, Icons.Default.LocalPharmacy, R.string.nav_pharmacy, Color(0xFFFCE8ED), Color(0xFFBE123C)),
-    ZadSectionEntry(ZadRoutes.MAINTENANCE, Icons.Default.Build, R.string.nav_maintenance, Color(0xFFFDF3E1), Color(0xFF92400E)),
-    ZadSectionEntry(ZadRoutes.TASBIHA, Icons.Default.Yard, R.string.tasbiha_short_label, Color(0xFFE6F4EC), Color(0xFF15803D)),
-    ZadSectionEntry(ZadRoutes.ASSISTANT, Icons.Default.Psychology, R.string.screen_title_assistant, Color(0xFFE0F2F1), Color(0xFF0F766E)),
-    ZadSectionEntry(ZadRoutes.KNOWLEDGE_MAP, Icons.Default.Hub, R.string.knowledge_map_title, Color(0xFFEAF2FB), Color(0xFF1D4ED8)),
-    ZadSectionEntry(ZadRoutes.NOTIFICATIONS, Icons.Default.Notifications, R.string.notifications_title, Color(0xFFFFF4E0), Color(0xFFB45309)),
-    ZadSectionEntry(ZadRoutes.STATEMENT, Icons.Default.ReceiptLong, R.string.statement_import_title, Color(0xFFEEF0F3), Color(0xFF334155)),
-    ZadSectionEntry(ZadRoutes.PREMIUM_PLANS, Icons.Default.Star, R.string.premium_plans_title, Color(0xFFFFF7ED), Color(0xFFB45309)),
-    ZadSectionEntry(ZadRoutes.PROFILE, Icons.Default.Person, R.string.screen_title_profile, Color(0xFFEEF0F3), Color(0xFF374151)),
+    ZadSectionEntry(ZadRoutes.INVENTORY, Icons.Default.Inventory2, R.string.nav_inventory, ZadSectionAccent.Emerald),
+    ZadSectionEntry(ZadRoutes.SHOPPING, Icons.Default.ShoppingCart, R.string.nav_shopping, ZadSectionAccent.Amber),
+    ZadSectionEntry(ZadRoutes.FAMILY, Icons.Default.FamilyRestroom, R.string.nav_family, ZadSectionAccent.Violet),
+    ZadSectionEntry(ZadRoutes.BUDGET, Icons.Default.BarChart, R.string.nav_budget, ZadSectionAccent.Blue),
+    ZadSectionEntry(ZadRoutes.SUBS, Icons.Default.CreditCard, R.string.subscriptions_title, ZadSectionAccent.Indigo),
+    ZadSectionEntry(ZadRoutes.PHARMACY, Icons.Default.LocalPharmacy, R.string.nav_pharmacy, ZadSectionAccent.Rose),
+    ZadSectionEntry(ZadRoutes.MAINTENANCE, Icons.Default.Build, R.string.nav_maintenance, ZadSectionAccent.Brown),
+    ZadSectionEntry(ZadRoutes.TASBIHA, Icons.Default.Yard, R.string.tasbiha_short_label, ZadSectionAccent.Green),
+    ZadSectionEntry(ZadRoutes.ASSISTANT, Icons.Default.Psychology, R.string.screen_title_assistant, ZadSectionAccent.Teal),
+    ZadSectionEntry(ZadRoutes.KNOWLEDGE_MAP, Icons.Default.Hub, R.string.knowledge_map_title, ZadSectionAccent.Blue),
+    ZadSectionEntry(ZadRoutes.NOTIFICATIONS, Icons.Default.Notifications, R.string.notifications_title, ZadSectionAccent.Amber),
+    ZadSectionEntry(ZadRoutes.STATEMENT, Icons.Default.ReceiptLong, R.string.statement_import_title, ZadSectionAccent.Slate),
+    ZadSectionEntry(ZadRoutes.PREMIUM_PLANS, Icons.Default.Star, R.string.premium_plans_title, ZadSectionAccent.Amber),
+    ZadSectionEntry(ZadRoutes.PROFILE, Icons.Default.Person, R.string.screen_title_profile, ZadSectionAccent.Slate),
 )
 
 internal const val HOME_SECTIONS_COLUMNS = 4
@@ -218,11 +217,11 @@ private fun SectionTile(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(entry.bg)
-                    .border(1.dp, entry.fg.copy(alpha = 0.16f), RoundedCornerShape(16.dp)),
+                    .background(entry.accent.containerColor)
+                    .border(1.dp, entry.accent.contentColor.copy(alpha = 0.20f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(entry.icon, contentDescription = null, tint = entry.fg, modifier = Modifier.size(24.dp))
+                Icon(entry.icon, contentDescription = null, tint = entry.accent.contentColor, modifier = Modifier.size(24.dp))
             }
             if (badge > 0) {
                 Box(

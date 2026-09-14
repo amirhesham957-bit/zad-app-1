@@ -832,8 +832,18 @@ private fun AddPharmacyItemDialog(
         }
     }
 
+    // حدود الخانات كانت توكن الـhairline (E0E3DA) = ~1.2:1 على خلفية الديالوج الملوّنة، يعني
+    // خانات من غير حدود تقريبًا (لقطة جهاز ٢٠٢٦-٠٩-١٤). عناصر الإدخال محتاجة 3:1 على الأقل
+    // (WCAG 1.4.11). متظبطة هنا بس — نفس التوكن هو hairline الكروت في التطبيق كله ومقصود خفيف.
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        unfocusedBorderColor = onSurfaceVariant.copy(alpha = 0.72f),
+        focusedBorderColor = primary,
+        unfocusedLabelColor = onSurfaceVariant,
+        focusedLabelColor = primary,
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = surface,
         title = { Text(stringResource(R.string.add_medicine_dialog_title), style = Typography.titleLarge, fontWeight = FontWeight.Bold) },
         text = {
             Column(
@@ -858,10 +868,12 @@ private fun AddPharmacyItemDialog(
                     }
                 }
 
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.medicine_name_hint)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    colors = fieldColors,value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.medicine_name_hint)) }, modifier = Modifier.fillMaxWidth())
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
+                    colors = fieldColors,
                         value = quantity, onValueChange = { quantity = it },
                         label = { Text(stringResource(R.string.remaining_quantity_hint)) },
                         singleLine = true,
@@ -871,14 +883,17 @@ private fun AddPharmacyItemDialog(
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.unit_hint), style = Typography.labelSmall, color = onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // FlowRow مش Row: ٤ شرايح في عرض الديالوج كانت بتتزنق، والرابعة بتتقلص لخط رمادي.
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         PHARMACY_UNITS.forEach { u ->
-                            FilterChip(selected = unit == u, onClick = { unit = u }, label = { Text(u, style = Typography.labelSmall) })
+                            FilterChip(selected = unit == u, onClick = { unit = u }, label = { Text(u, style = Typography.labelLarge) })
                         }
                     }
                 }
 
                 OutlinedTextField(
+                    colors = fieldColors,
                     value = dailyDoseCount, onValueChange = { dailyDoseCount = it },
                     label = { Text(stringResource(R.string.daily_dose_hint)) },
                     singleLine = true,
@@ -938,6 +953,7 @@ private fun AddPharmacyItemDialog(
                 }
 
                 OutlinedTextField(
+                    colors = fieldColors,
                     value = formatExpiryForDisplay(expiryDate), onValueChange = {}, readOnly = true,
                     singleLine = true,
                     label = { Text(stringResource(R.string.expiry_date_hint)) },
@@ -947,6 +963,7 @@ private fun AddPharmacyItemDialog(
                 )
                 val estimatedPlaceholder = remember(name) { com.example.data.PharmacyPricingEstimator.estimatePrice(name) }
                 OutlinedTextField(
+                    colors = fieldColors,
                     value = price,
                     onValueChange = { price = it },
                     label = { Text(stringResource(R.string.amount_with_currency_hint, com.example.data.CurrencyFormatter.symbol(context))) },
@@ -972,8 +989,10 @@ private fun AddPharmacyItemDialog(
 
                 AnimatedVisibility(visible = showAdditionalDetails) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(value = activeIngredient, onValueChange = { activeIngredient = it }, label = { Text(stringResource(R.string.active_ingredient_hint)) }, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = dosage, onValueChange = { dosage = it }, label = { Text(stringResource(R.string.dosage_hint)) }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(
+                    colors = fieldColors,value = activeIngredient, onValueChange = { activeIngredient = it }, label = { Text(stringResource(R.string.active_ingredient_hint)) }, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(
+                    colors = fieldColors,value = dosage, onValueChange = { dosage = it }, label = { Text(stringResource(R.string.dosage_hint)) }, modifier = Modifier.fillMaxWidth())
 
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             Checkbox(checked = isRecurring, onCheckedChange = { isRecurring = it })
@@ -983,6 +1002,7 @@ private fun AddPharmacyItemDialog(
                         if (familyMembers.isNotEmpty()) {
                             ExposedDropdownMenuBox(expanded = memberMenuExpanded, onExpandedChange = { memberMenuExpanded = it }) {
                                 OutlinedTextField(
+                    colors = fieldColors,
                                     value = familyMembers.find { it.id == selectedMemberId }?.alias ?: stringResource(R.string.none_option),
                                     onValueChange = {}, readOnly = true,
                                     label = { Text(stringResource(R.string.assigned_family_member_label)) },

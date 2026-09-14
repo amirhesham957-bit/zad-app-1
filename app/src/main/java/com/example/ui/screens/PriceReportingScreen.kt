@@ -290,9 +290,9 @@ fun CrowdsourceDashboard(
                 }
                 Text(
                     stringResource(R.string.price_board_title),
-                    fontSize = 20.sp,
+                    style = com.example.ui.theme.Typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = com.example.ui.theme.onSurface
                 )
             }
         }
@@ -301,7 +301,7 @@ fun CrowdsourceDashboard(
         // "أسعار حية" = contributionCount * 3، رقم مختلق مالوش أي مصدر حقيقي. اتشال.
         item {
             StatCard(
-                title = "مساهماتك",
+                title = stringResource(R.string.price_board_your_contributions),
                 value = contributionCount.toString(),
                 icon = Icons.Default.TrendingUp,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
@@ -327,9 +327,9 @@ fun CrowdsourceDashboard(
         item {
             Text(
                 stringResource(R.string.price_top_contributors),
-                fontSize = 16.sp,
+                style = com.example.ui.theme.Typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = com.example.ui.theme.onSurface
             )
         }
 
@@ -342,10 +342,20 @@ fun CrowdsourceDashboard(
         // Empty State
         if (leaderboardUsers.isEmpty()) {
             item {
+                // كانت أيقونة Info رمادي + عنوان بس = مساحة ميتة. دلوقتي بتقول الخطوة الجاية
+                // وليه تستاهل، وزرار التسجيل نفسه جوه الحالة الفاضية.
                 ZadEmptyState(
-                    icon = Icons.Default.Info,
-                    title = "لا توجد مساهمات بعد",
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
+                    icon = Icons.Default.EmojiEvents,
+                    title = stringResource(R.string.price_board_empty_title),
+                    subtitle = stringResource(R.string.price_board_empty_subtitle),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    action = {
+                        OutlinedButton(onClick = onReportPrice, modifier = Modifier.heightIn(min = 44.dp)) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.price_report_first), fontWeight = FontWeight.Bold)
+                        }
+                    }
                 )
             }
         }
@@ -359,35 +369,37 @@ private fun StatCard(
     icon: ImageVector = Icons.Default.Info,
     modifier: Modifier = Modifier
 ) {
+    // كان .height(100.dp) ثابت، والمحتوى (أيقونة + رقم 20sp + عنوان + مسافات + padding) ~106dp
+    // — فالعنوان "مساهماتك" كان بيتقص وبيبان كارت فاضي فيه "0" بس (لقطة جهاز ٢٠٢٦-٠٩-١٤).
     Card(
         modifier = modifier
-            .height(100.dp)
+            .heightIn(min = 96.dp)
             .border(0.5.dp, com.example.ui.theme.ZadLuxe.hairline, com.example.ui.theme.ZadLuxe.squircle),
         colors = CardDefaults.cardColors(containerColor = com.example.ui.theme.ZadLuxe.cardWhite),
         shape = com.example.ui.theme.ZadLuxe.squircle
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 icon,
-                title,
+                null,
                 tint = com.example.ui.theme.ZadLuxe.emerald,
                 modifier = Modifier.size(20.dp)
             )
             Text(
                 value,
-                fontSize = 20.sp,
+                style = com.example.ui.theme.Typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = com.example.ui.theme.ZadLuxe.emerald
             )
             Text(
                 title,
-                fontSize = 11.sp,
-                color = Color(0xFF475569)
+                style = com.example.ui.theme.Typography.labelLarge,
+                color = com.example.ui.theme.onSurfaceVariant
             )
         }
     }
