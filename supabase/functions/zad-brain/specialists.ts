@@ -262,6 +262,7 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "add_place_reminder", "cancel_place_reminder",
     // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
     "set_broke_mode",
+    "start_savings_challenge", "stop_savings_challenge",
   ]);
   return tools.filter((t) => allowed.has(t.name));
 }

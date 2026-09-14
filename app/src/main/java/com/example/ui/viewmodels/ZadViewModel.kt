@@ -388,6 +388,36 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
     private val _brokeMode = MutableStateFlow<com.example.data.ZadBrokeMode?>(null)
     val brokeMode: StateFlow<com.example.data.ZadBrokeMode?> = _brokeMode.asStateFlow()
 
+    /** تحدي التوفير الشغال — null = مفيش (أو القراءة فشلت). */
+    private val _savingsChallenge = MutableStateFlow<com.example.data.ZadSavingsChallenge?>(null)
+    val savingsChallenge: StateFlow<com.example.data.ZadSavingsChallenge?> = _savingsChallenge.asStateFlow()
+
+    fun loadSavingsChallenge() {
+        viewModelScope.launch { _savingsChallenge.value = SupabaseRepo.getActiveSavingsChallenge() }
+    }
+
+    fun suggestedChallengeCap(): Double? = com.example.data.SavingsChallengeMath.suggestCap(
+        avgDailySpend = com.example.data.SavingsChallengeMath.averageDailySpend(
+            _transactions.value, java.time.LocalDate.now(), java.time.ZoneId.systemDefault()
+        ),
+        dailyAllowanceLeft = _budgetState.value?.dailyAllowanceLeft,
+    )
+
+    fun startSavingsChallenge(dailyCap: Double, lengthDays: Int, onDone: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val ok = SupabaseRepo.startSavingsChallenge(dailyCap, lengthDays, _budgetState.value?.currency, java.time.LocalDate.now())
+            if (ok) _savingsChallenge.value = SupabaseRepo.getActiveSavingsChallenge()
+            onDone(ok)
+        }
+    }
+
+    fun abandonSavingsChallenge() {
+        val id = _savingsChallenge.value?.id ?: return
+        viewModelScope.launch {
+            if (SupabaseRepo.abandonSavingsChallenge(id)) _savingsChallenge.value = SupabaseRepo.getActiveSavingsChallenge()
+        }
+    }
+
     fun loadBrokeMode() {
         viewModelScope.launch { _brokeMode.value = SupabaseRepo.getBrokeMode() }
     }
@@ -1842,6 +1872,7 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
         if (touchedSyncedTables) syncData()
         if (tools.contains("set_monthly_limit")) loadBudget()
         if (tools.contains("set_broke_mode")) loadBrokeMode()
+        if (tools.contains("start_savings_challenge") || tools.contains("stop_savings_challenge")) loadSavingsChallenge()
         if (tools.contains("set_market")) {
             viewModelScope.launch {
                 try {
@@ -2592,6 +2623,7 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
             recalculateRemainingBalance(_transactions.value, _budget.value)
             _budgetLoaded.value = true
             _brokeMode.value = SupabaseRepo.getBrokeMode()
+            _savingsChallenge.value = SupabaseRepo.getActiveSavingsChallenge()
             Log.d(TAG, "loadBudget() → monthlyLimit=${_budget.value}, confirmed=${_budgetConfirmed.value}")
         }
     }

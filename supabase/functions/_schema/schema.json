@@ -799,6 +799,23 @@
     "recipe_name",
     "user_id"
   ],
+  "zad_savings_challenges": [
+    "best_streak",
+    "created_at",
+    "currency",
+    "daily_cap",
+    "days_lost",
+    "days_won",
+    "id",
+    "last_evaluated_on",
+    "length_days",
+    "source",
+    "started_on",
+    "status",
+    "streak",
+    "updated_at",
+    "user_id"
+  ],
   "zad_shopping_list": [
     "created_at",
     "estimated_price",

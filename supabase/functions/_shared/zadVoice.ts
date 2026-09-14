@@ -175,6 +175,10 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   weekly_money_proud: "proud",
   weekly_money_reproach: "reproachful",
   weekly_money_story: "warm",
+  // تحدي ٣٠ يوم توفير (20260914010000)
+  challenge_milestone: "proud",
+  challenge_completed: "proud",
+  challenge_streak_broken: "sad",
 };
 
 export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmotion {

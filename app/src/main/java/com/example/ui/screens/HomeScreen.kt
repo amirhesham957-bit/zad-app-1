@@ -163,6 +163,7 @@ fun HomeScreen(
     val chefRecipes by viewModel.chefRecipes.collectAsState()
     val brokeMode by viewModel.brokeMode.collectAsState()
     val brokeActive = brokeMode.isActive()
+    val savingsChallenge by viewModel.savingsChallenge.collectAsState()
     val ratedRecipes by viewModel.ratedRecipes.collectAsState()
     val insights by viewModel.insights.collectAsState()
     val zadInsights by viewModel.zadInsights.collectAsState()
@@ -505,6 +506,20 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
+                }
+                savingsChallenge?.let { ch ->
+                    val today = java.time.LocalDate.now()
+                    val zone = java.time.ZoneId.systemDefault()
+                    val dayIndex = com.example.data.SavingsChallengeMath.dayIndex(ch, today)
+                    val shareText = stringResource(R.string.challenge_share_text, dayIndex, ch.lengthDays, ch.streak)
+                    val shareTitle = stringResource(R.string.challenge_share_cd)
+                    com.example.ui.components.SavingsChallengeCard(
+                        challenge = ch,
+                        dayIndex = dayIndex,
+                        todaySpent = remember(transactions, ch) { com.example.data.SavingsChallengeMath.spentOn(transactions, today, zone) },
+                        onShare = { com.example.ui.components.ZadShare.shareText(context, shareText, shareTitle) },
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
                 if (showBrokeCashDialog) {
                     com.example.ui.components.BrokeModeDialog(

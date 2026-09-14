@@ -13,6 +13,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { emotionForMoment, EMOTION_DIRECTIONS, VOICE_EMOTIONAL_RANGE } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { localNowContext } from "./shared.ts";
+import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -56,6 +57,15 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي والأسبوع صرف فيه كتير أو هدر. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس " +
     "(المصروف ومقارنته بالأسبوع اللي فات، أكبر فئة، أكبر مصروف، الأصناف اللي اتهدرت)، وآخر سطر نصيحة واحدة عملية للأسبوع الجاي. " +
     "speech: من ٤ لـ٦ جمل — عتاب لطيف بهزار زي صاحبته («يعني كده؟»)، مش تجريح ولا تخويف، وتختمي بتشجيع إن الأسبوع الجاي أحسن.",
+  challenge_milestone:
+    "العميل كسب محطة في تحدي التوفير (streak يوم ورا بعض تحت السقف). text: سطر احتفال فيه السلسلة واليوم من length_days. " +
+    "speech: جملتين أو تلاتة فرحانة وفخورة بجد، وشجعيه يكمّل.",
+  challenge_completed:
+    "العميل خلّص تحدي التوفير كله. text: سطرين: كسب كام يوم (days_won من length_days) وأطول سلسلة. " +
+    "speech: من ٣ لـ٤ جمل احتفال كبير وفخر، واقترحي بلطف يبدأ تحدي جديد.",
+  challenge_streak_broken:
+    "سلسلة التحدي اتقطعت امبارح (broken_streak يوم) لأنه صرف فوق السقف. text: سطر لطيف فيه صرف امبارح والسقف. " +
+    "speech: جملتين زعلانة شوية بس حنينة — مش لوم — وإن النهارده يوم جديد يبدأ فيه سلسلة تانية.",
   weekly_money_story:
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس (المصروف، المقارنة، أكبر فئة، الهدر لو فيه) " +
     "وآخر سطر نصيحة واحدة. speech: من ٤ لـ٦ جمل بتحكي الأسبوع بدفء وتقولي فين راحت الفلوس.",
@@ -250,6 +260,28 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `رجعت أخيرًا! وحشتني. روحت فين بقى؟ أنا شايفة إنك صرفت ${amount}${where ? ` في ${where}` : ""}… كان يستاهل؟`,
       };
     }
+    case "challenge_milestone": {
+      const streak = Number(facts.streak) || 0;
+      return {
+        title: `🔥 ${streak} يوم ورا بعض!`,
+        text: `كمّلت ${streak} يوم تحت سقفك في تحدي التوفير (اليوم ${Number(facts.day) || streak} من ${Number(facts.length_days) || 30}).`,
+        speech: `يا سلام! ${streak} يوم ورا بعض تحت السقف! أنا فخورة بيك بجد، كمّل كده ماتوقفش.`,
+      };
+    }
+    case "challenge_completed":
+      return {
+        title: "🏆 خلّصت التحدي!",
+        text: `كسبت ${Number(facts.days_won) || 0} يوم من ${Number(facts.length_days) || 30}، وأطول سلسلة ${Number(facts.best_streak) || 0} يوم.`,
+        speech: "مبروووك! خلّصت التحدي كله! أنا مش مصدقة، إنت بطل بجد. نعمل تحدي جديد؟",
+      };
+    case "challenge_streak_broken": {
+      const cur = str(facts.currency, 10);
+      return {
+        title: "💔 السلسلة اتقطعت",
+        text: `امبارح صرفت ${Math.round(Number(facts.yesterday_spent) || 0)}${cur ? ` ${cur}` : ""} والسقف ${Math.round(Number(facts.daily_cap) || 0)}. النهارده يوم جديد.`,
+        speech: `كنت ماشي ${Number(facts.broken_streak) || 0} يوم حلوين… وامبارح عدّيت السقف. زعلت شوية، بس مش مشكلة، النهارده نبدأ سلسلة جديدة سوا.`,
+      };
+    }
     case "weekly_money_proud":
     case "weekly_money_reproach":
     case "weekly_money_story": {
@@ -385,6 +417,13 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     if (!apptId) return true;
     const { data: appt } = await sb.from("zad_appointments").select("status").eq("id", apptId).maybeSingle();
     return (appt as { status?: string } | null)?.status === "upcoming";
+  }
+  // تحدي اتساب بعد ما اللحظة اتسجلت = مفيش احتفال ولا زعل.
+  if (row.moment.startsWith("challenge_")) {
+    const challengeId = str(row.facts?.challenge_id, 60);
+    if (!challengeId) return true;
+    const { data: ch } = await sb.from("zad_savings_challenges").select("status").eq("id", challengeId).maybeSingle();
+    return (ch as { status?: string } | null)?.status !== "abandoned";
   }
   // التسبيحة: لو سبّح بعد ما التذكير اتسجل، مفيش تذكير.
   if (row.moment === "tasbiha_reminder") {
@@ -530,7 +569,7 @@ export async function morningFacts(
 ): Promise<Record<string, unknown>> {
   const dayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
   const dayEnd = new Date(new Date(dayStart).getTime() + 86_400_000).toISOString();
-  const [meds, appts, budget] = await Promise.all([
+  const [meds, appts, budget, challenge] = await Promise.all([
     sb.from("zad_pharmacy_items").select("name,dose_times").eq("user_id", userId).not("dose_times", "is", null).limit(6)
       .then((r) => (r.data ?? []) as Array<{ name: string; dose_times: string | null }>, () => []),
     sb.from("zad_appointments").select("title,starts_at,place_label").eq("user_id", userId).eq("status", "upcoming")
@@ -538,6 +577,8 @@ export async function morningFacts(
       .then((r) => (r.data ?? []) as Array<Record<string, unknown>>, () => []),
     sb.rpc("zad_budget_state", { p_user: userId })
       .then((r) => r.data as Record<string, unknown> | null, () => null),
+    sb.from("zad_savings_challenges").select("started_on,length_days,daily_cap,streak").eq("user_id", userId).eq("status", "active").maybeSingle()
+      .then((r) => r.data as { started_on: string; length_days: number; daily_cap: number; streak: number } | null, () => null),
   ]);
   return {
     local_date: local.date,
@@ -545,6 +586,7 @@ export async function morningFacts(
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times })),
     appointments_today: appts,
     ...(budget && budget.limit_confirmed ? { available: budget.available, days_left: budget.days_left, currency: budget.currency } : {}),
+    ...(challenge ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
   };
 }
 

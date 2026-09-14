@@ -1358,6 +1358,51 @@ object SupabaseRepo {
         false
     }
 
+    // ── تحدي التوفير (zad_savings_challenges) ────────────────────────────────
+    suspend fun getActiveSavingsChallenge(): ZadSavingsChallenge? = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return null
+        client.postgrest["zad_savings_challenges"].select {
+            filter {
+                eq("user_id", userId)
+                eq("status", "active")
+            }
+        }.decodeSingleOrNull<ZadSavingsChallenge>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getActiveSavingsChallenge() FAILED: ${e.message}")
+        null
+    }
+
+    suspend fun startSavingsChallenge(dailyCap: Double, lengthDays: Int, currency: String?, startedOn: java.time.LocalDate): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        client.postgrest["zad_savings_challenges"].insert(
+            buildJsonObject {
+                put("user_id", userId)
+                put("started_on", startedOn.toString())
+                put("length_days", lengthDays.coerceIn(7, 90))
+                put("daily_cap", dailyCap)
+                put("currency", currency)
+                put("source", "app")
+            }
+        )
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "startSavingsChallenge() FAILED: ${e.message}")
+        false
+    }
+
+    suspend fun abandonSavingsChallenge(id: String): Boolean = try {
+        client.postgrest["zad_savings_challenges"].update(
+            buildJsonObject {
+                put("status", "abandoned")
+                put("updated_at", java.time.Instant.now().toString())
+            }
+        ) { filter { eq("id", id) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "abandonSavingsChallenge() FAILED: ${e.message}")
+        false
+    }
+
     // ── وضع الطوارئ (zad_broke_mode) ─────────────────────────────────────────
     suspend fun getBrokeMode(): ZadBrokeMode? = try {
         val userId = client.auth.currentUserOrNull()?.id ?: return null

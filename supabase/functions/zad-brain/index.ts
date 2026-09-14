@@ -58,6 +58,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunCon
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
+import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -963,6 +964,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   if (brokeErr) console.error("[snapshot] zad_broke_mode failed:", brokeErr.message);
   const brokeActive = isBrokeModeActive(brokeRow as { ends_at?: string; ended_at?: string } | null, Date.now());
 
+  // تحدي التوفير الشغال — العقل يشجّع ويعرف السقف اليومي والسلسلة.
+  const { data: challengeRow } = await sb.from("zad_savings_challenges")
+    .select("id,started_on,length_days,daily_cap,currency,streak,best_streak,days_won,days_lost,last_evaluated_on")
+    .eq("user_id", userId).eq("status", "active").maybeSingle();
+
   // تذكيرات المكان المفتوحة — عشان «فكّرتني بإيه لما أروح الصيدلية؟» و«شيل تذكير البنادول».
   const { data: placeReminderRows, error: placeRemErr } = await sb.from("zad_place_reminders")
     .select("id,place,note,created_at")
@@ -1145,6 +1151,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
     broke_mode: brokeActive ? brokeRow : null,
+    // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
+    savings_challenge: challengeRow
+      ? { ...(challengeRow as Record<string, unknown>), day: challengeDayIndex(String((challengeRow as { started_on: string }).started_on), localNowContext(budgetState.timezone ?? "UTC").date) }
+      : null,
     // تذكيرات بتتقال لما يوصل نوع محل (مش وقت). id للإلغاء بـ cancel_place_reminder.
     place_reminders: (placeReminderRows ?? []) as Array<Record<string, unknown>>,
     // خروجاته من البيت آخر أسبوع (وقت + صرف + محلات) — لو فعّل تنبيهات الموقع.
@@ -2487,6 +2497,55 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       });
       return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
     }
+    case "start_savings_challenge": {
+      const { data: existing } = await sb.from("zad_savings_challenges").select("id,started_on,daily_cap")
+        .eq("user_id", userId).eq("status", "active").maybeSingle();
+      if (existing) return "مرفوض: عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).";
+      let cap = input.daily_cap === undefined || input.daily_cap === null ? null : Math.round(Number(input.daily_cap));
+      const { data: stateRaw } = await sb.rpc("zad_budget_state", { p_user: userId });
+      const state = (stateRaw ?? {}) as { daily_allowance_left?: number | null; currency?: string | null };
+      if (cap === null) {
+        const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+        const { data: spendRows } = await sb.from("zad_transactions").select("amount,counts_toward_budget")
+          .eq("user_id", userId).eq("txn_kind", "expense").gte("created_at", since).limit(1000);
+        const total = ((spendRows ?? []) as Array<{ amount: number; counts_toward_budget: boolean | null }>)
+          .filter((r) => r.counts_toward_budget !== false)
+          .reduce((a, r) => a + Math.abs(Number(r.amount) || 0), 0);
+        cap = suggestChallengeCap({ avgDailySpend: total > 0 ? total / 30 : null, dailyAllowanceLeft: state.daily_allowance_left ?? null });
+      }
+      if (cap === null) return "مرفوض: مفيش صرف ولا رصيد أحسب منه سقف — اسأله «عايز تصرف كام في اليوم بالظبط؟»";
+      const lengthDays = Number.isInteger(input.length_days) ? Number(input.length_days) : 30;
+      const startedOn = String(snap?.now_local?.date ?? new Date().toISOString().slice(0, 10));
+      const w = await writeRows(
+        sb.from("zad_savings_challenges").insert({
+          user_id: userId, started_on: startedOn, length_days: lengthDays, daily_cap: cap,
+          currency: state.currency ?? null,
+          source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+        }).select("id,started_on,daily_cap,length_days"),
+        "بدء تحدي التوفير",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const row = w.rows[0] as { id: string };
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { daily_cap: cap, length_days: lengthDays } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
+      const cur = state.currency ? ` ${state.currency}` : "";
+      return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم. كل صباح هقوله كسب امبارح ولا لأ، وهحتفل معاه في كل محطة.`;
+    }
+    case "stop_savings_challenge": {
+      const w = await writeRows(
+        sb.from("zad_savings_challenges").update({ status: "abandoned", updated_at: new Date().toISOString() })
+          .eq("user_id", userId).eq("status", "active").select("id,days_won,best_streak"),
+        "إيقاف تحدي التوفير",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      if (!w.rows.length) return "مفيش تحدي شغال أصلاً.";
+      const row = w.rows[0] as { id: string; days_won: number; best_streak: number };
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: { status: "active" }, new: { status: "abandoned" } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
+      return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}. قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.`;
+    }
     case "set_broke_mode": {
       const src = scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat";
       if (input.active === false) {
@@ -3782,6 +3841,26 @@ const CHAT_TOOLS: ToolDef[] = [
       },
       required: ["appointment_id"],
     },
+  },
+  {
+    // تحدي ٣٠ يوم توفير (20260914010000).
+    name: "start_savings_challenge",
+    description:
+      "ابدأ تحدي توفير (افتراضي ٣٠ يوم) بسقف يومي: «عايز أعمل تحدي توفير»، «تحدي ٣٠ يوم»، «ساعدني أوفّر الشهر ده». " +
+      "لو العميل قال رقم («مش هصرف أكتر من ١٠٠ في اليوم») حطه في daily_cap، وإلا سيبه فاضي وأنا هحسب ٨٠٪ من متوسط صرفه. " +
+      "كل صباح بيتحسب امبارح، وزاد بتحتفل بصوتها في المحطات.",
+    input_schema: {
+      type: "object",
+      properties: {
+        daily_cap: { type: "number", description: "السقف اليومي لو العميل حدده" },
+        length_days: { type: "number", description: "مدة التحدي بالأيام، افتراضي ٣٠" },
+      },
+    },
+  },
+  {
+    name: "stop_savings_challenge",
+    description: "اقفل تحدي التوفير الشغال لما العميل يطلب («بطّلت التحدي»، «وقّف التحدي»). متقفلوش من نفسك.",
+    input_schema: { type: "object", properties: {} },
   },
   {
     // وضع الطوارئ «مفلس باقي الشهر» (20260914009000).
@@ -5550,6 +5629,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
 12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
+13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.
 
 === SNAPSHOT ===
 ${JSON.stringify(snap)}

@@ -72,6 +72,32 @@ fun BudgetScreen(
     val brokeActive = brokeMode.isActive()
     val daysLeftForBroke by viewModel.daysLeftInCycle.collectAsState()
     var showBrokeDialog by remember { mutableStateOf(false) }
+    val savingsChallenge by viewModel.savingsChallenge.collectAsState()
+    var showChallengeDialog by remember { mutableStateOf(false) }
+    var confirmStopChallenge by remember { mutableStateOf(false) }
+    if (showChallengeDialog) {
+        com.example.ui.components.SavingsChallengeDialog(
+            suggestedCap = remember { viewModel.suggestedChallengeCap() },
+            onDismiss = { showChallengeDialog = false },
+            onStart = { cap, days ->
+                showChallengeDialog = false
+                viewModel.startSavingsChallenge(cap, days)
+            },
+        )
+    }
+    if (confirmStopChallenge) {
+        AlertDialog(
+            onDismissRequest = { confirmStopChallenge = false },
+            title = { Text(stringResource(R.string.challenge_stop_title)) },
+            text = { Text(stringResource(R.string.challenge_stop_body)) },
+            confirmButton = {
+                TextButton(onClick = { confirmStopChallenge = false; viewModel.abandonSavingsChallenge() }) {
+                    Text(stringResource(R.string.challenge_stop), color = dangerColor)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmStopChallenge = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
     if (showBrokeDialog) {
         com.example.ui.components.BrokeModeDialog(
             daysLeft = daysLeftForBroke,
@@ -255,6 +281,35 @@ fun BudgetScreen(
                 } else {
                     com.example.ui.components.BrokeModeEntryCard(
                         onActivate = { showBrokeDialog = true },
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    )
+                }
+            }
+
+            // ── تحدي ٣٠ يوم توفير ────────────────────────────────────────────────
+            item {
+                val ch = savingsChallenge
+                if (ch != null) {
+                    val today = java.time.LocalDate.now()
+                    val dayIndex = com.example.data.SavingsChallengeMath.dayIndex(ch, today)
+                    val shareText = stringResource(R.string.challenge_share_text, dayIndex, ch.lengthDays, ch.streak)
+                    val shareTitle = stringResource(R.string.challenge_share_cd)
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+                        com.example.ui.components.SavingsChallengeCard(
+                            challenge = ch,
+                            dayIndex = dayIndex,
+                            todaySpent = remember(transactions, ch) {
+                                com.example.data.SavingsChallengeMath.spentOn(transactions, today, java.time.ZoneId.systemDefault())
+                            },
+                            onShare = { com.example.ui.components.ZadShare.shareText(context, shareText, shareTitle) },
+                        )
+                        TextButton(onClick = { confirmStopChallenge = true }, modifier = Modifier.heightIn(min = 44.dp)) {
+                            Text(stringResource(R.string.challenge_stop), color = onSurfaceVariant)
+                        }
+                    }
+                } else {
+                    com.example.ui.components.SavingsChallengeEntryCard(
+                        onStart = { showChallengeDialog = true },
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
                     )
                 }

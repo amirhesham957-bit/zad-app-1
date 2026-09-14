@@ -2020,4 +2020,22 @@
     <string name="broke_mode_dialog_title">Emergency mode</string>
     <string name="broke_mode_dialog_body">%1$d days left. Enter what you actually have, or leave it empty to use your balance.</string>
     <string name="broke_mode_cash_label">How much do you have until month end?</string>
+    <string name="challenge_title">%1$d-day savings challenge</string>
+    <string name="challenge_day_of">Day %1$d of %2$d</string>
+    <string name="challenge_streak">in a row</string>
+    <string name="challenge_days_won">days won</string>
+    <string name="challenge_best">best streak</string>
+    <string name="challenge_today">Spent today: %1$s of %2$s</string>
+    <string name="challenge_share_cd">Share the challenge</string>
+    <string name="challenge_share_text">Day %1$d of my %2$d-day savings challenge with Zad 🔥 %3$d days in a row! Want to challenge me?</string>
+    <string name="challenge_entry_title">30-day savings challenge</string>
+    <string name="challenge_entry_sub">A daily cap, a streak, and Zad cheering you on out loud at every milestone</string>
+    <string name="challenge_start">Start the challenge</string>
+    <string name="challenge_dialog_suggested">I suggested a cap a little under your average spend — adjust it as you like.</string>
+    <string name="challenge_dialog_no_suggestion">Set the most you will spend in a day.</string>
+    <string name="challenge_cap_label">Daily cap</string>
+    <string name="challenge_length_fmt">%1$d days</string>
+    <string name="challenge_stop">Stop the challenge</string>
+    <string name="challenge_stop_title">Stop the challenge?</string>
+    <string name="challenge_stop_body">Your streak stops and the days you won still count. You can start again any time.</string>
 </resources>

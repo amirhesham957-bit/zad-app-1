@@ -2031,4 +2031,22 @@
     <string name="broke_mode_dialog_title">وضع الطوارئ</string>
     <string name="broke_mode_dialog_body">فاضل %1$d يوم. اكتب اللي معاك فعلاً، أو سيبه فاضي وأحسب من رصيدك.</string>
     <string name="broke_mode_cash_label">معاك كام لآخر الشهر؟</string>
+    <string name="challenge_title">تحدي %1$d يوم توفير</string>
+    <string name="challenge_day_of">اليوم %1$d من %2$d</string>
+    <string name="challenge_streak">ورا بعض</string>
+    <string name="challenge_days_won">يوم كسبته</string>
+    <string name="challenge_best">أطول سلسلة</string>
+    <string name="challenge_today">صرفت النهارده %1$s من %2$s</string>
+    <string name="challenge_share_cd">شارك التحدي</string>
+    <string name="challenge_share_text">أنا في اليوم %1$d من تحدي %2$d يوم توفير مع زاد 🔥 وسلسلتي %3$d يوم ورا بعض! تيجي تتحداني؟</string>
+    <string name="challenge_entry_title">تحدي ٣٠ يوم توفير</string>
+    <string name="challenge_entry_sub">سقف يومي، سلسلة أيام، وزاد تحتفل معاك بصوتها في كل محطة</string>
+    <string name="challenge_start">ابدأ التحدي</string>
+    <string name="challenge_dialog_suggested">اقترحت سقف أقل شوية من متوسط صرفك — عدّله براحتك.</string>
+    <string name="challenge_dialog_no_suggestion">حدد أقصى مبلغ هتصرفه في اليوم.</string>
+    <string name="challenge_cap_label">السقف اليومي</string>
+    <string name="challenge_length_fmt">%1$d يوم</string>
+    <string name="challenge_stop">إيقاف التحدي</string>
+    <string name="challenge_stop_title">توقف التحدي؟</string>
+    <string name="challenge_stop_body">السلسلة هتقف والأيام اللي كسبتها هتفضل محسوبة. تقدر تبدأ تاني وقت ما تحب.</string>
 </resources>

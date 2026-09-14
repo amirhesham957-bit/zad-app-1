@@ -782,6 +782,25 @@ export const validateSetBrokeMode: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+// تحدي ٣٠ يوم توفير (20260914010000).
+export const validateStartSavingsChallenge: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["start_savings_challenge"] ?? 0) >= 1) return { ok: false, reason: "تحدي واحد في المرة" };
+  if (input.daily_cap !== undefined && input.daily_cap !== null) {
+    const v = Number(input.daily_cap);
+    if (!Number.isFinite(v) || v < 1 || v > 10_000_000) return { ok: false, reason: "daily_cap لازم رقم موجب — السقف اليومي" };
+  }
+  if (input.length_days !== undefined && input.length_days !== null) {
+    const d = Number(input.length_days);
+    if (!Number.isInteger(d) || d < 7 || d > 90) return { ok: false, reason: "length_days من ٧ لـ ٩٠ يوم" };
+  }
+  return { ok: true };
+};
+
+export const validateStopSavingsChallenge: Validator = (_input, _snap, ctx) => {
+  if ((ctx.counts["stop_savings_challenge"] ?? 0) >= 1) return { ok: false, reason: "التحدي اتقفل خلاص" };
+  return { ok: true };
+};
+
 export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
@@ -853,6 +872,8 @@ export const VALIDATORS: Record<string, Validator> = {
   add_place_reminder: validateAddPlaceReminder,
   cancel_place_reminder: validateCancelPlaceReminder,
   set_broke_mode: validateSetBrokeMode,
+  start_savings_challenge: validateStartSavingsChallenge,
+  stop_savings_challenge: validateStopSavingsChallenge,
 };
 
 /**
@@ -879,6 +900,7 @@ export const MUTATING_TOOLS = [
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",
   "set_broke_mode",
+  "start_savings_challenge", "stop_savings_challenge",
   // أمر واجهة — قراءة/تنقّل بس، مش كتابة بيانات. مش في CONFIRM_REQUIRED أبداً.
   "app_command",
   // العقل بيتعلم — كتابة في zad_skills بس (مش بيانات عميل).
