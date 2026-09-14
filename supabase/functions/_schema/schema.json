@@ -981,6 +981,27 @@
     "stores",
     "user_id"
   ],
+  "zad_customer_profile": [
+    "age_range",
+    "city",
+    "created_at",
+    "dialect",
+    "gender",
+    "household_role",
+    "household_size",
+    "income_source",
+    "interests",
+    "kids_count",
+    "notes",
+    "occupation",
+    "pay_day",
+    "pay_frequency",
+    "preferred_name",
+    "updated_at",
+    "updated_by",
+    "user_id",
+    "work_schedule"
+  ],
   "zad_broke_mode": [
     "cash_left",
     "currency",

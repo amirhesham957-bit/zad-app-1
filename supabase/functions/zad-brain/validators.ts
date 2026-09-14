@@ -801,6 +801,16 @@ export const validateStopSavingsChallenge: Validator = (_input, _snap, ctx) => {
   return { ok: true };
 };
 
+// ملف العميل (20260914012000) — «بشتغل مهندس»، «أنا أم لتلات عيال»، «بقبض يوم ٢٥».
+export const validateUpdateCustomerProfile: Validator = async (input, _snap, ctx) => {
+  if ((ctx.counts["update_customer_profile"] ?? 0) >= 3) return { ok: false, reason: "ملف العميل اتحدث كفاية في اللفة دي" };
+  const { sanitizeProfilePatch } = await import("../_shared/customerProfile.ts");
+  const { patch, rejected } = sanitizeProfilePatch(input as Record<string, unknown>);
+  if (rejected.length) return { ok: false, reason: `قيم مش صالحة في: ${rejected.join("، ")} — راجع الأنواع المسموحة في وصف الأداة` };
+  if (Object.keys(patch).length === 0) return { ok: false, reason: "مفيش ولا حقل يتسجل — ابعت الحقل اللي العميل قاله بس" };
+  return { ok: true };
+};
+
 export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
@@ -872,6 +882,7 @@ export const VALIDATORS: Record<string, Validator> = {
   add_place_reminder: validateAddPlaceReminder,
   cancel_place_reminder: validateCancelPlaceReminder,
   set_broke_mode: validateSetBrokeMode,
+  update_customer_profile: validateUpdateCustomerProfile,
   start_savings_challenge: validateStartSavingsChallenge,
   stop_savings_challenge: validateStopSavingsChallenge,
 };
@@ -901,6 +912,7 @@ export const MUTATING_TOOLS = [
   "add_place_reminder", "cancel_place_reminder",
   "set_broke_mode",
   "start_savings_challenge", "stop_savings_challenge",
+  "update_customer_profile",
   // أمر واجهة — قراءة/تنقّل بس، مش كتابة بيانات. مش في CONFIRM_REQUIRED أبداً.
   "app_command",
   // العقل بيتعلم — كتابة في zad_skills بس (مش بيانات عميل).

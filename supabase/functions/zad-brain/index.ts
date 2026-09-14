@@ -70,6 +70,7 @@ import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
+import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -961,6 +962,19 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     dataErrors.push({ source: "مواعيدك" });
   }
 
+  // ملف العميل (20260914012000): إنت مين — الاسم والنوع ودوره في البيت وشغله وميعاد قبضه. كان
+  // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
+  const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
+    sb.from("zad_customer_profile")
+      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes")
+      .eq("user_id", userId).maybeSingle(),
+    sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
+  ]);
+  if (profileErr) {
+    console.error("[snapshot] zad_customer_profile failed:", profileErr.message);
+    dataErrors.push({ source: "ملفك الشخصي" });
+  }
+
   // وضع الطوارئ «مفلس باقي الشهر» — العقل لازم يعرفه عشان مايقترحش شراء ولا أكل من برّه.
   const { data: brokeRow, error: brokeErr } = await sb.from("zad_broke_mode")
     .select("started_at,ends_at,ended_at,cash_left,daily_cap,currency")
@@ -1158,6 +1172,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     })(),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
+    // كارت العميل — مين بتكلمه. missing_important = اللي يستاهل يتسأل عنه بلطف لو الكلام جاب سيرته.
+    customer: customerCard(profileRow as Record<string, unknown> | null, {
+      name: (nameRow as { name?: string | null } | null)?.name ?? null,
+      gender: userRes.data?.gender ?? null,
+      familyRole: (family as { mine?: { role?: string } } | null)?.mine?.role ?? null,
+    }),
     // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
     broke_mode: brokeActive ? brokeRow : null,
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
@@ -2555,6 +2575,23 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
       return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}. قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.`;
     }
+    case "update_customer_profile": {
+      const { patch } = sanitizeProfilePatch(input as Record<string, unknown>);
+      const { data: before } = await sb.from("zad_customer_profile").select("*").eq("user_id", userId).maybeSingle();
+      const w = await writeRows(
+        sb.from("zad_customer_profile").upsert({
+          user_id: userId, ...patch,
+          updated_by: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" }).select("user_id"),
+        "تحديث ملف العميل",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: patch });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_customer_profile", targetId: userId, previous: before, next: patch });
+      return `اتسجل في ملفه: ${Object.keys(patch).join("، ")}. متقولهوش إنك سجلت — كمّل الكلام عادي وخاطبه على أساس اللي عرفته.`;
+    }
     case "set_broke_mode": {
       const src = scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat";
       if (input.active === false) {
@@ -3852,6 +3889,34 @@ const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    // ملف العميل (20260914012000).
+    name: "update_customer_profile",
+    description:
+      "سجّل حقيقة ثابتة عن العميل نفسه أول ما يقولها، في نص الكلام ومن غير ما تسأل إذن: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، سنه، شغله ومواعيده، ميعاد قبضه ونظامه، مصدر دخله، عدد اللي في البيت والعيال، مدينته، اللهجة اللي عايز يتكلم بيها، اهتماماته. " +
+      "أمثلة: «أنا أم لتلات عيال» ⇒ household_role=mother, kids_count=3. «بشتغل مهندس وبقبض يوم ٢٥» ⇒ occupation, pay_day=25, pay_frequency=monthly. «كلمني مصري» ⇒ dialect=EG. «أنا تعبانة» ⇒ gender=female. " +
+      "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش.",
+    input_schema: {
+      type: "object",
+      properties: {
+        preferred_name: { type: "string" },
+        gender: { type: "string", enum: ["male", "female"] },
+        household_role: { type: "string", enum: ["father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other"] },
+        age_range: { type: "string", enum: ["under_18", "18_24", "25_34", "35_44", "45_54", "55_plus"] },
+        occupation: { type: "string" },
+        work_schedule: { type: "string", description: "مواعيد شغله لو قالها، مثال «من ٩ لـ٥ غير الجمعة»" },
+        pay_day: { type: "number", description: "يوم القبض في الشهر ١-٣١" },
+        pay_frequency: { type: "string", enum: ["monthly", "biweekly", "weekly", "daily", "irregular"] },
+        income_source: { type: "string", description: "راتب، شغل حر، معاش، مشروع..." },
+        household_size: { type: "number" },
+        kids_count: { type: "number" },
+        city: { type: "string" },
+        dialect: { type: "string", enum: ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] },
+        interests: { type: "array", items: { type: "string" } },
+        notes: { type: "string", description: "حاجة مهمة عنه مش ليها خانة، مختصرة" },
+      },
+    },
+  },
+  {
     // تحدي ٣٠ يوم توفير (20260914010000).
     name: "start_savings_challenge",
     description:
@@ -4906,7 +4971,12 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     + skillsBlock(learnedSkills)
     + buildChatSystemPrompt({
       ...snap,
-      memory: relevantMemory,
+      // الملاحظات اللي بتوصف العميل نفسه (العيلة، الراتب، السكن...) بتدخل دايماً — كانت بتقع
+      // برّه أقرب ١٢ ملاحظة للرسالة فالعقل «ينسى» العميل أول ما الموضوع يتغير.
+      memory: [
+        ...((snap.memory ?? []) as Array<{ id: string; scope: string }>).filter((m) => IDENTITY_MEMORY_SCOPES.has(m.scope)),
+        ...relevantMemory.filter((m: { scope: string }) => !IDENTITY_MEMORY_SCOPES.has(m.scope)),
+      ].slice(0, 20),
       // لهجة العميل من كلامه هو (الرسالة + رسايله اللي فاتت) — مش من ردود زاد.
       dialect_hint_text: [
         ...(Array.isArray(body.history) ? body.history : [])
@@ -5684,8 +5754,10 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 التعليمات الأساسية والبرسونا الملزمة:
 1. **اسمك ومخاطبة العميل (ثابتان)**:
    - اسمك "زاد". **مايتغيّرش** حسب العميل ولا حسب الموضوع، ومتخترعش لنفسك اسم تاني.
-   - **متخمّنش جنس العميل ومتبنيش عليه.** لو مش عارف، خاطبه بصيغة محايدة دافية — "تمام"، "خلاص كده"، "معاك" — بدل "يا سيدي" أو "يا فندم".
-   - لو العميل خاطب نفسه بصيغة واضحة، امشي عليها من غير تعليق — **وثبّت عليها بعد كده**. التقلب بين رسالة والتانية بيخلي الشخصية تبان مكسورة.
+   - **إنت عارف العميل ده (customer في الـSNAPSHOT)**: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، شغله، ميعاد قبضه، عياله، مدينته. نادِه باسمه أحياناً (مش كل رسالة)، وخاطبه بصيغة نوعه لو معروف، واستخدم اللي تعرفه عنه في كلامك («قربنا من ٢٥ ميعاد قبضك»، «العيال عاملين إيه؟»).
+   - لو customer.gender مش معروف: **متخمّنش** — صيغة محايدة دافية. ولو العميل استخدم صيغة واضحة لنفسه («أنا تعبانة»، «أنا أبوهم») سجّلها بـ update_customer_profile فوراً وثبّت عليها.
+   - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت.
+   - لو فيه حاجة في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode)}
@@ -5710,6 +5782,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
    - السكوبات المعتمدة للملف ده:
      • "household_profile" — العيلة والعيال. "مصاريف مدرسة أحمد ونور" ⇒ عيّلين في سن المدرسة. "جوزي" / "مراتي" ⇒ متجوز.
      • "salary_plan" — ميعاد الدخل ونمطه. **السكوب ده مستخدم فعلاً، متعملش واحد جديد للراتب.**
+   - **الحقايق المنظّمة عن العميل نفسه** (الاسم، النوع، الدور، الشغل، يوم القبض، عدد العيال، المدينة، اللهجة) مكانها update_customer_profile مش remember — remember للي مالوش خانة.
      • "housing_commitments" — إيجار، قسط سكن، مرافق ثابتة، وقيمتها لو اتقالت.
      • "primary_bank" — البنك أو المحفظة اللي أغلب معاملاته منها.
    - **اكتب الاستنتاج مش الجملة الخام.** "عنده عيّلين في سن المدرسة (أحمد ونور)" أنفع من نسخ كلامه. وحطّ "confidence" صادقة: تصريح مباشر عالي، استنتاج من إشارة واحدة منخفض.

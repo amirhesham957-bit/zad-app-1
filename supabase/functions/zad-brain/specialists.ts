@@ -263,6 +263,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
     "set_broke_mode",
     "start_savings_challenge", "stop_savings_challenge",
+    // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
+    "update_customer_profile",
   ]);
   return tools.filter((t) => allowed.has(t.name));
 }
