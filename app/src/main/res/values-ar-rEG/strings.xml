@@ -2099,4 +2099,6 @@
     <string name="who_are_you_title">عرّفني بنفسك</string>
     <string name="who_are_you_body">اسمك، وتحب أكلمك بصيغة راجل ولا ست، وشغلك وميعاد قبضك — عشان أكلمك صح وأفتكرك.</string>
     <string name="who_are_you_cta">يلا نتعرّف</string>
+    <string name="chef_badge_from_inventory">✓ مكتملة من مخزونك</string>
+    <string name="chef_badge_missing_count">ناقصك %1$d</string>
 </resources>

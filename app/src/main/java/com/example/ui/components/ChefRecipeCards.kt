@@ -66,12 +66,15 @@ fun ChefRecipeRow(
     onRecipeClick: ((ZadRecipe) -> Unit)? = null,
 ) {
     if (recipes.isEmpty()) return
+    // «من مخزونك» الأول (للتوفير)، وبعدها الوجبات اللي ناقصها حاجة — نفس ترتيب السيرفر، مضمون هنا
+    // حتى لو الرد جه من كاش قديم.
+    val ordered = remember(recipes) { recipes.sortedBy { it.missingIngredientsToBuy.isNotEmpty() } }
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
     ) {
-        itemsIndexed(recipes, key = { index, _ -> "recipe_$index" }) { _, recipe ->
+        itemsIndexed(ordered, key = { index, _ -> "recipe_$index" }) { _, recipe ->
             ChefRecipeCard(
                 recipe = recipe,
                 onAddMissingToShopping = onAddMissingToShopping,
@@ -138,6 +141,20 @@ private fun ChefRecipeCard(
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            // الشارة: «مكتملة من مخزونك» أو «ناقصك N» — العميل يعرف من أول نظرة هيشتري ولا لأ.
+            val complete = recipe.missingIngredientsToBuy.isEmpty()
+            Text(
+                if (complete) stringResource(R.string.chef_badge_from_inventory)
+                else stringResource(R.string.chef_badge_missing_count, recipe.missingIngredientsToBuy.size),
+                style = Typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (complete) primary else secondaryDark,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background((if (complete) primary else secondaryDark).copy(alpha = 0.12f))
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.height(6.dp))
             Text(
                 recipe.recipeName,
                 style = Typography.titleSmall,

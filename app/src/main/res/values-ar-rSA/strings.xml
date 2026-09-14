@@ -2088,4 +2088,6 @@
     <string name="who_are_you_title">عرّفني على نفسك</string>
     <string name="who_are_you_body">اسمك، وتبيني أكلمك بصيغة رجّال ولا حرمة، وشغلك وموعد راتبك — عشان أكلمك صح وأتذكرك.</string>
     <string name="who_are_you_cta">يلا نتعرّف</string>
+    <string name="chef_badge_from_inventory">✓ كاملة من مخزونك</string>
+    <string name="chef_badge_missing_count">ناقصك %1$d</string>
 </resources>

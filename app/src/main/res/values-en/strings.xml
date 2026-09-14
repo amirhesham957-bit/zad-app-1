@@ -2153,4 +2153,6 @@ or enter the code: %2$s</string>
     <string name="who_are_you_title">Tell me about you</string>
     <string name="who_are_you_body">Your name, how you\'d like to be addressed, your work and payday — so I talk to you right and remember you.</string>
     <string name="who_are_you_cta">Let\'s do it</string>
+    <string name="chef_badge_from_inventory">✓ All in your pantry</string>
+    <string name="chef_badge_missing_count">Missing %1$d</string>
 </resources>
