@@ -19,7 +19,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
-import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice } from "./voiceAlert.ts";
+import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
   adCreditKeyboard,
@@ -222,6 +222,7 @@ async function deliverVoiceAlert(
   body: string,
   emotion: VoiceEmotion,
   speech?: string,
+  moment?: unknown,
 ): Promise<void> {
   // لهجة الحساب نفسه — نفس مصدر المكالمة الحية وقراءة الإشعارات.
   let country: string | null = null;
@@ -229,7 +230,7 @@ async function deliverVoiceAlert(
     const { data } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
     country = (data as { country?: string | null } | null)?.country ?? null;
   } catch (_e) { /* من غير لهجة */ }
-  const text = speech?.trim() ? alertSpeechText("", speech) : alertSpeechText(title, body);
+  const text = speech?.trim() ? alertSpeechText("", speech, speechLimitForMoment(moment)) : alertSpeechText(title, body);
   const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion, country });
   if (!pcm) return; // السبب اتسجّل جوه synthesizeAlertPcm — النص وصل خلاص.
   await sendTelegramVoice(chatId, pcmToMp3(pcm));
@@ -2048,7 +2049,7 @@ Deno.serve(async (req: Request) => {
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.
       const voice = wantsVoice(payload);
       if (voice) {
-        runInBackground(deliverVoiceAlert(sb, user_id, chatId, title, body, alertEmotion(payload, `${title} ${body}`), typeof speech === "string" ? speech : undefined));
+        runInBackground(deliverVoiceAlert(sb, user_id, chatId, title, body, alertEmotion(payload, `${title} ${body}`), typeof speech === "string" ? speech : undefined, (payload as { moment?: unknown }).moment));
       }
       return new Response(JSON.stringify({ ok: true, delivered: true, voice: voice ? "queued" : "none" }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {

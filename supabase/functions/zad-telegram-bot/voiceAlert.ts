@@ -20,6 +20,12 @@ export const ALERT_TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro
 /** نفس صوت سارة في كل القنوات (`_shared/zadVoice.ts`). */
 export const ALERT_VOICE_NAME = DEFAULT_VOICE;
 export const ALERT_SPEECH_MAX_CHARS = 320;
+/** حكايات أطول من تنبيه (تقرير الجمعة): ٤–٦ جمل. نفس سقف الموبايل (VoiceMomentSpeaker = 600). */
+export const STORY_SPEECH_MAX_CHARS = 600;
+
+export function speechLimitForMoment(moment: unknown): number {
+  return typeof moment === "string" && moment.startsWith("weekly_money") ? STORY_SPEECH_MAX_CHARS : ALERT_SPEECH_MAX_CHARS;
+}
 const PCM_SAMPLE_RATE = 24_000;
 
 /** طلب realtime_push عايز فويس؟ `true` صريحة بس — أي قيمة تانية = نص بس زي الأول. */

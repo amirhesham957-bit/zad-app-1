@@ -171,6 +171,10 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   goal_achieved: "proud",
   tasbiha_reminder: "playful",
   ignored_days: "sulky",
+  // «فين راحت فلوسي؟» كل جمعة — النبرة بتتحدد من الأرقام (voiceMoments.summarizeWeek).
+  weekly_money_proud: "proud",
+  weekly_money_reproach: "reproachful",
+  weekly_money_story: "warm",
 };
 
 export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmotion {
