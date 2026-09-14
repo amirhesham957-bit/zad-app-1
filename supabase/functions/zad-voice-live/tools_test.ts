@@ -6,11 +6,12 @@ import {
   describeVoiceProposal,
   DIRECT_VOICE_TOOLS,
   isConfirmRequired,
+  PENDING_CONTROL_TOOLS,
   VOICE_TOOLS,
 } from "./tools.ts";
 
-Deno.test("VOICE_TOOLS is the union of direct + confirm tools, no overlap", () => {
-  assertEquals(VOICE_TOOLS.length, DIRECT_VOICE_TOOLS.length + CONFIRM_VOICE_TOOLS.length + 1);
+Deno.test("VOICE_TOOLS is the union of direct + confirm + pending-control tools + the brain, no overlap", () => {
+  assertEquals(VOICE_TOOLS.length, DIRECT_VOICE_TOOLS.length + CONFIRM_VOICE_TOOLS.length + PENDING_CONTROL_TOOLS.length + 1);
   const directNames = new Set(DIRECT_VOICE_TOOLS.map((t) => t.name));
   const confirmNames = new Set(CONFIRM_VOICE_TOOLS.map((t) => t.name));
   for (const name of confirmNames) assertEquals(directNames.has(name), false);

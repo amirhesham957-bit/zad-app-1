@@ -159,7 +159,7 @@ export const CONFIRM_VOICE_TOOLS: VoiceToolDef[] = [
 /** بيتضاف لـsystemInstruction — الموديل محتاج يعرف معنى status اللي بيرجعله من
  *  الأداة، وده عقد اخترعناه إحنا (33.2) مش حاجة Gemini عارفها بنفسه. */
 export const VOICE_TOOL_USAGE_INSTRUCTION =
-  "لو نداء أداة رجّعلك نتيجتها status=\"awaiting_confirmation\"، معناها ده أداة فلوس ولسه محتاجة تأكيد العميل بصوته — قوله الملخص اللي في summary بصيغة سؤال واضح (\"تقصد كذا؟ أأكد؟\") واستنى رده. لو قال أيوه/تمام/أكد بأي صيغة، نادِ نفس الأداة تاني بنفس البيانات بالظبط. لو قال لأ، سيبها ومتناديهاش تاني. لو status=\"done\" أو \"failed\"، اتصرف عادي: قول اللي حصل من غير ما تسأل تأكيد تاني. " +
+  "لو نداء أداة رجّعلك نتيجتها status=\"awaiting_confirmation\"، معناها ده أداة فلوس ولسه محتاجة تأكيد العميل بصوته — قوله الملخص اللي في summary بصيغة سؤال واضح (\"تقصد كذا؟ أأكد؟\") واستنى رده. لو قال أيوه/تمام/أكد/ماشي بأي صيغة، نادِ confirm_pending_money_action فوراً (من غير بيانات). لو قال لأ، نادِ cancel_pending_money_action. لو status=\"done\" أو \"failed\"، اتصرف عادي: قول اللي حصل من غير ما تسأل تأكيد تاني، ومتقوليش «سجلت» إلا لو status=\"done\". " +
   "أي طلب مالوش أداة مخصصة (تذكير، ميعاد، اشتراك، التزام، صيانة، دين، هدف، عيلة) ابعتيه لـ ask_zad_brain بدل ما تقولي إنك مش قادرة — العقل عنده كل أدوات التطبيق.";
 
 /**
@@ -185,7 +185,23 @@ export const BRAIN_VOICE_TOOL: VoiceToolDef = {
   },
 };
 
-export const VOICE_TOOLS: VoiceToolDef[] = [...DIRECT_VOICE_TOOLS, ...CONFIRM_VOICE_TOOLS, BRAIN_VOICE_TOOL];
+/** تأكيد/إلغاء آخر عملية فلوس معلّقة — من غير بيانات، عشان «أيوه» ماتتوهش في إعادة صياغة (confirmations.ts). */
+export const CONFIRM_PENDING_TOOL_NAME = "confirm_pending_money_action";
+export const CANCEL_PENDING_TOOL_NAME = "cancel_pending_money_action";
+export const PENDING_CONTROL_TOOLS: VoiceToolDef[] = [
+  {
+    name: CONFIRM_PENDING_TOOL_NAME,
+    description: "العميل وافق على عملية الفلوس اللي لسه سألتيه عنها (قال أيوه/تمام/أكد). بتنفّذ آخر عملية معلّقة زي ما اتقالت له بالظبط.",
+    parameters: { type: "object", properties: {} },
+  },
+  {
+    name: CANCEL_PENDING_TOOL_NAME,
+    description: "العميل رفض عملية الفلوس اللي سألتيه عنها (قال لأ/الغي).",
+    parameters: { type: "object", properties: {} },
+  },
+];
+
+export const VOICE_TOOLS: VoiceToolDef[] = [...DIRECT_VOICE_TOOLS, ...CONFIRM_VOICE_TOOLS, ...PENDING_CONTROL_TOOLS, BRAIN_VOICE_TOOL];
 const CONFIRM_NAMES = new Set(CONFIRM_VOICE_TOOLS.map((t) => t.name));
 export function isConfirmRequired(toolName: string): boolean {
   return CONFIRM_NAMES.has(toolName);

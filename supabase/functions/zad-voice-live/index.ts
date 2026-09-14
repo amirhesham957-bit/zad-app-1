@@ -38,11 +38,12 @@
 //   modalities not supported". الافتراضي هنا gemini-3.1-flash-live-preview (جيل 3.x،
 //   نفس تفضيل المشروع الموثّق في CLAUDE.md إن 2.5 كتير منها بيتقفل لعملاء جداد).
 
+import { PendingMoneyActions } from "./confirmations.ts";
 import { customerCard } from "../_shared/customerProfile.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildVoiceSystemInstruction } from "./persona.ts";
 import { formatVoiceContext, loadVoiceContext } from "./context.ts";
-import { ASK_BRAIN_TOOL_NAME, describeVoiceProposal, isConfirmRequired, VOICE_TOOL_USAGE_INSTRUCTION, VOICE_TOOLS } from "./tools.ts";
+import { ASK_BRAIN_TOOL_NAME, describeVoiceProposal, isConfirmRequired, VOICE_TOOL_USAGE_INSTRUCTION, VOICE_TOOLS, CONFIRM_PENDING_TOOL_NAME, CANCEL_PENDING_TOOL_NAME } from "./tools.ts";
 import {
   CLOSE_ENTITLEMENT,
   CLOSE_PROVIDER_UNAVAILABLE,
@@ -231,7 +232,8 @@ Deno.serve(async (req) => {
   // بند 33.2 — توقيعات toolCall (اسم+آرجيومنتس) لأدوات الفلوس اللي اتسألت للتأكيد
   // في الجلسة دي، لسه مستنية نداء تاني بنفس التوقيعة. Set في الذاكرة، مربوطة بعمر
   // الاتصال — جلسة جديدة = تأكيدات جديدة، مفيش حفظ عبر الجلسات عن قصد.
-  const pendingConfirmSignatures = new Set<string>();
+  // عملية الفلوس المعلّقة بالبيانات اللي العميل سمعها — مش توقيعة حرفية (confirmations.ts).
+  const pendingMoney = new PendingMoneyActions();
 
   /** بينده zad-brain's agent_execute (أدوات مباشرة) أو agent_confirm (فلوس بعد تأكيد)
    *  عبر HTTP بمفتاح الخدمة — نفس نمط resolveAuthedUserId's service-role bypass
@@ -300,21 +302,35 @@ Deno.serve(async (req) => {
         });
         continue;
       }
+      if (fc.name === CONFIRM_PENDING_TOOL_NAME) {
+        const pending = pendingMoney.confirm();
+        if (!pending) {
+          responses.push({ id: fc.id, name: fc.name, response: { status: "failed", summary: "مفيش عملية مستنية تأكيد — اسأل العميل عن التفاصيل تاني." } });
+          continue;
+        }
+        const result = await callZadBrainTool("agent_confirm", pending.tool, pending.args);
+        console.log(`[voice-live] confirmed ${pending.tool} → ${result.ok ? "done" : "failed"}`);
+        responses.push({ id: fc.id, name: fc.name, response: { status: result.ok ? "done" : "failed", summary: result.summary } });
+        continue;
+      }
+      if (fc.name === CANCEL_PENDING_TOOL_NAME) {
+        const had = pendingMoney.cancel();
+        responses.push({ id: fc.id, name: fc.name, response: { status: "done", summary: had ? "اتلغت ومتسجلتش." : "مكانش فيه حاجة معلّقة." } });
+        continue;
+      }
       if (isConfirmRequired(fc.name)) {
-        const signature = `${fc.name}:${JSON.stringify(args)}`;
-        if (!pendingConfirmSignatures.has(signature)) {
-          // أول مرة — سؤال بس، مفيش تنفيذ.
-          pendingConfirmSignatures.add(signature);
+        const decision = pendingMoney.onToolCall(fc.name, args);
+        if (decision.action === "ask") {
+          // أول مرة (أو عملية مختلفة) — سؤال بس، مفيش تنفيذ.
           responses.push({
             id: fc.id, name: fc.name,
             response: { status: "awaiting_confirmation", summary: describeVoiceProposal(fc.name, args) },
           });
           continue;
         }
-        // نداء تاني بنفس التوقيعة = العميل قال "أيوه". بننساها فوراً — تكرار لاحق
-        // لنفس الأداة والبيانات لازم يتسأل تاني، مش يتنفّذ تاني بصمت.
-        pendingConfirmSignatures.delete(signature);
-        const result = await callZadBrainTool("agent_confirm", fc.name, args);
+        // نفس العملية تاني = العميل وافق. بننفّذ البيانات اللي اتقالت له (مش إعادة الصياغة).
+        const result = await callZadBrainTool("agent_confirm", fc.name, decision.args);
+        console.log(`[voice-live] confirmed ${fc.name} (repeat call) → ${result.ok ? "done" : "failed"}`);
         responses.push({
           id: fc.id, name: fc.name,
           response: { status: result.ok ? "done" : "failed", summary: result.summary },
