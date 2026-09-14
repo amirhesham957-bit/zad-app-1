@@ -42,7 +42,8 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
   const since72h = new Date(now - 72 * 3600_000).toISOString();
   const since7d = new Date(now - 7 * 86400_000).toISOString();
 
-  const [runs, moments, appts, fallbacks, actions, bindings, profiles, users] = await Promise.all([
+  const since14d = new Date(now - 14 * 86400_000).toISOString();
+  const [runs, moments, appts, fallbacks, actions, bindings, profiles, users, fcm, momentsAll] = await Promise.all([
     rows(sb.from("zad_brain_runs").select("trigger,status,error").gte("started_at", since72h).limit(1000)),
     rows(sb.from("zad_voice_moments").select("moment,status,delivery,error").gte("created_at", since72h).limit(1000)),
     rows(sb.from("zad_appointments").select("source,status").limit(1000)),
@@ -50,7 +51,9 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     rows(sb.from("agent_actions").select("tool_name,source").gte("created_at", since7d).limit(2000)),
     rows(sb.from("telegram_bindings").select("chat_id").not("chat_id", "is", null).limit(1000)),
     rows(sb.from("zad_customer_profile").select("gender,preferred_name,pay_day").limit(1000)),
-    rows(sb.from("zad_users").select("id").limit(1000)),
+    rows(sb.from("zad_users").select("country").limit(1000)),
+    rows(sb.from("zad_fcm_tokens").select("updated_at").limit(1000)),
+    rows(sb.from("zad_voice_moments").select("moment,status").limit(2000)),
   ]);
 
   const failedRuns = runs.list.filter((r) => r.status === "failed");
@@ -85,7 +88,10 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
       ...(actions.error ? { query_error: actions.error } : {}),
     },
     telegram_linked_chats: bindings.error ? bindings.error : bindings.list.length,
-    users: users.error ? users.error : users.list.length,
+    users: users.error ? users.error : { total: users.list.length, by_country: countBy(users.list, (u) => String(u.country ?? "null")) },
+    // «صباح الخير» الاحتياطية بتختار اللي سجّل دخول أو حدّث توكن FCM آخر ١٤ يوم.
+    fcm_tokens: fcm.error ? fcm.error : { total: fcm.list.length, fresh_14d: fcm.list.filter((t) => String(t.updated_at ?? "") > since14d).length },
+    voice_moments_all_time: momentsAll.error ? momentsAll.error : countBy(momentsAll.list, (r) => `${r.moment}|${r.status}`, 20),
     customer_profiles: profiles.error ? profiles.error : {
       rows: profiles.list.length,
       with_gender: profiles.list.filter((p) => p.gender).length,

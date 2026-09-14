@@ -2116,6 +2116,35 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // فحص فويس التنبيهات من غير إرسال (٢٠٢٦-٠٩-١٤): «البوت مابيبعتش فويسات». النص بيوصل (delivery.telegram
+  // = delivered) والصوت بيتعمل في الخلفية بعد الرد — أي فشل هناك بيتسجل في اللوج بس. هنا نفس الخطوات
+  // (TTS بصوت زاد + تحويل MP3) بجملة ثابتة، بالتوقيت والحجم. مفيش بيانات عميل ولا إرسال.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "voice_selftest") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    const text = alertSpeechText("", "صباح الخير يا بطل! النهارده عندك دوا الضغط الساعة تسعة، وميعاد البنك الساعة خمسة. متنساش تفطر كويس، وأنا معاك طول اليوم.", speechLimitForMoment("morning_greeting"));
+    const t0 = Date.now();
+    const origError = console.error;
+    const errors: string[] = [];
+    console.error = (...a: unknown[]) => { errors.push(a.map(String).join(" ").replace(/[^\x20-\x7E]/g, "").slice(0, 200)); origError(...a); };
+    try {
+      const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion: "warm" as VoiceEmotion, country: "EG" });
+      const ttsMs = Date.now() - t0;
+      if (!pcm) return Response.json({ ok: false, stage: "tts", tts_ms: ttsMs, errors });
+      const t1 = Date.now();
+      const mp3 = pcmToMp3(pcm);
+      return Response.json({
+        ok: true, keys: geminiKeysFromEnv().length, tts_ms: ttsMs, pcm_bytes: pcm.byteLength,
+        audio_seconds: Math.round(pcm.byteLength / 2 / 24000), mp3_ms: Date.now() - t1, mp3_bytes: mp3.byteLength, errors,
+      });
+    } catch (e) {
+      return Response.json({ ok: false, stage: "threw", error: String((e as Error)?.message ?? e).slice(0, 200), errors });
+    } finally {
+      console.error = origError;
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "realtime_push") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });

@@ -246,7 +246,7 @@ jobs:
           if [ -z "$SERVICE_KEY" ]; then echo "no service_role key from CLI"; exit 0; fi
           echo "::add-mask::$SERVICE_KEY"
           sleep 20
-          curl -sS --max-time 90 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-core-intelligence" \
+          curl -sS --max-time 240 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-core-intelligence" \
             -H "Authorization: Bearer $SERVICE_KEY" -H "Content-Type: application/json" \
             -d '{"action":"provider_health"}' > provider_health.json || true
           echo "### Provider health" >> "$GITHUB_STEP_SUMMARY"

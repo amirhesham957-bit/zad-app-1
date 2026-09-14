@@ -944,12 +944,33 @@ Deno.serve(async (req: Request) => {
       // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
       const geminiKeys = [1, 2, 3, 4, 5].map((i) => Deno.env.get(`ZAD_API_KEY_${i}`)).filter((k): k is string => !!k);
-      const [keysReport, tts, pipeline] = await Promise.all([
+      // فحوص حية في الفانكشنز التانية بسيكريتاتها الداخلية (مش بتطلع من السيرفر): حلقة أدوات العقل
+      // بجمل مصطنعة، وفويس تنبيهات تليجرام من غير إرسال.
+      const internalProbe = async (fn: string, init: RequestInit): Promise<unknown> => {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/${fn}`, { ...init, signal: AbortSignal.timeout(120000) });
+          const text = await res.text();
+          try { return { status: res.status, ...JSON.parse(text) }; } catch { return { status: res.status, body: text.replace(/[^\x20-\x7E]/g, "").slice(0, 160) }; }
+        } catch (e) {
+          return { error: String((e as Error)?.message ?? e).slice(0, 160) };
+        }
+      };
+      const [keysReport, tts, pipeline, brainTools, voiceNote] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
         ttsHealth(geminiKeys.length ? geminiKeys : [Deno.env.get("GEMINI_API_KEY") ?? ""].filter(Boolean)),
         pipelineHealth(supabase),
+        internalProbe("zad-brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ZAD-PROACTIVE-CRON-SECRET": Deno.env.get("ZAD_PROACTIVE_CRON_SECRET") ?? "" },
+          body: JSON.stringify({ action: "tools_probe" }),
+        }),
+        internalProbe("zad-telegram-bot?job=voice_selftest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": Deno.env.get("ZAD_REALTIME_PUSH_SECRET") ?? "" },
+          body: "{}",
+        }),
       ]);
-      return jsonResponse({ ...keysReport, tts, pipeline });
+      return jsonResponse({ ...keysReport, tts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal

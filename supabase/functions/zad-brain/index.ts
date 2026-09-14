@@ -5967,6 +5967,60 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
 
+    // فحص حي لحلقة الشات بجُمل مصطنعة (٢٠٢٦-٠٩-١٤): عدّادات ما بعد النشر قالت zad_appointments = صفر
+    // من يوم ما اتعملت، وzad_customer_profile = صفر، رغم ٩ لفات شات «ناجحة». يعني الموديل بيرد من
+    // غير ما ينادي الأدوات الجديدة. هنا نفس المسار (توجيه الوكيل + تقليل الأدوات + برومبت الشات +
+    // callModel) على snapshot مصطنع — مفيش أي بيانات عميل — وبنرجّع أسماء الأدوات اللي اتنادت
+    // وأي تحذير سقوط موديل. بيتنادى من provider_health بعد النشر.
+    if (body.action === "tools_probe") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const asciiOnly = (v: unknown) => String(v ?? "").replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").trim().slice(0, 160);
+      const cases = [
+        { expect: "add_appointment", message: "فكّريني بكرة الساعة ٥ العصر أروح البنك" },
+        { expect: "add_appointment", message: "عندي ميعاد دكتور أسنان يوم الخميس الساعة ١١ الصبح" },
+        { expect: "update_customer_profile", message: "على فكرة أنا اسمي كريم وبشتغل محاسب وبقبض يوم ٢٥" },
+      ];
+      const snap = {
+        country: "EG", currency: "EGP", now_local: localNowContext("Africa/Cairo"),
+        appointments: [], place_reminders: [], memory: [], customer: { missing_important: ["preferred_name", "gender", "pay_day"] },
+      };
+      const results: Array<Record<string, unknown>> = [];
+      for (const c of cases) {
+        const { primary, secondary } = routeSpecialists(c.message);
+        const tools = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary);
+        const warns: string[] = [];
+        const origWarn = console.warn;
+        console.warn = (...a: unknown[]) => { warns.push(asciiOnly(a.map(String).join(" "))); origWarn(...a); };
+        const started = Date.now();
+        try {
+          const reply = await callModel({
+            model: MODEL_ROUTINE,
+            system: soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
+            tools, history: [{ role: "user", text: c.message }], maxTokens: 1200,
+          });
+          const called = reply.toolCalls.map((t) => t.name);
+          results.push({
+            expect: c.expect, specialist: `${primary}/${secondary ?? "-"}`, tools_offered: tools.length,
+            expected_tool_offered: tools.some((t) => t.name === c.expect), called,
+            pass: called.includes(c.expect), text_chars: reply.text.length, ms: Date.now() - started,
+            fallovers: warns.slice(0, 4),
+          });
+        } catch (e) {
+          results.push({ expect: c.expect, error: asciiOnly((e as Error)?.message ?? e), ms: Date.now() - started, fallovers: warns.slice(0, 4) });
+        } finally {
+          console.warn = origWarn;
+        }
+      }
+      let baseHost = "";
+      try { baseHost = new URL(Deno.env.get("ZAD_BASE_URL") ?? "").host; } catch { /* مش مضبوط */ }
+      return new Response(JSON.stringify({
+        provider: Deno.env.get("ZAD_PROVIDER") ?? "(unset → anthropic)", base_url_host: baseHost, agent_model: MODEL_ROUTINE,
+        chat_tools_total: CHAT_TOOLS.length, results,
+      }), { headers: CORS_HEADERS });
+    }
+
     // STEP 1 diagnostic — bypasses everything else (no user_id/DB needed) so
     // ZAD_PROVIDER/ZAD_API_KEY/ZAD_MODEL_ROUTINE can be checked in isolation
     // before trusting any real run. { "smoke_test": true } in the body.
