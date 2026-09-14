@@ -71,6 +71,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -5484,9 +5485,43 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     return new Response(JSON.stringify({ ok: true, status: "ignored", classification: "failed_or_pending_transaction" }), { headers: CORS_HEADERS });
   }
 
+  // ── بوابة «فلوس اتحركت فعلاً؟» (notificationGate.ts) — قبل أي سؤال أو اقتراح. ──
+  const knownSender = knownFinancialSender(packageName, title);
+  let verdict: GateVerdict | null = null;
+  try {
+    const g = gatePrompt({ packageName, title, text, knownSender });
+    const reply = await callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 });
+    verdict = parseGateVerdict(reply.text ?? "");
+  } catch (e) {
+    console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
+  }
+  const gate = decideGate(verdict, knownSender);
+  const gateTag = `gate:${verdict?.kind ?? "unavailable"}:${verdict ? verdict.confidence.toFixed(2) : "-"}${knownSender ? ":known" : ""}`;
+  console.log(`[notification_gate] ${packageName} → ${gate} (${gateTag})`);
+  if (gate === "ignore") {
+    await mark("ignored", gateTag);
+    return new Response(JSON.stringify({ ok: true, status: "ignored", classification: "informational_only", gate: verdict?.kind ?? "unavailable" }), { headers: CORS_HEADERS });
+  }
+  if (gate === "reminder" && verdict) {
+    // تذكير دفع جاي — مش معاملة. ملاحظة في «رؤى زاد» بدل سؤال «إيداع ولا خصم».
+    const what = verdict.kind === "installment_due" ? "قسط" : verdict.kind === "subscription_renewal" ? "تجديد اشتراك" : "فاتورة";
+    const who = verdict.counterparty ?? knownSender ?? packageName;
+    const money = verdict.amount ? ` بـ${verdict.amount}${verdict.currency ? ` ${verdict.currency}` : ""}` : "";
+    await sb.from("zad_insights").upsert({
+      user_id: userId, kind: "insight", surface: "home_card", priority: "normal",
+      title: `🔔 ${what} جاي`,
+      body: `${who}: ${what}${money} مستحق قريب. لو التزام ثابت، قولي أسجّله عشان يتحسب من المتاح.`,
+      dedupe_key: `notif_reminder_${dedupeHash.slice(0, 24)}`,
+      status: "pending", updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id,dedupe_key" });
+    await mark("ignored", gateTag);
+    return new Response(JSON.stringify({ ok: true, status: "reminder", classification: "informational_only", gate: verdict.kind }), { headers: CORS_HEADERS });
+  }
+
   const parsed = body.parsed ?? {};
   const clientClassification = normalizeClientClassification(body.client_classification);
-  const amount = Number(parsed.amount);
+  let amount = Number(parsed.amount);
+  if ((!Number.isFinite(amount) || amount <= 0) && gate === "money" && verdict?.amount) amount = verdict.amount;
   const confidence = Number(parsed.confidence ?? 0);
   if (!Number.isFinite(amount) || amount <= 0) {
     await mark("ambiguous", "needs_confirmation");
@@ -5500,7 +5535,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       title: "معاملة بنكية محتاجة تأكيد",
       // النص المقتبس هنا منقّى كمان — الصف ده بيتعرض للعميل **وبيدخل سياق النموذج**، يعني
       // نسخة تانية من نفس النص بترسّب في مكان تالت. المبلغ باقي زي ما هو لأنه هو السؤال.
-      body: `وصل إشعار من ${packageName} (المبلغ التقريبي: ${amountGuess}) — مش واضح إيداع ولا سحب. هل ده إيداع (فلوس داخلة)؟ أيوة = إيداع، لأ = سحب/مصروف. النص الأصلي: "${redactNotificationText(rawText).slice(0, 200)}"`,
+      body: gate === "money" && verdict
+        ? `وصل إشعار ${verdict.kind === "credit" || verdict.kind === "refund" ? "فلوس داخلة" : "خصم"} من ${knownSender ?? packageName} بس المبلغ مش واضح. قولي المبلغ وأنا أسجّله. النص: "${redactNotificationText(rawText).slice(0, 200)}"`
+        : `وصل إشعار من ${knownSender ?? packageName} فيه فلوس بس مش متأكدة إنها عملية فعلاً. هل دي عملية حصلت؟ أيوة = اتحسبها، لأ = تجاهلها. النص: "${redactNotificationText(rawText).slice(0, 200)}"`,
       dedupe_key: `notif_ambiguous_${dedupeHash.slice(0, 24)}`,
       action_type: "yes_no",
       about_item: rawText.slice(0, 200),
@@ -5519,10 +5556,14 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     }), { headers: CORS_HEADERS });
   }
 
-  const parsedKind = parsed.txn_kind === "transfer"
-    ? "transfer"
-    : (parsed.txn_kind === "income" || parsed.is_expense === false ? "income" : "expense");
-  const needsClassification = clientClassification !== "completed" || confidence < 0.9;
+  // نوع العملية من البوابة لما تكون متأكدة إنها فلوس اتحركت — أدق من تخمين الموبايل من الكلمات.
+  const parsedKind = gate === "money" && verdict
+    ? txnKindFor(verdict.kind)
+    : parsed.txn_kind === "transfer"
+      ? "transfer"
+      : (parsed.txn_kind === "income" || parsed.is_expense === false ? "income" : "expense");
+  // البوابة قالت «فلوس اتحركت» ⇒ العميل بيأكد بس (مش بيصنّف). غير كده السلوك القديم.
+  const needsClassification = gate !== "money" && (clientClassification !== "completed" || confidence < 0.9);
   const txnKind = needsClassification ? null : parsedKind;
   const sourceLabel = String(parsed.merchant_name ?? parsed.bank_name ?? packageName).trim().slice(0, 80);
 
