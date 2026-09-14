@@ -1358,6 +1358,44 @@ object SupabaseRepo {
         false
     }
 
+    // ── ملف العميل (zad_customer_profile) ─────────────────────────────────────
+    suspend fun getCustomerProfile(): ZadCustomerProfile? = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return null
+        client.postgrest["zad_customer_profile"].select {
+            filter { eq("user_id", userId) }
+        }.decodeSingleOrNull<ZadCustomerProfile>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getCustomerProfile() FAILED: ${e.message}")
+        null
+    }
+
+    /** upsert كامل من شاشة الملف: الحقول الفاضية بتتبعت null صريح (العميل مسحها). */
+    suspend fun saveCustomerProfile(profile: ZadCustomerProfile): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        val p = CustomerProfileOptions.normalized(profile)
+        client.postgrest["zad_customer_profile"].upsert(
+            buildJsonObject {
+                put("user_id", userId)
+                put("preferred_name", p.preferredName)
+                put("gender", p.gender)
+                put("household_role", p.householdRole)
+                put("occupation", p.occupation)
+                put("pay_day", p.payDay)
+                put("pay_frequency", p.payFrequency)
+                put("household_size", p.householdSize)
+                put("kids_count", p.kidsCount)
+                put("city", p.city)
+                put("dialect", p.dialect)
+                put("updated_by", "app")
+                put("updated_at", java.time.Instant.now().toString())
+            }
+        ) { onConflict = "user_id" }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "saveCustomerProfile() FAILED: ${e.message}")
+        false
+    }
+
     // ── تحدي التوفير (zad_savings_challenges) ────────────────────────────────
     suspend fun getActiveSavingsChallenge(): ZadSavingsChallenge? = try {
         val userId = client.auth.currentUserOrNull()?.id ?: return null

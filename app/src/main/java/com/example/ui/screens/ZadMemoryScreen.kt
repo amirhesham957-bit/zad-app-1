@@ -41,6 +41,10 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
     var deletingId by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<ZadMemoryNote?>(null) }
+    var profile by remember { mutableStateOf<com.example.data.ZadCustomerProfile?>(null) }
+    var editingProfile by remember { mutableStateOf(false) }
+    var savingProfile by remember { mutableStateOf(false) }
+    val profileSaveFailed = stringResource(R.string.profile_save_failed)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     // لازم تتحل هنا (سياق composable) — showSnackbar بيشتغل جوه coroutine، وstringResource
@@ -52,6 +56,7 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
         loading = true
         try {
             notes = SupabaseRepo.getMemoryNotes(limit = 200)
+            profile = SupabaseRepo.getCustomerProfile()
         } catch (e: Exception) {
             android.util.Log.e("ZadMemoryScreen", "Failed to get memory notes: ${e.message}")
         } finally {
@@ -103,17 +108,25 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
     ) { padding ->
         when {
             loading -> ZadLoadingState(modifier = Modifier.fillMaxSize().padding(padding))
-            notes.isEmpty() -> ZadEmptyState(
-                icon = Icons.Default.Psychology,
-                title = stringResource(R.string.zad_memory_empty_title),
-                subtitle = stringResource(R.string.zad_memory_empty_subtitle),
-                modifier = Modifier.fillMaxSize().padding(padding)
-            )
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, com.example.ui.theme.ZadHubListBottomPadding),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                // «إنت مين» — الحقايق المنظّمة اللي بتدخل سياق العقل كل مرة، قبل الملاحظات الحرة.
+                item(key = "customer-profile") {
+                    com.example.ui.components.CustomerProfileCard(profile = profile, onEdit = { editingProfile = true })
+                }
+                if (notes.isEmpty()) {
+                    item(key = "notes-empty") {
+                        ZadEmptyState(
+                            icon = Icons.Default.Psychology,
+                            title = stringResource(R.string.zad_memory_empty_title),
+                            subtitle = stringResource(R.string.zad_memory_empty_subtitle),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)
+                        )
+                    }
+                }
                 items(notes, key = { it.id ?: it.note }) { note ->
                     ZadMemoryRow(
                         note = note,
@@ -123,6 +136,27 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (editingProfile) {
+        com.example.ui.components.CustomerProfileDialog(
+            initial = profile,
+            saving = savingProfile,
+            onDismiss = { editingProfile = false },
+            onSave = { updated ->
+                savingProfile = true
+                scope.launch {
+                    val ok = SupabaseRepo.saveCustomerProfile(updated)
+                    savingProfile = false
+                    if (ok) {
+                        profile = SupabaseRepo.getCustomerProfile() ?: updated
+                        editingProfile = false
+                    } else {
+                        snackbarHostState.showSnackbar(profileSaveFailed)
+                    }
+                }
+            },
+        )
     }
 
     pendingDelete?.let { note ->
