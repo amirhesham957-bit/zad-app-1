@@ -1358,6 +1358,54 @@ object SupabaseRepo {
         false
     }
 
+    // ── وضع الطوارئ (zad_broke_mode) ─────────────────────────────────────────
+    suspend fun getBrokeMode(): ZadBrokeMode? = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return null
+        client.postgrest["zad_broke_mode"].select {
+            filter { eq("user_id", userId) }
+        }.decodeSingleOrNull<ZadBrokeMode>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getBrokeMode() FAILED: ${e.message}")
+        null
+    }
+
+    suspend fun activateBrokeMode(plan: BrokeModeMath.Plan, currency: String?): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        val now = java.time.Instant.now().toString()
+        client.postgrest["zad_broke_mode"].upsert(
+            buildJsonObject {
+                put("user_id", userId)
+                put("started_at", now)
+                put("ends_at", plan.endsAt.toString())
+                put("ended_at", kotlinx.serialization.json.JsonNull)
+                put("cash_left", plan.cashLeft)
+                put("daily_cap", plan.dailyCap)
+                put("currency", currency)
+                put("source", "app")
+                put("updated_at", now)
+            }
+        ) { onConflict = "user_id" }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "activateBrokeMode() FAILED: ${e.message}")
+        false
+    }
+
+    suspend fun endBrokeMode(): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        val now = java.time.Instant.now().toString()
+        client.postgrest["zad_broke_mode"].update(
+            buildJsonObject {
+                put("ended_at", now)
+                put("updated_at", now)
+            }
+        ) { filter { eq("user_id", userId) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "endBrokeMode() FAILED: ${e.message}")
+        false
+    }
+
     // ── تذكيرات المكان (zad_place_reminders) — null لو القراءة فشلت، زي المواعيد ──
     suspend fun getPlaceReminders(): List<ZadPlaceReminder>? = try {
         val userId = client.auth.currentUserOrNull()?.id ?: return null

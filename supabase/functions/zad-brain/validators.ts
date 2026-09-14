@@ -771,6 +771,17 @@ export const validateCancelPlaceReminder: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+// وضع الطوارئ «مفلس باقي الشهر» (20260914009000).
+export const validateSetBrokeMode: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["set_broke_mode"] ?? 0) >= 2) return { ok: false, reason: "وضع الطوارئ اتغيّر خلاص في اللفة دي" };
+  if (typeof input.active !== "boolean") return { ok: false, reason: "active لازم true (تفعيل) أو false (خروج)" };
+  if (input.cash_left !== undefined && input.cash_left !== null) {
+    const v = Number(input.cash_left);
+    if (!Number.isFinite(v) || v < 0 || v > 100_000_000) return { ok: false, reason: "cash_left لازم رقم موجب — اللي معاه فعلاً لآخر الشهر" };
+  }
+  return { ok: true };
+};
+
 export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
@@ -841,6 +852,7 @@ export const VALIDATORS: Record<string, Validator> = {
   update_appointment: validateUpdateAppointment,
   add_place_reminder: validateAddPlaceReminder,
   cancel_place_reminder: validateCancelPlaceReminder,
+  set_broke_mode: validateSetBrokeMode,
 };
 
 /**
@@ -866,6 +878,7 @@ export const MUTATING_TOOLS = [
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",
+  "set_broke_mode",
   // أمر واجهة — قراءة/تنقّل بس، مش كتابة بيانات. مش في CONFIRM_REQUIRED أبداً.
   "app_command",
   // العقل بيتعلم — كتابة في zad_skills بس (مش بيانات عميل).

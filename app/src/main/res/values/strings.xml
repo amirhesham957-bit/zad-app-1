@@ -2019,4 +2019,16 @@
     <string name="place_kind_any">أي محل</string>
     <string name="place_reminders_location_off">تنبيهات الموقع مقفولة — التذكيرات دي مش هتشتغل غير لما تفعّلها من الإعدادات.</string>
     <string name="place_reminder_remove_cd">إلغاء التذكير</string>
+    <string name="broke_mode_title">وضع الطوارئ شغال</string>
+    <string name="broke_mode_daily_cap">مصروفك النهارده %1$s بالظبط — فاضل %2$d يوم</string>
+    <string name="broke_mode_no_cash">قولي معاك كام لآخر الشهر وأنا أقسّمهم على الأيام</string>
+    <string name="broke_mode_effects">وقفت اقتراحات الشراء، والوصفات من اللي في البيت بس. هنعدّيها سوا.</string>
+    <string name="broke_mode_set_cash">معايا كام؟</string>
+    <string name="broke_mode_exit">قبضت — اقفل الوضع</string>
+    <string name="broke_mode_entry_title">مفلس لآخر الشهر؟</string>
+    <string name="broke_mode_entry_sub">زاد تقسّم اللي معاك على الأيام الباقية وتوقف أي اقتراح شراء</string>
+    <string name="broke_mode_activate">فعّل وضع الطوارئ</string>
+    <string name="broke_mode_dialog_title">وضع الطوارئ</string>
+    <string name="broke_mode_dialog_body">فاضل %1$d يوم. اكتب اللي معاك فعلاً، أو سيبه فاضي وأحسب من رصيدك.</string>
+    <string name="broke_mode_cash_label">معاك كام لآخر الشهر؟</string>
 </resources>

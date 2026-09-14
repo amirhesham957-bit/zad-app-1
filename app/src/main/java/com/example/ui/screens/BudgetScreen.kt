@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import com.example.data.isActive
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -67,6 +68,20 @@ fun BudgetScreen(
     val suggestedBudget by viewModel.suggestedBudget.collectAsState()
     val cycleStart by viewModel.cycleStart.collectAsState()
     val cycleEnd by viewModel.cycleEnd.collectAsState()
+    val brokeMode by viewModel.brokeMode.collectAsState()
+    val brokeActive = brokeMode.isActive()
+    val daysLeftForBroke by viewModel.daysLeftInCycle.collectAsState()
+    var showBrokeDialog by remember { mutableStateOf(false) }
+    if (showBrokeDialog) {
+        com.example.ui.components.BrokeModeDialog(
+            daysLeft = daysLeftForBroke,
+            onDismiss = { showBrokeDialog = false },
+            onConfirm = { cash ->
+                showBrokeDialog = false
+                viewModel.activateBrokeMode(cash)
+            },
+        )
+    }
 
     // Task 0ب — remainingBalance/availableFigure بقوا nullable (null = السقف لسه مش
     // معروف). الشاشة دي عملياً ما بتتعرضش من غير سقف مؤكد (بوابة MainScreen)، بس الشرط
@@ -222,6 +237,25 @@ fun BudgetScreen(
                         confirmButton = { TextButton(onClick = { showAvailableReason = false }) { Text(stringResource(R.string.close_action)) } },
                         title = { Text(stringResource(R.string.available_label) + " ≈") },
                         text = { Text(availableFigureValue.reason!!) }
+                    )
+                }
+            }
+
+            // ── وضع الطوارئ «مفلس باقي الشهر» ──────────────────────────────────
+            item {
+                val broke = brokeMode
+                if (brokeActive && broke != null) {
+                    com.example.ui.components.BrokeModeBanner(
+                        mode = broke,
+                        daysLeft = daysLeftForBroke,
+                        onSetCash = { showBrokeDialog = true },
+                        onExit = { viewModel.endBrokeMode() },
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    )
+                } else {
+                    com.example.ui.components.BrokeModeEntryCard(
+                        onActivate = { showBrokeDialog = true },
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
                     )
                 }
             }

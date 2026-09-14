@@ -963,6 +963,17 @@
     "stores",
     "user_id"
   ],
+  "zad_broke_mode": [
+    "cash_left",
+    "currency",
+    "daily_cap",
+    "ended_at",
+    "ends_at",
+    "source",
+    "started_at",
+    "updated_at",
+    "user_id"
+  ],
   "zad_place_reminders": [
     "created_at",
     "fired_at",

@@ -384,6 +384,38 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
     private val _budgetState = MutableStateFlow<BudgetState?>(null)
     val budgetState: StateFlow<BudgetState?> = _budgetState.asStateFlow()
 
+    /** وضع الطوارئ «مفلس باقي الشهر» — null = مفيش صف أو القراءة فشلت (الواجهة بتعامله كمش شغال). */
+    private val _brokeMode = MutableStateFlow<com.example.data.ZadBrokeMode?>(null)
+    val brokeMode: StateFlow<com.example.data.ZadBrokeMode?> = _brokeMode.asStateFlow()
+
+    fun loadBrokeMode() {
+        viewModelScope.launch { _brokeMode.value = SupabaseRepo.getBrokeMode() }
+    }
+
+    /** تفعيل يدوي من الشاشة. نفس حساب العقل (BrokeModeMath = _shared/brokeMode.ts). */
+    fun activateBrokeMode(cashLeft: Double?, onDone: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val state = _budgetState.value
+            val plan = com.example.data.BrokeModeMath.plan(
+                cashLeft = cashLeft,
+                available = state?.available,
+                limitConfirmed = state?.limitConfirmed == true,
+                daysLeft = state?.daysLeft ?: _daysLeftInCycle.value,
+                cycleEnd = state?.cycleEndDate(),
+                now = java.time.Instant.now(),
+            )
+            val ok = SupabaseRepo.activateBrokeMode(plan, state?.currency)
+            if (ok) _brokeMode.value = SupabaseRepo.getBrokeMode()
+            onDone(ok)
+        }
+    }
+
+    fun endBrokeMode() {
+        viewModelScope.launch {
+            if (SupabaseRepo.endBrokeMode()) _brokeMode.value = SupabaseRepo.getBrokeMode()
+        }
+    }
+
     /** اقتراح تعديل الميزانية بناء على متوسط آخر شهرين مكتملين فعلياً — اقتراح بس، محتاج موافقة المستخدم، مفيش تطبيق تلقائي */
     private val _suggestedBudget = MutableStateFlow<Double?>(null)
     val suggestedBudget: StateFlow<Double?> = _suggestedBudget.asStateFlow()
@@ -1809,6 +1841,7 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (touchedSyncedTables) syncData()
         if (tools.contains("set_monthly_limit")) loadBudget()
+        if (tools.contains("set_broke_mode")) loadBrokeMode()
         if (tools.contains("set_market")) {
             viewModelScope.launch {
                 try {
@@ -2558,6 +2591,7 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
 
             recalculateRemainingBalance(_transactions.value, _budget.value)
             _budgetLoaded.value = true
+            _brokeMode.value = SupabaseRepo.getBrokeMode()
             Log.d(TAG, "loadBudget() → monthlyLimit=${_budget.value}, confirmed=${_budgetConfirmed.value}")
         }
     }

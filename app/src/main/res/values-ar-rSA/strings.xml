@@ -1943,4 +1943,16 @@
     <string name="place_kind_any">أي محل</string>
     <string name="place_reminders_location_off">تنبيهات الموقع مقفلة — هذي التذكيرات ما تشتغل إلا إذا فعّلتها من الإعدادات.</string>
     <string name="place_reminder_remove_cd">إلغاء التذكير</string>
+    <string name="broke_mode_title">وضع الطوارئ مفعّل</string>
+    <string name="broke_mode_daily_cap">مصروفك اليوم %1$s بالضبط — باقي %2$d يوم</string>
+    <string name="broke_mode_no_cash">قل لي كم معك لآخر الشهر وأنا أقسّمها على الأيام</string>
+    <string name="broke_mode_effects">وقفت اقتراحات الشراء، والوصفات من اللي في البيت بس. بنعدّيها سوا.</string>
+    <string name="broke_mode_set_cash">كم معي؟</string>
+    <string name="broke_mode_exit">استلمت الراتب — أوقف الوضع</string>
+    <string name="broke_mode_entry_title">مفلس لآخر الشهر؟</string>
+    <string name="broke_mode_entry_sub">زاد تقسّم اللي معك على الأيام الباقية وتوقف أي اقتراح شراء</string>
+    <string name="broke_mode_activate">فعّل وضع الطوارئ</string>
+    <string name="broke_mode_dialog_title">وضع الطوارئ</string>
+    <string name="broke_mode_dialog_body">باقي %1$d يوم. اكتب اللي معك فعلاً، أو خله فاضي وأحسب من رصيدك.</string>
+    <string name="broke_mode_cash_label">كم معك لآخر الشهر؟</string>
 </resources>

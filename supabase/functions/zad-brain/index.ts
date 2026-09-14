@@ -57,6 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
+import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -955,6 +956,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     dataErrors.push({ source: "مواعيدك" });
   }
 
+  // وضع الطوارئ «مفلس باقي الشهر» — العقل لازم يعرفه عشان مايقترحش شراء ولا أكل من برّه.
+  const { data: brokeRow, error: brokeErr } = await sb.from("zad_broke_mode")
+    .select("started_at,ends_at,ended_at,cash_left,daily_cap,currency")
+    .eq("user_id", userId).maybeSingle();
+  if (brokeErr) console.error("[snapshot] zad_broke_mode failed:", brokeErr.message);
+  const brokeActive = isBrokeModeActive(brokeRow as { ends_at?: string; ended_at?: string } | null, Date.now());
+
   // تذكيرات المكان المفتوحة — عشان «فكّرتني بإيه لما أروح الصيدلية؟» و«شيل تذكير البنادول».
   const { data: placeReminderRows, error: placeRemErr } = await sb.from("zad_place_reminders")
     .select("id,place,note,created_at")
@@ -1135,6 +1143,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
+    // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
+    broke_mode: brokeActive ? brokeRow : null,
     // تذكيرات بتتقال لما يوصل نوع محل (مش وقت). id للإلغاء بـ cancel_place_reminder.
     place_reminders: (placeReminderRows ?? []) as Array<Record<string, unknown>>,
     // خروجاته من البيت آخر أسبوع (وقت + صرف + محلات) — لو فعّل تنبيهات الموقع.
@@ -2477,6 +2487,48 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       });
       return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
     }
+    case "set_broke_mode": {
+      const src = scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat";
+      if (input.active === false) {
+        const w = await writeRows(
+          sb.from("zad_broke_mode").update({ ended_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+            .eq("user_id", userId).is("ended_at", null).select("user_id"),
+          "الخروج من وضع الطوارئ",
+        );
+        if (!w.ok) return `مرفوض: ${w.reason}`;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: { active: true }, new: { active: false } });
+        await recordAction(sb, userId, scope, { tool: name, input, table: "zad_broke_mode", targetId: userId, previous: null, next: { active: false } });
+        return w.rows.length ? "تم — خرجنا من وضع الطوارئ ورجعت الاقتراحات العادية. مبروك إنك عدّيتها 🎉" : "وضع الطوارئ مكانش شغال أصلاً.";
+      }
+      const { data: stateRaw } = await sb.rpc("zad_budget_state", { p_user: userId });
+      const state = (stateRaw ?? {}) as { available?: number | null; limit_confirmed?: boolean; days_left?: number; cycle_end?: string | null; currency?: string | null };
+      const plan = brokeModePlan({
+        cashLeft: input.cash_left === undefined || input.cash_left === null ? null : Number(input.cash_left),
+        available: typeof state.available === "number" ? state.available : null,
+        limitConfirmed: state.limit_confirmed === true,
+        daysLeft: typeof state.days_left === "number" ? state.days_left : null,
+        cycleEnd: state.cycle_end ?? null,
+        nowMs: Date.now(),
+      });
+      const nowIso = new Date().toISOString();
+      const w = await writeRows(
+        sb.from("zad_broke_mode").upsert({
+          user_id: userId, started_at: nowIso, ends_at: plan.ends_at, ended_at: null,
+          cash_left: plan.cash_left, daily_cap: plan.daily_cap, currency: state.currency ?? null,
+          source: src, updated_at: nowIso,
+        }, { onConflict: "user_id" }).select("user_id,ends_at,daily_cap"),
+        "تفعيل وضع الطوارئ",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: plan });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_broke_mode", targetId: userId, previous: null, next: plan });
+      const cur = state.currency ? ` ${state.currency}` : "";
+      return plan.daily_cap === null
+        ? `تم تفعيل وضع الطوارئ لمدة ${plan.days_left} يوم: وقفت اقتراحات الشراء والوصفات بقت من اللي في البيت بس. مش عارفة معاه كام — اسأله «معاك كام لآخر الشهر؟» عشان أحسب مصروف اليوم.`
+        : `تم تفعيل وضع الطوارئ: معاه ${Math.round(plan.cash_left ?? 0)}${cur} لـ${plan.days_left} يوم = ${plan.daily_cap}${cur} في اليوم بالظبط. وقفت اقتراحات الشراء، والوصفات من اللي في البيت بس.`;
+    }
     case "add_place_reminder": {
       const note = String(input.note).trim().slice(0, 200);
       const place = PLACE_REMINDER_PLACE_VALUES.includes(String(input.place)) ? String(input.place) : "any";
@@ -3729,6 +3781,22 @@ const CHAT_TOOLS: ToolDef[] = [
         title: { type: "string" },
       },
       required: ["appointment_id"],
+    },
+  },
+  {
+    // وضع الطوارئ «مفلس باقي الشهر» (20260914009000).
+    name: "set_broke_mode",
+    description:
+      "شغّل أو اقفل وضع الطوارئ «مفلس باقي الشهر». شغّله (active=true) فوراً لما العميل يقول «أنا مفلس»، «مفلسة»، «خلصت فلوسي»، «مفلس باقي الشهر»، «مش معايا فلوس لآخر الشهر». " +
+      "لو قال المبلغ اللي معاه («معايا ٢٠٠») حطه في cash_left. اقفله (active=false) لما يقول «قبضت»، «الحمد لله الفلوس جت»، «خرّجني من وضع الطوارئ». " +
+      "الوضع بيعيد حساب مصروف اليوم للأيام الباقية، وبيوقف اقتراحات الشراء، والوصفات بتبقى من المخزون بس.",
+    input_schema: {
+      type: "object",
+      properties: {
+        active: { type: "boolean" },
+        cash_left: { type: "number", description: "اللي معاه فعلاً لآخر الدورة لو قاله" },
+      },
+      required: ["active"],
     },
   },
   {
@@ -5481,6 +5549,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
+12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
 
 === SNAPSHOT ===
 ${JSON.stringify(snap)}

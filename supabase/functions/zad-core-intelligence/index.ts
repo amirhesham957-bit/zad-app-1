@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
@@ -1067,7 +1068,17 @@ Deno.serve(async (req: Request) => {
         // الكاش بقى شخصي: الرد بقى فيه تفضيلات العميلة (تحت)، فمشاركته بين عملاء مختلف
         // مخزونهم زي بعضه كانت هتسرّب اقتراح مبني على حد تاني، أو تتجاهل تفضيلات العميلة
         // دي وترجّع رد حد تاني اتخزن الأول.
-        const cacheKey = "meal_suggestions:" + user_id + ":" + dialectPrefix + ":" + (items || "");
+        // وضع الطوارئ «مفلس باقي الشهر» (20260914009000): الوصفات من اللي في البيت بس، ولا صنف
+        // يتشرى. بيدخل في مفتاح الكاش — رد قبل التفعيل فيه مشتريات.
+        let brokeMode = false;
+        try {
+          const { data: brokeRow } = await supabase.from("zad_broke_mode")
+            .select("ends_at,ended_at").eq("user_id", user_id).maybeSingle();
+          brokeMode = !!brokeRow && !brokeRow.ended_at && Date.parse(String(brokeRow.ends_at)) > Date.now();
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions broke mode lookup failed:", (e as Error).message);
+        }
+        const cacheKey = "meal_suggestions:" + user_id + ":" + dialectPrefix + ":" + (brokeMode ? "broke:" : "") + (items || "");
         const cached = await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
 
@@ -1167,6 +1178,11 @@ Deno.serve(async (req: Request) => {
             : "") +
           `عدد أفراد الأسرة: ${familySize} — خلي الكميات والوصف يناسبوا العدد ده، مش وجبة لفرد واحد لو الأسرة أكبر.\n` +
           availableBudgetLine +
+          (brokeMode
+            ? "⚠️ العميل في وضع الطوارئ «مفلس باقي الشهر»: كل وصفة لازم تتعمل ١٠٠٪ من المخزون — " +
+              "`missing_ingredients_to_buy` فاضية تماماً (الملح والزيت والمية والبهارات بس مسموحين). " +
+              "لو مفيش وصفة كده، سيبي `recipes` فاضية وقولي بحنية إزاي يستغل الموجود، من غير ما تقترحي يشتري حاجة.\n"
+            : "") +
           `الشهر الحالي: ${seasonMonthAr} — لو فيه مناسبة موسمية معروفة (رمضان، الصيف، الشتاء، الأعياد) خدي بالك منها في اقتراحاتك، من غير ما تفرضيها لو المخزون مش مناسب.\n`;
         const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===";
         const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt));
@@ -1178,7 +1194,10 @@ Deno.serve(async (req: Request) => {
         // `text` بيفضل موجود عن قصد رغم إن `recipes` هي الشكل الجديد: الشاشة الحالية
         // (ZadChefCard عبر ZadViewModel._mealSuggestions) بتقرا نص، فتغيير الشكل من تحتها
         // كان هيكسّر شيف زاد بالكامل لحد ما الأندرويد يلحق. العقد بيتوسّع مش بيتبدّل.
-        const recipes = Array.isArray(result?.recipes) ? await attachRecipeImages(result.recipes) : [];
+        const rawRecipes = Array.isArray(result?.recipes) ? result.recipes : [];
+        // حارس فوق البرومبت: في وضع الطوارئ أي وصفة محتاجة شراء بتتشال، مش بتتعرض.
+        const allowedRecipes = brokeMode ? rawRecipes.filter((r: { missing_ingredients_to_buy?: unknown }) => recipeNeedsNoShopping(r?.missing_ingredients_to_buy)) : rawRecipes;
+        const recipes = allowedRecipes.length ? await attachRecipeImages(allowedRecipes) : [];
         const response = { text: result?.text || null, recipes, ok: !!result?.text };
         if (response.ok) await setCachedAiResponse(cacheKey, "meal_suggestions", response);
         return jsonResponse(response);

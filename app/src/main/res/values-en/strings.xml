@@ -2008,4 +2008,16 @@
     <string name="place_kind_any">Any store</string>
     <string name="place_reminders_location_off">Location alerts are off — these reminders only work once you turn them on in Settings.</string>
     <string name="place_reminder_remove_cd">Cancel reminder</string>
+    <string name="broke_mode_title">Emergency mode is on</string>
+    <string name="broke_mode_daily_cap">You can spend exactly %1$s today — %2$d days to go</string>
+    <string name="broke_mode_no_cash">Tell me how much you have until month end and I\'ll split it across the days</string>
+    <string name="broke_mode_effects">Shopping suggestions are off, and recipes only use what\'s at home. We\'ll get through this.</string>
+    <string name="broke_mode_set_cash">How much do I have?</string>
+    <string name="broke_mode_exit">Got paid — turn it off</string>
+    <string name="broke_mode_entry_title">Broke until month end?</string>
+    <string name="broke_mode_entry_sub">Zad splits what you have across the days left and stops shopping suggestions</string>
+    <string name="broke_mode_activate">Turn on emergency mode</string>
+    <string name="broke_mode_dialog_title">Emergency mode</string>
+    <string name="broke_mode_dialog_body">%1$d days left. Enter what you actually have, or leave it empty to use your balance.</string>
+    <string name="broke_mode_cash_label">How much do you have until month end?</string>
 </resources>

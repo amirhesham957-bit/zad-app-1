@@ -81,6 +81,7 @@ import com.example.data.ZadInventory
 import com.example.data.ZadTransaction
 import com.example.data.SupabaseRepo
 import com.example.data.buildHomeActivationProgress
+import com.example.data.isActive
 import com.example.data.findActivity
 import io.github.jan.supabase.auth.auth
 import androidx.compose.ui.res.painterResource
@@ -160,6 +161,8 @@ fun HomeScreen(
     val subscriptions by viewModel.subscriptions.collectAsState()
     val mealSuggestions by viewModel.mealSuggestions.collectAsState()
     val chefRecipes by viewModel.chefRecipes.collectAsState()
+    val brokeMode by viewModel.brokeMode.collectAsState()
+    val brokeActive = brokeMode.isActive()
     val ratedRecipes by viewModel.ratedRecipes.collectAsState()
     val insights by viewModel.insights.collectAsState()
     val zadInsights by viewModel.zadInsights.collectAsState()
@@ -219,6 +222,9 @@ fun HomeScreen(
     // شيف زاد: يربط بالمولد الحتمي الذكي عند غياب وصفات السيرفر
     val displayChefRecipes = chefRecipes.ifEmpty {
         com.example.data.ZadAiRepository.generateDeterministicChefRecipes(inventory)
+    }.let { recipes ->
+        // وضع الطوارئ: وصفات من اللي في البيت بس — أي وصفة محتاجة شراء بتختفي.
+        if (brokeActive) recipes.filter { com.example.data.BrokeModeMath.recipeNeedsNoShopping(it.missingIngredientsToBuy) } else recipes
     }
 
     // كان فيه fallback بيعرض 3 منتجات أمازون مُختلقة بالكامل (أسعار ولينكات صور وهمية)
@@ -485,6 +491,28 @@ fun HomeScreen(
                         onGoalSaved = {
                             showGoalPicker = false
                             hasActiveGoal = true
+                        },
+                    )
+                }
+                var showBrokeCashDialog by remember { mutableStateOf(false) }
+                if (brokeActive) {
+                    brokeMode?.let { mode ->
+                        com.example.ui.components.BrokeModeBanner(
+                            mode = mode,
+                            daysLeft = daysLeftInCycle,
+                            onSetCash = { showBrokeCashDialog = true },
+                            onExit = { viewModel.endBrokeMode() },
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+                if (showBrokeCashDialog) {
+                    com.example.ui.components.BrokeModeDialog(
+                        daysLeft = daysLeftInCycle,
+                        onDismiss = { showBrokeCashDialog = false },
+                        onConfirm = { cash ->
+                            showBrokeCashDialog = false
+                            viewModel.activateBrokeMode(cash)
                         },
                     )
                 }
@@ -934,7 +962,8 @@ fun HomeScreen(
                         emptyList()
                     }
                 }
-                if (displayAffiliatePicks.isNotEmpty() || effectiveSearchNeeds.isNotEmpty()) {
+                // وضع الطوارئ: مفيش اقتراحات شراء خالص.
+                if (!brokeActive && (displayAffiliatePicks.isNotEmpty() || effectiveSearchNeeds.isNotEmpty())) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
