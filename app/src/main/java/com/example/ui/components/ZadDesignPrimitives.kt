@@ -125,7 +125,10 @@ fun ZadDarkPanel(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(primaryDark)
+            // خلفية ثابتة غامقة في الثيمين: كانت primaryDark، وده في الغامق أخضر متوسط (3E8F68)
+            // فالنص الأبيض فوقه كان باهت، وفي الفاتح العنوان/الشريط بـprimary فوقه 1.35:1
+            // (مش باين). WcagContrastTest.darkPanelAccentsAreReadable بيقفل النسب.
+            .background(ZadDarkPanelBackground)
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -133,7 +136,7 @@ fun ZadDarkPanel(
             title,
             style = Typography.labelMedium.copy(fontSize = 12.5.sp),
             fontWeight = FontWeight.Bold,
-            color = primary
+            color = ZadDarkPanelAccent
         )
         content()
     }

@@ -67,4 +67,15 @@ class WcagContrastTest {
             }
         }
     }
+
+    /** اللوحة الغامقة (قوة الصرف): النص ≥ 4.5 والشريط ≥ 3 فوق خلفيتها الثابتة. */
+    @Test
+    fun darkPanelAccentsAreReadable() {
+        val bg = ZadDarkPanelBackground
+        assertTrue(contrast(Color.White, bg) >= 4.5)
+        assertTrue(contrast(ZadDarkPanelAccent, bg) >= 4.5)
+        listOf(ZadDarkPanelAccent, ZadDarkPanelWarning, ZadDarkPanelDanger, Color(0xFF84CC16)).forEach {
+            assertTrue("$it = ${"%.2f".format(contrast(it, bg))}", contrast(it, bg) >= 3.0)
+        }
+    }
 }

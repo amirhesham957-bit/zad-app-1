@@ -188,6 +188,14 @@ val kidsSurface = Color(0xFF1E0A4A)
 // are a near-black with a slight green cast rather than pure black, which is what keeps
 // this reading as the same product in the dark — iOS-style elevated greys, not #000.
 val ZadEmeraldOnDark = Color(0xFF74C69D)          // primary on dark
+
+// ZadDarkPanel — لوحة غامقة بنفس الشكل في الثيمين (نص أبيض فوقها 13.9:1). ألوان الشريط
+// والعنوان فوقها لازم تكون من دول مش primary/secondary/error بتوع الثيم (اتقاس ٢٠٢٦-٠٩-١٤:
+// primary فوق اللوحة كان 1.35:1).
+val ZadDarkPanelBackground = ZadForestEmeraldDark
+val ZadDarkPanelAccent = ZadEmeraldOnDark        // 6.8:1
+val ZadDarkPanelWarning = ZadMustardLight        // ~6.7:1
+val ZadDarkPanelDanger = ZadTerracottaLight      // ~5.0:1
 val ZadEmeraldContainerOnDark = Color(0xFF1E4534)
 val ZadMustardOnDark = ZadMustardLight            // 0xFFE9A844 already reads well on dark
 val ZadMustardContainerOnDark = Color(0xFF4A3712)
