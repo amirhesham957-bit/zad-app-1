@@ -92,6 +92,15 @@ object ZadVoiceController {
     val state: StateFlow<VoiceControllerState> = _state.asStateFlow()
 
     /** مستوى صوت المايك (0..1) — للكورة وهي بتسمع. */
+    /**
+     * اضغط واتكلم (٢٠٢٦-٠٩-١٥): المايك بيتبعت لجيميناي **بس** وزرار المايك مضغوط — زي فويس واتساب.
+     * شكوى من تجربة حقيقية: المايك المفتوح طول المكالمة كان بيدخل في لوب (بيسمع صدى ودوشة ويقطع
+     * نفسه). لما العميل يسيب الزرار بنبعت audioStreamEnd فجيميناي يرد على طول.
+     */
+    @Volatile private var talkHeld = false
+    private val _talking = MutableStateFlow(false)
+    val talking: StateFlow<Boolean> = _talking.asStateFlow()
+
     private val _micLevel = MutableStateFlow(0f)
     val micLevel: StateFlow<Float> = _micLevel.asStateFlow()
 
@@ -371,7 +380,7 @@ object ZadVoiceController {
                     val chunk = if (read == buffer.size) buffer else buffer.copyOf(read)
                     val level = pcmLevel(chunk)
                     _micLevel.value = level
-                    if (shouldForwardMic(_state.value == VoiceControllerState.ModelSpeaking, level)) {
+                    if (pushToTalkForwards(talkHeld)) {
                         sendAudioChunk(connectedSocket, chunk)
                     }
                 }
@@ -552,7 +561,31 @@ object ZadVoiceController {
     }
 
     /** يقفل المكالمة بالكامل (قفل الشيت، زرار الإيقاف). */
+    /** العميل ضغط على المايك: بنبدأ نبعت صوته، ولو زاد بتتكلم بتسكت فوراً (مقاطعة). */
+    fun beginTalk() {
+        if (!sessionActive.get()) return
+        talkHeld = true
+        _talking.value = true
+        if (_state.value == VoiceControllerState.ModelSpeaking) interruptPlayback()
+    }
+
+    /** العميل ساب المايك: بنوقف الصوت ونقول لجيميناي إن الكلام خلص عشان يرد. */
+    fun endTalk() {
+        if (!talkHeld) return
+        talkHeld = false
+        _talking.value = false
+        val ws = webSocket ?: return
+        if (!sessionActive.get()) return
+        try {
+            ws.send(JSONObject().put("realtimeInput", JSONObject().put("audioStreamEnd", true)).toString())
+        } catch (e: Exception) {
+            Log.w(tag, "audioStreamEnd send failed: ${e.message}")
+        }
+    }
+
     fun stop() {
+        talkHeld = false
+        _talking.value = false
         if (!sessionActive.getAndSet(false)) return
         recordingActive.set(false)
         try { webSocket?.close(1000, "client stop") } catch (_: Exception) {}
@@ -627,6 +660,9 @@ object ZadVoiceController {
  * وصدى بعد AEC عادةً أوطى بكتير. قيمة تجريبية: لو المقاطعة صعبة على جهاز حقيقي، ده الرقم.
  */
 internal const val BARGE_IN_LEVEL = 0.25f
+
+/** اضغط واتكلم: الصوت بيتبعت بس والزرار مضغوط — مفيش مايك مفتوح يسمع صدى ويقطع نفسه. */
+internal fun pushToTalkForwards(held: Boolean): Boolean = held
 
 /** وزاد ساكت كل الصوت بيتبعت (الـVAD بتاع جيميناي بيقرر). وهو بيتكلم: الكلام الواضح بس. */
 internal fun shouldForwardMic(modelSpeaking: Boolean, level: Float): Boolean =

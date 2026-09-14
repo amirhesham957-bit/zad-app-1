@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -50,8 +52,6 @@ import com.example.ui.theme.*
 import com.example.ui.viewmodels.AiChatMessage
 import kotlin.math.sin
 
-private const val MAX_TRANSIENT_RETRIES = 3
-
 /**
  * شيت المساعد الصوتي — **مسار واحد** (٢٠٢٦-٠٩-١٤).
  *
@@ -88,7 +88,6 @@ fun ZadVoiceBottomSheet(
         )
     }
     var recognizedText by remember { mutableStateOf("") }
-    var retryAttempt by remember { mutableIntStateOf(0) }
     var activeVoiceTurnId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
@@ -115,7 +114,6 @@ fun ZadVoiceBottomSheet(
 
     fun submitFallbackTurn(text: String) {
         if (text.isBlank() || !fallbackMode) return
-        retryAttempt = 0
         recognizedText = text
         voiceManager.markThinking()
         activeVoiceTurnId = viewModel.sendAiChatMessage(text, voiceMode = true)
@@ -129,9 +127,8 @@ fun ZadVoiceBottomSheet(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasAudioPermission = granted
-        if (granted) {
-            if (fallbackMode) listenFallback() else startLiveCall()
-        }
+        // اضغط واتكلم: الإذن بيجهّز المكالمة بس — الكلام بيبدأ لما العميل يضغط على المايك.
+        if (granted && !fallbackMode) startLiveCall()
     }
 
     // الشيت بيفتح على المكالمة على طول — مرة واحدة لكل فتحة.
@@ -145,7 +142,6 @@ fun ZadVoiceBottomSheet(
         val error = controllerState as? VoiceControllerState.Error ?: return@LaunchedEffect
         if (error.canFallBack && !fallbackMode && hasAudioPermission) {
             fallbackMode = true
-            listenFallback()
         }
     }
 
@@ -160,19 +156,11 @@ fun ZadVoiceBottomSheet(
         lastSpokenMessageId = lastReply.id
         activeVoiceTurnId = null
         voiceManager.stopListening()
-        val resume = { if (hasAudioPermission && fallbackMode) listenFallback(silent = true) }
-        voiceManager.speakHumanLike(lastReply.text, onDone = resume, onFailed = resume)
+        // مابنرجعش نسمع لوحدنا بعد الرد — ده كان اللوب. العميل يضغط على المايك لما يحب يتكلم.
+        voiceManager.speakHumanLike(lastReply.text, onDone = {}, onFailed = {})
     }
 
-    // استئناف بعد أخطاء التعرّف العابرة (NO_MATCH/TIMEOUT عاديين جداً بالعربي) — بسقف.
-    LaunchedEffect(voiceState, fallbackMode) {
-        if (!fallbackMode) return@LaunchedEffect
-        val error = voiceState as? VoiceState.Error ?: return@LaunchedEffect
-        if (!error.transient || retryAttempt >= MAX_TRANSIENT_RETRIES) return@LaunchedEffect
-        retryAttempt += 1
-        kotlinx.coroutines.delay(1200)
-        if (hasAudioPermission && voiceManager.voiceState.value == error) listenFallback(silent = true)
-    }
+    // مفيش استئناف تلقائي بعد أخطاء التعرّف (كان جزء من اللوب) — العميل يضغط تاني.
 
     DisposableEffect(Unit) {
         com.example.voice.HeyZadWakeService.pause(context)
@@ -189,7 +177,8 @@ fun ZadVoiceBottomSheet(
     val orbState by viewModel.companionMood.collectAsState()
     val isSpeaking = if (fallbackMode) voiceState is VoiceState.Speaking
         else controllerState is VoiceControllerState.ModelSpeaking
-    val isActive = if (fallbackMode) isFallbackListening || isSpeaking else liveConnected
+    val talking by voiceController.talking.collectAsState()
+    val isActive = if (fallbackMode) isFallbackListening else talking
     val errorMessage = if (fallbackMode) (voiceState as? VoiceState.Error)?.message
         else (controllerState as? VoiceControllerState.Error)?.message
 
@@ -367,38 +356,49 @@ fun ZadVoiceBottomSheet(
                         )
                     )
                     .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape)
-                    .clickable {
-                        when {
-                            !hasAudioPermission -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            fallbackMode && (isFallbackListening || isSpeaking) -> {
-                                voiceManager.stopListening()
-                                voiceManager.stopSpeaking()
+                    // اضغط واتكلم زي فويس واتساب: طول ما الزرار مضغوط بيسمع، ولما تسيب بيبعت وزاد ترد.
+                    .pointerInput(hasAudioPermission, fallbackMode, liveConnected, liveConnecting) {
+                        detectTapGestures(onPress = {
+                            when {
+                                !hasAudioPermission -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                fallbackMode -> {
+                                    voiceManager.stopSpeaking()
+                                    listenFallback()
+                                    tryAwaitRelease()
+                                    voiceManager.finishListening()
+                                }
+                                liveConnected -> {
+                                    voiceController.beginTalk()
+                                    tryAwaitRelease()
+                                    voiceController.endTalk()
+                                }
+                                liveConnecting -> Unit
+                                else -> startLiveCall()
                             }
-                            fallbackMode -> listenFallback()
-                            liveConnected || liveConnecting -> voiceController.stop()
-                            else -> startLiveCall()
-                        }
+                        })
                     },
                 contentAlignment = Alignment.Center
             ) {
                 M3Icon(
-                    imageVector = if (isActive || liveConnecting) Icons.Default.Stop else Icons.Default.Mic,
-                    contentDescription = stringResource(
-                        if (isActive || liveConnecting) R.string.voice_stop_call else R.string.voice_start_call
-                    ),
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = stringResource(R.string.voice_hold_to_talk),
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
                 )
             }
 
-            if (isSpeaking) {
-                Text(
-                    text = stringResource(R.string.voice_tap_to_interrupt_hint),
-                    style = Typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = ZadVoiceAlertAmber
-                )
-            }
+            Text(
+                text = stringResource(
+                    when {
+                        isActive -> R.string.voice_release_to_send
+                        isSpeaking -> R.string.voice_hold_to_interrupt
+                        else -> R.string.voice_hold_to_talk
+                    }
+                ),
+                style = Typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isActive) ZadVoiceTextMint else ZadVoiceAlertAmber
+            )
 
             // أسئلة جاهزة: جوه المكالمة المباشرة بتتبعت نص للجلسة نفسها، وفي البديل بتروح للشات.
             AnimatedVisibility(visible = chipsEnabled, enter = fadeIn(), exit = fadeOut()) {

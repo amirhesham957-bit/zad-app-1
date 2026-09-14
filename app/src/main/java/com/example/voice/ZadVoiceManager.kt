@@ -240,6 +240,29 @@ object ZadVoiceManager {
             }
     }
 
+    /**
+     * العميل ساب زرار المايك (اضغط واتكلم): بنقفل التسجيل **ونستنى النتيجة** — stopListening
+     * مش cancel، فالكلام اللي اتقال بيتبعت. لو ساب قبل ما المايك يفتح أصلاً، بنلغي بهدوء.
+     */
+    fun finishListening() {
+        mainHandler.post {
+            val pending = pendingListeningRunnable
+            if (pending != null && speechRecognizer == null) {
+                mainHandler.removeCallbacks(pending)
+                pendingListeningRunnable = null
+                listeningGeneration.incrementAndGet()
+                _isListening.value = false
+                _voiceState.value = VoiceState.Idle
+                return@post
+            }
+            try {
+                speechRecognizer?.stopListening()
+            } catch (e: Exception) {
+                Log.w(TAG, "finishListening error: ${e.message}")
+            }
+        }
+    }
+
     fun stopListening() {
         listeningGeneration.incrementAndGet()
         pendingListeningRunnable?.let { mainHandler.removeCallbacks(it) }

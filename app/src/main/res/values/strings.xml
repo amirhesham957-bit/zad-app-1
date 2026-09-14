@@ -2158,4 +2158,7 @@
     <string name="habits_clear_outings">امسح خروجاتي</string>
     <string name="habits_clear_body">هنمسح كل الخروجات المتسجلة (أوقات وصرف ومحلات). المصاريف نفسها مش هتتمسح.</string>
     <string name="habits_cleared">اتمسحت خروجاتك</string>
+    <string name="voice_hold_to_talk">دوس مع الاستمرار واتكلم</string>
+    <string name="voice_release_to_send">بسمعك… سيب عشان أرد</string>
+    <string name="voice_hold_to_interrupt">دوس واتكلم عشان تقاطعني</string>
 </resources>

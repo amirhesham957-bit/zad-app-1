@@ -2082,4 +2082,7 @@
     <string name="habits_clear_outings">امسح طلعاتي</string>
     <string name="habits_clear_body">بنمسح كل الطلعات المسجلة (أوقات وصرف ومحلات). المصاريف نفسها ما بتنمسح.</string>
     <string name="habits_cleared">انمسحت طلعاتك</string>
+    <string name="voice_hold_to_talk">اضغط مع الاستمرار وتكلم</string>
+    <string name="voice_release_to_send">أسمعك… فك عشان أرد</string>
+    <string name="voice_hold_to_interrupt">اضغط وتكلم عشان تقاطعني</string>
 </resources>

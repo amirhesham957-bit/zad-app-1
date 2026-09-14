@@ -2147,4 +2147,7 @@ or enter the code: %2$s</string>
     <string name="habits_clear_outings">Delete my outings</string>
     <string name="habits_clear_body">This deletes all recorded outings (times, spending and stores). Your expenses themselves stay.</string>
     <string name="habits_cleared">Your outings were deleted</string>
+    <string name="voice_hold_to_talk">Hold to talk</string>
+    <string name="voice_release_to_send">Listening… release to send</string>
+    <string name="voice_hold_to_interrupt">Hold and talk to interrupt</string>
 </resources>
