@@ -452,7 +452,10 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
                 // ارتفاع bottomBar الحقيقي وبيحجزه هنا مرة واحدة لكل الشاشات. كان فيه
                 // كمان CompositionLocal بينشر نفس الرقم والشاشات بتضيفه تاني — شوف
                 // التعليق في ZadShell.kt مكان تعريفه القديم.
-                Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                // consumeWindowInsets: الشاشات اللي جوه (شات العيلة) بتعمل navigationBarsPadding/
+                // imePadding بنفسها. من غيره الـinset بتاع البار السفلي كان بيتحسب مرتين — فراغ
+                // زيادة فوق البار، وخانة الكتابة بتطلع أعلى من الكيبورد لما يتفتح.
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding).consumeWindowInsets(innerPadding)) {
                     NavHost(
                         navController = navController,
                         startDestination = ZadRoutes.HOME,

@@ -904,13 +904,10 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        listOf(
-                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "default_oil", itemName = "زيت طهي عائلي", reason = "عروض البقالة والتوفير", score = 1),
-                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "default_cleaners", itemName = "منظفات ومعقمات منزلية", reason = "أساسيات المنزل", score = 1),
-                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "default_rice", itemName = "أرز بسمتي فاخر", reason = "سلع تموينية مخفضة", score = 1),
-                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "default_tea", itemName = "شاي وقهوة سريعة", reason = "مستلزمات الضيافة", score = 1),
-                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "default_tissues", itemName = "مناديل وورقيات", reason = "عبوات اقتصادية", score = 1)
-                        )
+                        // كانت ٥ "احتياجات" ثابتة (زيت، منظفات، رز...) بأسباب مكتوبة بإيد زي
+                        // "عروض البقالة والتوفير" — بتتعرض كأنها احتياج العميل وهي مش مبنية على
+                        // أي حاجة عنده. مفيش نقص حقيقي ولا قايمة تسوق = الشريط مايظهرش.
+                        emptyList()
                     }
                 }
                 if (displayAffiliatePicks.isNotEmpty() || effectiveSearchNeeds.isNotEmpty()) {
