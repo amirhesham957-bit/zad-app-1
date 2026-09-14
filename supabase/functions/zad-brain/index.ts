@@ -73,7 +73,7 @@ import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
@@ -4784,6 +4784,31 @@ async function answerFastPath(
   };
 }
 
+const INTENT_RETRY_NOTE =
+  "\n\n**مهم:** طلب العميل ده محتاج تنفيذ بأداة من الأدوات المتاحة دلوقتي (ميعاد/تذكير أو معلومة عنه نفسه). " +
+  "نادِ الأداة المناسبة بالبيانات اللي قالها، ومتردش بكلام بس. لو فيه تفصيلة ناقصة فعلاً (مثلاً الساعة مش مفهومة) اسأله عنها.";
+
+/**
+ * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
+ * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
+ */
+async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number) {
+  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200 });
+  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
+  const hinted = intentToolHints(message);
+  const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
+  if (narrowed.length === 0) return { ...first, intentRetry: null };
+  try {
+    const retry = await callModel({ model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200 });
+    const usage = { inTok: first.usage.inTok + retry.usage.inTok, outTok: first.usage.outTok + retry.usage.outTok };
+    if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted };
+    return { ...first, usage, intentRetry: hinted };
+  } catch (e) {
+    console.warn("[agent_turn] intent retry failed:", (e as Error)?.message ?? e);
+    return { ...first, intentRetry: null };
+  }
+}
+
 /**
  * لفة محادثة واحدة. بترجع رد نصي جاهز للعرض + الأدوات اللي اتنفذت فعلاً + الاقتراحات
  * المستنية تأكيد.
@@ -5047,7 +5072,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
-      reply = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: scopedTools, history, maxTokens: 1200 });
+      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn);
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
       await finishRun("failed", String(e));
@@ -5980,7 +6005,10 @@ Deno.serve(async (req: Request) => {
       const cases = [
         { expect: "add_appointment", message: "فكّريني بكرة الساعة ٥ العصر أروح البنك" },
         { expect: "add_appointment", message: "عندي ميعاد دكتور أسنان يوم الخميس الساعة ١١ الصبح" },
+        { expect: "add_appointment", message: "نظّملي مواعيدي: اجتماع شغل يوم الأحد ١٠ الصبح" },
         { expect: "update_customer_profile", message: "على فكرة أنا اسمي كريم وبشتغل محاسب وبقبض يوم ٢٥" },
+        { expect: "update_customer_profile", message: "أنا أم لتلات عيال وساكنة في المنصورة" },
+        { expect: "log_transaction", message: "صرفت ٥٠ جنيه قهوة" },
       ];
       const snap = {
         country: "EG", currency: "EGP", now_local: localNowContext("Africa/Cairo"),
@@ -5995,15 +6023,14 @@ Deno.serve(async (req: Request) => {
         console.warn = (...a: unknown[]) => { warns.push(asciiOnly(a.map(String).join(" "))); origWarn(...a); };
         const started = Date.now();
         try {
-          const reply = await callModel({
-            model: MODEL_ROUTINE,
-            system: soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
-            tools, history: [{ role: "user", text: c.message }], maxTokens: 1200,
-          });
+          const reply = await callAgentModel(
+            soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
+            tools, [{ role: "user", text: c.message }], c.message, 0,
+          );
           const called = reply.toolCalls.map((t) => t.name);
           results.push({
             expect: c.expect, specialist: `${primary}/${secondary ?? "-"}`, tools_offered: tools.length,
-            expected_tool_offered: tools.some((t) => t.name === c.expect), called,
+            expected_tool_offered: tools.some((t) => t.name === c.expect), called, intent_retry: reply.intentRetry,
             pass: called.includes(c.expect), text_chars: reply.text.length, ms: Date.now() - started,
             fallovers: warns.slice(0, 4),
           });

@@ -64,6 +64,9 @@ export const SPECIALISTS: Record<SpecialistId, SpecialistDef> = {
     activeLineAr: "وكيل العائلة بيراجع حال البيت...",
     keywords: [
       "مهمة", "مهام", "موعد", "مواعيد", "مذكر", "فكرني", "ذكرني", "جدول", "مناسبة", "عيد ميلاد",
+      // صيغ المؤنث/اللهجات: «فكّريني» بعد شيل التشكيل = «فكريني» ومابتحتويش «فكرني» — فالرسالة
+      // «فكّريني بكرة الساعة ٥ أروح البنك» كانت بتروح لوكيل المال بسبب «البنك» (قياس ٢٠٢٦-٠٩-١٤).
+      "فكريني", "ذكريني", "نبهني", "نبهيني", "فكرنى", "ميعاد", "ميعادي", "اجتماع", "مشوار", "رتبلي مواعيدي", "نظملي",
       "عزومة", "زيارة", "مدرسة", "أطفال", "الاولاد", "اولادي", "زوجتي", "جوازي", "واجب", "امتحان",
       "مذاكرة", "تسبيحة", "tasbih", "task", "reminder", "appointment",
       // استهلاك الأسرة ككل — تقرير/نمط، مش تسجيل صرفة واحدة (ده نطاق finance)
@@ -102,15 +105,35 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
+/**
+ * نية واضحة ⇒ الأدوات اللي لازم تتنادى (٢٠٢٦-٠٩-١٤). قياس حي: موديل الوكيل (flash-lite) مع ٣٨–٦٠ أداة
+ * كان بيرد بكلام من غير ما ينادي add_appointment («فكّريني بكرة الساعة ٥») ولا update_customer_profile
+ * («أنا اسمي كريم وبشتغل محاسب»)، ومع ٢٤ أداة نادى صح. فلو اللفة الأولى رجعت من غير أدوات والنية دي
+ * واضحة، العقل بيعيد السؤال بالأدوات دي بس. مش بيجبر نداء: الموديل لسه يقدر يرد بكلام.
+ */
+// كلمة تذكير أو ميعاد صريحة، مش ساعة لوحدها: «سجلي جرعة الدوا الساعة ٨» جرعة صيدلية مش ميعاد.
+const APPOINTMENT_INTENT = /(فكر|ذكر|نبه)(ني|يني|نى)|ميعاد|موعد|مواعيد|اجتماع|مشوار/;
+const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه/;
+
+export function intentToolHints(message: string): string[] {
+  const norm = normalize(message);
+  const tools: string[] = [];
+  if (APPOINTMENT_INTENT.test(norm)) tools.push("add_appointment", "update_appointment", "add_place_reminder");
+  if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
+  return tools;
+}
+
 /** نقاط كل وكيل لرسالة واحدة، بترتيب `ORDER` (general مش فيها لأنها مالهاش كلمات). */
 function scoreAll(message: string): Array<{ id: SpecialistId; score: number }> {
   const norm = normalize(message);
+  // نية ميعاد/تذكير واضحة بتكسب التعادل لوكيل العيلة: «فكّريني أروح البنك» ميعاد، مش عملية فلوس.
+  const appointmentBonus = APPOINTMENT_INTENT.test(norm) ? 1 : 0;
   return ORDER.map((id) => ({
     id,
     score: SPECIALISTS[id].keywords.reduce(
       (acc, kw) => acc + (norm.includes(normalize(kw)) ? 1 : 0),
       0,
-    ),
+    ) + (id === "family" ? appointmentBonus : 0),
   }));
 }
 

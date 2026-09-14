@@ -1,6 +1,7 @@
 // specialists_test.ts — اختبارات توجيه الوكلاء المتخصصين.
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  intentToolHints,
   routeSpecialist,
   routeSpecialists,
   scopeToolsForSpecialist,
@@ -115,4 +116,13 @@ Deno.test("appointment tools survive every specialist's tool scoping", () => {
     assertEquals(names.includes("add_appointment"), true, sp);
     assertEquals(names.includes("update_appointment"), true, sp);
   }
+});
+
+Deno.test("reminder and self-introduction intents are recognised in feminine/dialect forms (2026-09-14)", () => {
+  assertEquals(routeSpecialist("فكّريني بكرة الساعة ٥ العصر أروح البنك") !== "finance", true);
+  assertEquals(intentToolHints("فكّريني بكرة الساعة ٥ العصر أروح البنك").includes("add_appointment"), true);
+  assertEquals(intentToolHints("عندي ميعاد دكتور الخميس").includes("add_appointment"), true);
+  assertEquals(intentToolHints("على فكرة أنا اسمي كريم وبشتغل محاسب").includes("update_customer_profile"), true);
+  assertEquals(intentToolHints("أنا أم لتلات عيال").includes("update_customer_profile"), true);
+  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
 });

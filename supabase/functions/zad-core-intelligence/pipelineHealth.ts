@@ -56,9 +56,18 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     rows(sb.from("zad_voice_moments").select("moment,status").limit(2000)),
   ]);
 
+  let cron: unknown;
+  try {
+    const { data, error } = await sb.rpc("zad_diag_cron_health");
+    cron = error ? { error: sanitizeError(error.message) } : data;
+  } catch (e) {
+    cron = { error: sanitizeError((e as Error)?.message ?? e) };
+  }
+
   const failedRuns = runs.list.filter((r) => r.status === "failed");
   return {
     window: "72h (actions 7d)",
+    cron,
     brain_runs: {
       by_trigger_status: countBy(runs.list, (r) => `${r.trigger}|${r.status}`),
       top_errors: countBy(failedRuns, (r) => sanitizeError(r.error), 6),

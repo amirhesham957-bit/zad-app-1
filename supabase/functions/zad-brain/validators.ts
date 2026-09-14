@@ -570,6 +570,9 @@ export const APP_COMMAND_SCREENS = [
   "maintenance", "subscriptions", "debts", "obligations", "insights",
   "camera", "camera_receipt", "home", "tasbiha", "notifications",
   "profile", "statement", "appointments",
+  // «زاد عارف عني إيه» (ملف العميل + العادات + الملاحظات)، «سجل تعديلات زاد» (تراجع)، وإعدادات
+  // التنبيهات وقراءة البنك — كانت شاشات موجودة بس العقل مايقدرش يفتحها («وريني إنت عارف عني إيه»).
+  "zad_memory", "agent_action_log", "assistant_alerts",
 ] as const;
 export const APP_COMMAND_ACTIONS = [
   "open",            // افتح الشاشة

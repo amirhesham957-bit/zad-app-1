@@ -265,6 +265,9 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
             "profile" -> ZadRoutes.PROFILE
             "statement" -> ZadRoutes.STATEMENT
             "appointments" -> ZadRoutes.APPOINTMENTS
+            "zad_memory" -> ZadNav.ZAD_MEMORY
+            "agent_action_log" -> ZadNav.AGENT_ACTION_LOG
+            "assistant_alerts" -> ZadNav.ASSISTANT_ALERTS
             else -> null
         }
         // القايمة البيضا دي تالت حارس بعد validators.ts والـrepo، فأي شاشة السيرفر
