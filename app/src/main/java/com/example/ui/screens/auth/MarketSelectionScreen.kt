@@ -37,7 +37,6 @@ import androidx.compose.animation.core.MutableTransitionState
 @Composable
 fun MarketSelectionScreen(onContinue: () -> Unit) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf<Market?>(null) }
     val syncFailedText = stringResource(com.example.R.string.changes_save_failed)
 
@@ -78,14 +77,7 @@ fun MarketSelectionScreen(onContinue: () -> Unit) {
                 text = stringResource(R.string.market_continue),
                 onClick = {
                     selected?.let { market ->
-                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            MarketPrefs.setMarket(context, market)
-                            val synced = com.example.data.SupabaseRepo.syncMarketProfile(market)
-                            if (!synced) {
-                                android.util.Log.i("MarketSelectionScreen", "Market profile sync offline — enqueued to SyncOutbox")
-                                com.example.data.SyncOutbox.enqueueMarketProfile(context, market.currencyCode, market.countryCode)
-                            }
-                        }
+                        commitMarketSelection(context, market)
                         onContinue()
                     }
                 },
@@ -94,6 +86,40 @@ fun MarketSelectionScreen(onContinue: () -> Unit) {
             )
             Spacer(Modifier.height(12.dp))
         }
+        }
+    }
+}
+
+/**
+ * يحفظ البلد **قبل** ما الشاشة تنقل، وبعدين يزامن مع السيرفر في الخلفية.
+ *
+ * كان الحفظ نفسه جوه `scope.launch(Dispatchers.IO)` و`onContinue()` بعده على طول — فالنقل
+ * كان بيسبق الحفظ: `navigateAfterSplash` يلاقي `hasSelectedMarket = false` ويفتح شاشة
+ * اختيار البلد **تاني**، والعميل يختار مرتين (بلاغ مستخدم ٢٠٢٦-٠٩-١٤). وكمان الـscope
+ * كان `rememberCoroutineScope` بتاع الشاشة، فالمزامنة ممكن تتلغي أول ما الشاشة تختفي.
+ *
+ * دلوقتي: SharedPreferences.apply بيكتب في الذاكرة فورًا (نفس الـprocess بيقراه على طول)،
+ * والمزامنة على scope مستقل عن الشاشة — [syncLauncher] قابل للتبديل عشان التست.
+ */
+internal fun commitMarketSelection(
+    context: android.content.Context,
+    market: Market,
+    syncLauncher: (suspend () -> Unit) -> Unit = { block ->
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+            .launch { block() }
+    },
+) {
+    MarketPrefs.setMarket(context, market)
+    val appContext = context.applicationContext
+    syncLauncher {
+        val synced = try {
+            com.example.data.SupabaseRepo.syncMarketProfile(market)
+        } catch (e: Exception) {
+            false
+        }
+        if (!synced) {
+            android.util.Log.i("MarketSelectionScreen", "Market profile sync offline — enqueued to SyncOutbox")
+            com.example.data.SyncOutbox.enqueueMarketProfile(appContext, market.currencyCode, market.countryCode)
         }
     }
 }
