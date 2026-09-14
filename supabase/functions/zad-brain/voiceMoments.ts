@@ -33,6 +33,9 @@ export interface ComposedMoment {
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
 export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge"]);
 
+/** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
+export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
+
 /** بعد كده اللحظة بقت قديمة ومالهاش معنى (صباح الخير الساعة ٤ العصر). */
 export const MOMENT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 export const MAX_ATTEMPTS = 3;
@@ -57,6 +60,11 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي والأسبوع صرف فيه كتير أو هدر. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس " +
     "(المصروف ومقارنته بالأسبوع اللي فات، أكبر فئة، أكبر مصروف، الأصناف اللي اتهدرت)، وآخر سطر نصيحة واحدة عملية للأسبوع الجاي. " +
     "speech: من ٤ لـ٦ جمل — عتاب لطيف بهزار زي صاحبته («يعني كده؟»)، مش تجريح ولا تخويف، وتختمي بتشجيع إن الأسبوع الجاي أحسن.",
+  receipt_reaction:
+    "العميل لسه حافظ فاتورة (store، total، items، وhighlight = الحاجة اللي تستاهل تعليق). علّقي عليها بهزار زي صاحبته. " +
+    "highlight.kind: snacks = سناكس/حاجة ساقعة كتير، repeat = صنف متكرر بكمية كبيرة، priciest = أغلى حاجة. " +
+    "text: سطر واحد فيه الحاجة دي بالاسم والرقم. speech: جملة أو اتنين قصيرين بهزار لطيف. " +
+    "ممنوع أي تعليق على الوزن أو الجسم أو الصحة أو إن العميل مسرف — هزار بس، ولو الفاتورة موفرة امدحيه.",
   shopping_zone_warning:
     "العميل لسه داخل منطقة تسوق (store_name) وفيه اتفاق توفير (reason: broke = وضع الطوارئ، challenge = تحدي توفير، budget = الميزانية في خطر). " +
     "text: سطر واحد: فكّريه بالاتفاق والسقف اليومي لو موجود، وإن قايمة الشراء فيها list_count حاجة. " +
@@ -313,6 +321,31 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           : `ده أسبوعك يا صاحبي: صرفت ${money(facts.spent)}${top ? `، أغلبها على ${top}` : ""}. خلينا نبص على الأسبوع الجاي سوا.`;
       return { title: "💸 فين راحت فلوسك الأسبوع ده؟", text: lines.join("\n"), speech };
     }
+    case "receipt_reaction": {
+      const h = (facts.highlight ?? {}) as { kind?: string; item?: string; count?: number; amount?: number };
+      const item = str(h.item, 40) || "الحاجة دي";
+      const cur = str(facts.currency, 10);
+      const amount = `${Math.round(Number(h.amount) || 0)}${cur ? ` ${cur}` : ""}`;
+      if (h.kind === "snacks") {
+        return {
+          title: "🍫 إيه الحلاوة دي؟",
+          text: `${Number(h.count) || 0} سناكس في الفاتورة (${amount}).`,
+          speech: `استنى… ${Number(h.count) || 0} سناكس؟ ده سهرة ولا إيه؟ طيب بس ماتنساش تعزمني.`,
+        };
+      }
+      if (h.kind === "repeat") {
+        return {
+          title: `🛒 ${Number(h.count) || 0} ${item}!`,
+          text: `جبت ${Number(h.count) || 0} من ${item} (${amount}).`,
+          speech: `${Number(h.count) || 0} ${item}؟ إنت بتجهّز لحرب ولا إيه؟ ماشي، أنا هفكّرك قبل ما يخلصوا.`,
+        };
+      }
+      return {
+        title: "🧾 الفاتورة اتسجلت",
+        text: `أغلى حاجة كانت ${item}: ${amount}.`,
+        speech: `سجّلت الفاتورة! أغلى حاجة فيها كانت ${item}… يا ترى كانت تستاهل؟`,
+      };
+    }
     case "shopping_zone_warning": {
       const cur = str(facts.currency, 10);
       const cap = typeof facts.daily_cap === "number" ? `${Math.round(facts.daily_cap)}${cur ? ` ${cur}` : ""}` : "";
@@ -543,9 +576,11 @@ export async function processVoiceMoments(
         data.speech = composed.speech || composed.text;
       }
       const device = await deps.pushDevice(row.user_id, composed.title, composed.text, data, voice);
-      const telegram = voice
-        ? await deps.pushTelegram(row.user_id, composed.title, composed.text, true, deliveryMoment, composed.speech || composed.text)
-        : "not_for_text_moments";
+      const telegram = !voice
+        ? "not_for_text_moments"
+        : DEVICE_ONLY_MOMENTS.has(deliveryMoment)
+          ? "device_only"
+          : await deps.pushTelegram(row.user_id, composed.title, composed.text, true, deliveryMoment, composed.speech || composed.text);
 
       const delivered = device === "sent" || telegram === "delivered";
       await sb.from("zad_voice_moments").update({
@@ -573,7 +608,7 @@ export async function processVoiceMoments(
 
 
 /** اللحظات اللي التطبيق نفسه يقدر يطلبها (صحى من النوم / ميعاد التسبيحة). الباقي من السيرفر بس. */
-export const CLIENT_MOMENTS: ReadonlySet<string> = new Set(["morning_greeting", "tasbiha_reminder"]);
+export const CLIENT_MOMENTS: ReadonlySet<string> = new Set(["morning_greeting", "tasbiha_reminder", "receipt_reaction"]);
 
 /**
  * بيانات "صباح الخير" الحقيقية: أدوية النهارده، مواعيد النهارده، والرصيد المتاح. من غيرها

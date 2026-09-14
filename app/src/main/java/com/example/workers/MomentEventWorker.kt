@@ -22,8 +22,14 @@ class MomentEventWorker(appContext: Context, params: WorkerParameters) : Corouti
 
     override suspend fun doWork(): Result {
         val moment = inputData.getString(KEY_MOMENT) ?: return Result.failure()
+        val factsJson = inputData.getString(KEY_FACTS_JSON)
         return try {
-            val res = SupabaseRepo.callEdgeFunction("zad-brain", mapOf("action" to "moment_event", "moment" to moment))
+            val body = buildMap<String, Any> {
+                put("action", "moment_event")
+                put("moment", moment)
+                if (factsJson != null) put("facts_json", factsJson)
+            }
+            val res = SupabaseRepo.callEdgeFunction("zad-brain", body)
             val ok = res["ok"] == true
             Log.d(TAG, "moment_event $moment → ok=$ok status=${res["status"]}")
             if (ok && moment == "morning_greeting") {
@@ -40,15 +46,17 @@ class MomentEventWorker(appContext: Context, params: WorkerParameters) : Corouti
     companion object {
         private const val TAG = "MomentEventWorker"
         const val KEY_MOMENT = "moment"
+        const val KEY_FACTS_JSON = "facts_json"
 
-        fun enqueue(context: Context, moment: String) {
+        fun enqueue(context: Context, moment: String, factsJson: String? = null) {
             val request = OneTimeWorkRequestBuilder<MomentEventWorker>()
-                .setInputData(workDataOf(KEY_MOMENT to moment))
+                .setInputData(workDataOf(KEY_MOMENT to moment, KEY_FACTS_JSON to factsJson))
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .build()
-            // KEEP: كذا فتح للقفل ورا بعض = طلب واحد.
+            // KEEP: كذا فتح للقفل ورا بعض = طلب واحد. الفاتورة: آخر فاتورة هي اللي تتعلّق.
+            val policy = if (factsJson != null) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP
             WorkManager.getInstance(context.applicationContext)
-                .enqueueUniqueWork("zad_moment_$moment", ExistingWorkPolicy.KEEP, request)
+                .enqueueUniqueWork("zad_moment_$moment", policy, request)
         }
     }
 }

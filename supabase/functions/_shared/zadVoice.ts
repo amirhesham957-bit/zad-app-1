@@ -181,6 +181,8 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   challenge_streak_broken: "sad",
   // دخل منطقة تسوق وفيه اتفاق توفير — تحذير بهزار، مش لوم قبل ما يعمل حاجة.
   shopping_zone_warning: "playful",
+  // تعليق بهزار على فاتورة لسه متحفظة (على الموبايل بس).
+  receipt_reaction: "playful",
 };
 
 export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmotion {

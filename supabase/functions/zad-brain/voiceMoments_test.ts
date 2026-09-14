@@ -139,9 +139,9 @@ Deno.test("a cancelled appointment is not reminded", async () => {
   assertEquals(updates[0].values.status, "skipped");
 });
 
-Deno.test("only morning and tasbiha moments can be requested by the app itself", async () => {
+Deno.test("only morning, tasbiha and receipt moments can be requested by the app itself", async () => {
   const { CLIENT_MOMENTS } = await import("./voiceMoments.ts");
-  assertEquals([...CLIENT_MOMENTS].sort(), ["morning_greeting", "tasbiha_reminder"]);
+  assertEquals([...CLIENT_MOMENTS].sort(), ["morning_greeting", "receipt_reaction", "tasbiha_reminder"]);
   assert(!CLIENT_MOMENTS.has("budget_100"));
   assert(!CLIENT_MOMENTS.has("dose_missed"));
 });

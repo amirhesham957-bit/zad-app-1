@@ -3916,6 +3916,17 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
         _monthlyPharmaCost.value = monthlyPharmaTotal.asMoney()
     }
 
+    /**
+     * زاد تعلّق على الفاتورة اللي لسه اتحفظت بهزار (بصوتها على الموبايل). بس لو العميل
+     * سايب التنبيهات المنطوقة شغالة — من غيرها التعليق يبقى إشعار زيادة ملوش لازمة.
+     */
+    fun reactToReceipt(receipt: com.example.data.AiParsedReceipt) {
+        val app = getApplication<Application>()
+        if (!com.example.ui.screens.AlertPrefs.isEnabled(app, com.example.ui.screens.AlertPrefs.KEY_VOICE_SPOKEN_ALERTS)) return
+        val facts = com.example.data.ReceiptReaction.factsJson(receipt, com.example.data.CurrencyFormatter.currencyCode(app)) ?: return
+        com.example.workers.MomentEventWorker.enqueue(app, com.example.data.ReceiptReaction.MOMENT, facts)
+    }
+
     /** حقن فاتورة صيدلية وتحديث أسعار الأدوية والكميات وتسجيل المصروف تلقائياً */
     fun injectPharmacyReceipt(receipt: com.example.data.AiParsedReceipt) {
         viewModelScope.launch {

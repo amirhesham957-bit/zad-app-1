@@ -795,6 +795,7 @@ fun CameraScreen(
                                 analysisStatus = context.getString(R.string.cam_receipt_summary, receipt.storeName, summary)
                             }
                             analysisStatus = context.getString(R.string.cam_receipt_and_stock, receipt.storeName, com.example.data.CurrencyFormatter.format(context, receipt.total))
+                            viewModel.reactToReceipt(receipt)
                         } else {
                             viewModel.addTransaction(
                                 com.example.data.ZadTransaction(
@@ -818,6 +819,7 @@ fun CameraScreen(
                                 analysisStatus = context.getString(R.string.cam_receipt_full_summary, receipt.storeName, com.example.data.CurrencyFormatter.format(context, receipt.total), summary)
                             }
                             analysisStatus = context.getString(R.string.cam_receipt_and_items, receipt.storeName, com.example.data.CurrencyFormatter.format(context, receipt.total))
+                            viewModel.reactToReceipt(receipt)
                         }
                         showReceiptConfirmationDialog = false
                         parsedReceipt = null

@@ -60,6 +60,7 @@ import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postpo
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
+import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -6171,16 +6172,32 @@ Deno.serve(async (req: Request) => {
       const local = localNowContext(typeof tzRow === "string" ? tzRow : "UTC");
       const hour = Number(local.time.slice(0, 2));
       let facts: Record<string, unknown> | null = null;
+      let dedupeKey = `${moment === "morning_greeting" ? "morning" : "tasbiha"}:${local.date}`;
       if (moment === "morning_greeting") {
         if (hour < 4 || hour >= 12) {
           return new Response(JSON.stringify({ ok: true, status: "outside_morning" }), { headers: CORS_HEADERS });
         }
         facts = await morningFacts(sbEvent, eventUserId, local);
+      } else if (moment === "receipt_reaction") {
+        // أصناف الفاتورة من OCR على الموبايل — بتتنضف هنا (نص بيانات، مش تعليمات).
+        let parsed: unknown = null;
+        try {
+          const raw = String(body.facts_json ?? "");
+          parsed = raw.length > 0 && raw.length <= 8000 ? JSON.parse(raw) : null;
+        } catch { parsed = null; }
+        const receipt = sanitizeReceiptFacts(parsed);
+        if (!receipt) return new Response(JSON.stringify({ ok: false, error: "bad receipt" }), { status: 400, headers: CORS_HEADERS });
+        const { count } = await sbEvent.from("zad_voice_moments").select("id", { count: "exact", head: true })
+          .eq("user_id", eventUserId).like("dedupe_key", `receipt:${local.date}:%`);
+        if ((count ?? 0) >= RECEIPT_REACTIONS_PER_DAY) {
+          return new Response(JSON.stringify({ ok: true, status: "daily_cap" }), { headers: CORS_HEADERS });
+        }
+        facts = receipt as unknown as Record<string, unknown>;
+        dedupeKey = `receipt:${local.date}:${receiptKey(receipt)}`;
       } else {
         facts = await tasbihaFacts(sbEvent, eventUserId, local.date);
         if (!facts) return new Response(JSON.stringify({ ok: true, status: "not_needed" }), { headers: CORS_HEADERS });
       }
-      const dedupeKey = `${moment === "morning_greeting" ? "morning" : "tasbiha"}:${local.date}`;
       const { error: insErr } = await sbEvent.from("zad_voice_moments")
         .upsert({ user_id: eventUserId, moment, facts, dedupe_key: dedupeKey }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
       if (insErr) {
