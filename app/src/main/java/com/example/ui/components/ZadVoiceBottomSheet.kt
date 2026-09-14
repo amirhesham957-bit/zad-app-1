@@ -102,7 +102,7 @@ fun ZadVoiceBottomSheet(
         controllerState is VoiceControllerState.ModelSpeaking -> voiceController.outputLevel
         else -> voiceController.micLevel
     }
-    val petAudioLevel = rememberPetAudioLevel(petLevelFlow)
+    val petAudioLevel = rememberOrbAudioLevel(petLevelFlow)
     val waveLevel by petLevelFlow.collectAsState()
 
     fun startLiveCall() {
@@ -184,22 +184,9 @@ fun ZadVoiceBottomSheet(
         }
     }
 
-    val petState = when {
-        fallbackMode -> when (voiceState) {
-            is VoiceState.Listening -> VoicePetState.Listening
-            is VoiceState.Thinking -> VoicePetState.Thinking
-            is VoiceState.Speaking, is VoiceState.Recognized -> VoicePetState.Speaking
-            is VoiceState.Idle -> VoicePetState.Idle
-            is VoiceState.Error -> VoicePetState.Sleeping
-        }
-        else -> when (controllerState) {
-            is VoiceControllerState.Listening -> VoicePetState.Listening
-            is VoiceControllerState.ModelSpeaking -> VoicePetState.Speaking
-            is VoiceControllerState.Connecting -> VoicePetState.Thinking
-            is VoiceControllerState.Error -> VoicePetState.Sleeping
-            is VoiceControllerState.Idle -> VoicePetState.Idle
-        }
-    }
+    // نفس مزاج الكورة العايمة بالظبط: الـViewModel بيقدّم المكالمة، بعدها البديل، بعدها
+    // مزاج العقل (مثلاً Alert لو الميزانية اتعدّت) — أفتار واحد بنفس المعنى في كل مكان.
+    val orbState by viewModel.companionMood.collectAsState()
     val isSpeaking = if (fallbackMode) voiceState is VoiceState.Speaking
         else controllerState is VoiceControllerState.ModelSpeaking
     val isActive = if (fallbackMode) isFallbackListening || isSpeaking else liveConnected
@@ -312,9 +299,9 @@ fun ZadVoiceBottomSheet(
                 )
             }
 
-            ZadVoicePet(
-                state = petState,
-                size = 128.dp,
+            CompanionOrb(
+                state = orbState,
+                size = 144.dp,
                 audioLevel = petAudioLevel,
                 onClick = { ZadCutePetSoundFx.play(ZadCutePetSoundFx.PetSound.HappyChirp, 0.5f) }
             )
