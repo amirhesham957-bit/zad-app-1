@@ -970,7 +970,16 @@ Deno.serve(async (req: Request) => {
           body: "{}",
         }),
       ]);
-      return jsonResponse({ ...keysReport, tts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote });
+      // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
+      let webSearch: unknown;
+      try {
+        const t0 = Date.now();
+        const hits = await webSearchSnippets("FIFA Club World Cup winner");
+        webSearch = { results: hits.length, ms: Date.now() - t0 };
+      } catch (e) {
+        webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
+      }
+      return jsonResponse({ ...keysReport, tts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal

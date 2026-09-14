@@ -6009,6 +6009,10 @@ Deno.serve(async (req: Request) => {
         { expect: "update_customer_profile", message: "على فكرة أنا اسمي كريم وبشتغل محاسب وبقبض يوم ٢٥" },
         { expect: "update_customer_profile", message: "أنا أم لتلات عيال وساكنة في المنصورة" },
         { expect: "log_transaction", message: "صرفت ٥٠ جنيه قهوة" },
+        // «بيبحث في النت لو سألته أي سؤال؟» و«عنده ذاكرة؟» و«بيتحكم في الصفحات؟» — مقاسة مش مفترضة.
+        { expect: "web_search", message: "مين فاز بكأس العالم للأندية آخر مرة؟" },
+        { expect: "remember", message: "افتكر إني مش باكل تونة خالص" },
+        { expect: "app_command", message: "وريني صفحة مواعيدي" },
       ];
       const snap = {
         country: "EG", currency: "EGP", now_local: localNowContext("Africa/Cairo"),
