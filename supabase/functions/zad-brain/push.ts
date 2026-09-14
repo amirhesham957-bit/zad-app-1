@@ -106,6 +106,10 @@ export async function pushToDevice(
   // ZadFirebaseMessagingService بيقرا data.route ليقرر أي شاشة تتفتح لما العميل يدوس
   // على الإشعار، بدل ما يفتح الرئيسية العادية من غير سياق دايمًا.
   extraData?: Record<string, string>,
+  // data-only: من غير بلوك notification. أندرويد بيعرض إشعارات notification بنفسه والتطبيق
+  // في الخلفية، فكود التطبيق عمره ما بيشتغل — ولحظات الصوت محتاجة التطبيق هو اللي يستلم
+  // عشان يتكلم بصوت زاد (ZadFirebaseMessagingService).
+  dataOnly = false,
 ): Promise<PushDelivery> {
   try {
     const saRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT") ?? "";
@@ -137,7 +141,7 @@ export async function pushToDevice(
           body: JSON.stringify({
             message: {
               token,
-              notification: { title, body },
+              ...(dataOnly ? {} : { notification: { title, body } }),
               data: { title, body, ...extraData },
               android: { priority: "HIGH" },
             },
@@ -198,6 +202,8 @@ export async function pushToTelegram(
   // اسم اللحظة (listener_gap_alert، dose_missed...) — البوت بيحوّله لمشاعر الصوت من
   // `_shared/zadVoice.ts`، فنفس الموقف بيتقال بنفس الإحساس في كل القنوات.
   moment?: string,
+  // كلام الفويس لو مختلف عن نص الرسالة (بلهجة وإحساس بدل عنوان وأرقام).
+  speech?: string,
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -215,6 +221,7 @@ export async function pushToTelegram(
         ...(dismissTaskId ? { dismiss_task_id: dismissTaskId } : {}),
         ...(voice ? { voice: true } : {}),
         ...(voice && moment ? { moment } : {}),
+        ...(voice && speech ? { speech: speech.slice(0, 600) } : {}),
       }),
     });
     const text = await res.text();

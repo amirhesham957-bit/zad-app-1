@@ -73,6 +73,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { pushToDevice, pushToTelegram } from "./push.ts";
+import { processVoiceMoments } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -5468,6 +5469,24 @@ Deno.serve(async (req: Request) => {
     // المنطق نفسه قاعد في Postgres (agent_proactive_scan، migration
     // 20260810200000) — هنا بنناديها بس، بنفس فصل "البيانات والقرار في الـ DB والفانكشن
     // توصيل" اللي realtime_push بيشتغل بيه.
+    // لحظات صوت زاد (20260914003000): الكرون بيسجّل المواقف في zad_voice_moments وبينادي هنا
+    // بس لو فيه حاجة مستنية. نفس سيكريت الفحص الاستباقي.
+    if (body.action === "process_voice_moments") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbMoments = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const summary = await processVoiceMoments(sbMoments, {
+        compose: async (system, user) =>
+          (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
+        pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbMoments, userId, title, text, data, dataOnly),
+        pushTelegram: (userId, title, text, voice, moment, speech) =>
+          pushToTelegram(userId, title, text, fetch, undefined, voice, moment, speech),
+      });
+      console.log(`[voice_moments] sent=${summary.sent} skipped=${summary.skipped} failed=${summary.failed}`);
+      return new Response(JSON.stringify({ ok: true, ...summary }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "run_proactive_scan") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });

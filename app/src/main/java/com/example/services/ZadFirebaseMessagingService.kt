@@ -39,13 +39,25 @@ class ZadFirebaseMessagingService : FirebaseMessagingService() {
         // السيرفر يبعت push بديل عن تليجرام لإشعار بنكي مستني تأكيد) بيوصّل الدوسة على
         // الإشعار للشاشة الصح بدل ما يفتح الرئيسية العادية من غير أي سياق.
         val route = message.data["route"]
+        // لحظة صوت من zad_voice_moments: data-only عشان الكود ده يشتغل حتى والتطبيق في الخلفية.
+        val speech = message.data["speech"].takeIf { message.data["voice"] == "1" }
+        val moment = message.data["moment"]
         if (message.notification == null && !title.isNullOrBlank()) {
-            showAgentNotification(title, body ?: "", route)
+            showAgentNotification(title, body ?: "", route, speech, moment)
+        }
+        if (!speech.isNullOrBlank() && com.example.voice.VoiceMomentSpeaker.canAutoSpeakNow(this)) {
+            com.example.voice.VoiceMomentSpeaker.enqueue(this, speech, moment)
         }
     }
 
     /** إشعار محلي لإشعارات الأيدجنت data-only — يفتح الشاشة الرئيسية (أو route محدد). */
-    private fun showAgentNotification(title: String, body: String, route: String? = null) {
+    private fun showAgentNotification(
+        title: String,
+        body: String,
+        route: String? = null,
+        speech: String? = null,
+        moment: String? = null,
+    ) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
@@ -61,17 +73,31 @@ class ZadFirebaseMessagingService : FirebaseMessagingService() {
         val pending = PendingIntent.getActivity(
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notification = NotificationCompat.Builder(this, AGENT_CHANNEL)
+        val notificationId = System.currentTimeMillis().toInt()
+        val builder = NotificationCompat.Builder(this, AGENT_CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pending)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .build()
+        if (!speech.isNullOrBlank()) {
+            // "اسمع زاد": لما الموبايل كان صامت أو الشاشة مقفولة وقت الوصول.
+            val listen = Intent(this, com.example.voice.VoiceMomentSpeaker.ListenReceiver::class.java).apply {
+                putExtra(com.example.voice.VoiceMomentSpeaker.EXTRA_SPEECH, speech)
+                putExtra(com.example.voice.VoiceMomentSpeaker.EXTRA_MOMENT, moment)
+                putExtra("notification_id", notificationId)
+            }
+            val listenPending = PendingIntent.getBroadcast(
+                this, notificationId, listen, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.addAction(0, getString(R.string.voice_moment_listen_action), listenPending)
+        }
+        val notification = builder.build()
         try {
-            manager.notify(System.currentTimeMillis().toInt(), notification)
+            manager.notify(notificationId, notification)
         } catch (e: SecurityException) {
             // POST_NOTIFICATIONS مش متمنحة لسه — الإشعار يتساقط بأدب والرد النصي يفضل شغال
             android.util.Log.w("ZadFcm", "notify denied: ${e.message}")

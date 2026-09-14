@@ -145,6 +145,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- زرار "اسمع زاد" على إشعارات لحظات الصوت (VoiceMomentSpeaker) -->
+        <receiver
+            android:name=".voice.VoiceMomentSpeaker$ListenReceiver"
+            android:exported="false" />
+
         <!-- تنبيهات قرب السوبرماركت: geofence transitions (GroceryGeofenceManager بيسجلها) -->
         <receiver
             android:name=".receivers.GeofenceBroadcastReceiver"

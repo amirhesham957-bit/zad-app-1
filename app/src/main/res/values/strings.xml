@@ -1189,6 +1189,8 @@
     <string name="voice_stop_call">وقّف المكالمة</string>
     <string name="voice_start_call">ابدأ مكالمة مع زاد</string>
     <string name="voice_chips_label">أو اختار سؤال جاهز:</string>
+    <string name="voice_moment_listen_action">🔊 اسمع زاد</string>
+    <string name="voice_moment_speaking">زاد بتكلمك…</string>
     <string name="voice_tap_to_interrupt_hint">دوس تقاطعها</string>
 
     <!-- Ledger: quick deduct and manual balance override -->
