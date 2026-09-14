@@ -226,3 +226,28 @@ jobs:
             supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
           done
+
+      # مفاتيح المزوّدين: «المفتاح اتحط؟ وشغال؟» مقاسة بعد كل نشر مش تخمين. أسماء الأسرار
+      # بتتطبع (مش القيم — الـCLI بيطبع digest بس، وإحنا بناخد الاسم)، والفحص الحي بيرجّع حالة
+      # HTTP لكل مزوّد (zad-core-intelligence provider_health). مفتاح service role بيتعمله mask
+      # قبل أي استخدام. مابيفشّلش النشر — تشخيص بس.
+      - name: Provider keys health (names + status only)
+        if: steps.preflight.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "### Supabase secret names" >> "$GITHUB_STEP_SUMMARY"
+          supabase secrets list --project-ref "$PROJECT_REF" \
+            | awk -F'|' 'NR>2 { gsub(/^[ \t]+|[ \t]+$/, "", $1); if ($1 != "") print "- " $1 }' \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          SERVICE_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" -o json \
+            | jq -r '[.[] | select(.name == "service_role")][0].api_key // empty')
+          if [ -z "$SERVICE_KEY" ]; then echo "no service_role key from CLI"; exit 0; fi
+          echo "::add-mask::$SERVICE_KEY"
+          sleep 20
+          curl -sS --max-time 60 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-core-intelligence" \
+            -H "Authorization: Bearer $SERVICE_KEY" -H "Content-Type: application/json" \
+            -d '{"action":"provider_health"}' > provider_health.json || true
+          echo "### Provider health" >> "$GITHUB_STEP_SUMMARY"
+          { echo '```json'; jq . provider_health.json 2>/dev/null || cat provider_health.json; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,7 @@ import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
+import { providerHealth } from "./providerHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestGeminiVoiceWithPool, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 
@@ -929,6 +930,12 @@ Deno.serve(async (req: Request) => {
   try {
     const { action, user_id, payload, dialect } = await req.json();
     console.log(`[CoreIntel] action=${action}, user=${user_id}`);
+
+    // فحص مفاتيح المزوّدين — مفتاح service role بس (CI بعد النشر). أسماء وحالات، ولا مفتاح.
+    if (action === "provider_health") {
+      if (bearerToken(req) !== supabaseKey) return jsonResponse({ error: "unauthorized" }, 401);
+      return jsonResponse(await providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())));
+    }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
     // للـ TTS ونرجع الحالة فقط. للتشخيص من اللوجات/الـ curl بدون JWT.
