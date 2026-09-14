@@ -936,5 +936,20 @@
     "sent_at",
     "status",
     "user_id"
+  ],
+  "zad_appointments": [
+    "created_at",
+    "id",
+    "kind",
+    "notes",
+    "place_label",
+    "recurrence",
+    "remind_minutes_before",
+    "source",
+    "starts_at",
+    "status",
+    "title",
+    "updated_at",
+    "user_id"
   ]
 }

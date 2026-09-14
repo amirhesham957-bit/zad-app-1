@@ -54,9 +54,9 @@
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext } from "./shared.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -942,6 +942,19 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
 
+  // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
+  // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
+  const { data: apptRows, error: apptErr } = await sb.from("zad_appointments")
+    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence")
+    .eq("user_id", userId).eq("status", "upcoming")
+    .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
+    .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
+    .order("starts_at", { ascending: true }).limit(30);
+  if (apptErr) {
+    console.error("[snapshot] zad_appointments failed:", apptErr.message);
+    dataErrors.push({ source: "مواعيدك" });
+  }
+
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
   for (const sub of subRes.data ?? []) {
     if (sub.renewal_date) upcoming.push({ type: "subscription", name: sub.title, when: sub.renewal_date });
@@ -1102,6 +1115,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       title: g.title, metric: g.metric, target: g.target_value,
       done: g.current_value, deadline: g.deadline_date, status: g.status,
     })),
+    // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
+    now_local: localNowContext(budgetState.timezone ?? "UTC"),
+    // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
+    appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين
     // "مفيش مصاريف" و"مقدرتش أقرا المصاريف"، والعقل كان بيقول الأولانية وهو يقصد التانية.
     data_errors: dataErrors,
@@ -2394,6 +2411,52 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
         ? "قوّيت مهارة موجودة بدل ما أكررها"
         : "اتعلمت مهارة جديدة — هتفضل معايا في المحادثات الجاية";
     }
+    case "add_appointment": {
+      const title = String(input.title).trim();
+      const w = await writeRows(
+        sb.from("zad_appointments").insert({
+          user_id: userId,
+          title,
+          kind: APPOINTMENT_KINDS.includes(String(input.kind)) ? String(input.kind) : "personal",
+          starts_at: new Date(String(input.starts_at)).toISOString(),
+          place_label: input.place_label ? String(input.place_label).trim().slice(0, 120) : null,
+          remind_minutes_before: Number.isInteger(input.remind_minutes_before) ? input.remind_minutes_before : 30,
+          recurrence: ["daily", "weekly", "monthly"].includes(String(input.recurrence)) ? String(input.recurrence) : "once",
+          source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+        }).select("id,title,starts_at"),
+        "تسجيل الميعاد",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const row = w.rows[0] as { id: string; title: string; starts_at: string };
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: input.starts_at } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_appointments", targetId: row.id, previous: null, next: row,
+      });
+      const tz = snap?.now_local?.time_zone ?? "UTC";
+      const when = new Date(row.starts_at).toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
+      return `تم تسجيل الميعاد «${title}» ${when} — هفكّره بصوتي قبلها.`;
+    }
+    case "update_appointment": {
+      const id = String(input.appointment_id).trim();
+      const { data: before } = await sb.from("zad_appointments").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
+      if (!before) return "مرفوض: الميعاد ده مش موجود في مواعيد العميل";
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (input.status !== undefined) patch.status = input.status;
+      if (input.starts_at !== undefined) patch.starts_at = new Date(String(input.starts_at)).toISOString();
+      if (input.title !== undefined) patch.title = String(input.title).trim().slice(0, 160);
+      const w = await writeRows(
+        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status"),
+        "تعديل الميعاد",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: patch });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
+      });
+      return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
+    }
     case "schedule_task": {
       // حلقة الأهداف — لو المهمة دي جزء من هدف، اربطها. الهدف لازم يكون للعميل نفسه.
       let goalId: string | null = null;
@@ -3574,6 +3637,40 @@ const CHAT_TOOLS: ToolDef[] = [
         new_balance: { type: "number" },
       },
       required: ["new_balance"],
+    },
+  },
+  {
+    // مواعيد العميل غير المالية (20260914004000) — شغل/مشوار/دكتور/عيلة. زاد بتفكّره بصوتها قبلها.
+    name: "add_appointment",
+    description:
+      "سجّل ميعاد أو مشوار أو التزام غير مالي للعميل وزاد هتفكّره بيه بصوتها قبل ميعاده: «فكّريني بكرة الساعة ٥ أروح البنك»، «عندي دكتور الخميس ١١»، «اجتماع شغل كل حد الساعة ١٠». " +
+      "احسب starts_at من now_local في الـsnapshot (النهارده/بكرة/يوم الأسبوع) واكتبه ISO بنفس utc_offset. " +
+      "مش للفلوس (إيجار/قسط → add_obligation) ومش لتحليل مؤجل («راجعلي مصاريف الأسبوع بكرة» → schedule_task).",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "الميعاد بكلام العميل مختصر: «البنك»، «دكتور الأسنان»" },
+        starts_at: { type: "string", description: "ISO 8601 بالمنطقة الزمنية، مثال 2026-09-15T17:00:00+03:00" },
+        kind: { type: "string", enum: ["work", "errand", "medical", "family", "personal", "other"] },
+        place_label: { type: "string", description: "المكان لو العميل ذكره" },
+        remind_minutes_before: { type: "number", description: "يفكّره قبلها بكام دقيقة — افتراضي ٣٠، ولو مشوار بعيد أو دكتور خليه ٦٠" },
+        recurrence: { type: "string", enum: ["once", "daily", "weekly", "monthly"], description: "افتراضي once" },
+      },
+      required: ["title", "starts_at"],
+    },
+  },
+  {
+    name: "update_appointment",
+    description: "عدّل ميعاد موجود من appointments في الـsnapshot: خلّص (status=done)، اتلغى (cancelled)، أو اتأجل (starts_at جديد).",
+    input_schema: {
+      type: "object",
+      properties: {
+        appointment_id: { type: "string" },
+        status: { type: "string", enum: ["upcoming", "done", "cancelled"] },
+        starts_at: { type: "string", description: "الوقت الجديد ISO بالمنطقة الزمنية لو اتأجل" },
+        title: { type: "string" },
+      },
+      required: ["appointment_id"],
     },
   },
   {
@@ -5244,6 +5341,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 8. متكتبش أي اسم تقني في ردك. تكلم بشكل طبيعي يناسب ${voiceMode ? "المكالمة الصوتية" : "المحادثة المكتوبة"}.
 9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
+11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير.
 
 === SNAPSHOT ===
 ${JSON.stringify(snap)}

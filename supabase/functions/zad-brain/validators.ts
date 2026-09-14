@@ -701,6 +701,56 @@ export const validateSetLifeGoal: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+// مواعيد العميل غير المالية (20260914004000). الوقت لازم ISO فيه منطقة زمنية أو Z —
+// الموديل بيحسبه من now_local في الـsnapshot، ومن غير offset "الساعة ٥" كانت هتتسجل UTC.
+export const APPOINTMENT_KINDS = ["work", "errand", "medical", "family", "personal", "other"];
+const ISO_WITH_ZONE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
+const MAX_APPOINTMENT_DAYS_AHEAD = 366;
+
+export const validateAddAppointment: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["add_appointment"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ مواعيد في المرة" };
+  const title = String(input.title ?? "").trim();
+  if (title.length < 2) return { ok: false, reason: "اسم الميعاد قصير أوي" };
+  if (title.length > 160) return { ok: false, reason: "اسم الميعاد طويل أوي، لخّصه" };
+  const startsAt = String(input.starts_at ?? "");
+  if (!ISO_WITH_ZONE_RE.test(startsAt) || Number.isNaN(new Date(startsAt).getTime())) {
+    return { ok: false, reason: "starts_at لازم ISO 8601 فيه المنطقة الزمنية (مثال 2026-09-15T17:00:00+03:00) — احسبه من now_local" };
+  }
+  const t = new Date(startsAt).getTime();
+  if (t < Date.now() - PAST_GRACE_MINUTES * 60_000) return { ok: false, reason: "الميعاد ده فات بالفعل — اتأكد من اليوم والساعة" };
+  if (t > Date.now() + MAX_APPOINTMENT_DAYS_AHEAD * 86_400_000) return { ok: false, reason: "أبعد ميعاد مسموح سنة" };
+  if (input.kind !== undefined && !APPOINTMENT_KINDS.includes(String(input.kind))) {
+    return { ok: false, reason: `kind لازم واحد من: ${APPOINTMENT_KINDS.join("، ")}` };
+  }
+  if (input.recurrence !== undefined && !["once", "daily", "weekly", "monthly"].includes(String(input.recurrence))) {
+    return { ok: false, reason: "recurrence لازم once أو daily أو weekly أو monthly" };
+  }
+  if (input.remind_minutes_before !== undefined) {
+    const m = Number(input.remind_minutes_before);
+    if (!Number.isInteger(m) || m < 0 || m > 10080) return { ok: false, reason: "التذكير قبلها لازم دقايق من ٠ لـ ١٠٠٨٠" };
+  }
+  if (input.place_label != null && String(input.place_label).length > 120) return { ok: false, reason: "اسم المكان طويل أوي" };
+  return { ok: true };
+};
+
+export const validateUpdateAppointment: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["update_appointment"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ تعديلات مواعيد في المرة" };
+  if (String(input.appointment_id ?? "").trim().length < 10) return { ok: false, reason: "appointment_id لازم من appointments في الـsnapshot" };
+  if (input.status !== undefined && !["upcoming", "done", "cancelled"].includes(String(input.status))) {
+    return { ok: false, reason: "status لازم upcoming أو done أو cancelled" };
+  }
+  if (input.starts_at !== undefined) {
+    const startsAt = String(input.starts_at);
+    if (!ISO_WITH_ZONE_RE.test(startsAt) || Number.isNaN(new Date(startsAt).getTime())) {
+      return { ok: false, reason: "starts_at لازم ISO 8601 فيه المنطقة الزمنية" };
+    }
+  }
+  if (input.status === undefined && input.starts_at === undefined && input.title === undefined) {
+    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم" };
+  }
+  return { ok: true };
+};
+
 export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
@@ -767,6 +817,8 @@ export const VALIDATORS: Record<string, Validator> = {
   update_emergency_fund_balance: validateUpdateEmergencyFundBalance,
   app_command: validateAppCommand,
   learn_skill: validateLearnSkill,
+  add_appointment: validateAddAppointment,
+  update_appointment: validateUpdateAppointment,
 };
 
 /**
@@ -789,6 +841,8 @@ export const MUTATING_TOOLS = [
   "add_obligation", "update_obligation", "delete_obligation",
   "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",
   "update_emergency_fund_balance",
+  // مواعيد العميل (20260914004000)
+  "add_appointment", "update_appointment",
   // أمر واجهة — قراءة/تنقّل بس، مش كتابة بيانات. مش في CONFIRM_REQUIRED أبداً.
   "app_command",
   // العقل بيتعلم — كتابة في zad_skills بس (مش بيانات عميل).

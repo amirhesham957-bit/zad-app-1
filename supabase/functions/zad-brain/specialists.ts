@@ -256,6 +256,9 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
     "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
     "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
+    // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
+    // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
+    "add_appointment", "update_appointment",
   ]);
   return tools.filter((t) => allowed.has(t.name));
 }

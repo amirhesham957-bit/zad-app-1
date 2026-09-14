@@ -108,3 +108,31 @@ Deno.test("composed reply parsing tolerates code fences and rejects missing spee
   assertEquals(parseComposedMoment("not json", false), null);
   assertStringIncludes(momentFallback("dose_nudge", { item_name: "أسبرين" }).title, "أسبرين");
 });
+
+Deno.test("appointment fallback names the appointment, the place and the time left", () => {
+  const m = momentFallback("appointment_soon", {
+    title: "البنك", place_label: "فرع المعادي", minutes_left: 25,
+    starts_at: "2026-09-15T14:00:00Z", time_zone: "Africa/Cairo",
+  });
+  assertStringIncludes(m.title, "البنك");
+  assertStringIncludes(m.text, "25 دقيقة");
+  assertStringIncludes(m.speech, "فرع المعادي");
+});
+
+Deno.test("a cancelled appointment is not reminded", async () => {
+  const { sb, updates } = fakeSb({
+    zad_voice_moments: [{ id: "m9", user_id: "u1", moment: "appointment_soon", status: "pending", attempts: 0,
+      created_at: new Date().toISOString(), facts: { appointment_id: "a1", title: "البنك" } }],
+    zad_appointments: [{ id: "a1", status: "cancelled" }],
+    zad_users: [{ id: "u1", country: "EG" }],
+  });
+  let sent = 0;
+  const res = await processVoiceMoments(sb, {
+    compose: () => Promise.resolve("{}"),
+    pushDevice: () => { sent++; return Promise.resolve("sent"); },
+    pushTelegram: () => { sent++; return Promise.resolve("delivered"); },
+  });
+  assertEquals(res.skipped, 1);
+  assertEquals(sent, 0);
+  assertEquals(updates[0].values.status, "skipped");
+});

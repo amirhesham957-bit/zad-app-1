@@ -1299,3 +1299,25 @@ Deno.test("only urgent money initiatives get a Telegram voice note", () => {
     assertEquals(agentTaskNotice(kind).voice, false, kind);
   }
 });
+
+Deno.test("appointments need a zoned ISO time in the future; the local-now context gives the model one", async () => {
+  const { validateAddAppointment, validateUpdateAppointment } = await import("./validators.ts");
+  const { localNowContext } = await import("./shared.ts");
+  const ctx = { counts: {} } as never;
+  // deno-lint-ignore no-explicit-any
+  const ok = async (fn: any, input: Record<string, unknown>) => (await fn(input, {} as never, ctx)).ok;
+  const future = new Date(Date.now() + 3600_000).toISOString();
+  assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: future }), true);
+  assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: "2026-09-15T17:00:00" }), false);
+  assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: new Date(Date.now() - 3600_000).toISOString() }), false);
+  assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: future, kind: "party" }), false);
+  assertEquals(await ok(validateUpdateAppointment, { appointment_id: "11111111-2222-3333-4444-555555555555" }), false);
+  assertEquals(await ok(validateUpdateAppointment, { appointment_id: "11111111-2222-3333-4444-555555555555", status: "done" }), true);
+
+  const cairo = localNowContext("Africa/Cairo", new Date("2026-09-14T06:30:00Z"));
+  assertEquals(cairo.utc_offset, "+03:00");
+  assertEquals(cairo.iso_local, "2026-09-14T09:30:00+03:00");
+  assertEquals(cairo.date, "2026-09-14");
+  assertEquals(localNowContext("Not/AZone", new Date("2026-09-14T06:30:00Z")).time_zone, "UTC");
+  assertEquals(localNowContext("UTC", new Date("2026-09-14T00:05:00Z")).iso_local, "2026-09-14T00:05:00+00:00");
+});

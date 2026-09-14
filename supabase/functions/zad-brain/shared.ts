@@ -334,3 +334,31 @@ export function pickDuplicateProposalSibling(
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   return candidates.length > 0 ? { id: candidates[0].id } : null;
 }
+
+
+/**
+ * الوقت دلوقتي بتوقيت العميل — للـsnapshot. من غيره «فكّريني بكرة الساعة ٥» كان الموديل
+ * بيحسبه من إحساسه بالتاريخ: الـsnapshot كان فيه حدود دورة الميزانية بس، مفيش "النهارده
+ * كام والساعة كام" (اتقاس ٢٠٢٦-٠٩-١٤). offset صريح عشان الموديل يكتب starts_at بنفس
+ * المنطقة (add_appointment بترفض وقت من غير منطقة).
+ */
+export function localNowContext(timeZone: string, now: Date = new Date()): {
+  iso_local: string; date: string; time: string; weekday: string; utc_offset: string; time_zone: string;
+} {
+  const tz = (() => {
+    try { new Intl.DateTimeFormat("en-US", { timeZone }); return timeZone; } catch { return "UTC"; }
+  })();
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+      timeZoneName: "longOffset",
+    }).formatToParts(now).map((p) => [p.type, p.value]),
+  ) as Record<string, string>;
+  const hour = parts.hour === "24" ? "00" : parts.hour;
+  const offsetRaw = (parts.timeZoneName ?? "GMT").replace("GMT", "");
+  const utcOffset = offsetRaw === "" ? "+00:00" : offsetRaw;
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  const time = `${hour}:${parts.minute}`;
+  const weekday = new Intl.DateTimeFormat("ar-EG", { timeZone: tz, weekday: "long" }).format(now);
+  return { iso_local: `${date}T${time}:00${utcOffset}`, date, time, weekday, utc_offset: utcOffset, time_zone: tz };
+}

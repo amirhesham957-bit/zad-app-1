@@ -107,3 +107,12 @@ Deno.test("أدوات الاستشاري بتتضاف لأدوات الأساس�
   assertEquals(names.includes("log_transaction"), true);
   assertEquals(names.includes("add_pharmacy_item"), false);
 });
+
+Deno.test("appointment tools survive every specialist's tool scoping", () => {
+  const tools = [{ name: "add_appointment" }, { name: "update_appointment" }, { name: "log_transaction" }];
+  for (const sp of ["finance", "pantry", "pharmacy", "family", "home"] as const) {
+    const names = scopeToolsForSpecialist(tools, sp).map((t) => t.name);
+    assertEquals(names.includes("add_appointment"), true, sp);
+    assertEquals(names.includes("update_appointment"), true, sp);
+  }
+});

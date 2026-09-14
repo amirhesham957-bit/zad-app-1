@@ -55,7 +55,7 @@ export function spokenTime(iso: unknown, timeZone = "Africa/Cairo"): string {
  */
 export function momentFallback(moment: string, facts: Record<string, unknown>): ComposedMoment {
   const item = str(facts.item_name) || "الدوا";
-  const at = spokenTime(facts.scheduled_at, str(facts.time_zone, 40) || undefined);
+  const at = spokenTime(facts.scheduled_at ?? facts.starts_at, str(facts.time_zone, 40) || undefined);
   switch (moment) {
     case "dose_nudge":
       return {
@@ -75,6 +75,17 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         text: `دي تاني جرعة تفوت النهارده. صحتك أهم حاجة — خد ${item} دلوقتي.`,
         speech: `أنا زعلانة بجد… دي تاني مرة النهارده تنسى ${item}. صحتك تهمني أوي. خده دلوقتي، ماشي؟`,
       };
+    case "appointment_soon": {
+      const title = str(facts.title, 120) || "ميعادك";
+      const place = str(facts.place_label, 80);
+      const mins = typeof facts.minutes_left === "number" ? facts.minutes_left : null;
+      const when = at ? `الساعة ${at}` : "قريب";
+      return {
+        title: `⏰ ${title} ${when}`,
+        text: `فاضل${mins !== null ? ` ${mins} دقيقة` : " شوية"} على «${title}»${place ? ` في ${place}` : ""}.`,
+        speech: `فاكر ميعاد ${title}؟ ${mins !== null && mins <= 90 ? `فاضل ${mins} دقيقة بس` : `هو ${when}`}${place ? ` في ${place}` : ""}. يلا جهّز نفسك، وماتتأخرش عليا!`,
+      };
+    }
     default:
       return {
         title: "💬 زاد",
@@ -140,6 +151,13 @@ export function parseComposedMoment(raw: string, requireSpeech: boolean): Compos
 
 /** الجرعة لسه ماتاخدتش؟ (ممكن العميل داس "خدته" بعد ما اللحظة اتسجلت) */
 export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): Promise<boolean> {
+  // ميعاد اتلغى أو خلص بعد ما التذكير اتسجل = مفيش تذكير.
+  if (row.moment.startsWith("appointment_")) {
+    const apptId = str(row.facts?.appointment_id, 60);
+    if (!apptId) return true;
+    const { data: appt } = await sb.from("zad_appointments").select("status").eq("id", apptId).maybeSingle();
+    return (appt as { status?: string } | null)?.status === "upcoming";
+  }
   if (!row.moment.startsWith("dose_")) return true;
   const doseLogId = str(row.facts?.dose_log_id, 60);
   if (!doseLogId) return true;
