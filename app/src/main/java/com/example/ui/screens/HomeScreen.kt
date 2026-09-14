@@ -1797,7 +1797,12 @@ fun AgentSummaryCard(
                     }
                 }
             } else {
-                Text(stringResource(R.string.zad_analyzing_now), color = Color.White.copy(alpha = 0.7f), style = Typography.bodySmall)
+                // مش بيحمّل ومفيش ملخص = النداء فشل أو لسه ماتنداش. «زاد بيحلل دلوقتي» هنا كانت
+                // بتفضل للأبد من غير ما حاجة تحصل؛ نقول الحقيقة ونسيب زرار يعيد.
+                Text(stringResource(R.string.agent_summary_empty), color = Color.White.copy(alpha = 0.8f), style = Typography.bodySmall)
+                TextButton(onClick = onRefresh, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)) {
+                    Text(stringResource(R.string.agent_summary_retry), color = agentPanelBrand, style = Typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
             }
     }
 }

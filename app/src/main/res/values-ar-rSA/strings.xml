@@ -1929,4 +1929,8 @@
     <string name="telegram_prompt_benefit_forecast">يرسل لك ملخص البيت وتوقع الصرف</string>
     <string name="telegram_prompt_benefit_log">تسجل مصروفك برسالة وحدة</string>
     <string name="telegram_prompt_later">مو الحين</string>
+    <string name="glance_inventory_empty_title">المخزن فاضي للحين</string>
+    <string name="glance_inventory_empty_sub">صوّر فاتورة السوبرماركت أو أضف أغراضك، وزاد يعلمك وش قرب يخلص قبل تحتاجه</string>
+    <string name="agent_summary_empty">الملخص مو جاهز للحين — زاد يحتاج شوية بيانات أو انقطع النت.</string>
+    <string name="agent_summary_retry">حاول مرة ثانية</string>
 </resources>

@@ -489,7 +489,15 @@ fun ZadFoodShortagesGlanceCard(
             }
         }
 
-        // شريط تمرير أفقي انسيابي للنواقص والأصناف (Horizontal Scrollable Rail)
+        // المخزن الفاضي كان بيرسم LazyRow فاضي تحت العنوان — كارت مالوش أي معنى.
+        if (sampleItems.isEmpty()) {
+            ZadEmptyState(
+                icon = Icons.Default.Inventory2,
+                title = stringResource(R.string.glance_inventory_empty_title),
+                subtitle = stringResource(R.string.glance_inventory_empty_sub),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            )
+        } else
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),

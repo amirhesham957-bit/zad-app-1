@@ -2005,4 +2005,8 @@
     <string name="telegram_banner_body">التقارير وتأكيد حركات البنك وفويسات زاد (صباح الخير، الدوا، المواعيد) كلها بتوصل على تليجرام. من غير الربط مش هتوصلك.</string>
     <string name="telegram_banner_link">اربط دلوقتي</string>
     <string name="telegram_prompt_later">مش دلوقتي</string>
+    <string name="glance_inventory_empty_title">المخزن لسه فاضي</string>
+    <string name="glance_inventory_empty_sub">صوّر فاتورة السوبرماركت أو ضيف أصنافك، وزاد يقولك إيه قرب يخلص قبل ما تحتاجه</string>
+    <string name="agent_summary_empty">الملخص مش جاهز لسه — زاد محتاج شوية بيانات أو النت فصل.</string>
+    <string name="agent_summary_retry">حاول تاني</string>
 </resources>

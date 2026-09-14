@@ -1994,4 +1994,8 @@
     <string name="telegram_banner_body">Reports, bank confirmations and Zad\'s voice notes (good morning, medicine, appointments) all arrive on Telegram. Without linking, they will not reach you.</string>
     <string name="telegram_banner_link">Link now</string>
     <string name="telegram_prompt_later">Not now</string>
+    <string name="glance_inventory_empty_title">Your pantry is empty</string>
+    <string name="glance_inventory_empty_sub">Snap a grocery receipt or add items, and Zad will tell you what is running low before you need it</string>
+    <string name="agent_summary_empty">Summary isn\'t ready yet — Zad needs a bit more data, or the connection dropped.</string>
+    <string name="agent_summary_retry">Try again</string>
 </resources>
