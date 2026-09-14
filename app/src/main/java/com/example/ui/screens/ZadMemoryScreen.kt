@@ -44,6 +44,9 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
     var profile by remember { mutableStateOf<com.example.data.ZadCustomerProfile?>(null) }
     var editingProfile by remember { mutableStateOf(false) }
     var savingProfile by remember { mutableStateOf(false) }
+    var habits by remember { mutableStateOf(com.example.data.HabitsSummary.from(null, emptyList())) }
+    var confirmClearOutings by remember { mutableStateOf(false) }
+    val outingsClearedMessage = stringResource(R.string.habits_cleared)
     val profileSaveFailed = stringResource(R.string.profile_save_failed)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -57,6 +60,7 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
         try {
             notes = SupabaseRepo.getMemoryNotes(limit = 200)
             profile = SupabaseRepo.getCustomerProfile()
+            habits = com.example.data.HabitsSummary.from(SupabaseRepo.getBehaviorProfile(), SupabaseRepo.getPlaceVisits(30))
         } catch (e: Exception) {
             android.util.Log.e("ZadMemoryScreen", "Failed to get memory notes: ${e.message}")
         } finally {
@@ -117,6 +121,10 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
                 item(key = "customer-profile") {
                     com.example.ui.components.CustomerProfileCard(profile = profile, onEdit = { editingProfile = true })
                 }
+                // «عاداتك وتحركاتك» — اللي اتعلمه من سلوكك، ومسح الخروجات من هنا.
+                item(key = "habits") {
+                    com.example.ui.components.HabitsCard(summary = habits, onClearOutings = { confirmClearOutings = true })
+                }
                 if (notes.isEmpty()) {
                     item(key = "notes-empty") {
                         ZadEmptyState(
@@ -136,6 +144,28 @@ fun ZadMemoryScreen(onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (confirmClearOutings) {
+        AlertDialog(
+            onDismissRequest = { confirmClearOutings = false },
+            title = { Text(stringResource(R.string.habits_clear_outings)) },
+            text = { Text(stringResource(R.string.habits_clear_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClearOutings = false
+                    scope.launch {
+                        if (SupabaseRepo.deleteAllPlaceVisits()) {
+                            habits = habits.copy(outingsCount = 0, avgSpendPerOuting = null, topPlaces = emptyList())
+                            snackbarHostState.showSnackbar(outingsClearedMessage)
+                        } else {
+                            snackbarHostState.showSnackbar(deleteFailedMessage)
+                        }
+                    }
+                }) { Text(stringResource(R.string.zad_memory_delete_action), color = dangerColor) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClearOutings = false }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 
     if (editingProfile) {

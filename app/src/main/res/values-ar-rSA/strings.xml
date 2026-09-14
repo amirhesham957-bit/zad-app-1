@@ -2068,4 +2068,18 @@
 
 ادخل من هنا: %1$s
 أو اكتب الكود: %2$s</string>
+    <string name="habits_title">عاداتك وتحركاتك</string>
+    <string name="habits_subtitle">اللي تعلمته زاد من صرفك وطلعاتك — بدون أماكن ولا إحداثيات</string>
+    <string name="habits_empty">للحين تتعلم عاداتك — سجّل مصاريفك وفعّل تنبيهات الموقع وبتبان هنا</string>
+    <string name="habits_weekly">متوسط صرفك في الأسبوع</string>
+    <string name="habits_top_categories">أكثر شي تصرف عليه</string>
+    <string name="habits_busiest_day">أكثر يوم تصرف فيه</string>
+    <string name="habits_subscriptions">اشتراكاتك في الشهر</string>
+    <string name="habits_outings">طلعاتك آخر ٣٠ يوم</string>
+    <string name="habits_outings_fmt">%1$d طلعة</string>
+    <string name="habits_per_outing">متوسط صرف الطلعة</string>
+    <string name="habits_places">أكثر أماكن تروح لها</string>
+    <string name="habits_clear_outings">امسح طلعاتي</string>
+    <string name="habits_clear_body">بنمسح كل الطلعات المسجلة (أوقات وصرف ومحلات). المصاريف نفسها ما بتنمسح.</string>
+    <string name="habits_cleared">انمسحت طلعاتك</string>
 </resources>

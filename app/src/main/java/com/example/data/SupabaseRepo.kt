@@ -1358,6 +1358,33 @@ object SupabaseRepo {
         false
     }
 
+    // ── خروجات العميل (zad_place_visits — من غير إحداثيات) ────────────────────
+    suspend fun getPlaceVisits(days: Long = 30): List<ZadPlaceVisit> = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return emptyList()
+        val since = java.time.Instant.now().minus(java.time.Duration.ofDays(days)).toString()
+        client.postgrest["zad_place_visits"].select {
+            filter {
+                eq("user_id", userId)
+                gte("returned_at", since)
+            }
+            order("returned_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+            limit(200L)
+        }.decodeList<ZadPlaceVisit>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getPlaceVisits() FAILED: ${e.message}")
+        emptyList()
+    }
+
+    /** «امسح تحركاتي» — كل الخروجات المتسجلة للعميل (RLS بتسمح له بمسح صفوفه بس). */
+    suspend fun deleteAllPlaceVisits(): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        client.postgrest["zad_place_visits"].delete { filter { eq("user_id", userId) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "deleteAllPlaceVisits() FAILED: ${e.message}")
+        false
+    }
+
     // ── ملف العميل (zad_customer_profile) ─────────────────────────────────────
     suspend fun getCustomerProfile(): ZadCustomerProfile? = try {
         val userId = client.auth.currentUserOrNull()?.id ?: return null

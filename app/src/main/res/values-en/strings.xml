@@ -2133,4 +2133,18 @@
 
 Join here: %1$s
 or enter the code: %2$s</string>
+    <string name="habits_title">Your habits and outings</string>
+    <string name="habits_subtitle">What Zad learned from your spending and outings — no places or coordinates stored</string>
+    <string name="habits_empty">Still learning your habits — log spending and turn on location alerts to see them here</string>
+    <string name="habits_weekly">Average weekly spending</string>
+    <string name="habits_top_categories">What you spend most on</string>
+    <string name="habits_busiest_day">Your biggest spending day</string>
+    <string name="habits_subscriptions">Subscriptions per month</string>
+    <string name="habits_outings">Outings in the last 30 days</string>
+    <string name="habits_outings_fmt">%1$d outings</string>
+    <string name="habits_per_outing">Average spend per outing</string>
+    <string name="habits_places">Places you go most</string>
+    <string name="habits_clear_outings">Delete my outings</string>
+    <string name="habits_clear_body">This deletes all recorded outings (times, spending and stores). Your expenses themselves stay.</string>
+    <string name="habits_cleared">Your outings were deleted</string>
 </resources>
