@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { DeadKeys } from "../_shared/deadKeys.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
@@ -393,6 +394,8 @@ async function callOpenAICompatibleChat(opts: {
 // before ever falling through to Gemini. Any other failure (HTTP error, timeout, empty
 // content) also advances to the next key rather than failing fast, since a bad key or a
 // transient upstream blip shouldn't cost the whole pool.
+const groqDeadKeys = new DeadKeys();
+
 async function callGroqPool(opts: {
   model: string;
   systemPrompt: string;
@@ -403,11 +406,14 @@ async function callGroqPool(opts: {
 }): Promise<{ content: string | null; ok: boolean }> {
   if (GROQ_KEYS.length === 0) return { content: null, ok: false };
   const start = nextGroqKeyIndex();
-  for (let i = 0; i < GROQ_KEYS.length; i++) {
-    const keyIndex = (start + i) % GROQ_KEYS.length;
-    const result = await callOpenAICompatibleChat({ baseUrl: GROQ_CHAT_URL, apiKey: GROQ_KEYS[keyIndex], ...opts });
+  // مفتاح رجّع 401/403 بيتعدّى ٣٠ دقيقة بدل ما ياكل محاولة كل نداء (_shared/deadKeys.ts).
+  for (const key of groqDeadKeys.order(GROQ_KEYS, start)) {
+    const keyIndex = GROQ_KEYS.indexOf(key);
+    const result = await callOpenAICompatibleChat({ baseUrl: GROQ_CHAT_URL, apiKey: key, ...opts });
     if (result.ok && result.content) return { content: result.content, ok: true };
-    if (result.status === 429) {
+    if (groqDeadKeys.markIfRejected(key, result.status)) {
+      console.error(`[CoreIntel] Groq key ${keyIndex + 1} rejected (${result.status}) — skipping it for 30 min`);
+    } else if (result.status === 429) {
       console.warn(`[CoreIntel] Groq key ${keyIndex + 1} hit 429, switching to next Groq key...`);
     } else {
       console.error(`[CoreIntel] Groq key ${keyIndex + 1} failed (status ${result.status}):`, JSON.stringify(result.raw));

@@ -11,6 +11,7 @@ Deno.env.set("ZAD_PROVIDER", "gemini");
 Deno.env.set("ZAD_API_KEY_1", "k1");
 Deno.env.set("ZAD_API_KEY_2", "k2");
 Deno.env.set("GROQ_API_KEY_1", "groq1");
+Deno.env.set("GROQ_API_KEY_2", "groq2");
 Deno.env.set("ZAD_MODEL_FALLBACKS", "model-b,model-c");
 
 const { callModel } = await import("./callModel.ts");
@@ -170,5 +171,30 @@ Deno.test("موديل بيرفض thinkingConfig بيتعاد عليه من غي�
     assertEquals(s.calls[before].body.generationConfig.thinkingConfig, undefined);
   } finally {
     s.restore();
+  }
+});
+
+Deno.test("مفتاح Groq مرفوض (401) بيتعدّى للمفتاح التاني بدل ما رجل Groq كلها تفشل", async () => {
+  const original = globalThis.fetch;
+  const groqKeysUsed: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("api.groq.com")) {
+      const auth = String((init?.headers as Record<string, string>)?.authorization ?? "");
+      groqKeysUsed.push(auth);
+      if (auth.endsWith("groq1")) return Promise.resolve(new Response("invalid api key", { status: 401 }));
+      return Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content: "من المفتاح التاني", tool_calls: [] } }], usage: {} }), { status: 200 }));
+    }
+    return Promise.resolve(quota429());
+  }) as typeof fetch;
+  try {
+    const first = await callModel({ ...BASE });
+    const second = await callModel({ ...BASE });
+    assertEquals(first.text, "من المفتاح التاني");
+    assertEquals(second.text, "من المفتاح التاني");
+    // المفتاح المرفوض اتجرب مرة واحدة بس، وبعدها بيتعدّى
+    assertEquals(groqKeysUsed.filter((a) => a.endsWith("groq1")).length <= 1, true);
+  } finally {
+    globalThis.fetch = original;
   }
 });

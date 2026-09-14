@@ -23,6 +23,7 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
+import { DeadKeys } from "../_shared/deadKeys.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
 export type Turn =
@@ -576,14 +577,31 @@ async function sendGemini(o: {
  * this project at all, so routing Groq through cfg() would have failed with an undefined
  * bearer token the first time it was ever needed.
  */
-function sendGroq(o: {
+async function sendGroq(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
 }): Promise<ModelReply> {
-  const key = GROQ_KEY_POOL[groqKeyCursor % GROQ_KEY_POOL.length];
+  const start = groqKeyCursor % GROQ_KEY_POOL.length;
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
-  return sendOpenAICompatible(o, { key, baseUrl: "https://api.groq.com/openai/v1", who: "groq" });
+  // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
+  // Groq كلها نص المرات. دلوقتي المرفوض بيتعلّم ميت ونكمل على اللي بعده (_shared/deadKeys.ts).
+  let lastError: unknown = null;
+  for (const key of groqDeadKeys.order(GROQ_KEY_POOL, start)) {
+    try {
+      return await sendOpenAICompatible(o, { key, baseUrl: "https://api.groq.com/openai/v1", who: "groq" });
+    } catch (e) {
+      const status = e instanceof ConfigError ? Number(/groq (\d{3})/.exec(e.message)?.[1]) : undefined;
+      if (groqDeadKeys.markIfRejected(key, status)) {
+        console.error(`[zad-brain] groq key rejected (${status}) — skipping it for 30 min`);
+        lastError = e;
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastError ?? new ConfigError("groq: no usable key");
 }
 let groqKeyCursor = 0;
+const groqDeadKeys = new DeadKeys();
 
 async function sendOpenAICompatible(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
