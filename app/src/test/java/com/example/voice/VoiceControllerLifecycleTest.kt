@@ -24,17 +24,17 @@ import java.util.concurrent.TimeUnit
  * التستات دي بتمسك السيناريو ده بالظبط: افتح، اقفل، افتح تاني.
  */
 @RunWith(AndroidJUnit4::class)
-class LiveVoiceSessionLifecycleTest {
+class VoiceControllerLifecycleTest {
 
     @Before
     fun setUp() {
-        ZadLiveVoiceSession.init(ApplicationProvider.getApplicationContext<Application>())
+        ZadVoiceController.init(ApplicationProvider.getApplicationContext<Application>())
     }
 
     /** بيثبت إن الـscope مش بس "موجود" — بينفّذ شغل فعلاً. */
     private fun scopeActuallyRunsWork(): Boolean {
         val latch = CountDownLatch(1)
-        ZadLiveVoiceSession.scope.launch { latch.countDown() }
+        ZadVoiceController.scope.launch { latch.countDown() }
         return latch.await(3, TimeUnit.SECONDS)
     }
 
@@ -46,7 +46,7 @@ class LiveVoiceSessionLifecycleTest {
     fun aSecondSessionStillRunsAfterTheFirstOneWasReleased() {
         assertTrue("الفتحة الأولى لازم تشتغل", scopeActuallyRunsWork())
 
-        ZadLiveVoiceSession.release()
+        ZadVoiceController.release()
 
         assertTrue("الفتحة التانية بعد release لازم تشتغل برضه", scopeActuallyRunsWork())
     }
@@ -54,9 +54,9 @@ class LiveVoiceSessionLifecycleTest {
     /** قفل الشيت بينادي stop()، ودي المفروض ماتمسّش الـscope أصلاً. */
     @Test
     fun stopLeavesTheScopeUsable() {
-        val before = ZadLiveVoiceSession.scope
-        ZadLiveVoiceSession.stop()
-        assertSame("stop مالهاش دعوة بالـscope", before, ZadLiveVoiceSession.scope)
+        val before = ZadVoiceController.scope
+        ZadVoiceController.stop()
+        assertSame("stop مالهاش دعوة بالـscope", before, ZadVoiceController.scope)
         assertTrue(scopeActuallyRunsWork())
     }
 
@@ -64,7 +64,7 @@ class LiveVoiceSessionLifecycleTest {
     @Test
     fun initIsIdempotent() {
         val ctx = ApplicationProvider.getApplicationContext<Application>()
-        repeat(3) { ZadLiveVoiceSession.init(ctx) }
+        repeat(3) { ZadVoiceController.init(ctx) }
         assertTrue(scopeActuallyRunsWork())
     }
 }

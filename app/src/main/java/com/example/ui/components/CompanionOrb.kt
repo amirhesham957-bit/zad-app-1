@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.R
-import com.example.voice.LiveVoiceState
+import com.example.voice.VoiceControllerState
 import com.example.voice.ZadCutePetSoundFx
 import com.example.voice.VoiceState
 import com.example.ui.theme.*
@@ -88,11 +88,11 @@ fun companionMoodForVoice(voice: VoiceState): CompanionState? = when (voice) {
  * نفس القاعدة للمكالمة الحية. Connecting → Focused لأن الاتصال شغل بيحصل ورا
  * الكواليس والمستخدم مستني — نفس معنى "بيفكر" بالظبط.
  */
-fun companionMoodForLiveVoice(live: LiveVoiceState): CompanionState? = when (live) {
-    is LiveVoiceState.Listening -> CompanionState.Listening
-    is LiveVoiceState.ModelSpeaking -> CompanionState.Speaking
-    is LiveVoiceState.Connecting -> CompanionState.Focused
-    is LiveVoiceState.Idle, is LiveVoiceState.Error -> null
+fun companionMoodForLiveVoice(live: VoiceControllerState): CompanionState? = when (live) {
+    is VoiceControllerState.Listening -> CompanionState.Listening
+    is VoiceControllerState.ModelSpeaking -> CompanionState.Speaking
+    is VoiceControllerState.Connecting -> CompanionState.Focused
+    is VoiceControllerState.Idle, is VoiceControllerState.Error -> null
 }
 
 /**
@@ -186,7 +186,7 @@ fun CompanionOrb(
      * سعة الصوت اللحظية 0..1 — الكورة بتنبض بيها وهي بتسمع.
      *
      * **لامبدا مش `Float`، والسبب أدائي مش أسلوبي.** المصدر
-     * (`ZadLiveVoiceSession.updateMicLevel`) بيحدّث القيمة **مرة لكل بافر مايك** —
+     * (`ZadVoiceController` mic loop) بيحدّث القيمة **مرة لكل بافر مايك** —
      * عشرات المرات في الثانية على 16kHz mono PCM16. لو البارامتر كان `Float`،
      * كل انبعاث كان هيعمل recomposition لشجرة الكورة كلها بنفس المعدل، طول المكالمة.
      * كلامبدا، القراءة بتحصل **جوه الـdraw scope** فبتبطّل الرسم لوحده

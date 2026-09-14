@@ -186,7 +186,6 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
     // المسكوت الأليف في HomeScreen بيفتح على طول في وضع المكالمة الحية (Gemini Live) —
     // كل مداخل الصوت التانية (المايك في الشريط السفلي، كارت "مساعدك الذكي جاهز") لسه
     // بتفتح في الوضع العادي دور-بدور زي ما كانت.
-    var voiceSheetLiveMode by remember { mutableStateOf(false) }
     LaunchedEffect(wakeRequest) {
         if (wakeRequest) {
             showVoiceSheet = true
@@ -484,10 +483,6 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
                                 onNavigateToPlans = { go(ZadRoutes.PREMIUM_PLANS) },
                                 onNavigateToRoute = { goGuarded(it) },
                                 onOpenVoice = { showVoiceSheet = true },
-                                onOpenVoiceLive = {
-                                    voiceSheetLiveMode = true
-                                    showVoiceSheet = true
-                                },
                                 onOpenBotChat = { showAgentOverlay = true }
                             )
                         }
@@ -693,11 +688,7 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
     if (showVoiceSheet) {
         com.example.ui.components.ZadVoiceBottomSheet(
             viewModel = viewModel,
-            onDismiss = {
-                showVoiceSheet = false
-                voiceSheetLiveMode = false
-            },
-            initialLiveMode = voiceSheetLiveMode
+            onDismiss = { showVoiceSheet = false }
         )
     }
 }

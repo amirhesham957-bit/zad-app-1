@@ -1170,6 +1170,25 @@
     <string name="chat_memory_hint_label">Built on %1$d thing(s) Zad remembers about you</string>
 
     <!-- Interrupting Zad while she's talking -->
+    <string name="voice_suggestion_budget">How much budget is left?</string>
+    <string name="voice_sheet_title">Zad voice assistant</string>
+    <string name="voice_header_connecting">Connecting…</string>
+    <string name="voice_header_speaking">Zad is speaking…</string>
+    <string name="voice_header_thinking">Thinking…</string>
+    <string name="voice_header_live">Zad • Live</string>
+    <string name="voice_settings_title">Voice settings</string>
+    <string name="voice_settings_persona">Voice persona</string>
+    <string name="voice_settings_info_body">The voice you pick here answers your calls and reads your notifications. You can interrupt Zad at any time.</string>
+    <string name="voice_status_error_retry">⚠️ %1$s\nTap the mic to try again</string>
+    <string name="voice_status_connecting">Connecting to Zad…</string>
+    <string name="voice_status_live_speaking">Zad is speaking… talk any time to interrupt</string>
+    <string name="voice_status_live_listening">Zad is listening — go ahead</string>
+    <string name="voice_status_tap_to_start">Tap the mic and talk to Zad 🎙️</string>
+    <string name="voice_fallback_note">Live call is unavailable right now, so I will answer turn by turn in the same voice</string>
+    <string name="voice_retry_live">Try the live call again</string>
+    <string name="voice_stop_call">End call</string>
+    <string name="voice_start_call">Start a call with Zad</string>
+    <string name="voice_chips_label">Or pick a ready question:</string>
     <string name="voice_tap_to_interrupt_hint">Tap to interrupt</string>
 
     <!-- Ledger: quick deduct and manual balance override -->

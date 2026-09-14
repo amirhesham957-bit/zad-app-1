@@ -66,3 +66,18 @@ export function normalizeClientFrame(text: string): string {
   const { mediaChunks: _dropped, ...rest } = input;
   return JSON.stringify({ realtimeInput: { ...rest, audio: { mimeType: chunk.mimeType, data: chunk.data } } });
 }
+
+/** شخصية الصوت اللي العميل اختارها → صوت جيميناي. نفس جدول `zad-core-intelligence/voice.ts`
+ *  (VOICE_IDS) بالحرف — مفيش استيراد بين الفانكشنز في المشروع ده، فالتست بيقفل التطابق.
+ *  من غير ده الإعداد كان بيغيّر صوت قراءة النصوص بس، والمكالمة الحية فضلت على صوت واحد. */
+export const LIVE_VOICE_BY_PERSONA: Record<string, string> = {
+  sarah_warm: "Aoede",
+  karim_pro: "Charon",
+  pet_mascot: "Leda",
+};
+
+/** شخصية مش معروفة أو مش مبعوتة = الصوت الافتراضي. أي قيمة من العميل مابتوصلش لجيميناي
+ *  غير لو هي صوت من الجدول — setup بصوت غلط بيقفل الجلسة بـ1007. */
+export function liveVoiceFor(persona: string | null | undefined, fallback: string): string {
+  return (persona && Object.hasOwn(LIVE_VOICE_BY_PERSONA, persona)) ? LIVE_VOICE_BY_PERSONA[persona] : fallback;
+}

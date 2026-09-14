@@ -50,3 +50,14 @@ Deno.test("frames that are not a single legacy audio chunk pass through untouche
     assertEquals(normalizeClientFrame(frame), frame);
   }
 });
+
+Deno.test("persona maps to the same Gemini voice the notification reader uses", async () => {
+  const { LIVE_VOICE_BY_PERSONA, liveVoiceFor } = await import("./protocol.ts");
+  const { VOICE_IDS } = await import("../zad-core-intelligence/voice.ts");
+  assertEquals(LIVE_VOICE_BY_PERSONA, VOICE_IDS);
+  assertEquals(liveVoiceFor("sarah_warm", "X"), "Aoede");
+  assertEquals(liveVoiceFor("karim_pro", "X"), "Charon");
+  assertEquals(liveVoiceFor(null, "Aoede"), "Aoede");
+  assertEquals(liveVoiceFor("constructor", "Aoede"), "Aoede");
+  assertEquals(liveVoiceFor("Puck; drop", "Aoede"), "Aoede");
+});

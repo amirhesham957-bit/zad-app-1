@@ -4,7 +4,12 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.Icon as M3Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,10 +38,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.R
-import com.example.voice.LiveVoiceState
 import com.example.voice.VoiceState
 import com.example.voice.ZadCutePetSoundFx
 import com.example.voice.ZadVoiceController
@@ -44,164 +48,133 @@ import com.example.voice.VoiceControllerState
 import com.example.voice.ZadVoiceManager
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.AiChatMessage
-import kotlinx.coroutines.launch
 import kotlin.math.sin
 
 private const val MAX_TRANSIENT_RETRIES = 3
 
 /**
- * New Zad Voice Bottom Sheet using ZadVoicePet and ZadVoiceController.
- * Clean audio pipeline: no echo loops, proper mic mute during model speech,
- * Gemini Live API via WebSocket relay with female Arabic voice (Aoede).
+ * شيت المساعد الصوتي — **مسار واحد** (٢٠٢٦-٠٩-١٤).
+ *
+ * كان فيه زرار "مكالمة حية / وضع مباشر" بيبدّل بين مسارين، والاتنين كانوا بيقفوا على
+ * "تعذّر الاتصال" على جهاز حقيقي. دلوقتي الشيت بيفتح على المكالمة المباشرة (Gemini Live،
+ * صوت الشخصية المختارة) على طول، ومفيش اختيار يتعمل.
+ *
+ * البديل مش وضع يختاره المستخدم: لو المكالمة فشلت بسبب مايوقفش البديل كمان
+ * ([VoiceControllerState.Error.canFallBack])، الشيت بيكمّل بنفسه دور-بدور — تعرّف كلام
+ * + شات زاد + نفس صوت سارة — مع سطر صغير بيقول ده، وزرار يرجّع للمكالمة المباشرة.
+ * يعني زاد بيرد في كل الأحوال بدل ما يسكت على رسالة خطأ.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ZadVoiceBottomSheet(
     viewModel: com.example.ui.viewmodels.ZadViewModel,
     onDismiss: () -> Unit,
-    initialLiveMode: Boolean = false
 ) {
     val context = LocalContext.current
-    
-    // Initialize controllers
+
     val voiceManager = remember { ZadVoiceManager.apply { init(context) } }
     val voiceController = remember { ZadVoiceController.apply { init(context) } }
-    
-    // State
-    val voiceState by voiceManager.voiceState.collectAsState()
-    val isListeningState by voiceManager.isListening.collectAsState()
-    val soundLevel by voiceManager.soundLevel.collectAsState()
+
     val controllerState by voiceController.state.collectAsState()
-    val controllerMicLevel by voiceController.micLevel.collectAsState()
-    val companionMood by viewModel.companionMood.collectAsState()
+    val voiceState by voiceManager.voiceState.collectAsState()
+    val isFallbackListening by voiceManager.isListening.collectAsState()
     val currentPersona by voiceManager.currentPersona.collectAsState()
-    
-    // ⚠️ بيتقرا من `isLiveMode` (الحالة المتغيرة) مش `initialLiveMode` (الباراميتر
-    // الثابت). كان على الباراميتر، فلما العميل كان بيقلب الوضع الحي يدوي من الزرار
-    // الكورة كانت تفضل تقرا `soundLevel` بتاع المسار القديم — وهو صفر في الوضع الحي،
-    // يعني كورة ساكنة والمكالمة شغالة.
-    var isLiveMode by remember { mutableStateOf(initialLiveMode) }
 
-    // Pet audio level (smoothed, read in draw scope)
-    val petAudioLevel = rememberPetAudioLevel(
-        if (isLiveMode) voiceController.micLevel else voiceManager.soundLevel
-    )
-
-    var recognizedLiveText by remember { mutableStateOf("") }
+    var fallbackMode by rememberSaveable { mutableStateOf(false) }
     var hasAudioPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO
-            ) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
         )
     }
+    var recognizedText by remember { mutableStateOf("") }
     var retryAttempt by remember { mutableIntStateOf(0) }
     var activeVoiceTurnId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
-    // Submit voice turn to AI
-    fun submitVoiceTurn(result: String) {
-        if (result.isBlank()) return
-        // في المكالمة الحية جيميناي هو اللي بيسمع ويرد — أي نتيجة متأخرة جاية من
-        // المتعرِّف المحلي دي بقايا من قبل التحويل، مش طلب جديد. كانت بتقطع المكالمة
-        // وترجّع الوضع دور-بدور من غير ما العميل يفهم ليه.
-        if (isLiveMode) return
+    val liveConnected = controllerState is VoiceControllerState.Listening ||
+        controllerState is VoiceControllerState.ModelSpeaking
+    val liveConnecting = controllerState is VoiceControllerState.Connecting
+
+    // مصدر حركة الكورة: وزاد بيتكلم = صوته هو، غير كده = المايك.
+    val petLevelFlow: StateFlow<Float> = when {
+        fallbackMode -> voiceManager.soundLevel
+        controllerState is VoiceControllerState.ModelSpeaking -> voiceController.outputLevel
+        else -> voiceController.micLevel
+    }
+    val petAudioLevel = rememberPetAudioLevel(petLevelFlow)
+    val waveLevel by petLevelFlow.collectAsState()
+
+    fun startLiveCall() {
+        voiceManager.stopListening()
+        voiceManager.stopSpeaking()
+        voiceController.clearError()
+        fallbackMode = false
+        voiceController.start(personaId = currentPersona.id)
+    }
+
+    fun submitFallbackTurn(text: String) {
+        if (text.isBlank() || !fallbackMode) return
         retryAttempt = 0
-        recognizedLiveText = result
+        recognizedText = text
         voiceManager.markThinking()
-        activeVoiceTurnId = viewModel.sendAiChatMessage(result, voiceMode = true)
+        activeVoiceTurnId = viewModel.sendAiChatMessage(text, voiceMode = true)
     }
-    
-    // Start listening (turn-based mode)
-    fun listen(silent: Boolean = false, resetRetry: Boolean = false) {
-        if (resetRetry) retryAttempt = 0
-        voiceManager.startListening(silent = silent) { result -> submitVoiceTurn(result) }
+
+    fun listenFallback(silent: Boolean = false) {
+        voiceManager.startListening(silent = silent) { result -> submitFallbackTurn(result) }
     }
-    
-    // Permission launcher
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasAudioPermission = isGranted
-        if (isGranted) {
-            if (isLiveMode) {
-                voiceController.start()
-            } else {
-                listen(resetRetry = true)
-            }
+    ) { granted ->
+        hasAudioPermission = granted
+        if (granted) {
+            if (fallbackMode) listenFallback() else startLiveCall()
         }
     }
-    
-    // Handle live mode toggle
-    LaunchedEffect(isLiveMode) {
-        if (isLiveMode) {
-            voiceManager.stopListening()
-            voiceManager.stopSpeaking()
-            kotlinx.coroutines.delay(200)
-            voiceController.start { /* state updates automatically */ }
-        } else {
-            voiceController.stop()
+
+    // الشيت بيفتح على المكالمة على طول — مرة واحدة لكل فتحة.
+    LaunchedEffect(Unit) {
+        if (hasAudioPermission) startLiveCall()
+        else permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    // فشل المكالمة → البديل دور-بدور، لو السبب يسمح.
+    LaunchedEffect(controllerState) {
+        val error = controllerState as? VoiceControllerState.Error ?: return@LaunchedEffect
+        if (error.canFallBack && !fallbackMode && hasAudioPermission) {
+            fallbackMode = true
+            listenFallback()
         }
     }
-    
-    // Auto-start listening on permission grant
-    LaunchedEffect(hasAudioPermission, isLiveMode) {
-        if (isLiveMode) return@LaunchedEffect
-        if (hasAudioPermission) {
-            listen(resetRetry = true)
-        } else {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
-    
-    // Auto-speak AI replies (turn-based mode)
+
+    // البديل: رد زاد بيتقري بصوت الشخصية، وبعده الاستماع بيرجع لوحده.
     val isTyping by viewModel.isAiTyping.collectAsState()
     val messages by viewModel.aiChatMessages.collectAsState()
     var lastSpokenMessageId by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(isTyping, messages, isLiveMode, activeVoiceTurnId) {
-        if (isLiveMode) return@LaunchedEffect
-        if (isTyping) return@LaunchedEffect
+    LaunchedEffect(isTyping, messages, fallbackMode, activeVoiceTurnId) {
+        if (!fallbackMode || isTyping) return@LaunchedEffect
         val lastReply = voiceReplyForTurn(messages, activeVoiceTurnId) ?: return@LaunchedEffect
-        if (lastReply.text.isBlank()) return@LaunchedEffect
-        if (lastReply.id == lastSpokenMessageId) return@LaunchedEffect
+        if (lastReply.text.isBlank() || lastReply.id == lastSpokenMessageId) return@LaunchedEffect
         lastSpokenMessageId = lastReply.id
         activeVoiceTurnId = null
         voiceManager.stopListening()
-        // صامت: النغمة بتتشغّل مرة واحدة أول ما الشيت يفتح. لما كانت بتتشغّل مع كل
-        // استئناف، اللفة (اسمع ← رد ← اسمع) كانت بتسمع كأن المايك بيفتح ويقفل باستمرار.
-        val resumeListening = {
-            if (hasAudioPermission) {
-                listen(silent = true, resetRetry = true)
-            }
-        }
-        voiceManager.speakHumanLike(lastReply.text, onDone = resumeListening, onFailed = resumeListening)
+        val resume = { if (hasAudioPermission && fallbackMode) listenFallback(silent = true) }
+        voiceManager.speakHumanLike(lastReply.text, onDone = resume, onFailed = resume)
     }
-    
-    // استئناف بعد الفشل العابر — بسقف. كان محاولة واحدة بس لأي نوع خطأ، ولإن
-    // NO_MATCH/SPEECH_TIMEOUT عاديين جداً في العربي، غلطتين ورا بعض كانوا بيسيبوا
-    // الشيت واقف على رسالة خطأ للأبد. الأخطاء غير العابرة (صلاحية/مايك مشغول/شبكة)
-    // مابتتعادش أصلاً — إعادتها بتعمل لوب مايفكش.
-    LaunchedEffect(voiceState, isLiveMode) {
-        if (isLiveMode) return@LaunchedEffect
+
+    // استئناف بعد أخطاء التعرّف العابرة (NO_MATCH/TIMEOUT عاديين جداً بالعربي) — بسقف.
+    LaunchedEffect(voiceState, fallbackMode) {
+        if (!fallbackMode) return@LaunchedEffect
         val error = voiceState as? VoiceState.Error ?: return@LaunchedEffect
         if (!error.transient || retryAttempt >= MAX_TRANSIENT_RETRIES) return@LaunchedEffect
         retryAttempt += 1
         kotlinx.coroutines.delay(1200)
-        if (hasAudioPermission && voiceManager.voiceState.value == error) {
-            listen(silent = true)
-        }
+        if (hasAudioPermission && voiceManager.voiceState.value == error) listenFallback(silent = true)
     }
-    
-    // Controller error handling
-    LaunchedEffect(controllerState, isLiveMode) {
-        if (!isLiveMode) return@LaunchedEffect
-        val error = controllerState as? VoiceControllerState.Error ?: return@LaunchedEffect
-        // Controller errors are final - don't auto-retry to avoid loops
-    }
-    
-    // Pause HeyZad wake service while sheet is open
-    androidx.compose.runtime.DisposableEffect(Unit) {
+
+    DisposableEffect(Unit) {
         com.example.voice.HeyZadWakeService.pause(context)
         onDispose {
             voiceManager.stopListening()
@@ -210,14 +183,37 @@ fun ZadVoiceBottomSheet(
             com.example.voice.HeyZadWakeService.resume(context)
         }
     }
-    
+
+    val petState = when {
+        fallbackMode -> when (voiceState) {
+            is VoiceState.Listening -> VoicePetState.Listening
+            is VoiceState.Thinking -> VoicePetState.Thinking
+            is VoiceState.Speaking, is VoiceState.Recognized -> VoicePetState.Speaking
+            is VoiceState.Idle -> VoicePetState.Idle
+            is VoiceState.Error -> VoicePetState.Sleeping
+        }
+        else -> when (controllerState) {
+            is VoiceControllerState.Listening -> VoicePetState.Listening
+            is VoiceControllerState.ModelSpeaking -> VoicePetState.Speaking
+            is VoiceControllerState.Connecting -> VoicePetState.Thinking
+            is VoiceControllerState.Error -> VoicePetState.Sleeping
+            is VoiceControllerState.Idle -> VoicePetState.Idle
+        }
+    }
+    val isSpeaking = if (fallbackMode) voiceState is VoiceState.Speaking
+        else controllerState is VoiceControllerState.ModelSpeaking
+    val isActive = if (fallbackMode) isFallbackListening || isSpeaking else liveConnected
+    val errorMessage = if (fallbackMode) (voiceState as? VoiceState.Error)?.message
+        else (controllerState as? VoiceControllerState.Error)?.message
+
     val quickChips = listOf(
-        "حلل مصاريفي اليوم 📊",
-        "اقترحي أكلة للغداء بالمخزون 🍲",
-        "كم المتبقي في الميزانية؟ 💰",
-        "سجلت مصروف 50 قهوة ☕"
+        stringResource(R.string.voice_suggestion_analyze),
+        stringResource(R.string.voice_suggestion_meal),
+        stringResource(R.string.voice_suggestion_budget),
+        stringResource(R.string.voice_suggestion_spend),
     )
-    
+    val chipsEnabled = liveConnected || fallbackMode
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -228,9 +224,9 @@ fun ZadVoiceBottomSheet(
                 modifier = Modifier
                     .padding(vertical = 12.dp)
                     .width(44.dp)
-                    .height(5.dp)
+                    .height(4.dp)
                     .clip(RoundedCornerShape(9999.dp))
-                    .background(Color.White.copy(alpha = 0.20f))
+                    .background(Color.White.copy(alpha = 0.24f))
             )
         },
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -239,10 +235,12 @@ fun ZadVoiceBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header: Status + Live Mode Toggle + Settings + Close
+            // ── الترويسة: حالة + إعدادات + قفل. مفيش زرار أوضاع. ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -253,15 +251,15 @@ fun ZadVoiceBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .clip(RoundedCornerShape(9999.dp))
-                        .background(Color.White.copy(alpha = 0.07f))
-                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(9999.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(9999.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     val indicatorColor = when {
-                        isLiveMode && controllerState is VoiceControllerState.Listening -> ZadVoiceWaveMint
-                        isLiveMode && controllerState is VoiceControllerState.ModelSpeaking -> ZadVoiceAlertAmber
-                        isLiveMode && controllerState is VoiceControllerState.Connecting -> ZadVoiceCyan
-                        !isLiveMode && isListeningState -> ZadVoiceCyan
+                        errorMessage != null -> ZadVoiceAlertAmber
+                        isSpeaking -> ZadVoiceAlertAmber
+                        isActive -> ZadVoiceWaveMint
+                        liveConnecting -> ZadVoiceCyan
                         else -> ZadVoiceTextSoft
                     }
                     Box(
@@ -269,281 +267,223 @@ fun ZadVoiceBottomSheet(
                             .size(8.dp)
                             .clip(CircleShape)
                             .background(indicatorColor)
-                            .then(if (isLiveMode && (controllerState is VoiceControllerState.Listening || controllerState is VoiceControllerState.ModelSpeaking) || (!isLiveMode && isListeningState)) 
-                                Modifier.pulseGlow(minScale = 0.85f, maxScale = 1.35f) 
-                                else Modifier)
+                            .then(if (isActive) Modifier.pulseGlow(minScale = 0.85f, maxScale = 1.35f) else Modifier)
                     )
                     Text(
-                        text = when {
-                            isLiveMode && controllerState is VoiceControllerState.Connecting -> "جاري الاتصال..."
-                            isLiveMode && controllerState is VoiceControllerState.ModelSpeaking -> "المساعد يتكلم..."
-                            isLiveMode && controllerState is VoiceControllerState.Listening -> "عقل زاد • مباشر"
-                            isLiveMode && controllerState is VoiceControllerState.MicrophoneMuted -> "الميكروفون مكتوم..."
-                            !isLiveMode && isListeningState -> "مساعد زاد الصوتي"
-                            voiceState is VoiceState.Thinking -> "جاري التفكير..."
-                            voiceState is VoiceState.Speaking -> "يتحدث..."
-                            else -> "مساعد زاد الصوتي"
-                        },
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        text = stringResource(
+                            when {
+                                liveConnecting -> R.string.voice_header_connecting
+                                isSpeaking -> R.string.voice_header_speaking
+                                fallbackMode && voiceState is VoiceState.Thinking -> R.string.voice_header_thinking
+                                liveConnected -> R.string.voice_header_live
+                                else -> R.string.voice_sheet_title
+                            }
+                        ),
+                        style = Typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                 }
-                
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Live Mode Toggle
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(9999.dp))
-                            .background(if (isLiveMode) ZadVoiceWaveEmerald.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.08f))
-                            .border(
-                                1.dp,
-                                if (isLiveMode) ZadVoiceWaveEmerald.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.14f),
-                                RoundedCornerShape(9999.dp)
-                            )
-                            .clickable { isLiveMode = !isLiveMode }
-                            .padding(horizontal = 11.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (isLiveMode) "⚡ وضع مباشر" else "مكالمة حية",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isLiveMode) ZadVoiceWaveMint else ZadVoiceTextSoft
-                        )
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SheetIconButton(Icons.Default.Settings, stringResource(R.string.voice_settings_title)) {
+                        showSettings = !showSettings
                     }
-                    
-                    // Settings
-                    IconButton(
-                        onClick = { showSettings = true },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.08f))
-                    ) {
-                        M3Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "إعدادات الصوت",
-                            tint = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                    
-                    // Close
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.08f))
-                    ) {
-                        M3Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "إغلاق",
-                            tint = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
+                    SheetIconButton(Icons.Default.Close, stringResource(R.string.close_action), onDismiss)
                 }
             }
-            
-            // Settings Panel
-            if (showSettings) {
+
+            AnimatedVisibility(
+                visible = showSettings,
+                enter = expandVertically(spring(dampingRatio = 0.85f, stiffness = 380f)) + fadeIn(),
+                exit = shrinkVertically(spring(dampingRatio = 0.85f, stiffness = 380f)) + fadeOut(),
+            ) {
                 SettingsPanel(
-                    voiceManager = voiceManager,
-                    voiceController = voiceController,
                     currentPersonaFlow = voiceManager.currentPersona,
+                    onSelect = { persona ->
+                        voiceManager.setVoicePersona(persona)
+                        // الصوت بيتحدد في setup الجلسة — تغييره وسط مكالمة شغالة = مكالمة جديدة بالصوت الجديد.
+                        if (liveConnected || liveConnecting) {
+                            voiceController.stop()
+                            voiceController.start(personaId = persona.id)
+                        }
+                    },
                     onDismiss = { showSettings = false }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Central ZadVoicePet - the main visual character
+
             ZadVoicePet(
-                state = when {
-                    isLiveMode -> when (controllerState) {
-                        is VoiceControllerState.Listening -> VoicePetState.Listening
-                        is VoiceControllerState.ModelSpeaking -> VoicePetState.Speaking
-                        is VoiceControllerState.MicrophoneMuted -> VoicePetState.Listening
-                        is VoiceControllerState.Connecting -> VoicePetState.Thinking
-                        is VoiceControllerState.Error -> VoicePetState.Sleeping
-                        else -> VoicePetState.Idle
-                    }
-                    !isLiveMode -> when (voiceState) {
-                        is VoiceState.Listening -> VoicePetState.Listening
-                        is VoiceState.Thinking -> VoicePetState.Thinking
-                        is VoiceState.Speaking -> VoicePetState.Speaking
-                        is VoiceState.Recognized -> VoicePetState.Speaking // Happy state
-                        is VoiceState.Idle -> VoicePetState.Idle
-                        is VoiceState.Error -> VoicePetState.Sleeping
-                    }
-                    else -> VoicePetState.Idle
-                },
-                size = 120.dp,
+                state = petState,
+                size = 128.dp,
                 audioLevel = petAudioLevel,
-                onClick = {
-                    // Tap triggers happy reaction
-                    ZadCutePetSoundFx.play(ZadCutePetSoundFx.PetSound.HappyChirp, 0.5f)
-                }
+                onClick = { ZadCutePetSoundFx.play(ZadCutePetSoundFx.PetSound.HappyChirp, 0.5f) }
             )
-            
-            // Dynamic Audio Waveform Bars
+
             ZadAudioWavebars(
-                isListening = when {
-                    isLiveMode -> controllerState is VoiceControllerState.Listening || controllerState is VoiceControllerState.ModelSpeaking
-                    else -> isListeningState
-                },
-                soundLevel = if (isLiveMode) controllerMicLevel else soundLevel,
+                isListening = isActive,
+                soundLevel = waveLevel,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .height(48.dp)
             )
-            
-            // Transcript / Status Text
-            val controllerError = (controllerState as? VoiceControllerState.Error)?.message
-            val voiceError = (voiceState as? VoiceState.Error)?.message
-            val errorMsg = if (isLiveMode) controllerError else voiceError
-            
+
             Text(
                 text = when {
-                    errorMsg != null -> "⚠️ $errorMsg\nاضغط على المايك للمحاولة مجدداً"
-                    isLiveMode && controllerState is VoiceControllerState.Connecting -> "بيتّصل بعقل زاد المباشر…"
-                    isLiveMode && controllerState is VoiceControllerState.ModelSpeaking -> "زاد بيتكلم… اتكلم في أي وقت تقاطعه"
-                    isLiveMode && controllerState is VoiceControllerState.Listening -> "مكالمة مباشرة — اتكلم بحرية، زاد سامعك دلوقتي"
-                    isLiveMode && controllerState is VoiceControllerState.MicrophoneMuted -> "الميكروفون مكتوم مؤقتاً… جاري تشغيل رد زاد"
-                    isLiveMode -> "اضغط على المايك لبدء المكالمة المباشرة 🎙️"
-                    recognizedLiveText.isNotBlank() -> recognizedLiveText
-                    isListeningState -> "أنا أسمعك الآن… تكلّم مع زاد بحرية وسأجيبك فوراً"
-                    voiceState is VoiceState.Thinking -> "عقل زاد يفكّر بالرد…"
-                    voiceState is VoiceState.Speaking -> "زاد يتكلم…"
-                    else -> "اضغط على المايك لبدء التحدث 🎙️"
+                    errorMessage != null -> stringResource(R.string.voice_status_error_retry, errorMessage)
+                    liveConnecting -> stringResource(R.string.voice_status_connecting)
+                    fallbackMode && recognizedText.isNotBlank() && !isFallbackListening -> recognizedText
+                    isSpeaking -> stringResource(R.string.voice_status_live_speaking)
+                    fallbackMode && voiceState is VoiceState.Thinking -> stringResource(R.string.voice_status_thinking)
+                    isActive -> stringResource(R.string.voice_status_live_listening)
+                    else -> stringResource(R.string.voice_status_tap_to_start)
                 },
-                fontSize = 14.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (recognizedLiveText.isNotBlank()) Color.White else ZadVoiceWaveMint,
+                style = Typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = if (errorMessage != null) ZadVoiceAlertAmber else Color.White,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 14.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
-            val isSpeakingState = when {
-                isLiveMode -> controllerState is VoiceControllerState.ModelSpeaking
-                else -> voiceState is VoiceState.Speaking
+
+            // البديل شغال: سطر صغير بيقول ليه، وطريق واحد يرجّع للمكالمة المباشرة.
+            AnimatedVisibility(visible = fallbackMode, enter = fadeIn(), exit = fadeOut()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.voice_fallback_note),
+                        style = Typography.bodySmall,
+                        color = ZadVoiceTextSoft,
+                        textAlign = TextAlign.Center
+                    )
+                    TextButton(onClick = { startLiveCall() }) {
+                        Text(
+                            stringResource(R.string.voice_retry_live),
+                            style = Typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = ZadVoiceWaveMint
+                        )
+                    }
+                }
             }
-            val isLiveConnected = controllerState is VoiceControllerState.Listening || controllerState is VoiceControllerState.ModelSpeaking
-            
-            // Central Mic Button
+
+            // زرار المايك الوحيد: وقف لو شغال، ابدأ لو واقف.
             Box(
                 modifier = Modifier
-                    .size(68.dp)
-                    .then(if (isSpeakingState || isLiveConnected || isListeningState) Modifier.pulseGlow(minScale = 1f, maxScale = 1.07f) else Modifier)
+                    .size(72.dp)
+                    .then(if (isActive) Modifier.pulseGlow(minScale = 1f, maxScale = 1.07f) else Modifier)
                     .clip(CircleShape)
                     .background(
                         brush = Brush.radialGradient(
                             colors = when {
-                                isLiveMode && isLiveConnected -> listOf(ZadVoiceDangerStart, ZadVoiceDangerEnd)
-                                !isLiveMode && isListeningState -> listOf(ZadVoiceDangerStart, ZadVoiceDangerEnd)
-                                isSpeakingState -> listOf(ZadVoiceAlertAmber, ZadVoiceAlertBrown)
+                                isSpeaking -> listOf(ZadVoiceAlertAmber, ZadVoiceAlertBrown)
+                                isActive -> listOf(ZadVoiceDangerStart, ZadVoiceDangerEnd)
                                 else -> listOf(ZadVoiceWaveEmerald, ZadVoiceWaveTealDark)
                             }
                         )
                     )
                     .border(2.dp, Color.White.copy(alpha = 0.35f), CircleShape)
                     .clickable {
-                        if (isLiveMode) {
-                            if (isLiveConnected || controllerState is VoiceControllerState.Connecting) {
-                                voiceController.stop()
-                            } else if (hasAudioPermission) {
-                                voiceController.start()
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        when {
+                            !hasAudioPermission -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            fallbackMode && (isFallbackListening || isSpeaking) -> {
+                                voiceManager.stopListening()
+                                voiceManager.stopSpeaking()
                             }
-                        } else if (isListeningState) {
-                            voiceManager.stopListening()
-                        } else {
-                            if (hasAudioPermission) {
-                                listen(resetRetry = true)
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
+                            fallbackMode -> listenFallback()
+                            liveConnected || liveConnecting -> voiceController.stop()
+                            else -> startLiveCall()
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
                 M3Icon(
-                    imageVector = if ((isLiveMode && isLiveConnected) || (!isLiveMode && isListeningState)) Icons.Default.Stop else Icons.Default.Mic,
-                    contentDescription = null,
+                    imageVector = if (isActive || liveConnecting) Icons.Default.Stop else Icons.Default.Mic,
+                    contentDescription = stringResource(
+                        if (isActive || liveConnecting) R.string.voice_stop_call else R.string.voice_start_call
+                    ),
                     tint = Color.White,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
-            
-            if (isSpeakingState) {
-                Spacer(modifier = Modifier.height(4.dp))
+
+            if (isSpeaking) {
                 Text(
                     text = stringResource(R.string.voice_tap_to_interrupt_hint),
-                    fontSize = 11.sp,
+                    style = Typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = ZadVoiceAlertAmber
                 )
             }
-            
-            // Quick prompt chips (turn-based mode only)
-            if (!isLiveMode) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "أو اختر سؤالاً جاهزاً:",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = ZadVoiceTextSoft
-                )
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    quickChips.forEach { chip ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(9999.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
-                                .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(9999.dp))
-                                .clickable { submitVoiceTurn(chip) }
-                                .padding(horizontal = 12.dp, vertical = 7.dp)
-                        ) {
-                            Text(
-                                text = chip,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ZadVoiceTextMint
-                            )
+
+            // أسئلة جاهزة: جوه المكالمة المباشرة بتتبعت نص للجلسة نفسها، وفي البديل بتروح للشات.
+            AnimatedVisibility(visible = chipsEnabled, enter = fadeIn(), exit = fadeOut()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.voice_chips_label),
+                        style = Typography.labelMedium,
+                        color = ZadVoiceTextSoft
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        quickChips.forEach { chip ->
+                            Box(
+                                modifier = Modifier
+                                    .heightIn(min = 44.dp)
+                                    .clip(RoundedCornerShape(9999.dp))
+                                    .background(Color.White.copy(alpha = 0.10f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(9999.dp))
+                                    .clickable {
+                                        if (fallbackMode) submitFallbackTurn(chip) else voiceController.sendText(chip)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = chip,
+                                    style = Typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = ZadVoiceTextMint
+                                )
+                            }
                         }
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
 
+@Composable
+private fun SheetIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.08f))
+    ) {
+        M3Icon(icon, contentDescription = description, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(20.dp))
+    }
+}
+
 /**
- * Settings panel for voice preferences
+ * إعدادات الصوت: الشخصية بس. الشخصية دي نفسها بتتبعت للمكالمة المباشرة وبتقرا الإشعارات،
+ * فمفيش "صوت للمكالمة" و"صوت للإشعارات" منفصلين.
  */
 @Composable
 private fun SettingsPanel(
-    voiceManager: com.example.voice.ZadVoiceManager,
-    voiceController: ZadVoiceController,
     currentPersonaFlow: StateFlow<ZadNaturalVoiceEngine.VoicePersona>,
+    onSelect: (ZadNaturalVoiceEngine.VoicePersona) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val currentPersona = currentPersonaFlow.collectAsState()
-    val personas = ZadNaturalVoiceEngine.VoicePersona.values()
-    
+    val currentPersona by currentPersonaFlow.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.06f))
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -552,88 +492,42 @@ private fun SettingsPanel(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("إعدادات الصوت", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(stringResource(R.string.voice_settings_title), style = Typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
             IconButton(onClick = onDismiss) {
-                M3Icon(
-                    Icons.Default.Close,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp)
-                )
+                M3Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_action), tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(20.dp))
             }
         }
-        
-        // Persona selector
+        Text(stringResource(R.string.voice_settings_persona), style = Typography.labelLarge, color = ZadVoiceTextSoft)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("شخصية الصوت", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ZadVoiceTextSoft)
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                personas.forEach { persona ->
-                    val isSelected = currentPersona.value.id == persona.id
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) ZadVoiceWaveEmerald.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f))
-                            .border(1.dp, if (isSelected) ZadVoiceWaveEmerald.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                            .clickable { voiceManager.setVoicePersona(persona) }
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isSelected) ZadVoiceWaveMint else Color.White.copy(alpha = 0.3f))
-                            )
-                            Text(
-                                persona.displayNameAr,
-                                fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) ZadVoiceWaveMint else ZadVoiceTextSoft
-                            )
-                        }
-                        if (isSelected) {
-                            M3Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                tint = ZadVoiceWaveMint,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+            ZadNaturalVoiceEngine.VoicePersona.values().forEach { persona ->
+                val isSelected = currentPersona.id == persona.id
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) ZadVoiceWaveEmerald.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.05f))
+                        .border(1.dp, if (isSelected) ZadVoiceWaveEmerald.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                        .clickable { onSelect(persona) }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        persona.displayNameAr,
+                        style = Typography.bodyMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) ZadVoiceWaveMint else Color.White.copy(alpha = 0.85f)
+                    )
+                    if (isSelected) {
+                        M3Icon(Icons.Default.Check, contentDescription = null, tint = ZadVoiceWaveMint, modifier = Modifier.size(20.dp))
                     }
                 }
             }
         }
-        
-        Divider(color = Color.White.copy(alpha = 0.1f))
-      
-        // Live mode info
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                modifier = Modifier.size(36.dp).clip(CircleShape).background(ZadVoiceCyan.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                M3Icon(
-                    Icons.Default.Info,
-                    contentDescription = null,
-                    tint = ZadVoiceCyan,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("وضع المكالمة المباشرة", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ZadVoiceTextSoft)
-                Text(
-                    "مكالمة صوتية مباشرة مع Gemini Live API — الميكروفون مفتوح باستمرار، وتستطيع مقاطعته في أي وقت.",
-                    fontSize = 11.sp,
-                    color = ZadVoiceTextSoft.copy(alpha = 0.8f)
-                )
-            }
-        }
+        Text(stringResource(R.string.voice_settings_info_body), style = Typography.bodySmall, color = ZadVoiceTextSoft)
     }
 }
-
 
 /**
  * Animated Audio Wavebars — مجموعة من 26 بار نحيف مع حركة تموج ونبض طبيعي متناسق الارتفاعات

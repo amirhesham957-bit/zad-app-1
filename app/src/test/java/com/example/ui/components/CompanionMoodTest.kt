@@ -1,6 +1,6 @@
 package com.example.ui.components
 
-import com.example.voice.LiveVoiceState
+import com.example.voice.VoiceControllerState
 import com.example.voice.VoiceState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -52,26 +52,26 @@ class CompanionMoodTest {
 
     @Test
     fun liveCallMapsToItsOwnMood() {
-        assertEquals(CompanionState.Listening, companionMoodForLiveVoice(LiveVoiceState.Listening))
-        assertEquals(CompanionState.Speaking, companionMoodForLiveVoice(LiveVoiceState.ModelSpeaking))
-        assertEquals(CompanionState.Focused, companionMoodForLiveVoice(LiveVoiceState.Connecting))
+        assertEquals(CompanionState.Listening, companionMoodForLiveVoice(VoiceControllerState.Listening))
+        assertEquals(CompanionState.Speaking, companionMoodForLiveVoice(VoiceControllerState.ModelSpeaking))
+        assertEquals(CompanionState.Focused, companionMoodForLiveVoice(VoiceControllerState.Connecting))
     }
 
     /** نفس قاعدة null: مكالمة مقفولة ما تدهسش تنبيه حقيقي. */
     @Test
     fun silentLiveCallYieldsToo() {
-        assertNull(companionMoodForLiveVoice(LiveVoiceState.Idle))
-        assertNull(companionMoodForLiveVoice(LiveVoiceState.Error("اتقطع الاتصال")))
+        assertNull(companionMoodForLiveVoice(VoiceControllerState.Idle))
+        assertNull(companionMoodForLiveVoice(VoiceControllerState.Error("اتقطع الاتصال")))
     }
 
     @Test
     fun everyLiveStateIsAccountedFor() {
         val all = listOf(
-            LiveVoiceState.Idle,
-            LiveVoiceState.Connecting,
-            LiveVoiceState.Listening,
-            LiveVoiceState.ModelSpeaking,
-            LiveVoiceState.Error("x"),
+            VoiceControllerState.Idle,
+            VoiceControllerState.Connecting,
+            VoiceControllerState.Listening,
+            VoiceControllerState.ModelSpeaking,
+            VoiceControllerState.Error("x"),
         )
         assertEquals(3, all.count { companionMoodForLiveVoice(it) != null })
         assertEquals(2, all.count { companionMoodForLiveVoice(it) == null })

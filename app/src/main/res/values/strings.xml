@@ -1170,6 +1170,25 @@
     <string name="chat_memory_hint_label">اتبنى على %1$d حاجة زاد فاكرها عنك</string>
 
     <!-- مقاطعة زاد وهي بتتكلم -->
+    <string name="voice_suggestion_budget">كام فاضل في الميزانية؟</string>
+    <string name="voice_sheet_title">مساعد زاد الصوتي</string>
+    <string name="voice_header_connecting">بيتّصل…</string>
+    <string name="voice_header_speaking">زاد بيتكلم…</string>
+    <string name="voice_header_thinking">بيفكر…</string>
+    <string name="voice_header_live">عقل زاد • مباشر</string>
+    <string name="voice_settings_title">إعدادات الصوت</string>
+    <string name="voice_settings_persona">شخصية الصوت</string>
+    <string name="voice_settings_info_body">نفس الصوت اللي بتختاره هنا بيرد عليك في المكالمة وبيقرا الإشعارات. وتقدر تقاطع زاد وهو بيتكلم في أي وقت.</string>
+    <string name="voice_status_error_retry">⚠️ %1$s\nاضغط المايك وجرّب تاني</string>
+    <string name="voice_status_connecting">بيتّصل بزاد…</string>
+    <string name="voice_status_live_speaking">زاد بيتكلم… اتكلم في أي وقت تقاطعه</string>
+    <string name="voice_status_live_listening">زاد سامعك — اتكلم براحتك</string>
+    <string name="voice_status_tap_to_start">اضغط المايك وكلّم زاد 🎙️</string>
+    <string name="voice_fallback_note">المكالمة المباشرة مش متاحة دلوقتي، فبكلّمك بالطريقة العادية بنفس الصوت</string>
+    <string name="voice_retry_live">جرّب المكالمة المباشرة تاني</string>
+    <string name="voice_stop_call">وقّف المكالمة</string>
+    <string name="voice_start_call">ابدأ مكالمة مع زاد</string>
+    <string name="voice_chips_label">أو اختار سؤال جاهز:</string>
     <string name="voice_tap_to_interrupt_hint">دوس تقاطعها</string>
 
     <!-- Ledger: quick deduct and manual balance override -->

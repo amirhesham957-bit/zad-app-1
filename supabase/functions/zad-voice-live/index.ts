@@ -49,6 +49,7 @@ import {
   clientCloseForUpstream,
   closeReason,
   frameToText,
+  liveVoiceFor,
   normalizeClientFrame,
 } from "./protocol.ts";
 
@@ -197,6 +198,9 @@ Deno.serve(async (req) => {
     })(),
   ]);
 
+  // الشخصية من إعدادات العميل (سارة/كريم/الأليف) — نفس صوت قراءة الإشعارات.
+  const liveVoice = liveVoiceFor(new URL(req.url).searchParams.get("voice"), VOICE_LIVE_VOICE);
+
   const systemInstructionText = [
     buildVoiceSystemInstruction(userRow?.country),
     VOICE_TOOL_USAGE_INSTRUCTION,
@@ -310,7 +314,7 @@ Deno.serve(async (req) => {
           generationConfig: {
             responseModalities: ["AUDIO"],
             speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_LIVE_VOICE } },
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: liveVoice } },
               ...(VOICE_LIVE_LANG ? { languageCode: VOICE_LIVE_LANG } : {}),
             },
           },
