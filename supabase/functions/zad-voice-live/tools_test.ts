@@ -1,5 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  ASK_BRAIN_TOOL_NAME,
+  BRAIN_VOICE_TOOL,
   CONFIRM_VOICE_TOOLS,
   describeVoiceProposal,
   DIRECT_VOICE_TOOLS,
@@ -8,7 +10,7 @@ import {
 } from "./tools.ts";
 
 Deno.test("VOICE_TOOLS is the union of direct + confirm tools, no overlap", () => {
-  assertEquals(VOICE_TOOLS.length, DIRECT_VOICE_TOOLS.length + CONFIRM_VOICE_TOOLS.length);
+  assertEquals(VOICE_TOOLS.length, DIRECT_VOICE_TOOLS.length + CONFIRM_VOICE_TOOLS.length + 1);
   const directNames = new Set(DIRECT_VOICE_TOOLS.map((t) => t.name));
   const confirmNames = new Set(CONFIRM_VOICE_TOOLS.map((t) => t.name));
   for (const name of confirmNames) assertEquals(directNames.has(name), false);
@@ -48,4 +50,11 @@ Deno.test("describeVoiceProposal covers all four confirm-required tools includin
   const updateDesc = describeVoiceProposal("update_transaction", { amount: 200, title: "بقالة" });
   assertEquals(updateDesc.includes("200"), true);
   assertEquals(updateDesc.includes("بقالة"), true);
+});
+
+Deno.test("the live call is no longer blind: one tool reaches the full brain, and money stays behind confirmation", () => {
+  assertEquals(VOICE_TOOLS.some((t) => t.name === ASK_BRAIN_TOOL_NAME), true);
+  assertEquals(isConfirmRequired(ASK_BRAIN_TOOL_NAME), false);
+  assertEquals((BRAIN_VOICE_TOOL.parameters as { required: string[] }).required, ["request"]);
+  assertEquals(BRAIN_VOICE_TOOL.description.includes("فكّريني"), true);
 });

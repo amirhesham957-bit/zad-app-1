@@ -41,7 +41,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildVoiceSystemInstruction } from "./persona.ts";
 import { formatVoiceContext, loadVoiceContext } from "./context.ts";
-import { describeVoiceProposal, isConfirmRequired, VOICE_TOOL_USAGE_INSTRUCTION, VOICE_TOOLS } from "./tools.ts";
+import { ASK_BRAIN_TOOL_NAME, describeVoiceProposal, isConfirmRequired, VOICE_TOOL_USAGE_INSTRUCTION, VOICE_TOOLS } from "./tools.ts";
 import {
   CLOSE_ENTITLEMENT,
   CLOSE_PROVIDER_UNAVAILABLE,
@@ -245,6 +245,28 @@ Deno.serve(async (req) => {
     }
   }
 
+  /** طلب بكلام العميل لـ agent_turn (كل أدوات العقل) — نفس نداء تليجرام. عمليات الفلوس اللي
+   *  العقل يقترحها بتفضل مستنية تأكيد في التطبيق/تليجرام، ودي بتتقال للعميل صراحة. */
+  async function askZadBrain(request: string): Promise<{ ok: boolean; summary: string; pending: number }> {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-brain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ action: "agent_turn", user_id: userId, message: request.slice(0, 1200), source: "voice" }),
+      });
+      const data = await res.json().catch(() => ({})) as { ok?: boolean; reply?: string; proposals?: unknown[] };
+      const ok = res.ok && data.ok !== false;
+      return {
+        ok,
+        summary: String(data.reply ?? (ok ? "تم" : "معلش، العقل مقدرش ينفّذ الطلب ده دلوقتي.")).slice(0, 1500),
+        pending: Array.isArray(data.proposals) ? data.proposals.length : 0,
+      };
+    } catch (e) {
+      console.error("zad-voice-live: ask_zad_brain failed:", e);
+      return { ok: false, summary: "معلش، حصل خطأ وأنا بكلم العقل. جرّب تاني.", pending: 0 };
+    }
+  }
+
   /** بترد على toolCall واحدة أو أكتر جوّه نفس الرسالة — Gemini Live بيدّي array. */
   async function handleToolCall(
     functionCalls: Array<{ id: string; name: string; args?: Record<string, unknown> }>,
@@ -252,6 +274,18 @@ Deno.serve(async (req) => {
     const responses: Array<{ id: string; name: string; response: Record<string, unknown> }> = [];
     for (const fc of functionCalls) {
       const args = fc.args ?? {};
+      if (fc.name === ASK_BRAIN_TOOL_NAME) {
+        const brain = await askZadBrain(String(args.request ?? ""));
+        responses.push({
+          id: fc.id, name: fc.name,
+          response: {
+            status: brain.ok ? "done" : "failed",
+            summary: brain.summary,
+            ...(brain.pending > 0 ? { needs_app_confirmation: `${brain.pending} عملية فلوس مستنية تأكيد من التطبيق أو تليجرام` } : {}),
+          },
+        });
+        continue;
+      }
       if (isConfirmRequired(fc.name)) {
         const signature = `${fc.name}:${JSON.stringify(args)}`;
         if (!pendingConfirmSignatures.has(signature)) {
