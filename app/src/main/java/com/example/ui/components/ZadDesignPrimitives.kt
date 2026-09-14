@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
@@ -406,4 +407,25 @@ fun ZadPrimaryButton(
             )
         }
     }
+}
+
+/**
+ * يخلّي شريط أفقي (LazyRow) يوصل لحواف الشاشة جوه عمود عليه padding جانبي، من غير
+ * padding سالب (بيرمي). الشريط بيتقاس أعرض بـ[bleed] من كل ناحية وبيتحط متزاح لورا،
+ * فالمحتوى لازم ياخد `contentPadding` أفقي بنفس القيمة عشان أول/آخر كارت يتصفّوا مع
+ * باقي الشاشة.
+ *
+ * من غيره كروت أمازون كانت بتتقص عند حد الـ20dp مش عند حافة الشاشة — شكلها مكسور
+ * في نص الشاشة بدل ما يبان إنها بتتمرر.
+ */
+fun Modifier.bleedHorizontal(bleed: Dp): Modifier = layout { measurable, constraints ->
+    val extra = bleed.roundToPx() * 2
+    if (!constraints.hasBoundedWidth) {
+        val placeable = measurable.measure(constraints)
+        return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+    val placeable = measurable.measure(
+        constraints.copy(minWidth = constraints.minWidth + extra, maxWidth = constraints.maxWidth + extra)
+    )
+    layout(placeable.width - extra, placeable.height) { placeable.place(-bleed.roundToPx(), 0) }
 }

@@ -36,6 +36,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.ZadAiRepository
 import com.example.data.ZadInventory
+import com.example.data.ZadRecipe
+import kotlinx.coroutines.withTimeoutOrNull
 import com.example.ui.components.AppearOnEntry
 import com.example.ui.components.pressableScale
 import com.example.ui.theme.*
@@ -149,11 +151,33 @@ private fun RecipeSectionCard(
     }
 }
 
+/** مهلة نداء تفاصيل الوصفة. ردود zad-core-intelligence وصلت ٧٣ ثانية ليلة ٢٠٢٦-٠٩-١٣ والمهلة
+ *  العامة ٣٠ ثانية — يعني ٣٠ ثانية سبينر قبل أي حاجة. بعد المهلة دي الوصفة الاحتياطية بتظهر. */
+internal const val RECIPE_DETAILS_TIMEOUT_MS = 12_000L
+
+/** نص وصفة بنفس الصيغة اللي [parseRecipeContent] بيقراها، من وصفة معروفة بخطواتها — مفيش
+ *  داعي لنداء شبكة عشان نعرض حاجة الكارت نفسه شايلها. null لو مفيش خطوات. */
+internal fun recipeTextFromKnown(recipe: ZadRecipe): String? {
+    if (recipe.cookingInstructions.isEmpty()) return null
+    val ingredients = recipe.availableIngredientsUsed + recipe.missingIngredientsToBuy
+    return buildString {
+        if (ingredients.isNotEmpty()) {
+            appendLine("المقادير:")
+            ingredients.forEach { appendLine("• $it") }
+            appendLine()
+        }
+        appendLine("طريقة التحضير:")
+        recipe.cookingInstructions.forEachIndexed { i, step -> appendLine("${i + 1}. $step") }
+    }.trim()
+}
+
 @Composable
 fun RecipeDetailDialog(
     recipeTitle: String,
     inventory: List<ZadInventory>,
     onDismiss: () -> Unit,
+    /** الوصفة لو الكارت شايلها بخطواتها — بتتعرض فورًا من غير نداء شبكة. */
+    knownRecipe: ZadRecipe? = null,
     onAddMissingToShopping: ((List<String>) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -166,11 +190,19 @@ fun RecipeDetailDialog(
     val completedSteps = remember { mutableStateMapOf<Int, Boolean>() }
 
     LaunchedEffect(recipeTitle, retryKey) {
+        val local = knownRecipe?.takeIf { it.recipeName == recipeTitle }?.let(::recipeTextFromKnown)
+        if (local != null && retryKey == 0) {
+            recipeText = local
+            isLoading = false
+            return@LaunchedEffect
+        }
         isLoading = true
         errorMessage = null
         try {
             val result = withContext(Dispatchers.IO) {
-                ZadAiRepository.getRecipeDetails(recipeTitle, inventory)
+                withTimeoutOrNull(RECIPE_DETAILS_TIMEOUT_MS) {
+                    ZadAiRepository.getRecipeDetails(recipeTitle, inventory)
+                } ?: ZadAiRepository.generateDeterministicRecipeDetail(recipeTitle, inventory)
             }
             recipeText = result
         } catch (e: Exception) {

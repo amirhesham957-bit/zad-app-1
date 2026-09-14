@@ -21,6 +21,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
@@ -687,30 +688,14 @@ fun ZadSegmentedTabs(
 
 // ── "more" sheet ─────────────────────────────────────────────────────────────
 
-private data class ZadMoreEntry(
-    val route: String,
-    val icon: ImageVector,
-    val labelRes: Int,
-    val bg: Color,
-    val fg: Color,
-)
-
-/** Mockup `MORE_ITEMS`: an 8-cell 2-column grid of tinted icon tiles. */
+/** Mockup `MORE_ITEMS`: a 2-column grid of tinted icon tiles. القايمة نفسها من `zadAppSections`
+ *  (نفس مصدر شبكة الرئيسية)، ناقص اللي ليه تاب في البار السفلي أصلاً. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZadMoreSheet(onDismiss: () -> Unit, onNavigate: (String) -> Unit) {
-    val entries = listOf(
-        ZadMoreEntry(ZadRoutes.SHOPPING, Icons.Default.ShoppingCart, R.string.nav_shopping, Color(0xFFFCEEE3), Color(0xFFC2703D)),
-        ZadMoreEntry(ZadRoutes.FAMILY, Icons.Default.FamilyRestroom, R.string.nav_family, Color(0xFFF1EAFB), kidsPrimary),
-        ZadMoreEntry(ZadRoutes.BUDGET, Icons.Default.BarChart, R.string.nav_budget, Color(0xFFE8F1FC), tertiary),
-        ZadMoreEntry(ZadRoutes.SUBS, Icons.Default.CreditCard, R.string.subscriptions_title, Color(0xFFE8F1FC), tertiary),
-        ZadMoreEntry(ZadRoutes.PHARMACY, Icons.Default.LocalPharmacy, R.string.nav_pharmacy, Color(0xFFFCE8ED), dangerColor),
-        ZadMoreEntry(ZadRoutes.MAINTENANCE, Icons.Default.Build, R.string.nav_maintenance, Color(0xFFFDF3E1), secondaryDark),
-        ZadMoreEntry(ZadRoutes.TASBIHA, Icons.Default.Yard, R.string.tasbiha_short_label, Color(0xFFE6F4EC), primary),
-        ZadMoreEntry(ZadRoutes.KNOWLEDGE_MAP, Icons.Default.Hub, R.string.knowledge_map_title, Color(0xFFEAF2FB), Color(0xFF2563EB)),
-        ZadMoreEntry(ZadRoutes.PREMIUM_PLANS, Icons.Default.Star, R.string.premium_plans_title, Color(0xFFFFF7ED), Color(0xFFD97706)),
-        ZadMoreEntry(ZadRoutes.PROFILE, Icons.Default.Person, R.string.screen_title_profile, Color(0xFFEEF0F3), Color(0xFF374151)),
-    )
+    val entries = remember {
+        zadAppSections.filter { it.route != ZadRoutes.INVENTORY && it.route != ZadRoutes.ASSISTANT }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),

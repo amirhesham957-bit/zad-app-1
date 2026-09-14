@@ -482,6 +482,7 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
                                 onNavigateToCurrencySettings = { go(ZadNav.PAYMENT_BUDGET) },
                                 onNavigateToMaintenance = { go(ZadRoutes.MAINTENANCE) },
                                 onNavigateToPlans = { go(ZadRoutes.PREMIUM_PLANS) },
+                                onNavigateToRoute = { goGuarded(it) },
                                 onOpenVoice = { showVoiceSheet = true },
                                 onOpenVoiceLive = {
                                     voiceSheetLiveMode = true
@@ -641,7 +642,10 @@ fun MainScreen(onLogout: () -> Unit = {}, pendingInviteCode: String? = null, ope
                     }
                 }
             }
-            if (chromeVisible) {
+            // الرئيسية بس: على باقي الشاشات الكورة كانت بتغطي أيقونات آخر الصفوف (المخزون)
+            // وأزرار خانة الكتابة (شات العيلة) — لقطات جهاز حقيقي ٢٠٢٦-٠٩-١٤. المايك في نص
+            // البار السفلي بيفتح الصوت من أي شاشة، فمفيش مدخل بيضيع.
+            if (chromeVisible && currentRoute == ZadRoutes.HOME) {
                 com.example.ui.components.DraggableFloatingCompanion(
                     companionMood = companionMood,
                     bottomNavHeight = 80.dp,

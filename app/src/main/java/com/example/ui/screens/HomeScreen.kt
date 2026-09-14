@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import com.example.ui.components.bleedHorizontal
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -144,6 +145,8 @@ fun HomeScreen(
     onNavigateToCurrencySettings: () -> Unit = {},
     onNavigateToMaintenance: () -> Unit = {},
     onNavigateToPlans: () -> Unit = {},
+    /** شبكة الأقسام بتودّي لأي route من `zadAppSections` — مدخل واحد بدل callback لكل قسم. */
+    onNavigateToRoute: (String) -> Unit = {},
     onOpenVoice: () -> Unit = {},
     /** المسكوت الأليف (الكرة الخضراء) بيفتح على طول في وضع المكالمة الحية، عكس
      * onOpenVoice العادي اللي بيفتح دور-بدور. */
@@ -601,9 +604,6 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 val pendingShoppingCount = remember(shoppingList) { shoppingList.count { !it.isPurchased } }
-                val familyMembersCount = remember(familyState) {
-                    (familyState as? com.example.ui.viewmodels.FamilyState.Active)?.members?.size ?: 0
-                }
                 val subscriptionsDueCount = remember(subscriptions) {
                     val now = java.time.LocalDate.now()
                     subscriptions.count { sub ->
@@ -622,20 +622,25 @@ fun HomeScreen(
                     }
                 }
 
-                // ── 3. مربعات الاختصارات الأربعة (المخزون، التسوق، العائلة، الاشتراكات) ──
+                // ── 3. شبكة كل أقسام التطبيق (كانت ٤ اختصارات بس، والرابع بيتقص عند الحافة) ──
                 com.example.ui.components.AppearOnEntry(delayMs = 50) {
-                    ZadQuickCategoryGrid(
-                        onNavigateToInventory = onNavigateToInventory,
-                        onNavigateToShopping = onNavigateToShopping,
-                        onNavigateToFamily = onNavigateToFamily,
-                        onNavigateToSubscriptions = onNavigateToSubscriptions,
-                        inventoryShortageCount = shortageCount,
-                        shoppingCartCount = pendingShoppingCount,
-                        familyMembersCount = familyMembersCount,
-                        subscriptionsDueCount = subscriptionsDueCount
+                    com.example.ui.components.ZadSectionsGrid(
+                        onNavigate = onNavigateToRoute,
+                        badges = mapOf(
+                            com.example.ui.components.ZadRoutes.INVENTORY to shortageCount,
+                            com.example.ui.components.ZadRoutes.SHOPPING to pendingShoppingCount,
+                            com.example.ui.components.ZadRoutes.SUBS to subscriptionsDueCount,
+                        )
                     )
                 }
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ── مجتمع زاد على تليجرام — تحت الاختصارات مباشرة (كان آخر الشاشة بعد كل الكروت،
+                // فماكانش حد بيوصله) ──
+                com.example.ui.components.AppearOnEntry(delayMs = 80) {
+                    com.example.ui.components.ZadTelegramCommunityCard()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
 
 
                 // ── 4. إيدج صحة المخزون والنواقص الحية (Food Health & Shortages) ──
@@ -925,8 +930,9 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     if (displayAffiliatePicks.isNotEmpty()) {
                         LazyRow(
+                            modifier = Modifier.bleedHorizontal(20.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp)
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp)
                         ) {
                             itemsIndexed(displayAffiliatePicks, key = { index, pick -> "${pick.product.id}_${index}" }) { index, pick ->
                                 com.example.ui.widgets.ZadAmazonDealCard(
@@ -943,8 +949,9 @@ fun HomeScreen(
                     if (effectiveSearchNeeds.isNotEmpty()) {
                         if (displayAffiliatePicks.isNotEmpty()) Spacer(modifier = Modifier.height(10.dp))
                         LazyRow(
+                            modifier = Modifier.bleedHorizontal(20.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp)
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp)
                         ) {
                             itemsIndexed(effectiveSearchNeeds, key = { index, need -> "${need.id}_${index}" }) { index, need ->
                                 com.example.ui.widgets.ZadAmazonSearchChip(
@@ -1006,11 +1013,9 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(18.dp))
                 }
 
-                // ── كارت مجتمع وقناة تليجرام في أسفل الشاشة (Quiet Footer) ──
-                com.example.ui.components.AppearOnEntry(delayMs = 120) {
-                    com.example.ui.components.ZadTelegramCommunityCard()
-                }
-                Spacer(modifier = Modifier.height(24.dp))
+                // مساحة أمان تحت آخر كارت بارتفاع منطقة الكورة العايمة (36dp فوق البار + 62dp
+                // حجمها + هامش)، عشان آخر محتوى يتمرر لفوقها بدل ما يفضل مستخبي تحتها.
+                Spacer(modifier = Modifier.height(112.dp))
             } // closes inner Column
         } // closes else block (line 125)
     } // closes outer Column (line 103)
@@ -1117,6 +1122,7 @@ fun HomeScreen(
         RecipeDetailDialog(
             recipeTitle = selectedRecipeTitle!!,
             inventory = inventory,
+            knownRecipe = displayChefRecipes.firstOrNull { it.recipeName == selectedRecipeTitle },
             onDismiss = { showRecipeDialog = false },
             onAddMissingToShopping = { missing ->
                 missing.forEach { item ->

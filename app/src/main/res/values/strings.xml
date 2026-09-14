@@ -1813,6 +1813,8 @@
     <string name="shortcut_family_sub">عقل مشترك</string>
     <string name="shortcut_subscriptions">الاشتراكات</string>
     <string name="shortcut_subscriptions_sub">VIP وفواتير</string>
+    <string name="home_sections_show_all">كل الأقسام (%1$d)</string>
+    <string name="home_sections_show_less">أقسام أقل</string>
 
     <!-- Zad Intelligence Consolidated Dashboard -->
     <string name="ai_intel_empty_title">سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي</string>

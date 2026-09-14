@@ -93,7 +93,7 @@ fun ZadAmazonDealCard(
         if (!reason.isNullOrBlank()) {
             Text(
                 reason,
-                fontSize = 9.5.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = secondaryDark,
                 maxLines = 1,
@@ -131,23 +131,23 @@ fun ZadAmazonDealCard(
                         age <= 1 -> "اتحدث النهاردة"
                         else -> "سعر منذ $age يوم"
                     },
-                    fontSize = 8.sp,
-                    color = textTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = onSurfaceVariant,
                     maxLines = 1
                 )
             }
             Text(
                 stringResource(R.string.amazon_label),
-                fontSize = 9.5.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = textTertiary
+                color = onSurfaceVariant
             )
         }
         // إفصاح الأفلييت — مطلوب لشروط برنامج أمازون وأمانة مع العميل
         Text(
             stringResource(R.string.amazon_affiliate_disclosure),
-            fontSize = 7.5.sp,
-            color = textTertiary.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.labelSmall,
+            color = onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -195,9 +195,9 @@ fun ZadAmazonSearchChip(
             )
             Text(
                 reason,
-                fontSize = 9.5.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = textTertiary,
+                color = onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

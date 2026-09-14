@@ -1810,6 +1810,8 @@
     <string name="shortcut_family_sub">Shared Mind</string>
     <string name="shortcut_subscriptions">Subscriptions</string>
     <string name="shortcut_subscriptions_sub">VIP &amp; Bills</string>
+    <string name="home_sections_show_all">All sections (%1$d)</string>
+    <string name="home_sections_show_less">Fewer sections</string>
 
     <!-- Zad Intelligence Consolidated Dashboard -->
     <string name="ai_intel_empty_title">Record your first 3 expenses to activate Zad Intelligence</string>

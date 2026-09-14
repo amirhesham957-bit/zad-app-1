@@ -262,7 +262,10 @@ object ZadAiRepository {
         return response["ok"] as? Boolean ?: false
     }
 
-    fun generateDeterministicChefRecipes(available: List<ZadInventory>): List<ZadRecipe> {
+    fun generateDeterministicChefRecipes(inventory: List<ZadInventory>): List<ZadRecipe> {
+        // مخزون فعلي وقابل للطبخ بس: الرئيسية بتبعت المخزون كله (حتى الكمية صفر)، والمولّد
+        // كان بياخد أي صنف — فطلع "وجبة منزلية سريعة بـ ماء إيلان" على جهاز حقيقي.
+        val available = inventory.filter { it.quantity > 0 && isCookableIngredient(it.itemName, it.category) }
         val names = available.map { it.itemName.lowercase().trim() }
         val recipes = mutableListOf<ZadRecipe>()
 
@@ -363,7 +366,8 @@ object ZadAiRepository {
             )
         }
 
-        if (recipes.isEmpty() && available.isNotEmpty()) {
+        // وصفة عامة محتاجة صنفين حقيقيين على الأقل — "وجبة بـ بيض" لوحده مش وصفة.
+        if (recipes.isEmpty() && available.size >= 2) {
             val firstThree = available.take(3).map { it.itemName }
             recipes.add(
                 ZadRecipe(
@@ -383,6 +387,8 @@ object ZadAiRepository {
             )
         }
 
+        // وصفات عامة لما مفيش حاجة تنفع من المخزون: مكوّناتها كلها "ناقصة". كانت بتتعرض
+        // كأن البيض والطماطم عندك وهما مش في المخزون أصلاً.
         if (recipes.isEmpty()) {
             recipes.addAll(
                 listOf(
@@ -391,8 +397,8 @@ object ZadAiRepository {
                         imageKeywordEn = "shakshuka eggs tomato breakfast pan",
                         prepTimeMinutes = 15,
                         costEstimate = 25.0,
-                        availableIngredientsUsed = listOf("بيض", "طماطم", "بصل"),
-                        missingIngredientsToBuy = listOf("خبز بلدي طازج"),
+                        availableIngredientsUsed = emptyList(),
+                        missingIngredientsToBuy = listOf("بيض", "طماطم", "بصل", "خبز بلدي طازج"),
                         cookingInstructions = listOf(
                             "شوحي البصل والفلفل في مقلاة مع قليل من الزيت حتى يذبل.",
                             "أضيفي الطماطم والبهارات واتركيها تتسبك لمدة ٥ دقائق.",
@@ -405,8 +411,8 @@ object ZadAiRepository {
                         imageKeywordEn = "pasta tomato sauce basil cheese delicious",
                         prepTimeMinutes = 20,
                         costEstimate = 35.0,
-                        availableIngredientsUsed = listOf("مكرونة", "صلصة طماطم"),
-                        missingIngredientsToBuy = listOf("جبن مبشور", "ريحان طازج"),
+                        availableIngredientsUsed = emptyList(),
+                        missingIngredientsToBuy = listOf("مكرونة", "صلصة طماطم", "جبن مبشور", "ريحان طازج"),
                         cookingInstructions = listOf(
                             "اسلقي المكرونة في ماء مغلي مملح حتى تصبح طرية ومتماسكة.",
                             "جهزي صلصة الطماطم مع الثوم والزيت والملح والفلفل الأسود.",
@@ -418,8 +424,8 @@ object ZadAiRepository {
                         imageKeywordEn = "fresh tuna salad bowl vegetables",
                         prepTimeMinutes = 10,
                         costEstimate = 30.0,
-                        availableIngredientsUsed = listOf("تونة", "خيار", "خس"),
-                        missingIngredientsToBuy = listOf("ليمون", "زيت زيتون"),
+                        availableIngredientsUsed = emptyList(),
+                        missingIngredientsToBuy = listOf("تونة", "خيار", "خس", "ليمون", "زيت زيتون"),
                         cookingInstructions = listOf(
                             "صفي التونة من الزيت أو الماء وضعيها في وعاء عميق.",
                             "قطعي الخيار والطماطم والخس وضعيهم فوق التونة.",
