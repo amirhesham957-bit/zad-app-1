@@ -2038,4 +2038,19 @@
     <string name="challenge_stop">Stop the challenge</string>
     <string name="challenge_stop_title">Stop the challenge?</string>
     <string name="challenge_stop_body">Your streak stops and the days you won still count. You can start again any time.</string>
+    <string name="week_share_title">My week with Zad</string>
+    <string name="week_share_subtitle">Spending and habits — no numbers</string>
+    <string name="week_share_less">Spent %1$d%% less than last week</string>
+    <string name="week_share_more">Spent %1$d%% more than last week</string>
+    <string name="week_share_same">Spent exactly the same as last week</string>
+    <string name="week_share_first_week">First week with Zad</string>
+    <string name="week_share_tone_proud">A week to be proud of 🏆</string>
+    <string name="week_share_tone_reproach">Next week will be better 💪</string>
+    <string name="week_share_tone_neutral">Step by step 🌿</string>
+    <string name="week_share_top_category">Spent most on: %1$s</string>
+    <string name="week_share_challenge_streak">🔥 Savings challenge: %1$d days in a row</string>
+    <string name="week_share_tasbiha_streak">🌱 Tasbih: %1$d days in a row</string>
+    <string name="week_share_footer">Zad — your home companion</string>
+    <string name="week_share_cta">Get Zad and try a week with her</string>
+    <string name="week_share_action">Share your week</string>
 </resources>

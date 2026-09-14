@@ -748,6 +748,28 @@ fun HomeScreen(
                 }
                 Spacer(modifier = Modifier.height(18.dp))
 
+                // ── أسبوعك مع زاد — كارت يتشير (صورة من غير مبالغ) ──
+                val weekSummary = remember(transactions, budget) {
+                    com.example.data.WeekSummaryMath.summarize(transactions, java.time.Instant.now(), budget.takeIf { budgetConfirmed })
+                }
+                weekSummary?.let { week ->
+                    com.example.ui.components.AppearOnEntry(delayMs = 92) {
+                        com.example.ui.components.WeekWithZadCard(
+                            week = week,
+                            onShare = {
+                                com.example.share.WeeklyShareCard.share(
+                                    context, week,
+                                    com.example.share.WeeklyShareCard.Extras(
+                                        challengeStreak = savingsChallenge?.streak,
+                                        tasbihaStreak = myTasbiha?.streakDays,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(18.dp))
+                }
+
                 // ── 6. بستان التسبيح + تحدي التسبيحة العائلي (family_tasbiha_challenges) ──
                 val activeTasbihaChallenge = familyViewModel.activeChallenges.firstOrNull()
                 val tasbihaChallengeClicks = activeTasbihaChallenge?.let {

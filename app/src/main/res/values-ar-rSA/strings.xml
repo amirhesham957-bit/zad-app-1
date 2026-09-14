@@ -1973,4 +1973,19 @@
     <string name="challenge_stop">إيقاف التحدي</string>
     <string name="challenge_stop_title">توقف التحدي؟</string>
     <string name="challenge_stop_body">السلسلة بتوقف والأيام اللي فزت فيها تبقى محسوبة. تقدر تبدأ من جديد وقت ما تبي.</string>
+    <string name="week_share_title">أسبوعي مع زاد</string>
+    <string name="week_share_subtitle">ملخص الصرف والعادات — بدون أرقام</string>
+    <string name="week_share_less">صرفت أقل بـ %1$d٪ من الأسبوع الماضي</string>
+    <string name="week_share_more">صرفت أكثر بـ %1$d٪ من الأسبوع الماضي</string>
+    <string name="week_share_same">نفس صرف الأسبوع الماضي بالضبط</string>
+    <string name="week_share_first_week">أول أسبوع مع زاد</string>
+    <string name="week_share_tone_proud">أسبوع يستاهل فخر 🏆</string>
+    <string name="week_share_tone_reproach">الأسبوع الجاي بيكون أحسن 💪</string>
+    <string name="week_share_tone_neutral">خطوة خطوة 🌿</string>
+    <string name="week_share_top_category">أكثر شي صرفت عليه: %1$s</string>
+    <string name="week_share_challenge_streak">🔥 تحدي التوفير: %1$d يوم متتالي</string>
+    <string name="week_share_tasbiha_streak">🌱 التسبيح: %1$d يوم متتالي</string>
+    <string name="week_share_footer">زاد — رفيقتك في إدارة البيت</string>
+    <string name="week_share_cta">حمّل زاد وجرّب أسبوع معها</string>
+    <string name="week_share_action">شارك أسبوعك</string>
 </resources>
