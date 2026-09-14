@@ -193,6 +193,8 @@ export async function pushToTelegram(
   // معرّف المهمة الاستباقية: البوت بيحط تحت الرسالة أزرار رفض بتكتب في zad_memory
   // (20260913190000)، والماسح بيقرا الكتم ده. من غيره الرسالة بتتبعت من غير أزرار.
   dismissTaskId?: string,
+  // تنبيه حرج: البوت بيبعت فويس بصوت زاد بعد النص (zad-telegram-bot/voiceAlert.ts).
+  voice = false,
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -208,6 +210,7 @@ export async function pushToTelegram(
       body: JSON.stringify({
         user_id: userId, title, body: body.slice(0, 3500),
         ...(dismissTaskId ? { dismiss_task_id: dismissTaskId } : {}),
+        ...(voice ? { voice: true } : {}),
       }),
     });
     const text = await res.text();

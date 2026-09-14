@@ -4195,7 +4195,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       // المبادرات بتروح تليجرام كمان: من غيرها كانت بتقف في قايمة جوه التطبيق (FCM صفر
       // توكن). الطلبات مابتروحش — العميل غالبًا طلبها من نفس القناة اللي هيشوف ردها فيها.
       if (notice.proactive) {
-        const tg = await pushToTelegram(task.user_id, notice.title, finalText, fetch, task.id);
+        const tg = await pushToTelegram(task.user_id, notice.title, finalText, fetch, task.id, notice.voice);
         console.log(`[agent_tasks] proactive ${task.kind} for task ${task.id} → telegram: ${tg}`);
       }
       processed++;

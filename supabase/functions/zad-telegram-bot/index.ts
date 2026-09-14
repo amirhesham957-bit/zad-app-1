@@ -19,6 +19,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
+import { alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice } from "./voiceAlert.ts";
 import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
@@ -189,6 +190,34 @@ async function sendTelegramMessage(chatId: number, text: string, keyboard?: Inli
   if (!response.ok || result?.ok !== true) {
     throw new Error(`Telegram sendMessage failed (${response.status})`);
   }
+}
+
+/** فويس نوت (MP3) — تليجرام بيعرضه كرسالة صوتية مش ملف. */
+async function sendTelegramVoice(chatId: number, mp3: Uint8Array<ArrayBuffer>): Promise<void> {
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  form.append("voice", new Blob([mp3], { type: "audio/mpeg" }), "zad-alert.mp3");
+  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVoice`, { method: "POST", body: form });
+  const result = await response.json().catch(() => null) as { ok?: boolean; description?: string } | null;
+  if (!response.ok || result?.ok !== true) {
+    throw new Error(`Telegram sendVoice failed (${response.status}): ${result?.description ?? ""}`);
+  }
+}
+
+/** شغل بعد الرد: realtime_push بيتنادى من pg_net بمهلة ١٥ ثانية، والصوت (TTS + تحويل)
+ *  ممكن ياخد أكتر. `EdgeRuntime.waitUntil` بيكمّل الشغل بعد ما الرد يتبعت؛ لو مش متاح
+ *  (تست محلي) الشغل بيكمّل عادي من غير ما حد يستناه. */
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+function runInBackground(task: Promise<unknown>): void {
+  const guarded = task.catch((e) => console.error("[background] task failed:", e));
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(guarded);
+}
+
+async function deliverVoiceAlert(chatId: number, title: string, body: string): Promise<void> {
+  const pcm = await synthesizeAlertPcm(alertSpeechText(title, body), geminiKeysFromEnv());
+  if (!pcm) return; // السبب اتسجّل جوه synthesizeAlertPcm — النص وصل خلاص.
+  await sendTelegramVoice(chatId, pcmToMp3(pcm));
+  console.log(`[voiceAlert] delivered ${pcm.byteLength} bytes PCM as voice note`);
 }
 
 /** Server-side low-stock detection against zad_inventory + zad_consumption (Task 18's
@@ -1980,7 +2009,8 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: false, reason: "bot not configured" }), { status: 503 });
     }
     try {
-      const { user_id, title, body, dismiss_task_id } = await req.json() as {
+      const payload = await req.json();
+      const { user_id, title, body, dismiss_task_id } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
       };
       if (!user_id || !title || !body) {
@@ -1997,7 +2027,10 @@ Deno.serve(async (req: Request) => {
         ? proactiveDismissKeyboard(dismiss_task_id)
         : undefined;
       await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
-      return new Response(JSON.stringify({ ok: true, delivered: true }), { headers: { "Content-Type": "application/json" } });
+      // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.
+      const voice = wantsVoice(payload);
+      if (voice) runInBackground(deliverVoiceAlert(chatId, title, body));
+      return new Response(JSON.stringify({ ok: true, delivered: true, voice: voice ? "queued" : "none" }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("realtime_push failed:", e);
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });

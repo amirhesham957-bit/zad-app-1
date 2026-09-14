@@ -1291,3 +1291,11 @@ Deno.test("pickDuplicateProposalSibling: closed or un-posted siblings are not or
   const posted = [{ id: "posted", status: "posted", txn_kind: "expense", transaction_id: "t1", created_at: "2026-09-13T10:00:00Z" }];
   assertEquals(pickDuplicateProposalSibling(posted, "expense"), { id: "posted" });
 });
+
+Deno.test("only urgent money initiatives get a Telegram voice note", () => {
+  assertEquals(agentTaskNotice("listener_gap_alert").voice, true);
+  assertEquals(agentTaskNotice("spending_ahead").voice, true);
+  for (const kind of ["reminder", "", "home_weekly_digest", "bill_reminder", "store_arrival", "goal_review", "unknown_kind"]) {
+    assertEquals(agentTaskNotice(kind).voice, false, kind);
+  }
+});

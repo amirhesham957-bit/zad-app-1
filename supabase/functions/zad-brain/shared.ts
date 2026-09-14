@@ -32,10 +32,10 @@ export function normalizeBrainTrigger(raw: unknown): "daily" | "event" | "chat" 
  * بتتبعت لتليجرام كمان (3 من 4 مستخدمين حقيقيين مربوطين، وFCM صفر توكن — يعني قبل كده
  * النتيجة الاستباقية كانت بتقف في قايمة إشعارات جوه التطبيق محدش بيفتحها).
  */
-export function agentTaskNotice(kind: string | null | undefined): { title: string; proactive: boolean } {
+export function agentTaskNotice(kind: string | null | undefined): { title: string; proactive: boolean; voice: boolean } {
   const k = (kind ?? "").trim();
   if (k === "" || k === "reminder") {
-    return { title: "زاد خلّص مهمة كنت طلبتها ✅", proactive: false };
+    return { title: "زاد خلّص مهمة كنت طلبتها ✅", proactive: false, voice: false };
   }
   const titles: Record<string, string> = {
     home_weekly_digest: "📋 ملخص البيت من زاد",
@@ -48,8 +48,15 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     goal_review: "🎯 زاد بيتابع هدفك",
     store_arrival: "🛒 زاد لاحظ إنك جنب محل",
   };
-  return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true };
+  return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }
+
+/**
+ * مبادرات حرجة بتتبعت لتليجرام بفويس بصوت زاد مع النص (`voice:true` في realtime_push).
+ * خطر مالي بيحتاج تصرّف دلوقتي بس: إشعارات البنك وقفت (يعني صرف مش متسجّل) والصرف أسرع من
+ * السقف. الملخصات والتذكيرات لأ — فويس على كل رسالة بيبقى ضوضاء والعميل بيكتمه.
+ */
+export const VOICE_ALERT_KINDS: ReadonlySet<string> = new Set(["listener_gap_alert", "spending_ahead"]);
 
 /**
  * لو مبادرة مستحقة نوعها مكتوم (رفض العميل من تليجرام، 20260913190000)، بترجّع إمتى تتأجل —
