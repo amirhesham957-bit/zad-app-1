@@ -1933,4 +1933,14 @@
     <string name="glance_inventory_empty_sub">صوّر فاتورة السوبرماركت أو أضف أغراضك، وزاد يعلمك وش قرب يخلص قبل تحتاجه</string>
     <string name="agent_summary_empty">الملخص مو جاهز للحين — زاد يحتاج شوية بيانات أو انقطع النت.</string>
     <string name="agent_summary_retry">حاول مرة ثانية</string>
+    <string name="place_reminders_title">لما توصل مكان</string>
+    <string name="place_reminders_hint">قول لزاد «ذكريني إذا رحت الصيدلية أجيب بنادول» — بتقولها لك بصوتها أول ما توصل.</string>
+    <string name="place_reminders_add">تذكير بمكان</string>
+    <string name="place_reminder_field_note">أذكّرك بإيش؟</string>
+    <string name="place_kind_pharmacy">صيدلية</string>
+    <string name="place_kind_supermarket">سوبرماركت</string>
+    <string name="place_kind_mall">مول</string>
+    <string name="place_kind_any">أي محل</string>
+    <string name="place_reminders_location_off">تنبيهات الموقع مقفلة — هذي التذكيرات ما تشتغل إلا إذا فعّلتها من الإعدادات.</string>
+    <string name="place_reminder_remove_cd">إلغاء التذكير</string>
 </resources>

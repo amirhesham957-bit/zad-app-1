@@ -1358,6 +1358,48 @@ object SupabaseRepo {
         false
     }
 
+    // ── تذكيرات المكان (zad_place_reminders) — null لو القراءة فشلت، زي المواعيد ──
+    suspend fun getPlaceReminders(): List<ZadPlaceReminder>? = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: return null
+        client.postgrest["zad_place_reminders"].select {
+            filter {
+                eq("user_id", userId)
+                eq("status", "open")
+            }
+            order("created_at", io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+            limit(50L)
+        }.decodeList<ZadPlaceReminder>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getPlaceReminders() FAILED: ${e.message}")
+        null
+    }
+
+    suspend fun addPlaceReminder(note: String, place: String): Boolean = try {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("no session")
+        client.postgrest["zad_place_reminders"].insert(
+            buildJsonObject {
+                put("user_id", userId)
+                put("note", note.trim().take(200))
+                put("place", if (place in PLACE_REMINDER_PLACES) place else "any")
+                put("source", "app")
+            }
+        )
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "addPlaceReminder() FAILED: ${e.message}")
+        false
+    }
+
+    suspend fun cancelPlaceReminder(id: String): Boolean = try {
+        client.postgrest["zad_place_reminders"].update(
+            buildJsonObject { put("status", "cancelled") }
+        ) { filter { eq("id", id) } }
+        true
+    } catch (e: Exception) {
+        Log.e(TAG, "cancelPlaceReminder() FAILED: ${e.message}")
+        false
+    }
+
     suspend fun getObligations(): List<ZadObligation> {
         return try {
             val userId = client.auth.currentUserOrNull()?.id

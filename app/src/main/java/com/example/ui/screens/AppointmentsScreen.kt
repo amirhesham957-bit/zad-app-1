@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.example.R
 import com.example.data.APPOINTMENT_KINDS
 import com.example.data.AppointmentGroup
+import com.example.data.GroceryGeofenceManager
+import com.example.data.PLACE_REMINDER_PLACES
+import com.example.data.ZadPlaceReminder
 import com.example.data.SupabaseRepo
 import com.example.data.ZadAppointment
 import com.example.data.groupAppointments
@@ -78,12 +81,17 @@ fun AppointmentsScreen(
     var showPast by rememberSaveable { mutableStateOf(false) }
     var actionTarget by remember { mutableStateOf<ZadAppointment?>(null) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    var placeReminders by remember { mutableStateOf<List<ZadPlaceReminder>>(emptyList()) }
+    var showAddPlace by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val locationAlertsOn = remember(reloadKey) { GroceryGeofenceManager.isEnabled(context) }
 
     LaunchedEffect(reloadKey) {
         loading = true
         val result = SupabaseRepo.getAppointments()
         loadFailed = result == null
         if (result != null) items = result
+        SupabaseRepo.getPlaceReminders()?.let { placeReminders = it }
         loading = false
     }
 
@@ -97,6 +105,16 @@ fun AppointmentsScreen(
         ) {
             item(key = "voice") { VoiceHintCard(onOpenVoice) }
             item(key = "obligations") { ObligationsLink(onOpenObligations) }
+            item(key = "place-reminders") {
+                PlaceRemindersSection(
+                    reminders = placeReminders,
+                    locationAlertsOn = locationAlertsOn,
+                    onAdd = { showAddPlace = true },
+                    onCancel = { r ->
+                        scope.launch { if (SupabaseRepo.cancelPlaceReminder(r.id)) reloadKey++ }
+                    },
+                )
+            }
 
             when {
                 loading && items == null -> item(key = "loading") {
@@ -185,6 +203,16 @@ fun AppointmentsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = 24.dp)
                 .pressableScale(),
+        )
+    }
+
+    if (showAddPlace) {
+        AddPlaceReminderDialog(
+            onDismiss = { showAddPlace = false },
+            onSaved = {
+                showAddPlace = false
+                reloadKey++
+            },
         )
     }
 
@@ -283,6 +311,157 @@ private fun ObligationsLink(onClick: () -> Unit) {
         )
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null, tint = onSurfaceVariant)
     }
+}
+
+/**
+ * «لما توصل مكان» — تذكيرات من غير وقت. من غير تنبيهات الموقع مفيش store_arrival أصلاً،
+ * فبنقولها صريحة بدل ما العميل يستنى تذكير عمره ما هيتقال.
+ */
+@Composable
+private fun PlaceRemindersSection(
+    reminders: List<ZadPlaceReminder>,
+    locationAlertsOn: Boolean,
+    onAdd: () -> Unit,
+    onCancel: (ZadPlaceReminder) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(surface)
+            .border(1.dp, outlineVariant, RoundedCornerShape(20.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.Place, contentDescription = null, tint = primary, modifier = Modifier.size(20.dp))
+            Text(
+                stringResource(R.string.place_reminders_title),
+                style = Typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onAdd, modifier = Modifier.heightIn(min = 44.dp)) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.place_reminders_add))
+            }
+        }
+        if (reminders.isEmpty()) {
+            Text(stringResource(R.string.place_reminders_hint), style = Typography.bodySmall, color = onSurfaceVariant)
+        } else {
+            reminders.forEach { r ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    val accent = placeAccent(r.place)
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(accent.containerColor),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(placeIcon(r.place), contentDescription = null, tint = accent.contentColor, modifier = Modifier.size(18.dp))
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(r.note, style = Typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(placeLabel(r.place)), style = Typography.bodySmall, color = onSurfaceVariant)
+                    }
+                    IconButton(onClick = { onCancel(r) }) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.place_reminder_remove_cd), tint = onSurfaceVariant)
+                    }
+                }
+            }
+        }
+        if (!locationAlertsOn) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.LocationOff, contentDescription = null, tint = warningColor, modifier = Modifier.size(16.dp))
+                Text(stringResource(R.string.place_reminders_location_off), style = Typography.bodySmall, color = onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private fun placeLabel(place: String): Int = when (place) {
+    "pharmacy" -> R.string.place_kind_pharmacy
+    "supermarket" -> R.string.place_kind_supermarket
+    "mall" -> R.string.place_kind_mall
+    else -> R.string.place_kind_any
+}
+
+private fun placeIcon(place: String): ImageVector = when (place) {
+    "pharmacy" -> Icons.Default.LocalPharmacy
+    "supermarket" -> Icons.Default.ShoppingCart
+    "mall" -> Icons.Default.LocalMall
+    else -> Icons.Default.Storefront
+}
+
+private fun placeAccent(place: String): ZadSectionAccent = when (place) {
+    "pharmacy" -> ZadSectionAccent.Rose
+    "supermarket" -> ZadSectionAccent.Emerald
+    "mall" -> ZadSectionAccent.Violet
+    else -> ZadSectionAccent.Amber
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddPlaceReminderDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var note by rememberSaveable { mutableStateOf("") }
+    var place by rememberSaveable { mutableStateOf("pharmacy") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val failMessage = stringResource(R.string.appointments_save_failed)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = surface,
+        title = { Text(stringResource(R.string.place_reminders_add), style = Typography.titleLarge, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it.take(200) },
+                    label = { Text(stringResource(R.string.place_reminder_field_note)) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = onSurfaceVariant.copy(alpha = 0.72f),
+                        focusedBorderColor = primary,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    PLACE_REMINDER_PLACES.forEach { p ->
+                        FilterChip(
+                            selected = place == p,
+                            onClick = { place = p },
+                            label = { Text(stringResource(placeLabel(p)), style = Typography.labelLarge) },
+                            leadingIcon = { Icon(placeIcon(p), contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
+                }
+                AnimatedVisibility(visible = error != null) {
+                    Text(error.orEmpty(), style = Typography.bodySmall, color = dangerColor)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = note.trim().length >= 2 && !saving,
+                onClick = {
+                    saving = true
+                    error = null
+                    scope.launch {
+                        val ok = SupabaseRepo.addPlaceReminder(note, place)
+                        saving = false
+                        if (ok) onSaved() else error = failMessage
+                    }
+                },
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable

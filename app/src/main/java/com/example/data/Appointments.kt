@@ -69,3 +69,20 @@ fun groupAppointments(
         }
     }
 }
+
+/**
+ * تذكير مربوط بمكان مش بوقت (`zad_place_reminders`، ميجريشن 20260914007000) — «فكّريني لما
+ * أروح الصيدلية أجيب بنادول». بيتقال بصوت زاد لما الموبايل يبلّغ store_arrival لنوع المكان
+ * ده، ومرة واحدة (السيرفر بيقفله وقت الإطلاق).
+ */
+@Serializable
+data class ZadPlaceReminder(
+    val id: String,
+    val place: String = "any",
+    val note: String,
+    val status: String = "open",
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+/** قيم `place` زي ما هي في قيد الجدول — بيانات مطابقة، مش نصوص عرض. */
+val PLACE_REMINDER_PLACES = listOf("pharmacy", "supermarket", "mall", "any")

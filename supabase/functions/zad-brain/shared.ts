@@ -129,6 +129,22 @@ export function itemKey(name: string): string {
     .toLowerCase();
 }
 
+/**
+ * تذكيرات المكان (20260914007000) — «فكّريني لما أروح الصيدلية». 'any' = أي محل.
+ */
+export const PLACE_REMINDER_PLACES = ["supermarket", "pharmacy", "mall", "any"] as const;
+export type PlaceReminderPlace = typeof PLACE_REMINDER_PLACES[number];
+
+/** أنواع التذكيرات اللي تتقال لما العميل يوصل محل من النوع ده. */
+export function placesMatchingArrival(category: StoreCategory): PlaceReminderPlace[] {
+  return [category, "any"];
+}
+
+/** مفتاح منع التكرار للحظة الصوت: نفس التذكيرات = نفس اللحظة حتى لو الحدث وصل مرتين. */
+export function placeReminderDedupeKey(ids: string[]): string {
+  return `place_reminder:${[...ids].sort().join(",").slice(0, 400)}`;
+}
+
 export function storeArrivalDescription(storeName: string, category: StoreCategory): string {
   return `وصول لـ«${storeName}» (${category})`;
 }

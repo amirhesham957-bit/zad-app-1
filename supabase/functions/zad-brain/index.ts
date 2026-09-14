@@ -54,9 +54,9 @@
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APP_COMMAND_SCREENS } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -955,6 +955,16 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     dataErrors.push({ source: "مواعيدك" });
   }
 
+  // تذكيرات المكان المفتوحة — عشان «فكّرتني بإيه لما أروح الصيدلية؟» و«شيل تذكير البنادول».
+  const { data: placeReminderRows, error: placeRemErr } = await sb.from("zad_place_reminders")
+    .select("id,place,note,created_at")
+    .eq("user_id", userId).eq("status", "open")
+    .order("created_at", { ascending: true }).limit(20);
+  if (placeRemErr) {
+    console.error("[snapshot] zad_place_reminders failed:", placeRemErr.message);
+    dataErrors.push({ source: "تذكيرات المكان" });
+  }
+
   // خروجات آخر ٧ أيام (من غير إحداثيات) — العقل يعرف "خرج امبارح وصرف ٣٥٠ في كارفور".
   const { data: outingRows } = await sb.from("zad_place_visits")
     .select("left_at,returned_at,spent_total,currency,merchants,stores")
@@ -1125,6 +1135,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
+    // تذكيرات بتتقال لما يوصل نوع محل (مش وقت). id للإلغاء بـ cancel_place_reminder.
+    place_reminders: (placeReminderRows ?? []) as Array<Record<string, unknown>>,
     // خروجاته من البيت آخر أسبوع (وقت + صرف + محلات) — لو فعّل تنبيهات الموقع.
     recent_outings: (outingRows ?? []) as Array<Record<string, unknown>>,
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين
@@ -2465,6 +2477,44 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       });
       return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
     }
+    case "add_place_reminder": {
+      const note = String(input.note).trim().slice(0, 200);
+      const place = PLACE_REMINDER_PLACE_VALUES.includes(String(input.place)) ? String(input.place) : "any";
+      const w = await writeRows(
+        sb.from("zad_place_reminders").insert({
+          user_id: userId,
+          note,
+          place,
+          source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+        }).select("id,place,note"),
+        "تسجيل تذكير المكان",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const row = w.rows[0] as { id: string; place: string; note: string };
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { note, place } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_place_reminders", targetId: row.id, previous: null, next: row,
+      });
+      const where = place === "pharmacy" ? "أول ما توصل صيدلية" : place === "supermarket" ? "أول ما توصل سوبرماركت" : place === "mall" ? "أول ما توصل مول" : "أول ما توصل أي محل";
+      return `تم — هفكّره بصوتي بـ«${note}» ${where}. (محتاج تنبيهات الموقع مفعّلة في الإعدادات.)`;
+    }
+    case "cancel_place_reminder": {
+      const id = String(input.reminder_id).trim();
+      const { data: before } = await sb.from("zad_place_reminders").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
+      if (!before) return "مرفوض: التذكير ده مش موجود عند العميل";
+      const w = await writeRows(
+        sb.from("zad_place_reminders").update({ status: "cancelled" }).eq("id", id).eq("user_id", userId).select("id,note,status"),
+        "إلغاء تذكير المكان",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: { status: "cancelled" } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_place_reminders", targetId: id, previous: before, next: w.rows[0],
+      });
+      return `تم إلغاء تذكير «${(before as { note: string }).note}».`;
+    }
     case "schedule_task": {
       // حلقة الأهداف — لو المهمة دي جزء من هدف، اربطها. الهدف لازم يكون للعميل نفسه.
       let goalId: string | null = null;
@@ -3682,6 +3732,31 @@ const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    // تذكيرات المكان (20260914007000) — بتتقال بصوت زاد لما الموبايل يبلّغ إنه وصل نوع المحل ده.
+    name: "add_place_reminder",
+    description:
+      "سجّل تذكير مربوط بمكان مش بوقت: «فكّريني لما أروح الصيدلية أجيب بنادول»، «أول ما أنزل السوبرماركت فكّريني بالحفاضات»، «لما أكون في المول افتكر هدية ماما». " +
+      "زاد بتقوله بصوتها أول ما يوصل نوع المكان ده. لو فيه وقت محدد («بكرة الساعة ٥») يبقى add_appointment مش ده. " +
+      "لو الحاجة صنف هيشتريه من السوبرماركت ومش مجرد تذكير، ضيفه كمان في قايمة الشراء لو العميل عايز.",
+    input_schema: {
+      type: "object",
+      properties: {
+        note: { type: "string", description: "هيفتكر إيه، بكلام العميل مختصر: «أجيب بنادول»" },
+        place: { type: "string", enum: ["supermarket", "pharmacy", "mall", "any"], description: "نوع المكان؛ any لو قال «أي محل» أو مش واضح" },
+      },
+      required: ["note", "place"],
+    },
+  },
+  {
+    name: "cancel_place_reminder",
+    description: "الغي تذكير مكان مفتوح من place_reminders في الـsnapshot («شيل تذكير البنادول»، «خلاص جبته»).",
+    input_schema: {
+      type: "object",
+      properties: { reminder_id: { type: "string" } },
+      required: ["reminder_id"],
+    },
+  },
+  {
     // W8 — يخلي طلب زي "راجعلي مصاريف الأسبوع وابعتلي تقرير الساعة ٩" يتنفذ فعلاً وقت
     // ما العميل طلبه، مش وقت اللفة الحالية بس. النتيجة بتوصل كإشعار (processDueAgentTasks)
     // مش كرد شات هيختفي قبل ما يوصل وقته.
@@ -4126,10 +4201,14 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   if (!category || !storeName) return json({ ok: false, error: "bad_request" }, 400);
 
   const nowIso = new Date().toISOString();
+  // تذكيرات المكان قبل الكتم وحارس المحل/اليوم: العميل هو اللي طلبها بالاسم، فكتم «رسايل
+  // المحلات» مايخفيهاش. الـUPDATE بيرجّع الصفوف اللي حوّلها بس — حدثين ورا بعض مايكرروش.
+  const reminderStatus = await firePlaceReminders(sb, userId, category, storeName);
+
   const { data: mutes, error: muteErr } = await sb.from("zad_memory")
     .select("suppress_until").eq("user_id", userId).eq("subject_kind", "store_arrival").gt("suppress_until", nowIso);
   if (muteErr) console.error("[store_arrival] mute lookup failed:", muteErr.message);
-  if ((mutes ?? []).length > 0) return json({ ok: true, sent: false, reason: "muted" });
+  if ((mutes ?? []).length > 0) return json({ ok: true, sent: false, reason: "muted", reminders: reminderStatus });
 
   const { data: recent, error: recentErr } = await sb.from("agent_tasks")
     .select("created_at,task_description")
@@ -4137,7 +4216,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     .gte("created_at", new Date(Date.now() - 24 * 3_600_000).toISOString());
   if (recentErr) console.error("[store_arrival] recent lookup failed:", recentErr.message);
   const blocked = storeArrivalBlock((recent ?? []) as Array<{ created_at: string; task_description: string }>, storeName, Date.now());
-  if (blocked) return json({ ok: true, sent: false, reason: blocked });
+  if (blocked) return json({ ok: true, sent: false, reason: blocked, reminders: reminderStatus });
 
   let shopping: string[] = [];
   let lowStock: string[] = [];
@@ -4173,7 +4252,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   const message = buildStoreArrivalMessage({
     storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items),
   });
-  if (!message) return json({ ok: true, sent: false, reason: "nothing_missing" });
+  if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
   const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert({
     user_id: userId,
@@ -4192,7 +4271,57 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   const taskId = (taskRow as { id: string }).id;
   const telegram = await pushToTelegram(userId, message.title, message.body, fetch, taskId);
   console.log(`[store_arrival] ${category} «${storeName}» items=${message.itemCount} → telegram: ${telegram}`);
-  return json({ ok: true, sent: telegram === "delivered", telegram, items: message.itemCount, task_id: taskId });
+  return json({ ok: true, sent: telegram === "delivered", telegram, items: message.itemCount, task_id: taskId, reminders: reminderStatus });
+}
+
+/**
+ * «فكّريني لما أروح الصيدلية» — العميل وصل نوع المكان. التذكيرات بتتقفل (done) في نفس الـUPDATE
+ * اللي بيرجّعها، وبتتسجّل لحظة صوت place_reminder واحدة وتتعالج في الخلفية: الـreceiver على
+ * الموبايل ليه ثواني قليلة، وكتابة الكلام بالموديل ممكن تاخد أكتر.
+ */
+async function firePlaceReminders(
+  sb: SupabaseClient,
+  userId: string,
+  category: "supermarket" | "mall" | "pharmacy",
+  storeName: string,
+): Promise<string> {
+  const { data: fired, error } = await sb.from("zad_place_reminders")
+    .update({ status: "done", fired_at: new Date().toISOString(), fired_store: storeName })
+    .eq("user_id", userId).eq("status", "open").in("place", placesMatchingArrival(category))
+    .select("id,note");
+  if (error) {
+    console.error("[place_reminder] fire failed:", error.message);
+    return "error";
+  }
+  const rows = (fired ?? []) as Array<{ id: string; note: string }>;
+  if (rows.length === 0) return "none";
+
+  const { error: momentErr } = await sb.from("zad_voice_moments").upsert({
+    user_id: userId,
+    moment: "place_reminder",
+    facts: { store_name: storeName, category, notes: rows.slice(0, 5).map((r) => r.note) },
+    dedupe_key: placeReminderDedupeKey(rows.map((r) => r.id)),
+  }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  if (momentErr) {
+    // التذكير اتقفل ومش هيتقال — نرجّعه مفتوح بدل ما يضيع بصمت.
+    console.error("[place_reminder] moment insert failed — reopening:", momentErr.message);
+    await sb.from("zad_place_reminders").update({ status: "open", fired_at: null, fired_store: null })
+      .in("id", rows.map((r) => r.id));
+    return "error";
+  }
+
+  const work = processVoiceMoments(sb, {
+    compose: async (system, user) =>
+      (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
+    pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),
+    pushTelegram: (uid, title, text, voice, m, speech) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech),
+  }, 5, userId)
+    .then((r) => console.log(`[place_reminder] ${rows.length} for «${storeName}» → ${JSON.stringify(r)}`))
+    .catch((e) => console.error("[place_reminder] processing failed:", (e as Error)?.message));
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(work);
+  else await work;
+  return `fired:${rows.length}`;
 }
 
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
@@ -5351,7 +5480,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 8. متكتبش أي اسم تقني في ردك. تكلم بشكل طبيعي يناسب ${voiceMode ? "المكالمة الصوتية" : "المحادثة المكتوبة"}.
 9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
-11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير.
+11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
 
 === SNAPSHOT ===
 ${JSON.stringify(snap)}

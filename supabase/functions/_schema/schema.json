@@ -962,5 +962,16 @@
     "spent_total",
     "stores",
     "user_id"
+  ],
+  "zad_place_reminders": [
+    "created_at",
+    "fired_at",
+    "fired_store",
+    "id",
+    "note",
+    "place",
+    "source",
+    "status",
+    "user_id"
   ]
 }

@@ -1998,4 +1998,14 @@
     <string name="glance_inventory_empty_sub">Snap a grocery receipt or add items, and Zad will tell you what is running low before you need it</string>
     <string name="agent_summary_empty">Summary isn\'t ready yet — Zad needs a bit more data, or the connection dropped.</string>
     <string name="agent_summary_retry">Try again</string>
+    <string name="place_reminders_title">When you get somewhere</string>
+    <string name="place_reminders_hint">Tell Zad “remind me to get Panadol when I\'m at the pharmacy” — she\'ll say it out loud as soon as you arrive.</string>
+    <string name="place_reminders_add">Place reminder</string>
+    <string name="place_reminder_field_note">Remind you about what?</string>
+    <string name="place_kind_pharmacy">Pharmacy</string>
+    <string name="place_kind_supermarket">Supermarket</string>
+    <string name="place_kind_mall">Mall</string>
+    <string name="place_kind_any">Any store</string>
+    <string name="place_reminders_location_off">Location alerts are off — these reminders only work once you turn them on in Settings.</string>
+    <string name="place_reminder_remove_cd">Cancel reminder</string>
 </resources>

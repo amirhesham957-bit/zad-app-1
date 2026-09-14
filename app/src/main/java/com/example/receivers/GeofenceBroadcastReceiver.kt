@@ -143,7 +143,9 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             context,
             title = title,
             message = body,
-            speak = true,
+            // مكتوب بس: الكلام بصوت زاد عند المحل بقى لتذكيرات المكان اللي العميل طلبها
+            // (place_reminder من السيرفر). لو ده كمان اتقال، الاتنين بيتكلموا فوق بعض.
+            speak = false,
             priority = NotificationCompat.PRIORITY_HIGH
         )
         Log.d(TAG, "showNotification() → near $storeName, ${missingItems.size} missing items")

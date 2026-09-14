@@ -100,6 +100,18 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `رجعت أخيرًا! وحشتني. روحت فين بقى؟ أنا شايفة إنك صرفت ${amount}${where ? ` في ${where}` : ""}… كان يستاهل؟`,
       };
     }
+    case "place_reminder": {
+      const store = str(facts.store_name, 60) || "المحل";
+      const notes = Array.isArray(facts.notes) ? (facts.notes as unknown[]).map((n) => str(n, 120)).filter(Boolean) : [];
+      const list = notes.slice(0, 3).join("، و");
+      return {
+        title: "📌 افتكرت حاجة!",
+        text: list ? `إنت جنب «${store}» — كنت قايللي أفكّرك: ${list}.` : `إنت جنب «${store}» — كان عندك حاجة عايز تفتكرها هنا.`,
+        speech: list
+          ? `استنى استنى! إنت جنب ${store} دلوقتي، مش كنت قايللي أفكّرك ${list}؟ ماتمشيش من غيرها!`
+          : `استنى! إنت جنب ${store}، كنت قايللي أفكّرك بحاجة هنا.`,
+      };
+    }
     case "morning_greeting": {
       const meds = Array.isArray(facts.meds_today) ? (facts.meds_today as Array<{ name?: string }>).map((m) => m?.name).filter(Boolean) : [];
       const appts = Array.isArray(facts.appointments_today) ? (facts.appointments_today as Array<{ title?: string }>).map((a) => a?.title).filter(Boolean) : [];

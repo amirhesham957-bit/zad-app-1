@@ -751,6 +751,26 @@ export const validateUpdateAppointment: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+// تذكيرات مربوطة بمكان (20260914007000): «فكّريني لما أروح الصيدلية أجيب بنادول».
+export const PLACE_REMINDER_PLACE_VALUES = ["supermarket", "pharmacy", "mall", "any"];
+
+export const validateAddPlaceReminder: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["add_place_reminder"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ تذكيرات في المرة" };
+  const note = String(input.note ?? "").trim();
+  if (note.length < 2) return { ok: false, reason: "التذكير قصير أوي — قول هيفتكر إيه" };
+  if (note.length > 200) return { ok: false, reason: "التذكير طويل أوي، لخّصه" };
+  if (input.place !== undefined && !PLACE_REMINDER_PLACE_VALUES.includes(String(input.place))) {
+    return { ok: false, reason: `place لازم واحد من: ${PLACE_REMINDER_PLACE_VALUES.join("، ")}` };
+  }
+  return { ok: true };
+};
+
+export const validateCancelPlaceReminder: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["cancel_place_reminder"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ إلغاءات في المرة" };
+  if (String(input.reminder_id ?? "").trim().length < 10) return { ok: false, reason: "reminder_id لازم من place_reminders في الـsnapshot" };
+  return { ok: true };
+};
+
 export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
@@ -819,6 +839,8 @@ export const VALIDATORS: Record<string, Validator> = {
   learn_skill: validateLearnSkill,
   add_appointment: validateAddAppointment,
   update_appointment: validateUpdateAppointment,
+  add_place_reminder: validateAddPlaceReminder,
+  cancel_place_reminder: validateCancelPlaceReminder,
 };
 
 /**
@@ -843,6 +865,7 @@ export const MUTATING_TOOLS = [
   "update_emergency_fund_balance",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
+  "add_place_reminder", "cancel_place_reminder",
   // أمر واجهة — قراءة/تنقّل بس، مش كتابة بيانات. مش في CONFIRM_REQUIRED أبداً.
   "app_command",
   // العقل بيتعلم — كتابة في zad_skills بس (مش بيانات عميل).

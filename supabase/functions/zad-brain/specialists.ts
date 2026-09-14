@@ -259,6 +259,7 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
     // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
     "add_appointment", "update_appointment",
+    "add_place_reminder", "cancel_place_reminder",
   ]);
   return tools.filter((t) => allowed.has(t.name));
 }

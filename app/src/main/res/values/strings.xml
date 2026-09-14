@@ -2009,4 +2009,14 @@
     <string name="glance_inventory_empty_sub">صوّر فاتورة السوبرماركت أو ضيف أصنافك، وزاد يقولك إيه قرب يخلص قبل ما تحتاجه</string>
     <string name="agent_summary_empty">الملخص مش جاهز لسه — زاد محتاج شوية بيانات أو النت فصل.</string>
     <string name="agent_summary_retry">حاول تاني</string>
+    <string name="place_reminders_title">لما توصل مكان</string>
+    <string name="place_reminders_hint">قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك بصوتها أول ما توصل.</string>
+    <string name="place_reminders_add">تذكير بمكان</string>
+    <string name="place_reminder_field_note">أفكّرك بإيه؟</string>
+    <string name="place_kind_pharmacy">صيدلية</string>
+    <string name="place_kind_supermarket">سوبرماركت</string>
+    <string name="place_kind_mall">مول</string>
+    <string name="place_kind_any">أي محل</string>
+    <string name="place_reminders_location_off">تنبيهات الموقع مقفولة — التذكيرات دي مش هتشتغل غير لما تفعّلها من الإعدادات.</string>
+    <string name="place_reminder_remove_cd">إلغاء التذكير</string>
 </resources>
