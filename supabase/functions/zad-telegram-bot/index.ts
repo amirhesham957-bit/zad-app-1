@@ -20,7 +20,8 @@ import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
-import { resolveDialect } from "../_shared/dialect.ts";
+import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
+import { botDialectFor, type BotDialect, localizeBotText } from "./botDialect.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
@@ -833,6 +834,61 @@ interface AnalyzeReceiptResult {
 // module still loads and the GET probe can explain the misconfiguration. No request is
 // ever routed to this bot in that state — Deno.serve short-circuits below.
 const bot = new Bot(BOT_CONFIGURED ? BOT_TOKEN : "0:placeholder");
+
+// ── لهجة رسايل البوت الثابتة (botDialect.ts) ─────────────────────────────────
+// كل رسالة طالعة من البوت (ctx.reply وغيره عبر grammY) بتعدّي على localizeBotText بلهجة الشات:
+// ملف العميل ← كلامه في الرسالة دي ← بلد السوق/العملة. رد العقل مابيتطابقش مع الرسايل الثابتة
+// فبيعدّي زي ما هو (هو أصلاً بلهجته). كاش ١٠ دقايق لكل شات عشان مانقراش الداتابيز مع كل رد.
+const chatDialectCache = new Map<number, { dialect: BotDialect; at: number }>();
+const chatTextHint = new Map<number, string>();
+
+async function chatDialect(chatId: number): Promise<BotDialect> {
+  const hit = chatDialectCache.get(chatId);
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.dialect;
+  let dialect: BotDialect = "EG";
+  try {
+    const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const userId = await resolveUserId(sb, chatId);
+    const [userRow, profileRow] = userId
+      ? await Promise.all([
+        sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle().then((r) => r.data as { country?: string; currency?: string } | null),
+        sb.from("zad_customer_profile").select("dialect").eq("user_id", userId).maybeSingle().then((r) => r.data as { dialect?: string | null } | null),
+      ])
+      : [null, null];
+    dialect = botDialectFor(resolveDialect({
+      preferred: profileRow?.dialect,
+      text: chatTextHint.get(chatId) ?? null,
+      country: userRow?.country,
+      currency: userRow?.currency,
+    }));
+  } catch (e) {
+    console.warn("[botDialect] lookup failed, using Egyptian:", (e as Error)?.message);
+  }
+  chatDialectCache.set(chatId, { dialect, at: Date.now() });
+  return dialect;
+}
+
+// كلام العميل نفسه تلميح للهجة (لو واضح) — قبل أي handler.
+bot.use(async (ctx, next) => {
+  const chatId = ctx.chat?.id;
+  const text = ctx.message?.text ?? ctx.message?.caption;
+  if (chatId && text && detectDialectFromText(text)) {
+    chatTextHint.set(chatId, text);
+    chatDialectCache.delete(chatId);
+  } else if (chatId && ctx.from?.language_code?.startsWith("en") && !chatTextHint.has(chatId)) {
+    chatTextHint.set(chatId, "How much did I spend this week and what is left in the budget");
+  }
+  await next();
+});
+
+bot.api.config.use(async (prev, method, payload, signal) => {
+  const p = payload as { chat_id?: number | string; text?: string };
+  if ((method === "sendMessage" || method === "editMessageText") && typeof p.text === "string" && typeof p.chat_id === "number") {
+    const dialect = await chatDialect(p.chat_id);
+    if (dialect !== "EG") (payload as { text: string }).text = localizeBotText(p.text, dialect);
+  }
+  return prev(method, payload, signal);
+});
 
 bot.command("start", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
