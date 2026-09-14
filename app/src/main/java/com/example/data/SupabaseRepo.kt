@@ -1693,6 +1693,33 @@ object SupabaseRepo {
         }
     }
 
+    // ─── «أرخص سعر حواليك» (zad_cheapest_prices، 20260914011000) ──────────────
+    @kotlinx.serialization.Serializable
+    data class CheapestPrice(
+        @kotlinx.serialization.SerialName("item_name") val itemName: String,
+        @kotlinx.serialization.SerialName("min_price") val minPrice: Double,
+        @kotlinx.serialization.SerialName("avg_price") val avgPrice: Double,
+        val reports: Int,
+        @kotlinx.serialization.SerialName("cheapest_location") val cheapestLocation: String? = null,
+        @kotlinx.serialization.SerialName("cheapest_store") val cheapestStore: String? = null,
+    )
+
+    /** null = القراءة فشلت (مش «مفيش بلاغات») — الشاشة بتفرّق بينهم. */
+    suspend fun getCheapestPrices(currency: String, location: String?): List<CheapestPrice>? = try {
+        client.postgrest.rpc(
+            "zad_cheapest_prices",
+            buildJsonObject {
+                put("p_currency", currency)
+                put("p_location", location?.trim()?.takeIf { it.isNotEmpty() })
+                put("p_days", 14)
+                put("p_limit", 20)
+            }
+        ).decodeList<CheapestPrice>()
+    } catch (e: Exception) {
+        Log.e(TAG, "getCheapestPrices() FAILED: ${e.message}")
+        null
+    }
+
     // ─── المرحلة 4: صحة العقل الاستباقي ───────────────────────────────────
     // بتقرا جداول المراقبة اللي كانت متوصّلة بالسيرفر بس ومحدش في التطبيق بيشوفها.
     // المنطق نفسه في BrainHealth.kt (ملف صافي متغطّى بـunit test) — هنا القراءة بس.

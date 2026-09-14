@@ -2058,4 +2058,12 @@
     <string name="leaderboard_share_streak">🔥 %1$d days in a row</string>
     <string name="leaderboard_share_cta">Who will beat us this week?</string>
     <string name="leaderboard_share_action">Share the ranking</string>
+    <string name="cheapest_title">Cheapest near you</string>
+    <string name="cheapest_subtitle">From Zad community reports in the last 14 days — not official prices</string>
+    <string name="cheapest_city_label">City or area (optional)</string>
+    <string name="cheapest_search_cd">Search</string>
+    <string name="cheapest_failed">Couldn\'t load prices right now</string>
+    <string name="cheapest_empty_title">No reports here yet</string>
+    <string name="cheapest_empty_subtitle">Be the first to report a price — your neighbours will thank you</string>
+    <string name="cheapest_where_reports">%1$s · %2$d reports</string>
 </resources>

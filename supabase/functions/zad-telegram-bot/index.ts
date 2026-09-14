@@ -20,6 +20,7 @@ import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
+import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
   adCreditKeyboard,
@@ -2018,6 +2019,44 @@ Deno.serve(async (req: Request) => {
   // cron. Payload is pre-formatted title/body text; this endpoint only resolves the
   // chat_id and delivers, no calculation happens here. Missing binding is a silent
   // no-op (200), not an error — most rows won't belong to a Telegram-linked user.
+  // بوست قناة المجتمع اليومي: أرخص الأسعار من بلاغات العملاء (20260914011000). نفس سيكريت
+  // realtime_push (موجود في vault). من غير TELEGRAM_COMMUNITY_CHAT_ID بيتخطى بهدوء.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "community_prices") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    const communityChat = (Deno.env.get("TELEGRAM_COMMUNITY_CHAT_ID") ?? "").trim();
+    if (!BOT_CONFIGURED || !communityChat) {
+      console.log("[community_prices] skipped — bot or TELEGRAM_COMMUNITY_CHAT_ID not configured");
+      return new Response(JSON.stringify({ ok: true, posted: false, reason: "not configured" }), { headers: { "Content-Type": "application/json" } });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const days = 7;
+      const byMarket = [];
+      for (const m of COMMUNITY_MARKETS) {
+        const { data, error } = await sb.rpc("zad_cheapest_prices", { p_currency: m.currency, p_location: null, p_days: days, p_limit: 10 });
+        if (error) throw new Error(`zad_cheapest_prices ${m.currency}: ${error.message}`);
+        byMarket.push({ ...m, rows: (data ?? []) as CheapestRow[] });
+      }
+      const post = formatCommunityPricesPost(byMarket, days);
+      if (!post) {
+        return new Response(JSON.stringify({ ok: true, posted: false, reason: "not enough reports" }), { headers: { "Content-Type": "application/json" } });
+      }
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: communityChat, text: post }),
+      });
+      const ok = res.ok;
+      if (!ok) console.error("[community_prices] telegram rejected:", res.status, (await res.text()).slice(0, 300));
+      return new Response(JSON.stringify({ ok, posted: ok }), { status: ok ? 200 : 502, headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("[community_prices] failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "realtime_push") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });

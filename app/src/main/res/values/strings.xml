@@ -2069,4 +2069,12 @@
     <string name="leaderboard_share_streak">🔥 %1$d يوم ورا بعض</string>
     <string name="leaderboard_share_cta">مين هيسبقنا الأسبوع ده؟</string>
     <string name="leaderboard_share_action">شارك الترتيب</string>
+    <string name="cheapest_title">أرخص سعر حواليك</string>
+    <string name="cheapest_subtitle">من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية</string>
+    <string name="cheapest_city_label">المدينة أو المنطقة (اختياري)</string>
+    <string name="cheapest_search_cd">دوّر</string>
+    <string name="cheapest_failed">مقدرناش نجيب الأسعار دلوقتي</string>
+    <string name="cheapest_empty_title">لسه مفيش بلاغات هنا</string>
+    <string name="cheapest_empty_subtitle">كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك</string>
+    <string name="cheapest_where_reports">%1$s · %2$d بلاغ</string>
 </resources>

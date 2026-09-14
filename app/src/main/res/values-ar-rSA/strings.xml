@@ -1993,4 +1993,12 @@
     <string name="leaderboard_share_streak">🔥 %1$d يوم متتالي</string>
     <string name="leaderboard_share_cta">مين بيسبقنا هالأسبوع؟</string>
     <string name="leaderboard_share_action">شارك الترتيب</string>
+    <string name="cheapest_title">أرخص سعر حواليك</string>
+    <string name="cheapest_subtitle">من بلاغات مجتمع زاد آخر ١٤ يوم — مو أسعار رسمية</string>
+    <string name="cheapest_city_label">المدينة أو المنطقة (اختياري)</string>
+    <string name="cheapest_search_cd">ابحث</string>
+    <string name="cheapest_failed">ما قدرنا نجيب الأسعار الحين</string>
+    <string name="cheapest_empty_title">ما فيه بلاغات هنا للحين</string>
+    <string name="cheapest_empty_subtitle">كن أول واحد يبلّغ عن سعر — جيرانك بيشكرونك</string>
+    <string name="cheapest_where_reports">%1$s · %2$d بلاغ</string>
 </resources>

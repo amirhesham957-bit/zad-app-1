@@ -17,7 +17,12 @@ data class PriceReportState(
     val error: String? = null,
     val successMessage: String? = null,
     val contributionCount: Int = 0,
-    val leaderboard: List<LeaderboardEntryData> = emptyList()
+    val leaderboard: List<LeaderboardEntryData> = emptyList(),
+    /** أرخص الأسعار في عملة السوق (ومدينة لو اتحددت). null = لسه/فشلت القراءة. */
+    val cheapest: List<SupabaseRepo.CheapestPrice>? = null,
+    val cheapestLoading: Boolean = false,
+    val cheapestFailed: Boolean = false,
+    val locationFilter: String = "",
 )
 
 data class LeaderboardEntryData(
@@ -47,19 +52,25 @@ class PriceReportingViewModel : ViewModel() {
                 val userId = SupabaseRepo.client.auth.currentUserOrNull()?.id
                     ?: throw Exception("User not authenticated")
 
+                // كان mapOf<String, Any> فيه "EGP" ثابتة لكل الأسواق و`timestamp` بالمللي ثانية
+                // (رقم) في عمود timestamptz — ده مابيتخزنش. دلوقتي JSON صريح بعملة السوق، واسم
+                // المحل بيتحفظ (كان بيترمي)، والوقت default now() في الجدول.
                 SupabaseRepo.client.postgrest["price_index"]
                     .insert(
-                        mapOf(
-                            "item_name" to itemName,
-                            "item_category" to category,
-                            "price" to price,
-                            "currency" to "EGP",
-                            "user_id" to userId,
-                            "location" to location,
-                            "source" to "crowdsource",
-                            "timestamp" to System.currentTimeMillis()
-                        )
+                        kotlinx.serialization.json.buildJsonObject {
+                            put("item_name", kotlinx.serialization.json.JsonPrimitive(itemName.trim().take(80)))
+                            put("item_category", kotlinx.serialization.json.JsonPrimitive(category))
+                            put("price", kotlinx.serialization.json.JsonPrimitive(price))
+                            put("currency", kotlinx.serialization.json.JsonPrimitive(com.example.data.MarketPrefs.currentMarket.currencyCode))
+                            put("user_id", kotlinx.serialization.json.JsonPrimitive(userId))
+                            put("location", kotlinx.serialization.json.JsonPrimitive(location.trim().take(60)))
+                            storeName.trim().takeIf { it.isNotEmpty() }?.let {
+                                put("store_name", kotlinx.serialization.json.JsonPrimitive(it.take(60)))
+                            }
+                            put("source", kotlinx.serialization.json.JsonPrimitive("crowdsource"))
+                        }
                     )
+                if (location.isNotBlank()) _state.value = _state.value.copy(locationFilter = location.trim())
 
                 _state.value = _state.value.copy(
                     isSubmitting = false,
@@ -73,6 +84,7 @@ class PriceReportingViewModel : ViewModel() {
 
                 // Refresh leaderboard
                 loadLeaderboard()
+                loadCheapest()
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isSubmitting = false,
@@ -116,6 +128,26 @@ class PriceReportingViewModel : ViewModel() {
                 // Silently fail for leaderboard load
                 _state.value = _state.value.copy(leaderboard = emptyList())
             }
+        }
+    }
+
+    fun setLocationFilter(value: String) {
+        _state.value = _state.value.copy(locationFilter = value.take(60))
+    }
+
+    /** «أرخص سعر حواليك»: عملة سوق العميل، والمدينة لو كتبها (فاضي = كل البلد). */
+    fun loadCheapest() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(cheapestLoading = true, cheapestFailed = false)
+            val rows = SupabaseRepo.getCheapestPrices(
+                com.example.data.MarketPrefs.currentMarket.currencyCode,
+                _state.value.locationFilter,
+            )
+            _state.value = _state.value.copy(
+                cheapest = rows ?: _state.value.cheapest,
+                cheapestLoading = false,
+                cheapestFailed = rows == null,
+            )
         }
     }
 

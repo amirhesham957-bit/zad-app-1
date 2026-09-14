@@ -34,7 +34,10 @@ fun PriceReportingRoute(onBack: () -> Unit, viewModel: PriceReportingViewModel =
     val state by viewModel.state.collectAsState()
     var showForm by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.loadLeaderboard() }
+    LaunchedEffect(Unit) {
+        viewModel.loadLeaderboard()
+        viewModel.loadCheapest()
+    }
 
     if (showForm) {
         PriceReportingScreen(
@@ -49,7 +52,13 @@ fun PriceReportingRoute(onBack: () -> Unit, viewModel: PriceReportingViewModel =
             onReportPrice = { showForm = true },
             onBack = onBack,
             contributionCount = state.contributionCount,
-            leaderboardUsers = state.leaderboard
+            leaderboardUsers = state.leaderboard,
+            cheapest = state.cheapest,
+            cheapestLoading = state.cheapestLoading,
+            cheapestFailed = state.cheapestFailed,
+            locationFilter = state.locationFilter,
+            onLocationFilterChange = viewModel::setLocationFilter,
+            onSearchCheapest = viewModel::loadCheapest,
         )
     }
 }
@@ -267,7 +276,13 @@ fun CrowdsourceDashboard(
     onReportPrice: () -> Unit,
     onBack: () -> Unit,
     contributionCount: Int = 0,
-    leaderboardUsers: List<com.example.ui.viewmodels.LeaderboardEntryData> = emptyList()
+    leaderboardUsers: List<com.example.ui.viewmodels.LeaderboardEntryData> = emptyList(),
+    cheapest: List<com.example.data.SupabaseRepo.CheapestPrice>? = null,
+    cheapestLoading: Boolean = false,
+    cheapestFailed: Boolean = false,
+    locationFilter: String = "",
+    onLocationFilterChange: (String) -> Unit = {},
+    onSearchCheapest: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = Modifier
@@ -321,6 +336,19 @@ fun CrowdsourceDashboard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.price_report_new), fontWeight = FontWeight.Bold)
             }
+        }
+
+        // «أرخص سعر حواليك» — من بلاغات المجتمع آخر ١٤ يوم بعملة سوق العميل
+        item {
+            CheapestNearYouSection(
+                rows = cheapest,
+                loading = cheapestLoading,
+                failed = cheapestFailed,
+                location = locationFilter,
+                onLocationChange = onLocationFilterChange,
+                onSearch = onSearchCheapest,
+                onReportPrice = onReportPrice,
+            )
         }
 
         // Leaderboard Title
@@ -456,6 +484,79 @@ private fun LeaderboardCard(entry: com.example.ui.viewmodels.LeaderboardEntryDat
                     fontSize = 12.sp,
                     color = Color(0xFF475569)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CheapestNearYouSection(
+    rows: List<com.example.data.SupabaseRepo.CheapestPrice>?,
+    loading: Boolean,
+    failed: Boolean,
+    location: String,
+    onLocationChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onReportPrice: () -> Unit,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            stringResource(R.string.cheapest_title),
+            style = com.example.ui.theme.Typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = com.example.ui.theme.onSurface
+        )
+        Text(stringResource(R.string.cheapest_subtitle), style = com.example.ui.theme.Typography.bodySmall, color = com.example.ui.theme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = location,
+                onValueChange = onLocationChange,
+                label = { Text(stringResource(R.string.cheapest_city_label)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            FilledTonalButton(onClick = onSearch, modifier = Modifier.heightIn(min = 44.dp)) {
+                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cheapest_search_cd), modifier = Modifier.size(18.dp))
+            }
+        }
+        when {
+            loading && rows == null -> Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = com.example.ui.theme.primary)
+            }
+            failed && rows == null -> ZadEmptyState(
+                icon = Icons.Default.CloudOff,
+                title = stringResource(R.string.cheapest_failed),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                action = { OutlinedButton(onClick = onSearch, modifier = Modifier.heightIn(min = 44.dp)) { Text(stringResource(R.string.appointments_retry)) } },
+            )
+            rows.isNullOrEmpty() -> ZadEmptyState(
+                icon = Icons.Default.Storefront,
+                title = stringResource(R.string.cheapest_empty_title),
+                subtitle = stringResource(R.string.cheapest_empty_subtitle),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                action = { OutlinedButton(onClick = onReportPrice, modifier = Modifier.heightIn(min = 44.dp)) { Text(stringResource(R.string.price_report_first)) } },
+            )
+            else -> rows.forEach { row ->
+                com.example.ui.components.ZadListCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(row.itemName, style = com.example.ui.theme.Typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = com.example.ui.theme.onSurface)
+                            val where = listOfNotNull(row.cheapestStore?.takeIf { it.isNotBlank() }, row.cheapestLocation?.takeIf { it.isNotBlank() }).joinToString("، ")
+                            Text(
+                                stringResource(R.string.cheapest_where_reports, where.ifBlank { "—" }, row.reports),
+                                style = com.example.ui.theme.Typography.bodySmall,
+                                color = com.example.ui.theme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            com.example.data.CurrencyFormatter.format(context, row.minPrice),
+                            style = com.example.ui.theme.Typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = com.example.ui.theme.primary,
+                        )
+                    }
+                }
             }
         }
     }
