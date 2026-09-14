@@ -57,6 +57,13 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي والأسبوع صرف فيه كتير أو هدر. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس " +
     "(المصروف ومقارنته بالأسبوع اللي فات، أكبر فئة، أكبر مصروف، الأصناف اللي اتهدرت)، وآخر سطر نصيحة واحدة عملية للأسبوع الجاي. " +
     "speech: من ٤ لـ٦ جمل — عتاب لطيف بهزار زي صاحبته («يعني كده؟»)، مش تجريح ولا تخويف، وتختمي بتشجيع إن الأسبوع الجاي أحسن.",
+  shopping_zone_warning:
+    "العميل لسه داخل منطقة تسوق (store_name) وفيه اتفاق توفير (reason: broke = وضع الطوارئ، challenge = تحدي توفير، budget = الميزانية في خطر). " +
+    "text: سطر واحد: فكّريه بالاتفاق والسقف اليومي لو موجود، وإن قايمة الشراء فيها list_count حاجة. " +
+    "speech: جملة أو اتنين قصيرين جداً بهزار زي صاحبته: «افتكر إننا متفقين نوفّر، ماتشتريش غير اللي في القايمة» بلهجته — تحذير لطيف مش لوم.",
+  place_reminder:
+    "العميل وصل مكان وكان طالب تفتكريه بحاجات (notes). text: سطر فيه الحاجات. speech: جملتين بهزار تفكّريه بيهم. " +
+    "لو فيه savings في البيانات: زوّدي جملة قصيرة تفكّريه إنكم متفقين توفّروا وميشتريش غير اللي محتاجه.",
   challenge_milestone:
     "العميل كسب محطة في تحدي التوفير (streak يوم ورا بعض تحت السقف). text: سطر احتفال فيه السلسلة واليوم من length_days. " +
     "speech: جملتين أو تلاتة فرحانة وفخورة بجد، وشجعيه يكمّل.",
@@ -305,6 +312,17 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           ? `بص بقى، لازم نتكلم شوية. الأسبوع ده صرفت ${money(facts.spent)}${top ? `، وأغلبها على ${top}` : ""}${wasted.length ? `، وكمان ${wasted[0]} اتهدر` : ""}. يعني كده؟ الأسبوع الجاي هنظبطها سوا، ماشي؟`
           : `ده أسبوعك يا صاحبي: صرفت ${money(facts.spent)}${top ? `، أغلبها على ${top}` : ""}. خلينا نبص على الأسبوع الجاي سوا.`;
       return { title: "💸 فين راحت فلوسك الأسبوع ده؟", text: lines.join("\n"), speech };
+    }
+    case "shopping_zone_warning": {
+      const cur = str(facts.currency, 10);
+      const cap = typeof facts.daily_cap === "number" ? `${Math.round(facts.daily_cap)}${cur ? ` ${cur}` : ""}` : "";
+      const count = Number(facts.list_count) || 0;
+      const why = facts.reason === "broke" ? "وضع الطوارئ" : facts.reason === "challenge" ? "تحدي التوفير" : "الميزانية";
+      return {
+        title: "🛒 افتكر اتفاقنا",
+        text: `إنت في «${str(facts.store_name, 60) || "منطقة تسوق"}» — ${why}${cap ? `: سقف النهارده ${cap}` : ""}.${count ? ` القايمة فيها ${count} حاجة بس.` : ""}`,
+        speech: `استنى استنى! افتكر إننا متفقين نوفّر${facts.reason === "challenge" ? " عشان التحدي" : ""}. ماتشتريش غير اللي في القايمة، ماشي؟`,
+      };
     }
     case "place_reminder": {
       const store = str(facts.store_name, 60) || "المحل";

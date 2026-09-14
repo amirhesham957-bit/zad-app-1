@@ -59,6 +59,7 @@ import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } fr
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
+import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -4348,14 +4349,20 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   if (!category || !storeName) return json({ ok: false, error: "bad_request" }, 400);
 
   const nowIso = new Date().toISOString();
-  // تذكيرات المكان قبل الكتم وحارس المحل/اليوم: العميل هو اللي طلبها بالاسم، فكتم «رسايل
-  // المحلات» مايخفيهاش. الـUPDATE بيرجّع الصفوف اللي حوّلها بس — حدثين ورا بعض مايكرروش.
-  const reminderStatus = await firePlaceReminders(sb, userId, category, storeName);
-
   const { data: mutes, error: muteErr } = await sb.from("zad_memory")
     .select("suppress_until").eq("user_id", userId).eq("subject_kind", "store_arrival").gt("suppress_until", nowIso);
   if (muteErr) console.error("[store_arrival] mute lookup failed:", muteErr.message);
-  if ((mutes ?? []).length > 0) return json({ ok: true, sent: false, reason: "muted", reminders: reminderStatus });
+  const muted = (mutes ?? []).length > 0;
+
+  // تحذير «متفقين نوفّر» في السوبرماركت/المول بس (الدوا مش هدر)، ومش لو العميل كتم رسايل المحلات.
+  const agreement = category === "pharmacy" || muted ? null : await loadSavingsAgreement(sb, userId);
+
+  // تذكيرات المكان قبل الكتم وحارس المحل/اليوم: العميل هو اللي طلبها بالاسم، فكتم «رسايل
+  // المحلات» مايخفيهاش. الـUPDATE بيرجّع الصفوف اللي حوّلها بس — حدثين ورا بعض مايكرروش.
+  // لو فيه تذكيرات والتحذير مستحق، التحذير بيدخل جوه نفس الفويس بدل فويسين ورا بعض.
+  const reminderStatus = await firePlaceReminders(sb, userId, category, storeName, agreement);
+
+  if (muted) return json({ ok: true, sent: false, reason: "muted", reminders: reminderStatus });
 
   const { data: recent, error: recentErr } = await sb.from("agent_tasks")
     .select("created_at,task_description")
@@ -4426,11 +4433,37 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
  * اللي بيرجّعها، وبتتسجّل لحظة صوت place_reminder واحدة وتتعالج في الخلفية: الـreceiver على
  * الموبايل ليه ثواني قليلة، وكتابة الكلام بالموديل ممكن تاخد أكتر.
  */
+/** اتفاق التوفير الحالي للعميل (وضع طوارئ / تحدي / ميزانية في خطر) — أي قراءة تفشل = مفيش تحذير. */
+async function loadSavingsAgreement(sb: SupabaseClient, userId: string): Promise<(SavingsAgreement & { time_zone: string }) | null> {
+  try {
+    const [brokeRes, challengeRes, stateRes] = await Promise.all([
+      sb.from("zad_broke_mode").select("ends_at,ended_at,daily_cap").eq("user_id", userId).maybeSingle(),
+      sb.from("zad_savings_challenges").select("daily_cap,streak").eq("user_id", userId).eq("status", "active").maybeSingle(),
+      sb.rpc("zad_budget_state", { p_user: userId }),
+    ]);
+    const broke = brokeRes.data as { ends_at: string; ended_at: string | null; daily_cap: number | null } | null;
+    const state = (stateRes.data ?? {}) as { threat?: string; daily_allowance_left?: number | null; currency?: string | null; timezone?: string | null };
+    const agreement = savingsAgreementFrom({
+      brokeActive: isBrokeModeActive(broke, Date.now()),
+      brokeDailyCap: broke?.daily_cap ?? null,
+      challenge: challengeRes.data as { daily_cap: number; streak: number } | null,
+      threat: state.threat ?? null,
+      dailyAllowanceLeft: state.daily_allowance_left ?? null,
+      currency: state.currency ?? null,
+    });
+    return agreement ? { ...agreement, time_zone: state.timezone ?? "UTC" } : null;
+  } catch (e) {
+    console.error("[shopping_zone_warning] agreement lookup failed:", (e as Error)?.message);
+    return null;
+  }
+}
+
 async function firePlaceReminders(
   sb: SupabaseClient,
   userId: string,
   category: "supermarket" | "mall" | "pharmacy",
   storeName: string,
+  agreement: (SavingsAgreement & { time_zone: string }) | null,
 ): Promise<string> {
   const { data: fired, error } = await sb.from("zad_place_reminders")
     .update({ status: "done", fired_at: new Date().toISOString(), fired_store: storeName })
@@ -4441,14 +4474,48 @@ async function firePlaceReminders(
     return "error";
   }
   const rows = (fired ?? []) as Array<{ id: string; note: string }>;
-  if (rows.length === 0) return "none";
+  const localDate = localNowContext(agreement?.time_zone ?? "UTC").date;
+  // تحذير مرة واحدة في اليوم مهما دخل كام محل.
+  const warnKey = `shop_warn:${localDate}`;
+  let savings: Record<string, unknown> | null = null;
+  if (agreement) {
+    const { data: already } = await sb.from("zad_voice_moments").select("id").eq("user_id", userId).eq("dedupe_key", warnKey).maybeSingle();
+    if (!already) {
+      const { data: list } = await sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20);
+      const items = ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name);
+      savings = { ...agreement, list_count: items.length, list_preview: items.slice(0, 5) };
+    }
+  }
+
+  if (rows.length === 0) {
+    if (!savings) return "none";
+    const { error: warnErr } = await sb.from("zad_voice_moments").upsert({
+      user_id: userId,
+      moment: "shopping_zone_warning",
+      facts: { store_name: storeName, category, ...savings },
+      dedupe_key: warnKey,
+    }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+    if (warnErr) {
+      console.error("[shopping_zone_warning] insert failed:", warnErr.message);
+      return "error";
+    }
+    runVoiceMomentsInBackground(sb, userId, `[shopping_zone_warning] ${String(savings.reason)} at «${storeName}»`);
+    return "warning";
+  }
 
   const { error: momentErr } = await sb.from("zad_voice_moments").upsert({
     user_id: userId,
     moment: "place_reminder",
-    facts: { store_name: storeName, category, notes: rows.slice(0, 5).map((r) => r.note) },
+    facts: { store_name: storeName, category, notes: rows.slice(0, 5).map((r) => r.note), ...(savings ? { savings } : {}) },
     dedupe_key: placeReminderDedupeKey(rows.map((r) => r.id)),
   }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  if (savings && !momentErr) {
+    // التحذير اتقال جوه التذكير — نسجّل مفتاح اليوم عشان محل تاني النهارده مايكررهوش.
+    await sb.from("zad_voice_moments").upsert({
+      user_id: userId, moment: "shopping_zone_warning", facts: { merged_into: "place_reminder" },
+      dedupe_key: warnKey, status: "skipped", error: "merged into place_reminder",
+    }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  }
   if (momentErr) {
     // التذكير اتقفل ومش هيتقال — نرجّعه مفتوح بدل ما يضيع بصمت.
     console.error("[place_reminder] moment insert failed — reopening:", momentErr.message);
@@ -4457,18 +4524,25 @@ async function firePlaceReminders(
     return "error";
   }
 
+  runVoiceMomentsInBackground(sb, userId, `[place_reminder] ${rows.length} for «${storeName}»`);
+  return `fired:${rows.length}${savings ? "+warning" : ""}`;
+}
+
+/**
+ * لحظات العميل ده تتعالج في الخلفية: الـreceiver على الموبايل ليه ثواني قليلة، وكتابة الكلام
+ * بالموديل ممكن تاخد أكتر. من غير EdgeRuntime (تست/محلي) بيستنى عادي.
+ */
+function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: string): void {
   const work = processVoiceMoments(sb, {
     compose: async (system, user) =>
       (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
     pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),
     pushTelegram: (uid, title, text, voice, m, speech) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech),
   }, 5, userId)
-    .then((r) => console.log(`[place_reminder] ${rows.length} for «${storeName}» → ${JSON.stringify(r)}`))
-    .catch((e) => console.error("[place_reminder] processing failed:", (e as Error)?.message));
+    .then((r) => console.log(`${label} → ${JSON.stringify(r)}`))
+    .catch((e) => console.error(`${label} processing failed:`, (e as Error)?.message));
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
   if (runtime?.waitUntil) runtime.waitUntil(work);
-  else await work;
-  return `fired:${rows.length}`;
 }
 
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
