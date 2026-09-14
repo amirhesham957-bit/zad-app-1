@@ -1,5 +1,6 @@
 // deno-lint-ignore-file
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
+import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
@@ -1114,8 +1115,15 @@ Deno.serve(async (req: Request) => {
         }
 
         let availableBudgetLine = "";
+        let seasonLine = "";
         try {
           const { data: budgetState } = await supabase.rpc("zad_budget_state", { p_user: user_id });
+          const season = seasonFor(new Date(), (budgetState as { timezone?: string } | null)?.timezone ?? "UTC");
+          if (season?.kind === "ramadan") {
+            seasonLine = "النهارده رمضان: اقترحي أكلات للفطار (شوربة/طبق رئيسي) وللسحور (خفيفة وبتشبّع وقليلة الملح)، مش فطار صباحي ولا غدا.\n";
+          } else if (season?.kind === "eid_adha") {
+            seasonLine = "عيد الأضحى: غالباً فيه لحمة كتير — اقترحي أكلات لحمة وطرق تخزين.\n";
+          }
           const available = (budgetState as { available?: number } | null)?.available;
           const currency = (budgetState as { currency?: string } | null)?.currency;
           if (typeof available === "number") {
@@ -1178,6 +1186,7 @@ Deno.serve(async (req: Request) => {
             : "") +
           `عدد أفراد الأسرة: ${familySize} — خلي الكميات والوصف يناسبوا العدد ده، مش وجبة لفرد واحد لو الأسرة أكبر.\n` +
           availableBudgetLine +
+          seasonLine +
           (brokeMode
             ? "⚠️ العميل في وضع الطوارئ «مفلس باقي الشهر»: كل وصفة لازم تتعمل ١٠٠٪ من المخزون — " +
               "`missing_ingredients_to_buy` فاضية تماماً (الملح والزيت والمية والبهارات بس مسموحين). " +

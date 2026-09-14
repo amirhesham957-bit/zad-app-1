@@ -61,6 +61,7 @@ import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
+import { seasonFor, seasonInstruction } from "../_shared/season.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -1149,6 +1150,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     })),
     // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
+    // الموسم بتقويم أم القرى (رمضان/العيدين) بتوقيت العميل — null برّه المواسم.
+    season: (() => {
+      const se = seasonFor(new Date(), budgetState.timezone ?? "UTC");
+      return se?.kind ? { ...se, instruction: seasonInstruction(se) } : null;
+    })(),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
@@ -5704,6 +5710,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
 12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
+14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.
 13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.
 
 === SNAPSHOT ===
@@ -6178,6 +6185,25 @@ Deno.serve(async (req: Request) => {
           return new Response(JSON.stringify({ ok: true, status: "outside_morning" }), { headers: CORS_HEADERS });
         }
         facts = await morningFacts(sbEvent, eventUserId, local);
+      } else if (moment === "iftar_soon") {
+        // الموبايل بيحسب المغرب من مكان البيت (مابيوصلش السيرفر) وبيطلب قبلها بدقايق. السيرفر
+        // بيتأكد إنه رمضان فعلاً بتوقيت العميل — مش بيصدّق الموبايل في التاريخ.
+        const season = seasonFor(new Date(), typeof tzRow === "string" ? tzRow : "UTC");
+        if (season?.kind !== "ramadan") {
+          return new Response(JSON.stringify({ ok: true, status: "not_ramadan" }), { headers: CORS_HEADERS });
+        }
+        let minutes = 20;
+        try {
+          const parsed = JSON.parse(String(body.facts_json ?? "{}")) as { minutes_to_iftar?: unknown };
+          const m = Math.round(Number(parsed.minutes_to_iftar));
+          if (Number.isFinite(m)) minutes = Math.min(90, Math.max(1, m));
+        } catch { /* الافتراضي */ }
+        const { data: list } = await sbEvent.from("zad_shopping_list").select("item_name").eq("user_id", eventUserId).eq("is_purchased", false).limit(10);
+        facts = {
+          minutes_to_iftar: minutes, hijri_day: season.hijri_day, local_date: local.date,
+          shopping_preview: ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name).slice(0, 4),
+        };
+        dedupeKey = `iftar:${local.date}`;
       } else if (moment === "receipt_reaction") {
         // أصناف الفاتورة من OCR على الموبايل — بتتنضف هنا (نص بيانات، مش تعليمات).
         let parsed: unknown = null;

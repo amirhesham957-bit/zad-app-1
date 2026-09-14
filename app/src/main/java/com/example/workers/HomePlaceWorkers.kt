@@ -21,6 +21,8 @@ import com.example.data.SupabaseRepo
  */
 class HomeSampleWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
+        // تذكير الفطار في رمضان بيتجدول من هنا كل ليلة (بيحتاج مكان البيت اللي اتعلّم قبل كده بس).
+        com.example.workers.IftarScheduler.scheduleNext(applicationContext)
         if (!GroceryGeofenceManager.isEnabled(applicationContext) ||
             !GroceryGeofenceManager.hasBackgroundLocationPermission(applicationContext)
         ) return Result.success()

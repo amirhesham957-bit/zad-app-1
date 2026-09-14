@@ -14,6 +14,7 @@ import { emotionForMoment, EMOTION_DIRECTIONS, VOICE_EMOTIONAL_RANGE } from "../
 import { conversationProfile } from "./persona.ts";
 import { localNowContext } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
+import { seasonFor } from "../_shared/season.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -60,6 +61,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي والأسبوع صرف فيه كتير أو هدر. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس " +
     "(المصروف ومقارنته بالأسبوع اللي فات، أكبر فئة، أكبر مصروف، الأصناف اللي اتهدرت)، وآخر سطر نصيحة واحدة عملية للأسبوع الجاي. " +
     "speech: من ٤ لـ٦ جمل — عتاب لطيف بهزار زي صاحبته («يعني كده؟»)، مش تجريح ولا تخويف، وتختمي بتشجيع إن الأسبوع الجاي أحسن.",
+  iftar_soon:
+    "رمضان، والمغرب بعد minutes_to_iftar دقيقة. text: سطر: فاضل كام دقيقة على الفطار، ولو shopping_preview فيها حاجات فكّريه لو ناقص حاجة للفطار. " +
+    "speech: جملتين دافيين بصوت هادي: تقبّل الله، فاضل شوية، ابدأ بتمرة ومية. من غير هزار تقيل — ناس صايمة.",
   receipt_reaction:
     "العميل لسه حافظ فاتورة (store، total، items، وhighlight = الحاجة اللي تستاهل تعليق). علّقي عليها بهزار زي صاحبته. " +
     "highlight.kind: snacks = سناكس/حاجة ساقعة كتير، repeat = صنف متكرر بكمية كبيرة، priciest = أغلى حاجة. " +
@@ -320,6 +324,15 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           ? `بص بقى، لازم نتكلم شوية. الأسبوع ده صرفت ${money(facts.spent)}${top ? `، وأغلبها على ${top}` : ""}${wasted.length ? `، وكمان ${wasted[0]} اتهدر` : ""}. يعني كده؟ الأسبوع الجاي هنظبطها سوا، ماشي؟`
           : `ده أسبوعك يا صاحبي: صرفت ${money(facts.spent)}${top ? `، أغلبها على ${top}` : ""}. خلينا نبص على الأسبوع الجاي سوا.`;
       return { title: "💸 فين راحت فلوسك الأسبوع ده؟", text: lines.join("\n"), speech };
+    }
+    case "iftar_soon": {
+      const mins = Math.round(Number(facts.minutes_to_iftar) || 20);
+      const list = Array.isArray(facts.shopping_preview) ? (facts.shopping_preview as unknown[]).map((x) => str(x, 30)).filter(Boolean) : [];
+      return {
+        title: `🌙 فاضل ${mins} دقيقة على الفطار`,
+        text: list.length ? `تقبّل الله. لو ناقص حاجة للفطار: ${list.slice(0, 3).join("، ")}.` : "تقبّل الله صيامك. ابدأ بتمرة ومية.",
+        speech: `تقبّل الله يا حبيبي. فاضل ${mins} دقيقة بس على المغرب، اصبر شوية، وابدأ بتمرة ومية.`,
+      };
     }
     case "receipt_reaction": {
       const h = (facts.highlight ?? {}) as { kind?: string; item?: string; count?: number; amount?: number };
@@ -608,7 +621,7 @@ export async function processVoiceMoments(
 
 
 /** اللحظات اللي التطبيق نفسه يقدر يطلبها (صحى من النوم / ميعاد التسبيحة). الباقي من السيرفر بس. */
-export const CLIENT_MOMENTS: ReadonlySet<string> = new Set(["morning_greeting", "tasbiha_reminder", "receipt_reaction"]);
+export const CLIENT_MOMENTS: ReadonlySet<string> = new Set(["morning_greeting", "tasbiha_reminder", "receipt_reaction", "iftar_soon"]);
 
 /**
  * بيانات "صباح الخير" الحقيقية: أدوية النهارده، مواعيد النهارده، والرصيد المتاح. من غيرها
@@ -639,6 +652,10 @@ export async function morningFacts(
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times })),
     appointments_today: appts,
     ...(budget && budget.limit_confirmed ? { available: budget.available, days_left: budget.days_left, currency: budget.currency } : {}),
+    ...(() => {
+      const se = seasonFor(new Date(`${local.date}T12:00:00${local.utc_offset}`), local.time_zone);
+      return se?.kind ? { season: se.kind, hijri_day: se.hijri_day } : {};
+    })(),
     ...(challenge ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
   };
 }

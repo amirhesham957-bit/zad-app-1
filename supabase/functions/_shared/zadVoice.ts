@@ -183,6 +183,8 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   shopping_zone_warning: "playful",
   // تعليق بهزار على فاتورة لسه متحفظة (على الموبايل بس).
   receipt_reaction: "playful",
+  // رمضان: قبل المغرب بشوية، بدفا (مش هزار) — ناس صايمة وتعبانة.
+  iftar_soon: "warm",
 };
 
 export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmotion {

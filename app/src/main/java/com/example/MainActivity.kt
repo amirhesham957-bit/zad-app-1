@@ -325,6 +325,8 @@ class MainActivity : ComponentActivity() {
             ExistingPeriodicWorkPolicy.KEEP,
             homeSampleRequest
         )
+        // رمضان: «فاضل ٢٠ دقيقة على الفطار» — من مكان البيت على الموبايل (IftarScheduler).
+        com.example.workers.IftarScheduler.scheduleNext(this)
 
         // Start real-time chat notification service
         try {
