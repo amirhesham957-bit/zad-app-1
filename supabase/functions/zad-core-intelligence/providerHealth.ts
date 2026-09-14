@@ -11,6 +11,20 @@ export interface ProbeResult {
 
 type Env = (name: string) => string | undefined;
 
+/** توكن service role؟ مطابقة مباشرة للمفتاح، أو JWT دوره service_role (التوقيع اتحقق في البوابة). */
+export function isServiceRoleToken(token: string | null | undefined, serviceKey: string | undefined): boolean {
+  if (!token) return false;
+  if (serviceKey && token === serviceKey) return true;
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    const json = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
+    return json?.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
 /** أسماء أسرار شكلها مفاتيح موقع/صور/أسعار — عشان لو اتحط مفتاح باسم غير اللي الكود بيقراه يبان. */
 const INTERESTING_NAME = /LOCATION|MAPS|GEO|PLACES|PEXELS|UNSPLASH|PIXABAY|SERP|PRICE|RAPIDAPI|SPOON|EDAMAM|OPENFOOD|BARCODE|IMAGE|PHOTO/i;
 
@@ -40,7 +54,7 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
   if (geminiKeys.length === 0 && env("GEMINI_API_KEY")) geminiKeys.push(env("GEMINI_API_KEY")!);
   const groqKeys = [env("GROQ_API_KEY_1") ?? env("GROQ_API_KEY"), env("GROQ_API_KEY_2")].filter((k): k is string => !!k);
 
-  const [locationiq, pexels, telegram, elevenlabs, ...rest] = await Promise.all([
+  const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([
     probe(fetchImpl, env("LOCATIONIQ_API_KEY"), (k) => ({
       url: `https://us1.locationiq.com/v1/nearby?key=${encodeURIComponent(k)}&lat=30.0444&lon=31.2357&tag=supermarket&radius=2000&format=json`,
     }), async (res) => {
@@ -54,6 +68,8 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     })),
     probe(fetchImpl, env("TELEGRAM_BOT_TOKEN"), (k) => ({ url: `https://api.telegram.org/bot${k}/getMe` })),
     probe(fetchImpl, env("ELEVENLABS_API_KEY"), (k) => ({ url: "https://api.elevenlabs.io/v1/user", init: { headers: { "xi-api-key": k } } })),
+    probe(fetchImpl, env("EXCHANGE_RATE_API_KEY"), (k) => ({ url: `https://v6.exchangerate-api.com/v6/${encodeURIComponent(k)}/latest/USD` })),
+    probe(fetchImpl, env("USDA_API_KEY"), (k) => ({ url: `https://api.nal.usda.gov/fdc/v1/foods/search?pageSize=1&query=rice&api_key=${encodeURIComponent(k)}` })),
     ...geminiKeys.map((k) => probe(fetchImpl, k, (key) => ({
       url: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
       init: { headers: { "x-goog-api-key": key } },
@@ -69,6 +85,8 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     pexels,
     telegram,
     elevenlabs,
+    exchange_rate,
+    usda,
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),

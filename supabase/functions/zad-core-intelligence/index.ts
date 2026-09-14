@@ -3,7 +3,7 @@ import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
-import { providerHealth } from "./providerHealth.ts";
+import { isServiceRoleToken, providerHealth } from "./providerHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestGeminiVoiceWithPool, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 
@@ -933,7 +933,9 @@ Deno.serve(async (req: Request) => {
 
     // فحص مفاتيح المزوّدين — مفتاح service role بس (CI بعد النشر). أسماء وحالات، ولا مفتاح.
     if (action === "provider_health") {
-      if (bearerToken(req) !== supabaseKey) return jsonResponse({ error: "unauthorized" }, 401);
+      // البوابة (verify_jwt = true) اتحققت من توقيع التوكن قبل ما يوصل هنا؛ بنقرا الدور منه
+      // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
+      if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
       return jsonResponse(await providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())));
     }
 

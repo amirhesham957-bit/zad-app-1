@@ -18,6 +18,9 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const PROVIDER_URL = "https://open.er-api.com/v6/latest/USD";
+// مفتاح exchangerate-api.com (سر المشروع EXCHANGE_RATE_API_KEY) — أدق وبيتحدّث أكتر من المجاني.
+// لو مش موجود أو فشل، بنرجع للمجاني من غير مفتاح؛ الجدول مايقفش على مزوّد واحد.
+const EXCHANGE_RATE_API_KEY = Deno.env.get("EXCHANGE_RATE_API_KEY") ?? "";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -40,20 +43,29 @@ Deno.serve(async (req) => {
     return json({ error: "unauthorized" }, 401);
   }
 
-  let payload: unknown;
-  try {
-    const res = await fetch(PROVIDER_URL, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) {
-      console.error("fx provider http", res.status);
-      return json({ error: "provider_http", status: res.status }, 502);
+  const providers = [
+    ...(EXCHANGE_RATE_API_KEY ? [{ name: "exchangerate-api", url: `https://v6.exchangerate-api.com/v6/${encodeURIComponent(EXCHANGE_RATE_API_KEY)}/latest/USD` }] : []),
+    { name: "open.er-api", url: PROVIDER_URL },
+  ];
+  let parsed: ReturnType<typeof parseProviderPayload> = { ok: false, reason: "no provider answered" };
+  let provider = "";
+  for (const p of providers) {
+    try {
+      const res = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
+      if (!res.ok) {
+        console.error(`fx provider ${p.name} http`, res.status);
+        parsed = { ok: false, reason: `${p.name} http ${res.status}` };
+        continue;
+      }
+      parsed = parseProviderPayload(await res.json());
+      if (parsed.ok) { provider = p.name; break; }
+      console.error(`fx provider ${p.name} payload rejected:`, parsed.reason);
+    } catch (error) {
+      console.error(`fx provider ${p.name} unreachable:`, (error as Error).message);
+      parsed = { ok: false, reason: `${p.name} unreachable` };
     }
-    payload = await res.json();
-  } catch (error) {
-    console.error("fx provider unreachable:", (error as Error).message);
-    return json({ error: "provider_unreachable" }, 502);
   }
-
-  const parsed = parseProviderPayload(payload);
+  if (provider) console.log(`fx rates from ${provider}`);
   if (!parsed.ok) {
     // مافيش كتابة جزئية خالص — الجدول بيفضل على آخر دفعة سليمة.
     console.error("fx payload rejected:", parsed.reason);

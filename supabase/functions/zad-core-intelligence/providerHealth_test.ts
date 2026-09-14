@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { interestingSecretNames, providerHealth } from "./providerHealth.ts";
+import { interestingSecretNames, isServiceRoleToken, providerHealth } from "./providerHealth.ts";
 
 Deno.test("reports configured/status per provider and never echoes a key", async () => {
   const env: Record<string, string> = {
@@ -27,4 +27,12 @@ Deno.test("reports configured/status per provider and never echoes a key", async
 
 Deno.test("key-like secret names are picked out so a key saved under an unexpected name shows up", () => {
   assertEquals(interestingSecretNames(["LOCATION_IQ_KEY", "SUPABASE_URL", "PEXELS_API_KEY", "RAPIDAPI_KEY"]), ["LOCATION_IQ_KEY", "PEXELS_API_KEY", "RAPIDAPI_KEY"]);
+});
+
+Deno.test("only a service_role token passes the health check gate", () => {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+  assert(isServiceRoleToken(`${b64({ alg: "HS256" })}.${b64({ role: "service_role" })}.sig`, "other"));
+  assert(!isServiceRoleToken(`${b64({ alg: "HS256" })}.${b64({ role: "anon" })}.sig`, "other"));
+  assert(isServiceRoleToken("sb_secret_x", "sb_secret_x"));
+  assert(!isServiceRoleToken(null, "x"));
 });

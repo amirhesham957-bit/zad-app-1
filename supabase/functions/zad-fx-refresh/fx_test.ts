@@ -85,3 +85,14 @@ Deno.test("moves are ordered by magnitude and skip unknown or zero baselines", (
   ]);
   assertEquals(moves.map((m) => m.code), ["TRY", "LYD"]);
 });
+
+Deno.test("exchangerate-api's keyed response (conversion_rates) parses like open.er-api's rates", async () => {
+  const { parseProviderPayload } = await import("./fx.ts");
+  const open = { result: "success", rates: {} as Record<string, number> };
+  const keyed = { result: "success", conversion_rates: {} as Record<string, number> };
+  const probe = parseProviderPayload({ result: "success", rates: {} });
+  const codes = probe.ok ? [] : String(probe.reason).replace("missing or invalid: ", "").split(",");
+  for (const c of codes) { open.rates[c] = 2; keyed.conversion_rates[c] = 2; }
+  const a = parseProviderPayload(open), b = parseProviderPayload(keyed);
+  if (!a.ok || !b.ok) throw new Error("both shapes must parse");
+});

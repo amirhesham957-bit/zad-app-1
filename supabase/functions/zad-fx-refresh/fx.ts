@@ -35,14 +35,17 @@ export function parseProviderPayload(payload: unknown): ParseResult {
   if (typeof payload !== "object" || payload === null) {
     return { ok: false, reason: "payload is not an object" };
   }
-  const body = payload as { result?: unknown; rates?: unknown };
+  // open.er-api بيرجّع `rates`، وexchangerate-api بالمفتاح (v6) بيرجّع `conversion_rates` —
+  // نفس المعنى (كام وحدة لكل دولار)، فالاتنين مقبولين.
+  const body = payload as { result?: unknown; rates?: unknown; conversion_rates?: unknown };
   if (body.result !== "success") {
     return { ok: false, reason: `provider result=${String(body.result)}` };
   }
-  if (typeof body.rates !== "object" || body.rates === null) {
+  const rawRates = body.rates ?? body.conversion_rates;
+  if (typeof rawRates !== "object" || rawRates === null) {
     return { ok: false, reason: "rates missing" };
   }
-  const rates = body.rates as Record<string, unknown>;
+  const rates = rawRates as Record<string, unknown>;
 
   const rows: FxRow[] = [];
   const missing: string[] = [];
