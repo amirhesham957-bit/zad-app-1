@@ -231,13 +231,22 @@ fun HomeScreen(
     // كان فيه fallback بيعرض 3 منتجات أمازون مُختلقة بالكامل (أسعار ولينكات صور وهمية)
     // لما affiliatePicks وaffiliateProducts يرجعوا فاضيين — بيانات مالية وهمية معروضة
     // كأنها حقيقية. دلوقتي: القائمة الفاضية = الكارت بيتخفي (شايف الاستخدام تحت).
-    val displayAffiliatePicks = remember(affiliatePicks, affiliateProducts) {
-        if (affiliatePicks.isNotEmpty()) {
-            affiliatePicks
-        } else {
-            affiliateProducts.filter { it.isActive }
-                .map { com.example.ui.viewmodels.ZadViewModel.AffiliatePick(product = it, reason = "منتج موصى به للعائلة", score = 1) }
-        }
+    // ترشيحات السيرفر لو وصلت (تاج سوبابيز + الاستهلاك)، وإلا المطابقة المحلية — ومن غير كتالوج
+    // معروض كأنه توصية لما مفيش احتياج (ده اللي كان مطلّع «زيت زيتون» لوحده).
+    val amazonRecommendations by viewModel.amazonRecommendations.collectAsState()
+    val displayAffiliatePicks = remember(affiliatePicks, amazonRecommendations) {
+        amazonRecommendations?.filter { it.imageUrl != null }?.map { rec ->
+            com.example.ui.viewmodels.ZadViewModel.AffiliatePick(
+                product = com.example.data.AffiliateProduct(
+                    id = rec.productId ?: "rec:${rec.name}",
+                    productNameAr = rec.name,
+                    imageUrl = rec.imageUrl,
+                    averagePriceSar = rec.price ?: 0.0,
+                ),
+                reason = rec.reason,
+                score = 1,
+            )
+        } ?: affiliatePicks
     }
 
     val context = LocalContext.current
@@ -1003,8 +1012,16 @@ fun HomeScreen(
                 // فقسم أمازون مابانش ولا مرة. الشرط "لازم نقص حقيقي" صح ويفضل؛ اللي اتصلح
                 // إن النقص اللي مالوش صف في الكتالوج بقى يتعرض كبحث بالتاج بدل ما يتبلع.
                 // ── 9. تسوق أمازون والعروض الموصى بها (Amazon Smart Deals Rail) ──
-                val effectiveSearchNeeds = remember(affiliateSearchNeeds, shoppingList) {
-                    if (affiliateSearchNeeds.isNotEmpty()) {
+                LaunchedEffect(inventory.size, shoppingList.size) {
+                    viewModel.refreshAmazonRecommendations("${inventory.size}:${shoppingList.size}")
+                }
+                val effectiveSearchNeeds = remember(affiliateSearchNeeds, shoppingList, amazonRecommendations) {
+                    val serverRecs = amazonRecommendations
+                    if (serverRecs != null) {
+                        serverRecs.filter { it.imageUrl == null }.map { rec ->
+                            com.example.ui.viewmodels.ZadViewModel.AffiliateNeed(id = "rec:${rec.name}", itemName = rec.name, reason = rec.reason, score = 1)
+                        }
+                    } else if (affiliateSearchNeeds.isNotEmpty()) {
                         affiliateSearchNeeds.distinctBy { it.itemName }
                     } else if (shoppingList.isNotEmpty()) {
                         shoppingList.distinctBy { it.itemName }.take(5).map { item ->
@@ -1046,8 +1063,14 @@ fun HomeScreen(
                                     product = pick.product,
                                     reason = pick.reason,
                                     onClick = {
-                                        viewModel.recordAffiliateClick(pick.product.id, "home")
-                                        com.example.data.AffiliateHelper.openProduct(context, pick.product)
+                                        val rec = amazonRecommendations?.firstOrNull { it.name == pick.product.productNameAr }
+                                        if (rec != null) {
+                                            rec.productId?.let { viewModel.recordAffiliateClick(it, "home") }
+                                            com.example.data.AffiliateHelper.open(context, rec.url)
+                                        } else {
+                                            viewModel.recordAffiliateClick(pick.product.id, "home")
+                                            com.example.data.AffiliateHelper.openProduct(context, pick.product)
+                                        }
                                     }
                                 )
                             }
@@ -1067,10 +1090,11 @@ fun HomeScreen(
                                     onClick = {
                                         com.example.data.AffiliateHelper.open(
                                             context,
-                                            com.example.data.AffiliateHelper.productUrl(
-                                                asin = null,
-                                                fallbackSearchTerm = need.itemName,
-                                            )
+                                            amazonRecommendations?.firstOrNull { it.name == need.itemName }?.url
+                                                ?: com.example.data.AffiliateHelper.productUrl(
+                                                    asin = null,
+                                                    fallbackSearchTerm = need.itemName,
+                                                )
                                         )
                                     }
                                 )

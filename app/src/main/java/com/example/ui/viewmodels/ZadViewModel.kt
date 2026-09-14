@@ -5420,16 +5420,51 @@ class ZadViewModel(application: Application) : AndroidViewModel(application) {
                 val matched = best ?: continue
                 picks += AffiliatePick(product = product, reason = matched.third, score = bestScore)
             }
-            val ranked = picks.sortedByDescending { it.score }
-            if (ranked.isNotEmpty()) {
-                ranked.take(8)
-            } else {
-                val catalog = if (products.isNotEmpty()) products else DEFAULT_AFFILIATE_PRODUCTS
-                catalog.filter { it.isActive }.take(6).map { product ->
-                    AffiliatePick(product = product, reason = "عروض أمازون الموصى بها", score = 1)
-                }
-            }
+            // مفيش تطابق = مفيش ترشيح. كان بيعرض الكتالوج كله («زيت زيتون» بس في الإنتاج) كأنه توصية.
+            picks.sortedByDescending { it.score }.take(8)
         }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * ترشيح أمازون من السيرفر (amazon-creators-search → recommendations، ٢٠٢٦-٠٩-١٤): النقص + معدل
+     * الاستهلاك المتعلَّم + قايمة التسوق، واللينك مبني بالتاج والدومين من أسرار سوبابيز (مش BuildConfig).
+     */
+    data class AmazonRecommendation(
+        val name: String, val reason: String, val url: String,
+        val imageUrl: String?, val price: Double?, val productId: String?,
+    )
+
+    /** null = لسه ماتحملش أو السيرفر وقع (الشاشة بتقع على الحساب المحلي). فاضية = مفيش احتياج حقيقي. */
+    private val _amazonRecommendations = MutableStateFlow<List<AmazonRecommendation>?>(null)
+    val amazonRecommendations: StateFlow<List<AmazonRecommendation>?> = _amazonRecommendations.asStateFlow()
+
+    /** قراءة داتابيز + صور (مفيش موديل). المفتاح فيه عدد المخزون والتسوق: تغيير حقيقي يحدّث على طول. */
+    fun refreshAmazonRecommendations(signature: String = "") {
+        if (autoRefreshBlocked("amazon_recs:$signature")) return
+        viewModelScope.launch {
+            try {
+                val response = SupabaseRepo.callEdgeFunction("amazon-creators-search", mapOf("action" to "recommendations"))
+                val items = (response["items"] as? List<*>) ?: run {
+                    Log.w(TAG, "refreshAmazonRecommendations: no items (${response["error"]})")
+                    return@launch
+                }
+                _amazonRecommendations.value = items.mapNotNull { raw ->
+                    val m = raw as? Map<*, *> ?: return@mapNotNull null
+                    val name = (m["name"] as? String)?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    val url = (m["url"] as? String)?.takeIf { it.startsWith("https://") } ?: return@mapNotNull null
+                    AmazonRecommendation(
+                        name = name,
+                        reason = m["reason"] as? String ?: "",
+                        url = url,
+                        imageUrl = (m["image_url"] as? String)?.takeIf { it.startsWith("https://") },
+                        price = (m["price"] as? Number)?.toDouble()?.takeIf { it > 0 },
+                        productId = m["product_id"] as? String,
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "refreshAmazonRecommendations() FAILED: ${e.message}")
+            }
+        }
+    }
 
     /** حاجة العميل محتاجها فعلاً ومفيش ليها صف في الكتالوج — بتتفتح كبحث على أمازون. */
     data class AffiliateNeed(val id: String = java.util.UUID.randomUUID().toString(), val itemName: String, val reason: String, val score: Int)

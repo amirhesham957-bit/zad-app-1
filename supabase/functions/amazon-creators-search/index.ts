@@ -1,8 +1,9 @@
 // deno-lint-ignore-file
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import { computeNeeds, marketFor, matchCatalog, productUrl, searchUrl } from "./recommendations.ts";
 
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const ASSOCIATE_TAG = Deno.env.get("AMAZON_ASSOCIATE_TAG") || "zad0b-21";
 
 interface MatchRequest {
   product_name: string;
@@ -31,6 +32,59 @@ Deno.serve(async (req: Request) => {
     console.log(`[AmazonCreators] action=${action}`);
 
     switch (action) {
+      // ترشيحات حية للعميل نفسه (recommendations.ts): النقص + معدل الاستهلاك + قايمة التسوق، بلينكات
+      // بالتاج والدومين من أسرار المشروع. verify_jwt مقفول للفانكشن دي، فالتوكن بيتحقق هنا.
+      case "recommendations": {
+        const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const sb = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: caller, error: authError } = token ? await sb.auth.getUser(token) : { data: { user: null }, error: new Error("missing token") };
+        const userId = caller?.user?.id;
+        if (authError || !userId) return jsonResponse({ error: "unauthorized" }, 401);
+
+        const [inv, cons, shop, catalog, user] = await Promise.all([
+          sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,unit").eq("user_id", userId).limit(300),
+          sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId).limit(300),
+          sb.from("zad_shopping_list").select("item_name,is_purchased").eq("user_id", userId).eq("is_purchased", false).limit(100),
+          sb.from("affiliate_products").select("id,product_name_ar,product_name_search_keywords,asin,asin_verified,image_url,average_price_sar,is_active").eq("is_active", true).limit(200),
+          sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+        ]);
+        for (const r of [inv, cons, shop, catalog]) if (r.error) console.error("[AmazonCreators] recommendations read failed:", r.error.message);
+
+        const market = marketFor((user.data as { country?: string | null } | null)?.country, (n) => Deno.env.get(n));
+        const needs = computeNeeds(inv.data ?? [], cons.data ?? [], shop.data ?? [], 10);
+        const pexelsKey = Deno.env.get("PEXELS_API_KEY");
+        const imageFor = async (term: string): Promise<string | null> => {
+          if (!pexelsKey) return null;
+          try {
+            const res = await fetch(`https://api.pexels.com/v1/search?per_page=1&query=${encodeURIComponent(term)}`, {
+              headers: { Authorization: pexelsKey }, signal: AbortSignal.timeout(4000),
+            });
+            if (!res.ok) return null;
+            const body = await res.json();
+            return body?.photos?.[0]?.src?.medium ?? null;
+          } catch {
+            return null;
+          }
+        };
+        const items = await Promise.all(needs.map(async (need, i) => {
+          const product = matchCatalog(need, catalog.data ?? []);
+          const verified = !!(product?.asin && product.asin_verified);
+          return {
+            name: need.name,
+            reason: need.reason,
+            score: need.score,
+            days_left: need.days_left,
+            product_id: product?.id ?? null,
+            url: verified ? productUrl(market, product!.asin!) : searchUrl(market, product?.product_name_ar ?? need.name),
+            image_url: product?.image_url ?? (i < 8 ? await imageFor(need.name) : null),
+            // سعر الكتالوج بالريال — مايتعرضش على سوق تاني بعملة تانية.
+            price: market.domain.endsWith("amazon.sa") ? (product?.average_price_sar ?? null) : null,
+          };
+        }));
+        return jsonResponse({ domain: market.domain, tag_configured: !!market.tag, items });
+      }
+
       case "match_product": {
         const { product_name, catalog } = payload as MatchRequest;
         if (!product_name || !catalog?.length) {
@@ -113,7 +167,7 @@ Deno.serve(async (req: Request) => {
       case "build_affiliate_link": {
         const { asin } = payload;
         if (!asin) return jsonResponse({ error: "Missing asin" });
-        return jsonResponse({ link: `https://www.amazon.sa/dp/${asin}?tag=${ASSOCIATE_TAG}` });
+        return jsonResponse({ link: productUrl(marketFor(payload?.country, (n) => Deno.env.get(n)), String(asin)) });
       }
 
       case "record_click": {
