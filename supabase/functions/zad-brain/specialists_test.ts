@@ -125,4 +125,5 @@ Deno.test("reminder and self-introduction intents are recognised in feminine/dia
   assertEquals(intentToolHints("على فكرة أنا اسمي كريم وبشتغل محاسب").includes("update_customer_profile"), true);
   assertEquals(intentToolHints("أنا أم لتلات عيال").includes("update_customer_profile"), true);
   assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
+  assertEquals(intentToolHints("افتكر إني مش باكل تونة خالص").includes("remember"), true);
 });

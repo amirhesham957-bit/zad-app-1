@@ -2,7 +2,8 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { computeNeeds, marketFor, matchCatalog, productUrl, searchUrl } from "./recommendations.ts";
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+// GROQ_API_KEY المفرد بيرجع 401 (فحص ما بعد النشر ٢٠٢٦-٠٩-١٤) — التاني الأول.
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY_2") || Deno.env.get("GROQ_API_KEY");
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 interface MatchRequest {

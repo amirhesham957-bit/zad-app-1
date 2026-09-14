@@ -34,6 +34,12 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 // original singular GROQ_API_KEY so existing deployments with only one key keep working
 // unmodified. Add GROQ_API_KEY_3 etc. below if the pool ever needs to grow — the loop
 // already handles whatever length GROQ_KEYS is.
+// Whisper وcompound كانوا بيقروا GROQ_API_KEY المفرد بس — وده بالظبط المفتاح اللي فحص ما بعد النشر
+// لقاه بيرجع 401 (٢٠٢٦-٠٩-١٤)، يعني تفريغ فويسات تليجرام والبحث الحي كانوا واقفين والمفتاح التاني
+// شغال. دلوقتي بيلفوا على كل المفاتيح وبيعدّوا اللي مرفوض (401/403).
+const GROQ_DIRECT_KEYS: string[] = [...new Set([
+  Deno.env.get("GROQ_API_KEY"), Deno.env.get("GROQ_API_KEY_2"), Deno.env.get("GROQ_API_KEY_1"),
+].filter((k): k is string => !!k))];
 const GROQ_KEYS: string[] = [
   Deno.env.get("GROQ_API_KEY_1") || Deno.env.get("GROQ_API_KEY"),
   Deno.env.get("GROQ_API_KEY_2"),
@@ -671,28 +677,34 @@ async function callVisionModel(systemPrompt: string, userPrompt: string, imageBa
 }
 
 async function transcribeAudio(audioBase64: string, mimeType: string) {
-  if (!GROQ_API_KEY) return { text: null, raw: { error: "GROQ_API_KEY not set" }, ok: false, status: 0 };
+  if (GROQ_DIRECT_KEYS.length === 0) return { text: null, raw: { error: "GROQ_API_KEY not set" }, ok: false, status: 0 };
   try {
     const binary = atob(audioBase64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const ext = mimeType.includes("mp3") ? "mp3" : mimeType.includes("wav") ? "wav" : mimeType.includes("ogg") ? "ogg" : "m4a";
-    const form = new FormData();
-    form.append("file", new Blob([bytes], { type: mimeType }), `audio.${ext}`);
-    form.append("model", "whisper-large-v3-turbo");
-    form.append("language", "ar");
-    form.append("response_format", "json");
-    const resp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + GROQ_API_KEY },
-      body: form,
-    });
-    const data = await resp.json();
-    console.log("[CoreIntel] Whisper transcription raw response:", JSON.stringify(data));
-    if (!resp.ok) {
-      console.error("[CoreIntel] Whisper HTTP error:", resp.status, JSON.stringify(data));
+    let last: { text: string | null; raw: unknown; ok: boolean; status: number } = { text: null, raw: {}, ok: false, status: 0 };
+    for (const key of GROQ_DIRECT_KEYS) {
+      const form = new FormData();
+      form.append("file", new Blob([bytes], { type: mimeType }), `audio.${ext}`);
+      form.append("model", "whisper-large-v3-turbo");
+      form.append("language", "ar");
+      form.append("response_format", "json");
+      const resp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + key },
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error("[CoreIntel] Whisper HTTP error:", resp.status, JSON.stringify(data));
+        last = { text: null, raw: data, ok: false, status: resp.status };
+        if (resp.status === 401 || resp.status === 403) continue; // مفتاح مرفوض — اللي بعده
+        return last;
+      }
+      return { text: data.text || null, raw: data, ok: true, status: resp.status };
     }
-    return { text: data.text || null, raw: data, ok: resp.ok, status: resp.status };
+    return last;
   } catch (e) {
     console.error("[CoreIntel] transcribeAudio failed:", (e as Error).message);
     return { text: null, raw: { error: (e as Error).message }, ok: false, status: 0 };
@@ -726,18 +738,19 @@ async function transcribeAudio(audioBase64: string, mimeType: string) {
 // action — a second attempt has real odds of succeeding where the first one
 // found data but failed to extract it.
 async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500) {
-  if (!GROQ_API_KEY) return { parsed: null, executedTools: [], ok: false };
+  if (GROQ_DIRECT_KEYS.length === 0) return { parsed: null, executedTools: [], ok: false };
+  let keyIndex = 0;
   // groq/compound-mini runs on a shared org-level TPM budget (8000/min on this
   // account's tier) that a single agentic call can consume most of — a second
   // call landing in the same window gets a 429 with a sub-second suggested
   // retry ("Please try again in 37.5ms"), verified live. One short-delay retry
   // absorbs that without surfacing a false failure to the user.
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 2 + GROQ_DIRECT_KEYS.length; attempt++) {
     try {
       const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer " + GROQ_API_KEY,
+          "Authorization": "Bearer " + GROQ_DIRECT_KEYS[keyIndex],
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -754,6 +767,10 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
       const data = await resp.json();
       if (!resp.ok) {
         console.error("[CoreIntel] Groq compound HTTP error:", resp.status, JSON.stringify(data));
+        if ((resp.status === 401 || resp.status === 403) && keyIndex + 1 < GROQ_DIRECT_KEYS.length) {
+          keyIndex++;
+          continue;
+        }
         if (resp.status === 429 && attempt === 0) {
           await new Promise((r) => setTimeout(r, 800));
           continue;
@@ -840,7 +857,66 @@ async function setCachedAiResponse(cacheKey: string, action: string, response: R
 // يتصرف («مقدرتش أتأكد») بدل ما الموديل يخترع.
 interface WebHit { title: string; url: string; snippet: string }
 
+export let lastWebSearchSource = "none";
+
+/**
+ * بحث بجوجل عبر Gemini (google_search grounding) — بديل لما DDG مايرجّعش حاجة. قياس ما بعد النشر
+ * (٢٠٢٦-٠٩-١٤): DDG HTML من سيرفرات الإيدج رجّع صفر نتيجة في ٢١٩ms (صفحة منع مش نتايج)، فأداة
+ * web_search بتاعة العقل كانت بتتنادى صح وترجع «مفيش نتايج» على أي سؤال.
+ */
+async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  const models = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
+  for (const key of GEMINI_KEYS) {
+    for (const model of models) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: `Search the web and summarize the key facts with sources for: ${query}` }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { maxOutputTokens: 700 },
+          }),
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!res.ok) {
+          console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}`);
+          await res.body?.cancel();
+          if (res.status === 429 || res.status >= 500) break; // المفتاح ده مضغوط — اللي بعده
+          continue; // الموديل مش بيدعم — الموديل اللي بعده
+        }
+        const data = await res.json();
+        const cand = data?.candidates?.[0];
+        const answer = ((cand?.content?.parts ?? []) as Array<{ text?: string }>).map((p) => p.text ?? "").join("").trim();
+        const meta = cand?.groundingMetadata ?? {};
+        const chunks = (meta.groundingChunks ?? []) as Array<{ web?: { uri?: string; title?: string } }>;
+        const supports = (meta.groundingSupports ?? []) as Array<{ segment?: { text?: string }; groundingChunkIndices?: number[] }>;
+        const hits: WebHit[] = [];
+        chunks.forEach((c, i) => {
+          if (!c.web?.uri || hits.length >= maxResults) return;
+          const snippet = supports.filter((sp) => (sp.groundingChunkIndices ?? []).includes(i))
+            .map((sp) => sp.segment?.text ?? "").join(" ").slice(0, 400);
+          hits.push({ title: c.web.title ?? c.web.uri, url: c.web.uri, snippet: snippet || answer.slice(0, 400) });
+        });
+        if (hits.length === 0 && answer) hits.push({ title: "Google Search (Gemini)", url: "https://www.google.com/search?q=" + encodeURIComponent(query), snippet: answer.slice(0, 800) });
+        if (hits.length > 0) return hits;
+      } catch (e) {
+        console.warn(`[CoreIntel] grounded search ${model} failed:`, (e as Error).message);
+      }
+    }
+  }
+  return [];
+}
+
 export async function webSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
+  const ddg = await ddgSearchSnippets(query, maxResults);
+  if (ddg.length > 0) { lastWebSearchSource = "duckduckgo"; return ddg; }
+  const grounded = await groundedSearchSnippets(query, maxResults);
+  lastWebSearchSource = grounded.length > 0 ? "gemini_google_search" : "none";
+  return grounded;
+}
+
+async function ddgSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
   try {
     const res = await fetch(
       "https://html.duckduckgo.com/html/",
@@ -975,7 +1051,7 @@ Deno.serve(async (req: Request) => {
       try {
         const t0 = Date.now();
         const hits = await webSearchSnippets("FIFA Club World Cup winner");
-        webSearch = { results: hits.length, ms: Date.now() - t0 };
+        webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0 };
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
       }

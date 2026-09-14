@@ -115,12 +115,16 @@ function normalize(text: string): string {
 const APPOINTMENT_INTENT = /(فكر|ذكر|نبه)(ني|يني|نى)|ميعاد|موعد|مواعيد|اجتماع|مشوار/;
 const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه/;
 
+const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
+
 export function intentToolHints(message: string): string[] {
   const norm = normalize(message);
   const tools: string[] = [];
   if (APPOINTMENT_INTENT.test(norm)) tools.push("add_appointment", "update_appointment", "add_place_reminder");
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
-  return tools;
+  // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
+  if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
+  return [...new Set(tools)];
 }
 
 /** نقاط كل وكيل لرسالة واحدة، بترتيب `ORDER` (general مش فيها لأنها مالهاش كلمات). */
