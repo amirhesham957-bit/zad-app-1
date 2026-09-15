@@ -867,10 +867,11 @@ export let lastWebSearchAttempts: string[] = [];
  * web_search بتاعة العقل كانت بتتنادى صح وترجع «مفيش نتايج» على أي سؤال.
  */
 async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
-  const models = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
-  lastWebSearchAttempts = [];
-  for (const [ki, key] of GEMINI_KEYS.entries()) {
-    for (const model of models) {
+  const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"];
+  // موديل × مفتاح، بس بحد أقصى ٨ محاولات — الأداة جوه لفة شات والعميل مستني.
+  const plan = models.flatMap((model) => GEMINI_KEYS.slice(0, 2).map((key, ki) => ({ model, key, ki })));
+  for (const { model, key, ki } of plan) {
+    {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
@@ -887,8 +888,8 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           const msg = (errText.match(/"message":\s*"([^"]{0,90})/)?.[1] ?? "").replace(/[^\x20-\x7E]/g, "");
           lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
           console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
-          if (res.status === 429 || res.status >= 500) break; // المفتاح ده مضغوط — اللي بعده
-          continue; // الموديل مش بيدعم — الموديل اللي بعده
+          // الكوتة لكل موديل لوحده (CLAUDE.md) — 429 على موديل مش معناه إن التاني مقفول.
+          continue;
         }
         const data = await res.json();
         const cand = data?.candidates?.[0];
@@ -915,12 +916,54 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   return [];
 }
 
+/** آخر رجل: groq/compound-mini (بحث Tavily مدمج) — المصادر من executed_tools لو موجودة، وإلا الإجابة نفسها. */
+async function compoundSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  for (const [ki, key] of GROQ_DIRECT_KEYS.entries()) {
+    try {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "groq/compound-mini",
+          messages: [{ role: "user", content: `Search the web and answer briefly with the key facts: ${query}` }],
+          temperature: 0.2, max_tokens: 700,
+        }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!resp.ok) {
+        lastWebSearchAttempts.push(`groq${ki}/compound-mini:${resp.status}`);
+        await resp.body?.cancel();
+        continue;
+      }
+      const data = await resp.json();
+      const msg = data?.choices?.[0]?.message ?? {};
+      const answer = String(msg.content ?? "").trim();
+      const hits: WebHit[] = [];
+      for (const tool of (msg.executed_tools ?? []) as Array<{ search_results?: { results?: Array<{ title?: string; url?: string; content?: string }> } }>) {
+        for (const r of tool.search_results?.results ?? []) {
+          if (r.url && hits.length < maxResults) hits.push({ title: r.title ?? r.url, url: r.url, snippet: String(r.content ?? "").slice(0, 400) });
+        }
+      }
+      if (answer) hits.unshift({ title: "ملخص البحث", url: hits[0]?.url ?? "", snippet: answer.slice(0, 800) });
+      lastWebSearchAttempts.push(`groq${ki}/compound-mini:200 hits=${hits.length}`);
+      if (hits.length > 0) return hits.slice(0, maxResults);
+    } catch (e) {
+      lastWebSearchAttempts.push(`groq${ki}/compound-mini:threw ${String((e as Error)?.message ?? e).slice(0, 60)}`);
+    }
+  }
+  return [];
+}
+
 export async function webSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
+  lastWebSearchAttempts = [];
   const ddg = await ddgSearchSnippets(query, maxResults);
   if (ddg.length > 0) { lastWebSearchSource = "duckduckgo"; return ddg; }
+  lastWebSearchAttempts.push("duckduckgo:0");
   const grounded = await groundedSearchSnippets(query, maxResults);
-  lastWebSearchSource = grounded.length > 0 ? "gemini_google_search" : "none";
-  return grounded;
+  if (grounded.length > 0) { lastWebSearchSource = "gemini_google_search"; return grounded; }
+  const compound = await compoundSearchSnippets(query, maxResults);
+  lastWebSearchSource = compound.length > 0 ? "groq_compound" : "none";
+  return compound;
 }
 
 async function ddgSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
@@ -1058,7 +1101,7 @@ Deno.serve(async (req: Request) => {
       try {
         const t0 = Date.now();
         const hits = await webSearchSnippets("FIFA Club World Cup winner");
-        webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0, attempts: lastWebSearchAttempts.slice(0, 8) };
+        webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0, attempts: lastWebSearchAttempts.slice(0, 14) };
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
       }
