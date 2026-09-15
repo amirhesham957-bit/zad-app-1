@@ -1,5 +1,6 @@
 package com.example.voice
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,13 +8,16 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.example.MainActivity
 import com.example.R
 import kotlinx.coroutines.CoroutineScope
@@ -41,13 +45,22 @@ class HeyZadWakeService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /** false = النظام رفض startForeground، والخدمة بتقفل نفسها بدل ما توقّع التطبيق. */
+    private var foregroundStarted = false
+
     override fun onCreate() {
         super.onCreate()
-        startForegroundWithNotification()
-        startWakeLoop()
+        foregroundStarted = startForegroundWithNotification()
+        if (foregroundStarted) startWakeLoop() else stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // من غير START_NOT_STICKY هنا النظام كان هيعيد تشغيل الخدمة من الخلفية ويقع
+        // في نفس الرفض تاني — حلقة "التطبيق يستمر في التوقف".
+        if (!foregroundStarted) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         when (intent?.action) {
             ACTION_STOP -> {
                 stopSelf()
@@ -68,7 +81,30 @@ class HeyZadWakeService : Service() {
         return START_STICKY
     }
 
-    private fun startForegroundWithNotification() {
+    /**
+     * كراش الإقلاع على أندرويد ١٤+ (2026-09-15، بيلد 940e1554): `WakePrefs` مفعّلة افتراضيًا،
+     * فـ`MainActivity` بتشغّل الخدمة من أول فتحة — قبل ما حد يطلب RECORD_AUDIO. مع
+     * targetSdk 34+ النظام بيرمي SecurityException من `startForeground(type=MICROPHONE)` لو
+     * الإذن مش ممنوح، أو لو الخدمة اتشغلت من الخلفية (إعادة تشغيل START_STICKY). الرمية
+     * بتحصل هنا جوه onCreate الخدمة، فالـ try/catch حوالين `start()` في MainActivity
+     * ماكانش يقدر يمسكها. أندرويد ≤ ١٣ مابيطبّقش الشرط ده، وده سبب إنه وقع على أجهزة وأجهزة لأ.
+     */
+    private fun startForegroundWithNotification(): Boolean {
+        if (!hasMicPermission(this)) {
+            Log.w(TAG, "RECORD_AUDIO not granted — wake service not started")
+            return false
+        }
+        return try {
+            showForegroundNotification()
+            true
+        } catch (e: Exception) {
+            // SecurityException (أندرويد ١٤+) أو ForegroundServiceStartNotAllowedException (١٢+)
+            Log.w(TAG, "startForeground refused: ${e.message}")
+            false
+        }
+    }
+
+    private fun showForegroundNotification() {
         val channelId = "zad_wake_word"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
@@ -204,12 +240,29 @@ class HeyZadWakeService : Service() {
             "hey zad", "hey زاد", "hi zad", "يا زاد", "ازيك يا زاد", "هي زاد"
         )
 
+        private const val TAG = "HeyZadWakeService"
+
+        fun hasMicPermission(context: Context): Boolean =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+
+        /**
+         * مابتشغلش حاجة من غير إذن المايك: startForegroundService بيلزم الخدمة تنادي
+         * startForeground، واللي هي مش هتقدر تعمله من غير الإذن — والنظام بيوقّع التطبيق لو
+         * الخدمة وقفت قبلها. الخدمة بتشتغل لوحدها أول ما الإذن يتمنح (resume() من شاشة
+         * الصوت، أو الفتحة الجاية).
+         */
         fun start(context: Context) {
+            if (!hasMicPermission(context)) return
             val intent = Intent(context, HeyZadWakeService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "wake service start refused: ${e.message}")
             }
         }
 

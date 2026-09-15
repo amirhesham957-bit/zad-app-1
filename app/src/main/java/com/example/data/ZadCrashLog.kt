@@ -30,10 +30,12 @@ object ZadCrashLog {
                 append("\n")
                 append(throwable.stackTraceToString().take(3000))
             }
+            // commit مش apply: الهاندلر بيقتل العملية بعدها على طول، وapply بيكتب على
+            // خيط تاني — فالسجل كان بيضيع قبل ما يوصل الديسك في نفس الكراش اللي بيسجّله.
             prefs.edit()
                 .putString(KEY_PREFIX + (count % MAX_ENTRIES), entry)
                 .putInt(KEY_COUNT, count + 1)
-                .apply()
+                .commit()
             Log.e("ZadCrashLog", "crash recorded (#${count + 1})")
         } catch (_: Exception) { /* ما نكسرش الكراش هاندلر */ }
     }

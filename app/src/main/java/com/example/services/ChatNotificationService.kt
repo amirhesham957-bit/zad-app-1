@@ -13,6 +13,7 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.RealtimeChatRepo
 import com.example.data.SupabaseRepo
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,7 +30,14 @@ import kotlinx.coroutines.launch
 class ChatNotificationService : Service() {
 
     private val serviceJob = Job()
-    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
+    // من غير الهاندلر، أي رمية من اشتراك realtime أو من جوه الـ collector (الـ .catch في
+    // RealtimeChatRepo بيغطي الـ upstream بس) كانت بتوقّع العملية — والخدمة START_STICKY،
+    // فالنظام يرجّعها وتقع تاني.
+    private val serviceScope = CoroutineScope(
+        Dispatchers.IO + serviceJob + CoroutineExceptionHandler { _, e ->
+            android.util.Log.e("ChatNotificationService", "chat listener failed: ${e.message}", e)
+        }
+    )
     private var voiceEngine: com.example.voice.ZadNaturalVoiceEngine? = null
 
     override fun onBind(intent: Intent?): IBinder? = null

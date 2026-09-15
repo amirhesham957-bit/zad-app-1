@@ -1,7 +1,10 @@
 package com.example.services
 
+import android.content.Context
 import android.util.Log
 import com.example.data.SupabaseRepo
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,9 +62,36 @@ object ZadFcmGate {
         }
     }
 
+    @Volatile private var appContext: Context? = null
+
+    /** من ZadApplication.onCreate — عشان فحص Play Services تحت يلاقي Context من غير ما النداءات تتغير. */
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    /**
+     * FCM محتاج Google Play Services شغالة وحديثة. على جهاز من غيرها (روم صيني، هواوي) أو
+     * بنسخة قديمة، `getToken()` بيفشل — أو مابيكمّلش خالص، فالـ suspend تحت كان بيعلّق
+     * جامع الجلسة في MainActivity ومعاه ترميم بلد الحساب اللي بعده. لو مفيش Context
+     * (init ماتنادتش) بنكمّل زي الأول بدل ما نقفل FCM على الكل.
+     */
+    private fun playServicesReady(): Boolean {
+        val context = appContext ?: return true
+        return try {
+            GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+        } catch (e: Throwable) {
+            Log.w(TAG, "Play Services check failed: ${e.message}")
+            false
+        }
+    }
+
     /** بعد تسجيل الدخول — نجيب آخر توكن من Firebase ورفعه. no-op لو Firebase مش متفعّل. */
     suspend fun syncTokenAfterLogin() {
         if (!firebaseAvailable) return
+        if (!playServicesReady()) {
+            Log.i(TAG, "Google Play Services unavailable — skipping FCM token sync")
+            return
+        }
         try {
             val task = com.google.firebase.messaging.FirebaseMessaging.getInstance().token
             val token = kotlinx.coroutines.suspendCancellableCoroutine<String?> { cont ->

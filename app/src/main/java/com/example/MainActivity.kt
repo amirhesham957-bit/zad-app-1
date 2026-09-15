@@ -112,31 +112,33 @@ class MainActivity : ComponentActivity() {
      * وما بيبانش، رغم إن `values-tr` مترجمة بالكامل.
      */
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(MarketPrefs.wrapWithStoredLocale(newBase))
+        val wrapped = try {
+            MarketPrefs.wrapWithStoredLocale(newBase)
+        } catch (e: Throwable) {
+            Log.e("MainActivity", "locale wrap failed — using system locale", e)
+            newBase
+        }
+        super.attachBaseContext(wrapped)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
-            // سجل محلي قبل أي حاجة — لو الكراش قفل التطبيق، السجل يفضل موجود
-            try { com.example.data.ZadCrashLog.record(this, throwable) } catch (_: Exception) {}
-            val intent = Intent(this, CrashActivity::class.java).apply {
-                putExtra("crash", throwable.stackTraceToString())
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            startActivity(intent)
-            android.os.Process.killProcess(android.os.Process.myPid())
-            System.exit(1)
-        }
-        
+
+        // هاندلر الكراش اتنقل لـ ZadApplication.installCrashHandler — من هنا ماكانش بيغطي
+        // العمليات اللي ماتفتحتش من الشاشة دي.
+        //
+        // كل خطوة تحت لحد setContent مش لازمة لرسم الواجهة، فكل واحدة ملفوفة في
+        // runStartupStep: ميزة خلفية واحدة بتقع على روم معيّن (MIUI/HyperOS/ColorOS) تتسجل
+        // وتتقفل لوحدها بدل ما تمنع التطبيق كله يفتح.
         handleIntent(intent)
 
-        MarketPrefs.applyStoredLocale(this)
+        runStartupStep("MarketPrefs.applyStoredLocale") { MarketPrefs.applyStoredLocale(this) }
 
         // Initialize AdMob and Preload Rewarded Ad
-        com.example.ads.RewardedBrainAdManager.initialize(this)
-        com.example.ads.RewardedBrainAdManager.preload(this)
+        runStartupStep("RewardedBrainAdManager") {
+            com.example.ads.RewardedBrainAdManager.initialize(this)
+            com.example.ads.RewardedBrainAdManager.preload(this)
+        }
 
         // صلاحية ممنوحة مش معناها سيرفس شغال. أندرويد بيقتل NotificationListenerService
         // تحت ضغط الذاكرة أو بعد تحديث/إعادة تشغيل وساعات مابيرجعش يربطه، ومفيش حاجة في
@@ -150,6 +152,7 @@ class MainActivity : ComponentActivity() {
         // app-side save/restore code needed. This collector only reacts to the resulting
         // Authenticated status to sync pending alerts.
         lifecycleScope.launch {
+          try {
             SupabaseRepo.client.auth.sessionStatus.collect { status ->
                 if (status is SessionStatus.Authenticated) {
                     // أول ما المستخدم يفتح التطبيق والجلسة تتعرف، اسحب رؤى العقل الـ pending
@@ -202,11 +205,17 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+          } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+          } catch (e: Throwable) {
+            Log.e("MainActivity", "session status collector failed: ${e.message}", e)
+          }
         }
 
         // مفيش وعي بحالة الشبكة كان موجود خالص — SyncOutbox كان بيتصرّف بس كل ٣ ساعات
         // (TransactionSyncWorker) بغض النظر عن رجوع النت الفعلي. register() idempotent.
-        com.example.data.NetworkMonitor.register(applicationContext)
+        // registerNetworkCallback بيرمي SecurityException على بعض روامات أندرويد ١١.
+        runStartupStep("NetworkMonitor.register") { com.example.data.NetworkMonitor.register(applicationContext) }
 
         // نفس السبب: صار object مشترك بدل instance منفصل لكل شاشة (ZadVoiceBottomSheet،
         // ZadIntelligenceScreen كانوا كل واحد بيعمل نسخته بنفسه). init() هنا يضمن إنه
@@ -225,6 +234,43 @@ class MainActivity : ComponentActivity() {
             android.util.Log.e("MainActivity", "ZadVoiceManager.init safely caught: ${e.message}", e)
         }
 
+        // WorkManager.getInstance بيرمي IllegalStateException لو تهيئته فشلت (قاعدة
+        // بياناته على ديسك مليان/تالف) — الجدولة بتتعاد في الفتحة الجاية، الواجهة لأ.
+        runStartupStep("scheduleBackgroundWork") { scheduleBackgroundWork() }
+        // رمضان: «فاضل ٢٠ دقيقة على الفطار» — من مكان البيت على الموبايل (IftarScheduler).
+        runStartupStep("IftarScheduler.scheduleNext") { com.example.workers.IftarScheduler.scheduleNext(this) }
+        // زينة كورة زاد المختارة (بتتفتح بدعوة العيلة).
+        runStartupStep("OrbAccessoryStore.load") { com.example.data.OrbAccessoryStore.load(this) }
+
+        // Start real-time chat notification service
+        try {
+            startService(Intent(this, com.example.services.ChatNotificationService::class.java))
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to start ChatNotificationService: ${e.message}")
+        }
+
+        // "Hey Zad" wake word — استماع دائم (لو المستخدم مفعّله). لو RECORD_AUDIO مش
+        // متاح لسه (أول تشغيل)، start() مابتشغلش حاجة. التعليق هنا كان بيقول "الخدمة هتفشل
+        // بهدوء" — وده ماكانش صحيح على أندرويد ١٤+، كانت بتوقّع التطبيق من جوه الخدمة
+        // (شوف HeyZadWakeService.startForegroundWithNotification).
+        if (com.example.data.WakePrefs.isEnabled(this)) {
+            try {
+                com.example.voice.HeyZadWakeService.start(this)
+            } catch (e: Exception) {
+                android.util.Log.w("MainActivity", "Wake service not started: ${e.message}")
+            }
+        }
+
+        enableEdgeToEdge()
+        handleIntent(intent)
+        setContent {
+            AppTheme {
+                AppNavigation(pendingInviteCode.value)
+            }
+        }
+    }
+
+    private fun scheduleBackgroundWork() {
         // Schedule periodic AI analysis (Feature 6)
         val workRequest = PeriodicWorkRequestBuilder<PeriodicAnalysisWorker>(6, TimeUnit.HOURS).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
@@ -325,35 +371,6 @@ class MainActivity : ComponentActivity() {
             ExistingPeriodicWorkPolicy.KEEP,
             homeSampleRequest
         )
-        // رمضان: «فاضل ٢٠ دقيقة على الفطار» — من مكان البيت على الموبايل (IftarScheduler).
-        com.example.workers.IftarScheduler.scheduleNext(this)
-        // زينة كورة زاد المختارة (بتتفتح بدعوة العيلة).
-        com.example.data.OrbAccessoryStore.load(this)
-
-        // Start real-time chat notification service
-        try {
-            startService(Intent(this, com.example.services.ChatNotificationService::class.java))
-        } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Failed to start ChatNotificationService: ${e.message}")
-        }
-
-        // "Hey Zad" wake word — استماع دائم (لو المستخدم مفعّله). لو RECORD_AUDIO مش
-        // متاح لسه (أول تشغيل)، الخدمة هتفشل بهدوء والمستخدم هيدي الصلاحية من شاشة الصوت.
-        if (com.example.data.WakePrefs.isEnabled(this)) {
-            try {
-                com.example.voice.HeyZadWakeService.start(this)
-            } catch (e: Exception) {
-                android.util.Log.w("MainActivity", "Wake service not started: ${e.message}")
-            }
-        }
-
-        enableEdgeToEdge()
-        handleIntent(intent)
-        setContent {
-            AppTheme {
-                AppNavigation(pendingInviteCode.value)
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -698,7 +715,13 @@ fun SplashScreen(onTimeout: () -> Unit) {
 }
 
 class CrashActivity : ComponentActivity() {
+    companion object {
+        /** لو الشاشة دي نفسها (أو حاجة في عمليتها) وقعت، الهاندلر مايفتحهاش تاني — حلقة. */
+        @Volatile var shownInThisProcess = false
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        shownInThisProcess = true
         super.onCreate(savedInstanceState)
         val crash = intent.getStringExtra("crash") ?: "Unknown crash"
         setContent {
