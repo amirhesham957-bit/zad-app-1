@@ -858,6 +858,8 @@ async function setCachedAiResponse(cacheKey: string, action: string, response: R
 interface WebHit { title: string; url: string; snippet: string }
 
 export let lastWebSearchSource = "none";
+/** محاولات آخر بحث (موديل:حالة) — للتشخيص بس، من غير مفاتيح. */
+export let lastWebSearchAttempts: string[] = [];
 
 /**
  * بحث بجوجل عبر Gemini (google_search grounding) — بديل لما DDG مايرجّعش حاجة. قياس ما بعد النشر
@@ -866,7 +868,8 @@ export let lastWebSearchSource = "none";
  */
 async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
   const models = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
-  for (const key of GEMINI_KEYS) {
+  lastWebSearchAttempts = [];
+  for (const [ki, key] of GEMINI_KEYS.entries()) {
     for (const model of models) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -880,8 +883,10 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           signal: AbortSignal.timeout(20000),
         });
         if (!res.ok) {
-          console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}`);
-          await res.body?.cancel();
+          const errText = await res.text();
+          const msg = (errText.match(/"message":\s*"([^"]{0,90})/)?.[1] ?? "").replace(/[^\x20-\x7E]/g, "");
+          lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
+          console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
           if (res.status === 429 || res.status >= 500) break; // المفتاح ده مضغوط — اللي بعده
           continue; // الموديل مش بيدعم — الموديل اللي بعده
         }
@@ -899,8 +904,10 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           hits.push({ title: c.web.title ?? c.web.uri, url: c.web.uri, snippet: snippet || answer.slice(0, 400) });
         });
         if (hits.length === 0 && answer) hits.push({ title: "Google Search (Gemini)", url: "https://www.google.com/search?q=" + encodeURIComponent(query), snippet: answer.slice(0, 800) });
+        lastWebSearchAttempts.push(`k${ki}/${model}:200 chunks=${chunks.length} answer=${answer.length}`);
         if (hits.length > 0) return hits;
       } catch (e) {
+        lastWebSearchAttempts.push(`k${ki}/${model}:threw ${String((e as Error)?.message ?? e).slice(0, 60)}`);
         console.warn(`[CoreIntel] grounded search ${model} failed:`, (e as Error).message);
       }
     }
@@ -1051,7 +1058,7 @@ Deno.serve(async (req: Request) => {
       try {
         const t0 = Date.now();
         const hits = await webSearchSnippets("FIFA Club World Cup winner");
-        webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0 };
+        webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0, attempts: lastWebSearchAttempts.slice(0, 8) };
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
       }
