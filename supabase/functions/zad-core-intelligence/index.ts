@@ -954,11 +954,102 @@ async function compoundSearchSnippets(query: string, maxResults: number): Promis
   return [];
 }
 
+const decodeEntities = (v: string) => v
+  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, "")
+  .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+  .replace(/\s+/g, " ").trim();
+
+/** DuckDuckGo lite (GET) — صفحة أخف من html/ وأحياناً مابتتمنعش لما التانية تتمنع. */
+async function ddgLiteSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  try {
+    const res = await fetch(`https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`, {
+      headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Mobile Safari/537.36" },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) { lastWebSearchAttempts.push(`ddg_lite:${res.status}`); return []; }
+    const html = await res.text();
+    const links = [...html.matchAll(/<a[^>]*href="([^"]+)"[^>]*class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/g)];
+    const snippets = [...html.matchAll(/<td[^>]*class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/g)].map((m) => decodeEntities(m[1]));
+    const hits: WebHit[] = [];
+    links.forEach((m, i) => {
+      let url = m[1];
+      const uddg = /[?&]uddg=([^&]+)/.exec(url);
+      if (uddg) url = decodeURIComponent(uddg[1]);
+      if (url.startsWith("http") && hits.length < maxResults) hits.push({ title: decodeEntities(m[2]), url, snippet: snippets[i] ?? "" });
+    });
+    lastWebSearchAttempts.push(`ddg_lite:200 hits=${hits.length}`);
+    return hits;
+  } catch (e) {
+    lastWebSearchAttempts.push(`ddg_lite:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    return [];
+  }
+}
+
+/** أخبار جوجل RSS (من غير مفتاح) — للأسئلة عن أحداث وأخبار وأسعار اليوم. */
+async function googleNewsSnippets(query: string, arabic: boolean, maxResults: number): Promise<WebHit[]> {
+  try {
+    const locale = arabic ? "hl=ar&gl=EG&ceid=EG:ar" : "hl=en-US&gl=US&ceid=US:en";
+    const res = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${locale}`, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)" }, signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) { lastWebSearchAttempts.push(`google_news:${res.status}`); return []; }
+    const xml = await res.text();
+    const hits: WebHit[] = [];
+    for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+      const item = m[1];
+      const title = decodeEntities(item.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? "");
+      const link = decodeEntities(item.match(/<link>([\s\S]*?)<\/link>/)?.[1] ?? "");
+      const date = decodeEntities(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ?? "");
+      const source = decodeEntities(item.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] ?? "");
+      if (title && link.startsWith("http")) hits.push({ title, url: link, snippet: [source, date].filter(Boolean).join(" — ") });
+      if (hits.length >= maxResults) break;
+    }
+    lastWebSearchAttempts.push(`google_news:200 hits=${hits.length}`);
+    return hits;
+  } catch (e) {
+    lastWebSearchAttempts.push(`google_news:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    return [];
+  }
+}
+
+/** ويكيبيديا (عربي/إنجليزي، من غير مفتاح) — للمعلومات العامة. */
+async function wikipediaSnippets(query: string, lang: "ar" | "en", maxResults: number): Promise<WebHit[]> {
+  try {
+    const res = await fetch(
+      `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=${maxResults}&format=json&utf8=1`,
+      { headers: { "User-Agent": "ZadAssistant/1.0 (household app; contact via app store listing)" }, signal: AbortSignal.timeout(6000) },
+    );
+    if (!res.ok) { lastWebSearchAttempts.push(`wikipedia_${lang}:${res.status}`); return []; }
+    const data = await res.json();
+    const hits = ((data?.query?.search ?? []) as Array<{ title: string; snippet?: string }>).map((r) => ({
+      title: r.title,
+      url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(r.title.replace(/ /g, "_"))}`,
+      snippet: decodeEntities(r.snippet ?? ""),
+    }));
+    lastWebSearchAttempts.push(`wikipedia_${lang}:200 hits=${hits.length}`);
+    return hits;
+  } catch (e) {
+    lastWebSearchAttempts.push(`wikipedia_${lang}:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    return [];
+  }
+}
+
 export async function webSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
   lastWebSearchAttempts = [];
   const ddg = await ddgSearchSnippets(query, maxResults);
   if (ddg.length > 0) { lastWebSearchSource = "duckduckgo"; return ddg; }
   lastWebSearchAttempts.push("duckduckgo:0");
+  const lite = await ddgLiteSnippets(query, maxResults);
+  if (lite.length > 0) { lastWebSearchSource = "duckduckgo_lite"; return lite; }
+  // أخبار + ويكيبيديا مع بعض: الأخبار للي حصل مؤخراً، ويكيبيديا للمعلومة الثابتة. مفيش مفاتيح ولا كوتة.
+  const arabic = /[\u0600-\u06FF]/.test(query);
+  const [news, wikiPrimary, wikiEn] = await Promise.all([
+    googleNewsSnippets(query, arabic, 5),
+    wikipediaSnippets(query, arabic ? "ar" : "en", 3),
+    arabic ? wikipediaSnippets(query, "en", 2) : Promise.resolve([] as WebHit[]),
+  ]);
+  const free = [...news.slice(0, 5), ...wikiPrimary, ...wikiEn].slice(0, maxResults);
+  if (free.length > 0) { lastWebSearchSource = news.length > 0 ? "google_news+wikipedia" : "wikipedia"; return free; }
   const grounded = await groundedSearchSnippets(query, maxResults);
   if (grounded.length > 0) { lastWebSearchSource = "gemini_google_search"; return grounded; }
   const compound = await compoundSearchSnippets(query, maxResults);
@@ -1100,7 +1191,7 @@ Deno.serve(async (req: Request) => {
       let webSearch: unknown;
       try {
         const t0 = Date.now();
-        const hits = await webSearchSnippets("FIFA Club World Cup winner");
+        const hits = await webSearchSnippets("سعر الذهب اليوم في مصر");
         webSearch = { results: hits.length, source: lastWebSearchSource, ms: Date.now() - t0, attempts: lastWebSearchAttempts.slice(0, 14) };
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
