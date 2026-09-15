@@ -990,7 +990,7 @@ async function googleNewsSnippets(query: string, arabic: boolean, maxResults: nu
   try {
     const locale = arabic ? "hl=ar&gl=EG&ceid=EG:ar" : "hl=en-US&gl=US&ceid=US:en";
     const res = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${locale}`, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)" }, signal: AbortSignal.timeout(6000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)" }, signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) { lastWebSearchAttempts.push(`google_news:${res.status}`); return []; }
     const xml = await res.text();
