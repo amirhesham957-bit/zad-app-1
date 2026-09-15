@@ -2155,4 +2155,11 @@ or enter the code: %2$s</string>
     <string name="who_are_you_cta">Let\'s do it</string>
     <string name="chef_badge_from_inventory">✓ All in your pantry</string>
     <string name="chef_badge_missing_count">Missing %1$d</string>
+    <string name="profile_age">Age</string>
+    <string name="profile_age_under_18">Under 18</string>
+    <string name="profile_age_18_24">18–24</string>
+    <string name="profile_age_25_34">25–34</string>
+    <string name="profile_age_35_44">35–44</string>
+    <string name="profile_age_45_54">45–54</string>
+    <string name="profile_age_55_plus">55+</string>
 </resources>

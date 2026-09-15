@@ -1422,6 +1422,7 @@ object SupabaseRepo {
                 put("preferred_name", p.preferredName)
                 put("gender", p.gender)
                 put("household_role", p.householdRole)
+                put("age_range", p.ageRange)
                 put("occupation", p.occupation)
                 put("pay_day", p.payDay)
                 put("pay_frequency", p.payFrequency)

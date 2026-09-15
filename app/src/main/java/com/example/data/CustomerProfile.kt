@@ -38,6 +38,7 @@ fun needsIntroduction(profile: ZadCustomerProfile?): Boolean =
 object CustomerProfileOptions {
     val GENDERS = listOf("male", "female")
     val ROLES = listOf("father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other")
+    val AGE_RANGES = listOf("under_18", "18_24", "25_34", "35_44", "45_54", "55_plus")
     val PAY_FREQUENCIES = listOf("monthly", "biweekly", "weekly", "daily", "irregular")
     val DIALECTS = listOf("EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN")
 
@@ -46,6 +47,7 @@ object CustomerProfileOptions {
         preferredName = p.preferredName?.trim()?.take(40)?.ifBlank { null },
         gender = p.gender?.takeIf { it in GENDERS },
         householdRole = p.householdRole?.takeIf { it in ROLES },
+        ageRange = p.ageRange?.takeIf { it in AGE_RANGES },
         occupation = p.occupation?.trim()?.take(80)?.ifBlank { null },
         workSchedule = p.workSchedule?.trim()?.take(120)?.ifBlank { null },
         payDay = p.payDay?.takeIf { it in 1..31 },

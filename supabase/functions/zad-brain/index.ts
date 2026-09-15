@@ -375,7 +375,9 @@ async function callCoreIntel(action: string, payload: unknown, userId: string): 
 
 // الموقع بيتقادم بسرعة. تثبيتة عمرها يوم بتخلي "عدّي على المحل اللي جنبك" نصيحة واثقة
 // عن مكان العميل مشي منه امبارح — وده أوحش من إننا نقول مش عارفين هو فين.
-const LOCATION_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+// كان ٦ ساعات، والموبايل بيحدّث الموقع في الخلفية كل ١٢ ساعة (GeofenceRefreshWorker) — فنص اليوم كان
+// «موقعك قديم» حتى والإذن مفعّل. ١٤ ساعة = دورة التحديث + هامش؛ وفتح الرئيسية بيحدّثه كمان.
+const LOCATION_MAX_AGE_MS = 14 * 60 * 60 * 1000;
 
 /**
  * استرجاع ذاكرة مرتبط بالرسالة — deterministic بدون LLM:
@@ -2747,10 +2749,10 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
         .select("last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle();
       const p = prof as { last_lat: number | null; last_lon: number | null; last_location_at: string | null } | null;
       if (!p?.last_lat || !p?.last_lon || !p?.last_location_at) {
-        return "مفيش موقع محفوظ للعميل — قوله إنك مش عارف هو فين دلوقتي، متخمّنش محل.";
+        return "مفيش موقع محفوظ للعميل — قوله يفعّل «تنبيهات الأماكن» من صفحة البروفايل في التطبيق عشان تعرفي مكانه، ومتخمّنش محل.";
       }
       if (Date.now() - new Date(p.last_location_at).getTime() > LOCATION_MAX_AGE_MS) {
-        return "آخر موقع للعميل قديم (أكتر من ٦ ساعات) — متبنيش عليه ترشيح محل.";
+        return "آخر موقع للعميل قديم (أكتر من ١٤ ساعة) — قوله يفتح التطبيق عشان يتحدث، ومتبنيش عليه ترشيح محل.";
       }
       const res = await callCoreIntel("nearby_pois", {
         lat: p.last_lat, lon: p.last_lon,

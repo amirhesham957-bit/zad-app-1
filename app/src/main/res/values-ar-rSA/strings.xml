@@ -2090,4 +2090,11 @@
     <string name="who_are_you_cta">يلا نتعرّف</string>
     <string name="chef_badge_from_inventory">✓ كاملة من مخزونك</string>
     <string name="chef_badge_missing_count">ناقصك %1$d</string>
+    <string name="profile_age">العمر</string>
+    <string name="profile_age_under_18">أقل من ١٨</string>
+    <string name="profile_age_18_24">١٨–٢٤</string>
+    <string name="profile_age_25_34">٢٥–٣٤</string>
+    <string name="profile_age_35_44">٣٥–٤٤</string>
+    <string name="profile_age_45_54">٤٥–٥٤</string>
+    <string name="profile_age_55_plus">٥٥ وأكبر</string>
 </resources>

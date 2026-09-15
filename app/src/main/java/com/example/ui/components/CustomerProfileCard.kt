@@ -54,6 +54,7 @@ fun CustomerProfileCard(profile: ZadCustomerProfile?, onEdit: () -> Unit, modifi
         ProfileLine(stringResource(R.string.profile_name), p.preferredName ?: unknown)
         ProfileLine(stringResource(R.string.profile_gender), p.gender?.let { stringResource(genderLabel(it)) } ?: unknown)
         ProfileLine(stringResource(R.string.profile_role), p.householdRole?.let { stringResource(roleLabel(it)) } ?: unknown)
+        ProfileLine(stringResource(R.string.profile_age), p.ageRange?.let { stringResource(ageLabel(it)) } ?: unknown)
         ProfileLine(stringResource(R.string.profile_occupation), p.occupation ?: unknown)
         ProfileLine(
             stringResource(R.string.profile_pay),
@@ -89,6 +90,15 @@ fun roleLabel(v: String): Int = when (v) {
     "student" -> R.string.profile_role_student
     "grandparent" -> R.string.profile_role_grandparent
     else -> R.string.profile_role_other
+}
+
+fun ageLabel(v: String): Int = when (v) {
+    "under_18" -> R.string.profile_age_under_18
+    "18_24" -> R.string.profile_age_18_24
+    "25_34" -> R.string.profile_age_25_34
+    "35_44" -> R.string.profile_age_35_44
+    "45_54" -> R.string.profile_age_45_54
+    else -> R.string.profile_age_55_plus
 }
 
 fun freqLabel(v: String): Int = when (v) {
@@ -127,6 +137,7 @@ fun CustomerProfileDialog(
     var name by remember { mutableStateOf(start.preferredName.orEmpty()) }
     var gender by remember { mutableStateOf(start.gender) }
     var role by remember { mutableStateOf(start.householdRole) }
+    var age by remember { mutableStateOf(start.ageRange) }
     var occupation by remember { mutableStateOf(start.occupation.orEmpty()) }
     var payDay by remember { mutableStateOf(start.payDay?.toString().orEmpty()) }
     var freq by remember { mutableStateOf(start.payFrequency) }
@@ -145,6 +156,7 @@ fun CustomerProfileDialog(
                 OutlinedTextField(name, { name = it.take(40) }, label = { Text(stringResource(R.string.profile_name)) }, singleLine = true, colors = fieldColors, modifier = Modifier.fillMaxWidth())
                 ChipGroup(stringResource(R.string.profile_gender), CustomerProfileOptions.GENDERS, gender, { gender = it }) { stringResource(genderLabel(it)) }
                 ChipGroup(stringResource(R.string.profile_role), CustomerProfileOptions.ROLES, role, { role = it }) { stringResource(roleLabel(it)) }
+                ChipGroup(stringResource(R.string.profile_age), CustomerProfileOptions.AGE_RANGES, age, { age = it }) { stringResource(ageLabel(it)) }
                 OutlinedTextField(occupation, { occupation = it.take(80) }, label = { Text(stringResource(R.string.profile_occupation)) }, singleLine = true, colors = fieldColors, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(payDay, { payDay = it.filter(Char::isDigit).take(2) }, label = { Text(stringResource(R.string.profile_pay_day_label)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = fieldColors, modifier = Modifier.fillMaxWidth())
@@ -164,7 +176,7 @@ fun CustomerProfileDialog(
                 onSave(
                     CustomerProfileOptions.normalized(
                         start.copy(
-                            preferredName = name, gender = gender, householdRole = role, occupation = occupation,
+                            preferredName = name, gender = gender, householdRole = role, ageRange = age, occupation = occupation,
                             payDay = payDay.toIntOrNull(), payFrequency = freq, householdSize = household.toIntOrNull(),
                             kidsCount = kids.toIntOrNull(), city = city, dialect = dialect,
                         )
