@@ -17,7 +17,7 @@ import android.os.Looper
  */
 object ZadAlertSpeaker {
 
-    fun speakAlert(context: Context, text: String, moment: String? = null, onFinished: () -> Unit) {
+    fun speakAlert(context: Context, text: String, moment: String? = null, emotion: String? = null, onFinished: () -> Unit) {
         if (!com.example.ui.screens.AlertPrefs.isEnabled(context, com.example.ui.screens.AlertPrefs.KEY_VOICE_SPOKEN_ALERTS)) {
             onFinished()
             return
@@ -36,7 +36,8 @@ object ZadAlertSpeaker {
             text,
             onDone = { finishOnce() },
             onFailed = { finishOnce() }, // إشعار صامت — عمرها ما نستخدم صوت آلي
-            moment = moment
+            moment = moment,
+            emotion = emotion,
         )
 
         // شبكة أمان لو الاتصال علّق: سقف 20 ثانية

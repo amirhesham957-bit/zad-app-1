@@ -33,6 +33,7 @@ object VoiceMomentSpeaker {
     private const val TAG = "VoiceMomentSpeaker"
     const val EXTRA_SPEECH = "speech"
     const val EXTRA_MOMENT = "moment"
+    const val EXTRA_EMOTION = "emotion"
 
     /** يتكلم تلقائي دلوقتي؟ منطق صافي عشان يتختبر من غير جهاز. */
     fun shouldAutoSpeak(screenOn: Boolean, ringerMode: Int, spokenAlertsEnabled: Boolean): Boolean =
@@ -50,10 +51,10 @@ object VoiceMomentSpeaker {
         )
     }
 
-    fun enqueue(context: Context, speech: String, moment: String?) {
+    fun enqueue(context: Context, speech: String, moment: String?, emotion: String? = null) {
         if (speech.isBlank()) return
         val request = OneTimeWorkRequestBuilder<SpeakWorker>()
-            .setInputData(workDataOf(EXTRA_SPEECH to speech.take(600), EXTRA_MOMENT to moment))
+            .setInputData(workDataOf(EXTRA_SPEECH to speech.take(600), EXTRA_MOMENT to moment, EXTRA_EMOTION to emotion))
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
         WorkManager.getInstance(context.applicationContext).enqueue(request)
@@ -64,9 +65,10 @@ object VoiceMomentSpeaker {
         override suspend fun doWork(): Result {
             val speech = inputData.getString(EXTRA_SPEECH).orEmpty()
             val moment = inputData.getString(EXTRA_MOMENT)
+            val emotion = inputData.getString(EXTRA_EMOTION)
             if (speech.isBlank()) return Result.success()
             suspendCancellableCoroutine { cont ->
-                ZadAlertSpeaker.speakAlert(applicationContext, speech, moment) {
+                ZadAlertSpeaker.speakAlert(applicationContext, speech, moment, emotion) {
                     if (cont.isActive) cont.resume(Unit)
                 }
             }
@@ -89,7 +91,7 @@ object VoiceMomentSpeaker {
     class ListenReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val speech = intent.getStringExtra(EXTRA_SPEECH).orEmpty()
-            enqueue(context, speech, intent.getStringExtra(EXTRA_MOMENT))
+            enqueue(context, speech, intent.getStringExtra(EXTRA_MOMENT), intent.getStringExtra(EXTRA_EMOTION))
             val notificationId = intent.getIntExtra("notification_id", 0)
             if (notificationId != 0) {
                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(notificationId)

@@ -103,6 +103,7 @@ class ZadNaturalVoiceEngine(private val context: Context) {
     // في المراجعة: abandonAudioFocus كان عام مش مربوط بجيل معيّن).
     @Volatile private var audioFocusOwnerGeneration: Long = -1L
     @Volatile private var activeMoment: String? = null
+    @Volatile private var activeEmotion: String? = null
     @Volatile private var completion: (() -> Unit)? = null
     @Volatile private var failedCompletion: (() -> Unit)? = null
     private var audioFocusRequest: AudioFocusRequest? = null
@@ -184,10 +185,13 @@ class ZadNaturalVoiceEngine(private val context: Context) {
         onFailed: (() -> Unit)? = null,
         /** اللحظة (dose_due، dose_missed، morning_greeting...) — السيرفر بيحوّلها لمشاعر
          *  الصوت من `_shared/zadVoice.ts`. null = المشاعر بتتستنتج من النص. */
-        moment: String? = null
+        moment: String? = null,
+        /** إحساس الموقف ده بالاسم (caring، playful...) لو السيرفر اختاره — بيكسب على إحساس اللحظة. */
+        emotion: String? = null,
     ) {
         stopInternal()
         activeMoment = moment
+        activeEmotion = emotion
         if (text.isBlank()) {
             onDone?.invoke()
             return
@@ -371,6 +375,7 @@ class ZadNaturalVoiceEngine(private val context: Context) {
                         put("text", text)
                         put("persona", persona.id)
                         activeMoment?.let { put("moment", it) }
+                        activeEmotion?.let { put("emotion", it) }
                         put("locale", MarketPrefs.getMarket(context).localeTag)
                         // لهجة العميل توصل للـ style prompt — الصوت ينطق بنفس
                         // لهجته مش فصحى محايدة (المصري «إزيك»، الخليجي «شخبارك»...)

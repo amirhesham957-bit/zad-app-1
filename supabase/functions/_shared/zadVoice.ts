@@ -198,6 +198,86 @@ export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmoti
 }
 
 /**
+ * مدى المشاعر المسموح لكل لحظة حسب الموقف (٢٠٢٦-٠٩-١٥). بلاغ: «الفويسات عاوزها حقيقية أكتر، مشاعر حسب كل
+ * حالة مش كلها زعلانة». القياس: آخر أسبوعين العميل سمع ٢ «نسيت الدوا؟» بعتاب وتذكير واحد — لأن كل لحظة
+ * كانت ليها إحساس واحد ثابت، فنفس الموقف بيتقال بنفس النبرة كل مرة. دلوقتي العقل بيختار من المدى ده حسب
+ * البيانات (نوع الميعاد، الساعة، التكرار)، وأي اختيار برّاه بيترفض لصالح [situationalEmotion].
+ * زعل/عتاب مابيطلعش في لحظة مالهاش سبب زعل.
+ */
+export const MOMENT_EMOTION_RANGE: Record<string, readonly VoiceEmotion[]> = {
+  morning_greeting: ["cheerful", "playful", "warm", "tender"],
+  good_night: ["tender", "warm"],
+  dose_due: ["caring", "cheerful", "warm", "tender"],
+  dose_missed: ["reproachful", "worried", "caring", "sulky"],
+  dose_missed_again: ["sad", "worried", "sulky"],
+  appointment_soon: ["caring", "cheerful", "playful", "warm", "tender"],
+  appointment_missed: ["reproachful", "caring", "worried"],
+  budget_90: ["worried", "caring"],
+  budget_100: ["sad", "worried", "caring"],
+  spending_ahead: ["reproachful", "worried", "playful"],
+  back_home_spent: ["playful", "cheerful", "reproachful"],
+  place_reminder: ["playful", "cheerful", "caring"],
+  goal_achieved: ["proud", "cheerful", "playful"],
+  tasbiha_reminder: ["playful", "tender", "warm"],
+  ignored_days: ["sulky", "sad", "playful"],
+  weekly_money_proud: ["proud", "cheerful", "playful"],
+  weekly_money_reproach: ["reproachful", "playful", "worried"],
+  weekly_money_story: ["warm", "cheerful", "caring"],
+  challenge_milestone: ["proud", "cheerful", "playful"],
+  challenge_completed: ["proud", "cheerful"],
+  challenge_streak_broken: ["sad", "caring", "sulky"],
+  shopping_zone_warning: ["playful", "reproachful"],
+  receipt_reaction: ["playful", "cheerful"],
+  iftar_soon: ["warm", "tender"],
+};
+
+export function emotionRangeForMoment(moment: string): readonly VoiceEmotion[] {
+  return MOMENT_EMOTION_RANGE[moment] ?? [emotionForMoment(moment)];
+}
+
+function localHour(timeZone: unknown, nowMs: number): number | null {
+  try {
+    const h = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: typeof timeZone === "string" && timeZone ? timeZone : "UTC" })
+      .format(new Date(nowMs));
+    const n = Number(h);
+    return Number.isInteger(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * الإحساس الافتراضي من الموقف نفسه — لو الموديل ماختارش أو اختار حاجة برّه المدى، وللقالب الاحتياطي.
+ * بالليل (١٠ لـ٦) مفيش هزار عالي ولا عتاب: ناعمة وحنينة. الميعاد بيتقال حسب نوعه: دكتور = حنينة،
+ * شغل = دافية، مية/مشوار/حاجة شخصية أو متكررة = بهزار، عيلة = مبسوطة.
+ */
+export function situationalEmotion(moment: string, facts: Record<string, unknown> = {}, nowMs = Date.now()): VoiceEmotion {
+  const range = emotionRangeForMoment(moment);
+  const pick = (e: VoiceEmotion) => (range.includes(e) ? e : range[0]);
+  const hour = localHour(facts.time_zone, nowMs);
+  const night = hour !== null && (hour >= 22 || hour < 6);
+  switch (moment) {
+    case "appointment_soon": {
+      if (night) return pick("tender");
+      const kind = String(facts.kind ?? "");
+      if (kind === "medical") return "caring";
+      if (kind === "work") return "warm";
+      if (kind === "family") return "cheerful";
+      return "playful";
+    }
+    case "dose_due":
+      if (night) return pick("tender");
+      return hour !== null && hour >= 5 && hour < 12 ? "cheerful" : "caring";
+    case "dose_missed":
+      return night ? "caring" : "reproachful";
+    case "morning_greeting":
+      return hour !== null && hour < 7 ? "tender" : "cheerful";
+    default:
+      return range[0];
+  }
+}
+
+/**
  * مدى المشاعر في الكلام نفسه (المكالمة الحية والرد الصوتي دور-بدور). نفس المشاعر اللي
  * فوق بس كتعليمات "إزاي تتكلمي"، مش "إزاي تنطقي". بيتضاف لـ VOICE_TONE_INSTRUCTION في
  * zad-voice-live ولـ voiceModeInstruction في zad-brain — نص واحد، مش نسختين بتختلفوا.

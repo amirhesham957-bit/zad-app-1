@@ -1311,6 +1311,9 @@ Deno.test("appointments need a zoned ISO time in the future; the local-now conte
   assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: "2026-09-15T17:00:00" }), false);
   assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: new Date(Date.now() - 3600_000).toISOString() }), false);
   assertEquals(await ok(validateAddAppointment, { title: "البنك", starts_at: future, kind: "party" }), false);
+  // «فكرني كل ساعة» (٢٠٢٦-٠٩-١٥) كان بيتسجل daily لأن hourly ماكانتش موجودة؛ والدقايق لسه مرفوضة.
+  assertEquals(await ok(validateAddAppointment, { title: "اشرب مياه", starts_at: future, recurrence: "hourly", remind_minutes_before: 0 }), true);
+  assertEquals(await ok(validateAddAppointment, { title: "عصير", starts_at: future, recurrence: "every_10_minutes" }), false);
   assertEquals(await ok(validateUpdateAppointment, { appointment_id: "11111111-2222-3333-4444-555555555555" }), false);
   assertEquals(await ok(validateUpdateAppointment, { appointment_id: "11111111-2222-3333-4444-555555555555", status: "done" }), true);
 

@@ -9,28 +9,39 @@ import {
 
 // ── fake supabase: يكفي الاستعلامات اللي المعالج بيعملها، ويسجّل كل update ──
 type Row = Record<string, unknown>;
-function fakeSb(tables: Record<string, Row[]>) {
+function fakeSb(tables: Record<string, Row[]>, opts: { claimWins?: boolean } = {}) {
   const updates: Array<{ table: string; values: Row; id: unknown }> = [];
+  // الحجز الذرّي (status=sending) بيتسجل لوحده: مش جزء من «إيه اللي حصل للحظة».
+  const claims: unknown[] = [];
   const from = (table: string) => {
     const filters: Array<[string, unknown]> = [];
     const q = {
       select: () => q,
       eq: (c: string, v: unknown) => { filters.push([c, v]); return q; },
       gte: () => q,
+      or: () => q,
       order: () => q,
       limit: () => Promise.resolve({ data: rows(), error: null }),
       maybeSingle: () => Promise.resolve({ data: rows()[0] ?? null, error: null }),
       // الـbuilder الحقيقي بتاع supabase-js قابل للـawait مباشرة بعد eq().
       then: (resolve: (v: unknown) => unknown) => resolve({ data: rows(), error: null }),
       update: (values: Row) => ({
-        eq: (_c: string, id: unknown) => { updates.push({ table, values, id }); return Promise.resolve({ error: null }); },
+        eq: (_c: string, id: unknown) => {
+          if (values.status === "sending") {
+            claims.push(id);
+            const res = { data: opts.claimWins === false ? [] : [{ id }], error: null };
+            return { or: () => ({ select: () => Promise.resolve(res) }) };
+          }
+          updates.push({ table, values, id });
+          return Promise.resolve({ error: null });
+        },
       }),
     };
     const rows = () => (tables[table] ?? []).filter((r) => filters.every(([c, v]) => r[c] === v));
     return q;
   };
   // deno-lint-ignore no-explicit-any
-  return { sb: { from } as any, updates };
+  return { sb: { from } as any, updates, claims };
 }
 
 const pendingDose = (moment: string, taken: string | null = null) => ({
@@ -199,4 +210,62 @@ Deno.test("good night: tender voice, customer's name and gender, one thing for t
   assertStringIncludes(p.system, "المؤنث");
   assertStringIncludes(p.system, "tender");
   assertStringIncludes(p.user, "نورة");
+});
+
+Deno.test("a moment another processor already claimed is not sent twice", async () => {
+  const { sb, updates, claims } = fakeSb(pendingDose("dose_missed").tables, { claimWins: false });
+  const calls: string[] = [];
+  const res = await processVoiceMoments(sb, {
+    compose: () => Promise.resolve('{"title":"t","text":"x","speech":"s"}'),
+    pushDevice: () => { calls.push("device"); return Promise.resolve("sent"); },
+    pushTelegram: () => { calls.push("telegram"); return Promise.resolve("delivered"); },
+  });
+  assertEquals(claims, ["m1"]);
+  assertEquals(calls, []);
+  assertEquals(updates, []);
+  assertEquals(res, { sent: 0, skipped: 0, failed: 0 });
+});
+
+Deno.test("the on-time dose reminder goes to Telegram only — the phone's own exact alarm already speaks", async () => {
+  const tables = pendingDose("dose_due").tables;
+  const { sb, updates } = fakeSb(tables);
+  const calls: string[] = [];
+  await processVoiceMoments(sb, {
+    compose: () => Promise.resolve('{"title":"💊 كونكور","text":"ميعاد كونكور دلوقتي","speech":"يلا خد كونكور"}'),
+    pushDevice: () => { calls.push("device"); return Promise.resolve("sent"); },
+    pushTelegram: (_u, _t, _b, voice) => { calls.push(`telegram:${voice}`); return Promise.resolve("delivered"); },
+  });
+  assertEquals(calls, ["telegram:true"]);
+  assertEquals(updates.at(-1)?.values.status, "sent");
+  assertEquals((updates.at(-1)?.values.delivery as Record<string, unknown>).device, "telegram_only");
+});
+
+Deno.test("an appointment reminder at its own time says 'now', not '0 minutes left'", () => {
+  const f = momentFallback("appointment_soon", { title: "اشرب مياه", minutes_left: 0, starts_at: "2026-09-15T05:20:00Z", time_zone: "Africa/Cairo" });
+  assertStringIncludes(f.text, "دلوقتي");
+  assert(!f.speech.includes("0 دقيقة") && !f.text.includes("0 دقيقة"));
+  assertStringIncludes(momentFallback("dose_due", { item_name: "مسكن" }).speech, "مسكن");
+});
+
+Deno.test("the composer's emotion choice is kept only inside the moment's range, and reaches both voices", async () => {
+  const range = ["caring", "cheerful", "playful", "warm", "tender"] as const;
+  assertEquals(parseComposedMoment('{"title":"t","text":"x","speech":"s","emotion":"playful"}', true, undefined, range)?.emotion, "playful");
+  assertEquals(parseComposedMoment('{"title":"t","text":"x","speech":"s","emotion":"sad"}', true, undefined, range)?.emotion, undefined);
+
+  const { sb, updates } = fakeSb({
+    zad_voice_moments: [{ id: "a1", user_id: "u1", moment: "appointment_soon", status: "pending", attempts: 0, created_at: new Date().toISOString(),
+      facts: { title: "اشرب مياه", kind: "personal", recurrence: "hourly", minutes_left: 0, time_zone: "Africa/Cairo" } }],
+    zad_appointments: [{ id: "x", status: "upcoming" }],
+    zad_users: [{ id: "u1", country: "EG", name: null }],
+  });
+  const seen: string[] = [];
+  const prompts: string[] = [];
+  await processVoiceMoments(sb, {
+    compose: (system) => { prompts.push(system); return Promise.resolve('{"title":"💧 مية","text":"يلا مية","speech":"يلا اشرب مية","emotion":"cheerful"}'); },
+    pushDevice: (_u, _t, _b, data) => { seen.push(`device:${data.emotion}`); return Promise.resolve("sent"); },
+    pushTelegram: (_u, _t, _b, _v, _m, _s, emotion) => { seen.push(`telegram:${emotion}`); return Promise.resolve("delivered"); },
+  });
+  assertEquals(seen, ["device:cheerful", "telegram:cheerful"]);
+  assert(!prompts[0].includes("- sad:"), "an appointment reminder is never offered a sad voice");
+  assertEquals((updates.at(-1)?.values.delivery as Record<string, unknown>).emotion, "cheerful");
 });

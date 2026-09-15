@@ -1210,6 +1210,7 @@
     <string name="appointments_field_title">Appointment</string>
     <string name="appointments_field_place">Place (optional)</string>
     <string name="appointments_remind_before">Remind me before by</string>
+    <string name="appointments_remind_on_time">On time</string>
     <string name="appointments_minutes_fmt">%1$d min</string>
     <string name="appointments_time_in_past">That time has passed — pick an upcoming time</string>
     <string name="appointments_save_failed">Could not save the appointment, try again</string>
@@ -1220,6 +1221,7 @@
     <string name="appointment_kind_personal">Personal</string>
     <string name="appointment_kind_other">Other</string>
     <string name="appointment_repeat_once">Once</string>
+    <string name="appointment_repeat_hourly">Hourly</string>
     <string name="appointment_repeat_daily">Daily</string>
     <string name="appointment_repeat_weekly">Weekly</string>
     <string name="appointment_repeat_monthly">Monthly</string>

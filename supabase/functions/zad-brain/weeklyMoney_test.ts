@@ -88,10 +88,11 @@ Deno.test("a queued weekly story with its numbers already computed goes out unde
   };
   const from = (table: string) => {
     const q: Record<string, unknown> = {
-      select: () => q, eq: () => q, gte: () => q, order: () => q,
+      select: () => q, eq: () => q, gte: () => q, or: () => q, order: () => q,
       limit: () => Promise.resolve({ data: tables[table] ?? [], error: null }),
       maybeSingle: () => Promise.resolve({ data: (tables[table] ?? [])[0] ?? null, error: null }),
-      update: (values: unknown) => ({ eq: () => { updates.push(values); return Promise.resolve({ error: null }); } }),
+      // await مباشر بعد eq()، أو eq().or().select() للحجز الذرّي (status=sending).
+      update: (values: unknown) => ({ eq: () => { updates.push(values); return Object.assign(Promise.resolve({ error: null }), { or: () => ({ select: () => Promise.resolve({ data: [{ id: "claimed" }], error: null }) }) }); } }),
     };
     return q;
   };

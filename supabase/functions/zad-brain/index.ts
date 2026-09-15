@@ -54,7 +54,7 @@
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
@@ -73,7 +73,7 @@ import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
@@ -2492,8 +2492,9 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
           kind: APPOINTMENT_KINDS.includes(String(input.kind)) ? String(input.kind) : "personal",
           starts_at: new Date(String(input.starts_at)).toISOString(),
           place_label: input.place_label ? String(input.place_label).trim().slice(0, 120) : null,
-          remind_minutes_before: Number.isInteger(input.remind_minutes_before) ? input.remind_minutes_before : 30,
-          recurrence: ["daily", "weekly", "monthly"].includes(String(input.recurrence)) ? String(input.recurrence) : "once",
+          // الافتراضي في الوقت نفسه: ٣٠ كان بيطلّع «فكّرني كمان ١٠ دقايق» فوراً (قياس ٢٠٢٦-٠٩-١٥).
+          remind_minutes_before: Number.isInteger(input.remind_minutes_before) ? input.remind_minutes_before : 0,
+          recurrence: APPOINTMENT_RECURRENCES.includes(String(input.recurrence)) ? String(input.recurrence) : "once",
           source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
         }).select("id,title,starts_at"),
         "تسجيل الميعاد",
@@ -2507,7 +2508,8 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       });
       const tz = snap?.now_local?.time_zone ?? "UTC";
       const when = new Date(row.starts_at).toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
-      return `تم تسجيل الميعاد «${title}» ${when} — هفكّره بصوتي قبلها.`;
+      const repeat = String(input.recurrence) === "hourly" ? " وبعدها كل ساعة" : "";
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -3871,8 +3873,16 @@ const CHAT_TOOLS: ToolDef[] = [
         starts_at: { type: "string", description: "ISO 8601 بالمنطقة الزمنية، مثال 2026-09-15T17:00:00+03:00" },
         kind: { type: "string", enum: ["work", "errand", "medical", "family", "personal", "other"] },
         place_label: { type: "string", description: "المكان لو العميل ذكره" },
-        remind_minutes_before: { type: "number", description: "يفكّره قبلها بكام دقيقة — افتراضي ٣٠، ولو مشوار بعيد أو دكتور خليه ٦٠" },
-        recurrence: { type: "string", enum: ["once", "daily", "weekly", "monthly"], description: "افتراضي once" },
+        remind_minutes_before: {
+          type: "number",
+          description: "يفكّره قبلها بكام دقيقة. «فكّرني الساعة ٥» أو «فكّرني كمان ١٠ دقايق» أو «اشرب مية» = 0 (التذكير في الوقت نفسه). " +
+            "ميعاد محتاج تحضير (دكتور، مشوار، اجتماع) = ٣٠، ولو بعيد ٦٠. لو مش محدد: 0.",
+        },
+        recurrence: {
+          type: "string",
+          enum: ["once", "hourly", "daily", "weekly", "monthly"],
+          description: "افتراضي once. «كل ساعة» = hourly (ومعاه starts_at أول مرة). مفيش تكرار بالدقايق — لو طلب «كل ١٠ دقايق» قوله إن أقل تكرار كل ساعة واسأله يوافق.",
+        },
       },
       required: ["title", "starts_at"],
     },
@@ -4613,7 +4623,7 @@ function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: 
     compose: async (system, user) =>
       (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
     pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),
-    pushTelegram: (uid, title, text, voice, m, speech) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech),
+    pushTelegram: (uid, title, text, voice, m, speech, emotion) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech, emotion),
   }, 5, userId)
     .then((r) => console.log(`${label} → ${JSON.stringify(r)}`))
     .catch((e) => console.error(`${label} processing failed:`, (e as Error)?.message));
@@ -5172,6 +5182,9 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // ضد "وهم التنفيذ": لو الموديل قال "ضفتلك اللحمة" ومنداش أي أداة، مفيش تنفيذ يتأكد
   // وبالتالي مفيش كارت تأكيد يتعرض — والنص اللي بيتعرض هو نصه هو، من غير ادعاء.
   let reply = modelText.trim();
+  if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply)) {
+    reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
+  }
 
   // === نقاش الوكلاء (Orchestrator review) — المرحلة ٣ ===
   // لو اللفة فيها اقتراحات مالية أو تنفيذ فعلي، وكيل مراجعة مستقل بيتصرف كـ orchestrator:
@@ -6168,8 +6181,8 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbMoments, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, moment, speech) =>
-          pushToTelegram(userId, title, text, fetch, undefined, voice, moment, speech),
+        pushTelegram: (userId, title, text, voice, moment, speech, emotion) =>
+          pushToTelegram(userId, title, text, fetch, undefined, voice, moment, speech, emotion),
       });
       console.log(`[voice_moments] sent=${summary.sent} skipped=${summary.skipped} failed=${summary.failed}`);
       return new Response(JSON.stringify({ ok: true, ...summary }), { headers: CORS_HEADERS });
@@ -6378,7 +6391,7 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbPlace, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, m, speech) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech),
+        pushTelegram: (userId, title, text, voice, m, speech, emotion) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion),
       }, 5, placeUserId);
       return new Response(JSON.stringify({ ok: true, status: "processed", ...outing, ...summary }), { headers: CORS_HEADERS });
     }
@@ -6454,7 +6467,7 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbEvent, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, m, speech) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech),
+        pushTelegram: (userId, title, text, voice, m, speech, emotion) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion),
       }, 5, eventUserId);
       return new Response(JSON.stringify({ ok: true, status: "processed", ...summary }), { headers: CORS_HEADERS });
     }

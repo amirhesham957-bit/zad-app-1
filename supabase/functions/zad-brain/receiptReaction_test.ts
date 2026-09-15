@@ -49,10 +49,11 @@ Deno.test("the joke is playful, never about weight or health, and stays on the p
   };
   const from = (table: string) => {
     const q: Record<string, unknown> = {
-      select: () => q, eq: () => q, gte: () => q, order: () => q,
+      select: () => q, eq: () => q, gte: () => q, or: () => q, order: () => q,
       limit: () => Promise.resolve({ data: tables[table] ?? [], error: null }),
       maybeSingle: () => Promise.resolve({ data: (tables[table] ?? [])[0] ?? null, error: null }),
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+      // await مباشر بعد eq()، أو eq().or().select() للحجز الذرّي (status=sending).
+      update: () => ({ eq: () => Object.assign(Promise.resolve({ error: null }), { or: () => ({ select: () => Promise.resolve({ data: [{ id: "claimed" }], error: null }) }) }) }),
     };
     return q;
   };

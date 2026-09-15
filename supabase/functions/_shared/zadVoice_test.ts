@@ -64,3 +64,22 @@ Deno.test("persona voices stay identical to the live-call table", async () => {
   assertEquals(voiceForPersona("sarah_warm"), "Aoede");
   assertEquals(voiceForPersona("nope"), "Aoede");
 });
+
+Deno.test("the same moment is said with the feeling its situation calls for, never sad without a reason", async () => {
+  const { emotionRangeForMoment, situationalEmotion } = await import("./zadVoice.ts");
+  const cairoNoon = Date.parse("2026-09-15T09:00:00Z"); // ١٢ الضهر في القاهرة
+  const cairoLate = Date.parse("2026-09-15T20:30:00Z"); // ١١:٣٠ بالليل
+  const tz = { time_zone: "Africa/Cairo" };
+  assertEquals(situationalEmotion("appointment_soon", { ...tz, kind: "medical" }, cairoNoon), "caring");
+  assertEquals(situationalEmotion("appointment_soon", { ...tz, kind: "personal", recurrence: "hourly" }, cairoNoon), "playful");
+  assertEquals(situationalEmotion("appointment_soon", { ...tz, kind: "work" }, cairoNoon), "warm");
+  assertEquals(situationalEmotion("appointment_soon", { ...tz, kind: "personal" }, cairoLate), "tender");
+  assertEquals(situationalEmotion("dose_due", tz, Date.parse("2026-09-15T05:00:00Z")), "cheerful");
+  // مفيش عتاب بالليل على جرعة فاتت.
+  assertEquals(situationalEmotion("dose_missed", tz, cairoLate), "caring");
+  assertEquals(situationalEmotion("dose_missed", tz, cairoNoon), "reproachful");
+  for (const m of ["appointment_soon", "dose_due", "morning_greeting", "good_night", "goal_achieved", "receipt_reaction"]) {
+    const range = emotionRangeForMoment(m);
+    assert(!range.includes("sad") && !range.includes("reproachful") && !range.includes("sulky"), `${m} must not sound upset`);
+  }
+});

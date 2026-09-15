@@ -7,6 +7,7 @@ import {
   scopeToolsForSpecialist,
   SPECIALISTS,
   specialistPromptBlock,
+  unbackedReminderClaim,
 } from "./specialists.ts";
 
 Deno.test("رسالة مصاريف بتروح لوكيل المال", () => {
@@ -126,4 +127,12 @@ Deno.test("reminder and self-introduction intents are recognised in feminine/dia
   assertEquals(intentToolHints("أنا أم لتلات عيال").includes("update_customer_profile"), true);
   assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
   assertEquals(intentToolHints("افتكر إني مش باكل تونة خالص").includes("remember"), true);
+});
+
+Deno.test("«جاهز، سُجلت!» على طلب تذكير من غير أي أداة بيتكشف — وسؤال عن الوقت مايتكشفش", () => {
+  const ask = "طيب فكرني كمان ٥ د من دلوقتي و بعدين كل ساعة اتفقنا";
+  assertEquals(unbackedReminderClaim(ask, "خلاص اتفقنا! هفكرك كمان ٥ دقايق من دلوقتي وبعدين كل ساعة. \n\nجاهز، سُجلت! 👌"), true);
+  assertEquals(unbackedReminderClaim(ask, "تحب أفكرك الساعة كام بالظبط؟"), false);
+  // مش طلب تذكير أصلاً: «سجلت» هنا عن مصروف، والحارس ده مالوش دعوة.
+  assertEquals(unbackedReminderClaim("صرفت ٥٠ جنيه قهوة", "سجلت ٥٠ جنيه قهوة"), false);
 });

@@ -1210,6 +1210,7 @@
     <string name="appointments_field_title">الميعاد</string>
     <string name="appointments_field_place">المكان (اختياري)</string>
     <string name="appointments_remind_before">فكّرني قبلها بـ</string>
+    <string name="appointments_remind_on_time">في وقته</string>
     <string name="appointments_minutes_fmt">%1$d دقيقة</string>
     <string name="appointments_time_in_past">الوقت ده فات — اختار وقت جاي</string>
     <string name="appointments_save_failed">ماتسجلش الميعاد، جرّب تاني</string>
@@ -1220,6 +1221,7 @@
     <string name="appointment_kind_personal">شخصي</string>
     <string name="appointment_kind_other">تاني</string>
     <string name="appointment_repeat_once">مرة واحدة</string>
+    <string name="appointment_repeat_hourly">كل ساعة</string>
     <string name="appointment_repeat_daily">كل يوم</string>
     <string name="appointment_repeat_weekly">كل أسبوع</string>
     <string name="appointment_repeat_monthly">كل شهر</string>

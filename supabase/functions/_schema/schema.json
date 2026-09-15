@@ -944,6 +944,7 @@
   ],
   "zad_voice_moments": [
     "attempts",
+    "claimed_at",
     "created_at",
     "dedupe_key",
     "delivery",

@@ -707,6 +707,8 @@ export const validateSetLifeGoal: Validator = (input, _snap, ctx) => {
 // مواعيد العميل غير المالية (20260914004000). الوقت لازم ISO فيه منطقة زمنية أو Z —
 // الموديل بيحسبه من now_local في الـsnapshot، ومن غير offset "الساعة ٥" كانت هتتسجل UTC.
 export const APPOINTMENT_KINDS = ["work", "errand", "medical", "family", "personal", "other"];
+/** نفس قيد zad_appointments.recurrence (20260915002000). */
+export const APPOINTMENT_RECURRENCES = ["once", "hourly", "daily", "weekly", "monthly"];
 const ISO_WITH_ZONE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 const MAX_APPOINTMENT_DAYS_AHEAD = 366;
 
@@ -725,8 +727,8 @@ export const validateAddAppointment: Validator = (input, _snap, ctx) => {
   if (input.kind !== undefined && !APPOINTMENT_KINDS.includes(String(input.kind))) {
     return { ok: false, reason: `kind لازم واحد من: ${APPOINTMENT_KINDS.join("، ")}` };
   }
-  if (input.recurrence !== undefined && !["once", "daily", "weekly", "monthly"].includes(String(input.recurrence))) {
-    return { ok: false, reason: "recurrence لازم once أو daily أو weekly أو monthly" };
+  if (input.recurrence !== undefined && !APPOINTMENT_RECURRENCES.includes(String(input.recurrence))) {
+    return { ok: false, reason: "recurrence لازم once أو hourly أو daily أو weekly أو monthly — مفيش تكرار بالدقايق" };
   }
   if (input.remind_minutes_before !== undefined) {
     const m = Number(input.remind_minutes_before);

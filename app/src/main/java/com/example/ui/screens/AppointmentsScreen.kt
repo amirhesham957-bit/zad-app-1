@@ -568,6 +568,7 @@ private fun kindLabel(kind: String): Int = when (kind) {
 }
 
 private fun recurrenceLabel(r: String): Int = when (r) {
+    "hourly" -> R.string.appointment_repeat_hourly
     "daily" -> R.string.appointment_repeat_daily
     "weekly" -> R.string.appointment_repeat_weekly
     "monthly" -> R.string.appointment_repeat_monthly
@@ -668,16 +669,22 @@ private fun AddAppointmentDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
                 )
                 Text(stringResource(R.string.appointments_remind_before), style = Typography.labelLarge, color = onSurfaceVariant)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf(15, 30, 60, 120).forEach { m ->
+                    listOf(0, 15, 30, 60, 120).forEach { m ->
                         FilterChip(
                             selected = remind == m,
                             onClick = { remind = m },
-                            label = { Text(stringResource(R.string.appointments_minutes_fmt, m), style = Typography.labelLarge) },
+                            label = {
+                                Text(
+                                    if (m == 0) stringResource(R.string.appointments_remind_on_time)
+                                    else stringResource(R.string.appointments_minutes_fmt, m),
+                                    style = Typography.labelLarge,
+                                )
+                            },
                         )
                     }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf("once", "daily", "weekly", "monthly").forEach { r ->
+                    listOf("once", "hourly", "daily", "weekly", "monthly").forEach { r ->
                         FilterChip(
                             selected = recurrence == r,
                             onClick = { recurrence = r },

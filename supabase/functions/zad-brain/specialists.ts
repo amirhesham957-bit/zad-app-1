@@ -127,6 +127,15 @@ export function intentToolHints(message: string): string[] {
   return [...new Set(tools)];
 }
 
+// «جاهز، سُجلت! 👌» على «فكرني كمان ٥ د وبعدين كل ساعة» — ولا أداة اتنادت، ولا رفض (zad_brain_runs
+// ٢٠٢٦-٠٩-١٥ ٠٤:٢٢). مراجعة الادعاءات في العقل بتشتغل بس لو فيه تنفيذ؛ اللفة اللي مفيهاش أي أداة كانت بتعدّي.
+const REMINDER_DONE_CLAIM = /سجلت|سجلته|سجلتها|اتسجل|ظبطت|ظبطته|خليته يفكرك|خليته هيفكرك|هفكرك|حطيته|ضفته|ضفتلك/;
+
+/** طلب تذكير واضح + رد بيقول إنه اتعمل، من غير أي أداة ⇒ الرد كذب ولازم يتصحح. */
+export function unbackedReminderClaim(message: string, reply: string): boolean {
+  return intentToolHints(message).includes("add_appointment") && REMINDER_DONE_CLAIM.test(normalize(reply));
+}
+
 /** نقاط كل وكيل لرسالة واحدة، بترتيب `ORDER` (general مش فيها لأنها مالهاش كلمات). */
 function scoreAll(message: string): Array<{ id: SpecialistId; score: number }> {
   const norm = normalize(message);

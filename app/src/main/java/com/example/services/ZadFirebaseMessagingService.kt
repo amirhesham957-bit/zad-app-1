@@ -42,11 +42,13 @@ class ZadFirebaseMessagingService : FirebaseMessagingService() {
         // لحظة صوت من zad_voice_moments: data-only عشان الكود ده يشتغل حتى والتطبيق في الخلفية.
         val speech = message.data["speech"].takeIf { message.data["voice"] == "1" }
         val moment = message.data["moment"]
+        // الإحساس اللي العقل اختاره للموقف ده (مش الثابت بتاع اللحظة) — السيرفر بيتحقق منه تاني.
+        val emotion = message.data["emotion"]
         if (message.notification == null && !title.isNullOrBlank()) {
-            showAgentNotification(title, body ?: "", route, speech, moment)
+            showAgentNotification(title, body ?: "", route, speech, moment, emotion)
         }
         if (!speech.isNullOrBlank() && com.example.voice.VoiceMomentSpeaker.canAutoSpeakNow(this)) {
-            com.example.voice.VoiceMomentSpeaker.enqueue(this, speech, moment)
+            com.example.voice.VoiceMomentSpeaker.enqueue(this, speech, moment, emotion)
         }
     }
 
@@ -57,6 +59,7 @@ class ZadFirebaseMessagingService : FirebaseMessagingService() {
         route: String? = null,
         speech: String? = null,
         moment: String? = null,
+        emotion: String? = null,
     ) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -88,6 +91,7 @@ class ZadFirebaseMessagingService : FirebaseMessagingService() {
             val listen = Intent(this, com.example.voice.VoiceMomentSpeaker.ListenReceiver::class.java).apply {
                 putExtra(com.example.voice.VoiceMomentSpeaker.EXTRA_SPEECH, speech)
                 putExtra(com.example.voice.VoiceMomentSpeaker.EXTRA_MOMENT, moment)
+                putExtra(com.example.voice.VoiceMomentSpeaker.EXTRA_EMOTION, emotion)
                 putExtra("notification_id", notificationId)
             }
             val listenPending = PendingIntent.getBroadcast(
