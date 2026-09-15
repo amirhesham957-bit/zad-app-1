@@ -190,3 +190,13 @@ Deno.test("an outing summary adds expenses, ranks places by spend and reads stor
   assertEquals(out.stores, ["كارفور المعادي"]);
   assertStringIncludes(momentFallback("back_home_spent", { ...out }).speech, "391");
 });
+
+Deno.test("good night: tender voice, customer's name and gender, one thing for tomorrow (2026-09-15)", () => {
+  const fb = momentFallback("good_night", { customer_name: "أمير", tomorrow_appointments: [{ title: "البنك" }] });
+  assertStringIncludes(fb.speech, "أمير");
+  assertStringIncludes(fb.speech, "البنك");
+  const p = buildMomentPrompt({ moment: "good_night", facts: {} }, "SA", "نورة", { gender: "female" });
+  assertStringIncludes(p.system, "المؤنث");
+  assertStringIncludes(p.system, "tender");
+  assertStringIncludes(p.user, "نورة");
+});

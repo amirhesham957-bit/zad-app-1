@@ -85,6 +85,11 @@ const MOMENT_GUIDANCE: Record<string, string> = {
   challenge_streak_broken:
     "سلسلة التحدي اتقطعت امبارح (broken_streak يوم) لأنه صرف فوق السقف. text: سطر لطيف فيه صرف امبارح والسقف. " +
     "speech: جملتين زعلانة شوية بس حنينة — مش لوم — وإن النهارده يوم جديد يبدأ فيه سلسلة تانية.",
+  good_night:
+    "تصبح على خير — آخر كلمة من زاد قبل ما العميل ينام. text: سطر دافي، ولو فيه tomorrow_appointments أو meds_tomorrow_morning فكّريه بأهم حاجة واحدة بكرة. " +
+    "speech: من ٢ لـ٣ جمل ناعمة وحنينة جداً بصوت هادي كأنك بتطمني عليه قبل النوم: ناديه باسمه لو معروف، اتمنّي له نوم هادي وأحلام حلوة، " +
+    "وقولي إنك مستنياه الصبح، وفكّريه بحاجة واحدة بس لبكرة لو موجودة. دلع ودفا زي حد قريب أوي — من غير كلام غرامي صريح ولا ادعاء علاقة، " +
+    "ومن غير أي كلام عن فلوس أو لوم.",
   weekly_money_story:
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس (المصروف، المقارنة، أكبر فئة، الهدر لو فيه) " +
     "وآخر سطر نصيحة واحدة. speech: من ٤ لـ٦ جمل بتحكي الأسبوع بدفء وتقولي فين راحت الفلوس.",
@@ -395,6 +400,17 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `صباح الفل عليك! طمّني نمت كويس؟ ${meds.length ? `افطر الأول وخد ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}يلا يوم حلو إن شاء الله.`,
       };
     }
+    case "good_night": {
+      const name = str(facts.customer_name, 40);
+      const appts = Array.isArray(facts.tomorrow_appointments) ? (facts.tomorrow_appointments as Array<{ title?: string }>).map((a) => a?.title).filter(Boolean) : [];
+      const med = str(facts.meds_tomorrow_morning, 60);
+      const reminder = appts.length ? `وماتنساش إن بكرة عندك ${appts[0]}` : med ? `وأول ما تصحى خد ${med}` : "";
+      return {
+        title: "🌙 تصبح على خير",
+        text: `تصبح على خير${name ? ` يا ${name}` : ""}${reminder ? ` — ${reminder}` : ""}.`,
+        speech: `تصبح على خير${name ? ` يا ${name}` : ""}… نام كويس وارتاح، وأحلام سعيدة. ${reminder ? `${reminder}. ` : ""}أنا مستنياك الصبح.`,
+      };
+    }
     case "tasbiha_reminder": {
       const streak = typeof facts.streak_days === "number" ? facts.streak_days : 0;
       return {
@@ -418,16 +434,30 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
  * برومبت كتابة اللحظة. البيانات جوه بلوك `=== بيانات ===` تحت سطر صريح إنها مش تعليمات
  * (قاعدة حقن البرومبت في CLAUDE.md) — اسم الدوا ممكن يكون أي نص كتبه العميل.
  */
+export interface MomentCustomer {
+  gender?: string | null;
+  dialect?: string | null;
+}
+
 export function buildMomentPrompt(
   row: Pick<VoiceMomentRow, "moment" | "facts">,
   country: string | null,
   name: string | null,
+  // ملف العميل (zad_customer_profile): اللحظات كانت بتاخد الاسم من zad_users بس ومن غير النوع —
+  // فالفويس كان بيخاطب الكل بصيغة المذكر وباسم التسجيل مش الاسم اللي بيحب يتنادى بيه.
+  customer: MomentCustomer = {},
 ): { system: string; user: string } {
   const emotion = emotionForMoment(row.moment);
   const voice = !TEXT_ONLY_MOMENTS.has(row.moment);
+  const genderLine = customer.gender === "female"
+    ? "العميلة ست — خاطبيها بصيغة المؤنث في كل كلمة."
+    : customer.gender === "male"
+      ? "العميل راجل — خاطبيه بصيغة المذكر."
+      : "";
   const system = [
     "أنتِ \"زاد\" — صاحبة العميل المقربة ومساعدته في إدارة بيته وصحته وفلوسه.",
-    conversationProfile(country).instruction,
+    conversationProfile(country, { preferred: customer.dialect }).instruction,
+    genderLine,
     VOICE_EMOTIONAL_RANGE,
     `الإحساس المطلوب في اللحظة دي: ${emotion} — ${EMOTION_DIRECTIONS[emotion]}`,
     "اكتبي رد JSON بس، من غير أي كلام قبله أو بعده، بالشكل ده بالظبط:",
@@ -497,6 +527,18 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     return !((trees ?? []) as Array<{ last_tasbih_at: string | null }>).some((t) => String(t.last_tasbih_at ?? "").slice(0, 10) === localDate);
   }
   if (!row.moment.startsWith("dose_")) return true;
+  // لحظات الجرعة من السيرفر (20260915001000): item_ids + scheduled_at. لو اتسجل إنه خد أي دوا منهم
+  // بعد ما اللحظة اتسجلت، مفيش زعل.
+  const itemIds = Array.isArray(row.facts?.item_ids) ? (row.facts!.item_ids as unknown[]).map((v) => str(v, 60)).filter(Boolean) : [];
+  const slot = str(row.facts?.scheduled_at, 40);
+  if (itemIds.length > 0 && slot) {
+    const since = new Date(new Date(slot).getTime() - 3 * 3600_000).toISOString();
+    const [{ data: pd }, { data: dl }] = await Promise.all([
+      sb.from("zad_pharmacy_doses").select("id").eq("user_id", row.user_id).in("item_id", itemIds).eq("status", "taken").gte("taken_at", since).limit(1),
+      sb.from("zad_dose_log").select("id").eq("user_id", row.user_id).in("pharmacy_item_id", itemIds).gte("taken_at", since).limit(1),
+    ]);
+    return !((pd ?? []).length > 0 || (dl ?? []).length > 0);
+  }
   const doseLogId = str(row.facts?.dose_log_id, 60);
   if (!doseLogId) return true;
   const { data: log } = await sb.from("zad_dose_log")
@@ -566,20 +608,35 @@ export async function processVoiceMoments(
         }
         deliveryMoment = weeklyMomentFor(row.facts?.tone);
       }
+      if (row.moment === "good_night" && !("tomorrow_appointments" in (row.facts ?? {}))) {
+        try {
+          const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC");
+          row.facts = { ...(row.facts ?? {}), ...(await goodNightFacts(sb, row.user_id, local)) };
+        } catch (e) {
+          console.warn("[voice_moments] good night facts failed:", (e as Error)?.message);
+        }
+      }
       const voice = !TEXT_ONLY_MOMENTS.has(deliveryMoment);
-      const { data: userRow } = await sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle();
+      const [{ data: userRow }, { data: profileRow }] = await Promise.all([
+        sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle(),
+        sb.from("zad_customer_profile").select("preferred_name,gender,dialect").eq("user_id", row.user_id).maybeSingle(),
+      ]);
       const u = userRow as { country?: string | null; name?: string | null } | null;
+      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null } | null;
 
       let composed: ComposedMoment | null = null;
       let composedBy = "model";
       try {
-        const prompt = buildMomentPrompt({ moment: deliveryMoment, facts: row.facts }, u?.country ?? null, u?.name ?? null);
+        const prompt = buildMomentPrompt(
+          { moment: deliveryMoment, facts: row.facts }, u?.country ?? null, cp?.preferred_name || u?.name || null,
+          { gender: cp?.gender, dialect: cp?.dialect },
+        );
         composed = parseComposedMoment(await deps.compose(prompt.system, prompt.user), voice, momentLimits(deliveryMoment));
       } catch (e) {
         console.warn(`[voice_moments] compose failed for ${row.moment}:`, (e as Error)?.message);
       }
       if (!composed) {
-        composed = momentFallback(deliveryMoment, row.facts ?? {});
+        composed = momentFallback(deliveryMoment, { ...(row.facts ?? {}), customer_name: cp?.preferred_name || u?.name || "" });
         composedBy = "fallback";
       }
 
@@ -657,6 +714,35 @@ export async function morningFacts(
       return se?.kind ? { season: se.kind, hijri_day: se.hijri_day } : {};
     })(),
     ...(challenge ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
+  };
+}
+
+/** بيانات «تصبح على خير»: مواعيد بكرة وأول دوا الصبح. كل مصدر بيفشل لوحده بيتساب فاضي. */
+export async function goodNightFacts(
+  sb: SupabaseClient,
+  userId: string,
+  local: { date: string; time_zone: string; utc_offset: string },
+): Promise<Record<string, unknown>> {
+  const tomorrowStart = new Date(new Date(`${local.date}T00:00:00${local.utc_offset}`).getTime() + 86_400_000).toISOString();
+  const tomorrowEnd = new Date(new Date(tomorrowStart).getTime() + 86_400_000).toISOString();
+  const [appts, meds] = await Promise.all([
+    sb.from("zad_appointments").select("title,starts_at,place_label").eq("user_id", userId).eq("status", "upcoming")
+      .gte("starts_at", tomorrowStart).lt("starts_at", tomorrowEnd).order("starts_at", { ascending: true }).limit(3)
+      .then((r) => (r.data ?? []) as Array<Record<string, unknown>>, () => []),
+    sb.from("zad_pharmacy_items").select("name,dose_times,remaining_quantity").eq("user_id", userId).not("dose_times", "is", null).limit(10)
+      .then((r) => (r.data ?? []) as Array<{ name: string; dose_times: string | null; remaining_quantity: number | null }>, () => []),
+  ]);
+  // أول دوا قبل الضهر بكرة (من الأدوية اللي لسه فيها).
+  const morning = meds
+    .filter((m) => m.remaining_quantity === null || m.remaining_quantity > 0)
+    .flatMap((m) => (m.dose_times ?? "").split(",").map((t) => ({ name: m.name, t: t.trim() })))
+    .filter((x) => /^([01]?\d|2[0-3]):[0-5]\d$/.test(x.t) && Number(x.t.split(":")[0]) < 12)
+    .sort((a, b) => a.t.localeCompare(b.t))[0];
+  return {
+    local_date: local.date,
+    time_zone: local.time_zone,
+    tomorrow_appointments: appts,
+    ...(morning ? { meds_tomorrow_morning: morning.name, meds_tomorrow_time: morning.t } : {}),
   };
 }
 

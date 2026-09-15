@@ -23,10 +23,11 @@ export type VoiceEmotion =
   | "reproachful" // بتعاتب بدلع ("كده برضه؟")
   | "sulky"       // متقمصة وعاملة زعلانة
   | "sad"         // زعلانة لحد صوتها بيترعش كأنها هتعيط
-  | "proud";      // فخورة وفرحانة بإنجاز
+  | "proud"       // فخورة وفرحانة بإنجاز
+  | "tender";     // ناعمة وحنينة وهادية (تصبح على خير)
 
 export const VOICE_EMOTIONS: readonly VoiceEmotion[] = [
-  "warm", "cheerful", "playful", "caring", "worried", "reproachful", "sulky", "sad", "proud",
+  "warm", "cheerful", "playful", "caring", "worried", "reproachful", "sulky", "sad", "proud", "tender",
 ];
 
 export function isVoiceEmotion(value: unknown): value is VoiceEmotion {
@@ -53,6 +54,8 @@ export const EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
     "Sad and hurt, voice slightly trembling and close to tears, a soft sniffle and a shaky breath between phrases, then a hopeful little lift at the end.",
   proud:
     "Proud and delighted, celebrating them — excited, warm, a happy laugh, like she is cheering for a friend who just achieved something.",
+  tender:
+    "Very soft, slow and affectionate, a little sleepy and close to the mic, like a sweet late-night good-night to someone she is truly fond of — a gentle smile in the voice, a soft sigh, never loud.",
 };
 
 /** لهجة كل بلد — نفس خريطة zad-voice-live/persona.ts، بصياغة أداء صوتي بدل تعليمات كتابة. */
@@ -156,6 +159,7 @@ export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; co
  */
 export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   morning_greeting: "cheerful",
+  good_night: "tender",
   dose_due: "caring",
   dose_missed: "reproachful",
   dose_missed_again: "sad",
