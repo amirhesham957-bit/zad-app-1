@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { interestingSecretNames, isServiceRoleToken, providerHealth } from "./providerHealth.ts";
+import { interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
 
 Deno.test("reports configured/status per provider and never echoes a key", async () => {
   const env: Record<string, string> = {
@@ -35,4 +35,12 @@ Deno.test("only a service_role token passes the health check gate", () => {
   assert(!isServiceRoleToken(`${b64({ alg: "HS256" })}.${b64({ role: "anon" })}.sig`, "other"));
   assert(isServiceRoleToken("sb_secret_x", "sb_secret_x"));
   assert(!isServiceRoleToken(null, "x"));
+});
+
+Deno.test("the caller's user id comes from the token, so a body user_id can't borrow someone else's name", () => {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+  assertEquals(tokenSubject(`${b64({ alg: "HS256" })}.${b64({ sub: "u-1", role: "authenticated" })}.sig`), "u-1");
+  assertEquals(tokenSubject(`${b64({ alg: "HS256" })}.${b64({ role: "anon" })}.sig`), null);
+  assertEquals(tokenSubject("sb_publishable_x"), null);
+  assertEquals(tokenSubject(null), null);
 });

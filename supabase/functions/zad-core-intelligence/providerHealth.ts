@@ -15,13 +15,22 @@ type Env = (name: string) => string | undefined;
 export function isServiceRoleToken(token: string | null | undefined, serviceKey: string | undefined): boolean {
   if (!token) return false;
   if (serviceKey && token === serviceKey) return true;
+  return jwtClaims(token)?.role === "service_role";
+}
+
+/** `sub` من توكن اتحقق توقيعه في البوابة — عشان user_id اللي في الـbody يتصدّق بس لو هو صاحب التوكن. */
+export function tokenSubject(token: string | null | undefined): string | null {
+  const sub = token ? jwtClaims(token)?.sub : null;
+  return typeof sub === "string" && sub ? sub : null;
+}
+
+function jwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) return null;
   try {
-    const json = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
-    return json?.role === "service_role";
+    return JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
   } catch {
-    return false;
+    return null;
   }
 }
 
