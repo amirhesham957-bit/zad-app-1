@@ -392,3 +392,97 @@ export function formatTransactionsMessage(txs: Array<{ title: string; amount: nu
 export function formatInsightTitle(insight: { title: string; body: string }): string {
   return `${insight.title}\n${insight.body}`;
 }
+
+// ── الحلقة اللانهائية: مين يستاهل معالجة أصلاً (٢٠٢٦-٠٩-١٩) ──────────────────
+//
+// بلاغ: «البوت بيقرا رسايل نفسه ويرد عليها باستمرار». الفحص طلّع سببين مختلفين
+// بينتجوا نفس المنظر بالظبط، ولازم الاتنين يتقفلوا:
+//
+// 1. **راسل مش بني آدم.** أي تحديث جاي من `is_bot` (بوت تاني، أو رسالة البوت نفسه
+//    لما يكون في جروب/قناة ومتفعّل عنده privacy mode = off، أو رسالة متبعوتة
+//    `via_bot`، أو بوست قناة اللي بيجي بـ`sender_chat` من غير `from` آدمي).
+//    `zad-telegram-bot` كان بيعالج أي `message:text` من غير ما يبص على الراسل خالص.
+//    رسالة بوت بترد عليها برسالة، اللي بترجع كتحديث، اللي يرد عليها… إلخ.
+//
+// 2. **إعادة تسليم من تليجرام.** الـwebhook هنا بيستنى لفة الوكيل كلها (نداء موديل،
+//    ممكن ٣٠ ثانية+) قبل ما يرجع 200. تليجرام بيعتبر ده timeout ويعيد تسليم **نفس**
+//    التحديث بنفس `update_id`، فلفة تانية بتبدأ جنب اللي لسه شغالة، وكل واحدة بترد.
+//    ده اللي بيعمل «مئات الرسايل المتراكمة». الفلتر فوق مابيلمسش ده — عشان كده
+//    فيه `update_id` dedup كمان في index.ts.
+//
+// الفلتر ده متعمد إنه **خالص وبدون شبكة**: أول سطر في المعالجة، قبل أي قراية
+// داتابيز أو نداء موديل، عشان تحديث بوت مايكلّفش ولا استعلام.
+
+/** الحد الأدنى من شكل تحديث تليجرام اللي الفلتر بيحتاجه. */
+export interface UpdateEnvelope {
+  update_id?: number;
+  message?: { from?: { is_bot?: boolean }; via_bot?: unknown; sender_chat?: unknown };
+  edited_message?: { from?: { is_bot?: boolean }; via_bot?: unknown; sender_chat?: unknown };
+  callback_query?: { from?: { is_bot?: boolean } };
+  channel_post?: unknown;
+  edited_channel_post?: unknown;
+  [k: string]: unknown;
+}
+
+/**
+ * هل التحديث ده من بني آدم في محادثة عادية؟ `false` = يتسقط فوراً بـ200 من غير أي معالجة.
+ *
+ * بيترفض: أي `from.is_bot`، أي رسالة متبعوتة عن طريق بوت تاني (`via_bot`)، بوستات
+ * القنوات (`channel_post`/`edited_channel_post`)، وأي رسالة راسلها قناة مش شخص
+ * (`sender_chat` — بتوصل لما البوت أدمن في قناة أو في جروب متربوط بقناة).
+ *
+ * `edited_message` بيترفض كمان لأن البوت مابيتعاملش معاه أصلاً؛ تعديل رسالة قديمة كان
+ * هيتقري كرسالة جديدة ويتعمل عليها لفة وكيل كاملة.
+ */
+export function isHumanUpdate(update: UpdateEnvelope | null | undefined): boolean {
+  if (!update || typeof update !== "object") return false;
+  if (update.channel_post || update.edited_channel_post) return false;
+  if (update.edited_message) return false;
+  const msg = update.message;
+  if (msg) {
+    if (msg.sender_chat) return false;
+    if (msg.via_bot) return false;
+    return msg.from?.is_bot !== true;
+  }
+  const cb = update.callback_query;
+  if (cb) return cb.from?.is_bot !== true;
+  // نوع تحديث مش مطلوب (my_chat_member، poll…) — مفيش handler ليه، فمفيش سبب نشغّل عليه حاجة.
+  return false;
+}
+
+// ── أزرار الجرعة (٢٠٢٦-٠٩-١٩) ────────────────────────────────────────────────
+//
+// بلاغ: العميل بيكتب «أخدته» والبوت بيشكره من غير ما يسجّل حاجة، فالكرون بيفضل يبعت
+// «فاتتك جرعة المضاد» كل نص ساعة. السبب إن تأكيد الجرعة كان ماشي على **فهم الموديل**
+// للكلام، ولفة الوكيل ممكن تقع (نت/موديل/مهلة) وترجع رد قرايا من غير أي كتابة.
+//
+// الزر بيشيل الموديل من النص بالكامل: `callback_data` فيه معرّف لحظة الصوت اللي
+// اتبعتت (`zad_voice_moments.id`)، والبوت بيقرا منها `item_ids` + `scheduled_at`
+// وبينادي `zad_log_pharmacy_dose_atomic` على كل دوا بنفس الخانة الزمنية بالظبط.
+// مفيش رسالة شكر غير بعد ما الـRPC ترجع ok.
+//
+// الطول: "dz:" + uuid(36) + ":" + حرف = ٤١ بايت، تحت سقف تليجرام (٦٤ بايت) بمسافة.
+
+/** دقايق التأجيل لما العميل يدوس «فكّرني بعدين» — نفس الرقم في SQL (zad_dose_snoozes). */
+export const DOSE_SNOOZE_MINUTES = 15;
+
+export function doseKeyboard(momentId: string): InlineKeyboardButton[][] {
+  return [[
+    { text: "✅ أخدت الجرعة", callback_data: `dz:${momentId}:t` },
+    { text: `⏰ فكّرني بعد ${DOSE_SNOOZE_MINUTES} دقيقة`, callback_data: `dz:${momentId}:s` },
+  ]];
+}
+
+/** "dz:<uuid>:t" (اتاخدت) / "dz:<uuid>:s" (أجّل) */
+export function parseDoseCallback(data: string): { momentId: string; action: "taken" | "snooze" } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "dz") return null;
+  if (parts[2] !== "t" && parts[2] !== "s") return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { momentId: parts[1], action: parts[2] === "t" ? "taken" : "snooze" };
+}
+
+/** اللحظات اللي بتاخد أزرار الجرعة. `dose_nudge` مكتوبة بس بس برضه محتاجة الزرار. */
+export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
+  "dose_due", "dose_nudge", "dose_missed", "dose_missed_again",
+]);

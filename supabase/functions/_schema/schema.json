@@ -476,6 +476,10 @@
     "txn_kind",
     "user_id"
   ],
+  "telegram_processed_updates": [
+    "processed_at",
+    "update_id"
+  ],
   "user_achievements": [
     "achievement_id",
     "id",
@@ -1012,6 +1016,13 @@
     "source",
     "started_at",
     "updated_at",
+    "user_id"
+  ],
+  "zad_dose_snoozes": [
+    "created_at",
+    "item_id",
+    "scheduled_at",
+    "snooze_until",
     "user_id"
   ],
   "zad_place_reminders": [
