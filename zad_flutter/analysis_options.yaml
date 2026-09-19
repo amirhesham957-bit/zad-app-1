@@ -19,3 +19,10 @@ linter:
     # more obvious package was not used. A-to-Z would scatter the groups and
     # strand those comments beside unrelated packages.
     sort_pub_dependencies: false
+
+    # Off because its suggestion does not compile here. It fires on
+    # `Outbox({required Box<String> box}) : _box = box` and asks for
+    # `required this._box`, but a named parameter cannot start with an
+    # underscore, so a private field behind a named parameter has no other
+    # spelling.
+    prefer_initializing_formals: false
