@@ -1,0 +1,84 @@
+name: zad
+description: "زاد — مساعد مالي ذكي للعائلة العربية."
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  # The floor is set by riverpod_lint, freezed and very_good_analysis, all of
+  # which require Dart 3.13. Verified against Flutter 3.47.5 / Dart 3.13.4.
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # ── State: one manager, no second one.
+  flutter_riverpod: ^3.4.3
+  riverpod_annotation: ^4.0.7
+
+  # ── Server
+  supabase_flutter: ^2.17.2
+
+  # ── Local cache (offline-first). hive_ce, not hive: the original hive 2.2.3
+  # and hive_flutter 1.1.0 both declare `sdk: >=2.12.0 <3.0.0`, which excludes
+  # Dart 3 outright. Same wall on isar 3.1.0+1.
+  hive_ce: ^2.20.0
+  hive_ce_flutter: ^2.3.4
+  path_provider: ^2.1.6
+
+  # ── Navigation
+  go_router: ^18.0.1
+
+  # ── Motion and graphics
+  flutter_animate: ^4.5.2
+  rive: ^0.14.11
+  flutter_shaders: ^0.1.3
+  smooth_corner: ^1.1.1
+  fl_chart: ^1.2.0
+  flutter_svg: ^2.3.0
+
+  # ── Audio
+  record: ^7.1.1
+  permission_handler: ^13.0.2
+
+  # ── Time. The budget period is a civil range on the account's market
+  # calendar, so the client needs the same IANA rules Postgres uses; Dart core
+  # knows only UTC and the device's own zone.
+  timezone: ^0.11.1
+
+  # ── Models
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+
+  # ── Misc
+  flutter_secure_storage: ^11.2.0
+  intl: ^0.20.3
+  collection: ^1.19.1
+  envied: ^1.3.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.16.1
+  riverpod_generator: ^4.0.9
+  riverpod_lint: ^3.1.9
+  # No custom_lint here, and it is not an oversight: custom_lint 0.8.1, the
+  # newest there is, pins `analyzer: ^8.0.0`, while riverpod_generator and
+  # freezed need >=13 and >=14. It is also no longer required — riverpod_lint
+  # 3.x runs on the analyzer's own `analysis_server_plugin` instead.
+  freezed: ^4.0.2
+  json_serializable: ^6.14.1
+  hive_ce_generator: ^1.11.3
+  envied_generator: ^1.3.9
+  mocktail: ^1.0.5
+  very_good_analysis: ^11.0.0
+  flutter_native_splash: ^2.4.8
+
+flutter:
+  uses-material-design: true
+  # assets: and fonts: arrive with the design system commit — a declared asset
+  # directory that does not exist fails the build, and no font file is in the
+  # repo yet.

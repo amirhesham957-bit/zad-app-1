@@ -1,0 +1,21 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  # No `plugins: [custom_lint]` — see the note in pubspec.yaml's dev_dependencies.
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+    - android/**
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Off on purpose. pubspec.yaml groups dependencies by the job they do, with
+    # a comment per group saying why each one is there and, in two cases, why a
+    # more obvious package was not used. A-to-Z would scatter the groups and
+    # strand those comments beside unrelated packages.
+    sort_pub_dependencies: false
