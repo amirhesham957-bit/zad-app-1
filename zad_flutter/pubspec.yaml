@@ -32,6 +32,10 @@ dependencies:
   # ── Navigation
   go_router: ^18.0.1
 
+  # ── Sync triggers. Reports which interface is up, not whether anything is
+  # reachable, which is enough: a false "online" costs one transient failure.
+  connectivity_plus: ^7.3.1
+
   # ── Motion and graphics
   flutter_animate: ^4.5.2
   rive: ^0.14.11

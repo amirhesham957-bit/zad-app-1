@@ -9,8 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zad/data/local/boxes.dart';
+import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/data/sync/outbox_runner.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -76,4 +78,28 @@ transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
     newId: const Uuid().v4,
     signedInUserId: ref.watch(signedInUserIdProvider),
   );
+});
+
+/// Drains the outbox on startup, on resume, when the network comes back,
+/// and on a slow tick that exists to wake entries out of their backoff.
+///
+/// Something has to hold this: a Provider nobody reads is never built, and an
+/// outbox nobody flushes is just a list. `ZadApp` watches it for as long as
+/// the app lives.
+final Provider<OutboxRunner> outboxRunnerProvider = Provider<OutboxRunner>((
+  ref,
+) {
+  final triggers = AppSyncTriggers();
+  final runner = OutboxRunner(
+    outbox: ref.watch(outboxProvider),
+    triggers: triggers.stream,
+  );
+
+  ref.onDispose(() async {
+    await runner.dispose();
+    await triggers.dispose();
+  });
+
+  runner.start();
+  return runner;
 });
