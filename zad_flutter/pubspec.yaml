@@ -44,6 +44,12 @@ dependencies:
   fl_chart: ^1.2.0
   flutter_svg: ^2.3.0
 
+  # ── Icons, as a bundled font. Note this is deliberately NOT how the Kotlin
+  # app does it: LucideIcon.kt fetches each glyph from a CDN, which means an
+  # offline first launch draws no icons at all. `lucide_icons` (the other
+  # package) is Dart 2 only — `sdk: >=2.12.0 <3.0.0`.
+  lucide_icons_flutter: ^3.1.20
+
   # ── Audio
   record: ^7.1.1
   permission_handler: ^13.0.2
@@ -90,6 +96,18 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # assets: and fonts: arrive with the design system commit — a declared asset
-  # directory that does not exist fails the build, and no font file is in the
-  # repo yet.
+
+  # The same variable font files the Kotlin app ships, copied from
+  # app/src/main/res/font/ so text measures identically on both clients.
+  # Bundled, never fetched: google_fonts would download on first run, which
+  # contradicts both offline-first and instant-open.
+  #
+  # One file per family, with weight applied through the `wght` axis at use site
+  # (see design/tokens/zad_typography.dart) rather than declared per weight here.
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/cairo_variable.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/inter_variable.ttf

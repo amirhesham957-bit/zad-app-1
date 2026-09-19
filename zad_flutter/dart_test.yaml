@@ -1,0 +1,13 @@
+tags:
+  # Golden images are a design-review tool first and a regression gate second.
+  # They are rendered by one machine's Skia, so another Flutter version or
+  # another platform can produce different pixels without anything being wrong.
+  #
+  # They are NOT skipped here: on this machine they are a real check, and a
+  # skipped test is a test nobody notices has rotted. The tag exists so that CI,
+  # when it is set up, can run `flutter test --exclude-tags golden` and leave
+  # the pixel comparison to whoever is looking at the design.
+  #
+  # To review or update them:
+  #   flutter test --tags golden --update-goldens
+  golden:

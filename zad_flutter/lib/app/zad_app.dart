@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/zad_theme.dart';
 
 /// The root widget.
 ///
-/// Routing, theming and the design system land in the next commit; what is
-/// here is the shell the data layer was verified inside.
+/// Routing and the first real screens land next; what is here is the shell the
+/// data layer and the design system were verified inside.
 class ZadApp extends ConsumerWidget {
   /// Creates the root widget.
   const new({super.key});
@@ -21,17 +23,29 @@ class ZadApp extends ConsumerWidget {
     // is rendered from it.
     ref.watch(outboxRunnerProvider);
 
-    return const MaterialApp(
+    return MaterialApp(
       title: 'زاد',
       debugShowCheckedModeBanner: false,
-      locale: Locale('ar'),
-      supportedLocales: <Locale>[Locale('ar'), Locale('en')],
-      localizationsDelegates: <LocalizationsDelegate<Object>>[
+      theme: ZadTheme.light(),
+      locale: const Locale('ar'),
+      supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+      localizationsDelegates: const <LocalizationsDelegate<Object>>[
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: Scaffold(body: Center(child: Text('زاد'))),
+      home: const _Shell(),
     );
   }
+}
+
+/// A placeholder home, on the real canvas, until the router arrives.
+class _Shell extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => const DecoratedBox(
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
+    child: Center(child: Text('زاد')),
+  );
 }
