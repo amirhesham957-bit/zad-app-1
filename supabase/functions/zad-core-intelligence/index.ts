@@ -8,7 +8,8 @@ import { isServiceRoleToken, providerHealth, tokenSubject } from "./providerHeal
 import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
-import { bearerToken, extractDialectHint, requestGeminiVoice, requestGeminiVoiceWithPool, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
+import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
+import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -95,6 +96,8 @@ if (GEMINI_KEYS.length === 0) {
 let geminiKeyCursor = 0;
 // TTS يستخدم نفس مسبح المفاتيح — أول مفتاح متاح
 const GEMINI_API_KEY = GEMINI_KEYS[0] ?? Deno.env.get("GEMINI_API_KEY") ?? "";
+// احتياطي الصوت لما مسبح Gemini TTS كله يقع — null لو الأسرار مش متظبطة (azureVoice.ts).
+const AZURE_SPEECH = azureSpeechConfig((n) => Deno.env.get(n));
 function nextGeminiKeyIndex(): number {
   const i = geminiKeyCursor % Math.max(GEMINI_KEYS.length, 1);
   geminiKeyCursor = (geminiKeyCursor + 1) % Math.max(GEMINI_KEYS.length, 1);
@@ -1180,9 +1183,10 @@ Deno.serve(async (req: Request) => {
           return { error: String((e as Error)?.message ?? e).slice(0, 160) };
         }
       };
-      const [keysReport, tts, pipeline, brainTools, voiceNote] = await Promise.all([
+      const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
         ttsHealth(geminiKeys.length ? geminiKeys : [Deno.env.get("GEMINI_API_KEY") ?? ""].filter(Boolean)),
+        azureTtsHealth(AZURE_SPEECH),
         pipelineHealth(supabase),
         internalProbe("zad-brain", {
           method: "POST",
@@ -1204,7 +1208,7 @@ Deno.serve(async (req: Request) => {
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
       }
-      return jsonResponse({ ...keysReport, tts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch });
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
@@ -1253,7 +1257,7 @@ Deno.serve(async (req: Request) => {
       }
       const voiceRequest = validateVoicePayload(payload);
       if (!voiceRequest) return jsonResponse({ error: "invalid voice request" }, 400);
-      if (!GEMINI_API_KEY) return jsonResponse({ error: "voice provider unavailable" }, 503);
+      if (!GEMINI_API_KEY && !AZURE_SPEECH) return jsonResponse({ error: "voice provider unavailable" }, 503);
       // لهجة الصوت من بلد الحساب — نفس مصدر المكالمة الحية وفويس تليجرام. الجهاز كان بيبعت
       // مصري/سعودي بس، وأي بلد تاني كان بيتقري من غير لهجة. فشل القراءة = من غير لهجة، مش خطأ.
       try {
@@ -1263,12 +1267,12 @@ Deno.serve(async (req: Request) => {
         voiceRequest.country = null;
       }
 
-      const upstream = await requestGeminiVoiceWithPool(voiceRequest, GEMINI_KEYS, fetch, extractDialectHint(payload));
+      const upstream = await requestVoiceWithFallback(voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload));
       if (!upstream.ok || !upstream.body) {
-        // جرّبنا المسبح كله — نرجّع تفاصيل المحاولات (بدون أي مادة مفتاح) عشان اللوج يقول الحقيقة
+        // جرّبنا المسبح كله + Azure — نرجّع تفاصيل المحاولات (بدون أي مادة مفتاح) عشان اللوج يقول الحقيقة
         let attempts: unknown = null;
         try { attempts = (await upstream.json())?.attempts ?? null; } catch { /* non-json */ }
-        console.error(`[CoreIntel] Gemini TTS pool exhausted`, JSON.stringify(attempts));
+        console.error(`[CoreIntel] voice providers exhausted (Gemini pool + Azure)`, JSON.stringify(attempts));
         return jsonResponse({ error: "voice provider unavailable", attempts }, 502);
       }
       return new Response(upstream.body, {
@@ -1276,6 +1280,7 @@ Deno.serve(async (req: Request) => {
         headers: {
           ...corsHeaders(),
           "Content-Type": "audio/pcm",
+          "X-Zad-Voice-Provider": upstream.headers.get("X-Zad-Voice-Provider") ?? "gemini",
           "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
         },

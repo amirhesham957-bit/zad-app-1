@@ -24,6 +24,7 @@
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
 import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
 
@@ -110,6 +111,44 @@ export async function requestGeminiVoiceWithPool(
       } catch (e) {
         attempts.push({ key_index: ki, model, status: null });
       }
+    }
+  }
+  return new Response(
+    JSON.stringify({ error: "voice_provider_unavailable", attempts }),
+    { status: 502, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+/**
+ * Gemini الأول (بمشاعره) — ولو المسبح كله وقع لأي سبب، Azure بصوت محايد بنفس فورمات PCM.
+ * قبل كده سقوط كوتة Gemini = زاد ساكتة لحد تاني يوم. الرد فيه X-Zad-Voice-Provider
+ * عشان اللوج يقيس الاحتياطي اشتغل كام مرة.
+ */
+export async function requestVoiceWithFallback(
+  input: ValidVoiceRequest,
+  geminiKeys: string[],
+  azure: AzureSpeechConfig | null,
+  fetcher: typeof fetch = fetch,
+  dialectInstruction = "",
+): Promise<Response> {
+  const gemini = await requestGeminiVoiceWithPool(input, geminiKeys, fetcher, dialectInstruction);
+  if (gemini.ok && gemini.body) {
+    return new Response(gemini.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "gemini" } });
+  }
+  let attempts: unknown[] = [];
+  try { attempts = (await gemini.json())?.attempts ?? []; } catch { /* non-json */ }
+  if (azure) {
+    try {
+      const res = await requestAzureVoice(input, azure, fetcher);
+      if (res.ok && res.body) {
+        console.warn(`[CoreIntel] voice served by Azure fallback; gemini attempts=${JSON.stringify(attempts)}`);
+        return new Response(res.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "azure" } });
+      }
+      console.error(`[CoreIntel] Azure TTS fallback failed: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
+      attempts.push({ provider: "azure", status: res.status });
+    } catch (e) {
+      console.error(`[CoreIntel] Azure TTS fallback threw: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
+      attempts.push({ provider: "azure", status: null });
     }
   }
   return new Response(
