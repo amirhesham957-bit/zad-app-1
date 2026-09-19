@@ -28,21 +28,40 @@ import 'package:zad/design/tokens/zad_typography.dart';
 class ZadBalanceCard extends StatelessWidget {
   /// Creates the card.
   const new({
-    required this.remaining,
-    required this.budget,
+    required this.spendable,
+    required this.spent,
+    required this.openingBalance,
     required this.currency,
     required this.period,
     required this.now,
+    this.committed = 0,
     this.onTap,
+    this.onSetBudget,
     this.isStale = false,
     super.key,
   });
 
-  /// What is left to spend this period.
-  final double remaining;
+  /// What can actually be spent: the balance with committed obligations
+  /// already taken out.
+  ///
+  /// Null when the account has no confirmed limit. `zad_budget_state()` returns
+  /// null there on purpose, and the card says so rather than printing a figure
+  /// — filling the gap with a zero would assert something nobody told us.
+  final double? spendable;
 
-  /// What the period started with.
-  final double budget;
+  /// Spent this period, as the server counts it.
+  ///
+  /// Taken from the server rather than derived from the balance: when an
+  /// account has a `balance_anchored_at`, spend is counted from that anchor and
+  /// not from the period's start, and no subtraction here would know that.
+  final double spent;
+
+  /// What the period opened with, for the pace bar's denominator.
+  final double? openingBalance;
+
+  /// Obligations falling due before the period ends. Already out of
+  /// [spendable]; shown so the difference is explained rather than mysterious.
+  final double committed;
 
   /// The account's currency, shown as given — `ج.م`, `ر.س`.
   final String currency;
@@ -57,16 +76,21 @@ class ZadBalanceCard extends StatelessWidget {
   /// Opens the breakdown.
   final VoidCallback? onTap;
 
+  /// Offered when there is no confirmed limit.
+  final VoidCallback? onSetBudget;
+
   /// Whether these figures came from the cache and have not been confirmed.
   ///
   /// The card still shows them — that is the whole point of the cache — but it
   /// says so, because a number presented with no qualification is a promise.
   final bool isStale;
 
-  double get _spent => math.max(0, budget - remaining);
-
-  /// How much of the budget is gone, 0..1.
-  double get _spentFraction => budget <= 0 ? 0 : (_spent / budget).clamp(0, 1);
+  /// How much of the opening balance is gone, 0..1.
+  double get _spentFraction {
+    final opening = openingBalance;
+    if (opening == null || opening <= 0) return 0;
+    return (spent / opening).clamp(0, 1);
+  }
 
   /// How much of the period is gone, 0..1.
   double get _periodFraction {
@@ -85,12 +109,13 @@ class ZadBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daysLeft = math.max(0, period.daysRemainingFrom(now));
+    final amount = spendable;
 
     return ZadPressable(
-      onPressed: onTap,
-      semanticLabel:
-          'المتبقي ${_money(remaining)} $currency، '
-          'باقي $daysLeft يوم',
+      onPressed: amount == null ? onSetBudget : onTap,
+      semanticLabel: amount == null
+          ? 'لسه محددتش ميزانيتك'
+          : 'المتاح ${_money(amount)} $currency، باقي $daysLeft يوم',
       child: DecoratedBox(
         decoration: const BoxDecoration(boxShadow: ZadElevation.hero),
         child: ZadSquircleClip(
@@ -104,30 +129,36 @@ class ZadBalanceCard extends StatelessWidget {
               painter: const _HeroGlowPainter(),
               child: Padding(
                 padding: const EdgeInsets.all(ZadSpacing.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    _Label(
-                      isStale: isStale,
-                      isCalendarMonth: period.isCalendarMonth,
-                    ),
-                    const SizedBox(height: ZadSpacing.md),
-                    _Figure(amount: remaining, currency: currency),
-                    const SizedBox(height: ZadSpacing.xl),
-                    _PaceBar(
-                      spent: _spentFraction,
-                      elapsed: _periodFraction,
-                      aheadOfPace: _aheadOfPace,
-                    ),
-                    const SizedBox(height: ZadSpacing.md),
-                    _Footer(
-                      daysLeft: daysLeft,
-                      spent: _spent,
-                      currency: currency,
-                    ),
-                  ],
-                ),
+                child: amount == null
+                    ? _NoBudgetYet(spent: spent, currency: currency)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          _Label(
+                            isStale: isStale,
+                            isCalendarMonth: period.isCalendarMonth,
+                          ),
+                          const SizedBox(height: ZadSpacing.md),
+                          _Figure(amount: amount, currency: currency),
+                          if (committed > 0) ...<Widget>[
+                            const SizedBox(height: ZadSpacing.sm),
+                            _Committed(amount: committed, currency: currency),
+                          ],
+                          const SizedBox(height: ZadSpacing.xl),
+                          _PaceBar(
+                            spent: _spentFraction,
+                            elapsed: _periodFraction,
+                            aheadOfPace: _aheadOfPace,
+                          ),
+                          const SizedBox(height: ZadSpacing.md),
+                          _Footer(
+                            daysLeft: daysLeft,
+                            spent: spent,
+                            currency: currency,
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -135,6 +166,54 @@ class ZadBalanceCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What the card says before anybody has confirmed a limit.
+///
+/// It reports the one thing it does know — what has been spent — and asks for
+/// the one thing it does not. It never shows a balance of zero.
+class _NoBudgetYet extends StatelessWidget {
+  const new({required this.spent, required this.currency});
+
+  final double spent;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Text(
+        'اتصرف الفترة دي',
+        style: ZadType.labelLarge.copyWith(color: ZadColors.mint100),
+      ),
+      const SizedBox(height: ZadSpacing.md),
+      _Figure(amount: spent, currency: currency),
+      const SizedBox(height: ZadSpacing.xl),
+      Text(
+        'قوللي ميزانيتك الشهرية، وأقدر أقولك المتاح ليك كل يوم.',
+        style: ZadType.bodySmall.copyWith(
+          color: Colors.white.withValues(alpha: 0.72),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Explains the gap between the balance and what is spendable.
+class _Committed extends StatelessWidget {
+  const new({required this.amount, required this.currency});
+
+  final double amount;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    'بعد خصم ${_money(amount)} $currency التزامات',
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: ZadType.bodySmall.copyWith(color: ZadColors.mint100),
+  );
 }
 
 class _Label extends StatelessWidget {
@@ -152,7 +231,7 @@ class _Label extends StatelessWidget {
     children: <Widget>[
       Flexible(
         child: Text(
-          isCalendarMonth ? 'المتبقي هذا الشهر' : 'المتبقي في دورة الراتب',
+          isCalendarMonth ? 'المتاح هذا الشهر' : 'المتاح في دورة الراتب',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: ZadType.labelLarge.copyWith(color: ZadColors.mint100),
@@ -175,17 +254,40 @@ class _Label extends StatelessWidget {
   );
 }
 
-class _Figure extends StatelessWidget {
+class _Figure extends StatefulWidget {
   const new({required this.amount, required this.currency});
 
   final double amount;
   final String currency;
 
   @override
+  State<_Figure> createState() => _FigureState();
+}
+
+class _FigureState extends State<_Figure> {
+  /// Where the count starts.
+  ///
+  /// On first build this is the amount itself, so nothing animates: the figure
+  /// is drawn, finished, in the first frame. Counting up from zero every time
+  /// the screen opens would undo the point of reading it from the cache — the
+  /// user would be watching a number arrive that the device already had.
+  ///
+  /// It only moves when the value does: a refresh landing, or a queued expense
+  /// being subtracted. That is a change worth showing.
+  late double _from = widget.amount;
+
+  @override
+  void didUpdateWidget(_Figure oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.amount != widget.amount) _from = oldWidget.amount;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final currency = widget.currency;
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: amount),
-      duration: ZadDuration.count,
+      tween: Tween<double>(begin: _from, end: widget.amount),
+      duration: _from == widget.amount ? Duration.zero : ZadDuration.count,
       curve: ZadCurves.standard,
       builder: (context, value, _) {
         // The figure is masked with a white→mint gradient so a number this

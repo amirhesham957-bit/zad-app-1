@@ -1,0 +1,224 @@
+// The claim this screen makes is that the figure is on screen in the first
+// frame. This holds it to that: one pump, no settle, no awaiting the network.
+//
+// Everything that touches the disk happens in setUp, never in a test body.
+// `testWidgets` runs its body against a faked clock and a real Hive write
+// inside it does not progress — the test hangs rather than fails, which costs
+// far more to diagnose than it does to avoid. The remote here refuses
+// immediately for the same reason: a refresh that succeeded would write to the
+// cache mid-body. What a *successful* refresh does is covered next door in
+// budget_controller_test.dart, which is a plain test() with a real event loop.
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/data/providers.dart';
+import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/design/components/zad_balance_card.dart';
+import 'package:zad/design/zad_theme.dart';
+import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/budget/data/budget_repository.dart';
+import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/transactions/data/transactions_remote.dart';
+import 'package:zad/features/transactions/data/transactions_repository.dart';
+
+/// Refuses at once, so the screen's background refresh never writes to disk
+/// while the faked clock is in charge.
+class _OfflineRemote implements BudgetRemote {
+  int calls = 0;
+
+  @override
+  Future<Map<String, dynamic>> fetch({
+    required String userId,
+    required String timeZone,
+  }) {
+    calls++;
+    return Future<Map<String, dynamic>>.error(const SocketException('offline'));
+  }
+}
+
+class _FakeTransactionsRemote implements TransactionsRemote {
+  @override
+  Future<List<Map<String, dynamic>>> fetchPeriod({
+    required String userId,
+    required DateTime startsAt,
+    required DateTime endsAt,
+  }) async => <Map<String, dynamic>>[];
+
+  @override
+  Future<Map<String, dynamic>?> upsertReturning(
+    Map<String, dynamic> row,
+  ) async => row;
+}
+
+Map<String, dynamic> _state() => <String, dynamic>{
+  'user_id': 'user-1',
+  'currency': 'ج.م',
+  'timezone': 'Africa/Cairo',
+  'spent': 3179.5,
+  'income': 0,
+  'committed': 1200,
+  'days_left': 5,
+  'cycle_length_days': 31,
+  'threat': 'SAFE',
+  'unverified_count': 0,
+  'computed_at': '2026-09-19T12:00:00Z',
+  'available': 3620.5,
+  'remaining': 4820.5,
+  'opening_balance': 8000,
+  'limit_confirmed': true,
+  'cycle_start': '2026-08-25',
+  'cycle_end': '2026-09-25',
+};
+
+void main() {
+  late Directory dir;
+  late Box<String> documents;
+  late Box<String> transactions;
+  late Box<String> outboxBox;
+  late _OfflineRemote remote;
+
+  final now = DateTime.parse('2026-09-19T12:00:00Z');
+
+  setUpAll(() async {
+    tz_data.initializeTimeZones();
+    // The Lucide family has to be registered under its package-qualified name
+    // or the empty state's glyph is a tofu box and Flutter logs a missing font
+    // on every frame.
+    final lucide = FontLoader('packages/lucide_icons_flutter/Lucide')
+      ..addFont(
+        rootBundle.load('packages/lucide_icons_flutter/assets/lucide.ttf'),
+      );
+    await lucide.load();
+  });
+
+  setUp(() async {
+    dir = await Directory.systemTemp.createTemp('zad_home_test');
+    Hive.init(dir.path);
+    documents = await Hive.openBox<String>('documents');
+    transactions = await Hive.openBox<String>('transactions');
+    outboxBox = await Hive.openBox<String>('outbox');
+    remote = _OfflineRemote();
+
+    await documents.put(
+      'budget_state',
+      jsonEncode(BudgetSnapshot.fromJson(_state()).toJson()),
+    );
+  });
+
+  tearDown(() async {
+    await Hive.deleteFromDisk();
+    await dir.delete(recursive: true);
+  });
+
+  ProviderContainer containerWith() {
+    late TransactionsRepository txns;
+    final outbox = Outbox(
+      box: outboxBox,
+      send: (entry) => txns.sendQueued(entry),
+      clock: () => now,
+    );
+    txns = TransactionsRepository(
+      cache: transactions,
+      remote: _FakeTransactionsRemote(),
+      outbox: () => outbox,
+      newId: () => 'txn',
+      signedInUserId: () => 'user-1',
+    );
+
+    return ProviderContainer(
+      overrides: [
+        nowProvider.overrideWithValue(() => now),
+        transactionsRepositoryProvider.overrideWithValue(txns),
+        budgetRepositoryProvider.overrideWithValue(
+          BudgetRepository(
+            cache: documents,
+            remote: remote,
+            signedInUserId: () => 'user-1',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> pumpHome(WidgetTester tester, ProviderContainer container) =>
+      tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: const Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(body: HomeScreen()),
+            ),
+          ),
+        ),
+      );
+
+  testWidgets('the cached figure is on screen in the first frame', (
+    tester,
+  ) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    // One pump. No pumpAndSettle, no awaiting anything — and the remote is
+    // offline, so nothing on screen can have come from the network.
+    await pumpHome(tester, container);
+
+    expect(find.byType(ZadBalanceCard), findsOneWidget);
+    expect(find.text('3,620.5'), findsOneWidget);
+    expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
+  });
+
+  testWidgets('the figure does not count up from zero on open', (tester) async {
+    // Reading the balance should not mean watching it arrive. The count-up is
+    // for a value that *changed*, not for one the device already had.
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    expect(find.text('3,620.5'), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('a failing refresh marks the figure without hiding it', (
+    tester,
+  ) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+    await tester.pump();
+
+    expect(remote.calls, 1, reason: 'the screen never asked the server');
+    // The number is still there. A failed refresh is a reason to say it is not
+    // confirmed, never a reason to replace it with an error.
+    expect(find.text('3,620.5'), findsOneWidget);
+    expect(container.read(budgetControllerProvider).isStale, isTrue);
+  });
+
+  group('with nothing cached', () {
+    // A nested setUp, not a flag set in the test body: the shared setUp has
+    // already run by the time a body starts, and clearing the box from inside
+    // one would be a disk write against the faked clock.
+    setUp(() => documents.delete('budget_state'));
+
+    testWidgets('shows a state, never a blank screen', (tester) async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await pumpHome(tester, container);
+
+      expect(find.byType(ZadBalanceCard), findsNothing);
+      expect(find.text('بنجهّز ميزانيتك'), findsOneWidget);
+    });
+  });
+}

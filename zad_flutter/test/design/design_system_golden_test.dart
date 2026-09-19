@@ -105,8 +105,10 @@ void main() {
     await tester.pumpWidget(
       harness(
         ZadBalanceCard(
-          remaining: 4820.5,
-          budget: 8000,
+          spendable: 4820.5,
+          spent: 3179.5,
+          openingBalance: 8000,
+          committed: 1200,
           currency: 'ج.م',
           period: periodFor(cycleStartDay: 25),
           now: now,
@@ -129,8 +131,9 @@ void main() {
       harness(
         ZadBalanceCard(
           // Day 19 of a cycle that started on the 25th, with 89% gone.
-          remaining: 880,
-          budget: 8000,
+          spendable: 880,
+          spent: 7120,
+          openingBalance: 8000,
           currency: 'ج.م',
           period: periodFor(cycleStartDay: 25),
           now: now,

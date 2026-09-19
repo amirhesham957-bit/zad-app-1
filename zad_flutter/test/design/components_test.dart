@@ -128,7 +128,9 @@ void main() {
     Future<void> pumpCard(
       WidgetTester tester, {
       required int? cycleStartDay,
-      double remaining = 4820.5,
+      double? spendable = 4820.5,
+      double spent = 3179.5,
+      double committed = 0,
       bool isStale = false,
     }) async {
       await tester.pumpWidget(
@@ -136,8 +138,10 @@ void main() {
           SizedBox(
             width: 360,
             child: ZadBalanceCard(
-              remaining: remaining,
-              budget: 8000,
+              spendable: spendable,
+              spent: spent,
+              openingBalance: 8000,
+              committed: committed,
               currency: 'ج.م',
               period: period(cycleStartDay: cycleStartDay),
               now: now,
@@ -158,7 +162,7 @@ void main() {
       await pumpCard(tester, cycleStartDay: 25);
 
       expect(find.textContaining('باقي 5'), findsOneWidget);
-      expect(find.text('المتبقي في دورة الراتب'), findsOneWidget);
+      expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
     });
 
     testWidgets('says "this month" when no payday is known', (tester) async {
@@ -166,8 +170,8 @@ void main() {
       // asserts a fact nobody supplied.
       await pumpCard(tester, cycleStartDay: null);
 
-      expect(find.text('المتبقي هذا الشهر'), findsOneWidget);
-      expect(find.text('المتبقي في دورة الراتب'), findsNothing);
+      expect(find.text('المتاح هذا الشهر'), findsOneWidget);
+      expect(find.text('المتاح في دورة الراتب'), findsNothing);
     });
 
     testWidgets('an unconfirmed figure is marked, not hidden', (tester) async {
@@ -184,11 +188,36 @@ void main() {
       expect(marks, isNotEmpty, reason: 'no pending mark on a stale figure');
     });
 
+    testWidgets('asks for a budget instead of inventing one', (tester) async {
+      // zad_budget_state() returns null for `remaining` when no limit has been
+      // confirmed. Printing a confident zero there would assert a fact nobody
+      // supplied, so the card reports what it does know — the spend — and asks
+      // for the rest.
+      await pumpCard(tester, cycleStartDay: 25, spendable: null, spent: 1250);
+
+      expect(find.text('اتصرف الفترة دي'), findsOneWidget);
+      expect(find.text('1,250'), findsOneWidget);
+      expect(find.textContaining('ميزانيتك الشهرية'), findsOneWidget);
+      expect(find.text('المتاح في دورة الراتب'), findsNothing);
+    });
+
+    testWidgets('explains the gap that committed obligations make', (
+      tester,
+    ) async {
+      // Rent that has not gone out yet is not spendable, so `available` is
+      // below the balance. Saying by how much is what keeps that from looking
+      // like an arithmetic error.
+      await pumpCard(tester, cycleStartDay: 25, committed: 2000);
+
+      expect(find.textContaining('2,000'), findsWidgets);
+      expect(find.textContaining('التزامات'), findsOneWidget);
+    });
+
     testWidgets('announces itself to a screen reader', (tester) async {
       await pumpCard(tester, cycleStartDay: 25);
 
       final semantics = tester.getSemantics(find.byType(ZadBalanceCard).first);
-      expect(semantics.label, contains('المتبقي'));
+      expect(semantics.label, contains('المتاح'));
       expect(semantics.label, contains('4,820.5'));
     });
   });

@@ -58,6 +58,23 @@ class TransactionsRepository {
     return rows;
   }
 
+  /// Every cached row, newest first.
+  ///
+  /// Synchronous, like [cachedPeriod], and used for questions that are not
+  /// about one period — what is still queued, for instance.
+  List<ZadTransaction> allCached() {
+    final rows =
+        _cache.values
+            .map(
+              (raw) => ZadTransaction.fromJson(
+                jsonDecode(raw) as Map<String, dynamic>,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return rows;
+  }
+
   /// Fetches [period] from the server and replaces the cached copy of it.
   ///
   /// Only rows inside the period are replaced, and pending rows are kept. A

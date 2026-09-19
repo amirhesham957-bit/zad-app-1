@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/zad_theme.dart';
+import 'package:zad/features/home/presentation/home_screen.dart';
 
 /// The root widget.
 ///
-/// Routing and the first real screens land next; what is here is the shell the
-/// data layer and the design system were verified inside.
+/// Routing lands next. For now the shell opens straight onto the one screen
+/// there is.
 class ZadApp extends ConsumerWidget {
   /// Creates the root widget.
   const new({super.key});
@@ -34,18 +34,7 @@ class ZadApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const _Shell(),
+      home: const Scaffold(body: HomeScreen()),
     );
   }
-}
-
-/// A placeholder home, on the real canvas, until the router arrives.
-class _Shell extends StatelessWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context) => const DecoratedBox(
-    decoration: BoxDecoration(gradient: ZadColors.canvas),
-    child: Center(child: Text('زاد')),
-  );
 }

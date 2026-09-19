@@ -33,6 +33,7 @@ class BudgetPeriod {
     required this.timeZone,
     required this.cycleStartDay,
     required this.anchor,
+    required this.isCalendarMonth,
   });
 
   /// The period containing [at] for an account in [country] paid on
@@ -72,6 +73,53 @@ class BudgetPeriod {
       timeZone: zoneName,
       cycleStartDay: cycleStartDay,
       anchor: anchor,
+      isCalendarMonth: cycleStartDay == null,
+    );
+  }
+
+  /// Wraps the civil range the **server** already decided on.
+  ///
+  /// `zad_budget_state()` reports its own `cycle_start` and `cycle_end`, and
+  /// the money it reports is computed against those. Recomputing the range here
+  /// and showing the result next to those figures would put two answers to
+  /// "how many days left" on one card. So when a snapshot exists its range
+  /// wins, and [BudgetPeriod.at] is for the case where there is no snapshot to
+  /// defer to.
+  ///
+  /// Note the server's range comes from `zad_cycle_bounds()`, which is the
+  /// older function — see the header of migration
+  /// `20260919180000_budget_period_salary_cycle.sql` for the case it gets
+  /// wrong. Deferring to it keeps the card self-consistent; it does not
+  /// endorse it.
+  factory fromServer({
+    required DateTime cycleStart,
+    required DateTime cycleEnd,
+    required String timeZone,
+    int? cycleStartDay,
+    CycleAnchor anchor = CycleAnchor.dayOfMonth,
+  }) {
+    final location = tz.getLocation(timeZone);
+    final start = DateTime.utc(
+      cycleStart.year,
+      cycleStart.month,
+      cycleStart.day,
+    );
+    final end = DateTime.utc(cycleEnd.year, cycleEnd.month, cycleEnd.day);
+
+    return BudgetPeriod(
+      periodStart: start,
+      periodEnd: end,
+      startsAt: _midnightInstant(start, location),
+      endsAt: _midnightInstant(end, location),
+      timeZone: timeZone,
+      cycleStartDay: cycleStartDay,
+      anchor: anchor,
+      // Read off the dates, because `zad_budget_state()` does not report a
+      // payday. A range that runs from the 1st to the 1st is a calendar month;
+      // anything else is a salary cycle. Inferring this from a null
+      // `cycleStartDay` instead — the caller rarely has one to pass — told
+      // every user with a payday that they were looking at "this month".
+      isCalendarMonth: start.day == 1 && end.day == 1,
     );
   }
 
@@ -98,8 +146,12 @@ class BudgetPeriod {
   /// How [cycleStartDay] is placed inside its month.
   final CycleAnchor anchor;
 
-  /// Whether this period is a plain calendar month because no payday is known.
-  bool get isCalendarMonth => cycleStartDay == null;
+  /// Whether this period is a plain calendar month rather than a salary cycle.
+  ///
+  /// Stored, not derived. [BudgetPeriod.at] knows because it was given the
+  /// payday; [BudgetPeriod.fromServer] reads it off the range, because the
+  /// server's budget state reports dates and no payday.
+  final bool isCalendarMonth;
 
   /// The period's length in civil days.
   int get totalDays => periodEnd.difference(periodStart).inDays;

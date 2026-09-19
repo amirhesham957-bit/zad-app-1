@@ -13,6 +13,7 @@ import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -38,6 +39,22 @@ final supabaseClientProvider = Provider<SupabaseClient>(
 final signedInUserIdProvider = Provider<String? Function()>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return () => client.auth.currentUser?.id;
+});
+
+/// The clock.
+///
+/// Injected rather than read directly so a test, or a golden, is not at the
+/// mercy of the time of day it happens to run at.
+final nowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
+/// The budget, read from `zad_budget_state()` and cached.
+final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return BudgetRepository(
+    cache: store.documents,
+    remote: SupabaseBudgetRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
 });
 
 /// The server side of transactions.
