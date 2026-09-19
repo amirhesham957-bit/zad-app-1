@@ -39,6 +39,8 @@ import {
   confirmMedicationKeyboard, parseMedicationCallback,
   checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
   confirmToolKeyboard, parseToolCallback,
+  isHumanUpdate, type UpdateEnvelope,
+  doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES,
 } from "./telegram.ts";
 import {
   AgentContextInput, agentSystemPrompt, buildAgentContext, clampForTelegram,
@@ -1533,6 +1535,86 @@ bot.on("callback_query:data", async (ctx) => {
 
   const data = ctx.callbackQuery.data;
 
+  // ── زر الجرعة: قاعدة البيانات الأول، الشكر بعدين (٢٠٢٦-٠٩-١٩) ─────────────
+  //
+  // ده المسار اللي بيستبدل «اكتب أخدته وسيب الموديل يفهم». الترتيب هنا مقصود بالحرف:
+  // بنقرا اللحظة من `zad_voice_moments` (مصدر الحقيقة الوحيد لأسماء الأدوية
+  // ومواعيدها — مفيش أي اسم بييجي من كلام الموديل)، بننادي الـRPC الذرّية لكل دوا،
+  // وبنرد على العميل **بس** لو الكتابة نجحت. أي فشل بيقول له صراحةً إنها ماتسجلتش.
+  const doseCallback = parseDoseCallback(data);
+  if (doseCallback) {
+    const { data: momentRow } = await sb.from("zad_voice_moments")
+      .select("id,user_id,moment,facts")
+      .eq("id", doseCallback.momentId).eq("user_id", userId).maybeSingle();
+    const moment = momentRow as { moment: string; facts: Record<string, unknown> } | null;
+    if (!moment) {
+      await ctx.reply("التذكير ده مش موجود عندي — افتح صفحة الصيدلية في التطبيق وسجّل الجرعة من هناك.");
+      return;
+    }
+    const itemIds = Array.isArray(moment.facts?.item_ids)
+      ? (moment.facts.item_ids as unknown[]).map(String).filter((v) => /^[0-9a-fA-F-]{36}$/.test(v))
+      : [];
+    const scheduledAt = typeof moment.facts?.scheduled_at === "string" ? moment.facts.scheduled_at : null;
+    if (itemIds.length === 0 || !scheduledAt) {
+      await ctx.reply("التذكير ده قديم ومش مربوط بدوا محدد — سجّل الجرعة من صفحة الصيدلية في التطبيق.");
+      return;
+    }
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+
+    if (doseCallback.action === "snooze") {
+      // التأجيل بيتكتب في جدول، مش في الذاكرة: الكرون هو اللي بيقرا منه فبيسكت عن
+      // نفس الجرعة لحد ما الوقت يعدّي، وبعدها بيبعت تذكير واحد جديد.
+      const until = new Date(Date.now() + DOSE_SNOOZE_MINUTES * 60_000).toISOString();
+      const { error: snoozeErr } = await sb.from("zad_dose_snoozes").upsert(
+        itemIds.map((itemId) => ({
+          user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until,
+        })),
+        { onConflict: "user_id,item_id,scheduled_at" },
+      );
+      if (snoozeErr) {
+        console.error("[dose] snooze failed:", snoozeErr.message);
+        await ctx.reply("معلش، مقدرتش أأجّل التذكير — هفضل أفكّرك زي ما هو.");
+        return;
+      }
+      await ctx.reply(`تمام، هسكت ${DOSE_SNOOZE_MINUTES} دقيقة وأفكّرك تاني.`);
+      return;
+    }
+
+    const names: string[] = [];
+    const failed: string[] = [];
+    for (const itemId of itemIds) {
+      const { data: result, error } = await sb.rpc("zad_log_pharmacy_dose_atomic", {
+        p_user: userId,
+        p_item: itemId,
+        // الخانة الزمنية بتاعة التذكير نفسه، مش دلوقتي: الفهرس الفريد
+        // (user_id, item_id, scheduled_at) بيخلي ضغطتين على نفس الزر عملية واحدة،
+        // وبيخلي الكرون يشوف إن الجرعة دي بالذات اتاخدت.
+        p_scheduled_at: scheduledAt,
+        p_taken_at: new Date().toISOString(),
+      });
+      const r = result as { ok?: boolean; name?: string; remaining_quantity?: number } | null;
+      if (error || !r?.ok) {
+        console.error("[dose] log failed:", itemId, error?.message ?? JSON.stringify(r));
+        failed.push(itemId);
+      } else {
+        names.push(String(r.name ?? "الدوا"));
+      }
+    }
+    if (names.length === 0) {
+      await ctx.reply("معلش، مقدرتش أسجّل الجرعة دلوقتي — ماتسجلتش، جرّب من صفحة الصيدلية في التطبيق.");
+      return;
+    }
+    // التذكير ده خلص شغله: مايتبعتش تاني ولا يتحسب كجرعة فايتة.
+    await sb.from("zad_voice_moments")
+      .update({ status: "sent", error: null })
+      .eq("id", doseCallback.momentId).eq("user_id", userId);
+    const label = names.join(" و");
+    await ctx.reply(failed.length > 0
+      ? `اتسجلت جرعة ${label} ✅ — بس فيه دوا مقدرتش أسجله، راجع صفحة الصيدلية.`
+      : `اتسجلت جرعة ${label} ✅ تمام عليك.`);
+    return;
+  }
+
   // رفض مبادرة استباقية ← ذاكرة مهيكلة الماسح بيقراها (subject_kind/suppress_until).
   // الملكية بتتحقق جوه الدالة نفسها (المهمة لازم تكون بتاعة userId المحلول من الشات).
   const proactiveDismiss = parseProactiveDismissCallback(data);
@@ -1984,6 +2066,47 @@ async function ensureWebhook(force = false): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * مسح الطابور المتراكم عند تليجرام + إعادة الربط (٢٠٢٦-٠٩-١٩).
+ *
+ * لما الحلقة تكون شغالة فترة، تليجرام بيبقى ماسك مئات التحديثات المعلّقة وبيعيد
+ * تسليمها أول ما الفانكشن ترجع تستجيب — يعني إصلاح الكود لوحده مش كفاية، الطابور
+ * القديم لسه هينزل. `deleteWebhook` بـ`drop_pending_updates: true` بيرمي الطابور ده،
+ * وبعدها `setWebhook` بيرجّع الربط.
+ *
+ * ⚠️ مش في `ensureWebhook` وعمره ما هيتنادى لوحده: إسقاط الطابور بيرمي كمان رسايل
+ * عملاء حقيقية لسه ماتعالجتش. ده إجراء يدوي بسيكريت، مش سلوك تلقائي عند كل نشر.
+ */
+async function resetWebhook(): Promise<Record<string, unknown>> {
+  if (!BOT_CONFIGURED) return { ok: false, reason: "TELEGRAM_BOT_TOKEN is not set on this project" };
+  const before = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`)
+    .then((r) => r.json()).catch(() => null);
+  const dropped = before?.result?.pending_update_count ?? null;
+  const delRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ drop_pending_updates: true }),
+  });
+  const del = await delRes.json();
+  if (del?.ok !== true) {
+    console.error("resetWebhook: deleteWebhook rejected:", JSON.stringify(del));
+    return { ok: false, stage: "deleteWebhook", telegram: del };
+  }
+  const setRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: FUNCTION_URL,
+      secret_token: WEBHOOK_SECRET,
+      allowed_updates: ["message", "callback_query"],
+      drop_pending_updates: true,
+    }),
+  });
+  const set = await setRes.json();
+  console.log("resetWebhook: setWebhook ->", JSON.stringify(set));
+  return { ok: set?.ok === true, dropped_pending: dropped, url: FUNCTION_URL, telegram: set };
+}
+
 // Register on cold start too, so a redeploy re-asserts the webhook without anyone
 // having to poke it. Fire-and-forget: a Telegram outage must not stop the function
 // from booting and serving updates it may already be receiving.
@@ -1991,6 +2114,54 @@ if (BOT_CONFIGURED) {
   ensureWebhook().catch((e) => console.error("boot ensureWebhook:", e));
 } else {
   console.error("zad-telegram-bot: TELEGRAM_BOT_TOKEN is not set — bot is inert.");
+}
+
+// ── منع تكرار المعالجة (٢٠٢٦-٠٩-١٩) ─────────────────────────────────────────
+//
+// تليجرام بيضمن التسليم **مرة على الأقل**، مش مرة واحدة بالظبط. الـwebhook هنا بيستنى
+// لفة الوكيل كلها قبل ما يرجّع 200، فأي لفة بطيئة (نداء موديل) بتتقري عنده كـtimeout
+// وبيعيد تسليم نفس `update_id` — واللفة التانية بترد تاني. ده نص الحلقة اللانهائية،
+// والنص التاني (راسل بوت) بيتقفل في isHumanUpdate.
+//
+// طبقتين عن قصد:
+//  - كاش في الذاكرة: بيقفل أسرع إعادة تسليم — اللي بتنزل على نفس النسخة — من غير أي
+//    استعلام. مابيكفيش لوحده: كل نسخة (isolate) ليها ذاكرتها، وتليجرام ممكن يوزّع.
+//  - جدول `telegram_processed_updates`: مفتاحه الأساسي هو `update_id` نفسه، فالحجز
+//    ذرّي — أول INSERT بيكسب والباقي بياخد 23505 ويترمي.
+//
+// بيفشل **مفتوح** عن قصد: لو الجدول مش موجود أو الداتابيز وقعت، التحديث بيتعالج.
+// تكرار نادر أرحم من بوت ميت.
+const seenUpdateIds = new Map<number, number>();
+const SEEN_UPDATE_TTL_MS = 60 * 60_000;
+const SEEN_UPDATE_MAX = 2_000;
+
+/** `true` = التحديث ده لسه ماتعالجش وإحنا حجزناه. `false` = مكرر، يترمي بـ200. */
+async function claimUpdate(sb: SupabaseClient, updateId: unknown): Promise<boolean> {
+  if (typeof updateId !== "number" || !Number.isFinite(updateId)) return true;
+  const now = Date.now();
+  const seenAt = seenUpdateIds.get(updateId);
+  if (seenAt !== undefined && now - seenAt < SEEN_UPDATE_TTL_MS) return false;
+  if (seenUpdateIds.size > SEEN_UPDATE_MAX) {
+    for (const [id, at] of seenUpdateIds) {
+      if (now - at >= SEEN_UPDATE_TTL_MS) seenUpdateIds.delete(id);
+    }
+    // لسه كبير بعد التنضيف (سيل تحديثات) — الأقدم يمشي.
+    while (seenUpdateIds.size > SEEN_UPDATE_MAX) {
+      const oldest = seenUpdateIds.keys().next();
+      if (oldest.done) break;
+      seenUpdateIds.delete(oldest.value);
+    }
+  }
+  seenUpdateIds.set(updateId, now);
+
+  const { error } = await sb.from("telegram_processed_updates").insert({ update_id: updateId });
+  if (!error) return true;
+  if (error.code === "23505") {
+    console.log(`[dedupe] update ${updateId} already processed — dropped`);
+    return false;
+  }
+  console.error("[dedupe] claim failed, processing anyway:", error.code ?? "", error.message);
+  return true;
 }
 
 const handleUpdate = webhookCallback(bot, "std/http", { secretToken: WEBHOOK_SECRET });
@@ -2145,6 +2316,21 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // إعادة ضبط الـwebhook: يرمي الطابور المتراكم عند تليجرام ويربط من جديد. بسيكريت
+  // لأن الـGET probe تحت مفتوح للكل (verify_jwt=false على الفانكشن دي) — من غير
+  // البوابة دي أي حد على النت يقدر يمسح رسايل عملاء لسه ماوصلتش.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "reset_webhook") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      return Response.json(await resetWebhook());
+    } catch (e) {
+      console.error("reset_webhook failed:", e);
+      return Response.json({ ok: false, error: String(e) }, { status: 500 });
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "realtime_push") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });
@@ -2154,10 +2340,12 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
+        // اختياري: تنبيه جرعة — معرّف صف zad_voice_moments، بيتحوّل لزرار «أخدت الجرعة».
+        dose_moment_id?: string;
       };
       if (!user_id || !title || !body) {
         return new Response(JSON.stringify({ ok: false, reason: "missing user_id/title/body" }), { status: 400 });
@@ -2169,7 +2357,11 @@ Deno.serve(async (req: Request) => {
       }
       // اختياري: لو الرسالة مبادرة من مهمة استباقية، بتاخد أزرار رفض (pd:<task>). تريجرات
       // الداتابيز مابتبعتش الحقل ده، فرسايلهم بتفضل زي ما هي من غير أزرار.
-      const keyboard = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
+      // تنبيه جرعة بيكسب على زرار الرفض: الأهم إن العميل يقدر يسجّل إنه خدها بضغطة
+      // واحدة من غير ما يعدّي على فهم الموديل للكلام (سبب «بيشكرني ومابيسجلش»).
+      const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
+        ? doseKeyboard(dose_moment_id)
+        : dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
         ? proactiveDismissKeyboard(dismiss_task_id)
         : undefined;
       await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
@@ -2358,10 +2550,56 @@ Deno.serve(async (req: Request) => {
     // loop against a misconfigured project helps nobody.
     return new Response("bot not configured", { status: 503 });
   }
+
+  // ── الحارس: مين يدخل لفة الوكيل أصلاً (٢٠٢٦-٠٩-١٩) ────────────────────────
+  // أول حاجة بعد التحقق من الإعداد، وقبل grammY وقبل أي نداء ذكاء اصطناعي.
+  // بيرجّع 200 دايماً للمرفوض — 4xx/5xx بيخلي تليجرام يعيد التسليم، وده بالظبط
+  // اللي بنحاول نوقفه.
+  //
+  // الجسم بيتقرا مرة واحدة هنا وبيتبني منه Request جديد لـgrammY: `req.json()`
+  // بيستهلك الـbody ومينفعش يتقرا تاني.
+  // التحقق من سر الـwebhook **قبل** أي قراية أو كتابة. grammY بيتحقق منه برضه، بس
+  // بعد ما الحارس تحت يكون كتب صف حجز في الداتابيز — يعني أي حد على النت كان يقدر
+  // يضخّم `telegram_processed_updates` بطلبات مزوّرة. تليجرام بيبعت الهيدر ده مع كل
+  // تحديث لأن setWebhook بيتسجّل بـsecret_token (شوف ensureWebhook فوق).
+  if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== WEBHOOK_SECRET) {
+    console.error("[guard] webhook secret mismatch — rejected");
+    return new Response("unauthorized", { status: 401 });
+  }
+
+  let update: UpdateEnvelope;
+  let rawBody: string;
   try {
-    return await handleUpdate(req);
+    rawBody = await req.text();
+    update = JSON.parse(rawBody) as UpdateEnvelope;
+  } catch {
+    // جسم مش JSON مش تحديث تليجرام — مالوش لازمة يوصل grammY.
+    return new Response("OK", { status: 200 });
+  }
+
+  if (!isHumanUpdate(update)) {
+    console.log("[guard] dropped non-human update", JSON.stringify({
+      update_id: update?.update_id,
+      kind: update?.message ? "message" : update?.callback_query ? "callback_query" : "other",
+      is_bot: update?.message?.from?.is_bot ?? update?.callback_query?.from?.is_bot ?? null,
+    }));
+    return new Response("OK", { status: 200 });
+  }
+
+  const dedupeClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  if (!(await claimUpdate(dedupeClient, update.update_id))) {
+    return new Response("OK", { status: 200 });
+  }
+
+  try {
+    // Request جديدة بنفس الطريقة والهيدرز (grammY بيتحقق من secret_token منها)
+    // وبجسم مقرووء تاني.
+    return await handleUpdate(new Request(req.url, { method: req.method, headers: req.headers, body: rawBody }));
   } catch (e) {
     console.error("zad-telegram-bot error:", e);
-    return new Response("error", { status: 500 });
+    // 500 هنا = تليجرام يعيد التسليم = نفس اللفة تتنفذ تاني. الحجز فوق بيمنع كده
+    // برضه، بس الأنضف إننا نقر بالاستلام: الخطأ متسجل في اللوج ومحدش بيستفيد من
+    // إعادة محاولة نداء موديل وقع.
+    return new Response("OK", { status: 200 });
   }
 });

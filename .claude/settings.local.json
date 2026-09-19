@@ -32,6 +32,8 @@
   },
   "enabledMcpjsonServers": [
     "supabase",
-    "figma"
+    "figma",
+    "chrome-devtools",
+    "context7"
   ]
 }
