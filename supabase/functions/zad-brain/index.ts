@@ -56,7 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -2063,12 +2063,19 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       const { data: items } = await sb.from("zad_pharmacy_items")
         .select("id,name,remaining_quantity,unit,daily_dose_count").eq("user_id", userId);
       const rows = (items ?? []) as Array<{ id: string; name: string; remaining_quantity: number; unit: string | null; daily_dose_count: number | null }>;
-      const match = rows.find((r) => {
-        const a = r.name.trim().toLowerCase();
-        const b = spoken.toLowerCase();
-        return a.includes(b) || b.includes(a);
-      });
-      if (!match) return `مرفوض: مفيش دواء اسمه "${spoken}" في قايمة العميل — عدّل وحاول تاني.`;
+      // مطابقة صارمة: دوا واحد واضح أو مفيش. تسجيل الجرعة على الدوا الغلط غلط طبي،
+      // فالتخمين ممنوع — والرد بيسمّي الأدوية المسجّلة فعلاً عشان الموديل يردّ من
+      // الجدول مش من خياله (matchMedicineByName في shared.ts).
+      const { item: match, ambiguous } = matchMedicineByName(rows, spoken);
+      if (ambiguous) {
+        return `مرفوض: "${spoken}" بيطابق أكتر من دوا (${ambiguous.join("، ")}) — اسأل العميل يحدد أنهي واحد بالاسم كامل قبل ما تسجّل.`;
+      }
+      if (!match) {
+        const registered = rows.map((r) => r.name).join("، ");
+        return rows.length === 0
+          ? `مرفوض: مفيش أي دوا مسجّل في جدول العميل. قوله بالنص: "مفيش دواء مسجل بالاسم ده في جدولك" واعرض عليه يضيفه (add_pharmacy_item). ممنوع تخترع اسم دوا أو جرعة.`
+          : `مرفوض: مفيش دواء اسمه "${spoken}" في جدول العميل. الأدوية المسجّلة: ${registered}. قوله "مفيش دواء مسجل بالاسم ده في جدولك" واعرض عليه الأسماء دي بالظبط — ممنوع تخترع اسم.`;
+      }
 
       const nowIso = new Date().toISOString();
       const { data: mutation, error: doseErr } = await sb.rpc("zad_log_pharmacy_dose_atomic", {
@@ -2485,12 +2492,17 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
     }
     case "add_appointment": {
       const title = String(input.title).trim();
+      // بتوقيت العميل، مش بتوقيت السيرفر — resolveLocalIso بيشرح ليه ده كان بيزحلق
+      // كل ميعاد ساعتين/تلاتة. الرفض هنا أحسن من ميعاد في وقت غلط: تذكير دوا في وقت
+      // غلط أسوأ من إنه مايتسجلش.
+      const startsAt = resolveLocalIso(input.starts_at, snap?.now_local?.utc_offset ?? "+00:00");
+      if (!startsAt) return "مرفوض: الوقت مش مفهوم — اكتبه ISO بالمنطقة الزمنية (مثال 2026-09-19T17:00:00+03:00) أو اسأل العميل الساعة بالظبط.";
       const w = await writeRows(
         sb.from("zad_appointments").insert({
           user_id: userId,
           title,
           kind: APPOINTMENT_KINDS.includes(String(input.kind)) ? String(input.kind) : "personal",
-          starts_at: new Date(String(input.starts_at)).toISOString(),
+          starts_at: startsAt,
           place_label: input.place_label ? String(input.place_label).trim().slice(0, 120) : null,
           // الافتراضي في الوقت نفسه: ٣٠ كان بيطلّع «فكّرني كمان ١٠ دقايق» فوراً (قياس ٢٠٢٦-٠٩-١٥).
           remind_minutes_before: Number.isInteger(input.remind_minutes_before) ? input.remind_minutes_before : 0,
@@ -2502,7 +2514,7 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       if (!w.ok) return `مرفوض: ${w.reason}`;
       const row = w.rows[0] as { id: string; title: string; starts_at: string };
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: input.starts_at } });
+      ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: startsAt } });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_appointments", targetId: row.id, previous: null, next: row,
       });
@@ -2517,7 +2529,11 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       if (!before) return "مرفوض: الميعاد ده مش موجود في مواعيد العميل";
       const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (input.status !== undefined) patch.status = input.status;
-      if (input.starts_at !== undefined) patch.starts_at = new Date(String(input.starts_at)).toISOString();
+      if (input.starts_at !== undefined) {
+        const moved = resolveLocalIso(input.starts_at, snap?.now_local?.utc_offset ?? "+00:00");
+        if (!moved) return "مرفوض: الوقت الجديد مش مفهوم — اكتبه ISO بالمنطقة الزمنية أو اسأل العميل الساعة بالظبط.";
+        patch.starts_at = moved;
+      }
       if (input.title !== undefined) patch.title = String(input.title).trim().slice(0, 160);
       const w = await writeRows(
         sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status"),
@@ -4623,7 +4639,7 @@ function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: 
     compose: async (system, user) =>
       (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
     pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),
-    pushTelegram: (uid, title, text, voice, m, speech, emotion) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech, emotion),
+    pushTelegram: (uid, title, text, voice, m, speech, emotion, doseId) => pushToTelegram(uid, title, text, fetch, undefined, voice, m, speech, emotion, doseId),
   }, 5, userId)
     .then((r) => console.log(`${label} → ${JSON.stringify(r)}`))
     .catch((e) => console.error(`${label} processing failed:`, (e as Error)?.message));
@@ -5880,6 +5896,13 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.
 10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
+11b. **الأدوية — صفر اختراع، وصفر شكر من غير تسجيل (قاعدة سلامة، مش قاعدة أسلوب)**:
+   - **ممنوع منعاً باتاً تذكر أو تقترح أو تجدول أي دوا مش موجود بالاسم في pharmacy جوه الـsnapshot.** مفيش استثناء: لا اسم علمي، لا بديل، لا ماركة قريبة، لا جرعة من معلوماتك العامة. الجدول هو المصدر الوحيد لأسماء أدوية العميل.
+   - لو سأل عن دوا مش في الجدول، الرد الوحيد المسموح: «مفيش دواء مسجل بالاسم ده في جدولك» — وبعدها اعرض عليه الأسماء المسجّلة فعلاً، أو اعرض تضيفه بـadd_pharmacy_item لو هو اللي طلب.
+   - **«أخدته» / «خدت الدوا» / «شربت الحبة» ⇒ نادِ log_pharmacy_dose فوراً.** ممنوع ترد بشكر أو تطمين قبل ما الأداة ترجّع نجاح. لو رجّعت «مرفوض» بأي سبب، قول للعميل صراحةً إنها **ماتسجلتش** والسبب — متقولش «تمام سجلتها» أبداً.
+   - لو الاسم بيطابق أكتر من دوا، اسأله يحدد بالاسم كامل. متختارش بالنيابة عنه: تسجيل جرعة على الدوا الغلط غلط طبي.
+   - إلغاء أو تعديل تذكير أو ميعاد = **نداء أداة** (update_appointment / update_pharmacy_item)، مش وعد في الكلام. «تمام هظبطها» من غير أداة معناها إن التنبيهات هتفضل تيجي زي ما هي والعميل هيفتكر إنك عدّلتها.
+
 12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
 13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.
 14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.
@@ -6181,8 +6204,8 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbMoments, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, moment, speech, emotion) =>
-          pushToTelegram(userId, title, text, fetch, undefined, voice, moment, speech, emotion),
+        pushTelegram: (userId, title, text, voice, moment, speech, emotion, doseId) =>
+          pushToTelegram(userId, title, text, fetch, undefined, voice, moment, speech, emotion, doseId),
       });
       console.log(`[voice_moments] sent=${summary.sent} skipped=${summary.skipped} failed=${summary.failed}`);
       return new Response(JSON.stringify({ ok: true, ...summary }), { headers: CORS_HEADERS });
@@ -6391,7 +6414,7 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbPlace, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, m, speech, emotion) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion),
+        pushTelegram: (userId, title, text, voice, m, speech, emotion, doseId) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion, doseId),
       }, 5, placeUserId);
       return new Response(JSON.stringify({ ok: true, status: "processed", ...outing, ...summary }), { headers: CORS_HEADERS });
     }
@@ -6467,7 +6490,7 @@ Deno.serve(async (req: Request) => {
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbEvent, userId, title, text, data, dataOnly),
-        pushTelegram: (userId, title, text, voice, m, speech, emotion) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion),
+        pushTelegram: (userId, title, text, voice, m, speech, emotion, doseId) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion, doseId),
       }, 5, eventUserId);
       return new Response(JSON.stringify({ ok: true, status: "processed", ...summary }), { headers: CORS_HEADERS });
     }

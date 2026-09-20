@@ -45,6 +45,42 @@ export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reacti
  */
 export const TELEGRAM_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_due"]);
 
+/**
+ * لحظات الدوا — بتاخد زرار «✅ أخدت الجرعة» على تليجرام، وبتتحكم فيها حراسة
+ * منع الهلوسة تحت. نفس القايمة موجودة في zad-telegram-bot/telegram.ts (DOSE_MOMENTS)؛
+ * الفانكشنين منفصلتين في النشر فماينفعش يستوردوا من بعض.
+ */
+export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
+  "dose_due", "dose_nudge", "dose_missed", "dose_missed_again",
+]);
+
+/**
+ * حراسة منع الهلوسة الدوائية (٢٠٢٦-٠٩-١٩).
+ *
+ * بلاغ: «البوت بيولّد أدوية وهمية مش موجودة». المصدر مش الجدول — `facts.item_name`
+ * بييجي من SQL على `zad_pharmacy_items` مباشرة. المصدر هو **صياغة** الموديل للتنبيه:
+ * بيتاخد اسم حقيقي ويرجع نص فيه اسم تاني (اسم علمي، ماركة قربها، أو دوا مخترع).
+ * ده مش خطأ لغوي — ده إنسان بياخد دوا غلط بناءً على تنبيه.
+ *
+ * القاعدة: أي نص أو كلام لتنبيه جرعة **لازم** يحتوي على الاسم زي ما هو مكتوب في
+ * جدول العميل. لو مش موجود، الصياغة كلها تترمي ويتبعت القالب الثابت — اللي بيركّب
+ * الاسم من `facts` حرفياً ومستحيل يخترع حاجة.
+ *
+ * بيقارن على مستوى الكلمة عشان اللزقة العربية ("الكونكور"، "وبانادول") ماتعديش كفشل.
+ */
+export function mentionsRealMedicine(composed: ComposedMoment, facts: Record<string, unknown>): boolean {
+  const names = String(facts?.item_name ?? "").split(/\s+و|,|،/).map((n) => n.trim()).filter((n) => n.length >= 2);
+  if (names.length === 0) return true; // مفيش اسم نقارن بيه — القالب هيقول "الدوا"
+  const haystack = `${composed.title} ${composed.text} ${composed.speech}`.toLowerCase();
+  // الاسم المركّب ("بانادول اكسترا") يعدّي لو أول كلمة منه موجودة: الموديل بيختصر.
+  return names.every((n) => {
+    const full = n.toLowerCase();
+    if (haystack.includes(full)) return true;
+    const head = full.split(/\s+/)[0];
+    return head.length >= 3 && haystack.includes(head);
+  });
+}
+
 /** معالج اتحجز له صف ومات قبل ما يخلّصه — بعد المدة دي الصف يرجع يتاخد تاني. */
 export const CLAIM_STALE_MS = 5 * 60 * 1000;
 
@@ -591,7 +627,7 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
 export interface VoiceMomentDeps {
   compose: (system: string, user: string) => Promise<string>;
   pushDevice: (userId: string, title: string, body: string, data: Record<string, string>, dataOnly: boolean) => Promise<string>;
-  pushTelegram: (userId: string, title: string, body: string, voice: boolean, moment: string, speech: string, emotion?: VoiceEmotion) => Promise<string>;
+  pushTelegram: (userId: string, title: string, body: string, voice: boolean, moment: string, speech: string, emotion?: VoiceEmotion, doseMomentId?: string) => Promise<string>;
   now?: () => number;
 }
 
@@ -684,6 +720,11 @@ export async function processVoiceMoments(
       } catch (e) {
         console.warn(`[voice_moments] compose failed for ${row.moment}:`, (e as Error)?.message);
       }
+      // صياغة تنبيه جرعة مش فيها اسم الدوا الحقيقي = اسم مخترع. تترمي كلها.
+      if (composed && DOSE_MOMENTS.has(deliveryMoment) && !mentionsRealMedicine(composed, row.facts ?? {})) {
+        console.error(`[voice_moments] ${deliveryMoment} ${row.id}: composed text does not name the real medicine — using template`);
+        composed = null;
+      }
       if (!composed) {
         composed = momentFallback(deliveryMoment, { ...(row.facts ?? {}), customer_name: cp?.preferred_name || u?.name || "" });
         composedBy = "fallback";
@@ -703,7 +744,13 @@ export async function processVoiceMoments(
         ? "not_for_text_moments"
         : DEVICE_ONLY_MOMENTS.has(deliveryMoment)
           ? "device_only"
-          : await deps.pushTelegram(row.user_id, composed.title, composed.text, true, deliveryMoment, composed.speech || composed.text, emotion);
+          // تنبيه جرعة بياخد معرّف الصف معاه: البوت بيحوّله لزرار «✅ أخدت الجرعة»
+          // بيكتب في الداتابيز مباشرة (٢٠٢٦-٠٩-١٩).
+          : await deps.pushTelegram(
+            row.user_id, composed.title, composed.text, true, deliveryMoment,
+            composed.speech || composed.text, emotion,
+            DOSE_MOMENTS.has(deliveryMoment) ? row.id : undefined,
+          );
 
       const delivered = device === "sent" || telegram === "delivered";
       await sb.from("zad_voice_moments").update({

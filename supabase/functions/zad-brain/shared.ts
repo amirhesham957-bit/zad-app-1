@@ -378,3 +378,108 @@ export function localNowContext(timeZone: string, now: Date = new Date()): {
   const weekday = new Intl.DateTimeFormat("ar-EG", { timeZone: tz, weekday: "long" }).format(now);
   return { iso_local: `${date}T${time}:00${utcOffset}`, date, time, weekday, utc_offset: utcOffset, time_zone: tz };
 }
+
+/**
+ * وقت كتبه الموديل ⇐ لحظة مطلقة بتوقيت العميل (٢٠٢٦-٠٩-١٩).
+ *
+ * بلاغ: «لخبطة صريحة في التوقيت — بيخلط بين UTC وتوقيت المستخدم المحلي +03:00 / +02:00».
+ *
+ * السبب: `add_appointment` كان بيعمل `new Date(input.starts_at).toISOString()` على طول.
+ * وصف الأداة بيقول للموديل يكتب المنطقة، بس ولا حاجة كانت **بتفرضها**. أول ما الموديل
+ * يكتب `2026-09-19T21:00:00` من غير منطقة، جافاسكريبت بتقراها بتوقيت **السيرفر** — وسيرفر
+ * سوبابيز على UTC. يعني ميعاد ٩ بالليل في القاهرة بيتخزن ٩ بالليل UTC = ١١ بالليل بتوقيته،
+ * وفي الرياض ١٢ بالليل. التذكير بيرن بعد الميعاد بساعتين أو تلاتة، والعميل بيشوف البوت
+ * بيقوله ميعاد مختلف عن اللي طلبه. نفس الغلط في `update_appointment` لما يأجّل ميعاد.
+ *
+ * القاعدة دلوقتي: وقت **بمنطقة صريحة** (Z أو ±HH:MM) بيتحترم زي ما هو — الموديل قال
+ * لحظة مطلقة ومفيش لبس. وقت **من غير منطقة** بيتقري بتوقيت العميل هو، مش بتوقيت السيرفر.
+ *
+ * بيرجع `null` لو النص مش وقت أصلاً — والمنادي بيرفض الأداة بدل ما يكتب `Invalid Date`.
+ *
+ * @param raw النص زي ما الموديل كتبه.
+ * @param utcOffset إزاحة العميل من `localNowContext().utc_offset`، مثال `+03:00`.
+ */
+export function resolveLocalIso(raw: unknown, utcOffset: string): string | null {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+  // فيه منطقة صريحة؟ (Z في الآخر، أو ±HH:MM / ±HHMM / ±HH بعد جزء الوقت)
+  const hasZone = /(?:Z|[+-]\d{2}:?\d{2}|[+-]\d{2})$/.test(text) && /\d{2}:\d{2}/.test(text);
+  const offset = /^[+-]\d{2}:\d{2}$/.test(utcOffset) ? utcOffset : "+00:00";
+  let candidate = text;
+  if (!hasZone) {
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text);
+    if (dateOnly) candidate = `${text}T00:00:00${offset}`;
+    else if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/.test(text)) {
+      const normalized = text.replace(" ", "T");
+      candidate = `${normalized.length === 16 ? `${normalized}:00` : normalized}${offset}`;
+    } else return null; // شكل مش متوقع — أحسن نرفض من إننا نخمّن منطقة
+  }
+  const parsed = new Date(candidate);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/**
+ * مطابقة اسم دوا قاله العميل باسم مسجّل في جدوله — بدون تخمين (٢٠٢٦-٠٩-١٩).
+ *
+ * بلاغ: «البوت بيولّد أدوية وهمية مش موجودة ولا بيسجّل الجرعة فعلياً».
+ *
+ * المطابقة القديمة كانت `a.includes(b) || b.includes(a)` على الاسم الخام. مشكلتها
+ * الحقيقية مش إنها بتقبل أسماء وهمية — دي بترفضها — المشكلة إنها بتقبل **الدوا الغلط**:
+ *  - العميل يقول «خدت الحبة» ⇒ "حبة" جوه "حبة الضغط" **و** "حبوب الحديد" ⇒ أول واحد
+ *    في الليستة بيتسجل، واللي اتاخد فعلاً بيفضل مفتوح فالكرون يفضل يزن عليه.
+ *  - حرفين زي «د» بيطابقوا أي حاجة.
+ *  - «بانادول» و«بندول» مابيطابقوش لأن الألف واللزقة العربية مابتتوحّدش.
+ *
+ * تسجيل جرعة على الدوا الغلط غلط طبي، مش غلط عرض. فالقاعدة هنا: مطابقة واحدة واضحة
+ * أو مفيش. أكتر من مرشّح = `ambiguous` والمنادي بيسأل العميل يحدد، مايختارش بالنيابة عنه.
+ */
+export interface MedicineMatch<T> {
+  /** الصف الوحيد اللي طابق. */
+  item?: T;
+  /** أكتر من دوا طابق الاسم ده — لازم العميل يوضّح. */
+  ambiguous?: string[];
+}
+
+/** توحيد عربي بسيط: تشكيل، ألف/ياء/تاء مربوطة، ولزقة "ال" التعريف. */
+export function normalizeMedicineName(raw: string): string {
+  return raw
+    // NFKD بتفكّك «أ» لـ«ا» + همزة فوق، و\p{Mn} بتشيل كل علامة غير متباعدة بعدها
+    // (تشكيل، همزة فوق/تحت، ألف خنجرية). مدى مكتوب باليد كان بيقف عند السكون
+    // فـ«أوجمنتين» مكانتش بتطابق «اوجمنتين» — وهي نفس الدوا.
+    .normalize("NFKD")
+    .replace(/\p{Mn}/gu, "")
+    .replace(/\u0640/g, "")
+    .replace(/[\u0625\u0623\u0622\u0671]/g, "\u0627")
+    .replace(/\u0649/g, "\u064A")
+    .replace(/\u0624/g, "\u0648")
+    .replace(/\u0626/g, "\u064A")
+    .replace(/\u0629/g, "\u0647")
+    .replace(/^\u0627\u0644/, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function matchMedicineByName<T extends { name: string }>(rows: readonly T[], spoken: string): MedicineMatch<T> {
+  const needle = normalizeMedicineName(spoken);
+  if (needle.length < 3) return {}; // «د»، «حبة» — مش اسم، مايتخمّنش عليه
+  const scored = rows.map((row) => {
+    const hay = normalizeMedicineName(row.name);
+    if (hay === needle) return { row, rank: 0 };
+    // كلمة كاملة جوه الاسم («بانادول» في «بانادول اكسترا»)، أو العكس («بانادول اكسترا»
+    // والعميل قال الاسم كامل والمسجّل أقصر). اللزقة بتتقارن على حدود الكلمة عشان
+    // "حبة" ماتطابقش "حبوب".
+    const words = hay.split(" ");
+    if (words.includes(needle)) return { row, rank: 1 };
+    if (needle.split(" ").includes(hay)) return { row, rank: 1 };
+    // بادئة كلمة: «بندو» ⇒ «بندول». ٤ حروف على الأقل عشان ماتبقاش مصادفة.
+    if (needle.length >= 4 && words.some((w) => w.startsWith(needle))) return { row, rank: 2 };
+    return null;
+  }).filter((v): v is { row: T; rank: number } => v !== null);
+
+  if (scored.length === 0) return {};
+  const best = Math.min(...scored.map((s) => s.rank));
+  const winners = scored.filter((s) => s.rank === best);
+  if (winners.length > 1) return { ambiguous: winners.map((w) => w.row.name) };
+  return { item: winners[0].row };
+}

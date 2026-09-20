@@ -206,6 +206,9 @@ export async function pushToTelegram(
   speech?: string,
   // الإحساس المختار للموقف ده (voiceMoments) — بيكسب على إحساس اللحظة الثابت في البوت.
   emotion?: string,
+  // تنبيه جرعة: معرّف صف zad_voice_moments. البوت بيحوّله لزرار «✅ أخدت الجرعة»
+  // بيكتب في الداتابيز مباشرة من غير ما يعدّي على فهم الموديل للكلام (٢٠٢٦-٠٩-١٩).
+  doseMomentId?: string,
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -225,6 +228,7 @@ export async function pushToTelegram(
         ...(voice && moment ? { moment } : {}),
         ...(voice && speech ? { speech: speech.slice(0, 600) } : {}),
         ...(voice && emotion ? { emotion } : {}),
+        ...(doseMomentId ? { dose_moment_id: doseMomentId } : {}),
       }),
     });
     const text = await res.text();
