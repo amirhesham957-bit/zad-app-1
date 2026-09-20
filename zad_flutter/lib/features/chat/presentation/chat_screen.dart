@@ -17,6 +17,7 @@ import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 
@@ -54,6 +55,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final view = ref.watch(chatControllerProvider);
+
+    // The words land in the field, not in a turn. Whisper on dialect Arabic is
+    // good and not certain, and "خمسين" against "خمسمية" is money — so they
+    // are read before they are sent. Appended rather than assigned: somebody
+    // who typed half a sentence and then spoke the rest means both.
+    ref.listen(voiceInputControllerProvider, (previous, next) {
+      final transcript = next.transcript;
+      if (transcript == null) return;
+      final existing = _composer.text.trim();
+      _composer.text = existing.isEmpty ? transcript : '$existing $transcript';
+      _composer.selection = TextSelection.collapsed(
+        offset: _composer.text.length,
+      );
+      ref.read(voiceInputControllerProvider.notifier).transcriptTaken();
+      setState(() {});
+    });
 
     return DecoratedBox(
       decoration: const BoxDecoration(gradient: ZadColors.canvas),
@@ -376,7 +393,7 @@ class _Proposal extends ConsumerWidget {
   }
 }
 
-class _Composer extends StatelessWidget {
+class _Composer extends ConsumerWidget {
   const new({
     required this.controller,
     required this.busy,
@@ -390,45 +407,258 @@ class _Composer extends StatelessWidget {
   final Future<void> Function() onSend;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final voice = ref.watch(voiceInputControllerProvider);
     final canSend = !busy && controller.text.trim().isNotEmpty;
 
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.all(ZadSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 5,
-                textInputAction: TextInputAction.send,
-                onChanged: (_) => onChanged(),
-                onSubmitted: (_) => canSend ? onSend() : null,
-                decoration: const InputDecoration(
-                  hintText: 'اكتب لزاد…',
-                  filled: true,
-                  fillColor: ZadColors.surface,
+            if (_hint(voice.stage) case final hint?) ...<Widget>[
+              Padding(
+                padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                child: Text(
+                  hint,
+                  style: ZadType.labelSmall.copyWith(
+                    color: voice.stage == VoiceStage.denied
+                        ? ZadColors.terracottaRust
+                        : ZadColors.inkMuted,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: ZadSpacing.sm),
-            // Big enough to hit, in the bottom third, where the thumb is.
-            SizedBox(
-              width: kZadMinTapTarget,
-              height: kZadMinTapTarget,
-              child: IconButton.filled(
-                onPressed: canSend ? onSend : null,
-                icon: const Icon(ZadIcons.forward, size: 20),
-                tooltip: 'ابعت',
+            ],
+            if (voice.isRecording)
+              _Recording(amplitude: voice.amplitude)
+            else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      minLines: 1,
+                      maxLines: 5,
+                      enabled: voice.stage != VoiceStage.transcribing,
+                      textInputAction: TextInputAction.send,
+                      onChanged: (_) => onChanged(),
+                      onSubmitted: (_) => canSend ? onSend() : null,
+                      decoration: InputDecoration(
+                        hintText: voice.stage == VoiceStage.transcribing
+                            ? 'بحوّل الكلام…'
+                            : 'اكتب لزاد…',
+                        filled: true,
+                        fillColor: ZadColors.surface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  _MicButton(stage: voice.stage),
+                  const SizedBox(width: ZadSpacing.sm),
+                  SizedBox(
+                    width: kZadMinTapTarget,
+                    height: kZadMinTapTarget,
+                    child: IconButton.filled(
+                      onPressed: canSend ? onSend : null,
+                      icon: const Icon(ZadIcons.forward, size: 20),
+                      tooltip: 'ابعت',
+                    ),
+                  ),
+                ],
               ),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  /// What to say about the microphone, or nothing at all.
+  static String? _hint(VoiceStage stage) => switch (stage) {
+    // Named as the nudge it is, not as an error. The fix is to hold it a
+    // moment longer, and saying so is what breaks the habit of tapping again.
+    VoiceStage.tooShort => 'مسكت الزرار بسرعة — دوس وابدأ اتكلم، وبعدين قف.',
+    VoiceStage.denied =>
+      'محتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.',
+    VoiceStage.failed => 'مقدرتش أحوّل الكلام. جرب تاني.',
+    _ => null,
+  };
+}
+
+/// The microphone button, in whichever state it is in.
+class _MicButton extends ConsumerWidget {
+  const new({required this.stage});
+
+  final VoiceStage stage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(voiceInputControllerProvider.notifier);
+    final transcribing = stage == VoiceStage.transcribing;
+
+    return SizedBox(
+      width: kZadMinTapTarget,
+      height: kZadMinTapTarget,
+      child: transcribing
+          ? const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          : IconButton(
+              onPressed: () => unawaited(controller.start()),
+              icon: const Icon(ZadIcons.voice, size: 20),
+              tooltip: 'سجّل صوت',
+              style: IconButton.styleFrom(
+                foregroundColor: ZadColors.green800,
+                backgroundColor: ZadColors.mint50,
+              ),
+            ),
+    );
+  }
+}
+
+/// What the composer becomes while the microphone is live.
+///
+/// It replaces the field rather than sitting beside it, because the one thing
+/// a customer needs to know here is that it **is** recording — the habit this
+/// is fixing is pressing again because nothing looked different.
+class _Recording extends ConsumerWidget {
+  const new({required this.amplitude});
+
+  final double amplitude;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(voiceInputControllerProvider.notifier);
+
+    return Row(
+      children: <Widget>[
+        SizedBox(
+          width: kZadMinTapTarget,
+          height: kZadMinTapTarget,
+          child: IconButton(
+            onPressed: () => unawaited(controller.cancel()),
+            icon: const Icon(ZadIcons.dismiss, size: 20),
+            tooltip: 'إلغاء',
+            style: IconButton.styleFrom(foregroundColor: ZadColors.inkMuted),
+          ),
+        ),
+        const SizedBox(width: ZadSpacing.sm),
+        Expanded(
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: ZadColors.surface,
+              shape: zadSquircle(ZadRadii.pill),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.lg,
+                vertical: ZadSpacing.md,
+              ),
+              child: Row(
+                children: <Widget>[
+                  const _RecordingDot(),
+                  const SizedBox(width: ZadSpacing.md),
+                  Expanded(child: _Waveform(amplitude: amplitude)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: ZadSpacing.sm),
+        SizedBox(
+          width: kZadMinTapTarget,
+          height: kZadMinTapTarget,
+          child: IconButton.filled(
+            onPressed: () => unawaited(controller.stopAndTranscribe()),
+            icon: const Icon(ZadIcons.synced, size: 20),
+            tooltip: 'خلصت',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The red dot, breathing.
+class _RecordingDot extends StatefulWidget {
+  const new();
+
+  @override
+  State<_RecordingDot> createState() => _RecordingDotState();
+}
+
+class _RecordingDotState extends State<_RecordingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: Tween<double>(begin: 0.35, end: 1).animate(_pulse),
+    child: Container(
+      width: 10,
+      height: 10,
+      decoration: const BoxDecoration(
+        color: ZadColors.terracottaRust,
+        shape: BoxShape.circle,
+      ),
+    ),
+  );
+}
+
+/// A row of bars that answers the voice.
+///
+/// Driven by the recorder's own amplitude stream, so it moves when the
+/// microphone hears something and stays flat when it does not — which is the
+/// feedback that says the session is genuinely open, rather than an animation
+/// that would look identical over a dead capture.
+class _Waveform extends StatelessWidget {
+  const new({required this.amplitude});
+
+  final double amplitude;
+
+  static const int _bars = 18;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 24,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        for (var i = 0; i < _bars; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: 3,
+            height: _heightFor(i),
+            decoration: BoxDecoration(
+              color: ZadColors.green600,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+      ],
+    ),
+  );
+
+  /// Bars nearer the middle react more, so the row reads as a voice rather
+  /// than as a level meter.
+  double _heightFor(int index) {
+    const centre = (_bars - 1) / 2;
+    final distance = (index - centre).abs() / centre;
+    final weight = 1 - (distance * 0.7);
+    return 4 + (amplitude * 20 * weight);
   }
 }
