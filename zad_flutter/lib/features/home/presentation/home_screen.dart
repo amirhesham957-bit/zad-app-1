@@ -15,6 +15,7 @@ import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
@@ -45,6 +46,7 @@ class HomeScreen extends ConsumerWidget {
               title: Text('زاد'),
               floating: true,
               backgroundColor: Colors.transparent,
+              actions: <Widget>[SignOutAction()],
             ),
             SliverPadding(
               padding: const EdgeInsets.all(ZadSpacing.gutter),

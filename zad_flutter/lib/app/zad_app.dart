@@ -4,14 +4,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/zad_shell.dart';
+import 'package:zad/app/auth_gate.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/zad_theme.dart';
 
 /// The root widget.
 ///
-/// Routing lands next. For now the shell opens straight onto the one screen
-/// there is.
+/// Opens on the gate, which is either the shell or the login screen — decided
+/// on the first frame, from the session already restored off disk.
 class ZadApp extends ConsumerWidget {
   /// Creates the root widget.
   const new({super.key});
@@ -34,7 +34,7 @@ class ZadApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const ZadShell(),
+      home: const ZadAuthGate(),
     );
   }
 }

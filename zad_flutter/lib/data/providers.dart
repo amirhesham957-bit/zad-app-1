@@ -13,6 +13,7 @@ import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/bank/data/bank_capture_marker.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
@@ -38,6 +39,11 @@ final localStoreProvider = Provider<ZadLocalStore>(
 /// The Supabase client, initialised in `bootstrap()`.
 final supabaseClientProvider = Provider<SupabaseClient>(
   (ref) => Supabase.instance.client,
+);
+
+/// Signing in, signing up, signing out.
+final authGatewayProvider = Provider<AuthGateway>(
+  (ref) => SupabaseAuthGateway(ref.watch(supabaseClientProvider)),
 );
 
 /// The signed-in user's id, read fresh on each call rather than captured, so a

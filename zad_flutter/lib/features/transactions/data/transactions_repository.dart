@@ -46,13 +46,25 @@ class TransactionsRepository {
   /// Synchronous, and the whole point of the cache. Containment is decided by
   /// [BudgetPeriod.contains], so a cached row is filtered by exactly the range
   /// the server would have filtered it by.
+  ///
+  /// Rows belonging to anyone but the signed-in account are skipped, and with
+  /// nobody signed in this is empty. The box is keyed by row id and holds
+  /// whatever was last fetched, so without this check a sign-out followed by a
+  /// different sign-in would open on the previous customer's spending — which
+  /// `clearCaches()` also prevents, but only on the sign-out path. A session
+  /// that ends because its refresh token expired never goes through that path.
   List<ZadTransaction> cachedPeriod(BudgetPeriod period) {
+    final userId = _signedInUserId();
+    if (userId == null) return const <ZadTransaction>[];
+
     final rows = <ZadTransaction>[];
     for (final raw in _cache.values) {
       final txn = ZadTransaction.fromJson(
         jsonDecode(raw) as Map<String, dynamic>,
       );
-      if (period.contains(txn.createdAt)) rows.add(txn);
+      if (txn.userId == userId && period.contains(txn.createdAt)) {
+        rows.add(txn);
+      }
     }
     rows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return rows;
@@ -63,6 +75,9 @@ class TransactionsRepository {
   /// Synchronous, like [cachedPeriod], and used for questions that are not
   /// about one period — what is still queued, for instance.
   List<ZadTransaction> allCached() {
+    final userId = _signedInUserId();
+    if (userId == null) return const <ZadTransaction>[];
+
     final rows =
         _cache.values
             .map(
@@ -70,6 +85,7 @@ class TransactionsRepository {
                 jsonDecode(raw) as Map<String, dynamic>,
               ),
             )
+            .where((txn) => txn.userId == userId)
             .toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return rows;

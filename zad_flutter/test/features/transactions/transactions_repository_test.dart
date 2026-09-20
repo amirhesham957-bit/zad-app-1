@@ -252,4 +252,56 @@ void main() {
       expect(rows.first.createdAt.isAfter(rows.last.createdAt), isTrue);
     });
   });
+
+  group('whose rows these are', () {
+    // The box is keyed by row id and holds whatever was last fetched, with no
+    // per-account partition. Signing out and signing in as somebody else on
+    // the same phone therefore used to open the list on the previous
+    // customer's spending, for as long as it took a refresh to land.
+    //
+    // `ZadLocalStore.clearCaches()` closes that on the sign-out path. This
+    // closes it on every other path — a refresh token that expired, a session
+    // revoked from the dashboard, a restore from a backup — none of which go
+    // through a sign-out.
+    late String? signedIn;
+    late TransactionsRepository shared;
+
+    setUp(() async {
+      signedIn = 'user-1';
+      shared = TransactionsRepository(
+        cache: cache,
+        remote: remote,
+        outbox: () => outbox,
+        newId: () => 'txn-shared',
+        signedInUserId: () => signedIn,
+      );
+
+      await shared.record(coffee);
+    });
+
+    test('a different account sees none of them', () {
+      expect(shared.cachedPeriod(september), hasLength(1));
+      expect(shared.allCached(), hasLength(1));
+
+      signedIn = 'user-2';
+
+      expect(shared.cachedPeriod(september), isEmpty);
+      expect(shared.allCached(), isEmpty);
+    });
+
+    test('nobody signed in sees nothing at all', () {
+      signedIn = null;
+
+      expect(shared.cachedPeriod(september), isEmpty);
+      expect(shared.allCached(), isEmpty);
+    });
+
+    test('and the rows are still there for the account that owns them', () {
+      signedIn = 'user-2';
+      expect(shared.allCached(), isEmpty);
+
+      signedIn = 'user-1';
+      expect(shared.allCached(), hasLength(1));
+    });
+  });
 }
