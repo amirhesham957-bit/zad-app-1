@@ -22,24 +22,43 @@ object CycleMath {
         else -> setOf(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY)
     }
 
+    /**
+     * مرتبات الشهر السابق لحد شهرين قدام. النافذة واسعة كده عن قصد: مع
+     * `last_working_day` مرتب الشهر الجاي ممكن يرجع لورا جوه الشهر ده (أول
+     * الشهر لو وقع سبت بيتصرف الخميس ٣٠)، ومن اليوم ده الدورة بتمشي للمرتب
+     * اللي بعده.
+     *
+     * ده بالظبط اللي بتعمله `zad_period_bounds()` في Postgres. الطريقة القديمة
+     * — "مرتب الشهر ده، وإلا اللي قبله" وبعدين النهاية = شهر بعد البداية —
+     * كانت **بتنهار** في الحالة دي: البداية والنهاية بيبقوا نفس اليوم، فالدورة
+     * تبقى فاضية و`daysLeft` يفضل ينزل تحت الصفر لحد آخر الشهر.
+     */
+    private fun paydaysAround(
+        asOf: LocalDate,
+        cycleStartDay: Int,
+        cycleAnchor: String,
+        market: Market,
+    ): List<LocalDate> = (-1..2).map { k ->
+        val month = asOf.withDayOfMonth(1).plusMonths(k.toLong())
+        anchoredDay(month.year, month.monthValue, cycleStartDay, cycleAnchor, market)
+    }
+
     /** بداية الدورة الحالية (أقرب تاريخ راتب <= asOf) */
     fun cycleStart(asOf: LocalDate, cycleStartDay: Int?, cycleAnchor: String, market: Market): LocalDate {
         if (cycleStartDay == null) return asOf.withDayOfMonth(1)
-        val thisMonthAnchor = anchoredDay(asOf.year, asOf.monthValue, cycleStartDay, cycleAnchor, market)
-        return if (asOf.isBefore(thisMonthAnchor)) {
-            val prevMonth = asOf.minusMonths(1)
-            anchoredDay(prevMonth.year, prevMonth.monthValue, cycleStartDay, cycleAnchor, market)
-        } else {
-            thisMonthAnchor
-        }
+        // مرتب الشهر اللي فات دايماً قبل أي يوم في الشهر ده، فالقايمة عمرها ما تبقى فاضية.
+        return paydaysAround(asOf, cycleStartDay, cycleAnchor, market)
+            .filter { !it.isAfter(asOf) }
+            .max()
     }
 
     /** بداية الدورة الجاية (تاريخ الراتب الجاي) — دي حدود "متاح" في Task 26 كمان، مش بس نهاية الدورة الحالية */
     fun cycleEnd(asOf: LocalDate, cycleStartDay: Int?, cycleAnchor: String, market: Market): LocalDate {
         if (cycleStartDay == null) return asOf.withDayOfMonth(1).plusMonths(1)
-        val start = cycleStart(asOf, cycleStartDay, cycleAnchor, market)
-        val nextMonth = start.plusMonths(1)
-        return anchoredDay(nextMonth.year, nextMonth.monthValue, cycleStartDay, cycleAnchor, market)
+        // ومرتب بعد شهرين دايماً بعد أي يوم في الشهر ده.
+        return paydaysAround(asOf, cycleStartDay, cycleAnchor, market)
+            .filter { it.isAfter(asOf) }
+            .min()
     }
 
     /** طول الدورة بالأيام — مش دايماً ٣٠، بيختلف شهر عن شهر خصوصاً مع last_working_day */

@@ -61,6 +61,21 @@ class BudgetAuthorityParityTest {
             Case("2026-01-01", 1, "day_of_month", "EG", "2026-01-01", "2026-02-01"),
             // Year rollover.
             Case("2026-12-31", 15, "day_of_month", "MA", "2026-12-15", "2027-01-15"),
+
+            // The collapse. 2026-08-01 is a Saturday, so a payday on the 1st walks back
+            // to Thursday 2026-07-30 — and from that day the cycle runs to the *next*
+            // payday, 2026-09-01. The previous arithmetic (here and in
+            // zad_cycle_bounds) returned start == end for the whole of August: an empty
+            // range, over which `spent` sums to zero and daysLeft falls to -32.
+            // Fixed in migration 20260919232941; these vectors are what stops it
+            // coming back.
+            Case("2026-07-29", 1, "last_working_day", "SA", "2026-07-01", "2026-07-30"),
+            Case("2026-07-30", 1, "last_working_day", "SA", "2026-07-30", "2026-09-01"),
+            Case("2026-08-10", 1, "last_working_day", "SA", "2026-07-30", "2026-09-01"),
+            Case("2026-08-31", 1, "last_working_day", "SA", "2026-07-30", "2026-09-01"),
+            // 2026-02-01 is a Sunday: a working day in Riyadh, the weekend in Istanbul.
+            Case("2026-02-10", 1, "last_working_day", "SA", "2026-02-01", "2026-03-01"),
+            Case("2026-02-10", 1, "last_working_day", "TR", "2026-01-30", "2026-02-27"),
         )
 
         for (c in cases) {

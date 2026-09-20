@@ -86,11 +86,11 @@ class BudgetPeriod {
   /// wins, and [BudgetPeriod.at] is for the case where there is no snapshot to
   /// defer to.
   ///
-  /// Note the server's range comes from `zad_cycle_bounds()`, which is the
-  /// older function — see the header of migration
-  /// `20260919180000_budget_period_salary_cycle.sql` for the case it gets
-  /// wrong. Deferring to it keeps the card self-consistent; it does not
-  /// endorse it.
+  /// `zad_cycle_bounds()`, which the server's budget state calls, is a thin
+  /// alias over `zad_period_bounds()` as of migration `20260919232941` — the
+  /// same definition this file mirrors. Before that it had its own arithmetic
+  /// and collapsed under the `last_working_day` anchor, returning an empty
+  /// range for a whole month.
   factory fromServer({
     required DateTime cycleStart,
     required DateTime cycleEnd,

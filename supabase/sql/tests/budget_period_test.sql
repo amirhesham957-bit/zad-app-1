@@ -52,7 +52,16 @@ begin
 
       -- Year rollover, both directions.
       ('dec_to_jan_year_rollover',       date '2026-12-28', 25,        'day_of_month',    'EG', date '2026-12-25', date '2027-01-25'),
-      ('jan_to_dec_year_rollover',       date '2026-01-03', 25,        'day_of_month',    'EG', date '2025-12-25', date '2026-01-25')
+      ('jan_to_dec_year_rollover',       date '2026-01-03', 25,        'day_of_month',    'EG', date '2025-12-25', date '2026-01-25'),
+
+      -- The collapse migration 20260919232941 closed. Asked anywhere in August
+      -- with a payday on the 1st in Saudi Arabia, the old zad_cycle_bounds()
+      -- returned start = end = 2026-07-30: an empty range that summed no
+      -- spending and reported days_left down to -32.
+      ('collapse_day_before',            date '2026-07-29', 1,         'last_working_day','SA', date '2026-07-01', date '2026-07-30'),
+      ('collapse_on_payday',             date '2026-07-30', 1,         'last_working_day','SA', date '2026-07-30', date '2026-09-01'),
+      ('collapse_mid_month',             date '2026-08-10', 1,         'last_working_day','SA', date '2026-07-30', date '2026-09-01'),
+      ('collapse_last_day',              date '2026-08-31', 1,         'last_working_day','SA', date '2026-07-30', date '2026-09-01')
     ) as t(id, on_date, day, anchor, country, want_start, want_end)
   loop
     select * into got
@@ -116,6 +125,35 @@ begin
       raise warning '% : want % hours, got %', c.id, c.want_hours,
         extract(epoch from (c.pe::timestamp at time zone c.tz)
                          - (c.ps::timestamp at time zone c.tz)) / 3600;
+    end if;
+  end loop;
+
+  ------------------------------------------- one definition, two names ------
+  -- zad_cycle_bounds() is a thin alias over zad_period_bounds() as of
+  -- migration 20260919232941. It is what zad_budget_state_legacy() calls, so a
+  -- drift between the two names would be a drift in every money figure.
+  for c in
+    select * from (values
+      (date '2026-08-10', 1,         'last_working_day', 'SA'),
+      (date '2026-07-30', 1,         'last_working_day', 'SA'),
+      (date '2026-02-10', 1,         'last_working_day', 'TR'),
+      (date '2026-09-19', 25,        'day_of_month',     'EG'),
+      (date '2026-09-19', null::int, null::text,         'EG')
+    ) as t(on_date, day, anchor, country)
+  loop
+    checked := checked + 1;
+
+    select * into got
+      from public.zad_period_bounds(c.on_date, c.day, c.anchor, c.country);
+
+    if not exists (
+      select 1 from public.zad_cycle_bounds(c.on_date, c.day, c.anchor, c.country) b
+       where b.cycle_start is not distinct from got.period_start
+         and b.cycle_end   is not distinct from got.period_end
+    ) then
+      failures := failures + 1;
+      raise warning 'zad_cycle_bounds drifted from zad_period_bounds at % (day %, %, %)',
+        c.on_date, c.day, c.anchor, c.country;
     end if;
   end loop;
 
