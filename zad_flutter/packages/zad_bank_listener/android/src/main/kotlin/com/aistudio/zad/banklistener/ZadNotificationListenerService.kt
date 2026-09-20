@@ -25,7 +25,7 @@ import android.util.Log
  */
 class ZadNotificationListenerService : NotificationListenerService() {
 
-    private val store by lazy { CapturedNotificationStore(applicationContext) }
+    private val store by lazy { CapturedNotificationStore.get(applicationContext) }
 
     override fun onListenerConnected() {
         super.onListenerConnected()

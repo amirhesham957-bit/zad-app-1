@@ -16,7 +16,7 @@ import android.database.sqlite.SQLiteOpenHelper
  * الجدول ده صندوق وارد، مش مصدر حقيقة: Dart بيسحب منه، يقرّر، ويحطّ اللي
  * يستاهل في طابور الإرسال. المسح بيحصل بعد السحب بنجاح بس.
  */
-internal class CapturedNotificationStore(context: Context) :
+internal class CapturedNotificationStore private constructor(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -119,6 +119,33 @@ internal class CapturedNotificationStore(context: Context) :
     }
 
     companion object {
+        /**
+         * نسخة واحدة للعملية كلها.
+         *
+         * ودي مش تحسين. الـ `SQLiteOpenHelper` بيفتح **اتصال خاص بيه**، والقفل
+         * اللي بيسلسل الكتابة قفل على النسخة نفسها — مش على الملف. وهنا في
+         * كاتبين في نفس العملية: الخدمة بتكتب `insert` وقت ما الإشعار يوصل،
+         * والبلَج-إن بيعمل `peek`/`deleteUpTo` وقت ما Dart يفضّي الصندوق. كل
+         * واحد كان ماسك نسخة لوحده، يعني اتصالين على نفس الملف من غير أي شيء
+         * يسلسلهم.
+         *
+         * من غير WAL، الكاتب في SQLite بيقفل الملف على أي قارئ أو كاتب تاني،
+         * فالتزامن ده بيرمي `SQLiteDatabaseLockedException`. والخدمة بتمسك
+         * `Exception` وتكتب "capture failed" في اللوج — يعني **رسالة البنك
+         * بتضيع في سكوت**، وهي بالظبط اللحظة اللي بتحصل فيها: إشعار بيوصل
+         * والتطبيق مفتوح بيفضّي الصندوق.
+         *
+         * نسخة واحدة = اتصال واحد = القفل الداخلي بيسلسل الاتنين.
+         */
+        @Volatile
+        private var instance: CapturedNotificationStore? = null
+
+        /** الصندوق. نسخة واحدة مهما اتنادت. */
+        fun get(context: Context): CapturedNotificationStore =
+            instance ?: synchronized(this) {
+                instance ?: CapturedNotificationStore(context).also { instance = it }
+            }
+
         private const val DB_NAME = "zad_captured_notifications.db"
         private const val DB_VERSION = 1
         private const val TABLE = "captured_notifications"

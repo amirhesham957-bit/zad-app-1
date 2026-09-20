@@ -16,7 +16,7 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
-    private val store by lazy { CapturedNotificationStore(context) }
+    private val store by lazy { CapturedNotificationStore.get(context) }
 
     override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
