@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label. Arabic, and the same string the Kotlin app uses:
+         two clients of one product must not sit on the home screen under two
+         different names. The template's "zad" was never a decision. -->
+    <string name="app_name">زاد</string>
+</resources>

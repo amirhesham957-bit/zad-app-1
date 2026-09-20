@@ -1,6 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      INTERNET lives here, not only in the debug and profile manifests the
+      Flutter template ships it in. Those two exist so the tool can attach a
+      debugger and hot-reload; a release build merges neither, so a release APK
+      built from the template has no INTERNET permission at all.
+
+      Every screen in this app reads Supabase. Without this line the release
+      build installs, opens, draws the cached figures from Hive — and then
+      every request fails, the outbox never drains and sign-in cannot complete,
+      with nothing on screen saying why. It reads exactly like "the server is
+      down", on a build that was never allowed to reach it.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
-        android:label="zad"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
