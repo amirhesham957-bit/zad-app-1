@@ -18,6 +18,7 @@ import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
+import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
@@ -88,6 +89,16 @@ final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
   return BudgetRepository(
     cache: store.documents,
     remote: SupabaseBudgetRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});
+
+/// Bank transactions waiting for the customer to say yes.
+final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return ProposalsRepository(
+    cache: store.documents,
+    remote: SupabaseProposalsRemote(ref.watch(supabaseClientProvider)),
     signedInUserId: ref.watch(signedInUserIdProvider),
   );
 });
