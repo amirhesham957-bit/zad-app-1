@@ -13,6 +13,7 @@ import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
@@ -40,6 +41,11 @@ final signedInUserIdProvider = Provider<String? Function()>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return () => client.auth.currentUser?.id;
 });
+
+/// Hands bank notifications to zad-brain.
+final bankRemoteProvider = Provider<BankRemote>(
+  (ref) => SupabaseBankRemote(ref.watch(supabaseClientProvider)),
+);
 
 /// The clock.
 ///
@@ -77,6 +83,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
     send: (entry) async => switch (entry.kind) {
       OutboxKind.insertTransaction =>
         await ref.read(transactionsRepositoryProvider).sendQueued(entry),
+      OutboxKind.notificationIngest =>
+        await ref.read(bankRemoteProvider).ingestNotification(entry.payload),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

@@ -7,6 +7,12 @@ library;
 abstract final class OutboxKind {
   /// Insert a row into `zad_transactions`.
   static const String insertTransaction = 'insert_transaction';
+
+  /// Hand a bank notification to `zad-brain` for it to decide on.
+  ///
+  /// Queued rather than called directly so a notification arriving with no
+  /// signal is not lost, and so a replay cannot ingest the same message twice.
+  static const String notificationIngest = 'notification_ingest';
 }
 
 /// Where an entry stands.
