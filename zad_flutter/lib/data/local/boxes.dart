@@ -21,6 +21,12 @@ abstract final class ZadBoxes {
   /// Cached single-value documents — the profile, the last known period.
   static const String documents = 'zad_cache_documents';
 
+  /// The pantry, keyed by row id.
+  static const String inventory = 'zad_cache_inventory';
+
+  /// The shopping list, keyed by row id.
+  static const String shopping = 'zad_cache_shopping';
+
   /// The conversation, keyed by message id.
   ///
   /// A cache in the same sense as the others: the agent keeps its own memory
@@ -29,7 +35,13 @@ abstract final class ZadBoxes {
   static const String chat = 'zad_cache_chat';
 
   /// The caches, in the sense that losing them costs nothing but a round trip.
-  static const List<String> caches = <String>[transactions, documents, chat];
+  static const List<String> caches = <String>[
+    transactions,
+    documents,
+    chat,
+    inventory,
+    shopping,
+  ];
 }
 
 /// The opened boxes.
@@ -40,6 +52,8 @@ class ZadLocalStore {
     required this.transactions,
     required this.documents,
     required this.chat,
+    required this.inventory,
+    required this.shopping,
   });
 
   /// Opens every box, recovering caches that will not open.
@@ -66,6 +80,8 @@ class ZadLocalStore {
       transactions: Hive.box<String>(ZadBoxes.transactions),
       documents: Hive.box<String>(ZadBoxes.documents),
       chat: Hive.box<String>(ZadBoxes.chat),
+      inventory: Hive.box<String>(ZadBoxes.inventory),
+      shopping: Hive.box<String>(ZadBoxes.shopping),
     );
   }
 
@@ -81,6 +97,12 @@ class ZadLocalStore {
   /// The conversation.
   final Box<String> chat;
 
+  /// The pantry.
+  final Box<String> inventory;
+
+  /// The shopping list.
+  final Box<String> shopping;
+
   /// Empties the caches, leaving the outbox alone.
   ///
   /// This is what a sign-out calls. The outbox survives it: whoever wrote those
@@ -92,5 +114,7 @@ class ZadLocalStore {
     // on the device and the next person to sign in on this phone must not
     // scroll back into somebody else's questions about their money.
     await chat.clear();
+    await inventory.clear();
+    await shopping.clear();
   }
 }

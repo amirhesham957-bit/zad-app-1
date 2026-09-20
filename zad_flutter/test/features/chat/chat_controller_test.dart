@@ -156,6 +156,8 @@ void main() {
             transactions: transactions,
             documents: documents,
             chat: chat,
+            inventory: chat,
+            shopping: chat,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

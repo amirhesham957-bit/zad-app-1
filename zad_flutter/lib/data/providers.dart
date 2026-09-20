@@ -21,6 +21,9 @@ import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
+import 'package:zad/features/inventory/data/inventory_remote.dart';
+import 'package:zad/features/inventory/data/inventory_repository.dart';
+import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
@@ -112,6 +115,32 @@ final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
   );
 });
 
+/// The pantry, offline first.
+final Provider<InventoryRepository> inventoryRepositoryProvider =
+    Provider<InventoryRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return InventoryRepository(
+        cache: store.inventory,
+        remote: SupabaseInventoryRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
+/// The shopping list, offline first.
+final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
+    Provider<ShoppingListRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ShoppingListRepository(
+        cache: store.shopping,
+        remote: SupabaseShoppingListRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
 /// The conversation, on this device.
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(
@@ -167,6 +196,14 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(bankRemoteProvider).ingestNotification(entry.payload),
       OutboxKind.updateAccountSettings =>
         await ref.read(settingsRepositoryProvider).sendQueued(entry),
+      OutboxKind.upsertInventory =>
+        await ref.read(inventoryRepositoryProvider).sendQueued(entry),
+      OutboxKind.deleteInventory =>
+        await ref.read(inventoryRepositoryProvider).sendQueuedDelete(entry),
+      OutboxKind.upsertShoppingItem =>
+        await ref.read(shoppingListRepositoryProvider).sendQueued(entry),
+      OutboxKind.deleteShoppingItem =>
+        await ref.read(shoppingListRepositoryProvider).sendQueuedDelete(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

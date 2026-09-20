@@ -84,6 +84,8 @@ void main() {
       transactions: transactions,
       documents: documents,
       chat: chatBox,
+      inventory: chatBox,
+      shopping: chatBox,
     );
 
     await documents.put('budget_state', jsonEncode(<String, String>{'a': 'b'}));

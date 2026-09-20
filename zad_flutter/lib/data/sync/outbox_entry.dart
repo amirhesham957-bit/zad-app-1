@@ -15,6 +15,22 @@ abstract final class OutboxKind {
   /// since it happens once, early, wherever the customer happens to be.
   static const String updateAccountSettings = 'update_account_settings';
 
+  /// Insert or update a row in `zad_inventory`.
+  static const String upsertInventory = 'upsert_inventory';
+
+  /// Remove a row from `zad_inventory`.
+  ///
+  /// A delete is queued like any other write. A row the customer threw away
+  /// while offline must not come back on the next refresh, and it would if the
+  /// deletion lived only in the cache.
+  static const String deleteInventory = 'delete_inventory';
+
+  /// Insert or update a line in `zad_shopping_list`.
+  static const String upsertShoppingItem = 'upsert_shopping_item';
+
+  /// Remove a line from `zad_shopping_list`.
+  static const String deleteShoppingItem = 'delete_shopping_item';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

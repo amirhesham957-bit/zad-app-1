@@ -67,6 +67,8 @@ void main() {
             transactions: documents,
             documents: documents,
             chat: chatBox,
+            inventory: chatBox,
+            shopping: chatBox,
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),
