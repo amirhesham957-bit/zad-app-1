@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
+import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
@@ -40,6 +41,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         children: const <Widget>[
           HomeScreen(),
           TransactionsScreen(),
+          ChatScreen(),
           ProposalsScreen(),
         ],
       ),
@@ -55,6 +57,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
           const NavigationDestination(
             icon: Icon(ZadIcons.budget),
             label: 'المعاملات',
+          ),
+          const NavigationDestination(
+            icon: Icon(ZadIcons.assistant),
+            label: 'زاد',
           ),
           NavigationDestination(
             icon: Badge(

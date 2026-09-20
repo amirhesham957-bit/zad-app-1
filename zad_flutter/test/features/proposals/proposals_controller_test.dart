@@ -69,6 +69,7 @@ Map<String, dynamic> _proposal(
 void main() {
   late Directory dir;
   late Box<String> documents;
+  late Box<String> chatBox;
   late _FakeRemote remote;
   late ProviderContainer container;
 
@@ -79,6 +80,7 @@ void main() {
     dir = await Directory.systemTemp.createTemp('zad_prop_test');
     Hive.init(dir.path);
     documents = await Hive.openBox<String>('documents');
+    chatBox = await Hive.openBox<String>('chat');
     remote = _FakeRemote();
     now = DateTime.parse('2026-09-20T12:00:00Z');
     signedIn = 'user-1';
@@ -94,6 +96,7 @@ void main() {
             outbox: documents,
             transactions: documents,
             documents: documents,
+            chat: chatBox,
           ),
         ),
         nowProvider.overrideWithValue(() => now),
@@ -133,6 +136,7 @@ void main() {
               outbox: documents,
               transactions: documents,
               documents: documents,
+              chat: chatBox,
             ),
           ),
           nowProvider.overrideWithValue(() => now),

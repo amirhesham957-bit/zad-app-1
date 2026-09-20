@@ -19,6 +19,8 @@ import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
+import 'package:zad/features/chat/data/agent_remote.dart';
+import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
@@ -109,6 +111,19 @@ final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
     signedInUserId: ref.watch(signedInUserIdProvider),
   );
 });
+
+/// The conversation, on this device.
+final chatRepositoryProvider = Provider<ChatRepository>(
+  (ref) => ChatRepository(
+    box: ref.watch(localStoreProvider).chat,
+    newId: const Uuid().v4,
+  ),
+);
+
+/// The agent loop.
+final agentRemoteProvider = Provider<AgentRemote>(
+  (ref) => SupabaseAgentRemote(ref.watch(supabaseClientProvider)),
+);
 
 /// The account's own configuration — the ceiling and the salary day.
 ///

@@ -22,6 +22,12 @@ dependencies:
   # ── Server
   supabase_flutter: ^2.17.2
 
+  # Declared rather than leaned on transitively through supabase_flutter. The
+  # chat turn reads a `text/event-stream` response line by line, which
+  # `functions.invoke` cannot do — it buffers the whole body — so that one call
+  # goes out over http directly.
+  http: ^1.6.0
+
   # ── Local cache (offline-first). hive_ce, not hive: the original hive 2.2.3
   # and hive_flutter 1.1.0 both declare `sdk: >=2.12.0 <3.0.0`, which excludes
   # Dart 3 outright. Same wall on isar 3.1.0+1.

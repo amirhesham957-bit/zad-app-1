@@ -189,6 +189,7 @@ void main() {
             outbox: outboxBox,
             transactions: transactions,
             documents: documents,
+            chat: documents,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

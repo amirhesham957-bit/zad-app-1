@@ -120,6 +120,7 @@ Map<String, dynamic> _state() => <String, dynamic>{
 
 void main() {
   late Box<String> documents;
+  late Box<String> chatBox;
   late Box<String> transactions;
   late Box<String> outboxBox;
 
@@ -135,6 +136,7 @@ void main() {
       bytes: Uint8List(0),
     );
     outboxBox = await Hive.openBox<String>('outbox', bytes: Uint8List(0));
+    chatBox = await Hive.openBox<String>('chat', bytes: Uint8List(0));
     await documents.put(
       'budget_state',
       jsonEncode(BudgetSnapshot.fromJson(_state()).toJson()),
@@ -168,6 +170,7 @@ void main() {
             outbox: outboxBox,
             transactions: transactions,
             documents: documents,
+            chat: chatBox,
           ),
         ),
         transactionsRepositoryProvider.overrideWithValue(txns),

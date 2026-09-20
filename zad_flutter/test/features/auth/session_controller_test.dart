@@ -61,6 +61,7 @@ class _FakeGateway implements AuthGateway {
 
 void main() {
   late Box<String> documents;
+  late Box<String> chatBox;
   late Box<String> transactions;
   late Box<String> outboxBox;
   late ZadLocalStore store;
@@ -77,10 +78,12 @@ void main() {
       bytes: Uint8List(0),
     );
     outboxBox = await Hive.openBox<String>('outbox', bytes: Uint8List(0));
+    chatBox = await Hive.openBox<String>('chat', bytes: Uint8List(0));
     store = ZadLocalStore(
       outbox: outboxBox,
       transactions: transactions,
       documents: documents,
+      chat: chatBox,
     );
 
     await documents.put('budget_state', jsonEncode(<String, String>{'a': 'b'}));

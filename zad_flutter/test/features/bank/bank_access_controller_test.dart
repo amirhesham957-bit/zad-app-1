@@ -53,6 +53,7 @@ class _FakeListener implements ZadBankListener {
 void main() {
   late Directory dir;
   late Box<String> documents;
+  late Box<String> chatBox;
   late _FakeListener listener;
   late ProviderContainer container;
 
@@ -65,6 +66,7 @@ void main() {
             outbox: documents,
             transactions: documents,
             documents: documents,
+            chat: chatBox,
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),
@@ -76,6 +78,7 @@ void main() {
     dir = await Directory.systemTemp.createTemp('zad_access_test');
     Hive.init(dir.path);
     documents = await Hive.openBox<String>('documents');
+    chatBox = await Hive.openBox<String>('chat');
   });
 
   tearDown(() async {

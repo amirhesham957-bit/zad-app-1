@@ -21,8 +21,15 @@ abstract final class ZadBoxes {
   /// Cached single-value documents — the profile, the last known period.
   static const String documents = 'zad_cache_documents';
 
+  /// The conversation, keyed by message id.
+  ///
+  /// A cache in the same sense as the others: the agent keeps its own memory
+  /// server-side (`zad_memory`), and the transcript here is what this device
+  /// shows, not the record. Losing it loses the scrollback and nothing else.
+  static const String chat = 'zad_cache_chat';
+
   /// The caches, in the sense that losing them costs nothing but a round trip.
-  static const List<String> caches = <String>[transactions, documents];
+  static const List<String> caches = <String>[transactions, documents, chat];
 }
 
 /// The opened boxes.
@@ -32,6 +39,7 @@ class ZadLocalStore {
     required this.outbox,
     required this.transactions,
     required this.documents,
+    required this.chat,
   });
 
   /// Opens every box, recovering caches that will not open.
@@ -57,6 +65,7 @@ class ZadLocalStore {
       outbox: await Hive.openBox<String>(ZadBoxes.outbox),
       transactions: Hive.box<String>(ZadBoxes.transactions),
       documents: Hive.box<String>(ZadBoxes.documents),
+      chat: Hive.box<String>(ZadBoxes.chat),
     );
   }
 
@@ -69,6 +78,9 @@ class ZadLocalStore {
   /// Cached single-value documents.
   final Box<String> documents;
 
+  /// The conversation.
+  final Box<String> chat;
+
   /// Empties the caches, leaving the outbox alone.
   ///
   /// This is what a sign-out calls. The outbox survives it: whoever wrote those
@@ -76,5 +88,9 @@ class ZadLocalStore {
   Future<void> clearCaches() async {
     await transactions.clear();
     await documents.clear();
+    // The conversation goes with the account. It is the most personal thing
+    // on the device and the next person to sign in on this phone must not
+    // scroll back into somebody else's questions about their money.
+    await chat.clear();
   }
 }
