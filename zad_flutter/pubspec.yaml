@@ -55,6 +55,20 @@ dependencies:
   # package) is Dart 2 only — `sdk: >=2.12.0 <3.0.0`.
   lucide_icons_flutter: ^3.1.20
 
+  # ── Camera and gallery, for the receipt scanner.
+  #
+  # image_picker, not the `camera` plugin: this app wants one still frame from
+  # whatever camera app the phone already has, not a viewfinder it has to draw,
+  # focus and rotate itself. Going through the system camera intent also means
+  # no CAMERA permission in the manifest — the picker owns that — which matters
+  # for a Play listing that has already dropped RECEIVE_SMS for the same kind
+  # of reason.
+  #
+  # Its maxWidth/maxHeight/imageQuality do the resize and the JPEG encode, so
+  # the 1024px/q70 the Kotlin client sends to the vision model is reproduced
+  # without a second image package.
+  image_picker: ^1.2.0
+
   # ── Audio
   record: ^7.1.1
   permission_handler: ^13.0.2

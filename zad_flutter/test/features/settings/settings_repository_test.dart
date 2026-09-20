@@ -307,6 +307,30 @@ void main() {
       expect(settings.cycleAnchor, CycleAnchor.dayOfMonth);
     });
 
+    test('a refresh does not wipe a write that is still queued', () async {
+      // The ordinary case on a phone with no signal: the ceiling is typed,
+      // the send fails, and a refresh arrives afterwards carrying the older
+      // row the server still holds. Overwriting with it would take the number
+      // back off the screen minutes after the customer was told it was saved,
+      // and put it back when the queue drained — which reads as a glitch
+      // rather than as sync.
+      remote.failWith = Exception('offline');
+      await repo.setMonthlyLimit(8000);
+      await outbox.flush();
+      expect(settingsEntries(), hasLength(1), reason: 'the send failed');
+
+      remote
+        ..failWith = null
+        ..row = <String, dynamic>{'monthly_limit': 3000, 'currency': 'ج.م'};
+      final merged = await repo.refresh();
+
+      expect(merged.monthlyLimit, 8000, reason: 'the queued value wins');
+      expect(merged.limitConfirmedAt, isNotNull);
+      // Everything the server knows that is not queued still comes through.
+      expect(merged.currency, 'ج.م');
+      expect(repo.cached()?.monthlyLimit, 8000);
+    });
+
     test('clear() forgets the row, for sign-out', () async {
       await repo.setMonthlyLimit(8000);
       await repo.clear();

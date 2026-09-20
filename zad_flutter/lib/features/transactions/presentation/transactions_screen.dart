@@ -16,6 +16,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
@@ -33,12 +34,31 @@ class TransactionsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       // Bottom third of the screen, where the thumb already is.
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showAddTransactionSheet(context),
-        icon: const Icon(ZadIcons.add),
-        label: const Text('سجّل عملية'),
-        backgroundColor: ZadColors.green800,
-        foregroundColor: Colors.white,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          // Above the main action and smaller than it: scanning is the faster
+          // way in when there is paper in hand, but typing is the one that
+          // always works, so it keeps the larger target.
+          FloatingActionButton.small(
+            heroTag: 'scan',
+            onPressed: () => showReceiptScanSheet(context, ref),
+            tooltip: 'صوّر فاتورة',
+            backgroundColor: ZadColors.surface,
+            foregroundColor: ZadColors.green800,
+            child: const Icon(ZadIcons.scan),
+          ),
+          const SizedBox(height: ZadSpacing.md),
+          FloatingActionButton.extended(
+            heroTag: 'add',
+            onPressed: () => showAddTransactionSheet(context),
+            icon: const Icon(ZadIcons.add),
+            label: const Text('سجّل عملية'),
+            backgroundColor: ZadColors.green800,
+            foregroundColor: Colors.white,
+          ),
+        ],
       ),
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: ZadColors.canvas),

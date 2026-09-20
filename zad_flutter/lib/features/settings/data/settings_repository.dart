@@ -113,13 +113,51 @@ class SettingsRepository {
   }
 
   /// Asks the server, and caches the answer.
+  ///
+  /// Anything still sitting in the outbox is laid back over the server's row
+  /// before it is cached. Without that, a refresh landing while a write is
+  /// queued — the ordinary case on a phone with no signal — replaces the
+  /// ceiling the customer just typed with the older one the server still
+  /// holds, and the value they were told was saved disappears off the screen.
+  /// It comes back when the queue drains, which makes it look like a glitch
+  /// rather than the sync it is.
   Future<AccountSettings> refresh() async {
     final row = await _remote.fetch(userId: _requireUserId());
     // No row yet — the trigger has not run, or this is a brand-new account.
     // That is an empty configuration, not an error: nothing has been set.
-    final settings = AccountSettings.fromJson(row ?? <String, dynamic>{});
+    final server = AccountSettings.fromJson(row ?? <String, dynamic>{});
+    final settings = _withQueuedWrites(server);
     await _write(settings);
     return settings;
+  }
+
+  /// Re-applies the columns still waiting in the outbox.
+  AccountSettings _withQueuedWrites(AccountSettings server) {
+    var merged = server;
+
+    for (final entry in _outbox().entries(includeDead: false)) {
+      if (entry.kind != OutboxKind.updateAccountSettings) continue;
+      final payload = entry.payload;
+
+      if (payload.containsKey('monthly_limit')) {
+        merged = merged.copyWith(
+          monthlyLimit: (payload['monthly_limit'] as num?)?.toDouble(),
+          limitConfirmedAt: switch (payload['limit_confirmed_at']) {
+            final String s => DateTime.parse(s).toUtc(),
+            _ => null,
+          },
+        );
+      }
+      if (payload.containsKey('cycle_start_day')) {
+        final day = (payload['cycle_start_day'] as num?)?.toInt();
+        merged = merged.copyWith(
+          cycleStartDay: day,
+          clearCycleStartDay: day == null,
+        );
+      }
+    }
+
+    return merged;
   }
 
   /// Sets the cycle ceiling: cache, then queue.
