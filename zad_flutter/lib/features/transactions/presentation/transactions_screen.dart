@@ -18,6 +18,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 
 /// The list.
 class TransactionsScreen extends ConsumerWidget {
@@ -29,35 +30,46 @@ class TransactionsScreen extends ConsumerWidget {
     final view = ref.watch(transactionsControllerProvider);
     final controller = ref.read(transactionsControllerProvider.notifier);
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
-      child: RefreshIndicator(
-        // force: the cooldown stops *automatic* refetching on re-entry. Someone
-        // who pulled the list down asked for it.
-        onRefresh: () => controller.refresh(force: true),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: <Widget>[
-            SliverAppBar(
-              title: const Text('المعاملات'),
-              floating: true,
-              backgroundColor: Colors.transparent,
-              actions: <Widget>[
-                if (view.pendingCount > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(left: ZadSpacing.lg),
-                    child: _PendingChip(count: view.pendingCount),
-                  ),
-              ],
-            ),
-            if (view.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _Empty(hasError: view.error != null),
-              )
-            else
-              ..._daySlivers(ref, view.rows),
-          ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      // Bottom third of the screen, where the thumb already is.
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showAddTransactionSheet(context),
+        icon: const Icon(ZadIcons.add),
+        label: const Text('سجّل عملية'),
+        backgroundColor: ZadColors.green800,
+        foregroundColor: Colors.white,
+      ),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: ZadColors.canvas),
+        child: RefreshIndicator(
+          // force: the cooldown stops *automatic* refetching on re-entry.
+          // Someone who pulled the list down asked for it.
+          onRefresh: () => controller.refresh(force: true),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              SliverAppBar(
+                title: const Text('المعاملات'),
+                floating: true,
+                backgroundColor: Colors.transparent,
+                actions: <Widget>[
+                  if (view.pendingCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: ZadSpacing.lg),
+                      child: _PendingChip(count: view.pendingCount),
+                    ),
+                ],
+              ),
+              if (view.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _Empty(hasError: view.error != null),
+                )
+              else
+                ..._daySlivers(ref, view.rows),
+            ],
+          ),
         ),
       ),
     );
