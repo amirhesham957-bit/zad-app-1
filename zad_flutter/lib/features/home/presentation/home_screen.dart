@@ -15,10 +15,11 @@ import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/features/settings/presentation/settings_screen.dart';
 
 /// Home.
 class HomeScreen extends ConsumerWidget {
@@ -42,11 +43,21 @@ class HomeScreen extends ConsumerWidget {
           // is one card and does not fill the screen.
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: <Widget>[
-            const SliverAppBar(
-              title: Text('زاد'),
+            SliverAppBar(
+              title: const Text('زاد'),
               floating: true,
               backgroundColor: Colors.transparent,
-              actions: <Widget>[SignOutAction()],
+              // Settings rather than sign-out. The way out is in there, with
+              // the warning about unsent writes beside it — an icon in the app
+              // bar put the most destructive action on this screen one tap
+              // from the balance.
+              actions: <Widget>[
+                IconButton(
+                  onPressed: () => showSettingsScreen(context),
+                  icon: const Icon(ZadIcons.settings),
+                  tooltip: 'الإعدادات',
+                ),
+              ],
             ),
             SliverPadding(
               padding: const EdgeInsets.all(ZadSpacing.gutter),
@@ -107,6 +118,11 @@ class _Budget extends ConsumerWidget {
       // write is still queued and the number on screen is this device's
       // arithmetic rather than the server's.
       isStale: view.isStale || view.pendingSpend > 0,
+      // The card has always offered this and it has always been null, so
+      // tapping "لسه محددتش ميزانيتك" did nothing — `ZadPressable` disables
+      // the press outright when its callback is null, so there was not even
+      // a scale to say the tap had registered.
+      onSetBudget: () => showMonthlyLimitSheet(context),
     );
   }
 

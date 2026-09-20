@@ -27,6 +27,8 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -43,6 +45,24 @@ class _OfflineRemote implements BudgetRemote {
     calls++;
     return Future<Map<String, dynamic>>.error(const SocketException('offline'));
   }
+}
+
+/// The settings row, without a server. The home screen reaches it the moment
+/// the "set a budget" sheet opens, and the controller behind that sheet reads
+/// `zad_users` as it builds.
+///
+/// It refuses immediately, for the same reason [_OfflineRemote] does: a read
+/// that succeeded would write to the cache while the faked clock is in charge,
+/// and a Hive write there never completes — the test hangs rather than fails.
+/// This one did hang, before the refusal was added.
+class _FakeSettingsRemote implements SettingsRemote {
+  @override
+  Future<Map<String, dynamic>?> fetch({required String userId}) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
+
+  @override
+  Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> sent) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
 }
 
 class _FakeTransactionsRemote implements TransactionsRemote {
@@ -77,6 +97,17 @@ Map<String, dynamic> _state() => <String, dynamic>{
   'limit_confirmed': true,
   'cycle_start': '2026-08-25',
   'cycle_end': '2026-09-25',
+};
+
+/// The same account before it has told us anything: the server answers with
+/// nulls, not zeroes, for an unconfirmed limit.
+Map<String, dynamic> _stateWithNoBudget() => <String, dynamic>{
+  ..._state(),
+  'available': null,
+  'remaining': null,
+  'opening_balance': null,
+  'limit_confirmed': false,
+  'threat': 'UNKNOWN',
 };
 
 void main() {
@@ -149,6 +180,15 @@ void main() {
         ),
         nowProvider.overrideWithValue(() => now),
         transactionsRepositoryProvider.overrideWithValue(txns),
+        settingsRepositoryProvider.overrideWithValue(
+          SettingsRepository(
+            cache: documents,
+            remote: _FakeSettingsRemote(),
+            outbox: () => outbox,
+            signedInUserId: () => 'user-1',
+            now: () => now,
+          ),
+        ),
         budgetRepositoryProvider.overrideWithValue(
           BudgetRepository(
             cache: documents,
@@ -232,5 +272,64 @@ void main() {
       expect(find.byType(ZadBalanceCard), findsNothing);
       expect(find.text('بنجهّز ميزانيتك'), findsOneWidget);
     });
+  });
+
+  group('with no confirmed limit', () {
+    // The cache is rewritten here rather than in the test body. A Hive write
+    // inside `testWidgets` runs against the faked clock and never completes —
+    // the suite hangs instead of failing, which is the trap this file's header
+    // warns about and which this group walked straight into once.
+    setUp(() async {
+      await documents.put(
+        'budget_state',
+        jsonEncode(BudgetSnapshot.fromJson(_stateWithNoBudget()).toJson()),
+      );
+    });
+
+    testWidgets('tapping "no budget yet" opens the sheet that sets one', (
+      tester,
+    ) async {
+      // The regression this exists for: `ZadBalanceCard` has always offered
+      // `onSetBudget` and `HomeScreen` has always passed null, so the card
+      // that asks for a budget was not tappable at all —
+      // `ZadPressable` disables the gesture outright when its callback is
+      // null, so there was not even a scale to say the tap had landed. A
+      // customer with no confirmed limit had no way to set one anywhere in
+      // the app.
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await pumpHome(tester, container);
+      expect(
+        find.text('قوللي ميزانيتك الشهرية، وأقدر أقولك المتاح ليك كل يوم.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byType(ZadBalanceCard));
+      // Pumped past the sheet's entrance rather than settled: the sheet
+      // autofocuses its amount field and a blinking text cursor is an
+      // animation that never ends, so `pumpAndSettle` times out on a sheet
+      // that opened perfectly well.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(MonthlyLimitSheet), findsOneWidget);
+      expect(find.text('كام معاك للشهر ده؟'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the app bar opens settings rather than signing out', (
+    tester,
+  ) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    // Sign-out lives inside settings now, beside the warning about unsent
+    // writes. One tap from the balance to "log out" put the most destructive
+    // action on this screen next to the least destructive one.
+    expect(find.byTooltip('الإعدادات'), findsOneWidget);
+    expect(find.byTooltip('اخرج من الحساب'), findsNothing);
   });
 }

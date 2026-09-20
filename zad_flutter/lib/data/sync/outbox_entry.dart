@@ -8,6 +8,13 @@ abstract final class OutboxKind {
   /// Insert a row into `zad_transactions`.
   static const String insertTransaction = 'insert_transaction';
 
+  /// Write the customer's own settings onto their `zad_users` row.
+  ///
+  /// Queued like any other write so that setting a budget works on a phone
+  /// with no signal — which is the phone this is most likely to be set on,
+  /// since it happens once, early, wherever the customer happens to be.
+  static const String updateAccountSettings = 'update_account_settings';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

@@ -20,6 +20,7 @@ import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
@@ -109,6 +110,24 @@ final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
   );
 });
 
+/// The account's own configuration — the ceiling and the salary day.
+///
+/// Explicitly typed for the same reason the outbox below is: it reads the
+/// outbox and the outbox dispatches back into it, and Dart cannot infer either
+/// one through the cycle.
+final Provider<SettingsRepository> settingsRepositoryProvider =
+    Provider<SettingsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return SettingsRepository(
+        cache: store.documents,
+        remote: SupabaseSettingsRemote(ref.watch(supabaseClientProvider)),
+        // Read lazily: the outbox sends through this repository.
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        now: ref.watch(nowProvider),
+      );
+    });
+
 /// The server side of transactions.
 final transactionsRemoteProvider = Provider<TransactionsRemote>(
   (ref) => SupabaseTransactionsRemote(ref.watch(supabaseClientProvider)),
@@ -131,6 +150,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(transactionsRepositoryProvider).sendQueued(entry),
       OutboxKind.notificationIngest =>
         await ref.read(bankRemoteProvider).ingestNotification(entry.payload),
+      OutboxKind.updateAccountSettings =>
+        await ref.read(settingsRepositoryProvider).sendQueued(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );
