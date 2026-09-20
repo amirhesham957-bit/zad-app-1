@@ -13,10 +13,14 @@ import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/bank/data/bank_capture_marker.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
+import 'package:zad/features/bank/data/notification_drain.dart';
+import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// The opened boxes.
 ///
@@ -41,6 +45,31 @@ final signedInUserIdProvider = Provider<String? Function()>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return () => client.auth.currentUser?.id;
 });
+
+/// The Android capture inbox.
+final bankListenerProvider = Provider<ZadBankListener>(
+  (ref) => const ZadBankListener(),
+);
+
+/// Remembers whether this device has ever captured anything.
+final bankCaptureMarkerProvider = Provider<BankCaptureMarker>(
+  (ref) => BankCaptureMarker(ref.watch(localStoreProvider).documents),
+);
+
+/// Empties the capture inbox into the outbox.
+///
+/// Read lazily by the runner, so this provider does not need the outbox at
+/// construction time.
+final Provider<NotificationDrain> notificationDrainProvider =
+    Provider<NotificationDrain>((ref) {
+      return NotificationDrain(
+        listener: ref.watch(bankListenerProvider),
+        outbox: ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        isTrackedFinancialApp: isTrackedFinancialApp,
+      );
+    });
 
 /// Hands bank notifications to zad-brain.
 final bankRemoteProvider = Provider<BankRemote>(
@@ -118,6 +147,17 @@ final Provider<OutboxRunner> outboxRunnerProvider = Provider<OutboxRunner>((
   final runner = OutboxRunner(
     outbox: ref.watch(outboxProvider),
     triggers: triggers.stream,
+    // Ordering, not decoration: the inbox is emptied into the queue before the
+    // queue is sent, so a notification captured while the app was closed goes
+    // up on this cycle rather than the next one.
+    beforeFlush: () async {
+      final report = await ref.read(notificationDrainProvider).drain();
+      if (report.seen > 0) {
+        await ref
+            .read(bankCaptureMarkerProvider)
+            .sawCapture(ref.read(nowProvider)());
+      }
+    },
   );
 
   ref.onDispose(() async {

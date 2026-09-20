@@ -234,6 +234,71 @@ void main() {
     expect(reports.single.stop, FlushStop.finished);
   });
 
+  group('beforeFlush', () {
+    test('runs before the queue is worked, not after', () async {
+      // Ordering is the point. A notification captured while the app was shut
+      // must become a queued entry *and* be sent on the same cycle, not wait
+      // for the next trigger.
+      final order = <String>[];
+      late Outbox outbox;
+      outbox = outboxThat((e) async => order.add('sent ${e.id}'));
+
+      final r = OutboxRunner(
+        outbox: outbox,
+        triggers: triggers.stream,
+        beforeFlush: () async {
+          order.add('filled');
+          await enqueue(outbox, 'a');
+        },
+      );
+      runner = r;
+      r.start();
+      await r.flushNow();
+
+      expect(order, <String>['filled', 'sent a']);
+    });
+
+    test('a failure to fill does not stop the queue being emptied', () async {
+      // The inbox is a source of work, not the work. A missing plugin on a
+      // test host must not strand rows that are already queued.
+      final sent = <String>[];
+      final outbox = outboxThat((e) async => sent.add(e.id));
+      await enqueue(outbox, 'already-queued');
+
+      final r = OutboxRunner(
+        outbox: outbox,
+        triggers: triggers.stream,
+        beforeFlush: () async => throw StateError('no plugin here'),
+      );
+      runner = r;
+      r.start();
+      await r.flushNow();
+
+      expect(sent, <String>['already-queued']);
+      expect(r.lastPrefillError, isA<StateError>());
+    });
+
+    test('a successful fill clears the last error', () async {
+      var shouldFail = true;
+      final outbox = outboxThat((e) async {});
+      final r = OutboxRunner(
+        outbox: outbox,
+        triggers: triggers.stream,
+        beforeFlush: () async {
+          if (shouldFail) throw StateError('once');
+        },
+      );
+      runner = r;
+      r.start();
+      await r.flushNow();
+      expect(r.lastPrefillError, isNotNull);
+
+      shouldFail = false;
+      await r.flushNow();
+      expect(r.lastPrefillError, isNull);
+    });
+  });
+
   test('dispose stops it responding to triggers', () async {
     var calls = 0;
     final outbox = outboxThat((e) async => calls++);

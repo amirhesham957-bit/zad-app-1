@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/design/components/zad_balance_card.dart';
@@ -135,6 +136,17 @@ void main() {
 
     return ProviderContainer(
       overrides: [
+        // The home screen now carries the bank-access card, which reads the
+        // documents box. A screen test that leaves it out is not testing the
+        // app — localStoreProvider throws by design rather than opening boxes
+        // lazily, so the omission surfaces here rather than on a device.
+        localStoreProvider.overrideWithValue(
+          ZadLocalStore(
+            outbox: outboxBox,
+            transactions: transactions,
+            documents: documents,
+          ),
+        ),
         nowProvider.overrideWithValue(() => now),
         transactionsRepositoryProvider.overrideWithValue(txns),
         budgetRepositoryProvider.overrideWithValue(

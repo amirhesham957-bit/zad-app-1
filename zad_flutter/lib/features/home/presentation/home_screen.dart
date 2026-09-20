@@ -15,6 +15,7 @@ import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 
@@ -47,7 +48,17 @@ class HomeScreen extends ConsumerWidget {
             ),
             SliverPadding(
               padding: const EdgeInsets.all(ZadSpacing.gutter),
-              sliver: SliverToBoxAdapter(child: _Budget(view: view)),
+              sliver: SliverList.list(
+                children: <Widget>[
+                  _Budget(view: view),
+                  // Below the money, not above it. The channel's health is
+                  // worth saying when it is broken, but the balance is what
+                  // the screen is for — and the card renders nothing at all
+                  // when the channel is working.
+                  const SizedBox(height: ZadSpacing.lg),
+                  const BankAccessCard(),
+                ],
+              ),
             ),
           ],
         ),
