@@ -8,6 +8,10 @@
 /// `supabase/sql/tests/budget_period_test.sql`, and both were taken from the
 /// deployed functions rather than written by hand.
 ///
+/// One Flutter import, for `@immutable` alone. The rest of this file is plain
+/// Dart on purpose — the period's arithmetic is tested without a widget
+/// binding, and nothing here touches a widget.
+///
 /// Two rules this module exists to enforce:
 ///
 /// * The month is **not** the calendar month. It is the salary cycle. The
@@ -18,11 +22,17 @@
 ///   would get wrong.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/market_calendar.dart';
 import 'package:zad/core/period/payday.dart';
 
 /// One account's current budget period.
+///
+/// Immutable, and it has to be: it carries value equality so that watching it
+/// can dedupe, and equality on something that can change underneath its own
+/// hash is a bug waiting for a map to be involved.
+@immutable
 class BudgetPeriod {
   /// Creates a period. Prefer [BudgetPeriod.at], which derives every field.
   const new({
@@ -173,6 +183,36 @@ class BudgetPeriod {
     final today = DateTime.utc(local.year, local.month, local.day);
     return periodEnd.difference(today).inDays - 1;
   }
+
+  /// Value equality.
+  ///
+  /// A period is a value, not an identity, and without this it behaves like
+  /// one: `ref.watch(...select(period))` could never dedupe, so every change to
+  /// the budget — including its own background refresh landing — rebuilt
+  /// everything keyed on the period and re-read the cache. It also made
+  /// `BudgetPeriod` useless as a provider-family key. Both were found by a test
+  /// that expected a list to stay confirmed after a successful refresh and
+  /// found it marked stale again a moment later.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BudgetPeriod &&
+          other.periodStart == periodStart &&
+          other.periodEnd == periodEnd &&
+          other.timeZone == timeZone &&
+          other.cycleStartDay == cycleStartDay &&
+          other.anchor == anchor &&
+          other.isCalendarMonth == isCalendarMonth;
+
+  @override
+  int get hashCode => Object.hash(
+    periodStart,
+    periodEnd,
+    timeZone,
+    cycleStartDay,
+    anchor,
+    isCalendarMonth,
+  );
 
   @override
   String toString() =>

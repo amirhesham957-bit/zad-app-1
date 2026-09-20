@@ -4,6 +4,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/env/zad_env.dart';
@@ -34,6 +35,10 @@ Future<void> bootstrap(Widget app) async {
 
   ZadEnv.requireConfigured();
   tz_data.initializeTimeZones();
+  // Arabic month and weekday names. DateFormat throws without this, and the
+  // transactions list groups by day — so the first screen with a date on it
+  // would be the one that crashed.
+  await initializeDateFormatting('ar');
 
   await Hive.initFlutter();
   final store = await ZadLocalStore.open();

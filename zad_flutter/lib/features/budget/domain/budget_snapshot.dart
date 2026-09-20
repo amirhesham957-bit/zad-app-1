@@ -11,6 +11,8 @@
 /// what it knows it has queued — both of which are marked as such on screen.
 library;
 
+import 'package:zad/core/period/budget_period.dart';
+
 /// How fast the account is spending relative to the cycle.
 enum BudgetThreat {
   /// On track.
@@ -169,6 +171,23 @@ class BudgetSnapshot {
     // than the hours either side of midnight.
     final today = at.toUtc();
     return today.isBefore(end.add(const Duration(days: 1)));
+  }
+
+  /// This reading's cycle as a [BudgetPeriod], or null when the server gave
+  /// no range.
+  ///
+  /// Built from the server's own dates rather than recomputed, so every screen
+  /// reporting these figures counts the same days — see
+  /// `BudgetPeriod.fromServer`.
+  BudgetPeriod? get periodOrNull {
+    final start = cycleStart;
+    final end = cycleEnd;
+    if (start == null || end == null) return null;
+    return BudgetPeriod.fromServer(
+      cycleStart: start,
+      cycleEnd: end,
+      timeZone: timeZone,
+    );
   }
 
   /// Round-trips through the cache.

@@ -4,9 +4,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/zad_shell.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/home/presentation/home_screen.dart';
 
 /// The root widget.
 ///
@@ -34,7 +34,7 @@ class ZadApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const Scaffold(body: HomeScreen()),
+      home: const ZadShell(),
     );
   }
 }
