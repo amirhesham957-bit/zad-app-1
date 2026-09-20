@@ -1,0 +1,11 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+include: package:very_good_analysis/analysis_options.yaml
+
+linter:
+  rules:
+    # Same reason as the app's: a named parameter cannot start with an
+    # underscore, so a private field behind one has no other spelling.
+    prefer_initializing_formals: false

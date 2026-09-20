@@ -32,6 +32,11 @@ dependencies:
   # ── Navigation
   go_router: ^18.0.1
 
+  # ── The Android notification channel the bank messages arrive on. Local
+  # package: the service is this app's, not a general-purpose dependency.
+  zad_bank_listener:
+    path: packages/zad_bank_listener
+
   # ── Sync triggers. Reports which interface is up, not whether anything is
   # reachable, which is enough: a false "online" costs one transient failure.
   connectivity_plus: ^7.3.1

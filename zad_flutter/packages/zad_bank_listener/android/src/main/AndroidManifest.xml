@@ -1,0 +1,24 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+          BIND_NOTIFICATION_LISTENER_SERVICE is granted by the user in system
+          settings, not by an install-time prompt, and it cannot be requested
+          from inside the app. `exported` must be true: the system itself binds
+          this, and a non-exported listener is simply never bound.
+
+          Note there is no RECEIVE_SMS here, and there must not be. It was
+          dropped for Play Store compliance, which is why bank text arrives as
+          a notification from the messaging app at all.
+        -->
+        <service
+            android:name=".ZadNotificationListenerService"
+            android:exported="true"
+            android:label="زاد — قراءة إشعارات البنك"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>
