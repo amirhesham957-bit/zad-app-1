@@ -166,6 +166,36 @@ Scoped to this app's actual attack surface (Android client + Supabase backend + 
   reconcile by renaming/restoring files — **not** with the `repair --status reverted` the
   CLI suggests, which records applied migrations as reverted and makes the history lie.
 
+## Flutter migration (`zad_flutter/`) — the active work stream (2026-09-21)
+
+**The owner's decision: finish the Flutter client first, whatever it takes, and keep
+going until the whole app is converted.** The Kotlin app in `app/` still ships and is
+the only thing CI builds; both clients share one Supabase project, so the migration
+lands screen by screen.
+
+**Resuming? Read [`docs/agent/FLUTTER_MIGRATION.md`](./docs/agent/FLUTTER_MIGRATION.md)
+first.** It has the start-here checklist, the conventions every feature follows, what
+is done (per commit), the traps already paid for, the open decisions, and the ordered
+list of what is left. Status at a glance: HEAD `427dca37`, `flutter analyze` clean,
+**439** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
+home/budget, bank channel, transactions, proposals, auth, settings, receipt scanner,
+chat + voice input, pantry/shopping list, pharmacy. **Next: onboarding + market
+selection** (a null `zad_users.country` makes the account zone fall back to UTC).
+
+Rules that apply to every Flutter change, in short:
+
+- **Verify locally — no CI runs Flutter.** `export PATH="$HOME/flutter/bin:$PATH"`,
+  `ANDROID_HOME=$HOME/android-sdk`, `env.json` present, then `flutter analyze`,
+  `flutter test`, and `flutter build apk --release --split-per-abi
+  --dart-define-from-file=env.json`. Quote the results; never report done without them.
+- **Offline first:** cache → outbox → server. Outbox entry id = the server's conflict
+  key; read the row back after every upsert; the server's row wins; deletes are queued.
+- **Civil time is the account's market zone** (`accountTimeZoneProvider`), never the
+  device's. Dose times follow the server regex exactly (`24:00` is invalid).
+- **Agent tools run on the server** — `executed` is a receipt, never replay it locally.
+- **Mutation-check the guards that matter.** It has caught two real test gaps already.
+- One slice, one commit, full verification, report, then continue.
+
 ## Project plan and task numbering
 
 The full plan lives in `docs/agent/`. Read `ZAD_MASTER.md` first — it is the single
@@ -196,6 +226,9 @@ already knowing where things stand instead of re-deriving it from commit history
 `SESSION_2026_07_26_epic19.md` is archived (Epic 1+4, tasks 19-24, closed); Epic 2
 (`EPIC_2_ai_screen.md`) closed 2026-07-30.
 
+- `docs/agent/FLUTTER_MIGRATION.md` — **the Flutter migration's status, conventions and
+  remaining plan. Read this first for any work in `zad_flutter/`** (the active stream
+  since 2026-09-19); the bullet below is about the Kotlin app and the server.
 - `docs/agent/SESSION_HANDOFF.md` — **اقرأه هو الأول، قبل أي حاجة تانية في القائمة دي.**
   حالة ١٣ كومِت اتدفعوا لـ`main` في ٢٠٢٦-٠٩-١٢/١٣ (مسار الصوت الحي بالكامل، سياق
   المكالمة، العقل الاستباقي، ٨ جداول ناقصة من الريبو، إصلاحات واجهة) والنشر متوقف على
