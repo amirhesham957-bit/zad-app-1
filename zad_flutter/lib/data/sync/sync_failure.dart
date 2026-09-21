@@ -24,6 +24,23 @@ enum SyncFailureKind {
   unauthenticated,
 }
 
+/// A server function looked at a queued write and said, in words, why it will
+/// never take it — `invalid_input` from an RPC that answers refusals as data
+/// rather than as errors. Permanent: the tenth attempt gets the same answer.
+class ServerRefusal implements Exception {
+  /// Creates a refusal.
+  const new(this.function, this.reason);
+
+  /// Which function refused.
+  final String function;
+
+  /// What it said.
+  final String reason;
+
+  @override
+  String toString() => '$function refused: $reason';
+}
+
 /// Classifies [error] for the outbox.
 ///
 /// PostgREST reports a SQLSTATE in `code` for anything the database refused and
@@ -35,6 +52,7 @@ enum SyncFailureKind {
 /// and then lands the entry in dead, where it is visible.
 SyncFailureKind classifySyncFailure(Object error) {
   if (error is AuthException) return SyncFailureKind.unauthenticated;
+  if (error is ServerRefusal) return SyncFailureKind.permanent;
 
   if (error is PostgrestException) {
     final code = error.code;

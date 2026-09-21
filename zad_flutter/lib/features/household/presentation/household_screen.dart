@@ -13,6 +13,7 @@ import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
 
 /// Which part of the household is showing.
@@ -57,6 +58,11 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
       appBar: AppBar(
         title: const Text('البيت'),
         actions: <Widget>[
+          IconButton(
+            onPressed: () => showPricesScreen(context),
+            icon: const Icon(ZadIcons.prices),
+            tooltip: 'الأسعار',
+          ),
           IconButton(
             onPressed: () => showFamilyScreen(context),
             icon: const Icon(ZadIcons.family),

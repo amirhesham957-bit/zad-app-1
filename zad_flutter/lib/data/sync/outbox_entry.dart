@@ -89,6 +89,12 @@ abstract final class OutboxKind {
   /// upserts on `(user_id, recipe_name)`.
   static const String rateRecipe = 'rate_recipe';
 
+  /// Report a price through `zad_report_price`.
+  ///
+  /// One entry per report (`price_report:<id>`), the id recorded by the
+  /// function so a replay is `duplicate`, never a second vote.
+  static const String reportPrice = 'report_price';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

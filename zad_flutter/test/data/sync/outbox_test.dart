@@ -43,6 +43,13 @@ void main() {
   );
 
   group('classification', () {
+    test('a server function that says why it refuses is permanent', () {
+      expect(
+        classifySyncFailure(const ServerRefusal('zad_report_price', 'x')),
+        SyncFailureKind.permanent,
+      );
+    });
+
     test('a constraint violation is permanent — the row is wrong', () {
       // 23514 is check_violation: what transfer_needs_target raises.
       const error = PostgrestException(

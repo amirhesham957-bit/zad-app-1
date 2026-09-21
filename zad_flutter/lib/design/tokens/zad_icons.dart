@@ -89,6 +89,18 @@ abstract final class ZadIcons {
   /// An opinion: did not.
   static const IconData dislike = LucideIcons.thumbsDown;
 
+  /// Prices: what things cost, and where.
+  static const IconData prices = LucideIcons.tag;
+
+  /// A shop.
+  static const IconData store = LucideIcons.store;
+
+  /// Where the customer is.
+  static const IconData location = LucideIcons.locateFixed;
+
+  /// Who reports most.
+  static const IconData leaderboard = LucideIcons.trophy;
+
   /// The family.
   static const IconData family = LucideIcons.users;
 

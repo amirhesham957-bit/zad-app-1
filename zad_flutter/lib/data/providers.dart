@@ -31,6 +31,8 @@ import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/features/prices/data/prices_remote.dart';
+import 'package:zad/features/prices/data/prices_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/recipes/data/recipes_remote.dart';
 import 'package:zad/features/recipes/data/recipes_repository.dart';
@@ -160,6 +162,20 @@ final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
         outbox: () => ref.read(outboxProvider),
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
+/// Crowd prices: the cheapest list, the leaderboard, queued reports.
+final Provider<PricesRepository> pricesRepositoryProvider =
+    Provider<PricesRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return PricesRepository(
+        cache: store.documents,
+        remote: SupabasePricesRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        now: ref.watch(nowProvider),
       );
     });
 
@@ -303,6 +319,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(consumptionObservationsProvider).sendQueued(entry),
       OutboxKind.rateRecipe =>
         await ref.read(recipesRepositoryProvider).sendQueuedRating(entry),
+      OutboxKind.reportPrice =>
+        await ref.read(pricesRepositoryProvider).sendQueuedReport(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>
