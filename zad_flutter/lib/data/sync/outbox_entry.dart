@@ -69,6 +69,10 @@ abstract final class OutboxKind {
   /// and a hundred queued writes is a hundred round trips for one tap.
   static const String markAllNotificationsRead = 'mark_all_notifications_read';
 
+  /// Record a stock reading for the consumption learner. One entry per
+  /// reading — they are events, and a later one must not replace an earlier.
+  static const String recordObservation = 'record_observation';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

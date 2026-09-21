@@ -275,14 +275,48 @@ class _ReadingState extends ConsumerState<_Reading> {
             ],
           ),
 
-          if (receipt.items.isNotEmpty) ...<Widget>[
+          if (view.offersPantry) ...<Widget>[
+            const SizedBox(height: ZadSpacing.md),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: view.addToPantry,
+              onChanged: busy
+                  ? null
+                  : (v) => controller.setAddToPantry(value: v),
+              title: Text(
+                'ضيف الأصناف للمخزن '
+                '(${receipt.items.length - view.excludedItems.length})',
+                style: ZadType.titleSmall,
+              ),
+              subtitle: Text(
+                'اللي موجود هتزيد كميته، واللي في قايمة المشتريات '
+                'هيتشال منها.',
+                style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    for (final (i, item) in receipt.items.indexed)
+                      _ItemRow(
+                        item: item,
+                        checked: !view.excludedItems.contains(i),
+                        onChanged: busy || !view.addToPantry
+                            ? null
+                            : () => controller.toggleItem(i),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ] else if (receipt.items.isNotEmpty) ...<Widget>[
             const SizedBox(height: ZadSpacing.lg),
             Text(
-              // Named as what it is. The items are not stored anywhere yet —
-              // the pantry has not been ported — and implying otherwise would
-              // be the sort of half-claim this app keeps getting caught by.
-              'الأصناف اللي قريتها (${receipt.items.length}) — للمراجعة بس، '
-              'لسه مش بتتخزن',
+              // Only groceries go into the pantry: a restaurant bill's lines
+              // are meals, and a pharmacy's are medicines.
+              'الأصناف اللي قريتها (${receipt.items.length}) — للمراجعة بس',
               style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -305,7 +339,15 @@ class _ReadingState extends ConsumerState<_Reading> {
             onPressed: busy || _parsedTotal == null
                 ? null
                 : () => _save(controller.saveAsTransaction),
-            child: busy ? const _ButtonSpinner() : const Text('احفظ كمصروف'),
+            child: busy
+                ? const _ButtonSpinner()
+                : Text(
+                    view.offersPantry &&
+                            view.addToPantry &&
+                            view.excludedItems.length < receipt.items.length
+                        ? 'احفظ وضيف للمخزن'
+                        : 'احفظ كمصروف',
+                  ),
           )
         else
           FilledButton(
@@ -324,25 +366,57 @@ class _ReadingState extends ConsumerState<_Reading> {
   }
 
   Future<void> _save(Future<bool> Function() write) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final saved = await write();
     if (!mounted) return;
     if (saved) {
+      // Said on the screen underneath, which outlives this sheet.
+      final said = _intakeMessage(ref.read(scanControllerProvider).lastIntake);
+      if (said != null) {
+        messenger?.showSnackBar(SnackBar(content: Text(said)));
+      }
       await HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     }
   }
+
+  /// What the pantry got, in one line — or that it got nothing.
+  static String? _intakeMessage(PantryIntakeResult? intake) {
+    if (intake == null) return null;
+    if (intake.failed) {
+      return 'المصروف اتسجل، بس الأصناف مادخلتش المخزن. ضيفها من البيت.';
+    }
+    final parts = <String>[
+      if (intake.added > 0) '${intake.added} جديد',
+      if (intake.toppedUp > 0) '${intake.toppedUp} زادت كميته',
+      if (intake.ticked > 0) '${intake.ticked} اتشال من المشتريات',
+    ];
+    if (parts.isEmpty) return null;
+    return 'اتسجل المصروف — المخزن: ${parts.join('، ')}.';
+  }
 }
 
 class _ItemRow extends StatelessWidget {
-  const new({required this.item});
+  const new({required this.item, this.checked, this.onChanged});
 
   final ScannedReceiptItem item;
+
+  /// Whether the line goes into the pantry; null for a review-only row.
+  final bool? checked;
+
+  /// Ticks or unticks it; null when it cannot be changed right now.
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
     child: Row(
       children: <Widget>[
+        if (checked case final value?)
+          Checkbox(
+            value: value,
+            onChanged: onChanged == null ? null : (_) => onChanged!(),
+          ),
         Expanded(
           child: Text(
             item.name,

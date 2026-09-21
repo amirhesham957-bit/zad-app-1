@@ -36,7 +36,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 577 passing after family membership
+   flutter test                       # 591 passing after receipt → pantry
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -136,7 +136,8 @@ and `features/inventory/` are the cleanest examples.
 | Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | `ef7e4131` |
 | Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | `133adb79` |
 | Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | `388ee145` |
-| Family membership — create / join (server functions), members, roles, leave | `features/family` | family commit |
+| Family membership — create / join (server functions), members, roles, leave | `features/family` | `52d80640` |
+| Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | intake commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -278,10 +279,14 @@ one commit, full verification, report, then continue.
    `convertLimitsForMarketChange`, which converts the monthly limit to the new
    currency; porting the picker without that conversion would leave the limit
    in the old currency's figures, so it was deliberately left out.
-2. **Receipt items → pantry.** The scanner shows line items as "review only";
-   `InventoryRepository` now exists, so wire grocery receipts into the pantry
-   (Kotlin's `injectScannedItems`), and route `receiptType: pharmacy` to the
-   pharmacy.
+2. **Receipt items → pantry** — grocery done: ticked lines add to matching
+   pantry rows (Kotlin's `namesMatch` rules, duplicates and double matches
+   summed) or become new rows, open shopping-list lines are ticked off, and
+   `zad_record_observation` gets a `camera_ocr` reading *before and after*
+   each top-up (Kotlin sends only after, which hides the consumption since the
+   last reading). **Still open:** route `receiptType: pharmacy` to the
+   pharmacy, and send `manual` readings from the pantry's −/+ buttons
+   (Kotlin does; Flutter does not yet).
 3. ~~Subscriptions~~ — done (data layer + screens, Home entry card under the
    balance). Not ported, deliberately: Kotlin's AI detection
    (`detectSubscriptions`, an LLM call on screen open — CLAUDE.md forbids it)

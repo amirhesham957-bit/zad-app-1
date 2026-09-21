@@ -23,6 +23,7 @@ import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/family/data/family_remote.dart';
 import 'package:zad/features/family/data/family_repository.dart';
+import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
@@ -130,6 +131,17 @@ final Provider<InventoryRepository> inventoryRepositoryProvider =
       return InventoryRepository(
         cache: store.inventory,
         remote: SupabaseInventoryRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
+/// Stock readings for the server's consumption learner.
+final Provider<ConsumptionObservations> consumptionObservationsProvider =
+    Provider<ConsumptionObservations>((ref) {
+      return ConsumptionObservations(
+        remote: SupabaseObservationRemote(ref.watch(supabaseClientProvider)),
         outbox: () => ref.read(outboxProvider),
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
@@ -270,6 +282,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pharmacyRepositoryProvider).sendQueuedSnooze(entry),
       OutboxKind.upsertSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueued(entry),
+      OutboxKind.recordObservation =>
+        await ref.read(consumptionObservationsProvider).sendQueued(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>
