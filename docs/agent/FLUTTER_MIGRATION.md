@@ -1,6 +1,6 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (third session). HEAD `84c53a25` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
+**Last updated 2026-09-21 (third session). HEAD `30019e51` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
 see "Where the commits live" below). Both of this session's migrations are live
 (§5 item 7).
 
@@ -37,7 +37,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 657 passing after recipes
+   flutter test                       # 696 passing after prices & nearby
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -146,14 +146,20 @@ and `features/inventory/` are the cleanest examples.
 | Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` (server fn not live yet) |
 | Pantry −/+ and hand-added rows → `manual` consumption readings | `features/inventory/application/pantry_controller.dart` | `9db280c2` |
 | Recipes — شيف زاد as البيت's fourth section, recipe sheet, add-missing, like/dislike | `features/recipes` | `84c53a25` |
+| Crowd prices — cheapest reported, city filter, leaderboard (no names), queued reports | `features/prices` (tag icon on البيت) | `912c23c5` (server fn not live yet) |
+| Shops near you — second tab of the prices screen, radius chips, list/medicine hints | `features/nearby` | `30019e51` |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
 Android: `INTERNET` is declared in the **main** manifest (the template only put
 it in debug/profile, so every release build had no network — `51608a88`);
 launcher label is `@string/app_name` = زاد. Declared permissions in the release
-APK: INTERNET, ACCESS_NETWORK_STATE, RECORD_AUDIO. No SMS, no CAMERA (the
-scanner uses the system camera intent via `image_picker`).
+APK (merged manifest, checked with `aapt2 dump xmltree` at `30019e51`): INTERNET,
+ACCESS_NETWORK_STATE, RECORD_AUDIO, ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION.
+No SMS, no CAMERA (the scanner uses the system camera intent via
+`image_picker`), **no ACCESS_BACKGROUND_LOCATION and no foreground-service
+permission** — geolocator's `GeolocatorLocationService` is removed with
+`tools:node="remove"`; keep it that way.
 
 ---
 
@@ -278,6 +284,28 @@ scanner uses the system camera intent via `image_picker`).
   `b325d34f` (the key had gained `v2:`); that fix ships through CI like any edge
   function and is **not deployed** from here. Opinions are queued per dish
   under a UUID v5 of the name (Hive keys must be ASCII).
+- **Crowd prices go through the server** (`20260921160000`, **not live** — §5
+  item 9). `price_index` let anyone, signed in or not, read every report with
+  its `user_id` and insert unowned rows of any source; now clients write only
+  through `zad_report_price` (idempotent on the phone's report id; one voice
+  per person/item/store/city per 12 h — a second report corrects the first;
+  30 new an hour; the account's own currency) and read only their own rows;
+  `zad_cheapest_prices` is definer and `zad_price_leaderboard` returns rank,
+  count and `is_me`, never an id. On the phone a report is checked against
+  the same bounds before it is queued (`checkReport`), so the queue never
+  holds one the server will refuse.
+- **`ServerRefusal` is permanent** (`data/sync/sync_failure.dart`). An RPC that
+  answers refusals as data (`{ok:false, reason}`) should throw it for reasons
+  that retrying cannot change, so the outbox dead-letters at once instead of
+  burning eight attempts. Transient reasons (`too_many`) throw anything else.
+  Older senders (pharmacy restock/dose) still throw `StateError` for refusals.
+- **Location: one fix on a tap, a coarse point on the wire** (`features/nearby`).
+  Never a stream; on open no permission prompt and no new fix — only the OS's
+  last position if under 30 minutes old; a tap takes one medium-accuracy fix
+  (10 s limit). Only `GeoPoint.coarse` (3 decimals, ~110 m) leaves the phone,
+  to `nearby_pois` and then Overpass; distances are computed locally and the
+  exact fix is never stored. The kept list is reused within 500 m and 24 h;
+  radius chips never fetch.
 - **SQL behaviour tests run on a scratch Postgres**, not the live project:
   `supabase/sql/tests/scratch_scaffold.sql` (header has the docker commands) +
   `pharmacy_restock_test.sql` + `family_money_test.sql` (39 checks as four
@@ -342,6 +370,13 @@ scanner uses the system camera intent via `image_picker`).
    under any `sender_id` (Kotlin inserts `zad_ai` messages from the phone). Only
    `PURCHASE_REQUEST` is now pinned to the sender's own name, because that is the
    one that moves money.
+9. **`20260921160000_price_reports_through_the_server` is in the repo and not on
+   the live project** — it changes what the shipping Kotlin app can do (its
+   direct `price_index` inserts stop; its leaderboard shows only the caller),
+   so it waits for the owner's word, like any migration not named in an
+   instruction. Until it lands, the Flutter app's reports dead-letter
+   (`PGRST202`) and `zad_price_leaderboard` does not exist (the leaderboard
+   card just stays empty). Scratch-tested: `supabase/sql/tests/price_reports_test.sql`.
 
 ---
 
@@ -389,7 +424,12 @@ one commit, full verification, report, then continue.
    automatic "urgent recipes" call on every pantry change (both unrequested
    model calls or fake answers). A customer-tapped "use what is about to
    expire" ask is a possible follow-up.
-7. **Prices & deals** (`NearbyDealsScreen`, `PriceReportingScreen`).
+7. ~~Prices & deals~~ — done: crowd prices (`912c23c5`) and shops near you
+   (`30019e51`). Not ported: Kotlin's "live deals" / "price shock" web-search
+   actions (`fetch_live_deals`, `fetch_price_shock_warnings` — model calls; no
+   screen asked for them here) and its background geofence alerts
+   (`GroceryGeofenceManager`, which needs the background-location permission
+   this client deliberately does not declare).
 8. **Brain screens** (`ZadMemoryScreen`, `ZadKnowledgeMapScreen`,
    `AgentActionLogScreen`, `BrainHealthScreen`).
 9. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,

@@ -176,20 +176,22 @@ lands screen by screen.
 **Resuming? Read [`docs/agent/FLUTTER_MIGRATION.md`](./docs/agent/FLUTTER_MIGRATION.md)
 first.** It has the start-here checklist, the conventions every feature follows, what
 is done (per commit), the traps already paid for, the open decisions, and the ordered
-list of what is left. Status at a glance: HEAD `84c53a25`, `flutter analyze` clean,
-**657** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
+list of what is left. Status at a glance: HEAD `30019e51`, `flutter analyze` clean,
+**696** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
 home/budget, bank channel, transactions, proposals, auth, settings, receipt scanner
 (grocery lines fill the pantry, pharmacy lines restock the pharmacy), chat + voice
 input, pantry/shopping list (−/+ feed the consumption learner), pharmacy (snooze
 server-side), market selection, subscriptions, onboarding intro, notification center,
-family membership, recipes (شيف زاد, asked by a tap — never on open). **Family membership is server-only since `0e99f226`**: create/join
+family membership, recipes (شيف زاد, asked by a tap — never on open), crowd prices,
+shops near you (one fix on a tap, coarse point only, no background location). **Family membership is server-only since `0e99f226`**: create/join
 through `zad_create_family`/`zad_join_family`, no client insert policy on
 `family_members`/`family_groups` — never add one back. **Family balances are
 server-only since `f35d4716`** (chores, challenges, purchase requests
 through four RPCs); it and `20260921140000_pharmacy_restock` were hand-applied and
 verified on live 2026-09-21 (FLUTTER_MIGRATION.md §5 item 7 — note the stamped
-`120000`/`130000` versions the ship repo lacks). **Next:** prices & deals
-(FLUTTER_MIGRATION.md §6 item 7).
+`120000`/`130000` versions the ship repo lacks). ⚠️ `20260921160000_price_reports_through_the_server`
+is **not live** — it waits for the owner (§5 item 9). **Next:** the brain screens
+(FLUTTER_MIGRATION.md §6 item 8).
 
 Rules that apply to every Flutter change, in short:
 
