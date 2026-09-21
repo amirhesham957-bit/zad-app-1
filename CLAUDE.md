@@ -189,9 +189,12 @@ through `zad_create_family`/`zad_join_family`, no client insert policy on
 server-only since `f35d4716`** (chores, challenges, purchase requests
 through four RPCs); it and `20260921140000_pharmacy_restock` were hand-applied and
 verified on live 2026-09-21 (FLUTTER_MIGRATION.md §5 item 7 — note the stamped
-`120000`/`130000` versions the ship repo lacks). ⚠️ `20260921160000_price_reports_through_the_server`
-is **not live** — it waits for the owner (§5 item 9). **Next:** the brain screens
-(FLUTTER_MIGRATION.md §6 item 8).
+`120000`/`130000` versions the ship repo lacks). `20260921160000_price_reports_through_the_server` is live too (§5 item 9).
+⚠️ **A push to `origin main` (the fork) deploys migrations and edge functions to
+production** — see FLUTTER_MIGRATION.md "Where the commits live". **Next:** the
+brain screens (FLUTTER_MIGRATION.md §6 item 8). **Finish line:** a debug-signed
+release APK on the owner's phone — no keystore, no Play work; the live voice
+call (`zad-voice-live`) is cancelled for good.
 
 Rules that apply to every Flutter change, in short:
 

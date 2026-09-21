@@ -1,8 +1,8 @@
 # Flutter migration — status, conventions, and what is left
 
 **Last updated 2026-09-21 (third session). HEAD `30019e51` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
-see "Where the commits live" below). Both of this session's migrations are live
-(§5 item 7).
+see "Where the commits live" below — **a push there deploys to production**). Every
+migration in the repo is live (§5 items 7 and 9).
 
 **The decision:** the owner decided to finish the Flutter client first, whatever
 it takes, and to keep going until the whole app is converted. Until then the
@@ -143,10 +143,10 @@ and `features/inventory/` are the cleanest examples.
 | Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | `388ee145` |
 | Family membership — create / join (server functions), members, roles, leave | `features/family` | `52d80640` |
 | Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | `7124f68b` |
-| Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` (server fn not live yet) |
+| Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` |
 | Pantry −/+ and hand-added rows → `manual` consumption readings | `features/inventory/application/pantry_controller.dart` | `9db280c2` |
 | Recipes — شيف زاد as البيت's fourth section, recipe sheet, add-missing, like/dislike | `features/recipes` | `84c53a25` |
-| Crowd prices — cheapest reported, city filter, leaderboard (no names), queued reports | `features/prices` (tag icon on البيت) | `912c23c5` (server fn not live yet) |
+| Crowd prices — cheapest reported, city filter, leaderboard (no names), queued reports | `features/prices` (tag icon on البيت) | `912c23c5` |
 | Shops near you — second tab of the prices screen, radius chips, list/medicine hints | `features/nearby` | `30019e51` |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
@@ -281,10 +281,10 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
   on. The request sends the pantry sorted and without zero-quantity rows, so an
   unchanged kitchen is the same text and hits the server's per-user cache
   (6 h). `rate_recipe` is meant to clear that cache — it matched nothing until
-  `b325d34f` (the key had gained `v2:`); that fix ships through CI like any edge
-  function and is **not deployed** from here. Opinions are queued per dish
+  `b325d34f` (the key had gained `v2:`); that fix shipped with the fork's CI deploy
+  (run `35658640118`, 2026-09-21). Opinions are queued per dish
   under a UUID v5 of the name (Hive keys must be ASCII).
-- **Crowd prices go through the server** (`20260921160000`, **not live** — §5
+- **Crowd prices go through the server** (`20260921160000`, live — §5
   item 9). `price_index` let anyone, signed in or not, read every report with
   its `user_id` and insert unowned rows of any source; now clients write only
   through `zad_report_price` (idempotent on the phone's report id; one voice
@@ -370,13 +370,17 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
    under any `sender_id` (Kotlin inserts `zad_ai` messages from the phone). Only
    `PURCHASE_REQUEST` is now pinned to the sender's own name, because that is the
    one that moves money.
-9. **`20260921160000_price_reports_through_the_server` is in the repo and not on
-   the live project** — it changes what the shipping Kotlin app can do (its
-   direct `price_index` inserts stop; its leaderboard shows only the caller),
-   so it waits for the owner's word, like any migration not named in an
-   instruction. Until it lands, the Flutter app's reports dead-letter
-   (`PGRST202`) and `zad_price_leaderboard` does not exist (the leaderboard
-   card just stays empty). Scratch-tested: `supabase/sql/tests/price_reports_test.sql`.
+9. ~~`20260921160000_price_reports_through_the_server`~~ — **live.** The owner
+   ordered it on 2026-09-21 ("لا يهمنا كوتلن" — Kotlin's direct inserts and
+   its full leaderboard can break). It turned out to be live already: the
+   fork's CI (run `35658640118`) had applied it on the docs push at 21:42,
+   while this item still said it was waiting. Verified on live in a
+   rolled-back block with real accounts, 15/15: report in the account's
+   currency, name normalised, replay is a duplicate, same store and city is
+   a correction, bad input refused, direct insert and update refused, both
+   aggregates see the report, a second account reads none of the first's
+   rows but its aggregates count them, `is_me` only for the reporter, anon
+   reads nothing and calls nothing. `price_index` still had 0 rows afterwards.
 
 ---
 
@@ -436,8 +440,12 @@ one commit, full verification, report, then continue.
    `AchievementsScreen`, `TasbihaScreen`, `StatementImportScreen`,
    `ZadSubscriptionPaywallScreen`, `TermsOfServiceScreen`, `HelpSupportScreen`,
    `ProfileScreen`/`ProfileSubScreens`, `FinancesScreen`, `BudgetScreen`.
-10. **Live voice call** (`zad-voice-live`) — large; do last.
-11. **Shipping:** a Flutter CI workflow, real release signing, Play listing.
+10. **The finish line:** a release APK signed with the debug key (already the
+    template's setting, `android/app/build.gradle.kts`), sideloaded on the
+    owner's phone to confirm the whole conversion works. **Out of scope, by
+    the owner's decision on 2026-09-21:** an official keystore, the Play
+    Console, a store listing, a Flutter CI workflow. **Cancelled for good:** the
+    live voice call (`zad-voice-live`). Do not put it back on this list.
 
 ---
 
@@ -445,6 +453,12 @@ one commit, full verification, report, then continue.
 
 `origin` = `amirhesham957-bit/zad-app-1` (personal fork, created automatically
 because the Codespace token is read-only on `seam1010x-lab/zad-app`).
-`upstream` = `seam1010x-lab/zad-app`, the ship repo. `git push origin main`
-works; nothing here can push to `upstream`. See memory note
+`upstream` = `seam1010x-lab/zad-app`, the ship repo, which nothing here can push to.
+
+⚠️ **A push to `origin main` deploys to production.** The fork has Actions on
+and the deploy secrets set (Edge Functions runs since 2026-09-20), so
+`edge-functions.yml` runs `supabase db push --include-all` and deploys every
+edge function to `auuftqncrjsnyylolhbu`. A migration the owner has not approved
+must not be on `main` when you push. After a push, read the run's `Push
+migrations` log (`gh run list -R amirhesham957-bit/zad-app-1`). See memory note
 `codespace-git-forks-origin`.
