@@ -40,7 +40,15 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(memoryControllerProvider.notifier).refresh());
+    // After this frame: a refresh changes provider state, which is not
+    // allowed while the tree is building.
+    unawaited(
+      Future<void>.microtask(
+        () => mounted
+            ? ref.read(memoryControllerProvider.notifier).refresh()
+            : null,
+      ),
+    );
   }
 
   void _say(String message) => ScaffoldMessenger.of(context)

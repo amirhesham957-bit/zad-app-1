@@ -45,7 +45,15 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
     super.initState();
     // Every open reads the log again: it is a database read, and the actions
     // most worth seeing are the ones the chat just made.
-    unawaited(ref.read(agentActionsControllerProvider.notifier).refresh());
+    // After this frame: a refresh changes provider state, which is not
+    // allowed while the tree is building.
+    unawaited(
+      Future<void>.microtask(
+        () => mounted
+            ? ref.read(agentActionsControllerProvider.notifier).refresh()
+            : null,
+      ),
+    );
   }
 
   Future<void> _undo(AgentAction action) async {

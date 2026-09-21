@@ -21,6 +21,7 @@ import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/brain/data/agent_actions_remote.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
+import 'package:zad/features/brain/data/brain_health_repository.dart';
 import 'package:zad/features/brain/data/memory_remote.dart';
 import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
@@ -268,6 +269,15 @@ final memoryRepositoryProvider = Provider<MemoryRepository>((ref) {
   return MemoryRepository(
     cache: store.documents,
     remote: SupabaseMemoryRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+    now: ref.watch(nowProvider),
+  );
+});
+
+/// "صحة عقل زاد": nine reads and a verdict, never cached on disk.
+final brainHealthRepositoryProvider = Provider<BrainHealthRepository>((ref) {
+  return BrainHealthRepository(
+    remote: SupabaseBrainHealthRemote(ref.watch(supabaseClientProvider)),
     signedInUserId: ref.watch(signedInUserIdProvider),
     now: ref.watch(nowProvider),
   );

@@ -12,6 +12,7 @@ import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
+import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 
 /// Opens the hub.
@@ -38,6 +39,12 @@ class BrainHubScreen extends StatelessWidget {
         title: 'سجل تعديلات زاد',
         subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط',
         open: showAgentActionLog,
+      ),
+      _Entry(
+        icon: ZadIcons.brainHealth,
+        title: 'صحة عقل زاد',
+        subtitle: 'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه',
+        open: showBrainHealth,
       ),
     ];
 
