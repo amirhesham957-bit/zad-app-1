@@ -9,8 +9,10 @@
 --   psql < supabase/migrations/20260921130000_family_membership_through_the_server.sql
 --   psql < supabase/migrations/20260921140000_pharmacy_restock.sql
 --   psql < supabase/migrations/20260921150000_family_money_through_the_server.sql
+--   psql < supabase/migrations/20260921160000_price_reports_through_the_server.sql
 --   psql < supabase/sql/tests/pharmacy_restock_test.sql
 --   psql < supabase/sql/tests/family_money_test.sql
+--   psql < supabase/sql/tests/price_reports_test.sql
 --
 -- Never against the live project: it writes, and the guard below refuses.
 
@@ -103,3 +105,20 @@ create table public.app_notifications (id uuid primary key default gen_random_uu
   is_read boolean default false, created_at timestamptz default now());
 alter table public.app_notifications enable row level security;
 create policy users_read_own_notifications on public.app_notifications for select using (user_id = (select auth.uid()));
+
+-- price_index and the zad_users column zad_report_price reads, as live 2026-09-21.
+create table public.zad_users (id uuid primary key, currency text);
+create table public.price_index (
+  id bigserial primary key, item_name text not null, item_category text, price double precision not null,
+  currency text not null default 'EGP', user_id uuid references auth.users(id) on delete set null, location text,
+  source text not null default 'usda', "timestamp" timestamptz not null default now(),
+  store_name text check (store_name is null or char_length(store_name) <= 60));
+alter table public.price_index enable row level security;
+create policy price_index_public_read on public.price_index for select using (true);
+create policy price_index_server_write on public.price_index for insert with check (user_id is null);
+create policy price_index_user_crowdsource_write on public.price_index for insert
+  with check ((user_id is null) or ((select auth.uid()) = user_id));
+create or replace function public.zad_cheapest_prices(p_currency text, p_location text default null, p_days int default 14, p_limit int default 20)
+returns table (item_name text, min_price double precision, avg_price double precision, reports int,
+  cheapest_location text, cheapest_store text, last_reported timestamptz)
+language sql stable set search_path to 'public' as $$ select null::text, 0::float8, 0::float8, 0, null::text, null::text, now() where false $$;
