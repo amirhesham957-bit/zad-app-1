@@ -12,6 +12,7 @@ import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
+import 'package:zad/features/brain/presentation/memory_screen.dart';
 
 /// Opens the hub.
 Future<void> showBrainHub(BuildContext context) => Navigator.of(
@@ -26,6 +27,12 @@ class BrainHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const entries = <_Entry>[
+      _Entry(
+        icon: ZadIcons.memory,
+        title: 'زاد عارف عني إيه',
+        subtitle: 'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه',
+        open: showMemoryScreen,
+      ),
       _Entry(
         icon: ZadIcons.actionLog,
         title: 'سجل تعديلات زاد',

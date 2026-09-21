@@ -21,6 +21,8 @@ import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/brain/data/agent_actions_remote.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
+import 'package:zad/features/brain/data/memory_remote.dart';
+import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
@@ -257,6 +259,17 @@ final agentActionsRepositoryProvider = Provider<AgentActionsRepository>((ref) {
     cache: store.documents,
     remote: SupabaseAgentActionsRemote(ref.watch(supabaseClientProvider)),
     signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});
+
+/// "زاد عارف عني إيه": notes, profile and habits; changed only online.
+final memoryRepositoryProvider = Provider<MemoryRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return MemoryRepository(
+    cache: store.documents,
+    remote: SupabaseMemoryRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+    now: ref.watch(nowProvider),
   );
 });
 
