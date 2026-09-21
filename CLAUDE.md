@@ -185,10 +185,10 @@ server-side), market selection, subscriptions, onboarding intro, notification ce
 family membership. **Family membership is server-only since `0e99f226`**: create/join
 through `zad_create_family`/`zad_join_family`, no client insert policy on
 `family_members`/`family_groups` — never add one back. **Family balances are
-server-only in the repo since `f35d4716`** (chores, challenges, purchase requests
-through four RPCs) — ⚠️ that migration and `20260921140000_pharmacy_restock` are
-**not yet on the live project**; FLUTTER_MIGRATION.md §5 item 7. **Next:** apply
-those two, then recipes.
+server-only since `f35d4716`** (chores, challenges, purchase requests
+through four RPCs); it and `20260921140000_pharmacy_restock` were hand-applied and
+verified on live 2026-09-21 (FLUTTER_MIGRATION.md §5 item 7 — note the stamped
+`120000`/`130000` versions the ship repo lacks). **Next:** recipes.
 
 Rules that apply to every Flutter change, in short:
 

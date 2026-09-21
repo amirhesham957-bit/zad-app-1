@@ -1,9 +1,8 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (third session). HEAD `9db280c2`, committed locally
-and not yet pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
-see "Where the commits live" below). ⚠️ Two migrations from this session are in the
-repo but **not on the live project** — §5 item 7.
+**Last updated 2026-09-21 (third session). HEAD `9db280c2` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
+see "Where the commits live" below). Both of this session's migrations are live
+(§5 item 7).
 
 **The decision:** the owner decided to finish the Flutter client first, whatever
 it takes, and to keep going until the whole app is converted. Until then the
@@ -257,7 +256,7 @@ scanner uses the system camera intent via `image_picker`).
   is needed after + as well as − — Kotlin sends only after − and edits, which
   loses the consumption after any unreported rise. Repeated equal readings are
   harmless (no drop, no change to the span).
-- **Family money is server-only in the repo** (`20260921150000`, not live yet).
+- **Family money is server-only** (`20260921150000`, live since 2026-09-21).
   Balances change only inside `zad_complete_chore`, `zad_reopen_chore`,
   `zad_contribute_to_challenge`, `zad_decide_purchase_request`, which raise a
   transaction-local flag (`zad.family_ledger`) the balance guard checks. Rewards,
@@ -307,18 +306,24 @@ scanner uses the system camera intent via `image_picker`).
    السيرفر") — see item 7 for its live state.
 6. Where commits should end up: this Codespace can only push to the fork (see
    below). Getting work into the ship repo needs a PR or a token with write.
-7. **Two migrations are in the repo and not on the live project** (2026-09-21):
-   `20260921140000_pharmacy_restock` (pharmacy receipts depend on it — until it
-   lands, a restock the app queues is answered `PGRST202` "function not found",
-   which `classifySyncFailure` treats as permanent: the entry goes straight to
-   the dead letters — kept and re-queueable with `Outbox.retryDead`, but not retried
-   on its own. The expense itself is unaffected) and `20260921150000_family_money_through_the_server`
-   (closes the balance/reward/request holes; stops Kotlin's direct balance,
-   progress and approval writes, as the owner accepted). The session's hand-apply
-   through `execute_sql` was **refused by its permission gate**, so nothing was
-   run. To apply: the owner authorizes it (or runs both files in the SQL editor,
-   in order); both are idempotent and stamp no version. Verify afterwards on live
-   with rolled-back blocks, as `20260921130000` was.
+7. ~~Two migrations awaiting the live project~~ — **applied 2026-09-21** on the
+   owner's instruction ("معاك صلاحية كاملة لتشغيل الـ migrations عبر
+   execute_sql"): `20260921140000_pharmacy_restock` then
+   `20260921150000_family_money_through_the_server`, through `execute_sql` in
+   `begin … commit`, so no version was stamped. Verified on live in rolled-back
+   blocks with real accounts picked inside the block (no ids returned): restock
+   7/7 (own +30, replay adds nothing, new medicine lands with its count, name
+   clash, another account's medicine, posing as another account, log scoped);
+   family money 21/21 (direct balance writes refused for child and admin, reward
+   rules, completion once, admin-only reopen with take-back, challenge target and
+   progress locked, pays once, request in a sibling's name and self-approval
+   refused, admin approval debits, `family_messages` hidden from an outsider).
+   Row counts unchanged afterwards. ⚠️ **Found while checking:**
+   `supabase_migrations.schema_migrations` *does* hold `20260921120000` and
+   `20260921130000` — contrary to what §4 says about the snooze migration being
+   unstamped. Until the ship repo (`upstream`) has those two files, its CI
+   `db push` fails with "Remote migration versions not found". Getting this
+   fork's commits into `upstream` (item 6) fixes it; do not `repair`.
 8. **Also found, not fixed:** any family member can post a `chat_messages` row
    under any `sender_id` (Kotlin inserts `zad_ai` messages from the phone). Only
    `PURCHASE_REQUEST` is now pinned to the sender's own name, because that is the
@@ -356,8 +361,8 @@ one commit, full verification, report, then continue.
    the family icon on the البيت tab). Still to port from the 2,597-line
    `FamilyScreen.kt`: family chat, requests/approvals, chores, challenges,
    sinking funds, spend limits UI, children's spending. Rewards and request
-   decisions are server functions now (`f35d4716`, §4) — port the screens onto
-   them once the migration is live. Membership writes deliberately bypass the
+   decisions are server functions now (`f35d4716`, §4, live) — port the
+   screens onto them. Membership writes deliberately bypass the
    outbox: they are online-only and read back; the money RPCs should too (none
    of them carries an idempotency key — a replayed contribution counts twice).
 5. ~~Notification center~~ — done for `app_notifications` (list, read,
