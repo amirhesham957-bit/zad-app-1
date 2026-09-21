@@ -10,6 +10,7 @@ import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
+import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1383,7 +1384,9 @@ Deno.serve(async (req: Request) => {
         } catch (e) {
           console.error("[CoreIntel] meal_suggestions broke mode lookup failed:", (e as Error).message);
         }
-        const cacheKey = "meal_suggestions:v2:" + user_id + ":" + dialectPrefix + ":" + personTag + ":" + (brokeMode ? "broke:" : "") + (items || "");
+        const cacheKey = mealSuggestionsCacheKey({
+          userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: items || "",
+        });
         const cached = await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
 
@@ -1562,7 +1565,7 @@ Deno.serve(async (req: Request) => {
           .from("ai_response_cache")
           .delete()
           .eq("action", "meal_suggestions")
-          .like("cache_key", `meal_suggestions:${rateCaller.user.id}:%`);
+          .like("cache_key", mealSuggestionsCachePattern(rateCaller.user.id));
         if (cacheClearError) {
           // مش fatal — أسوأ حالة الكاش القديم يفضل شوية وبعدين ينتهي بـTTL العادي.
           console.error("[CoreIntel] rate_recipe cache invalidation failed:", cacheClearError.message);
