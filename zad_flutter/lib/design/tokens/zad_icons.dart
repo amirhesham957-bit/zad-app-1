@@ -77,6 +77,18 @@ abstract final class ZadIcons {
   /// Medicines and doses.
   static const IconData pharmacy = LucideIcons.pill;
 
+  /// شيف زاد and the recipes.
+  static const IconData chef = LucideIcons.chefHat;
+
+  /// How long something takes.
+  static const IconData duration = LucideIcons.clock;
+
+  /// An opinion: liked it.
+  static const IconData like = LucideIcons.thumbsUp;
+
+  /// An opinion: did not.
+  static const IconData dislike = LucideIcons.thumbsDown;
+
   /// The family.
   static const IconData family = LucideIcons.users;
 

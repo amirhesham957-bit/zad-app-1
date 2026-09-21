@@ -1,6 +1,6 @@
-/// The household: pantry, shopping list, pharmacy.
+/// The household: pantry, shopping list, pharmacy, recipes.
 ///
-/// One tab with three sections rather than three tabs. The bar already holds
+/// One tab with four sections rather than four tabs. The bar already holds
 /// four destinations, and the three belong together — a medicine that runs
 /// out lands on the same shopping list a carton of milk does.
 library;
@@ -13,6 +13,7 @@ import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/features/recipes/presentation/recipes_view.dart';
 
 /// Which part of the household is showing.
 enum HouseholdSection {
@@ -24,6 +25,9 @@ enum HouseholdSection {
 
   /// Medicines and doses.
   pharmacy,
+
+  /// What to cook from what is in the kitchen.
+  recipes,
 }
 
 /// The household screen.
@@ -39,7 +43,7 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
   HouseholdSection _section = HouseholdSection.pantry;
 
   /// Sections opened so far. Each one fetches when it first builds, so a
-  /// section is built on first visit rather than all three at once — opening
+  /// section is built on first visit rather than all at once — opening
   /// the pantry should not also query every medicine's dose history.
   final Set<HouseholdSection> _opened = <HouseholdSection>{
     HouseholdSection.pantry,
@@ -88,6 +92,10 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
                   value: HouseholdSection.pharmacy,
                   label: Text('الصيدلية'),
                 ),
+                ButtonSegment<HouseholdSection>(
+                  value: HouseholdSection.recipes,
+                  label: Text('وصفات'),
+                ),
               ],
               selected: <HouseholdSection>{_section},
               onSelectionChanged: (s) => setState(() {
@@ -110,6 +118,7 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
                       HouseholdSection.pantry => const PantryView(),
                       HouseholdSection.shopping => const ShoppingListView(),
                       HouseholdSection.pharmacy => const PharmacyView(),
+                      HouseholdSection.recipes => const RecipesView(),
                     }
                   else
                     const SizedBox.shrink(),

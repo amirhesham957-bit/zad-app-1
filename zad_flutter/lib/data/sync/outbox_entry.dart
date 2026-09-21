@@ -82,6 +82,13 @@ abstract final class OutboxKind {
   /// reading — they are events, and a later one must not replace an earlier.
   static const String recordObservation = 'record_observation';
 
+  /// Like or dislike one of شيف زاد's recipes through `rate_recipe`.
+  ///
+  /// One entry per dish (`recipe_rating:<name-based uuid>`), so changing your
+  /// mind before the queue drains sends only the last opinion. The server
+  /// upserts on `(user_id, recipe_name)`.
+  static const String rateRecipe = 'rate_recipe';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

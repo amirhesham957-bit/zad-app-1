@@ -32,6 +32,8 @@ import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
+import 'package:zad/features/recipes/data/recipes_remote.dart';
+import 'package:zad/features/recipes/data/recipes_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
@@ -161,6 +163,19 @@ final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
       );
     });
 
+/// شيف زاد's last answer and the customer's opinions of its recipes.
+final Provider<RecipesRepository> recipesRepositoryProvider =
+    Provider<RecipesRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return RecipesRepository(
+        cache: store.documents,
+        remote: SupabaseRecipesRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        now: ref.watch(nowProvider),
+      );
+    });
+
 /// Medicines and doses, offline first.
 final Provider<PharmacyRepository> pharmacyRepositoryProvider =
     Provider<PharmacyRepository>((ref) {
@@ -286,6 +301,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(subscriptionsRepositoryProvider).sendQueued(entry),
       OutboxKind.recordObservation =>
         await ref.read(consumptionObservationsProvider).sendQueued(entry),
+      OutboxKind.rateRecipe =>
+        await ref.read(recipesRepositoryProvider).sendQueuedRating(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>
