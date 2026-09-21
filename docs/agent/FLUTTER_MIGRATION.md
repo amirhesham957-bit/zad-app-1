@@ -1,6 +1,6 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (third session). HEAD `9db280c2` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
+**Last updated 2026-09-21 (third session). HEAD `84c53a25` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
 see "Where the commits live" below). Both of this session's migrations are live
 (§5 item 7).
 
@@ -37,7 +37,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 631 passing after pharmacy receipts + −/+ readings
+   flutter test                       # 657 passing after recipes
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -107,6 +107,10 @@ and `features/inventory/` are the cleanest examples.
 - Use **unique box names per test** (`'pantry$run'`) and **wait on real
   conditions** (a turn counter, `live?.isClosed == false`) rather than
   `Duration.zero` guesses.
+- **`await HapticFeedback.*()` never completes under `flutter_test`** — anything
+  after it (a snackbar, a pop) silently does not happen in the test. Don't await
+  a haptic before something a test checks; `unawaited` it. The receipt sheet's
+  `_save` still awaits one before popping (untested path).
 - A Riverpod `onDispose` hook **may not touch `ref`** — capture what it needs in
   `build`.
 - **Mutation-check the guards that matter**: break the rule, confirm a test
@@ -141,6 +145,7 @@ and `features/inventory/` are the cleanest examples.
 | Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | `7124f68b` |
 | Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` (server fn not live yet) |
 | Pantry −/+ and hand-added rows → `manual` consumption readings | `features/inventory/application/pantry_controller.dart` | `9db280c2` |
+| Recipes — شيف زاد as البيت's fourth section, recipe sheet, add-missing, like/dislike | `features/recipes` | `84c53a25` |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -264,6 +269,15 @@ scanner uses the system camera intent via `image_picker`).
   server-only; a purchase request is PENDING in its sender's own name and only an
   admin's RPC decides it. When porting chores/challenges/requests, call these —
   never write `balance`, `is_completed`, progress rows or a request's metadata.
+- **Recipes are asked for by a tap, never on open** (`features/recipes`). Kotlin
+  calls `meal_suggestions` on every pantry change; the Flutter section shows the
+  cached last answer with a pantry fingerprint and says when the pantry moved
+  on. The request sends the pantry sorted and without zero-quantity rows, so an
+  unchanged kitchen is the same text and hits the server's per-user cache
+  (6 h). `rate_recipe` is meant to clear that cache — it matched nothing until
+  `b325d34f` (the key had gained `v2:`); that fix ships through CI like any edge
+  function and is **not deployed** from here. Opinions are queued per dish
+  under a UUID v5 of the name (Hive keys must be ASCII).
 - **SQL behaviour tests run on a scratch Postgres**, not the live project:
   `supabase/sql/tests/scratch_scaffold.sql` (header has the docker commands) +
   `pharmacy_restock_test.sql` + `family_money_test.sql` (39 checks as four
@@ -370,7 +384,11 @@ one commit, full verification, report, then continue.
    push/FCM tokens, and the brain's `zad_insights` — none are `surface =
    'bell'` in the live table (all `home_card`/`voice`), so they belong with the
    Home card / brain screens, including Task 28's dismiss-with-reason.
-6. **Recipes** (`RecipeDetailScreen`, `RecommendationsScreen`) — pantry-driven.
+6. ~~Recipes~~ — done (`84c53a25`). Not ported, deliberately: Kotlin's
+   hard-coded fallback recipes (`generateDeterministicChefRecipes`) and the
+   automatic "urgent recipes" call on every pantry change (both unrequested
+   model calls or fake answers). A customer-tapped "use what is about to
+   expire" ask is a possible follow-up.
 7. **Prices & deals** (`NearbyDealsScreen`, `PriceReportingScreen`).
 8. **Brain screens** (`ZadMemoryScreen`, `ZadKnowledgeMapScreen`,
    `AgentActionLogScreen`, `BrainHealthScreen`).
