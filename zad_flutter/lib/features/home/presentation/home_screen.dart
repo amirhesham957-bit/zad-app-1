@@ -20,6 +20,7 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
+import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 
 /// Home.
 class HomeScreen extends ConsumerWidget {
@@ -64,6 +65,10 @@ class HomeScreen extends ConsumerWidget {
               sliver: SliverList.list(
                 children: <Widget>[
                   _Budget(view: view),
+                  // Right under the money, because it is what the money's
+                  // "committed" part is made of.
+                  const SizedBox(height: ZadSpacing.md),
+                  const SubscriptionsEntryCard(),
                   // Below the money, not above it. The channel's health is
                   // worth saying when it is broken, but the balance is what
                   // the screen is for — and the card renders nothing at all

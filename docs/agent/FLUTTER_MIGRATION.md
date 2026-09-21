@@ -35,7 +35,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 536 passing after the subscriptions data layer
+   flutter test                       # 541 passing after the subscriptions screens
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -131,7 +131,8 @@ and `features/inventory/` are the cleanest examples.
 | Pharmacy — schedule, doses, snooze (server-side since the snooze commit) | `features/pharmacy` | `13d1d01c`, screens `427dca37` |
 | Household tab (pantry / shopping / pharmacy) | `features/household` | `427dca37` |
 | Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | `cc8a0f3d` |
-| Subscriptions — data layer (renewal mirror, repository, controller); **screens next** | `features/subscriptions` | subscriptions commit |
+| Subscriptions — data layer (renewal mirror, repository, controller) | `features/subscriptions` | `ef639beb` |
+| Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | screens commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -266,12 +267,12 @@ one commit, full verification, report, then continue.
    `InventoryRepository` now exists, so wire grocery receipts into the pantry
    (Kotlin's `injectScannedItems`), and route `receiptType: pharmacy` to the
    pharmacy.
-3. **Subscriptions** — data layer done; **screens next**: list (running
-   first, soonest renewal first), add/edit sheet (title, amount, cycle,
-   renewal date, type), stop/resume, delete, "دفعت" naming the date it pays.
-   Needs an entry point (the home card's committed figure is the natural one).
-   Kotlin's AI detection (`detectSubscriptions`, an LLM call on screen open)
-   is deliberately not ported — CLAUDE.md forbids LLM calls on screen open.
+3. ~~Subscriptions~~ — done (data layer + screens, Home entry card under the
+   balance). Not ported, deliberately: Kotlin's AI detection
+   (`detectSubscriptions`, an LLM call on screen open — CLAUDE.md forbids it)
+   and the debt planner / deals / challenges cards that shared its old tab.
+   Widget tests need `initializeDateFormatting('ar')` in `setUpAll` wherever a
+   screen prints an Arabic month.
 4. **Family** (`FamilyScreen`, `BrainFamilyScreen`) — shared pantry, children,
    spend limits; RLS via `get_my_family_ids()`.
 5. **Notification center** (`NotificationCenterScreen`) and push/FCM tokens.

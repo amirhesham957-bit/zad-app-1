@@ -29,6 +29,8 @@ import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -110,11 +112,30 @@ Map<String, dynamic> _stateWithNoBudget() => <String, dynamic>{
   'threat': 'UNKNOWN',
 };
 
+/// Refuses at once: a widget test must not let a background refresh reach a
+/// Hive write, which never completes under the fake clock.
+class _OfflineSubscriptions implements SubscriptionsRemote {
+  @override
+  Future<List<Map<String, dynamic>>> fetchAll({required String userId}) =>
+      Future<List<Map<String, dynamic>>>.error(
+        const SocketException('offline'),
+      );
+
+  @override
+  Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> row) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
+
+  @override
+  Future<void> remove(String id) =>
+      Future<void>.error(const SocketException('offline'));
+}
+
 void main() {
   late Directory dir;
   late Box<String> documents;
   late Box<String> transactions;
   late Box<String> outboxBox;
+  late Box<String> subsBox;
   late _OfflineRemote remote;
 
   final now = DateTime.parse('2026-09-19T12:00:00Z');
@@ -137,6 +158,7 @@ void main() {
     documents = await Hive.openBox<String>('documents');
     transactions = await Hive.openBox<String>('transactions');
     outboxBox = await Hive.openBox<String>('outbox');
+    subsBox = await Hive.openBox<String>('subscriptions');
     remote = _OfflineRemote();
 
     await documents.put(
@@ -180,11 +202,20 @@ void main() {
             inventory: documents,
             shopping: documents,
             pharmacy: documents,
-            subscriptions: documents,
+            subscriptions: subsBox,
           ),
         ),
         nowProvider.overrideWithValue(() => now),
         transactionsRepositoryProvider.overrideWithValue(txns),
+        subscriptionsRepositoryProvider.overrideWithValue(
+          SubscriptionsRepository(
+            cache: subsBox,
+            remote: _OfflineSubscriptions(),
+            outbox: () => outbox,
+            newId: () => 'sub',
+            signedInUserId: () => 'user-1',
+          ),
+        ),
         settingsRepositoryProvider.overrideWithValue(
           SettingsRepository(
             cache: documents,

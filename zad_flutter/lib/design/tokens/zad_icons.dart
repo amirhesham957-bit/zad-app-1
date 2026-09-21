@@ -106,6 +106,29 @@ abstract final class ZadIcons {
   /// A country, a market.
   static const IconData market = LucideIcons.globe;
 
+  // ── Recurring charges ────────────────────────────────────────────────────
+
+  /// A subscription — something that renews.
+  static const IconData recurring = LucideIcons.repeat;
+
+  /// A utility bill.
+  static const IconData bill = LucideIcons.zap;
+
+  /// Mark a charge paid.
+  static const IconData paid = LucideIcons.calendarCheck;
+
+  /// Stop something that runs.
+  static const IconData pause = LucideIcons.circlePause;
+
+  /// Start it again.
+  static const IconData resume = LucideIcons.circlePlay;
+
+  /// Edit.
+  static const IconData edit = LucideIcons.pencil;
+
+  /// Delete for good.
+  static const IconData delete = LucideIcons.trash2;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors

@@ -30,6 +30,8 @@ import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/settings/domain/account_settings.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -139,11 +141,30 @@ Map<String, dynamic> _state() => <String, dynamic>{
   'cycle_end': '2026-09-25',
 };
 
+/// Refuses at once: a widget test must not let a background refresh reach a
+/// Hive write, which never completes under the fake clock.
+class _OfflineSubscriptions implements SubscriptionsRemote {
+  @override
+  Future<List<Map<String, dynamic>>> fetchAll({required String userId}) =>
+      Future<List<Map<String, dynamic>>>.error(
+        const SocketException('offline'),
+      );
+
+  @override
+  Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> row) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
+
+  @override
+  Future<void> remove(String id) =>
+      Future<void>.error(const SocketException('offline'));
+}
+
 void main() {
   late Box<String> documents;
   late Box<String> chatBox;
   late Box<String> transactions;
   late Box<String> outboxBox;
+  late Box<String> subsBox;
   late _OfflineSettings settingsRemote;
 
   final now = DateTime.parse('2026-09-20T12:00:00Z');
@@ -158,6 +179,7 @@ void main() {
       bytes: Uint8List(0),
     );
     outboxBox = await Hive.openBox<String>('outbox', bytes: Uint8List(0));
+    subsBox = await Hive.openBox<String>('subscriptions', bytes: Uint8List(0));
     chatBox = await Hive.openBox<String>('chat', bytes: Uint8List(0));
     settingsRemote = _OfflineSettings();
     await documents.put(
@@ -197,7 +219,7 @@ void main() {
             inventory: chatBox,
             shopping: chatBox,
             pharmacy: chatBox,
-            subscriptions: chatBox,
+            subscriptions: subsBox,
           ),
         ),
         transactionsRepositoryProvider.overrideWithValue(txns),
@@ -205,6 +227,15 @@ void main() {
           BudgetRepository(
             cache: documents,
             remote: _OfflineBudget(),
+            signedInUserId: () => userId,
+          ),
+        ),
+        subscriptionsRepositoryProvider.overrideWithValue(
+          SubscriptionsRepository(
+            cache: subsBox,
+            remote: _OfflineSubscriptions(),
+            outbox: () => outbox,
+            newId: () => 'sub',
             signedInUserId: () => userId,
           ),
         ),
