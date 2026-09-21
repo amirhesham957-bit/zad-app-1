@@ -22,8 +22,7 @@
 -- Security invoker, like the dose function: RLS applies, and p_user must be the caller
 -- unless the caller is the service role.
 --
--- Also run by hand on the live project on 2026-09-21 (owner: start wiring pharmacy
--- receipts now), through execute_sql so no version was stamped; every statement is
+-- Written for a hand-apply through execute_sql (no version stamped); every statement is
 -- idempotent, so CI re-running this file changes nothing.
 
 create table if not exists public.zad_pharmacy_restocks (
