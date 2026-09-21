@@ -54,6 +54,12 @@ abstract final class OutboxKind {
   /// row.
   static const String upsertDoseSnooze = 'upsert_dose_snooze';
 
+  /// Insert or update a row in `zad_subscriptions`.
+  static const String upsertSubscription = 'upsert_subscription';
+
+  /// Remove a row from `zad_subscriptions`.
+  static const String deleteSubscription = 'delete_subscription';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

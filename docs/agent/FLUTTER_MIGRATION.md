@@ -35,7 +35,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 472 passing after the market slice
+   flutter test                       # 536 passing after the subscriptions data layer
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -130,7 +130,8 @@ and `features/inventory/` are the cleanest examples.
 | Pantry + shopping list (auto-add shortages) | `features/inventory` | `607d635c`, screens `427dca37` |
 | Pharmacy — schedule, doses, snooze (server-side since the snooze commit) | `features/pharmacy` | `13d1d01c`, screens `427dca37` |
 | Household tab (pantry / shopping / pharmacy) | `features/household` | `427dca37` |
-| Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | market commit |
+| Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | `cc8a0f3d` |
+| Subscriptions — data layer (renewal mirror, repository, controller); **screens next** | `features/subscriptions` | subscriptions commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -184,7 +185,24 @@ scanner uses the system camera intent via `image_picker`).
   dequeued caches the stale row** — nothing queued is left to lay over it. The
   market gate re-asserts the pick in that case; `SettingsController` (limit,
   salary day) has the same window and does not yet.
-- **Mutation checks found three real test gaps:** (3) the market gate's
+- **Subscriptions' renewal date is a mirror of
+  `zad_subscription_next_renewal`**, pinned by 24 cases whose expected values
+  were produced by calling the *deployed* function (it is `IMMUTABLE`, so that
+  is a pure read). Re-run that query when the SQL changes. "Mark paid" pays the
+  renewal the server is reserving *now* and moves `renewal_date` past it; the
+  expense goes under one of the eleven categories by `type`, never the row's
+  free-text category.
+- **Queue before cache, not after.** `SubscriptionsRepository._save` and
+  `SettingsRepository.setMarket` enqueue first: a send of the row's previous
+  version that settles in the gap cannot see a newer entry and writes the
+  older server row over the edit. The pantry, shopping, pharmacy and the other
+  settings setters still write cache-first — same window, not yet fixed.
+- **Outbox `flush` leaves a replaced entry alone** (`93e503b0`). Per-row ids
+  mean an edit during a send replaces the in-flight entry; `flush` used to
+  delete it unsent on success, or write the old payload back over it on
+  failure.
+- **Mutation checks found four real test gaps:** (4) nothing tested that a
+  settling subscription send leaves a newer edit on screen. (3) (3) the market gate's
   stale-read test waited on a cache value the send had already written, so it
   passed without the fix — it now waits on the second upsert. Earlier two: (1) reading the date in UTC
   instead of the market zone passed every test because they all ran at noon UTC
@@ -248,7 +266,12 @@ one commit, full verification, report, then continue.
    `InventoryRepository` now exists, so wire grocery receipts into the pantry
    (Kotlin's `injectScannedItems`), and route `receiptType: pharmacy` to the
    pharmacy.
-3. **Subscriptions** (`SubscriptionsScreen`) — feeds `committed` in the budget.
+3. **Subscriptions** — data layer done; **screens next**: list (running
+   first, soonest renewal first), add/edit sheet (title, amount, cycle,
+   renewal date, type), stop/resume, delete, "دفعت" naming the date it pays.
+   Needs an entry point (the home card's committed figure is the natural one).
+   Kotlin's AI detection (`detectSubscriptions`, an LLM call on screen open)
+   is deliberately not ported — CLAUDE.md forbids LLM calls on screen open.
 4. **Family** (`FamilyScreen`, `BrainFamilyScreen`) — shared pantry, children,
    spend limits; RLS via `get_my_family_ids()`.
 5. **Notification center** (`NotificationCenterScreen`) and push/FCM tokens.

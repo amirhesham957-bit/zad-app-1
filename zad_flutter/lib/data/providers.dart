@@ -28,6 +28,8 @@ import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
@@ -156,6 +158,19 @@ final Provider<PharmacyRepository> pharmacyRepositoryProvider =
       );
     });
 
+/// Subscriptions, bills, instalments and rent, offline first.
+final Provider<SubscriptionsRepository> subscriptionsRepositoryProvider =
+    Provider<SubscriptionsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return SubscriptionsRepository(
+        cache: store.subscriptions,
+        remote: SupabaseSubscriptionsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
 /// The conversation, on this device.
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(
@@ -227,6 +242,10 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pharmacyRepositoryProvider).sendQueuedDose(entry),
       OutboxKind.upsertDoseSnooze =>
         await ref.read(pharmacyRepositoryProvider).sendQueuedSnooze(entry),
+      OutboxKind.upsertSubscription =>
+        await ref.read(subscriptionsRepositoryProvider).sendQueued(entry),
+      OutboxKind.deleteSubscription =>
+        await ref.read(subscriptionsRepositoryProvider).sendQueuedDelete(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

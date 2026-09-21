@@ -10,6 +10,7 @@ import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
+import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 
 /// The signed-in account id, or null.
@@ -95,6 +96,7 @@ class SessionController extends Notifier<String?> {
       // And the settings screen's copy, which otherwise shows the previous
       // account's ceiling for as long as its ten-minute cooldown lasts.
       ..invalidate(settingsControllerProvider)
+      ..invalidate(subscriptionsControllerProvider)
       // The form too. Without this a failed sign-in leaves "الإيميل أو كلمة
       // السر مش مظبوطة" sitting under the button, and the next person to sign
       // out on this device is greeted by it before they have typed anything.

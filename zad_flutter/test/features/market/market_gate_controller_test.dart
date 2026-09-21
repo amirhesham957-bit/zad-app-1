@@ -208,6 +208,7 @@ void main() {
             inventory: documents,
             shopping: documents,
             pharmacy: documents,
+            subscriptions: documents,
           ),
         ),
         outboxProvider.overrideWithValue(outbox),

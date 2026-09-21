@@ -192,6 +192,7 @@ void main() {
             inventory: pantryBox,
             shopping: shoppingBox,
             pharmacy: pharmacyBox,
+            subscriptions: pharmacyBox,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

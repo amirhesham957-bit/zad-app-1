@@ -197,6 +197,7 @@ void main() {
             inventory: chatBox,
             shopping: chatBox,
             pharmacy: chatBox,
+            subscriptions: chatBox,
           ),
         ),
         transactionsRepositoryProvider.overrideWithValue(txns),

@@ -70,6 +70,7 @@ void main() {
             inventory: chatBox,
             shopping: chatBox,
             pharmacy: chatBox,
+            subscriptions: chatBox,
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),

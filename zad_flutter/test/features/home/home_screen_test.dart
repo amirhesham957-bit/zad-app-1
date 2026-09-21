@@ -180,6 +180,7 @@ void main() {
             inventory: documents,
             shopping: documents,
             pharmacy: documents,
+            subscriptions: documents,
           ),
         ),
         nowProvider.overrideWithValue(() => now),
