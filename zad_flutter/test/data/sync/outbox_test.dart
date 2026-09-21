@@ -128,6 +128,67 @@ void main() {
       expect(entry.payload['id'], entry.id);
     });
 
+    test('an edit queued while the previous version is being sent is kept, '
+        'and goes out next', () async {
+      // Entries are keyed by row, so the edit replaces the in-flight entry
+      // under the same id. Deleting by id after the send used to delete the
+      // edit, unsent: the server kept the old row and the queue was empty.
+      late Outbox outbox;
+      final sent = <Object?>[];
+      var editDuringSend = true;
+      outbox = outboxThat((e) async {
+        sent.add(e.payload['amount']);
+        if (editDuringSend) {
+          editDuringSend = false;
+          await outbox.enqueue(
+            id: 'a',
+            kind: OutboxKind.insertTransaction,
+            payload: <String, dynamic>{'id': 'a', 'amount': 75.0},
+          );
+        }
+      });
+      await enqueue(outbox, 'a');
+
+      final first = await outbox.flush();
+      expect(first.sent, 1);
+      expect(
+        outbox.entries().single.payload['amount'],
+        75.0,
+        reason: 'the edit was deleted along with the version it replaced',
+      );
+
+      await outbox.flush();
+      expect(sent, <Object?>[50.0, 75.0]);
+      expect(outbox.entries(), isEmpty);
+    });
+
+    test('a failed send does not write its old payload over an edit made '
+        'meanwhile', () async {
+      late Outbox outbox;
+      var editDuringSend = true;
+      outbox = outboxThat((e) async {
+        if (editDuringSend) {
+          editDuringSend = false;
+          await outbox.enqueue(
+            id: 'a',
+            kind: OutboxKind.insertTransaction,
+            payload: <String, dynamic>{'id': 'a', 'amount': 75.0},
+          );
+        }
+        throw const SocketException('offline');
+      });
+      await enqueue(outbox, 'a');
+
+      final report = await outbox.flush();
+
+      expect(report.stop, FlushStop.offline);
+      final entry = outbox.entries().single;
+      expect(entry.payload['amount'], 75.0);
+      // Not charged for a failure that happened to a different version.
+      expect(entry.attempts, 0);
+      expect(entry.state, OutboxState.pending);
+    });
+
     test('a transient failure keeps the entry and backs off', () async {
       final outbox = outboxThat(
         (e) async => throw const SocketException('offline'),

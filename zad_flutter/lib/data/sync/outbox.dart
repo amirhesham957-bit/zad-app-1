@@ -148,9 +148,20 @@ class Outbox {
     for (final entry in entries(includeDead: false)) {
       if (!entry.isDueAt(_clock())) continue;
 
+      // What the box held when this entry was sent. Entries are keyed by the
+      // row they write, so re-editing a row while its previous version is in
+      // flight replaces the entry under the same id — and everything below
+      // must leave that replacement alone. Deleting it on success sent the old
+      // version and threw the edit away; charging it an attempt on failure
+      // wrote the old payload back over it. Either way the customer's latest
+      // change never reached the server and nothing said so.
+      final sentRaw = _box.get(entry.id);
+      bool replaced() => _box.get(entry.id) != sentRaw;
+
       try {
         await _send(entry);
-        await _box.delete(entry.id);
+        // Checked and deleted with no await between, so nothing can slip in.
+        if (!replaced()) await _box.delete(entry.id);
         sent++;
       } on Object catch (error) {
         switch (classifySyncFailure(error)) {
@@ -158,6 +169,9 @@ class Outbox {
             // No attempt charged: the row is fine, the session is not.
             stop = FlushStop.unauthenticated;
           case SyncFailureKind.permanent:
+            // A replacement has not been tried yet; the version that failed
+            // is already gone. Nothing to mark dead.
+            if (replaced()) continue;
             await _put(
               entry.copyWith(
                 attempts: entry.attempts + 1,
@@ -168,6 +182,9 @@ class Outbox {
             died++;
             continue;
           case SyncFailureKind.transient:
+            stop = FlushStop.offline;
+            // The replacement goes out on the next flush with a clean record.
+            if (replaced()) break;
             final attempts = entry.attempts + 1;
             final exhausted = attempts >= maxAttempts;
             await _put(
@@ -181,7 +198,6 @@ class Outbox {
               ),
             );
             if (exhausted) died++;
-            stop = FlushStop.offline;
         }
         break;
       }
