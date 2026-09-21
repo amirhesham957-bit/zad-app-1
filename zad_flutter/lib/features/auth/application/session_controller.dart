@@ -8,6 +8,7 @@ import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
@@ -97,6 +98,7 @@ class SessionController extends Notifier<String?> {
       // account's ceiling for as long as its ten-minute cooldown lasts.
       ..invalidate(settingsControllerProvider)
       ..invalidate(subscriptionsControllerProvider)
+      ..invalidate(notificationsControllerProvider)
       // The form too. Without this a failed sign-in leaves "الإيميل أو كلمة
       // السر مش مظبوطة" sitting under the button, and the next person to sign
       // out on this device is greeted by it before they have typed anything.

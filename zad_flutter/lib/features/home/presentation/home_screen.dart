@@ -18,6 +18,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
@@ -53,6 +54,7 @@ class HomeScreen extends ConsumerWidget {
               // bar put the most destructive action on this screen one tap
               // from the balance.
               actions: <Widget>[
+                const NotificationBell(),
                 IconButton(
                   onPressed: () => showSettingsScreen(context),
                   icon: const Icon(ZadIcons.settings),

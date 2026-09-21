@@ -60,6 +60,15 @@ abstract final class OutboxKind {
   /// Remove a row from `zad_subscriptions`.
   static const String deleteSubscription = 'delete_subscription';
 
+  /// Mark one row of `app_notifications` read.
+  static const String markNotificationRead = 'mark_notification_read';
+
+  /// Mark every notification up to a moment read, in one statement.
+  ///
+  /// One entry, not one per row: an account can have over a hundred unread,
+  /// and a hundred queued writes is a hundred round trips for one tap.
+  static const String markAllNotificationsRead = 'mark_all_notifications_read';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

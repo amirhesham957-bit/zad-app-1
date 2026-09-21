@@ -35,7 +35,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 548 passing after the onboarding intro
+   flutter test                       # 562 passing after the notification center
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -133,7 +133,8 @@ and `features/inventory/` are the cleanest examples.
 | Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | `cc8a0f3d` |
 | Subscriptions — data layer (renewal mirror, repository, controller) | `features/subscriptions` | `ef639beb` |
 | Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | `ef7e4131` |
-| Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | intro commit |
+| Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | `133adb79` |
+| Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | notifications commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -294,7 +295,11 @@ one commit, full verification, report, then continue.
    spend limits; RLS via `get_my_family_ids()`. **Blocked on open decision 5**
    (the membership policies are open); do not port the join flow as Kotlin has
    it. `FamilyScreen.kt` is 2,597 lines — slice it: membership first.
-5. **Notification center** (`NotificationCenterScreen`) and push/FCM tokens.
+5. ~~Notification center~~ — done for `app_notifications` (list, read,
+   mark all read up to the newest *seen*, bell with badge on Home). Not in it:
+   push/FCM tokens, and the brain's `zad_insights` — none are `surface =
+   'bell'` in the live table (all `home_card`/`voice`), so they belong with the
+   Home card / brain screens, including Task 28's dismiss-with-reason.
 6. **Recipes** (`RecipeDetailScreen`, `RecommendationsScreen`) — pantry-driven.
 7. **Prices & deals** (`NearbyDealsScreen`, `PriceReportingScreen`).
 8. **Brain screens** (`ZadMemoryScreen`, `ZadKnowledgeMapScreen`,

@@ -26,6 +26,8 @@ import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/features/notifications/data/notifications_remote.dart';
+import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
@@ -160,6 +162,29 @@ class _OfflineSubscriptions implements SubscriptionsRemote {
       Future<void>.error(const SocketException('offline'));
 }
 
+/// Refuses at once, for the same reason as the subscriptions stand-in.
+class _OfflineNotifications implements NotificationsRemote {
+  @override
+  Future<List<Map<String, dynamic>>> fetchLatest({
+    required String userId,
+    required int limit,
+  }) => Future<List<Map<String, dynamic>>>.error(
+    const SocketException('offline'),
+  );
+
+  @override
+  Future<Map<String, dynamic>?> markReadReturning(String id) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
+
+  @override
+  Future<void> markAllRead({required String userId, required DateTime upTo}) =>
+      Future<void>.error(const SocketException('offline'));
+
+  @override
+  Future<int> unreadUpTo({required String userId, required DateTime upTo}) =>
+      Future<int>.error(const SocketException('offline'));
+}
+
 void main() {
   late Box<String> documents;
   late Box<String> chatBox;
@@ -234,6 +259,14 @@ void main() {
           BudgetRepository(
             cache: documents,
             remote: _OfflineBudget(),
+            signedInUserId: () => userId,
+          ),
+        ),
+        notificationsRepositoryProvider.overrideWithValue(
+          NotificationsRepository(
+            cache: documents,
+            remote: _OfflineNotifications(),
+            outbox: () => outbox,
             signedInUserId: () => userId,
           ),
         ),

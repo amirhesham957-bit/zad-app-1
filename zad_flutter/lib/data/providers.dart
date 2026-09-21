@@ -24,6 +24,8 @@ import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
+import 'package:zad/features/notifications/data/notifications_remote.dart';
+import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
@@ -171,6 +173,18 @@ final Provider<SubscriptionsRepository> subscriptionsRepositoryProvider =
       );
     });
 
+/// The notification list: the newest page, cached as one document.
+final Provider<NotificationsRepository> notificationsRepositoryProvider =
+    Provider<NotificationsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return NotificationsRepository(
+        cache: store.documents,
+        remote: SupabaseNotificationsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
 /// The conversation, on this device.
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(
@@ -244,6 +258,12 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pharmacyRepositoryProvider).sendQueuedSnooze(entry),
       OutboxKind.upsertSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueued(entry),
+      OutboxKind.markNotificationRead =>
+        await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
+      OutboxKind.markAllNotificationsRead =>
+        await ref
+            .read(notificationsRepositoryProvider)
+            .sendQueuedReadAll(entry),
       OutboxKind.deleteSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueuedDelete(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),

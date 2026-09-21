@@ -129,6 +129,15 @@ abstract final class ZadIcons {
   /// Delete for good.
   static const IconData delete = LucideIcons.trash2;
 
+  /// Notifications.
+  static const IconData notifications = LucideIcons.bell;
+
+  /// No notifications.
+  static const IconData noNotifications = LucideIcons.bellOff;
+
+  /// Mark everything read.
+  static const IconData markAllRead = LucideIcons.checkCheck;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors
