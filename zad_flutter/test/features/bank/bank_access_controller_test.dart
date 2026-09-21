@@ -71,6 +71,7 @@ void main() {
             shopping: chatBox,
             pharmacy: chatBox,
             subscriptions: chatBox,
+            device: chatBox,
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),

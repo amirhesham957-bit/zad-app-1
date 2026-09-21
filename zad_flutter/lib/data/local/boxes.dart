@@ -33,6 +33,11 @@ abstract final class ZadBoxes {
   /// Subscriptions, bills, instalments and rent, keyed by row id.
   static const String subscriptions = 'zad_cache_subscriptions';
 
+  /// What belongs to the phone rather than to an account — whether the
+  /// introduction has been seen. **Not a cache**: it survives sign-out, so the
+  /// next person to sign in on this phone is not walked through it again.
+  static const String device = 'zad_device';
+
   /// The conversation, keyed by message id.
   ///
   /// A cache in the same sense as the others: the agent keeps its own memory
@@ -64,6 +69,7 @@ class ZadLocalStore {
     required this.shopping,
     required this.pharmacy,
     required this.subscriptions,
+    required this.device,
   });
 
   /// Opens every box, recovering caches that will not open.
@@ -94,7 +100,19 @@ class ZadLocalStore {
       shopping: Hive.box<String>(ZadBoxes.shopping),
       pharmacy: Hive.box<String>(ZadBoxes.pharmacy),
       subscriptions: Hive.box<String>(ZadBoxes.subscriptions),
+      device: await _openRecoverable(ZadBoxes.device),
     );
+  }
+
+  /// Opens a box whose contents are worth nothing next to starting the app:
+  /// a file that will not open is deleted and reopened empty.
+  static Future<Box<String>> _openRecoverable(String name) async {
+    try {
+      return await Hive.openBox<String>(name);
+    } on Object {
+      await Hive.deleteBoxFromDisk(name);
+      return await Hive.openBox<String>(name);
+    }
   }
 
   /// Unsent writes.
@@ -120,6 +138,9 @@ class ZadLocalStore {
 
   /// Recurring charges.
   final Box<String> subscriptions;
+
+  /// The phone's own flags. Left alone by [clearCaches].
+  final Box<String> device;
 
   /// Empties the caches, leaving the outbox alone.
   ///

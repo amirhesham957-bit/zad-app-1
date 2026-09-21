@@ -161,6 +161,7 @@ void main() {
             shopping: chat,
             pharmacy: chat,
             subscriptions: chat,
+            device: chat,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

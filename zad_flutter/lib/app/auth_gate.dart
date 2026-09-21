@@ -12,10 +12,12 @@ import 'package:zad/features/auth/application/session_controller.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/features/onboarding/application/intro_controller.dart';
+import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 
 /// Shows the shell to a signed-in customer whose account has a market, the
 /// market picker to one whose account has none, and the login screen to
-/// everyone else.
+/// everyone else — after the introduction, on a phone that has not seen it.
 ///
 /// A customer coming back to the app sees no loading branch at all:
 /// [SessionController] seeds itself synchronously from the session Supabase
@@ -33,7 +35,13 @@ class ZadAuthGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final signedIn = ref.watch(sessionControllerProvider) != null;
 
-    if (!signedIn) return const LoginScreen();
+    if (!signedIn) {
+      // A phone that has never seen Zad is shown what it does before it is
+      // asked for an email address.
+      return ref.watch(introSeenProvider)
+          ? const LoginScreen()
+          : const IntroScreen();
+    }
 
     return switch (ref.watch(marketGateProvider)) {
       MarketGate.checking => const _Checking(),

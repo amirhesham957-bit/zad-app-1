@@ -194,6 +194,7 @@ void main() {
             shopping: documents,
             pharmacy: documents,
             subscriptions: documents,
+            device: documents,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

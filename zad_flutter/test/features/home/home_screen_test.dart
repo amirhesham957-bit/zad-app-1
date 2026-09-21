@@ -203,6 +203,7 @@ void main() {
             shopping: documents,
             pharmacy: documents,
             subscriptions: subsBox,
+            device: subsBox,
           ),
         ),
         nowProvider.overrideWithValue(() => now),

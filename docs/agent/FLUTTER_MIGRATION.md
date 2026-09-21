@@ -35,7 +35,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 541 passing after the subscriptions screens
+   flutter test                       # 548 passing after the onboarding intro
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -132,7 +132,8 @@ and `features/inventory/` are the cleanest examples.
 | Household tab (pantry / shopping / pharmacy) | `features/household` | `427dca37` |
 | Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | `cc8a0f3d` |
 | Subscriptions — data layer (renewal mirror, repository, controller) | `features/subscriptions` | `ef639beb` |
-| Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | screens commit |
+| Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | `ef7e4131` |
+| Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | intro commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -247,7 +248,23 @@ scanner uses the system camera intent via `image_picker`).
    **deferred by the owner** while the APK builds. Do not touch unless asked.
 4. **Archive screen — cancelled by the owner.** It is not defined anywhere in
    the product; do not build it.
-5. Where commits should end up: this Codespace can only push to the fork (see
+5. ⚠️ **Family RLS lets any signed-in account join any family as admin —
+   blocks the family port (found 2026-09-21, read off `pg_policies`).**
+   `family_members_insert` checks only `auth.role() = 'authenticated'`, so a
+   client can insert any `family_id`, any `user_id`, any `role`;
+   `family_groups_select_authenticated` is `using (true)`, so every family id
+   and invite code is readable; `family_members_update` lets any member
+   change any member's `role`. Through `get_my_family_ids()` that is the
+   household's shared pantry, chat, and — as admin — its children's spending.
+   Live exposure that day: 14 groups, 2 members. Invite codes are `ZAD-` + 4
+   digits (9,000 values). The shipped Kotlin app *depends* on the open
+   policies (it inserts its own membership and reads `family_groups` by
+   code), so closing them breaks its create/join until it moves too.
+   Recommended: server functions `zad_create_family` / `zad_join_family`
+   (security definer, role forced server-side, longer codes), both clients
+   switched to them, then the insert/select/update policies tightened. Needs
+   the owner's decision before anything is applied.
+6. Where commits should end up: this Codespace can only push to the fork (see
    below). Getting work into the ship repo needs a PR or a token with write.
 
 ---
@@ -258,7 +275,7 @@ Ordered by value and dependency, not by screen count. Each item = one slice,
 one commit, full verification, report, then continue.
 
 1. ~~Market selection~~ — done (gate after sign-in). **Still open:** the
-   pre-login intro carousel (`OnboardingScreen`), and changing the market
+   pre-login intro carousel (done since — `features/onboarding`), and changing the market
    *later* from settings — Kotlin's profile does that with
    `convertLimitsForMarketChange`, which converts the monthly limit to the new
    currency; porting the picker without that conversion would leave the limit
@@ -274,7 +291,9 @@ one commit, full verification, report, then continue.
    Widget tests need `initializeDateFormatting('ar')` in `setUpAll` wherever a
    screen prints an Arabic month.
 4. **Family** (`FamilyScreen`, `BrainFamilyScreen`) — shared pantry, children,
-   spend limits; RLS via `get_my_family_ids()`.
+   spend limits; RLS via `get_my_family_ids()`. **Blocked on open decision 5**
+   (the membership policies are open); do not port the join flow as Kotlin has
+   it. `FamilyScreen.kt` is 2,597 lines — slice it: membership first.
 5. **Notification center** (`NotificationCenterScreen`) and push/FCM tokens.
 6. **Recipes** (`RecipeDetailScreen`, `RecommendationsScreen`) — pantry-driven.
 7. **Prices & deals** (`NearbyDealsScreen`, `PriceReportingScreen`).

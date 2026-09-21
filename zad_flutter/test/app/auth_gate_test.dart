@@ -26,6 +26,7 @@ import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
@@ -165,6 +166,7 @@ void main() {
   late Box<String> transactions;
   late Box<String> outboxBox;
   late Box<String> subsBox;
+  late Box<String> deviceBox;
   late _OfflineSettings settingsRemote;
 
   final now = DateTime.parse('2026-09-20T12:00:00Z');
@@ -180,6 +182,10 @@ void main() {
     );
     outboxBox = await Hive.openBox<String>('outbox', bytes: Uint8List(0));
     subsBox = await Hive.openBox<String>('subscriptions', bytes: Uint8List(0));
+    deviceBox = await Hive.openBox<String>('device', bytes: Uint8List(0));
+    // A phone that has already been through the introduction — what every
+    // case outside the introduction's own group is about.
+    await deviceBox.put('intro_seen', 'true');
     chatBox = await Hive.openBox<String>('chat', bytes: Uint8List(0));
     settingsRemote = _OfflineSettings();
     await documents.put(
@@ -220,6 +226,7 @@ void main() {
             shopping: chatBox,
             pharmacy: chatBox,
             subscriptions: subsBox,
+            device: deviceBox,
           ),
         ),
         transactionsRepositoryProvider.overrideWithValue(txns),
@@ -365,4 +372,60 @@ void main() {
       expect(find.byType(MarketSelectionScreen), findsNothing);
     },
   );
+
+  group('a phone that has never seen the introduction', () {
+    setUp(() => deviceBox.delete('intro_seen'));
+
+    testWidgets('signed out, it opens on the introduction', (tester) async {
+      final container = containerFor(null);
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      expect(find.byType(IntroScreen), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
+    });
+
+    testWidgets('"عندي حساب" goes straight to signing in', (tester) async {
+      final container = containerFor(null);
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.tap(find.text('عندي حساب'));
+      await tester.pump();
+
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('اسمك'), findsNothing, reason: 'sign-in has no name');
+    });
+
+    testWidgets('"اعمل حساب جديد" opens the form in sign-up mode', (
+      tester,
+    ) async {
+      final container = containerFor(null);
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.tap(find.text('اعمل حساب جديد'));
+      await tester.pump();
+
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('اسمك'), findsOneWidget);
+    });
+  });
+
+  group('a signed-in customer on a phone that never saw it', () {
+    setUp(() async {
+      await deviceBox.delete('intro_seen');
+      await seedSettings(const AccountSettings(country: 'EG', currency: 'EGP'));
+    });
+
+    testWidgets('is never shown the introduction', (tester) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      expect(find.byType(IntroScreen), findsNothing);
+      expect(find.byType(ZadShell), findsOneWidget);
+    });
+  });
 }

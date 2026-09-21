@@ -209,6 +209,7 @@ void main() {
             shopping: documents,
             pharmacy: documents,
             subscriptions: documents,
+            device: documents,
           ),
         ),
         outboxProvider.overrideWithValue(outbox),
