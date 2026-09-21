@@ -19,6 +19,8 @@ import 'package:zad/features/bank/data/bank_capture_marker.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
+import 'package:zad/features/brain/data/agent_actions_remote.dart';
+import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
@@ -247,6 +249,16 @@ final Provider<NotificationsRepository> notificationsRepositoryProvider =
         signedInUserId: ref.watch(signedInUserIdProvider),
       );
     });
+
+/// "سجل تعديلات زاد": cached for an instant open, undone only online.
+final agentActionsRepositoryProvider = Provider<AgentActionsRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return AgentActionsRepository(
+    cache: store.documents,
+    remote: SupabaseAgentActionsRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});
 
 /// The account's family: cached, and changed only online.
 final familyRepositoryProvider = Provider<FamilyRepository>((ref) {

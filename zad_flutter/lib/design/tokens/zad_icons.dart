@@ -162,6 +162,30 @@ abstract final class ZadIcons {
   /// Mark everything read.
   static const IconData markAllRead = LucideIcons.checkCheck;
 
+  /// عقل زاد: what the assistant knows, did and is doing.
+  static const IconData brain = LucideIcons.brain;
+
+  /// What زاد remembers about the customer.
+  static const IconData memory = LucideIcons.lightbulb;
+
+  /// Who the customer is to زاد.
+  static const IconData profile = LucideIcons.idCard;
+
+  /// Habits and outings learned from behaviour.
+  static const IconData habits = LucideIcons.footprints;
+
+  /// The log of what زاد changed.
+  static const IconData actionLog = LucideIcons.history;
+
+  /// Take a change back.
+  static const IconData undo = LucideIcons.undo;
+
+  /// How the customer's areas connect.
+  static const IconData knowledgeMap = LucideIcons.network;
+
+  /// Whether the brain is working.
+  static const IconData brainHealth = LucideIcons.heartPulse;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors
