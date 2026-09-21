@@ -15,6 +15,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/nearby/presentation/nearby_view.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
 import 'package:zad/features/prices/domain/prices.dart';
 
@@ -23,7 +24,10 @@ Future<void> showPricesScreen(BuildContext context) =>
     Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => const PricesScreen()));
 
-/// The prices screen.
+/// Prices and shops: what things cost, and where to buy them nearby.
+///
+/// Two tabs. The second is built only when opened, so looking at prices
+/// never checks location.
 class PricesScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
@@ -31,10 +35,21 @@ class PricesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
     decoration: const BoxDecoration(gradient: ZadColors.canvas),
-    child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('الأسعار')),
-      body: const PricesList(),
+    child: DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('الأسعار والمحلات'),
+          bottom: const TabBar(
+            tabs: <Widget>[
+              Tab(text: 'الأسعار'),
+              Tab(text: 'حواليك'),
+            ],
+          ),
+        ),
+        body: const TabBarView(children: <Widget>[PricesList(), NearbyList()]),
+      ),
     ),
   );
 }

@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zad/data/local/boxes.dart';
@@ -27,6 +28,8 @@ import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
+import 'package:zad/features/nearby/data/nearby_remote.dart';
+import 'package:zad/features/nearby/data/nearby_repository.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
@@ -162,6 +165,21 @@ final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
         outbox: () => ref.read(outboxProvider),
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
+/// Shops near the customer, kept per ~500 m and a day.
+final Provider<NearbyRepository> nearbyRepositoryProvider =
+    Provider<NearbyRepository>((ref) {
+      final client = http.Client();
+      ref.onDispose(client.close);
+      return NearbyRepository(
+        cache: ref.watch(localStoreProvider).documents,
+        remote: ServerThenOverpassRemote(
+          supabaseServerCall(ref.watch(supabaseClientProvider)),
+          client,
+        ),
+        now: ref.watch(nowProvider),
       );
     });
 
