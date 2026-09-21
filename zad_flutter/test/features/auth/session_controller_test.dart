@@ -19,6 +19,13 @@ import 'package:zad/data/sync/outbox_runner.dart';
 import 'package:zad/features/auth/application/session_controller.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
+import 'package:zad/features/brain/application/agent_actions_controller.dart';
+import 'package:zad/features/brain/application/brain_health_controller.dart';
+import 'package:zad/features/brain/application/knowledge_map_controller.dart';
+import 'package:zad/features/brain/application/memory_controller.dart';
+import 'package:zad/features/brain/data/memory_repository.dart';
+import 'package:zad/features/brain/domain/agent_action.dart';
+import 'package:zad/features/brain/domain/knowledge_map.dart';
 
 class _FakeGateway implements AuthGateway {
   new(this.userId);
@@ -226,6 +233,53 @@ void main() {
       );
     });
 
+    test("drops every brain screen's copy of the last account", () async {
+      final builds = <String, int>{};
+      final watching = ProviderContainer(
+        overrides: [
+          localStoreProvider.overrideWithValue(store),
+          authGatewayProvider.overrideWithValue(gateway),
+          outboxRunnerProvider.overrideWith((ref) {
+            final r = OutboxRunner(
+              outbox: ref.watch(outboxProvider),
+              triggers: const Stream<SyncTrigger>.empty(),
+            );
+            ref.onDispose(r.dispose);
+            return r;
+          }),
+          agentActionsControllerProvider.overrideWith(
+            () => _CountingActions(builds),
+          ),
+          memoryControllerProvider.overrideWith(() => _CountingMemory(builds)),
+          brainHealthControllerProvider.overrideWith(
+            () => _CountingHealth(builds),
+          ),
+          knowledgeMapControllerProvider.overrideWith(
+            () => _CountingMap(builds),
+          ),
+        ],
+      );
+      addTearDown(watching.dispose);
+      void readAll() {
+        watching
+          ..read(agentActionsControllerProvider)
+          ..read(memoryControllerProvider)
+          ..read(brainHealthControllerProvider)
+          ..read(knowledgeMapControllerProvider);
+      }
+
+      readAll();
+      await watching.read(sessionControllerProvider.notifier).signOut();
+      readAll();
+
+      expect(builds, <String, int>{
+        'actions': 2,
+        'memory': 2,
+        'health': 2,
+        'map': 2,
+      });
+    });
+
     test(
       'empties the caches even when the call to the server failed',
       () async {
@@ -263,4 +317,44 @@ void main() {
       },
     );
   });
+}
+
+class _CountingActions extends AgentActionsController {
+  new(this.builds);
+  final Map<String, int> builds;
+  @override
+  AgentActionsView build() {
+    builds['actions'] = (builds['actions'] ?? 0) + 1;
+    return const AgentActionsView(items: <AgentAction>[]);
+  }
+}
+
+class _CountingMemory extends MemoryController {
+  new(this.builds);
+  final Map<String, int> builds;
+  @override
+  MemoryView build() {
+    builds['memory'] = (builds['memory'] ?? 0) + 1;
+    return const MemoryView(snapshot: MemorySnapshot());
+  }
+}
+
+class _CountingHealth extends BrainHealthController {
+  new(this.builds);
+  final Map<String, int> builds;
+  @override
+  BrainHealthView build() {
+    builds['health'] = (builds['health'] ?? 0) + 1;
+    return const BrainHealthView();
+  }
+}
+
+class _CountingMap extends KnowledgeMapController {
+  new(this.builds);
+  final Map<String, int> builds;
+  @override
+  KnowledgeMapView build() {
+    builds['map'] = (builds['map'] ?? 0) + 1;
+    return KnowledgeMapView(map: buildKnowledgeMap(const MapInputs()));
+  }
 }

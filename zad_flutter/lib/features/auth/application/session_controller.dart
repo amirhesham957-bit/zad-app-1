@@ -7,6 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
+import 'package:zad/features/brain/application/agent_actions_controller.dart';
+import 'package:zad/features/brain/application/brain_health_controller.dart';
+import 'package:zad/features/brain/application/knowledge_map_controller.dart';
+import 'package:zad/features/brain/application/memory_controller.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
@@ -101,6 +105,13 @@ class SessionController extends Notifier<String?> {
       ..invalidate(subscriptionsControllerProvider)
       ..invalidate(notificationsControllerProvider)
       ..invalidate(familyControllerProvider)
+      // The four brain screens hold the last account's notes, profile,
+      // actions and map in memory; the cleared box alone would leave them
+      // on screen until each one's refresh landed.
+      ..invalidate(agentActionsControllerProvider)
+      ..invalidate(memoryControllerProvider)
+      ..invalidate(brainHealthControllerProvider)
+      ..invalidate(knowledgeMapControllerProvider)
       // The form too. Without this a failed sign-in leaves "الإيميل أو كلمة
       // السر مش مظبوطة" sitting under the button, and the next person to sign
       // out on this device is greeted by it before they have typed anything.
