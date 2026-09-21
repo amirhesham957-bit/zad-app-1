@@ -36,8 +36,9 @@
 -- Guards skip calls with no auth.uid() — the service role, i.e. edge functions — which
 -- are trusted and run their own checks, as in 20260921130000.
 --
--- Written for a hand-apply through execute_sql (no version stamped); every statement is
--- idempotent, so CI re-running this file changes nothing.
+-- Also run by hand on the live project on 2026-09-21 on the owner's instruction, through
+-- execute_sql so no version was stamped, and verified there in rolled-back blocks as real
+-- accounts; every statement is idempotent, so CI re-running this file changes nothing.
 
 -- ── The flag the money functions raise ───────────────────────────────────────
 
