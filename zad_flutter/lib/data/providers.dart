@@ -225,6 +225,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pharmacyRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.logPharmacyDose =>
         await ref.read(pharmacyRepositoryProvider).sendQueuedDose(entry),
+      OutboxKind.upsertDoseSnooze =>
+        await ref.read(pharmacyRepositoryProvider).sendQueuedSnooze(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

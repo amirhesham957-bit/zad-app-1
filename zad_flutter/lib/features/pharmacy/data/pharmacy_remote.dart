@@ -76,6 +76,10 @@ abstract interface class PharmacyRemote {
 
   /// Removes a medicine.
   Future<void> remove(String id);
+
+  /// Writes a row of `zad_dose_snoozes` and returns what it holds afterwards,
+  /// or null if there is no such row to read back.
+  Future<Map<String, dynamic>?> snoozeReturning(Map<String, dynamic> row);
 }
 
 /// The real pharmacy.
@@ -88,6 +92,7 @@ class SupabasePharmacyRemote implements PharmacyRemote {
   static const String _items = 'zad_pharmacy_items';
   static const String _doses = 'zad_pharmacy_doses';
   static const String _log = 'zad_dose_log';
+  static const String _snoozes = 'zad_dose_snoozes';
 
   @override
   Future<List<Map<String, dynamic>>> fetchMedicines({
@@ -175,6 +180,24 @@ class SupabasePharmacyRemote implements PharmacyRemote {
 
   @override
   Future<void> remove(String id) => _client.from(_items).delete().eq('id', id);
+
+  @override
+  Future<Map<String, dynamic>?> snoozeReturning(
+    Map<String, dynamic> row,
+  ) async {
+    // The same upsert the Telegram bot makes, on the same key, so a dose put
+    // off in both places is one row whose latest deferral wins.
+    await _client
+        .from(_snoozes)
+        .upsert(row, onConflict: 'user_id,item_id,scheduled_at');
+    return await _client
+        .from(_snoozes)
+        .select('snooze_until')
+        .eq('user_id', row['user_id'] as String)
+        .eq('item_id', row['item_id'] as String)
+        .eq('scheduled_at', row['scheduled_at'] as String)
+        .maybeSingle();
+  }
 }
 
 /// Reads a timestamptz column.

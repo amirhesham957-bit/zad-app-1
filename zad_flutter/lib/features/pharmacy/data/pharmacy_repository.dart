@@ -86,9 +86,12 @@ class PharmacyRepository {
 
   /// How long a put-off dose stays quiet.
   ///
-  /// The Telegram bot's figure, so a dose deferred on one surface reads the
-  /// same on the other.
-  static const Duration snoozeFor = Duration(minutes: 30);
+  /// The Telegram bot's figure — `DOSE_SNOOZE_MINUTES` in
+  /// `zad-telegram-bot/telegram.ts` — so a dose deferred on one surface reads
+  /// the same on the other. It said so here while being 30, twice the bot's
+  /// 15; harmless while the app's snooze stayed on the device, not once both
+  /// write the same row.
+  static const Duration snoozeFor = Duration(minutes: 15);
 
   /// How far back dose records are read.
   ///
@@ -217,15 +220,16 @@ class PharmacyRepository {
     );
   }
 
-  /// Puts a dose off for [snoozeFor].
+  /// Puts a dose off for [snoozeFor]: on this device at once, and on the
+  /// server through the outbox.
   ///
-  /// **This device only.** `zad_dose_snoozes` has a select policy and no
-  /// insert policy, so an authenticated client cannot write one — the rows
-  /// come from the Telegram bot on the service-role key. So this quietens the
-  /// app and nothing else: the server's own nudge for the same slot still
-  /// goes out. Closing that gap is a migration adding an owner-insert policy,
-  /// not a client change, and until it exists the app must not claim more
-  /// than it does.
+  /// The server's copy is what makes it a real snooze.
+  /// `zad_enqueue_missed_doses` drops a dose from every reminder window while
+  /// a row in `zad_dose_snoozes` covers it, and sends one reminder when it
+  /// ends — so without the row, the nudge and the "you missed it" message
+  /// still go out through the bot for a dose the customer just deferred.
+  /// Clients could not write that table until
+  /// `20260921120000_app_snoozes_its_own_doses`.
   Future<DoseSnooze> snooze(
     String medicineId, {
     required DateTime scheduledAt,
@@ -237,11 +241,42 @@ class PharmacyRepository {
       scheduledAt: scheduledAt.toUtc(),
       until: now.toUtc().add(forDuration ?? snoozeFor),
     );
-    await _cache.put(
-      DoseSnooze.keyFor(medicineId, scheduledAt),
-      jsonEncode(snooze.toJson()),
+    final key = DoseSnooze.keyFor(medicineId, scheduledAt);
+
+    await _outbox().enqueue(
+      id: key,
+      kind: OutboxKind.upsertDoseSnooze,
+      payload: <String, dynamic>{
+        'user_id': _requireUserId(),
+        'item_id': medicineId,
+        'scheduled_at': snooze.scheduledAt.toIso8601String(),
+        'snooze_until': snooze.until.toIso8601String(),
+      },
     );
+    await _cache.put(key, jsonEncode(snooze.toJson()));
     return snooze;
+  }
+
+  /// Sends one queued snooze, and reads it back.
+  ///
+  /// Sent even if it has already run out by the time there is a network. A
+  /// lapsed row is harmless — the cron only honours `snooze_until > now()` —
+  /// and one that lapsed in the last ten minutes produces the single
+  /// "time's up" reminder the snooze promised.
+  Future<void> sendQueuedSnooze(OutboxEntry entry) async {
+    final stored = await _remote.snoozeReturning(entry.payload);
+    final wanted = readInstant(entry.payload['snooze_until']);
+    final got = readInstant(stored?['snooze_until']);
+
+    // Later is fine: the bot may have put the same dose off again since. What
+    // is not fine is no row, or a snooze that ends before the one asked for —
+    // then the server is still going to remind about a dose the screen says
+    // is quiet.
+    if (wanted == null || got == null || got.isBefore(wanted)) {
+      throw StateError(
+        'zad_dose_snoozes read back snooze_until $got after writing $wanted',
+      );
+    }
   }
 
   /// Whether this slot is being put off at [now].

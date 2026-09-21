@@ -125,7 +125,8 @@ class PharmacyController extends Notifier<PharmacyView> {
     );
   }
 
-  /// Puts a dose off on this device.
+  /// Puts a dose off — here at once, and for the server's reminders and the
+  /// bot through the outbox.
   Future<void> snooze(DoseSlot slot) async {
     final now = ref.read(nowProvider)();
     await ref

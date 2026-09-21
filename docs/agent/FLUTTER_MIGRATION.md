@@ -128,7 +128,7 @@ and `features/inventory/` are the cleanest examples.
 | Chat with the agent (`zad-brain` `agent_turn_stream`) | `features/chat` | `80cc281a` |
 | Voice input into the chat composer | `features/chat` | `8abcc369` |
 | Pantry + shopping list (auto-add shortages) | `features/inventory` | `607d635c`, screens `427dca37` |
-| Pharmacy — schedule, doses, local snooze | `features/pharmacy` | `13d1d01c`, screens `427dca37` |
+| Pharmacy — schedule, doses, snooze (server-side since the snooze commit) | `features/pharmacy` | `13d1d01c`, screens `427dca37` |
 | Household tab (pantry / shopping / pharmacy) | `features/household` | `427dca37` |
 | Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | market commit |
 
@@ -194,8 +194,17 @@ scanner uses the system camera intent via `image_picker`).
 - **Doses are recorded only through `zad_log_pharmacy_dose_atomic`** (decrements
   stock, carries fractions, adds to shopping list — one transaction). Idempotent
   on `(user_id, item_id, scheduled_at)`; `duplicate` = success.
-- **`zad_dose_snoozes` has no insert policy** for authenticated users (only the
-  Telegram bot writes it, service role). App snooze is device-only.
+- **App snoozes reach the server (2026-09-21).** Migration
+  `20260921120000_app_snoozes_its_own_doses` adds owner INSERT *and* UPDATE
+  policies on `zad_dose_snoozes` (UPDATE because a re-snooze of the same slot
+  is an upsert conflict), both checking the medicine is the caller's own. It
+  was **run by hand on the live project** on the owner's instruction via
+  `execute_sql` — *not* `apply_migration`, so no version was stamped and the
+  ship repo's `db push` history is untouched; the file is idempotent and CI
+  re-runs it harmlessly. Verified as a real account in a rolled-back block:
+  own insert ok, re-snooze ok, another account's medicine `42501`, posing as
+  another user `42501`. Snooze length is 15 min, the bot's
+  `DOSE_SNOOZE_MINUTES` (the app had 30 while claiming to match).
 - **`zad_shopping_list` has a partial unique index** on
   `(user_id, lower(trim(item_name))) where is_purchased = false`. The client
   dedupe mirrors it; a hand-typed duplicate lands as a permanent 409 → dead
@@ -211,8 +220,7 @@ scanner uses the system camera intent via `image_picker`).
 
 ## 5. Open decisions (the owner's call — ask, do not assume)
 
-1. **Server-side dose snooze** — a migration adding an owner-insert policy on
-   `zad_dose_snoozes`, so the app's snooze also silences the server nudge.
+1. ~~Server-side dose snooze~~ — **decided and done 2026-09-21** (see §4).
 2. **Transcript-only action** on `zad-core-intelligence` (wraps the existing
    `transcribeAudio`) to stop paying for `voice_agent`'s unused intent call.
    Swap point: `chat/data/transcriber.dart`.

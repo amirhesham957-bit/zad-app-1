@@ -94,6 +94,11 @@ class _Pharmacy implements PharmacyRemote {
 
   @override
   Future<void> remove(String id) async {}
+
+  @override
+  Future<Map<String, dynamic>?> snoozeReturning(
+    Map<String, dynamic> row,
+  ) async => <String, dynamic>{'snooze_until': row['snooze_until']};
 }
 
 class _NoSettings implements SettingsRemote {

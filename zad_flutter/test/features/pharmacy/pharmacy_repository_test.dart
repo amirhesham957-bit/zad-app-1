@@ -80,6 +80,24 @@ class _FakeRemote implements PharmacyRemote {
     if (failWith case final e?) throw e;
     removed.add(id);
   }
+
+  /// `zad_dose_snoozes`, keyed as the table is.
+  final Map<String, Map<String, dynamic>> snoozes =
+      <String, Map<String, dynamic>>{};
+
+  /// Overrides the read-back, to stage a snooze that did not land as sent.
+  Map<String, dynamic>? Function(Map<String, dynamic> sent)? snoozeReadBack;
+
+  @override
+  Future<Map<String, dynamic>?> snoozeReturning(
+    Map<String, dynamic> row,
+  ) async {
+    if (failWith case final e?) throw e;
+    if (snoozeReadBack case final override?) return override(row);
+    final key = '${row['user_id']}|${row['item_id']}|${row['scheduled_at']}';
+    snoozes[key] = <String, dynamic>{...row};
+    return <String, dynamic>{'snooze_until': row['snooze_until']};
+  }
 }
 
 void main() {
@@ -114,6 +132,7 @@ void main() {
         OutboxKind.upsertPharmacyItem => await pharmacy.sendQueued(entry),
         OutboxKind.deletePharmacyItem => await pharmacy.sendQueuedDelete(entry),
         OutboxKind.logPharmacyDose => await pharmacy.sendQueuedDose(entry),
+        OutboxKind.upsertDoseSnooze => await pharmacy.sendQueuedSnooze(entry),
         _ => throw StateError('no sender for "${entry.kind}"'),
       },
       clock: () => now,
@@ -283,14 +302,91 @@ void main() {
       );
     });
 
-    test('never reaches the server', () async {
-      // `zad_dose_snoozes` has a select policy and no insert policy — the
-      // rows come from the Telegram bot on the service-role key. Queueing one
-      // would dead-letter on an RLS refusal, and claiming the server had been
-      // told would be worse than the gap itself.
+    test("lasts as long as the bot's snooze", () {
+      // DOSE_SNOOZE_MINUTES in zad-telegram-bot/telegram.ts. Both surfaces
+      // now write the same row, so one dose must not get two lengths.
+      expect(PharmacyRepository.snoozeFor, const Duration(minutes: 15));
+    });
+
+    test("is queued for the server under the table's own key", () async {
+      // Owner decision 2026-09-21, migration 20260921120000: an app snooze
+      // must quieten the server's reminders and the bot too, and they only
+      // read `zad_dose_snoozes`.
       await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
 
-      expect(outbox.entries(), isEmpty);
+      final entry = queued(OutboxKind.upsertDoseSnooze).single;
+      expect(entry.id, DoseSnooze.keyFor('srv-1', slot));
+      expect(entry.payload, <String, dynamic>{
+        'user_id': 'user-1',
+        'item_id': 'srv-1',
+        'scheduled_at': slot.toIso8601String(),
+        'snooze_until': now.add(PharmacyRepository.snoozeFor).toIso8601String(),
+      });
+    });
+
+    test('putting it off again replaces the queued write', () async {
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
+      final later = now.add(const Duration(minutes: 10));
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: later);
+
+      final entry = queued(OutboxKind.upsertDoseSnooze).single;
+      expect(
+        entry.payload['snooze_until'],
+        later.add(PharmacyRepository.snoozeFor).toIso8601String(),
+      );
+    });
+
+    test('is sent, read back, and settled', () async {
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
+      final report = await outbox.flush();
+
+      expect(report.sent, 1);
+      expect(remote.snoozes, hasLength(1));
+      expect(queued(OutboxKind.upsertDoseSnooze), isEmpty);
+    });
+
+    test('a later snooze_until on the server still counts as sent', () async {
+      // The bot may have put the same dose off again in the meantime.
+      remote.snoozeReadBack = (sent) => <String, dynamic>{
+        'snooze_until': '2026-09-20T09:00:00+00:00',
+      };
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
+
+      expect((await outbox.flush()).sent, 1);
+    });
+
+    test('stays queued when no row reads back', () async {
+      remote.snoozeReadBack = (_) => null;
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
+
+      expect((await outbox.flush()).sent, 0);
+      expect(queued(OutboxKind.upsertDoseSnooze), hasLength(1));
+    });
+
+    test('stays queued when the snooze ends earlier than asked', () async {
+      // Then the server reminds about a dose the screen says is quiet.
+      remote.snoozeReadBack = (sent) => <String, dynamic>{
+        'snooze_until': slot.toIso8601String(),
+      };
+      await pharmacy.snooze('srv-1', scheduledAt: slot, now: now);
+
+      expect((await outbox.flush()).sent, 0);
+      expect(queued(OutboxKind.upsertDoseSnooze), hasLength(1));
+    });
+
+    test('refuses to snooze with nobody signed in', () async {
+      final signedOut = PharmacyRepository(
+        cache: cache,
+        remote: remote,
+        outbox: () => outbox,
+        newId: () => 'x',
+        signedInUserId: () => null,
+      );
+      await expectLater(
+        signedOut.snooze('srv-1', scheduledAt: slot, now: now),
+        throwsStateError,
+      );
+      expect(signedOut.isSnoozed('srv-1', slot, now), isFalse);
     });
 
     test('expired snoozes are cleared out', () async {

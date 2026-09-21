@@ -45,6 +45,15 @@ abstract final class OutboxKind {
   /// answers `duplicate` instead of taking a second tablet off the count.
   static const String logPharmacyDose = 'log_pharmacy_dose';
 
+  /// Put a dose off in `zad_dose_snoozes`, where the cron and the Telegram
+  /// bot read it.
+  ///
+  /// The entry id is the table's own key — `(user_id, item_id,
+  /// scheduled_at)`, as `DoseSnooze.keyFor` — so snoozing the same dose again
+  /// replaces the queued write, and a replay lands as an upsert on the same
+  /// row.
+  static const String upsertDoseSnooze = 'upsert_dose_snooze';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no
