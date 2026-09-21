@@ -250,22 +250,17 @@ scanner uses the system camera intent via `image_picker`).
    **deferred by the owner** while the APK builds. Do not touch unless asked.
 4. **Archive screen — cancelled by the owner.** It is not defined anywhere in
    the product; do not build it.
-5. ⚠️ **Family RLS lets any signed-in account join any family as admin —
-   blocks the family port (found 2026-09-21, read off `pg_policies`).**
-   `family_members_insert` checks only `auth.role() = 'authenticated'`, so a
-   client can insert any `family_id`, any `user_id`, any `role`;
-   `family_groups_select_authenticated` is `using (true)`, so every family id
-   and invite code is readable; `family_members_update` lets any member
-   change any member's `role`. Through `get_my_family_ids()` that is the
-   household's shared pantry, chat, and — as admin — its children's spending.
-   Live exposure that day: 14 groups, 2 members. Invite codes are `ZAD-` + 4
-   digits (9,000 values). The shipped Kotlin app *depends* on the open
-   policies (it inserts its own membership and reads `family_groups` by
-   code), so closing them breaks its create/join until it moves too.
-   Recommended: server functions `zad_create_family` / `zad_join_family`
-   (security definer, role forced server-side, longer codes), both clients
-   switched to them, then the insert/select/update policies tightened. Needs
-   the owner's decision before anything is applied.
+5. ~~Family RLS~~ — **closed 2026-09-21** by
+   `20260921130000_family_membership_through_the_server` (owner: fix strictly,
+   no Kotlin compatibility — it has no live users). Create/join only through
+   `zad_create_family` / `zad_join_family` (security definer); no client insert
+   policy on `family_members` or `family_groups`; families visible to members
+   only; 40-bit invite codes (all 14 rotated), 10 failed joins an hour; one
+   family per account; guard triggers on role, limits, membership moves and the
+   last admin; an emptied family is deleted. Run by hand via `execute_sql` and
+   verified as three real accounts in a rolled-back block (16 checks). Still
+   open, family-internal: balances are credited by whoever completes a chore
+   or challenge (client-side reward logic) — move rewards server-side.
 6. Where commits should end up: this Codespace can only push to the fork (see
    below). Getting work into the ship repo needs a PR or a token with write.
 
