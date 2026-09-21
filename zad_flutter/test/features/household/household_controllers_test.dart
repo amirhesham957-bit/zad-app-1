@@ -21,6 +21,7 @@ import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
+import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
@@ -110,6 +111,16 @@ class _Pharmacy implements PharmacyRemote {
   Future<Map<String, dynamic>?> snoozeReturning(
     Map<String, dynamic> row,
   ) async => <String, dynamic>{'snooze_until': row['snooze_until']};
+}
+
+class _Readings implements ObservationRemote {
+  @override
+  Future<Object?> record({
+    required String userId,
+    required String item,
+    required num quantity,
+    required String source,
+  }) async => <String, dynamic>{'samples': 0};
 }
 
 class _NoSettings implements SettingsRemote {
@@ -229,6 +240,14 @@ void main() {
           ),
         ),
         pharmacyRepositoryProvider.overrideWithValue(pharmacy),
+        consumptionObservationsProvider.overrideWithValue(
+          ConsumptionObservations(
+            remote: _Readings(),
+            outbox: () => outbox,
+            newId: () => 'o${ids++}',
+            signedInUserId: () => 'user-1',
+          ),
+        ),
         settingsRepositoryProvider.overrideWithValue(
           SettingsRepository(
             cache: documents,
@@ -361,6 +380,65 @@ void main() {
             .itemName,
         'لبن',
       );
+    });
+  });
+
+  group('the pantry tells the consumption learner', () {
+    // In the outbox's own order — the order the learner will receive them.
+    List<(String, num, String)> readings(ProviderContainer c) =>
+        <(String, num, String)>[
+          for (final e in c.read(outboxProvider).entries())
+            if (e.kind == OutboxKind.recordObservation)
+              (
+                e.payload['item'] as String,
+                e.payload['qty'] as num,
+                e.payload['source'] as String,
+              ),
+        ];
+
+    test('the level after − and after +, as the customer counted', () async {
+      await withCountry('EG');
+      pantryRemote.rows = <Map<String, dynamic>>[pantryRow('a', 'لبن', 3)];
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(pantryControllerProvider.notifier);
+      await controller.refresh(force: true);
+
+      await controller.adjust('a', -1);
+      await controller.adjust('a', 1);
+      await controller.adjust('a', -1);
+
+      // Without the reading after +, the last − would read as 3 → 2 against
+      // a previous 2: no drop, and a glass of milk the learner never saw.
+      expect(readings(container), <(String, num, String)>[
+        ('لبن', 2, 'manual'),
+        ('لبن', 3, 'manual'),
+        ('لبن', 2, 'manual'),
+      ]);
+    });
+
+    test('a row added by hand is the first level it hears of', () async {
+      await withCountry('EG');
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await container
+          .read(pantryControllerProvider.notifier)
+          .add(itemName: 'أرز', quantity: 5);
+
+      expect(readings(container), <(String, num, String)>[
+        ('أرز', 5, 'manual'),
+      ]);
+    });
+
+    test('a row that is not there says nothing', () async {
+      await withCountry('EG');
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await container.read(pantryControllerProvider.notifier).adjust('x', -1);
+
+      expect(readings(container), isEmpty);
     });
   });
 

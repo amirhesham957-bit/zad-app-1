@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
 import 'package:zad/features/inventory/domain/shortage.dart';
 
@@ -112,7 +113,7 @@ class PantryController extends Notifier<PantryView> {
     int? lowStockThreshold,
     DateTime? expiryDate,
   }) async {
-    await ref
+    final added = await ref
         .read(inventoryRepositoryProvider)
         .add(
           itemName: itemName,
@@ -122,14 +123,29 @@ class PantryController extends Notifier<PantryView> {
           lowStockThreshold: lowStockThreshold,
           expiryDate: expiryDate,
         );
+    // The first level the learner hears of. Without it the first − has
+    // nothing to be a drop from.
+    await _reading(added);
     await _reload();
   }
 
-  /// Moves a count by [delta].
+  /// Moves a count by [delta], and tells the consumption learner the new
+  /// level.
+  ///
+  /// After + as well as −. The learner counts drops between consecutive
+  /// readings; a + that went unreported leaves the last reading at the lower
+  /// level, and the next − then reads as no drop at all.
   Future<void> adjust(String id, int delta) async {
-    await ref.read(inventoryRepositoryProvider).adjustQuantity(id, delta);
+    final updated = await ref
+        .read(inventoryRepositoryProvider)
+        .adjustQuantity(id, delta);
+    if (updated != null) await _reading(updated);
     await _reload();
   }
+
+  Future<void> _reading(InventoryItem item) => ref
+      .read(consumptionObservationsProvider)
+      .record(item.itemName, item.quantity, ObservationSource.manual);
 
   /// Removes a row.
   Future<void> remove(String id) async {

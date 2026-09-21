@@ -4,7 +4,8 @@
 /// shelf, and `zad_recompute_consumption` turns the *drops between
 /// consecutive readings* into a daily rate — which is what lets the brain say
 /// "the milk runs out Thursday" instead of asking. Kotlin sends one every time
-/// a receipt or the − button changes the pantry (Task 18).
+/// a receipt or the − button changes the pantry (Task 18); this client sends
+/// one for a receipt, for − and +, and for a row added by hand.
 ///
 /// Queued like every other write, one entry per reading: they are events, not
 /// rows, so a later one must never replace an earlier one, and the outbox's
@@ -20,6 +21,10 @@ import 'package:zad/data/sync/outbox_entry.dart';
 abstract final class ObservationSource {
   /// A photographed receipt.
   static const String cameraOcr = 'camera_ocr';
+
+  /// The customer's own count: the pantry's − and + buttons, or a row added
+  /// by hand. Kotlin's source for the same buttons.
+  static const String manual = 'manual';
 }
 
 /// The server side.
