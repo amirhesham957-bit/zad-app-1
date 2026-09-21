@@ -21,6 +21,8 @@ import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
+import 'package:zad/features/family/data/family_remote.dart';
+import 'package:zad/features/family/data/family_repository.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
@@ -184,6 +186,16 @@ final Provider<NotificationsRepository> notificationsRepositoryProvider =
         signedInUserId: ref.watch(signedInUserIdProvider),
       );
     });
+
+/// The account's family: cached, and changed only online.
+final familyRepositoryProvider = Provider<FamilyRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return FamilyRepository(
+    cache: store.documents,
+    remote: SupabaseFamilyRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});
 
 /// The conversation, on this device.
 final chatRepositoryProvider = Provider<ChatRepository>(

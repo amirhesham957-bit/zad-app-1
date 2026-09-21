@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
@@ -49,7 +50,16 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
     decoration: const BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('البيت')),
+      appBar: AppBar(
+        title: const Text('البيت'),
+        actions: <Widget>[
+          IconButton(
+            onPressed: () => showFamilyScreen(context),
+            icon: const Icon(ZadIcons.family),
+            tooltip: 'العيلة',
+          ),
+        ],
+      ),
       floatingActionButton: _section == HouseholdSection.pantry
           ? FloatingActionButton.extended(
               heroTag: 'pantry-add',

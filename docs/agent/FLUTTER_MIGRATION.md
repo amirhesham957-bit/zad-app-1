@@ -36,7 +36,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 562 passing after the notification center
+   flutter test                       # 577 passing after family membership
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -135,7 +135,8 @@ and `features/inventory/` are the cleanest examples.
 | Subscriptions — data layer (renewal mirror, repository, controller) | `features/subscriptions` | `ef639beb` |
 | Subscriptions — screen, add/edit sheet, "دفعت", Home entry card | `features/subscriptions/presentation`, `features/home` | `ef7e4131` |
 | Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | `133adb79` |
-| Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | notifications commit |
+| Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | `388ee145` |
+| Family membership — create / join (server functions), members, roles, leave | `features/family` | family commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -287,10 +288,14 @@ one commit, full verification, report, then continue.
    and the debt planner / deals / challenges cards that shared its old tab.
    Widget tests need `initializeDateFormatting('ar')` in `setUpAll` wherever a
    screen prints an Arabic month.
-4. **Family** (`FamilyScreen`, `BrainFamilyScreen`) — shared pantry, children,
-   spend limits; RLS via `get_my_family_ids()`. **Blocked on open decision 5**
-   (the membership policies are open); do not port the join flow as Kotlin has
-   it. `FamilyScreen.kt` is 2,597 lines — slice it: membership first.
+4. **Family** — membership done (create/join through `zad_create_family` /
+   `zad_join_family`, members, roles, remove, leave, new invite code; entry is
+   the family icon on the البيت tab). Still to port from the 2,597-line
+   `FamilyScreen.kt`: family chat, requests/approvals, chores, challenges,
+   sinking funds, spend limits UI, children's spending — and move chore/
+   challenge rewards server-side before porting them (balances are credited
+   client-side today). Membership writes deliberately bypass the outbox: they
+   are online-only and read back.
 5. ~~Notification center~~ — done for `app_notifications` (list, read,
    mark all read up to the newest *seen*, bell with badge on Home). Not in it:
    push/FCM tokens, and the brain's `zad_insights` — none are `surface =
