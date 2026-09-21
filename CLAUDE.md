@@ -176,14 +176,16 @@ lands screen by screen.
 **Resuming? Read [`docs/agent/FLUTTER_MIGRATION.md`](./docs/agent/FLUTTER_MIGRATION.md)
 first.** It has the start-here checklist, the conventions every feature follows, what
 is done (per commit), the traps already paid for, the open decisions, and the ordered
-list of what is left. Status at a glance: HEAD `30019e51`, `flutter analyze` clean,
-**696** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
+list of what is left. Status at a glance: HEAD `23dc6f54`, `flutter analyze` clean,
+**785** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
 home/budget, bank channel, transactions, proposals, auth, settings, receipt scanner
 (grocery lines fill the pantry, pharmacy lines restock the pharmacy), chat + voice
 input, pantry/shopping list (−/+ feed the consumption learner), pharmacy (snooze
 server-side), market selection, subscriptions, onboarding intro, notification center,
 family membership, recipes (شيف زاد, asked by a tap — never on open), crowd prices,
-shops near you (one fix on a tap, coarse point only, no background location). **Family membership is server-only since `0e99f226`**: create/join
+shops near you (one fix on a tap, coarse point only, no background location), the four
+brain screens (عقل زاد hub on the chat: memory, knowledge map, action log with undo,
+brain health). **Family membership is server-only since `0e99f226`**: create/join
 through `zad_create_family`/`zad_join_family`, no client insert policy on
 `family_members`/`family_groups` — never add one back. **Family balances are
 server-only since `f35d4716`** (chores, challenges, purchase requests
@@ -191,8 +193,8 @@ through four RPCs); it and `20260921140000_pharmacy_restock` were hand-applied a
 verified on live 2026-09-21 (FLUTTER_MIGRATION.md §5 item 7 — note the stamped
 `120000`/`130000` versions the ship repo lacks). `20260921160000_price_reports_through_the_server` is live too (§5 item 9).
 ⚠️ **A push to `origin main` (the fork) deploys migrations and edge functions to
-production** — see FLUTTER_MIGRATION.md "Where the commits live". **Next:** the
-brain screens (FLUTTER_MIGRATION.md §6 item 8). **Finish line:** a debug-signed
+production** — see FLUTTER_MIGRATION.md "Where the commits live". **Next:** alerts —
+push, permission, insight cards (FLUTTER_MIGRATION.md §6 item 9). **Finish line:** a debug-signed
 release APK on the owner's phone — no keystore, no Play work; the live voice
 call (`zad-voice-live`) is cancelled for good.
 

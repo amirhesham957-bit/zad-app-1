@@ -1,6 +1,6 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (third session). HEAD `30019e51` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
+**Last updated 2026-09-21 (fourth session). HEAD `23dc6f54` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
 see "Where the commits live" below — **a push there deploys to production**). Every
 migration in the repo is live (§5 items 7 and 9).
 
@@ -37,7 +37,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 696 passing after prices & nearby
+   flutter test                       # 785 passing after the brain screens
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -148,6 +148,10 @@ and `features/inventory/` are the cleanest examples.
 | Recipes — شيف زاد as البيت's fourth section, recipe sheet, add-missing, like/dislike | `features/recipes` | `84c53a25` |
 | Crowd prices — cheapest reported, city filter, leaderboard (no names), queued reports | `features/prices` (tag icon on البيت) | `912c23c5` |
 | Shops near you — second tab of the prices screen, radius chips, list/medicine hints | `features/nearby` | `30019e51` |
+| عقل زاد hub (brain icon on the chat) + سجل تعديلات زاد: agent_actions in words, undo via `zad_agent_undo` | `features/brain` | `978eecea` |
+| زاد عارف عني إيه: profile (edit), habits (wipe outings), memory notes (forget) — online writes, read back | `features/brain` | `18cc32a6` |
+| صحة عقل زاد: Kotlin's BrainHealth v2 verdict ported with its 20 cases; no disk cache on purpose | `features/brain` | `4fa99070` |
+| خريطة زاد: areas around the budget, real edges only, "اسأل زاد" prefills the chat | `features/brain` | `23dc6f54` |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -434,13 +438,27 @@ one commit, full verification, report, then continue.
    screen asked for them here) and its background geofence alerts
    (`GroceryGeofenceManager`, which needs the background-location permission
    this client deliberately does not declare).
-8. **Brain screens** (`ZadMemoryScreen`, `ZadKnowledgeMapScreen`,
-   `AgentActionLogScreen`, `BrainHealthScreen`).
-9. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
+8. ~~Brain screens~~ — done (`978eecea`, `18cc32a6`, `4fa99070`, `23dc6f54`).
+   Differences from Kotlin, on purpose: undo is offered only for the seven
+   tables `zad_agent_undo` restores, and is asked first; forget / profile save /
+   outings wipe are online and read back (never queued: "forgotten" must be
+   true on the next turn); the health screen keeps no cache on disk (a stale
+   all-clear is the failure it exists to prevent); the map drops Kotlin's
+   invented telemetry figures. Kotlin's tool/scope/source identifiers that
+   leaked to the screen (`spending_pattern`, `add_obligation`, `voice`) all
+   read as Arabic now.
+9. **Alerts — the owner's explicit ask ("ولا تنسى التنبيهات").** The phone has
+   to actually alert, not just list: FCM push (the server already sends to
+   `zad_fcm_tokens` through `zad-brain/push.ts`; the table had 0 rows on
+   2026-09-21), notification permission, foreground display, a tap that opens
+   the right tab (`route: transaction_proposals`), and the brain's
+   `zad_insights` home cards with dismiss-with-reason (Task 28). The
+   token-takeover fix is `20260921170000_fcm_token_follows_the_device`.
+10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
    `AchievementsScreen`, `TasbihaScreen`, `StatementImportScreen`,
    `ZadSubscriptionPaywallScreen`, `TermsOfServiceScreen`, `HelpSupportScreen`,
    `ProfileScreen`/`ProfileSubScreens`, `FinancesScreen`, `BudgetScreen`.
-10. **The finish line:** a release APK signed with the debug key (already the
+11. **The finish line:** a release APK signed with the debug key (already the
     template's setting, `android/app/build.gradle.kts`), sideloaded on the
     owner's phone to confirm the whole conversion works. **Out of scope, by
     the owner's decision on 2026-09-21:** an official keystore, the Play
