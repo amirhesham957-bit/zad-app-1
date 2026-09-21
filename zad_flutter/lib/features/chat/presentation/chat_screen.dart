@@ -73,6 +73,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       setState(() {});
     });
 
+    // A question another screen offered (the map's "اسأل زاد"). It lands in
+    // the field like a transcript does, and waits for the customer to send it.
+    ref.listen(chatPrefillProvider, (previous, next) {
+      if (next == null) return;
+      _composer
+        ..text = next
+        ..selection = TextSelection.collapsed(offset: next.length);
+      ref.read(chatPrefillProvider.notifier).taken();
+      setState(() {});
+    });
+
     return DecoratedBox(
       decoration: const BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(

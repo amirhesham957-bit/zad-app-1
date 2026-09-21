@@ -22,6 +22,7 @@ import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad/features/brain/data/agent_actions_remote.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/brain/data/brain_health_repository.dart';
+import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/data/memory_remote.dart';
 import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
@@ -280,6 +281,16 @@ final brainHealthRepositoryProvider = Provider<BrainHealthRepository>((ref) {
     remote: SupabaseBrainHealthRemote(ref.watch(supabaseClientProvider)),
     signedInUserId: ref.watch(signedInUserIdProvider),
     now: ref.watch(nowProvider),
+  );
+});
+
+/// خريطة زاد's own reads: obligations, debts, appliances, pending insights.
+final knowledgeMapRepositoryProvider = Provider<KnowledgeMapRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return KnowledgeMapRepository(
+    cache: store.documents,
+    remote: SupabaseKnowledgeMapRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
   );
 });
 

@@ -309,3 +309,27 @@ class ChatController extends Notifier<ChatView> {
 final chatControllerProvider = NotifierProvider<ChatController, ChatView>(
   ChatController.new,
 );
+
+/// A question another screen wants to put in the composer.
+///
+/// Only put there, never sent: the customer reads it, edits it if they like,
+/// and sends it themselves — the same rule as the voice transcript. Nothing
+/// outside the chat starts a model call on its own.
+class ChatPrefill extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Offers [text] to the composer; a blank offer is no offer.
+  void offer(String text) {
+    final t = text.trim();
+    if (t.isNotEmpty) state = t;
+  }
+
+  /// The composer has it.
+  void taken() => state = null;
+}
+
+/// The question waiting for the composer, if any.
+final chatPrefillProvider = NotifierProvider<ChatPrefill, String?>(
+  ChatPrefill.new,
+);

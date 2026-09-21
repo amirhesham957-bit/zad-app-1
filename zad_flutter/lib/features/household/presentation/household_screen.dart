@@ -33,21 +33,25 @@ enum HouseholdSection {
 
 /// The household screen.
 class HouseholdScreen extends StatefulWidget {
-  /// Creates the screen.
-  const new({super.key});
+  /// Creates the screen, open on [initialSection].
+  const new({this.initialSection = HouseholdSection.pantry, super.key});
+
+  /// The section showing first — the pantry in the tab; another one when a
+  /// screen elsewhere (the knowledge map) opens the household on it.
+  final HouseholdSection initialSection;
 
   @override
   State<HouseholdScreen> createState() => _HouseholdScreenState();
 }
 
 class _HouseholdScreenState extends State<HouseholdScreen> {
-  HouseholdSection _section = HouseholdSection.pantry;
+  late HouseholdSection _section = widget.initialSection;
 
   /// Sections opened so far. Each one fetches when it first builds, so a
   /// section is built on first visit rather than all at once — opening
   /// the pantry should not also query every medicine's dose history.
-  final Set<HouseholdSection> _opened = <HouseholdSection>{
-    HouseholdSection.pantry,
+  late final Set<HouseholdSection> _opened = <HouseholdSection>{
+    widget.initialSection,
   };
 
   @override

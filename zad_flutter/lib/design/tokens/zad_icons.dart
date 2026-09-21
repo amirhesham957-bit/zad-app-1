@@ -186,6 +186,12 @@ abstract final class ZadIcons {
   /// Whether the brain is working.
   static const IconData brainHealth = LucideIcons.heartPulse;
 
+  /// Appliances and their upkeep.
+  static const IconData maintenance = LucideIcons.wrench;
+
+  /// Ask زاد about something.
+  static const IconData ask = LucideIcons.messageCircle;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors
