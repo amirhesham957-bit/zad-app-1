@@ -23,6 +23,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
@@ -311,11 +312,53 @@ class _ReadingState extends ConsumerState<_Reading> {
                 ),
               ),
             ),
+          ] else if (view.offersPharmacy) ...<Widget>[
+            const SizedBox(height: ZadSpacing.md),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: view.addToPharmacy,
+              onChanged: busy
+                  ? null
+                  : (v) => controller.setAddToPharmacy(value: v),
+              title: Text(
+                'ضيف الأدوية للصيدلية '
+                '(${receipt.items.length - view.excludedItems.length})',
+                style: ZadType.titleSmall,
+              ),
+              subtitle: Text(
+                // Said because it is the one thing that surprises: the count
+                // is in what a dose takes, not in boxes.
+                'اللي عندك هيزيد رصيده بالحباية مش بالعلبة، والجديد هيتسجل. '
+                'دوس على العدد لو عايز تعدّله.',
+                style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    for (final (i, proposal)
+                        in view.pharmacyWithCounts.indexed)
+                      _MedicineRow(
+                        proposal: proposal,
+                        checked: !view.excludedItems.contains(i),
+                        onChanged: busy || !view.addToPharmacy
+                            ? null
+                            : () => controller.toggleItem(i),
+                        onCount: busy || !view.addToPharmacy
+                            ? null
+                            : () => _askCount(i, proposal),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ] else if (receipt.items.isNotEmpty) ...<Widget>[
             const SizedBox(height: ZadSpacing.lg),
             Text(
-              // Only groceries go into the pantry: a restaurant bill's lines
-              // are meals, and a pharmacy's are medicines.
+              // Groceries go into the pantry and medicines into the
+              // pharmacy; a restaurant bill's lines are meals.
               'الأصناف اللي قريتها (${receipt.items.length}) — للمراجعة بس',
               style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
             ),
@@ -341,13 +384,15 @@ class _ReadingState extends ConsumerState<_Reading> {
                 : () => _save(controller.saveAsTransaction),
             child: busy
                 ? const _ButtonSpinner()
-                : Text(
-                    view.offersPantry &&
-                            view.addToPantry &&
-                            view.excludedItems.length < receipt.items.length
-                        ? 'احفظ وضيف للمخزن'
-                        : 'احفظ كمصروف',
-                  ),
+                : Text(switch (view) {
+                    _ when view.excludedItems.length >= receipt.items.length =>
+                      'احفظ كمصروف',
+                    _ when view.offersPantry && view.addToPantry =>
+                      'احفظ وضيف للمخزن',
+                    _ when view.offersPharmacy && view.addToPharmacy =>
+                      'احفظ وضيف للصيدلية',
+                    _ => 'احفظ كمصروف',
+                  }),
           )
         else
           FilledButton(
@@ -371,7 +416,10 @@ class _ReadingState extends ConsumerState<_Reading> {
     if (!mounted) return;
     if (saved) {
       // Said on the screen underneath, which outlives this sheet.
-      final said = _intakeMessage(ref.read(scanControllerProvider).lastIntake);
+      final after = ref.read(scanControllerProvider);
+      final said =
+          _intakeMessage(after.lastIntake) ??
+          _pharmacyMessage(after.lastPharmacyIntake);
       if (said != null) {
         messenger?.showSnackBar(SnackBar(content: Text(said)));
       }
@@ -393,6 +441,172 @@ class _ReadingState extends ConsumerState<_Reading> {
     ];
     if (parts.isEmpty) return null;
     return 'اتسجل المصروف — المخزن: ${parts.join('، ')}.';
+  }
+
+  /// What the pharmacy got, in one line — including what it did not.
+  static String? _pharmacyMessage(PharmacyIntakeResult? intake) {
+    if (intake == null) return null;
+    if (intake.failed) {
+      return 'المصروف اتسجل، بس الأدوية مادخلتش الصيدلية. ضيفها من البيت.';
+    }
+    final parts = <String>[
+      if (intake.added > 0) '${intake.added} جديد',
+      if (intake.toppedUp > 0) '${intake.toppedUp} زاد رصيده',
+      if (intake.ticked > 0) '${intake.ticked} اتشال من المشتريات',
+      if (intake.uncounted > 0) '${intake.uncounted} من غير عدد مازادش',
+    ];
+    if (parts.isEmpty) return null;
+    return 'اتسجل المصروف — الصيدلية: ${parts.join('، ')}.';
+  }
+
+  /// Asks how many units a line adds, and keeps the answer.
+  Future<void> _askCount(int index, RestockProposal proposal) async {
+    final count = await showDialog<int>(
+      context: context,
+      builder: (_) => _CountDialog(proposal: proposal),
+    );
+    if (count != null && mounted) {
+      ref.read(scanControllerProvider.notifier).setPharmacyCount(index, count);
+    }
+  }
+}
+
+/// One medicine line: where it goes, and how many it adds.
+class _MedicineRow extends StatelessWidget {
+  const new({
+    required this.proposal,
+    required this.checked,
+    this.onChanged,
+    this.onCount,
+  });
+
+  final RestockProposal proposal;
+  final bool checked;
+  final VoidCallback? onChanged;
+  final VoidCallback? onCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final needsCount = proposal.needsCount;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+      child: Row(
+        children: <Widget>[
+          Checkbox(
+            value: checked,
+            onChanged: onChanged == null ? null : (_) => onChanged!(),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  proposal.line.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
+                ),
+                Text(
+                  // Which medicine it adds to, so a wrong match can be
+                  // unticked before it changes somebody's count.
+                  switch (proposal.medicine) {
+                    final m? => 'يزيد: ${m.name}',
+                    null => 'جديد في الصيدلية',
+                  },
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: ZadSpacing.sm),
+          TextButton(
+            onPressed: checked ? onCount : null,
+            style: TextButton.styleFrom(
+              foregroundColor: needsCount
+                  ? ZadColors.mustardOchre
+                  : ZadColors.green700,
+            ),
+            child: Text(
+              needsCount
+                  ? 'كام ${proposal.unit}؟'
+                  : '+${proposal.count} ${proposal.unit}',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// How many units a line adds, typed by the customer.
+class _CountDialog extends StatefulWidget {
+  const new({required this.proposal});
+
+  final RestockProposal proposal;
+
+  @override
+  State<_CountDialog> createState() => _CountDialogState();
+}
+
+class _CountDialogState extends State<_CountDialog> {
+  late final TextEditingController _count = TextEditingController(
+    text: widget.proposal.count?.toString() ?? '',
+  );
+
+  @override
+  void dispose() {
+    _count.dispose();
+    super.dispose();
+  }
+
+  /// A whole count from 1 to the server's ceiling, in either digit set —
+  /// an Arabic keyboard types ٣٠.
+  int? get _parsed {
+    final value = parseMoneyInput(_count.text);
+    if (value == null || value != value.roundToDouble()) return null;
+    final n = value.toInt();
+    return n <= 10000 ? n : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.proposal;
+    return AlertDialog(
+      title: Text('كام ${p.unit}؟', style: ZadType.titleMedium),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '${p.line.name} — عدد العلب × اللي في العلبة الواحدة.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.md),
+          TextField(
+            controller: _count,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            decoration: InputDecoration(suffixText: p.unit),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: _parsed == null
+              ? null
+              : () => Navigator.of(context).pop(_parsed),
+          child: const Text('تمام'),
+        ),
+      ],
+    );
   }
 }
 

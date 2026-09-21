@@ -193,6 +193,133 @@ class PharmacyRepository {
     return pending;
   }
 
+  /// Adds [count] to a tracked medicine's stock — a purchase.
+  ///
+  /// Queued for `zad_pharmacy_restock`, never written as a new
+  /// `remaining_quantity`: the dose RPC moves that column, and a count
+  /// computed here would overwrite any dose it took in the meantime. The
+  /// screen shows the sum at once; the server's figure replaces it when the
+  /// restock is sent.
+  Future<void> restock(String medicineId, int count) async {
+    if (count < 1) return;
+    await _enqueueRestock(medicineId: medicineId, count: count);
+
+    final key = '$_medicinePrefix$medicineId';
+    final current = _read(_cache.get(key) ?? '');
+    if (current == null) return;
+    await _cache.put(
+      key,
+      jsonEncode(
+        current
+            .copyWith(
+              remainingQuantity: (current.remainingQuantity ?? 0) + count,
+              isPending: true,
+            )
+            .toCacheJson(),
+      ),
+    );
+  }
+
+  /// Starts tracking a medicine with [count] [unit]s in stock.
+  ///
+  /// Through the restock function rather than [add]: the plain upsert never
+  /// carries `remaining_quantity`, and the column defaults to 1, so a new
+  /// medicine sent that way would arrive as a single tablet.
+  Future<Medicine> restockNew({
+    required String name,
+    required int count,
+    required String unit,
+    String? category,
+  }) async {
+    final medicine = Medicine(
+      id: _newId(),
+      userId: _requireUserId(),
+      name: name.trim(),
+      unit: unit,
+      category: category,
+      remainingQuantity: count,
+      // The column's default. A medicine bought is not yet a course.
+      isRecurring: false,
+      isPending: true,
+    );
+    await _enqueueRestock(
+      medicineId: medicine.id,
+      count: count,
+      name: medicine.name,
+      unit: unit,
+      category: category,
+    );
+    await _cache.put(
+      '$_medicinePrefix${medicine.id}',
+      jsonEncode(medicine.toCacheJson()),
+    );
+    return medicine;
+  }
+
+  /// Sends one queued restock, and keeps the row the server answers with.
+  ///
+  /// That row can be a different one from the row asked for: a medicine
+  /// started here under a name the server already has — added by voice or on
+  /// another phone since the last refresh — is restocked there instead, and
+  /// the local copy is dropped for it.
+  Future<void> sendQueuedRestock(OutboxEntry entry) async {
+    final payload = entry.payload;
+    final asked = payload['item_id'] as String;
+    final receipt = await _remote.restock(
+      userId: payload['user_id'] as String,
+      restockId: payload['restock_id'] as String,
+      medicineId: asked,
+      quantity: payload['quantity'] as int,
+      name: payload['name'] as String?,
+      unit: payload['unit'] as String?,
+      category: payload['category'] as String?,
+    );
+
+    // Thrown, like a refused dose, so the outbox keeps a dead letter: stock
+    // the customer was told went in must not vanish quietly.
+    if (!receipt.ok) {
+      throw StateError(
+        'zad_pharmacy_restock refused: ${receipt.reason ?? 'unknown'}',
+      );
+    }
+
+    // A replay of a restock whose medicine has since been deleted.
+    final item = receipt.item;
+    if (item == null) return;
+
+    final confirmed = Medicine.fromJson(item).markPending(pending: false);
+    if (confirmed.id != asked) await _cache.delete('$_medicinePrefix$asked');
+    await _cache.put(
+      '$_medicinePrefix${confirmed.id}',
+      jsonEncode(confirmed.toCacheJson()),
+    );
+  }
+
+  Future<void> _enqueueRestock({
+    required String medicineId,
+    required int count,
+    String? name,
+    String? unit,
+    String? category,
+  }) async {
+    final restockId = _newId();
+    await _outbox().enqueue(
+      // The function's own key. Not the medicine's: two purchases of the same
+      // medicine are two restocks, and one must not replace the other.
+      id: 'restock:$restockId',
+      kind: OutboxKind.restockPharmacyItem,
+      payload: <String, dynamic>{
+        'user_id': _requireUserId(),
+        'restock_id': restockId,
+        'item_id': medicineId,
+        'quantity': count,
+        'name': ?name,
+        'unit': ?unit,
+        'category': ?category,
+      },
+    );
+  }
+
   /// Records a dose: queued, and safe to replay.
   ///
   /// [scheduledAt] is the slot being answered. Leaving it null is how an

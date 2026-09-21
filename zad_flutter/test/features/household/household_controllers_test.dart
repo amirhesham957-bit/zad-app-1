@@ -93,6 +93,17 @@ class _Pharmacy implements PharmacyRemote {
   }
 
   @override
+  Future<RestockReceipt> restock({
+    required String userId,
+    required String restockId,
+    required String medicineId,
+    required int quantity,
+    String? name,
+    String? unit,
+    String? category,
+  }) async => const RestockReceipt(ok: false, reason: 'not_in_this_test');
+
+  @override
   Future<void> remove(String id) async {}
 
   @override

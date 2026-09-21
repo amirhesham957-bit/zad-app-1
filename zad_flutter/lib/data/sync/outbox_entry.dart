@@ -45,6 +45,15 @@ abstract final class OutboxKind {
   /// answers `duplicate` instead of taking a second tablet off the count.
   static const String logPharmacyDose = 'log_pharmacy_dose';
 
+  /// Add stock to a medicine — or start one — through
+  /// `zad_pharmacy_restock`.
+  ///
+  /// One entry per restock, keyed on an id made here that the function
+  /// records: a replay answers `duplicate` instead of adding the tablets a
+  /// second time. Never merged with a later restock of the same medicine —
+  /// they are two purchases.
+  static const String restockPharmacyItem = 'restock_pharmacy_item';
+
   /// Put a dose off in `zad_dose_snoozes`, where the cron and the Telegram
   /// bot read it.
   ///

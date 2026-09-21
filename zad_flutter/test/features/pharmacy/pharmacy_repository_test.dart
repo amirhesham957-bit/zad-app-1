@@ -75,6 +75,66 @@ class _FakeRemote implements PharmacyRemote {
     return receipt;
   }
 
+  /// Stock by medicine id, as `zad_pharmacy_restock` keeps it.
+  final Map<String, Map<String, dynamic>> rows =
+      <String, Map<String, dynamic>>{};
+
+  /// Restock ids already applied — the function's `zad_pharmacy_restocks`.
+  final Map<String, String> restocks = <String, String>{};
+  int restockCalls = 0;
+
+  /// Overrides the answer, to stage a refusal.
+  RestockReceipt? restockAnswer;
+
+  @override
+  Future<RestockReceipt> restock({
+    required String userId,
+    required String restockId,
+    required String medicineId,
+    required int quantity,
+    String? name,
+    String? unit,
+    String? category,
+  }) async {
+    if (failWith case final e?) throw e;
+    restockCalls++;
+    if (restockAnswer case final answer?) return answer;
+
+    if (restocks[restockId] case final prior?) {
+      return RestockReceipt(ok: true, duplicate: true, item: rows[prior]);
+    }
+    var target = rows[medicineId];
+    var created = false;
+    if (target == null && name != null) {
+      // The per-owner name index: a clash goes to the row that has the name.
+      target = rows.values
+          .where((r) => (r['name'] as String).trim() == name.trim())
+          .firstOrNull;
+      if (target == null) {
+        created = true;
+        target = rows[medicineId] = <String, dynamic>{
+          'id': medicineId,
+          'user_id': userId,
+          'name': name,
+          'unit': unit ?? 'قرص',
+          'category': category ?? 'عام',
+          'remaining_quantity': 0,
+        };
+      }
+    }
+    if (target == null) {
+      return const RestockReceipt(ok: false, reason: 'not_found');
+    }
+    restocks[restockId] = target['id'] as String;
+    target['remaining_quantity'] =
+        (target['remaining_quantity'] as int) + quantity;
+    return RestockReceipt(
+      ok: true,
+      created: created,
+      item: <String, dynamic>{...target},
+    );
+  }
+
   @override
   Future<void> remove(String id) async {
     if (failWith case final e?) throw e;
@@ -133,6 +193,8 @@ void main() {
         OutboxKind.deletePharmacyItem => await pharmacy.sendQueuedDelete(entry),
         OutboxKind.logPharmacyDose => await pharmacy.sendQueuedDose(entry),
         OutboxKind.upsertDoseSnooze => await pharmacy.sendQueuedSnooze(entry),
+        OutboxKind.restockPharmacyItem =>
+          await pharmacy.sendQueuedRestock(entry),
         _ => throw StateError('no sender for "${entry.kind}"'),
       },
       clock: () => now,
@@ -274,6 +336,143 @@ void main() {
       await outbox.flush();
 
       expect(queued(OutboxKind.logPharmacyDose), hasLength(1));
+    });
+  });
+
+  group('restocking from a purchase', () {
+    Future<void> tracked({int remaining = 3}) async {
+      remote.medicines = <Map<String, dynamic>>[
+        serverMedicine(remaining: remaining),
+      ];
+      remote.rows['srv-1'] = serverMedicine(remaining: remaining);
+      await pharmacy.refresh();
+    }
+
+    test('is queued, and the sum is on screen at once', () async {
+      await tracked();
+
+      await pharmacy.restock('srv-1', 30);
+
+      expect(remote.restockCalls, 0);
+      expect(queued(OutboxKind.restockPharmacyItem), hasLength(1));
+      final shown = pharmacy.cached().single;
+      expect((shown.remainingQuantity, shown.isPending), (33, true));
+    });
+
+    test('never writes remaining_quantity through the upsert', () async {
+      // The dose RPC moves that column. An upsert of 33 sent after a dose
+      // took one would put the tablet back.
+      await tracked();
+
+      await pharmacy.restock('srv-1', 30);
+
+      expect(queued(OutboxKind.upsertPharmacyItem), isEmpty);
+    });
+
+    test('two purchases of one medicine are two restocks', () async {
+      // Keyed on the purchase, not the medicine: one must not replace the
+      // other the way a second edit replaces the first.
+      await tracked();
+
+      await pharmacy.restock('srv-1', 30);
+      await pharmacy.restock('srv-1', 30);
+
+      expect(queued(OutboxKind.restockPharmacyItem), hasLength(2));
+      expect(pharmacy.cached().single.remainingQuantity, 63);
+    });
+
+    test("sending it settles on the server's figure", () async {
+      await tracked();
+      // A dose taken through the bot while the restock waited.
+      remote.rows['srv-1']!['remaining_quantity'] = 2;
+
+      await pharmacy.restock('srv-1', 30);
+      await outbox.flush();
+
+      final settled = pharmacy.cached().single;
+      expect((settled.remainingQuantity, settled.isPending), (32, false));
+      expect(queued(OutboxKind.restockPharmacyItem), isEmpty);
+    });
+
+    test('a replay after an ambiguous failure adds nothing', () async {
+      await tracked();
+      await pharmacy.restock('srv-1', 30);
+      final entry = queued(OutboxKind.restockPharmacyItem).single;
+
+      await pharmacy.sendQueuedRestock(entry);
+      await pharmacy.sendQueuedRestock(entry);
+
+      expect(remote.rows['srv-1']!['remaining_quantity'], 33);
+      expect(pharmacy.cached().single.remainingQuantity, 33);
+    });
+
+    test('a refusal is surfaced, never swallowed', () async {
+      await tracked();
+      remote.restockAnswer = const RestockReceipt(
+        ok: false,
+        reason: 'not_found',
+      );
+
+      await pharmacy.restock('srv-1', 30);
+      final report = await outbox.flush();
+
+      expect(report.sent, 0);
+      expect(queued(OutboxKind.restockPharmacyItem), hasLength(1));
+    });
+
+    test('nothing, or less than one, is not a purchase', () async {
+      await tracked();
+
+      await pharmacy.restock('srv-1', 0);
+
+      expect(queued(OutboxKind.restockPharmacyItem), isEmpty);
+    });
+  });
+
+  group('a medicine bought for the first time', () {
+    test('lands with its count, not the column default', () async {
+      final started = await pharmacy.restockNew(
+        name: 'أوجمنتين 1جم',
+        count: 14,
+        unit: 'قرص',
+        category: 'مضاد حيوي',
+      );
+      expect(pharmacy.cached().single.remainingQuantity, 14);
+
+      final payload = queued(OutboxKind.restockPharmacyItem).single.payload;
+      expect(payload['item_id'], started.id);
+      expect(payload['name'], 'أوجمنتين 1جم');
+      expect(queued(OutboxKind.upsertPharmacyItem), isEmpty);
+
+      await outbox.flush();
+
+      final settled = pharmacy.cached().single;
+      expect(remote.rows[started.id]!['remaining_quantity'], 14);
+      expect((settled.remainingQuantity, settled.isPending), (14, false));
+    });
+
+    test('survives a refresh before it is sent', () async {
+      await pharmacy.restockNew(name: 'بانادول', count: 24, unit: 'قرص');
+      remote.medicines = <Map<String, dynamic>>[serverMedicine()];
+
+      await pharmacy.refresh();
+
+      expect(
+        pharmacy.cached().map((m) => m.name),
+        containsAll(<String>['بانادول', 'كونكور']),
+      );
+    });
+
+    test('a name the server already has goes to that medicine', () async {
+      // Added by voice since the last refresh: the server restocks its row,
+      // and the phone swaps its own copy for it rather than showing two.
+      remote.rows['srv-1'] = serverMedicine(remaining: 5);
+
+      await pharmacy.restockNew(name: 'كونكور', count: 30, unit: 'قرص');
+      await outbox.flush();
+
+      final only = pharmacy.cached().single;
+      expect((only.id, only.remainingQuantity), ('srv-1', 35));
     });
   });
 

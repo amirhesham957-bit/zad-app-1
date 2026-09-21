@@ -45,6 +45,47 @@ class DoseReceipt {
   final bool shoppingAdded;
 }
 
+/// What `zad_pharmacy_restock` answered.
+class RestockReceipt {
+  /// Creates a receipt.
+  const new({
+    required this.ok,
+    this.duplicate = false,
+    this.created = false,
+    this.item,
+    this.reason,
+  });
+
+  /// Reads the function's jsonb.
+  factory fromJson(Map<String, dynamic> json) => RestockReceipt(
+    ok: json['ok'] as bool? ?? false,
+    duplicate: json['duplicate'] as bool? ?? false,
+    created: json['created'] as bool? ?? false,
+    item: switch (json['item']) {
+      final Map<dynamic, dynamic> m => Map<String, dynamic>.from(m),
+      _ => null,
+    },
+    reason: json['reason'] as String?,
+  );
+
+  /// Whether the stock was accepted.
+  final bool ok;
+
+  /// Whether this restock had already been applied. Not a failure: it is how
+  /// a replay after an ambiguous network failure answers.
+  final bool duplicate;
+
+  /// Whether the medicine was created by this call.
+  final bool created;
+
+  /// The medicine's row afterwards — possibly a different row from the one
+  /// asked for, when the name was already taken on the server.
+  final Map<String, dynamic>? item;
+
+  /// Why it was refused — `invalid_input`, `not_found`.
+  final String? reason;
+}
+
 /// Reads and writes the pharmacy.
 abstract interface class PharmacyRemote {
   /// Every medicine the account can see.
@@ -72,6 +113,18 @@ abstract interface class PharmacyRemote {
     required String medicineId,
     DateTime? scheduledAt,
     DateTime? takenAt,
+  });
+
+  /// Adds stock through `zad_pharmacy_restock`, creating the medicine when
+  /// [name] is given and there is no row [medicineId] yet.
+  Future<RestockReceipt> restock({
+    required String userId,
+    required String restockId,
+    required String medicineId,
+    required int quantity,
+    String? name,
+    String? unit,
+    String? category,
   });
 
   /// Removes a medicine.
@@ -176,6 +229,37 @@ class SupabasePharmacyRemote implements PharmacyRemote {
       throw StateError('zad_log_pharmacy_dose_atomic answered $result');
     }
     return DoseReceipt.fromJson(Map<String, dynamic>.from(result));
+  }
+
+  @override
+  Future<RestockReceipt> restock({
+    required String userId,
+    required String restockId,
+    required String medicineId,
+    required int quantity,
+    String? name,
+    String? unit,
+    String? category,
+  }) async {
+    // The function, not an update of `remaining_quantity`: the dose RPC moves
+    // that column too, and a read-add-write from here would race it.
+    final result = await _client.rpc<dynamic>(
+      'zad_pharmacy_restock',
+      params: <String, dynamic>{
+        'p_user': userId,
+        'p_restock': restockId,
+        'p_item': medicineId,
+        'p_quantity': quantity,
+        'p_name': name,
+        'p_unit': unit,
+        'p_category': category,
+      },
+    );
+
+    if (result is! Map) {
+      throw StateError('zad_pharmacy_restock answered $result');
+    }
+    return RestockReceipt.fromJson(Map<String, dynamic>.from(result));
   }
 
   @override

@@ -280,6 +280,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pharmacyRepositoryProvider).sendQueuedDose(entry),
       OutboxKind.upsertDoseSnooze =>
         await ref.read(pharmacyRepositoryProvider).sendQueuedSnooze(entry),
+      OutboxKind.restockPharmacyItem =>
+        await ref.read(pharmacyRepositoryProvider).sendQueuedRestock(entry),
       OutboxKind.upsertSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueued(entry),
       OutboxKind.recordObservation =>

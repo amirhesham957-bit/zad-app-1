@@ -15,6 +15,8 @@ import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
+import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
@@ -63,6 +65,33 @@ class PantryIntakeResult {
   final bool failed;
 }
 
+/// What a saved pharmacy receipt did to the pharmacy.
+class PharmacyIntakeResult {
+  /// Creates a result.
+  const new({
+    required this.added,
+    required this.toppedUp,
+    required this.ticked,
+    this.uncounted = 0,
+    this.failed = false,
+  });
+
+  /// New medicines.
+  final int added;
+
+  /// Tracked medicines that got more.
+  final int toppedUp;
+
+  /// Shopping-list lines ticked off.
+  final int ticked;
+
+  /// Lines left out because nobody said how many they hold.
+  final int uncounted;
+
+  /// The expense was saved but the medicines did not reach the pharmacy.
+  final bool failed;
+}
+
 /// What the scan screen draws.
 class ScanView {
   /// Creates a view.
@@ -74,6 +103,10 @@ class ScanView {
     this.excludedItems = const <int>{},
     this.addToPantry = true,
     this.lastIntake,
+    this.pharmacy = const <RestockProposal>[],
+    this.pharmacyCounts = const <int, int>{},
+    this.addToPharmacy = true,
+    this.lastPharmacyIntake,
   });
 
   /// Where things stand.
@@ -97,6 +130,31 @@ class ScanView {
   /// What the last save did to the pantry, for the screen to say so.
   final PantryIntakeResult? lastIntake;
 
+  /// What each line of a pharmacy receipt would do, by index into the
+  /// reading's items — worked out when the reading arrives, from the
+  /// medicines on the phone.
+  final List<RestockProposal> pharmacy;
+
+  /// Counts the customer gave, by line — for a box whose contents the name
+  /// does not print, or a count they corrected.
+  final Map<int, int> pharmacyCounts;
+
+  /// Whether a pharmacy receipt's ticked lines go into the pharmacy on save.
+  final bool addToPharmacy;
+
+  /// What the last save did to the pharmacy.
+  final PharmacyIntakeResult? lastPharmacyIntake;
+
+  /// Whether this reading can go into the pharmacy.
+  bool get offersPharmacy =>
+      receipt?.type == ReceiptType.pharmacy && pharmacy.isNotEmpty;
+
+  /// [pharmacy], with the customer's counts applied.
+  List<RestockProposal> get pharmacyWithCounts => <RestockProposal>[
+    for (final (i, p) in pharmacy.indexed)
+      if (pharmacyCounts[i] case final count?) p.withCount(count) else p,
+  ];
+
   /// Whether this reading can go into the pantry at all. Groceries only: a
   /// restaurant bill's lines are meals, and a pharmacy's are medicines.
   bool get offersPantry =>
@@ -116,6 +174,9 @@ class ScanView {
     bool clearReceipt = false,
     Set<int>? excludedItems,
     bool? addToPantry,
+    List<RestockProposal>? pharmacy,
+    Map<int, int>? pharmacyCounts,
+    bool? addToPharmacy,
   }) => ScanView(
     stage: stage ?? this.stage,
     receipt: clearReceipt ? null : (receipt ?? this.receipt),
@@ -123,6 +184,9 @@ class ScanView {
     error: clearError ? null : (error ?? this.error),
     excludedItems: excludedItems ?? this.excludedItems,
     addToPantry: addToPantry ?? this.addToPantry,
+    pharmacy: pharmacy ?? this.pharmacy,
+    pharmacyCounts: pharmacyCounts ?? this.pharmacyCounts,
+    addToPharmacy: addToPharmacy ?? this.addToPharmacy,
   );
 }
 
@@ -164,6 +228,7 @@ class ScanController extends Notifier<ScanView> {
       state = ScanView(
         stage: receipt.isUsable ? ScanStage.ready : ScanStage.unreadable,
         receipt: receipt.isUsable ? receipt : null,
+        pharmacy: receipt.isUsable ? _proposalsFor(receipt) : const [],
       );
     } on Object catch (error) {
       if (!ref.mounted) return;
@@ -175,9 +240,18 @@ class ScanController extends Notifier<ScanView> {
   void correct({double? total, String? category, ReceiptType? type}) {
     final current = state.receipt;
     if (!ref.mounted || current == null) return;
-    state = state.copyWith(
-      receipt: current.copyWith(total: total, category: category, type: type),
+    final next = current.copyWith(
+      total: total,
+      category: category,
+      type: type,
     );
+    state = type == null || type == current.type
+        ? state.copyWith(receipt: next)
+        : state.copyWith(
+            receipt: next,
+            pharmacy: _proposalsFor(next),
+            pharmacyCounts: const <int, int>{},
+          );
   }
 
   /// Ticks or unticks one receipt line for the pantry.
@@ -191,6 +265,21 @@ class ScanController extends Notifier<ScanView> {
   /// Whether the ticked lines go into the pantry on save.
   void setAddToPantry({required bool value}) {
     if (ref.mounted) state = state.copyWith(addToPantry: value);
+  }
+
+  /// Whether a pharmacy receipt's ticked lines go into the pharmacy on save.
+  void setAddToPharmacy({required bool value}) {
+    if (ref.mounted) state = state.copyWith(addToPharmacy: value);
+  }
+
+  /// How many units receipt line [index] adds — the customer's count, which
+  /// replaces whatever the name suggested.
+  void setPharmacyCount(int index, int count) {
+    if (!ref.mounted || index < 0 || index >= state.pharmacy.length) return;
+    if (count < 1) return;
+    state = state.copyWith(
+      pharmacyCounts: <int, int>{...state.pharmacyCounts, index: count},
+    );
   }
 
   /// Records the receipt as an expense.
@@ -241,8 +330,17 @@ class ScanController extends Notifier<ScanView> {
       if (state.offersPantry && state.addToPantry) {
         intake = await _intoPantry(receipt, state.excludedItems);
       }
+      PharmacyIntakeResult? pharmacy;
+      if (state.offersPharmacy && state.addToPharmacy) {
+        pharmacy = await _intoPharmacy(
+          state.pharmacyWithCounts,
+          state.excludedItems,
+        );
+      }
 
-      if (ref.mounted) state = ScanView(lastIntake: intake);
+      if (ref.mounted) {
+        state = ScanView(lastIntake: intake, lastPharmacyIntake: pharmacy);
+      }
       return true;
     } on Object catch (error) {
       if (!ref.mounted) return false;
@@ -328,6 +426,87 @@ class ScanController extends Notifier<ScanView> {
         ticked: 0,
         failed: true,
       );
+    }
+  }
+
+  /// Puts the ticked lines into the pharmacy and closes the shopping-list
+  /// loop, as [_intoPantry] does for groceries.
+  Future<PharmacyIntakeResult> _intoPharmacy(
+    List<RestockProposal> proposals,
+    Set<int> excluded,
+  ) async {
+    try {
+      final pharmacy = ref.read(pharmacyRepositoryProvider);
+      final shopping = ref.read(shoppingListRepositoryProvider);
+
+      final plan = planPharmacyIntake(
+        proposals: <RestockProposal>[
+          for (final (i, p) in proposals.indexed)
+            if (!excluded.contains(i)) p,
+        ],
+        shopping: shopping.cached(),
+      );
+
+      for (final (:medicine, :add) in plan.restocks) {
+        await pharmacy.restock(medicine.id, add);
+      }
+      for (final m in plan.additions) {
+        await pharmacy.restockNew(
+          name: m.name,
+          count: m.count,
+          unit: m.unit,
+          category: m.category,
+        );
+      }
+      for (final line in plan.bought) {
+        await shopping.setPurchased(line.id, purchased: true);
+      }
+
+      if (ref.mounted) {
+        ref
+          ..invalidate(pharmacyControllerProvider)
+          ..invalidate(shoppingControllerProvider);
+      }
+      return PharmacyIntakeResult(
+        added: plan.additions.length,
+        toppedUp: plan.restocks.length,
+        ticked: plan.bought.length,
+        uncounted: plan.uncounted,
+      );
+    } on Object {
+      return const PharmacyIntakeResult(
+        added: 0,
+        toppedUp: 0,
+        ticked: 0,
+        failed: true,
+      );
+    }
+  }
+
+  /// What each line of a pharmacy reading would do, against the medicines on
+  /// the phone. Empty for anything that is not a pharmacy receipt.
+  List<RestockProposal> _proposalsFor(ScannedReceipt receipt) {
+    if (receipt.type != ReceiptType.pharmacy || receipt.items.isEmpty) {
+      return const <RestockProposal>[];
+    }
+    try {
+      final medicines = ref.read(pharmacyRepositoryProvider).cached();
+      return <RestockProposal>[
+        for (final item in receipt.items)
+          proposeRestock(
+            PharmacyLine(
+              name: item.name,
+              packs: wholeCount(item.quantity),
+              unit: item.unit,
+              category: medicineCategory(item.category),
+            ),
+            medicines,
+          ),
+      ];
+    } on Object {
+      // No pharmacy to read is no offer, not a failed scan: the expense is
+      // still the part that matters.
+      return const <RestockProposal>[];
     }
   }
 

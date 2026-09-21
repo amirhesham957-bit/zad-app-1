@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/design/zad_theme.dart';
+import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
@@ -52,8 +54,18 @@ ScannedReceipt _receipt(ReceiptType type) => ScannedReceipt(
 void main() {
   late _Scan fake;
 
-  Future<void> pump(WidgetTester tester, ReceiptType type) async {
-    fake = _Scan(ScanView(stage: ScanStage.ready, receipt: _receipt(type)));
+  Future<void> pump(
+    WidgetTester tester,
+    ReceiptType type, {
+    List<RestockProposal> pharmacy = const <RestockProposal>[],
+  }) async {
+    fake = _Scan(
+      ScanView(
+        stage: ScanStage.ready,
+        receipt: _receipt(type),
+        pharmacy: pharmacy,
+      ),
+    );
     tester.view.physicalSize = const Size(1080, 2400);
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
@@ -105,5 +117,36 @@ void main() {
     expect(find.byType(Checkbox), findsNothing);
     expect(find.textContaining('للمراجعة بس'), findsOneWidget);
     expect(find.text('احفظ كمصروف'), findsOneWidget);
+  });
+
+  testWidgets('a pharmacy receipt says where each line goes, and how many', (
+    tester,
+  ) async {
+    const concor = Medicine(id: 'm1', userId: 'u', name: 'كونكور 5');
+    await pump(
+      tester,
+      ReceiptType.pharmacy,
+      pharmacy: const <RestockProposal>[
+        RestockProposal(
+          line: PharmacyLine(name: 'كونكور 5 مجم 30 قرص', packs: 2),
+          medicine: concor,
+          count: 60,
+          unit: 'قرص',
+        ),
+        RestockProposal(
+          line: PharmacyLine(name: 'فيتامين د3', packs: 1),
+          unit: 'قرص',
+        ),
+      ],
+    );
+
+    expect(find.text('ضيف الأدوية للصيدلية (2)'), findsOneWidget);
+    expect(find.text('يزيد: كونكور 5'), findsOneWidget);
+    expect(find.text('جديد في الصيدلية'), findsOneWidget);
+    expect(find.text('+60 قرص'), findsOneWidget);
+    // Not guessed: asked.
+    expect(find.text('كام قرص؟'), findsOneWidget);
+    expect(find.text('احفظ وضيف للصيدلية'), findsOneWidget);
+    expect(find.textContaining('للمراجعة بس'), findsNothing);
   });
 }
