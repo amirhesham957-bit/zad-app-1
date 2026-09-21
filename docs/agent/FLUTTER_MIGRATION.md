@@ -1,7 +1,9 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (second session). HEAD `7124f68b` on `origin/main`**
-(the personal fork `amirhesham957-bit/zad-app-1` — see "Where the commits live" below).
+**Last updated 2026-09-21 (third session). HEAD `9db280c2`, committed locally
+and not yet pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
+see "Where the commits live" below). ⚠️ Two migrations from this session are in the
+repo but **not on the live project** — §5 item 7.
 
 **The decision:** the owner decided to finish the Flutter client first, whatever
 it takes, and to keep going until the whole app is converted. Until then the
@@ -36,7 +38,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 591 passing after receipt → pantry
+   flutter test                       # 631 passing after pharmacy receipts + −/+ readings
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -137,7 +139,9 @@ and `features/inventory/` are the cleanest examples.
 | Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | `133adb79` |
 | Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | `388ee145` |
 | Family membership — create / join (server functions), members, roles, leave | `features/family` | `52d80640` |
-| Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | intake commit |
+| Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | `7124f68b` |
+| Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` (server fn not live yet) |
+| Pantry −/+ and hand-added rows → `manual` consumption readings | `features/inventory/application/pantry_controller.dart` | `9db280c2` |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -229,6 +233,42 @@ scanner uses the system camera intent via `image_picker`).
   own insert ok, re-snooze ok, another account's medicine `42501`, posing as
   another user `42501`. Snooze length is 15 min, the bot's
   `DOSE_SNOOZE_MINUTES` (the app had 30 while claiming to match).
+- **Pharmacy stock comes in through `zad_pharmacy_restock`, never an upsert**
+  (`20260921140000`). The dose RPC decrements `remaining_quantity`; a client
+  read-add-write races it (Kotlin's `injectPharmacyReceipt` does exactly that).
+  Each restock carries a client-made id recorded in `zad_pharmacy_restocks`, so an
+  outbox replay adds nothing; the outbox entry is `restock:<id>` — per purchase,
+  never merged. A new medicine is created by the same call with its first stock:
+  `toUpsertJson` never sends `remaining_quantity` and the column **defaults to 1**,
+  so `PharmacyRepository.add` alone would land a new medicine as one tablet (no UI
+  calls `add` yet — whoever adds a manual "new medicine" sheet must use
+  `restockNew` or send the count). A name the server already has is restocked
+  there and the phone drops its local copy.
+- **A pharmacy receipt counts in dose units, not boxes.** Box contents are read
+  off the printed name ("30 قرص", "120 مل"); a strength (`مجم`, `mg`) is never a
+  count. When the name does not say and the medicine is counted in tablets, the
+  line asks the customer (`كام قرص؟`) and is skipped if left uncounted — Kotlin
+  adds the box count, so two boxes of thirty became two tablets and the "running
+  out" reminder went quiet. Medicine names match stricter than pantry items:
+  every word of the shorter name and no conflicting strength
+  (`medicineNamesMatch`).
+- **The consumption learner sums drops between consecutive readings and ignores
+  rises** (`zad_recompute_consumption`, read off the live function). So a reading
+  is needed after + as well as − — Kotlin sends only after − and edits, which
+  loses the consumption after any unreported rise. Repeated equal readings are
+  harmless (no drop, no change to the span).
+- **Family money is server-only in the repo** (`20260921150000`, not live yet).
+  Balances change only inside `zad_complete_chore`, `zad_reopen_chore`,
+  `zad_contribute_to_challenge`, `zad_decide_purchase_request`, which raise a
+  transaction-local flag (`zad.family_ledger`) the balance guard checks. Rewards,
+  targets and windows are admins'; completion columns and challenge progress are
+  server-only; a purchase request is PENDING in its sender's own name and only an
+  admin's RPC decides it. When porting chores/challenges/requests, call these —
+  never write `balance`, `is_completed`, progress rows or a request's metadata.
+- **SQL behaviour tests run on a scratch Postgres**, not the live project:
+  `supabase/sql/tests/scratch_scaffold.sql` (header has the docker commands) +
+  `pharmacy_restock_test.sql` + `family_money_test.sql` (39 checks as four
+  accounts). They refuse to run on a database with a `storage` schema.
 - **`zad_shopping_list` has a partial unique index** on
   `(user_id, lower(trim(item_name))) where is_purchased = false`. The client
   dedupe mirrors it; a hand-typed duplicate lands as a permanent 409 → dead
@@ -262,9 +302,27 @@ scanner uses the system camera intent via `image_picker`).
    last admin; an emptied family is deleted. Run by hand via `execute_sql` and
    verified as three real accounts in a rolled-back block (16 checks). Still
    open, family-internal: balances are credited by whoever completes a chore
-   or challenge (client-side reward logic) — move rewards server-side.
+   or challenge (client-side reward logic) — move rewards server-side. **Done in
+   the repo 2026-09-21** (`f35d4716`, owner: "انقلها فوراً لدالة آمنة على
+   السيرفر") — see item 7 for its live state.
 6. Where commits should end up: this Codespace can only push to the fork (see
    below). Getting work into the ship repo needs a PR or a token with write.
+7. **Two migrations are in the repo and not on the live project** (2026-09-21):
+   `20260921140000_pharmacy_restock` (pharmacy receipts depend on it — until it
+   lands, a restock the app queues is answered `PGRST202` "function not found",
+   which `classifySyncFailure` treats as permanent: the entry goes straight to
+   the dead letters — kept and re-queueable with `Outbox.retryDead`, but not retried
+   on its own. The expense itself is unaffected) and `20260921150000_family_money_through_the_server`
+   (closes the balance/reward/request holes; stops Kotlin's direct balance,
+   progress and approval writes, as the owner accepted). The session's hand-apply
+   through `execute_sql` was **refused by its permission gate**, so nothing was
+   run. To apply: the owner authorizes it (or runs both files in the SQL editor,
+   in order); both are idempotent and stamp no version. Verify afterwards on live
+   with rolled-back blocks, as `20260921130000` was.
+8. **Also found, not fixed:** any family member can post a `chat_messages` row
+   under any `sender_id` (Kotlin inserts `zad_ai` messages from the phone). Only
+   `PURCHASE_REQUEST` is now pinned to the sender's own name, because that is the
+   one that moves money.
 
 ---
 
@@ -284,9 +342,9 @@ one commit, full verification, report, then continue.
    summed) or become new rows, open shopping-list lines are ticked off, and
    `zad_record_observation` gets a `camera_ocr` reading *before and after*
    each top-up (Kotlin sends only after, which hides the consumption since the
-   last reading). **Still open:** route `receiptType: pharmacy` to the
-   pharmacy, and send `manual` readings from the pantry's −/+ buttons
-   (Kotlin does; Flutter does not yet).
+   last reading). Pharmacy receipts restock the pharmacy (`b4ae5a31`) and the
+   pantry's −/+ send `manual` readings (`9db280c2`). **Still open:** a price
+   column for medicines (Kotlin keeps `price`; Flutter's model does not).
 3. ~~Subscriptions~~ — done (data layer + screens, Home entry card under the
    balance). Not ported, deliberately: Kotlin's AI detection
    (`detectSubscriptions`, an LLM call on screen open — CLAUDE.md forbids it)
@@ -297,10 +355,11 @@ one commit, full verification, report, then continue.
    `zad_join_family`, members, roles, remove, leave, new invite code; entry is
    the family icon on the البيت tab). Still to port from the 2,597-line
    `FamilyScreen.kt`: family chat, requests/approvals, chores, challenges,
-   sinking funds, spend limits UI, children's spending — and move chore/
-   challenge rewards server-side before porting them (balances are credited
-   client-side today). Membership writes deliberately bypass the outbox: they
-   are online-only and read back.
+   sinking funds, spend limits UI, children's spending. Rewards and request
+   decisions are server functions now (`f35d4716`, §4) — port the screens onto
+   them once the migration is live. Membership writes deliberately bypass the
+   outbox: they are online-only and read back; the money RPCs should too (none
+   of them carries an idempotency key — a replayed contribution counts twice).
 5. ~~Notification center~~ — done for `app_notifications` (list, read,
    mark all read up to the newest *seen*, bell with badge on Home). Not in it:
    push/FCM tokens, and the brain's `zad_insights` — none are `surface =
