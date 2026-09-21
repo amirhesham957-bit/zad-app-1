@@ -176,11 +176,13 @@ lands screen by screen.
 **Resuming? Read [`docs/agent/FLUTTER_MIGRATION.md`](./docs/agent/FLUTTER_MIGRATION.md)
 first.** It has the start-here checklist, the conventions every feature follows, what
 is done (per commit), the traps already paid for, the open decisions, and the ordered
-list of what is left. Status at a glance: HEAD `427dca37`, `flutter analyze` clean,
-**439** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
+list of what is left. Status at a glance: HEAD `388ee145`, `flutter analyze` clean,
+**562** app tests + 15 `zad_bank_listener` tests passing, release APK builds. Ported:
 home/budget, bank channel, transactions, proposals, auth, settings, receipt scanner,
-chat + voice input, pantry/shopping list, pharmacy. **Next: onboarding + market
-selection** (a null `zad_users.country` makes the account zone fall back to UTC).
+chat + voice input, pantry/shopping list, pharmacy (snooze now server-side), market
+selection, subscriptions, onboarding intro, notification center. **Family is blocked**
+on an open RLS decision (FLUTTER_MIGRATION.md §5 item 5 — any signed-in account can
+join any family as admin). **Next: receipt items → pantry**, then recipes.
 
 Rules that apply to every Flutter change, in short:
 

@@ -1,7 +1,7 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21. HEAD `427dca37` on `origin/main`** (the personal fork
-`amirhesham957-bit/zad-app-1` — see "Where the commits live" below).
+**Last updated 2026-09-21 (second session). HEAD `388ee145` on `origin/main`**
+(the personal fork `amirhesham957-bit/zad-app-1` — see "Where the commits live" below).
 
 **The decision:** the owner decided to finish the Flutter client first, whatever
 it takes, and to keep going until the whole app is converted. Until then the
@@ -10,7 +10,8 @@ clients share one Supabase project — same tables, same RLS, same edge
 functions — so the migration is a client rewrite, not a system one, and it can
 land screen by screen.
 
-Size at `427dca37` (measured, not estimated): Flutter `lib/` is 16,309 lines
+Size at `427dca37` (measured then, not re-measured since — the second
+session added market, subscriptions, onboarding and notifications): Flutter `lib/` is 16,309 lines
 plus 10,045 lines of tests, against Kotlin's 76,148 across 34 screen files.
 Twelve feature folders are ported; the list of what is left is §6.
 
