@@ -1,6 +1,6 @@
 # Flutter migration — status, conventions, and what is left
 
-**Last updated 2026-09-21 (second session). HEAD `388ee145` on `origin/main`**
+**Last updated 2026-09-21 (second session). HEAD `7124f68b` on `origin/main`**
 (the personal fork `amirhesham957-bit/zad-app-1` — see "Where the commits live" below).
 
 **The decision:** the owner decided to finish the Flutter client first, whatever
