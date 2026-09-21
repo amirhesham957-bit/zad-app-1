@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Heap dumps from -XX:+HeapDumpOnOutOfMemoryError (gradle.properties).
+*.hprof

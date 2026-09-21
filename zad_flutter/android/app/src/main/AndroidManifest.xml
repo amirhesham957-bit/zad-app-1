@@ -25,6 +25,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
+    <!--
+      Alerts. Android 13+ asks the customer before an app may post a
+      notification; without this declared, the request cannot even be made and
+      every alert zad-brain pushes is dropped on the floor, silently.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
@@ -60,6 +67,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!--
+          FCM shows a push with a notification block by itself while the app is
+          in the background, on this channel. The id is the Kotlin app's
+          (ZadFirebaseMessagingService.AGENT_CHANNEL) and the app creates it at
+          start with high importance, so a background alert makes a sound and
+          peeks instead of landing silently in the shade.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="zad_agent_channel" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_zad" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -3,8 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
+import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -29,7 +31,36 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   bool _householdOpened = false;
 
   @override
+  void initState() {
+    super.initState();
+    // The shell exists only while somebody is signed in, which is exactly
+    // when this device's token belongs on an account. After the first frame:
+    // starting changes provider state, and the permission prompt should come
+    // over a drawn screen, not a blank one.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final alerts = ref.read(alertsControllerProvider.notifier);
+      await alerts.start();
+      if (mounted) await alerts.askOnce();
+    });
+  }
+
+  void _show(int index) => setState(() {
+    _index = index;
+    if (index == _householdTab) _householdOpened = true;
+  });
+
+  @override
   Widget build(BuildContext context) {
+    // A tab asked for from outside — a tapped alert. Whatever was pushed over
+    // the shell is closed first, or the tab would change behind it.
+    ref.listen(shellNavigationProvider, (previous, next) {
+      if (next == null) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _show(next.index);
+      ref.read(shellNavigationProvider.notifier).shown();
+    });
+
     // Watched at the shell so the badge is right whichever tab is open. The
     // count is the point: a proposal nobody looks at expires after seven days
     // and the spending simply never gets recorded.
@@ -61,10 +92,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() {
-          _index = i;
-          if (i == _householdTab) _householdOpened = true;
-        }),
+        onDestinationSelected: _show,
         backgroundColor: ZadColors.surface,
         destinations: <NavigationDestination>[
           const NavigationDestination(

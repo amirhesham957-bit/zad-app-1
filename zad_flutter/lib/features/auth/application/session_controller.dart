@@ -72,6 +72,9 @@ class SessionController extends Notifier<String?> {
   /// was not told": keeping the previous account's figures on screen for that
   /// case would be the worst possible reading of an error.
   Future<void> signOut() async {
+    // First, while the session can still delete its own row: this phone
+    // stops receiving the account's alerts. Never throws, never blocks long.
+    await ref.read(pushRegistrarProvider).unregister();
     try {
       await ref.read(authGatewayProvider).signOut();
     } finally {

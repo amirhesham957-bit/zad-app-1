@@ -10,9 +10,11 @@
 --   psql < supabase/migrations/20260921140000_pharmacy_restock.sql
 --   psql < supabase/migrations/20260921150000_family_money_through_the_server.sql
 --   psql < supabase/migrations/20260921160000_price_reports_through_the_server.sql
+--   psql < supabase/migrations/20260921170000_fcm_token_follows_the_device.sql
 --   psql < supabase/sql/tests/pharmacy_restock_test.sql
 --   psql < supabase/sql/tests/family_money_test.sql
 --   psql < supabase/sql/tests/price_reports_test.sql
+--   psql < supabase/sql/tests/fcm_tokens_test.sql
 --
 -- Never against the live project: it writes, and the guard below refuses.
 
@@ -122,3 +124,14 @@ create or replace function public.zad_cheapest_prices(p_currency text, p_locatio
 returns table (item_name text, min_price double precision, avg_price double precision, reports int,
   cheapest_location text, cheapest_store text, last_reported timestamptz)
 language sql stable set search_path to 'public' as $$ select null::text, 0::float8, 0::float8, 0, null::text, null::text, now() where false $$;
+
+-- zad_fcm_tokens, as live 2026-09-21: unique token, owner read + owner write.
+create table public.zad_fcm_tokens (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null, token text not null unique,
+  platform text not null default 'android', updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now());
+create index idx_zad_fcm_tokens_user on public.zad_fcm_tokens (user_id);
+alter table public.zad_fcm_tokens enable row level security;
+create policy fcm_tokens_own_read on public.zad_fcm_tokens for select using ((select auth.uid()) = user_id);
+create policy fcm_tokens_own_write on public.zad_fcm_tokens for all
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);

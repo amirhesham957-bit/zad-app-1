@@ -1,7 +1,8 @@
 /// The account's settings.
 ///
-/// Three things, which is the whole list on purpose: the two numbers the
-/// budget is derived from, the state of the bank channel, and the way out.
+/// Four things, which is the whole list on purpose: the two numbers the
+/// budget is derived from, the state of the bank channel, whether زاد may
+/// alert the phone, and the way out.
 /// Anything the brain infers or another screen owns is not here — a settings
 /// screen that writes back everything it happens to be holding is how fields
 /// get overwritten with stale values.
@@ -15,6 +16,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/alerts/presentation/alerts_settings_section.dart';
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
@@ -92,6 +94,9 @@ class SettingsScreen extends ConsumerWidget {
 
               const SizedBox(height: ZadSpacing.lg),
               const _BankChannelSection(),
+
+              const SizedBox(height: ZadSpacing.lg),
+              const AlertsSettingsSection(),
 
               const SizedBox(height: ZadSpacing.lg),
               const _Section(

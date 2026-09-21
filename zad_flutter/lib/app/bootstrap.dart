@@ -10,6 +10,8 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/data/notification_permission.dart';
+import 'package:zad/features/alerts/data/push_platform.dart';
 
 /// Prepares the app and runs it.
 ///
@@ -53,7 +55,16 @@ Future<void> bootstrap(Widget app) async {
 
   runApp(
     ProviderScope(
-      overrides: [localStoreProvider.overrideWithValue(store)],
+      overrides: [
+        localStoreProvider.overrideWithValue(store),
+        // The alerts, real on a phone. Firebase starts on first use, after
+        // the first frame; everything outside this function (every test)
+        // keeps the silent defaults.
+        pushPlatformProvider.overrideWithValue(FirebasePushPlatform()),
+        notificationPermissionProvider.overrideWithValue(
+          const PluginNotificationPermission(),
+        ),
+      ],
       child: app,
     ),
   );

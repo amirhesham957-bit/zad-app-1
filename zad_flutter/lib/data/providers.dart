@@ -14,6 +14,9 @@ import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/alerts/data/notification_permission.dart';
+import 'package:zad/features/alerts/data/push_platform.dart';
+import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/bank/data/bank_capture_marker.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
@@ -110,6 +113,30 @@ final Provider<NotificationDrain> notificationDrainProvider =
 final bankRemoteProvider = Provider<BankRemote>(
   (ref) => SupabaseBankRemote(ref.watch(supabaseClientProvider)),
 );
+
+/// FCM and local notifications. Silent unless `bootstrap()` started Firebase
+/// and installed the real platform — so no test ever reaches a plugin.
+final pushPlatformProvider = Provider<PushPlatform>(
+  (ref) => const SilentPushPlatform(),
+);
+
+/// The Android 13+ notification permission; unknown unless `bootstrap()`
+/// installed the real one.
+final notificationPermissionProvider = Provider<NotificationPermission>(
+  (ref) => const UnknownNotificationPermission(),
+);
+
+/// This device's push token on the signed-in account.
+final Provider<PushRegistrar> pushRegistrarProvider = Provider<PushRegistrar>((
+  ref,
+) {
+  return PushRegistrar(
+    device: ref.watch(localStoreProvider).device,
+    remote: () => SupabasePushTokenRemote(ref.read(supabaseClientProvider)),
+    platform: ref.watch(pushPlatformProvider),
+    outbox: () => ref.read(outboxProvider),
+  );
+});
 
 /// The clock.
 ///
@@ -385,6 +412,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(recipesRepositoryProvider).sendQueuedRating(entry),
       OutboxKind.reportPrice =>
         await ref.read(pricesRepositoryProvider).sendQueuedReport(entry),
+      OutboxKind.registerPushToken =>
+        await ref.read(pushRegistrarProvider).sendQueued(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>

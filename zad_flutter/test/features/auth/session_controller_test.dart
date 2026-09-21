@@ -16,6 +16,8 @@ import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/features/alerts/data/push_platform.dart';
+import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/auth/application/session_controller.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
@@ -233,6 +235,43 @@ void main() {
       );
     });
 
+    test(
+      'takes this phone off the account while the session is valid',
+      () async {
+        final events = <String>[];
+        final remote = _TokenRemote(events);
+        final platform = _KillablePlatform(events);
+        await chatBox.put('push_token', 'token-${'a' * 40}');
+        final withPush = ProviderContainer(
+          overrides: [
+            localStoreProvider.overrideWithValue(store),
+            authGatewayProvider.overrideWithValue(_OrderedGateway(events)),
+            pushRegistrarProvider.overrideWith(
+              (ref) => PushRegistrar(
+                device: chatBox,
+                remote: () => remote,
+                platform: platform,
+                outbox: () => ref.read(outboxProvider),
+              ),
+            ),
+            outboxRunnerProvider.overrideWith((ref) {
+              final r = OutboxRunner(
+                outbox: ref.watch(outboxProvider),
+                triggers: const Stream<SyncTrigger>.empty(),
+              );
+              ref.onDispose(r.dispose);
+              return r;
+            }),
+          ],
+        );
+        addTearDown(withPush.dispose);
+
+        await withPush.read(sessionControllerProvider.notifier).signOut();
+
+        expect(events, <String>['row deleted', 'token killed', 'signed out']);
+      },
+    );
+
     test("drops every brain screen's copy of the last account", () async {
       final builds = <String, int>{};
       final watching = ProviderContainer(
@@ -356,5 +395,32 @@ class _CountingMap extends KnowledgeMapController {
   KnowledgeMapView build() {
     builds['map'] = (builds['map'] ?? 0) + 1;
     return KnowledgeMapView(map: buildKnowledgeMap(const MapInputs()));
+  }
+}
+
+class _TokenRemote implements PushTokenRemote {
+  new(this.events);
+  final List<String> events;
+  @override
+  Future<Map<String, dynamic>> register(String token) async =>
+      <String, dynamic>{'ok': true};
+  @override
+  Future<void> unregister(String token) async => events.add('row deleted');
+}
+
+class _KillablePlatform extends SilentPushPlatform {
+  new(this.events);
+  final List<String> events;
+  @override
+  Future<void> deleteToken() async => events.add('token killed');
+}
+
+class _OrderedGateway extends _FakeGateway {
+  new(this.events) : super('user-1');
+  final List<String> events;
+  @override
+  Future<void> signOut() async {
+    events.add('signed out');
+    await super.signOut();
   }
 }

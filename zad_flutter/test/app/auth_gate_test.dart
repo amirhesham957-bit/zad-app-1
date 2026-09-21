@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/auth_gate.dart';
+import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/app/zad_shell.dart';
 import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
@@ -340,6 +341,23 @@ void main() {
     setUp(
       () => seedSettings(const AccountSettings(country: 'EG', currency: 'EGP')),
     );
+
+    testWidgets('a tapped alert asking for a tab gets it', (tester) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      NavigationBar bar() =>
+          tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(bar().selectedIndex, 0);
+
+      container.read(shellNavigationProvider.notifier).open(ShellTab.proposals);
+      await tester.pump();
+
+      expect(bar().selectedIndex, ShellTab.proposals.index);
+      expect(container.read(shellNavigationProvider), isNull);
+    });
 
     testWidgets('opens straight onto the shell, and asks nobody', (
       tester,

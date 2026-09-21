@@ -95,6 +95,13 @@ abstract final class OutboxKind {
   /// function so a replay is `duplicate`, never a second vote.
   static const String reportPrice = 'report_price';
 
+  /// Tell the server this device's push token belongs to the signed-in
+  /// account, through `zad_register_fcm_token`.
+  ///
+  /// One entry at a time (`push_token`): a rotated token replaces the queued
+  /// one, and only the newest is worth sending.
+  static const String registerPushToken = 'register_push_token';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

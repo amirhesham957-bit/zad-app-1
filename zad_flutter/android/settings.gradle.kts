@@ -21,6 +21,10 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.1.0" apply false
     id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    // Reads android/app/google-services.json — the same Firebase project and
+    // package the Kotlin app ships (app/google-services.json), so zad-brain's
+    // pushes reach whichever client is installed.
+    id("com.google.gms.google-services") version "4.5.0" apply false
 }
 
 include(":app")
