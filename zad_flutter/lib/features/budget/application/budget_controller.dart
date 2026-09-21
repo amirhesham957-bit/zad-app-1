@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 
@@ -119,9 +120,12 @@ class BudgetController extends Notifier<BudgetView> {
     state = state.copyWith(isRefreshing: true, clearError: true);
 
     try {
+      // The account's zone, or '' for "you know the country, you decide" —
+      // never the last snapshot's zone, which the server would take as an
+      // instruction. See `serverTimeZoneArgumentProvider`.
       final snapshot = await ref
           .read(budgetRepositoryProvider)
-          .refresh(timeZone: state.snapshot?.timeZone ?? 'UTC');
+          .refresh(timeZone: ref.read(serverTimeZoneArgumentProvider)());
       if (!ref.mounted) return;
       _lastFetch = now;
       state = BudgetView(

@@ -97,6 +97,15 @@ abstract final class ZadIcons {
   /// Dismiss.
   static const IconData dismiss = LucideIcons.x;
 
+  /// Search a list.
+  static const IconData search = LucideIcons.search;
+
+  /// The chosen one of several options.
+  static const IconData selected = LucideIcons.circleCheck;
+
+  /// A country, a market.
+  static const IconData market = LucideIcons.globe;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors

@@ -246,6 +246,97 @@ void main() {
     });
   });
 
+  group('the market', () {
+    test('queues country and currency as one write, and caches both', () async {
+      final saved = await repo.setMarket(country: 'EG', currency: 'EGP');
+
+      expect(saved.country, 'EG');
+      expect(saved.currency, 'EGP');
+      expect(repo.cached()?.country, 'EG');
+
+      // One entry: an account with a country and no currency is the half-set
+      // profile the brain and the bot still treat as unknown.
+      final entry = settingsEntries().single;
+      expect(entry.id, SettingsRepository.outboxIdFor('market'));
+      expect(entry.payload, <String, dynamic>{
+        'id': 'user-1',
+        'country': 'EG',
+        'currency': 'EGP',
+      });
+    });
+
+    test('a second choice replaces the first while it is unsent', () async {
+      await repo.setMarket(country: 'SA', currency: 'SAR');
+      await repo.setMarket(country: 'EG', currency: 'EGP');
+
+      expect(settingsEntries(), hasLength(1));
+      expect(settingsEntries().single.payload['country'], 'EG');
+    });
+
+    test('reads back and settles when both columns landed', () async {
+      await repo.setMarket(country: 'EG', currency: 'EGP');
+      final report = await outbox.flush();
+
+      expect(report.sent, 1);
+      expect(remote.row?['country'], 'EG');
+      expect(remote.row?['currency'], 'EGP');
+    });
+
+    test(
+      'stays queued when the country reads back as something else',
+      () async {
+        remote.readBack = (sent) => <String, dynamic>{...sent, 'country': null};
+
+        await repo.setMarket(country: 'EG', currency: 'EGP');
+        final report = await outbox.flush();
+
+        expect(report.sent, 0);
+        expect(settingsEntries(), hasLength(1), reason: 'it must stay queued');
+      },
+    );
+
+    test(
+      'stays queued when the currency reads back as something else',
+      () async {
+        remote.readBack = (sent) => <String, dynamic>{
+          ...sent,
+          'currency': 'SAR',
+        };
+
+        await repo.setMarket(country: 'EG', currency: 'EGP');
+        final report = await outbox.flush();
+
+        expect(report.sent, 0);
+        expect(settingsEntries(), hasLength(1));
+      },
+    );
+
+    test("a refresh keeps an unsent choice over the server's null", () async {
+      remote.failWith = Exception('offline');
+      await repo.setMarket(country: 'EG', currency: 'EGP');
+      await outbox.flush();
+
+      remote
+        ..failWith = null
+        ..row = <String, dynamic>{'country': null, 'currency': null};
+      final merged = await repo.refresh();
+
+      // Without this the account zone would read UTC again the moment any
+      // refresh landed before the queue drained.
+      expect(merged.country, 'EG');
+      expect(merged.currency, 'EGP');
+    });
+
+    test('refuses to write with nobody signed in', () async {
+      signedIn = null;
+      await expectLater(
+        repo.setMarket(country: 'EG', currency: 'EGP'),
+        throwsStateError,
+      );
+      expect(settingsEntries(), isEmpty);
+    });
+  });
+
   group('the salary day', () {
     test('clearing it queues an explicit null, not an omission', () async {
       await repo.setCycleStartDay(25);

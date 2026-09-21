@@ -35,7 +35,7 @@ Twelve feature folders are ported; the list of what is left is §6.
 3. **Confirm the baseline before touching anything:**
    ```sh
    flutter analyze                    # must say "No issues found!"
-   flutter test                       # 439 passing at 427dca37
+   flutter test                       # 472 passing after the market slice
    (cd packages/zad_bank_listener && flutter test)   # 15 passing
    flutter build apk --release --split-per-abi --dart-define-from-file=env.json
    ```
@@ -130,6 +130,7 @@ and `features/inventory/` are the cleanest examples.
 | Pantry + shopping list (auto-add shortages) | `features/inventory` | `607d635c`, screens `427dca37` |
 | Pharmacy — schedule, doses, local snooze | `features/pharmacy` | `13d1d01c`, screens `427dca37` |
 | Household tab (pantry / shopping / pharmacy) | `features/household` | `427dca37` |
+| Market selection — gate after sign-in, 19 markets, `p_tz` fix | `features/market`, `app/auth_gate` | market commit |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -164,7 +165,28 @@ scanner uses the system camera intent via `image_picker`).
   `24:00` is invalid and skipped. Slots are civil times in the market zone over
   today and yesterday, mirroring `zad_enqueue_missed_doses`; 3 h answer window,
   30 min nudge delay.
-- **Mutation checks found two real test gaps:** (1) reading the date in UTC
+- **The budget's `p_tz` outranks the account's country.**
+  `zad_budget_state_legacy` resolves `coalesce(nullif(p_tz,''),
+  zad_market_timezone(country))` (read off the deployed function 2026-09-21).
+  The client used to send the last snapshot's zone or `'UTC'`, so the first
+  answer became permanent. It now sends `serverTimeZoneArgumentProvider`: the
+  market zone when the device knows the country, else `''` (server decides).
+  Any new RPC that takes `p_tz` should use the same provider.
+- **`accountTimeZoneProvider` is a plain cached `Provider`.** Whatever changes
+  the cached country must `ref.invalidate` it (the market gate does; so does
+  an account change in `SessionController`).
+- **Market gate rules:** decide from the settings cache; an empty cache means
+  *ask the server*, never *ask the customer* (Kotlin's "pick twice" bug,
+  2026-09-14). Server unreachable + nothing cached → open the app (`unknown`).
+  Cached null + unreachable → keep the picker. Only a country in `kMarkets`
+  counts — an unknown code would still be UTC on the server.
+- **A refresh that starts before a write is sent and returns after it is
+  dequeued caches the stale row** — nothing queued is left to lay over it. The
+  market gate re-asserts the pick in that case; `SettingsController` (limit,
+  salary day) has the same window and does not yet.
+- **Mutation checks found three real test gaps:** (3) the market gate's
+  stale-read test waited on a cache value the send had already written, so it
+  passed without the fix — it now waits on the second upsert. Earlier two: (1) reading the date in UTC
   instead of the market zone passed every test because they all ran at noon UTC
   — boundary tests at 22:00Z/02:00Z now pin it; (2) slots were `TZDateTime`,
   and `TZDateTime == DateTime` is false while the reverse is true — slots are
@@ -208,11 +230,12 @@ scanner uses the system camera intent via `image_picker`).
 Ordered by value and dependency, not by screen count. Each item = one slice,
 one commit, full verification, report, then continue.
 
-1. **Onboarding + market selection** (`OnboardingScreen`,
-   `MarketSelectionScreen`). Sets `zad_users.country`/`currency`. High priority:
-   with `country` null the account zone falls back to UTC, which shifts doses
-   and the budget period. (CLAUDE.md records 4 of 6 prod accounts with
-   `country = null`.) Must write through the settings outbox with read-back.
+1. ~~Market selection~~ — done (gate after sign-in). **Still open:** the
+   pre-login intro carousel (`OnboardingScreen`), and changing the market
+   *later* from settings — Kotlin's profile does that with
+   `convertLimitsForMarketChange`, which converts the monthly limit to the new
+   currency; porting the picker without that conversion would leave the limit
+   in the old currency's figures, so it was deliberately left out.
 2. **Receipt items → pantry.** The scanner shows line items as "review only";
    `InventoryRepository` now exists, so wire grocery receipts into the pantry
    (Kotlin's `injectScannedItems`), and route `receiptType: pharmacy` to the

@@ -18,6 +18,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
@@ -163,6 +164,7 @@ void main() {
         ),
         nowProvider.overrideWithValue(() => now),
         signedInUserIdProvider.overrideWithValue(() => 'user-1'),
+        serverTimeZoneArgumentProvider.overrideWithValue(() => ''),
         transactionsRepositoryProvider.overrideWithValue(txns),
         agentRemoteProvider.overrideWithValue(agent),
         chatRepositoryProvider.overrideWithValue(

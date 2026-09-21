@@ -155,6 +155,12 @@ class SettingsRepository {
           clearCycleStartDay: day == null,
         );
       }
+      if (payload.containsKey('country')) {
+        merged = merged.copyWith(
+          country: payload['country'] as String?,
+          currency: payload['currency'] as String?,
+        );
+      }
     }
 
     return merged;
@@ -212,6 +218,44 @@ class SettingsRepository {
       payload: <String, dynamic>{'id': userId, 'cycle_start_day': day},
     );
 
+    return next;
+  }
+
+  /// Sets the account's country and currency: queue, then cache.
+  ///
+  /// The two columns travel as one entry because they are one fact — the
+  /// currency is derived from the country, and the Kotlin app writes them in
+  /// one statement for the same reason. Two entries could leave an account
+  /// with an Egyptian country and no currency if only one of them landed.
+  ///
+  /// Queued *before* the cache is written, unlike the other setters. A
+  /// [refresh] already in flight lays the queued writes over the server's row
+  /// and then caches the result in one step; if that step fell between this
+  /// method's cache write and its enqueue, it would cache the server's null
+  /// country over the one just chosen, and the account zone would read UTC
+  /// until the next refresh. Queuing first means any refresh that runs after
+  /// this point already sees the choice.
+  Future<AccountSettings> setMarket({
+    required String country,
+    required String currency,
+  }) async {
+    final userId = _requireUserId();
+
+    await _outbox().enqueue(
+      id: outboxIdFor('market'),
+      kind: OutboxKind.updateAccountSettings,
+      payload: <String, dynamic>{
+        'id': userId,
+        'country': country,
+        'currency': currency,
+      },
+    );
+
+    final next = (cached() ?? const AccountSettings()).copyWith(
+      country: country,
+      currency: currency,
+    );
+    await _write(next);
     return next;
   }
 
@@ -279,6 +323,15 @@ class SettingsRepository {
       final got = (stored['cycle_start_day'] as num?)?.toInt();
       if (got != wanted) {
         throw StateError('cycle_start_day read back as $got, wanted $wanted');
+      }
+    }
+
+    for (final column in const <String>['country', 'currency']) {
+      if (!sent.containsKey(column)) continue;
+      if (stored[column] != sent[column]) {
+        throw StateError(
+          '$column read back as ${stored[column]}, wanted ${sent[column]}',
+        );
       }
     }
   }

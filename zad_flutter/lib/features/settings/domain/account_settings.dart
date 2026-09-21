@@ -66,8 +66,12 @@ class AccountSettings {
   /// The account's currency code, as the brain and the bot read it.
   final String? currency;
 
-  /// The account's country. Set elsewhere; carried here so a settings write
-  /// never has to send it back.
+  /// The account's country, as an ISO alpha-2 code. Set by the market picker,
+  /// together with [currency].
+  ///
+  /// Null is the state the picker exists to end: the server puts a null
+  /// country on UTC (`zad_market_timezone`), which moves dose times and the
+  /// budget period off the customer's real clock.
   final String? country;
 
   /// Whether there is a confirmed limit to report.

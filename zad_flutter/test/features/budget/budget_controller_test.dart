@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
@@ -23,12 +24,16 @@ class _FakeBudgetRemote implements BudgetRemote {
   Exception? failWith;
   Map<String, dynamic> answer = _state();
 
+  /// The `p_tz` the last call sent.
+  String? sentTimeZone;
+
   @override
   Future<Map<String, dynamic>> fetch({
     required String userId,
     required String timeZone,
   }) async {
     calls++;
+    sentTimeZone = timeZone;
     if (failWith case final error?) throw error;
     return answer;
   }
@@ -89,6 +94,7 @@ void main() {
 
   var now = DateTime.parse('2026-09-19T12:00:00Z');
   var signedIn = 'user-1';
+  var zoneArgument = '';
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('zad_budget_test');
@@ -99,6 +105,7 @@ void main() {
     remote = _FakeBudgetRemote();
     now = DateTime.parse('2026-09-19T12:00:00Z');
     signedIn = 'user-1';
+    zoneArgument = '';
 
     late TransactionsRepository txns;
     final outbox = Outbox(
@@ -117,6 +124,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         nowProvider.overrideWithValue(() => now),
+        serverTimeZoneArgumentProvider.overrideWithValue(() => zoneArgument),
         transactionsRepositoryProvider.overrideWithValue(txns),
         budgetRepositoryProvider.overrideWithValue(
           BudgetRepository(
@@ -198,6 +206,36 @@ void main() {
           .refresh(force: true);
       expect(documents.get('budget_state'), isNotNull);
     });
+
+    test(
+      "sends the account's zone argument, never the last snapshot's zone",
+      () async {
+        // The server resolves `coalesce(nullif(p_tz, ''), market zone)`: the
+        // argument outranks the account's country. Echoing the snapshot's
+        // zone back made the first answer — UTC, for an account with no
+        // country yet — permanent, whatever country was set afterwards.
+        await seedCache(_state());
+        expect(
+          container.read(budgetControllerProvider).snapshot?.timeZone,
+          'Africa/Cairo',
+        );
+
+        await container
+            .read(budgetControllerProvider.notifier)
+            .refresh(force: true);
+        expect(
+          remote.sentTimeZone,
+          '',
+          reason: 'with no known country the server must decide the zone',
+        );
+
+        zoneArgument = 'Asia/Riyadh';
+        await container
+            .read(budgetControllerProvider.notifier)
+            .refresh(force: true);
+        expect(remote.sentTimeZone, 'Asia/Riyadh');
+      },
+    );
 
     test('a failure keeps the figures and marks them unconfirmed', () async {
       await seedCache(_state(available: 100));

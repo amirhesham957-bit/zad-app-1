@@ -25,8 +25,11 @@ import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/market/presentation/market_selection_screen.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/features/settings/domain/account_settings.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
@@ -84,6 +87,24 @@ class _OfflineBudget implements BudgetRemote {
   }) => Future<Map<String, dynamic>>.error(const SocketException('offline'));
 }
 
+/// Refuses at once. A widget test cannot let a background refresh reach a
+/// Hive write — under the fake clock that write never completes.
+class _OfflineSettings implements SettingsRemote {
+  int fetches = 0;
+
+  @override
+  Future<Map<String, dynamic>?> fetch({required String userId}) {
+    fetches++;
+    return Future<Map<String, dynamic>?>.error(
+      const SocketException('offline'),
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> row) =>
+      Future<Map<String, dynamic>?>.error(const SocketException('offline'));
+}
+
 class _OfflineProposals implements ProposalsRemote {
   @override
   Future<List<Map<String, dynamic>>> fetchOpen({required String userId}) =>
@@ -123,6 +144,7 @@ void main() {
   late Box<String> chatBox;
   late Box<String> transactions;
   late Box<String> outboxBox;
+  late _OfflineSettings settingsRemote;
 
   final now = DateTime.parse('2026-09-20T12:00:00Z');
 
@@ -137,6 +159,7 @@ void main() {
     );
     outboxBox = await Hive.openBox<String>('outbox', bytes: Uint8List(0));
     chatBox = await Hive.openBox<String>('chat', bytes: Uint8List(0));
+    settingsRemote = _OfflineSettings();
     await documents.put(
       'budget_state',
       jsonEncode(BudgetSnapshot.fromJson(_state()).toJson()),
@@ -184,6 +207,15 @@ void main() {
             signedInUserId: () => userId,
           ),
         ),
+        settingsRepositoryProvider.overrideWithValue(
+          SettingsRepository(
+            cache: documents,
+            remote: settingsRemote,
+            outbox: () => outbox,
+            signedInUserId: () => userId,
+            now: () => now,
+          ),
+        ),
         proposalsRepositoryProvider.overrideWithValue(
           ProposalsRepository(
             cache: documents,
@@ -228,14 +260,77 @@ void main() {
     },
   );
 
-  testWidgets('with a session, the shell opens straight away', (tester) async {
-    final container = containerFor('user-1');
-    addTearDown(container.dispose);
+  /// Writes a settings row into the cache, as an earlier read would have.
+  Future<void> seedSettings(AccountSettings settings) =>
+      documents.put('account_settings', jsonEncode(settings.toJson()));
 
-    await pumpGate(tester, container);
-    await tester.pump(Duration.zero);
+  group('an account whose market is known', () {
+    setUp(
+      () => seedSettings(const AccountSettings(country: 'EG', currency: 'EGP')),
+    );
 
-    expect(find.byType(ZadShell), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
+    testWidgets('opens straight onto the shell, and asks nobody', (
+      tester,
+    ) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+
+      expect(find.byType(ZadShell), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
+      expect(find.byType(MarketSelectionScreen), findsNothing);
+      expect(
+        settingsRemote.fetches,
+        0,
+        reason: 'a returning customer waited on a settings read',
+      );
+    });
   });
+
+  group('an account the server said has no market', () {
+    setUp(() => seedSettings(const AccountSettings()));
+
+    testWidgets('is asked in the first frame, and still asked offline', (
+      tester,
+    ) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      expect(find.byType(MarketSelectionScreen), findsOneWidget);
+
+      // The re-check fails. The device already holds the server's "none",
+      // and a dead network is no reason to believe that changed.
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(settingsRemote.fetches, 1);
+      expect(find.byType(MarketSelectionScreen), findsOneWidget);
+      expect(find.byType(ZadShell), findsNothing);
+    });
+  });
+
+  testWidgets(
+    'a device that has never read the account checks first, and opens the '
+    'app rather than asking again when it cannot',
+    (tester) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      // The first frame: nothing on the device says either way, so neither
+      // the picker nor the shell — the one short wait there is.
+      await pumpGate(tester, container);
+      expect(find.text('بنجهّز حسابك…'), findsOneWidget);
+      expect(find.byType(MarketSelectionScreen), findsNothing);
+      expect(find.byType(ZadShell), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(settingsRemote.fetches, 1);
+      // Asking would risk making somebody who already chose choose again —
+      // the Kotlin bug this gate is built around.
+      expect(find.byType(ZadShell), findsOneWidget);
+      expect(find.byType(MarketSelectionScreen), findsNothing);
+    },
+  );
 }
