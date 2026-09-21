@@ -7,6 +7,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
@@ -23,6 +24,10 @@ class ZadShell extends ConsumerStatefulWidget {
 class _ZadShellState extends ConsumerState<ZadShell> {
   int _index = 0;
 
+  /// The household tab's position, and whether it has been opened yet.
+  static const int _householdTab = 3;
+  bool _householdOpened = false;
+
   @override
   Widget build(BuildContext context) {
     // Watched at the shell so the badge is right whichever tab is open. The
@@ -38,16 +43,28 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       // scrolled list and re-read Hive every time somebody switched back.
       body: IndexedStack(
         index: _index,
-        children: const <Widget>[
-          HomeScreen(),
-          TransactionsScreen(),
-          ChatScreen(),
-          ProposalsScreen(),
+        children: <Widget>[
+          const HomeScreen(),
+          const TransactionsScreen(),
+          const ChatScreen(),
+          // Built the first time it is opened, then kept. An IndexedStack
+          // builds every child up front, and the household's three sections
+          // each fetch on build — the pharmacy two queries per medicine — so
+          // leaving it eager would spend a round of network on every launch
+          // for a tab the customer may not open that day.
+          if (_householdOpened || _index == _householdTab)
+            const HouseholdScreen()
+          else
+            const SizedBox.shrink(),
+          const ProposalsScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) => setState(() {
+          _index = i;
+          if (i == _householdTab) _householdOpened = true;
+        }),
         backgroundColor: ZadColors.surface,
         destinations: <NavigationDestination>[
           const NavigationDestination(
@@ -61,6 +78,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
           const NavigationDestination(
             icon: Icon(ZadIcons.assistant),
             label: 'زاد',
+          ),
+          const NavigationDestination(
+            icon: Icon(ZadIcons.family),
+            label: 'البيت',
           ),
           NavigationDestination(
             icon: Badge(

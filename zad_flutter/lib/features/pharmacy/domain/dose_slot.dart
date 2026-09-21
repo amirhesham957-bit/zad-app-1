@@ -145,14 +145,16 @@ List<DoseSlot> doseSlotsFor(
           // Built in the zone, then read as an instant. Constructing a
           // `TZDateTime` this way is what applies the offset — including the
           // day a clock change makes 23 or 25 hours long.
-          scheduledAt: tz.TZDateTime(
-            location,
-            day.year,
-            day.month,
-            day.day,
-            time.hour,
-            time.minute,
-          ).toUtc(),
+          scheduledAt: _plainUtc(
+            tz.TZDateTime(
+              location,
+              day.year,
+              day.month,
+              day.day,
+              time.hour,
+              time.minute,
+            ),
+          ),
         ),
       );
     }
@@ -160,6 +162,20 @@ List<DoseSlot> doseSlotsFor(
 
   return slots..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 }
+
+/// The same instant as a plain UTC [DateTime].
+///
+/// Not cosmetic. `TZDateTime.toUtc()` returns another `TZDateTime`, and
+/// equality between the two types is **asymmetric**: `DateTime == TZDateTime`
+/// is true for the same instant, `TZDateTime == DateTime` is false. So a slot
+/// carrying a `TZDateTime` would fail to match itself against any instant read
+/// back from JSON — a cached snooze, a server record, a tapped slot looked up
+/// by time — depending only on which side of `==` it landed on. Slots leave
+/// this file as plain instants so that cannot happen downstream.
+DateTime _plainUtc(DateTime instant) => DateTime.fromMicrosecondsSinceEpoch(
+  instant.microsecondsSinceEpoch,
+  isUtc: true,
+);
 
 /// Marks each slot taken from [records], using the server's own matching rule.
 ///

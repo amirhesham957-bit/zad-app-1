@@ -11,6 +11,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/pharmacy/domain/dose_time.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
@@ -208,6 +209,26 @@ void main() {
 
       expect(summer.hour, 5, reason: '08:00 at +03');
       expect(winter.hour, 6, reason: '08:00 at +02');
+    });
+
+    test('a slot is a plain instant, so it equals itself from either side', () {
+      // `TZDateTime.toUtc()` is still a TZDateTime, and equality between the
+      // two types is asymmetric — `DateTime == TZDateTime` holds for the same
+      // instant, `TZDateTime == DateTime` does not. A slot carrying one could
+      // not be found again by an instant read back from JSON, which is how a
+      // tapped dose went missing in the controller before this was pinned.
+      final slot = doseSlotsFor(
+        medicine(doseTimes: '08:00'),
+        now: DateTime.utc(2026, 9, 20, 12),
+        timeZone: riyadh,
+        daysBack: 0,
+      ).single;
+      final fromJson = DateTime.parse('2026-09-20T05:00:00Z');
+
+      expect(slot.scheduledAt, isNot(isA<tz.TZDateTime>()));
+      expect(slot.scheduledAt == fromJson, isTrue);
+      expect(fromJson == slot.scheduledAt, isTrue);
+      expect(<DateTime>{slot.scheduledAt}.contains(fromJson), isTrue);
     });
 
     test('slots come back in order', () {
