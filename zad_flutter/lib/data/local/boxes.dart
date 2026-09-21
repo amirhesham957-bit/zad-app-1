@@ -27,6 +27,9 @@ abstract final class ZadBoxes {
   /// The shopping list, keyed by row id.
   static const String shopping = 'zad_cache_shopping';
 
+  /// Medicines and the doses put off on this device.
+  static const String pharmacy = 'zad_cache_pharmacy';
+
   /// The conversation, keyed by message id.
   ///
   /// A cache in the same sense as the others: the agent keeps its own memory
@@ -41,6 +44,7 @@ abstract final class ZadBoxes {
     chat,
     inventory,
     shopping,
+    pharmacy,
   ];
 }
 
@@ -54,6 +58,7 @@ class ZadLocalStore {
     required this.chat,
     required this.inventory,
     required this.shopping,
+    required this.pharmacy,
   });
 
   /// Opens every box, recovering caches that will not open.
@@ -82,6 +87,7 @@ class ZadLocalStore {
       chat: Hive.box<String>(ZadBoxes.chat),
       inventory: Hive.box<String>(ZadBoxes.inventory),
       shopping: Hive.box<String>(ZadBoxes.shopping),
+      pharmacy: Hive.box<String>(ZadBoxes.pharmacy),
     );
   }
 
@@ -103,6 +109,9 @@ class ZadLocalStore {
   /// The shopping list.
   final Box<String> shopping;
 
+  /// Medicines and put-off doses.
+  final Box<String> pharmacy;
+
   /// Empties the caches, leaving the outbox alone.
   ///
   /// This is what a sign-out calls. The outbox survives it: whoever wrote those
@@ -116,5 +125,6 @@ class ZadLocalStore {
     await chat.clear();
     await inventory.clear();
     await shopping.clear();
+    await pharmacy.clear();
   }
 }

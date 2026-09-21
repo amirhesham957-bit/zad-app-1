@@ -24,6 +24,8 @@ import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
@@ -141,6 +143,19 @@ final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
       );
     });
 
+/// Medicines and doses, offline first.
+final Provider<PharmacyRepository> pharmacyRepositoryProvider =
+    Provider<PharmacyRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return PharmacyRepository(
+        cache: store.pharmacy,
+        remote: SupabasePharmacyRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
 /// The conversation, on this device.
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(
@@ -204,6 +219,12 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(shoppingListRepositoryProvider).sendQueued(entry),
       OutboxKind.deleteShoppingItem =>
         await ref.read(shoppingListRepositoryProvider).sendQueuedDelete(entry),
+      OutboxKind.upsertPharmacyItem =>
+        await ref.read(pharmacyRepositoryProvider).sendQueued(entry),
+      OutboxKind.deletePharmacyItem =>
+        await ref.read(pharmacyRepositoryProvider).sendQueuedDelete(entry),
+      OutboxKind.logPharmacyDose =>
+        await ref.read(pharmacyRepositoryProvider).sendQueuedDose(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

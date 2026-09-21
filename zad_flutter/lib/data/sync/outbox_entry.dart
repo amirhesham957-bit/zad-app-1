@@ -31,6 +31,20 @@ abstract final class OutboxKind {
   /// Remove a line from `zad_shopping_list`.
   static const String deleteShoppingItem = 'delete_shopping_item';
 
+  /// Insert or update a row in `zad_pharmacy_items`.
+  static const String upsertPharmacyItem = 'upsert_pharmacy_item';
+
+  /// Remove a row from `zad_pharmacy_items`.
+  static const String deletePharmacyItem = 'delete_pharmacy_item';
+
+  /// Record a dose through `zad_log_pharmacy_dose_atomic`.
+  ///
+  /// Queued, not called, because a dose is most often recorded at the moment
+  /// the reminder fires — which is not a moment anybody chose for its signal.
+  /// The RPC is idempotent on `(user_id, item_id, scheduled_at)`, so a replay
+  /// answers `duplicate` instead of taking a second tablet off the count.
+  static const String logPharmacyDose = 'log_pharmacy_dose';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

@@ -1,0 +1,379 @@
+/// The pharmacy, offline first.
+///
+/// Recording a dose is the one write in this app that is **not** a plain
+/// upsert. `zad_log_pharmacy_dose_atomic` inserts the dose, decrements
+/// `remaining_quantity` carrying the fraction in `dose_carry`, and adds the
+/// medicine to the shopping list when it drops under a day's worth — one
+/// transaction, three effects. The client queues a call to it and never writes
+/// those columns itself, because doing so would race the RPC for the same
+/// numbers.
+///
+/// It is safe to retry by construction: the insert is `on conflict (user_id,
+/// item_id, scheduled_at) do nothing`, so a replay after an ambiguous failure
+/// answers `duplicate: true` rather than taking a second tablet off the count.
+/// The queued entry's id carries the same three parts for the same reason.
+library;
+
+import 'dart:convert';
+
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/features/pharmacy/domain/dose_slot.dart';
+import 'package:zad/features/pharmacy/domain/medicine.dart';
+
+/// A dose the customer put off, remembered on this device.
+class DoseSnooze {
+  /// Creates a snooze.
+  const new({
+    required this.medicineId,
+    required this.scheduledAt,
+    required this.until,
+  });
+
+  /// Reads one back out of the cache.
+  factory fromJson(Map<String, dynamic> json) => DoseSnooze(
+    medicineId: json['medicine_id'] as String,
+    scheduledAt: DateTime.parse(json['scheduled_at'] as String).toUtc(),
+    until: DateTime.parse(json['until'] as String).toUtc(),
+  );
+
+  /// Which medicine.
+  final String medicineId;
+
+  /// Which slot.
+  final DateTime scheduledAt;
+
+  /// When to ask again.
+  final DateTime until;
+
+  /// Whether it is still in force at [now].
+  bool coversAt(DateTime now) => now.toUtc().isBefore(until);
+
+  /// The key a slot is remembered under.
+  static String keyFor(String medicineId, DateTime scheduledAt) =>
+      'snooze:$medicineId:${scheduledAt.toUtc().toIso8601String()}';
+
+  /// Writes it into the cache.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'medicine_id': medicineId,
+    'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+    'until': until.toUtc().toIso8601String(),
+  };
+}
+
+/// Holds the pharmacy.
+class PharmacyRepository {
+  /// Creates a repository.
+  const new({
+    required Box<String> cache,
+    required PharmacyRemote remote,
+    required Outbox Function() outbox,
+    required String Function() newId,
+    required String? Function() signedInUserId,
+  }) : _cache = cache,
+       _remote = remote,
+       _outbox = outbox,
+       _newId = newId,
+       _signedInUserId = signedInUserId;
+
+  final Box<String> _cache;
+  final PharmacyRemote _remote;
+  final Outbox Function() _outbox;
+  final String Function() _newId;
+  final String? Function() _signedInUserId;
+
+  /// How long a put-off dose stays quiet.
+  ///
+  /// The Telegram bot's figure, so a dose deferred on one surface reads the
+  /// same on the other.
+  static const Duration snoozeFor = Duration(minutes: 30);
+
+  /// How far back dose records are read.
+  ///
+  /// Two days covers the slot window — today and yesterday — plus the
+  /// three-hour grace either side of the earliest of them.
+  static const Duration recordWindow = Duration(days: 2);
+
+  static const String _medicinePrefix = 'med:';
+
+  /// Every medicine on the device, by name.
+  List<Medicine> cached() {
+    final medicines = <Medicine>[];
+    for (final key in _cache.keys) {
+      if (key is! String || !key.startsWith(_medicinePrefix)) continue;
+      final medicine = _read(_cache.get(key) ?? '');
+      if (medicine != null) medicines.add(medicine);
+    }
+    return medicines..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  /// Asks the server and replaces what it answered for, keeping queued rows.
+  Future<List<Medicine>> refresh() async {
+    final rows = await _remote.fetchMedicines(userId: _requireUserId());
+    final server = rows
+        .map(Medicine.fromJson)
+        .map((m) => m.markPending(pending: false))
+        .toList();
+    final serverIds = server.map((m) => m.id).toSet();
+
+    final stale = cached()
+        .where((m) => !m.isPending && !serverIds.contains(m.id))
+        .map((m) => '$_medicinePrefix${m.id}');
+    await _cache.deleteAll(stale);
+
+    await _cache.putAll(<String, String>{
+      for (final medicine in server)
+        '$_medicinePrefix${medicine.id}': jsonEncode(medicine.toCacheJson()),
+    });
+
+    return cached();
+  }
+
+  /// The slots for [medicine] around [now], with recorded doses applied.
+  ///
+  /// [timeZone] is the **account's** market zone. Passing the device's is the
+  /// bug `dose_slot.dart` exists to prevent, and this signature is where it
+  /// would be introduced, so it has no default.
+  Future<List<DoseSlot>> slotsFor(
+    Medicine medicine, {
+    required DateTime now,
+    required String timeZone,
+  }) async {
+    final slots = doseSlotsFor(medicine, now: now, timeZone: timeZone);
+    if (slots.isEmpty) return slots;
+
+    final records = await _remote.fetchDoseRecords(
+      userId: _requireUserId(),
+      medicineId: medicine.id,
+      since: now.toUtc().subtract(recordWindow),
+    );
+
+    return applyRecords(slots, records);
+  }
+
+  /// Adds a medicine.
+  Future<Medicine> add({
+    required String name,
+    String? dosage,
+    String? category,
+    String? unit,
+    String? doseTimes,
+    int? dailyDoseCount,
+    double unitsPerDose = 1,
+    int? remainingQuantity,
+    DateTime? expiryDate,
+  }) async {
+    final medicine = Medicine(
+      id: _newId(),
+      userId: _requireUserId(),
+      name: name.trim(),
+      dosage: dosage,
+      category: category,
+      unit: unit,
+      doseTimesRaw: doseTimes,
+      dailyDoseCount: dailyDoseCount,
+      unitsPerDose: unitsPerDose,
+      remainingQuantity: remainingQuantity,
+      expiryDate: expiryDate,
+      isPending: true,
+    );
+    await _save(medicine);
+    return medicine;
+  }
+
+  /// Writes a changed medicine.
+  Future<Medicine> update(Medicine medicine) async {
+    final pending = medicine.markPending(pending: true);
+    await _save(pending);
+    return pending;
+  }
+
+  /// Records a dose: queued, and safe to replay.
+  ///
+  /// [scheduledAt] is the slot being answered. Leaving it null is how an
+  /// ad-hoc "I took it just now" is recorded — the RPC then buckets it to the
+  /// nearest five minutes, which makes a network retry idempotent without
+  /// blocking a genuine later dose.
+  Future<void> logDose(
+    String medicineId, {
+    required DateTime takenAt,
+    DateTime? scheduledAt,
+  }) async {
+    final slot = scheduledAt?.toUtc();
+
+    await _outbox().enqueue(
+      // The RPC's own conflict key, so a queued replay and a server replay
+      // collide on the same thing.
+      id: 'dose:$medicineId:${slot?.toIso8601String() ?? 'adhoc'}',
+      kind: OutboxKind.logPharmacyDose,
+      payload: <String, dynamic>{
+        'user_id': _requireUserId(),
+        'item_id': medicineId,
+        'scheduled_at': slot?.toIso8601String(),
+        'taken_at': takenAt.toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  /// Puts a dose off for [snoozeFor].
+  ///
+  /// **This device only.** `zad_dose_snoozes` has a select policy and no
+  /// insert policy, so an authenticated client cannot write one — the rows
+  /// come from the Telegram bot on the service-role key. So this quietens the
+  /// app and nothing else: the server's own nudge for the same slot still
+  /// goes out. Closing that gap is a migration adding an owner-insert policy,
+  /// not a client change, and until it exists the app must not claim more
+  /// than it does.
+  Future<DoseSnooze> snooze(
+    String medicineId, {
+    required DateTime scheduledAt,
+    required DateTime now,
+    Duration? forDuration,
+  }) async {
+    final snooze = DoseSnooze(
+      medicineId: medicineId,
+      scheduledAt: scheduledAt.toUtc(),
+      until: now.toUtc().add(forDuration ?? snoozeFor),
+    );
+    await _cache.put(
+      DoseSnooze.keyFor(medicineId, scheduledAt),
+      jsonEncode(snooze.toJson()),
+    );
+    return snooze;
+  }
+
+  /// Whether this slot is being put off at [now].
+  bool isSnoozed(String medicineId, DateTime scheduledAt, DateTime now) {
+    final raw = _cache.get(DoseSnooze.keyFor(medicineId, scheduledAt));
+    if (raw == null) return false;
+
+    try {
+      final snooze = DoseSnooze.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+      return snooze.coversAt(now);
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Drops snoozes that have expired.
+  Future<void> pruneSnoozes(DateTime now) async {
+    final dead = <String>[];
+    for (final key in _cache.keys) {
+      if (key is! String || !key.startsWith('snooze:')) continue;
+      final raw = _cache.get(key);
+      if (raw == null) continue;
+      try {
+        final snooze = DoseSnooze.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>,
+        );
+        if (!snooze.coversAt(now)) dead.add(key);
+      } on Object {
+        dead.add(key);
+      }
+    }
+    await _cache.deleteAll(dead);
+  }
+
+  /// Removes a medicine.
+  Future<void> remove(String id) async {
+    await _cache.delete('$_medicinePrefix$id');
+    await _outbox().enqueue(
+      id: 'pharmacy_delete:$id',
+      kind: OutboxKind.deletePharmacyItem,
+      payload: <String, dynamic>{'id': id},
+    );
+  }
+
+  /// Sends one queued medicine write.
+  Future<void> sendQueued(OutboxEntry entry) async {
+    final stored = await _remote.upsertReturning(entry.payload);
+    if (stored == null) return;
+
+    final confirmed = Medicine.fromJson(stored).markPending(pending: false);
+    await _cache.put(
+      '$_medicinePrefix${confirmed.id}',
+      jsonEncode(confirmed.toCacheJson()),
+    );
+  }
+
+  /// Sends one queued dose.
+  ///
+  /// A refusal the server can explain — `not_found`, `invalid_input` — is
+  /// thrown rather than swallowed, so the outbox records a dead letter the
+  /// customer can be shown. A dose that silently failed to record is the one
+  /// outcome this path must not produce.
+  Future<void> sendQueuedDose(OutboxEntry entry) async {
+    final payload = entry.payload;
+    final receipt = await _remote.logDose(
+      userId: payload['user_id'] as String,
+      medicineId: payload['item_id'] as String,
+      scheduledAt: switch (payload['scheduled_at']) {
+        final String s => DateTime.parse(s),
+        _ => null,
+      },
+      takenAt: DateTime.parse(payload['taken_at'] as String),
+    );
+
+    if (!receipt.ok) {
+      throw StateError(
+        'zad_log_pharmacy_dose_atomic refused: ${receipt.reason ?? 'unknown'}',
+      );
+    }
+
+    // The count moved on the server. Reflect it locally rather than waiting
+    // for a refresh, so the screen that just recorded a dose shows what is
+    // left. A duplicate answers with the unchanged figure, which is correct.
+    final remaining = receipt.remainingQuantity;
+    if (remaining == null) return;
+
+    final key = '$_medicinePrefix${payload['item_id']}';
+    final current = _read(_cache.get(key) ?? '');
+    if (current == null) return;
+    await _cache.put(
+      key,
+      jsonEncode(current.copyWith(remainingQuantity: remaining).toCacheJson()),
+    );
+  }
+
+  /// Sends one queued delete.
+  Future<void> sendQueuedDelete(OutboxEntry entry) =>
+      _remote.remove(entry.payload['id'] as String);
+
+  /// Forgets the pharmacy. Called on sign-out.
+  Future<void> clear() => _cache.clear();
+
+  Future<void> _save(Medicine medicine) async {
+    await _cache.put(
+      '$_medicinePrefix${medicine.id}',
+      jsonEncode(medicine.toCacheJson()),
+    );
+    await _outbox().enqueue(
+      id: 'pharmacy:${medicine.id}',
+      kind: OutboxKind.upsertPharmacyItem,
+      payload: medicine.toUpsertJson(),
+    );
+  }
+
+  static Medicine? _read(String raw) {
+    if (raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return Medicine.fromJson(Map<String, dynamic>.from(decoded));
+    } on Object {
+      return null;
+    }
+  }
+
+  String _requireUserId() {
+    final id = _signedInUserId();
+    if (id == null || id.isEmpty) {
+      throw StateError('no signed-in user to read or write a pharmacy for');
+    }
+    return id;
+  }
+}

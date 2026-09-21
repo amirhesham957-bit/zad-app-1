@@ -86,6 +86,7 @@ void main() {
       chat: chatBox,
       inventory: chatBox,
       shopping: chatBox,
+      pharmacy: chatBox,
     );
 
     await documents.put('budget_state', jsonEncode(<String, String>{'a': 'b'}));

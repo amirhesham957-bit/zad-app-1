@@ -192,6 +192,7 @@ void main() {
             chat: documents,
             inventory: documents,
             shopping: documents,
+            pharmacy: documents,
           ),
         ),
         nowProvider.overrideWithValue(() => now),
