@@ -193,8 +193,11 @@ through four RPCs); it and `20260921140000_pharmacy_restock` were hand-applied a
 verified on live 2026-09-21 (FLUTTER_MIGRATION.md §5 item 7 — note the stamped
 `120000`/`130000` versions the ship repo lacks). `20260921160000_price_reports_through_the_server` is live too (§5 item 9).
 ⚠️ **A push to `origin main` (the fork) deploys migrations and edge functions to
-production** — see FLUTTER_MIGRATION.md "Where the commits live". **Next:** alerts —
-push, permission, insight cards (FLUTTER_MIGRATION.md §6 item 9). **Finish line:** a debug-signed
+production** — see FLUTTER_MIGRATION.md "Where the commits live". **Status 2026-09-25 (`ab84cd43`):**
+every Kotlin screen has a Flutter counterpart and the phone raises push plus the
+on-phone reminders (doses, tasbih, seasons). What is deliberately or not yet
+ported is listed in FLUTTER_MIGRATION.md §6 "Known gaps" — read it before
+calling anything "100%". **Next:** put the APK on the owner's phone. **Finish line:** a debug-signed
 release APK on the owner's phone — no keystore, no Play work; the live voice
 call (`zad-voice-live`) is cancelled for good.
 

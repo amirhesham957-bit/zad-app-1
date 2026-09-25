@@ -449,7 +449,9 @@ one commit, full verification, report, then continue.
    invented telemetry figures. Kotlin's tool/scope/source identifiers that
    leaked to the screen (`spending_pattern`, `add_obligation`, `voice`) all
    read as Arabic now.
-9. **Alerts — the owner's explicit ask ("ولا تنسى التنبيهات").** The phone has
+9. ~~**Alerts**~~ (done: FCM push + permission + insight cards earlier; the
+   on-phone reminders — doses, tasbih 17:00, seasons 30 days ahead — in
+   `ab84cd43`, `alerts/application/local_reminders.dart`). **Alerts — the owner's explicit ask ("ولا تنسى التنبيهات").** The phone has
    to actually alert, not just list: FCM push (the server already sends to
    `zad_fcm_tokens` through `zad-brain/push.ts`; the table had 0 rows on
    2026-09-21), notification permission, foreground display, a tap that opens
@@ -476,7 +478,8 @@ one commit, full verification, report, then continue.
    rows wired in the profile),
    ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184`; every
    profile row is wired now),
-   `FinancesScreen`, `BudgetScreen`.
+   ~~`FinancesScreen`, `BudgetScreen`~~ (three tabs; the debts tab with the
+   payoff planner and live deals, `db4ba689`).
    Also done 2026-09-25: the kids home's Amazon row (`affiliate/`,
    `url_launcher`), `RecipeDetailDialog`, `NearbyDealsScreen` as its own page,
    `BudgetGateScreen` (in `ZadShell`), `RecommendationsRoute`,
@@ -487,6 +490,21 @@ one commit, full verification, report, then continue.
    the home grid's العائلة and عقل زاد.
    **Owner's order 2026-09-25: UI parity first, no test files and no test
    runs — verify with `flutter analyze` + the release build only.**
+   **Known gaps after the port (2026-09-25) — not "100%" until these are
+   decided:**
+   - Voice out: no TTS (`voice_synthesize`), no spoken alerts, no wake
+     greeting; voice *in* (STT in the chat) is ported.
+   - No Lottie: confetti on the kids savings goal and the tasbiha level-up
+     are replaced by drawn bursts or left out.
+   - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,
+     by the owner's no-Play decision.
+   - No store-arrival geofence, so place reminders never fire and iftar
+     reminders (home location) are not ported.
+   - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
+     app.
+   - The intelligence screen's PDF report export (Kotlin's local brain
+     report) is not ported; the AI report is shared as text.
+   - MerchantCategoryOverrides are not applied to statement import.
 11. **The finish line:** a release APK signed with the debug key (already the
     template's setting, `android/app/build.gradle.kts`), sideloaded on the
     owner's phone to confirm the whole conversion works. **Out of scope, by
