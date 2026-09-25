@@ -4,7 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/auth_gate.dart';
+import 'package:zad/app/splash_screen.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/zad_theme.dart';
 
@@ -34,7 +34,7 @@ class ZadApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const ZadAuthGate(),
+      home: const ZadSplashGate(),
     );
   }
 }

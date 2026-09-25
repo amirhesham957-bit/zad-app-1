@@ -35,7 +35,8 @@
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <!--
           geolocator declares a location foreground service for position
           streams. This app takes single fixes only, so the service is removed:

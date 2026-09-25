@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- The first frame before Flutter draws: Kotlin's splash canvas (#FBFAF8) with
+     the carrot mark at the size its SplashScreen shows it (80dp), so the Dart
+     splash that follows starts from the same picture. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item android:drawable="@color/zad_splash_background" />
+    <item
+        android:width="80dp"
+        android:height="80dp"
+        android:drawable="@drawable/ic_carrot_logo"
+        android:gravity="center" />
 </layer-list>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The brand mark from the design mockup (web_preview/react/app.jsx, the splash `<svg>`),
+  path-for-path: a #F0703D carrot body, three off-white ridge strokes, three #3CA06E
+  leaf strokes. viewportWidth/Height are the mockup's own 64×64 so the coordinates are
+  copied rather than re-fitted.
+
+  What was here before was a different drawing entirely — an amber (#F59E0B) carrot with
+  emerald leaves, lying diagonally and sitting off-centre in its own viewport, which is
+  why the logo on the auth screens and in the app bar did not match the mockup.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+
+    <!-- Body -->
+    <path
+        android:fillColor="#F0703D"
+        android:pathData="M31,16C36,20 42,30 40,44C39,51 34,58 29,57C24,56 21,50 22,43C24,30 27,21 31,16Z" />
+
+    <!-- Ridges -->
+    <path
+        android:strokeColor="#FBFAF8"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M25.5,30.5L34.5,33.5M24,38L33,41M25.5,45.5L31.5,47.5" />
+
+    <!-- Leaves -->
+    <path
+        android:strokeColor="#3CA06E"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M29,17C27,13 28,9 26,6M32,15C32,11 34,8 33,4M35,17C37,14 40,12 40,8" />
+</vector>

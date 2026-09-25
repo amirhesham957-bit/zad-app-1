@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ masks the splash icon to a circle about two thirds of its box;
+     the inset keeps the whole carrot, leaves included, inside it. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_carrot_logo"
+    android:inset="22%" />
