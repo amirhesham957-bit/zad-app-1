@@ -27,8 +27,8 @@ import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
+import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
-import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
 /// Home.
@@ -64,9 +64,9 @@ class HomeScreen extends ConsumerWidget {
               actions: <Widget>[
                 const NotificationBell(),
                 IconButton(
-                  onPressed: () => showSettingsScreen(context),
-                  icon: const Icon(ZadIcons.settings),
-                  tooltip: 'الإعدادات',
+                  onPressed: () => showProfileScreen(context),
+                  icon: const Icon(ZadIcons.profile),
+                  tooltip: 'حسابي',
                 ),
               ],
             ),

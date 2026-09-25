@@ -23,7 +23,7 @@ import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
-import 'package:zad/features/settings/presentation/settings_screen.dart';
+import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 
@@ -189,7 +189,7 @@ final List<ZadSection> zadSections = <ZadSection>[
     icon: ZadIcons.settings,
     label: 'حسابي',
     accent: ZadSectionAccent.slate,
-    open: showSettingsScreen,
+    open: showProfileScreen,
   ),
 ];
 
