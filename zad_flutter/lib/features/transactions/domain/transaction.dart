@@ -90,6 +90,7 @@ class ZadTransaction {
     String? merchantName,
     bool countsTowardBudget = true,
     bool isPending = false,
+    String? sourceType,
   }) => ZadTransaction._(
     id: id,
     userId: userId,
@@ -104,6 +105,7 @@ class ZadTransaction {
     merchantName: merchantName,
     countsTowardBudget: countsTowardBudget,
     isPending: isPending,
+    sourceType: sourceType,
   );
 
   /// Money in.
@@ -117,6 +119,7 @@ class ZadTransaction {
     String? category,
     String? currency,
     bool isPending = false,
+    String? sourceType,
   }) => ZadTransaction._(
     id: id,
     userId: userId,
@@ -129,6 +132,7 @@ class ZadTransaction {
     category: category,
     currency: currency,
     isPending: isPending,
+    sourceType: sourceType,
   );
 
   /// Money moved between the user's own wallets.
@@ -287,6 +291,7 @@ class ZadTransaction {
     'currency': currency,
     'counts_toward_budget': countsTowardBudget,
     'merchant_name': merchantName,
+    'source_type': sourceType,
   };
 
   /// The form kept in the local cache, which is the insert body plus the local

@@ -457,15 +457,21 @@ one commit, full verification, report, then continue.
    `zad_insights` home cards with dismiss-with-reason (Task 28). The
    token-takeover fix is `20260921170000_fcm_token_follows_the_device`.
 10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
-   `AchievementsScreen`, `TasbihaScreen`, `StatementImportScreen`,
+   ~~`AchievementsScreen`~~, `TasbihaScreen`, ~~`StatementImportScreen`~~
+   (both done 2026-09-25 with kids mode — the PIN (SHA-256 in the `device`
+   box, wiped on sign-out), `KidsShell` with two tabs and «الوضع الكامل»
+   behind the PIN, `KidsHome` without the tasbiha card, the affiliate row and
+   the confetti, which wait for tasbiha/affiliate/Lottie; plus Kotlin's launcher
+   icon at every density, the native splash (API 31 styles + layer-list) and
+   the Dart `SplashScreen`),
    `ZadSubscriptionPaywallScreen`, ~~`TermsOfServiceScreen`,
    `HelpSupportScreen`, `OrbAccessoryPicker`~~ (done 2026-09-25 — terms word
    for word; the support chat on `ai_text` plus the on-phone crash log
    (`core/crash/crash_log.dart`, installed in `bootstrap`); «زيّن زاد» with a
    still port of `CompanionOrb`, choice kept in the `device` box; all three
    rows wired in the profile),
-   ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184` — its rows
-   for statement import, achievements and kids mode wait for those screens),
+   ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184`; every
+   profile row is wired now),
    `FinancesScreen`, `BudgetScreen`.
    **Owner's order 2026-09-25: UI parity first, no test files and no test
    runs — verify with `flutter analyze` + the release build only.**

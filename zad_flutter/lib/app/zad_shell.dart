@@ -10,6 +10,8 @@ import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
+import 'package:zad/features/kids/presentation/kids_shell.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
@@ -54,12 +56,21 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   Widget build(BuildContext context) {
     // A tab asked for from outside — a tapped alert. Whatever was pushed over
     // the shell is closed first, or the tab would change behind it.
-    ref.listen(shellNavigationProvider, (previous, next) {
+    ref.listen(shellNavigationProvider, (previous, next) async {
       if (next == null) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
-      _show(next.index);
       ref.read(shellNavigationProvider.notifier).shown();
+      // Kotlin's goGuarded: in kids mode a money tab asks for the PIN first.
+      if (ref.read(kidsModeActiveProvider) &&
+          next != ShellTab.home &&
+          !await unlockKidsMode(context, ref)) {
+        return;
+      }
+      if (mounted) _show(next.index);
     });
+
+    // Kids mode replaces the whole shell: home and family, nothing else.
+    if (ref.watch(kidsModeActiveProvider)) return const KidsShell();
 
     // Watched at the shell so the badge is right whichever tab is open. The
     // count is the point: a proposal nobody looks at expires after seven days

@@ -21,18 +21,23 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/achievements/presentation/achievements_screen.dart';
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
+import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
+import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/support/presentation/help_support_screen.dart';
 import 'package:zad/features/support/presentation/terms_screen.dart';
 
@@ -64,6 +69,8 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, ZadSpacing.lg, 20, 96),
             children: <Widget>[
               _Header(view: view),
+              const SizedBox(height: 14),
+              const _KidsModeCard(),
               const SizedBox(height: ZadSpacing.xl),
               const _SectionTitle('الإعدادات'),
               const SizedBox(height: ZadSpacing.md),
@@ -104,6 +111,12 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(showSettingsScreen(context)),
                   ),
                   _MenuRow(
+                    icon: LucideIcons.fileUp,
+                    title: 'استيراد كشف حساب',
+                    subtitle: 'استورد كشف حساب CSV من البنك',
+                    onTap: () => unawaited(showStatementImportScreen(context)),
+                  ),
+                  _MenuRow(
                     icon: LucideIcons.headset,
                     title: 'الدعم الفني',
                     subtitle: 'تواصل معنا',
@@ -120,6 +133,12 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'زاد عارف عني إيه',
                     subtitle: 'الذكريات اللي اتعلمها عنك',
                     onTap: () => unawaited(showMemoryScreen(context)),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.leaderboard,
+                    title: 'الإنجازات والرتب',
+                    subtitle: 'نقاطك وإنجازاتك من المساهمة بالأسعار',
+                    onTap: () => unawaited(showAchievementsScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.shopping,
@@ -988,4 +1007,55 @@ class _MarketTile extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Kotlin's kids-mode card under the header: an admin hands the phone to a
+/// child (asking for a PIN first if none is set, so the child cannot set
+/// one at the exit), and a child whose lock a parent lifted can put it back.
+class _KidsModeCard extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final family = ref.watch(familyControllerProvider);
+    final isAdmin = family.isAdmin;
+    final isChild = ref.watch(isChildRoleProvider);
+    final unlocked = ref.watch(kidsModeProvider.select((s) => s.pinUnlocked));
+    if (isChild && unlocked) {
+      return _MenuGroup(
+        rows: <_MenuRow>[
+          _MenuRow(
+            icon: LucideIcons.lock,
+            title: 'إعادة قفل وضع الأطفال',
+            subtitle: 'يرجع الجهاز لوضع الأطفال',
+            onTap: () => ref.read(kidsModeProvider.notifier).relock(),
+          ),
+        ],
+      );
+    }
+    if (!isAdmin) return const SizedBox.shrink();
+    Future<void> enter() async {
+      final kids = ref.read(kidsModeProvider.notifier);
+      if (!kids.hasPin && !await showPinPrompt(context)) return;
+      kids.setManual(active: true);
+      if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
+
+    return _MenuGroup(
+      rows: <_MenuRow>[
+        _MenuRow(
+          icon: ZadIcons.child,
+          title: 'تبديل لوضع الأطفال',
+          subtitle: 'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN',
+          onTap: () => unawaited(enter()),
+          trailing: Switch(
+            value: false,
+            onChanged: (on) => on ? unawaited(enter()) : null,
+          ),
+        ),
+      ],
+    );
+  }
 }

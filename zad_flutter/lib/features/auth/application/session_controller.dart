@@ -15,6 +15,7 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/modes/application/modes_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
@@ -83,6 +84,11 @@ class SessionController extends Notifier<String?> {
       await ref.read(authGatewayProvider).signOut();
     } finally {
       await ref.read(localStoreProvider).clearCaches();
+      // Kotlin's LocalAccountData: the next account on this phone starts
+      // with no kids-mode PIN and no hand-over mode.
+      await KidsModeController.clearAccountState(
+        ref.read(localStoreProvider).device,
+      );
       if (ref.mounted) {
         state = null;
         _forgetPreviousAccount();
@@ -99,6 +105,7 @@ class SessionController extends Notifier<String?> {
   /// that are not cost nothing.
   void _forgetPreviousAccount() {
     ref
+      ..invalidate(kidsModeProvider)
       ..invalidate(transactionsControllerProvider)
       ..invalidate(budgetControllerProvider)
       ..invalidate(proposalsControllerProvider)
