@@ -147,6 +147,27 @@ class PantryController extends Notifier<PantryView> {
       .read(consumptionObservationsProvider)
       .record(item.itemName, item.quantity, ObservationSource.manual);
 
+  /// Kotlin's `EditInventoryDialog`: name, count and unit. The learner hears
+  /// the new count, as it does after −/+.
+  Future<void> edit(
+    InventoryItem item, {
+    required String itemName,
+    required int quantity,
+    String? unit,
+  }) async {
+    final updated = await ref
+        .read(inventoryRepositoryProvider)
+        .update(
+          item.copyWith(
+            itemName: itemName.trim(),
+            quantity: quantity,
+            unit: unit,
+          ),
+        );
+    if (updated.quantity != item.quantity) await _reading(updated);
+    await _reload();
+  }
+
   /// Removes a row.
   Future<void> remove(String id) async {
     await ref.read(inventoryRepositoryProvider).remove(id);
