@@ -7,6 +7,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/core/crash/crash_log.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
@@ -44,6 +45,7 @@ Future<void> bootstrap(Widget app) async {
 
   await Hive.initFlutter();
   final store = await ZadLocalStore.open();
+  CrashLog(store.device).install();
 
   await Supabase.initialize(
     url: ZadEnv.supabaseUrl,

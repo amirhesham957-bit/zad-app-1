@@ -458,10 +458,15 @@ one commit, full verification, report, then continue.
    token-takeover fix is `20260921170000_fcm_token_follows_the_device`.
 10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
    `AchievementsScreen`, `TasbihaScreen`, `StatementImportScreen`,
-   `ZadSubscriptionPaywallScreen`, `TermsOfServiceScreen`, `HelpSupportScreen`,
+   `ZadSubscriptionPaywallScreen`, ~~`TermsOfServiceScreen`,
+   `HelpSupportScreen`, `OrbAccessoryPicker`~~ (done 2026-09-25 — terms word
+   for word; the support chat on `ai_text` plus the on-phone crash log
+   (`core/crash/crash_log.dart`, installed in `bootstrap`); «زيّن زاد» with a
+   still port of `CompanionOrb`, choice kept in the `device` box; all three
+   rows wired in the profile),
    ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184` — its rows
-   for statement import, help, achievements, terms, the orb picker and kids
-   mode wait for those screens), `FinancesScreen`, `BudgetScreen`.
+   for statement import, achievements and kids mode wait for those screens),
+   `FinancesScreen`, `BudgetScreen`.
    **Owner's order 2026-09-25: UI parity first, no test files and no test
    runs — verify with `flutter analyze` + the release build only.**
 11. **The finish line:** a release APK signed with the debug key (already the

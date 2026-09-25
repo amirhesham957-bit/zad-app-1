@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:zad/core/crash/crash_log.dart';
 import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/sync/app_sync_triggers.dart';
 import 'package:zad/data/sync/outbox.dart';
@@ -56,6 +57,7 @@ import 'package:zad/features/recipes/data/recipes_repository.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/features/support/data/support_assistant.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
@@ -80,6 +82,16 @@ final supabaseClientProvider = Provider<SupabaseClient>(
 /// Signing in, signing up, signing out.
 final authGatewayProvider = Provider<AuthGateway>(
   (ref) => SupabaseAuthGateway(ref.watch(supabaseClientProvider)),
+);
+
+/// The on-phone crash log the support screen exports.
+final crashLogProvider = Provider<CrashLog>(
+  (ref) => CrashLog(ref.watch(localStoreProvider).device),
+);
+
+/// The support screen's usage-help assistant.
+final supportAssistantProvider = Provider<SupportAssistant>(
+  (ref) => SupportAssistant(ref.watch(supabaseClientProvider)),
 );
 
 /// The signed-in user's id, read fresh on each call rather than captured, so a

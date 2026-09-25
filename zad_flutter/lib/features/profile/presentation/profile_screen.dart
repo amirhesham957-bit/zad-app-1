@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
@@ -28,9 +29,12 @@ import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
+import 'package:zad/features/support/presentation/help_support_screen.dart';
+import 'package:zad/features/support/presentation/terms_screen.dart';
 
 /// Opens the profile.
 Future<void> showProfileScreen(BuildContext context) => Navigator.of(context)
@@ -100,6 +104,12 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(showSettingsScreen(context)),
                   ),
                   _MenuRow(
+                    icon: LucideIcons.headset,
+                    title: 'الدعم الفني',
+                    subtitle: 'تواصل معنا',
+                    onTap: () => unawaited(showHelpSupportScreen(context)),
+                  ),
+                  _MenuRow(
                     icon: ZadIcons.actionLog,
                     title: 'سجل تعديلات زاد',
                     subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
@@ -124,6 +134,18 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'هدف جديد',
                     subtitle: 'خلّي زاد يتابع معاك هدف ادخار أو عادة',
                     onTap: () => unawaited(_newGoal(context, ref)),
+                  ),
+                  _MenuRow(
+                    icon: LucideIcons.sparkles,
+                    title: 'زيّن زاد',
+                    subtitle: 'كل ما عيلتك تنضم لزاد، زاد بتتزيّن',
+                    onTap: () => unawaited(showOrbPicker(context)),
+                  ),
+                  _MenuRow(
+                    icon: LucideIcons.fileText,
+                    title: 'الشروط والأحكام',
+                    subtitle: 'سياسة الاستخدام والخصوصية',
+                    onTap: () => unawaited(showTermsScreen(context)),
                   ),
                 ],
               ),
