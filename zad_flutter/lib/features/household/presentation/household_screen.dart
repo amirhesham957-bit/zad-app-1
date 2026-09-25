@@ -15,6 +15,7 @@ import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
+import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
 
 /// Opens the household on [section], as its own page — how Home's glance
 /// cards and the knowledge map reach one section directly.
@@ -86,13 +87,29 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
         ],
       ),
       floatingActionButton: _section == HouseholdSection.pantry
-          ? FloatingActionButton.extended(
-              heroTag: 'pantry-add',
-              onPressed: () => showAddPantrySheet(context),
-              icon: const Icon(ZadIcons.add),
-              label: const Text('ضيف صنف'),
-              backgroundColor: ZadColors.green800,
-              foregroundColor: Colors.white,
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                // Kotlin's "مسح المخزون": a shelf photographed and read.
+                FloatingActionButton.small(
+                  heroTag: 'pantry-photo',
+                  onPressed: () => showPantryPhotoSheet(context),
+                  tooltip: 'صوّر المخزن',
+                  backgroundColor: ZadColors.surface,
+                  foregroundColor: ZadColors.green800,
+                  child: const Icon(ZadIcons.scan),
+                ),
+                const SizedBox(height: ZadSpacing.md),
+                FloatingActionButton.extended(
+                  heroTag: 'pantry-add',
+                  onPressed: () => showAddPantrySheet(context),
+                  icon: const Icon(ZadIcons.add),
+                  label: const Text('ضيف صنف'),
+                  backgroundColor: ZadColors.green800,
+                  foregroundColor: Colors.white,
+                ),
+              ],
             )
           : null,
       body: Column(

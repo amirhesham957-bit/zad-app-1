@@ -18,6 +18,7 @@ import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
+import 'package:zad/features/scan/data/vision_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
@@ -240,11 +241,7 @@ class ScanController extends Notifier<ScanView> {
   void correct({double? total, String? category, ReceiptType? type}) {
     final current = state.receipt;
     if (!ref.mounted || current == null) return;
-    final next = current.copyWith(
-      total: total,
-      category: category,
-      type: type,
-    );
+    final next = current.copyWith(total: total, category: category, type: type);
     state = type == null || type == current.type
         ? state.copyWith(receipt: next)
         : state.copyWith(
@@ -353,81 +350,16 @@ class ScanController extends Notifier<ScanView> {
   Future<PantryIntakeResult> _intoPantry(
     ScannedReceipt receipt,
     Set<int> excluded,
-  ) async {
-    try {
-      final inventory = ref.read(inventoryRepositoryProvider);
-      final shopping = ref.read(shoppingListRepositoryProvider);
-      final readings = ref.read(consumptionObservationsProvider);
-
-      final plan = planIntake(
-        lines: <IntakeLine>[
-          for (final (i, item) in receipt.items.indexed)
-            if (!excluded.contains(i))
-              IntakeLine(
-                name: item.name,
-                quantity: wholeCount(item.quantity),
-                unit: item.unit,
-                category: item.category,
-              ),
-        ],
-        pantry: inventory.cached(),
-        shopping: shopping.cached(),
-      );
-
-      for (final (:item, :add) in plan.increments) {
-        // The level before the purchase as well as after. The learner reads
-        // the drops between consecutive readings; with only the "after" one,
-        // everything eaten since the last reading vanishes into a rise.
-        await readings.record(
-          item.itemName,
-          item.quantity,
-          ObservationSource.cameraOcr,
-        );
-        final updated = await inventory.adjustQuantity(item.id, add);
-        if (updated != null) {
-          await readings.record(
-            updated.itemName,
-            updated.quantity,
-            ObservationSource.cameraOcr,
-          );
-        }
-      }
-      for (final line in plan.additions) {
-        final added = await inventory.add(
-          itemName: line.name,
-          quantity: line.quantity,
-          unit: line.unit,
-          category: line.category,
-        );
-        await readings.record(
-          added.itemName,
-          added.quantity,
-          ObservationSource.cameraOcr,
-        );
-      }
-      for (final line in plan.bought) {
-        await shopping.setPurchased(line.id, purchased: true);
-      }
-
-      if (ref.mounted) {
-        ref
-          ..invalidate(pantryControllerProvider)
-          ..invalidate(shoppingControllerProvider);
-      }
-      return PantryIntakeResult(
-        added: plan.additions.length,
-        toppedUp: plan.increments.length,
-        ticked: plan.bought.length,
-      );
-    } on Object {
-      return const PantryIntakeResult(
-        added: 0,
-        toppedUp: 0,
-        ticked: 0,
-        failed: true,
-      );
-    }
-  }
+  ) => intakeIntoPantry(ref, <IntakeLine>[
+    for (final (i, item) in receipt.items.indexed)
+      if (!excluded.contains(i))
+        IntakeLine(
+          name: item.name,
+          quantity: wholeCount(item.quantity),
+          unit: item.unit,
+          category: item.category,
+        ),
+  ]);
 
   /// Puts the ticked lines into the pharmacy and closes the shopping-list
   /// loop, as [_intoPantry] does for groceries.
@@ -537,6 +469,82 @@ class ScanController extends Notifier<ScanView> {
   }
 }
 
+/// Puts [lines] into the pantry and closes the shopping-list loop — a grocery
+/// receipt's ticked lines, or what a pantry photo showed.
+///
+/// Never throws: a pantry that could not be written is reported as
+/// [PantryIntakeResult.failed], because the caller may already have saved
+/// something (a receipt's expense) that must not be lost with it.
+Future<PantryIntakeResult> intakeIntoPantry(
+  Ref ref,
+  List<IntakeLine> lines,
+) async {
+  try {
+    final inventory = ref.read(inventoryRepositoryProvider);
+    final shopping = ref.read(shoppingListRepositoryProvider);
+    final readings = ref.read(consumptionObservationsProvider);
+
+    final plan = planIntake(
+      lines: lines,
+      pantry: inventory.cached(),
+      shopping: shopping.cached(),
+    );
+
+    for (final (:item, :add) in plan.increments) {
+      // The level before the purchase as well as after. The learner reads
+      // the drops between consecutive readings; with only the "after" one,
+      // everything eaten since the last reading vanishes into a rise.
+      await readings.record(
+        item.itemName,
+        item.quantity,
+        ObservationSource.cameraOcr,
+      );
+      final updated = await inventory.adjustQuantity(item.id, add);
+      if (updated != null) {
+        await readings.record(
+          updated.itemName,
+          updated.quantity,
+          ObservationSource.cameraOcr,
+        );
+      }
+    }
+    for (final line in plan.additions) {
+      final added = await inventory.add(
+        itemName: line.name,
+        quantity: line.quantity,
+        unit: line.unit,
+        category: line.category,
+      );
+      await readings.record(
+        added.itemName,
+        added.quantity,
+        ObservationSource.cameraOcr,
+      );
+    }
+    for (final line in plan.bought) {
+      await shopping.setPurchased(line.id, purchased: true);
+    }
+
+    if (ref.mounted) {
+      ref
+        ..invalidate(pantryControllerProvider)
+        ..invalidate(shoppingControllerProvider);
+    }
+    return PantryIntakeResult(
+      added: plan.additions.length,
+      toppedUp: plan.increments.length,
+      ticked: plan.bought.length,
+    );
+  } on Object {
+    return const PantryIntakeResult(
+      added: 0,
+      toppedUp: 0,
+      ticked: 0,
+      failed: true,
+    );
+  }
+}
+
 /// The camera.
 final receiptCameraProvider = Provider<ReceiptCamera>(
   (ref) => ImagePickerCamera(),
@@ -550,4 +558,9 @@ final receiptScannerProvider = Provider<ReceiptScanner>(
 /// One scan.
 final scanControllerProvider = NotifierProvider<ScanController, ScanView>(
   ScanController.new,
+);
+
+/// The pantry and medicine photo reads.
+final visionScannerProvider = Provider<VisionScanner>(
+  (ref) => SupabaseVisionScanner(ref.watch(supabaseClientProvider)),
 );

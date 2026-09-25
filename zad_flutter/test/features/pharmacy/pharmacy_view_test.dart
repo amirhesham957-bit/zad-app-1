@@ -1,6 +1,8 @@
 // The pharmacy screen's Kotlin parts: the stats, the card's badges and
 // actions, and the rules behind them.
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,9 @@ import 'package:zad/features/pharmacy/application/pharmacy_controller.dart'
     as pc;
 import 'package:zad/features/pharmacy/domain/medicine.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/features/scan/data/receipt_scanner.dart';
+import 'package:zad/features/scan/data/vision_scanner.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
@@ -37,6 +42,67 @@ class _Txns extends TransactionsController {
 class _NoFamily extends FamilyController {
   @override
   FamilyView build() => const FamilyView(status: NoFamily(), userId: 'u');
+}
+
+class _Camera implements ReceiptCamera {
+  @override
+  Future<Uint8List?> capture(ReceiptImageSource source) async =>
+      Uint8List.fromList(<int>[1]);
+}
+
+class _Box implements VisionScanner {
+  @override
+  Future<List<ScannedPantryItem>> pantry({
+    required String userId,
+    required Uint8List image,
+  }) async => const <ScannedPantryItem>[];
+
+  @override
+  Future<ScannedMedicine?> medicine({
+    required String userId,
+    required Uint8List image,
+  }) async => medicineFrom(<String, dynamic>{
+    'medicine': <String, dynamic>{
+      'name': 'كونكور 5',
+      'active_ingredient': 'Bisoprolol',
+      'category': 'مزمن',
+      'quantity': 30,
+      'unit': 'شريط',
+      'expiry_date': '2027-05',
+      'daily_dose_count': 2,
+      'suggested_times': <String>['20:00', '8:00', '24:00'],
+    },
+  });
+}
+
+/// Records what the add form saved.
+class _Adding extends QuietPharmacy {
+  final List<Map<String, Object?>> added = <Map<String, Object?>>[];
+
+  @override
+  Future<void> add({
+    required String name,
+    required int quantity,
+    required String unit,
+    required int dailyDoseCount,
+    String? doseTimes,
+    DateTime? expiryDate,
+    double price = 0,
+    String? activeIngredient,
+    String? dosage,
+    String? category,
+    bool isRecurring = false,
+    String? familyMemberId,
+  }) async => added.add(<String, Object?>{
+    'name': name,
+    'quantity': quantity,
+    'unit': unit,
+    'daily': dailyDoseCount,
+    'times': doseTimes,
+    'expiry': expiryDate,
+    'ingredient': activeIngredient,
+    'category': category,
+  });
 }
 
 Medicine _m(
@@ -132,5 +198,62 @@ void main() {
     await tester.tap(find.text('الكمية محتاجة تأكيد'));
     await tester.pumpAndSettle();
     expect(find.text('الجرعة الواحدة كام قرص؟'), findsOneWidget);
+  });
+
+  testWidgets('a box photographed opens the add form filled in', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(420, 2400));
+    final pharmacy = _Adding();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          signedInUserIdProvider.overrideWithValue(() => 'u'),
+          receiptCameraProvider.overrideWithValue(_Camera()),
+          visionScannerProvider.overrideWithValue(_Box()),
+          pc.pharmacyControllerProvider.overrideWith(() => pharmacy),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          transactionsControllerProvider.overrideWith(_Txns.new),
+          familyControllerProvider.overrideWith(_NoFamily.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PharmacyView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('صوّر علبة الدواء'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('افتح الكاميرا'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('راجع الدواء'), findsOneWidget);
+    expect(find.text('كونكور 5'), findsOneWidget);
+    // The box's own unit, kept even though Kotlin's list lacks it.
+    expect(find.widgetWithText(ChoiceChip, 'شريط'), findsOneWidget);
+    expect(pharmacy.added, isEmpty);
+
+    await tester.ensureVisible(find.text('حفظ'));
+    await tester.tap(find.text('حفظ'));
+    await tester.pumpAndSettle();
+
+    expect(pharmacy.added, <Map<String, Object?>>[
+      <String, Object?>{
+        'name': 'كونكور 5',
+        'quantity': 30,
+        'unit': 'شريط',
+        'daily': 2,
+        'times': '08:00,20:00',
+        'expiry': DateTime.utc(2027, 5, 31),
+        'ingredient': 'Bisoprolol',
+        'category': 'مزمن',
+      },
+    ]);
   });
 }

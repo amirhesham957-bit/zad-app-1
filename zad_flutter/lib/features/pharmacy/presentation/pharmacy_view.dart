@@ -27,7 +27,10 @@ import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
+import 'package:zad/features/pharmacy/domain/dose_time.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/features/scan/data/vision_scanner.dart';
+import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
@@ -140,6 +143,15 @@ class PharmacyView extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
+          FloatingActionButton.small(
+            heroTag: 'pharmacy-photo',
+            onPressed: () => unawaited(_addFromPhoto(context)),
+            tooltip: 'صوّر علبة الدواء',
+            backgroundColor: ZadColors.surface,
+            foregroundColor: ZadColors.green800,
+            child: const Icon(ZadIcons.scan),
+          ),
+          const SizedBox(height: ZadSpacing.md),
           FloatingActionButton.small(
             heroTag: 'pharmacy-talk',
             onPressed: () => unawaited(_showSmartAdd(context, ref)),
@@ -939,18 +951,31 @@ Future<void> _showSmartAdd(BuildContext context, WidgetRef ref) async {
   Navigator.of(context).popUntil((r) => r.isFirst);
 }
 
-/// Opens Kotlin's add form.
-Future<void> showAddMedicineSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: ZadColors.surface,
-      shape: zadSquircle(ZadRadii.sheet),
-      builder: (_) => const _AddMedicineSheet(),
-    );
+/// Kotlin's `PHARMACY` camera mode: photograph the box, then the add form
+/// opens filled in with what was read — Kotlin's confirm dialog, except every
+/// field can be corrected before it is saved.
+Future<void> _addFromPhoto(BuildContext context) async {
+  final scanned = await showMedicinePhotoSheet(context);
+  if (scanned == null || !context.mounted) return;
+  await showAddMedicineSheet(context, scanned: scanned);
+}
+
+/// Opens Kotlin's add form, filled in from [scanned] when a box was read.
+Future<void> showAddMedicineSheet(
+  BuildContext context, {
+  ScannedMedicine? scanned,
+}) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: ZadColors.surface,
+  shape: zadSquircle(ZadRadii.sheet),
+  builder: (_) => _AddMedicineSheet(scanned: scanned),
+);
 
 class _AddMedicineSheet extends ConsumerStatefulWidget {
-  const new();
+  const new({this.scanned});
+
+  final ScannedMedicine? scanned;
 
   @override
   ConsumerState<_AddMedicineSheet> createState() => _AddMedicineSheetState();
@@ -977,6 +1002,24 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
     ('20:00', '🌙 مساءً'),
     ('23:00', '🛌 قبل النوم'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.scanned;
+    if (s == null) return;
+    _name.text = s.name;
+    _qty.text = '${s.quantity}';
+    _daily.text = '${s.dailyDoseCount < 1 ? 1 : s.dailyDoseCount}';
+    _ingredient.text = s.activeIngredient?.trim() ?? '';
+    _dosage.text = s.dosage?.trim() ?? '';
+    _unit = s.unit;
+    if (kMedicineCategories.contains(s.category)) _category = s.category;
+    _times.addAll(scannedDoseTimes(s.doseTimes));
+    _expiry = s.expiryDate;
+    // What was read off the box should be in view, not folded away.
+    _extras = _ingredient.text.isNotEmpty || _dosage.text.isNotEmpty;
+  }
 
   @override
   void dispose() {
@@ -1056,11 +1099,21 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Text('إضافة دواء', style: ZadType.titleMedium),
+            Text(
+              widget.scanned == null ? 'إضافة دواء' : 'راجع الدواء',
+              style: ZadType.titleMedium,
+            ),
+            if (widget.scanned != null) ...<Widget>[
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.',
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+            ],
             const SizedBox(height: ZadSpacing.lg),
             TextField(
               controller: _name,
-              autofocus: true,
+              autofocus: widget.scanned == null,
               decoration: const InputDecoration(labelText: 'اسم الدواء'),
               onChanged: (_) => setState(() {}),
             ),
@@ -1082,7 +1135,12 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               spacing: ZadSpacing.sm,
               runSpacing: ZadSpacing.xs,
               children: <Widget>[
-                for (final u in kMedicineUnits)
+                for (final u in <String>[
+                  ...kMedicineUnits,
+                  // A unit the box printed that the list lacks stays
+                  // choosable rather than silently swapped for another.
+                  if (!kMedicineUnits.contains(_unit)) _unit,
+                ])
                   ChoiceChip(
                     label: Text(u),
                     selected: _unit == u,
@@ -1239,4 +1297,13 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
       ),
     );
   }
+}
+
+/// A box reading's suggested times as the form keeps them: only what the
+/// server's `dose_times` regex accepts, padded, once each, in order.
+List<String> scannedDoseTimes(String? raw) {
+  final times = <DoseTime>[
+    for (final part in (raw ?? '').split(',')) ?DoseTime.parse(part),
+  ]..sort();
+  return <String>{for (final t in times) t.wireName}.toList();
 }
