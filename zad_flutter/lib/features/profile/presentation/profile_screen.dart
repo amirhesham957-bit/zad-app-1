@@ -28,13 +28,13 @@ import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
@@ -144,9 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                     icon: ZadIcons.shopping,
                     title: 'توصيات الشراء الذكية',
                     subtitle: 'توصيات مبنية على الأسعار والسوق',
-                    onTap: () => unawaited(
-                      showHouseholdSection(context, HouseholdSection.shopping),
-                    ),
+                    onTap: () => unawaited(showRecommendationsScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.savings,
