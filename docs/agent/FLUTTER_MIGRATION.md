@@ -393,7 +393,10 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
 Ordered by value and dependency, not by screen count. Each item = one slice,
 one commit, full verification, report, then continue.
 
-1. ~~Market selection~~ — done (gate after sign-in). **Still open:** the
+1. ~~Market selection~~ — done (gate after sign-in). **Changing it later is
+   done too (2026-09-25, `7834d184`)**: the profile's regional sheet converts
+   the monthly limit and category budgets with Kotlin's seed rates
+   (`core/money/fx.dart`) after a confirmation. **Still open:** the
    pre-login intro carousel (done since — `features/onboarding`), and changing the market
    *later* from settings — Kotlin's profile does that with
    `convertLimitsForMarketChange`, which converts the monthly limit to the new
@@ -413,15 +416,14 @@ one commit, full verification, report, then continue.
    and the debt planner / deals / challenges cards that shared its old tab.
    Widget tests need `initializeDateFormatting('ar')` in `setUpAll` wherever a
    screen prints an Arabic month.
-4. **Family** — membership done (create/join through `zad_create_family` /
-   `zad_join_family`, members, roles, remove, leave, new invite code; entry is
-   the family icon on the البيت tab). Still to port from the 2,597-line
-   `FamilyScreen.kt`: family chat, requests/approvals, chores, challenges,
-   sinking funds, spend limits UI, children's spending. Rewards and request
-   decisions are server functions now (`f35d4716`, §4, live) — port the
-   screens onto them. Membership writes deliberately bypass the
-   outbox: they are online-only and read back; the money RPCs should too (none
-   of them carries an idempotency key — a replayed contribution counts twice).
+4. ~~Family~~ — **done 2026-09-25** (`5ddf6883`): Kotlin's whole FamilyScreen —
+   header (code, SOS, join, invite with QR/link/code/WhatsApp, share), live chat
+   (`chat_messages` stream: text/SOS/request/poll, pin, reactions, quick replies,
+   "@زاد" → `family_assistant`), chores through `zad_complete_chore`/
+   `zad_reopen_chore`, members + member sheet + spending limits, the shared
+   `shared_grocery_list`, a parent's الأبناء (requests decided by
+   `zad_decide_purchase_request`) and الأهداف (`family_goals_suggest` on a tap).
+   Not ported: the typing indicator (Kotlin's poller 401-looped), voice messages.
 5. ~~Notification center~~ — done for `app_notifications` (list, read,
    mark all read up to the newest *seen*, bell with badge on Home). Not in it:
    push/FCM tokens, and the brain's `zad_insights` — none are `surface =
@@ -457,7 +459,11 @@ one commit, full verification, report, then continue.
 10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
    `AchievementsScreen`, `TasbihaScreen`, `StatementImportScreen`,
    `ZadSubscriptionPaywallScreen`, `TermsOfServiceScreen`, `HelpSupportScreen`,
-   `ProfileScreen`/`ProfileSubScreens`, `FinancesScreen`, `BudgetScreen`.
+   ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184` — its rows
+   for statement import, help, achievements, terms, the orb picker and kids
+   mode wait for those screens), `FinancesScreen`, `BudgetScreen`.
+   **Owner's order 2026-09-25: UI parity first, no test files and no test
+   runs — verify with `flutter analyze` + the release build only.**
 11. **The finish line:** a release APK signed with the debug key (already the
     template's setting, `android/app/build.gradle.kts`), sideloaded on the
     owner's phone to confirm the whole conversion works. **Out of scope, by
