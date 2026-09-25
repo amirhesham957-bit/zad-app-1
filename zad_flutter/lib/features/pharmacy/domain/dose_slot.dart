@@ -163,6 +163,33 @@ List<DoseSlot> doseSlotsFor(
   return slots..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 }
 
+/// The share of the last seven days' doses that were taken, 0..100, or null
+/// when none have come due yet.
+///
+/// Kotlin's `calculateWeeklyAdherence` divides taken by every logged slot of
+/// the week. Here the slots are rebuilt from the schedule, so a dose nobody
+/// logged at all still counts against the figure — and one still inside its
+/// answer window counts neither way, because it has not been missed yet.
+int? weeklyAdherence(List<DoseSlot> slots, DateTime now) {
+  final weekAgo = now.toUtc().subtract(const Duration(days: 7));
+  var taken = 0;
+  var settled = 0;
+  for (final slot in slots) {
+    if (slot.scheduledAt.isBefore(weekAgo)) continue;
+    switch (slot.stateAt(now)) {
+      case DoseState.taken:
+        taken++;
+        settled++;
+      case DoseState.missed:
+        settled++;
+      case DoseState.upcoming || DoseState.due:
+        break;
+    }
+  }
+  if (settled == 0) return null;
+  return (taken * 100 ~/ settled).clamp(0, 100);
+}
+
 /// The same instant as a plain UTC [DateTime].
 ///
 /// Not cosmetic. `TZDateTime.toUtc()` returns another `TZDateTime`, and

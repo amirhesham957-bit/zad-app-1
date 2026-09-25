@@ -39,6 +39,8 @@ import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
+import '../../support/quiet_household.dart';
+
 /// Refuses at once, so the screen's background refresh never writes to disk
 /// while the faked clock is in charge.
 class _OfflineRemote implements BudgetRemote {
@@ -243,6 +245,7 @@ void main() {
 
     return ProviderContainer(
       overrides: [
+        ...quietHouseholdOverrides,
         // The home screen now carries the bank-access card, which reads the
         // documents box. A screen test that leaves it out is not testing the
         // app — localStoreProvider throws by design rather than opening boxes
@@ -369,16 +372,16 @@ void main() {
       expect(send().onPressed, isNull, reason: 'nothing typed yet');
 
       await tester.enterText(find.byType(TextField).at(2), '0');
-    await tester.pump();
-    expect(send().onPressed, isNull, reason: 'a zero is not an expense');
+      await tester.pump();
+      expect(send().onPressed, isNull, reason: 'a zero is not an expense');
 
-    await tester.enterText(find.byType(TextField).at(2), '75');
-    await tester.pump();
-    expect(send().onPressed, isNull, reason: 'an amount with no name');
+      await tester.enterText(find.byType(TextField).at(2), '75');
+      await tester.pump();
+      expect(send().onPressed, isNull, reason: 'an amount with no name');
 
-    await tester.enterText(find.byType(TextField).at(0), 'حلاقة');
-    await tester.pump();
-    expect(send().onPressed, isNotNull);
+      await tester.enterText(find.byType(TextField).at(0), 'حلاقة');
+      await tester.pump();
+      expect(send().onPressed, isNotNull);
     },
   );
 

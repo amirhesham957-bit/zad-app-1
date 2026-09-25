@@ -20,6 +20,7 @@ class PharmacyView {
     this.medicines = const <Medicine>[],
     this.today = const <DoseSlot>[],
     this.snoozed = const <String>{},
+    this.adherence,
     this.isRefreshing = false,
     this.error,
   });
@@ -33,6 +34,10 @@ class PharmacyView {
 
   /// Slots put off on this device, keyed as `DoseSnooze.keyFor`.
   final Set<String> snoozed;
+
+  /// The last seven days' taken share, 0..100 — null until a dose has come
+  /// due. Home's pharmacy card shows it.
+  final int? adherence;
 
   /// Whether a fetch is in flight.
   final bool isRefreshing;
@@ -48,6 +53,7 @@ class PharmacyView {
     List<Medicine>? medicines,
     List<DoseSlot>? today,
     Set<String>? snoozed,
+    int? adherence,
     bool? isRefreshing,
     Object? error,
     bool clearError = false,
@@ -55,6 +61,7 @@ class PharmacyView {
     medicines: medicines ?? this.medicines,
     today: today ?? this.today,
     snoozed: snoozed ?? this.snoozed,
+    adherence: adherence ?? this.adherence,
     isRefreshing: isRefreshing ?? this.isRefreshing,
     error: clearError ? null : (error ?? this.error),
   );
@@ -88,7 +95,12 @@ class PharmacyController extends Notifier<PharmacyView> {
 
       final slots = <DoseSlot>[
         for (final medicine in medicines)
-          ...await repository.slotsFor(medicine, now: now, timeZone: zone),
+          ...await repository.slotsFor(
+            medicine,
+            now: now,
+            timeZone: zone,
+            daysBack: 7,
+          ),
       ];
       await repository.pruneSnoozes(now);
       if (!ref.mounted) return;
@@ -97,6 +109,7 @@ class PharmacyController extends Notifier<PharmacyView> {
         medicines: medicines,
         today: _relevant(slots, now),
         snoozed: _snoozedAmong(slots, now),
+        adherence: weeklyAdherence(slots, now),
       );
     } on Object catch (error) {
       if (!ref.mounted) return;

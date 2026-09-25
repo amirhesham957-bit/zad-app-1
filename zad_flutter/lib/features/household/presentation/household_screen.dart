@@ -16,6 +16,17 @@ import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
 
+/// Opens the household on [section], as its own page — how Home's glance
+/// cards and the knowledge map reach one section directly.
+Future<void> showHouseholdSection(
+  BuildContext context,
+  HouseholdSection section,
+) => Navigator.of(context).push<void>(
+  MaterialPageRoute<void>(
+    builder: (_) => HouseholdScreen(initialSection: section),
+  ),
+);
+
 /// Which part of the household is showing.
 enum HouseholdSection {
   /// What is in the kitchen.

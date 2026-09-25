@@ -139,18 +139,30 @@ class PharmacyRepository {
   /// [timeZone] is the **account's** market zone. Passing the device's is the
   /// bug `dose_slot.dart` exists to prevent, and this signature is where it
   /// would be introduced, so it has no default.
+  ///
+  /// [daysBack] widens the history: the screen needs yesterday, the weekly
+  /// adherence figure needs seven days. Records are fetched one day further
+  /// back than the slots, for the grace window of the earliest.
   Future<List<DoseSlot>> slotsFor(
     Medicine medicine, {
     required DateTime now,
     required String timeZone,
+    int daysBack = 1,
   }) async {
-    final slots = doseSlotsFor(medicine, now: now, timeZone: timeZone);
+    final slots = doseSlotsFor(
+      medicine,
+      now: now,
+      timeZone: timeZone,
+      daysBack: daysBack,
+    );
     if (slots.isEmpty) return slots;
 
     final records = await _remote.fetchDoseRecords(
       userId: _requireUserId(),
       medicineId: medicine.id,
-      since: now.toUtc().subtract(recordWindow),
+      since: now.toUtc().subtract(
+        daysBack <= 1 ? recordWindow : Duration(days: daysBack + 1),
+      ),
     );
 
     return applyRecords(slots, records);

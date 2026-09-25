@@ -21,12 +21,12 @@ import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
 /// Home.
@@ -73,20 +73,21 @@ class HomeScreen extends ConsumerWidget {
               sliver: SliverList.list(
                 children: <Widget>[
                   _Budget(view: view),
-                  // Right under the money, because it is what the money's
-                  // "committed" part is made of.
+                  // Kotlin's order under the money: the channel's health, then
+                  // the pantry, the pharmacy and the subscriptions, then what
+                  // the brain noticed. The bank card renders nothing at all
+                  // while the channel is working, and so does the insights
+                  // section when nothing is pending.
                   const SizedBox(height: ZadSpacing.md),
-                  const SubscriptionsEntryCard(),
-                  // What the brain noticed, under the money it is about.
-                  // Nothing at all when nothing is pending.
+                  const BankAccessCard(),
+                  const SizedBox(height: ZadSpacing.md),
+                  const PantryGlanceCard(),
+                  const SizedBox(height: ZadSpacing.lg),
+                  const PharmacyGlanceCard(),
+                  const SizedBox(height: ZadSpacing.lg),
+                  const SubscriptionsGlanceCard(),
                   const SizedBox(height: ZadSpacing.lg),
                   const HomeInsightsSection(),
-                  // Below the money, not above it. The channel's health is
-                  // worth saying when it is broken, but the balance is what
-                  // the screen is for — and the card renders nothing at all
-                  // when the channel is working.
-                  const SizedBox(height: ZadSpacing.lg),
-                  const BankAccessCard(),
                 ],
               ),
             ),

@@ -117,6 +117,24 @@ abstract final class ZadColors {
     colors: <Color>[emeraldDeep, green600, green800, Color(0xFF052E16)],
   );
 
+  /// Kotlin's `info` — the subscriptions card's accent.
+  static const Color info = Color(0xFF2B6CB0);
+
+  /// Kotlin's `primaryLight`, the far end of a healthy progress gradient.
+  static const Color forestLight = Color(0xFF2D6A4F);
+
+  /// Kotlin's `ZadMustardLight`, the far end of a warning gradient.
+  static const Color mustardLight = Color(0xFFE9A844);
+
+  /// Kotlin's `outline`: the hairline round a glance card.
+  static const Color outline = Color(0xFFE0E3DA);
+
+  /// Kotlin's `outlineVariant`: a track, a neutral tile.
+  static const Color outlineVariant = Color(0xFFE8EBE2);
+
+  /// Kotlin's `surfaceContainerLow`: a row inside a white card.
+  static const Color surfaceLow = Color(0xFFFBFBFA);
+
   /// The spent chip's dot on the green card.
   static const Color spentDot = Color(0xFFF59E0B);
 

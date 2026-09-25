@@ -144,11 +144,7 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
       _ => null,
     };
     if (section != null) {
-      return () => Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => HouseholdScreen(initialSection: section),
-        ),
-      );
+      return () => showHouseholdSection(context, section);
     }
     if (key == MapDomainKey.subscriptions) {
       return () => showSubscriptionsScreen(context);

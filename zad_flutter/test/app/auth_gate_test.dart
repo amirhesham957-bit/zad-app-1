@@ -40,6 +40,8 @@ import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 
+import '../support/quiet_household.dart';
+
 class _Gateway implements AuthGateway {
   new(this.userId);
 
@@ -266,6 +268,7 @@ void main() {
 
     return ProviderContainer(
       overrides: [
+        ...quietHouseholdOverrides,
         authGatewayProvider.overrideWithValue(_Gateway(userId)),
         signedInUserIdProvider.overrideWithValue(() => userId),
         nowProvider.overrideWithValue(() => now),

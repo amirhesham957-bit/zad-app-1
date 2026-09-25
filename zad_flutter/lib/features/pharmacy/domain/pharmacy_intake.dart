@@ -312,13 +312,11 @@ const Set<String> _packWords = <String>{
 
 ({Set<String> words, Set<String> numbers}) _tokens(String name) {
   // Digits and letters apart, so "5mg" and "د3" are two tokens each.
-  final spaced = _latinDigits(name).replaceAllMapped(
-    RegExp(r'(\d+(?:\.\d+)?)'),
-    (m) => ' ${m.group(1)} ',
-  );
-  final tokens = normalizeItemName(
-    spaced,
-  ).split(' ').where((t) => t.isNotEmpty);
+  final spaced = _latinDigits(name)
+      .replaceAllMapped(RegExp(r'(\d+(?:\.\d+)?)'), (m) => ' ${m.group(1)} ');
+  final tokens = normalizeItemName(spaced)
+      .split(' ')
+      .where((t) => t.isNotEmpty);
 
   final words = <String>{};
   final numbers = <String>{};

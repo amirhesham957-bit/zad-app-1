@@ -68,11 +68,11 @@ owner asked for it on 2026-09-25: "مش عاوزين ننسى ولا زر ولا
 | `BankListeningPill` | ✅ | `BankAccessCard`. |
 | `ZadSectionsGrid` (15 sections, badges, show all/less) | ❌ | |
 | `TelegramLinkBanner` / `ZadTelegramCommunityCard` / `TelegramBotSheet` / `TelegramLinkPromptSheet` | ❌ | |
-| `ZadFoodShortagesGlanceCard`: health, shortages, confirm, add to list | ❌ | |
-| `ZadPharmacyGlanceCard`: adherence %, next dose, take dose | ❌ | |
+| `ZadFoodShortagesGlanceCard`: health, shortages, confirm, add to list | ✅ | `glance_cards.dart`. "Low" uses the pantry's shortage rule, not Kotlin's `qty ≤ 2`. The tile shows the quantity, or the days to expiry when known; Kotlin labelled the quantity as days. Kotlin's `onConfirm` was never wired to a button. |
+| `ZadPharmacyGlanceCard`: adherence %, next dose, take dose | ✅ | Adherence comes from the schedule over 7 days (`weeklyAdherence`). "خدت الجرعة" shows only when the dose can be recorded, the pharmacy screen's rule. |
 | `WeekWithZadCard` + share image | ❌ | |
 | `TasbihaHomeWidget` | ❌ | Needs Tasbiha. |
-| `ZadSubscriptionsGlanceCard` | ⚠️ | `SubscriptionsEntryCard` exists; check it against the glance card. |
+| `ZadSubscriptionsGlanceCard` | ✅ | Replaces `SubscriptionsEntryCard`. Accents go by rank; Kotlin hard-coded colours for "نتفليكس" and "الجيم". |
 | `SmartChefSection` / `UrgentRecipeCard` / `ZadChefCard` | ⚠️ | Recipes live in البيت; no Home section. Kotlin's automatic urgent-recipes call is 🚫 (a model call on data change). |
 | Bank proposals on Home (`TransactionProposalCard`) | ⚠️ | A tab of their own in Flutter. |
 | Insights (`zad_insights` home cards, dismiss reason, question card, currency-settings button) | ✅ | `4cc97cdb`. The currency-settings shortcut is missing. |
