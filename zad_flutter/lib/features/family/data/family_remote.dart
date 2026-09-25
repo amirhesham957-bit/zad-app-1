@@ -47,7 +47,9 @@ class SupabaseFamilyRemote implements FamilyRemote {
 
   static const String _members = 'family_members';
   static const String _groups = 'family_groups';
-  static const String _memberColumns = 'id, user_id, role, alias, family_id';
+  static const String _memberColumns =
+      'id, user_id, role, alias, family_id, balance, savings_goal, '
+      'daily_limit, weekly_limit, last_seen_at';
 
   @override
   Future<Map<String, dynamic>?> fetchMyMembership({required String userId}) =>

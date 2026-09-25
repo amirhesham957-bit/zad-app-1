@@ -45,6 +45,11 @@ class FamilyMember {
     required this.userId,
     required this.role,
     required this.alias,
+    this.balance = 0,
+    this.savingsGoal = 0,
+    this.dailyLimit,
+    this.weeklyLimit,
+    this.lastSeenAt,
   });
 
   /// Reads a `family_members` row.
@@ -53,6 +58,11 @@ class FamilyMember {
     userId: (json['user_id'] as String?) ?? '',
     role: FamilyRole.fromWire(json['role'] as String?),
     alias: (json['alias'] as String?)?.trim() ?? '',
+    balance: (json['balance'] as num?)?.toDouble() ?? 0,
+    savingsGoal: (json['savings_goal'] as num?)?.toDouble() ?? 0,
+    dailyLimit: (json['daily_limit'] as num?)?.toDouble(),
+    weeklyLimit: (json['weekly_limit'] as num?)?.toDouble(),
+    lastSeenAt: DateTime.tryParse((json['last_seen_at'] as String?) ?? ''),
   );
 
   /// The row id.
@@ -67,12 +77,37 @@ class FamilyMember {
   /// What the family calls them.
   final String alias;
 
+  /// Pocket money. Moved only by the server's family-money functions — a
+  /// chore paid, a challenge won, a purchase request approved.
+  final double balance;
+
+  /// What the member is saving towards; 0 when nothing.
+  final double savingsGoal;
+
+  /// A parent's daily spending cap for this member, or null.
+  final double? dailyLimit;
+
+  /// A parent's weekly spending cap for this member, or null.
+  final double? weeklyLimit;
+
+  /// When the member's app last said it was open.
+  final DateTime? lastSeenAt;
+
+  /// Kotlin's `isOnline`: seen within the last five minutes.
+  bool isOnlineAt(DateTime now) =>
+      lastSeenAt != null && now.difference(lastSeenAt!).inMinutes < 5;
+
   /// Round-trips through the cache.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'user_id': userId,
     'role': role.wireName,
     'alias': alias,
+    'balance': balance,
+    'savings_goal': savingsGoal,
+    'daily_limit': dailyLimit,
+    'weekly_limit': weeklyLimit,
+    'last_seen_at': lastSeenAt?.toIso8601String(),
   };
 }
 

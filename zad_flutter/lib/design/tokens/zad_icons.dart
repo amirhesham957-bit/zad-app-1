@@ -210,4 +210,69 @@ abstract final class ZadIcons {
 
   /// Back, in reading order. Mirrors under RTL for the same reason.
   static const IconData back = LucideIcons.chevronLeftDir;
+
+  // ── Family ───────────────────────────────────────────────────────────────
+
+  /// An emergency call to the family.
+  static const IconData sos = LucideIcons.siren;
+
+  /// Invite someone.
+  static const IconData invite = LucideIcons.userPlus;
+
+  /// Join a family by code.
+  static const IconData joinFamily = LucideIcons.userRoundPlus;
+
+  /// Share.
+  static const IconData share = LucideIcons.share2;
+
+  /// Pin a message.
+  static const IconData pin = LucideIcons.pin;
+
+  /// React to a message.
+  static const IconData react = LucideIcons.smile;
+
+  /// A poll.
+  static const IconData poll = LucideIcons.chartBar;
+
+  /// A chore.
+  static const IconData chore = LucideIcons.clipboardList;
+
+  /// An admin.
+  static const IconData admin = LucideIcons.star;
+
+  /// A child.
+  static const IconData child = LucideIcons.baby;
+
+  /// Pocket money.
+  static const IconData coins = LucideIcons.coins;
+
+  /// Not done yet.
+  static const IconData open = LucideIcons.circle;
+
+  /// Leave.
+  static const IconData leave = LucideIcons.logOut;
+
+  /// A reward.
+  static const IconData gift = LucideIcons.gift;
+
+  /// Copy.
+  static const IconData copy = LucideIcons.copy;
+
+  /// Savings.
+  static const IconData savings = LucideIcons.piggyBank;
+
+  /// A tasbiha tree.
+  static const IconData tree = LucideIcons.treePine;
+
+  /// Play.
+  static const IconData play = LucideIcons.play;
+
+  /// A QR code.
+  static const IconData qr = LucideIcons.qrCode;
+
+  /// Turned down.
+  static const IconData rejected = LucideIcons.circleX;
+
+  /// A wallet.
+  static const IconData wallet = LucideIcons.wallet;
 }
