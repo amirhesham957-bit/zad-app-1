@@ -193,8 +193,9 @@ void main() {
         OutboxKind.deletePharmacyItem => await pharmacy.sendQueuedDelete(entry),
         OutboxKind.logPharmacyDose => await pharmacy.sendQueuedDose(entry),
         OutboxKind.upsertDoseSnooze => await pharmacy.sendQueuedSnooze(entry),
-        OutboxKind.restockPharmacyItem =>
-          await pharmacy.sendQueuedRestock(entry),
+        OutboxKind.restockPharmacyItem => await pharmacy.sendQueuedRestock(
+          entry,
+        ),
         _ => throw StateError('no sender for "${entry.kind}"'),
       },
       clock: () => now,

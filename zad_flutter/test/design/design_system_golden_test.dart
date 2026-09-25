@@ -101,7 +101,7 @@ void main() {
   );
 
   testWidgets('the green card, comfortably within budget', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 320));
+    await tester.binding.setSurfaceSize(const Size(390, 400));
     await tester.pumpWidget(
       harness(
         ZadBalanceCard(
@@ -113,6 +113,8 @@ void main() {
           period: periodFor(cycleStartDay: 25),
           now: now,
           onTap: () {},
+          onQuickExpense: () {},
+          onEditBalance: () {},
         ),
       ),
     );

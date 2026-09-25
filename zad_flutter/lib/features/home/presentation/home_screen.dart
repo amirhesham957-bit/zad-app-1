@@ -6,6 +6,8 @@
 /// the number with a mark on it.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -16,13 +18,16 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/features/bank/presentation/bank_access_card.dart';
+import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
+import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
 /// Home.
 class HomeScreen extends ConsumerWidget {
@@ -118,23 +123,41 @@ class _Budget extends ConsumerWidget {
       );
     }
 
-    return ZadBalanceCard(
-      spendable: view.spendable,
-      spent: snapshot.spent,
-      openingBalance: snapshot.openingBalance,
-      committed: snapshot.committed,
-      currency: snapshot.currency,
-      period: _periodOf(snapshot),
-      now: ref.read(nowProvider)(),
-      // Either the server has not confirmed this session's figures, or a local
-      // write is still queued and the number on screen is this device's
-      // arithmetic rather than the server's.
-      isStale: view.isStale || view.pendingSpend > 0,
-      // The card has always offered this and it has always been null, so
-      // tapping "لسه محددتش ميزانيتك" did nothing — `ZadPressable` disables
-      // the press outright when its callback is null, so there was not even
-      // a scale to say the tap had registered.
-      onSetBudget: () => showMonthlyLimitSheet(context),
+    final period = _periodOf(snapshot);
+    final now = ref.read(nowProvider)();
+    final spendable = view.spendable;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        ZadBalanceCard(
+          spendable: spendable,
+          spent: snapshot.spent,
+          openingBalance: snapshot.openingBalance,
+          committed: snapshot.committed,
+          currency: snapshot.currency,
+          period: period,
+          now: now,
+          // Either the server has not confirmed this session's figures, or a
+          // local write is still queued and the number on screen is this
+          // device's arithmetic rather than the server's.
+          isStale: view.isStale || view.pendingSpend > 0,
+          // Kotlin's tap opens "ليه الرقم اتغيّر؟" — what the brain changed
+          // lately. This client's answer to that question is the action log:
+          // the same changes, in words, with undo.
+          onTap: () => showAgentActionLog(context),
+          onSetBudget: () => showMonthlyLimitSheet(context),
+          onQuickExpense: () => showQuickExpenseSheet(context),
+          onEditBalance: () => showMonthlyLimitSheet(context),
+        ),
+        if (spendable != null) ...<Widget>[
+          const SizedBox(height: ZadSpacing.md),
+          HomeMetricsDuo(
+            spendable: spendable,
+            daysLeft: math.max(0, period.daysRemainingFrom(now)),
+            currency: snapshot.currency,
+          ),
+        ],
+      ],
     );
   }
 

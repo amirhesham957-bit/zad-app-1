@@ -116,10 +116,7 @@ void main() {
       // Sorted, and without what has run out: an unchanged pantry is the same
       // text, which is what the server's cache is keyed on.
       expect(pantryForChef(pantry), 'بيض (6), طماطم (3)');
-      expect(
-        pantryForChef(pantry.reversed.toList()),
-        pantryForChef(pantry),
-      );
+      expect(pantryForChef(pantry.reversed.toList()), pantryForChef(pantry));
     });
 
     test('the signature moves with a count, not with an order', () {

@@ -109,6 +109,23 @@ abstract final class ZadColors {
     stops: <double>[0, 0.55, 1],
   );
 
+  /// Kotlin's `ZadWalletHeroCard` gradient, stop for stop: deep emerald, a
+  /// bright green band, then down to near-black green.
+  static const LinearGradient wallet = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: <Color>[emeraldDeep, green600, green800, Color(0xFF052E16)],
+  );
+
+  /// The spent chip's dot on the green card.
+  static const Color spentDot = Color(0xFFF59E0B);
+
+  /// The committed chip's dot on the green card.
+  static const Color committedDot = Color(0xFFFF8066);
+
+  /// The "confirmed" tick beside the balance.
+  static const Color confirmedTick = Color(0xFF6EE7B7);
+
   /// A figure on the green card: white fading to mint, so a big number has some
   /// depth without a second colour.
   static const LinearGradient heroFigure = LinearGradient(

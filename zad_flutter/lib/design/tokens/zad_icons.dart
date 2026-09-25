@@ -40,6 +40,9 @@ abstract final class ZadIcons {
   /// Money in.
   static const IconData income = LucideIcons.arrowUpCircle;
 
+  /// Sending something off — the quick expense sheet's button.
+  static const IconData send = LucideIcons.send;
+
   /// Money moved between the user's own wallets.
   static const IconData transfer = LucideIcons.arrowLeftRight;
 

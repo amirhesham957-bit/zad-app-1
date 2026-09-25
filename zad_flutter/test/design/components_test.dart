@@ -132,6 +132,8 @@ void main() {
       double spent = 3179.5,
       double committed = 0,
       bool isStale = false,
+      VoidCallback? onQuickExpense,
+      VoidCallback? onEditBalance,
     }) async {
       await tester.pumpWidget(
         wrap(
@@ -146,6 +148,8 @@ void main() {
               period: period(cycleStartDay: cycleStartDay),
               now: now,
               isStale: isStale,
+              onQuickExpense: onQuickExpense,
+              onEditBalance: onEditBalance,
             ),
           ),
         ),
@@ -161,7 +165,8 @@ void main() {
       // would have said eleven.
       await pumpCard(tester, cycleStartDay: 25);
 
-      expect(find.textContaining('باقي 5'), findsOneWidget);
+      final semantics = tester.getSemantics(find.byType(ZadBalanceCard).first);
+      expect(semantics.label, contains('باقي 5 يوم'));
       expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
     });
 
@@ -178,14 +183,54 @@ void main() {
       await pumpCard(tester, cycleStartDay: 25, isStale: true);
 
       // The figure is still there — showing the cached number is the point —
-      // and the card carries a mark saying it is not confirmed.
+      // but it reads "≈" and wears no tick, as Kotlin's unsure figure does.
+      expect(find.text('≈ 4,820.5'), findsOneWidget);
+      expect(find.byIcon(ZadIcons.selected), findsNothing);
+    });
+
+    testWidgets('a confirmed figure wears the tick', (tester) async {
+      await pumpCard(tester, cycleStartDay: 25);
+
       expect(find.text('4,820.5'), findsOneWidget);
-      final marks = tester
-          .widgetList<Container>(find.byType(Container))
-          .where(
-            (c) => (c.decoration as BoxDecoration?)?.shape == BoxShape.circle,
-          );
-      expect(marks, isNotEmpty, reason: 'no pending mark on a stale figure');
+      expect(find.byIcon(ZadIcons.selected), findsOneWidget);
+    });
+
+    testWidgets('shows what is spent and what is held back, as chips', (
+      tester,
+    ) async {
+      await pumpCard(tester, cycleStartDay: 25, committed: 2000);
+
+      expect(find.text('المصروف 3,179.5 ج.م'), findsOneWidget);
+      expect(find.text('محجوز 2,000 ج.م'), findsOneWidget);
+    });
+
+    testWidgets('its two buttons, pencil and long press do what they say', (
+      tester,
+    ) async {
+      var quick = 0;
+      var edit = 0;
+      await pumpCard(
+        tester,
+        cycleStartDay: 25,
+        onQuickExpense: () => quick++,
+        onEditBalance: () => edit++,
+      );
+
+      await tester.tap(find.text('خصم سريع'));
+      await tester.tap(find.text('تعديل الميزانية'));
+      await tester.tap(find.bySemanticsLabel('تعديل الرصيد'));
+      await tester.longPress(find.text('4,820.5'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(quick, 2, reason: 'the button and the long press');
+      expect(edit, 2, reason: 'the button and the pencil');
+    });
+
+    testWidgets('no buttons when nobody wired them', (tester) async {
+      await pumpCard(tester, cycleStartDay: 25);
+
+      expect(find.text('خصم سريع'), findsNothing);
+      expect(find.text('تعديل الميزانية'), findsNothing);
     });
 
     testWidgets('asks for a budget instead of inventing one', (tester) async {
@@ -209,8 +254,7 @@ void main() {
       // like an arithmetic error.
       await pumpCard(tester, cycleStartDay: 25, committed: 2000);
 
-      expect(find.textContaining('2,000'), findsWidgets);
-      expect(find.textContaining('التزامات'), findsOneWidget);
+      expect(find.textContaining('محجوز 2,000'), findsOneWidget);
     });
 
     testWidgets('announces itself to a screen reader', (tester) async {

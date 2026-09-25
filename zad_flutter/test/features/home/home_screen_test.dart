@@ -27,6 +27,7 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/data/notifications_repository.dart';
@@ -36,6 +37,7 @@ import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
 /// Refuses at once, so the screen's background refresh never writes to disk
 /// while the faked clock is in charge.
@@ -334,6 +336,52 @@ void main() {
     expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
   });
 
+  testWidgets('the two small cards sit under the green one', (tester) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    expect(find.byType(HomeMetricsDuo), findsOneWidget);
+    expect(find.text('معدل الصرف اليومي الآمن'), findsOneWidget);
+    expect(find.text('يوم متبقي'), findsOneWidget);
+  });
+
+  testWidgets(
+    '"خصم سريع" opens the quick expense sheet, send held till valid',
+    (tester) async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await pumpHome(tester, container);
+      await tester.tap(find.text('خصم سريع'));
+      // An autofocused field: pumpAndSettle would wait on the cursor forever.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(QuickExpenseSheet), findsOneWidget);
+      FilledButton send() => tester.widget<FilledButton>(
+        find.ancestor(
+          of: find.text('إرسال'),
+          matching: find.byWidgetPredicate((w) => w is FilledButton),
+        ),
+      );
+      expect(send().onPressed, isNull, reason: 'nothing typed yet');
+
+      await tester.enterText(find.byType(TextField).at(2), '0');
+    await tester.pump();
+    expect(send().onPressed, isNull, reason: 'a zero is not an expense');
+
+    await tester.enterText(find.byType(TextField).at(2), '75');
+    await tester.pump();
+    expect(send().onPressed, isNull, reason: 'an amount with no name');
+
+    await tester.enterText(find.byType(TextField).at(0), 'حلاقة');
+    await tester.pump();
+    expect(send().onPressed, isNotNull);
+    },
+  );
+
   testWidgets('the figure does not count up from zero on open', (tester) async {
     // Reading the balance should not mean watching it arrive. The count-up is
     // for a value that *changed*, not for one the device already had.
@@ -357,8 +405,9 @@ void main() {
 
     expect(remote.calls, 1, reason: 'the screen never asked the server');
     // The number is still there. A failed refresh is a reason to say it is not
-    // confirmed, never a reason to replace it with an error.
-    expect(find.text('3,620.5'), findsOneWidget);
+    // confirmed, never a reason to replace it with an error — so it reads
+    // "≈", as Kotlin's unconfirmed figure does.
+    expect(find.text('≈ 3,620.5'), findsOneWidget);
     expect(container.read(budgetControllerProvider).isStale, isTrue);
   });
 
@@ -419,7 +468,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byType(MonthlyLimitSheet), findsOneWidget);
-      expect(find.text('كام معاك للشهر ده؟'), findsOneWidget);
+      expect(find.text('تعديل الرصيد'), findsOneWidget);
     });
   });
 

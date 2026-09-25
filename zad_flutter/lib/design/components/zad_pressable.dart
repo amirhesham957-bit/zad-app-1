@@ -22,6 +22,7 @@ class ZadPressable extends StatefulWidget {
   const new({
     required this.child,
     this.onPressed,
+    this.onLongPress,
     this.scale = 0.97,
     this.haptic = true,
     this.semanticLabel,
@@ -34,6 +35,10 @@ class ZadPressable extends StatefulWidget {
   /// What the press does. A null callback disables the press and its feedback,
   /// so a disabled card does not animate as though it did something.
   final VoidCallback? onPressed;
+
+  /// A second, slower way in — the green card's long press opens the quick
+  /// expense sheet, as Kotlin's does.
+  final VoidCallback? onLongPress;
 
   /// How far it shrinks. Deliberately shallow — 0.97 on a large card is a
   /// noticeable give; anything under about 0.93 looks like the card is falling
@@ -77,6 +82,7 @@ class _ZadPressableState extends State<ZadPressable> {
         onTapUp: (_) => _setDown(false),
         onTapCancel: () => _setDown(false),
         onTap: widget.onPressed,
+        onLongPress: widget.onLongPress,
         behavior: HitTestBehavior.opaque,
         child: AnimatedScale(
           scale: _down ? widget.scale : 1,

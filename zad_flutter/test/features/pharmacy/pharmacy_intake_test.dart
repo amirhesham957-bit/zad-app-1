@@ -97,10 +97,9 @@ void main() {
 
     test("a medicine counted in tubes takes the receipt's count", () {
       final cream = _med('m2', 'فيوسيدين كريم', unit: 'كريم', left: 0);
-      final p = proposeRestock(
-        _line('فيوسيدين كريم', packs: 2),
-        <Medicine>[cream],
-      );
+      final p = proposeRestock(_line('فيوسيدين كريم', packs: 2), <Medicine>[
+        cream,
+      ]);
       expect((p.count, p.unit), (2, 'كريم'));
     });
 
@@ -117,10 +116,10 @@ void main() {
     test('the most specific tracked name wins', () {
       final plain = _med('m3', 'بانادول');
       final extra = _med('m4', 'بانادول اكسترا');
-      final p = proposeRestock(
-        _line('بانادول اكسترا 24 قرص'),
-        <Medicine>[plain, extra],
-      );
+      final p = proposeRestock(_line('بانادول اكسترا 24 قرص'), <Medicine>[
+        plain,
+        extra,
+      ]);
       expect(p.medicine?.id, 'm4');
     });
   });

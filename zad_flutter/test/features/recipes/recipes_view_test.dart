@@ -136,9 +136,7 @@ void main() {
     ),
   );
 
-  testWidgets('before the first ask, the chef waits for a tap', (
-    tester,
-  ) async {
+  testWidgets('before the first ask, the chef waits for a tap', (tester) async {
     await pump(tester, pantry: _kitchen);
 
     expect(find.text('شيف زاد جاهزة'), findsOneWidget);

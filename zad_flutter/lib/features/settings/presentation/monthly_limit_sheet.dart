@@ -11,11 +11,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/money/money.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 
 /// Opens the sheet.
@@ -39,9 +41,12 @@ class MonthlyLimitSheet extends ConsumerStatefulWidget {
 
 class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
   late final TextEditingController _amount = TextEditingController(
-    // Prefilled when there is a limit already, because the common reason to
-    // open this a second time is to adjust a number, not to retype it.
-    text: switch (ref.read(settingsControllerProvider).settings?.monthlyLimit) {
+    // Prefilled with the balance as it stands now, not the limit it opened
+    // with — Kotlin's `BudgetEditSheet` does the same, and for a reason: the
+    // server anchors the figure to the moment it is saved, so saving the old
+    // opening figure unchanged would quietly hand back everything spent since.
+    text: switch (ref.read(budgetControllerProvider).snapshot?.remaining ??
+        ref.read(settingsControllerProvider).settings?.monthlyLimit) {
       final double current when current > 0 => _plain(current),
       _ => '',
     },
@@ -75,6 +80,8 @@ class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
     final view = ref.watch(settingsControllerProvider);
     final inset = MediaQuery.viewInsetsOf(context).bottom;
     final currency = view.settings?.currency ?? '';
+    final committed =
+        ref.watch(budgetControllerProvider).snapshot?.committed ?? 0;
 
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
@@ -84,14 +91,21 @@ class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('كام معاك للشهر ده؟', style: ZadType.titleMedium),
+            const Text('تعديل الرصيد', style: ZadType.titleMedium),
             const SizedBox(height: ZadSpacing.sm),
             // What the number means, said before it is asked for. The server
             // anchors the balance to the moment this is written — so it is
-            // what is in hand now, not what the salary was.
+            // what is in hand now, not what the salary was. Kotlin's two
+            // lines, word for word.
             Text(
-              'اكتب اللي معاك دلوقتي فعلاً. زاد هيحسب المتاح ليك منه، '
-              'وهيطرح الالتزامات اللي لسه جاية قبل ما يقولك تصرف كام.',
+              'اكتب رصيدك الحالي وزاد يمشي عليه: كل دخل بيزوّده وكل مصروف '
+              'بينقّصه.',
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+            ),
+            const SizedBox(height: ZadSpacing.xs),
+            Text(
+              'الرقم ده كلمتك الأخيرة — لو زاد حسب غلط، صحّحه من هنا وهو '
+              'هيمشي عليه.',
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.lg),
@@ -105,13 +119,22 @@ class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
               textDirection: TextDirection.ltr,
               style: ZadType.figure(28),
               decoration: InputDecoration(
-                labelText: 'المبلغ',
+                labelText: 'الرصيد',
                 hintText: '0',
                 suffixText: currency.isEmpty ? null : currency,
               ),
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _parsed == null ? null : _save(),
             ),
+
+            if (_parsed case final double typed) ...<Widget>[
+              const SizedBox(height: ZadSpacing.md),
+              _Preview(
+                balance: typed,
+                committed: committed,
+                currency: currency,
+              ),
+            ],
 
             const SizedBox(height: ZadSpacing.xl),
             FilledButton(
@@ -149,6 +172,46 @@ class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
     );
   }
 }
+
+/// What the typed balance leaves spendable once the committed obligations
+/// are taken out — Kotlin's two preview lines.
+class _Preview extends StatelessWidget {
+  const new({
+    required this.balance,
+    required this.committed,
+    required this.currency,
+  });
+
+  final double balance;
+  final double committed;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final available = balance - committed;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          'متبقي ${_shown(balance)} $currency · محجوز ${_shown(committed)} '
+          '$currency',
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+        ),
+        Text(
+          'متاح: ${_shown(available)} $currency',
+          style: ZadType.bodyMedium.copyWith(
+            fontWeight: FontWeight.w600,
+            color: available >= 0
+                ? ZadColors.green600
+                : ZadColors.terracottaRust,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _shown(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// The figure without grouping separators, for an editable field.
 String _plain(double value) {

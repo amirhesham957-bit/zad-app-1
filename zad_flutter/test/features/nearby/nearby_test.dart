@@ -228,11 +228,7 @@ void main() {
       );
 
       await expectLater(
-        remote.stores(
-          at: _home.coarse,
-          kind: StoreKind.pharmacy,
-          radius: 3000,
-        ),
+        remote.stores(at: _home.coarse, kind: StoreKind.pharmacy, radius: 3000),
         throwsStateError,
       );
     });

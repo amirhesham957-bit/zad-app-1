@@ -20,6 +20,7 @@ import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/foundation/elevation.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
@@ -37,6 +38,8 @@ class ZadBalanceCard extends StatelessWidget {
     this.committed = 0,
     this.onTap,
     this.onSetBudget,
+    this.onQuickExpense,
+    this.onEditBalance,
     this.isStale = false,
     super.key,
   });
@@ -79,6 +82,13 @@ class ZadBalanceCard extends StatelessWidget {
   /// Offered when there is no confirmed limit.
   final VoidCallback? onSetBudget;
 
+  /// "خصم سريع": the in-card button, and the card's long press — both as in
+  /// Kotlin's `ZadWalletHeroCard`.
+  final VoidCallback? onQuickExpense;
+
+  /// "تعديل الميزانية": the in-card button and the pencil in the corner.
+  final VoidCallback? onEditBalance;
+
   /// Whether these figures came from the cache and have not been confirmed.
   ///
   /// The card still shows them — that is the whole point of the cache — but it
@@ -113,6 +123,7 @@ class ZadBalanceCard extends StatelessWidget {
 
     return ZadPressable(
       onPressed: amount == null ? onSetBudget : onTap,
+      onLongPress: onQuickExpense,
       semanticLabel: amount == null
           ? 'لسه محددتش ميزانيتك'
           : 'المتاح ${_money(amount)} $currency، باقي $daysLeft يوم',
@@ -121,7 +132,7 @@ class ZadBalanceCard extends StatelessWidget {
         child: ZadSquircleClip(
           radius: ZadRadii.hero,
           child: DecoratedBox(
-            decoration: const BoxDecoration(gradient: ZadColors.hero),
+            decoration: const BoxDecoration(gradient: ZadColors.wallet),
             child: CustomPaint(
               // Two soft radial glows. They are what stop a large saturated
               // panel reading as flat fill, and they cost one paint — no blur,
@@ -129,36 +140,48 @@ class ZadBalanceCard extends StatelessWidget {
               painter: const _HeroGlowPainter(),
               child: Padding(
                 padding: const EdgeInsets.all(ZadSpacing.xl),
-                child: amount == null
-                    ? _NoBudgetYet(spent: spent, currency: currency)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          _Label(
-                            isStale: isStale,
-                            isCalendarMonth: period.isCalendarMonth,
-                          ),
-                          const SizedBox(height: ZadSpacing.md),
-                          _Figure(amount: amount, currency: currency),
-                          if (committed > 0) ...<Widget>[
-                            const SizedBox(height: ZadSpacing.sm),
-                            _Committed(amount: committed, currency: currency),
-                          ],
-                          const SizedBox(height: ZadSpacing.xl),
-                          _PaceBar(
-                            spent: _spentFraction,
-                            elapsed: _periodFraction,
-                            aheadOfPace: _aheadOfPace,
-                          ),
-                          const SizedBox(height: ZadSpacing.md),
-                          _Footer(
-                            daysLeft: daysLeft,
-                            spent: spent,
-                            currency: currency,
-                          ),
-                        ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (amount == null)
+                      _NoBudgetYet(spent: spent, currency: currency)
+                    else ...<Widget>[
+                      _Header(
+                        isCalendarMonth: period.isCalendarMonth,
+                        onEdit: onEditBalance,
                       ),
+                      const SizedBox(height: ZadSpacing.md),
+                      _Figure(
+                        amount: amount,
+                        currency: currency,
+                        isConfirmed: !isStale,
+                      ),
+                      const SizedBox(height: ZadSpacing.lg),
+                      _Chips(
+                        spent: spent,
+                        committed: committed,
+                        currency: currency,
+                      ),
+                      const SizedBox(height: ZadSpacing.lg),
+                      _PaceBar(
+                        spent: _spentFraction,
+                        elapsed: _periodFraction,
+                        aheadOfPace: _aheadOfPace,
+                      ),
+                    ],
+                    if (onQuickExpense != null ||
+                        onEditBalance != null) ...<Widget>[
+                      const SizedBox(height: ZadSpacing.lg),
+                      _Actions(
+                        onQuickExpense: onQuickExpense,
+                        onEditBalance: amount == null
+                            ? onSetBudget ?? onEditBalance
+                            : onEditBalance,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -200,65 +223,236 @@ class _NoBudgetYet extends StatelessWidget {
   );
 }
 
-/// Explains the gap between the balance and what is spendable.
-class _Committed extends StatelessWidget {
-  const new({required this.amount, required this.currency});
-
-  final double amount;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) => Text(
-    'بعد خصم ${_money(amount)} $currency التزامات',
-    maxLines: 1,
-    overflow: TextOverflow.ellipsis,
-    style: ZadType.bodySmall.copyWith(color: ZadColors.mint100),
-  );
-}
-
-class _Label extends StatelessWidget {
-  const new({required this.isStale, required this.isCalendarMonth});
-
-  final bool isStale;
+/// The card's top row: the card chip and label on one side, the pencil on
+/// the other — Kotlin's header, word for word except the label, which says
+/// which period the figure belongs to.
+class _Header extends StatelessWidget {
+  const new({required this.isCalendarMonth, this.onEdit});
 
   /// Whether this period is a plain calendar month. The label has to say so:
   /// telling somebody "دورة الراتب" when the app does not know their payday
   /// claims a fact nobody supplied.
   final bool isCalendarMonth;
 
+  final VoidCallback? onEdit;
+
   @override
   Widget build(BuildContext context) => Row(
     children: <Widget>[
-      Flexible(
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+        ),
+        child: const SizedBox.square(
+          dimension: 28,
+          child: Icon(ZadIcons.card, size: 14, color: Colors.white),
+        ),
+      ),
+      const SizedBox(width: ZadSpacing.sm),
+      Expanded(
         child: Text(
           isCalendarMonth ? 'المتاح هذا الشهر' : 'المتاح في دورة الراتب',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: ZadType.labelLarge.copyWith(color: ZadColors.mint100),
-        ),
-      ),
-      if (isStale) ...<Widget>[
-        const SizedBox(width: ZadSpacing.sm),
-        // A dot, not a spinner. A spinner on a figure says "this is loading";
-        // the figure is right here and readable, it is just not confirmed.
-        Container(
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: ZadColors.mustardOchre,
-            shape: BoxShape.circle,
+          style: ZadType.labelLarge.copyWith(
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
-      ],
+      ),
+      if (onEdit != null)
+        Semantics(
+          button: true,
+          label: 'تعديل الرصيد',
+          child: GestureDetector(
+            onTap: onEdit,
+            behavior: HitTestBehavior.opaque,
+            // 44 to touch, 32 to see: the circle is Kotlin's size, the target
+            // is the house minimum.
+            child: SizedBox.square(
+              dimension: 44,
+              child: Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: SizedBox.square(
+                    dimension: 32,
+                    child: Icon(
+                      ZadIcons.edit,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
     ],
   );
 }
 
+/// المصروف and محجوز, as two glass pills with a coloured dot each.
+class _Chips extends StatelessWidget {
+  const new({
+    required this.spent,
+    required this.committed,
+    required this.currency,
+  });
+
+  final double spent;
+  final double committed;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: ZadSpacing.sm,
+    runSpacing: ZadSpacing.sm,
+    children: <Widget>[
+      _Chip(
+        dot: ZadColors.spentDot,
+        text: 'المصروف ${_money(spent)} $currency',
+      ),
+      _Chip(
+        dot: ZadColors.committedDot,
+        text: 'محجوز ${_money(committed)} $currency',
+      ),
+    ],
+  );
+}
+
+class _Chip extends StatelessWidget {
+  const new({required this.dot, required this.text});
+
+  final Color dot;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(ZadRadii.pill),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ZadSpacing.md,
+        vertical: 6,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          DecoratedBox(
+            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+            child: const SizedBox.square(dimension: 7),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            maxLines: 1,
+            style: ZadType.labelMedium.copyWith(
+              color: Colors.white.withValues(alpha: 0.95),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// خصم سريع and تعديل الميزانية — buttons inside the card, not floating over
+/// the screen, so nothing under them is ever covered.
+class _Actions extends StatelessWidget {
+  const new({this.onQuickExpense, this.onEditBalance});
+
+  final VoidCallback? onQuickExpense;
+  final VoidCallback? onEditBalance;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      if (onQuickExpense != null)
+        Expanded(
+          child: _Action(
+            label: 'خصم سريع',
+            icon: ZadIcons.add,
+            emphasized: true,
+            onTap: onQuickExpense!,
+          ),
+        ),
+      if (onQuickExpense != null && onEditBalance != null)
+        const SizedBox(width: ZadSpacing.sm),
+      if (onEditBalance != null)
+        Expanded(
+          child: _Action(
+            label: 'تعديل الميزانية',
+            icon: ZadIcons.edit,
+            emphasized: false,
+            onTap: onEditBalance!,
+          ),
+        ),
+    ],
+  );
+}
+
+class _Action extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.icon,
+    required this.emphasized,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool emphasized;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ZadPressable(
+    onPressed: onTap,
+    semanticLabel: label,
+    child: Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: emphasized ? 0.20 : 0.08),
+        borderRadius: BorderRadius.circular(ZadRadii.chip + 2),
+      ),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ZadType.labelLarge.copyWith(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _Figure extends StatefulWidget {
-  const new({required this.amount, required this.currency});
+  const new({
+    required this.amount,
+    required this.currency,
+    this.isConfirmed = true,
+  });
 
   final double amount;
   final String currency;
+
+  /// The server has confirmed this figure. When it has not — read from the
+  /// cache, or a local write still queued — the figure says "≈" instead of
+  /// wearing the tick, as Kotlin's does for a figure it is unsure of.
+  final bool isConfirmed;
 
   @override
   State<_Figure> createState() => _FigureState();
@@ -293,9 +487,10 @@ class _FigureState extends State<_Figure> {
         // The figure is masked with a white→mint gradient so a number this
         // large
         // has some depth without introducing a second colour.
-        return ShaderMask(
+        final figure = ShaderMask(
           shaderCallback: (bounds) => ZadColors.heroFigure.createShader(bounds),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             textBaseline: TextBaseline.alphabetic,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             children: <Widget>[
@@ -309,7 +504,7 @@ class _FigureState extends State<_Figure> {
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    _money(value),
+                    '${widget.isConfirmed ? '' : '≈ '}${_money(value)}',
                     maxLines: 1,
                     style: ZadType.figure(44).copyWith(color: Colors.white),
                   ),
@@ -322,6 +517,19 @@ class _FigureState extends State<_Figure> {
               ),
             ],
           ),
+        );
+        if (!widget.isConfirmed) return figure;
+        // Outside the mask, so the tick keeps its own mint.
+        return Row(
+          children: <Widget>[
+            Flexible(child: figure),
+            const SizedBox(width: ZadSpacing.sm),
+            const Icon(
+              ZadIcons.selected,
+              size: 20,
+              color: ZadColors.confirmedTick,
+            ),
+          ],
         );
       },
     );
@@ -398,46 +606,6 @@ class _PaceBar extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _Footer extends StatelessWidget {
-  const new({
-    required this.daysLeft,
-    required this.spent,
-    required this.currency,
-  });
-
-  final int daysLeft;
-  final double spent;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = ZadType.bodySmall.copyWith(
-      color: Colors.white.withValues(alpha: 0.72),
-    );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            'اتصرف ${_money(spent)} $currency',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: style,
-          ),
-        ),
-        const SizedBox(width: ZadSpacing.sm),
-        Text(
-          daysLeft == 0
-              ? 'آخر يوم'
-              : 'باقي $daysLeft ${daysLeft <= 10 ? "أيام" : "يوم"}',
-          maxLines: 1,
-          style: style,
-        ),
-      ],
     );
   }
 }
