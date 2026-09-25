@@ -24,12 +24,14 @@ import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
+import 'package:zad/features/debts/presentation/debts_tab.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
@@ -61,9 +63,73 @@ final categoryBudgetsProvider =
     );
 
 /// The screen.
-class FinancesScreen extends ConsumerWidget {
+class FinancesScreen extends StatefulWidget {
   /// Creates the screen.
-  const new({super.key});
+  const new({this.initialTab = 0, super.key});
+
+  /// 0 الحركات والميزانية, 1 الاشتراكات والأقساط, 2 الديون.
+  final int initialTab;
+
+  @override
+  State<FinancesScreen> createState() => _FinancesState();
+}
+
+/// Kotlin's `FinancesScreen`: three tabs over one title.
+class _FinancesState extends State<FinancesScreen> {
+  late int _tab = widget.initialTab;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(title: const Text('الميزانية والالتزامات')),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ZadSpacing.gutter,
+              vertical: ZadSpacing.xs,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<int>(
+                showSelectedIcon: false,
+                segments: const <ButtonSegment<int>>[
+                  ButtonSegment<int>(
+                    value: 0,
+                    label: Text('الحركات والميزانية'),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    label: Text('الاشتراكات والأقساط'),
+                  ),
+                  ButtonSegment<int>(value: 2, label: Text('الديون')),
+                ],
+                selected: <int>{_tab},
+                onSelectionChanged: (s) => setState(() => _tab = s.first),
+              ),
+            ),
+          ),
+          Expanded(
+            child: IndexedStack(
+              index: _tab,
+              children: const <Widget>[
+                _DailyTab(),
+                SubscriptionsScreen(embedded: true),
+                DebtsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Kotlin's `BudgetScreen` — the «الحركات والميزانية» tab.
+class _DailyTab extends ConsumerWidget {
+  const new();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,10 +150,9 @@ class FinancesScreen extends ConsumerWidget {
     );
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: const BoxDecoration(),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('الميزانية والالتزامات')),
         floatingActionButton: FloatingActionButton.extended(
           heroTag: 'finances-add',
           onPressed: () => showAddTransactionSheet(context),

@@ -91,8 +91,12 @@ String _whenLabel(DateTime next, DateTime today) {
 
 /// The screen.
 class SubscriptionsScreen extends ConsumerWidget {
-  /// Creates the screen.
-  const new({super.key});
+  /// Creates the screen; [embedded] drops the app bar inside the finances
+  /// screen's «الاشتراكات والأقساط» tab.
+  const new({this.embedded = false, super.key});
+
+  /// Whether a host screen already shows the title.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -106,7 +110,9 @@ class SubscriptionsScreen extends ConsumerWidget {
       decoration: const BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('الاشتراكات والفواتير')),
+        appBar: embedded
+            ? null
+            : AppBar(title: const Text('الاشتراكات والفواتير')),
         // The thumb zone: the one action that adds, bottom corner.
         floatingActionButton: view.items.isEmpty
             ? null
