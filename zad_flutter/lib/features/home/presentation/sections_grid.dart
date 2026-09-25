@@ -14,6 +14,7 @@ import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/appointments/presentation/appointments_screen.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
@@ -21,6 +22,7 @@ import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
@@ -122,6 +124,14 @@ final List<ZadSection> zadSections = <ZadSection>[
     badge: SectionBadge.shopping,
     open: (c) => showHouseholdSection(c, HouseholdSection.shopping),
   ),
+  // مواعيدي third: Kotlin's "a feature for the things that matter" order.
+  const ZadSection(
+    id: 'appointments',
+    icon: ZadIcons.obligation,
+    label: 'مواعيدي',
+    accent: ZadSectionAccent.teal,
+    open: showAppointmentsScreen,
+  ),
   const ZadSection(
     id: 'family',
     icon: ZadIcons.family,
@@ -157,6 +167,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'تسبيحة',
     accent: ZadSectionAccent.emerald,
     open: showTasbihaScreen,
+  ),
+  const ZadSection(
+    id: 'maintenance',
+    icon: ZadIcons.maintenance,
+    label: 'صيانة المنزل',
+    accent: ZadSectionAccent.amber,
+    open: showMaintenanceScreen,
   ),
   ZadSection(
     id: 'recipes',
