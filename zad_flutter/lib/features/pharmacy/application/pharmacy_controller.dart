@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
 
@@ -104,6 +105,8 @@ class PharmacyController extends Notifier<PharmacyView> {
       ];
       await repository.pruneSnoozes(now);
       if (!ref.mounted) return;
+      // The dose reminders follow the list the server just gave.
+      unawaited(ref.read(localRemindersProvider).syncDoses(medicines));
 
       state = PharmacyView(
         medicines: medicines,
@@ -212,6 +215,7 @@ class PharmacyController extends Notifier<PharmacyView> {
   Future<void> _afterWrite() async {
     if (!ref.mounted) return;
     final medicines = ref.read(pharmacyRepositoryProvider).cached();
+    unawaited(ref.read(localRemindersProvider).syncDoses(medicines));
     state = state.copyWith(
       medicines: medicines,
       today: _relevant(_bareSlots(medicines), ref.read(nowProvider)()),

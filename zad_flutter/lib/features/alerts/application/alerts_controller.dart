@@ -112,6 +112,10 @@ class AlertsController extends Notifier<AlertsView> {
       case AlertDestination.proposals:
         ref.invalidate(proposalsControllerProvider);
         ref.read(shellNavigationProvider.notifier).open(ShellTab.proposals);
+      case AlertDestination.pharmacy:
+        ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
+      case AlertDestination.home:
+        ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
       case null:
         break;
     }

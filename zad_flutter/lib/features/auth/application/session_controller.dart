@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/application/brain_health_controller.dart';
@@ -81,6 +82,12 @@ class SessionController extends Notifier<String?> {
     // First, while the session can still delete its own row: this phone
     // stops receiving the account's alerts. Never throws, never blocks long.
     await ref.read(pushRegistrarProvider).unregister();
+    // Kotlin's PharmacyReminderScheduler.cancelAll: the next account on this
+    // phone must not be reminded of the last one's medicines.
+    await ref
+        .read(localRemindersProvider)
+        .cancelAll()
+        .then((_) {}, onError: (Object _) {});
     try {
       await ref.read(authGatewayProvider).signOut();
     } finally {

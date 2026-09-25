@@ -11,6 +11,12 @@ import 'package:flutter/foundation.dart';
 enum AlertDestination {
   /// The bank transactions waiting for a yes.
   proposals,
+
+  /// The family pharmacy — a dose reminder.
+  pharmacy,
+
+  /// The home — the tasbiha and seasonal reminders.
+  home,
 }
 
 /// An alert.
@@ -48,6 +54,8 @@ class PushAlert {
 /// newer server's route must not crash an older phone.
 AlertDestination? destinationFor(String? route) => switch (route) {
   'transaction_proposals' => AlertDestination.proposals,
+  'pharmacy' => AlertDestination.pharmacy,
+  'home' => AlertDestination.home,
   _ => null,
 };
 
@@ -55,6 +63,8 @@ AlertDestination? destinationFor(String? route) => switch (route) {
 /// same way as a tap on a push.
 String? payloadFor(AlertDestination? d) => switch (d) {
   AlertDestination.proposals => 'transaction_proposals',
+  AlertDestination.pharmacy => 'pharmacy',
+  AlertDestination.home => 'home',
   null => null,
 };
 

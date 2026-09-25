@@ -7,6 +7,7 @@ import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
+import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
@@ -47,6 +48,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
       if (mounted) await alerts.askOnce();
+      // Kotlin's on-phone reminders: doses, tasbih at 17:00, seasons.
+      if (mounted) await ref.read(localRemindersProvider).resyncAll();
     });
   }
 

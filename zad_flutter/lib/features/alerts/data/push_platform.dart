@@ -68,6 +68,10 @@ class SilentPushPlatform implements PushPlatform {
 final FlutterLocalNotificationsPlugin _local =
     FlutterLocalNotificationsPlugin();
 
+/// The one plugin instance — the local reminders schedule on it too, so a
+/// tap on one of them is routed by the same callback as a tap on a push.
+FlutterLocalNotificationsPlugin get zadLocalNotifications => _local;
+
 const String _channelName = 'تنبيهات زاد';
 const String _channelDescription = 'تنبيهات استباقية من مساعد زاد';
 

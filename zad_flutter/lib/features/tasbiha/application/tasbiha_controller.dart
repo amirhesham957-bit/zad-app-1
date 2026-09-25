@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/tasbiha/data/tasbiha_remote.dart';
@@ -77,6 +78,7 @@ class TasbihaView {
 /// The garden.
 class TasbihaController extends Notifier<TasbihaView> {
   Timer? _flush;
+  String? _reminderMovedFor;
   int _pendingDelta = 0;
   GardenTree? _pendingTree;
 
@@ -225,6 +227,16 @@ class TasbihaController extends Notifier<TasbihaView> {
 
     _pendingDelta += 1;
     _pendingTree = updated;
+    // Said tasbih today: today's 17:00 reminder moves to tomorrow.
+    if (_reminderMovedFor != today) {
+      _reminderMovedFor = today;
+      unawaited(
+        ref
+            .read(localRemindersProvider)
+            .syncTasbih(doneToday: true)
+            .then((_) {}, onError: (Object _) {}),
+      );
+    }
     _flush?.cancel();
     _flush = Timer(const Duration(milliseconds: 1500), () {
       unawaited(_flushNow());
