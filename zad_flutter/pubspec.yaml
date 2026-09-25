@@ -108,6 +108,9 @@ dependencies:
   # The system share sheet — Kotlin's ZadShare: the savings challenge's
   # "شارك التحدي" and the weekly card. Text only; no files leave the app.
   share_plus: ^13.3.0
+  # Draws the family invite as a QR code — Kotlin's InviteMemberDialog "QR"
+  # tab. Pure Dart painter, no platform code, no camera.
+  qr_flutter: ^4.1.0
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen
