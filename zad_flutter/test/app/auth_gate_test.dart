@@ -26,6 +26,7 @@ import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/data/notifications_repository.dart';
@@ -163,6 +164,32 @@ class _OfflineSubscriptions implements SubscriptionsRemote {
       Future<void>.error(const SocketException('offline'));
 }
 
+/// Insights with no server: every call refuses at once, so Home's section
+/// renders from the (empty) cache and a background refresh cannot write.
+class _OfflineInsights implements InsightsRemote {
+  @override
+  Future<List<Map<String, dynamic>>> fetchPending(String userId) =>
+      Future<List<Map<String, dynamic>>>.error(
+        const SocketException('offline'),
+      );
+
+  @override
+  Future<void> setStatus(String id, String status, {String? reason}) =>
+      Future<void>.error(const SocketException('offline'));
+
+  @override
+  Future<String?> statusOf(String id) =>
+      Future<String?>.error(const SocketException('offline'));
+
+  @override
+  Future<void> remember({
+    required String userId,
+    required String scope,
+    required String note,
+    required double confidence,
+  }) => Future<void>.error(const SocketException('offline'));
+}
+
 /// Refuses at once, for the same reason as the subscriptions stand-in.
 class _OfflineNotifications implements NotificationsRemote {
   @override
@@ -260,6 +287,14 @@ void main() {
           BudgetRepository(
             cache: documents,
             remote: _OfflineBudget(),
+            signedInUserId: () => userId,
+          ),
+        ),
+        insightsRepositoryProvider.overrideWithValue(
+          InsightsRepository(
+            cache: documents,
+            remote: _OfflineInsights(),
+            outbox: () => outbox,
             signedInUserId: () => userId,
           ),
         ),

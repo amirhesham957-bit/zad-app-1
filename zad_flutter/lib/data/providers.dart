@@ -33,6 +33,7 @@ import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/family/data/family_remote.dart';
 import 'package:zad/features/family/data/family_repository.dart';
+import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
@@ -321,6 +322,18 @@ final knowledgeMapRepositoryProvider = Provider<KnowledgeMapRepository>((ref) {
   );
 });
 
+/// The brain's pending insights, for Home; decisions queued.
+final Provider<InsightsRepository> insightsRepositoryProvider =
+    Provider<InsightsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return InsightsRepository(
+        cache: store.documents,
+        remote: SupabaseInsightsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
 /// The account's family: cached, and changed only online.
 final familyRepositoryProvider = Provider<FamilyRepository>((ref) {
   final store = ref.watch(localStoreProvider);
@@ -414,6 +427,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(pricesRepositoryProvider).sendQueuedReport(entry),
       OutboxKind.registerPushToken =>
         await ref.read(pushRegistrarProvider).sendQueued(entry),
+      OutboxKind.resolveInsight =>
+        await ref.read(insightsRepositoryProvider).sendQueued(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>

@@ -18,6 +18,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
@@ -71,6 +72,10 @@ class HomeScreen extends ConsumerWidget {
                   // "committed" part is made of.
                   const SizedBox(height: ZadSpacing.md),
                   const SubscriptionsEntryCard(),
+                  // What the brain noticed, under the money it is about.
+                  // Nothing at all when nothing is pending.
+                  const SizedBox(height: ZadSpacing.lg),
+                  const HomeInsightsSection(),
                   // Below the money, not above it. The channel's health is
                   // worth saying when it is broken, but the balance is what
                   // the screen is for — and the card renders nothing at all

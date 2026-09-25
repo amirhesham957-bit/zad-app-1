@@ -102,6 +102,13 @@ abstract final class OutboxKind {
   /// one, and only the newest is worth sending.
   static const String registerPushToken = 'register_push_token';
 
+  /// Move a brain insight on — `seen`, `acted`, or `dismissed` with a reason
+  /// — and, for a reasoned dismissal, leave the brain its memory note.
+  ///
+  /// One entry per insight (`insight:<id>`): a later decision about the same
+  /// card replaces an unsent earlier one.
+  static const String resolveInsight = 'resolve_insight';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

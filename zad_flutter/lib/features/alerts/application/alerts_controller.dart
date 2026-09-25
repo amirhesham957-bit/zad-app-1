@@ -9,6 +9,7 @@ import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
+import 'package:zad/features/insights/application/insights_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 
@@ -92,6 +93,12 @@ class AlertsController extends Notifier<AlertsView> {
     unawaited(
       ref
           .read(notificationsControllerProvider.notifier)
+          .refresh(force: true)
+          .then((_) {}, onError: (Object _) {}),
+    );
+    unawaited(
+      ref
+          .read(insightsControllerProvider.notifier)
           .refresh(force: true)
           .then((_) {}, onError: (Object _) {}),
     );
