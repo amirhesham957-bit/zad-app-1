@@ -38,6 +38,7 @@ import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
+import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/modes/data/modes_repository.dart';
 import 'package:zad/features/nearby/data/nearby_remote.dart';
@@ -310,6 +311,12 @@ final Provider<ModesRepository> modesRepositoryProvider =
         signedInUserId: ref.watch(signedInUserIdProvider),
       );
     });
+
+/// The shopping list's two model calls, asked on a tap.
+final Provider<ShoppingAiRemote> shoppingAiRemoteProvider =
+    Provider<ShoppingAiRemote>(
+      (ref) => SupabaseShoppingAiRemote(ref.watch(supabaseClientProvider)),
+    );
 
 /// The notification list: the newest page, cached as one document.
 final Provider<NotificationsRepository> notificationsRepositoryProvider =

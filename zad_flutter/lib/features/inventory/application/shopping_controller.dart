@@ -66,13 +66,31 @@ class ShoppingController extends Notifier<ShoppingView> {
     }
   }
 
-  /// Adds a line the customer typed.
-  Future<void> add(String itemName, {int quantity = 1}) async {
+  /// Adds a line the customer typed — Kotlin's dialog also takes a price and
+  /// a store.
+  Future<void> add(
+    String itemName, {
+    int quantity = 1,
+    double estimatedPrice = 0,
+    String? store,
+  }) async {
     final name = itemName.trim();
     if (name.isEmpty) return;
     await ref
         .read(shoppingListRepositoryProvider)
-        .add(itemName: name, quantity: quantity, at: ref.read(nowProvider)());
+        .add(
+          itemName: name,
+          quantity: quantity,
+          estimatedPrice: estimatedPrice,
+          store: (store?.trim().isEmpty ?? true) ? null : store!.trim(),
+          at: ref.read(nowProvider)(),
+        );
+    _reload();
+  }
+
+  /// Keeps a price estimate on a line.
+  Future<void> setEstimatedPrice(String id, double price) async {
+    await ref.read(shoppingListRepositoryProvider).setEstimatedPrice(id, price);
     _reload();
   }
 

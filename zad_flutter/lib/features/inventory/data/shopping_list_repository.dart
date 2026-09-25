@@ -123,6 +123,18 @@ class ShoppingListRepository {
     return item;
   }
 
+  /// Stores a price estimate on a line, so it is not asked for again —
+  /// Kotlin's `persistEstimatedPrice`.
+  Future<ShoppingItem?> setEstimatedPrice(String id, double price) async {
+    final current = _read(_cache.get(id) ?? '');
+    if (current == null) return null;
+    final next = current
+        .copyWith(estimatedPrice: price)
+        .markPending(pending: true);
+    await _save(next);
+    return next;
+  }
+
   /// Ticks a line off, or back on.
   Future<ShoppingItem?> setPurchased(
     String id, {

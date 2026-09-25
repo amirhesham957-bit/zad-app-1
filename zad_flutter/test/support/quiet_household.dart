@@ -61,8 +61,12 @@ class QuietShopping extends ShoppingController {
   Future<void> refresh() async {}
 
   @override
-  Future<void> add(String itemName, {int quantity = 1}) async =>
-      added.add(itemName);
+  Future<void> add(
+    String itemName, {
+    int quantity = 1,
+    double estimatedPrice = 0,
+    String? store,
+  }) async => added.add(itemName);
 }
 
 /// Broke mode and the challenge, showing [view] and never fetching.
