@@ -249,9 +249,11 @@ Deno.test("parseTransactionProposalCallback rejects malformed and unrelated call
 Deno.test("classification proposal keyboard is complete and within Telegram callback limit", () => {
   const id = "3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607";
   const buttons = transactionProposalKeyboard(id, "needs_classification").flat();
+  // The last button («المبلغ غلط», pw:) is handled by its own parser, not the RPC's decisions.
   assertEquals(buttons.map((button) => parseTransactionProposalCallback(button.callback_data ?? "")?.decision), [
-    "expense", "income", "transfer", "reject",
+    "expense", "income", "transfer", "reject", undefined,
   ]);
+  assertEquals(buttons.at(-1)?.callback_data, `pw:${id}`);
   for (const button of buttons) {
     assert(new TextEncoder().encode(button.callback_data).length <= 64);
   }
@@ -262,7 +264,7 @@ Deno.test("confirmation proposal keyboard offers confirmation, rejection, and co
   const decisions = transactionProposalKeyboard(id, "awaiting_confirmation", "expense")
     .flat()
     .map((button) => parseTransactionProposalCallback(button.callback_data ?? "")?.decision);
-  assertEquals(decisions, ["confirm", "reject", "income", "transfer"]);
+  assertEquals(decisions, ["confirm", "reject", "income", "transfer", undefined]);
 });
 
 Deno.test("notification review message asks for amount and direction without claiming a write", () => {

@@ -183,7 +183,10 @@ export function transactionProposalKeyboard(
         { text: "دخل", callback_data: `pi:${proposalId}` },
         { text: "تحويل", callback_data: `pt:${proposalId}` },
       ],
-      [{ text: "رفض", callback_data: `pr:${proposalId}` }],
+      [
+        { text: "رفض", callback_data: `pr:${proposalId}` },
+        { text: "✏️ المبلغ غلط", callback_data: `pw:${proposalId}` },
+      ],
     ];
   }
 
@@ -199,7 +202,16 @@ export function transactionProposalKeyboard(
       { text: "رفض", callback_data: `pr:${proposalId}` },
     ],
     corrections,
+    // «الرقم ده غلط» (بلاغ ٢٠٢٦-٠٩-٢٥): كان الحل الوحيد «رفض» ومفيش طريقة تقول المبلغ الصح.
+    [{ text: "✏️ المبلغ غلط", callback_data: `pw:${proposalId}` }],
   ];
+}
+
+/** "pw:<proposal_id>" — المبلغ اللي قريناه من الإشعار غلط. */
+export function parseAmountWrongCallback(data: string): string | null {
+  const parts = data.split(":");
+  if (parts.length !== 2 || parts[0] !== "pw" || !/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return parts[1];
 }
 
 export function parseTransactionProposalCallback(
@@ -467,19 +479,77 @@ export function isHumanUpdate(update: UpdateEnvelope | null | undefined): boolea
 export const DOSE_SNOOZE_MINUTES = 15;
 
 export function doseKeyboard(momentId: string): InlineKeyboardButton[][] {
-  return [[
-    { text: "✅ أخدت الجرعة", callback_data: `dz:${momentId}:t` },
-    { text: `⏰ فكّرني بعد ${DOSE_SNOOZE_MINUTES} دقيقة`, callback_data: `dz:${momentId}:s` },
-  ]];
+  return [
+    [
+      { text: "✅ أخدت الجرعة", callback_data: `dz:${momentId}:t` },
+      // بلاغ ٢٠٢٦-٠٩-٢٥: «لما بدوس مخدتش الدوا مش بيقراها». الزرار ماكانش موجود أصلاً،
+      // فالعميل اللي فوّت جرعة بقصد كان ملوش غير إنه يكتب — والكتابة ماكانتش بتتفهم —
+      // والكرون يفضل يعاتبه عليها لحد ما الوقت يعدّي.
+      { text: "❌ مخدتهاش", callback_data: `dz:${momentId}:k` },
+    ],
+    [{ text: `⏰ فكّرني بعد ${DOSE_SNOOZE_MINUTES} دقيقة`, callback_data: `dz:${momentId}:s` }],
+  ];
 }
 
-/** "dz:<uuid>:t" (اتاخدت) / "dz:<uuid>:s" (أجّل) */
-export function parseDoseCallback(data: string): { momentId: string; action: "taken" | "snooze" } | null {
+export type DoseAction = "taken" | "skipped" | "snooze";
+
+/** "dz:<uuid>:t" (اتاخدت) / "dz:<uuid>:k" (مخدتهاش) / "dz:<uuid>:s" (أجّل) */
+export function parseDoseCallback(data: string): { momentId: string; action: DoseAction } | null {
   const parts = data.split(":");
   if (parts.length !== 3 || parts[0] !== "dz") return null;
-  if (parts[2] !== "t" && parts[2] !== "s") return null;
+  const actions: Record<string, DoseAction> = { t: "taken", k: "skipped", s: "snooze" };
+  const action = actions[parts[2]];
+  if (!action) return null;
   if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
-  return { momentId: parts[1], action: parts[2] === "t" ? "taken" : "snooze" };
+  return { momentId: parts[1], action };
+}
+
+// ── الرد بالكلام بدل الزرار (٢٠٢٦-٠٩-٢٥) ────────────────────────────────────
+//
+// البلاغ: «لما أقول لا مش بيقراها، بيقرا الموافقة بس». السبب الجذري كان في الـregex
+// نفسه: `/^\s*(لا|أيوه|…)\b/` — و`\b` في JavaScript حد كلمة **ASCII**. الحروف العربي
+// مش «word characters» عنده، فمفيش أي حد بين «لا» وآخر الرسالة أو المسافة اللي بعدها.
+// النتيجة المقاسة: «لا»، «أيوه»، «تمام»، «اه» كلهم false؛ «ok» و«no» بس اللي كانوا
+// بيتفهموا. يعني كل رد عربي كان بيروح للموديل كرسالة عادية ومفيش حاجة بتتقفل.
+//
+// الحد هنا lookahead صريح: آخر الرسالة أو مسافة أو علامة ترقيم. والرسالة لازم تكون
+// قصيرة — «تمام بس المبلغ ١٥٠ مش ٢٠٠» مش موافقة، ده تصحيح، ومكانه الموديل.
+//
+// «مش» و«أي» اتشالوا من القوايم عن قصد: «مش فاهم» مش رفض، و«أي حاجة» مش موافقة.
+// طول ما الـregex القديم كان عاطل ماحدش خد باله إنهم غلط.
+
+const WORD_END = String.raw`(?=$|[\s\p{P}\p{S}])`;
+const YES_RE = new RegExp(
+  String.raw`^\s*(?:أيوه|ايوه|أيوا|ايوا|أيوة|ايوة|أه|اه|آه|نعم|تم|تمام|ماشي|موافق|أكد|اكد|أكيد|اكيد|نفذ|نفّذ|اوك|أوك|أوكي|اوكي|صح|مظبوط|ok|okay|yes|yeah|yep|sure|confirm)` + WORD_END,
+  "iu",
+);
+const NO_RE = new RegExp(
+  String.raw`^\s*(?:لا|لأ|لاء|لاا|لع|إلغاء|الغاء|الغي|ألغي|رفض|ارفض|غلط|استنى|استني|بعدين|no|nope|cancel|stop|wait|later)` + WORD_END,
+  "iu",
+);
+
+/** أقصى عدد كلمات لرسالة تتحسب «أيوه/لا». أطول من كده = كلام فيه معلومة، يروح للموديل. */
+const MAX_YES_NO_WORDS = 4;
+
+export function parseYesNoReply(text: string): "yes" | "no" | null {
+  const t = text.trim();
+  if (!t || t.split(/\s+/).length > MAX_YES_NO_WORDS) return null;
+  if (NO_RE.test(t)) return "no";
+  if (YES_RE.test(t)) return "yes";
+  return null;
+}
+
+// «أخدته» / «مخدتش» صريحة عن الجرعة — بتتقرا حتى لو الرسالة أطول شوية («خدت الدوا الحمدلله»).
+// النفي بيتفحص الأول: «مخدتهاش» فيها «خدت».
+const DOSE_SKIPPED_RE = /(?:^|\s)(?:م|ما\s*)(?:ا?خدت|أخدت|اخدت)(?:ه|ها|هم)?ش(?=$|[\s\p{P}])|(?:^|\s)نسيت(?:ه|ها|هم)?(?=$|[\s\p{P}])|مش\s+(?:هاخد|هخد|واخد|واخدها|واخده)/u;
+const DOSE_TAKEN_RE = /(?:^|\s)(?:ا?خدت|أخدت|اخدت|خدت)(?:ه|ها|هم|و)?(?=$|[\s\p{P}])|(?:^|\s)(?:ا?خدناه|شربته|شربتها)(?=$|[\s\p{P}])/u;
+
+export function parseDoseReply(text: string): "taken" | "skipped" | null {
+  const t = text.trim();
+  if (!t || t.split(/\s+/).length > 8) return null;
+  if (DOSE_SKIPPED_RE.test(t)) return "skipped";
+  if (DOSE_TAKEN_RE.test(t)) return "taken";
+  return null;
 }
 
 /** اللحظات اللي بتاخد أزرار الجرعة. `dose_nudge` مكتوبة بس بس برضه محتاجة الزرار. */

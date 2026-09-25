@@ -40,7 +40,8 @@ import {
   checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
-  doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES,
+  doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
+  parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision,
 } from "./telegram.ts";
 import {
   AgentContextInput, agentSystemPrompt, buildAgentContext, clampForTelegram,
@@ -1244,12 +1245,39 @@ bot.on("message:text", async (ctx) => {
   // بيعمله التطبيق). بنقرا أحدث pending write/tool لسه pending بتاعه، ولو رده
   // موافق/رافض ننفذ نفس منطق الـ callback بالظبط عبر handleSpendCallbackText /
   // handleToolCallbackText تحت (idempotent: claim بـ status).
-  const affirmative = /^\s*(أيوه|ايوه|أيوا|ايوا|أيوة|ايوة|أي|اي|أه|اه|نعم|تم|تمام|ماشي|موافق|أكد|اكد|أكيد|اكيد|نفذ|نفّذ|اوك|أوكي|اوكي|ok|okay|yes|yeah|yep|sure|confirm)\b/i;
-  const negative = /^\s*(لا|لأ|مش|مت|إلغاء|الغاء|استنى|استني|بعدين|no|nope|cancel|stop|wait|later)\b/i;
-  if (affirmative.test(ctx.message.text) || negative.test(ctx.message.text)) {
-    const isAffirm = affirmative.test(ctx.message.text);
+  //
+  // ٢٠٢٦-٠٩-٢٥: الـregex القديم كان بـ`\b` فمكانش بيشوف أي رد عربي خالص (parseYesNoReply
+  // في telegram.ts فيها السبب بالتفصيل)، وكان بيدوّر على المصروف المكتوب والأداة بس — لا
+  // تذكير الجرعة ولا اقتراح الإشعار البنكي. دلوقتي الاتنين بيتقفلوا بالكلام كمان.
+  const yesNo = parseYesNoReply(ctx.message.text);
+  if (yesNo) {
+    const isAffirm = yesNo === "yes";
     if (await handleSpendCallbackText(ctx, sb, userId, isAffirm)) return;
     if (await handleToolCallbackText(ctx, sb, userId, isAffirm)) return;
+  }
+  const doseReply = parseDoseReply(ctx.message.text);
+  if (yesNo || doseReply) {
+    const [dose, proposal] = await Promise.all([openDoseMoment(sb, userId), yesNo ? openProposal(sb, userId) : null]);
+    // «لا» لوحدها ممكن تبقى على الجرعة أو على الإشعار البنكي — بتروح للي اتبعت آخر.
+    // «أخدته» / «مخدتش» عن الدوا بس، مهما كان فيه اقتراح.
+    const toDose = dose && (doseReply || !proposal || dose.sentAt >= proposal.createdAt);
+    if (toDose) {
+      const action = doseReply ?? (yesNo === "yes" ? "taken" : "skipped");
+      await ctx.reply(await settleDose(sb, userId, dose.id, action));
+      return;
+    }
+    if (proposal && yesNo) {
+      if (yesNo === "no") {
+        await resolveProposalAndReply(ctx, sb, ctx.chat.id, userId, proposal.id, "reject");
+      } else if (proposal.status === "awaiting_confirmation") {
+        await resolveProposalAndReply(ctx, sb, ctx.chat.id, userId, proposal.id, "confirm");
+      } else {
+        // «أيوه» على حركة مش معروف اتجاهها ماتكفيش — مانخمنش مصروف ولا دخل.
+        await sendTelegramMessage(ctx.chat.id, "تمام — بس دي مصروف ولا دخل ولا تحويل؟",
+          transactionProposalKeyboard(proposal.id, "needs_classification"));
+      }
+      return;
+    }
     // مفيش حاجة معلّقة → كمّل كرسالة عادية للوكيل
   }
 
@@ -1521,6 +1549,200 @@ bot.on("message:photo", async (ctx) => {
   await ctx.reply(itemsSummary || "معلش، ملقتش أصناف ولا مبلغ واضح في الصورة دي.");
 });
 
+// Bank notifications use one durable proposal shared with Android. The RPC locks the
+// row and posts at most one transaction, so two quick taps or an app + Telegram race
+// both return the same terminal result without duplicating money. Shared by the buttons
+// and by a typed «أيوه/لا» (2026-09-25).
+async function resolveProposalAndReply(
+  ctx: { reply: (t: string) => Promise<unknown> },
+  sb: SupabaseClient,
+  chatId: number,
+  userId: string,
+  proposalId: string,
+  decision: TransactionProposalDecision,
+): Promise<void> {
+  const { data: result, error } = await sb.rpc("zad_resolve_transaction_proposal_service", {
+    p_user: userId,
+    p_proposal: proposalId,
+    p_decision: decision,
+    p_channel: "telegram",
+  });
+  if (error || !result) {
+    console.error("transaction proposal resolution failed:", error?.message ?? "missing result");
+    await ctx.reply("معلش، مقدرتش أنفذ القرار دلوقتي. جرب تاني.");
+    return;
+  }
+  const resolved = result as { ok?: boolean; status?: string; already_resolved?: boolean };
+  if (resolved.status === "duplicate_suspected") {
+    // الدالة ماقيدتش: فيه معاملة متسجلة بنفس المبلغ من ربع ساعة. نفس السؤال اللي بيظهر
+    // في التطبيق، والقرار التالي (pd/ps) بيرجع لنفس الدالة.
+    if (!(await sendDuplicateProposalQuestion(sb, chatId, userId, proposalId))) {
+      await ctx.reply("فيه عملية متسجلة بنفس المبلغ في نفس الوقت تقريبًا. افتح التطبيق وقولي دي نفس المعاملة ولا لأ.");
+    }
+    return;
+  }
+  if (resolved.status === "merged") {
+    await ctx.reply(resolved.already_resolved ? "اتحسبت مرة واحدة بالفعل." : "تمام، اعتبرتهم معاملة واحدة ومش هتتحسب مرتين.");
+    return;
+  }
+  if (resolved.status === "needs_classification") {
+    // "عملية تانية" على اقتراح اتجاهه لسه مش معروف — مايتقيدش بتخمين.
+    await sendTelegramMessage(chatId, "تمام، عملية تانية. دي مصروف ولا دخل ولا تحويل؟",
+      transactionProposalKeyboard(proposalId, "needs_classification"));
+    return;
+  }
+  if (resolved.status === "expired") {
+    await ctx.reply("الطلب ده انتهت صلاحيته.");
+    return;
+  }
+  if (resolved.status === "rejected") {
+    await ctx.reply(resolved.already_resolved ? "العملية كانت مرفوضة بالفعل." : "تمام، العملية اترفضت ومش هتتحسب.");
+    return;
+  }
+  if (resolved.status === "posted") {
+    await ctx.reply(resolved.already_resolved ? "العملية كانت متسجلة بالفعل، وماتكررتش." : "تمام، اتأكدت واتسجلت مرة واحدة.");
+    return;
+  }
+  await ctx.reply("القرار موصلش لحالة نهائية. افتح التطبيق وراجع العملية.");
+  return;
+}
+
+// ── تسوية تذكير الجرعة: زرار أو كلام، نفس المسار (٢٠٢٦-٠٩-١٩، ومخدتهاش ٢٠٢٦-٠٩-٢٥) ──
+//
+// الترتيب مقصود بالحرف: بنقرا اللحظة من `zad_voice_moments` (مصدر الحقيقة الوحيد لأسماء
+// الأدوية ومواعيدها — مفيش أي اسم بييجي من كلام الموديل)، بنكتب في الداتابيز، وبنرد على
+// العميل **بس** لو الكتابة نجحت. أي فشل بيقول له صراحةً إنها ماتسجلتش.
+async function settleDose(sb: SupabaseClient, userId: string, momentId: string, action: DoseAction): Promise<string> {
+  const { data: momentRow } = await sb.from("zad_voice_moments")
+    .select("id,user_id,moment,facts")
+    .eq("id", momentId).eq("user_id", userId).maybeSingle();
+  const moment = momentRow as { moment: string; facts: Record<string, unknown> } | null;
+  if (!moment) {
+    return "التذكير ده مش موجود عندي — افتح صفحة الصيدلية في التطبيق وسجّل الجرعة من هناك.";
+  }
+  const itemIds = Array.isArray(moment.facts?.item_ids)
+    ? (moment.facts.item_ids as unknown[]).map(String).filter((v) => /^[0-9a-fA-F-]{36}$/.test(v))
+    : [];
+  const scheduledAt = typeof moment.facts?.scheduled_at === "string" ? moment.facts.scheduled_at : null;
+  if (itemIds.length === 0 || !scheduledAt) {
+    return "التذكير ده قديم ومش مربوط بدوا محدد — سجّل الجرعة من صفحة الصيدلية في التطبيق.";
+  }
+
+  if (action === "snooze") {
+    // التأجيل بيتكتب في جدول، مش في الذاكرة: الكرون هو اللي بيقرا منه فبيسكت عن
+    // نفس الجرعة لحد ما الوقت يعدّي، وبعدها بيبعت تذكير واحد جديد.
+    const until = new Date(Date.now() + DOSE_SNOOZE_MINUTES * 60_000).toISOString();
+    const { error: snoozeErr } = await sb.from("zad_dose_snoozes").upsert(
+      itemIds.map((itemId) => ({
+        user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until,
+      })),
+      { onConflict: "user_id,item_id,scheduled_at" },
+    );
+    if (snoozeErr) {
+      console.error("[dose] snooze failed:", snoozeErr.message);
+      return "معلش، مقدرتش أأجّل التذكير — هفضل أفكّرك زي ما هو.";
+    }
+    return `تمام، هسكت ${DOSE_SNOOZE_MINUTES} دقيقة وأفكّرك تاني.`;
+  }
+
+  const names: string[] = [];
+  const failed: string[] = [];
+  if (action === "skipped") {
+    // صف `skipped` في نفس الخانة الزمنية: الفهرس الفريد (user_id, item_id, scheduled_at)
+    // بيخليه الإجابة الوحيدة على الجرعة دي، و`zad_enqueue_missed_doses` بيعتبره إجابة
+    // فبيبطّل «فاتتك الجرعة». units = 0 لأن مفيش حاجة خرجت من العلبة. الـinsert مش upsert
+    // عن قصد: الفهرس جزئي (WHERE scheduled_at IS NOT NULL) وON CONFLICT مايقدرش يستنتجه؛
+    // وتكرار (23505) معناه إن الجرعة اتجاوب عليها قبل كده — مش فشل.
+    const { data: items } = await sb.from("zad_pharmacy_items").select("id,name").eq("user_id", userId).in("id", itemIds);
+    const nameOf = new Map(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
+    for (const itemId of itemIds) {
+      const { error } = await sb.from("zad_pharmacy_doses").insert({
+        user_id: userId, item_id: itemId, scheduled_at: scheduledAt, status: "skipped", units: 0,
+      });
+      if (error && (error as { code?: string }).code !== "23505") {
+        console.error("[dose] skip failed:", itemId, error.message);
+        failed.push(itemId);
+      } else {
+        names.push(String(nameOf.get(itemId) ?? "الدوا"));
+      }
+    }
+  } else {
+    for (const itemId of itemIds) {
+      const { data: result, error } = await sb.rpc("zad_log_pharmacy_dose_atomic", {
+        p_user: userId,
+        p_item: itemId,
+        // الخانة الزمنية بتاعة التذكير نفسه، مش دلوقتي: الفهرس الفريد
+        // (user_id, item_id, scheduled_at) بيخلي ضغطتين على نفس الزر عملية واحدة،
+        // وبيخلي الكرون يشوف إن الجرعة دي بالذات اتاخدت.
+        p_scheduled_at: scheduledAt,
+        p_taken_at: new Date().toISOString(),
+      });
+      const r = result as { ok?: boolean; name?: string; remaining_quantity?: number } | null;
+      if (error || !r?.ok) {
+        console.error("[dose] log failed:", itemId, error?.message ?? JSON.stringify(r));
+        failed.push(itemId);
+      } else {
+        names.push(String(r.name ?? "الدوا"));
+      }
+    }
+  }
+  if (names.length === 0) {
+    return "معلش، مقدرتش أسجّل ده دلوقتي — ماتسجلش، جرّب من صفحة الصيدلية في التطبيق.";
+  }
+  // التذكير ده خلص شغله: مايتبعتش تاني ولا يتحسب كجرعة فايتة.
+  await sb.from("zad_voice_moments")
+    .update({ status: "sent", error: null })
+    .eq("id", momentId).eq("user_id", userId);
+  const label = names.join(" و");
+  const partial = failed.length > 0 ? " — بس فيه دوا مقدرتش أسجله، راجع صفحة الصيدلية." : "";
+  return action === "skipped"
+    ? `تمام، سجّلت إنك مخدتش جرعة ${label} المرة دي، ومش هعاتبك عليها. الجرعة الجاية هفكّرك بيها في ميعادها${partial}`
+    : failed.length > 0
+      ? `اتسجلت جرعة ${label} ✅${partial}`
+      : `اتسجلت جرعة ${label} ✅ تمام عليك.`;
+}
+
+/**
+ * آخر تذكير جرعة اتبعت للعميل من ٣ ساعات ومحدش رد عليه — عشان «أخدته» / «لا» المكتوبة
+ * تتربط بيه. «محدش رد» = مفيش صف في `zad_pharmacy_doses` للخانة دي لأي دوا فيها.
+ */
+async function openDoseMoment(sb: SupabaseClient, userId: string): Promise<{ id: string; sentAt: number } | null> {
+  const since = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+  const { data } = await sb.from("zad_voice_moments")
+    .select("id,facts,sent_at,created_at")
+    .eq("user_id", userId)
+    .in("moment", [...DOSE_MOMENTS])
+    .eq("status", "sent")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  for (const row of (data ?? []) as Array<{ id: string; facts: Record<string, unknown>; sent_at: string | null; created_at: string }>) {
+    const ids = Array.isArray(row.facts?.item_ids) ? (row.facts.item_ids as unknown[]).map(String) : [];
+    const scheduledAt = typeof row.facts?.scheduled_at === "string" ? row.facts.scheduled_at : null;
+    if (ids.length === 0 || !scheduledAt) continue;
+    const { count } = await sb.from("zad_pharmacy_doses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId).in("item_id", ids).eq("scheduled_at", scheduledAt);
+    if ((count ?? 0) === 0) return { id: row.id, sentAt: new Date(row.sent_at ?? row.created_at).getTime() };
+  }
+  return null;
+}
+
+/** آخر اقتراح معاملة بنكية لسه مستني قرار (نفس الحالات اللي الأزرار بتشتغل عليها). */
+async function openProposal(sb: SupabaseClient, userId: string): Promise<{ id: string; status: string; createdAt: number } | null> {
+  const { data } = await sb.from("zad_transaction_proposals")
+    .select("id,status,created_at")
+    .eq("user_id", userId)
+    .in("status", ["awaiting_confirmation", "needs_classification"])
+    .gt("expires_at", new Date().toISOString())
+    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const row = data as { id: string; status: string; created_at: string } | null;
+  return row ? { id: row.id, status: row.status, createdAt: new Date(row.created_at).getTime() } : null;
+}
+
 bot.on("callback_query:data", async (ctx) => {
   await ctx.answerCallbackQuery();
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -1543,75 +1765,28 @@ bot.on("callback_query:data", async (ctx) => {
   // وبنرد على العميل **بس** لو الكتابة نجحت. أي فشل بيقول له صراحةً إنها ماتسجلتش.
   const doseCallback = parseDoseCallback(data);
   if (doseCallback) {
-    const { data: momentRow } = await sb.from("zad_voice_moments")
-      .select("id,user_id,moment,facts")
-      .eq("id", doseCallback.momentId).eq("user_id", userId).maybeSingle();
-    const moment = momentRow as { moment: string; facts: Record<string, unknown> } | null;
-    if (!moment) {
-      await ctx.reply("التذكير ده مش موجود عندي — افتح صفحة الصيدلية في التطبيق وسجّل الجرعة من هناك.");
-      return;
-    }
-    const itemIds = Array.isArray(moment.facts?.item_ids)
-      ? (moment.facts.item_ids as unknown[]).map(String).filter((v) => /^[0-9a-fA-F-]{36}$/.test(v))
-      : [];
-    const scheduledAt = typeof moment.facts?.scheduled_at === "string" ? moment.facts.scheduled_at : null;
-    if (itemIds.length === 0 || !scheduledAt) {
-      await ctx.reply("التذكير ده قديم ومش مربوط بدوا محدد — سجّل الجرعة من صفحة الصيدلية في التطبيق.");
-      return;
-    }
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await ctx.reply(await settleDose(sb, userId, doseCallback.momentId, doseCallback.action));
+    return;
+  }
 
-    if (doseCallback.action === "snooze") {
-      // التأجيل بيتكتب في جدول، مش في الذاكرة: الكرون هو اللي بيقرا منه فبيسكت عن
-      // نفس الجرعة لحد ما الوقت يعدّي، وبعدها بيبعت تذكير واحد جديد.
-      const until = new Date(Date.now() + DOSE_SNOOZE_MINUTES * 60_000).toISOString();
-      const { error: snoozeErr } = await sb.from("zad_dose_snoozes").upsert(
-        itemIds.map((itemId) => ({
-          user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until,
-        })),
-        { onConflict: "user_id,item_id,scheduled_at" },
-      );
-      if (snoozeErr) {
-        console.error("[dose] snooze failed:", snoozeErr.message);
-        await ctx.reply("معلش، مقدرتش أأجّل التذكير — هفضل أفكّرك زي ما هو.");
-        return;
-      }
-      await ctx.reply(`تمام، هسكت ${DOSE_SNOOZE_MINUTES} دقيقة وأفكّرك تاني.`);
+  // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
+  // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
+  const amountWrongId = parseAmountWrongCallback(data);
+  if (amountWrongId) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_resolve_transaction_proposal_service", {
+      p_user: userId, p_proposal: amountWrongId, p_decision: "reject", p_channel: "telegram",
+    });
+    const status = (result as { status?: string } | null)?.status;
+    if (error || (status !== "rejected")) {
+      console.error("amount-wrong reject failed:", error?.message ?? JSON.stringify(result));
+      await ctx.reply(status === "posted"
+        ? "العملية دي كانت اتسجلت بالفعل — عدّل المبلغ من صفحة المعاملات في التطبيق."
+        : "معلش، مقدرتش أقفل الاقتراح ده دلوقتي — جرب تاني.");
       return;
     }
-
-    const names: string[] = [];
-    const failed: string[] = [];
-    for (const itemId of itemIds) {
-      const { data: result, error } = await sb.rpc("zad_log_pharmacy_dose_atomic", {
-        p_user: userId,
-        p_item: itemId,
-        // الخانة الزمنية بتاعة التذكير نفسه، مش دلوقتي: الفهرس الفريد
-        // (user_id, item_id, scheduled_at) بيخلي ضغطتين على نفس الزر عملية واحدة،
-        // وبيخلي الكرون يشوف إن الجرعة دي بالذات اتاخدت.
-        p_scheduled_at: scheduledAt,
-        p_taken_at: new Date().toISOString(),
-      });
-      const r = result as { ok?: boolean; name?: string; remaining_quantity?: number } | null;
-      if (error || !r?.ok) {
-        console.error("[dose] log failed:", itemId, error?.message ?? JSON.stringify(r));
-        failed.push(itemId);
-      } else {
-        names.push(String(r.name ?? "الدوا"));
-      }
-    }
-    if (names.length === 0) {
-      await ctx.reply("معلش، مقدرتش أسجّل الجرعة دلوقتي — ماتسجلتش، جرّب من صفحة الصيدلية في التطبيق.");
-      return;
-    }
-    // التذكير ده خلص شغله: مايتبعتش تاني ولا يتحسب كجرعة فايتة.
-    await sb.from("zad_voice_moments")
-      .update({ status: "sent", error: null })
-      .eq("id", doseCallback.momentId).eq("user_id", userId);
-    const label = names.join(" و");
-    await ctx.reply(failed.length > 0
-      ? `اتسجلت جرعة ${label} ✅ — بس فيه دوا مقدرتش أسجله، راجع صفحة الصيدلية.`
-      : `اتسجلت جرعة ${label} ✅ تمام عليك.`);
+    await ctx.reply("تمام، شلت الرقم الغلط ومش هيتحسب. ابعتلي المبلغ الصح كده: «صرفت ١٥٠ جنيه في المكان» وأنا أسجلها بعد ما تأكد.");
     return;
   }
 
@@ -1664,49 +1839,7 @@ bot.on("callback_query:data", async (ctx) => {
   // both return the same terminal result without duplicating money.
   const proposalCallback = parseTransactionProposalCallback(data);
   if (proposalCallback) {
-    const { data: result, error } = await sb.rpc("zad_resolve_transaction_proposal_service", {
-      p_user: userId,
-      p_proposal: proposalCallback.proposalId,
-      p_decision: proposalCallback.decision,
-      p_channel: "telegram",
-    });
-    if (error || !result) {
-      console.error("transaction proposal resolution failed:", error?.message ?? "missing result");
-      await ctx.reply("معلش، مقدرتش أنفذ القرار دلوقتي. جرب تاني.");
-      return;
-    }
-    const resolved = result as { ok?: boolean; status?: string; already_resolved?: boolean };
-    if (resolved.status === "duplicate_suspected") {
-      // الدالة ماقيدتش: فيه معاملة متسجلة بنفس المبلغ من ربع ساعة. نفس السؤال اللي بيظهر
-      // في التطبيق، والقرار التالي (pd/ps) بيرجع لنفس الدالة.
-      if (!(await sendDuplicateProposalQuestion(sb, chatId, userId, proposalCallback.proposalId))) {
-        await ctx.reply("فيه عملية متسجلة بنفس المبلغ في نفس الوقت تقريبًا. افتح التطبيق وقولي دي نفس المعاملة ولا لأ.");
-      }
-      return;
-    }
-    if (resolved.status === "merged") {
-      await ctx.reply(resolved.already_resolved ? "اتحسبت مرة واحدة بالفعل." : "تمام، اعتبرتهم معاملة واحدة ومش هتتحسب مرتين.");
-      return;
-    }
-    if (resolved.status === "needs_classification") {
-      // "عملية تانية" على اقتراح اتجاهه لسه مش معروف — مايتقيدش بتخمين.
-      await sendTelegramMessage(chatId, "تمام، عملية تانية. دي مصروف ولا دخل ولا تحويل؟",
-        transactionProposalKeyboard(proposalCallback.proposalId, "needs_classification"));
-      return;
-    }
-    if (resolved.status === "expired") {
-      await ctx.reply("الطلب ده انتهت صلاحيته.");
-      return;
-    }
-    if (resolved.status === "rejected") {
-      await ctx.reply(resolved.already_resolved ? "العملية كانت مرفوضة بالفعل." : "تمام، العملية اترفضت ومش هتتحسب.");
-      return;
-    }
-    if (resolved.status === "posted") {
-      await ctx.reply(resolved.already_resolved ? "العملية كانت متسجلة بالفعل، وماتكررتش." : "تمام، اتأكدت واتسجلت مرة واحدة.");
-      return;
-    }
-    await ctx.reply("القرار موصلش لحالة نهائية. افتح التطبيق وراجع العملية.");
+    await resolveProposalAndReply(ctx, sb, chatId, userId, proposalCallback.proposalId, proposalCallback.decision);
     return;
   }
 
