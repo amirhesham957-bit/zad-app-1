@@ -23,6 +23,8 @@ import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
+import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
 
 const Color _kidsPrimary = Color(0xFF6B46C1);
 const Color _kidsPrimaryDark = Color(0xFF442B82);
@@ -173,6 +175,13 @@ class KidsHome extends ConsumerWidget {
           const SizedBox(height: 22),
           _BadgeRow(
             completedChores: chores.where((c) => c.isCompleted).length,
+            tasbihaStreakDays:
+                ref
+                    .watch(tasbihaControllerProvider)
+                    .myTrees
+                    .firstOrNull
+                    ?.streakDays ??
+                0,
             savingsProgress: savings,
           ),
           const SizedBox(height: 22),
@@ -197,6 +206,8 @@ class KidsHome extends ConsumerWidget {
             )
           else
             for (final m in recent) _MessageRow(message: m, family: family),
+          const SizedBox(height: 22),
+          const _TasbihaCard(),
         ],
       ),
     );
@@ -524,19 +535,24 @@ class _ChoreRow extends StatelessWidget {
 }
 
 /// Kotlin's `buildKidBadges` + `KidBadgeRow`: three thresholds from data that
-/// already exists. The week badge counts tasbiha streak days, which Flutter
-/// does not read yet, so it stays unearned until the tasbiha screen lands.
+/// already exists — three done chores, a seven-day tasbiha streak, half the
+/// savings goal.
 class _BadgeRow extends StatelessWidget {
-  const new({required this.completedChores, required this.savingsProgress});
+  const new({
+    required this.completedChores,
+    required this.tasbihaStreakDays,
+    required this.savingsProgress,
+  });
 
   final int completedChores;
+  final int tasbihaStreakDays;
   final double savingsProgress;
 
   @override
   Widget build(BuildContext context) {
     final badges = <(String, String, bool)>[
       ('🏅', '3 مهام', completedChores >= 3),
-      ('🔥', 'أسبوع كامل', false),
+      ('🔥', 'أسبوع كامل', tasbihaStreakDays >= 7),
       ('💰', 'نص الهدف', savingsProgress >= 0.5),
     ];
     const colors = <Color>[
@@ -662,6 +678,80 @@ class _MessageRow extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kotlin's kids tasbiha widget: the child's tree score, opening the garden.
+class _TasbihaCard extends ConsumerStatefulWidget {
+  const new();
+
+  @override
+  ConsumerState<_TasbihaCard> createState() => _TasbihaCardState();
+}
+
+class _TasbihaCardState extends ConsumerState<_TasbihaCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Read once on open, not on every return: the garden screen reloads
+    // itself, and the controller keeps what it read for the session.
+    unawaited(
+      Future<void>.microtask(() {
+        if (!mounted) return;
+        final view = ref.read(tasbihaControllerProvider);
+        if (view.myTrees.isEmpty) {
+          unawaited(ref.read(tasbihaControllerProvider.notifier).load());
+        }
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tree = ref.watch(tasbihaControllerProvider).myTrees.firstOrNull;
+    return Material(
+      color: const Color(0xFFF1F8E9),
+      elevation: 4,
+      shadowColor: const Color(0xFF2E7D32).withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => unawaited(showTasbihaScreen(context)),
+        child: Padding(
+          padding: const EdgeInsets.all(ZadSpacing.lg),
+          child: Row(
+            children: <Widget>[
+              const Text('🌳', style: TextStyle(fontSize: 30)),
+              const SizedBox(width: ZadSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text(
+                      'بستان التسبيحة',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                    Text(
+                      tree != null
+                          ? 'شجرتك: ${tree.score} تسبيحة'
+                          : 'ازرع شجرتك!',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF558B2F),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(ZadIcons.back, color: Color(0xFF2E7D32)),
             ],
           ),
         ),

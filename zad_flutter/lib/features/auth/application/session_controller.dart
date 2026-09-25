@@ -22,6 +22,7 @@ import 'package:zad/features/obligations/application/obligations_controller.dart
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 
 /// The signed-in account id, or null.
@@ -106,6 +107,7 @@ class SessionController extends Notifier<String?> {
   void _forgetPreviousAccount() {
     ref
       ..invalidate(kidsModeProvider)
+      ..invalidate(tasbihaControllerProvider)
       ..invalidate(transactionsControllerProvider)
       ..invalidate(budgetControllerProvider)
       ..invalidate(proposalsControllerProvider)

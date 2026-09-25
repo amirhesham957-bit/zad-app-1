@@ -457,11 +457,14 @@ one commit, full verification, report, then continue.
    `zad_insights` home cards with dismiss-with-reason (Task 28). The
    token-takeover fix is `20260921170000_fcm_token_follows_the_device`.
 10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
-   ~~`AchievementsScreen`~~, `TasbihaScreen`, ~~`StatementImportScreen`~~
+   ~~`AchievementsScreen`~~, ~~`TasbihaScreen`~~ (done 2026-09-25 — splash, three
+   tabs, leaderboard image share, challenges; taps batched into
+   `increment_tasbiha_clicks` 1.5s after the last one; streak dates in the
+   account's zone; the kids home card and «أسبوع كامل» badge now read it), ~~`StatementImportScreen`~~
    (both done 2026-09-25 with kids mode — the PIN (SHA-256 in the `device`
    box, wiped on sign-out), `KidsShell` with two tabs and «الوضع الكامل»
-   behind the PIN, `KidsHome` without the tasbiha card, the affiliate row and
-   the confetti, which wait for tasbiha/affiliate/Lottie; plus Kotlin's launcher
+   behind the PIN, `KidsHome` without the affiliate row and the confetti,
+   which wait for affiliate/Lottie; plus Kotlin's launcher
    icon at every density, the native splash (API 31 styles + layer-list) and
    the Dart `SplashScreen`),
    `ZadSubscriptionPaywallScreen`, ~~`TermsOfServiceScreen`,

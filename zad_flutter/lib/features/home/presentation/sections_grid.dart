@@ -26,6 +26,7 @@ import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
+import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
 
 /// Kotlin's `ZadSectionAccent`, light values: a tile's icon colour, with its
 /// container at 12%.
@@ -148,6 +149,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'صيدلية العائلة',
     accent: ZadSectionAccent.rose,
     open: (c) => showHouseholdSection(c, HouseholdSection.pharmacy),
+  ),
+  const ZadSection(
+    id: 'tasbiha',
+    icon: ZadIcons.tree,
+    label: 'تسبيحة',
+    accent: ZadSectionAccent.emerald,
+    open: showTasbihaScreen,
   ),
   ZadSection(
     id: 'recipes',
