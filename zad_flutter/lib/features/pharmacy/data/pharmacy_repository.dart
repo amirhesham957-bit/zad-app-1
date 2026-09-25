@@ -268,6 +268,55 @@ class PharmacyRepository {
     return medicine;
   }
 
+  /// The customer counted the box: [quantity] is the stock now. Shown at
+  /// once; queued as an absolute count, not a difference, because it is a
+  /// fact about the box rather than an event — and read back when sent.
+  Future<void> confirmQuantity(String medicineId, int quantity) async {
+    final key = '$_medicinePrefix$medicineId';
+    final current = _read(_cache.get(key) ?? '');
+    if (current == null) return;
+    final at = DateTime.now().toUtc();
+    await _outbox().enqueue(
+      id: 'med_qty:$medicineId',
+      kind: OutboxKind.confirmPharmacyQuantity,
+      payload: <String, dynamic>{
+        'id': medicineId,
+        'quantity': quantity,
+        'at': at.toIso8601String(),
+      },
+    );
+    await _cache.put(
+      key,
+      jsonEncode(
+        current
+            .copyWith(remainingQuantity: quantity, qtyConfirmedAt: at)
+            .toCacheJson(),
+      ),
+    );
+  }
+
+  /// Sends a queued count and checks the row now says it.
+  Future<void> sendQueuedQuantity(OutboxEntry entry) async {
+    final p = entry.payload;
+    final id = p['id'] as String;
+    final quantity = p['quantity'] as int;
+    final row = await _remote.confirmQuantity(
+      id,
+      quantity,
+      DateTime.parse(p['at'] as String),
+    );
+    // Deleted since: nothing left to count.
+    if (row == null) return;
+    if ((row['remaining_quantity'] as num?)?.toInt() != quantity) {
+      throw StateError('medicine $id did not take the count $quantity');
+    }
+    final confirmed = Medicine.fromJson(row);
+    await _cache.put(
+      '$_medicinePrefix$id',
+      jsonEncode(confirmed.toCacheJson()),
+    );
+  }
+
   /// Sends one queued restock, and keeps the row the server answers with.
   ///
   /// That row can be a different one from the row asked for: a medicine

@@ -21,6 +21,28 @@ import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 
 class _FakeRemote implements PharmacyRemote {
+  /// The count a confirmation leaves on the row, as the table would.
+  final Map<String, int> counted = <String, int>{};
+
+  /// A confirmation acknowledged but not applied.
+  bool ignoreCounts = false;
+
+  @override
+  Future<Map<String, dynamic>?> confirmQuantity(
+    String id,
+    int quantity,
+    DateTime at,
+  ) async {
+    if (!ignoreCounts) counted[id] = quantity;
+    return <String, dynamic>{
+      'id': id,
+      'user_id': 'user-1',
+      'name': 'x',
+      'remaining_quantity': counted[id] ?? 1,
+      'qty_confirmed_at': at.toIso8601String(),
+    };
+  }
+
   List<Map<String, dynamic>> medicines = <Map<String, dynamic>>[];
   List<DateTime> records = <DateTime>[];
   final List<Map<String, Object?>> logged = <Map<String, Object?>>[];
@@ -194,6 +216,9 @@ void main() {
         OutboxKind.logPharmacyDose => await pharmacy.sendQueuedDose(entry),
         OutboxKind.upsertDoseSnooze => await pharmacy.sendQueuedSnooze(entry),
         OutboxKind.restockPharmacyItem => await pharmacy.sendQueuedRestock(
+          entry,
+        ),
+        OutboxKind.confirmPharmacyQuantity => await pharmacy.sendQueuedQuantity(
           entry,
         ),
         _ => throw StateError('no sender for "${entry.kind}"'),
@@ -694,5 +719,29 @@ void main() {
         expect(slots, isEmpty);
       },
     );
+  });
+
+  group('a counted box', () {
+    test('shows at once, is sent as the count, and read back', () async {
+      final m = await pharmacy.add(name: 'كونكور', unit: 'قرص');
+      await pharmacy.confirmQuantity(m.id, 24);
+
+      final shown = pharmacy.cached().singleWhere((x) => x.id == m.id);
+      expect(shown.remainingQuantity, 24);
+      expect(shown.qtyConfirmedAt, isNotNull);
+
+      await outbox.flush();
+      expect(remote.counted[m.id], 24);
+      expect(queued(OutboxKind.confirmPharmacyQuantity), isEmpty);
+    });
+
+    test('a count the row did not take stays queued', () async {
+      final m = await pharmacy.add(name: 'كونكور', unit: 'قرص');
+      remote.ignoreCounts = true;
+      await pharmacy.confirmQuantity(m.id, 24);
+      await outbox.flush();
+
+      expect(queued(OutboxKind.confirmPharmacyQuantity), hasLength(1));
+    });
   });
 }

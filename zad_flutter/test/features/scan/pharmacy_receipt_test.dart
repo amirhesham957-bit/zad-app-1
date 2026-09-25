@@ -43,6 +43,13 @@ class _Scanner implements ReceiptScanner {
 
 /// Answers the medicine list and nothing else — nothing is sent here.
 class _Pharmacy implements PharmacyRemote {
+  @override
+  Future<Map<String, dynamic>?> confirmQuantity(
+    String id,
+    int quantity,
+    DateTime at,
+  ) async => null;
+
   List<Map<String, dynamic>> medicines = <Map<String, dynamic>>[];
 
   @override

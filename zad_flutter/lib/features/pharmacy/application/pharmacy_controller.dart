@@ -119,6 +119,108 @@ class PharmacyController extends Notifier<PharmacyView> {
     }
   }
 
+  /// Kotlin's `AddPharmacyItemDialog`: the medicine, then its count.
+  ///
+  /// The plain upsert never carries `remaining_quantity` (the dose RPC owns
+  /// that column), so the count the customer typed follows as a queued
+  /// confirmation — the same write "فاضل قد إيه فعلاً؟" makes.
+  Future<void> add({
+    required String name,
+    required int quantity,
+    required String unit,
+    required int dailyDoseCount,
+    String? doseTimes,
+    DateTime? expiryDate,
+    double price = 0,
+    String? activeIngredient,
+    String? dosage,
+    String? category,
+    bool isRecurring = false,
+    String? familyMemberId,
+  }) async {
+    final repository = ref.read(pharmacyRepositoryProvider);
+    final added = await repository.add(
+      name: name,
+      dosage: dosage,
+      category: category,
+      unit: unit,
+      doseTimes: doseTimes,
+      dailyDoseCount: dailyDoseCount,
+      remainingQuantity: quantity,
+      expiryDate: expiryDate,
+    );
+    await repository.update(
+      added.copyWith(
+        price: price,
+        activeIngredient: activeIngredient,
+        isRecurring: isRecurring,
+        familyMemberId: familyMemberId,
+      ),
+    );
+    await repository.confirmQuantity(added.id, quantity);
+    await _afterWrite();
+  }
+
+  /// "تجديد الطلب": [added] more in stock, and the new price and expiry when
+  /// given.
+  Future<void> refill(
+    Medicine medicine, {
+    required int added,
+    double? price,
+    DateTime? expiryDate,
+  }) async {
+    final repository = ref.read(pharmacyRepositoryProvider);
+    if (price != null || expiryDate != null) {
+      await repository.update(
+        medicine.copyWith(price: price, expiryDate: expiryDate),
+      );
+    }
+    await repository.restock(medicine.id, added);
+    await _afterWrite();
+  }
+
+  /// "فاضل قد إيه فعلاً؟": the counted stock, and how many units one dose is
+  /// when the customer said.
+  Future<void> confirmQuantity(
+    Medicine medicine,
+    int quantity, {
+    double? unitsPerDose,
+  }) async {
+    final repository = ref.read(pharmacyRepositoryProvider);
+    if (unitsPerDose != null && unitsPerDose > 0) {
+      await repository.update(medicine.copyWith(unitsPerDose: unitsPerDose));
+    }
+    await repository.confirmQuantity(medicine.id, quantity);
+    await _afterWrite();
+  }
+
+  /// "تناول جرعة" on a medicine with no schedule: one dose, now.
+  Future<void> takeNow(Medicine medicine) async {
+    final now = ref.read(nowProvider)();
+    await ref
+        .read(pharmacyRepositoryProvider)
+        .logDose(medicine.id, scheduledAt: now, takenAt: now);
+    await _afterWrite();
+  }
+
+  /// Deletes a medicine.
+  Future<void> remove(Medicine medicine) async {
+    await ref.read(pharmacyRepositoryProvider).remove(medicine.id);
+    await _afterWrite();
+  }
+
+  Future<void> _afterWrite() async {
+    if (!ref.mounted) return;
+    final medicines = ref.read(pharmacyRepositoryProvider).cached();
+    state = state.copyWith(
+      medicines: medicines,
+      today: _relevant(_bareSlots(medicines), ref.read(nowProvider)()),
+    );
+    unawaited(
+      ref.read(outboxProvider).flush().then((_) {}, onError: (Object _) {}),
+    );
+  }
+
   /// Records a dose against its slot.
   ///
   /// Marked taken on screen straight away. The write is queued; the slot is

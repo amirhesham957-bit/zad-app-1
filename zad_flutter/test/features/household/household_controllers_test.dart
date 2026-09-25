@@ -61,6 +61,13 @@ class _Shopping implements ShoppingListRemote {
 }
 
 class _Pharmacy implements PharmacyRemote {
+  @override
+  Future<Map<String, dynamic>?> confirmQuantity(
+    String id,
+    int quantity,
+    DateTime at,
+  ) async => null;
+
   List<Map<String, dynamic>> medicines = <Map<String, dynamic>>[];
   List<DateTime> records = <DateTime>[];
   int doseCalls = 0;

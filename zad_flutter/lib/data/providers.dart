@@ -461,6 +461,8 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
         await ref.read(shoppingListRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.upsertPharmacyItem =>
         await ref.read(pharmacyRepositoryProvider).sendQueued(entry),
+      OutboxKind.confirmPharmacyQuantity =>
+        await ref.read(pharmacyRepositoryProvider).sendQueuedQuantity(entry),
       OutboxKind.deletePharmacyItem =>
         await ref.read(pharmacyRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.logPharmacyDose =>

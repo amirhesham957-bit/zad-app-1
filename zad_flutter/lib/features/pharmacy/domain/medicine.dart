@@ -30,6 +30,9 @@ class Medicine {
     this.familyMemberId,
     this.serverSaysInvalidDoseTime = false,
     this.isRecurring = true,
+    this.price = 0,
+    this.unitsPerDoseKnown = true,
+    this.qtyConfirmedAt,
     this.isPending = false,
   });
 
@@ -51,6 +54,12 @@ class Medicine {
     familyMemberId: json['family_member_id'] as String?,
     serverSaysInvalidDoseTime: json['has_invalid_dose_time'] as bool? ?? false,
     isRecurring: json['is_recurring'] as bool? ?? true,
+    price: (json['price'] as num?)?.toDouble() ?? 0,
+    unitsPerDoseKnown: json['units_per_dose'] != null,
+    qtyConfirmedAt: switch (json['qty_confirmed_at']) {
+      final String s => DateTime.tryParse(s)?.toUtc(),
+      _ => null,
+    },
     isPending: json['_pending'] as bool? ?? false,
   );
 
@@ -113,8 +122,34 @@ class Medicine {
   /// Whether this is an ongoing course rather than a one-off.
   final bool isRecurring;
 
+  /// What one box costs — Kotlin's `price`, the base of the monthly cost.
+  final double price;
+
+  /// Whether `units_per_dose` came from the row rather than the default of
+  /// one. When it did not, the days of supply are a guess, and Kotlin asks
+  /// the customer to confirm ("الكمية محتاجة تأكيد").
+  final bool unitsPerDoseKnown;
+
+  /// When the customer last counted the box by hand.
+  final DateTime? qtyConfirmedAt;
+
   /// Whether the row is still queued.
   final bool isPending;
+
+  /// Days the stock lasts at the schedule, or null when unknown — Kotlin's
+  /// `daysOfSupplyLeft`: never a guessed figure.
+  int? get daysOfSupplyLeft {
+    final remaining = remainingQuantity;
+    final daily = dailyDoseCount;
+    if (!unitsPerDoseKnown ||
+        remaining == null ||
+        daily == null ||
+        daily <= 0) {
+      return null;
+    }
+    if (unitsPerDose <= 0) return null;
+    return (remaining / (unitsPerDose * daily)).floor();
+  }
 
   /// The valid times in the schedule, in order.
   List<DoseTime> get doseTimes => parseDoseTimes(doseTimesRaw);
@@ -161,13 +196,19 @@ class Medicine {
     double? unitsPerDose,
     int? remainingQuantity,
     DateTime? expiryDate,
+    String? activeIngredient,
+    String? familyMemberId,
+    bool clearFamilyMember = false,
+    bool? isRecurring,
+    double? price,
+    DateTime? qtyConfirmedAt,
     bool? isPending,
   }) => Medicine(
     id: id,
     userId: userId,
     name: name ?? this.name,
     dosage: dosage ?? this.dosage,
-    activeIngredient: activeIngredient,
+    activeIngredient: activeIngredient ?? this.activeIngredient,
     category: category ?? this.category,
     unit: unit ?? this.unit,
     doseTimesRaw: doseTimesRaw ?? this.doseTimesRaw,
@@ -176,9 +217,14 @@ class Medicine {
     remainingQuantity: remainingQuantity ?? this.remainingQuantity,
     doseCarry: doseCarry,
     expiryDate: expiryDate ?? this.expiryDate,
-    familyMemberId: familyMemberId,
+    familyMemberId: clearFamilyMember
+        ? null
+        : (familyMemberId ?? this.familyMemberId),
     serverSaysInvalidDoseTime: serverSaysInvalidDoseTime,
-    isRecurring: isRecurring,
+    isRecurring: isRecurring ?? this.isRecurring,
+    price: price ?? this.price,
+    unitsPerDoseKnown: unitsPerDose != null || unitsPerDoseKnown,
+    qtyConfirmedAt: qtyConfirmedAt ?? this.qtyConfirmedAt,
     isPending: isPending ?? this.isPending,
   );
 
@@ -199,15 +245,24 @@ class Medicine {
     'unit': ?unit,
     'dose_times': ?doseTimesRaw,
     'daily_dose_count': ?dailyDoseCount,
-    'units_per_dose': unitsPerDose,
+    // Null when nobody has said: writing the default of one would turn "we
+    // do not know" into a fact on the server.
+    'units_per_dose': unitsPerDoseKnown ? unitsPerDose : null,
     'expiry_date': expiryDate?.toIso8601String().split('T').first,
+    // The fields Kotlin's add form writes. Sent on every write: each is read
+    // from the row, so sending it back changes nothing unless the customer
+    // changed it.
+    'active_ingredient': ?activeIngredient,
+    'price': price,
+    'is_recurring': isRecurring,
+    'family_member_id': familyMemberId,
   };
 
   /// The row as the cache keeps it.
   Map<String, dynamic> toCacheJson() => <String, dynamic>{
     ...toUpsertJson(),
-    'active_ingredient': ?activeIngredient,
     'remaining_quantity': remainingQuantity,
+    'qty_confirmed_at': qtyConfirmedAt?.toIso8601String(),
     'dose_carry': doseCarry,
     'family_member_id': ?familyMemberId,
     'has_invalid_dose_time': serverSaysInvalidDoseTime,

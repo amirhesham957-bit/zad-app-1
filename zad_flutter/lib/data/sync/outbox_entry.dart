@@ -41,6 +41,11 @@ abstract final class OutboxKind {
   /// Insert or update a row in `zad_pharmacy_items`.
   static const String upsertPharmacyItem = 'upsert_pharmacy_item';
 
+  /// Set a medicine's count to what the customer counted
+  /// (`med_qty:<id>`) — an absolute figure, so a later count replaces an
+  /// unsent earlier one.
+  static const String confirmPharmacyQuantity = 'confirm_pharmacy_quantity';
+
   /// Remove a row from `zad_pharmacy_items`.
   static const String deletePharmacyItem = 'delete_pharmacy_item';
 

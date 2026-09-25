@@ -107,6 +107,15 @@ abstract interface class PharmacyRemote {
   /// Inserts or updates a medicine, returning what the row holds afterwards.
   Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> row);
 
+  /// Sets [id]'s count to what the customer counted, clears the part-dose
+  /// carried over, stamps the confirmation, and returns the row — Kotlin's
+  /// `confirmPharmacyQuantity`.
+  Future<Map<String, dynamic>?> confirmQuantity(
+    String id,
+    int quantity,
+    DateTime at,
+  );
+
   /// Records a dose through `zad_log_pharmacy_dose_atomic`.
   Future<DoseReceipt> logDose({
     required String userId,
@@ -260,6 +269,23 @@ class SupabasePharmacyRemote implements PharmacyRemote {
       throw StateError('zad_pharmacy_restock answered $result');
     }
     return RestockReceipt.fromJson(Map<String, dynamic>.from(result));
+  }
+
+  @override
+  Future<Map<String, dynamic>?> confirmQuantity(
+    String id,
+    int quantity,
+    DateTime at,
+  ) async {
+    await _client
+        .from(_items)
+        .update(<String, dynamic>{
+          'remaining_quantity': quantity,
+          'dose_carry': 0,
+          'qty_confirmed_at': at.toUtc().toIso8601String(),
+        })
+        .eq('id', id);
+    return await _client.from(_items).select().eq('id', id).maybeSingle();
   }
 
   @override
