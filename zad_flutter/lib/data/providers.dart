@@ -39,6 +39,7 @@ import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/inventory_repository.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
+import 'package:zad/features/modes/data/modes_repository.dart';
 import 'package:zad/features/nearby/data/nearby_remote.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
@@ -298,6 +299,17 @@ final Provider<BehaviorAnalysisRemote> behaviorAnalysisRemoteProvider =
       (ref) =>
           SupabaseBehaviorAnalysisRemote(ref.watch(supabaseClientProvider)),
     );
+
+/// Broke mode and the savings challenge: online, read back, cached.
+final Provider<ModesRepository> modesRepositoryProvider =
+    Provider<ModesRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ModesRepository(
+        cache: store.documents,
+        remote: SupabaseModesRemote(ref.watch(supabaseClientProvider)),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
 
 /// The notification list: the newest page, cached as one document.
 final Provider<NotificationsRepository> notificationsRepositoryProvider =

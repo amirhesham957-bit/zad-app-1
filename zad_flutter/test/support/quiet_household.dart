@@ -9,6 +9,7 @@ library;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/features/modes/application/modes_controller.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 
@@ -64,9 +65,25 @@ class QuietShopping extends ShoppingController {
       added.add(itemName);
 }
 
-/// Overrides for all three, empty.
+/// Broke mode and the challenge, showing [view] and never fetching.
+class QuietModes extends ModesController {
+  /// Creates the stand-in.
+  new([this.view = const ModesView()]);
+
+  /// What it shows.
+  final ModesView view;
+
+  @override
+  ModesView build() => view;
+
+  @override
+  Future<void> refresh() async {}
+}
+
+/// Overrides for all of them, empty.
 List<Override> get quietHouseholdOverrides => <Override>[
   pantryControllerProvider.overrideWith(QuietPantry.new),
   pharmacyControllerProvider.overrideWith(QuietPharmacy.new),
   shoppingControllerProvider.overrideWith(QuietShopping.new),
+  modesControllerProvider.overrideWith(QuietModes.new),
 ];

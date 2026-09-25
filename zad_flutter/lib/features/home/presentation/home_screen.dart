@@ -25,6 +25,7 @@ import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
+import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/settings/presentation/settings_screen.dart';
@@ -73,6 +74,10 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(ZadSpacing.gutter),
               sliver: SliverList.list(
                 children: <Widget>[
+                  // Kotlin shows these two above the money while they run;
+                  // both render nothing otherwise.
+                  const BrokeModeSlot(),
+                  const SavingsChallengeSlot(),
                   _Budget(view: view),
                   // Kotlin's order under the money: the channel's health, then
                   // the pantry, the pharmacy and the subscriptions, then what

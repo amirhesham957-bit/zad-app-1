@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/design/zad_theme.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
+import 'package:zad/features/modes/application/modes_controller.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
@@ -17,6 +18,8 @@ import 'package:zad/features/subscriptions/application/subscriptions_controller.
 import 'package:zad/features/subscriptions/domain/subscription.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
+
+import '../../support/quiet_household.dart';
 
 final DateTime _today = DateTime.utc(2026, 9, 25);
 
@@ -96,6 +99,7 @@ void main() {
           obligationsControllerProvider.overrideWith(_Obligations.new),
           subscriptionsControllerProvider.overrideWith(_Subs.new),
           categoryBudgetsProvider.overrideWith(_NoCeilings.new),
+          modesControllerProvider.overrideWith(QuietModes.new),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),

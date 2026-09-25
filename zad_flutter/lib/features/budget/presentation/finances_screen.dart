@@ -25,6 +25,7 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
+import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
@@ -104,6 +105,10 @@ class FinancesScreen extends ConsumerWidget {
           ),
           children: <Widget>[
             _Available(view: budget, currency: currency),
+            const SizedBox(height: ZadSpacing.md),
+            const BrokeModeSlot(offerEntry: true),
+            const SizedBox(height: ZadSpacing.md),
+            const SavingsChallengeSlot(offerEntry: true, offerStop: true),
             const SizedBox(height: ZadSpacing.md),
             const ObligationsSection(),
             const SizedBox(height: ZadSpacing.sm),

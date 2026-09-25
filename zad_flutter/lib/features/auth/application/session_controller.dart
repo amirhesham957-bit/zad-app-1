@@ -12,9 +12,12 @@ import 'package:zad/features/brain/application/brain_health_controller.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/application/memory_controller.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
+import 'package:zad/features/modes/application/modes_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
+import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
@@ -117,6 +120,9 @@ class SessionController extends Notifier<String?> {
       ..invalidate(brainHealthControllerProvider)
       ..invalidate(knowledgeMapControllerProvider)
       ..invalidate(insightsControllerProvider)
+      ..invalidate(obligationsControllerProvider)
+      ..invalidate(modesControllerProvider)
+      ..invalidate(categoryBudgetsProvider)
       // The form too. Without this a failed sign-in leaves "الإيميل أو كلمة
       // السر مش مظبوطة" sitting under the button, and the next person to sign
       // out on this device is greeted by it before they have typed anything.
