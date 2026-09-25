@@ -2,7 +2,7 @@
 /// feeds both Home's grid and the "المزيد" sheet so the two cannot drift.
 ///
 /// A section joins this list when its screen exists in this client. Kotlin's
-/// appointments, budget, tasbiha, maintenance, statement import and premium
+/// appointments, tasbiha, maintenance, statement import and premium
 /// plans are not here yet; FLUTTER_PARITY.md tracks them.
 library;
 
@@ -16,6 +16,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
+import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
@@ -125,6 +126,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'العائلة',
     accent: ZadSectionAccent.violet,
     open: showFamilyScreen,
+  ),
+  const ZadSection(
+    id: 'budget',
+    icon: ZadIcons.budget,
+    label: 'الميزانية',
+    accent: ZadSectionAccent.blue,
+    open: showFinancesScreen,
   ),
   const ZadSection(
     id: 'subscriptions',

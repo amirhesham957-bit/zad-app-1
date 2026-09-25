@@ -98,7 +98,7 @@ owner asked for it on 2026-09-25: "مش عاوزين ننسى ولا زر ولا
 | `OnboardingScreen` | ✅ | |
 | `MarketSelectionScreen` | ✅ | Changing the market later from profile (limit conversion). |
 | `BudgetGateScreen` (first-run budget + market) | ⚠️ | Check against the monthly-limit sheet. |
-| `BudgetScreen` / `FinancesScreen`: category budgets, category insight, edit, transactions by date, transaction edit, obligations (add/edit), debts | ❌ | Largest money gap. |
+| `BudgetScreen` / `FinancesScreen`: category budgets, category insight, edit, transactions by date, transaction edit, obligations (add/edit), debts | ⚠️ | `finances_screen.dart` ("الميزانية" in the grid): available with ≈, obligations (`zad_obligations`: add/edit/delete, queued and read back, status and bar), income/spent/budget, insight strip → chat, category budgets on the device with edit and the tapped `behavior_analysis`, subscriptions card, month totals, add FAB, and a link to the transactions tab (a tab of its own here). Missing: broke mode, the savings challenge, the budget suggestion (needs two past months of rows), and the debts tab. |
 | Transactions (list + manual entry) | ✅ | Edit (`TransactionEditDialog`: title, amount, kind, category) and delete, queued and read back. The four filters (الكل/المصروفات/الدخل/البنك). A tap shows the row's edit and delete, as in `TxRowItem`. Kotlin's merchant→category memory on edit is not ported. |
 | `InventoryScreen`: categories, low-stock banner, expiring soon, edit, shortages, search, empty states | ⚠️ | Pantry exists; check each part. |
 | `ShoppingListScreen`: budget header, priority chips, grocery suggestions, affiliate footer | ⚠️ | List exists. |

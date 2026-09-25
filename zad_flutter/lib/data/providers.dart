@@ -29,6 +29,7 @@ import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/data/memory_remote.dart';
 import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
+import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/family/data/family_remote.dart';
@@ -42,6 +43,7 @@ import 'package:zad/features/nearby/data/nearby_remote.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/data/notifications_repository.dart';
+import 'package:zad/features/obligations/data/obligations_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/prices/data/prices_remote.dart';
@@ -270,6 +272,33 @@ final Provider<SubscriptionsRepository> subscriptionsRepositoryProvider =
       );
     });
 
+/// Fixed obligations — rent, instalments, bills — cached in the documents
+/// box.
+final Provider<ObligationsRepository> obligationsRepositoryProvider =
+    Provider<ObligationsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ObligationsRepository(
+        cache: store.documents,
+        remote: SupabaseObligationsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });
+
+/// Category ceilings, on this device only — as Kotlin keeps them.
+final Provider<CategoryBudgetsStore> categoryBudgetsStoreProvider =
+    Provider<CategoryBudgetsStore>(
+      (ref) => CategoryBudgetsStore(ref.watch(localStoreProvider).documents),
+    );
+
+/// The per-category analysis, asked on a tap.
+final Provider<BehaviorAnalysisRemote> behaviorAnalysisRemoteProvider =
+    Provider<BehaviorAnalysisRemote>(
+      (ref) =>
+          SupabaseBehaviorAnalysisRemote(ref.watch(supabaseClientProvider)),
+    );
+
 /// The notification list: the newest page, cached as one document.
 final Provider<NotificationsRepository> notificationsRepositoryProvider =
     Provider<NotificationsRepository>((ref) {
@@ -441,6 +470,10 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
             .sendQueuedReadAll(entry),
       OutboxKind.deleteSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueuedDelete(entry),
+      OutboxKind.upsertObligation =>
+        await ref.read(obligationsRepositoryProvider).sendQueued(entry),
+      OutboxKind.deleteObligation =>
+        await ref.read(obligationsRepositoryProvider).sendQueuedDelete(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     },
   );

@@ -73,6 +73,12 @@ abstract final class OutboxKind {
   /// Insert or update a row in `zad_subscriptions`.
   static const String upsertSubscription = 'upsert_subscription';
 
+  /// Write an obligation row (`obligation:<id>`).
+  static const String upsertObligation = 'upsert_obligation';
+
+  /// Delete an obligation row (`obligation_delete:<id>`).
+  static const String deleteObligation = 'delete_obligation';
+
   /// Remove a row from `zad_subscriptions`.
   static const String deleteSubscription = 'delete_subscription';
 
