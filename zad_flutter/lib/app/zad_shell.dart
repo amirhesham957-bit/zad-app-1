@@ -7,6 +7,8 @@ import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
+import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -14,6 +16,7 @@ import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/kids_shell.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
+import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 
 /// Holds the tabs.
@@ -71,6 +74,22 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
     // Kids mode replaces the whole shell: home and family, nothing else.
     if (ref.watch(kidsModeActiveProvider)) return const KidsShell();
+
+    // Kotlin's BudgetGateScreen: no money screen before the ceiling is
+    // confirmed — decided only once the server has said so.
+    final unconfirmed = ref.watch(
+      budgetControllerProvider.select(
+        (v) => v.snapshot != null && !v.snapshot!.limitConfirmed,
+      ),
+    );
+    // A ceiling saved here but still queued (offline) counts as confirmed:
+    // the gate must not trap the customer until the outbox drains.
+    final confirmedHere = ref.watch(
+      settingsControllerProvider.select(
+        (v) => v.settings?.limitConfirmedAt != null,
+      ),
+    );
+    if (unconfirmed && !confirmedHere) return const BudgetGateScreen();
 
     // Watched at the shell so the badge is right whichever tab is open. The
     // count is the point: a proposal nobody looks at expires after seven days

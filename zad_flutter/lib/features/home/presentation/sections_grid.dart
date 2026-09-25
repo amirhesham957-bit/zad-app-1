@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -25,8 +26,10 @@ import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
+import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
+import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
@@ -216,6 +219,20 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'الإشعارات',
     accent: ZadSectionAccent.amber,
     open: showNotificationCenter,
+  ),
+  const ZadSection(
+    id: 'statement',
+    icon: LucideIcons.fileUp,
+    label: 'استيراد كشف حساب',
+    accent: ZadSectionAccent.slate,
+    open: showStatementImportScreen,
+  ),
+  const ZadSection(
+    id: 'premium',
+    icon: ZadIcons.admin,
+    label: 'باقات زاد',
+    accent: ZadSectionAccent.amber,
+    open: showPaywallScreen,
   ),
   const ZadSection(
     id: 'profile',
