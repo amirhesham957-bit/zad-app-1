@@ -66,7 +66,7 @@ owner asked for it on 2026-09-25: "مش عاوزين ننسى ولا زر ولا
 | `ZadMinimalMetricsDuo`: safe daily spend, days left | ✅ | `metrics_duo.dart`. Kotlin printed the number twice ("12 12 يوم"); Flutter prints it once. |
 | FX-excluded notice ("استُبعدت N معاملة") | ❌ | |
 | `BankListeningPill` | ✅ | `BankAccessCard`. |
-| `ZadSectionsGrid` (15 sections, badges, show all/less) | ❌ | |
+| `ZadSectionsGrid` (15 sections, badges, show all/less) | ⚠️ | `sections_grid.dart`, with badges and show all/less. 11 sections so far, including شيف زاد and الأسعار, which Flutter already has. Appointments, budget, tasbiha, maintenance, statement import and premium plans join when their screens land. |
 | `TelegramLinkBanner` / `ZadTelegramCommunityCard` / `TelegramBotSheet` / `TelegramLinkPromptSheet` | ❌ | |
 | `ZadFoodShortagesGlanceCard`: health, shortages, confirm, add to list | ✅ | `glance_cards.dart`. "Low" uses the pantry's shortage rule, not Kotlin's `qty ≤ 2`. The tile shows the quantity, or the days to expiry when known; Kotlin labelled the quantity as days. Kotlin's `onConfirm` was never wired to a button. |
 | `ZadPharmacyGlanceCard`: adherence %, next dose, take dose | ✅ | Adherence comes from the schedule over 7 days (`weeklyAdherence`). "خدت الجرعة" shows only when the dose can be recorded, the pharmacy screen's rule. |

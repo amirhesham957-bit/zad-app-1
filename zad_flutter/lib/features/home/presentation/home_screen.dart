@@ -23,6 +23,7 @@ import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
+import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
@@ -80,6 +81,9 @@ class HomeScreen extends ConsumerWidget {
                   // section when nothing is pending.
                   const SizedBox(height: ZadSpacing.md),
                   const BankAccessCard(),
+                  const SizedBox(height: ZadSpacing.md),
+                  // Every section, one tap away — Kotlin's grid.
+                  const SectionsGrid(),
                   const SizedBox(height: ZadSpacing.md),
                   const PantryGlanceCard(),
                   const SizedBox(height: ZadSpacing.lg),

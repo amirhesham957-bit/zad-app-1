@@ -195,6 +195,9 @@ abstract final class ZadIcons {
   /// Ask زاد about something.
   static const IconData ask = LucideIcons.messageCircle;
 
+  /// Open a folded list — "كل الأقسام".
+  static const IconData expand = LucideIcons.chevronDown;
+
   /// Forward, in reading order.
   ///
   /// The `Dir` variant, which carries `matchTextDirection: true` and so mirrors
