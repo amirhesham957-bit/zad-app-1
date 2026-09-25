@@ -21,6 +21,7 @@ import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
@@ -177,6 +178,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'الأسعار والعروض',
     accent: ZadSectionAccent.blue,
     open: showPricesScreen,
+  ),
+  const ZadSection(
+    id: 'nearby',
+    icon: ZadIcons.store,
+    label: 'المتاجر القريبة',
+    accent: ZadSectionAccent.emerald,
+    open: showNearbyDealsScreen,
   ),
   const ZadSection(
     id: 'knowledge_map',

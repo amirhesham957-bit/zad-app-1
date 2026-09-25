@@ -22,6 +22,7 @@ import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 
 /// The recipes section.
 class RecipesView extends ConsumerWidget {
@@ -246,9 +247,7 @@ class _RecipeCard extends ConsumerWidget {
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
                   _meta(recipe, currency),
-                  style: ZadType.labelSmall.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ],
             ),
@@ -409,6 +408,16 @@ class RecipeSheet extends ConsumerWidget {
                 _Step(number: i + 1, text: step),
             ],
             const SizedBox(height: ZadSpacing.xl),
+            // Kotlin's RecipeDetailDialog: the full recipe, step by step.
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => unawaited(showRecipeDetail(context, recipe)),
+                icon: const Icon(ZadIcons.chef),
+                label: const Text('الوصفة كاملة خطوة بخطوة'),
+              ),
+            ),
+            const SizedBox(height: ZadSpacing.sm),
             if (toBuy.isNotEmpty)
               SizedBox(
                 width: double.infinity,
