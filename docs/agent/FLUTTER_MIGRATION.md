@@ -456,7 +456,7 @@ one commit, full verification, report, then continue.
    the right tab (`route: transaction_proposals`), and the brain's
    `zad_insights` home cards with dismiss-with-reason (Task 28). The
    token-takeover fix is `20260921170000_fcm_token_follows_the_device`.
-10. **The rest:** `AppointmentsScreen`, `MaintenanceScreen`,
+10. **The rest:** ~~`AppointmentsScreen`, `MaintenanceScreen`~~,
    ~~`AchievementsScreen`~~, ~~`TasbihaScreen`~~ (done 2026-09-25 — splash, three
    tabs, leaderboard image share, challenges; taps batched into
    `increment_tasbiha_clicks` 1.5s after the last one; streak dates in the
@@ -467,7 +467,8 @@ one commit, full verification, report, then continue.
    which wait for affiliate/Lottie; plus Kotlin's launcher
    icon at every density, the native splash (API 31 styles + layer-list) and
    the Dart `SplashScreen`),
-   `ZadSubscriptionPaywallScreen`, ~~`TermsOfServiceScreen`,
+   ~~`ZadSubscriptionPaywallScreen`~~ (UI only: Play Billing and AdMob are
+   not in a sideloaded build, so its buttons say so), ~~`TermsOfServiceScreen`,
    `HelpSupportScreen`, `OrbAccessoryPicker`~~ (done 2026-09-25 — terms word
    for word; the support chat on `ai_text` plus the on-phone crash log
    (`core/crash/crash_log.dart`, installed in `bootstrap`); «زيّن زاد» with a
@@ -476,6 +477,14 @@ one commit, full verification, report, then continue.
    ~~`ProfileScreen`/`ProfileSubScreens`~~ (done 2026-09-25, `7834d184`; every
    profile row is wired now),
    `FinancesScreen`, `BudgetScreen`.
+   Also done 2026-09-25: the kids home's Amazon row (`affiliate/`,
+   `url_launcher`), `RecipeDetailDialog`, `NearbyDealsScreen` as its own page,
+   `BudgetGateScreen` (in `ZadShell`), `RecommendationsRoute`,
+   `SinkingFundsCard` + `FinancialChallengesCard` (`savings/`, progress
+   through `zad_contribute_to_challenge`), `ZadIntelligenceScreen` as it
+   renders (hero, report, stress test, distribution; chat opens the chat
+   tab; no ad gate, no PDF), and `BrainFamilyScreen` (`brain_family/`) behind
+   the home grid's العائلة and عقل زاد.
    **Owner's order 2026-09-25: UI parity first, no test files and no test
    runs — verify with `flutter analyze` + the release build only.**
 11. **The finish line:** a release APK signed with the debug key (already the

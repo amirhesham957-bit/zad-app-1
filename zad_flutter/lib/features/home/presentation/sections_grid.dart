@@ -16,10 +16,9 @@ import 'package:zad/design/tokens/zad_motion.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/presentation/appointments_screen.dart';
-import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
+import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
@@ -140,7 +139,7 @@ final List<ZadSection> zadSections = <ZadSection>[
     icon: ZadIcons.family,
     label: 'العائلة',
     accent: ZadSectionAccent.violet,
-    open: showFamilyScreen,
+    open: _openFamily,
   ),
   const ZadSection(
     id: 'budget',
@@ -190,7 +189,7 @@ final List<ZadSection> zadSections = <ZadSection>[
     icon: ZadIcons.brain,
     label: 'عقل زاد',
     accent: ZadSectionAccent.teal,
-    open: showBrainHub,
+    open: showBrainFamily,
   ),
   const ZadSection(
     id: 'deals',
@@ -242,6 +241,10 @@ final List<ZadSection> zadSections = <ZadSection>[
     open: showProfileScreen,
   ),
 ];
+
+// Kotlin's family route opens BrainFamily on its family tab.
+Future<void> _openFamily(BuildContext context) =>
+    showBrainFamily(context, tab: BrainFamilyTab.family);
 
 /// How many columns the grid has.
 const int kSectionColumns = 4;
