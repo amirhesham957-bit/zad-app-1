@@ -31,6 +31,17 @@ class _OfflineBudget implements BudgetRemote {
 
 class _NoTransactions implements TransactionsRemote {
   @override
+  Future<Map<String, dynamic>?> updateReturning(
+    Map<String, dynamic> patch,
+  ) async => null;
+
+  @override
+  Future<void> delete(String id) async {}
+
+  @override
+  Future<bool> exists(String id) async => false;
+
+  @override
   Future<List<Map<String, dynamic>>> fetchPeriod({
     required String userId,
     required DateTime startsAt,

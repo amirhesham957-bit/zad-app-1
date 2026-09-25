@@ -69,6 +69,8 @@ class ZadTransaction {
     this.currency,
     this.countsTowardBudget = true,
     this.merchantName,
+    this.sourceType,
+    this.bankName,
     this.isPending = false,
   });
 
@@ -193,6 +195,8 @@ class ZadTransaction {
     currency: json['currency'] as String?,
     countsTowardBudget: json['counts_toward_budget'] as bool? ?? true,
     merchantName: json['merchant_name'] as String?,
+    sourceType: json['source_type'] as String?,
+    bankName: json['bank_name'] as String?,
     isPending: json['_pending'] as bool? ?? false,
   );
 
@@ -243,6 +247,21 @@ class ZadTransaction {
   /// The merchant, when a bank message named one.
   final String? merchantName;
 
+  /// Where the server says the row came from — `notification_listener`,
+  /// `receipt`, `csv_import`… Read only: the server and the brain set it.
+  final String? sourceType;
+
+  /// The bank a notification came from, when one did.
+  final String? bankName;
+
+  /// Whether a bank message produced this row — the "البنك" filter.
+  bool get isFromBank =>
+      (bankName?.isNotEmpty ?? false) ||
+      switch (sourceType) {
+        final String t => t.contains('notification') || t.contains('bank'),
+        null => false,
+      };
+
   /// Whether this row is still only local.
   ///
   /// Not a column. It is kept in the cache so the UI can mark the row as not
@@ -274,7 +293,55 @@ class ZadTransaction {
   /// pending flag.
   Map<String, dynamic> toCacheJson() => <String, dynamic>{
     ...toInsertJson(),
+    'source_type': sourceType,
+    'bank_name': bankName,
     '_pending': isPending,
+  };
+
+  /// The row with the fields Kotlin's `TransactionEditDialog` changes: title,
+  /// amount, category, and — for an expense or an income — which of the two
+  /// it is. A transfer keeps its kind: turning it into spending would need a
+  /// wallet pair that makes no sense for either.
+  ///
+  /// `is_expense` and `txn_kind` always change together, for the reason
+  /// Kotlin's `SupabaseRepo.updateTransaction` gives: the client reads one,
+  /// the edge functions and the bot read the other.
+  ZadTransaction edited({
+    required String title,
+    required double amount,
+    required String? category,
+    bool? isExpense,
+  }) {
+    final flip = kind != TxnKind.transfer && isExpense != null;
+    final expense = flip ? isExpense : this.isExpense;
+    return ZadTransaction._(
+      id: id,
+      userId: userId,
+      amount: amount.asMoney,
+      title: title,
+      createdAt: createdAt,
+      wallet: wallet,
+      kind: flip ? (expense ? TxnKind.expense : TxnKind.income) : kind,
+      isExpense: expense,
+      category: category,
+      transferTo: transferTo,
+      currency: currency,
+      countsTowardBudget: countsTowardBudget,
+      merchantName: merchantName,
+      sourceType: sourceType,
+      bankName: bankName,
+      isPending: true,
+    );
+  }
+
+  /// The columns an edit writes.
+  Map<String, dynamic> toEditJson() => <String, dynamic>{
+    'id': id,
+    'title': title,
+    'amount': amount,
+    'category': category,
+    'is_expense': isExpense,
+    'txn_kind': kind.wireName,
   };
 
   /// Returns a copy with [isPending] set.
@@ -292,6 +359,8 @@ class ZadTransaction {
     currency: currency,
     countsTowardBudget: countsTowardBudget,
     merchantName: merchantName,
+    sourceType: sourceType,
+    bankName: bankName,
     isPending: pending,
   );
 }

@@ -10,12 +10,46 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/core/period/payday.dart';
 import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Stands in for the server, including the parts of it that rewrite a row.
 class _FakeRemote implements TransactionsRemote {
+  /// When set, an update is acknowledged but not applied — the case the
+  /// read-back exists for.
+  bool dropUpdates = false;
+
+  /// When set, a delete is acknowledged but the row stays.
+  bool keepDeleted = false;
+
+  int updates = 0;
+  int deletes = 0;
+
+  @override
+  Future<Map<String, dynamic>?> updateReturning(
+    Map<String, dynamic> patch,
+  ) async {
+    if (failWith case final error?) throw error;
+    updates++;
+    final id = patch['id'] as String;
+    final row = rows[id];
+    if (row == null) return null;
+    if (!dropUpdates) row.addAll(patch);
+    return row;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    if (failWith case final error?) throw error;
+    deletes++;
+    if (!keepDeleted) rows.remove(id);
+  }
+
+  @override
+  Future<bool> exists(String id) async => rows.containsKey(id);
+
   final Map<String, Map<String, dynamic>> rows =
       <String, Map<String, dynamic>>{};
   int upserts = 0;
@@ -75,7 +109,11 @@ void main() {
 
     outbox = Outbox(
       box: outboxBox,
-      send: (entry) => repo.sendQueued(entry),
+      send: (entry) => switch (entry.kind) {
+        OutboxKind.updateTransaction => repo.sendQueuedEdit(entry),
+        OutboxKind.deleteTransaction => repo.sendQueuedDelete(entry),
+        _ => repo.sendQueued(entry),
+      },
       clock: () => now,
     );
     repo = TransactionsRepository(
@@ -302,6 +340,149 @@ void main() {
 
       signedIn = 'user-1';
       expect(shared.allCached(), hasLength(1));
+    });
+  });
+
+  group('editing and deleting', () {
+    test(
+      'an edit of a sent row is queued as an update and read back',
+      () async {
+        final txn = await repo.record(coffee);
+        await outbox.flush();
+
+        await repo.edit(
+          repo.allCached().single,
+          title: 'غدا',
+          amount: 120,
+          category: 'المطاعم',
+        );
+        expect(repo.allCached().single.title, 'غدا');
+        expect(repo.allCached().single.isPending, isTrue);
+        expect(
+          outbox.entries().single.id,
+          TransactionsRepository.editIdFor(txn.id),
+        );
+
+        await outbox.flush();
+        expect(remote.rows[txn.id]!['title'], 'غدا');
+        expect(remote.rows[txn.id]!['amount'], 120);
+        expect(repo.allCached().single.isPending, isFalse);
+        expect(outbox.entries(), isEmpty);
+      },
+    );
+
+    test('an edit before the insert went out rewrites the insert', () async {
+      final txn = await repo.record(coffee);
+      await repo.edit(
+        repo.allCached().single,
+        title: 'غدا',
+        amount: 120,
+        category: 'المطاعم',
+      );
+
+      // One write, not an insert racing an update.
+      expect(outbox.entries().single.id, txn.id);
+      await outbox.flush();
+      expect(remote.upserts, 1);
+      expect(remote.updates, 0);
+      expect(remote.rows[txn.id]!['title'], 'غدا');
+    });
+
+    test('flipping an expense to income moves both columns', () async {
+      await repo.record(coffee);
+      await outbox.flush();
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة',
+        amount: 50,
+        category: null,
+        isExpense: false,
+      );
+      await outbox.flush();
+
+      final row = remote.rows.values.single;
+      expect(row['is_expense'], isFalse);
+      expect(row['txn_kind'], 'income');
+    });
+
+    test('an update the server did not apply is not believed', () async {
+      await repo.record(coffee);
+      await outbox.flush();
+      remote.dropUpdates = true;
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'غدا',
+        amount: 120,
+        category: 'المطاعم',
+      );
+      await outbox.flush();
+
+      expect(outbox.entries(), isNotEmpty, reason: 'kept for a retry');
+    });
+
+    test('a delete leaves the screen at once and the server after', () async {
+      final txn = await repo.record(coffee);
+      await outbox.flush();
+
+      await repo.delete(txn.id);
+      expect(repo.allCached(), isEmpty);
+      await outbox.flush();
+
+      expect(remote.rows, isEmpty);
+      expect(outbox.entries(), isEmpty);
+    });
+
+    test('a delete the server did not carry out is retried', () async {
+      final txn = await repo.record(coffee);
+      await outbox.flush();
+      remote.keepDeleted = true;
+
+      await repo.delete(txn.id);
+      await outbox.flush();
+
+      expect(outbox.entries(), isNotEmpty);
+    });
+
+    test('deleting a row never sent drops its insert, sends nothing', () async {
+      final txn = await repo.record(coffee);
+
+      await repo.delete(txn.id);
+
+      expect(outbox.entries(), isEmpty);
+      await outbox.flush();
+      expect(remote.upserts, 0);
+      expect(remote.deletes, 0);
+    });
+
+    test(
+      'a refresh does not bring back a row whose delete is queued',
+      () async {
+        final txn = await repo.record(coffee);
+        await outbox.flush();
+        remote.failWith = null;
+
+        await repo.delete(txn.id);
+        await repo.refreshPeriod(september);
+
+        expect(repo.allCached(), isEmpty);
+      },
+    );
+
+    test('a refresh does not undo an edit still queued', () async {
+      await repo.record(coffee);
+      await outbox.flush();
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'غدا',
+        amount: 120,
+        category: 'المطاعم',
+      );
+      await repo.refreshPeriod(september);
+
+      expect(repo.allCached().single.title, 'غدا');
     });
   });
 }

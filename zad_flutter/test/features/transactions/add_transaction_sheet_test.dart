@@ -34,6 +34,17 @@ import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 
 class _Unreachable implements TransactionsRemote {
+  @override
+  Future<Map<String, dynamic>?> updateReturning(
+    Map<String, dynamic> patch,
+  ) async => null;
+
+  @override
+  Future<void> delete(String id) async {}
+
+  @override
+  Future<bool> exists(String id) async => false;
+
   int fetches = 0;
   int upserts = 0;
 

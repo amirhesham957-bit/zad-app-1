@@ -395,6 +395,10 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
     send: (entry) async => switch (entry.kind) {
       OutboxKind.insertTransaction =>
         await ref.read(transactionsRepositoryProvider).sendQueued(entry),
+      OutboxKind.updateTransaction =>
+        await ref.read(transactionsRepositoryProvider).sendQueuedEdit(entry),
+      OutboxKind.deleteTransaction =>
+        await ref.read(transactionsRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.notificationIngest =>
         await ref.read(bankRemoteProvider).ingestNotification(entry.payload),
       OutboxKind.updateAccountSettings =>

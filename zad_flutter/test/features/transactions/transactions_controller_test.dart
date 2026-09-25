@@ -28,6 +28,17 @@ class _FakeBudgetRemote implements BudgetRemote {
 }
 
 class _FakeTxnRemote implements TransactionsRemote {
+  @override
+  Future<Map<String, dynamic>?> updateReturning(
+    Map<String, dynamic> patch,
+  ) async => null;
+
+  @override
+  Future<void> delete(String id) async {}
+
+  @override
+  Future<bool> exists(String id) async => false;
+
   List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
   Exception? failWith;
   int fetches = 0;

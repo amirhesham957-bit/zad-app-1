@@ -16,6 +16,16 @@ abstract interface class TransactionsRemote {
   /// Inserts [row] if its id is new, then returns whatever the server holds for
   /// that id.
   Future<Map<String, dynamic>?> upsertReturning(Map<String, dynamic> row);
+
+  /// Applies [patch] to the row `patch['id']`, then returns what the server
+  /// holds for it — null when the row is gone.
+  Future<Map<String, dynamic>?> updateReturning(Map<String, dynamic> patch);
+
+  /// Deletes [id].
+  Future<void> delete(String id);
+
+  /// Whether [id] still exists — the read-back after a delete.
+  Future<bool> exists(String id);
 }
 
 /// The real implementation.
@@ -69,4 +79,24 @@ class SupabaseTransactionsRemote implements TransactionsRemote {
         .eq('id', row['id'] as String)
         .maybeSingle();
   }
+
+  @override
+  Future<Map<String, dynamic>?> updateReturning(
+    Map<String, dynamic> patch,
+  ) async {
+    final id = patch['id'] as String;
+    await _client
+        .from(_table)
+        .update(<String, dynamic>{...patch}..remove('id'))
+        .eq('id', id);
+    return await _client.from(_table).select().eq('id', id).maybeSingle();
+  }
+
+  @override
+  Future<void> delete(String id) => _client.from(_table).delete().eq('id', id);
+
+  @override
+  Future<bool> exists(String id) async =>
+      await _client.from(_table).select('id').eq('id', id).maybeSingle() !=
+      null;
 }

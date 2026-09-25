@@ -8,6 +8,13 @@ abstract final class OutboxKind {
   /// Insert a row into `zad_transactions`.
   static const String insertTransaction = 'insert_transaction';
 
+  /// Change a transaction's title, amount, category or direction. Keyed
+  /// `txn_edit:<id>`, so a second edit replaces an unsent first.
+  static const String updateTransaction = 'update_transaction';
+
+  /// Delete a transaction. Keyed `txn_delete:<id>`.
+  static const String deleteTransaction = 'delete_transaction';
+
   /// Write the customer's own settings onto their `zad_users` row.
   ///
   /// Queued like any other write so that setting a budget works on a phone

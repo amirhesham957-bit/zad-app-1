@@ -80,7 +80,7 @@ owner asked for it on 2026-09-25: "مش عاوزين ننسى ولا زر ولا
 | Amazon rail (`ZadAmazonDealCard`, `ZadAmazonSearchChip`) | ❌ | Affiliate. |
 | `AiAlertBanner` | ❌ | |
 | `ZadQuickExpenseSheet` | ✅ | `quick_expense_sheet.dart`. Card wallet as in Kotlin. No auto-classify call when the category is empty (Kotlin fires one). |
-| `BudgetEditSheet`: set the balance, recent transactions, edit category, delete | ⚠️ | The balance, the preview and Kotlin's copy are in (`monthly_limit_sheet.dart`, prefilled with the current balance). Missing: the cycle's expense list with category edit and delete, which waits on transaction edit/delete. |
+| `BudgetEditSheet`: set the balance, recent transactions, edit category, delete | ✅ | `monthly_limit_sheet.dart`: the balance (prefilled with the current one), the preview, and the period's expenses, each with edit and delete. |
 | `QuickDeductDialog`, `AddTransactionDialog` | ⚠️ | Covered by the add-transaction sheet? Check. |
 | `WhyChangedSheet` | ✅ | The card tap opens the action log (`agent_actions` in words, with undo) instead of raw `zad_brain_runs.mutations`. |
 | `GroceryPurchasePromptDialog` | ❌ | |
@@ -99,7 +99,7 @@ owner asked for it on 2026-09-25: "مش عاوزين ننسى ولا زر ولا
 | `MarketSelectionScreen` | ✅ | Changing the market later from profile (limit conversion). |
 | `BudgetGateScreen` (first-run budget + market) | ⚠️ | Check against the monthly-limit sheet. |
 | `BudgetScreen` / `FinancesScreen`: category budgets, category insight, edit, transactions by date, transaction edit, obligations (add/edit), debts | ❌ | Largest money gap. |
-| Transactions (list + manual entry) | ✅ | Check edit/delete against `TransactionEditDialog`. |
+| Transactions (list + manual entry) | ✅ | Edit (`TransactionEditDialog`: title, amount, kind, category) and delete, queued and read back. The four filters (الكل/المصروفات/الدخل/البنك). A tap shows the row's edit and delete, as in `TxRowItem`. Kotlin's merchant→category memory on edit is not ported. |
 | `InventoryScreen`: categories, low-stock banner, expiring soon, edit, shortages, search, empty states | ⚠️ | Pantry exists; check each part. |
 | `ShoppingListScreen`: budget header, priority chips, grocery suggestions, affiliate footer | ⚠️ | List exists. |
 | `PantryShoppingScreen` (tabs) | ✅ | Household tab. |

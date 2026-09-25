@@ -8,17 +8,24 @@
 /// all.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/money/money.dart';
+import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
+import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
 
 /// Opens the sheet.
 Future<void> showMonthlyLimitSheet(BuildContext context) =>
@@ -166,9 +173,101 @@ class _MonthlyLimitSheetState extends ConsumerState<MonthlyLimitSheet> {
                 ),
               ),
             ],
+            // Kotlin's BudgetEditSheet shows the period's spending under the
+            // balance, each row editable and deletable — the usual reason
+            // the figure is wrong is one of these.
+            const Divider(height: ZadSpacing.xxl + ZadSpacing.sm),
+            const _CycleExpenses(),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The period's expenses, each with its edit and delete.
+class _CycleExpenses extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expenses = ref
+        .watch(transactionsControllerProvider)
+        .rows
+        .where((t) => t.kind == TxnKind.expense)
+        .toList();
+    final total = expenses.fold<double>(0, (sum, t) => sum + t.amount);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('المصروف · ${_shown(total)}', style: ZadType.titleSmall),
+        const SizedBox(height: ZadSpacing.sm),
+        if (expenses.isEmpty)
+          const ZadEmptyState(
+            icon: ZadIcons.expense,
+            title: 'لا توجد معاملات بعد.',
+            message: 'ابدأ بتسجيل أول مصروف — صوّر فاتورة أو اطلب من زاد',
+          )
+        else
+          for (final t in expenses)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                padding: const EdgeInsetsDirectional.only(start: ZadSpacing.md),
+                decoration: BoxDecoration(
+                  color: ZadColors.surfaceLow,
+                  borderRadius: BorderRadius.circular(ZadRadii.chip),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            t.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            t.category ?? 'أخرى',
+                            style: ZadType.labelSmall.copyWith(
+                              color: ZadColors.inkMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      _shown(t.amount),
+                      style: ZadType.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          unawaited(showEditTransactionSheet(context, t)),
+                      tooltip: 'تعديل التصنيف',
+                      icon: const Icon(ZadIcons.edit, size: 18),
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          unawaited(confirmDeleteTransaction(context, ref, t)),
+                      tooltip: 'حذف',
+                      icon: const Icon(
+                        ZadIcons.delete,
+                        size: 18,
+                        color: ZadColors.terracottaRust,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+      ],
     );
   }
 }

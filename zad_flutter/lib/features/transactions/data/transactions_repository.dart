@@ -104,8 +104,14 @@ class TransactionsRepository {
       endsAt: period.endsAt,
     );
 
+    // A row with an edit or a delete still queued is this device's to decide:
+    // the server's copy is the one being replaced, and taking it would undo
+    // the edit on screen — or bring the deleted row back — until the outbox
+    // drains.
+    final queued = _queuedEditsAndDeletes();
     final server = fresh
         .map(ZadTransaction.fromJson)
+        .where((t) => !queued.contains(t.id))
         .map((t) => t.markPending(pending: false))
         .toList();
     final serverIds = server.map((t) => t.id).toSet();
@@ -158,6 +164,101 @@ class TransactionsRepository {
         .markPending(pending: false);
     await _cache.put(confirmed.id, jsonEncode(confirmed.toCacheJson()));
   }
+
+  /// Outbox id for an edit of [id].
+  static String editIdFor(String id) => 'txn_edit:$id';
+
+  /// Outbox id for a delete of [id].
+  static String deleteIdFor(String id) => 'txn_delete:$id';
+
+  /// Saves an edit of [txn]: cache first, then queued.
+  ///
+  /// A row whose insert has not been sent yet has no server copy to edit, so
+  /// its queued insert is replaced with the edited row instead — one write,
+  /// not an insert racing an update.
+  Future<ZadTransaction> edit(
+    ZadTransaction txn, {
+    required String title,
+    required double amount,
+    required String? category,
+    bool? isExpense,
+  }) async {
+    final next = txn.edited(
+      title: title,
+      amount: amount,
+      category: category,
+      isExpense: isExpense,
+    );
+    await _cache.put(next.id, jsonEncode(next.toCacheJson()));
+    if (_hasQueuedInsert(txn.id)) {
+      await _outbox().enqueue(
+        id: next.id,
+        kind: OutboxKind.insertTransaction,
+        payload: next.toInsertJson(),
+      );
+    } else {
+      await _outbox().enqueue(
+        id: editIdFor(next.id),
+        kind: OutboxKind.updateTransaction,
+        payload: next.toEditJson(),
+      );
+    }
+    return next;
+  }
+
+  /// Deletes [id]: gone from the cache at once, then queued.
+  ///
+  /// A row that never reached the server is simply dropped with its queued
+  /// insert — there is nothing on the server to delete.
+  Future<void> delete(String id) async {
+    await _cache.delete(id);
+    await _outbox().discard(editIdFor(id));
+    if (_hasQueuedInsert(id)) {
+      await _outbox().discard(id);
+      return;
+    }
+    await _outbox().enqueue(
+      id: deleteIdFor(id),
+      kind: OutboxKind.deleteTransaction,
+      payload: <String, dynamic>{'id': id},
+    );
+  }
+
+  /// Sends one queued edit and checks it took; the server's row wins.
+  Future<void> sendQueuedEdit(OutboxEntry entry) async {
+    final stored = await _remote.updateReturning(entry.payload);
+    // Deleted elsewhere since: nothing left to edit.
+    if (stored == null) return;
+    final sent = entry.payload;
+    if (stored['title'] != sent['title'] ||
+        stored['txn_kind'] != sent['txn_kind'] ||
+        stored['category'] != sent['category']) {
+      throw StateError('transaction ${sent['id']} did not take the edit');
+    }
+    final confirmed = ZadTransaction.fromJson(stored)
+        .markPending(pending: false);
+    await _cache.put(confirmed.id, jsonEncode(confirmed.toCacheJson()));
+  }
+
+  /// Sends one queued delete and checks the row is gone.
+  Future<void> sendQueuedDelete(OutboxEntry entry) async {
+    final id = entry.payload['id'] as String;
+    await _remote.delete(id);
+    if (await _remote.exists(id)) {
+      throw StateError('transaction $id is still there after its delete');
+    }
+  }
+
+  bool _hasQueuedInsert(String id) => _outbox()
+      .entries(includeDead: false)
+      .any((e) => e.id == id && e.kind == OutboxKind.insertTransaction);
+
+  Set<String> _queuedEditsAndDeletes() => <String>{
+    for (final e in _outbox().entries(includeDead: false))
+      if (e.kind == OutboxKind.updateTransaction ||
+          e.kind == OutboxKind.deleteTransaction)
+        e.payload['id'] as String,
+  };
 
   String _requireUserId() {
     final id = _signedInUserId();
