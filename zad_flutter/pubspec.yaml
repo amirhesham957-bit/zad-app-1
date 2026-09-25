@@ -113,6 +113,7 @@ dependencies:
   qr_flutter: ^4.1.0
   file_picker: ^13.1.0
   crypto: ^3.0.7
+  url_launcher: ^6.3.2
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen

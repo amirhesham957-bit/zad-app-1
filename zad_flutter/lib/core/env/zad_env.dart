@@ -28,6 +28,14 @@ abstract final class ZadEnv {
     'SUPABASE_ANON_KEY',
   );
 
+  /// The Amazon Associates store id every affiliate link carries. Public by
+  /// nature (it is in every link); `.env.example`'s value is the default so a
+  /// build without it still earns the commission.
+  static const String amazonAssociateTag = String.fromEnvironment(
+    'AMAZON_ASSOCIATE_TAG',
+    defaultValue: 'zad0b-21',
+  );
+
   /// Whether both values were supplied at build time.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

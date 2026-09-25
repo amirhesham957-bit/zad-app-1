@@ -18,6 +18,8 @@ import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/affiliate/data/affiliate_repository.dart';
+import 'package:zad/features/affiliate/presentation/affiliate_product_card.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family.dart';
@@ -208,6 +210,8 @@ class KidsHome extends ConsumerWidget {
             for (final m in recent) _MessageRow(message: m, family: family),
           const SizedBox(height: 22),
           const _TasbihaCard(),
+          const SizedBox(height: 22),
+          const _AffiliateRow(),
         ],
       ),
     );
@@ -756,6 +760,48 @@ class _TasbihaCardState extends ConsumerState<_TasbihaCard> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Kotlin's «اقتراحات التسوق» row on the kids home: up to five active
+/// catalogue products, each click recorded as `kids_home`. Nothing shows
+/// when the catalogue has no active product.
+class _AffiliateRow extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final products = (ref.watch(affiliateProductsProvider).value ?? const [])
+        .where((p) => p.isActive)
+        .take(5)
+        .toList();
+    if (products.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const _SectionTitle(emoji: '🛍️', title: 'اقتراحات التسوق'),
+        const SizedBox(height: ZadSpacing.sm),
+        SizedBox(
+          height: 150,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: products.length,
+            separatorBuilder: (_, _) => const SizedBox(width: ZadSpacing.md),
+            itemBuilder: (context, i) => AffiliateProductCard(
+              width: 320,
+              product: products[i],
+              onBuy: () => unawaited(
+                openAffiliateProduct(
+                  ref,
+                  products[i],
+                  sourceScreen: 'kids_home',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
