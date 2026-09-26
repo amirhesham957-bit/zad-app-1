@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/tokens/zad_palette.dart';
 import 'package:zad/features/tasbiha/domain/tasbiha.dart';
 
 const double _w = 1080;
@@ -55,10 +56,10 @@ Future<List<int>> renderLeaderboard(List<MemberGarden> gardens) async {
     ..drawRect(
       const Rect.fromLTWH(0, 0, _w, _h),
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[ZadColors.forestEmerald, ZadColors.emeraldDeep],
+          colors: <Color>[ZadPalette.forestEmerald, ZadColors.emeraldDeep],
         ).createShader(const Rect.fromLTWH(0, 0, _w, _h)),
     )
     ..drawCircle(

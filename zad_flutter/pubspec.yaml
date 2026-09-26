@@ -108,6 +108,9 @@ dependencies:
   file_picker: ^13.1.0
   crypto: ^3.0.7
   url_launcher: ^6.3.2
+  # ── Lottie, for the same res/raw animations the Kotlin app plays
+  # (garden burst, confetti, success check, scan line…).
+  lottie: ^3.6.1
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen
@@ -135,6 +138,8 @@ flutter:
 
   assets:
     - assets/brand/
+    # Kotlin's res/raw Lottie files, byte for byte.
+    - assets/lottie/
 
   # The same variable font files the Kotlin app ships, copied from
   # app/src/main/res/font/ so text measures identically on both clients.

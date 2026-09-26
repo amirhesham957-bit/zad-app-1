@@ -24,9 +24,12 @@ import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
+import 'package:zad/features/home/presentation/home_chef_section.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
+import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
+import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
@@ -108,10 +111,13 @@ class HomeScreen extends ConsumerWidget {
             delayMs: 85,
             child: ZadTrailingGap(gap: 18, child: PharmacyGlanceCard()),
           ),
+          const ZadAppearOnEntry(delayMs: 92, child: WeekWithZadSlot()),
+          const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
           const ZadAppearOnEntry(
             delayMs: 100,
             child: ZadTrailingGap(gap: 18, child: SubscriptionsGlanceCard()),
           ),
+          const ZadAppearOnEntry(delayMs: 105, child: HomeChefSection()),
           const HomeProposalsSection(),
           const ZadTrailingGap(gap: 18, child: HomeInsightsSection()),
           const HomeRecentTransactions(),
