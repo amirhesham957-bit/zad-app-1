@@ -155,6 +155,7 @@ class PricesController extends Notifier<PricesView> {
     required String priceText,
     String? store,
     String? city,
+    String? category,
   }) async {
     final price = parseMoneyInput(priceText);
     final problem = checkReport(
@@ -172,6 +173,7 @@ class PricesController extends Notifier<PricesView> {
       currency: state.market?.currency,
       store: store,
       city: city,
+      category: category,
     );
     if (ref.mounted) {
       state = state.copyWith(

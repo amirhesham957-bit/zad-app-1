@@ -150,6 +150,7 @@ class PricesRepository {
     String? currency,
     String? store,
     String? city,
+    String? category,
   }) async {
     final problem = checkReport(
       item: item,
@@ -177,6 +178,7 @@ class PricesRepository {
         'currency': ?currency,
         'store': ?_orNull(store),
         'city': ?_orNull(city),
+        'category': ?_orNull(category),
       },
     );
     if (place.isNotEmpty) await _cache.put(_cityKey, place);
@@ -209,6 +211,7 @@ class PricesRepository {
       currency: p['currency'] as String?,
       city: p['city'] as String?,
       store: p['store'] as String?,
+      category: p['category'] as String?,
     );
     if (answer['ok'] == true) return;
 

@@ -15,6 +15,7 @@ abstract interface class PricesRemote {
     String? currency,
     String? city,
     String? store,
+    String? category,
   });
 
   /// Calls `zad_cheapest_prices`.
@@ -39,6 +40,7 @@ class SupabasePricesRemote implements PricesRemote {
     String? currency,
     String? city,
     String? store,
+    String? category,
   }) async {
     final result = await _client.rpc<dynamic>(
       'zad_report_price',
@@ -49,6 +51,7 @@ class SupabasePricesRemote implements PricesRemote {
         'p_currency': currency,
         'p_location': city,
         'p_store': store,
+        'p_category': category,
       },
     );
     if (result is! Map) {

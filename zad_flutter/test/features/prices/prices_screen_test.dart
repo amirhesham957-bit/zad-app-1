@@ -34,6 +34,7 @@ class _Prices extends PricesController {
     required String priceText,
     String? store,
     String? city,
+    String? category,
   }) async {
     calls.add('report:$item:$priceText');
     return answer;

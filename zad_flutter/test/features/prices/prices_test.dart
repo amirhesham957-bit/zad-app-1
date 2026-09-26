@@ -47,6 +47,7 @@ class _Server implements PricesRemote {
     String? currency,
     String? city,
     String? store,
+    String? category,
   }) async {
     if (failWith case final e?) throw e;
     reports.add(<String, Object?>{

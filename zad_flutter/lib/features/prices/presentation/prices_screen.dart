@@ -1,5 +1,14 @@
-/// The community's prices: the cheapest each item was reported at, and a way
-/// to add one.
+/// Kotlin's `PriceReportingRoute` (`ui/screens/PriceReportingScreen.kt`):
+/// «لوحة الأسعار» — your contributions, «سجّل سعر جديد», «أرخص سعر حواليك»
+/// with its city filter, «أكثر المشاركين 🏆» — and, as a sub-view in the
+/// same place, the «سجّل السعر» form.
+///
+/// Same backend as before, not Kotlin's direct `price_index` insert: the
+/// table takes no client writes since
+/// `20260921160000_price_reports_through_the_server`, so a report is queued
+/// for `zad_report_price` (which also takes Kotlin's category), and the board
+/// reads `zad_price_leaderboard` — a rank and a count, named «المساهم N» as
+/// Kotlin names them.
 library;
 
 import 'dart:async';
@@ -8,14 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `hide TextDirection`: the price field needs dart:ui's, digits left to right.
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/nearby/presentation/nearby_view.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
 import 'package:zad/features/prices/domain/prices.dart';
 
@@ -24,360 +27,102 @@ Future<void> showPricesScreen(BuildContext context) =>
     Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => const PricesScreen()));
 
-/// Prices and shops: what things cost, and where to buy them nearby.
-///
-/// Two tabs. The second is built only when opened, so looking at prices
-/// never checks location.
-class PricesScreen extends ConsumerWidget {
+/// Kotlin's slate text, fixed in both themes as Kotlin has it.
+const Color _ink = Color(0xFF0F172A);
+const Color _slate = Color(0xFF475569);
+
+/// Kotlin's `ZadHubListBottomPadding`.
+const double _hubBottom = 110;
+
+/// The board, or the form over it.
+class PricesScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
-    decoration: BoxDecoration(gradient: ZadColors.canvas),
-    child: DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('الأسعار والمحلات'),
-          bottom: const TabBar(
-            tabs: <Widget>[
-              Tab(text: 'الأسعار'),
-              Tab(text: 'حواليك'),
-            ],
-          ),
-        ),
-        body: const TabBarView(children: <Widget>[PricesList(), NearbyList()]),
-      ),
-    ),
-  );
+  ConsumerState<PricesScreen> createState() => _PricesScreenState();
 }
 
-/// The prices list, with the report button under it.
-class PricesList extends ConsumerWidget {
-  /// Creates the view.
-  const new({super.key});
+class _PricesScreenState extends ConsumerState<PricesScreen> {
+  bool _showForm = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final view = ref.watch(pricesControllerProvider);
-    final controller = ref.read(pricesControllerProvider.notifier);
-    final symbol = view.market?.currencySymbol ?? '';
-    final rows = view.rows;
-
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: <Widget>[
-                if (view.market case final market?)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      ZadSpacing.gutter,
-                      ZadSpacing.sm,
-                      ZadSpacing.gutter,
-                      0,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: Wrap(
-                        spacing: ZadSpacing.sm,
-                        children: <Widget>[
-                          ChoiceChip(
-                            label: Text('كل ${market.nameAr}'),
-                            selected: view.city == null,
-                            onSelected: (_) =>
-                                unawaited(controller.setCity(null)),
-                          ),
-                          for (final c in <String>{?view.city, ?view.lastCity})
-                            ChoiceChip(
-                              label: Text(c),
-                              selected: view.city == c,
-                              onSelected: (_) =>
-                                  unawaited(controller.setCity(c)),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (view.queued.isNotEmpty)
-                  _Padded(
-                    child: _Queued(reports: view.queued, symbol: symbol),
-                  ),
-                if (rows.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: switch (view) {
-                      PricesView(market: null) => const ZadEmptyState(
-                        icon: ZadIcons.prices,
-                        title: 'اختار بلدك الأول',
-                        message: 'الأسعار بتتقارن بعملة بلدك.',
-                      ),
-                      PricesView(error: final _?) => const ZadEmptyState(
-                        icon: ZadIcons.prices,
-                        title: 'مقدرتش أجيب الأسعار',
-                        message: 'اسحب لتحت نجرب تاني.',
-                        tone: ZadEmptyTone.problem,
-                      ),
-                      _ => const ZadEmptyState(
-                        icon: ZadIcons.prices,
-                        title: 'مفيش أسعار لسه',
-                        message:
-                            'لو اشتريت حاجة النهارده، بلّغ عن سعرها — هيوفّر '
-                            'على غيرك.',
-                      ),
-                    },
-                  )
-                else ...<Widget>[
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      ZadSpacing.gutter,
-                      ZadSpacing.lg,
-                      ZadSpacing.gutter,
-                      0,
-                    ),
-                    sliver: SliverList.separated(
-                      itemCount: rows.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: ZadSpacing.sm),
-                      itemBuilder: (_, i) =>
-                          _PriceCard(row: rows[i], symbol: symbol),
-                    ),
-                  ),
-                  if (view.leaderboard.isNotEmpty)
-                    _Padded(child: _Leaderboard(rows: view.leaderboard)),
-                ],
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: ZadSpacing.lg),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.gutter,
-            0,
-            ZadSpacing.gutter,
-            ZadSpacing.lg,
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => unawaited(showReportPriceSheet(context)),
-              icon: const Icon(ZadIcons.add),
-              label: const Text('بلّغ عن سعر'),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Padded extends StatelessWidget {
-  const new({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => SliverPadding(
-    padding: const EdgeInsets.fromLTRB(
-      ZadSpacing.gutter,
-      ZadSpacing.lg,
-      ZadSpacing.gutter,
-      0,
-    ),
-    sliver: SliverToBoxAdapter(child: child),
-  );
-}
-
-class _PriceCard extends StatelessWidget {
-  const new({required this.row, required this.symbol});
-
-  final CheapestPrice row;
-  final String symbol;
-
-  @override
-  Widget build(BuildContext context) {
-    final where = <String>[?row.store, ?row.location].join('، ');
-    return ZadCard(
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(row.itemName, style: ZadType.titleSmall),
-                if (where.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: ZadSpacing.xs),
-                  Text(
-                    'أرخص سعر: $where',
-                    style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
-                  ),
-                ],
-                const SizedBox(height: ZadSpacing.xs),
-                Text(
-                  row.reports == 1
-                      ? 'بلاغ واحد'
-                      : 'المتوسط ${formatPrice(row.avgPrice)} · '
-                            '${row.reports} بلاغات',
-                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: ZadSpacing.md),
-          Text(
-            '${formatPrice(row.minPrice)} $symbol'.trim(),
-            style: ZadType.figure(18).copyWith(color: ZadColors.green700),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Queued extends StatelessWidget {
-  const new({required this.reports, required this.symbol});
-
-  final List<QueuedReport> reports;
-  final String symbol;
-
-  @override
-  Widget build(BuildContext context) => ZadCard(
-    color: ZadColors.mint50,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Text('بلاغاتك اللي على الموبايل', style: ZadType.titleSmall),
-        const SizedBox(height: ZadSpacing.sm),
-        for (final r in reports)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    '${r.item} — ${formatPrice(r.price)} $symbol'.trim(),
-                    style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
-                  ),
-                ),
-                Text(
-                  // A refusal is said, not hidden: the customer was thanked
-                  // for a report that did not count.
-                  r.refused ? 'ماتقبلش' : 'مستني النت',
-                  style: ZadType.labelSmall.copyWith(
-                    color: r.refused
-                        ? ZadColors.terracottaRust
-                        : ZadColors.inkMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-class _Leaderboard extends StatelessWidget {
-  const new({required this.rows});
-
-  final List<LeaderboardRow> rows;
-
-  @override
-  Widget build(BuildContext context) => ZadCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Icon(ZadIcons.leaderboard, size: 18, color: ZadColors.mustardOchre),
-            const SizedBox(width: ZadSpacing.sm),
-            const Expanded(
-              child: Text(
-                'أكتر ناس بتبلّغ الشهر ده',
-                style: ZadType.titleSmall,
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_showForm,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) setState(() => _showForm = false);
+    },
+    child: Scaffold(
+      body: SafeArea(
+        child: _showForm
+            ? PriceReportForm(
+                onBack: () => setState(() => _showForm = false),
+                onSubmitted: () => setState(() => _showForm = false),
+              )
+            : CrowdsourceDashboard(
+                onReportPrice: () => setState(() => _showForm = true),
+                onBack: () => Navigator.of(context).maybePop(),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: ZadSpacing.sm),
-        for (final r in rows.take(5))
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-            child: Row(
-              children: <Widget>[
-                SizedBox(
-                  width: 32,
-                  child: Text('#${r.rank}', style: ZadType.labelMedium),
-                ),
-                Expanded(
-                  child: Text(
-                    // Never a name: the server does not send one.
-                    r.isMe ? 'إنت' : 'مساهم',
-                    style: ZadType.bodySmall.copyWith(
-                      color: r.isMe ? ZadColors.green700 : ZadColors.slate,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${r.reports} بلاغ',
-                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-                ),
-              ],
-            ),
-          ),
-      ],
+      ),
     ),
   );
 }
 
-/// Opens the report form.
-Future<void> showReportPriceSheet(BuildContext context) =>
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: ZadColors.surface,
-      shape: zadSquircle(ZadRadii.sheet),
-      builder: (_) => const ReportPriceSheet(),
-    );
-
-/// The report form.
-class ReportPriceSheet extends ConsumerStatefulWidget {
+/// Kotlin's `PriceReportingScreen`: the report form.
+class PriceReportForm extends ConsumerStatefulWidget {
   /// Creates the form.
-  const new({super.key});
+  const new({required this.onBack, required this.onSubmitted, super.key});
+
+  /// Back to the board.
+  final VoidCallback onBack;
+
+  /// After a report was queued.
+  final VoidCallback onSubmitted;
 
   @override
-  ConsumerState<ReportPriceSheet> createState() => _ReportPriceSheetState();
+  ConsumerState<PriceReportForm> createState() => _PriceReportFormState();
 }
 
-class _ReportPriceSheetState extends ConsumerState<ReportPriceSheet> {
+class _PriceReportFormState extends ConsumerState<PriceReportForm> {
+  static const List<String> _categories = <String>[
+    'bread',
+    'milk',
+    'eggs',
+    'oil',
+    'vegetables',
+    'fruits',
+    'general',
+  ];
+
   final TextEditingController _item = TextEditingController();
   final TextEditingController _price = TextEditingController();
+  final TextEditingController _location = TextEditingController();
   final TextEditingController _store = TextEditingController();
-  late final TextEditingController _city = TextEditingController(
-    text: ref.read(pricesControllerProvider).lastCity ?? '',
-  );
+  String _category = 'bread';
+  bool _submitting = false;
   ReportProblem? _problem;
-  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _item.addListener(_changed);
+    _price.addListener(_changed);
+  }
+
+  void _changed() => setState(() {});
 
   @override
   void dispose() {
     _item.dispose();
     _price.dispose();
+    _location.dispose();
     _store.dispose();
-    _city.dispose();
     super.dispose();
   }
 
-  Future<void> _send() async {
-    if (_saving) return;
-    setState(() => _saving = true);
+  Future<void> _submit() async {
+    if (_item.text.isEmpty || _price.text.isEmpty || _submitting) return;
+    setState(() => _submitting = true);
     final messenger = ScaffoldMessenger.maybeOf(context);
     final problem = await ref
         .read(pricesControllerProvider.notifier)
@@ -385,109 +130,644 @@ class _ReportPriceSheetState extends ConsumerState<ReportPriceSheet> {
           item: _item.text,
           priceText: _price.text,
           store: _store.text,
-          city: _city.text,
+          city: _location.text,
+          category: _category,
         );
     if (!mounted) return;
     if (problem != null) {
       setState(() {
         _problem = problem;
-        _saving = false;
+        _submitting = false;
       });
       return;
     }
-    Navigator.of(context).pop();
+    final city = tidyReportText(_location.text);
+    if (city.isNotEmpty) {
+      unawaited(ref.read(pricesControllerProvider.notifier).setCity(city));
+    }
     messenger?.showSnackBar(
-      const SnackBar(
-        content: Text('شكراً على البلاغ — هيوصل أول ما يبقى فيه نت.'),
-      ),
+      const SnackBar(content: Text('تم تسجيل السعر بنجاح! شكراً على مساهمتك.')),
     );
+    widget.onSubmitted();
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final symbol =
         ref
             .watch(pricesControllerProvider.select((v) => v.market))
             ?.currencySymbol ??
         '';
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(ZadSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    const labelStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: _slate,
+    );
+    final fieldShape = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+    );
+
+    Widget field(
+      String label,
+      TextEditingController controller,
+      String hint, {
+      String? error,
+      bool number = false,
+    }) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(label, style: labelStyle),
+        TextField(
+          controller: controller,
+          keyboardType: number
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : null,
+          textDirection: number ? TextDirection.ltr : null,
+          onChanged: number
+              ? (v) {
+                  // Kotlin: only a number (or nothing) is taken.
+                  if (v.isNotEmpty && double.tryParse(v) == null) {
+                    final cut = v.substring(0, v.length - 1);
+                    controller.value = TextEditingValue(
+                      text: cut,
+                      selection: TextSelection.collapsed(offset: cut.length),
+                    );
+                  }
+                }
+              : null,
+          decoration: InputDecoration(
+            hintText: hint,
+            border: fieldShape,
+            enabledBorder: fieldShape,
+            isDense: true,
+            errorText: error,
+            prefixIcon: number
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(symbol, style: const TextStyle(fontSize: 12)),
+                  )
+                : null,
+            prefixIconConstraints: const BoxConstraints(),
+          ),
+        ),
+      ],
+    );
+
+    final canSend =
+        _item.text.isNotEmpty && _price.text.isNotEmpty && !_submitting;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16 + _hubBottom),
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: <Widget>[
+              SizedBox.square(
+                dimension: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: widget.onBack,
+                  tooltip: 'Back',
+                  icon: Icon(Icons.arrow_back, color: scheme.primary),
+                ),
+              ),
+              const Text(
+                'سجّل السعر',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: _ink,
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.trending_up, color: scheme.primary, size: 24),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: scheme.outline, width: 0.5),
+          ),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.info, color: scheme.primary, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'ساهم في تحديث أسعار السوق الحية. بيانات العائلة تساعد '
+                  'تنبؤات أفضل.',
+                  style: TextStyle(fontSize: 12, color: _slate),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        field(
+          'اسم السلعة',
+          _item,
+          'مثل: خبز، لبن، بيض',
+          error: switch (_problem) {
+            ReportProblem.itemTooShort => 'اكتب اسم الصنف',
+            ReportProblem.itemTooLong => 'الاسم طويل أوي',
+            _ => null,
+          },
+        ),
+        const SizedBox(height: 16),
+        const Text('الفئة', style: labelStyle),
+        DropdownMenu<String>(
+          initialSelection: _category,
+          expandedInsets: EdgeInsets.zero,
+          inputDecorationTheme: InputDecorationTheme(
+            border: fieldShape,
+            isDense: true,
+          ),
+          onSelected: (v) {
+            if (v != null) setState(() => _category = v);
+          },
+          dropdownMenuEntries: <DropdownMenuEntry<String>>[
+            for (final c in _categories)
+              DropdownMenuEntry<String>(value: c, label: c),
+          ],
+        ),
+        const SizedBox(height: 16),
+        field(
+          'السعر',
+          _price,
+          'مثل: 15.50',
+          number: true,
+          error: switch (_problem) {
+            ReportProblem.noPrice => 'اكتب السعر',
+            ReportProblem.priceTooHigh => 'الرقم ده كبير أوي',
+            _ => null,
+          },
+        ),
+        const SizedBox(height: 16),
+        field(
+          'المنطقة',
+          _location,
+          'مثل: القاهرة، الجيزة',
+          error: _problem == ReportProblem.cityTooLong
+              ? 'الاسم طويل أوي'
+              : null,
+        ),
+        const SizedBox(height: 16),
+        field(
+          'اسم المتجر (اختياري)',
+          _store,
+          'مثل: كارفور، سبينيز',
+          error: _problem == ReportProblem.storeTooLong
+              ? 'الاسم طويل أوي'
+              : null,
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 48,
+          child: FilledButton(
+            onPressed: canSend ? () => unawaited(_submit()) : null,
+            style: FilledButton.styleFrom(backgroundColor: scheme.primary),
+            child: _submitting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.check, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'أرسل السعر',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Kotlin's `CrowdsourceDashboard`.
+class CrowdsourceDashboard extends ConsumerStatefulWidget {
+  /// Creates the board.
+  const new({required this.onReportPrice, required this.onBack, super.key});
+
+  /// Opens the form.
+  final VoidCallback onReportPrice;
+
+  /// Leaves the screen.
+  final VoidCallback onBack;
+
+  @override
+  ConsumerState<CrowdsourceDashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends ConsumerState<CrowdsourceDashboard> {
+  late final TextEditingController _location = TextEditingController(
+    text: ref.read(pricesControllerProvider).city ?? '',
+  );
+
+  @override
+  void dispose() {
+    _location.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final view = ref.watch(pricesControllerProvider);
+    final controller = ref.read(pricesControllerProvider.notifier);
+    final mine = view.leaderboard.where((r) => r.isMe).firstOrNull;
+    final contributions =
+        (mine?.reports ?? 0) + view.queued.where((q) => !q.refused).length;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16 + _hubBottom),
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: <Widget>[
+              SizedBox.square(
+                dimension: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: widget.onBack,
+                  tooltip: 'Back',
+                  icon: Icon(Icons.arrow_back, color: scheme.primary),
+                ),
+              ),
+              Text(
+                'لوحة الأسعار',
+                style: ZadType.titleLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: _StatCard(
+            title: 'مساهماتك',
+            value: '$contributions',
+            icon: Icons.trending_up,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: widget.onReportPrice,
+            style: FilledButton.styleFrom(backgroundColor: scheme.primary),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'سجّل سعر جديد',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _CheapestNearYou(
+          view: view,
+          location: _location,
+          onSearch: () => unawaited(controller.setCity(_location.text)),
+          onReportPrice: widget.onReportPrice,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'أكثر المشاركين 🏆',
+          style: ZadType.titleMedium.copyWith(
+            fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
+          ),
+        ),
+        for (final (i, entry) in view.leaderboard.indexed) ...<Widget>[
+          const SizedBox(height: 16),
+          _LeaderboardCard(entry: entry, rank: i + 1),
+        ],
+        if (view.leaderboard.isEmpty) ...<Widget>[
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: KtEmptyState(
+              icon: Icons.emoji_events,
+              title: 'لسه مفيش مساهمات',
+              subtitle:
+                  'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد '
+                  'جيرانك يلاقوا أرخص مكان.',
+              action: _FirstReportButton(
+                onPressed: widget.onReportPrice,
+                withIcon: true,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FirstReportButton extends StatelessWidget {
+  const new({required this.onPressed, this.withIcon = false});
+
+  final VoidCallback onPressed;
+  final bool withIcon;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(minHeight: 44),
+    child: OutlinedButton(
+      onPressed: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (withIcon) ...<Widget>[
+            const Icon(Icons.add, size: 18),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            'سجّل أول سعر',
+            style: TextStyle(fontWeight: withIcon ? FontWeight.bold : null),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Kotlin's `StatCard`.
+class _StatCard extends StatelessWidget {
+  const new({required this.title, required this.value, required this.icon});
+
+  final String title;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 96),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outline, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(icon, color: scheme.primary, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: ZadType.headlineMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: scheme.primary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: ZadType.labelLarge.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kotlin's `LeaderboardCard`: gold, silver, bronze, then grey.
+class _LeaderboardCard extends StatelessWidget {
+  const new({required this.entry, required this.rank});
+
+  final LeaderboardRow entry;
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outline, width: 0.5),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: switch (rank) {
+                1 => const Color(0xFFFFD700),
+                2 => const Color(0xFFC0C0C0),
+                3 => const Color(0xFFCD7F32),
+                _ => const Color(0xFFE0E0E0),
+              },
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$rank',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'المساهم $rank',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                Text(
+                  '${entry.reports} مساهمات',
+                  style: const TextStyle(fontSize: 12, color: _slate),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kotlin's `CheapestNearYouSection`: the community's reports of the last
+/// 14 days, in the account's currency, for a city or the whole country.
+class _CheapestNearYou extends StatelessWidget {
+  const new({
+    required this.view,
+    required this.location,
+    required this.onSearch,
+    required this.onReportPrice,
+  });
+
+  final PricesView view;
+  final TextEditingController location;
+  final VoidCallback onSearch;
+  final VoidCallback onReportPrice;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final rows = view.rows;
+    final symbol = view.market?.currencySymbol ?? '';
+    final hasRows = view.snapshot != null && rows.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          'أرخص سعر حواليك',
+          style: ZadType.titleMedium.copyWith(
+            fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية',
+          style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 8),
+        Row(
           children: <Widget>[
-            const Text('بلّغ عن سعر', style: ZadType.titleMedium),
-            const SizedBox(height: ZadSpacing.sm),
-            Text(
-              'السعر اللي دفعته فعلاً، والمحل. بلاغ واحد للصنف في نفس المحل '
-              'كل ١٢ ساعة — التاني بيصحّح الأول.',
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            ),
-            const SizedBox(height: ZadSpacing.lg),
-            TextField(
-              controller: _item,
-              autofocus: true,
-              maxLength: ReportBounds.textMax,
-              decoration: InputDecoration(
-                labelText: 'الصنف',
-                errorText: switch (_problem) {
-                  ReportProblem.itemTooShort => 'اكتب اسم الصنف',
-                  ReportProblem.itemTooLong => 'الاسم طويل أوي',
-                  _ => null,
-                },
+            Expanded(
+              child: TextField(
+                controller: location,
+                maxLength: ReportBounds.textMax,
+                buildCounter: (
+                  _, {
+                  required currentLength,
+                  required isFocused,
+                  maxLength,
+                }) => null,
+                onSubmitted: (_) => onSearch(),
+                decoration: const InputDecoration(
+                  labelText: 'المدينة أو المنطقة (اختياري)',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
-            TextField(
-              controller: _price,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textDirection: TextDirection.ltr,
-              decoration: InputDecoration(
-                labelText: 'السعر',
-                suffixText: symbol,
-                errorText: switch (_problem) {
-                  ReportProblem.noPrice => 'اكتب السعر',
-                  ReportProblem.priceTooHigh => 'الرقم ده كبير أوي',
-                  _ => null,
-                },
-              ),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-            TextField(
-              controller: _store,
-              maxLength: ReportBounds.textMax,
-              decoration: InputDecoration(
-                labelText: 'المحل (اختياري)',
-                errorText: _problem == ReportProblem.storeTooLong
-                    ? 'الاسم طويل أوي'
-                    : null,
-              ),
-            ),
-            TextField(
-              controller: _city,
-              maxLength: ReportBounds.textMax,
-              decoration: InputDecoration(
-                labelText: 'المدينة (اختياري)',
-                errorText: _problem == ReportProblem.cityTooLong
-                    ? 'الاسم طويل أوي'
-                    : null,
-              ),
-            ),
-            const SizedBox(height: ZadSpacing.lg),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _saving ? null : () => unawaited(_send()),
-                child: const Text('ابعت'),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: FilledButton.tonal(
+                onPressed: onSearch,
+                child: const Icon(
+                  Icons.search,
+                  size: 18,
+                  semanticLabel: 'دوّر',
+                ),
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        if (view.isRefreshing && !hasRows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: CircularProgressIndicator(color: scheme.primary),
+            ),
+          )
+        else if (view.error != null && !hasRows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: KtEmptyState(
+              icon: Icons.cloud_off,
+              title: 'مقدرناش نجيب الأسعار دلوقتي',
+              action: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: OutlinedButton(
+                  onPressed: onSearch,
+                  child: const Text('جرّب تاني'),
+                ),
+              ),
+            ),
+          )
+        else if (!hasRows)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: KtEmptyState(
+              icon: Icons.storefront,
+              title: 'لسه مفيش بلاغات هنا',
+              subtitle: 'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك',
+              action: _FirstReportButton(onPressed: onReportPrice),
+            ),
+          )
+        else
+          for (final row in rows) ...<Widget>[
+            ZadListCard(
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          row.itemName,
+                          style: ZadType.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_where(row)} · ${row.reports} بلاغ',
+                          style: ZadType.bodySmall.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${formatPrice(row.minPrice)} $symbol'.trim(),
+                    style: ZadType.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+      ],
     );
+  }
+
+  static String _where(CheapestPrice row) {
+    final where = <String>[?row.store, ?row.location].join('، ');
+    return where.isEmpty ? '—' : where;
   }
 }
 
