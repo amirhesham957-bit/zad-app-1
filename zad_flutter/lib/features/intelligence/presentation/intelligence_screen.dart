@@ -19,7 +19,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -32,6 +31,7 @@ import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
+import 'package:zad/features/intelligence/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
@@ -85,23 +85,32 @@ Future<String?> _aiText(WidgetRef ref, String system, String user) async {
 }
 
 /// The screen.
-class IntelligenceScreen extends ConsumerWidget {
+class IntelligenceScreen extends ConsumerStatefulWidget {
   /// Creates the screen; [embedded] drops the app bar inside BrainFamily.
   const new({this.embedded = false, super.key});
 
   /// Whether a host screen already shows the title.
   final bool embedded;
 
-  void _ask(BuildContext context, WidgetRef ref, [String? prompt]) {
+  @override
+  ConsumerState<IntelligenceScreen> createState() => _IntelligenceState();
+}
+
+class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
+  bool _chatExpanded = false;
+
+  /// Kotlin: the orb, a quick prompt or «اتكلم مع زاد» open the chat card on
+  /// this screen; a prompt is also sent.
+  void _ask([String? prompt]) {
     if (prompt != null) {
       unawaited(ref.read(chatControllerProvider.notifier).send(prompt));
     }
-    Navigator.of(context).popUntil((r) => r.isFirst);
-    ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
+    setState(() => _chatExpanded = true);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final embedded = widget.embedded;
     final all = ref.watch(transactionsRepositoryProvider).allCached();
     final budget = ref.watch(budgetControllerProvider).snapshot;
     final expenses = all.where(_isExpense).toList();
@@ -135,15 +144,9 @@ class IntelligenceScreen extends ConsumerWidget {
           children:
               <Widget>[
                     const _SosBanner(),
-                    _Hero(
-                      onOrb: () => _ask(context, ref),
-                      onPrompt: (p) => _ask(context, ref, p),
-                    ),
+                    _Hero(onOrb: _ask, onPrompt: _ask),
                     if (!enough)
-                      _NotEnough(
-                        count: expenses.length,
-                        onTalk: () => _ask(context, ref),
-                      )
+                      _NotEnough(count: expenses.length, onTalk: _ask)
                     else ...<Widget>[
                       _ReportCard(
                         transactions: all,
@@ -162,7 +165,11 @@ class IntelligenceScreen extends ConsumerWidget {
                         categories: categoryList,
                       ),
                     ],
-                    _ChatCard(onOpen: () => _ask(context, ref)),
+                    ChatSectionCard(
+                      expanded: _chatExpanded,
+                      onToggle: () =>
+                          setState(() => _chatExpanded = !_chatExpanded),
+                    ),
                   ]
                   .map(
                     (w) => Padding(
@@ -1250,58 +1257,3 @@ class _DistributionCard extends ConsumerWidget {
 
 String _summary(List<MapEntry<String, double>> c) =>
     c.take(5).map((e) => '${e.key}: ${e.value}').join(', ');
-
-// ── Chat ────────────────────────────────────────────────────────────────────
-
-class _ChatCard extends StatelessWidget {
-  const new({required this.onOpen});
-
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: ZadColors.surface,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onOpen,
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: ZadColors.green700,
-              ),
-              child: const Icon(ZadIcons.ask, color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'اتكلم مع زاد',
-                    style: ZadType.titleMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'اسأله عن مصاريفك، ميزانيتك، أو بيتك — بالكتابة أو بصوتك',
-                    style: ZadType.bodySmall.copyWith(
-                      color: ZadColors.inkMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(ZadIcons.back, color: ZadColors.inkMuted),
-          ],
-        ),
-      ),
-    ),
-  );
-}

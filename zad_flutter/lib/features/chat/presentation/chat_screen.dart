@@ -244,11 +244,11 @@ class _Bubble extends ConsumerWidget {
 
           // Receipts for what the server already did, not buttons. The write
           // has happened; this is the record of it.
-          for (final receipt in message.executed) _Receipt(receipt: receipt),
+          for (final receipt in message.executed) ChatReceipt(receipt: receipt),
 
           // And the opposite: nothing has happened yet.
           for (final proposal in message.proposals)
-            _Proposal(messageId: message.id, proposal: proposal),
+            ChatProposal(messageId: message.id, proposal: proposal),
 
           if (failed && mine) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
@@ -291,9 +291,11 @@ class _Thinking extends StatelessWidget {
 }
 
 /// Something the server did.
-class _Receipt extends StatelessWidget {
-  const new({required this.receipt});
+class ChatReceipt extends StatelessWidget {
+  /// Creates the receipt.
+  const new({required this.receipt, super.key});
 
+  /// What was done.
   final AgentExecuted receipt;
 
   @override
@@ -345,10 +347,14 @@ class _Receipt extends StatelessWidget {
 }
 
 /// Something the server is waiting to be allowed to do.
-class _Proposal extends ConsumerWidget {
-  const new({required this.messageId, required this.proposal});
+class ChatProposal extends ConsumerWidget {
+  /// Creates the card.
+  const new({required this.messageId, required this.proposal, super.key});
 
+  /// The reply it came with.
   final String messageId;
+
+  /// What would be done.
   final AgentProposal proposal;
 
   @override
