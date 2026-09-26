@@ -3,7 +3,10 @@ package com.aistudio.zad.wrtqvx
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.content.Context
+import android.telephony.TelephonyManager
 import android.util.Log
+import java.util.Locale
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -29,6 +32,23 @@ class MainActivity : FlutterActivity() {
                 }
                 playPcm(pcm, sampleRate)
                 result.success(null)
+            }
+        // Kotlin's TravelDetector.detectCurrentCountryCode: the network's
+        // country (right while roaming, unlike the SIM's), else the locale's.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/travel")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "detectCountry") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val networkIso = try {
+                    (getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager)
+                        ?.networkCountryIso?.takeIf { it.isNotBlank() }
+                } catch (e: Exception) {
+                    null
+                }
+                val code = networkIso ?: Locale.getDefault().country.takeIf { it.isNotBlank() }
+                result.success(code?.uppercase(Locale.US))
             }
     }
 

@@ -17,11 +17,12 @@ import 'package:zad/design/components/zad_balance_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/components/zad_trailing_gap.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
+import 'package:zad/features/brain/presentation/why_changed_sheet.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
+import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
@@ -30,6 +31,7 @@ import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
+import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
@@ -75,6 +77,9 @@ class HomeScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         children: <Widget>[
+          // Kotlin's order: the travel suggestion, then the offline banner.
+          const TravelBannerSlot(),
+          const GroceryPurchasePromptHost(),
           const HomeOfflineBanner(),
           ZadAppearOnEntry(
             child: HomeCompanionHeader(
@@ -185,10 +190,8 @@ class _Budget extends ConsumerWidget {
             // local write is still queued and the number on screen is this
             // device's arithmetic rather than the server's.
             isStale: view.isStale || view.pendingSpend > 0,
-            // Kotlin's tap opens "ليه الرقم اتغيّر؟" — what the brain changed
-            // lately. This client's answer to that question is the action log:
-            // the same changes, in words, with undo.
-            onTap: () => showAgentActionLog(context),
+            // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
+            onTap: () => openWhyChanged(context),
             onSetBudget: () => showMonthlyLimitSheet(context),
             onQuickExpense: () => showQuickExpenseSheet(context),
             onEditBalance: () => showMonthlyLimitSheet(context),

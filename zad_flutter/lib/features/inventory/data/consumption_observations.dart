@@ -25,6 +25,10 @@ abstract final class ObservationSource {
   /// The customer's own count: the pantry's − and + buttons, or a row added
   /// by hand. Kotlin's source for the same buttons.
   static const String manual = 'manual';
+
+  /// A purchase confirmed from «ضيف إيه للمخزون؟» after a grocery
+  /// transaction — Kotlin's `addGroceryPurchaseItem`.
+  static const String purchase = 'purchase';
 }
 
 /// The server side.

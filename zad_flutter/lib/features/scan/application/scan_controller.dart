@@ -478,8 +478,9 @@ class ScanController extends Notifier<ScanView> {
 /// something (a receipt's expense) that must not be lost with it.
 Future<PantryIntakeResult> intakeIntoPantry(
   Ref ref,
-  List<IntakeLine> lines,
-) async {
+  List<IntakeLine> lines, {
+  String source = ObservationSource.cameraOcr,
+}) async {
   try {
     final inventory = ref.read(inventoryRepositoryProvider);
     final shopping = ref.read(shoppingListRepositoryProvider);
@@ -495,18 +496,10 @@ Future<PantryIntakeResult> intakeIntoPantry(
       // The level before the purchase as well as after. The learner reads
       // the drops between consecutive readings; with only the "after" one,
       // everything eaten since the last reading vanishes into a rise.
-      await readings.record(
-        item.itemName,
-        item.quantity,
-        ObservationSource.cameraOcr,
-      );
+      await readings.record(item.itemName, item.quantity, source);
       final updated = await inventory.adjustQuantity(item.id, add);
       if (updated != null) {
-        await readings.record(
-          updated.itemName,
-          updated.quantity,
-          ObservationSource.cameraOcr,
-        );
+        await readings.record(updated.itemName, updated.quantity, source);
       }
     }
     for (final line in plan.additions) {
@@ -516,11 +509,7 @@ Future<PantryIntakeResult> intakeIntoPantry(
         unit: line.unit,
         category: line.category,
       );
-      await readings.record(
-        added.itemName,
-        added.quantity,
-        ObservationSource.cameraOcr,
-      );
+      await readings.record(added.itemName, added.quantity, source);
     }
     for (final line in plan.bought) {
       await shopping.setPurchased(line.id, purchased: true);
