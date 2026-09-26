@@ -22,9 +22,12 @@ import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
+import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
+import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
+import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
@@ -76,6 +79,9 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           const ZadTrailingGap(gap: 16, child: BrokeModeSlot()),
           const ZadTrailingGap(gap: 16, child: SavingsChallengeSlot()),
+          const HomeActivationSlot(),
+          const WhoAreYouCard(),
+          const InventoryCheckInSlot(),
           _Budget(view: view),
           const ZadTrailingGap(gap: 18, child: BankAccessCard()),
           // Kotlin's grid sits a further 16dp in from the page padding.

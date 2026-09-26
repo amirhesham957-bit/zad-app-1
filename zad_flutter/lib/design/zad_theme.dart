@@ -175,6 +175,10 @@ abstract final class ZadTheme {
         shape: zadSquircle(ZadRadii.sheet),
         showDragHandle: true,
       ),
+      // Compose Material3 1.3.0's progress indicators: a gap between the
+      // indicator and its track, and a stop dot at the track's end.
+      // ignore: deprecated_member_use
+      progressIndicatorTheme: const ProgressIndicatorThemeData(year2023: false),
       // Compose's snackbar default: inverseSurface / inverseOnSurface.
       snackBarTheme: SnackBarThemeData(
         contentTextStyle: ZadType.bodyMedium.copyWith(

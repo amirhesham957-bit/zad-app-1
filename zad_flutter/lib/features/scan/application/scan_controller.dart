@@ -13,6 +13,7 @@ import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/features/inventory/data/consumption_learner.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
@@ -523,6 +524,12 @@ Future<PantryIntakeResult> intakeIntoPantry(
     }
     for (final line in plan.bought) {
       await shopping.setPurchased(line.id, purchased: true);
+    }
+    // Kotlin's `injectScannedItems` records a purchase for every scanned
+    // line on the on-device learner — what «هل خلص X؟» predicts from.
+    final learner = ref.read(consumptionLearnerProvider);
+    for (final line in lines) {
+      learner.recordPurchase(line.name);
     }
 
     if (ref.mounted) {

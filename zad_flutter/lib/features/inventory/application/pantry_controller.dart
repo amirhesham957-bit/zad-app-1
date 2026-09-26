@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/inventory/data/consumption_learner.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
 import 'package:zad/features/inventory/domain/shortage.dart';
@@ -139,6 +140,10 @@ class PantryController extends Notifier<PantryView> {
     final updated = await ref
         .read(inventoryRepositoryProvider)
         .adjustQuantity(id, delta);
+    // Kotlin's `consumeItem` feeds the on-device learner on every use.
+    if (updated != null && delta < 0) {
+      ref.read(consumptionLearnerProvider).recordConsumption(updated.itemName);
+    }
     if (updated != null) await _reading(updated);
     await _reload();
   }
