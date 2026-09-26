@@ -56,7 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -600,7 +600,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active")
         .eq("user_id", userId).eq("is_active", true),
-      sb.from("zad_pharmacy_items").select("name,remaining_quantity,daily_dose_count,dose_times")
+      sb.from("zad_pharmacy_items").select("name,remaining_quantity,daily_dose_count,dose_times,created_at")
         .eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -826,6 +826,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   const transactions = txRes.data ?? [];
   const now = new Date();
+  // كل تسجيل الجرعات الحالي هنا، مش في zad_dose_log (doseAdherence في shared.ts).
+  const pharmacyDosesRes = await sb.from("zad_pharmacy_doses").select("status,scheduled_at")
+    .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString());
+  if (pharmacyDosesRes.error) console.error("[snapshot] zad_pharmacy_doses failed:", pharmacyDosesRes.error.message);
 
   // Phase 0 — the money figures are read, not computed. zad_budget_state() is the single
   // authority (migration 20260809120000); BudgetMath.kt is its offline mirror on the
@@ -1150,13 +1154,14 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     notifications_sent: (notifRes.data ?? []).map((n: any) => ({
       title: n.title, read: n.is_read, at: String(n.created_at).slice(0, 10),
     })),
-    dose_adherence: (() => {
-      const rows = doseRes.data ?? [];
-      if (rows.length === 0) return null;
-      const due = rows.filter((d: any) => new Date(d.scheduled_at) <= now);
-      if (due.length === 0) return null;
-      return { scheduled: due.length, taken: due.filter((d: any) => d.taken_at).length };
-    })(),
+    // الجدولين: الجديد (كل التسجيل الحالي) والقديم — doseAdherence في shared.ts فيها السبب.
+    dose_adherence: doseAdherence(
+      (pharmRes.data ?? []) as Array<{ dose_times?: string | null; created_at?: string | null }>,
+      (pharmacyDosesRes.data ?? []) as Array<{ status?: string | null; scheduled_at?: string | null }>,
+      (doseRes.data ?? []) as Array<{ scheduled_at?: string | null; taken_at?: string | null }>,
+      localNowContext(budgetState.timezone ?? "UTC").utc_offset,
+      now,
+    ),
     // العقل الواحد — حالة العيلة كاملة: أفرادها، محافظ الأطفال، المهام، الأهداف،
     // وبستان التسبيحة. null يعني العميل مش منضم لعيلة (مش خطأ).
     family,

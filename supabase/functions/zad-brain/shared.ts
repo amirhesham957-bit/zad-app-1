@@ -483,3 +483,60 @@ export function matchMedicineByName<T extends { name: string }>(rows: readonly T
   if (winners.length > 1) return { ambiguous: winners.map((w) => w.row.name) };
   return { item: winners[0].row };
 }
+
+/**
+ * التزام الدوا آخر [days] يوم، للـsnapshot (٢٠٢٦-٠٩-٢٥).
+ *
+ * العقل كان بيقرا `zad_dose_log` بس — الجدول القديم. كل التسجيل الحالي (زرار تليجرام،
+ * `zad_log_pharmacy_dose_atomic`، التطبيق الجديد) بيروح `zad_pharmacy_doses`، فالعقل
+ * كان شايف العميل مابياخدش دواه وهو بياخده (المالك: ٢٠ جرعة متسجلة، العقل شايف ١).
+ *
+ * `zad_pharmacy_doses` فيه بس الجرعات اللي اتجاوب عليها، مش المجدولة، فالمطلوب بيتحسب
+ * من `dose_times` بتوقيت الحساب: كل خانة عدّت في النافذة وبعد ما الدوا اتضاف.
+ * الجدول القديم فيه صفوف مجدولة، فلو هو اللي أكبر (أدوية قديمة من غير dose_times) بيكسب.
+ */
+export function doseAdherence(
+  items: Array<{ dose_times?: string | null; created_at?: string | null }>,
+  answered: Array<{ status?: string | null; scheduled_at?: string | null }>,
+  legacy: Array<{ scheduled_at?: string | null; taken_at?: string | null }>,
+  utcOffset: string,
+  now: Date = new Date(),
+  days = 14,
+): { scheduled: number; taken: number; skipped: number } | null {
+  const windowStart = now.getTime() - days * 86_400_000;
+  const offsetMs = (() => {
+    const m = /^([+-])(\d{2}):(\d{2})$/.exec(utcOffset);
+    return m ? (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) * 60_000 : 0;
+  })();
+  let expected = 0;
+  for (const item of items) {
+    const created = item.created_at ? Date.parse(item.created_at) : NaN;
+    const from = Number.isFinite(created) ? Math.max(windowStart, created) : windowStart;
+    const slots = String(item.dose_times ?? "").split(",").map((s) => s.trim())
+      .filter((s) => /^([01]?\d|2[0-3]):[0-5]\d$/.test(s));
+    for (let d = 0; d <= days; d++) {
+      // منتصف ليل اليوم المحلي (d يوم قبل النهارده) بالـUTC.
+      const localNow = new Date(now.getTime() + offsetMs);
+      const localMidnight = Date.UTC(localNow.getUTCFullYear(), localNow.getUTCMonth(), localNow.getUTCDate() - d);
+      for (const s of slots) {
+        const [h, m] = s.split(":").map(Number);
+        const at = localMidnight + (h * 60 + m) * 60_000 - offsetMs;
+        if (at <= now.getTime() && at >= from) expected++;
+      }
+    }
+  }
+  const inWindow = (iso?: string | null) => {
+    const t = iso ? Date.parse(iso) : NaN;
+    return Number.isFinite(t) && t >= windowStart && t <= now.getTime();
+  };
+  const newRows = answered.filter((r) => inWindow(r.scheduled_at));
+  const legacyDue = legacy.filter((r) => inWindow(r.scheduled_at));
+  const scheduled = Math.max(expected, legacyDue.length);
+  if (scheduled === 0) return null;
+  const taken = newRows.filter((r) => r.status === "taken").length + legacyDue.filter((r) => r.taken_at).length;
+  return {
+    scheduled,
+    taken: Math.min(scheduled, taken),
+    skipped: newRows.filter((r) => r.status === "skipped").length,
+  };
+}
