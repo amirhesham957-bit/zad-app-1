@@ -1,7 +1,9 @@
-/// Recording a transaction by hand.
-///
-/// The bank channel fills the list on its own; this is the other half — the
-/// cash purchase no notification will ever mention.
+/// Kotlin's `AddTransactionDialog` (`HomeScreen.kt`, opened from the budget
+/// screen's «إضافة عملية»): the quick expense sheet — title with a close
+/// button, «خصم (مصروف)» / «إيداع (راتب)», the three grey rounded fields and
+/// the full-width green button. Kotlin's save rules: an income's category is
+/// «دخل», an empty description is «بدون وصف», the wallet is Kotlin's default
+/// card.
 ///
 /// It writes through the repository, which means Hive first and the network
 /// never: the row is in the list before this sheet closes, and the outbox
@@ -13,9 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/data/providers.dart';
-import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
@@ -27,7 +27,9 @@ Future<void> showAddTransactionSheet(BuildContext context) =>
       context: context,
       isScrollControlled: true,
       backgroundColor: ZadColors.surface,
-      shape: zadSquircle(ZadRadii.sheet),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) => const AddTransactionSheet(),
     );
 
@@ -44,11 +46,9 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
 class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final TextEditingController _amount = TextEditingController();
   final TextEditingController _title = TextEditingController();
-  final TextEditingController _category = TextEditingController();
+  final TextEditingController _category = TextEditingController(text: 'عام');
 
-  TxnKind _kind = TxnKind.expense;
-  Wallet _wallet = Wallet.cash;
-  Wallet _transferTo = Wallet.bank;
+  bool _isExpense = true;
   bool _saving = false;
 
   @override
@@ -59,67 +59,40 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     super.dispose();
   }
 
-  double? get _parsedAmount => parseMoneyInput(_amount.text);
-
-  bool get _canSave =>
-      !_saving &&
-      _parsedAmount != null &&
-      _title.text.trim().isNotEmpty &&
-      // The domain refuses a transfer to the wallet it came from, and it
-      // refuses it by throwing. Catching that at the button is the difference
-      // between a disabled control and a crash.
-      (_kind != TxnKind.transfer || _wallet != _transferTo);
-
   Future<void> _save() async {
-    final amount = _parsedAmount;
     final userId = ref.read(signedInUserIdProvider)();
-    if (amount == null || userId == null || !_canSave) return;
-
+    if (userId == null || _saving) return;
     setState(() => _saving = true);
-    final title = _title.text.trim();
-    final category = _category.text.trim();
+    final amount = parseMoneyInput(_amount.text) ?? 0;
+    final title = _title.text.isEmpty ? 'بدون وصف' : _title.text;
+    final category = _isExpense ? _category.text : 'دخل';
     final now = ref.read(nowProvider)();
-
     try {
-      await ref.read(transactionsRepositoryProvider).record((id) {
-        return switch (_kind) {
-          TxnKind.expense => ZadTransaction.expense(
-            id: id,
-            userId: userId,
-            amount: amount,
-            title: title,
-            createdAt: now,
-            wallet: _wallet,
-            category: category.isEmpty ? null : category,
-          ),
-          TxnKind.income => ZadTransaction.income(
-            id: id,
-            userId: userId,
-            amount: amount,
-            title: title,
-            createdAt: now,
-            wallet: _wallet,
-            category: category.isEmpty ? null : category,
-          ),
-          TxnKind.transfer => ZadTransaction.transfer(
-            id: id,
-            userId: userId,
-            amount: amount,
-            title: title,
-            createdAt: now,
-            from: _wallet,
-            to: _transferTo,
-          ),
-        };
-      });
-
-      // The two screens that were already showing figures. Without these the
-      // row exists in Hive and neither the list nor the balance knows it.
+      await ref
+          .read(transactionsRepositoryProvider)
+          .record(
+            (id) => _isExpense
+                ? ZadTransaction.expense(
+                    id: id,
+                    userId: userId,
+                    amount: amount,
+                    title: title,
+                    createdAt: now,
+                    wallet: Wallet.card,
+                    category: category,
+                  )
+                : ZadTransaction.income(
+                    id: id,
+                    userId: userId,
+                    amount: amount,
+                    title: title,
+                    createdAt: now,
+                    wallet: Wallet.card,
+                    category: category,
+                  ),
+          );
       ref.read(transactionsControllerProvider.notifier).reloadFromCache();
       ref.read(budgetControllerProvider.notifier).recomputePending();
-
-      // Saved, not sent — and the confirmation says the first, because the
-      // second has not happened and may not for a while.
       await HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     } on Object {
@@ -129,168 +102,131 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Above the keyboard. Without this the amount field is the thing the
-    // keyboard covers.
-    final inset = MediaQuery.viewInsetsOf(context).bottom;
+    final scheme = Theme.of(context).colorScheme;
+    final fieldShape = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    );
+    InputDecoration field(String label) => InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: ZadColors.surfaceVariant,
+      border: fieldShape,
+      enabledBorder: fieldShape,
+      focusedBorder: fieldShape,
+    );
+    Widget kind(String label, {required bool expense}) => Expanded(
+      child: FilterChip(
+        label: SizedBox(
+          width: double.infinity,
+          child: Text(label, textAlign: TextAlign.center),
+        ),
+        selected: _isExpense == expense,
+        onSelected: (_) => setState(() => _isExpense = expense),
+        selectedColor: scheme.primary,
+        labelStyle: TextStyle(
+          color: _isExpense == expense ? scheme.onPrimary : scheme.onSurface,
+        ),
+        checkmarkColor: scheme.onPrimary,
+      ),
+    );
 
     return Padding(
-      padding: EdgeInsets.only(bottom: inset),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(ZadSpacing.xl),
+        padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Text('سجّل عملية', style: ZadType.titleMedium),
-            const SizedBox(height: ZadSpacing.lg),
-
-            _KindPicker(
-              value: _kind,
-              onChanged: (k) => setState(() => _kind = k),
-            ),
-            const SizedBox(height: ZadSpacing.lg),
-
-            TextField(
-              controller: _amount,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textDirection: TextDirection.ltr,
-              style: ZadType.figure(28),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ',
-                hintText: '0',
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-
-            TextField(
-              controller: _title,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'على إيه؟',
-                hintText: 'قهوة، بنزين، إيجار…',
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-
-            if (_kind != TxnKind.transfer) ...<Widget>[
-              const SizedBox(height: ZadSpacing.md),
-              TextField(
-                controller: _category,
-                decoration: const InputDecoration(
-                  labelText: 'الفئة (اختياري)',
-                  hintText: 'مأكولات، مواصلات…',
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 22),
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ],
-
-            const SizedBox(height: ZadSpacing.lg),
-            _WalletPicker(
-              label: _kind == TxnKind.transfer ? 'من' : 'من فين؟',
-              value: _wallet,
-              onChanged: (w) => setState(() => _wallet = w),
             ),
-
-            if (_kind == TxnKind.transfer) ...<Widget>[
-              const SizedBox(height: ZadSpacing.md),
-              _WalletPicker(
-                label: 'إلى',
-                value: _transferTo,
-                // Excluding the source is what keeps the domain's
-                // ArgumentError unreachable from the UI.
-                exclude: _wallet,
-                onChanged: (w) => setState(() => _transferTo = w),
+            Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                Text(
+                  _isExpense ? 'إضافة مصروف' : 'إضافة دخل/راتب',
+                  style: ZadType.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: ZadColors.ink,
+                  ),
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: InkResponse(
+                    onTap: () => Navigator.of(context).pop(),
+                    radius: 16,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: ZadColors.textTertiary,
+                        semanticLabel: 'إلغاء',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: <Widget>[
+                kind('خصم (مصروف)', expense: true),
+                const SizedBox(width: 8),
+                kind('إيداع (راتب)', expense: false),
+              ],
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _title,
+              decoration: field('الوصف (مثال: راتب، إيجار)'),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _amount,
+              keyboardType: TextInputType.number,
+              decoration: field('المبلغ'),
+            ),
+            if (_isExpense) ...<Widget>[
+              const SizedBox(height: 14),
+              TextField(
+                controller: _category,
+                decoration: field('التصنيف (سوبرماركت، فواتير...)'),
               ),
             ],
-
-            const SizedBox(height: ZadSpacing.xl),
-            // Bottom of the sheet: the thumb is already here.
-            // No spinner. The save is a Hive write and an enqueue — it is
-            // over in microseconds, and a spinner for a wait that does not
-            // exist is a lie about where the work is. `_saving` is here to
-            // stop a double tap, which the disabled state already expresses.
-            FilledButton(
-              onPressed: _canSave ? _save : null,
-              child: const Text('احفظ'),
-            ),
-            const SizedBox(height: ZadSpacing.sm),
-            Text(
-              'هتتسجّل على طول على تليفونك، وتتبعت أول ما يبقى في نت.',
-              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 52,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: scheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  _isExpense ? 'خصم المبلغ' : 'إضافة المبلغ',
+                  style: ZadType.titleSmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onPrimary,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class _KindPicker extends StatelessWidget {
-  const new({required this.value, required this.onChanged});
-
-  final TxnKind value;
-  final ValueChanged<TxnKind> onChanged;
-
-  @override
-  Widget build(BuildContext context) => SegmentedButton<TxnKind>(
-    segments: const <ButtonSegment<TxnKind>>[
-      ButtonSegment<TxnKind>(value: TxnKind.expense, label: Text('مصروف')),
-      ButtonSegment<TxnKind>(value: TxnKind.income, label: Text('دخل')),
-      ButtonSegment<TxnKind>(value: TxnKind.transfer, label: Text('تحويل')),
-    ],
-    selected: <TxnKind>{value},
-    onSelectionChanged: (s) => onChanged(s.first),
-    showSelectedIcon: false,
-  );
-}
-
-class _WalletPicker extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.exclude,
-  });
-
-  final String label;
-  final Wallet value;
-  final ValueChanged<Wallet> onChanged;
-
-  /// A wallet this picker must not offer — the other side of a transfer.
-  final Wallet? exclude;
-
-  @override
-  Widget build(BuildContext context) {
-    final options = Wallet.values.where((w) => w != exclude).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          label,
-          style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
-        ),
-        const SizedBox(height: ZadSpacing.sm),
-        Wrap(
-          spacing: ZadSpacing.sm,
-          children: <Widget>[
-            for (final w in options)
-              ChoiceChip(
-                label: Text(_name(w)),
-                selected: w == value,
-                onSelected: (_) => onChanged(w),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  static String _name(Wallet w) => switch (w) {
-    Wallet.cash => 'كاش',
-    Wallet.card => 'بطاقة',
-    Wallet.bank => 'بنك',
-  };
 }
