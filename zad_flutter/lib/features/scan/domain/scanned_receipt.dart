@@ -183,11 +183,12 @@ class ScannedReceipt {
     String? category,
     String? storeName,
     ReceiptType? type,
+    List<ScannedReceiptItem>? items,
   }) => ScannedReceipt(
     total: total ?? this.total,
     category: category ?? this.category,
     storeName: storeName ?? this.storeName,
     type: type ?? this.type,
-    items: items,
+    items: items ?? this.items,
   );
 }

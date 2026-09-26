@@ -33,8 +33,7 @@ import 'package:zad/features/notifications/presentation/notification_center_scre
 import 'package:zad/features/orb/presentation/floating_companion.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
-import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
-import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
+import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 
@@ -115,16 +114,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     }
   }
 
-  Future<void> _openCamera() async {
-    final choice = await showZadCameraSheet(context);
-    if (!mounted || choice == null) return;
-    switch (choice) {
-      case ZadCameraChoice.inventory:
-        await showPantryPhotoSheet(context);
-      case ZadCameraChoice.receipt:
-        await showReceiptScanSheet(context, ref);
-    }
-  }
+  Future<void> _openCamera() => openZadCamera(context);
 
   /// The mic orb: Kotlin's voice sheet. Here the conversation opens with the
   /// microphone already listening; what is heard lands in the composer.

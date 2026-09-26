@@ -30,7 +30,7 @@ import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/pharmacy/domain/dose_time.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
 import 'package:zad/features/scan/data/vision_scanner.dart';
-import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
+import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
@@ -145,7 +145,8 @@ class PharmacyView extends ConsumerWidget {
         children: <Widget>[
           FloatingActionButton.small(
             heroTag: 'pharmacy-photo',
-            onPressed: () => unawaited(_addFromPhoto(context)),
+            onPressed: () =>
+                unawaited(showCameraScreen(context, CameraMode.pharmacy)),
             tooltip: 'صوّر علبة الدواء',
             backgroundColor: ZadColors.surface,
             foregroundColor: ZadColors.green800,
@@ -949,15 +950,6 @@ Future<void> _showSmartAdd(BuildContext context, WidgetRef ref) async {
     ),
   );
   Navigator.of(context).popUntil((r) => r.isFirst);
-}
-
-/// Kotlin's `PHARMACY` camera mode: photograph the box, then the add form
-/// opens filled in with what was read — Kotlin's confirm dialog, except every
-/// field can be corrected before it is saved.
-Future<void> _addFromPhoto(BuildContext context) async {
-  final scanned = await showMedicinePhotoSheet(context);
-  if (scanned == null || !context.mounted) return;
-  await showAddMedicineSheet(context, scanned: scanned);
 }
 
 /// Opens Kotlin's add form, filled in from [scanned] when a box was read.

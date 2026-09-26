@@ -367,81 +367,13 @@ class ScanController extends Notifier<ScanView> {
   Future<PharmacyIntakeResult> _intoPharmacy(
     List<RestockProposal> proposals,
     Set<int> excluded,
-  ) async {
-    try {
-      final pharmacy = ref.read(pharmacyRepositoryProvider);
-      final shopping = ref.read(shoppingListRepositoryProvider);
+  ) => intakeIntoPharmacy(ref, <RestockProposal>[
+    for (final (i, p) in proposals.indexed)
+      if (!excluded.contains(i)) p,
+  ]);
 
-      final plan = planPharmacyIntake(
-        proposals: <RestockProposal>[
-          for (final (i, p) in proposals.indexed)
-            if (!excluded.contains(i)) p,
-        ],
-        shopping: shopping.cached(),
-      );
-
-      for (final (:medicine, :add) in plan.restocks) {
-        await pharmacy.restock(medicine.id, add);
-      }
-      for (final m in plan.additions) {
-        await pharmacy.restockNew(
-          name: m.name,
-          count: m.count,
-          unit: m.unit,
-          category: m.category,
-        );
-      }
-      for (final line in plan.bought) {
-        await shopping.setPurchased(line.id, purchased: true);
-      }
-
-      if (ref.mounted) {
-        ref
-          ..invalidate(pharmacyControllerProvider)
-          ..invalidate(shoppingControllerProvider);
-      }
-      return PharmacyIntakeResult(
-        added: plan.additions.length,
-        toppedUp: plan.restocks.length,
-        ticked: plan.bought.length,
-        uncounted: plan.uncounted,
-      );
-    } on Object {
-      return const PharmacyIntakeResult(
-        added: 0,
-        toppedUp: 0,
-        ticked: 0,
-        failed: true,
-      );
-    }
-  }
-
-  /// What each line of a pharmacy reading would do, against the medicines on
-  /// the phone. Empty for anything that is not a pharmacy receipt.
-  List<RestockProposal> _proposalsFor(ScannedReceipt receipt) {
-    if (receipt.type != ReceiptType.pharmacy || receipt.items.isEmpty) {
-      return const <RestockProposal>[];
-    }
-    try {
-      final medicines = ref.read(pharmacyRepositoryProvider).cached();
-      return <RestockProposal>[
-        for (final item in receipt.items)
-          proposeRestock(
-            PharmacyLine(
-              name: item.name,
-              packs: wholeCount(item.quantity),
-              unit: item.unit,
-              category: medicineCategory(item.category),
-            ),
-            medicines,
-          ),
-      ];
-    } on Object {
-      // No pharmacy to read is no offer, not a failed scan: the expense is
-      // still the part that matters.
-      return const <RestockProposal>[];
-    }
-  }
+  List<RestockProposal> _proposalsFor(ScannedReceipt receipt) =>
+      pharmacyProposalsFor(ref, receipt);
 
   /// Takes a balance card's figure as the cycle's ceiling.
   ///
@@ -469,6 +401,91 @@ class ScanController extends Notifier<ScanView> {
     if (ref.mounted) state = const ScanView();
   }
 }
+
+/// A pharmacy receipt's lines into the pharmacy: counts topped up on the
+/// medicines already there, new ones added, shopping lines ticked off.
+Future<PharmacyIntakeResult> intakeIntoPharmacy(
+  Ref ref,
+  List<RestockProposal> proposals,
+) async {
+  try {
+    final pharmacy = ref.read(pharmacyRepositoryProvider);
+    final shopping = ref.read(shoppingListRepositoryProvider);
+
+    final plan = planPharmacyIntake(
+      proposals: proposals,
+      shopping: shopping.cached(),
+    );
+
+    for (final (:medicine, :add) in plan.restocks) {
+      await pharmacy.restock(medicine.id, add);
+    }
+    for (final m in plan.additions) {
+      await pharmacy.restockNew(
+        name: m.name,
+        count: m.count,
+        unit: m.unit,
+        category: m.category,
+      );
+    }
+    for (final line in plan.bought) {
+      await shopping.setPurchased(line.id, purchased: true);
+    }
+
+    if (ref.mounted) {
+      ref
+        ..invalidate(pharmacyControllerProvider)
+        ..invalidate(shoppingControllerProvider);
+    }
+    return PharmacyIntakeResult(
+      added: plan.additions.length,
+      toppedUp: plan.restocks.length,
+      ticked: plan.bought.length,
+      uncounted: plan.uncounted,
+    );
+  } on Object {
+    return const PharmacyIntakeResult(
+      added: 0,
+      toppedUp: 0,
+      ticked: 0,
+      failed: true,
+    );
+  }
+}
+
+/// What each line of a pharmacy reading would do, against the medicines on
+/// the phone. Empty for anything that is not a pharmacy receipt.
+List<RestockProposal> pharmacyProposalsFor(Ref ref, ScannedReceipt receipt) {
+  if (receipt.type != ReceiptType.pharmacy || receipt.items.isEmpty) {
+    return const <RestockProposal>[];
+  }
+  try {
+    final medicines = ref.read(pharmacyRepositoryProvider).cached();
+    return <RestockProposal>[
+      for (final item in receipt.items)
+        proposeRestock(
+          PharmacyLine(
+            name: item.name,
+            packs: wholeCount(item.quantity),
+            unit: item.unit,
+            category: medicineCategory(item.category),
+          ),
+          medicines,
+        ),
+    ];
+  } on Object {
+    // No pharmacy to read is no offer, not a failed scan: the expense is
+    // still the part that matters.
+    return const <RestockProposal>[];
+  }
+}
+
+/// Takes a balance card's figure as the cycle's ceiling.
+///
+/// This is the whole reason `budget_card` is a case rather than a label. The
+/// customer photographed a salary notice or a balance screen; the useful
+/// thing to do with that number is set the budget, which is otherwise typed
+/// by hand.
 
 /// Puts [lines] into the pantry and closes the shopping-list loop — a grocery
 /// receipt's ticked lines, or what a pantry photo showed.
