@@ -33,6 +33,7 @@ import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/prices/presentation/live_market_ticker.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/features/telegram/presentation/telegram_binding.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 
 /// Home.
@@ -96,6 +97,8 @@ class HomeScreen extends ConsumerWidget {
               child: SectionsGrid(),
             ),
           ),
+          const SizedBox(height: 16),
+          const ZadAppearOnEntry(delayMs: 80, child: HomeTelegramBlocks()),
           const SizedBox(height: 16),
           const ZadAppearOnEntry(
             delayMs: 65,
