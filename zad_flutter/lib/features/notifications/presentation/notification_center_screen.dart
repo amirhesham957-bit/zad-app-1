@@ -1,4 +1,12 @@
-/// What the app and the family left for this account.
+/// Kotlin's `NotificationCenterScreen`: everything that wants the customer's
+/// attention in one list — «عمليات بنكية بانتظارك», «تنبيهات عقل زاد» (the
+/// brain's bell insights, with Kotlin's three dismiss reasons or the
+/// question card), and «إشعارات التطبيق» with read state — plus «قراءة
+/// التنبيهات صوتيًا» in زاد's voice.
+///
+/// Kotlin's «تنبيهات ذكاء زاد» section read `spending_insights`, a model call
+/// Kotlin makes on its own; under the owner's standing decision that source
+/// is not here, so neither is the section.
 library;
 
 import 'dart:async';
@@ -7,17 +15,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/insights/application/insights_controller.dart';
+import 'package:zad/features/insights/domain/insight.dart';
+import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
-import 'package:zad/features/notifications/domain/app_notification.dart';
+import 'package:zad/features/proposals/application/proposals_controller.dart';
+import 'package:zad/features/proposals/presentation/proposals_screen.dart';
+import 'package:zad/features/voice/zad_voice.dart';
 
 /// Opens the screen.
 Future<void> showNotificationCenter(BuildContext context) =>
@@ -45,166 +52,317 @@ String whenLabel(DateTime at, DateTime now, String zone) {
 }
 
 /// The screen.
-class NotificationCenterScreen extends ConsumerWidget {
+class NotificationCenterScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final view = ref.watch(notificationsControllerProvider);
-    final controller = ref.read(notificationsControllerProvider.notifier);
-    final now = ref.read(nowProvider)();
-    final zone = ref.read(accountTimeZoneProvider);
+  ConsumerState<NotificationCenterScreen> createState() => _CenterState();
+}
 
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('التنبيهات'),
-          actions: <Widget>[
-            if (view.unread > 0)
-              TextButton.icon(
-                onPressed: controller.markAllRead,
-                icon: const Icon(ZadIcons.markAllRead, size: 18),
-                label: const Text('علّم الكل مقروء'),
-              ),
-          ],
+class _CenterState extends ConsumerState<NotificationCenterScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Kotlin's LaunchedEffect: notifications, insights and proposals, read
+    // again on open.
+    unawaited(
+      Future<void>.microtask(() {
+        if (!mounted) return;
+        unawaited(ref.read(notificationsControllerProvider.notifier).refresh());
+        unawaited(
+          ref.read(insightsControllerProvider.notifier).refresh(force: true),
+        );
+        unawaited(
+          ref.read(proposalsControllerProvider.notifier).refresh(force: true),
+        );
+      }),
+    );
+  }
+
+  void _readAloud() {
+    final bell = ref.read(insightsControllerProvider).onBell;
+    final unread = [
+      ...ref
+          .read(notificationsControllerProvider)
+          .items
+          .where((n) => !n.isRead),
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final spoken = <String>[
+      for (final a in bell) '${a.title}. ${a.body}',
+      for (final n in unread) '${n.title}. ${n.message}',
+    ];
+    unawaited(
+      ref
+          .read(zadVoiceProvider)
+          .speak(spoken.isEmpty ? 'مفيش تنبيهات جديدة' : spoken.join('. ')),
+    );
+  }
+
+  @override
+  void dispose() {
+    ref.read(zadVoiceProvider).stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final notifications = ref.watch(
+      notificationsControllerProvider.select((v) => v.items),
+    );
+    final controller = ref.read(notificationsControllerProvider.notifier);
+    final bell = ref.watch(insightsControllerProvider.select((v) => v.onBell));
+    final insights = ref.read(insightsControllerProvider.notifier);
+    final proposals = ref.watch(proposalsControllerProvider);
+    final unread =
+        notifications.where((n) => !n.isRead).length +
+        bell.length +
+        proposals.rows.length;
+    final sorted = [...notifications]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    Widget section(String title, {Color? color}) => Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title,
+        style: ZadType.titleMedium.copyWith(
+          fontWeight: FontWeight.bold,
+          color: color ?? scheme.primary,
         ),
-        body: RefreshIndicator(
-          onRefresh: () => controller.refresh(force: true),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: <Widget>[
-              if (view.items.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ZadEmptyState(
-                    icon: view.error != null
-                        ? ZadIcons.failed
-                        : ZadIcons.noNotifications,
-                    title: view.error != null
-                        ? 'مقدرتش أجيب التنبيهات'
-                        : 'مفيش تنبيهات',
-                    message: view.error != null
-                        ? 'اسحب لتحت نجرب تاني.'
-                        : 'لما زاد يلاقي حاجة تستاهل، هتلاقيها هنا.',
-                    tone: view.error != null
-                        ? ZadEmptyTone.problem
-                        : ZadEmptyTone.calm,
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.all(ZadSpacing.gutter),
-                  sliver: SliverList.separated(
-                    itemCount: view.items.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: ZadSpacing.sm),
-                    itemBuilder: (context, i) => _NotificationCard(
-                      notification: view.items[i],
-                      when: whenLabel(view.items[i].createdAt, now, zone),
+      ),
+    );
+
+    final empty = notifications.isEmpty && bell.isEmpty && proposals.isEmpty;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('الإشعارات')),
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: <Widget>[
+                if (unread > 0)
+                  Text(
+                    '$unread غير مقروء',
+                    style: ZadType.labelSmall.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'قراءة التنبيهات صوتيًا',
+                  onPressed: _readAloud,
+                  icon: Icon(Icons.volume_up, color: scheme.primary),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            child: empty
+                ? const KtEmptyState(
+                    icon: Icons.notifications_none,
+                    title: 'لا توجد إشعارات حالياً.',
+                    subtitle: 'هنعلمك أول ما يحصل حاجة تستاهل انتباهك',
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+                    children: <Widget>[
+                      if (!proposals.isEmpty) ...<Widget>[
+                        section('عمليات بنكية بانتظارك'),
+                        for (final p in proposals.rows) ...<Widget>[
+                          ProposalCard(
+                            proposal: p,
+                            busy: proposals.deciding.contains(p.id),
+                            failed: proposals.failed.contains(p.id),
+                            onDecide: (d) => ref
+                                .read(proposalsControllerProvider.notifier)
+                                .decide(p.id, d),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        const SizedBox(height: 12),
+                      ],
+                      if (bell.isNotEmpty) ...<Widget>[
+                        section('تنبيهات عقل زاد'),
+                        for (final a in bell)
+                          if (a.isQuestion)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: ZadQuestionCard(
+                                insight: a,
+                                onAnswer: (t) =>
+                                    unawaited(insights.answer(a, t)),
+                                onDismiss: () => unawaited(insights.dismiss(a)),
+                              ),
+                            )
+                          else
+                            _BellCard(insight: a),
+                        const SizedBox(height: 20),
+                      ],
+                      if (sorted.isNotEmpty) ...<Widget>[
+                        section('إشعارات التطبيق', color: scheme.onSurface),
+                        for (final n in sorted)
+                          NotificationCard(
+                            title: n.title,
+                            message: n.message,
+                            color: n.isRead
+                                ? scheme.onSurfaceVariant
+                                : scheme.error,
+                            isRead: n.isRead,
+                            onTap: () => unawaited(controller.markRead(n)),
+                          ),
+                      ],
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// One notification: a dot that says unread, the title, the body.
-class _NotificationCard extends ConsumerStatefulWidget {
-  const new({required this.notification, required this.when});
+/// A bell insight: the tap opens Kotlin's three dismiss reasons (Task 28).
+class _BellCard extends ConsumerWidget {
+  const new({required this.insight});
 
-  final AppNotification notification;
-  final String when;
+  final ZadInsight insight;
 
   @override
-  ConsumerState<_NotificationCard> createState() => _NotificationCardState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return Builder(
+      builder: (cardContext) => NotificationCard(
+        title: insight.title,
+        message: insight.body,
+        color: insight.isCritical ? scheme.error : scheme.primary,
+        isRead: false,
+        onTap: () async {
+          final box = cardContext.findRenderObject()! as RenderBox;
+          final at = box.localToGlobal(Offset.zero);
+          final reason = await showMenu<DismissReason>(
+            context: cardContext,
+            position: RelativeRect.fromLTRB(
+              at.dx,
+              at.dy + box.size.height,
+              at.dx + box.size.width,
+              0,
+            ),
+            items: <PopupMenuEntry<DismissReason>>[
+              const PopupMenuItem<DismissReason>(
+                value: DismissReason.notRelevant,
+                child: Text('مش مهم'),
+              ),
+              PopupMenuItem<DismissReason>(
+                value: DismissReason.wrongData,
+                child: Text('الرقم غلط', style: TextStyle(color: scheme.error)),
+              ),
+              PopupMenuItem<DismissReason>(
+                value: DismissReason.timing,
+                child: Text(
+                  'عرفت خلاص',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ),
+            ],
+          );
+          if (reason == null) return;
+          await ref
+              .read(insightsControllerProvider.notifier)
+              .dismiss(insight, reason: reason);
+        },
+      ),
+    );
+  }
 }
 
-class _NotificationCardState extends ConsumerState<_NotificationCard> {
-  bool _expanded = false;
+/// Kotlin's `NotificationCard`: a 20dp surface card with a hairline, a 10dp
+/// dot in the severity colour (35% once read), title over body.
+class NotificationCard extends StatelessWidget {
+  /// Creates the card.
+  const new({
+    required this.title,
+    required this.message,
+    required this.color,
+    required this.isRead,
+    required this.onTap,
+    super.key,
+  });
 
-  void _open() {
-    setState(() => _expanded = !_expanded);
-    final n = widget.notification;
-    if (!n.isRead) {
-      unawaited(ref.read(notificationsControllerProvider.notifier).markRead(n));
-    }
-  }
+  /// The title.
+  final String title;
+
+  /// The body.
+  final String message;
+
+  /// The severity colour.
+  final Color color;
+
+  /// Read or not.
+  final bool isRead;
+
+  /// The tap.
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final n = widget.notification;
-    return Semantics(
-      label: n.isRead ? null : 'مش مقروء',
-      child: ZadCard(
-        onTap: _open,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(top: ZadSpacing.xs + 2),
-              child: AnimatedContainer(
-                duration: ZadDuration.quick,
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  // Solid while unread, faded once read — the same signal
-                  // without tinting the whole card.
-                  color: n.isRead
-                      ? ZadColors.inkMuted.withValues(alpha: 0.35)
-                      : ZadColors.green600,
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Material(
+        color: scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: scheme.outline, width: 0.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isRead ? color.withValues(alpha: 0.35) : color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          n.title,
-                          style: ZadType.titleSmall.copyWith(
-                            fontWeight: n.isRead ? null : FontWeight.w700,
-                          ),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface,
                         ),
                       ),
-                      const SizedBox(width: ZadSpacing.sm),
+                      const SizedBox(height: 3),
                       Text(
-                        widget.when,
-                        style: ZadType.labelSmall.copyWith(
-                          color: ZadColors.inkMuted,
+                        message,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 18 / 12.5,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  AnimatedSize(
-                    duration: ZadDuration.quick,
-                    curve: ZadCurves.standard,
-                    alignment: AlignmentDirectional.topStart,
-                    child: Text(
-                      n.message,
-                      maxLines: _expanded ? null : 3,
-                      overflow: _expanded
-                          ? TextOverflow.visible
-                          : TextOverflow.ellipsis,
-                      style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

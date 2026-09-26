@@ -21,6 +21,9 @@ class InsightsView {
 
   /// The ones Home shows.
   List<ZadInsight> get onHome => homeInsights(pending);
+
+  /// The ones the notification center shows.
+  List<ZadInsight> get onBell => bellInsights(pending);
 }
 
 /// Holds the insights.

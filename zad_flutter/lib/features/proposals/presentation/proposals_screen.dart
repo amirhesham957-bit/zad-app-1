@@ -65,7 +65,7 @@ class ProposalsScreen extends ConsumerWidget {
                   itemCount: view.rows.length,
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: ZadSpacing.md),
-                  itemBuilder: (_, i) => _ProposalCard(
+                  itemBuilder: (_, i) => ProposalCard(
                     proposal: view.rows[i],
                     busy: view.deciding.contains(view.rows[i].id),
                     failed: view.failed.contains(view.rows[i].id),
@@ -137,7 +137,7 @@ class HomeProposalsSection extends ConsumerWidget {
           ),
           for (var i = 0; i < view.rows.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: 10),
-            _ProposalCard(
+            ProposalCard(
               proposal: view.rows[i],
               busy: view.deciding.contains(view.rows[i].id),
               failed: view.failed.contains(view.rows[i].id),
@@ -151,17 +151,26 @@ class HomeProposalsSection extends ConsumerWidget {
 }
 
 /// Kotlin's `TransactionProposalCard` (`ui/widgets/TransactionProposalCard.kt`).
-class _ProposalCard extends ConsumerWidget {
+class ProposalCard extends ConsumerWidget {
+  /// Creates the card.
   const new({
     required this.proposal,
     required this.busy,
     required this.failed,
     required this.onDecide,
+    super.key,
   });
 
+  /// The proposal.
   final TransactionProposal proposal;
+
+  /// A decision is in flight.
   final bool busy;
+
+  /// The last decision failed.
   final bool failed;
+
+  /// Sends a decision.
   final ValueChanged<ProposalDecision> onDecide;
 
   @override
