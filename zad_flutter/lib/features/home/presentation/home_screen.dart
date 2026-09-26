@@ -17,10 +17,10 @@ import 'package:zad/design/components/zad_balance_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/components/zad_trailing_gap.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/features/bank/presentation/bank_access_card.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
@@ -30,6 +30,7 @@ import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
+import 'package:zad/features/prices/presentation/live_market_ticker.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
@@ -82,8 +83,11 @@ class HomeScreen extends ConsumerWidget {
           const HomeActivationSlot(),
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
+          const ZadAppearOnEntry(child: LiveMarketTickerSlot()),
           _Budget(view: view),
-          const ZadTrailingGap(gap: 18, child: BankAccessCard()),
+          const FxExcludedNotice(),
+          const BankListeningPill(),
+          const SizedBox(height: 18),
           // Kotlin's grid sits a further 16dp in from the page padding.
           const ZadAppearOnEntry(
             delayMs: 50,

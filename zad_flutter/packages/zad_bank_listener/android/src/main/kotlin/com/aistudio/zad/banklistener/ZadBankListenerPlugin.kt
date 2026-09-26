@@ -56,6 +56,17 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     result.success(null)
                 }
                 "pendingCount" -> result.success(store.pending())
+                // كوتلن BankReadingStatus: آخر ربط للخدمة وآخر إشعار شافته (أي إشعار).
+                "listenerStatus" -> result.success(
+                    mapOf(
+                        "lastConnectedAt" to ZadNotificationListenerService.readMillis(
+                            context, ZadNotificationListenerService.LAST_CONNECTED_AT,
+                        ),
+                        "lastSeenAnyAt" to ZadNotificationListenerService.readMillis(
+                            context, ZadNotificationListenerService.LAST_SEEN_ANY_AT,
+                        ),
+                    ),
+                )
                 // الدالة اللي محرك الخلفية بيشغّلها لما إشعار يوصل والتطبيق مقفول.
                 "registerBackgroundHandle" -> {
                     val handle = call.argument<Number>("handle")?.toLong() ?: 0L

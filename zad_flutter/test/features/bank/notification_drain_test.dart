@@ -39,6 +39,9 @@ class _FakeListener implements ZadBankListener {
   Future<int> pendingCount() async => rows.length;
 
   @override
+  Future<ListenerStatus> listenerStatus() async => const ListenerStatus();
+
+  @override
   Future<bool> isPermissionGranted() async => true;
 
   @override

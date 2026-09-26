@@ -40,6 +40,9 @@ class _FakeListener implements ZadBankListener {
   Future<int> pendingCount() async => pending;
 
   @override
+  Future<ListenerStatus> listenerStatus() async => const ListenerStatus();
+
+  @override
   Future<void> registerBackgroundHandle(int handle) async {}
 
   @override

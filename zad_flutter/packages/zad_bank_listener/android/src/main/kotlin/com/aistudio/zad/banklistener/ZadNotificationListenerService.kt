@@ -34,6 +34,8 @@ class ZadNotificationListenerService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.i(TAG, "listener connected; pending=${store.pending()}")
+        // كوتلن BankReadingStatus.recordListenerConnected: الصلاحية مش معناها الخدمة مربوطة.
+        markNow(applicationContext, LAST_CONNECTED_AT)
         // أول ما الصلاحية تتفعّل (أو أندرويد يربط الخدمة من جديد) الإشعارات اللي لسه
         // ظاهرة في الشريط ماعدّتش على onNotificationPosted. كوتلن كان بيلمّها هنا؛ المفاتيح
         // اللي اتشافت قبل كده بتتحفظ عشان إعادة الربط ماتبعتش نفس الرسالة تاني.
@@ -56,6 +58,13 @@ class ZadNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         val notification = sbn ?: return
+        // كوتلن BankReadingStatus.recordSawNotification: **أي** إشعار، حتى لو اتفلتر بعد كده —
+        // من غيره مفيش فرق بين "الخدمة ميتة" و"الخدمة شغالة والفلترة رمت كل حاجة".
+        try {
+            markNow(applicationContext, LAST_SEEN_ANY_AT)
+        } catch (e: Exception) {
+            Log.e(TAG, "mark seen failed: ${e.message}")
+        }
         try {
             if (capture(notification)) {
                 // Handler مش استدعاء مباشر: محرك Flutter لازم يتعمل على الـ main thread،
@@ -90,7 +99,19 @@ class ZadNotificationListenerService : NotificationListenerService() {
 
     internal companion object {
         const val TAG = "ZadBankListener"
-        private const val PREFS = "zad_bank_listener"
+        const val PREFS = "zad_bank_listener"
+        const val LAST_CONNECTED_AT = "last_connected_at"
+        const val LAST_SEEN_ANY_AT = "last_seen_any_at"
+
+        fun markNow(context: Context, key: String) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit().putLong(key, System.currentTimeMillis()).apply()
+        }
+
+        fun readMillis(context: Context, key: String): Long? {
+            val v = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(key, -1L)
+            return if (v > 0) v else null
+        }
         private const val SEEN_KEYS = "seen_active_keys"
         private const val MAX_SEEN_KEYS = 300
     }

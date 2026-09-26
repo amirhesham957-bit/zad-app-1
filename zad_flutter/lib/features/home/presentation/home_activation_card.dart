@@ -62,7 +62,9 @@ final homeActivationProgressProvider = Provider<HomeActivationProgress>((ref) {
       snapshot != null && snapshot.limitConfirmed && snapshot.remaining != null;
   // Kotlin: notification access granted and the listener connected.
   final bankReadingEnabled = ref.watch(
-    bankAccessControllerProvider.select((s) => s.granted),
+    bankAccessControllerProvider.select(
+      (s) => s.granted && s.lastConnectedAt != null,
+    ),
   );
   final hasInventory = ref.watch(
     pantryControllerProvider.select((v) => v.items.isNotEmpty),
@@ -94,7 +96,7 @@ class HomeActivationSlot extends ConsumerWidget {
         progress: progress,
         onSetBalance: () => showMonthlyLimitSheet(context),
         onEnableBankReading: () =>
-            ref.read(bankAccessControllerProvider.notifier).openSettings(),
+            ref.read(bankAccessControllerProvider.notifier).repair(),
         onAddInventoryItem: () =>
             ref.read(shellNavigationProvider.notifier).open(ShellTab.inventory),
         onSetFirstGoal: () => showLifeGoalPickerSheet(context),

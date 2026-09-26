@@ -109,6 +109,21 @@ class ZadBankListener {
     <String, Object>{'ids': ids.toList()},
   );
 
+  /// When the service last bound, and when it last saw any notification at
+  /// all (even one it then ignored) — Kotlin's `BankReadingStatus`. Null
+  /// fields mean never.
+  Future<ListenerStatus> listenerStatus() async {
+    final map = await channel.invokeMapMethod<String, Object?>(
+      'listenerStatus',
+    );
+    DateTime? at(Object? v) =>
+        v is num ? DateTime.fromMillisecondsSinceEpoch(v.toInt()) : null;
+    return ListenerStatus(
+      lastConnectedAt: at(map?['lastConnectedAt']),
+      lastSeenAnyAt: at(map?['lastSeenAnyAt']),
+    );
+  }
+
   /// How many are waiting. Cheap enough for a status row.
   Future<int> pendingCount() async =>
       await channel.invokeMethod<int>('pendingCount') ?? 0;
@@ -141,4 +156,16 @@ class ZadBankListener {
       if (call.method == 'captured') _captures.add(null);
     });
   }
+}
+
+/// Kotlin's `BankReadingStatus` readings.
+class ListenerStatus {
+  /// Creates a status.
+  const new({this.lastConnectedAt, this.lastSeenAnyAt});
+
+  /// When the service last bound.
+  final DateTime? lastConnectedAt;
+
+  /// When it last saw any notification.
+  final DateTime? lastSeenAnyAt;
 }

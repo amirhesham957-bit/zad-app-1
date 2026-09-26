@@ -39,6 +39,8 @@ class BankAccessState {
     required this.granted,
     required this.pending,
     this.lastCapturedAt,
+    this.lastConnectedAt,
+    this.lastSeenAnyAt,
     this.checking = false,
   });
 
@@ -51,8 +53,24 @@ class BankAccessState {
   /// When this device last captured anything at all, ever.
   final DateTime? lastCapturedAt;
 
+  /// When the listener service last bound (Kotlin's `lastConnectedAt`).
+  final DateTime? lastConnectedAt;
+
+  /// When it last saw any notification at all, even one it then ignored
+  /// (Kotlin's `lastSawNotificationAt`).
+  final DateTime? lastSeenAnyAt;
+
   /// Whether a check is in flight.
   final bool checking;
+
+  /// Kotlin's `BankReadingStatus.isListenerAlive`: granted, bound at least
+  /// once, and a notification seen in the last ten minutes — a phone can be
+  /// genuinely quiet, and that much grace keeps the pill from flapping.
+  bool isAlive(DateTime now) =>
+      granted &&
+      lastConnectedAt != null &&
+      lastSeenAnyAt != null &&
+      now.difference(lastSeenAnyAt!) < const Duration(minutes: 10);
 
   /// The reading to show.
   BankAccessHealth get health {
@@ -73,6 +91,8 @@ class BankAccessState {
     granted: granted ?? this.granted,
     pending: pending ?? this.pending,
     lastCapturedAt: lastCapturedAt ?? this.lastCapturedAt,
+    lastConnectedAt: lastConnectedAt,
+    lastSeenAnyAt: lastSeenAnyAt,
     checking: checking ?? this.checking,
   );
 }
@@ -108,12 +128,15 @@ class BankAccessController extends Notifier<BankAccessState> {
       final granted = await listener.isPermissionGranted();
       if (granted) await listener.requestRebind();
       final pending = granted ? await listener.pendingCount() : 0;
+      final status = await listener.listenerStatus();
 
       if (!ref.mounted) return;
       state = BankAccessState(
         granted: granted,
         pending: pending,
         lastCapturedAt: ref.read(bankCaptureMarkerProvider).lastCapturedAt(),
+        lastConnectedAt: status.lastConnectedAt,
+        lastSeenAnyAt: status.lastSeenAnyAt,
       );
     } on Object {
       // The plugin is not there — a test host, or a platform without it. Not
@@ -126,6 +149,25 @@ class BankAccessController extends Notifier<BankAccessState> {
   /// Opens the system screen. There is no in-app prompt for this permission.
   Future<void> openSettings() async {
     await ref.read(bankListenerProvider).openPermissionSettings();
+  }
+
+  /// Kotlin's `BankReadingStatus.repairListening` — «اضغط للإصلاح»: rebind
+  /// when access is granted; otherwise the only fix is the customer turning
+  /// it back on, so go straight to that screen. MIUI's battery manager kills
+  /// the service and revokes the permission with it, and a silent rebind
+  /// there does nothing at all.
+  Future<void> repair() async {
+    final listener = ref.read(bankListenerProvider);
+    try {
+      if (await listener.isPermissionGranted()) {
+        await listener.requestRebind();
+      } else {
+        await listener.openPermissionSettings();
+      }
+    } on Object {
+      // No plugin (a test host). Nothing to repair.
+    }
+    await refresh();
   }
 }
 
