@@ -17,7 +17,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/features/auth/application/session_controller.dart';
 
 const Color _canvas = Color(0xFFFBFAF8);
-const Color _textTertiary = Color(0xFF6E7065);
+Color get _textTertiary => ZadColors.textTertiary;
 
 /// The app's root: the splash on a cold, signed-out start, then the gate.
 class ZadSplashGate extends ConsumerStatefulWidget {
@@ -162,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
+              Text(
                 'خصوصية بياناتك أولوية، دائماً',
                 style: TextStyle(
                   fontSize: 12.5,

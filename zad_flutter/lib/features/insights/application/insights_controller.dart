@@ -8,9 +8,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/insights/domain/insight.dart';
 
 /// What Home draws.
@@ -64,19 +62,35 @@ class InsightsController extends Notifier<InsightsView> {
     _afterDecision();
   }
 
-  /// Answers a brain question: the card is marked acted, and the answer goes
-  /// to the chat as the customer's own message — the agent acts on it with
-  /// its tools, and the reply is there to read.
+  /// Kotlin's `answerBrainQuestion`: the card is marked acted, and the
+  /// answer reaches zad-brain as an event (`trigger: event`) — the same
+  /// pipeline as the daily run, which may raise a fresh card. Insights are
+  /// read again afterwards so it can show.
   Future<void> answer(ZadInsight question, String text) async {
     if (text.trim().isEmpty) return;
     await ref.read(insightsRepositoryProvider).markActed(question);
     _afterDecision();
-    ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
-    unawaited(
-      ref
-          .read(chatControllerProvider.notifier)
-          .send(answerMessage(question, text)),
+    final client = ref.read(supabaseClientProvider);
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return;
+    final message = StringBuffer(
+      'العميل جاوب على سؤال: "${question.title} — ${question.body}"',
     );
+    if (question.aboutItem case final item?) message.write(' (بخصوص: $item)');
+    message.write('. الإجابة: $text');
+    try {
+      await client.functions.invoke(
+        'zad-brain',
+        body: <String, dynamic>{
+          'user_id': userId,
+          'trigger': 'event',
+          'user_message': message.toString(),
+        },
+      );
+    } on Object {
+      // Kotlin logs and moves on; the answer is already recorded as acted.
+    }
+    if (ref.mounted) unawaited(refresh(force: true));
   }
 
   void _afterDecision() {

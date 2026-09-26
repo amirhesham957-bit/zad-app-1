@@ -21,6 +21,7 @@ class ZadInsight {
     this.surface = 'home_card',
     this.priority = 'normal',
     this.aboutItem,
+    this.actionType,
     this.createdAt,
   });
 
@@ -33,6 +34,7 @@ class ZadInsight {
     surface: (json['surface'] as String?) ?? 'home_card',
     priority: (json['priority'] as String?) ?? 'normal',
     aboutItem: json['about_item'] as String?,
+    actionType: json['action_type'] as String?,
     createdAt: switch (json['created_at']) {
       final String s => DateTime.parse(s).toUtc(),
       _ => null,
@@ -60,6 +62,10 @@ class ZadInsight {
   /// What it is about — a medicine, a subscription — when the brain said.
   final String? aboutItem;
 
+  /// A question's answer type — `yes_no`, `number`, `camera` — as zad-brain's
+  /// `validateAskUser` writes it. Anything else is answered as free text.
+  final String? actionType;
+
   /// When it was written.
   final DateTime? createdAt;
 
@@ -85,6 +91,7 @@ class ZadInsight {
     'surface': surface,
     'priority': priority,
     'about_item': aboutItem,
+    'action_type': actionType,
     'created_at': createdAt?.toIso8601String(),
   };
 }

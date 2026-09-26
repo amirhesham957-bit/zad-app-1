@@ -23,6 +23,7 @@ import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
+import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/home_chef_section.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
@@ -119,9 +120,13 @@ class HomeScreen extends ConsumerWidget {
           ),
           const ZadAppearOnEntry(delayMs: 105, child: HomeChefSection()),
           const HomeProposalsSection(),
-          const ZadTrailingGap(gap: 18, child: HomeInsightsSection()),
+          ZadTrailingGap(
+            gap: 18,
+            child: HomeInsightsSection(onOpenCamera: onOpenCamera),
+          ),
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
+          const HomeAmazonRow(),
           // Kotlin: room under the last card for the floating companion.
           const SizedBox(height: 112),
         ],

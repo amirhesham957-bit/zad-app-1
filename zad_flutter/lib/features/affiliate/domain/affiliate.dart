@@ -13,6 +13,8 @@ typedef AffiliateProduct = ({
   String? imageUrl,
   double averagePriceSar,
   bool isActive,
+  List<String> keywords,
+  DateTime? priceCheckedAt,
 });
 
 /// Reads an `affiliate_products` row.
@@ -24,7 +26,22 @@ AffiliateProduct affiliateFromJson(Map<String, dynamic> j) => (
   imageUrl: j['image_url'] as String?,
   averagePriceSar: (j['average_price_sar'] as num?)?.toDouble() ?? 0,
   isActive: (j['is_active'] as bool?) ?? true,
+  keywords: <String>[
+    for (final k
+        in (j['product_name_search_keywords'] as List<Object?>?) ??
+            const <Object?>[])
+      if (k is String) k,
+  ],
+  priceCheckedAt: switch (j['price_checked_at']) {
+    final String s => DateTime.tryParse(s),
+    _ => null,
+  },
 );
+
+/// Kotlin's `priceAgeDays`: whole days since the price was last checked,
+/// null when nobody knows.
+int? priceAgeDays(AffiliateProduct p, DateTime now) =>
+    p.priceCheckedAt == null ? null : now.difference(p.priceCheckedAt!).inDays;
 
 /// Kotlin's `productUrl`: a `/dp/` link only for a human-verified ASIN; any
 /// other product gets a tagged search, which cannot 404.
@@ -51,6 +68,8 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/33783/olive-oil-salad-dressing-cooking-olive.jpg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 28.50,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
   (
     id: 'aff_rice_1',
@@ -60,6 +79,8 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/4110256/pexels-photo-4110256.jpeg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 45.00,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
   (
     id: 'aff_tea_1',
@@ -69,6 +90,8 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/1493080/pexels-photo-1493080.jpeg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 19.75,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
   (
     id: 'aff_sugar_1',
@@ -78,6 +101,8 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/2523652/pexels-photo-2523652.jpeg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 22.00,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
   (
     id: 'aff_milk_1',
@@ -87,6 +112,8 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 6.50,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
   (
     id: 'aff_coffee_1',
@@ -96,5 +123,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     imageUrl: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600',
     averagePriceSar: 34.00,
     isActive: true,
+    keywords: <String>[],
+    priceCheckedAt: null,
   ),
 ];

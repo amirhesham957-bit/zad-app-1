@@ -17,6 +17,7 @@ class ProposalsView {
     this.isRefreshing = false,
     this.isStale = false,
     this.deciding = const <String>{},
+    this.failed = const <String>{},
     this.error,
     this.lastOutcome,
   });
@@ -34,6 +35,10 @@ class ProposalsView {
   /// Proposals with a decision in flight, so their buttons can be disabled
   /// without freezing the rest of the list.
   final Set<String> deciding;
+
+  /// Kotlin's `failedTransactionProposals`: the last decision on these did
+  /// not go through.
+  final Set<String> failed;
 
   /// The last refresh failure.
   final Object? error;
@@ -54,6 +59,7 @@ class ProposalsView {
     bool? isRefreshing,
     bool? isStale,
     Set<String>? deciding,
+    Set<String>? failed,
     Object? error,
     ProposalOutcome? lastOutcome,
     bool clearError = false,
@@ -63,6 +69,7 @@ class ProposalsView {
     isRefreshing: isRefreshing ?? this.isRefreshing,
     isStale: isStale ?? this.isStale,
     deciding: deciding ?? this.deciding,
+    failed: failed ?? this.failed,
     error: clearError ? null : (error ?? this.error),
     lastOutcome: clearOutcome ? null : (lastOutcome ?? this.lastOutcome),
   );
@@ -103,7 +110,11 @@ class ProposalsController extends Notifier<ProposalsView> {
       final rows = await ref.read(proposalsRepositoryProvider).refresh();
       if (!ref.mounted) return;
       _lastFetch = now;
-      state = ProposalsView(rows: rows, deciding: state.deciding);
+      state = ProposalsView(
+        rows: rows,
+        deciding: state.deciding,
+        failed: state.failed,
+      );
     } on Object catch (error) {
       if (!ref.mounted) return;
       state = state.copyWith(isRefreshing: false, isStale: true, error: error);
@@ -129,6 +140,7 @@ class ProposalsController extends Notifier<ProposalsView> {
 
     state = state.copyWith(
       deciding: <String>{...state.deciding, proposalId},
+      failed: {...state.failed}..remove(proposalId),
       clearOutcome: true,
       clearError: true,
     );
@@ -161,6 +173,10 @@ class ProposalsController extends Notifier<ProposalsView> {
       // dependency is unavailable — and it cannot force a network call from
       // here either. Each rebuilds from its own cache the moment it is next
       // watched, and asks the server on its own terms.
+      // The server asked back (a suspected duplicate, or a direction it
+      // needs): read the row again so the card puts the new question.
+      if (!settled) unawaited(refresh(force: true));
+
       if (outcome.status == 'posted') {
         ref
           ..invalidate(budgetControllerProvider)
@@ -172,6 +188,7 @@ class ProposalsController extends Notifier<ProposalsView> {
       if (!ref.mounted) return null;
       state = state.copyWith(
         deciding: {...state.deciding}..remove(proposalId),
+        failed: <String>{...state.failed, proposalId},
         error: error,
       );
       return null;

@@ -98,6 +98,9 @@ class TransactionProposal {
     this.merchantName,
     this.bankName,
     this.confidence,
+    this.duplicateOfProposalId,
+    this.duplicateOfTransactionId,
+    this.duplicateClearedAt,
   });
 
   /// Reads a row of `zad_transaction_proposals`.
@@ -115,6 +118,9 @@ class TransactionProposal {
     merchantName: json['merchant_name'] as String?,
     bankName: json['bank_name'] as String?,
     confidence: (json['confidence'] as num?)?.toDouble(),
+    duplicateOfProposalId: json['duplicate_of_proposal_id'] as String?,
+    duplicateOfTransactionId: json['duplicate_of_transaction_id'] as String?,
+    duplicateClearedAt: json['duplicate_cleared_at'] as String?,
   );
 
   /// The row id, and what the decision names.
@@ -157,6 +163,20 @@ class TransactionProposal {
   /// How sure the reading was, 0..1.
   final double? confidence;
 
+  /// Another proposal the server thinks is the same payment.
+  final String? duplicateOfProposalId;
+
+  /// A posted transaction the server thinks is the same payment.
+  final String? duplicateOfTransactionId;
+
+  /// When the customer said they are two payments.
+  final String? duplicateClearedAt;
+
+  /// Kotlin's `asksDuplicateQuestion`: «هل هذه نفس المعاملة؟» comes first.
+  bool get asksDuplicateQuestion =>
+      duplicateClearedAt == null &&
+      (duplicateOfProposalId != null || duplicateOfTransactionId != null);
+
   /// The best single line describing where this came from.
   String? get source => merchantName ?? bankName;
 
@@ -185,6 +205,9 @@ class TransactionProposal {
     'merchant_name': merchantName,
     'bank_name': bankName,
     'confidence': confidence,
+    'duplicate_of_proposal_id': duplicateOfProposalId,
+    'duplicate_of_transaction_id': duplicateOfTransactionId,
+    'duplicate_cleared_at': duplicateClearedAt,
   };
 }
 

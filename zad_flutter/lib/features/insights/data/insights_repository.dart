@@ -52,7 +52,7 @@ class SupabaseInsightsRemote implements InsightsRemote {
               .from('zad_insights')
               .select(
                 'id, kind, surface, priority, title, body, about_item, '
-                'created_at',
+                'action_type, created_at',
               )
               .eq('user_id', userId)
               .eq('status', 'pending')

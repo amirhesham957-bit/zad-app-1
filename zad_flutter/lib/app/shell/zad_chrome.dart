@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/components/zad_pulses.dart';
+import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 
 /// Kotlin's `primary`.
@@ -16,16 +17,16 @@ const Color kShellPrimary = Color(0xFF1B4332);
 const Color kShellTextPrimary = Color(0xFF1F1F14);
 
 /// Kotlin's `onSurfaceVariant` / `textSecondary`.
-const Color _textSecondary = Color(0xFF5F6258);
+Color get _textSecondary => ZadColors.inkMuted;
 
 /// Kotlin's `textTertiary`.
-const Color _textTertiary = Color(0xFF6E7065);
+Color get _textTertiary => ZadColors.textTertiary;
 
 /// Kotlin's `surfaceContainerLow`.
-const Color _surfaceContainerLow = Color(0xFFFBFBFA);
+Color get _surfaceContainerLow => ZadColors.surfaceLow;
 
 /// Kotlin's `error` (`ZadTerracottaRust`).
-const Color _danger = Color(0xFFD95726);
+Color get _danger => ZadColors.terracottaRust;
 
 /// Kotlin's `kidsPrimary`.
 const Color _kidsPrimary = Color(0xFF6B46C1);
@@ -337,7 +338,7 @@ class _BellPill extends StatelessWidget {
               ),
             ),
             if (unread)
-              const PositionedDirectional(
+              PositionedDirectional(
                 top: 0,
                 end: 0,
                 child: SizedBox.square(
@@ -449,7 +450,7 @@ class ZadDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Drawer(
     width: MediaQuery.sizeOf(context).width * 0.78,
-    backgroundColor: Colors.white,
+    backgroundColor: ZadColors.surface,
     shape: const RoundedRectangleBorder(),
     child: Column(
       children: <Widget>[
@@ -520,7 +521,7 @@ class ZadDrawer extends StatelessWidget {
                             color: kShellTextPrimary,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'اضغط لعرض الملف الشخصي',
                           style: TextStyle(
                             fontSize: 11.5,
@@ -530,11 +531,7 @@ class ZadDrawer extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(
-                    Icons.chevron_left,
-                    size: 20,
-                    color: _textTertiary,
-                  ),
+                  Icon(Icons.chevron_left, size: 20, color: _textTertiary),
                 ],
               ),
             ),
@@ -595,7 +592,7 @@ Future<String?> showZadMoreSheet(BuildContext context) =>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: ZadColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -716,7 +713,7 @@ Future<ZadCameraChoice?> showZadCameraSheet(BuildContext context) =>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: ZadColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -789,8 +786,11 @@ class _CameraSheet extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => Navigator.of(context).pop(),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   child: Text(
                     'إلغاء',
                     style: TextStyle(

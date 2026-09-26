@@ -4,6 +4,8 @@
 /// Kotlin's.
 library;
 
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,8 @@ import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_pulses.dart';
 import 'package:zad/design/foundation/compose_shadow.dart';
+import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/design/tokens/zad_extended_colors.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
@@ -21,28 +25,27 @@ import 'package:zad/features/orb/presentation/companion_orb.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
-import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 
 /// Kotlin's `primary` — `ZadLuxe.emerald`.
-const Color _emerald = Color(0xFF1B4332);
+Color get _emerald => ZadColors.forestEmerald;
 
 /// Kotlin's `textPrimary`.
-const Color _textPrimary = Color(0xFF1F1F14);
+Color get _textPrimary => ZadColors.ink;
 
 /// Kotlin's `onSurfaceVariant`.
-const Color _onSurfaceVariant = Color(0xFF5F6258);
+Color get _onSurfaceVariant => ZadColors.inkMuted;
 
 /// Kotlin's `textTertiary`.
-const Color _textTertiary = Color(0xFF6E7065);
+Color get _textTertiary => ZadColors.textTertiary;
 
 /// Kotlin's `warningColor` (`secondary`, ZadMustardOchre).
-const Color _warning = Color(0xFFC68216);
+Color get _warning => ZadColors.mustardOchre;
 
 /// Kotlin's `dangerColor` (`error`, ZadTerracottaRust).
-const Color _danger = Color(0xFFD95726);
+Color get _danger => ZadColors.terracottaRust;
 
 /// Kotlin's `outline`.
-const Color _outline = Color(0xFFE0E3DA);
+Color get _outline => ZadColors.outline;
 
 // ── offline ──────────────────────────────────────────────────────────────────
 
@@ -79,7 +82,7 @@ class HomeOfflineBanner extends ConsumerWidget {
         ),
         child: Row(
           children: <Widget>[
-            const Icon(Icons.cloud_off, size: 28, color: _warning),
+            Icon(Icons.cloud_off, size: 28, color: _warning),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -128,8 +131,8 @@ class HomeCompanionHeader extends ConsumerWidget {
     final name = ref.watch(profileControllerProvider.select((v) => v.name));
     const radius = BorderRadius.all(Radius.circular(20));
     return Material(
-      color: Colors.white,
-      shape: const RoundedRectangleBorder(
+      color: ZadColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(color: _outline, width: 0.5),
       ),
@@ -170,7 +173,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                     ),
                     Row(
                       children: <Widget>[
-                        const ZadDotPulse(
+                        ZadDotPulse(
                           child: SizedBox.square(
                             dimension: 6,
                             child: DecoratedBox(
@@ -200,7 +203,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: onOpenCamera,
-                  child: const SizedBox.square(
+                  child: SizedBox.square(
                     dimension: 40,
                     child: Icon(
                       Icons.camera_alt,
@@ -250,7 +253,7 @@ class HomeRecentTransactions extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            const Text(
+            Text(
               'أحدث المعاملات',
               style: TextStyle(
                 fontSize: 15,
@@ -260,12 +263,8 @@ class HomeRecentTransactions extends ConsumerWidget {
               ),
             ),
             GestureDetector(
-              onTap: () => Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TransactionsScreen(),
-                ),
-              ),
-              child: const Text(
+              onTap: () => unawaited(_showFullLog(context, recent)),
+              child: Text(
                 'عرض الكل',
                 style: TextStyle(
                   fontSize: 12.5,
@@ -282,14 +281,14 @@ class HomeRecentTransactions extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: ZadColors.surface,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(Icons.receipt_long, size: 18, color: _textTertiary),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   'سيتم عرض المعاملات البنكية هنا',
                   style: TextStyle(fontSize: 12, color: _textTertiary),
@@ -309,6 +308,74 @@ class HomeRecentTransactions extends ConsumerWidget {
       ],
     );
   }
+
+  /// Kotlin's «السجل الكامل للمعاملات» dialog: every row, oldest first as
+  /// Kotlin reverses its newest-first list, with the category under the
+  /// title and the signed amount.
+  static Future<void> _showFullLog(
+    BuildContext context,
+    List<ZadTransaction> rows,
+  ) => showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      final scheme = Theme.of(dialogContext).colorScheme;
+      final ext = dialogContext.zadExt;
+      final list = rows.reversed.toList();
+      return AlertDialog(
+        title: const Text('السجل الكامل للمعاملات'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: list.length,
+            itemBuilder: (_, i) {
+              final tx = list[i];
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            tx.title,
+                            style: ZadType.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            tx.category ?? 'Other',
+                            style: ZadType.labelSmall.copyWith(
+                              color: const Color(0xFF888888),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${tx.isExpense ? '-' : '+'}${tx.amount}',
+                      style: ZadType.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: tx.isExpense ? scheme.error : ext.success,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      );
+    },
+  );
 
   /// اليوم / أمس / قبل N أيام, counted in the account's zone.
   static String _relativeDay(DateTime at, DateTime now, String zone) {
@@ -339,7 +406,7 @@ class _TxRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: ZadColors.surface,
       borderRadius: BorderRadius.circular(14),
       boxShadow: kZadCardShadow,
     ),
@@ -353,7 +420,7 @@ class _TxRow extends StatelessWidget {
                 tx.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13.5,
                   height: 22 / 13.5,
                   fontWeight: FontWeight.w600,
@@ -363,7 +430,7 @@ class _TxRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 day,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   height: 22 / 11.5,
                   color: _textTertiary,

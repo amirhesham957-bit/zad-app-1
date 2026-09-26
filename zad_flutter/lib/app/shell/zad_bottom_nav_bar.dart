@@ -13,19 +13,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/foundation/compose_shadow.dart';
+import 'package:zad/design/tokens/zad_colors.dart';
 
 /// Kotlin's `primary` (`ZadForestEmerald`).
-const Color _primary = Color(0xFF1B4332);
+Color get _primary => ZadColors.forestEmerald;
 
 /// Kotlin's `textTertiary`.
-const Color _textTertiary = Color(0xFF6E7065);
+Color get _textTertiary => ZadColors.textTertiary;
 
 /// Kotlin's `outline` (`ZadIosOutline`).
-const Color _outline = Color(0xFFE0E3DA);
+Color get _outline => ZadColors.outline;
 
 /// Kotlin's `surface` / `surfaceContainerLow`.
-const Color _surface = Color(0xFFFFFFFF);
-const Color _surfaceContainerLow = Color(0xFFFBFBFA);
+Color get _surface => ZadColors.surface;
+Color get _surfaceContainerLow => ZadColors.surfaceLow;
 
 /// Kotlin's `ZadDarkSlate`.
 const Color _darkSlate = Color(0xFF0F172A);
@@ -456,7 +457,7 @@ class _CameraFab extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: <Color>[_surface, _surfaceContainerLow],
@@ -468,7 +469,7 @@ class _CameraFab extends StatelessWidget {
           spot: _primary.withValues(alpha: 0.25),
         ),
       ),
-      child: const Icon(Icons.camera_alt, color: _primary, size: 22),
+      child: Icon(Icons.camera_alt, color: _primary, size: 22),
     ),
   );
 }

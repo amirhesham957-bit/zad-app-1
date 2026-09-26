@@ -6,17 +6,19 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:zad/design/components/zad_card.dart';
+import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/foundation/compose_shadow.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 
@@ -66,6 +68,7 @@ class ProposalsScreen extends ConsumerWidget {
                   itemBuilder: (_, i) => _ProposalCard(
                     proposal: view.rows[i],
                     busy: view.deciding.contains(view.rows[i].id),
+                    failed: view.failed.contains(view.rows[i].id),
                     onDecide: (d) => controller.decide(view.rows[i].id, d),
                   ),
                 ),
@@ -128,7 +131,7 @@ class HomeProposalsSection extends ConsumerWidget {
               'عمليات بنكية بانتظارك',
               style: ZadType.titleMedium.copyWith(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1F1F14),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -137,6 +140,7 @@ class HomeProposalsSection extends ConsumerWidget {
             _ProposalCard(
               proposal: view.rows[i],
               busy: view.deciding.contains(view.rows[i].id),
+              failed: view.failed.contains(view.rows[i].id),
               onDecide: (d) => controller.decide(view.rows[i].id, d),
             ),
           ],
@@ -146,167 +150,260 @@ class HomeProposalsSection extends ConsumerWidget {
   }
 }
 
-/// One proposal, and the answer it is waiting for.
-class _ProposalCard extends StatelessWidget {
+/// Kotlin's `TransactionProposalCard` (`ui/widgets/TransactionProposalCard.kt`).
+class _ProposalCard extends ConsumerWidget {
   const new({
     required this.proposal,
     required this.busy,
+    required this.failed,
     required this.onDecide,
   });
 
   final TransactionProposal proposal;
   final bool busy;
+  final bool failed;
+  final ValueChanged<ProposalDecision> onDecide;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final country = ref.watch(settingsRepositoryProvider).cached()?.country;
+    final currency = (proposal.currency?.trim().isNotEmpty ?? false)
+        ? proposal.currency!
+        : marketFor(country)?.currencySymbol ?? '';
+    final source = proposal.merchantName ?? proposal.bankName;
+    final needsKind = proposal.status == ProposalStatus.needsClassification;
+    final direction = needsKind
+        ? 'حدد الاتجاه'
+        : switch (proposal.txnKind) {
+            'income' => 'دخل متوقع',
+            'transfer' => 'تحويل متوقع',
+            _ => 'مصروف متوقع',
+          };
+    // Compose `Surface(color = White, tonalElevation = 1.dp)`: tinted only
+    // where White is the scheme's surface — the light theme.
+    final tinted = scheme.surface == Colors.white
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: (4.5 * math.log(2) + 2) / 100),
+            Colors.white,
+          )
+        : Colors.white;
+
+    void decide(ProposalDecision d) {
+      if (d == ProposalDecision.confirm) {
+        unawaited(HapticFeedback.mediumImpact());
+      }
+      onDecide(d);
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tinted,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: composeShadow(
+          elevation: 2,
+          ambient: Colors.black,
+          spot: Colors.black,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  width: 34,
+                  height: 34,
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet,
+                    size: 20,
+                    color: scheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '${proposal.amount.toStringAsFixed(2)} $currency',
+                        style: ZadType.titleMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        proposal.title,
+                        style: ZadType.bodyMedium.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  direction,
+                  style: ZadType.labelSmall.copyWith(color: scheme.secondary),
+                ),
+              ],
+            ),
+            if (source != null && source.trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                'المصدر: $source',
+                style: ZadType.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'لن يتغير الرصيد قبل قرارك.',
+              style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            if (failed) ...<Widget>[
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Icon(Icons.error_outline, size: 16, color: scheme.error),
+                  const SizedBox(width: 6),
+                  Text(
+                    'تعذر تنفيذ القرار. حاول مرة أخرى.',
+                    style: ZadType.labelSmall.copyWith(color: scheme.error),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 8),
+            if (busy)
+              const SizedBox(
+                height: 40,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text('جارٍ تنفيذ القرار…', style: ZadType.labelMedium),
+                  ],
+                ),
+              )
+            else if (proposal.asksDuplicateQuestion) ...<Widget>[
+              Text(
+                'توجد عملية أخرى بنفس المبلغ في نفس الوقت تقريبًا. هل هذه '
+                'نفس المعاملة؟',
+                style: ZadType.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => decide(ProposalDecision.duplicate),
+                      child: const Text('نفس المعاملة'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => decide(ProposalDecision.separate),
+                      child: const Text('عملية أخرى'),
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (needsKind) ...<Widget>[
+              _DirectionButtons(onDecide: decide),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => decide(ProposalDecision.reject),
+                child: const Text('رفض'),
+              ),
+            ] else ...<Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => decide(ProposalDecision.confirm),
+                      child: const Text('تأكيد'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => decide(ProposalDecision.reject),
+                      child: const Text('رفض'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'الاتجاه غير صحيح؟',
+                style: ZadType.labelSmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _DirectionButtons(
+                currentKind: proposal.txnKind,
+                onDecide: decide,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kotlin's `DirectionButtons`: the three directions, less the current one.
+class _DirectionButtons extends StatelessWidget {
+  const new({required this.onDecide, this.currentKind});
+
+  final String? currentKind;
   final ValueChanged<ProposalDecision> onDecide;
 
   @override
   Widget build(BuildContext context) {
-    final needsKind = proposal.status == ProposalStatus.needsClassification;
-
-    return ZadCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      proposal.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _subtitle(proposal),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ZadType.bodySmall.copyWith(
-                        color: ZadColors.inkMuted,
-                      ),
-                    ),
-                  ],
-                ),
+    final choices = <(String, String, ProposalDecision)>[
+      ('expense', 'مصروف', ProposalDecision.expense),
+      ('income', 'دخل', ProposalDecision.income),
+      ('transfer', 'تحويل', ProposalDecision.transfer),
+    ].where((c) => c.$1 != currentKind).toList();
+    return Row(
+      children: <Widget>[
+        for (var i = 0; i < choices.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
-              const SizedBox(width: ZadSpacing.md),
-              Text(
-                _money(proposal.amount),
-                style: ZadType.figure(20).copyWith(color: ZadColors.ink),
+              onPressed: () => onDecide(choices[i].$3),
+              child: Text(
+                choices[i].$2,
+                maxLines: 1,
+                style: ZadType.labelSmall,
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: ZadSpacing.md),
-          // Said plainly, because it is the reassurance that makes it safe to
-          // leave one of these unanswered.
-          Text(
-            'لسه ماتحسبتش على رصيدك.',
-            style: ZadType.labelSmall.copyWith(color: ZadColors.mustardOchre),
-          ),
-          const SizedBox(height: ZadSpacing.lg),
-
-          if (needsKind) ...<Widget>[
-            Text(
-              'دي إيه بالظبط؟',
-              style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
-            ),
-            const SizedBox(height: ZadSpacing.sm),
-            Wrap(
-              spacing: ZadSpacing.sm,
-              children: <Widget>[
-                _Choice(
-                  label: 'مصروف',
-                  busy: busy,
-                  onTap: () => onDecide(ProposalDecision.expense),
-                ),
-                _Choice(
-                  label: 'دخل',
-                  busy: busy,
-                  onTap: () => onDecide(ProposalDecision.income),
-                ),
-                _Choice(
-                  label: 'تحويل',
-                  busy: busy,
-                  onTap: () => onDecide(ProposalDecision.transfer),
-                ),
-              ],
-            ),
-            const SizedBox(height: ZadSpacing.sm),
-            _RejectButton(
-              busy: busy,
-              onTap: () => onDecide(ProposalDecision.reject),
-            ),
-          ] else
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton(
-                    onPressed: busy
-                        ? null
-                        : () {
-                            unawaited(HapticFeedback.mediumImpact());
-                            onDecide(ProposalDecision.confirm);
-                          },
-                    child: const Text('أكد'),
-                  ),
-                ),
-                const SizedBox(width: ZadSpacing.md),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: busy
-                        ? null
-                        : () => onDecide(ProposalDecision.reject),
-                    child: const Text('مش بتاعتي'),
-                  ),
-                ),
-              ],
-            ),
         ],
-      ),
+      ],
     );
   }
-
-  /// Where it came from, and which way the server thinks it goes.
-  static String _subtitle(TransactionProposal p) => <String>[
-    if (p.source case final s? when s.isNotEmpty) s,
-    switch (p.txnKind) {
-      'income' => 'دخل متوقع',
-      'transfer' => 'تحويل متوقع',
-      'expense' => 'مصروف متوقع',
-      _ => 'الاتجاه مش واضح',
-    },
-    DateFormat('d MMMM', 'ar').format(p.createdAt.toLocal()),
-  ].join(' · ');
-}
-
-class _Choice extends StatelessWidget {
-  const new({required this.label, required this.busy, required this.onTap});
-
-  final String label;
-  final bool busy;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) =>
-      OutlinedButton(onPressed: busy ? null : onTap, child: Text(label));
-}
-
-class _RejectButton extends StatelessWidget {
-  const new({required this.busy, required this.onTap});
-
-  final bool busy;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => TextButton(
-    onPressed: busy ? null : onTap,
-    child: Text(
-      'مش بتاعتي',
-      style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
-    ),
-  );
 }
 
 class _Empty extends StatelessWidget {
@@ -324,5 +421,3 @@ class _Empty extends StatelessWidget {
     tone: hasError ? ZadEmptyTone.problem : ZadEmptyTone.calm,
   );
 }
-
-String _money(double amount) => NumberFormat('#,##0.##', 'en').format(amount);

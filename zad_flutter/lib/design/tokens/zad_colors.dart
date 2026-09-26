@@ -95,6 +95,10 @@ abstract final class ZadColors {
   static Color get slate =>
       isDark ? const Color(0xFFB9BDB3) : const Color(0xFF374151);
 
+  /// Kotlin's `textTertiary` (`LocalZadExtendedColors`).
+  static Color get textTertiary =>
+      isDark ? const Color(0xFF8E9388) : const Color(0xFF6E7065);
+
   /// Muted labels. 5.9:1 on the canvas — the Kotlin app has a contrast test
   /// pinning this, and a lighter grey fails it.
   static Color get inkMuted =>
