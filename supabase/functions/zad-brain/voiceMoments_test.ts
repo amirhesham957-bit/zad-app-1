@@ -269,3 +269,11 @@ Deno.test("the composer's emotion choice is kept only inside the moment's range,
   assert(!prompts[0].includes("- sad:"), "an appointment reminder is never offered a sad voice");
   assertEquals((updates.at(-1)?.values.delivery as Record<string, unknown>).emotion, "cheerful");
 });
+
+Deno.test("تذكير مجموعة الأدوية بيقول مواعيد كل دوا، ومحتفظ بالأسماء الحقيقية", async () => {
+  const { momentFallback, mentionsRealMedicine } = await import("./voiceMoments.ts");
+  const facts = { item_name: "مضاد حيوي ومضاد للالتهاب", schedule_text: "مضاد حيوي 01:00، مضاد للالتهاب 01:30", time_zone: "Africa/Cairo" };
+  const c = momentFallback("dose_due", facts);
+  if (!c.text.includes("01:30") || !c.text.includes("مضاد للالتهاب")) throw new Error(c.text);
+  if (!mentionsRealMedicine(c, facts)) throw new Error("guard rejected the grouped template");
+});

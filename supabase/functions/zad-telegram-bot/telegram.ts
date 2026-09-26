@@ -556,3 +556,19 @@ export function parseDoseReply(text: string): "taken" | "skipped" | null {
 export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
   "dose_due", "dose_nudge", "dose_missed", "dose_missed_again",
 ]);
+
+/**
+ * خانة كل دوا في تذكير الجرعة. تذكير المجموعة (20260926120000) بيحمل `facts.slots`
+ * — دوائين بينهم نص ساعة في رسالة واحدة، وكل واحد لازم يتسجّل في خانته هو عشان
+ * الفهرس الفريد (user_id, item_id, scheduled_at) ومولّد التذكيرات يشوفوه متجاوب عليه.
+ * التذكير القديم مافيهوش slots، فكل الأدوية بتاخد `fallback` (facts.scheduled_at).
+ */
+export function doseSlots(facts: Record<string, unknown> | null | undefined, fallback: string): (itemId: string) => string {
+  const map = new Map<string, string>();
+  const slots = Array.isArray(facts?.slots) ? facts!.slots as unknown[] : [];
+  for (const s of slots) {
+    const o = s as { item_id?: unknown; scheduled_at?: unknown } | null;
+    if (typeof o?.item_id === "string" && typeof o?.scheduled_at === "string") map.set(o.item_id, o.scheduled_at);
+  }
+  return (itemId) => map.get(itemId) ?? fallback;
+}

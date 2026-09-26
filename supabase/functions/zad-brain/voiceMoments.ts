@@ -296,12 +296,22 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
   const item = str(facts.item_name) || "الدوا";
   const at = spokenTime(facts.scheduled_at ?? facts.starts_at, str(facts.time_zone, 40) || undefined);
   switch (moment) {
-    case "dose_due":
+    case "dose_due": {
+      // تذكير مجموعة (أدوية بينها ≤٣٠ دقيقة، 20260926120000): مواعيد كل واحد في نفس الرسالة.
+      const schedule = str(facts.schedule_text, 200);
+      if (schedule) {
+        return {
+          title: `💊 ميعاد ${item}`,
+          text: `مواعيد أدويتك دلوقتي: ${schedule} — دوس "خدته" لما تاخدهم.`,
+          speech: `ميعاد ${item} جه. يلا خدهم، وقولّي لما تخلص.`,
+        };
+      }
       return {
         title: `💊 ميعاد ${item}`,
         text: `ميعاد ${item} دلوقتي${at ? ` (الساعة ${at})` : ""} — خده ودوس "خدته".`,
         speech: `ميعاد ${item} جه. يلا خده دلوقتي، وقولّي لما تخلص.`,
       };
+    }
     case "dose_nudge":
       return {
         title: `💊 لسه ماخدتش ${item}؟`,

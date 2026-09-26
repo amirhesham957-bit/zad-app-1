@@ -41,7 +41,7 @@ import {
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
-  parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision,
+  parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
 } from "./telegram.ts";
 import {
   AgentContextInput, agentSystemPrompt, buildAgentContext, clampForTelegram,
@@ -1627,6 +1627,8 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
   if (itemIds.length === 0 || !scheduledAt) {
     return "التذكير ده قديم ومش مربوط بدوا محدد — سجّل الجرعة من صفحة الصيدلية في التطبيق.";
   }
+  // تذكير المجموعة (20260926120000) فيه خانة كل دوا لوحده؛ القديم فيه خانة واحدة للكل.
+  const slotOf = doseSlots(moment.facts, scheduledAt);
 
   if (action === "snooze") {
     // التأجيل بيتكتب في جدول، مش في الذاكرة: الكرون هو اللي بيقرا منه فبيسكت عن
@@ -1634,7 +1636,7 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
     const until = new Date(Date.now() + DOSE_SNOOZE_MINUTES * 60_000).toISOString();
     const { error: snoozeErr } = await sb.from("zad_dose_snoozes").upsert(
       itemIds.map((itemId) => ({
-        user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until,
+        user_id: userId, item_id: itemId, scheduled_at: slotOf(itemId), snooze_until: until,
       })),
       { onConflict: "user_id,item_id,scheduled_at" },
     );
@@ -1657,7 +1659,7 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
     const nameOf = new Map(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
     for (const itemId of itemIds) {
       const { error } = await sb.from("zad_pharmacy_doses").insert({
-        user_id: userId, item_id: itemId, scheduled_at: scheduledAt, status: "skipped", units: 0,
+        user_id: userId, item_id: itemId, scheduled_at: slotOf(itemId), status: "skipped", units: 0,
       });
       if (error && (error as { code?: string }).code !== "23505") {
         console.error("[dose] skip failed:", itemId, error.message);
@@ -1674,7 +1676,7 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
         // الخانة الزمنية بتاعة التذكير نفسه، مش دلوقتي: الفهرس الفريد
         // (user_id, item_id, scheduled_at) بيخلي ضغطتين على نفس الزر عملية واحدة،
         // وبيخلي الكرون يشوف إن الجرعة دي بالذات اتاخدت.
-        p_scheduled_at: scheduledAt,
+        p_scheduled_at: slotOf(itemId),
         p_taken_at: new Date().toISOString(),
       });
       const r = result as { ok?: boolean; name?: string; remaining_quantity?: number } | null;
@@ -1720,10 +1722,17 @@ async function openDoseMoment(sb: SupabaseClient, userId: string): Promise<{ id:
     const ids = Array.isArray(row.facts?.item_ids) ? (row.facts.item_ids as unknown[]).map(String) : [];
     const scheduledAt = typeof row.facts?.scheduled_at === "string" ? row.facts.scheduled_at : null;
     if (ids.length === 0 || !scheduledAt) continue;
-    const { count } = await sb.from("zad_pharmacy_doses")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId).in("item_id", ids).eq("scheduled_at", scheduledAt);
-    if ((count ?? 0) === 0) return { id: row.id, sentAt: new Date(row.sent_at ?? row.created_at).getTime() };
+    const slotOf = doseSlots(row.facts, scheduledAt);
+    const { data: answered } = await sb.from("zad_pharmacy_doses")
+      .select("item_id,scheduled_at")
+      .eq("user_id", userId).in("item_id", ids);
+    const done = new Set(((answered ?? []) as Array<{ item_id: string; scheduled_at: string | null }>)
+      .filter((a) => a.scheduled_at)
+      .map((a) => `${a.item_id}|${new Date(a.scheduled_at!).getTime()}`));
+    // مفتوح لو أي دوا في التذكير لسه ماتجاوبش عليه في خانته.
+    if (ids.some((id) => !done.has(`${id}|${new Date(slotOf(id)).getTime()}`))) {
+      return { id: row.id, sentAt: new Date(row.sent_at ?? row.created_at).getTime() };
+    }
   }
   return null;
 }

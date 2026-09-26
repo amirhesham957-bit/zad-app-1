@@ -69,3 +69,17 @@ Deno.test("زرار «المبلغ غلط» على الاقتراح في الح�
   assertEquals(parseAmountWrongCallback(`pr:${UUID}`), null);
   assertEquals(parseAmountWrongCallback(`pw:nope`), null);
 });
+
+Deno.test("تذكير المجموعة: كل دوا بيتسجّل في خانته، والقديم بياخد الخانة الواحدة", async () => {
+  const { doseSlots } = await import("./telegram.ts");
+  const A = "11111111-1111-4111-8111-111111111111";
+  const B = "22222222-2222-4222-8222-222222222222";
+  const grouped = doseSlots({
+    scheduled_at: "2026-09-25T22:00:00Z",
+    slots: [{ item_id: A, scheduled_at: "2026-09-25T22:00:00Z" }, { item_id: B, scheduled_at: "2026-09-25T22:30:00Z" }],
+  }, "2026-09-25T22:00:00Z");
+  assertEquals(grouped(A), "2026-09-25T22:00:00Z");
+  assertEquals(grouped(B), "2026-09-25T22:30:00Z");
+  const legacy = doseSlots({ scheduled_at: "2026-09-25T22:00:00Z" }, "2026-09-25T22:00:00Z");
+  assertEquals(legacy(B), "2026-09-25T22:00:00Z");
+});
