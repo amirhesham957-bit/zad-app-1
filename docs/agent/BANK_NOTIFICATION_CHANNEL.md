@@ -76,3 +76,22 @@ order by rows desc;
 - `UnifiedBankListener.trackedPackages` — تحذير مختصر عند القايمة نفسها
 - `UnifiedBankListener.onNotificationPosted` — التحذير المقاس عند فرع الالتقاط الشامل
 - `SaBankParser.shouldSendToBrain` — القاعدتين اللي بيمسكوا الهدر الحقيقي بدل التضييق
+
+## إعادة القياس ٢٠٢٦-٠٩-٢٥ — تطبيقات الشات برّه (مش تضييق على الحزم غير المتتبَّعة)
+
+الجدول كله (٣٤ صف، آخر صف ٢٠٢٦-٠٩-١٥):
+
+| الحزمة | الصفوف | معاملات حقيقية |
+|---|---|---|
+| `org.thunderdog.challegram` (Telegram X) | 22 | **0** — قنوات كريبتو («البيتكوين يصل الي 79,000 دولار» ← «حركة بنكية 79000 USD») ورسايل **بوت زاد نفسه** راجعة كإشعار بنكي (سأل «نفس المعاملة؟» ١٣ مرة) |
+| `com.google.android.apps.messaging` (SMS) | 5 | 3 (BDC) + عرض فودافون اتقيد بالغلط |
+| `com.mexcpro.client` | 1 | 0 (إعلان بونص) |
+| `com.google.android.apps.photos` | 2 | 0 |
+
+القرار: خدمة Flutter (`NotificationContent.IGNORED_PACKAGES`) بقت تتجاهل الشات والنظام زي
+`ignoredPackages` في كوتلن بالظبط، **زائد** فروع تليجرام اللي كوتلن فاتها (`org.telegram`
+مابيمسكش `org.thunderdog.challegram`). ده رجوع لسلوك كوتلن، مش قاعدة جديدة على الحزم غير
+المتتبَّعة: تطبيق الـSMS — القناة الأساسية — لسه جوه ولازم يفضل.
+
+وفي نفس اليوم: نفس الدفعة من تطبيقين مختلفين خلال ٥ دقايق بنفس المبلغ والعملة بتتدمج
+على السيرفر من غير سؤال (`pickCrossChannelTwin` في `zad-brain/shared.ts`).
