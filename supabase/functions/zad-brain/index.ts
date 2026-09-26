@@ -56,7 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -5744,7 +5744,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     // المعاملة؟" — ومهما ضغط العميل، دالة الحسم نفسها بتمنع القيد التاني (20260913213000).
     // فشل الاستعلام ده مايوقفش الاستلام: الحارس الحقيقي في دالة الحسم مش هنا.
     const { data: amountSiblings, error: amountSiblingsError } = await sb.from("zad_transaction_proposals")
-      .select("id,status,txn_kind,transaction_id,created_at")
+      .select("id,status,txn_kind,transaction_id,created_at,currency,source_event_id")
       .eq("user_id", userId)
       .eq("amount", proposalRow.amount)
       .neq("idempotency_key", dedupeHash)
@@ -5752,6 +5752,31 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       .gte("created_at", new Date(Date.now() - DUPLICATE_PROPOSAL_WINDOW_MS).toISOString())
       .limit(10);
     if (amountSiblingsError) console.error("duplicate sibling lookup failed:", amountSiblingsError.message);
+
+    // نفس الدفعة من تطبيق تاني خلال ٥ دقايق ← دمج صامت، مفيش اقتراح تاني ولا سؤال تاني
+    // (pickCrossChannelTwin في shared.ts). الإشعار متسجل كـignored بسبب واضح للمراجعة.
+    const siblingRows = (amountSiblings ?? []) as Array<{
+      id: string; status: string; txn_kind: string | null; transaction_id: string | null;
+      created_at: string; currency: string | null; source_event_id: string | null;
+    }>;
+    const siblingEventIds = siblingRows.map((r) => r.source_event_id).filter((v): v is string => !!v);
+    const packageOf = new Map<string, string>();
+    if (siblingEventIds.length > 0) {
+      const { data: siblingEvents } = await sb.from("zad_notification_ingest_events")
+        .select("id,package_name").eq("user_id", userId).in("id", siblingEventIds);
+      for (const e of (siblingEvents ?? []) as Array<{ id: string; package_name: string }>) packageOf.set(e.id, e.package_name);
+    }
+    const twin = pickCrossChannelTwin(
+      siblingRows.map((r) => ({ ...r, package_name: r.source_event_id ? packageOf.get(r.source_event_id) ?? null : null })),
+      { packageName, currency: proposalRow.currency, txnKind },
+      Date.now(),
+    );
+    if (twin) {
+      await mark("ignored", `merged_cross_channel:${twin.id}`);
+      return new Response(JSON.stringify({
+        ok: true, status: "ignored", reason: "merged_cross_channel", proposal_id: twin.id,
+      }), { headers: CORS_HEADERS });
+    }
     const duplicateOf = pickDuplicateProposalSibling(
       (amountSiblings ?? []) as Array<{ id: string; status: string; txn_kind: string | null; transaction_id: string | null; created_at: string }>,
       txnKind,

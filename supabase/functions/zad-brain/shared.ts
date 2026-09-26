@@ -351,6 +351,43 @@ export function pickDuplicateProposalSibling(
   return candidates.length > 0 ? { id: candidates[0].id } : null;
 }
 
+/** نافذة الدمج التلقائي بين قنوات مختلفة لنفس الدفعة — أضيق من نافذة السؤال (١٥ دقيقة). */
+export const CROSS_CHANNEL_TWIN_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * نفس الدفعة جت من تطبيق تاني؟ ← تتدمج من غير سؤال (٢٠٢٦-٠٩-٢٥).
+ *
+ * بلاغ: «لما بصرف بيجيلي رسالة ونتفكيشن من البنك وInstaPay — ٣ إشعارات لنفس العملية».
+ * [pickDuplicateProposalSibling] كان بيعمل اقتراح لكل واحد ويسأل «هل دي نفس المعاملة؟»
+ * — يعني ٣ رسايل على تليجرام لدفعة واحدة.
+ *
+ * هنا الدمج صامت بس لما الإشارة قوية: **تطبيق مختلف** (SMS مقابل تطبيق البنك مقابل
+ * المحفظة)، نفس المبلغ والعملة، اتجاه متوافق، وخلال ٥ دقايق. دفعتين حقيقيتين بنفس
+ * المبلغ ورا بعض بتوصلوا من **نفس** القنوات مرتين، فإشعارين من نفس التطبيق مابيتدمجوش
+ * هنا — بيفضلوا على السؤال القديم.
+ */
+export function pickCrossChannelTwin(
+  siblings: Array<{
+    id: string; status: string; txn_kind: string | null; currency: string | null;
+    transaction_id: string | null; created_at: string; package_name: string | null;
+  }>,
+  incoming: { packageName: string; currency: string | null; txnKind: string | null },
+  now: number,
+): { id: string; status: string } | null {
+  const cur = (v: string | null) => (v ?? "").trim().toUpperCase();
+  const twins = siblings
+    .filter((s) =>
+      ["awaiting_confirmation", "needs_classification"].includes(s.status) ||
+      (s.status === "posted" && s.transaction_id != null)
+    )
+    .filter((s) => s.package_name != null && s.package_name !== incoming.packageName)
+    .filter((s) => now - Date.parse(s.created_at) <= CROSS_CHANNEL_TWIN_WINDOW_MS)
+    .filter((s) => !cur(s.currency) || !cur(incoming.currency) || cur(s.currency) === cur(incoming.currency))
+    .filter((s) => s.txn_kind == null || incoming.txnKind == null || s.txn_kind === incoming.txnKind)
+    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+  return twins.length > 0 ? { id: twins[0].id, status: twins[0].status } : null;
+}
+
 
 /**
  * الوقت دلوقتي بتوقيت العميل — للـsnapshot. من غيره «فكّريني بكرة الساعة ٥» كان الموديل
