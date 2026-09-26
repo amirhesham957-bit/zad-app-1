@@ -793,8 +793,11 @@ export async function morningFacts(
   const dayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
   const dayEnd = new Date(new Date(dayStart).getTime() + 86_400_000).toISOString();
   const [meds, appts, budget, challenge] = await Promise.all([
-    sb.from("zad_pharmacy_items").select("name,dose_times").eq("user_id", userId).not("dose_times", "is", null).limit(6)
-      .then((r) => (r.data ?? []) as Array<{ name: string; dose_times: string | null }>, () => []),
+    // الأدوية اللي لسه فيها بس (زي goodNightFacts ومولّد تذكيرات الجرعات): دوا رصيده صفر
+    // كان بيتقال في تحية الصبح «خد المضاد» بعد ما الكورس خلص — بيانات وهمية (٢٠٢٦-٠٩-٢٥).
+    sb.from("zad_pharmacy_items").select("name,dose_times,remaining_quantity").eq("user_id", userId).not("dose_times", "is", null).limit(10)
+      .then((r) => ((r.data ?? []) as Array<{ name: string; dose_times: string | null; remaining_quantity: number | null }>)
+        .filter((m) => m.remaining_quantity === null || m.remaining_quantity > 0).slice(0, 6), () => []),
     sb.from("zad_appointments").select("title,starts_at,place_label").eq("user_id", userId).eq("status", "upcoming")
       .gte("starts_at", dayStart).lt("starts_at", dayEnd).order("starts_at", { ascending: true }).limit(5)
       .then((r) => (r.data ?? []) as Array<Record<string, unknown>>, () => []),
