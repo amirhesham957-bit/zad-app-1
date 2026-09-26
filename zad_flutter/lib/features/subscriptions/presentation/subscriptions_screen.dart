@@ -1,25 +1,32 @@
-/// Subscriptions, bills, instalments and the rent — the charges the budget
-/// reserves money for before they arrive.
+/// Kotlin's `SubscriptionsScreen` (`ui/screens/SubscriptionsScreen.kt`): the
+/// «أقساط واشتراكات وفواتير» tab — the active/all chips, «إجمالي الاشتراكات
+/// الشهرية» banner, the four segmented tabs, the brand-coloured rows with
+/// «تم الدفع ✓» and the four quiet icons, and `AddEditSubscriptionDialog`.
+///
+/// Not here, by the owner's standing decision on automatic model calls:
+/// Kotlin's `detectSubscriptions()` on open (and the «زاد يبحث عن اشتراكاتك»
+/// banner and pending-confirmation section that belong to it), and
+/// `classifyBill` while the name is typed. The category still follows the
+/// preset or the kind, as Kotlin's save does.
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat, NumberFormat;
-import 'package:zad/core/money/money.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/design/foundation/compose_shadow.dart';
+import 'package:zad/design/tokens/zad_extended_colors.dart';
+import 'package:zad/design/tokens/zad_palette.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/subscriptions/domain/renewal.dart';
 import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
 
 /// Opens the screen.
 Future<void> showSubscriptionsScreen(BuildContext context) =>
@@ -27,70 +34,48 @@ Future<void> showSubscriptionsScreen(BuildContext context) =>
       MaterialPageRoute<void>(builder: (_) => const SubscriptionsScreen()),
     );
 
-/// The kinds a customer picks from, and what each writes.
-///
-/// `type` and `category` are **stored values** (CLAUDE.md i18n rule): the
-/// Kotlin screen filters on exactly these strings, so they stay Arabic and
-/// unchanged whatever the interface language.
-const List<({String label, String type, String category, IconData icon})>
-kSubscriptionKinds =
-    <({String label, String type, String category, IconData icon})>[
-      (
-        label: 'اشتراك',
-        type: SubscriptionType.subscription,
-        category: 'اشتراك',
-        icon: ZadIcons.recurring,
-      ),
-      (
-        label: 'فاتورة',
-        type: SubscriptionType.utility,
-        category: 'فواتير',
-        icon: ZadIcons.bill,
-      ),
-      (
-        label: 'قسط',
-        type: SubscriptionType.installment,
-        category: 'أقساط',
-        icon: ZadIcons.card,
-      ),
-      (
-        label: 'إيجار',
-        type: SubscriptionType.rent,
-        category: 'سكن',
-        icon: ZadIcons.home,
-      ),
-    ];
+String _money(double amount, String symbol) {
+  final pattern = amount % 1 == 0 ? '#,##0' : '#,##0.##';
+  return '${NumberFormat(pattern, 'en').format(amount)} $symbol'.trim();
+}
 
-IconData _iconOf(String type) => switch (type) {
-  SubscriptionType.utility || SubscriptionType.bill => ZadIcons.bill,
-  SubscriptionType.installment => ZadIcons.card,
-  SubscriptionType.rent => ZadIcons.home,
-  _ => ZadIcons.recurring,
-};
-
+/// Kotlin's `billingCycleLabel`.
 String _cycleLabel(BillingCycle cycle) => switch (cycle) {
-  BillingCycle.monthly => 'شهري',
   BillingCycle.yearly => 'سنوي',
   BillingCycle.weekly => 'أسبوعي',
+  BillingCycle.monthly => 'شهري',
 };
 
-String _money(double amount) => NumberFormat('#,##0.##', 'en').format(amount);
+/// Kotlin's tab filters. `type` and `category` are stored values.
+bool _inTab(Subscription s, int tab) => switch (tab) {
+  1 => s.type == 'subscription' || s.category == 'اشتراك',
+  2 => s.category == 'فواتير' || s.type == 'bill' || s.type == 'utility',
+  3 =>
+    s.category == 'الأقساط' ||
+        s.category == 'أقساط' ||
+        s.category == 'التزامات' ||
+        s.type == 'installment' ||
+        s.type == 'rent',
+  _ => true,
+};
 
-String _date(DateTime date) => DateFormat('d MMMM', 'ar').format(date);
+/// Rows an old AI detector wrote, which no customer would have: Kotlin's
+/// «مسح الكل» targets.
+bool _isAutoDetected(Subscription s) =>
+    s.category == 'Auto-detected' ||
+    s.category == 'ai_detected' ||
+    ((s.category == 'اشتراك' || s.category == 'فواتير') &&
+        s.title.trim().isEmpty);
 
-/// "النهارده", "بكرة", "بعد ٥ أيام", or the date.
-String _whenLabel(DateTime next, DateTime today) {
-  final days = next.difference(today).inDays;
-  return switch (days) {
-    0 => 'النهارده',
-    1 => 'بكرة',
-    < 8 => 'بعد $days أيام',
-    _ => _date(next),
-  };
+DateTime? _storedRenewal(Subscription s) {
+  final raw = s.renewalDate;
+  if (raw == null || raw.length < 10) return null;
+  final d = DateTime.tryParse(raw.substring(0, 10));
+  return d == null ? null : DateTime.utc(d.year, d.month, d.day);
 }
 
 /// The screen.
-class SubscriptionsScreen extends ConsumerWidget {
+class SubscriptionsScreen extends ConsumerStatefulWidget {
   /// Creates the screen; [embedded] drops the app bar inside the finances
   /// screen's «الاشتراكات والأقساط» tab.
   const new({this.embedded = false, super.key});
@@ -99,554 +84,1202 @@ class SubscriptionsScreen extends ConsumerWidget {
   final bool embedded;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final view = ref.watch(subscriptionsControllerProvider);
-    final controller = ref.read(subscriptionsControllerProvider.notifier);
-    final currency = ref.watch(
-      budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
-    );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: embedded
-            ? null
-            : AppBar(title: const Text('الاشتراكات والفواتير')),
-        // The thumb zone: the one action that adds, bottom corner.
-        floatingActionButton: view.items.isEmpty
-            ? null
-            : FloatingActionButton(
-                onPressed: () => showSubscriptionSheet(context),
-                tooltip: 'ضيف',
-                child: const Icon(ZadIcons.add),
-              ),
-        body: RefreshIndicator(
-          onRefresh: () => controller.refresh(force: true),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: <Widget>[
-              if (view.items.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ZadEmptyState(
-                    icon: view.error != null
-                        ? ZadIcons.failed
-                        : ZadIcons.obligation,
-                    title: view.error != null
-                        ? 'مقدرتش أجيب الاشتراكات'
-                        : 'مفيش اشتراكات ولا فواتير لسه',
-                    message: view.error != null
-                        ? 'اسحب لتحت نجرب تاني.'
-                        : 'ضيف نتفليكس، الكهربا، أو القسط — وزاد هيحجز '
-                              'فلوسهم من ميزانيتك قبل ما ييجوا.',
-                    tone: view.error != null
-                        ? ZadEmptyTone.problem
-                        : ZadEmptyTone.calm,
-                    action: FilledButton.icon(
-                      onPressed: () => showSubscriptionSheet(context),
-                      icon: const Icon(ZadIcons.add),
-                      label: const Text('ضيف أول واحد'),
-                    ),
-                  ),
-                )
-              else ...<Widget>[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    ZadSpacing.gutter,
-                    ZadSpacing.md,
-                    ZadSpacing.gutter,
-                    0,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: _Summary(view: view, currency: currency),
-                  ),
-                ),
-                SliverPadding(
-                  // Room under the last row for the button that floats over
-                  // it, so the bottom row is never under a thumb-sized circle.
-                  padding: const EdgeInsets.fromLTRB(
-                    ZadSpacing.gutter,
-                    ZadSpacing.lg,
-                    ZadSpacing.gutter,
-                    ZadSpacing.xxl * 2,
-                  ),
-                  sliver: SliverList.separated(
-                    itemCount: view.items.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: ZadSpacing.sm),
-                    itemBuilder: (context, i) => _Row(
-                      sub: view.items[i],
-                      today: view.today,
-                      currency: currency,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  ConsumerState<SubscriptionsScreen> createState() => _SubsState();
 }
 
-/// What the running charges cost a month.
-class _Summary extends StatelessWidget {
-  const new({required this.view, required this.currency});
+class _SubsState extends ConsumerState<SubscriptionsScreen> {
+  int _tab = 0;
+  bool _showInactive = false;
 
-  final SubscriptionsView view;
-  final String currency;
+  static const List<String> _tabs = <String>[
+    'الكل',
+    'اشتراكات',
+    'فواتير',
+    'أقساط',
+  ];
+
+  Future<void> _clearDetected(List<Subscription> targets) async {
+    final controller = ref.read(subscriptionsControllerProvider.notifier);
+    for (final s in targets) {
+      await controller.remove(s);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final running = view.active.length;
-    return ZadCard(
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'في الشهر',
-                  style: ZadType.labelMedium.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
-                ),
-                const SizedBox(height: ZadSpacing.xs),
-                Text(
-                  '${_money(view.monthlyTotal)} $currency'.trim(),
-                  style: ZadType.headlineMedium,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            running == 1 ? 'واحد شغّال' : '$running شغّالين',
-            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
-          ),
-        ],
-      ),
+    final scheme = Theme.of(context).colorScheme;
+    final ext = context.zadExt;
+    final view = ref.watch(subscriptionsControllerProvider);
+    final controller = ref.read(subscriptionsControllerProvider.notifier);
+    final symbol = ref.watch(
+      budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
     );
-  }
-}
+    final today = view.today;
+    final active = view.items.where((s) => s.isActive).toList();
+    final totalMonthly = active.fold<double>(0, (sum, s) => sum + s.amount);
+    final pool = _showInactive ? view.items : active;
+    final filtered = pool.where((s) => _inTab(s, _tab)).toList()
+      ..sort((a, b) {
+        final byActive = (a.isActive ? 0 : 1).compareTo(b.isActive ? 0 : 1);
+        if (byActive != 0) return byActive;
+        int days(Subscription s) =>
+            s.nextRenewalFrom(today)?.difference(today).inDays ?? 999;
+        return days(a).compareTo(days(b));
+      });
+    final detected = view.items.where(_isAutoDetected).toList();
 
-/// One charge.
-class _Row extends ConsumerWidget {
-  const new({required this.sub, required this.today, required this.currency});
-
-  final Subscription sub;
-  final DateTime today;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final next = sub.isActive ? sub.nextRenewalFrom(today) : null;
-    final when = !sub.isActive
-        ? 'متوقف'
-        : next == null
-        ? 'ميعاده مش محدد'
-        : _whenLabel(next, today);
-    final soon = next != null && next.difference(today).inDays <= 3;
-
-    return Opacity(
-      // Stopped rows stay readable but step back: the eye goes to what is
-      // going to take money, not to what no longer will.
-      opacity: sub.isActive ? 1 : 0.55,
-      child: ZadCard(
-        onTap: () => _showActions(context, ref, sub, today),
-        padding: const EdgeInsets.symmetric(
-          horizontal: ZadSpacing.lg,
-          vertical: ZadSpacing.md,
-        ),
-        child: Row(
+    final list = ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
-            Container(
-              width: kZadMinTapTarget,
-              height: kZadMinTapTarget,
-              alignment: Alignment.center,
-              decoration: ShapeDecoration(
-                color: ZadColors.mint50,
-                shape: zadSquircle(ZadRadii.chip),
-              ),
-              child: Icon(
-                _iconOf(sub.type),
-                size: 20,
-                color: ZadColors.green700,
-              ),
+            _Chip(
+              label: 'النشطة',
+              selected: !_showInactive,
+              selectedColor: scheme.primaryContainer,
+              onTap: () => setState(() => _showInactive = false),
             ),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    sub.title.isEmpty ? 'من غير اسم' : sub.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ZadType.titleSmall,
-                  ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  Text(
-                    when,
-                    style: ZadType.labelSmall.copyWith(
-                      color: soon ? ZadColors.mustardOchre : ZadColors.inkMuted,
-                      fontWeight: soon ? FontWeight.w700 : null,
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(width: 6),
+            _Chip(
+              label: 'الكل',
+              selected: _showInactive,
+              selectedColor: ext.surfaceContainerHigh,
+              onTap: () => setState(() => _showInactive = true),
             ),
-            const SizedBox(width: ZadSpacing.sm),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Text(
-                  '${_money(sub.amount)} $currency'.trim(),
-                  style: ZadType.titleSmall,
-                ),
-                const SizedBox(height: ZadSpacing.xs),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+          ],
+        ),
+        const SizedBox(height: 12),
+        Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: HeroGradientCard.banner(
+                padding: const EdgeInsets.all(20),
+                child: Row(
                   children: <Widget>[
-                    if (sub.isPending) ...<Widget>[
-                      // Saved here, not yet on the server — said, not hidden.
-                      Icon(
-                        ZadIcons.pending,
-                        size: 12,
-                        color: ZadColors.inkMuted,
-                        semanticLabel: 'لسه ما اتبعتش',
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(width: ZadSpacing.xs),
-                    ],
-                    Text(
-                      _cycleLabel(sub.cycle),
-                      style: ZadType.labelSmall.copyWith(
-                        color: ZadColors.inkMuted,
+                      child: const Icon(
+                        Icons.credit_card,
+                        color: Colors.white,
+                        size: 22,
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'إجمالي الاشتراكات الشهرية',
+                            style: ZadType.labelMedium.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              _money(totalMonthly, symbol),
+                              style: ZadType.displayMedium.copyWith(
+                                fontSize: 36,
+                                height: 44 / 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: <Widget>[
+                        Text(
+                          'اشتراكات نشطة',
+                          style: ZadType.labelSmall.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        Text(
+                          '${active.length}',
+                          style: ZadType.titleLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        ZadSegmentedTabs(
+          tabs: _tabs,
+          selectedIndex: _tab,
+          onSelect: (i) => setState(() => _tab = i),
+        ),
+        if (detected.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  '${detected.length} اشتراك مكتشف تلقائياً',
+                  style: ZadType.labelMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => unawaited(_clearDetected(detected)),
+                  icon: Icon(Icons.auto_delete, size: 16, color: scheme.error),
+                  label: Text(
+                    'مسح الكل',
+                    style: ZadType.labelLarge.copyWith(color: scheme.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        if (filtered.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: KtEmptyState(
+              icon: Icons.credit_card,
+              title: _tab == 0
+                  ? 'لا توجد اشتراكات'
+                  : 'لا توجد عناصر في هذا التصنيف',
+            ),
+          )
+        else
+          for (final (i, sub) in filtered.indexed) ...<Widget>[
+            if (i > 0) const SizedBox(height: 12),
+            _ListItemEnter(
+              key: ValueKey<String>(sub.id),
+              index: i,
+              child: SubscriptionCardFull(
+                sub: sub,
+                today: today,
+                symbol: symbol,
+                onToggleActive: () =>
+                    unawaited(controller.setActive(sub, active: !sub.isActive)),
+                onToggleAutoDeduct: () => unawaited(
+                  controller.save(sub.copyWith(autoDeduct: !sub.autoDeduct)),
+                ),
+                onEdit: () => unawaited(
+                  showAddEditSubscriptionDialog(context, subscription: sub),
+                ),
+                onDelete: () => unawaited(controller.remove(sub)),
+                onMarkAsPaid: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  await controller.markPaid(sub);
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'تم تسجيل سداد ${sub.title} وترحيل الموعد للشهر '
+                        'القادم بنجاح',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+      ],
+    );
+
+    final body = Stack(
+      children: <Widget>[
+        Positioned.fill(
+          child: RefreshIndicator(
+            onRefresh: () => controller.refresh(force: true),
+            child: list,
+          ),
+        ),
+        PositionedDirectional(
+          end: 24,
+          bottom: 16,
+          child: SafeArea(
+            child: FloatingActionButton(
+              heroTag: null,
+              onPressed: () =>
+                  unawaited(showAddEditSubscriptionDialog(context)),
+              backgroundColor: scheme.primary,
+              foregroundColor: Colors.white,
+              tooltip: 'إضافة',
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return Scaffold(
+      appBar: widget.embedded
+          ? null
+          : AppBar(title: const Text('الاشتراكات والفواتير')),
+      backgroundColor: widget.embedded ? Colors.transparent : null,
+      body: body,
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.selected,
+    required this.selectedColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 32,
+    child: FilterChip(
+      label: Text(label, style: ZadType.labelSmall),
+      selected: selected,
+      showCheckmark: true,
+      selectedColor: selectedColor,
+      onSelected: (_) => onTap(),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+  );
+}
+
+/// Kotlin's `ZadTransitions.listItemEnter`: a third-height slide up and a
+/// fade, 300ms, 40ms later per row (at most 400ms).
+class _ListItemEnter extends StatefulWidget {
+  const new({required this.index, required this.child, super.key});
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_ListItemEnter> createState() => _ListItemEnterState();
+}
+
+class _ListItemEnterState extends State<_ListItemEnter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _t = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    final delay = math.min(widget.index * 40, 400);
+    unawaited(
+      Future<void>.delayed(Duration(milliseconds: delay), () {
+        if (mounted) _t.forward();
+      }),
+    );
+  }
+
+  @override
+  void dispose() {
+    _t.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _t,
+    builder: (_, child) => FractionalTranslation(
+      translation: Offset(0, (1 - _t.value) / 3),
+      child: Opacity(opacity: _t.value, child: child),
+    ),
+    child: widget.child,
+  );
+}
+
+/// Kotlin's `SubScreenSubscriptionCardFull`: a 4dp urgency stripe, the
+/// brand's tile when the service is known, the name over the renewal line,
+/// and the amount over the yearly cost, «تم الدفع ✓» and four quiet icons.
+class SubscriptionCardFull extends StatelessWidget {
+  /// Creates the card.
+  const new({
+    required this.sub,
+    required this.today,
+    required this.symbol,
+    required this.onToggleActive,
+    required this.onToggleAutoDeduct,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onMarkAsPaid,
+    super.key,
+  });
+
+  /// The row.
+  final Subscription sub;
+
+  /// Today, in the account's zone.
+  final DateTime today;
+
+  /// The currency symbol.
+  final String symbol;
+
+  /// Pause or resume.
+  final VoidCallback onToggleActive;
+
+  /// Auto-deduct on or off.
+  final VoidCallback onToggleAutoDeduct;
+
+  /// Edit.
+  final VoidCallback onEdit;
+
+  /// Delete.
+  final VoidCallback onDelete;
+
+  /// «تم الدفع ✓».
+  final VoidCallback onMarkAsPaid;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final ext = context.zadExt;
+    final next = sub.nextRenewalFrom(today) ?? _storedRenewal(sub);
+    final daysLeft = next?.difference(today).inDays;
+    final brand = subscriptionBrandFor(sub.title, sub.provider);
+    final accent = !sub.isActive
+        ? scheme.outlineVariant
+        : daysLeft != null && daysLeft <= 3
+        ? scheme.error
+        : daysLeft != null && daysLeft <= 7
+        ? scheme.secondary
+        : scheme.primary;
+    final shape = BorderRadius.circular(20);
+
+    Widget quiet(IconData icon, String label, Color tint, VoidCallback onTap) =>
+        Tooltip(
+          message: label,
+          child: InkResponse(
+            onTap: onTap,
+            radius: 14,
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Icon(icon, size: 18, color: tint, semanticLabel: label),
+            ),
+          ),
+        );
+
+    final yearly = switch (sub.billingCycle?.toUpperCase()) {
+      'YEARLY' => sub.amount,
+      'WEEKLY' => sub.amount * 52,
+      _ => sub.amount * 12,
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: shape,
+        boxShadow: composeShadow(
+          elevation: 2,
+          ambient: Colors.black,
+          spot: Colors.black,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: shape,
+        child: Container(
+          decoration: BoxDecoration(
+            color: sub.isActive ? scheme.surface : ext.surfaceContainerLow,
+            borderRadius: shape,
+            border: Border.all(
+              color: sub.isActive
+                  ? scheme.outlineVariant.withValues(alpha: 0.5)
+                  : scheme.outlineVariant,
+            ),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Container(width: 4, color: accent),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        if (brand != null) ...<Widget>[
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: brand.color.withValues(
+                                alpha: sub.isActive ? 0.14 : 0.06,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: composeShadow(
+                                elevation: 2,
+                                ambient: Colors.black,
+                                spot: brand.color.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              brand.icon,
+                              size: 22,
+                              color: brand.color.withValues(
+                                alpha: sub.isActive ? 1 : 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                        ],
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                sub.title,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: sub.isActive
+                                      ? scheme.onSurface
+                                      : scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                switch (daysLeft) {
+                                  null => sub.provider ?? '',
+                                  0 => 'يُجدد اليوم',
+                                  < 0 => 'منتهي منذ ${-daysLeft} يوم',
+                                  _ => 'يُجدد بعد $daysLeft يوم',
+                                },
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      daysLeft != null &&
+                                          daysLeft <= 3 &&
+                                          sub.isActive
+                                      ? scheme.error
+                                      : scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            Text(
+                              _money(sub.amount, symbol),
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: sub.isActive
+                                    ? scheme.onSurface
+                                    : scheme.outlineVariant,
+                              ),
+                            ),
+                            if (sub.isActive) ...<Widget>[
+                              const SizedBox(height: 6),
+                              Text(
+                                '≈ ${_money(yearly, symbol)}/سنة',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Material(
+                                color: scheme.primary.withValues(alpha: 0.12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.35,
+                                    ),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: InkWell(
+                                  onTap: onMarkAsPaid,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 3,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Icon(
+                                          Icons.check_circle,
+                                          size: 12,
+                                          color: scheme.primary,
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          'تم الدفع ✓',
+                                          style: TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: scheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                quiet(
+                                  Icons.bolt,
+                                  'تفعيل/إيقاف الخصم التلقائي',
+                                  sub.autoDeduct
+                                      ? scheme.primary
+                                      : scheme.outlineVariant,
+                                  onToggleAutoDeduct,
+                                ),
+                                const SizedBox(width: 4),
+                                quiet(
+                                  sub.isActive
+                                      ? Icons.pause_circle
+                                      : Icons.play_circle,
+                                  sub.isActive ? 'تعطيل' : 'تفعيل',
+                                  scheme.onSurfaceVariant,
+                                  onToggleActive,
+                                ),
+                                const SizedBox(width: 4),
+                                quiet(
+                                  Icons.edit_note,
+                                  'تعديل الاشتراك',
+                                  scheme.onSurfaceVariant,
+                                  onEdit,
+                                ),
+                                const SizedBox(width: 4),
+                                quiet(
+                                  Icons.delete_outline,
+                                  'حذف',
+                                  scheme.onSurfaceVariant,
+                                  onDelete,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-Future<void> _showActions(
-  BuildContext context,
-  WidgetRef ref,
-  Subscription sub,
-  DateTime today,
-) async {
-  final controller = ref.read(subscriptionsControllerProvider.notifier);
-  final due = sub.isActive ? sub.nextRenewalFrom(today) : null;
+/// Kotlin's `SubscriptionPresetItem`s. Names, providers, categories and types
+/// are stored values.
+typedef _Preset = ({
+  String name,
+  String provider,
+  String category,
+  IconData icon,
+  Color color,
+  String type,
+});
 
-  final action = await showModalBottomSheet<String>(
-    context: context,
-    backgroundColor: ZadColors.surface,
-    shape: zadSquircle(ZadRadii.sheet),
-    builder: (sheet) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const SizedBox(height: ZadSpacing.sm),
-          if (sub.isActive)
-            ListTile(
-              leading: const Icon(ZadIcons.paid, color: ZadColors.green700),
-              // Names the renewal it pays, so "paid" is never a guess about
-              // which month the customer meant.
-              title: Text(due == null ? 'دفعت' : 'دفعت — ${_date(due)}'),
-              subtitle: const Text('بيتسجل مصروف، والتجديد بيتنقل للي بعده'),
-              onTap: () => Navigator.of(sheet).pop('paid'),
-            ),
-          ListTile(
-            leading: const Icon(ZadIcons.edit),
-            title: const Text('عدّل'),
-            onTap: () => Navigator.of(sheet).pop('edit'),
-          ),
-          ListTile(
-            leading: Icon(sub.isActive ? ZadIcons.pause : ZadIcons.resume),
-            title: Text(sub.isActive ? 'وقّفه' : 'شغّله تاني'),
-            subtitle: sub.isActive
-                ? const Text('مش هيتحجزله فلوس لحد ما تشغّله')
-                : null,
-            onTap: () => Navigator.of(sheet).pop('toggle'),
-          ),
-          ListTile(
-            leading: Icon(ZadIcons.delete, color: ZadColors.terracottaRust),
-            title: Text(
-              'امسحه',
-              style: TextStyle(color: ZadColors.terracottaRust),
-            ),
-            onTap: () => Navigator.of(sheet).pop('delete'),
-          ),
-          const SizedBox(height: ZadSpacing.sm),
-        ],
-      ),
-    ),
+final List<_Preset> _presets = <_Preset>[
+  (
+    name: 'Netflix',
+    provider: 'Netflix',
+    category: 'ترفيه',
+    icon: Icons.movie,
+    color: ZadPalette.brandNetflix,
+    type: 'subscription',
+  ),
+  (
+    name: 'Shahid',
+    provider: 'MBC Shahid',
+    category: 'ترفيه',
+    icon: Icons.live_tv,
+    color: ZadPalette.brandShahid,
+    type: 'subscription',
+  ),
+  (
+    name: 'Spotify',
+    provider: 'Spotify',
+    category: 'موسيقى',
+    icon: Icons.music_note,
+    color: ZadPalette.brandSpotify,
+    type: 'subscription',
+  ),
+  (
+    name: 'YouTube Premium',
+    provider: 'Google',
+    category: 'ترفيه',
+    icon: Icons.smart_display,
+    color: ZadPalette.brandYouTube,
+    type: 'subscription',
+  ),
+  (
+    name: 'TOD',
+    provider: 'TOD TV',
+    category: 'رياضة وترفيه',
+    icon: Icons.live_tv,
+    color: ZadPalette.brandTod,
+    type: 'subscription',
+  ),
+  (
+    name: 'Watch IT',
+    provider: 'Watch IT',
+    category: 'ترفيه',
+    icon: Icons.movie,
+    color: ZadPalette.brandWatchIt,
+    type: 'subscription',
+  ),
+  (
+    name: 'تابي Tabby',
+    provider: 'Tabby',
+    category: 'أقساط',
+    icon: Icons.shopping_bag,
+    color: ZadPalette.brandTabby,
+    type: 'installment',
+  ),
+  (
+    name: 'تمارا Tamara',
+    provider: 'Tamara',
+    category: 'أقساط',
+    icon: Icons.shopping_bag,
+    color: ZadPalette.brandTamara,
+    type: 'installment',
+  ),
+  (
+    name: 'فاتورة كهرباء',
+    provider: 'شركة الكهرباء',
+    category: 'فواتير',
+    icon: Icons.bolt,
+    color: ZadPalette.brandElectricity,
+    type: 'utility',
+  ),
+  (
+    name: 'فاتورة مياه',
+    provider: 'شركة المياه',
+    category: 'فواتير',
+    icon: Icons.water_drop,
+    color: ZadPalette.brandWater,
+    type: 'utility',
+  ),
+  (
+    name: 'فاتورة إنترنت',
+    provider: 'شركة الاتصالات',
+    category: 'اتصالات',
+    icon: Icons.wifi,
+    color: ZadPalette.brandInternet,
+    type: 'utility',
+  ),
+  (
+    name: 'إيجار البيت',
+    provider: 'إيجار المنزل',
+    category: 'سكن',
+    icon: Icons.home,
+    color: ZadPalette.brandRent,
+    type: 'rent',
+  ),
+];
+
+/// Kotlin's `parseFlexibleRenewalDate`: Arabic and Persian digits, the
+/// standard patterns, then any three (or two) numbers in a sensible order.
+DateTime? parseFlexibleRenewalDate(String input, {required DateTime today}) {
+  final trimmed = input.trim();
+  if (trimmed.isEmpty) return null;
+  final normalized = String.fromCharCodes(
+    trimmed.runes.map((c) {
+      if (c >= 0x0660 && c <= 0x0669) return 0x30 + c - 0x0660;
+      if (c >= 0x06F0 && c <= 0x06F9) return 0x30 + c - 0x06F0;
+      return c;
+    }),
   );
-  if (!context.mounted || action == null) return;
+  final parts = normalized
+      .split(RegExp('[^0-9]+'))
+      .where((p) => p.isNotEmpty)
+      .map(int.parse)
+      .toList();
 
-  switch (action) {
-    case 'paid':
-      final paid = await controller.markPaid(sub);
-      if (!context.mounted || paid == null) return;
-      final next = paid.subscription.nextRenewalFrom(today);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            next == null || !paid.subscription.isActive
-                ? 'اتسجل مصروف ${_money(sub.amount)}.'
-                : 'اتسجل مصروف ${_money(sub.amount)} — التجديد الجاي '
-                      '${_date(next)}.',
-          ),
-        ),
-      );
-    case 'edit':
-      await showSubscriptionSheet(context, editing: sub);
-    case 'toggle':
-      await controller.setActive(sub, active: !sub.isActive);
-    case 'delete':
-      final sure = await showDialog<bool>(
-        context: context,
-        builder: (dialog) => AlertDialog(
-          title: Text('تمسح «${sub.title}»؟'),
-          content: const Text(
-            'هيتشال من الميزانية ومن القايمة. لو عايزه يرجع بعدين، وقّفه بدل '
-            'ما تمسحه.',
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialog).pop(false),
-              child: const Text('لأ'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialog).pop(true),
-              child: Text(
-                'امسح',
-                style: TextStyle(color: ZadColors.terracottaRust),
-              ),
-            ),
-          ],
-        ),
-      );
-      if (sure ?? false) await controller.remove(sub);
+  DateTime? build(int year, int month, int day) {
+    final y = year.clamp(2000, 2100);
+    final m = month.clamp(1, 12);
+    final maxDay = DateTime.utc(y, m + 1, 0).day;
+    return DateTime.utc(y, m, day.clamp(1, maxDay));
   }
+
+  // The standard patterns (yyyy-MM-dd, dd/MM/yyyy and their one-digit forms)
+  // are the strict cases of the rules below, when every number is in range.
+  bool real(int y, int m, int d) =>
+      m >= 1 && m <= 12 && d >= 1 && d <= DateTime.utc(y, m + 1, 0).day;
+  final standard = RegExp(r'^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$');
+  if (standard.hasMatch(normalized) && parts.length == 3) {
+    final (a, b, c) = (parts[0], parts[1], parts[2]);
+    if (a >= 1000 && real(a, b, c)) return DateTime.utc(a, b, c);
+    if (c >= 1000 && real(c, b, a)) return DateTime.utc(c, b, a);
+  }
+
+  if (parts.length == 3) {
+    final (p0, p1, p2) = (parts[0], parts[1], parts[2]);
+    if (p0 >= 1000) {
+      return p1 > 12 ? build(p0, p2, p1) : build(p0, p1, p2);
+    }
+    if (p2 >= 1000) {
+      if (p0 > 12) return build(p2, p1, p0);
+      if (p1 > 12) return build(p2, p0, p1);
+      return build(p2, p1, p0);
+    }
+    final y = p0 >= 20 && p0 <= 99
+        ? p0 + 2000
+        : p2 >= 20 && p2 <= 99
+        ? p2 + 2000
+        : today.year;
+    if (p0 >= 20 && p0 <= 99 && y == p0 + 2000) return build(y, p1, p2);
+    return build(y, p1, p0);
+  }
+  if (parts.length == 2) {
+    final (p0, p1) = (parts[0], parts[1]);
+    final (day, month) = p0 > 12 ? (p0, p1) : (p1, p0);
+    return build(today.year, month, day);
+  }
+  return null;
 }
 
-/// Opens the add sheet, or the edit sheet for [editing].
-Future<void> showSubscriptionSheet(
+String _iso(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
+    '${d.month.toString().padLeft(2, '0')}-'
+    '${d.day.toString().padLeft(2, '0')}';
+
+/// Opens Kotlin's `AddEditSubscriptionDialog`.
+Future<void> showAddEditSubscriptionDialog(
   BuildContext context, {
-  Subscription? editing,
-}) => showModalBottomSheet<void>(
+  Subscription? subscription,
+}) => showDialog<void>(
   context: context,
-  isScrollControlled: true,
-  backgroundColor: ZadColors.surface,
-  shape: zadSquircle(ZadRadii.sheet),
-  builder: (_) => SubscriptionSheet(editing: editing),
+  builder: (_) => AddEditSubscriptionDialog(subscription: subscription),
 );
 
-/// Adds a charge, or edits one.
-class SubscriptionSheet extends ConsumerStatefulWidget {
-  /// Creates the sheet.
-  const new({this.editing, super.key});
+/// Kotlin's `AddEditSubscriptionDialog`: one form for adding and editing.
+class AddEditSubscriptionDialog extends ConsumerStatefulWidget {
+  /// Creates the dialog.
+  const new({this.subscription, super.key});
 
   /// The row being edited, or null to add one.
-  final Subscription? editing;
+  final Subscription? subscription;
 
   @override
-  ConsumerState<SubscriptionSheet> createState() => _SubscriptionSheetState();
+  ConsumerState<AddEditSubscriptionDialog> createState() => _DialogState();
 }
 
-class _SubscriptionSheetState extends ConsumerState<SubscriptionSheet> {
+class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
+  late final Subscription? _sub = widget.subscription;
   late final TextEditingController _title = TextEditingController(
-    text: widget.editing?.title ?? '',
+    text: _sub?.title ?? '',
   );
   late final TextEditingController _amount = TextEditingController(
-    text: switch (widget.editing?.amount) {
+    text: switch (_sub?.amount) {
       final double a => NumberFormat('0.##', 'en').format(a),
       null => '',
     },
   );
-  late String _type = widget.editing?.type ?? SubscriptionType.subscription;
-  late BillingCycle _cycle = widget.editing?.cycle ?? BillingCycle.monthly;
+  final TextEditingController _total = TextEditingController();
+  final TextEditingController _remaining = TextEditingController();
+  late final TextEditingController _provider = TextEditingController(
+    text: _sub?.provider ?? '',
+  );
+  late final TextEditingController _date = TextEditingController(
+    text: switch (_sub?.renewalDate) {
+      final String d when d.length >= 10 => d.substring(0, 10),
+      final String d => d,
+      null => _iso(ref.read(subscriptionsControllerProvider).today),
+    },
+  );
+  late String _type = _sub?.type ?? 'subscription';
+  late String _category = _sub?.category ?? 'اشتراك';
+  late BillingCycle _cycle = _sub?.cycle ?? BillingCycle.monthly;
 
-  /// A date the customer picked in this sheet. Null means "leave the stored
-  /// one alone" when editing — an old row's `'30 مارس'` is not rewritten just
-  /// because the sheet was opened.
-  DateTime? _renewsOn;
-  bool _saving = false;
+  @override
+  void initState() {
+    super.initState();
+    for (final c in <TextEditingController>[
+      _title,
+      _amount,
+      _provider,
+      _date,
+    ]) {
+      c.addListener(_changed);
+    }
+    _total.addListener(_installments);
+    _remaining.addListener(_installments);
+  }
+
+  void _changed() => setState(() {});
+
+  /// Kotlin: the monthly amount from the total and the count, while the
+  /// amount is still empty.
+  void _installments() {
+    final total = double.tryParse(_total.text);
+    final count = int.tryParse(_remaining.text);
+    if (total != null &&
+        total > 0 &&
+        count != null &&
+        count > 0 &&
+        _amount.text.trim().isEmpty) {
+      final monthly = total / count;
+      _amount.text = monthly == monthly.truncateToDouble()
+          ? monthly.toInt().toString()
+          : monthly.toStringAsFixed(2);
+    }
+  }
 
   @override
   void dispose() {
-    _title.dispose();
-    _amount.dispose();
+    for (final c in <TextEditingController>[
+      _title,
+      _amount,
+      _total,
+      _remaining,
+      _provider,
+      _date,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  double? get _parsedAmount => parseMoneyInput(_amount.text);
-
-  bool get _canSave =>
-      !_saving && _title.text.trim().isNotEmpty && (_parsedAmount ?? 0) > 0;
-
   Future<void> _pickDate() async {
     final today = ref.read(subscriptionsControllerProvider).today;
-    final current =
-        _renewsOn ?? widget.editing?.nextRenewalFrom(today) ?? today;
     final picked = await showDatePicker(
       context: context,
-      initialDate: current,
-      firstDate: today.subtract(const Duration(days: 365)),
-      lastDate: today.add(const Duration(days: 365 * 2)),
-      helpText: 'بيتجدد إمتى؟',
+      initialDate: today,
+      firstDate: DateTime.utc(2000),
+      lastDate: DateTime.utc(2100),
+      confirmText: 'تأكيد',
+      cancelText: 'إلغاء',
     );
     if (picked != null && mounted) {
-      setState(
-        () => _renewsOn = DateTime.utc(picked.year, picked.month, picked.day),
-      );
+      _date.text = _iso(DateTime.utc(picked.year, picked.month, picked.day));
     }
   }
 
-  Future<void> _save() async {
-    final amount = _parsedAmount;
-    if (!_canSave || amount == null) return;
-    setState(() => _saving = true);
-
+  Future<void> _save(DateTime? parsed) async {
+    unawaited(HapticFeedback.heavyImpact());
+    final today = ref.read(subscriptionsControllerProvider).today;
+    final amount = double.tryParse(_amount.text) ?? 0;
+    final date = parsed ?? today;
+    final category = switch (_type) {
+      'installment' =>
+        _category == 'اشتراك' || _category.isEmpty ? 'أقساط' : _category,
+      'utility' =>
+        _category == 'اشتراك' || _category.isEmpty ? 'فواتير' : _category,
+      'rent' =>
+        _category == 'اشتراك' || _category.isEmpty ? 'التزامات' : _category,
+      _ => _category.isEmpty ? 'اشتراك' : _category,
+    };
+    final remaining = _remaining.text.trim();
+    final title =
+        _type == 'installment' &&
+            remaining.isNotEmpty &&
+            !_title.text.contains('قسط')
+        ? '${_title.text.trim()} ($remaining أقساط)'
+        : _title.text.trim();
+    final provider = _provider.text.trim();
     final controller = ref.read(subscriptionsControllerProvider.notifier);
-    final kind = kSubscriptionKinds.firstWhere(
-      (k) => k.type == _type,
-      orElse: () => kSubscriptionKinds.first,
-    );
-    final editing = widget.editing;
-    final picked = _renewsOn;
-
-    if (editing == null) {
+    final navigator = Navigator.of(context);
+    final existing = _sub;
+    if (existing == null) {
       await controller.add(
-        title: _title.text,
+        title: title,
         amount: amount,
         cycle: _cycle,
-        renewsOn: picked,
-        category: kind.category,
+        renewsOn: date,
+        category: category,
         type: _type,
+        provider: provider,
       );
     } else {
       await controller.save(
-        editing.copyWith(
-          title: _title.text.trim(),
+        existing.copyWith(
+          title: title,
           amount: amount,
+          renewalDate: _iso(date),
+          dueDay: date.day,
+          provider: provider,
+          category: category,
+          billingCycle: _cycle.wireName,
           type: _type,
-          // The category follows the kind only when the kind changed; a
-          // customer's own category on an unchanged row is theirs.
-          category: _type == editing.type ? null : kind.category,
-          // Only rewritten when changed: `copyWith` keeps what it is not
-          // given, so a row written as `ANNUAL` stays `ANNUAL`.
-          billingCycle: _cycle == editing.cycle ? null : _cycle.wireName,
-          renewalDate: picked == null ? null : isoDate(picked),
-          dueDay: picked?.day,
         ),
       );
     }
-    if (mounted) Navigator.of(context).pop();
+    navigator.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final today = ref.watch(
       subscriptionsControllerProvider.select((v) => v.today),
     );
-    final shownDate = _renewsOn ?? widget.editing?.nextRenewalFrom(today);
+    final symbol = ref.watch(
+      budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
+    );
+    final amount = double.tryParse(_amount.text);
+    final parsed = parseFlexibleRenewalDate(_date.text, today: today);
+    final canSave =
+        _title.text.trim().isNotEmpty &&
+        amount != null &&
+        amount > 0 &&
+        parsed != null;
+    final sectionLabel = ZadType.labelSmall.copyWith(
+      color: scheme.onSurfaceVariant,
+      fontWeight: FontWeight.w600,
+    );
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(ZadSpacing.xl),
+    return AlertDialog(
+      title: Text(
+        _sub == null ? 'إضافة اشتراك جديد' : 'تعديل الاشتراك',
+        style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.bold),
+      ),
+      content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              widget.editing == null ? 'ضيف اشتراك أو فاتورة' : 'تعديل',
-              style: ZadType.titleMedium,
+            Text('الخدمات والاشتراكات المقترحة:', style: sectionLabel),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _presets.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) {
+                  final p = _presets[i];
+                  final on = _title.text == p.name;
+                  return Material(
+                    color: on
+                        ? p.color.withValues(alpha: 0.18)
+                        : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: on
+                            ? p.color
+                            : scheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        unawaited(HapticFeedback.selectionClick());
+                        setState(() {
+                          _title.text = p.name;
+                          _provider.text = p.provider;
+                          _category = p.category;
+                          _type = p.type;
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: p.color.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(p.icon, size: 14, color: p.color),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              p.name,
+                              style: ZadType.labelSmall.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: scheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: ZadSpacing.lg),
+            const SizedBox(height: 14),
+            Text('تصنيف الالتزام:', style: sectionLabel),
+            const SizedBox(height: 12),
             Wrap(
-              spacing: ZadSpacing.sm,
-              runSpacing: ZadSpacing.sm,
+              spacing: 6,
               children: <Widget>[
-                for (final kind in kSubscriptionKinds)
-                  ChoiceChip(
-                    avatar: Icon(kind.icon, size: 16),
-                    label: Text(kind.label),
-                    selected: kind.type == _type,
-                    onSelected: (_) => setState(() => _type = kind.type),
+                for (final (key, label) in const <(String, String)>[
+                  ('subscription', 'اشتراك شهري'),
+                  ('installment', 'قسط'),
+                  ('utility', 'فاتورة'),
+                  ('rent', 'التزام'),
+                ])
+                  FilterChip(
+                    selected: _type == key,
+                    onSelected: (_) => setState(() => _type = key),
+                    label: Text(label, style: ZadType.labelSmall),
                   ),
               ],
             ),
-            const SizedBox(height: ZadSpacing.lg),
-            TextField(
-              controller: _title,
-              autofocus: widget.editing == null,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'الاسم',
-                hintText: 'نتفليكس، الكهربا، قسط الموبايل…',
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-            TextField(
-              controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'المبلغ كل مرة'),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: ZadSpacing.lg),
-            SegmentedButton<BillingCycle>(
-              segments: <ButtonSegment<BillingCycle>>[
-                for (final cycle in BillingCycle.values)
-                  ButtonSegment<BillingCycle>(
-                    value: cycle,
-                    label: Text(_cycleLabel(cycle)),
+            if (_type == 'installment') ...<Widget>[
+              const SizedBox(height: 12),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      controller: _total,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'إجمالي المبلغ',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
                   ),
-              ],
-              selected: <BillingCycle>{_cycle},
-              onSelectionChanged: (s) => setState(() => _cycle = s.first),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-            OutlinedButton.icon(
-              onPressed: _pickDate,
-              icon: const Icon(ZadIcons.obligation),
-              label: Text(
-                shownDate == null
-                    ? 'بيتجدد إمتى؟ (اختياري)'
-                    : 'بيتجدد ${_date(shownDate)}',
-              ),
-            ),
-            if (shownDate == null) ...<Widget>[
-              const SizedBox(height: ZadSpacing.xs),
-              Text(
-                // Said here because it is the one consequence of skipping the
-                // field that the customer would not guess.
-                'من غير ميعاد، زاد مش هيعرف يحجزله فلوس من الميزانية.',
-                style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _remaining,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'الأقساط المتبقية',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-            const SizedBox(height: ZadSpacing.xl),
-            FilledButton(
-              onPressed: _canSave ? _save : null,
-              child: const Text('احفظ'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _title,
+              decoration: const InputDecoration(
+                labelText: 'اسم الاشتراك (مثال: Netflix)',
+                border: OutlineInputBorder(),
+              ),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amount,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'المبلغ ($symbol)',
+                border: const OutlineInputBorder(),
+                errorText:
+                    _amount.text.trim().isNotEmpty &&
+                        (amount == null || amount <= 0)
+                    ? ''
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _provider,
+              decoration: const InputDecoration(
+                labelText: 'مزود الخدمة',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _date,
+              decoration: InputDecoration(
+                labelText: 'تاريخ التجديد (YYYY-MM-DD)',
+                hintText: 'YYYY-MM-DD',
+                border: const OutlineInputBorder(),
+                errorText: _date.text.trim().isNotEmpty && parsed == null
+                    ? ''
+                    : null,
+                suffixIcon: IconButton(
+                  tooltip: 'اختر التاريخ',
+                  onPressed: () => unawaited(_pickDate()),
+                  icon: Icon(Icons.calendar_month, color: scheme.primary),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'دورة الفوترة',
+              style: ZadType.labelMedium.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                for (final cycle in const <BillingCycle>[
+                  BillingCycle.monthly,
+                  BillingCycle.yearly,
+                  BillingCycle.weekly,
+                ])
+                  FilterChip(
+                    selected: _cycle == cycle,
+                    onSelected: (_) => setState(() => _cycle = cycle),
+                    label: Text(_cycleLabel(cycle), style: ZadType.labelSmall),
+                  ),
+              ],
+            ),
+            if (_title.text.length >= 3) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                'الفئة المقترحة: $_category',
+                style: ZadType.labelSmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: canSave ? () => unawaited(_save(parsed)) : null,
+          style: FilledButton.styleFrom(shape: const StadiumBorder()),
+          child: const Text('حفظ'),
+        ),
+      ],
     );
   }
 }

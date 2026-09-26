@@ -383,3 +383,87 @@ class KtEmptyState extends StatelessWidget {
     );
   }
 }
+
+/// Kotlin's `ZadSegmentedTabs` (`ZadShell.kt`): a surface pill track with a
+/// hairline and the card shadow, 4dp inset; the chosen segment is filled with
+/// primary and white 12sp bold text. More than three tabs scroll.
+class ZadSegmentedTabs extends StatelessWidget {
+  /// Creates the tabs.
+  const new({
+    required this.tabs,
+    required this.selectedIndex,
+    required this.onSelect,
+    this.margin = const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    super.key,
+  });
+
+  /// The labels.
+  final List<String> tabs;
+
+  /// The chosen one.
+  final int selectedIndex;
+
+  /// Picks one.
+  final ValueChanged<int> onSelect;
+
+  /// Kotlin's default modifier padding.
+  final EdgeInsetsGeometry margin;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final scrollable = tabs.length > 3;
+
+    Widget segment(int i) {
+      final selected = i == selectedIndex;
+      return Material(
+        color: selected ? scheme.primary : Colors.transparent,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => onSelect(i),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            child: Text(
+              tabs[i],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: selected ? Colors.white : scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final children = <Widget>[
+      for (var i = 0; i < tabs.length; i++) ...<Widget>[
+        if (i > 0) const SizedBox(width: 6),
+        if (scrollable) segment(i) else Expanded(child: segment(i)),
+      ],
+    ];
+    return Padding(
+      padding: margin,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: scheme.outline, width: 0.5),
+          boxShadow: kZadCardShadow,
+        ),
+        child: scrollable
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: children),
+              )
+            : Row(children: children),
+      ),
+    );
+  }
+}
