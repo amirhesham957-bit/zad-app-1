@@ -49,7 +49,7 @@ Future<bool> confirmAndSendSos(BuildContext context, WidgetRef ref) async {
   final sure = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      icon: const Icon(ZadIcons.sos, color: ZadColors.terracottaRust),
+      icon: Icon(ZadIcons.sos, color: ZadColors.terracottaRust),
       title: const Text('تأكيد نداء الطوارئ'),
       content: const Text(
         'هيتبعت تنبيه فوري لكل أفراد العائلة إنك محتاج مساعدة. متأكد؟',

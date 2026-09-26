@@ -539,7 +539,7 @@ class _MedicineCard extends ConsumerWidget {
                             ),
                             shape: BoxShape.circle,
                           ),
-                          child: const SizedBox.square(
+                          child: SizedBox.square(
                             dimension: 40,
                             child: Icon(
                               ZadIcons.pharmacy,
@@ -573,7 +573,7 @@ class _MedicineCard extends ConsumerWidget {
                           onPressed: () =>
                               unawaited(_confirmDelete(context, ref, medicine)),
                           tooltip: 'حذف',
-                          icon: const Icon(
+                          icon: Icon(
                             ZadIcons.delete,
                             size: 18,
                             color: ZadColors.terracottaRust,
@@ -625,7 +625,7 @@ class _MedicineCard extends ConsumerWidget {
                             onTap: () => unawaited(
                               _showConfirmQuantity(context, ref, medicine),
                             ),
-                            child: const _Badge(
+                            child: _Badge(
                               text: 'الكمية محتاجة تأكيد',
                               color: ZadColors.mustardOchre,
                             ),

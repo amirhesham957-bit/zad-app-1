@@ -107,7 +107,7 @@ class SubscriptionsScreen extends ConsumerWidget {
     );
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: embedded
@@ -312,7 +312,7 @@ class _Row extends ConsumerWidget {
                   children: <Widget>[
                     if (sub.isPending) ...<Widget>[
                       // Saved here, not yet on the server — said, not hidden.
-                      const Icon(
+                      Icon(
                         ZadIcons.pending,
                         size: 12,
                         color: ZadColors.inkMuted,
@@ -378,11 +378,8 @@ Future<void> _showActions(
             onTap: () => Navigator.of(sheet).pop('toggle'),
           ),
           ListTile(
-            leading: const Icon(
-              ZadIcons.delete,
-              color: ZadColors.terracottaRust,
-            ),
-            title: const Text(
+            leading: Icon(ZadIcons.delete, color: ZadColors.terracottaRust),
+            title: Text(
               'امسحه',
               style: TextStyle(color: ZadColors.terracottaRust),
             ),
@@ -430,7 +427,7 @@ Future<void> _showActions(
             ),
             TextButton(
               onPressed: () => Navigator.of(dialog).pop(true),
-              child: const Text(
+              child: Text(
                 'امسح',
                 style: TextStyle(color: ZadColors.terracottaRust),
               ),

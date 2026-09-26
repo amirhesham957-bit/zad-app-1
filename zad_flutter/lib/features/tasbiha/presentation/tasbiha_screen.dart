@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -31,7 +30,7 @@ Future<void> showTasbihaScreen(BuildContext context) => Navigator.of(context)
 const Color _green = Color(0xFF2E7D32);
 const Color _gold = Color(0xFFFFD700);
 const Color _lilac = Color(0xFF9C27B0);
-const Color _coral = ZadColors.terracottaRust;
+Color get _coral => ZadColors.terracottaRust;
 const Color _primary = ZadColors.green700;
 
 /// The garden.
@@ -262,7 +261,7 @@ class _SplashState extends State<_Splash> with TickerProviderStateMixin {
                               setState(() => _pressed = true);
                               widget.onEnter();
                             },
-                            icon: const Icon(LucideIcons.play, size: 28),
+                            icon: const Icon(Icons.play_arrow, size: 28),
                             label: const Text(
                               'ادخل البستان',
                               style: TextStyle(
@@ -302,7 +301,7 @@ class _MainState extends ConsumerState<_Main> {
     final view = ref.watch(tasbihaControllerProvider);
     final total = view.myTrees.fold<int>(0, (s, t) => s + t.score);
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('تسبيحة')),
@@ -957,7 +956,7 @@ class _TreeDisplayState extends State<_TreeDisplay>
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(
-                              LucideIcons.partyPopper,
+                              Icons.celebration,
                               size: 20,
                               color: _primary,
                             ),
@@ -1152,14 +1151,14 @@ class _RingPainter extends CustomPainter {
       sweep,
       false,
       Paint()
-        ..shader = const SweepGradient(
+        ..shader = SweepGradient(
           colors: <Color>[
             _primary,
             ZadColors.green600,
             ZadColors.mustardOchre,
             _primary,
           ],
-          transform: GradientRotation(-math.pi / 2),
+          transform: const GradientRotation(-math.pi / 2),
         ).createShader(rect)
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
@@ -1193,12 +1192,16 @@ class _Stats extends StatelessWidget {
       _StatCard(
         label: 'إجمالي',
         value: '${tree.totalClicks}',
-        icon: const Icon(LucideIcons.pointer, size: 20),
+        icon: const Icon(Icons.touch_app, size: 20),
       ),
       _StatCard(
         label: 'السلسلة',
         value: '${tree.streakDays}',
-        icon: const Icon(LucideIcons.flame, size: 20, color: Color(0xFFFF5722)),
+        icon: const Icon(
+          Icons.local_fire_department,
+          size: 20,
+          color: Color(0xFFFF5722),
+        ),
       ),
     ],
   );
@@ -1547,7 +1550,7 @@ class _ChallengesTab extends ConsumerWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            const Icon(LucideIcons.target, size: 24, color: _primary),
+            const Icon(Icons.track_changes, size: 24, color: _primary),
             const SizedBox(width: ZadSpacing.sm),
             Expanded(
               child: Text(
@@ -1572,7 +1575,7 @@ class _ChallengesTab extends ConsumerWidget {
         const SizedBox(height: ZadSpacing.lg),
         if (view.challenges.isEmpty)
           ZadEmptyState(
-            icon: LucideIcons.target,
+            icon: Icons.track_changes,
             title: 'لا توجد تحديات حالياً',
             message: isAdmin
                 ? 'اضغط + وابدأ أول تحدي للعيلة.'

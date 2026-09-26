@@ -55,7 +55,7 @@ Widget _avatar(FamilyMember m, {double size = 56}) => Container(
       end: Alignment.bottomCenter,
       colors: m.role == FamilyRole.admin
           ? const <Color>[ZadColors.green700, ZadColors.green600]
-          : const <Color>[ZadColors.mustardOchre, ZadColors.mustardLight],
+          : <Color>[ZadColors.mustardOchre, ZadColors.mustardLight],
     ),
   ),
   child: Text(
@@ -479,7 +479,7 @@ class _MemberCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(ZadIcons.forward, color: ZadColors.inkMuted),
+              Icon(ZadIcons.forward, color: ZadColors.inkMuted),
             ],
           ),
           if (showFinancials && goal > 0) ...<Widget>[
@@ -754,11 +754,7 @@ class _MemberSheet extends ConsumerWidget {
             const SizedBox(height: ZadSpacing.lg),
             Row(
               children: <Widget>[
-                const Icon(
-                  ZadIcons.wallet,
-                  size: 18,
-                  color: ZadColors.mustardOchre,
-                ),
+                Icon(ZadIcons.wallet, size: 18, color: ZadColors.mustardOchre),
                 const SizedBox(width: 6),
                 const Expanded(
                   child: Text('حد الإنفاق', style: ZadType.titleSmall),
@@ -834,7 +830,7 @@ class _MemberSheet extends ConsumerWidget {
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(c).pop(true),
-                        child: const Text(
+                        child: Text(
                           'شيله',
                           style: TextStyle(color: ZadColors.terracottaRust),
                         ),
@@ -1268,7 +1264,7 @@ class _KidCard extends ConsumerWidget {
                   for (final r in pending)
                     Row(
                       children: <Widget>[
-                        const Icon(
+                        Icon(
                           ZadIcons.wallet,
                           size: 14,
                           color: ZadColors.mustardOchre,
@@ -1394,7 +1390,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                       padding: const EdgeInsets.only(top: ZadSpacing.sm),
                       child: Row(
                         children: <Widget>[
-                          const Icon(
+                          Icon(
                             ZadIcons.gift,
                             size: 14,
                             color: ZadColors.inkMuted,
@@ -1572,11 +1568,7 @@ class FamilyGoalsTab extends ConsumerWidget {
               const SizedBox(height: 6),
               Row(
                 children: <Widget>[
-                  const Icon(
-                    ZadIcons.gift,
-                    size: 14,
-                    color: ZadColors.inkMuted,
-                  ),
+                  Icon(ZadIcons.gift, size: 14, color: ZadColors.inkMuted),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(

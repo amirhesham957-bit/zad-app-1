@@ -8,7 +8,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
@@ -158,12 +157,12 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       actions: <Widget>[
         IconButton(
           tooltip: 'سجل الأعطال',
-          icon: const Icon(LucideIcons.bug, color: ZadColors.inkMuted),
+          icon: Icon(Icons.bug_report, color: ZadColors.inkMuted),
           onPressed: () => unawaited(_crashLog()),
         ),
       ],
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
         child: Divider(height: 1, color: ZadColors.outlineVariant),
       ),
     ),
@@ -209,7 +208,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
+                          borderSide: BorderSide(
                             color: ZadColors.outlineVariant,
                           ),
                         ),
@@ -262,7 +261,7 @@ class _AgentBadge extends StatelessWidget {
           : ZadColors.green700.withValues(alpha: 0.1),
     ),
     child: Icon(
-      LucideIcons.headset,
+      Icons.support_agent,
       size: size * 0.55,
       color: filled ? Colors.white : ZadColors.green700,
     ),

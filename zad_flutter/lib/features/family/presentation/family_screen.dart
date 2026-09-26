@@ -50,7 +50,7 @@ class FamilyScreen extends ConsumerWidget {
     );
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: switch (view.status) {
         InFamily(:final family) => _ActiveFamily(
           family: family,

@@ -46,7 +46,15 @@ enum HouseholdSection {
 /// The household screen.
 class HouseholdScreen extends StatefulWidget {
   /// Creates the screen, open on [initialSection].
-  const new({this.initialSection = HouseholdSection.pantry, super.key});
+  const new({
+    this.initialSection = HouseholdSection.pantry,
+    this.embedded = false,
+    super.key,
+  });
+
+  /// Shown as the shell's المخزون tab, under the shell's own header — so
+  /// without an app bar of its own, as Kotlin's inventory route has none.
+  final bool embedded;
 
   /// The section showing first — the pantry in the tab; another one when a
   /// screen elsewhere (the knowledge map) opens the household on it.
@@ -68,24 +76,26 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('البيت'),
-        actions: <Widget>[
-          IconButton(
-            onPressed: () => showPricesScreen(context),
-            icon: const Icon(ZadIcons.prices),
-            tooltip: 'الأسعار',
-          ),
-          IconButton(
-            onPressed: () => showFamilyScreen(context),
-            icon: const Icon(ZadIcons.family),
-            tooltip: 'العيلة',
-          ),
-        ],
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: const Text('البيت'),
+              actions: <Widget>[
+                IconButton(
+                  onPressed: () => showPricesScreen(context),
+                  icon: const Icon(ZadIcons.prices),
+                  tooltip: 'الأسعار',
+                ),
+                IconButton(
+                  onPressed: () => showFamilyScreen(context),
+                  icon: const Icon(ZadIcons.family),
+                  tooltip: 'العيلة',
+                ),
+              ],
+            ),
       floatingActionButton: _section == HouseholdSection.pantry
           ? Column(
               mainAxisSize: MainAxisSize.min,

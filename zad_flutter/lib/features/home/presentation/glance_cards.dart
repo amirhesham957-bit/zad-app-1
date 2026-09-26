@@ -146,13 +146,13 @@ class _Bar extends StatelessWidget {
     required this.value,
     required this.gradient,
     this.height = 6,
-    this.track = ZadColors.outlineVariant,
+    this.track,
   });
 
   final double value;
   final List<Color> gradient;
   final double height;
-  final Color track;
+  final Color? track;
 
   @override
   Widget build(BuildContext context) => ClipRRect(
@@ -161,7 +161,9 @@ class _Bar extends StatelessWidget {
       height: height,
       child: Stack(
         children: <Widget>[
-          Positioned.fill(child: ColoredBox(color: track)),
+          Positioned.fill(
+            child: ColoredBox(color: track ?? ZadColors.outlineVariant),
+          ),
           FractionallySizedBox(
             alignment: AlignmentDirectional.centerStart,
             widthFactor: value.clamp(0, 1),
@@ -323,12 +325,12 @@ class _LowPill extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const DecoratedBox(
+        DecoratedBox(
           decoration: BoxDecoration(
             color: ZadColors.terracottaRust,
             shape: BoxShape.circle,
           ),
-          child: SizedBox.square(dimension: 7),
+          child: const SizedBox.square(dimension: 7),
         ),
         const SizedBox(width: 6),
         Text(
@@ -364,10 +366,10 @@ class _FoodTile extends StatelessWidget {
     final days = item.daysUntilExpiry(today);
     final soon = days != null && days <= 4;
     final gradient = isLow
-        ? const <Color>[ZadColors.terracottaRust, ZadColors.terracottaRust]
+        ? <Color>[ZadColors.terracottaRust, ZadColors.terracottaRust]
         : soon
-        ? const <Color>[ZadColors.mustardOchre, ZadColors.mustardLight]
-        : const <Color>[ZadColors.forestEmerald, ZadColors.forestLight];
+        ? <Color>[ZadColors.mustardOchre, ZadColors.mustardLight]
+        : <Color>[ZadColors.forestEmerald, ZadColors.forestLight];
     // Kotlin printed the quantity as a number of days ("متبقي 3 أيام" for
     // three cartons). The expiry, when known, is the days; otherwise the
     // line says what is actually left.
@@ -467,7 +469,7 @@ class _FoodTile extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        const Icon(
+                        Icon(
                           ZadIcons.shopping,
                           size: 14,
                           color: ZadColors.forestEmerald,
@@ -744,7 +746,7 @@ class _NextDose extends StatelessWidget {
               color: ZadColors.terracottaRust.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const SizedBox.square(
+            child: SizedBox.square(
               dimension: 28,
               child: Icon(
                 ZadIcons.pharmacy,
@@ -854,7 +856,7 @@ class SubscriptionsGlanceCard extends ConsumerWidget {
   /// Creates the card.
   const new({super.key});
 
-  static const List<Color> _accents = <Color>[
+  static List<Color> get _accents => <Color>[
     ZadColors.info,
     ZadColors.forestEmerald,
     ZadColors.mustardOchre,
@@ -964,7 +966,7 @@ class _NextRenewal extends StatelessWidget {
             color: ZadColors.info.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
-          child: const SizedBox.square(
+          child: SizedBox.square(
             dimension: 26,
             child: Icon(ZadIcons.duration, size: 14, color: ZadColors.info),
           ),

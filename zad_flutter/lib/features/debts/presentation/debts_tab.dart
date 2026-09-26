@@ -11,7 +11,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
@@ -488,7 +487,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                     IconButton(
                       tooltip: 'حذف الدين',
                       onPressed: () => unawaited(_delete(s.debt)),
-                      icon: const Icon(
+                      icon: Icon(
                         ZadIcons.delete,
                         size: 18,
                         color: ZadColors.terracottaRust,
@@ -727,7 +726,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                     color: ZadColors.info.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text(
+                  child: Text(
                     'نتيجة بحث حي',
                     style: TextStyle(fontSize: 10, color: ZadColors.info),
                   ),
@@ -756,7 +755,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
               ],
             ),
             _Fetch.error => const ZadEmptyState(
-              icon: LucideIcons.cloudOff,
+              icon: Icons.cloud_off,
               title: 'تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية',
               message:
                   'البحث الحي ما ردّش في الوقت. دوس تحديث تاني — وشوف النت '

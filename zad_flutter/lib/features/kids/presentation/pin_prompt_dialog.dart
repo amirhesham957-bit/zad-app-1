@@ -113,7 +113,7 @@ class _PinPromptDialogState extends ConsumerState<PinPromptDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (_stage != _Stage.verify) ...<Widget>[
-            const Text(
+            Text(
               'هتحتاجه في كل مرة تحب تخرج من وضع الأطفال على الجهاز ده',
               style: TextStyle(color: ZadColors.inkMuted),
             ),
@@ -140,14 +140,11 @@ class _PinPromptDialogState extends ConsumerState<PinPromptDialog> {
           ),
           if (_error != null) ...<Widget>[
             const SizedBox(height: 4),
-            Text(
-              _error!,
-              style: const TextStyle(color: ZadColors.terracottaRust),
-            ),
+            Text(_error!, style: TextStyle(color: ZadColors.terracottaRust)),
           ],
           if (locked) ...<Widget>[
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'استنى ثانية وحاول تاني',
               style: TextStyle(color: ZadColors.inkMuted),
             ),

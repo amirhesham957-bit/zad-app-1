@@ -13,7 +13,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -48,7 +47,7 @@ class FamilySavingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
-    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('صناديق التجميع')),
@@ -298,11 +297,7 @@ class _FundsState extends ConsumerState<SinkingFundsCard> {
           shape: BoxShape.circle,
           color: ZadColors.mustardOchre.withValues(alpha: 0.15),
         ),
-        child: const Icon(
-          ZadIcons.savings,
-          size: 18,
-          color: ZadColors.mustardOchre,
-        ),
+        child: Icon(ZadIcons.savings, size: 18, color: ZadColors.mustardOchre),
       ),
       title: 'صناديق التجميع',
       action: family == null
@@ -599,7 +594,7 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
     final family = ref.watch(familyControllerProvider).family;
     final currency = familyCurrency(ref);
     return _Card(
-      icon: const Icon(LucideIcons.trophy, size: 22, color: ZadColors.ink),
+      icon: Icon(Icons.emoji_events, size: 22, color: ZadColors.ink),
       title: 'تحديات العائلة المالية',
       action: family == null
           ? null

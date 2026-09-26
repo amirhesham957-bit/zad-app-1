@@ -175,15 +175,17 @@ List<InventoryItem> stockedPantry(List<InventoryItem> pantry) =>
 /// The pantry as the chef is told it: `name (qty)`, comma-separated — the
 /// shape Kotlin sends. Sorted, so an unchanged pantry is the same text and
 /// the server's cache answers it.
-String pantryForChef(List<InventoryItem> pantry) => stockedPantry(
-  pantry,
-).map((i) => '${i.itemName} (${i.quantity})').join(', ');
+String pantryForChef(List<InventoryItem> pantry) =>
+    stockedPantry(pantry)
+        .map((i) => '${i.itemName} (${i.quantity})')
+        .join(', ');
 
 /// A fingerprint of the pantry, to tell whether suggestions were asked about
 /// the kitchen as it is now.
-String pantrySignature(List<InventoryItem> pantry) => stockedPantry(
-  pantry,
-).map((i) => '${normalizeItemName(i.itemName)}:${i.quantity}').join('|');
+String pantrySignature(List<InventoryItem> pantry) =>
+    stockedPantry(pantry)
+        .map((i) => '${normalizeItemName(i.itemName)}:${i.quantity}')
+        .join('|');
 
 /// The missing ingredients worth adding to the list: not already on it, and
 /// not in the pantry since the chef was asked.

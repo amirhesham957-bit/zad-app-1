@@ -215,7 +215,7 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
       });
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('صيانة المنزل')),
@@ -269,7 +269,7 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
                     padding: const EdgeInsets.all(ZadSpacing.md),
                     child: Row(
                       children: <Widget>[
-                        const Icon(
+                        Icon(
                           ZadIcons.failed,
                           size: 18,
                           color: ZadColors.terracottaRust,
@@ -345,7 +345,7 @@ class _Stat extends StatelessWidget {
           Text(
             label,
             maxLines: 2,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: ZadColors.inkMuted,
@@ -428,10 +428,7 @@ class _ItemCard extends StatelessWidget {
                         : warranty != null
                         ? 'الضمان ينتهي خلال $warranty يوم'
                         : item.category,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      color: ZadColors.inkMuted,
-                    ),
+                    style: TextStyle(fontSize: 11.5, color: ZadColors.inkMuted),
                   ),
                 ],
               ),
@@ -482,7 +479,7 @@ class _ItemCard extends StatelessWidget {
                     IconButton(
                       tooltip: 'حذف',
                       onPressed: onDelete,
-                      icon: const Icon(
+                      icon: Icon(
                         ZadIcons.delete,
                         size: 16,
                         color: ZadColors.inkMuted,

@@ -57,7 +57,7 @@ class NotificationCenterScreen extends ConsumerWidget {
     final zone = ref.read(accountTimeZoneProvider);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

@@ -58,7 +58,7 @@ class _Checking extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     body: DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

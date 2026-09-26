@@ -338,8 +338,7 @@ class _ReadingState extends ConsumerState<_Reading> {
               child: SingleChildScrollView(
                 child: Column(
                   children: <Widget>[
-                    for (final (i, proposal)
-                        in view.pharmacyWithCounts.indexed)
+                    for (final (i, proposal) in view.pharmacyWithCounts.indexed)
                       _MedicineRow(
                         proposal: proposal,
                         checked: !view.excludedItems.contains(i),

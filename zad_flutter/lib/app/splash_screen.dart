@@ -66,12 +66,17 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  // Kotlin: the column fades in over 1000ms; the logo enters in 700ms
-  // (FastOutSlowIn) then floats 6dp up and back every 1500ms.
+  // Kotlin: the column fades in over `tween(1000)` — whose default easing is
+  // FastOutSlowIn — and the logo enters in 700ms (FastOutSlowIn) then floats
+  // 6dp up and back every 1500ms (linear).
   late final AnimationController _fade = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1000),
   )..forward();
+  late final Animation<double> _fadeCurve = CurvedAnimation(
+    parent: _fade,
+    curve: Curves.fastOutSlowIn,
+  );
   late final AnimationController _enter = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 700),
@@ -106,7 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: _Blob(Color(0xFFBFE3D1)),
         ),
         FadeTransition(
-          opacity: _fade,
+          opacity: _fadeCurve,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -139,7 +144,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'زاد',
                 style: TextStyle(
                   fontSize: 32,
@@ -148,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'تدبير ذكي لبيت هادئ',
                 style: TextStyle(
                   fontSize: 15,
@@ -182,20 +187,36 @@ class _SplashScreenState extends State<SplashScreen>
   );
 }
 
+/// Kotlin's blob, layer for layer: `clip(CircleShape)` outside,
+/// `zadGlassBlur(80.dp)` inside it, then the 55% fill. Compose's `blur` with
+/// its default `BlurredEdgeTreatment.Rectangle` clips to its own bounds and
+/// clamps the edge, so the same filter here is `TileMode.clamp` inside a
+/// `ClipRect`, and the circle clip wraps both. Android converts a blur radius
+/// to sigma as `0.57735 * r + 0.5`.
 class _Blob extends StatelessWidget {
   const new(this.color);
 
   final Color color;
 
+  static const double _sigma = 0.57735 * 80 + 0.5;
+
   @override
-  Widget build(BuildContext context) => ImageFiltered(
-    imageFilter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-    child: Container(
-      width: 320,
-      height: 320,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.55),
+  // Its own layer: the logo floats forever above it, and a blur this wide
+  // is the one thing on the splash that must not be redrawn every frame.
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: ClipOval(
+      child: ClipRect(
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(
+            sigmaX: _sigma,
+            sigmaY: _sigma,
+            tileMode: TileMode.clamp,
+          ),
+          child: SizedBox.square(
+            dimension: 320,
+            child: ColoredBox(color: color.withValues(alpha: 0.55)),
+          ),
+        ),
       ),
     ),
   );

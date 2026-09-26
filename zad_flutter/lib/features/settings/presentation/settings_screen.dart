@@ -38,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
     final settings = view.settings;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('الإعدادات')),

@@ -74,7 +74,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(
                 yes,
-                style: const TextStyle(color: ZadColors.terracottaRust),
+                style: TextStyle(color: ZadColors.terracottaRust),
               ),
             ),
           ],
@@ -128,7 +128,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     final loading = !view.hasFetched && view.isRefreshing && notes.isEmpty;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('زاد عارف عني إيه')),

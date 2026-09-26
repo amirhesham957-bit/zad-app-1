@@ -13,7 +13,6 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
@@ -26,32 +25,20 @@ Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
 const Color _lilac = Color(0xFF9C27B0);
 
 enum _Plan {
-  basic(
-    'الأساسية (Basic)',
-    50,
-    'الأكثر اقتصاداً',
-    ZadColors.forestEmerald,
-    <String>[
-      'تجربة خالية من الإعلانات 100%',
-      '50 استشارة وطلب ذكي شهرياً',
-      'مسح وتفكيك الفواتير الأساسي',
-      'رصد الإشعارات البنكية اللحظي',
-    ],
-  ),
-  plus(
-    'المتقدمة (Plus)',
-    250,
-    'الأكثر شعبية ⭐',
-    ZadColors.mustardOchre,
-    <String>[
-      'كل مزايا الباقة الأساسية',
-      '250 استشارة وطلب ذكي شهرياً',
-      'تحليلات عقل زاد الاستراتيجية والتنبؤات',
-      'مقارنة الأسعار وتنبيهات العروض اللحظية',
-      'شجرة المعرفة العصبية التفاعلية 3D',
-    ],
-  ),
-  ultra('الفائقة (Ultra)', -1, 'VIP العائلة 👑', _lilac, <String>[
+  basic('الأساسية (Basic)', 50, 'الأكثر اقتصاداً', <String>[
+    'تجربة خالية من الإعلانات 100%',
+    '50 استشارة وطلب ذكي شهرياً',
+    'مسح وتفكيك الفواتير الأساسي',
+    'رصد الإشعارات البنكية اللحظي',
+  ]),
+  plus('المتقدمة (Plus)', 250, 'الأكثر شعبية ⭐', <String>[
+    'كل مزايا الباقة الأساسية',
+    '250 استشارة وطلب ذكي شهرياً',
+    'تحليلات عقل زاد الاستراتيجية والتنبؤات',
+    'مقارنة الأسعار وتنبيهات العروض اللحظية',
+    'شجرة المعرفة العصبية التفاعلية 3D',
+  ]),
+  ultra('الفائقة (Ultra)', -1, 'VIP العائلة 👑', <String>[
     'طلبات ذكاء اصطناعي غير محدودة بالكامل (Unlimited AI)',
     'مشاركة عائلية متزامنة لـ 5 حسابات',
     'تقرير عقل زاد الاستراتيجي المطبوع بختم زاد',
@@ -59,12 +46,16 @@ enum _Plan {
     'دعم فني مباشر VIP ذو أولوية قصوى',
   ]);
 
-  new(this.title, this.quota, this.badge, this.accent, this.perks);
+  new(this.title, this.quota, this.badge, this.perks);
 
   final String title;
   final int quota;
   final String badge;
-  final Color accent;
+  Color get accent => switch (this) {
+    _Plan.basic => ZadColors.forestEmerald,
+    _Plan.plus => ZadColors.mustardOchre,
+    _Plan.ultra => _lilac,
+  };
   final List<String> perks;
 }
 
@@ -112,7 +103,7 @@ class _PaywallState extends State<PaywallScreen> {
         DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: <Color>[ZadColors.forestEmerald, ZadColors.forestLight],
             ),
           ),
@@ -120,7 +111,7 @@ class _PaywallState extends State<PaywallScreen> {
             padding: const EdgeInsets.all(22),
             child: Column(
               children: <Widget>[
-                const Icon(
+                Icon(
                   ZadIcons.assistant,
                   size: 40,
                   color: ZadColors.mustardLight,
@@ -177,7 +168,7 @@ class _PaywallState extends State<PaywallScreen> {
                     'هنا.',
               ),
             ),
-            icon: const Icon(LucideIcons.shoppingBag, size: 20),
+            icon: const Icon(Icons.shopping_bag, size: 20),
             label: Text(
               'اشترك في ${_selected.title} عبر Google Play',
               style: const TextStyle(
@@ -204,7 +195,7 @@ class _PaywallState extends State<PaywallScreen> {
                 ),
                 child: Text(
                   '$icon $method',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                     color: ZadColors.inkMuted,
@@ -338,7 +329,7 @@ class _PlanCard extends StatelessWidget {
                           plan.quota == -1
                               ? 'ذكاء اصطناعي غير محدود'
                               : '${plan.quota} طلب ذكي شهرياً',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11.5,
                             color: ZadColors.inkMuted,
                           ),
@@ -356,7 +347,7 @@ class _PlanCard extends StatelessWidget {
                           color: ZadColors.forestEmerald,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'اشتراك شهري تجديد تلقائي',
                         style: TextStyle(
                           fontSize: 9,
@@ -393,7 +384,7 @@ class _PlanCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Row(
                     children: <Widget>[
-                      const Icon(
+                      Icon(
                         ZadIcons.selected,
                         size: 16,
                         color: ZadColors.forestEmerald,

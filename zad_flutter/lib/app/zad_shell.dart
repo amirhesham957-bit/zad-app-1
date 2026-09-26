@@ -1,22 +1,40 @@
-/// The two screens there are, and the bar between them.
+/// Kotlin's `MainScreen` chrome: the header on top, the screen, the floating
+/// pill at the bottom, the drawer behind the menu square — drawn once here
+/// and never by a screen.
+///
+/// The bar has Kotlin's three screens (الرئيسية, عقل زاد, المخزون), the mic
+/// orb and the camera between them, and المزيد. Every other section opens
+/// over the shell from the grid, the drawer or the المزيد sheet.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
+import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/alerts/application/local_reminders.dart';
+import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
+import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/kids_shell.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/presentation/proposals_screen.dart';
+import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
+import 'package:zad/features/notifications/application/notifications_controller.dart';
+import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
+import 'package:zad/features/orb/presentation/floating_companion.dart';
+import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/features/profile/presentation/profile_screen.dart';
+import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
+import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 
@@ -30,11 +48,21 @@ class ZadShell extends ConsumerStatefulWidget {
 }
 
 class _ZadShellState extends ConsumerState<ZadShell> {
-  int _index = 0;
+  final GlobalKey<ScaffoldState> _scaffold = GlobalKey<ScaffoldState>();
 
-  /// The household tab's position, and whether it has been opened yet.
-  static const int _householdTab = 3;
-  bool _householdOpened = false;
+  ZadNavDestination _tab = ZadNavDestination.home;
+
+  // عقل زاد and المخزون fetch when they first build, so each is built on its
+  // first visit and then kept — an IndexedStack builds every child up front,
+  // and a launch should not spend a round of network on tabs nobody opened.
+  bool _assistantOpened = false;
+  bool _inventoryOpened = false;
+
+  static const List<ZadNavDestination> _tabs = <ZadNavDestination>[
+    ZadNavDestination.home,
+    ZadNavDestination.assistant,
+    ZadNavDestination.inventory,
+  ];
 
   @override
   void initState() {
@@ -53,26 +81,97 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     });
   }
 
-  void _show(int index) => setState(() {
-    _index = index;
-    if (index == _householdTab) _householdOpened = true;
+  void _show(ZadNavDestination tab) => setState(() {
+    _tab = tab;
+    if (tab == ZadNavDestination.assistant) _assistantOpened = true;
+    if (tab == ZadNavDestination.inventory) _inventoryOpened = true;
   });
+
+  /// Kotlin's screen titles (`zadScreenTitle`).
+  String get _title => switch (_tab) {
+    ZadNavDestination.assistant => 'عقل زاد',
+    ZadNavDestination.inventory => 'المخزون',
+    _ => 'لوحة الميزانية',
+  };
+
+  /// A route id from the drawer, the المزيد sheet or the grid.
+  Future<void> _go(String id) async {
+    switch (id) {
+      case 'home':
+        _show(ZadNavDestination.home);
+      case 'inventory':
+        _show(ZadNavDestination.inventory);
+      case 'assistant':
+        _show(ZadNavDestination.assistant);
+      case 'deals':
+        await showNearbyDealsScreen(context);
+      default:
+        for (final s in zadSections) {
+          if (s.id == id) {
+            await s.open(context);
+            return;
+          }
+        }
+    }
+  }
+
+  Future<void> _openCamera() async {
+    final choice = await showZadCameraSheet(context);
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case ZadCameraChoice.inventory:
+        await showPantryPhotoSheet(context);
+      case ZadCameraChoice.receipt:
+        await showReceiptScanSheet(context, ref);
+    }
+  }
+
+  /// The mic orb: Kotlin's voice sheet. Here the conversation opens with the
+  /// microphone already listening; what is heard lands in the composer.
+  Future<void> _openVoice() async {
+    unawaited(ref.read(voiceInputControllerProvider.notifier).start());
+    await _openChat();
+  }
+
+  Future<void> _openChat() => Navigator.of(context)
+      .push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
+
+  Future<void> _openMore() async {
+    final id = await showZadMoreSheet(context);
+    if (mounted && id != null) await _go(id);
+  }
+
+  Future<void> _resolve(ShellTab request) async {
+    switch (request) {
+      case ShellTab.home:
+      case ShellTab.proposals:
+        // Kotlin lists the bank's waiting proposals on الرئيسية, and a
+        // proposal's notification brings the customer there.
+        _show(ZadNavDestination.home);
+      case ShellTab.assistant:
+        _show(ZadNavDestination.assistant);
+      case ShellTab.inventory:
+      case ShellTab.household:
+        _show(ZadNavDestination.inventory);
+      case ShellTab.chat:
+        await _openChat();
+      case ShellTab.transactions:
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(builder: (_) => const TransactionsScreen()),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // A tab asked for from outside — a tapped alert. Whatever was pushed over
-    // the shell is closed first, or the tab would change behind it.
+    // A destination asked for from outside — a tapped alert, a tile, "اسأل
+    // زاد". Whatever was pushed over the shell is closed first, or the tab
+    // would change behind it.
     ref.listen(shellNavigationProvider, (previous, next) async {
       if (next == null) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
       ref.read(shellNavigationProvider.notifier).shown();
-      // Kotlin's goGuarded: in kids mode a money tab asks for the PIN first.
-      if (ref.read(kidsModeActiveProvider) &&
-          next != ShellTab.home &&
-          !await unlockKidsMode(context, ref)) {
-        return;
-      }
-      if (mounted) _show(next.index);
+      await _resolve(next);
     });
 
     // Kids mode replaces the whole shell: home and family, nothing else.
@@ -94,65 +193,90 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     );
     if (unconfirmed && !confirmedHere) return const BudgetGateScreen();
 
-    // Watched at the shell so the badge is right whichever tab is open. The
-    // count is the point: a proposal nobody looks at expires after seven days
-    // and the spending simply never gets recorded.
-    final waiting = ref.watch(
-      proposalsControllerProvider.select((v) => v.count),
+    final unread = ref.watch(
+      notificationsControllerProvider.select((v) => v.unread > 0),
+    );
+    final name = ref.watch(profileControllerProvider.select((v) => v.name));
+    final avatar = ref.watch(
+      profileControllerProvider.select((v) => v.avatarUrl),
     );
 
-    return Scaffold(
-      // IndexedStack, not a rebuild per tab: each screen's controller reads
-      // its cache in build, and swapping the subtree would throw away a
-      // scrolled list and re-read Hive every time somebody switched back.
-      body: IndexedStack(
-        index: _index,
-        children: <Widget>[
-          const HomeScreen(),
-          const TransactionsScreen(),
-          const ChatScreen(),
-          // Built the first time it is opened, then kept. An IndexedStack
-          // builds every child up front, and the household's three sections
-          // each fetch on build — the pharmacy two queries per medicine — so
-          // leaving it eager would spend a round of network on every launch
-          // for a tab the customer may not open that day.
-          if (_householdOpened || _index == _householdTab)
-            const HouseholdScreen()
-          else
-            const SizedBox.shrink(),
-          const ProposalsScreen(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _show,
-        backgroundColor: ZadColors.surface,
-        destinations: <NavigationDestination>[
-          const NavigationDestination(
-            icon: Icon(ZadIcons.home),
-            label: 'الرئيسية',
-          ),
-          const NavigationDestination(
-            icon: Icon(ZadIcons.budget),
-            label: 'المعاملات',
-          ),
-          const NavigationDestination(
-            icon: Icon(ZadIcons.assistant),
-            label: 'زاد',
-          ),
-          const NavigationDestination(
-            icon: Icon(ZadIcons.family),
-            label: 'البيت',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: waiting > 0,
-              label: Text('$waiting'),
-              child: const Icon(ZadIcons.pending),
+    return DecoratedBox(
+      // Kotlin paints the canvas once, behind the whole scaffold.
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
+      child: Scaffold(
+        key: _scaffold,
+        backgroundColor: Colors.transparent,
+        drawer: ZadDrawer(
+          current: _tab.name,
+          entries: zadDrawerEntries,
+          userName: name,
+          avatarUrl: avatar,
+          onNavigate: (id) {
+            _scaffold.currentState?.closeDrawer();
+            unawaited(_go(id));
+          },
+          onProfile: () {
+            _scaffold.currentState?.closeDrawer();
+            unawaited(showProfileScreen(context));
+          },
+        ),
+        body: Column(
+          children: <Widget>[
+            ZadTopHeader(
+              title: _title,
+              hasUnreadNotifications: unread,
+              avatarUrl: avatar,
+              onOpenDrawer: () => _scaffold.currentState?.openDrawer(),
+              onNotifications: () => unawaited(showNotificationCenter(context)),
+              onAvatar: () => unawaited(showProfileScreen(context)),
             ),
-            label: 'تأكيدات',
-          ),
-        ],
+            Expanded(
+              // IndexedStack, not a rebuild per tab: each screen's controller
+              // reads its cache in build, and swapping the subtree would throw
+              // away a scrolled list and re-read Hive on every switch back.
+              child: Stack(
+                children: <Widget>[
+                  Positioned.fill(
+                    child: IndexedStack(
+                      index: _tabs.indexOf(_tab),
+                      children: <Widget>[
+                        HomeScreen(
+                          onOpenVoice: () => unawaited(_openVoice()),
+                          onOpenCamera: () => unawaited(_openCamera()),
+                        ),
+                        if (_assistantOpened)
+                          const BrainFamilyScreen(embedded: true)
+                        else
+                          const SizedBox.shrink(),
+                        if (_inventoryOpened)
+                          const HouseholdScreen(embedded: true)
+                        else
+                          const SizedBox.shrink(),
+                      ],
+                    ),
+                  ),
+                  // Kotlin shows the floating companion on الرئيسية only —
+                  // elsewhere it covered the last icons of a row.
+                  if (_tab == ZadNavDestination.home)
+                    Positioned.fill(
+                      child: FloatingCompanion(
+                        onOpenVoice: () => unawaited(_openVoice()),
+                        onOpenChat: () => unawaited(_openChat()),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: ZadBottomNavBar(
+          current: _tab,
+          onNavigate: _show,
+          onOpenCamera: () => unawaited(_openCamera()),
+          onOpenVoice: () => unawaited(_openVoice()),
+          onOpenMore: () => unawaited(_openMore()),
+        ),
       ),
     );
   }

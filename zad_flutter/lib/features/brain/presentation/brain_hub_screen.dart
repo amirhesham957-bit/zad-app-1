@@ -56,7 +56,7 @@ class BrainHubScreen extends StatelessWidget {
     ];
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('عقل زاد')),
@@ -120,7 +120,7 @@ class _EntryCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: ZadSpacing.sm),
-        const Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
+        Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
       ],
     ),
   );

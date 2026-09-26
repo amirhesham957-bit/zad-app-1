@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
@@ -156,7 +155,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('استيراد كشف حساب')),
@@ -203,7 +202,7 @@ class _PickStep extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(LucideIcons.fileUp, size: 56, color: ZadColors.green700),
+          const Icon(Icons.upload_file, size: 56, color: ZadColors.green700),
           const SizedBox(height: ZadSpacing.lg),
           Text(
             'اختر ملف CSV من كشف حسابك — هتحدد بنفسك أي عمود هو التاريخ '
@@ -382,7 +381,7 @@ class _PreviewStep extends StatelessWidget {
             ? const Padding(
                 padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
                 child: ZadEmptyState(
-                  icon: LucideIcons.fileText,
+                  icon: Icons.description,
                   title: 'ما لقيتش أي معاملة في الملف',
                   message:
                       'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه '

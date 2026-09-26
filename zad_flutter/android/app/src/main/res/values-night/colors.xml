@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kotlin's values-night/colors.xml: ZadIosBackgroundDark. -->
+    <color name="zad_window_background">#FF10130F</color>
+</resources>

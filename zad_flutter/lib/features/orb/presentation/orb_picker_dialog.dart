@@ -7,7 +7,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
@@ -144,13 +143,9 @@ class _Slot extends StatelessWidget {
               Stack(
                 alignment: Alignment.center,
                 children: <Widget>[
-                  CompanionOrb(accessory: accessory, size: 56),
+                  CompanionOrb(accessory: accessory, size: 56, animated: false),
                   if (!unlocked)
-                    const Icon(
-                      LucideIcons.lock,
-                      size: 20,
-                      color: ZadColors.inkMuted,
-                    ),
+                    Icon(Icons.lock, size: 20, color: ZadColors.inkMuted),
                 ],
               ),
               Text(

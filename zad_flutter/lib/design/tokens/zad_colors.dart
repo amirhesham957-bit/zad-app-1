@@ -16,10 +16,23 @@ import 'package:flutter/material.dart';
 
 /// The raw palette.
 abstract final class ZadColors {
+  // Kotlin's lowercase tokens (`primary`, `onSurfaceVariant`, `surface`,
+  // `successColor`…) are `@Composable get()` accessors that resolve through
+  // the active theme, which is how dark mode reaches ~900 call sites that name
+  // them directly. The getters below are the same idea for the Flutter call
+  // sites that name these tokens: each one that mirrors a theme-aware Kotlin
+  // token follows [isDark]. The rest (the V3 greens, the hero gradients, the
+  // hairline, the shadows) are static in Kotlin too, and stay `const` here.
+  /// Whether the dark theme is active. Set by `ZadApp` only, which then
+  /// rebuilds every element, the way a Compose theme switch recomposes every
+  /// reader.
+  static bool isDark = false;
+
   // ── Heritage core ────────────────────────────────────────────────────────
 
   /// Primary. High-trust: household health and wealth. The green card's base.
-  static const Color forestEmerald = Color(0xFF1B4332);
+  static Color get forestEmerald =>
+      isDark ? const Color(0xFF74C69D) : const Color(0xFF1B4332);
 
   /// Darker primary, for the hero gradient's deep end.
   static const Color emeraldDeep = Color(0xFF0A382C);
@@ -43,39 +56,49 @@ abstract final class ZadColors {
   static const Color mintGlow = Color(0xFF6EE7B7);
 
   /// Secondary. Due dates, budget warnings, anything pending.
-  static const Color mustardOchre = Color(0xFFC68216);
+  static Color get mustardOchre =>
+      isDark ? const Color(0xFFE9A844) : const Color(0xFFC68216);
 
   /// Tertiary. Urgent: a missed dose, a debt deadline, stock about to run out.
-  static const Color terracottaRust = Color(0xFFD95726);
+  static Color get terracottaRust =>
+      isDark ? const Color(0xFFEA764B) : const Color(0xFFD95726);
 
   // ── Surfaces ─────────────────────────────────────────────────────────────
 
   /// The canvas, top of its gradient.
-  static const Color canvasTop = Color(0xFFF8F9FA);
+  static Color get canvasTop =>
+      isDark ? const Color(0xFF10130F) : const Color(0xFFF8F9FA);
 
   /// The canvas, middle.
-  static const Color canvasMid = Color(0xFFF4F6F2);
+  static Color get canvasMid =>
+      isDark ? const Color(0xFF141712) : const Color(0xFFF4F6F2);
 
   /// The canvas, bottom.
-  static const Color canvasBottom = Color(0xFFEDEFE9);
+  static Color get canvasBottom =>
+      isDark ? const Color(0xFF191D17) : const Color(0xFFEDEFE9);
 
   /// A card.
-  static const Color surface = Color(0xFFFFFFFF);
+  static Color get surface =>
+      isDark ? const Color(0xFF191D17) : const Color(0xFFFFFFFF);
 
   /// A pill, an icon backdrop, a filled container.
-  static const Color surfaceVariant = Color(0xFFEDEFE9);
+  static Color get surfaceVariant =>
+      isDark ? const Color(0xFF262B24) : const Color(0xFFEDEFE9);
 
   // ── Ink ──────────────────────────────────────────────────────────────────
 
   /// Body text and figures.
-  static const Color ink = Color(0xFF0F172A);
+  static Color get ink =>
+      isDark ? const Color(0xFFE9ECE4) : const Color(0xFF1F1F14);
 
   /// Secondary text.
-  static const Color slate = Color(0xFF374151);
+  static Color get slate =>
+      isDark ? const Color(0xFFB9BDB3) : const Color(0xFF374151);
 
   /// Muted labels. 5.9:1 on the canvas — the Kotlin app has a contrast test
   /// pinning this, and a lighter grey fails it.
-  static const Color inkMuted = Color(0xFF5F6258);
+  static Color get inkMuted =>
+      isDark ? const Color(0xFFA6AB9C) : const Color(0xFF5F6258);
 
   // ── Lines and shadows ────────────────────────────────────────────────────
 
@@ -93,11 +116,13 @@ abstract final class ZadColors {
 
   // ── Gradients ────────────────────────────────────────────────────────────
 
-  /// The screen canvas.
-  static const LinearGradient canvas = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  /// The screen canvas — Kotlin's `ZadCanvasBackground`: straight down, with
+  /// the middle stop at 45%.
+  static LinearGradient get canvas => LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
     colors: <Color>[canvasTop, canvasMid, canvasBottom],
+    stops: const <double>[0, 0.45, 1],
   );
 
   /// The green card. Three stops, not two: the extra deep stop is what stops a
@@ -118,22 +143,28 @@ abstract final class ZadColors {
   );
 
   /// Kotlin's `info` — the subscriptions card's accent.
-  static const Color info = Color(0xFF2B6CB0);
+  static Color get info =>
+      isDark ? const Color(0xFF7FB3E8) : const Color(0xFF2B6CB0);
 
   /// Kotlin's `primaryLight`, the far end of a healthy progress gradient.
-  static const Color forestLight = Color(0xFF2D6A4F);
+  static Color get forestLight =>
+      isDark ? const Color(0xFF95D9B5) : const Color(0xFF2D6A4F);
 
   /// Kotlin's `ZadMustardLight`, the far end of a warning gradient.
-  static const Color mustardLight = Color(0xFFE9A844);
+  static Color get mustardLight =>
+      isDark ? const Color(0xFFF3C476) : const Color(0xFFE9A844);
 
   /// Kotlin's `outline`: the hairline round a glance card.
-  static const Color outline = Color(0xFFE0E3DA);
+  static Color get outline =>
+      isDark ? const Color(0xFF363C33) : const Color(0xFFE0E3DA);
 
   /// Kotlin's `outlineVariant`: a track, a neutral tile.
-  static const Color outlineVariant = Color(0xFFE8EBE2);
+  static Color get outlineVariant =>
+      isDark ? const Color(0xFF363C33) : const Color(0xFFE8EBE2);
 
   /// Kotlin's `surfaceContainerLow`: a row inside a white card.
-  static const Color surfaceLow = Color(0xFFFBFBFA);
+  static Color get surfaceLow =>
+      isDark ? const Color(0xFF151813) : const Color(0xFFFBFBFA);
 
   /// The spent chip's dot on the green card.
   static const Color spentDot = Color(0xFFF59E0B);

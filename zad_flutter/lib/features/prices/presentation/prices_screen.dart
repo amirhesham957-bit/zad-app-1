@@ -34,7 +34,7 @@ class PricesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
-    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -294,11 +294,11 @@ class _Leaderboard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Row(
+        Row(
           children: <Widget>[
             Icon(ZadIcons.leaderboard, size: 18, color: ZadColors.mustardOchre),
-            SizedBox(width: ZadSpacing.sm),
-            Expanded(
+            const SizedBox(width: ZadSpacing.sm),
+            const Expanded(
               child: Text(
                 'أكتر ناس بتبلّغ الشهر ده',
                 style: ZadType.titleSmall,

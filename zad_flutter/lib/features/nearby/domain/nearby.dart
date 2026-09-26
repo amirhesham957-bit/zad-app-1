@@ -120,9 +120,8 @@ List<StoreDistance> storesWithin(
 }
 
 /// "٣٥٠ م" or "١٫٢ كم" — display only.
-String formatDistance(int metres) => metres < 1000
-    ? '$metres م'
-    : '${(metres / 1000).toStringAsFixed(1)} كم';
+String formatDistance(int metres) =>
+    metres < 1000 ? '$metres م' : '${(metres / 1000).toStringAsFixed(1)} كم';
 
 double? _number(Object? raw) => switch (raw) {
   final num n => n.toDouble(),

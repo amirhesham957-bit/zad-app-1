@@ -80,7 +80,7 @@ class _FinancesState extends State<FinancesScreen> {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(gradient: ZadColors.canvas),
+    decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('الميزانية والالتزامات')),
@@ -544,13 +544,13 @@ class _CategoryCard extends StatelessWidget {
             IconButton(
               onPressed: onInsight,
               tooltip: 'تحليل ذكي',
-              icon: const Icon(
+              icon: Icon(
                 ZadIcons.assistant,
                 size: 16,
                 color: ZadColors.forestEmerald,
               ),
             ),
-            const Icon(ZadIcons.edit, size: 16, color: ZadColors.inkMuted),
+            Icon(ZadIcons.edit, size: 16, color: ZadColors.inkMuted),
           ],
         ),
       ),

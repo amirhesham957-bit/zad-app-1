@@ -322,7 +322,7 @@ class _BalanceCard extends ConsumerWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: <Color>[_kidsPrimary, _kidsPink, ZadColors.mustardOchre],
         ),
         boxShadow: <BoxShadow>[

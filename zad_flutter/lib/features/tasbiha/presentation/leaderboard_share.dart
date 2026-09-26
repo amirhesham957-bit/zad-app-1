@@ -55,7 +55,7 @@ Future<List<int>> renderLeaderboard(List<MemberGarden> gardens) async {
     ..drawRect(
       const Rect.fromLTWH(0, 0, _w, _h),
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[ZadColors.forestEmerald, ZadColors.emeraldDeep],

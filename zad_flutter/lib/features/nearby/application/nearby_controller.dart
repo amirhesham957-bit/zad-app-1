@@ -187,5 +187,6 @@ final locationSourceProvider = Provider<LocationSource>(
 );
 
 /// Shops near the customer.
-final nearbyControllerProvider =
-    NotifierProvider<NearbyController, NearbyView>(NearbyController.new);
+final nearbyControllerProvider = NotifierProvider<NearbyController, NearbyView>(
+  NearbyController.new,
+);

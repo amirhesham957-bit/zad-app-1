@@ -100,7 +100,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ],
       ),
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: ZadColors.canvas),
+        decoration: BoxDecoration(gradient: ZadColors.canvas),
         child: RefreshIndicator(
           // force: the cooldown stops *automatic* refetching on re-entry.
           // Someone who pulled the list down asked for it.
@@ -342,7 +342,7 @@ class _RowState extends ConsumerState<_Row> {
                   unawaited(confirmDeleteTransaction(context, ref, txn));
                 },
                 tooltip: 'حذف',
-                icon: const Icon(
+                icon: Icon(
                   ZadIcons.delete,
                   size: 18,
                   color: ZadColors.terracottaRust,
@@ -381,7 +381,7 @@ class _PendingMark extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: <Widget>[
-      const Icon(ZadIcons.pending, size: 11, color: ZadColors.mustardOchre),
+      Icon(ZadIcons.pending, size: 11, color: ZadColors.mustardOchre),
       const SizedBox(width: 3),
       Text(
         'لسه محفوظة',

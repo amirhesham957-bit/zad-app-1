@@ -118,7 +118,7 @@ class _BrainHealthScreenState extends ConsumerState<BrainHealthScreen> {
     final health = view.health;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

@@ -45,13 +45,13 @@ class RecipesView extends ConsumerWidget {
           child: CustomScrollView(
             slivers: <Widget>[
               if (view.error != null)
-                const _Note(
+                _Note(
                   icon: ZadIcons.failed,
                   color: ZadColors.terracottaRust,
                   text: 'مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.',
                 )
               else if (isStale && hasStock)
-                const _Note(
+                _Note(
                   icon: ZadIcons.inventory,
                   color: ZadColors.mustardOchre,
                   text: 'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.',
@@ -460,7 +460,7 @@ class RecipeSheet extends ConsumerWidget {
                       unawaited(controller.rate(recipe, liked: false)),
                   isSelected: rating == false,
                   color: ZadColors.inkMuted,
-                  selectedIcon: const Icon(
+                  selectedIcon: Icon(
                     ZadIcons.dislike,
                     color: ZadColors.terracottaRust,
                   ),

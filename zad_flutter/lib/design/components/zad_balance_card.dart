@@ -581,9 +581,9 @@ class _PaceBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: aheadOfPace
-                        ? const <Color>[
+                        ? <Color>[
                             ZadColors.mustardOchre,
-                            Color(0xFFE9A844),
+                            const Color(0xFFE9A844),
                           ]
                         : const <Color>[ZadColors.green600, ZadColors.mintGlow],
                   ),

@@ -5,7 +5,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/foundation/squircle.dart';
@@ -86,7 +85,7 @@ class _AchievementsState extends ConsumerState<AchievementsScreen> {
         final data = snap.data;
         if (snap.hasError || data == null) {
           return ZadEmptyState(
-            icon: LucideIcons.cloudOff,
+            icon: Icons.cloud_off,
             title: 'تعذر حفظ التغييرات',
             message: 'تحقق من الاتصال وحاول مرة أخرى',
             action: FilledButton(
@@ -151,8 +150,8 @@ class _Body extends StatelessWidget {
               padding: const EdgeInsets.all(ZadSpacing.md),
               child: Row(
                 children: <Widget>[
-                  const Icon(
-                    LucideIcons.trophy,
+                  Icon(
+                    Icons.emoji_events,
                     size: 24,
                     color: ZadColors.mustardOchre,
                   ),
@@ -161,7 +160,7 @@ class _Body extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        const Text(
+                        Text(
                           'الإنجاز التالي',
                           style: TextStyle(
                             fontSize: 11,
@@ -325,7 +324,7 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: ZadSpacing.xs),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: ZadColors.forestEmerald,
@@ -352,7 +351,7 @@ class _AchievementCard extends StatelessWidget {
         shape: zadSquircle(
           ZadRadii.card,
           side: item.unlocked
-              ? const BorderSide(width: 2, color: ZadColors.mustardOchre)
+              ? BorderSide(width: 2, color: ZadColors.mustardOchre)
               : const BorderSide(width: 0.5, color: ZadColors.hairline),
         ),
       ),

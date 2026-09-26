@@ -374,7 +374,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                   ),
           ),
           DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: ZadColors.surface,
               border: Border(top: BorderSide(color: ZadColors.outlineVariant)),
             ),

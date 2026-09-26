@@ -2,4 +2,7 @@
 <resources>
     <!-- Kotlin's SplashScreen canvas, MainActivity.kt. -->
     <color name="zad_splash_background">#FBFAF8</color>
+    <!-- Kotlin's `zad_window_background` (values/colors.xml): ZadIosBackground.
+         Shown whenever Flutter is not drawing — the cold start, a resize. -->
+    <color name="zad_window_background">#FFF8F9FA</color>
 </resources>

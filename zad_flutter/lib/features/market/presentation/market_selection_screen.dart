@@ -76,7 +76,7 @@ class _MarketSelectionScreenState extends ConsumerState<MarketSelectionScreen> {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: ZadColors.canvas),
+        decoration: BoxDecoration(gradient: ZadColors.canvas),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
@@ -151,7 +151,7 @@ class _MarketSelectionScreenState extends ConsumerState<MarketSelectionScreen> {
                   child: FilledButton(
                     onPressed: _selected == null || _saving ? null : _confirm,
                     child: _saving
-                        ? const SizedBox.square(
+                        ? SizedBox.square(
                             dimension: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,

@@ -64,7 +64,7 @@ class ObligationsSection extends ConsumerWidget {
               IconButton(
                 onPressed: () => unawaited(showObligationSheet(context)),
                 tooltip: 'إضافة التزام',
-                icon: const Icon(ZadIcons.add, color: ZadColors.mustardOchre),
+                icon: Icon(ZadIcons.add, color: ZadColors.mustardOchre),
               ),
             ],
           ),
@@ -163,7 +163,7 @@ class ObligationCard extends ConsumerWidget {
                   onPressed: () =>
                       unawaited(_confirmDelete(context, ref, obligation)),
                   tooltip: 'حذف',
-                  icon: const Icon(
+                  icon: Icon(
                     ZadIcons.delete,
                     size: 18,
                     color: ZadColors.inkMuted,

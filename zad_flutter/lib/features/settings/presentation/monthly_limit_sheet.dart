@@ -257,7 +257,7 @@ class _CycleExpenses extends ConsumerWidget {
                       onPressed: () =>
                           unawaited(confirmDeleteTransaction(context, ref, t)),
                       tooltip: 'حذف',
-                      icon: const Icon(
+                      icon: Icon(
                         ZadIcons.delete,
                         size: 18,
                         color: ZadColors.terracottaRust,

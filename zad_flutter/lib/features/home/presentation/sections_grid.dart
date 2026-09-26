@@ -1,17 +1,13 @@
 /// Every section of the app, in one list — Kotlin's `zadAppSections`, which
 /// feeds both Home's grid and the "المزيد" sheet so the two cannot drift.
 ///
-/// A section joins this list when its screen exists in this client. Kotlin's
-/// appointments, tasbiha, maintenance, statement import and premium
-/// plans are not here yet; FLUTTER_PARITY.md tracks them.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
@@ -23,10 +19,8 @@ import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
-import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
-import 'package:zad/features/prices/presentation/prices_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
@@ -59,6 +53,12 @@ abstract final class ZadSectionAccent {
 
   /// Slate.
   static const Color slate = Color(0xFF334155);
+
+  /// Brown.
+  static const Color brown = Color(0xFF92400E);
+
+  /// Green.
+  static const Color green = Color(0xFF15803D);
 }
 
 /// Which badge a section carries, if any.
@@ -108,19 +108,21 @@ class ZadSection {
   final SectionBadge badge;
 }
 
-/// The sections, in Kotlin's order — the first eight are the most used.
+/// The sections, in Kotlin's order (`zadAppSections`, ZadSectionsGrid.kt) —
+/// the same fifteen, with the same Material glyphs and accents. The first
+/// eight are the most used.
 final List<ZadSection> zadSections = <ZadSection>[
-  ZadSection(
+  const ZadSection(
     id: 'inventory',
-    icon: ZadIcons.inventory,
+    icon: Icons.inventory_2,
     label: 'المخزون',
     accent: ZadSectionAccent.emerald,
     badge: SectionBadge.shortages,
-    open: (c) => showHouseholdSection(c, HouseholdSection.pantry),
+    open: _openInventoryTab,
   ),
   ZadSection(
     id: 'shopping',
-    icon: ZadIcons.shopping,
+    icon: Icons.shopping_cart,
     label: 'قائمة التسوق',
     accent: ZadSectionAccent.amber,
     badge: SectionBadge.shopping,
@@ -129,28 +131,28 @@ final List<ZadSection> zadSections = <ZadSection>[
   // مواعيدي third: Kotlin's "a feature for the things that matter" order.
   const ZadSection(
     id: 'appointments',
-    icon: ZadIcons.obligation,
+    icon: Icons.event_note,
     label: 'مواعيدي',
     accent: ZadSectionAccent.teal,
     open: showAppointmentsScreen,
   ),
   const ZadSection(
     id: 'family',
-    icon: ZadIcons.family,
+    icon: Icons.family_restroom,
     label: 'العائلة',
     accent: ZadSectionAccent.violet,
     open: _openFamily,
   ),
   const ZadSection(
     id: 'budget',
-    icon: ZadIcons.budget,
+    icon: Icons.bar_chart,
     label: 'الميزانية',
     accent: ZadSectionAccent.blue,
     open: showFinancesScreen,
   ),
   const ZadSection(
     id: 'subscriptions',
-    icon: ZadIcons.card,
+    icon: Icons.credit_card,
     label: 'الاشتراكات',
     accent: ZadSectionAccent.indigo,
     badge: SectionBadge.renewals,
@@ -158,89 +160,82 @@ final List<ZadSection> zadSections = <ZadSection>[
   ),
   ZadSection(
     id: 'pharmacy',
-    icon: ZadIcons.pharmacy,
+    icon: Icons.local_pharmacy,
     label: 'صيدلية العائلة',
     accent: ZadSectionAccent.rose,
     open: (c) => showHouseholdSection(c, HouseholdSection.pharmacy),
   ),
   const ZadSection(
     id: 'tasbiha',
-    icon: ZadIcons.tree,
+    icon: Icons.yard,
     label: 'تسبيحة',
-    accent: ZadSectionAccent.emerald,
+    accent: ZadSectionAccent.green,
     open: showTasbihaScreen,
   ),
   const ZadSection(
     id: 'maintenance',
-    icon: ZadIcons.maintenance,
+    icon: Icons.build,
     label: 'صيانة المنزل',
-    accent: ZadSectionAccent.amber,
+    accent: ZadSectionAccent.brown,
     open: showMaintenanceScreen,
-  ),
-  ZadSection(
-    id: 'recipes',
-    icon: ZadIcons.chef,
-    label: 'شيف زاد',
-    accent: ZadSectionAccent.emerald,
-    open: (c) => showHouseholdSection(c, HouseholdSection.recipes),
   ),
   const ZadSection(
     id: 'assistant',
-    icon: ZadIcons.brain,
+    icon: Icons.psychology,
     label: 'عقل زاد',
     accent: ZadSectionAccent.teal,
-    open: showBrainFamily,
-  ),
-  const ZadSection(
-    id: 'deals',
-    icon: ZadIcons.prices,
-    label: 'الأسعار والعروض',
-    accent: ZadSectionAccent.blue,
-    open: showPricesScreen,
-  ),
-  const ZadSection(
-    id: 'nearby',
-    icon: ZadIcons.store,
-    label: 'المتاجر القريبة',
-    accent: ZadSectionAccent.emerald,
-    open: showNearbyDealsScreen,
+    open: _openAssistantTab,
   ),
   const ZadSection(
     id: 'knowledge_map',
-    icon: ZadIcons.knowledgeMap,
+    icon: Icons.hub,
     label: 'خريطة زاد',
     accent: ZadSectionAccent.blue,
     open: showKnowledgeMap,
   ),
   const ZadSection(
     id: 'notifications',
-    icon: ZadIcons.notifications,
+    icon: Icons.notifications,
     label: 'الإشعارات',
     accent: ZadSectionAccent.amber,
     open: showNotificationCenter,
   ),
   const ZadSection(
     id: 'statement',
-    icon: LucideIcons.fileUp,
+    icon: Icons.receipt_long,
     label: 'استيراد كشف حساب',
     accent: ZadSectionAccent.slate,
     open: showStatementImportScreen,
   ),
   const ZadSection(
     id: 'premium',
-    icon: ZadIcons.admin,
-    label: 'باقات زاد',
+    icon: Icons.star,
+    label: 'باقات زاد الشهرية الذكية',
     accent: ZadSectionAccent.amber,
     open: showPaywallScreen,
   ),
   const ZadSection(
     id: 'profile',
-    icon: ZadIcons.settings,
+    icon: Icons.person,
     label: 'حسابي',
     accent: ZadSectionAccent.slate,
     open: showProfileScreen,
   ),
 ];
+
+// المخزون and عقل زاد are tabs of the bar in Kotlin, so their tiles switch
+// the tab instead of pushing a second copy over it.
+Future<void> _openInventoryTab(BuildContext context) async =>
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shellNavigationProvider.notifier).open(ShellTab.inventory);
+
+Future<void> _openAssistantTab(BuildContext context) async =>
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shellNavigationProvider.notifier).open(ShellTab.assistant);
 
 // Kotlin's family route opens BrainFamily on its family tab.
 Future<void> _openFamily(BuildContext context) =>
@@ -319,8 +314,8 @@ class _SectionsGridState extends ConsumerState<SectionsGrid> {
                 AnimatedRotation(
                   turns: _expanded ? 0.5 : 0,
                   duration: ZadDuration.quick,
-                  child: const Icon(
-                    ZadIcons.expand,
+                  child: Icon(
+                    Icons.expand_more,
                     size: 20,
                     color: ZadColors.forestEmerald,
                   ),
@@ -456,7 +451,8 @@ class SectionTile extends StatelessWidget {
             textAlign: TextAlign.center,
             style: ZadType.labelMedium.copyWith(
               fontWeight: FontWeight.w600,
-              color: ZadColors.ink,
+              // Kotlin's textPrimary: onSurface, ZadNeutralDark.
+              color: const Color(0xFF1F1F14),
             ),
           ),
         ],

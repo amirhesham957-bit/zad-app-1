@@ -85,7 +85,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -629,7 +629,7 @@ class _RecordingDotState extends State<_RecordingDot>
     child: Container(
       width: 10,
       height: 10,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: ZadColors.terracottaRust,
         shape: BoxShape.circle,
       ),

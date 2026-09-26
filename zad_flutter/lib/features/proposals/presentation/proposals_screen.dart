@@ -40,7 +40,7 @@ class ProposalsScreen extends ConsumerWidget {
     });
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: RefreshIndicator(
         onRefresh: () => controller.refresh(force: true),
         child: CustomScrollView(
@@ -94,6 +94,56 @@ class ProposalsScreen extends ConsumerWidget {
         'expired' => 'الطلب ده عدت عليه أكتر من أسبوع وانتهت صلاحيته.',
         _ => null,
       };
+}
+
+/// Kotlin's block on الرئيسية: «عمليات بنكية بانتظارك» over the waiting
+/// proposals, spaced 10dp — nothing at all while none is waiting.
+class HomeProposalsSection extends ConsumerWidget {
+  /// Creates the section.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final view = ref.watch(proposalsControllerProvider);
+    if (view.isEmpty) return const SizedBox.shrink();
+    final controller = ref.read(proposalsControllerProvider.notifier);
+
+    ref.listen(proposalsControllerProvider, (previous, next) {
+      final outcome = next.lastOutcome;
+      if (outcome == null || outcome == previous?.lastOutcome) return;
+      final message = ProposalsScreen._outcomeMessage(outcome);
+      if (message == null) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    });
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'عمليات بنكية بانتظارك',
+              style: ZadType.titleMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1F1F14),
+              ),
+            ),
+          ),
+          for (var i = 0; i < view.rows.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(height: 10),
+            _ProposalCard(
+              proposal: view.rows[i],
+              busy: view.deciding.contains(view.rows[i].id),
+              onDecide: (d) => controller.decide(view.rows[i].id, d),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 /// One proposal, and the answer it is waiting for.

@@ -57,20 +57,20 @@ class AffiliateProductCard extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: <Widget>[
-                        const ColoredBox(color: ZadColors.surfaceLow),
+                        ColoredBox(color: ZadColors.surfaceLow),
                         if (image != null && image.isNotEmpty)
                           Image.network(
                             image,
                             fit: BoxFit.cover,
                             semanticLabel: product.nameAr,
-                            errorBuilder: (_, _, _) => const Icon(
+                            errorBuilder: (_, _, _) => Icon(
                               ZadIcons.shopping,
                               size: 28,
                               color: ZadColors.outline,
                             ),
                           )
                         else
-                          const Icon(
+                          Icon(
                             ZadIcons.shopping,
                             size: 28,
                             color: ZadColors.outline,

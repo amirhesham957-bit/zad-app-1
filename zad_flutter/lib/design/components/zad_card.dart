@@ -17,7 +17,7 @@ class ZadCard extends StatefulWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(ZadSpacing.lg),
     this.radius = ZadRadii.card,
-    this.color = ZadColors.surface,
+    this.color,
     super.key,
   });
 
@@ -34,7 +34,7 @@ class ZadCard extends StatefulWidget {
   final double radius;
 
   /// Fill.
-  final Color color;
+  final Color? color;
 
   @override
   State<ZadCard> createState() => _ZadCardState();
@@ -49,7 +49,7 @@ class _ZadCardState extends State<ZadCard> {
       duration: ZadDuration.press,
       curve: ZadCurves.press,
       decoration: ShapeDecoration(
-        color: widget.color,
+        color: widget.color ?? ZadColors.surface,
         shape: zadSquircle(
           widget.radius,
           // A half-pixel hairline, iOS-style, instead of a border. On a white

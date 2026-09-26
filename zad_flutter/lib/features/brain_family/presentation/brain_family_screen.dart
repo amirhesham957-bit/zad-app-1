@@ -44,7 +44,16 @@ Future<void> showBrainFamily(
 /// The gateway.
 class BrainFamilyScreen extends StatefulWidget {
   /// Creates the gateway.
-  const new({this.initialTab = BrainFamilyTab.intelligence, super.key});
+  const new({
+    this.initialTab = BrainFamilyTab.intelligence,
+    this.embedded = false,
+    super.key,
+  });
+
+  /// Shown as the shell's عقل زاد tab. Kotlin draws it under the shell
+  /// header with no bar of its own: the two tabs on top, then the row of
+  /// side icons, end-aligned.
+  final bool embedded;
 
   /// The tab it opens on.
   final BrainFamilyTab initialTab;
@@ -69,37 +78,32 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
   @override
   Widget build(BuildContext context) {
     final intelligence = _tab == BrainFamilyTab.intelligence;
+    final side = intelligence
+        ? <Widget>[
+            _side(Icons.psychology, 'زاد عارف عني إيه', showMemoryScreen),
+            _side(Icons.hub, 'خريطة زاد', showKnowledgeMap),
+            _side(Icons.history, 'سجل تعديلات زاد', showAgentActionLog),
+            _side(Icons.monitor_heart, 'صحة عقل زاد', showBrainHealth),
+          ]
+        : <Widget>[
+            _side(ZadIcons.savings, 'صناديق التجميع', showFamilySavingsScreen),
+            _side(
+              ZadIcons.leaderboard,
+              'الإنجازات والرتب',
+              showAchievementsScreen,
+            ),
+            _side(ZadIcons.tree, 'تسبيحة', showTasbihaScreen),
+          ];
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(intelligence ? 'عقل زاد' : 'العائلة'),
-          actions: intelligence
-              ? <Widget>[
-                  _side(ZadIcons.memory, 'زاد عارف عني إيه', showMemoryScreen),
-                  _side(ZadIcons.knowledgeMap, 'خريطة زاد', showKnowledgeMap),
-                  _side(
-                    ZadIcons.actionLog,
-                    'سجل تعديلات زاد',
-                    showAgentActionLog,
-                  ),
-                  _side(ZadIcons.brainHealth, 'صحة عقل زاد', showBrainHealth),
-                ]
-              : <Widget>[
-                  _side(
-                    ZadIcons.savings,
-                    'صناديق التجميع',
-                    showFamilySavingsScreen,
-                  ),
-                  _side(
-                    ZadIcons.leaderboard,
-                    'الإنجازات والرتب',
-                    showAchievementsScreen,
-                  ),
-                  _side(ZadIcons.tree, 'تسبيحة', showTasbihaScreen),
-                ],
-        ),
+        appBar: widget.embedded
+            ? null
+            : AppBar(
+                title: Text(intelligence ? 'عقل زاد' : 'العائلة'),
+                actions: side,
+              ),
         body: Column(
           children: <Widget>[
             Padding(
@@ -128,6 +132,17 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
                 ),
               ),
             ),
+            if (widget.embedded)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: side,
+                ),
+              ),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),

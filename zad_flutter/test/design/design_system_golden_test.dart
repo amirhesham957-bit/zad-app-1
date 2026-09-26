@@ -76,7 +76,7 @@ void main() {
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: ZadColors.canvas),
+          decoration: BoxDecoration(gradient: ZadColors.canvas),
           child: Center(
             child: SizedBox(
               width: width,

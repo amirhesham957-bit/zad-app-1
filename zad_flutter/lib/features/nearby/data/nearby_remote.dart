@@ -29,8 +29,11 @@ abstract interface class NearbyRemote {
 typedef ServerCall = Future<Object?> Function(Map<String, dynamic> body);
 
 /// [ServerCall] over a Supabase client.
-ServerCall supabaseServerCall(SupabaseClient client) => (body) async =>
-    (await client.functions.invoke('zad-core-intelligence', body: body)).data;
+ServerCall supabaseServerCall(SupabaseClient client) =>
+    (body) async => (await client.functions.invoke(
+      'zad-core-intelligence',
+      body: body,
+    )).data;
 
 /// The real one.
 class ServerThenOverpassRemote implements NearbyRemote {

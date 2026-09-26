@@ -305,11 +305,7 @@ class _ExpiringSoon extends ConsumerWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            const Icon(
-              ZadIcons.duration,
-              size: 18,
-              color: ZadColors.mustardOchre,
-            ),
+            Icon(ZadIcons.duration, size: 18, color: ZadColors.mustardOchre),
             const SizedBox(width: ZadSpacing.sm),
             Expanded(
               child: Text(
@@ -547,10 +543,10 @@ class _DeleteBackground extends StatelessWidget {
       color: ZadColors.terracottaRust.withValues(alpha: 0.12),
       shape: zadSquircle(ZadRadii.card),
     ),
-    child: const Align(
+    child: Align(
       alignment: AlignmentDirectional.centerEnd,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: ZadSpacing.xl),
+        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.xl),
         child: Icon(ZadIcons.dismiss, color: ZadColors.terracottaRust),
       ),
     ),

@@ -18,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
@@ -33,7 +32,7 @@ import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/orb/application/orb_accessory_controller.dart';
+import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
@@ -122,7 +121,7 @@ class IntelligenceScreen extends ConsumerWidget {
     final enough = expenses.length >= 3;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: embedded ? null : AppBar(title: const Text('عقل زاد')),
@@ -216,7 +215,7 @@ class _SosBanner extends ConsumerWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: <Widget>[
-              const Icon(ZadIcons.sos, color: ZadColors.terracottaRust),
+              Icon(ZadIcons.sos, color: ZadColors.terracottaRust),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -227,11 +226,7 @@ class _SosBanner extends ConsumerWidget {
                   ),
                 ),
               ),
-              const Icon(
-                ZadIcons.back,
-                size: 18,
-                color: ZadColors.terracottaRust,
-              ),
+              Icon(ZadIcons.back, size: 18, color: ZadColors.terracottaRust),
             ],
           ),
         ),
@@ -276,17 +271,9 @@ class _Hero extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: <Widget>[
-            GestureDetector(
-              onTap: onOrb,
-              child: CompanionOrb(accessory: ref.watch(orbAccessoryProvider))
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scaleXY(
-                    begin: 0.98,
-                    end: 1.05,
-                    duration: 2600.ms,
-                    curve: Curves.fastOutSlowIn,
-                  ),
-            ),
+            // Kotlin: the living orb, 96dp, on the one shared mood; a tap
+            // squeezes, blinks and glows, then opens the chat.
+            CompanionOrb(state: ref.watch(companionMoodProvider), onTap: onOrb),
             const SizedBox(height: 14),
             Text(
               'عقل زاد الذكي',
@@ -1010,7 +997,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(LucideIcons.shieldCheck, size: 22),
+              const Icon(Icons.security, size: 22),
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
@@ -1171,7 +1158,7 @@ class _DistributionCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _Header(
-            icon: LucideIcons.chartPie,
+            icon: Icons.pie_chart,
             title: 'توزيع المصروفات والملاحظات السلوكية',
             subtitle: 'تحليل نسب الصرف على الفئات والملاحظات السلوكية الذكية',
             trailing: Text(
@@ -1218,7 +1205,7 @@ class _DistributionCard extends ConsumerWidget {
                 Text(
                   '${(e.value / safeTotal * 100).toInt()}% • '
                   '${_money(ref, e.value)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: ZadColors.inkMuted,
@@ -1311,7 +1298,7 @@ class _ChatCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(ZadIcons.back, color: ZadColors.inkMuted),
+            Icon(ZadIcons.back, color: ZadColors.inkMuted),
           ],
         ),
       ),

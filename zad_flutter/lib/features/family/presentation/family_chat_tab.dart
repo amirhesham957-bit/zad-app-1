@@ -555,10 +555,10 @@ class _SosBubble extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          const CircleAvatar(
+          CircleAvatar(
             radius: 20,
             backgroundColor: ZadColors.terracottaRust,
-            child: Icon(ZadIcons.sos, color: Colors.white, size: 20),
+            child: const Icon(ZadIcons.sos, color: Colors.white, size: 20),
           ),
           const SizedBox(width: ZadSpacing.md),
           Expanded(
@@ -664,7 +664,7 @@ class _RequestBubble extends ConsumerWidget {
               ),
             ] else if (status == RequestStatus.rejected) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
-              const _Status(
+              _Status(
                 icon: ZadIcons.rejected,
                 text: 'مرفوض',
                 color: ZadColors.terracottaRust,
@@ -728,7 +728,7 @@ class _PollBubble extends ConsumerWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Icon(ZadIcons.poll, color: ZadColors.mustardOchre),
+                Icon(ZadIcons.poll, color: ZadColors.mustardOchre),
                 const SizedBox(width: ZadSpacing.sm),
                 Text(
                   'تصويت من $alias',
@@ -766,7 +766,7 @@ class _PollBubble extends ConsumerWidget {
                   child: Row(
                     children: <Widget>[
                       if (mine == i) ...<Widget>[
-                        const Icon(
+                        Icon(
                           ZadIcons.selected,
                           size: 16,
                           color: ZadColors.mustardOchre,
@@ -889,7 +889,7 @@ class _Composer extends StatelessWidget {
                         IconButton(
                           tooltip: 'نداء طوارئ',
                           onPressed: onSos,
-                          icon: const Icon(
+                          icon: Icon(
                             ZadIcons.sos,
                             color: ZadColors.terracottaRust,
                           ),
@@ -905,7 +905,7 @@ class _Composer extends StatelessWidget {
                         IconButton(
                           tooltip: 'تصويت',
                           onPressed: onPoll,
-                          icon: const Icon(
+                          icon: Icon(
                             ZadIcons.poll,
                             color: ZadColors.mustardOchre,
                           ),
@@ -921,7 +921,7 @@ class _Composer extends StatelessWidget {
                         IconButton(
                           tooltip: 'البقالة',
                           onPressed: onGrocery,
-                          icon: const Icon(
+                          icon: Icon(
                             ZadIcons.inventory,
                             color: ZadColors.mustardOchre,
                           ),

@@ -288,7 +288,7 @@ class _ChallengeCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 ZadIcons.leaderboard,
                 size: 22,
                 color: ZadColors.mustardOchre,
@@ -325,7 +325,7 @@ class _ChallengeCard extends StatelessWidget {
                   ),
                 ),
                 tooltip: 'شارك التحدي',
-                icon: const Icon(ZadIcons.send, color: ZadColors.forestEmerald),
+                icon: Icon(ZadIcons.send, color: ZadColors.forestEmerald),
               ),
             ],
           ),

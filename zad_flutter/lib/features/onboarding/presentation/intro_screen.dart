@@ -84,7 +84,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     body: DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.xl),

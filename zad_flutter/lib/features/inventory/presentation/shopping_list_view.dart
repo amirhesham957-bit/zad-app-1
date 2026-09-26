@@ -169,7 +169,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => unawaited(_add()),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'محتاج تشتري إيه؟',
                     filled: true,
                     fillColor: ZadColors.surface,
@@ -556,7 +556,7 @@ class _Line extends ConsumerWidget {
               IconButton(
                 onPressed: () => unawaited(controller.remove(item.id)),
                 tooltip: 'حذف',
-                icon: const Icon(
+                icon: Icon(
                   ZadIcons.delete,
                   size: 18,
                   color: ZadColors.inkMuted,

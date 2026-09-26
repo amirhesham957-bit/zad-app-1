@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
@@ -58,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(profileControllerProvider);
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('حسابي')),
@@ -111,13 +110,13 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(showSettingsScreen(context)),
                   ),
                   _MenuRow(
-                    icon: LucideIcons.fileUp,
+                    icon: Icons.upload_file,
                     title: 'استيراد كشف حساب',
                     subtitle: 'استورد كشف حساب CSV من البنك',
                     onTap: () => unawaited(showStatementImportScreen(context)),
                   ),
                   _MenuRow(
-                    icon: LucideIcons.headset,
+                    icon: Icons.support_agent,
                     title: 'الدعم الفني',
                     subtitle: 'تواصل معنا',
                     onTap: () => unawaited(showHelpSupportScreen(context)),
@@ -153,13 +152,13 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(_newGoal(context, ref)),
                   ),
                   _MenuRow(
-                    icon: LucideIcons.sparkles,
+                    icon: Icons.auto_awesome,
                     title: 'زيّن زاد',
                     subtitle: 'كل ما عيلتك تنضم لزاد، زاد بتتزيّن',
                     onTap: () => unawaited(showOrbPicker(context)),
                   ),
                   _MenuRow(
-                    icon: LucideIcons.fileText,
+                    icon: Icons.description,
                     title: 'الشروط والأحكام',
                     subtitle: 'سياسة الاستخدام والخصوصية',
                     onTap: () => unawaited(showTermsScreen(context)),
@@ -237,7 +236,7 @@ class ProfileScreen extends ConsumerWidget {
           if (on)
             TextButton(
               onPressed: () => Navigator.of(c).pop(false),
-              child: const Text(
+              child: Text(
                 'إلغاء التفعيل',
                 style: TextStyle(color: ZadColors.terracottaRust),
               ),
@@ -265,7 +264,7 @@ class ProfileScreen extends ConsumerWidget {
     final sure = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text(
+        title: Text(
           'حذف الحساب',
           style: TextStyle(color: ZadColors.terracottaRust),
         ),
@@ -448,10 +447,10 @@ class _Header extends ConsumerWidget {
                               onTap: view.isUploading
                                   ? null
                                   : () => unawaited(_pickAvatar(context, ref)),
-                              child: const CircleAvatar(
+                              child: CircleAvatar(
                                 radius: 12,
                                 backgroundColor: ZadColors.surface,
-                                child: Icon(
+                                child: const Icon(
                                   ZadIcons.edit,
                                   size: 13,
                                   color: ZadColors.green700,
@@ -592,11 +591,7 @@ class _MenuGroup extends StatelessWidget {
             ),
             trailing:
                 row.trailing ??
-                const Icon(
-                  ZadIcons.forward,
-                  size: 18,
-                  color: ZadColors.inkMuted,
-                ),
+                Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
           ),
         ],
       ],
@@ -779,7 +774,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ?.toUpperCase() ??
         '?';
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('تعديل الملف الشخصي')),
@@ -1023,7 +1018,7 @@ class _KidsModeCard extends ConsumerWidget {
       return _MenuGroup(
         rows: <_MenuRow>[
           _MenuRow(
-            icon: LucideIcons.lock,
+            icon: Icons.lock,
             title: 'إعادة قفل وضع الأطفال',
             subtitle: 'يرجع الجهاز لوضع الأطفال',
             onTap: () => ref.read(kidsModeProvider.notifier).relock(),

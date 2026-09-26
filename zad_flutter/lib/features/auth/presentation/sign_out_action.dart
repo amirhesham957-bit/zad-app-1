@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/auth/application/session_controller.dart';
@@ -16,7 +15,7 @@ class SignOutAction extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => IconButton(
-    icon: const Icon(LucideIcons.logOut),
+    icon: const Icon(Icons.exit_to_app),
     tooltip: 'اخرج من الحساب',
     onPressed: () => confirmAndSignOut(context, ref),
   );
@@ -33,7 +32,7 @@ class SignOutTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => ListTile(
-    leading: const Icon(LucideIcons.logOut, color: ZadColors.terracottaRust),
+    leading: Icon(Icons.exit_to_app, color: ZadColors.terracottaRust),
     title: Text(
       'اخرج من الحساب',
       style: ZadType.titleSmall.copyWith(color: ZadColors.terracottaRust),

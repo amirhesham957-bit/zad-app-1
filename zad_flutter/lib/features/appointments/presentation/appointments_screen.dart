@@ -12,7 +12,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/period/account_time_zone.dart';
@@ -33,12 +32,12 @@ Future<void> showAppointmentsScreen(BuildContext context) =>
     );
 
 IconData _kindIcon(String kind) => switch (kind) {
-  'work' => LucideIcons.briefcase,
-  'errand' => LucideIcons.footprints,
-  'medical' => LucideIcons.hospital,
+  'work' => Icons.work,
+  'errand' => Icons.insights,
+  'medical' => Icons.local_hospital,
   'family' => ZadIcons.family,
-  'personal' => LucideIcons.user,
-  _ => LucideIcons.calendar,
+  'personal' => Icons.person,
+  _ => Icons.calendar_month,
 };
 
 Color _kindAccent(String kind) => switch (kind) {
@@ -53,7 +52,7 @@ Color _kindAccent(String kind) => switch (kind) {
 IconData _placeIcon(String place) => switch (place) {
   'pharmacy' => ZadIcons.pharmacy,
   'supermarket' => ZadIcons.shopping,
-  'mall' => LucideIcons.shoppingBag,
+  'mall' => Icons.shopping_bag,
   _ => ZadIcons.store,
 };
 
@@ -232,7 +231,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
                 Navigator.of(dialogContext).pop();
                 unawaited(_setStatus(a, 'cancelled'));
               },
-              child: const Text(
+              child: Text(
                 'إلغاء الميعاد',
                 style: TextStyle(color: ZadColors.terracottaRust),
               ),
@@ -270,7 +269,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
     final groups = groupAppointments(items ?? const [], nowLocal, _local);
     final hasUpcoming = groups.any((g) => g.$1 != AppointmentGroup.past);
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZadColors.canvas),
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('مواعيدي')),
@@ -449,23 +448,23 @@ class _ObligationsLink extends StatelessWidget {
     color: Colors.transparent,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
-      side: const BorderSide(color: ZadColors.outlineVariant),
+      side: BorderSide(color: ZadColors.outlineVariant),
     ),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 44),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
             horizontal: ZadSpacing.lg,
             vertical: ZadSpacing.md,
           ),
           child: Row(
             children: <Widget>[
               Icon(ZadIcons.obligation, size: 20, color: ZadColors.inkMuted),
-              SizedBox(width: ZadSpacing.md),
-              Expanded(
+              const SizedBox(width: ZadSpacing.md),
+              const Expanded(
                 child: Text(
                   'التزاماتك المالية (إيجار، أقساط، فواتير)',
                   style: ZadType.bodyMedium,
@@ -505,11 +504,7 @@ class _PlaceReminders extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
-                LucideIcons.mapPin,
-                size: 20,
-                color: ZadColors.green700,
-              ),
+              const Icon(Icons.place, size: 20, color: ZadColors.green700),
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
@@ -576,10 +571,7 @@ class _PlaceReminders extends StatelessWidget {
                     IconButton(
                       tooltip: 'إلغاء التذكير',
                       onPressed: () => onCancel(r),
-                      icon: const Icon(
-                        ZadIcons.dismiss,
-                        color: ZadColors.inkMuted,
-                      ),
+                      icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
                     ),
                   ],
                 ),
@@ -590,11 +582,7 @@ class _PlaceReminders extends StatelessWidget {
           // location alerts are off.
           Row(
             children: <Widget>[
-              const Icon(
-                LucideIcons.mapPinOff,
-                size: 16,
-                color: ZadColors.mustardOchre,
-              ),
+              Icon(Icons.location_off, size: 16, color: ZadColors.mustardOchre),
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
@@ -644,7 +632,7 @@ class _PastHeader extends StatelessWidget {
             AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: ZadDuration.quick,
-              child: const Icon(ZadIcons.expand, color: ZadColors.inkMuted),
+              child: Icon(ZadIcons.expand, color: ZadColors.inkMuted),
             ),
           ],
         ),
@@ -677,7 +665,7 @@ class _Row extends StatelessWidget {
         color: ZadColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: ZadColors.outlineVariant),
+          side: BorderSide(color: ZadColors.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -730,7 +718,7 @@ class _Row extends StatelessWidget {
                     tooltip: 'خلص',
                     onPressed: onDone,
                     icon: const Icon(
-                      LucideIcons.circleCheck,
+                      Icons.check_circle,
                       color: ZadColors.green700,
                     ),
                   )
@@ -881,7 +869,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
                       );
                       if (picked != null) setState(() => _date = picked);
                     },
-                    icon: const Icon(LucideIcons.calendar, size: 18),
+                    icon: const Icon(Icons.calendar_month, size: 18),
                     label: Text(
                       DateFormat('EEE d MMM', 'ar').format(_date),
                       maxLines: 1,

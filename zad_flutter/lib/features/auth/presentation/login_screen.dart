@@ -10,7 +10,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
@@ -63,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: ZadColors.canvas),
+        decoration: BoxDecoration(gradient: ZadColors.canvas),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -144,7 +143,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             onPressed: () =>
                                 setState(() => _obscured = !_obscured),
                             icon: Icon(
-                              _obscured ? LucideIcons.eye : LucideIcons.eyeOff,
+                              _obscured
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                             ),
                             tooltip: _obscured ? 'اظهر كلمة السر' : 'اخفيها',
                           ),
@@ -156,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         case final AuthFailure failure) ...<Widget>[
                       const SizedBox(height: ZadSpacing.lg),
                       _Banner(
-                        icon: LucideIcons.triangleAlert,
+                        icon: Icons.warning,
                         text: failure.message,
                         tint: ZadColors.terracottaRust,
                       ),
@@ -165,7 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     if (form.notice case final String notice) ...<Widget>[
                       const SizedBox(height: ZadSpacing.lg),
                       _Banner(
-                        icon: LucideIcons.mailCheck,
+                        icon: Icons.mark_email_read,
                         text: notice,
                         tint: ZadColors.green600,
                       ),
@@ -179,7 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // A spinner here is honest, unlike the one the add
                           // sheet does not have: this really is a network round
                           // trip and the customer really is waiting on it.
-                          ? const SizedBox.square(
+                          ? SizedBox.square(
                               dimension: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
@@ -235,7 +236,7 @@ class _Brand extends StatelessWidget {
           alignment: Alignment.center,
           decoration: const BoxDecoration(gradient: ZadColors.hero),
           child: const Icon(
-            LucideIcons.wallet,
+            Icons.account_balance_wallet,
             color: ZadColors.mintGlow,
             size: 34,
           ),
