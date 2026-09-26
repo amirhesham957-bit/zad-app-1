@@ -1,6 +1,9 @@
 /// Everything that must be true before the first frame is drawn.
 library;
 
+import 'dart:async';
+import 'dart:ui' show PluginUtilities;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -13,6 +16,8 @@ import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
+import 'package:zad/features/bank/background/bank_background_main.dart';
+import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// Prepares the app and runs it.
 ///
@@ -54,6 +59,18 @@ Future<void> bootstrap(Widget app) async {
     // was renamed.
     publishableKey: ZadEnv.supabaseAnonKey,
   );
+
+  // Which function the bank listener runs when a notification arrives with
+  // the app closed. Registered on every start because an app update can move
+  // the handle; not awaited, because nothing on the first frame depends on it.
+  final handle = PluginUtilities.getCallbackHandle(bankBackgroundMain);
+  if (handle != null) {
+    unawaited(
+      const ZadBankListener()
+          .registerBackgroundHandle(handle.toRawHandle())
+          .catchError((Object _) {}),
+    );
+  }
 
   runApp(
     ProviderScope(

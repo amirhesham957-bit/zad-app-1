@@ -40,6 +40,15 @@ class _FakeListener implements ZadBankListener {
   Future<int> pendingCount() async => pending;
 
   @override
+  Future<void> registerBackgroundHandle(int handle) async {}
+
+  @override
+  Future<void> backgroundDone() async {}
+
+  @override
+  Stream<void> get captures => const Stream<void>.empty();
+
+  @override
   Future<void> openPermissionSettings() async => settingsOpened++;
 
   @override

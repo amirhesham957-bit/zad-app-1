@@ -25,6 +25,10 @@ enum SyncTrigger {
   /// A periodic nudge, which exists for one reason: an entry inside its
   /// backoff needs waking, and no user action may be coming.
   tick,
+
+  /// The bank listener just captured a notification while the app is
+  /// running. Without it the notification waited for the next tick.
+  bankCaptured,
 }
 
 /// Runs flushes, one at a time.

@@ -15,7 +15,14 @@ import 'package:zad/data/sync/outbox_runner.dart';
 class AppSyncTriggers {
   /// Starts observing. [tick] is the floor: an entry inside its backoff has no
   /// user action coming to wake it, so something has to.
-  new({Duration tick = const Duration(seconds: 30)}) {
+  ///
+  /// [bankCaptures] is the listener's "something arrived" signal, so a card
+  /// payment made while the app is open is sent within seconds.
+  new({
+    Duration tick = const Duration(seconds: 30),
+    Stream<void>? bankCaptures,
+  }) {
+    _captures = bankCaptures?.listen((_) => _emit(SyncTrigger.bankCaptured));
     // No startup event is emitted here. This is a broadcast controller, so an
     // event added before the runner subscribes is dropped on the floor;
     // OutboxRunner.start() does the first flush itself instead.
@@ -37,6 +44,7 @@ class AppSyncTriggers {
   late final AppLifecycleListener _lifecycle;
   late final StreamSubscription<List<ConnectivityResult>> _connectivity;
   late final Timer _tick;
+  StreamSubscription<void>? _captures;
 
   /// The merged trigger stream.
   Stream<SyncTrigger> get stream => _controller.stream;
@@ -48,6 +56,7 @@ class AppSyncTriggers {
   /// Stops observing.
   Future<void> dispose() async {
     _tick.cancel();
+    await _captures?.cancel();
     _lifecycle.dispose();
     await _connectivity.cancel();
     await _controller.close();

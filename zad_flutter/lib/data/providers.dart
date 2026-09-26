@@ -536,7 +536,9 @@ transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
 final Provider<OutboxRunner> outboxRunnerProvider = Provider<OutboxRunner>((
   ref,
 ) {
-  final triggers = AppSyncTriggers();
+  final triggers = AppSyncTriggers(
+    bankCaptures: ref.read(bankListenerProvider).captures,
+  );
   final runner = OutboxRunner(
     outbox: ref.watch(outboxProvider),
     triggers: triggers.stream,

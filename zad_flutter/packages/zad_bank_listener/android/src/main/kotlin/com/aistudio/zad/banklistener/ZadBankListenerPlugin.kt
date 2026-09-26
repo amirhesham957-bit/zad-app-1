@@ -18,14 +18,22 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var context: Context
     private val store by lazy { CapturedNotificationStore.get(context) }
 
+    /** البلَج-إن ده متسجّل في محرك الخلفية (BackgroundDelivery)، مش في التطبيق نفسه. */
+    private var inBackgroundEngine = false
+
     override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         channel = MethodChannel(binding.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
+        inBackgroundEngine = BackgroundDelivery.creatingHeadless
+        if (!inBackgroundEngine) BackgroundDelivery.uiChannel = channel
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        if (!inBackgroundEngine && BackgroundDelivery.uiChannel === channel) {
+            BackgroundDelivery.uiChannel = null
+        }
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
@@ -48,6 +56,16 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     result.success(null)
                 }
                 "pendingCount" -> result.success(store.pending())
+                // الدالة اللي محرك الخلفية بيشغّلها لما إشعار يوصل والتطبيق مقفول.
+                "registerBackgroundHandle" -> {
+                    val handle = call.argument<Number>("handle")?.toLong() ?: 0L
+                    if (handle != 0L) BackgroundDelivery.saveCallbackHandle(context, handle)
+                    result.success(null)
+                }
+                "backgroundDone" -> {
+                    if (inBackgroundEngine) BackgroundDelivery.headlessFinished()
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {

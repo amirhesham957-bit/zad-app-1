@@ -46,6 +46,15 @@ class _FakeListener implements ZadBankListener {
 
   @override
   Future<bool> requestRebind() async => true;
+
+  @override
+  Future<void> registerBackgroundHandle(int handle) async {}
+
+  @override
+  Future<void> backgroundDone() async {}
+
+  @override
+  Stream<void> get captures => const Stream<void>.empty();
 }
 
 CapturedNotification _n(

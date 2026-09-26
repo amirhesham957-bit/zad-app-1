@@ -10,6 +10,8 @@
 /// tests against the Kotlin it came from.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -110,4 +112,33 @@ class ZadBankListener {
   /// How many are waiting. Cheap enough for a status row.
   Future<int> pendingCount() async =>
       await channel.invokeMethod<int>('pendingCount') ?? 0;
+
+  /// Tells the service which Dart function to run when a notification
+  /// arrives and the app is not running.
+  ///
+  /// [handle] is `PluginUtilities.getCallbackHandle(fn)!.toRawHandle()` for a
+  /// top-level function marked `@pragma('vm:entry-point')`. The service
+  /// stores it, so it survives the app being closed; an app update can move
+  /// it, so the app registers it on every start.
+  Future<void> registerBackgroundHandle(int handle) =>
+      channel.invokeMethod<void>('registerBackgroundHandle', <String, Object>{
+        'handle': handle,
+      });
+
+  /// Called by the background function when it is finished, so the service
+  /// can shut its engine down. A no-op from the app's own engine.
+  Future<void> backgroundDone() => channel.invokeMethod<void>('backgroundDone');
+
+  /// Fires when the service captured something while the app is running —
+  /// the cue to drain the inbox now rather than on the next tick.
+  Stream<void> get captures => _captures.stream;
+
+  static final StreamController<void> _captures =
+      StreamController<void>.broadcast(onListen: _listenForCaptures);
+
+  static void _listenForCaptures() {
+    channel.setMethodCallHandler((call) async {
+      if (call.method == 'captured') _captures.add(null);
+    });
+  }
 }
