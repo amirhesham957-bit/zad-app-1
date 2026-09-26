@@ -1,48 +1,47 @@
-/// The first thing a new phone shows: what Zad does, in four screens, then
-/// the way in.
+/// Kotlin's `OnboardingScreen` (`ui/screens/auth/OnboardingScreen.kt`): the
+/// brand, four feature cards in a pager (Lottie on the first and third), the
+/// page dots, «التالي» / «ابدأ مع زاد», «تخطي» and the sign-up link — on the
+/// auth canvas.
 ///
-/// Only what this app does today. The Kotlin carousel opens on the shared
-/// family pantry, which this client has not ported yet — promising it here
-/// would be the first thing the customer finds missing.
+/// Kotlin's language toggle is not here: this client has no second language
+/// to switch to yet.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lottie/lottie.dart';
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/design/tokens/zad_extended_colors.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
+import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/onboarding/application/intro_controller.dart';
 
-/// One page of the introduction.
+/// One card of the carousel.
 typedef IntroPage = ({IconData icon, String title, String body});
 
-/// The pages, in order.
+/// Kotlin's four features, in order.
 const List<IntroPage> kIntroPages = <IntroPage>[
   (
-    icon: ZadIcons.bank,
-    title: 'ميزانيتك من رسايل البنك',
-    body: 'زاد بيقرا إشعار البنك ويسجّل المصروف لوحده — من غير ما تكتب حاجة.',
+    icon: Icons.inventory_2,
+    title: 'إدارة المخزين',
+    body: 'تتبع كل ما في مطبخك وبيتك بذكاء',
   ),
   (
-    icon: ZadIcons.assistant,
-    title: 'اسأل زاد',
-    body: 'اكتب أو اتكلم: «صرفت كام على الأكل الشهر ده؟» وهو يرد بالأرقام.',
+    icon: Icons.family_restroom,
+    title: 'العائلة كلها',
+    body: 'شارك الميزانية والمهام مع عائلتك',
   ),
   (
-    icon: ZadIcons.family,
-    title: 'البيت في مكان واحد',
-    body: 'المخزن، قايمة المشتريات، ومواعيد الدوا — وبيفكّرك قبل ما حاجة تخلص.',
+    icon: Icons.smart_toy,
+    title: 'مساعد ذكي',
+    body: 'ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك',
   ),
   (
-    icon: ZadIcons.obligation,
-    title: 'الالتزامات قبل ما تيجي',
-    body:
-        'الاشتراكات والفواتير بتتحجز من ميزانيتك قبل ميعادها، فاللي قدامك '
-        'هو اللي تقدر تصرفه فعلاً.',
+    icon: Icons.account_balance_wallet,
+    title: 'الميزانية بذكاء',
+    body: 'حلل إنفاقك ووفّر أكثر باقتراحات ذكية',
   ),
 ];
 
@@ -67,150 +66,213 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     super.dispose();
   }
 
-  /// Leaves for the login form, in the mode the customer asked for.
   void _finish({AuthMode mode = AuthMode.signIn}) {
     ref.read(authControllerProvider.notifier).setMode(mode);
     ref.read(introSeenProvider.notifier).markSeen();
   }
 
-  void _next() {
-    if (_onLast) {
-      _finish();
-      return;
-    }
-    _pages.nextPage(duration: ZadDuration.enter, curve: ZadCurves.standard);
-  }
+  Color _color(int i, ColorScheme scheme) => switch (i) {
+    0 => scheme.primary,
+    1 => scheme.secondary,
+    2 => const Color(0xFF7C3AED),
+    _ => scheme.tertiary,
+  };
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.xl),
-          child: Column(
-            children: <Widget>[
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                // Hidden on the last page, where the main button already says
-                // the same thing.
-                child: AnimatedOpacity(
-                  opacity: _onLast ? 0 : 1,
-                  duration: ZadDuration.quick,
-                  child: TextButton(
-                    onPressed: _onLast ? null : _finish,
-                    child: const Text('تخطّي'),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: ZadAuthBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 36),
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SvgPicture.asset(
+                      'assets/brand/carrot_logo.svg',
+                      width: 52,
+                      height: 52,
+                      semanticsLabel: 'شعار زاد',
+                    ),
+                    const SizedBox(width: 14),
+                    Text(
+                      'زاد',
+                      style: ZadType.displayLarge.copyWith(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: context.zadExt.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'تدبير ذكي لبيت هادئ',
+                  style: ZadType.labelLarge.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pages,
-                  itemCount: kIntroPages.length,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  itemBuilder: (_, i) => _Page(page: kIntroPages[i]),
-                ),
-              ),
-              _Dots(count: kIntroPages.length, current: _page),
-              const SizedBox(height: ZadSpacing.xl),
-              // The thumb zone: the one primary action, then the two ways to
-              // leave early, closer together than to it.
-              FilledButton(
-                onPressed: _next,
-                child: Text(_onLast ? 'يلا نبدأ' : 'التالي'),
-              ),
-              const SizedBox(height: ZadSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () => _finish(mode: AuthMode.signUp),
-                    child: const Text('اعمل حساب جديد'),
-                  ),
-                  Text(
-                    '·',
-                    style: ZadType.bodyMedium.copyWith(
-                      color: ZadColors.inkMuted,
+                const SizedBox(height: 40),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pages,
+                    itemCount: kIntroPages.length,
+                    onPageChanged: (p) => setState(() => _page = p),
+                    itemBuilder: (_, i) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: _FeatureCard(
+                        page: i,
+                        feature: kIntroPages[i],
+                        color: _color(i, scheme),
+                        selected: i == _page,
+                      ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    for (var i = 0; i < kIntroPages.length; i++) ...<Widget>[
+                      if (i > 0) const SizedBox(width: 8),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: i == _page ? 28 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: i == _page
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 32),
+                ZadPrimaryButton(
+                  text: _onLast ? 'ابدأ مع زاد' : 'التالي',
+                  onPressed: () {
+                    if (_onLast) {
+                      _finish();
+                    } else {
+                      _pages.animateToPage(
+                        _page + 1,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (!_onLast)
                   TextButton(
                     onPressed: _finish,
-                    child: const Text('عندي حساب'),
+                    child: Text(
+                      'تخطي',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.md),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-class _Page extends StatelessWidget {
-  const new({required this.page});
-
-  final IntroPage page;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: <Widget>[
-      ZadSquircleClip(
-        radius: ZadRadii.hero,
-        child: Container(
-          width: 96,
-          height: 96,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(gradient: ZadColors.hero),
-          child: Icon(page.icon, color: ZadColors.mintGlow, size: 44),
-        ),
-      ),
-      const SizedBox(height: ZadSpacing.xxl),
-      Text(
-        page.title,
-        style: ZadType.headlineMedium,
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: ZadSpacing.md),
-      Text(
-        page.body,
-        style: ZadType.bodyLarge.copyWith(color: ZadColors.inkMuted),
-        textAlign: TextAlign.center,
-      ),
-    ],
-  );
-}
-
-/// Where the reader is: the current page's dot stretches.
-class _Dots extends StatelessWidget {
-  const new({required this.count, required this.current});
-
-  final int count;
-  final int current;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'صفحة ${current + 1} من $count',
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        for (var i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: ZadDuration.quick,
-            curve: ZadCurves.standard,
-            margin: const EdgeInsets.symmetric(horizontal: ZadSpacing.xs),
-            width: i == current ? ZadSpacing.xl : ZadSpacing.sm,
-            height: ZadSpacing.sm,
-            decoration: ShapeDecoration(
-              color: i == current
-                  ? ZadColors.green600
-                  : ZadColors.inkMuted.withValues(alpha: 0.3),
-              shape: const StadiumBorder(),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => _finish(mode: AuthMode.signUp),
+                  child: Text(
+                    'ليس لديك حساب؟ أنشئ حساباً جديداً',
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-      ],
-    ),
-  );
+        ),
+      ),
+    );
+  }
+}
+
+/// Kotlin's `FeatureCard`.
+class _FeatureCard extends StatelessWidget {
+  const new({
+    required this.page,
+    required this.feature,
+    required this.color,
+    required this.selected,
+  });
+
+  final int page;
+  final IntroPage feature;
+  final Color color;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedScale(
+      scale: selected ? 1 : 0.95,
+      duration: const Duration(milliseconds: 300),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: ZadListCard(
+          padding: const EdgeInsets.all(32),
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                switch (page) {
+                  0 => Lottie.asset(
+                    'assets/lottie/lottie_onboarding_welcome.json',
+                    width: 200,
+                    height: 200,
+                    repeat: false,
+                  ),
+                  2 => Lottie.asset(
+                    'assets/lottie/lottie_onboarding_ai.json',
+                    width: 200,
+                    height: 200,
+                    repeat: false,
+                  ),
+                  _ => Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: LinearGradient(
+                        colors: <Color>[color, color.withValues(alpha: 0.7)],
+                      ),
+                    ),
+                    child: Icon(feature.icon, size: 40, color: Colors.white),
+                  ),
+                },
+                const SizedBox(height: 24),
+                Text(
+                  feature.title,
+                  textAlign: TextAlign.center,
+                  style: ZadType.headlineMedium.copyWith(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  feature.body,
+                  textAlign: TextAlign.center,
+                  style: ZadType.bodyLarge.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 24 / 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

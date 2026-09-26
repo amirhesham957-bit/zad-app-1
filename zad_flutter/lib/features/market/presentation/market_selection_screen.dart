@@ -12,16 +12,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/design/components/zad_appear.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/features/market/presentation/market_picker_grid.dart';
 
 /// The market picker.
 class MarketSelectionScreen extends ConsumerStatefulWidget {
@@ -34,17 +30,8 @@ class MarketSelectionScreen extends ConsumerStatefulWidget {
 }
 
 class _MarketSelectionScreenState extends ConsumerState<MarketSelectionScreen> {
-  final TextEditingController _search = TextEditingController();
-
   Market? _selected;
-  String _query = '';
   bool _saving = false;
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
 
   Future<void> _confirm() async {
     final market = _selected;
@@ -72,179 +59,55 @@ class _MarketSelectionScreenState extends ConsumerState<MarketSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final markets = searchMarkets(_query);
-
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(gradient: ZadColors.canvas),
+      body: ZadAuthBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                const SizedBox(height: ZadSpacing.xxl),
-                const Text(
-                  'إنت منين؟',
-                  style: ZadType.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                Text(
-                  // Says what the answer is for, because "which country" on
-                  // its own reads like a survey. The two effects are the two
-                  // things a null country actually breaks.
-                  'زاد بيحسب مصروفك بعملة بلدك، ومواعيد دواك على ساعتها.',
-                  style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: ZadSpacing.xl),
-
-                TextField(
-                  controller: _search,
-                  onChanged: (value) => setState(() => _query = value),
-                  textInputAction: TextInputAction.search,
-                  decoration: const InputDecoration(
-                    hintText: 'دوّر على بلدك أو عملتك',
-                    prefixIcon: Icon(ZadIcons.search),
+          child: ZadAppearOnEntry(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const SizedBox(height: 48),
+                  Text(
+                    'وين موطنك؟',
+                    textAlign: TextAlign.center,
+                    style: ZadType.headlineMedium.copyWith(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: scheme.onSurface,
+                    ),
                   ),
-                ),
-                const SizedBox(height: ZadSpacing.md),
-
-                Expanded(
-                  child: markets.isEmpty
-                      ? const ZadEmptyState(
-                          icon: ZadIcons.market,
-                          title: 'مفيش بلد بالاسم ده',
-                          message:
-                              'جرّب اسم البلد بالعربي، أو كود العملة زي EGP.',
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                mainAxisSpacing: ZadSpacing.sm,
-                                crossAxisSpacing: ZadSpacing.sm,
-                                childAspectRatio: 0.95,
-                              ),
-                          itemCount: markets.length,
-                          itemBuilder: (context, i) {
-                            final market = markets[i];
-                            return _MarketTile(
-                              market: market,
-                              selected: market == _selected,
-                              onTap: _saving
-                                  ? null
-                                  : () => setState(() => _selected = market),
-                            );
-                          },
-                        ),
-                ),
-
-                // The thumb zone: the one action on the screen, at the bottom.
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: ZadSpacing.sm,
-                    bottom: ZadSpacing.lg,
+                  const SizedBox(height: 8),
+                  Text(
+                    'زاد بيتكلم بلهجتك وبيحسب مصروفك بعملة بلدك',
+                    textAlign: TextAlign.center,
+                    style: ZadType.bodyLarge.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
-                  child: FilledButton(
-                    onPressed: _selected == null || _saving ? null : _confirm,
-                    child: _saving
-                        ? SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ZadColors.surface,
-                            ),
-                          )
-                        : Text(switch (_selected) {
-                            final m? => 'متابعة — ${m.nameAr}',
-                            null => 'اختار بلدك',
-                          }),
+                  const SizedBox(height: 28),
+                  MarketPickerGrid(
+                    selected: _selected,
+                    onSelect: _saving
+                        ? null
+                        : (m) => setState(() => _selected = m),
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  ZadPrimaryButton(
+                    text: 'متابعة',
+                    enabled: _selected != null,
+                    loading: _saving,
+                    onPressed: () => unawaited(_confirm()),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
-
-/// One market in the grid.
-class _MarketTile extends StatelessWidget {
-  const new({required this.market, required this.selected, this.onTap});
-
-  final Market market;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    selected: selected,
-    child: ZadPressable(
-      onPressed: onTap,
-      semanticLabel: '${market.nameAr}، ${market.currency}',
-      child: AnimatedContainer(
-        duration: ZadDuration.quick,
-        curve: ZadCurves.standard,
-        padding: const EdgeInsets.symmetric(
-          vertical: ZadSpacing.md,
-          horizontal: ZadSpacing.xs,
-        ),
-        decoration: ShapeDecoration(
-          color: selected ? ZadColors.mint50 : ZadColors.surface,
-          shape: zadSquircle(
-            ZadRadii.card,
-            side: selected
-                ? const BorderSide(color: ZadColors.green600, width: 1.5)
-                : const BorderSide(color: ZadColors.hairline, width: 0.5),
-          ),
-        ),
-        child: ExcludeSemantics(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Stack(
-                clipBehavior: Clip.none,
-                children: <Widget>[
-                  Text(market.flag, style: ZadType.headlineLarge),
-                  PositionedDirectional(
-                    top: -ZadSpacing.xs,
-                    end: -ZadSpacing.sm,
-                    child: AnimatedScale(
-                      scale: selected ? 1 : 0,
-                      duration: ZadDuration.quick,
-                      curve: ZadCurves.springy,
-                      child: const Icon(
-                        ZadIcons.selected,
-                        size: 16,
-                        color: ZadColors.green600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xs),
-              Text(
-                market.nameAr,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: ZadType.labelMedium.copyWith(
-                  color: selected ? ZadColors.green700 : ZadColors.ink,
-                  fontWeight: selected ? FontWeight.w700 : null,
-                ),
-              ),
-              Text(
-                market.currencySymbol,
-                style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }
