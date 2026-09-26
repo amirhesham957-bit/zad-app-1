@@ -121,8 +121,20 @@ class ZadBankListener {
     return ListenerStatus(
       lastConnectedAt: at(map?['lastConnectedAt']),
       lastSeenAnyAt: at(map?['lastSeenAnyAt']),
+      testSentAt: at(map?['testSentAt']),
+      testResult: map?['testResult'] as String?,
     );
   }
+
+  /// Kotlin's `BankReadingStatus.sendTestNotification`: a real notification
+  /// through the same listener path, marked so the service knows it.
+  Future<void> sendTestNotification({
+    required String title,
+    required String body,
+  }) => channel.invokeMethod<void>('sendTestNotification', <String, Object>{
+    'title': title,
+    'body': body,
+  });
 
   /// How many are waiting. Cheap enough for a status row.
   Future<int> pendingCount() async =>
@@ -161,11 +173,22 @@ class ZadBankListener {
 /// Kotlin's `BankReadingStatus` readings.
 class ListenerStatus {
   /// Creates a status.
-  const new({this.lastConnectedAt, this.lastSeenAnyAt});
+  const new({
+    this.lastConnectedAt,
+    this.lastSeenAnyAt,
+    this.testSentAt,
+    this.testResult,
+  });
 
   /// When the service last bound.
   final DateTime? lastConnectedAt;
 
   /// When it last saw any notification.
   final DateTime? lastSeenAnyAt;
+
+  /// When the last test notification was sent.
+  final DateTime? testSentAt;
+
+  /// `sent`, `received_by_listener`, or null.
+  final String? testResult;
 }

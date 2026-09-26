@@ -41,6 +41,7 @@ class BankAccessState {
     this.lastCapturedAt,
     this.lastConnectedAt,
     this.lastSeenAnyAt,
+    this.testResult,
     this.checking = false,
   });
 
@@ -59,6 +60,9 @@ class BankAccessState {
   /// When it last saw any notification at all, even one it then ignored
   /// (Kotlin's `lastSawNotificationAt`).
   final DateTime? lastSeenAnyAt;
+
+  /// The test notification: `sent`, `received_by_listener`, or null.
+  final String? testResult;
 
   /// Whether a check is in flight.
   final bool checking;
@@ -93,6 +97,7 @@ class BankAccessState {
     lastCapturedAt: lastCapturedAt ?? this.lastCapturedAt,
     lastConnectedAt: lastConnectedAt,
     lastSeenAnyAt: lastSeenAnyAt,
+    testResult: testResult,
     checking: checking ?? this.checking,
   );
 }
@@ -137,6 +142,7 @@ class BankAccessController extends Notifier<BankAccessState> {
         lastCapturedAt: ref.read(bankCaptureMarkerProvider).lastCapturedAt(),
         lastConnectedAt: status.lastConnectedAt,
         lastSeenAnyAt: status.lastSeenAnyAt,
+        testResult: status.testResult,
       );
     } on Object {
       // The plugin is not there — a test host, or a platform without it. Not

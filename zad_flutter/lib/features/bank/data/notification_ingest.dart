@@ -76,6 +76,7 @@ Future<OutboxEntry?> ingestBankNotification({
   required String text,
   required bool isTrackedFinancialApp,
   String? marketCurrency,
+  void Function(BankRejectReason reason)? onRejected,
 }) async {
   final verdict = classifyBankNotification(
     title: title,
@@ -88,6 +89,9 @@ Future<OutboxEntry?> ingestBankNotification({
     reason: verdict.reason,
     isTrackedFinancialApp: isTrackedFinancialApp,
   )) {
+    // Kotlin's SaBankParser.logRejection: set aside for a reason the
+    // customer can see — the proof the filter is not eating real ones.
+    if (verdict.reason case final reason?) onRejected?.call(reason);
     return null;
   }
 

@@ -43,6 +43,12 @@ class _FakeListener implements ZadBankListener {
   Future<ListenerStatus> listenerStatus() async => const ListenerStatus();
 
   @override
+  Future<void> sendTestNotification({
+    required String title,
+    required String body,
+  }) async {}
+
+  @override
   Future<void> registerBackgroundHandle(int handle) async {}
 
   @override

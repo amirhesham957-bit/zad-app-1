@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/family/application/family_controller.dart';
@@ -166,6 +167,11 @@ class LocalReminders {
 
   /// The next 17:00 — today's only if the member has not said tasbih today.
   Future<void> syncTasbih({bool doneToday = false}) async {
+    // Kotlin's TasbihaReminderWorker: nothing unless «تذكير التسبيح» is on.
+    if (!_ref.read(alertPrefsProvider).isEnabled(AlertPrefs.tasbihReminder)) {
+      await _plugin.cancel(id: _tasbihId);
+      return;
+    }
     final zone = _zone;
     final now = tz.TZDateTime.now(zone);
     var done = doneToday;

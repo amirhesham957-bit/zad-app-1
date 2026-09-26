@@ -62,6 +62,14 @@ class ZadNotificationListenerService : NotificationListenerService() {
         // من غيره مفيش فرق بين "الخدمة ميتة" و"الخدمة شغالة والفلترة رمت كل حاجة".
         try {
             markNow(applicationContext, LAST_SEEN_ANY_AT)
+            // كوتلن UnifiedBankListener: الإشعار التجريبي بيتعرف من الـperson مش النص،
+            // فالكشف شغال مهما كانت لغة التطبيق.
+            val people = notification.notification?.extras
+                ?.getStringArray(android.app.Notification.EXTRA_PEOPLE)
+            if (people?.contains(TEST_MARKER_PERSON) == true) {
+                applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit().putString(TEST_RESULT, "received_by_listener").apply()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "mark seen failed: ${e.message}")
         }
@@ -102,6 +110,9 @@ class ZadNotificationListenerService : NotificationListenerService() {
         const val PREFS = "zad_bank_listener"
         const val LAST_CONNECTED_AT = "last_connected_at"
         const val LAST_SEEN_ANY_AT = "last_seen_any_at"
+        const val TEST_MARKER_PERSON = "test:zad-diagnostic"
+        const val TEST_AT = "test_sent_at"
+        const val TEST_RESULT = "test_result"
 
         fun markNow(context: Context, key: String) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

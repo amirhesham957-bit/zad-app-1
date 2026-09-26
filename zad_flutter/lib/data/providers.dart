@@ -5,6 +5,8 @@
 /// outside this file.
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -20,6 +22,7 @@ import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/bank/data/bank_capture_marker.dart';
+import 'package:zad/features/bank/data/bank_rejected_log.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
@@ -123,8 +126,16 @@ final Provider<NotificationDrain> notificationDrainProvider =
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
         isTrackedFinancialApp: isTrackedFinancialApp,
+        onRejected: (source, reason, raw) => unawaited(
+          ref.read(bankRejectedLogProvider).add(source, reason, raw),
+        ),
       );
     });
+
+/// The bank messages set aside, with why (Kotlin's rejected-messages table).
+final bankRejectedLogProvider = Provider<BankRejectedLog>(
+  (ref) => BankRejectedLog(ref.watch(localStoreProvider).documents),
+);
 
 /// Hands bank notifications to zad-brain.
 final bankRemoteProvider = Provider<BankRemote>(

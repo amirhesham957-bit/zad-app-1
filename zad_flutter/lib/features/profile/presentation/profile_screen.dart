@@ -26,16 +26,15 @@ import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/features/profile/presentation/profile_sub_screens.dart';
 import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/support/presentation/help_support_screen.dart';
 import 'package:zad/features/support/presentation/terms_screen.dart';
@@ -89,13 +88,13 @@ class ProfileScreen extends ConsumerWidget {
                     icon: ZadIcons.family,
                     title: 'إدارة العائلة',
                     subtitle: 'الأعضاء والصلاحيات',
-                    onTap: () => unawaited(showFamilyScreen(context)),
+                    onTap: () => unawaited(showFamilyManagementScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.budget,
                     title: 'الميزانية وطرق الدفع',
                     subtitle: 'الميزانية الشهرية والربط البنكي',
-                    onTap: () => unawaited(showSettingsScreen(context)),
+                    onTap: () => unawaited(showPaymentAndBudgetScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.market,
@@ -107,7 +106,7 @@ class ProfileScreen extends ConsumerWidget {
                     icon: ZadIcons.notifications,
                     title: 'تنبيهات المساعد الذكي',
                     subtitle: 'التحكم في التنبيهات الذكية',
-                    onTap: () => unawaited(showSettingsScreen(context)),
+                    onTap: () => unawaited(showAssistantAlertsScreen(context)),
                   ),
                   _MenuRow(
                     icon: Icons.upload_file,

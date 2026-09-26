@@ -56,6 +56,15 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     result.success(null)
                 }
                 "pendingCount" -> result.success(store.pending())
+                // كوتلن BankReadingStatus.sendTestNotification: إشعار حقيقي بيمشي على نفس
+                // مسار المستمع، بعلامة person مستقلة عن اللغة.
+                "sendTestNotification" -> {
+                    sendTestNotification(
+                        call.argument<String>("title") ?: "",
+                        call.argument<String>("body") ?: "",
+                    )
+                    result.success(null)
+                }
                 // كوتلن BankReadingStatus: آخر ربط للخدمة وآخر إشعار شافته (أي إشعار).
                 "listenerStatus" -> result.success(
                     mapOf(
@@ -65,6 +74,12 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         "lastSeenAnyAt" to ZadNotificationListenerService.readMillis(
                             context, ZadNotificationListenerService.LAST_SEEN_ANY_AT,
                         ),
+                        "testSentAt" to ZadNotificationListenerService.readMillis(
+                            context, ZadNotificationListenerService.TEST_AT,
+                        ),
+                        "testResult" to context.getSharedPreferences(
+                            ZadNotificationListenerService.PREFS, Context.MODE_PRIVATE,
+                        ).getString(ZadNotificationListenerService.TEST_RESULT, null),
                     ),
                 )
                 // الدالة اللي محرك الخلفية بيشغّلها لما إشعار يوصل والتطبيق مقفول.
@@ -126,5 +141,36 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private companion object {
         const val CHANNEL = "com.aistudio.zad/bank_listener"
+    }
+
+    @Suppress("DEPRECATION")
+    private fun sendTestNotification(title: String, body: String) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE)
+            as android.app.NotificationManager
+        val channelId = "zad_test_channel"
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                android.app.NotificationChannel(
+                    channelId, "Zad test", android.app.NotificationManager.IMPORTANCE_DEFAULT,
+                ),
+            )
+            android.app.Notification.Builder(context, channelId)
+        } else {
+            android.app.Notification.Builder(context)
+        }
+        builder
+            .setSmallIcon(android.R.drawable.ic_menu_manage)
+            .setContentTitle(title)
+            .setContentText(body)
+            .addPerson(ZadNotificationListenerService.TEST_MARKER_PERSON)
+        val canPost = Build.VERSION.SDK_INT < 33 ||
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (canPost) manager.notify(99001, builder.build())
+        context.getSharedPreferences(ZadNotificationListenerService.PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(ZadNotificationListenerService.TEST_AT, System.currentTimeMillis())
+            .putString(ZadNotificationListenerService.TEST_RESULT, "sent")
+            .apply()
     }
 }

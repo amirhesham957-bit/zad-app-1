@@ -8,6 +8,7 @@ library;
 
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/features/bank/data/notification_ingest.dart';
+import 'package:zad/features/bank/domain/bank_notification.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// What one drain did.
@@ -35,7 +36,10 @@ class NotificationDrain {
     required String? Function() signedInUserId,
     required bool Function(String packageName) isTrackedFinancialApp,
     String? Function()? marketCurrency,
-  }) : _listener = listener,
+    void Function(String source, BankRejectReason reason, String rawText)?
+    onRejected,
+  }) : _onRejected = onRejected,
+       _listener = listener,
        _outbox = outbox,
        _newId = newId,
        _signedInUserId = signedInUserId,
@@ -48,6 +52,7 @@ class NotificationDrain {
   final String? Function() _signedInUserId;
   final bool Function(String) _isTracked;
   final String? Function()? _marketCurrency;
+  final void Function(String, BankRejectReason, String)? _onRejected;
 
   /// Takes what the service captured, queues what matters, drops the rest.
   ///
@@ -79,6 +84,11 @@ class NotificationDrain {
         text: n.text,
         isTrackedFinancialApp: _isTracked(n.packageName),
         marketCurrency: _marketCurrency?.call(),
+        onRejected: (reason) => _onRejected?.call(
+          n.title.trim().isEmpty ? n.packageName : n.title,
+          reason,
+          n.text,
+        ),
       );
       if (entry != null) queued++;
     }
