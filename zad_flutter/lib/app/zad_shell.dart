@@ -20,7 +20,6 @@ import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
@@ -36,6 +35,7 @@ import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
+import 'package:zad/features/voice/zad_voice_sheet.dart';
 
 /// Holds the tabs.
 class ZadShell extends ConsumerStatefulWidget {
@@ -116,12 +116,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   Future<void> _openCamera() => openZadCamera(context);
 
-  /// The mic orb: Kotlin's voice sheet. Here the conversation opens with the
-  /// microphone already listening; what is heard lands in the composer.
-  Future<void> _openVoice() async {
-    unawaited(ref.read(voiceInputControllerProvider.notifier).start());
-    await _openChat();
-  }
+  /// The mic orb: Kotlin's voice sheet — hold, speak, and زاد answers aloud.
+  Future<void> _openVoice() => showZadVoiceSheet(context);
 
   Future<void> _openChat() => Navigator.of(context)
       .push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));

@@ -11,10 +11,12 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/env/zad_env.dart';
@@ -33,6 +35,13 @@ abstract final class VoicePersona {
 
   /// «زاد الأليف (رفيق مرح)».
   static const String petMascot = 'pet_mascot';
+
+  /// Kotlin's `VoicePersona.values()`, id and `displayNameAr`, in order.
+  static const List<(String, String)> all = <(String, String)>[
+    (sarahWarm, '👩 سارة (صوت بشري دافئ)'),
+    (karimPro, '👨 كريم (صوت بشري واثق)'),
+    (petMascot, '🐾 زاد الأليف (رفيق مرح)'),
+  ];
 }
 
 /// Kotlin's `cleanRawText`.
@@ -74,20 +83,49 @@ List<String> speechChunks(String text) {
 /// The voice.
 class ZadVoice {
   /// Creates the voice.
-  new(this._client);
+  new(this._client, this._box);
 
   final SupabaseClient _client;
+  final Box<String> _box;
   int _generation = 0;
 
-  /// Stops whatever is being said (the next chunk will not start).
-  void stop() => _generation++;
+  // Kotlin's `zad_voice_persona` preference, `persona_id`.
+  static const String _personaKey = 'zad_voice_persona:persona_id';
 
-  /// Says [text] in [persona]'s voice.
-  Future<void> speak(
-    String text, {
-    String persona = VoicePersona.sarahWarm,
-  }) async {
+  /// Whether زاد is talking.
+  final ValueNotifier<bool> speaking = ValueNotifier<bool>(false);
+
+  /// Loudness of what is being said, 0..1, for the orb and the wave.
+  final ValueNotifier<double> level = ValueNotifier<double>(0);
+
+  /// The chosen persona — the one the voice sheet and the read-aloud use.
+  String get persona => _box.get(_personaKey) ?? VoicePersona.sarahWarm;
+
+  set persona(String id) => unawaited(_box.put(_personaKey, id));
+
+  /// Stops whatever is being said (the next chunk will not start).
+  void stop() {
+    _generation++;
+    speaking.value = false;
+    level.value = 0;
+  }
+
+  /// Says [text] in [persona]'s voice (the chosen one by default).
+  Future<void> speak(String text, {String? persona}) async {
     final generation = ++_generation;
+    final voice = persona ?? this.persona;
+    speaking.value = true;
+    try {
+      await _speak(text, voice, generation);
+    } finally {
+      if (generation == _generation) {
+        speaking.value = false;
+        level.value = 0;
+      }
+    }
+  }
+
+  Future<void> _speak(String text, String persona, int generation) async {
     var cleaned = cleanSpeechText(text);
     if (cleaned.length > 1200) cleaned = cleaned.substring(0, 1200);
     final chunks = [
@@ -97,6 +135,7 @@ class ZadVoice {
       if (generation != _generation) return;
       final pcm = await _synthesize(chunk, persona);
       if (pcm == null || generation != _generation) return;
+      level.value = _loudness(pcm);
       try {
         await _channel.invokeMethod<void>('play', <String, Object>{
           'pcm': pcm,
@@ -109,6 +148,20 @@ class ZadVoice {
       final ms = pcm.length ~/ 2 * 1000 ~/ _sampleRate;
       await Future<void>.delayed(Duration(milliseconds: ms + 80));
     }
+  }
+
+  /// RMS of 16-bit little-endian PCM, scaled to 0..1.
+  static double _loudness(Uint8List pcm) {
+    final data = ByteData.sublistView(pcm);
+    final n = pcm.length ~/ 2;
+    if (n == 0) return 0;
+    var sum = 0.0;
+    for (var i = 0; i < n; i += 4) {
+      final v = data.getInt16(i * 2, Endian.little) / 32768;
+      sum += v * v;
+    }
+    final rms = math.sqrt(sum / (n / 4).ceil());
+    return (rms * 3).clamp(0, 1).toDouble();
   }
 
   /// One chunk, with Kotlin's single retry on a server error.
@@ -148,5 +201,8 @@ class ZadVoice {
 
 /// The voice.
 final zadVoiceProvider = Provider<ZadVoice>(
-  (ref) => ZadVoice(ref.watch(supabaseClientProvider)),
+  (ref) => ZadVoice(
+    ref.watch(supabaseClientProvider),
+    ref.watch(localStoreProvider).device,
+  ),
 );
