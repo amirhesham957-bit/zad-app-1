@@ -14,7 +14,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/design/components/zad_pressable.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
@@ -24,11 +24,12 @@ import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
+import 'package:zad/features/budget/presentation/budget_screen_parts.dart';
 import 'package:zad/features/debts/presentation/debts_tab.dart';
-import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
+import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
@@ -153,13 +154,36 @@ class _DailyTab extends ConsumerWidget {
       decoration: const BoxDecoration(),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        floatingActionButton: FloatingActionButton.extended(
-          heroTag: 'finances-add',
-          onPressed: () => showAddTransactionSheet(context),
-          icon: const Icon(ZadIcons.add),
-          label: const Text('معاملة'),
-          backgroundColor: ZadColors.forestEmerald,
-          foregroundColor: Colors.white,
+        // Kotlin: the small scan button over «معاملة».
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            FloatingActionButton.small(
+              heroTag: 'finances-scan',
+              onPressed: () => unawaited(openZadCamera(context)),
+              tooltip: 'Scan',
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Colors.white,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.document_scanner, size: 20),
+            ),
+            const SizedBox(height: 12),
+            FloatingActionButton.extended(
+              heroTag: 'finances-add',
+              onPressed: () => showAddTransactionSheet(context),
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text(
+                'معاملة',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ],
         ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -185,6 +209,7 @@ class _DailyTab extends ConsumerWidget {
             ),
             const SizedBox(height: ZadSpacing.md),
             _InsightStrip(spent: spent, budget: limit),
+            BudgetSuggestionCard(currency: currency),
             const SizedBox(height: ZadSpacing.lg),
             Row(
               children: <Widget>[
@@ -199,10 +224,14 @@ class _DailyTab extends ConsumerWidget {
               ],
             ),
             if (lines.isEmpty)
-              const ZadEmptyState(
-                icon: ZadIcons.budget,
-                title: 'لسه ما حددتش ميزانية لأي فئة',
-                message: 'اضغط "تحديد فئة" عشان زاد يتابعلك كل فئة لوحدها.',
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: KtEmptyState(
+                  icon: Icons.pie_chart,
+                  title:
+                      'لسه ما حددتش ميزانية لأي فئة. اضغط "تحديد فئة" عشان '
+                      'زاد يتابعلك كل فئة لوحدها.',
+                ),
               )
             else
               for (final l in lines) ...<Widget>[
@@ -217,21 +246,8 @@ class _DailyTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: ZadSpacing.sm),
               ],
-            const SizedBox(height: ZadSpacing.lg),
-            const SubscriptionsGlanceCard(),
-            const SizedBox(height: ZadSpacing.lg),
-            _MonthTotals(income: income, spent: spent, currency: currency),
             const SizedBox(height: ZadSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: () {
-                ref
-                    .read(shellNavigationProvider.notifier)
-                    .open(ShellTab.transactions);
-                Navigator.of(context).popUntil((r) => r.isFirst);
-              },
-              icon: const Icon(ZadIcons.forward, size: 18),
-              label: const Text('كل المعاملات'),
-            ),
+            BudgetTransactionsSection(income: income, spent: spent),
           ],
         ),
       ),
@@ -556,54 +572,6 @@ class _CategoryCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MonthTotals extends StatelessWidget {
-  const new({
-    required this.income,
-    required this.spent,
-    required this.currency,
-  });
-
-  final double income;
-  final double spent;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[
-      Text(
-        'هذا الشهر',
-        style: ZadType.labelMedium.copyWith(
-          color: ZadColors.inkMuted,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      const SizedBox(height: ZadSpacing.xs),
-      Row(
-        children: <Widget>[
-          if (income > 0)
-            Text(
-              '+${_money(income)} $currency'.trim(),
-              style: ZadType.bodyMedium.copyWith(
-                color: ZadColors.green600,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          if (income > 0 && spent > 0) const SizedBox(width: ZadSpacing.sm),
-          if (spent > 0)
-            Text(
-              '−${_money(spent)} $currency'.trim(),
-              style: ZadType.bodyMedium.copyWith(
-                color: ZadColors.terracottaRust,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-        ],
-      ),
-    ],
-  );
 }
 
 /// Kotlin's `CategoryBudgetEditDialog`: a category (chosen when new) and its
