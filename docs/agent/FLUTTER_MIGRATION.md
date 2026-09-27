@@ -492,8 +492,23 @@ one commit, full verification, report, then continue.
    runs — verify with `flutter analyze` + the release build only.**
    **Known gaps after the port (2026-09-25) — not "100%" until these are
    decided:**
-   - Voice out: no TTS (`voice_synthesize`), no spoken alerts, no wake
-     greeting; voice *in* (STT in the chat) is ported.
+   - Voice out in the chat is ported (`features/voice/`): a message the
+     customer spoke goes with `voice_mode` and the reply is read aloud, and
+     every reply has a speaker button. `voice_synthesize` = Gemini (Sarah,
+     Aoede) then Azure (Salma for Egypt) — needs `AZURE_SPEECH_KEY`/`REGION`
+     on the project for the fallback. The orb shows «بيتكلم» while audio
+     plays; the microphone interrupts Zad. Still not ported: spoken alerts
+     (notifications/doses read aloud), the wake greeting, persona choice
+     (fixed to Sarah).
+   - Agent screen commands are ported (`chat/domain/agent_screen.dart`):
+     `app_commands` from a turn open the named screen over the chat — never
+     in kids mode. The server list now also has `recipes`, `prices`,
+     `goals`, `nearby`; Kotlin logs and ignores those four (its
+     `MainScreen` whitelist was not extended — no Android SDK in the session
+     that added them).
+   - The agent has a chef: zad-brain's `suggest_recipes` calls the same
+     `meal_suggestions` as the Chef screen with the snapshot's pantry
+     (`zad-brain/chef.ts`); the chat prompt forbids inventing recipes.
    - No Lottie: confetti on the kids savings goal and the tasbiha level-up
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,
@@ -502,8 +517,19 @@ one commit, full verification, report, then continue.
      reminders (home location) are not ported.
    - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
      app.
-   - The intelligence screen's PDF report export (Kotlin's local brain
-     report) is not ported; the AI report is shared as text.
+   - The intelligence screen's PDF: the *AI* monthly report now shares as
+     `zad_report_yyyyMMdd.pdf`, a strategic report — overview KPIs, (1) house /
+     children / pharmacy / family-outings cards, (2) repeat-purchase, costly
+     transport and small-purchase alerts, (3) a month-on-month table with a
+     cap per category and projected savings. Every number comes from
+     `intelligence/domain/monthly_analysis.dart` on the phone (keyword lists
+     there are matching data — never translate); the model only writes the
+     summary and advice. Essentials (medicine, bills, rent, instalments,
+     school) are never capped below their level. Via `package:pdf`, font
+     `assets/fonts/cairo_pdf.ttf` from `tool/make_pdf_font.py`; see the
+     header of `intelligence/data/monthly_report_pdf.dart` for the two
+     `package:pdf` Arabic defects it works around). Kotlin's *local brain*
+     report content is still not computed in Flutter.
    - MerchantCategoryOverrides are not applied to statement import.
 11. **The finish line:** a release APK signed with the debug key (already the
     template's setting, `android/app/build.gradle.kts`), sideloaded on the

@@ -39,10 +39,14 @@ import 'package:zad/features/transactions/presentation/add_transaction_sheet.dar
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
-/// Opens the screen.
-Future<void> showFinancesScreen(BuildContext context) => Navigator.of(
-  context,
-).push<void>(MaterialPageRoute<void>(builder: (_) => const FinancesScreen()));
+/// Opens the screen on [initialTab] — 0 الحركات والميزانية, 1 الاشتراكات
+/// والأقساط, 2 الديون.
+Future<void> showFinancesScreen(BuildContext context, {int initialTab = 0}) =>
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => FinancesScreen(initialTab: initialTab),
+      ),
+    );
 
 /// The ceilings on screen.
 class CategoryBudgetsController extends Notifier<Map<String, double>> {

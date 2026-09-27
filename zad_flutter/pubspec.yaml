@@ -71,6 +71,9 @@ dependencies:
 
   # ── Audio
   record: ^7.1.1
+  # Zad's voice out: plays the PCM voice_synthesize returns (Gemini, or
+  # Azure's Salma when every Gemini key fails), wrapped as WAV in a temp file.
+  audioplayers: ^6.8.1
   permission_handler: ^13.0.2
 
   # ── Time. The budget period is a civil range on the account's market
@@ -100,7 +103,8 @@ dependencies:
   firebase_messaging: ^16.7.0
   flutter_local_notifications: ^22.3.1
   # The system share sheet — Kotlin's ZadShare: the savings challenge's
-  # "شارك التحدي" and the weekly card. Text only; no files leave the app.
+  # "شارك التحدي" and the weekly card. Text, plus the monthly report PDF
+  # the user chooses to share.
   share_plus: ^13.3.0
   # Draws the family invite as a QR code — Kotlin's InviteMemberDialog "QR"
   # tab. Pure Dart painter, no platform code, no camera.
@@ -111,6 +115,9 @@ dependencies:
   # ── Lottie, for the same res/raw animations the Kotlin app plays
   # (garden burst, confetti, success check, scan line…).
   lottie: ^3.6.1
+  # The monthly report as a file — Kotlin's ZadReportPdfBuilder. Pure Dart,
+  # no platform code: it shapes Arabic and lays out right-to-left itself, with
+  # the bundled Cairo font, so the PDF reads the same on every phone.
   pdf: ^3.13.1
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
@@ -141,6 +148,9 @@ flutter:
     - assets/brand/
     # Kotlin's res/raw Lottie files, byte for byte.
     - assets/lottie/
+    # Cairo for the monthly report PDF only — built by tool/make_pdf_font.py;
+    # see features/intelligence/data/monthly_report_pdf.dart for why.
+    - assets/fonts/cairo_pdf.ttf
 
   # The same variable font files the Kotlin app ships, copied from
   # app/src/main/res/font/ so text measures identically on both clients.

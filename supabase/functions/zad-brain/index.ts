@@ -54,6 +54,7 @@
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { formatChefResult, pantryForChef } from "./chef.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
@@ -2463,6 +2464,18 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       });
       return `اتظبط رصيد صندوق الطوارئ على ${input.new_balance}`;
     }
+    case "suggest_recipes": {
+      // قراءة بس — مفيش كتابة. المخزون من الـsnapshot (نفس اللي العقل شايفه)، والشيف نفسه
+      // في zad-core-intelligence. فشل النداء بيترجع كجملة صريحة، مش وصفات من الموديل.
+      const items = pantryForChef(snap?.stock);
+      if (!items) {
+        return "المخزون فاضي في التطبيق، فشيف زاد مش هيقدر يقترح من اللي في البيت. اقترح على العميل يسجّل "
+          + "اللي عنده (أو يصوّره: app_command screen=camera) الأول.";
+      }
+      const result = await callCoreIntel("meal_suggestions", { items }, userId);
+      if (!result) return "شيف زاد مش متاح دلوقتي — قول للعميل يجرب تاني بعد شوية، وماتقترحش وصفات من عندك.";
+      return formatChefResult(result, snap?.currency ?? "");
+    }
     case "app_command": {
       // أمر واجهة بس — مفيش أي كتابة في الداتابيز هنا. الأمر بيرجع للكلاينت جوه رد
       // agent_turn (agentAppCommands) وZadViewModel هو اللي بينفذه محلياً: يفتح الشاشة،
@@ -4210,6 +4223,15 @@ const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    // شيف زاد نفسه، مش تخمين الموديل: نفس meal_suggestions اللي صفحة الشيف بتناديه.
+    name: "suggest_recipes",
+    description:
+      "اسأل «شيف زاد» يقترح أكلات من مخزون البيت الحالي — نفس اقتراحات صفحة الشيف (بتراعي آراء العميل "
+      + "في الوصفات، عدد الأسرة، المتاح في الميزانية، ووضع الطوارئ). نادِها لما العميل يسأل «أطبخ إيه؟» أو "
+      + "«أعمل أكل إيه من اللي عندي؟». اعرض الوصفات اللي رجعت بس — ماتخترعش وصفة من عندك جنبها.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
     // أمر واجهة — العقل يقدّر يفتح شاشة أو يظلّل عنصر داخل التطبيق (نمط "الإيجنت
     // يدير كل زرار"). قراءة/تنقّل بس: مفيش أي كتابة فلوس أو بيانات حساسة من هنا.
     // الأوامر بتوصل للكلاينت في رد الـ agent_turn (حقل app_commands) وبيستقبلها
@@ -5936,6 +5958,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
 13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.
 14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.
+15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).
 
 === SNAPSHOT ===
 ${JSON.stringify(snap)}

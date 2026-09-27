@@ -123,6 +123,12 @@ abstract final class ZadIcons {
   /// Speak.
   static const IconData voice = Icons.mic;
 
+  /// Hear a reply read aloud.
+  static const IconData listen = Icons.volume_up;
+
+  /// Stop the voice.
+  static const IconData silence = Icons.stop_circle;
+
   /// Retry.
   static const IconData retry = Icons.refresh;
 

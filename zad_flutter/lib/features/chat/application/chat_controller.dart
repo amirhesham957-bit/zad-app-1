@@ -21,9 +21,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
+import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// What the chat screen draws.
 class ChatView {
@@ -77,8 +80,10 @@ class ChatController extends Notifier<ChatView> {
     return ChatView(messages: ref.read(chatRepositoryProvider).all());
   }
 
-  /// Sends one message.
-  Future<void> send(String raw) async {
+  /// Sends one message. [viaVoice] marks one the customer spoke: the server
+  /// keeps the reply short enough to hear (`voice_mode`), and Zad reads it
+  /// aloud when it arrives — Kotlin's voice turn.
+  Future<void> send(String raw, {bool viaVoice = false}) async {
     final text = raw.trim();
     if (text.isEmpty || !ref.mounted || state.isAwaitingReply) return;
 
@@ -115,7 +120,12 @@ class ChatController extends Notifier<ChatView> {
     await repository.save(mine);
     if (!ref.mounted) return;
 
-    await _run(mine: mine, placeholder: placeholder, history: history);
+    await _run(
+      mine: mine,
+      placeholder: placeholder,
+      history: history,
+      viaVoice: viaVoice,
+    );
   }
 
   /// Sends a failed message again, without making the customer retype it.
@@ -138,6 +148,7 @@ class ChatController extends Notifier<ChatView> {
     required ChatMessage mine,
     required ChatMessage placeholder,
     required List<AgentHistoryEntry> history,
+    bool viaVoice = false,
   }) async {
     final repository = ref.read(chatRepositoryProvider);
     final completer = Completer<void>();
@@ -146,7 +157,7 @@ class ChatController extends Notifier<ChatView> {
     await _turn?.cancel();
     _turn = ref
         .read(agentRemoteProvider)
-        .turn(message: mine.text, history: history)
+        .turn(message: mine.text, history: history, voiceMode: viaVoice)
         .listen(
           (event) {
             if (!ref.mounted) return;
@@ -181,6 +192,16 @@ class ChatController extends Notifier<ChatView> {
       await repository.save(mine.copyWith(status: ChatStatus.done));
       await repository.save(streamed);
       if (!ref.mounted) return;
+
+      // Asked aloud, answered aloud. Not awaited: the turn is over when the
+      // reply is on screen, not when Zad stops talking.
+      if (viaVoice && streamed.text.trim().isNotEmpty) {
+        unawaited(
+          ref
+              .read(voiceOutputControllerProvider.notifier)
+              .speak(streamed.text, messageId: streamed.id),
+        );
+      }
 
       state = state.copyWith(
         messages: state.messages
@@ -225,6 +246,13 @@ class ChatController extends Notifier<ChatView> {
     );
     _replace(settled);
     if (turn.touchedMoney) _refreshMoney();
+    // Only the first: two screens pushed from one reply would bury the first
+    // under the second before anybody saw it.
+    // Kids mode opens nothing: a child reaches no money screen by asking the
+    // agent any more than by tapping (Kotlin's kidsModeEffective guard).
+    if (turn.appCommands.isNotEmpty && !ref.read(kidsModeActiveProvider)) {
+      ref.read(agentCommandProvider.notifier).request(turn.appCommands.first);
+    }
     return settled;
   }
 
@@ -333,3 +361,25 @@ class ChatPrefill extends Notifier<String?> {
 final chatPrefillProvider = NotifierProvider<ChatPrefill, String?>(
   ChatPrefill.new,
 );
+
+/// A screen the agent asked to open, stamped so that the same command twice
+/// in a row is still two requests.
+typedef AgentCommandRequest = ({int serial, AgentAppCommand command});
+
+/// The screen the agent last asked for. The chat screen listens and opens it
+/// — a listener, not a read, so a request made while the chat was closed is
+/// not carried out later, out of context, when it reopens.
+class AgentCommands extends Notifier<AgentCommandRequest?> {
+  var _serial = 0;
+
+  @override
+  AgentCommandRequest? build() => null;
+
+  /// Asks for [command].
+  void request(AgentAppCommand command) =>
+      state = (serial: ++_serial, command: command);
+}
+
+/// The agent's latest screen request.
+final agentCommandProvider =
+    NotifierProvider<AgentCommands, AgentCommandRequest?>(AgentCommands.new);

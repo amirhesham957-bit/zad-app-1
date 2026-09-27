@@ -14,6 +14,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,12 +25,18 @@ import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
+import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
+import 'package:zad/features/voice/data/voice_player.dart';
+import 'package:zad/features/voice/data/voice_synthesizer.dart';
 
 class _FakeAgent implements AgentRemote {
   /// Driven by the test, so a turn can be observed mid-flight.
@@ -37,6 +44,7 @@ class _FakeAgent implements AgentRemote {
 
   List<AgentHistoryEntry>? sentHistory;
   String? sentMessage;
+  bool? sentVoiceMode;
 
   /// How many turns have been opened.
   int turns = 0;
@@ -57,6 +65,7 @@ class _FakeAgent implements AgentRemote {
     turns++;
     sentMessage = message;
     sentHistory = history;
+    sentVoiceMode = voiceMode;
     return (live = StreamController<AgentEvent>()).stream;
   }
 
@@ -69,6 +78,32 @@ class _FakeAgent implements AgentRemote {
     if (confirmFailsWith case final e?) throw e;
     return confirmation;
   }
+}
+
+class _Synth implements VoiceSynthesizer {
+  final spoken = <String>[];
+
+  @override
+  Future<SpokenAudio> synthesize(String text) async {
+    spoken.add(text);
+    return (pcm: Uint8List(2), provider: 'gemini');
+  }
+}
+
+class _SilentPlayer implements VoicePlayer {
+  @override
+  Future<void> play(Uint8List wav) async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> dispose() async {}
+}
+
+class _Mic extends VoiceInputController {
+  @override
+  VoiceInputView build() => const VoiceInputView();
 }
 
 class _CountingBudget implements BudgetRemote {
@@ -117,6 +152,7 @@ void main() {
   late Box<String> chat;
   late _FakeAgent agent;
   late _CountingBudget budget;
+  late _Synth synth;
 
   final now = DateTime.parse('2026-09-20T09:00:00Z');
   var ids = 0;
@@ -137,6 +173,7 @@ void main() {
     chat = await Hive.openBox<String>('chat$run');
     agent = _FakeAgent();
     budget = _CountingBudget();
+    synth = _Synth();
     ids = 0;
   });
 
@@ -145,7 +182,7 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer containerWith() {
+  ProviderContainer containerWith({bool kids = false}) {
     late TransactionsRepository txns;
     final outbox = Outbox(
       box: outboxBox,
@@ -180,6 +217,10 @@ void main() {
         serverTimeZoneArgumentProvider.overrideWithValue(() => ''),
         transactionsRepositoryProvider.overrideWithValue(txns),
         agentRemoteProvider.overrideWithValue(agent),
+        voiceSynthesizerProvider.overrideWithValue(synth),
+        voicePlayerProvider.overrideWithValue(_SilentPlayer()),
+        voiceInputControllerProvider.overrideWith(_Mic.new),
+        kidsModeActiveProvider.overrideWithValue(kids),
         chatRepositoryProvider.overrideWithValue(
           ChatRepository(box: chat, newId: () => 'm${ids++}'),
         ),
@@ -217,6 +258,124 @@ void main() {
       specialist: specialist,
     ),
   );
+
+  group('asked aloud, answered aloud', () {
+    Future<void> turn(ProviderContainer c, {required bool viaVoice}) async {
+      final pending = c
+          .read(chatControllerProvider.notifier)
+          .send('عندي كام في الميزانية؟', viaVoice: viaVoice);
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(done(reply: 'فاضلك ألف جنيه.'));
+      await agent.live!.close();
+      await pending;
+      for (var i = 0; i < 20; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('a spoken message goes in voice mode and the reply is read', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      await turn(container, viaVoice: true);
+      expect(agent.sentVoiceMode, isTrue);
+      expect(synth.spoken, <String>['فاضلك ألف جنيه.']);
+    });
+
+    test('a typed message is neither', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      await turn(container, viaVoice: false);
+      expect(agent.sentVoiceMode, isFalse);
+      expect(synth.spoken, isEmpty);
+    });
+  });
+
+  group('the agent opens screens', () {
+    test('a turn with app_commands asks for the first one, once', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final seen = <AgentCommandRequest?>[];
+      container.listen(
+        agentCommandProvider,
+        (_, next) => seen.add(next),
+        fireImmediately: true,
+      );
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('وريني مواعيدي');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(
+        AgentDone(
+          AgentTurn.fromJson(<String, dynamic>{
+            'reply': 'فتحتلك المواعيد.',
+            'app_commands': <Map<String, dynamic>>[
+              <String, dynamic>{'screen': 'appointments', 'action': 'open'},
+              <String, dynamic>{'screen': 'pharmacy', 'action': 'open'},
+            ],
+          }),
+        ),
+      );
+      await agent.live!.close();
+      await pending;
+
+      expect(seen, hasLength(2)); // null, then the one request
+      expect(seen.last!.command.screen, AgentScreen.appointments);
+    });
+
+    test('kids mode opens nothing', () async {
+      final container = containerWith(kids: true);
+      addTearDown(container.dispose);
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('وريني الديون');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(
+        AgentDone(
+          AgentTurn.fromJson(<String, dynamic>{
+            'reply': 'تمام.',
+            'app_commands': <Map<String, dynamic>>[
+              <String, dynamic>{'screen': 'debts', 'action': 'open'},
+            ],
+          }),
+        ),
+      );
+      await agent.live!.close();
+      await pending;
+
+      expect(container.read(agentCommandProvider), isNull);
+    });
+
+    test('the same command twice is two requests', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      const cmd = AgentAppCommand(
+        screen: AgentScreen.shopping,
+        action: AgentScreenAction.open,
+      );
+      final notifier = container.read(agentCommandProvider.notifier)
+        ..request(cmd);
+      final first = container.read(agentCommandProvider)!.serial;
+      notifier.request(cmd);
+      expect(container.read(agentCommandProvider)!.serial, first + 1);
+    });
+
+    test('a turn without commands asks for nothing', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('صرفت ٥٠');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(done());
+      await agent.live!.close();
+      await pending;
+
+      expect(container.read(agentCommandProvider), isNull);
+    });
+  });
 
   group('the message is on screen before the server answers', () {
     test('the customer text is in state and in the box immediately', () async {
