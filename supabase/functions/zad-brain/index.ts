@@ -57,6 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd } from "./lowStock.ts";
+import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
@@ -6054,6 +6055,40 @@ Deno.serve(async (req: Request) => {
       });
       console.log(`[voice_moments] sent=${summary.sent} skipped=${summary.skipped} failed=${summary.failed}`);
       return new Response(JSON.stringify({ ok: true, ...summary }), { headers: CORS_HEADERS });
+    }
+
+    // التحليل اليومي (dailyBrain.ts): الكرون brain-daily-analysis بيصحّيه الصبح بنفس سيكريت
+    // الفحص الاستباقي. بيرد على طول (202) والشغل بيكمل في الخلفية — كل حساب نداء منفصل
+    // لمسار trigger=daily بمفتاح الخدمة، واللي فيه حارس الـ١٢ ساعة ضد التكرار.
+    if (body.action === "run_daily_brain") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDaily = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: accounts, error } = await sbDaily.from("zad_users").select("id").limit(500);
+      if (error) {
+        return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: CORS_HEADERS });
+      }
+      const ids = (accounts ?? []).map((a: { id: string }) => a.id);
+      const work = runDailyForUsers(ids, async (userId) => {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-brain`, {
+            method: "POST",
+            headers: { "content-type": "application/json", "authorization": `Bearer ${SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({ trigger: "daily", user_id: userId }),
+            signal: AbortSignal.timeout(140_000),
+          });
+          if (!res.ok) console.error(`[daily_brain] ${userId} → ${res.status}`);
+          return res.ok;
+        } catch (e) {
+          console.error(`[daily_brain] ${userId} failed:`, (e as Error).message);
+          return false;
+        }
+      }).then((r) => console.log(`[daily_brain] started=${r.started} ok=${r.ok} failed=${r.failed}`));
+      const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+      if (runtime?.waitUntil) runtime.waitUntil(work);
+      else await work;
+      return new Response(JSON.stringify({ ok: true, accounts: ids.length }), { status: 202, headers: CORS_HEADERS });
     }
 
     if (body.action === "run_proactive_scan") {
