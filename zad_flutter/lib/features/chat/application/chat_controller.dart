@@ -25,6 +25,7 @@ import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// What the chat screen draws.
 class ChatView {
@@ -78,8 +79,10 @@ class ChatController extends Notifier<ChatView> {
     return ChatView(messages: ref.read(chatRepositoryProvider).all());
   }
 
-  /// Sends one message.
-  Future<void> send(String raw) async {
+  /// Sends one message. [viaVoice] marks one the customer spoke: the server
+  /// keeps the reply short enough to hear (`voice_mode`), and Zad reads it
+  /// aloud when it arrives — Kotlin's voice turn.
+  Future<void> send(String raw, {bool viaVoice = false}) async {
     final text = raw.trim();
     if (text.isEmpty || !ref.mounted || state.isAwaitingReply) return;
 
@@ -116,7 +119,12 @@ class ChatController extends Notifier<ChatView> {
     await repository.save(mine);
     if (!ref.mounted) return;
 
-    await _run(mine: mine, placeholder: placeholder, history: history);
+    await _run(
+      mine: mine,
+      placeholder: placeholder,
+      history: history,
+      viaVoice: viaVoice,
+    );
   }
 
   /// Sends a failed message again, without making the customer retype it.
@@ -139,6 +147,7 @@ class ChatController extends Notifier<ChatView> {
     required ChatMessage mine,
     required ChatMessage placeholder,
     required List<AgentHistoryEntry> history,
+    bool viaVoice = false,
   }) async {
     final repository = ref.read(chatRepositoryProvider);
     final completer = Completer<void>();
@@ -147,7 +156,7 @@ class ChatController extends Notifier<ChatView> {
     await _turn?.cancel();
     _turn = ref
         .read(agentRemoteProvider)
-        .turn(message: mine.text, history: history)
+        .turn(message: mine.text, history: history, voiceMode: viaVoice)
         .listen(
           (event) {
             if (!ref.mounted) return;
@@ -182,6 +191,16 @@ class ChatController extends Notifier<ChatView> {
       await repository.save(mine.copyWith(status: ChatStatus.done));
       await repository.save(streamed);
       if (!ref.mounted) return;
+
+      // Asked aloud, answered aloud. Not awaited: the turn is over when the
+      // reply is on screen, not when Zad stops talking.
+      if (viaVoice && streamed.text.trim().isNotEmpty) {
+        unawaited(
+          ref
+              .read(voiceOutputControllerProvider.notifier)
+              .speak(streamed.text, messageId: streamed.id),
+        );
+      }
 
       state = state.copyWith(
         messages: state.messages

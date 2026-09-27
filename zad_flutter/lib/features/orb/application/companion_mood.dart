@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/orb/domain/companion_state.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// The mood.
 final Provider<CompanionState> companionMoodProvider = Provider<CompanionState>(
@@ -28,6 +29,14 @@ final Provider<CompanionState> companionMoodProvider = Provider<CompanionState>(
       default:
         break;
     }
+
+    // Zad's own voice next: squash-and-talk while audio plays, thinking while
+    // the first chunk is synthesized.
+    final voiceOut = ref.watch(
+      voiceOutputControllerProvider.select((v) => v.stage),
+    );
+    if (voiceOut == VoiceOutputStage.speaking) return CompanionState.speaking;
+    if (voiceOut == VoiceOutputStage.preparing) return CompanionState.focused;
 
     // Kotlin sets Focused while a turn is out, then reads the reply's tone.
     final awaiting = ref.watch(

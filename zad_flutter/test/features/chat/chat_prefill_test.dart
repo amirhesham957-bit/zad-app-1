@@ -16,7 +16,8 @@ class _Chat extends ChatController {
   ChatView build() => const ChatView();
 
   @override
-  Future<void> send(String text) async => sent.add(text);
+  Future<void> send(String text, {bool viaVoice = false}) async =>
+      sent.add(text);
 }
 
 class _Voice extends VoiceInputController {

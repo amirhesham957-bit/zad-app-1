@@ -71,6 +71,9 @@ dependencies:
 
   # ── Audio
   record: ^7.1.1
+  # Zad's voice out: plays the PCM voice_synthesize returns (Gemini, or
+  # Azure's Salma when every Gemini key fails), wrapped as WAV in a temp file.
+  audioplayers: ^6.8.1
   permission_handler: ^13.0.2
 
   # ── Time. The budget period is a civil range on the account's market

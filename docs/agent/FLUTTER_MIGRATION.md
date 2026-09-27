@@ -492,8 +492,16 @@ one commit, full verification, report, then continue.
    runs — verify with `flutter analyze` + the release build only.**
    **Known gaps after the port (2026-09-25) — not "100%" until these are
    decided:**
-   - Voice out: no TTS (`voice_synthesize`), no spoken alerts, no wake
-     greeting; voice *in* (STT in the chat) is ported.
+   - Voice out in the chat is ported (`features/voice/`): a message the
+     customer spoke goes with `voice_mode` and the reply is read aloud, and
+     every reply has a speaker button. `voice_synthesize` = Gemini (Sarah,
+     Aoede) then Azure (Salma for Egypt) — needs `AZURE_SPEECH_KEY`/`REGION`
+     on the project for the fallback. The orb shows «بيتكلم» while audio
+     plays; the microphone interrupts Zad. Still not ported: spoken alerts
+     (notifications/doses read aloud), the wake greeting, persona choice
+     (fixed to Sarah).
+   - Agent screen commands are ported (`chat/domain/agent_screen.dart`):
+     `app_commands` from a turn open the named screen over the chat.
    - No Lottie: confetti on the kids savings goal and the tasbiha level-up
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,

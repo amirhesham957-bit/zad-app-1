@@ -22,6 +22,7 @@ import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// The chat screen.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -36,6 +37,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _composer = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
+  /// The composer holds words the customer spoke. Cleared when the field is
+  /// emptied by hand, so typing afresh is a typed message again.
+  bool _spoken = false;
+
   @override
   void dispose() {
     _composer.dispose();
@@ -49,9 +54,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Cleared here, not after the reply. The message is saved the moment the
     // controller takes it, so leaving it in the field would only offer the
     // customer the chance to send it twice.
+    final spoken = _spoken;
     _composer.clear();
-    setState(() {});
-    await ref.read(chatControllerProvider.notifier).send(text);
+    setState(() => _spoken = false);
+    await ref
+        .read(chatControllerProvider.notifier)
+        .send(text, viaVoice: spoken);
   }
 
   @override
@@ -71,7 +79,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         offset: _composer.text.length,
       );
       ref.read(voiceInputControllerProvider.notifier).transcriptTaken();
-      setState(() {});
+      setState(() => _spoken = true);
     });
 
     // A question another screen offered (the map's "اسأل زاد"). It lands in
@@ -83,6 +91,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ..selection = TextSelection.collapsed(offset: next.length);
       ref.read(chatPrefillProvider.notifier).taken();
       setState(() {});
+    });
+
+    // Kotlin's voice_unavailable toast: silence says nothing on its own.
+    ref.listen(voiceOutputControllerProvider.select((v) => v.failed), (_, f) {
+      if (!f) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الصوت مش متاح دلوقتي — الرد مكتوب قدامك'),
+        ),
+      );
     });
 
     // «وريني مواعيدي»: the agent's app_command, opened over the chat so back
@@ -134,7 +152,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             _Composer(
               controller: _composer,
               busy: view.isAwaitingReply,
-              onChanged: () => setState(() {}),
+              onChanged: () => setState(() {
+                if (_composer.text.trim().isEmpty) _spoken = false;
+              }),
               onSend: _send,
             ),
           ],
@@ -242,6 +262,11 @@ class _Bubble extends ConsumerWidget {
             ],
           ),
 
+          if (!mine &&
+              message.status == ChatStatus.done &&
+              message.text.trim().isNotEmpty)
+            _SpeakButton(message: message),
+
           if (message.specialist case final specialist?) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
             Text(
@@ -273,6 +298,39 @@ class _Bubble extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Reads a reply aloud — Kotlin's speak icon on each of Zad's bubbles. The
+/// same button stops it while it is this message that is playing.
+class _SpeakButton extends ConsumerWidget {
+  const new({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final voice = ref.watch(voiceOutputControllerProvider);
+    final mine = voice.isActive && voice.messageId == message.id;
+    final controller = ref.read(voiceOutputControllerProvider.notifier);
+    return IconButton(
+      tooltip: mine ? 'وقّف الصوت' : 'اسمع الرد',
+      onPressed: () => unawaited(
+        mine
+            ? controller.stop()
+            : controller.speak(message.text, messageId: message.id),
+      ),
+      icon: mine && voice.stage == VoiceOutputStage.preparing
+          ? const SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(
+              mine ? ZadIcons.silence : ZadIcons.listen,
+              size: 20,
+              color: ZadColors.inkMuted,
+            ),
     );
   }
 }
