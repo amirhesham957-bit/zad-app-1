@@ -56,7 +56,7 @@ Deno.test("persona maps to the same Gemini voice the notification reader uses", 
   const { VOICE_IDS } = await import("../zad-core-intelligence/voice.ts");
   assertEquals(LIVE_VOICE_BY_PERSONA, VOICE_IDS);
   assertEquals(liveVoiceFor("sarah_warm", "X"), "Aoede");
-  assertEquals(liveVoiceFor("karim_pro", "X"), "Charon");
+  assertEquals(liveVoiceFor("karim_pro", "X"), "Aoede"); // one voice, named Zad
   assertEquals(liveVoiceFor(null, "Aoede"), "Aoede");
   assertEquals(liveVoiceFor("constructor", "Aoede"), "Aoede");
   assertEquals(liveVoiceFor("Puck; drop", "Aoede"), "Aoede");

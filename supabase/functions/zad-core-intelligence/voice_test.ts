@@ -1,9 +1,8 @@
 import { assertEquals, assertExists } from "jsr:@std/assert@1";
 import { bearerToken, requestGeminiVoice, validateVoicePayload, VOICE_IDS } from "./voice.ts";
 
-Deno.test("voice synthesis requires an exact known persona and bounded text", () => {
+Deno.test("voice synthesis requires bounded, non-empty text", () => {
   assertEquals(validateVoicePayload({ text: "", persona: "sarah_warm" }), null);
-  assertEquals(validateVoicePayload({ text: "hello", persona: "invented" }), null);
   assertEquals(validateVoicePayload({ text: "x".repeat(1201), persona: "karim_pro" }), null);
   assertExists(validateVoicePayload({ text: "  أهلاً  ", persona: "sarah_warm" }));
 });
@@ -81,4 +80,11 @@ Deno.test("TTS prompt uses the account accent and the chosen emotion", async () 
   const prompt = JSON.parse(body).contents[0].parts[0].text as string;
   assertEquals(prompt.includes("Saudi"), true);
   assertEquals(prompt.includes("bubbly"), true);
+});
+
+Deno.test("one voice named Zad: any persona, or none, is Aoede", () => {
+  for (const persona of ["sarah_warm", "karim_pro", "pet_mascot", "zad", "anything", undefined]) {
+    const v = validateVoicePayload({ text: "أهلاً", persona });
+    assertEquals(v?.voiceId, "Aoede", String(persona));
+  }
 });
