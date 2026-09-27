@@ -1,6 +1,10 @@
 /// Kotlin's `PinPromptDialog`: the one PIN for entering and leaving kids
 /// mode. The first use sets it (typed twice), after that it is checked, and a
 /// wrong guess locks the field for a moment.
+///
+/// Except on a child's own account: there the first use would let the child
+/// choose the PIN and unlock full mode themselves (Kotlin's hole too), so a
+/// child with no PIN on the phone is told to ask a parent instead.
 library;
 
 import 'dart:async';
@@ -19,7 +23,7 @@ Future<bool> showPinPrompt(BuildContext context) async =>
     ) ??
     false;
 
-enum _Stage { verify, setupEnter, setupConfirm }
+enum _Stage { verify, setupEnter, setupConfirm, askParent }
 
 /// The PIN dialog.
 class PinPromptDialog extends ConsumerStatefulWidget {
@@ -33,6 +37,8 @@ class PinPromptDialog extends ConsumerStatefulWidget {
 class _PinPromptDialogState extends ConsumerState<PinPromptDialog> {
   late _Stage _stage = ref.read(kidsModeProvider.notifier).hasPin
       ? _Stage.verify
+      : ref.read(isChildRoleProvider)
+      ? _Stage.askParent
       : _Stage.setupEnter;
   final TextEditingController _pin = TextEditingController();
   String _first = '';
@@ -84,6 +90,8 @@ class _PinPromptDialogState extends ConsumerState<PinPromptDialog> {
           _error = null;
           _stage = _Stage.setupConfirm;
         });
+      case _Stage.askParent:
+        return;
       case _Stage.setupConfirm:
         if (pin == _first) {
           kids.setPin(pin);
@@ -101,12 +109,29 @@ class _PinPromptDialogState extends ConsumerState<PinPromptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (_stage == _Stage.askParent) {
+      return AlertDialog(
+        title: const Text('وضع الأطفال'),
+        content: Text(
+          'الخروج من وضع الأطفال محتاج PIN من ولي الأمر. اطلب من بابا أو ماما '
+          'يفتحوه لك.',
+          style: TextStyle(color: ZadColors.inkMuted),
+        ),
+        actions: <Widget>[
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('تمام'),
+          ),
+        ],
+      );
+    }
     final locked = _lock > Duration.zero;
     return AlertDialog(
       title: Text(switch (_stage) {
         _Stage.verify => 'PIN وضع الأطفال',
         _Stage.setupEnter => 'حدّد PIN للخروج من وضع الأطفال',
         _Stage.setupConfirm => 'أكّد الـ PIN',
+        _Stage.askParent => 'وضع الأطفال',
       }),
       content: Column(
         mainAxisSize: MainAxisSize.min,
