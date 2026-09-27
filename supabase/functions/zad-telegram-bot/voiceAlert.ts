@@ -1,4 +1,4 @@
-// voiceAlert.ts — فويس نوت بصوت زاد (سارة = Aoede) مع التنبيهات المالية الحرجة على تليجرام.
+// voiceAlert.ts — فويس نوت بصوت زاد (Aoede، بلهجة بلد الحساب) مع التنبيهات المالية الحرجة على تليجرام.
 //
 // ليه: التنبيه الحرج (الميزانية خلصت، إشعارات البنك وقفت، الصرف أسرع من السقف) كان نص
 // بيتقري زي أي رسالة معاملة عادية ويتنسي في نفس الشات. فويس بنفس الصوت اللي بيقرا
@@ -17,7 +17,7 @@ import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
 import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
 
 export const ALERT_TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
-/** نفس صوت سارة في كل القنوات (`_shared/zadVoice.ts`). */
+/** نفس صوت زاد في كل القنوات (`_shared/zadVoice.ts`). */
 export const ALERT_VOICE_NAME = DEFAULT_VOICE;
 export const ALERT_SPEECH_MAX_CHARS = 320;
 /** حكايات أطول من تنبيه (تقرير الجمعة): ٤–٦ جمل. نفس سقف الموبايل (VoiceMomentSpeaker = 600). */

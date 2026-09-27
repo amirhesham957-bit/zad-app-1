@@ -103,16 +103,23 @@ export function accentDirection(country: unknown): string {
     : "Match the language and dialect of the text itself; do not force a different accent.";
 }
 
-/** شخصية الصوت المختارة في التطبيق → صوت جيميناي. سارة (Aoede) هي الافتراضي. */
+/**
+ * صوت زاد — صوت واحد، بنت، اسمها زاد، بلهجة بلد الحساب (accentDirection فوق، وAzure بصوت
+ * البنت بتاع نفس البلد). قرار المالك ٢٠٢٦-٠٩-٢٧: «مش عاوز سارة ولا كريم ولا الأليف».
+ * كانت فيه تلات شخصيات (سارة=Aoede، كريم=Charon رجالي، الأليف=Leda)؛ الأسامي لسه مقبولة
+ * هنا عشان نسخ التطبيق القديمة اللي بتبعتها ماتاخدش 400، بس كلها بقت نفس الصوت.
+ */
+export const ZAD_VOICE = "Aoede";
+export const DEFAULT_VOICE = ZAD_VOICE;
 export const PERSONA_VOICES: Record<string, string> = {
-  sarah_warm: "Aoede",
-  karim_pro: "Charon",
-  pet_mascot: "Leda",
+  zad: ZAD_VOICE,
+  sarah_warm: ZAD_VOICE,
+  karim_pro: ZAD_VOICE,
+  pet_mascot: ZAD_VOICE,
 };
-export const DEFAULT_VOICE = "Aoede";
 
-export function voiceForPersona(persona: unknown): string {
-  return typeof persona === "string" && Object.hasOwn(PERSONA_VOICES, persona) ? PERSONA_VOICES[persona] : DEFAULT_VOICE;
+export function voiceForPersona(_persona: unknown): string {
+  return ZAD_VOICE;
 }
 
 /**

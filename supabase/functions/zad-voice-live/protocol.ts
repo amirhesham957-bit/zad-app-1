@@ -71,9 +71,11 @@ export function normalizeClientFrame(text: string): string {
  *  (VOICE_IDS) بالحرف — مفيش استيراد بين الفانكشنز في المشروع ده، فالتست بيقفل التطابق.
  *  من غير ده الإعداد كان بيغيّر صوت قراءة النصوص بس، والمكالمة الحية فضلت على صوت واحد. */
 export const LIVE_VOICE_BY_PERSONA: Record<string, string> = {
+  // صوت واحد اسمه زاد (٢٠٢٦-٠٩-٢٧) — الأسامي القديمة كلها نفس الصوت.
+  zad: "Aoede",
   sarah_warm: "Aoede",
-  karim_pro: "Charon",
-  pet_mascot: "Leda",
+  karim_pro: "Aoede",
+  pet_mascot: "Aoede",
 };
 
 /** شخصية مش معروفة أو مش مبعوتة = الصوت الافتراضي. أي قيمة من العميل مابتوصلش لجيميناي
