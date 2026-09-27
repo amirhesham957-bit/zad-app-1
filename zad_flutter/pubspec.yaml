@@ -100,7 +100,8 @@ dependencies:
   firebase_messaging: ^16.7.0
   flutter_local_notifications: ^22.3.1
   # The system share sheet — Kotlin's ZadShare: the savings challenge's
-  # "شارك التحدي" and the weekly card. Text only; no files leave the app.
+  # "شارك التحدي" and the weekly card. Text, plus the monthly report PDF
+  # the user chooses to share.
   share_plus: ^13.3.0
   # Draws the family invite as a QR code — Kotlin's InviteMemberDialog "QR"
   # tab. Pure Dart painter, no platform code, no camera.
@@ -108,6 +109,10 @@ dependencies:
   file_picker: ^13.1.0
   crypto: ^3.0.7
   url_launcher: ^6.3.2
+  # The monthly report as a file — Kotlin's ZadReportPdfBuilder. Pure Dart,
+  # no platform code: it shapes Arabic and lays out right-to-left itself, with
+  # the bundled Cairo font, so the PDF reads the same on every phone.
+  pdf: ^3.13.1
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen
@@ -135,6 +140,9 @@ flutter:
 
   assets:
     - assets/brand/
+    # Cairo for the monthly report PDF only — built by tool/make_pdf_font.py;
+    # see features/intelligence/data/monthly_report_pdf.dart for why.
+    - assets/fonts/cairo_pdf.ttf
 
   # The same variable font files the Kotlin app ships, copied from
   # app/src/main/res/font/ so text measures identically on both clients.

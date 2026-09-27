@@ -502,8 +502,13 @@ one commit, full verification, report, then continue.
      reminders (home location) are not ported.
    - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
      app.
-   - The intelligence screen's PDF report export (Kotlin's local brain
-     report) is not ported; the AI report is shared as text.
+   - The intelligence screen's PDF: the *AI* monthly report now shares as
+     `zad_report_yyyyMMdd.pdf` (Kotlin's `ZadReportPdfBuilder` layout — red
+     title, issue date, stamp — via `package:pdf`, font
+     `assets/fonts/cairo_pdf.ttf` from `tool/make_pdf_font.py`; see the
+     header of `intelligence/data/monthly_report_pdf.dart` for the two
+     `package:pdf` Arabic defects it works around). Kotlin's *local brain*
+     report content is still not computed in Flutter.
    - MerchantCategoryOverrides are not applied to statement import.
 11. **The finish line:** a release APK signed with the debug key (already the
     template's setting, `android/app/build.gradle.kts`), sideloaded on the

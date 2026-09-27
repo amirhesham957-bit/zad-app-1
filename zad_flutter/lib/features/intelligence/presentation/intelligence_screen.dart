@@ -7,17 +7,19 @@
 ///
 /// Kotlin embeds its chat here; in Flutter the chat is its own tab, so the
 /// prompts and the chat card send to it and open it. The ad gate and ad
-/// battery are Kotlin's AdMob path, not in this sideloaded build, and the
-/// PDF export needs Kotlin's local brain report, which Flutter does not
-/// compute — the AI report is shared as text instead, as Kotlin also does.
+/// battery are Kotlin's AdMob path, not in this sideloaded build. The AI report
+/// shares as a PDF (Kotlin's `ZadReportPdfBuilder`), with its text alongside.
 library;
 
 import 'dart:async';
+import 'dart:io' show File;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
@@ -32,6 +34,8 @@ import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
+import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
+import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
@@ -589,13 +593,6 @@ class _NotEnough extends StatelessWidget {
 
 // ── AI report ───────────────────────────────────────────────────────────────
 
-typedef _Report = ({
-  String summary,
-  List<String> insights,
-  List<String> recommendations,
-  String health,
-});
-
 class _ReportCard extends ConsumerStatefulWidget {
   const new({
     required this.transactions,
@@ -618,9 +615,10 @@ class _ReportCard extends ConsumerStatefulWidget {
 }
 
 class _ReportState extends ConsumerState<_ReportCard> {
-  _Report? _report;
+  MonthlyReport? _report;
   bool _loading = false;
   bool _failed = false;
+  bool _sharing = false;
 
   Future<void> _generate() async {
     setState(() {
@@ -654,23 +652,10 @@ class _ReportState extends ConsumerState<_ReportCard> {
           },
         },
       );
-      final d = response.data;
-      if (d is! Map) {
-        throw StateError('monthly_expense_report: ${d.runtimeType}');
-      }
-      List<String> strings(Object? v) => <String>[
-        if (v is List)
-          for (final s in v)
-            if (s is String) s,
-      ];
+      final report = MonthlyReport.fromResponse(response.data);
       if (!mounted) return;
       setState(() {
-        _report = (
-          summary: (d['summary'] as String?) ?? '',
-          insights: strings(d['insights']),
-          recommendations: strings(d['recommendations']),
-          health: (d['health_label'] as String?) ?? '',
-        );
+        _report = report;
         _loading = false;
       });
     } on Object catch (e) {
@@ -684,25 +669,41 @@ class _ReportState extends ConsumerState<_ReportCard> {
     }
   }
 
-  void _share(_Report r) {
-    final b = StringBuffer(r.summary);
-    if (r.insights.isNotEmpty) {
-      b.write('\n\n');
-      for (final i in r.insights) {
-        b.writeln('• $i');
-      }
+  /// Shares the report as `zad_report_yyyyMMdd.pdf`, its text as the body.
+  /// If the PDF cannot be built, the text alone still goes out.
+  Future<void> _share(MonthlyReport r) async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    final text = r.toShareText();
+    try {
+      final now = DateTime.now();
+      final bytes = await buildMonthlyReportPdf(
+        r,
+        font: await rootBundle.load(monthlyReportFontAsset),
+        issuedOn: now,
+        cycle: widget.cycleStart == null
+            ? ''
+            : DateFormat('MMMM yyyy', 'ar').format(widget.cycleStart!),
+      );
+      final name = monthlyReportFileName(now);
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/$name';
+      await File(path).writeAsBytes(bytes, flush: true);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(path, mimeType: 'application/pdf', name: name)],
+          text: text,
+          subject: monthlyReportShareSubject,
+        ),
+      );
+    } on Object catch (e) {
+      debugPrint('monthly report PDF failed: $e');
+      await SharePlus.instance.share(
+        ShareParams(text: text, subject: monthlyReportShareSubject),
+      );
+    } finally {
+      if (mounted) setState(() => _sharing = false);
     }
-    if (r.recommendations.isNotEmpty) {
-      b.writeln();
-      for (final i in r.recommendations) {
-        b.writeln('✓ $i');
-      }
-    }
-    unawaited(
-      SharePlus.instance.share(
-        ShareParams(text: b.toString(), subject: 'تقرير زاد المالي'),
-      ),
-    );
   }
 
   @override
@@ -720,9 +721,17 @@ class _ReportState extends ConsumerState<_ReportCard> {
                 'الاصطناعي',
             trailing: report == null
                 ? null
+                : _sharing
+                ? const Padding(
+                    padding: EdgeInsets.all(ZadSpacing.md),
+                    child: SizedBox.square(
+                      dimension: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                  )
                 : IconButton(
-                    tooltip: 'مشاركة تقرير زاد',
-                    onPressed: () => _share(report),
+                    tooltip: 'مشاركة التقرير PDF',
+                    onPressed: () => unawaited(_share(report)),
                     icon: const Icon(ZadIcons.share, color: ZadColors.green700),
                   ),
           ),
@@ -817,7 +826,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
             if (report.recommendations.isNotEmpty) ...<Widget>[
               const SizedBox(height: ZadSpacing.md),
               Text(
-                'نصايح زاد',
+                monthlyReportRecommendationsHeading,
                 style: ZadType.labelMedium.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
