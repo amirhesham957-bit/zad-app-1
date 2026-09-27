@@ -19,6 +19,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
+import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
 import { botDialectFor, type BotDialect, localizeBotText } from "./botDialect.ts";
@@ -1451,7 +1452,10 @@ bot.on("message:photo", async (ctx) => {
   // نحقنها، ومفيش مصروف نسجله — كتابة monthly_limit من رقم OCR بدون تأكيد صريح خطر (رقم
   // غلط بيكسر كل حسابات الميزانية). أقصى حاجة آمنة: نعرض الرقم اللي اتقرا ونوجّه المستخدم
   // يأكده بجملة عادية في الشات، اللي عنده مسار تأكيد فعلي بالفعل (voice_agent/chat actions).
-  if (result.receiptType === "budget_card") {
+  // وين تروح الصورة: كلام العميل في الكابشن الأول، وبعده نوع القارئ (photoRoute.ts).
+  const route = routePhoto(result.receiptType, ctx.message.caption);
+
+  if (route === "budget_card") {
     // مفيش مسار كتابة لـ monthly_limit من الشات/الصوت حالياً (check_budget قراءة بس) —
     // مينفعش نعد المستخدم بأمر نصي بيسجلها، فبس نوضح إنها مش فاتورة ونوجهه للتطبيق.
     const amountHint = result.total > 0
@@ -1463,7 +1467,7 @@ bot.on("message:photo", async (ctx) => {
 
   // OCR only supplies fields. Both pharmacy and inventory mutations are executed by
   // zad-brain; the receipt total still waits for the normal financial confirmation.
-  if (result.receiptType === "pharmacy" && result.items.length > 0) {
+  if (route === "pharmacy" && result.items.length > 0) {
     let addedCount = 0;
     for (const item of result.items) {
       if (!item.name?.trim()) continue;
@@ -1501,8 +1505,9 @@ bot.on("message:photo", async (ctx) => {
     return;
   }
 
+  // أصناف المخزون من فاتورة بقالة بس — أكل مطعم أو بنزين أو خدمة مش حاجة في البيت.
   let addedCount = 0;
-  for (const item of result.items) {
+  for (const item of route === "grocery" ? result.items : []) {
     if (!item.name?.trim()) continue;
     const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? Math.round(item.quantity) : 1;
     const added = await agentExecute(userId, "add_inventory_item", {
