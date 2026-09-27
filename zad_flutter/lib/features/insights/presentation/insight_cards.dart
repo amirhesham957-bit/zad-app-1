@@ -402,6 +402,8 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
         SizedBox(
           height: 40,
           child: FilledButton(
+            // The theme's minimum is full width, which a Row cannot give.
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 40)),
             onPressed: numeric && !valid
                 ? null
                 : () {

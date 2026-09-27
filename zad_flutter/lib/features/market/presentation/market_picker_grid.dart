@@ -42,6 +42,7 @@ class _MarketPickerGridState extends State<MarketPickerGrid> {
               )
               .toList();
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         TextField(
@@ -53,80 +54,92 @@ class _MarketPickerGridState extends State<MarketPickerGrid> {
           ),
         ),
         const SizedBox(height: 12),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 420),
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              mainAxisExtent: 96,
-            ),
-            itemCount: markets.length,
-            itemBuilder: (_, i) {
-              final m = markets[i];
-              final selected = m == widget.selected;
-              return Material(
-                color: selected
-                    ? scheme.primary.withValues(alpha: 0.12)
-                    : ext.surfaceContainer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: selected
-                      ? BorderSide(color: scheme.primary, width: 1.5)
-                      : BorderSide.none,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: widget.onSelect == null
-                      ? null
-                      : () => widget.onSelect!(m),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 6,
-                    ),
-                    child: Column(
-                      children: <Widget>[
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: <Widget>[
-                            Text(m.flag, style: const TextStyle(fontSize: 28)),
-                            if (selected)
-                              PositionedDirectional(
-                                top: 0,
-                                end: -6,
-                                child: Icon(
-                                  Icons.check_circle,
-                                  size: 14,
-                                  color: scheme.primary,
-                                ),
+        // Flexible: on a short phone the grid scrolls in what is left
+        // instead of pushing the screen's button off the bottom.
+        Flexible(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 420),
+            child: GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                mainAxisExtent: 96,
+              ),
+              itemCount: markets.length,
+              itemBuilder: (_, i) {
+                final m = markets[i];
+                final selected = m == widget.selected;
+                return Material(
+                  color: selected
+                      ? scheme.primary.withValues(alpha: 0.12)
+                      : ext.surfaceContainer,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: selected
+                        ? BorderSide(color: scheme.primary, width: 1.5)
+                        : BorderSide.none,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: widget.onSelect == null
+                        ? null
+                        : () => widget.onSelect!(m),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 6,
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: <Widget>[
+                              // height 1: an emoji's natural line is
+                              // taller than 28, which ran the column 9px
+                              // past the tile's fixed 96.
+                              Text(
+                                m.flag,
+                                style: const TextStyle(fontSize: 28, height: 1),
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          m.nameAr,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: ZadType.labelMedium.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: selected ? scheme.primary : scheme.onSurface,
+                              if (selected)
+                                PositionedDirectional(
+                                  top: 0,
+                                  end: -6,
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    size: 14,
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                        Text(
-                          m.currencySymbol,
-                          style: ZadType.labelSmall.copyWith(
-                            color: scheme.onSurfaceVariant,
+                          const SizedBox(height: 6),
+                          Text(
+                            m.nameAr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.labelMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: selected
+                                  ? scheme.primary
+                                  : scheme.onSurface,
+                            ),
                           ),
-                        ),
-                      ],
+                          Text(
+                            m.currencySymbol,
+                            style: ZadType.labelSmall.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],

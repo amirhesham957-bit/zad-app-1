@@ -533,9 +533,15 @@ Future<PantryIntakeResult> intakeIntoPantry(
     }
     // Kotlin's `injectScannedItems` records a purchase for every scanned
     // line on the on-device learner — what «هل خلص X؟» predicts from.
-    final learner = ref.read(consumptionLearnerProvider);
-    for (final line in lines) {
-      learner.recordPurchase(line.name);
+    // Best effort: the pantry is already written, and a learner that could
+    // not be read must not report that write as failed.
+    try {
+      final learner = ref.read(consumptionLearnerProvider);
+      for (final line in lines) {
+        learner.recordPurchase(line.name);
+      }
+    } on Object {
+      // «هل خلص؟» simply learns from the next purchase instead.
     }
 
     if (ref.mounted) {

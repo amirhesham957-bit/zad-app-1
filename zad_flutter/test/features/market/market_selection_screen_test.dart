@@ -39,43 +39,40 @@ void main() {
     );
   }
 
-  FilledButton confirmButton(WidgetTester tester) =>
-      tester.widget<FilledButton>(find.byType(FilledButton));
+  ElevatedButton confirmButton(WidgetTester tester) =>
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton));
 
   testWidgets('the button does nothing until a market is picked', (
     tester,
   ) async {
     await pumpScreen(tester);
+    await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('اختار بلدك'), findsOneWidget);
+    expect(find.text('وين موطنك؟'), findsOneWidget);
     expect(confirmButton(tester).onPressed, isNull);
   });
 
   testWidgets('what is tapped is what is chosen', (tester) async {
     await pumpScreen(tester);
+    await tester.pump(const Duration(milliseconds: 600));
 
     await tester.tap(find.text('مصر'));
     await tester.pump();
-    expect(find.text('متابعة — مصر'), findsOneWidget);
+    expect(confirmButton(tester).onPressed, isNotNull);
 
-    await tester.tap(find.byType(FilledButton));
+    await tester.tap(find.byType(ElevatedButton));
     await tester.pump();
 
     expect(gate.chosen, <Market>[marketFor('EG')!]);
   });
 
-  testWidgets('searching narrows the grid, and says so when nothing is left', (
-    tester,
-  ) async {
+  testWidgets('searching narrows the grid', (tester) async {
     await pumpScreen(tester);
+    await tester.pump(const Duration(milliseconds: 600));
 
     await tester.enterText(find.byType(TextField), 'TRY');
     await tester.pump();
     expect(find.text('تركيا'), findsOneWidget);
     expect(find.text('مصر'), findsNothing);
-
-    await tester.enterText(find.byType(TextField), 'zzz');
-    await tester.pump();
-    expect(find.text('مفيش بلد بالاسم ده'), findsOneWidget);
   });
 }

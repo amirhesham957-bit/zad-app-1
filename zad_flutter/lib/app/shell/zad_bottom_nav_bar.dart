@@ -285,7 +285,9 @@ class _ZadNavTabState extends State<_ZadNavTab>
             selected: widget.selected,
             button: true,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              // Kotlin's 6dp all round sums to 65 in the 64dp pill (Compose
+              // clips the extra pixel); 5 below keeps the tab inside it.
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 5),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[

@@ -51,20 +51,23 @@ void main() {
 
   testWidgets('nothing pending: nothing drawn', (tester) async {
     await pump(tester, const <ZadInsight>[]);
-    expect(find.text('من زاد'), findsNothing);
+    expect(find.text('رؤية زاد الذكي ✨'), findsNothing);
   });
 
   testWidgets('an insight is dismissed with the reason chosen', (tester) async {
     await pump(tester, const <ZadInsight>[
       ZadInsight(id: 'a', title: 'اشتراكك بيتجدد', body: 'بكرة'),
     ]);
-    expect(find.text('من زاد'), findsOneWidget);
+    expect(find.text('رؤية زاد الذكي ✨'), findsOneWidget);
     expect(find.text('معلومة'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('اقفل'));
-    await tester.pumpAndSettle();
+    // The card pulses forever, so no pumpAndSettle.
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('الرقم غلط'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(fake.calls, <String>['dismiss:a:wrong_data']);
   });
@@ -80,18 +83,17 @@ void main() {
         kind: 'question',
       ),
     ]);
-    expect(find.text('سؤال'), findsOneWidget);
+    expect(find.text('فاضل قد إيه من البنادول؟'), findsOneWidget);
+    expect(find.byIcon(Icons.help_outline), findsOneWidget);
 
-    await tester.tap(find.text('جاوب'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    // Kotlin's card: the answer field is open, no "answer" step first.
     await tester.enterText(find.byType(TextField), 'شريطين');
-    await tester.tap(find.text('ابعت لزاد'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('إرسال'));
+    await tester.pump();
     expect(fake.calls, <String>['answer:q:شريطين']);
 
-    await tester.tap(find.byTooltip('مش دلوقتي'));
+    await tester.tap(find.byIcon(Icons.close));
     await tester.pump();
     expect(fake.calls.last, 'dismiss:q:null');
   });

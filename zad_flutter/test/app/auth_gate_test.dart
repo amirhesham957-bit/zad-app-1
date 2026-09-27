@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/auth_gate.dart';
+import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/app/zad_shell.dart';
 import 'package:zad/data/local/boxes.dart';
@@ -397,14 +398,14 @@ void main() {
 
       await pumpGate(tester, container);
       await tester.pump(Duration.zero);
-      NavigationBar bar() =>
-          tester.widget<NavigationBar>(find.byType(NavigationBar));
-      expect(bar().selectedIndex, 0);
+      ZadBottomNavBar bar() =>
+          tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
+      expect(bar().current, ZadNavDestination.home);
 
-      container.read(shellNavigationProvider.notifier).open(ShellTab.proposals);
+      container.read(shellNavigationProvider.notifier).open(ShellTab.inventory);
       await tester.pump();
 
-      expect(bar().selectedIndex, ShellTab.proposals.index);
+      expect(bar().current, ZadNavDestination.inventory);
       expect(container.read(shellNavigationProvider), isNull);
     });
 
@@ -415,6 +416,10 @@ void main() {
       addTearDown(container.dispose);
 
       await pumpGate(tester, container);
+      // The shell is up before any settings read has answered — the one read
+      // there is is the shell's own background refresh (SettingsController),
+      // and it is offline here, so nothing waited on it.
+      expect(find.byType(ZadShell), findsOneWidget);
       await tester.pump(Duration.zero);
 
       expect(find.byType(ZadShell), findsOneWidget);
@@ -422,8 +427,8 @@ void main() {
       expect(find.byType(MarketSelectionScreen), findsNothing);
       expect(
         settingsRemote.fetches,
-        0,
-        reason: 'a returning customer waited on a settings read',
+        1,
+        reason: 'only the shell refreshes; the gate read nothing',
       );
     });
   });
@@ -465,7 +470,8 @@ void main() {
       expect(find.byType(ZadShell), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 400));
-      expect(settingsRemote.fetches, 1);
+      // The gate's check, then the shell's own background refresh.
+      expect(settingsRemote.fetches, 2);
       // Asking would risk making somebody who already chose choose again —
       // the Kotlin bug this gate is built around.
       expect(find.byType(ZadShell), findsOneWidget);
@@ -485,30 +491,38 @@ void main() {
       expect(find.byType(LoginScreen), findsNothing);
     });
 
-    testWidgets('"عندي حساب" goes straight to signing in', (tester) async {
+    testWidgets('"تخطي" goes straight to signing in', (tester) async {
       final container = containerFor(null);
       addTearDown(container.dispose);
 
       await pumpGate(tester, container);
-      await tester.tap(find.text('عندي حساب'));
+      await tester.tap(find.text('تخطي'));
       await tester.pump();
+      // The form enters with ZadAppearOnEntry.
+      await tester.pump(const Duration(milliseconds: 600));
 
       expect(find.byType(LoginScreen), findsOneWidget);
-      expect(find.text('اسمك'), findsNothing, reason: 'sign-in has no name');
+      expect(
+        find.text('اسم المستخدم'),
+        findsNothing,
+        reason: 'sign-in has no name',
+      );
     });
 
-    testWidgets('"اعمل حساب جديد" opens the form in sign-up mode', (
+    testWidgets('"أنشئ حساباً جديداً" opens the form in sign-up mode', (
       tester,
     ) async {
       final container = containerFor(null);
       addTearDown(container.dispose);
 
       await pumpGate(tester, container);
-      await tester.tap(find.text('اعمل حساب جديد'));
+      await tester.tap(find.text('ليس لديك حساب؟ أنشئ حساباً جديداً'));
       await tester.pump();
+      // The form enters with ZadAppearOnEntry.
+      await tester.pump(const Duration(milliseconds: 600));
 
       expect(find.byType(LoginScreen), findsOneWidget);
-      expect(find.text('اسمك'), findsOneWidget);
+      expect(find.text('اسم المستخدم'), findsOneWidget);
     });
   });
 

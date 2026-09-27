@@ -45,14 +45,9 @@ Future<void> _loadFonts() async {
 
   await load('Cairo', 'assets/fonts/cairo_variable.ttf');
   await load('Inter', 'assets/fonts/inter_variable.ttf');
-  // The family name has the package prefix. An IconData carrying
-  // `fontPackage: 'lucide_icons_flutter'` resolves to
-  // `packages/lucide_icons_flutter/Lucide`, so registering it as plain 'Lucide'
-  // loads a font nothing asks for and every icon renders as a tofu box.
-  await load(
-    'packages/lucide_icons_flutter/Lucide',
-    'packages/lucide_icons_flutter/assets/lucide.ttf',
-  );
+  // The app's icons are Material's since 596576c3; without the font every
+  // one renders as a tofu box.
+  await load('MaterialIcons', 'fonts/MaterialIcons-Regular.otf');
 }
 
 void main() {

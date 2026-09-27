@@ -13,7 +13,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -209,14 +208,6 @@ void main() {
 
   setUpAll(() async {
     tz_data.initializeTimeZones();
-    // The Lucide family has to be registered under its package-qualified name
-    // or the empty state's glyph is a tofu box and Flutter logs a missing font
-    // on every frame.
-    final lucide = FontLoader('packages/lucide_icons_flutter/Lucide')
-      ..addFont(
-        rootBundle.load('packages/lucide_icons_flutter/assets/lucide.ttf'),
-      );
-    await lucide.load();
   });
 
   setUp(() async {
@@ -321,19 +312,32 @@ void main() {
     );
   }
 
-  Future<void> pumpHome(WidgetTester tester, ProviderContainer container) =>
-      tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: MaterialApp(
-            theme: ZadTheme.light(),
-            home: const Directionality(
-              textDirection: TextDirection.rtl,
-              child: Scaffold(body: HomeScreen()),
-            ),
+  // Home's list is lazy, and the wallet card now sits under the companion
+  // row, the modes and the market ticker — below an 800×600 test window.
+  Future<void> pumpHome(
+    WidgetTester tester,
+    ProviderContainer container,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(412, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: HomeScreen()),
           ),
         ),
-      );
+      ),
+    );
+    // Every block enters through ZadAppearOnEntry, which draws from a timer
+    // of at most 105ms (Kotlin's per-block delays) — frames, not a network
+    // round trip.
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 120));
+  }
 
   testWidgets('the cached figure is on screen in the first frame', (
     tester,
@@ -346,7 +350,9 @@ void main() {
     await pumpHome(tester, container);
 
     expect(find.byType(ZadBalanceCard), findsOneWidget);
-    expect(find.text('3,620.5'), findsOneWidget);
+    // The cached number, marked "≈" because the offline refresh never
+    // confirmed it — present either way, and never waited for.
+    expect(find.text('≈ 3,620.5'), findsOneWidget);
     expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
   });
 
@@ -404,7 +410,8 @@ void main() {
 
     await pumpHome(tester, container);
 
-    expect(find.text('3,620.5'), findsOneWidget);
+    expect(find.text('≈ 3,620.5'), findsOneWidget);
+    expect(find.text('≈ 0'), findsNothing);
     expect(find.text('0'), findsNothing);
   });
 
@@ -438,7 +445,9 @@ void main() {
       await pumpHome(tester, container);
 
       expect(find.byType(ZadBalanceCard), findsNothing);
-      expect(find.text('بنجهّز ميزانيتك'), findsOneWidget);
+      // The remote here is offline, so the waiting state has already turned
+      // into the one that says so — a state either way, never a blank.
+      expect(find.text('مقدرتش أوصل للسيرفر'), findsOneWidget);
     });
   });
 
@@ -486,18 +495,16 @@ void main() {
     });
   });
 
-  testWidgets('the app bar opens settings rather than signing out', (
-    tester,
-  ) async {
+  testWidgets('home offers no sign-out', (tester) async {
     final container = containerWith();
     addTearDown(container.dispose);
 
     await pumpHome(tester, container);
 
-    // Sign-out lives inside settings now, beside the warning about unsent
+    // Sign-out lives inside settings, beside the warning about unsent
     // writes. One tap from the balance to "log out" put the most destructive
     // action on this screen next to the least destructive one.
-    expect(find.byTooltip('الإعدادات'), findsOneWidget);
     expect(find.byTooltip('اخرج من الحساب'), findsNothing);
+    expect(find.textContaining('تسجيل الخروج'), findsNothing);
   });
 }

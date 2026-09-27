@@ -228,12 +228,14 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byTooltip('صوّر علبة الدواء'));
+    // Kotlin's flow: the one add button, then the form's camera row.
+    await tester.tap(find.byTooltip('إضافة'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('افتح الكاميرا'));
+    await tester.ensureVisible(find.text('مسح العبوة بالكاميرا'));
+    await tester.tap(find.text('مسح العبوة بالكاميرا'));
     await tester.pumpAndSettle();
 
-    expect(find.text('راجع الدواء'), findsOneWidget);
+    expect(find.text('إضافة دواء'), findsOneWidget);
     expect(find.text('كونكور 5'), findsOneWidget);
     // The box's own unit, kept even though Kotlin's list lacks it.
     expect(find.widgetWithText(ChoiceChip, 'شريط'), findsOneWidget);

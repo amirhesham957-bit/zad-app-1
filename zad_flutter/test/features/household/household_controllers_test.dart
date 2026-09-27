@@ -18,6 +18,7 @@ import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
@@ -30,6 +31,8 @@ import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/settings/data/settings_repository.dart';
+
+import '../../support/quiet_household.dart';
 
 class _Pantry implements InventoryRemote {
   List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
@@ -226,6 +229,7 @@ void main() {
           ),
         ),
         nowProvider.overrideWithValue(() => now),
+        localRemindersProvider.overrideWith(QuietReminders.new),
         outboxProvider.overrideWithValue(outbox),
         signedInUserIdProvider.overrideWithValue(() => 'user-1'),
         inventoryRepositoryProvider.overrideWithValue(

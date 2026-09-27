@@ -1,10 +1,16 @@
 // "الميزانية والالتزامات": the parts Kotlin's budget screen has, fed from the
 // controllers the rest of the app already uses.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/data/local/boxes.dart';
+import 'package:zad/data/providers.dart';
 import 'package:zad/design/zad_theme.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
@@ -84,7 +90,26 @@ class _Subs extends SubscriptionsController {
 }
 
 void main() {
-  setUpAll(() => initializeDateFormatting('ar'));
+  setUpAll(() async {
+    tz_data.initializeTimeZones();
+    await initializeDateFormatting('ar');
+  });
+
+  // The suggestion and deals cards read the device box. Opened here, never
+  // inside testWidgets: a Hive write under the fake clock never completes.
+  late Directory dir;
+  late ZadLocalStore store;
+
+  setUp(() async {
+    dir = await Directory.systemTemp.createTemp('zad_finances_test');
+    Hive.init(dir.path);
+    store = await ZadLocalStore.open();
+  });
+
+  tearDown(() async {
+    await Hive.deleteFromDisk();
+    await dir.delete(recursive: true);
+  });
 
   testWidgets('shows obligations, the summary and the category cards', (
     tester,
@@ -100,6 +125,8 @@ void main() {
           subscriptionsControllerProvider.overrideWith(_Subs.new),
           categoryBudgetsProvider.overrideWith(_NoCeilings.new),
           modesControllerProvider.overrideWith(QuietModes.new),
+          localStoreProvider.overrideWithValue(store),
+          supabaseClientProvider.overrideWithValue(quietSupabase),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
@@ -123,7 +150,8 @@ void main() {
     expect(find.text('5,000'), findsOneWidget, reason: 'the budget column');
     // No snapshot, nothing spent by the server's count: the calm tier.
     expect(find.textContaining('صرفت 0% فقط'), findsOneWidget);
-    expect(find.text('البقالة'), findsOneWidget);
+    // The category card's title, and the purchase's row under it.
+    expect(find.text('البقالة'), findsNWidgets(2));
     expect(find.textContaining('بدون حد'), findsOneWidget);
   });
 }

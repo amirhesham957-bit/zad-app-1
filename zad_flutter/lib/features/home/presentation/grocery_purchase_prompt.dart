@@ -56,6 +56,7 @@ class GroceryPurchasePrompt extends Notifier<ZadTransaction?> {
       if (previous == null) return;
       final now = ref.read(nowProvider)();
       final prompted = _prompted();
+      final before = prompted.length;
       // Forget prompts older than a week.
       final weekAgo = now.subtract(const Duration(days: 7));
       prompted.removeWhere(
@@ -73,7 +74,9 @@ class GroceryPurchasePrompt extends Notifier<ZadTransaction?> {
           )
           .firstOrNull;
       if (fresh != null) prompted.add(fresh.id);
-      _savePrompted(prompted);
+      // Only when something was forgotten or added: every refresh of the
+      // list lands here, and most change nothing.
+      if (fresh != null || prompted.length != before) _savePrompted(prompted);
       if (fresh != null) state = fresh;
     }, fireImmediately: true);
     return null;

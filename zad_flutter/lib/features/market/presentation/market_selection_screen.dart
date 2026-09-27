@@ -88,13 +88,19 @@ class _MarketSelectionScreenState extends ConsumerState<MarketSelectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  MarketPickerGrid(
-                    selected: _selected,
-                    onSelect: _saving
-                        ? null
-                        : (m) => setState(() => _selected = m),
+                  // Expanded, not a Spacer after it: the grid takes what is
+                  // left and scrolls, so «متابعة» stays on a short phone.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: MarketPickerGrid(
+                        selected: _selected,
+                        onSelect: _saving
+                            ? null
+                            : (m) => setState(() => _selected = m),
+                      ),
+                    ),
                   ),
-                  const Spacer(),
                   ZadPrimaryButton(
                     text: 'متابعة',
                     enabled: _selected != null,

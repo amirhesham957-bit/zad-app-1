@@ -289,9 +289,13 @@ class HomeRecentTransactions extends ConsumerWidget {
               children: <Widget>[
                 Icon(Icons.receipt_long, size: 18, color: _textTertiary),
                 const SizedBox(width: 8),
-                Text(
-                  'سيتم عرض المعاملات البنكية هنا',
-                  style: TextStyle(fontSize: 12, color: _textTertiary),
+                // Flexible: a large font scale wraps instead of overflowing.
+                Flexible(
+                  child: Text(
+                    'سيتم عرض المعاملات البنكية هنا',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: _textTertiary),
+                  ),
                 ),
               ],
             ),
