@@ -80,6 +80,7 @@ import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport }
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
 import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
+import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { pushToDevice, pushToTelegram } from "./push.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
@@ -1207,7 +1208,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 // Tool execution — actual DB writes, only reached after validation passes
 // ═══════════════════════════════════════════════════════════
 
-async function executeTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
+export async function executeTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   switch (name) {
     case "emit_insight": {
       const { error } = await sb.from("zad_insights").upsert({
@@ -1236,8 +1237,13 @@ async function executeTool(sb: SupabaseClient, userId: string, name: string, inp
       const hint = String(input.category_hint ?? "").trim();
       const since = new Date(Date.now() - 30 * 86400000).toISOString();
       const { data: fam } = await sb.from("family_members")
-        .select("user_id, alias, family_id").eq("user_id", userId).maybeSingle();
+        .select("user_id, alias, family_id, role").eq("user_id", userId).maybeSingle();
       if (!fam?.family_id) return "العميل مش منضم لعيلة — الوساطة للعائلات فقط.";
+      // Service role reads every member's transactions here, so the role rule RLS would
+      // apply has to be applied by hand: a child (or plain member) never sees the others'.
+      if (!canSeeFamilySpending(fam.role)) {
+        return "الوساطة بتعرض صرف كل فرد في العيلة، ودي لمدير العيلة بس. قول للعميل يطلبها من ولي الأمر.";
+      }
       const { data: members } = await sb.from("family_members")
         .select("user_id, alias").eq("family_id", fam.family_id);
       if (!members || members.length < 2) return "العيلة فيها فرد واحد — مفيش حد يتوسّط معاه 😊";
