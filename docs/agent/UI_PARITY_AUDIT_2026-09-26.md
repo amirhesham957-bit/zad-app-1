@@ -25,6 +25,38 @@ aliases:
 >   فيهم مطابقة شكلاً.
 > - **14 أنيميشن Lottie وصوت `zad_alert.wav`** مش موجودين في فلاتر.
 
+> [!success] تحديث 2026-09-27: الحالة بعد النسخ
+> إعادة تشغيل `python3 tool/ui_parity_audit.py`: **167** نص ناقص من **1,661** بعد ما كانوا **518**.
+> أرقام الأقسام والعلامات ❌ تحت بقت تاريخية. المرجع هو ناتج الأداة.
+>
+> **اتقفل بالكامل (0 ناقص):**
+> - `LifeGoalPickerSheet`، `HomeActivationCard`، `LiveMarketTicker`، `ChefRecipeCards`
+> - `CompanionOrb`، `DraggableFloatingCompanion`، `OrbAccessoryPicker`
+> - `TasbihaScreen`، `HomeScreenWidgets`
+> - `PriceReportingScreen`، `NotificationCenterScreen`
+> - `SubscriptionsScreen`: فاضل سطر واحد تابع للاكتشاف التلقائي
+>
+> **ولسه على الرئيسية:**
+> - `WhoAreYouCard` و`TasbihaHomeWidget` و`SmartChefSection` كمان على الرئيسية.
+> - `UrgentRecipeCard` اتضاف بمحفّزات محسوبة على الموبايل، والوصفات بتتطلب من الشات بضغطة.
+> - الأورب منقول بنفس الطبقات والأرقام: التنفس، والطور السائل، والدوران، واللمعة، والرمش العشوائي،
+>   والتوهج والضغطة، والهزة، والضغط وقت الكلام، والعيون لكل مزاج، والشرارات، والإكسسوارات الأربعة.
+>
+> **مستبعد بقرار المالك (مش ناقص):**
+> - الإعلانات والبوابة: `AdEnergyBatteryCard`، و`brain_gate_*`، و`ZadSubscriptionPaywallScreen`.
+> - المكالمة الحية.
+> - تنبيهات الموقع في الخلفية: `LocationAlertsCard`.
+> - مفتاح Gemini.
+> - كل نداء ذكاء اصطناعي تلقائي. من أمثلته: `detectSubscriptions`، و`classifyBill`، و`spending_insights`،
+>   ونص وصفات `UrgentRecipeCard`، و`AgentSummaryCard` (كارت ميت في كوتلن أصلاً).
+>
+> **الباقي الحقيقي، بالترتيب:**
+> - نصوص إشعارات `ZadViewModel` المحلية.
+> - تقرير `ZadHomeGlanceCards` الاستراتيجي.
+> - `PharmacyScreen` و`InventoryScreen` و`ProfileScreen` و`FamilyScreen`.
+> - `ZadKnowledgeMapScreen` و`AmazonAffiliateWidget`.
+> - «تصدير التقرير الشهري»: محتاج مكتبة PDF.
+
 ## المنهج وحدوده
 
 - **النصوص:** اتسحب كل `R.string.*` وكل نص عربي مكتوب مباشرة في `Text/label/title/contentDescription`
