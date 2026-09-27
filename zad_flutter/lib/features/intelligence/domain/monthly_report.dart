@@ -19,6 +19,23 @@ const String monthlyReportInsightsHeading = 'ملاحظات زاد';
 /// The recommendations section's heading — also the card's.
 const String monthlyReportRecommendationsHeading = 'نصايح زاد';
 
+/// The KPI strip at the top of the PDF.
+const String monthlyReportOverviewHeading = 'نظرة عامة على الشهر';
+
+/// Section 1: the household groups.
+const String monthlyReportFamilyHeading = 'تفكيك مصاريف الأسرة والأطفال';
+
+/// Section 2: habits and consumption alerts.
+const String monthlyReportHabitsHeading =
+    'رصد العادات المالية الخاطئة وتنبيهات الاستهلاك';
+
+/// Section 3: advice and savings.
+const String monthlyReportSavingsHeading = 'نصائح زاد الذكية وتوصيات التوفير';
+
+/// Section 3's table.
+const String monthlyReportTableHeading =
+    'مقارنة البنود والسقف المقترح للشهر الجاي';
+
 /// The big word in the red stamp on the last page.
 const String monthlyReportStampMark = 'زاد';
 

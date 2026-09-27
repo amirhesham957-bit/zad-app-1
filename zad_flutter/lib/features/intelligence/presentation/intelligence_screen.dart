@@ -35,6 +35,7 @@ import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
+import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
@@ -156,6 +157,8 @@ class IntelligenceScreen extends ConsumerWidget {
                         expense: budget?.spent ?? 0,
                         categories: categoryList.take(5).toList(),
                         cycleStart: start,
+                        cycleEnd: end,
+                        currency: budget?.currency ?? '',
                       ),
                       _StressTestCard(
                         expenses: expenses,
@@ -601,6 +604,8 @@ class _ReportCard extends ConsumerStatefulWidget {
     required this.expense,
     required this.categories,
     required this.cycleStart,
+    required this.cycleEnd,
+    required this.currency,
   });
 
   final List<ZadTransaction> transactions;
@@ -609,6 +614,8 @@ class _ReportCard extends ConsumerStatefulWidget {
   final double expense;
   final List<MapEntry<String, double>> categories;
   final DateTime? cycleStart;
+  final DateTime? cycleEnd;
+  final String currency;
 
   @override
   ConsumerState<_ReportCard> createState() => _ReportState();
@@ -677,13 +684,25 @@ class _ReportState extends ConsumerState<_ReportCard> {
     final text = r.toShareText();
     try {
       final now = DateTime.now();
+      // The budget cycle when there is one, otherwise this calendar month.
+      final start = widget.cycleStart ?? DateTime(now.year, now.month);
+      final end =
+          widget.cycleEnd ??
+          (widget.cycleStart == null
+              ? DateTime(now.year, now.month + 1)
+              : now.add(const Duration(days: 1)));
       final bytes = await buildMonthlyReportPdf(
         r,
         font: await rootBundle.load(monthlyReportFontAsset),
         issuedOn: now,
-        cycle: widget.cycleStart == null
-            ? ''
-            : DateFormat('MMMM yyyy', 'ar').format(widget.cycleStart!),
+        cycle: DateFormat('MMMM yyyy', 'ar').format(start),
+        currency: widget.currency,
+        analysis: analyzeMonth(
+          transactions: widget.transactions,
+          start: start,
+          end: end,
+          budget: widget.budget > 0 ? widget.budget : null,
+        ),
       );
       final name = monthlyReportFileName(now);
       final dir = await getTemporaryDirectory();

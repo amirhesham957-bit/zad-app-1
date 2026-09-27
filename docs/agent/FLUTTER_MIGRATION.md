@@ -503,8 +503,14 @@ one commit, full verification, report, then continue.
    - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
      app.
    - The intelligence screen's PDF: the *AI* monthly report now shares as
-     `zad_report_yyyyMMdd.pdf` (Kotlin's `ZadReportPdfBuilder` layout — red
-     title, issue date, stamp — via `package:pdf`, font
+     `zad_report_yyyyMMdd.pdf`, a strategic report — overview KPIs, (1) house /
+     children / pharmacy / family-outings cards, (2) repeat-purchase, costly
+     transport and small-purchase alerts, (3) a month-on-month table with a
+     cap per category and projected savings. Every number comes from
+     `intelligence/domain/monthly_analysis.dart` on the phone (keyword lists
+     there are matching data — never translate); the model only writes the
+     summary and advice. Essentials (medicine, bills, rent, instalments,
+     school) are never capped below their level. Via `package:pdf`, font
      `assets/fonts/cairo_pdf.ttf` from `tool/make_pdf_font.py`; see the
      header of `intelligence/data/monthly_report_pdf.dart` for the two
      `package:pdf` Arabic defects it works around). Kotlin's *local brain*

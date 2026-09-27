@@ -5,7 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 // The library's own font parser, to check the glyphs it will look up.
 import 'package:pdf/src/pdf/font/ttf_parser.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
+import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
+import 'package:zad/features/transactions/domain/transaction.dart';
+
+import 'sample_month.dart';
 
 ByteData _cairo() =>
     ByteData.sublistView(File(monthlyReportFontAsset).readAsBytesSync());
@@ -31,6 +35,20 @@ void main() {
       expect(monthlyReportSummaryHeading, 'الملخص');
       expect(monthlyReportInsightsHeading, 'ملاحظات زاد');
       expect(monthlyReportRecommendationsHeading, 'نصايح زاد');
+    });
+
+    test('the strategic report section titles', () {
+      expect(monthlyReportOverviewHeading, 'نظرة عامة على الشهر');
+      expect(monthlyReportFamilyHeading, 'تفكيك مصاريف الأسرة والأطفال');
+      expect(
+        monthlyReportHabitsHeading,
+        'رصد العادات المالية الخاطئة وتنبيهات الاستهلاك',
+      );
+      expect(monthlyReportSavingsHeading, 'نصائح زاد الذكية وتوصيات التوفير');
+      expect(
+        monthlyReportTableHeading,
+        'مقارنة البنود والسقف المقترح للشهر الجاي',
+      );
     });
 
     test('issued line carries d/m/yyyy, unpadded', () {
@@ -119,6 +137,19 @@ void main() {
     });
   });
 
+  group('formatting', () {
+    test('money: grouped Latin digits, cents only when present', () {
+      expect(formatReportMoney(1250, 'ج.م'), '1,250 ج.م');
+      expect(formatReportMoney(102.5, 'ر.س'), '102.5 ر.س');
+      expect(formatReportMoney(40, ''), '40');
+    });
+
+    test('percent rounds', () {
+      expect(formatReportPercent(0.9765), '98%');
+      expect(formatReportPercent(0), '0%');
+    });
+  });
+
   group('pdfWords', () {
     test('brackets every word with U+200C and keeps the spaces', () {
       expect(
@@ -181,6 +212,38 @@ void main() {
         issuedOn: DateTime(2026, 9, 27),
       );
       expect(_pages(bytes), greaterThan(1));
+    });
+
+    test('with the analysis: all three sections, over several pages', () async {
+      final bytes = await buildMonthlyReportPdf(
+        _report,
+        font: _cairo(),
+        issuedOn: DateTime(2026, 9, 27),
+        cycle: 'سبتمبر 2026',
+        currency: 'ج.م',
+        analysis: analyzeMonth(
+          transactions: sampleMonth(),
+          start: sampleStart,
+          end: sampleEnd,
+          budget: 20000,
+        ),
+      );
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+      expect(_pages(bytes), inInclusiveRange(2, 4));
+    });
+
+    test('with an empty month: still builds, no division by zero', () async {
+      final bytes = await buildMonthlyReportPdf(
+        _report,
+        font: _cairo(),
+        issuedOn: DateTime(2026, 9, 27),
+        analysis: analyzeMonth(
+          transactions: const <ZadTransaction>[],
+          start: sampleStart,
+          end: sampleEnd,
+        ),
+      );
+      expect(_pages(bytes), greaterThanOrEqualTo(1));
     });
 
     test('an empty report still builds (title and stamp only)', () async {
