@@ -26,3 +26,18 @@ jobs:
         with:
           name: app-debug
           path: zad_flutter/build/app/outputs/flutter-apk/app-debug.apk
+      # The full release build — what goes on a phone (owner's request
+      # 2026-09-27: build it in Actions). Signed with the debug key, the
+      # template's setting in android/app/build.gradle.kts, so it installs
+      # without a keystore; split per ABI, so a phone takes one ~30 MB file.
+      # app-arm64-v8a-release.apk is the one for almost every modern phone.
+      - name: Build release APK
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+        working-directory: zad_flutter
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: zad_flutter/build/app/outputs/flutter-apk/app-*-release.apk
