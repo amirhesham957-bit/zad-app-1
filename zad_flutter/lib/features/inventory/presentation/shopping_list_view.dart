@@ -22,6 +22,7 @@ import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
@@ -305,6 +306,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   _Line(item: item, currency: currency),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
+                const AffiliateSuggestionSection(),
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(
@@ -500,6 +502,12 @@ class _Line extends ConsumerWidget {
                     final bought = v ?? false;
                     unawaited(controller.toggle(item.id, purchased: bought));
                     if (bought) {
+                      // Kotlin's onCheck: matchProduct on the tick.
+                      unawaited(
+                        ref
+                            .read(affiliateMatchProvider.notifier)
+                            .onPurchased(item.itemName),
+                      );
                       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                         SnackBar(content: Text('تم شراء ${item.itemName}')),
                       );
