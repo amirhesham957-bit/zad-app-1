@@ -32,6 +32,7 @@ import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
+import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
@@ -132,6 +133,8 @@ class HomeScreen extends ConsumerWidget {
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
           const HomeAmazonRow(),
+          // Kotlin: «العقل → الوصفات», the last card before the gap.
+          const UrgentRecipeSlot(),
           // Kotlin: room under the last card for the floating companion.
           const SizedBox(height: 112),
         ],

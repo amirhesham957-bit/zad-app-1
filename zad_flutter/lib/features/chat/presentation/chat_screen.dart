@@ -36,6 +36,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scroll = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // A question offered before this screen was open (the home's urgent
+    // recipes card pushes it right after offering).
+    final pending = ref.read(chatPrefillProvider);
+    if (pending != null) {
+      _composer.text = pending;
+      unawaited(
+        Future<void>.microtask(() {
+          if (mounted) ref.read(chatPrefillProvider.notifier).taken();
+        }),
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _composer.dispose();
     _scroll.dispose();

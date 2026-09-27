@@ -135,6 +135,36 @@ class ConsumptionLearner {
     return remaining.clamp(-30, 365);
   }
 
+  /// Kotlin's `hasAnyConsumeEvent`.
+  bool hasAnyConsumeEvent(String itemName) =>
+      _events(_use, itemName).isNotEmpty;
+
+  /// Kotlin's `lastActivityEpochDay`: the last purchase or use, or null.
+  int? lastActivityDay(String itemName) {
+    final all = <int>[..._events(_buy, itemName), ..._events(_use, itemName)];
+    return all.isEmpty ? null : all.reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Kotlin's `InventoryFlowEngine.isStagnant` (Task 23): in stock, no
+  /// activity for 30 days, and never once used.
+  bool isStagnant(InventoryItem item) {
+    if (item.quantity <= 0) return false;
+    final created = item.createdAt;
+    final reference =
+        lastActivityDay(item.itemName) ??
+        (created == null
+            ? null
+            : DateTime.utc(
+                    created.year,
+                    created.month,
+                    created.day,
+                  ).millisecondsSinceEpoch ~/
+                  Duration.millisecondsPerDay);
+    if (reference == null) return false;
+    if (_today() - reference < 30) return false;
+    return !hasAnyConsumeEvent(item.itemName);
+  }
+
   /// Kotlin's `getCheckInCandidates`: in stock, not snoozed, and due to run
   /// out within a day — nearest first.
   List<CheckInCandidate> checkInCandidates(List<InventoryItem> inventory) {
