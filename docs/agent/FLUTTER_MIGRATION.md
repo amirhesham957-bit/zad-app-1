@@ -509,6 +509,13 @@ one commit, full verification, report, then continue.
    - The agent has a chef: zad-brain's `suggest_recipes` calls the same
      `meal_suggestions` as the Chef screen with the snapshot's pantry
      (`zad-brain/chef.ts`); the chat prompt forbids inventing recipes.
+   - Kotlin's `ZadExecutiveDossierSheet` («التقرير الاستراتيجي الشامل لعقل
+     زاد») is ported and, unlike Kotlin (where nothing ever set
+     `showExecutiveDossier`), reachable: home's budget block has a row with
+     «تصدير التقرير الشهري» (the brain PDF, `shareBrainReportPdf`) and
+     «التقرير الاستراتيجي». Its safe daily is the home card's figure, not
+     Kotlin's ÷ 14; its forecast line is dropped (Kotlin's came from an AI
+     call Flutter does not make on its own).
    - No Lottie: confetti on the kids savings goal and the tasbiha level-up
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,

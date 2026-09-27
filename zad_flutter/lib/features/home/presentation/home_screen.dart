@@ -28,6 +28,7 @@ import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/home_chef_section.dart';
+import 'package:zad/features/home/presentation/home_reports_row.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
@@ -215,6 +216,16 @@ class _Budget extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
         ],
+        ZadAppearOnEntry(
+          delayMs: 60,
+          child: HomeReportsRow(
+            spent: snapshot.spent,
+            spendable: spendable,
+            daysLeft: math.max(0, period.daysRemainingFrom(now)),
+            currency: snapshot.currency,
+          ),
+        ),
+        const SizedBox(height: 14),
       ],
     );
   }

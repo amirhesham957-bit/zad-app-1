@@ -26,6 +26,44 @@ import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 
+/// Builds the month's report on the phone, writes Kotlin's PDF and hands it
+/// to the share sheet. Shared by the brain screen's button and the home
+/// screen's budget block.
+Future<void> shareBrainReportPdf(WidgetRef ref) async {
+  final zone = tz.getLocation(ref.read(accountTimeZoneProvider));
+  final now = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
+  final today = DateTime.utc(now.year, now.month, now.day);
+  final currency = ref.read(budgetControllerProvider).snapshot?.currency ?? '';
+  String money(double v) =>
+      '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
+  final learner = ref.read(consumptionLearnerProvider);
+  final report = buildBrainReport(
+    transactions: ref.read(transactionsControllerProvider).rows,
+    subscriptions: ref.read(subscriptionsControllerProvider).items,
+    pantryNames: <String>[
+      for (final i in ref.read(pantryControllerProvider).items) i.itemName,
+    ],
+    categoryBudgets: ref.read(categoryBudgetsProvider),
+    standardCategories: kStandardCategories,
+    budget: ref.read(settingsControllerProvider).settings?.monthlyLimit ?? 0,
+    today: today,
+    local: (t) => tz.TZDateTime.from(t.toUtc(), zone),
+    predictDaysLeft: learner.predictDaysLeft,
+    money: money,
+  );
+  final file = await buildReportPdf(
+    buildExportText(report, today: today, money: money),
+    today: today,
+  );
+  await SharePlus.instance.share(
+    ShareParams(
+      files: <XFile>[XFile(file.path, mimeType: 'application/pdf')],
+      subject: 'تقرير زاد المالي',
+      title: 'مشاركة تقرير زاد',
+    ),
+  );
+}
+
 /// The button.
 class ExportReportButton extends ConsumerStatefulWidget {
   /// Creates the button.
@@ -42,40 +80,7 @@ class _ExportState extends ConsumerState<ExportReportButton> {
     if (_building) return;
     setState(() => _building = true);
     try {
-      final zone = tz.getLocation(ref.read(accountTimeZoneProvider));
-      final now = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
-      final today = DateTime.utc(now.year, now.month, now.day);
-      final currency =
-          ref.read(budgetControllerProvider).snapshot?.currency ?? '';
-      String money(double v) =>
-          '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
-      final learner = ref.read(consumptionLearnerProvider);
-      final report = buildBrainReport(
-        transactions: ref.read(transactionsControllerProvider).rows,
-        subscriptions: ref.read(subscriptionsControllerProvider).items,
-        pantryNames: <String>[
-          for (final i in ref.read(pantryControllerProvider).items) i.itemName,
-        ],
-        categoryBudgets: ref.read(categoryBudgetsProvider),
-        standardCategories: kStandardCategories,
-        budget:
-            ref.read(settingsControllerProvider).settings?.monthlyLimit ?? 0,
-        today: today,
-        local: (t) => tz.TZDateTime.from(t.toUtc(), zone),
-        predictDaysLeft: learner.predictDaysLeft,
-        money: money,
-      );
-      final file = await buildReportPdf(
-        buildExportText(report, today: today, money: money),
-        today: today,
-      );
-      await SharePlus.instance.share(
-        ShareParams(
-          files: <XFile>[XFile(file.path, mimeType: 'application/pdf')],
-          subject: 'تقرير زاد المالي',
-          title: 'مشاركة تقرير زاد',
-        ),
-      );
+      await shareBrainReportPdf(ref);
     } on Object catch (e) {
       debugPrint('PDF export failed: $e');
     } finally {
