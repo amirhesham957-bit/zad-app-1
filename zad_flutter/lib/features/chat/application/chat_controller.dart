@@ -24,7 +24,11 @@ import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/features/inventory/application/pantry_controller.dart';
+import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
+import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
 
@@ -246,6 +250,7 @@ class ChatController extends Notifier<ChatView> {
     );
     _replace(settled);
     if (turn.touchedMoney) _refreshMoney();
+    if (turn.touchedHousehold) _refreshHousehold();
     // Only the first: two screens pushed from one reply would bury the first
     // under the second before anybody saw it.
     // Kids mode opens nothing: a child reaches no money screen by asking the
@@ -303,6 +308,7 @@ class ChatController extends Notifier<ChatView> {
       );
 
       if (receipt.ok && receipt.touchedMoney) _refreshMoney();
+      if (receipt.ok && receipt.touchedHousehold) _refreshHousehold();
       return receipt.ok;
     } on Object catch (error) {
       if (!ref.mounted) return false;
@@ -330,6 +336,18 @@ class ChatController extends Notifier<ChatView> {
   void _refreshMoney() {
     ref.invalidate(transactionsControllerProvider);
     unawaited(ref.read(budgetControllerProvider.notifier).refresh(force: true));
+  }
+
+  /// «ضيف لبن للمخزون» ran on the server; the pantry, shopping list,
+  /// pharmacy and subscriptions on screen still show the old rows. Marked
+  /// stale the same way as the money, so each one reads again the next time
+  /// it is watched — without a network call from inside the turn.
+  void _refreshHousehold() {
+    ref
+      ..invalidate(pantryControllerProvider)
+      ..invalidate(shoppingControllerProvider)
+      ..invalidate(pharmacyControllerProvider)
+      ..invalidate(subscriptionsControllerProvider);
   }
 }
 

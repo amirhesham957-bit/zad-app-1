@@ -88,4 +88,33 @@ void main() {
       expect(turn.appCommands, isEmpty);
     });
   });
+
+  group('a turn that changed the household refreshes its screens', () {
+    AgentTurn turn(String tool, {bool ok = true}) => AgentTurn(
+      reply: 'تمام',
+      executed: <AgentExecuted>[
+        AgentExecuted(tool: tool, summary: 'تم', ok: ok),
+      ],
+    );
+
+    test('pantry, shopping, pharmacy and subscription tools', () {
+      for (final tool in <String>[
+        'add_inventory_item',
+        'update_inventory_qty',
+        'add_shopping_item',
+        'complete_shopping_item',
+        'add_pharmacy_item',
+        'log_pharmacy_dose',
+        'add_subscription',
+      ]) {
+        expect(turn(tool).touchedHousehold, isTrue, reason: tool);
+      }
+    });
+
+    test('not money, not a failed write', () {
+      expect(turn('log_transaction').touchedHousehold, isFalse);
+      expect(turn('add_inventory_item', ok: false).touchedHousehold, isFalse);
+      expect(turn('remember').touchedHousehold, isFalse);
+    });
+  });
 }
