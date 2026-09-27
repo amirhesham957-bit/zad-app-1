@@ -98,7 +98,7 @@ void main() {
       await pump(tester);
       expect(find.text('أرز'), findsOneWidget);
 
-      await tester.tap(find.text('الألبان'));
+      await tester.tap(find.widgetWithText(FilterChip, 'الألبان'));
       await tester.pump();
       expect(find.text('أرز'), findsNothing);
       expect(find.text('لبن'), findsOneWidget);
@@ -117,32 +117,37 @@ void main() {
       expect(find.text('لا توجد نتائج'), findsOneWidget);
     });
 
-    testWidgets('what expires soon is gathered, with a recipe ask', (
+    testWidgets("Kotlin's banners: shortages and «ينتهي قريباً»", (
       tester,
     ) async {
       await pump(tester);
+      expect(find.text('نواقص المخزون (1)'), findsOneWidget);
       expect(find.text('ينتهي قريباً'), findsOneWidget);
-      expect(find.text('زبادي · باقي 2 يوم'), findsOneWidget);
+      expect(find.text('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);
     });
 
     testWidgets('the shortages tab puts a row on the list', (tester) async {
       final shopping = QuietShopping();
       await pump(tester, shopping: shopping);
-      await tester.tap(find.text('النواقص (1)'));
-      await tester.pump();
+      await tester.tap(find.text('النواقص (2)'));
+      // Not pumpAndSettle: Kotlin's emoji bob forever.
+      await tester.pump(const Duration(milliseconds: 500));
 
-      await tester.tap(find.text('نزّلها في التسوق'));
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'نزّلها في التسوق').first,
+      );
       await tester.pump();
       expect(shopping.added, <String>['لبن']);
+      expect(find.text('أُضيفت'), findsOneWidget);
     });
 
-    testWidgets('a tap opens the edit sheet on that row', (tester) async {
+    testWidgets('the pencil opens «تعديل الصنف» on that row', (tester) async {
       await pump(tester);
-      await tester.tap(find.text('أرز'));
-      await tester.pumpAndSettle();
-      expect(find.text('تعديل الصنف'), findsOneWidget);
-      expect(find.text('حذف'), findsOneWidget);
+      await tester.tap(find.byTooltip('تعديل الصنف').first);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('تعديل الصنف'), findsWidgets);
+      expect(find.widgetWithText(FilledButton, 'حفظ'), findsOneWidget);
     });
   });
 }

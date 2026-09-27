@@ -194,43 +194,39 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder amountField() => find.byType(TextField).first;
-  Finder titleField() => find.byType(TextField).at(1);
-  Finder saveButton() => find.widgetWithText(FilledButton, 'احفظ');
+  // Kotlin's order: description, amount, category (expense only).
+  Finder titleField() => find.byType(TextField).at(0);
+  Finder amountField() => find.byType(TextField).at(1);
+  Finder categoryField() => find.byType(TextField).at(2);
+  Finder saveButton([String text = 'خصم المبلغ']) =>
+      find.widgetWithText(FilledButton, text);
 
   /// Taps save and settles. Safe because the boxes are in memory — see the
   /// note at the top of the file.
-  Future<void> tapSave(WidgetTester tester) async {
-    await tester.tap(saveButton());
+  Future<void> tapSave(
+    WidgetTester tester, [
+    String text = 'خصم المبلغ',
+  ]) async {
+    await tester.tap(saveButton(text));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('save is refused until there is an amount and a name', (
+  testWidgets("Kotlin's sheet: title, the two chips, «عام» by default", (
     tester,
   ) async {
     await pumpSheet(tester);
-
-    expect(tester.widget<FilledButton>(saveButton()).onPressed, isNull);
-
-    await tester.enterText(amountField(), '50');
-    await tester.pump();
-    // Amount alone is not enough: an unnamed row is one nobody can recognise
-    // in the list a week later.
-    expect(tester.widget<FilledButton>(saveButton()).onPressed, isNull);
-
-    await tester.enterText(titleField(), 'قهوة');
-    await tester.pump();
-    expect(tester.widget<FilledButton>(saveButton()).onPressed, isNotNull);
+    expect(find.text('إضافة مصروف'), findsOneWidget);
+    expect(find.text('خصم (مصروف)'), findsOneWidget);
+    expect(find.text('إيداع (راتب)'), findsOneWidget);
+    expect(tester.widget<TextField>(categoryField()).controller!.text, 'عام');
   });
 
   testWidgets('saving writes to Hive and queues, with no network', (
     tester,
   ) async {
     await pumpSheet(tester);
-
-    await tester.enterText(amountField(), '125.5');
     await tester.enterText(titleField(), 'قهوة');
-    await tester.pump();
+    await tester.enterText(amountField(), '125.5');
     await tapSave(tester);
 
     expect(transactions.length, 1, reason: 'nothing reached the cache');
@@ -238,9 +234,8 @@ void main() {
     expect(queued.kind, OutboxKind.insertTransaction);
     expect(queued.payload['amount'], 125.5);
     expect(queued.payload['title'], 'قهوة');
-    // Counted as upserts, not as every call: saving refreshes the list, and
-    // that read is a background fetch the form did not wait for. What must not
-    // happen is the *write* going out before the sheet returns.
+    expect(queued.payload['category'], 'عام');
+    expect(queued.payload['wallet'], 'card');
     expect(remote.upserts, 0, reason: 'the save pushed to the server inline');
   });
 
@@ -248,66 +243,33 @@ void main() {
     tester,
   ) async {
     await pumpSheet(tester);
-
-    await tester.enterText(amountField(), '١٢٥٫٥');
     await tester.enterText(titleField(), 'قهوة');
-    await tester.pump();
+    await tester.enterText(amountField(), '١٢٥٫٥');
     await tapSave(tester);
-
     expect(outbox.entries().single.payload['amount'], 125.5);
   });
 
-  testWidgets('a transfer never offers the wallet it is leaving', (
-    tester,
-  ) async {
-    // The domain throws on a transfer to the same wallet. Not offering it is
-    // what keeps that unreachable from the UI.
+  testWidgets("an empty description is Kotlin's «بدون وصف»", (tester) async {
     await pumpSheet(tester);
-
-    await tester.tap(find.text('تحويل'));
-    await tester.pumpAndSettle();
-
-    // "من" offers all three; "إلى" offers the two that are left.
-    expect(find.widgetWithText(ChoiceChip, 'كاش'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'بطاقة'), findsNWidgets(2));
-    expect(find.widgetWithText(ChoiceChip, 'بنك'), findsNWidgets(2));
-  });
-
-  testWidgets('a transfer saves with its target and does not count as spend', (
-    tester,
-  ) async {
-    await pumpSheet(tester);
-
-    await tester.tap(find.text('تحويل'));
-    await tester.pumpAndSettle();
-    await tester.enterText(amountField(), '200');
-    await tester.enterText(titleField(), 'من الكاش للبنك');
-    await tester.pump();
+    await tester.enterText(amountField(), '10');
     await tapSave(tester);
-
-    final payload = outbox.entries().single.payload;
-    expect(payload['txn_kind'], 'transfer');
-    expect(payload['transfer_to'], isNotNull);
-    expect(payload['transfer_to'], isNot(payload['wallet']));
-    // Moving money is not spending it.
-    expect(payload['counts_toward_budget'], isFalse);
+    expect(outbox.entries().single.payload['title'], 'بدون وصف');
   });
 
-  testWidgets('income is saved as income, not as a negative expense', (
-    tester,
-  ) async {
+  testWidgets('income is saved as income under «دخل»', (tester) async {
     await pumpSheet(tester);
-
-    await tester.tap(find.text('دخل'));
+    await tester.tap(find.text('إيداع (راتب)'));
     await tester.pumpAndSettle();
-    await tester.enterText(amountField(), '5000');
+    expect(find.text('إضافة دخل/راتب'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2), reason: 'no category');
     await tester.enterText(titleField(), 'راتب');
-    await tester.pump();
-    await tapSave(tester);
+    await tester.enterText(amountField(), '5000');
+    await tapSave(tester, 'إضافة المبلغ');
 
     final payload = outbox.entries().single.payload;
     expect(payload['txn_kind'], 'income');
     expect(payload['is_expense'], isFalse);
     expect(payload['amount'], 5000);
+    expect(payload['category'], 'دخل');
   });
 }

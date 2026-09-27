@@ -133,6 +133,27 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
     );
   }
 
+  // Motion is decoration here; a phone set to reduce it gets a still map.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final still = MediaQuery.disableAnimationsOf(context);
+    for (final c in <AnimationController>[_particles, _orbit, _wave]) {
+      if (still) {
+        c.stop();
+      } else if (!c.isAnimating) {
+        c.repeat();
+      }
+    }
+    for (final c in <AnimationController>[_live, _blink]) {
+      if (still) {
+        c.stop();
+      } else if (!c.isAnimating) {
+        c.repeat(reverse: true);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _live.dispose();
@@ -413,67 +434,74 @@ class _Telemetry extends StatelessWidget {
         children: <Widget>[
           Expanded(
             flex: 11,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    FadeTransition(
-                      opacity: Tween<double>(begin: 0.35, end: 1).animate(
-                        CurvedAnimation(
-                          parent: blink,
-                          curve: Curves.fastOutSlowIn,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      FadeTransition(
+                        opacity: Tween<double>(begin: 0.35, end: 1).animate(
+                          CurvedAnimation(
+                            parent: blink,
+                            curve: Curves.fastOutSlowIn,
+                          ),
+                        ),
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: _emerald,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: _emerald,
-                          shape: BoxShape.circle,
-                        ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'SYS.ONLINE // 14ms',
+                        style: mono(10, _emerald, bold: true),
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'SYS.ONLINE // 14ms',
-                      style: mono(10, _emerald, bold: true),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                SizedBox(
-                  width: 85,
-                  height: 12,
-                  child: AnimatedBuilder(
-                    animation: wave,
-                    builder: (_, _) =>
-                        CustomPaint(painter: _WavePainter(wave.value * 6.28)),
+                    ],
                   ),
-                ),
-                Text(
-                  'NEURAL LINKS: $activeLinks/$totalLinks',
-                  style: mono(9, _textDim),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  SizedBox(
+                    width: 85,
+                    height: 12,
+                    child: AnimatedBuilder(
+                      animation: wave,
+                      builder: (_, _) =>
+                          CustomPaint(painter: _WavePainter(wave.value * 6.28)),
+                    ),
+                  ),
+                  Text(
+                    'NEURAL LINKS: $activeLinks/$totalLinks',
+                    style: mono(9, _textDim),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
             flex: 10,
-            child: Column(
-              children: <Widget>[
-                Text('AUTOMATED OPS', style: mono(9, _textDim)),
-                Text(
-                  '+$insights',
-                  style: ZadType.titleMedium.copyWith(
-                    fontFamily: _mono,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: _cyan,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                children: <Widget>[
+                  Text('AUTOMATED OPS', style: mono(9, _textDim)),
+                  Text(
+                    '+$insights',
+                    style: ZadType.titleMedium.copyWith(
+                      fontFamily: _mono,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: _cyan,
+                    ),
                   ),
-                ),
-                Text('DECISIONS TODAY', style: mono(9, _emerald)),
-              ],
+                  Text('DECISIONS TODAY', style: mono(9, _emerald)),
+                ],
+              ),
             ),
           ),
           Row(
@@ -845,11 +873,17 @@ class _SpherePainter extends CustomPainter {
       center,
       halo,
       Paint()
-        ..shader = ui.Gradient.radial(center, halo, <Color>[
-          primary.withValues(alpha: 0.22 * liveAlpha),
-          _cyan.withValues(alpha: 0.06 * liveAlpha),
-          Colors.transparent,
-        ]),
+        ..shader = ui.Gradient.radial(
+          center,
+          halo,
+          <Color>[
+            primary.withValues(alpha: 0.22 * liveAlpha),
+            _cyan.withValues(alpha: 0.06 * liveAlpha),
+            Colors.transparent,
+          ],
+          // Compose spreads three colours evenly; dart:ui needs it said.
+          const <double>[0, 0.5, 1],
+        ),
     );
     // 3. The guide rings.
     final ring = Paint()

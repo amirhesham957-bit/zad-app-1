@@ -680,6 +680,7 @@ class _CheapestNearYou extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 44),
               child: FilledButton.tonal(
                 onPressed: onSearch,
+                style: FilledButton.styleFrom(minimumSize: const Size(44, 44)),
                 child: const Icon(
                   Icons.search,
                   size: 18,

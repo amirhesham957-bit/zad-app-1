@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
@@ -69,126 +68,124 @@ void main() {
     ),
   );
 
-  Finder fieldLabelled(String label) =>
-      find.ancestor(of: find.text(label), matching: find.byType(TextField));
+  // Kotlin's labels sit above the fields, so the fields go by order.
+  Finder emailField() => find.byType(TextField).at(0);
+  Finder passwordField() => find.byType(TextField).at(1);
+  Finder submit(String text) => find.widgetWithText(ElevatedButton, text);
 
-  testWidgets('opens on sign-in, with no name field to fill', (tester) async {
+  Future<void> signIn(
+    WidgetTester tester,
+    String email,
+    String password,
+  ) async {
+    await tester.enterText(emailField(), email);
+    await tester.enterText(passwordField(), password);
+    await tester.pump();
+    await tester.ensureVisible(submit('دخول'));
+    await tester.tap(submit('دخول'));
+  }
+
+  testWidgets("opens on Kotlin's sign-in, with no name field", (tester) async {
     await pumpLogin(tester);
-
-    expect(find.text('أهلاً بيك تاني'), findsOneWidget);
-    expect(find.text('ادخل'), findsOneWidget);
-    expect(find.text('اسمك'), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
+    expect(find.text('البريد الإلكتروني'), findsOneWidget);
+    expect(find.text('كلمة المرور'), findsOneWidget);
+    expect(find.text('اسم المستخدم'), findsNothing);
   });
 
-  testWidgets('typing an email and a password signs in with exactly those', (
-    tester,
-  ) async {
+  testWidgets('the button waits for an email and a password', (tester) async {
     await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    expect(tester.widget<ElevatedButton>(submit('دخول')).onPressed, isNull);
+  });
 
-    await tester.enterText(fieldLabelled('الإيميل'), 'amir@example.com');
-    await tester.enterText(fieldLabelled('كلمة السر'), 'hunter2000');
-    await tester.tap(find.widgetWithText(FilledButton, 'ادخل'));
-    await tester.pump();
-
+  testWidgets('signs in with exactly what was typed', (tester) async {
+    await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    await signIn(tester, 'amir@example.com', 'hunter2000');
+    // The button keeps spinning until the session arrives, so no settle.
+    await tester.pump(const Duration(milliseconds: 300));
     expect(gateway.calls, <String>['signIn:amir@example.com:hunter2000']);
   });
 
-  testWidgets('a rejected password is said in words, and the button returns', (
-    tester,
-  ) async {
+  testWidgets('a rejected password is said in words', (tester) async {
     gateway.failWith = const AuthFailure(AuthFailureKind.invalidCredentials);
     await pumpLogin(tester);
-
-    await tester.enterText(fieldLabelled('الإيميل'), 'amir@example.com');
-    await tester.enterText(fieldLabelled('كلمة السر'), 'wrong-one');
-    await tester.tap(find.widgetWithText(FilledButton, 'ادخل'));
-    await tester.pump();
-    await tester.pump();
-
+    await tester.pumpAndSettle();
+    await signIn(tester, 'amir@example.com', 'wrong-one');
+    await tester.pumpAndSettle();
     expect(find.text('الإيميل أو كلمة السر مش مظبوطة.'), findsOneWidget);
-    final button = tester.widget<FilledButton>(find.byType(FilledButton));
-    expect(button.onPressed, isNotNull, reason: 'the button must come back');
   });
 
   testWidgets('a typo in the address never leaves the device', (tester) async {
     await pumpLogin(tester);
-
-    await tester.enterText(fieldLabelled('الإيميل'), 'amir-at-example.com');
-    await tester.enterText(fieldLabelled('كلمة السر'), 'hunter2000');
-    await tester.tap(find.widgetWithText(FilledButton, 'ادخل'));
-    await tester.pump();
-
-    expect(find.text('الإيميل ده شكله مش مظبوط.'), findsOneWidget);
+    await tester.pumpAndSettle();
+    await signIn(tester, 'amir-at-example.com', 'hunter2000');
+    await tester.pumpAndSettle();
     expect(gateway.calls, isEmpty);
   });
 
-  testWidgets('while the request is in flight the button is disabled', (
+  testWidgets('while the request is in flight the button spins', (
     tester,
   ) async {
     gateway.gate = Completer<void>();
     await pumpLogin(tester);
-
-    await tester.enterText(fieldLabelled('الإيميل'), 'amir@example.com');
-    await tester.enterText(fieldLabelled('كلمة السر'), 'hunter2000');
-    await tester.tap(find.widgetWithText(FilledButton, 'ادخل'));
-    // pump, never pumpAndSettle: the spinner in the button animates forever
-    // and settling would wait for an animation that has no end.
-    await tester.pump();
-
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pumpAndSettle();
+    await signIn(tester, 'amir@example.com', 'hunter2000');
+    await tester.pump(const Duration(milliseconds: 100));
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      find.descendant(
+        of: find.byType(ElevatedButton),
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsOneWidget,
+    );
+    gateway.gate!.complete();
+    await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('«سجل الآن» opens sign-up with the terms to accept', (
+    tester,
+  ) async {
+    await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('سجل الآن'));
+    await tester.tap(find.text('سجل الآن'));
+    await tester.pumpAndSettle();
+    expect(find.text('اسم المستخدم'), findsOneWidget);
+    expect(find.text('الشروط وسياسة الخصوصية'), findsOneWidget);
+    expect(
+      tester.widget<ElevatedButton>(submit('إنشاء حساب')).onPressed,
       isNull,
     );
-
-    gateway.gate!.complete();
-    await tester.pump();
   });
 
-  testWidgets('switching to sign-up asks for a name and says the minimum', (
-    tester,
-  ) async {
+  testWidgets('«نسيت كلمة المرور؟» sends the reset link', (tester) async {
     await pumpLogin(tester);
-
-    await tester.tap(find.text('لسه معندكش حساب؟ اعمل واحد'));
-    await tester.pump();
-
-    expect(find.text('اسمك'), findsOneWidget);
-    expect(find.text('$kMinPasswordLength حروف على الأقل'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'اعمل حساب'), findsOneWidget);
-  });
-
-  testWidgets('the reset mode drops the password field entirely', (
-    tester,
-  ) async {
-    await pumpLogin(tester);
-
-    await tester.tap(find.text('نسيت كلمة السر؟'));
-    await tester.pump();
-
-    expect(find.text('كلمة السر'), findsNothing);
-
-    await tester.enterText(fieldLabelled('الإيميل'), 'amir@example.com');
-    await tester.tap(find.widgetWithText(FilledButton, 'ابعت اللينك'));
-    await tester.pump();
-    await tester.pump();
-
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('نسيت كلمة المرور؟'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('نسيت كلمة المرور؟'));
+    await tester.pumpAndSettle();
+    expect(find.text('استعادة كلمة المرور'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'البريد الإلكتروني').last,
+      'amir@example.com',
+    );
+    await tester.tap(find.text('إرسال'));
+    await tester.pumpAndSettle();
     expect(gateway.calls, <String>['reset:amir@example.com']);
-    // Back on sign-in, and told what just happened.
-    expect(find.widgetWithText(FilledButton, 'ادخل'), findsOneWidget);
-    expect(find.textContaining('لينك لتغيير كلمة السر'), findsOneWidget);
+    expect(find.text('تم إرسال الرابط بنجاح!'), findsOneWidget);
   });
 
   testWidgets('the password can be revealed', (tester) async {
     await pumpLogin(tester);
-
-    TextField password() =>
-        tester.widget<TextField>(fieldLabelled('كلمة السر'));
+    await tester.pumpAndSettle();
+    TextField password() => tester.widget<TextField>(passwordField());
     expect(password().obscureText, isTrue);
-
-    await tester.tap(find.byTooltip('اظهر كلمة السر'));
+    await tester.tap(find.byTooltip('إظهار/إخفاء كلمة المرور'));
     await tester.pump();
-
     expect(password().obscureText, isFalse);
   });
 }

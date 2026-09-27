@@ -10,6 +10,7 @@ import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/chat/presentation/chat_screen.dart';
 
 class _Map extends KnowledgeMapController {
   new(this.inputs);
@@ -24,6 +25,11 @@ class _Map extends KnowledgeMapController {
   Future<void> refresh() async {}
 }
 
+class _Chat extends ChatController {
+  @override
+  ChatView build() => const ChatView();
+}
+
 void main() {
   late ProviderContainer container;
 
@@ -35,6 +41,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         knowledgeMapControllerProvider.overrideWith(() => _Map(inputs)),
+        chatControllerProvider.overrideWith(_Chat.new),
       ],
     );
     addTearDown(container.dispose);
@@ -101,19 +108,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('لبن'), findsOneWidget);
     expect(find.text('1 علبة'), findsOneWidget);
-    expect(find.text('افتح'), findsOneWidget);
+    expect(find.text('فتح الشاشة'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('اقفل'));
+    await tester.tap(find.text('×'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('الميزانية'));
     await tester.pumpAndSettle();
+    expect(find.text('محجوز'), findsOneWidget);
     expect(find.text('3,300 EGP'), findsOneWidget);
     expect(find.text('1,200 EGP'), findsOneWidget);
-    // The budget has no screen of its own to open here.
-    expect(find.text('افتح'), findsNothing);
+    // Kotlin's budget panel offers «اسأل زاد» only.
+    expect(find.text('فتح الشاشة'), findsNothing);
   });
 
-  testWidgets('"اسأل زاد" fills the composer and does not send', (
+  testWidgets('«اسأل زاد» puts the question in the composer, unsent', (
     tester,
   ) async {
     await pump(tester, inputs);
@@ -123,13 +131,13 @@ void main() {
     await tester.tap(find.text('اسأل زاد'));
     await tester.pumpAndSettle();
 
-    expect(container.read(chatPrefillProvider), 'وضّحلي أكتر عن المخزون');
-    // Back where the map was opened from.
-    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(ChatScreen), findsOneWidget);
+    expect(find.text('وضّحلي أكتر عن المخزون'), findsOneWidget);
   });
 
-  testWidgets('an empty map says what would fill it', (tester) async {
+  testWidgets('an empty map still shows the budget hub', (tester) async {
     await pump(tester, const MapInputs());
-    expect(find.textContaining('لسه مفيش حاجة تتربط'), findsOneWidget);
+    expect(find.text('الميزانية'), findsOneWidget);
+    expect(find.text('1 عنصر متصل'), findsOneWidget);
   });
 }

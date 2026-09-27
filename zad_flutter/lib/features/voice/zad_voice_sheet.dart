@@ -55,7 +55,18 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
     'صرفت 50 على القهوة',
   ];
 
-  late final ZadVoice _voice = ref.read(zadVoiceProvider);
+  // Both captured in initState: `ref` may not be used in dispose.
+  late final ZadVoice _voice;
+  late final VoiceInputController _input;
+  bool _recording = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _voice = ref.read(zadVoiceProvider);
+    _input = ref.read(voiceInputControllerProvider.notifier);
+  }
+
   final ValueNotifier<double> _mic = ValueNotifier<double>(0);
   bool _showSettings = false;
   String _recognized = '';
@@ -67,10 +78,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
   void dispose() {
     _mic.dispose();
     _voice.stop();
-    final input = ref.read(voiceInputControllerProvider);
-    if (input.isRecording) {
-      unawaited(ref.read(voiceInputControllerProvider.notifier).cancel());
-    }
+    if (_recording) unawaited(_input.cancel());
     super.dispose();
   }
 
@@ -101,6 +109,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
     // recogniser heard.
     ref
       ..listen(voiceInputControllerProvider, (_, next) {
+        _recording = next.isRecording;
         _mic.value = next.isRecording ? next.amplitude : 0;
         final heard = next.transcript;
         if (heard != null) {

@@ -284,7 +284,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 SliverList.list(children: header),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 62,
+                    height: 76,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
@@ -301,26 +301,33 @@ class _PantryViewState extends ConsumerState<PantryView> {
                     ),
                   ),
                 ),
+                // Two columns, each cell as tall as its content.
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-                  sliver: SliverGrid.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          mainAxisExtent: 104,
-                        ),
-                    itemCount: shortages.length,
-                    itemBuilder: (_, i) => _ShortageItemCard(
-                      item: shortages[i],
-                      today: today,
-                      onAdd: () => unawaited(
-                        ref
-                            .read(shoppingControllerProvider.notifier)
-                            .add(shortages[i].itemName),
-                      ),
-                    ),
+                  sliver: SliverList.separated(
+                    itemCount: (shortages.length + 1) ~/ 2,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (_, row) {
+                      Widget cell(int i) => i < shortages.length
+                          ? _ShortageItemCard(
+                              item: shortages[i],
+                              today: today,
+                              onAdd: () => unawaited(
+                                ref
+                                    .read(shoppingControllerProvider.notifier)
+                                    .add(shortages[i].itemName),
+                              ),
+                            )
+                          : const SizedBox.shrink();
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Expanded(child: cell(row * 2)),
+                          const SizedBox(width: 12),
+                          Expanded(child: cell(row * 2 + 1)),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -513,15 +520,20 @@ class ZadAppearOnEntryDelay extends StatefulWidget {
 
 class _AppearState extends State<ZadAppearOnEntryDelay> {
   bool _shown = false;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    unawaited(
-      Future<void>.delayed(Duration(milliseconds: widget.delayMs), () {
-        if (mounted) setState(() => _shown = true);
-      }),
-    );
+    _timer = Timer(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) setState(() => _shown = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -739,6 +751,7 @@ class _ExpiringSoonSection extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 1),
                   child: ZadListCard(
                     padding: EdgeInsets.zero,
+                    fillWidth: false,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,

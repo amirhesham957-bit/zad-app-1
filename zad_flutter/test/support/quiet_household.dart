@@ -7,6 +7,10 @@
 library;
 
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/data/providers.dart';
+import 'package:zad/features/family/application/family_controller.dart';
+import 'package:zad/features/family/data/family_repository.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/modes/application/modes_controller.dart';
@@ -84,10 +88,31 @@ class QuietModes extends ModesController {
   Future<void> refresh() async {}
 }
 
+/// No family, and never a fetch — the shell reads kids mode, which reads the
+/// family, and a screen test should not need the family's server.
+class QuietFamily extends FamilyController {
+  @override
+  FamilyView build() => const FamilyView(status: NoFamily(), userId: 'u1');
+
+  @override
+  Future<void> refresh() async {}
+}
+
+/// A client pointed at a closed local port: anything a screen asks the
+/// network for fails at once and is handled as offline, instead of the test
+/// needing an initialised `Supabase.instance`.
+final SupabaseClient quietSupabase = SupabaseClient(
+  'http://127.0.0.1:9',
+  'test-anon-key',
+  authOptions: const AuthClientOptions(autoRefreshToken: false),
+);
+
 /// Overrides for all of them, empty.
 List<Override> get quietHouseholdOverrides => <Override>[
   pantryControllerProvider.overrideWith(QuietPantry.new),
   pharmacyControllerProvider.overrideWith(QuietPharmacy.new),
   shoppingControllerProvider.overrideWith(QuietShopping.new),
   modesControllerProvider.overrideWith(QuietModes.new),
+  familyControllerProvider.overrideWith(QuietFamily.new),
+  supabaseClientProvider.overrideWithValue(quietSupabase),
 ];

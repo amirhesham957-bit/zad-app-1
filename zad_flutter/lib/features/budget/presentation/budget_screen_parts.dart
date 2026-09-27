@@ -147,6 +147,7 @@ class BudgetSuggestionCard extends ConsumerWidget {
                       );
                     },
                     style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 34),
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),

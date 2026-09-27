@@ -167,78 +167,84 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
         'للمخزون؟',
         style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.bold),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (inventory.isNotEmpty) ...<Widget>[
-            SizedBox(
-              height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: inventory.length > 20 ? 20 : inventory.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final item = inventory[i];
-                  final added = _added.contains(item.itemName);
-                  return ActionChip(
-                    onPressed: () {
-                      unawaited(HapticFeedback.heavyImpact());
-                      _add(item.itemName);
-                    },
-                    avatar: Icon(
-                      added ? Icons.check : Icons.add,
-                      size: 16,
-                      color: added ? scheme.primary : null,
-                    ),
-                    label: Text(item.itemName),
-                    backgroundColor: added
-                        ? scheme.primary.withValues(alpha: 0.12)
-                        : null,
-                    labelStyle: added ? TextStyle(color: scheme.primary) : null,
-                  );
-                },
+      // A horizontal ListView inside AlertDialog needs a bounded width.
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (inventory.isNotEmpty) ...<Widget>[
+              SizedBox(
+                height: 40,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: inventory.length > 20 ? 20 : inventory.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final item = inventory[i];
+                    final added = _added.contains(item.itemName);
+                    return ActionChip(
+                      onPressed: () {
+                        unawaited(HapticFeedback.heavyImpact());
+                        _add(item.itemName);
+                      },
+                      avatar: Icon(
+                        added ? Icons.check : Icons.add,
+                        size: 16,
+                        color: added ? scheme.primary : null,
+                      ),
+                      label: Text(item.itemName),
+                      backgroundColor: added
+                          ? scheme.primary.withValues(alpha: 0.12)
+                          : null,
+                      labelStyle: added
+                          ? TextStyle(color: scheme.primary)
+                          : null,
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  controller: _name,
-                  decoration: InputDecoration(
-                    hintText: 'اسم منتج تاني…',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 12),
+            ],
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _name,
+                    decoration: InputDecoration(
+                      hintText: 'اسم منتج تاني…',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'إضافة',
-                onPressed: () {
-                  final name = _name.text.trim();
-                  if (name.isEmpty) return;
-                  _add(name);
-                  _name.clear();
-                },
-                icon: Icon(Icons.add, color: scheme.primary),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'إضافة',
+                  onPressed: () {
+                    final name = _name.text.trim();
+                    if (name.isEmpty) return;
+                    _add(name);
+                    _name.clear();
+                  },
+                  icon: Icon(Icons.add, color: scheme.primary),
+                ),
+              ],
+            ),
+            if (_added.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                'أضفت ${_added.length} أصناف ✅',
+                style: ZadType.labelSmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: context.zadExt.success,
+                ),
               ),
             ],
-          ),
-          if (_added.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 8),
-            Text(
-              'أضفت ${_added.length} أصناف ✅',
-              style: ZadType.labelSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: context.zadExt.success,
-              ),
-            ),
           ],
-        ],
+        ),
       ),
       actions: <Widget>[
         TextButton(

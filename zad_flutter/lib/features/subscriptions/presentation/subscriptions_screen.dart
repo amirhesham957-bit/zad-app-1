@@ -385,19 +385,22 @@ class _ListItemEnterState extends State<_ListItemEnter>
     duration: const Duration(milliseconds: 300),
   );
 
+  late final Timer _timer;
+
   @override
   void initState() {
     super.initState();
-    final delay = math.min(widget.index * 40, 400);
-    unawaited(
-      Future<void>.delayed(Duration(milliseconds: delay), () {
+    _timer = Timer(
+      Duration(milliseconds: math.min(widget.index * 40, 400)),
+      () {
         if (mounted) _t.forward();
-      }),
+      },
     );
   }
 
   @override
   void dispose() {
+    _timer.cancel();
     _t.dispose();
     super.dispose();
   }
@@ -1069,204 +1072,214 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
         _sub == null ? 'إضافة اشتراك جديد' : 'تعديل الاشتراك',
         style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.bold),
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('الخدمات والاشتراكات المقترحة:', style: sectionLabel),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 36,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _presets.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final p = _presets[i];
-                  final on = _title.text == p.name;
-                  return Material(
-                    color: on
-                        ? p.color.withValues(alpha: 0.18)
-                        : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: on
-                            ? p.color
-                            : scheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        unawaited(HapticFeedback.selectionClick());
-                        setState(() {
-                          _title.text = p.name;
-                          _provider.text = p.provider;
-                          _category = p.category;
-                          _type = p.type;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        child: Row(
-                          children: <Widget>[
-                            Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                color: p.color.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(p.icon, size: 14, color: p.color),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              p.name,
-                              style: ZadType.labelSmall.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text('تصنيف الالتزام:', style: sectionLabel),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              children: <Widget>[
-                for (final (key, label) in const <(String, String)>[
-                  ('subscription', 'اشتراك شهري'),
-                  ('installment', 'قسط'),
-                  ('utility', 'فاتورة'),
-                  ('rent', 'التزام'),
-                ])
-                  FilterChip(
-                    selected: _type == key,
-                    onSelected: (_) => setState(() => _type = key),
-                    label: Text(label, style: ZadType.labelSmall),
-                  ),
-              ],
-            ),
-            if (_type == 'installment') ...<Widget>[
+      // A horizontal ListView inside AlertDialog needs a bounded width, or
+      // the dialog's IntrinsicWidth throws on layout.
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('الخدمات والاشتراكات المقترحة:', style: sectionLabel),
               const SizedBox(height: 12),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _total,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'إجمالي المبلغ',
-                        border: OutlineInputBorder(),
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _presets.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final p = _presets[i];
+                    final on = _title.text == p.name;
+                    return Material(
+                      color: on
+                          ? p.color.withValues(alpha: 0.18)
+                          : scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.5,
+                            ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: on
+                              ? p.color
+                              : scheme.outline.withValues(alpha: 0.3),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _remaining,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'الأقساط المتبقية',
-                        border: OutlineInputBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          unawaited(HapticFeedback.selectionClick());
+                          setState(() {
+                            _title.text = p.name;
+                            _provider.text = p.provider;
+                            _category = p.category;
+                            _type = p.type;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: p.color.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(p.icon, size: 14, color: p.color),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                p.name,
+                                style: ZadType.labelSmall.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: _title,
-              decoration: const InputDecoration(
-                labelText: 'اسم الاشتراك (مثال: Netflix)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _amount,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'المبلغ ($symbol)',
-                border: const OutlineInputBorder(),
-                errorText:
-                    _amount.text.trim().isNotEmpty &&
-                        (amount == null || amount <= 0)
-                    ? ''
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _provider,
-              decoration: const InputDecoration(
-                labelText: 'مزود الخدمة',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _date,
-              decoration: InputDecoration(
-                labelText: 'تاريخ التجديد (YYYY-MM-DD)',
-                hintText: 'YYYY-MM-DD',
-                border: const OutlineInputBorder(),
-                errorText: _date.text.trim().isNotEmpty && parsed == null
-                    ? ''
-                    : null,
-                suffixIcon: IconButton(
-                  tooltip: 'اختر التاريخ',
-                  onPressed: () => unawaited(_pickDate()),
-                  icon: Icon(Icons.calendar_month, color: scheme.primary),
+                    );
+                  },
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'دورة الفوترة',
-              style: ZadType.labelMedium.copyWith(
-                color: scheme.onSurfaceVariant,
+              const SizedBox(height: 14),
+              Text('تصنيف الالتزام:', style: sectionLabel),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 6,
+                children: <Widget>[
+                  for (final (key, label) in const <(String, String)>[
+                    ('subscription', 'اشتراك شهري'),
+                    ('installment', 'قسط'),
+                    ('utility', 'فاتورة'),
+                    ('rent', 'التزام'),
+                  ])
+                    FilterChip(
+                      selected: _type == key,
+                      onSelected: (_) => setState(() => _type = key),
+                      label: Text(label, style: ZadType.labelSmall),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final cycle in const <BillingCycle>[
-                  BillingCycle.monthly,
-                  BillingCycle.yearly,
-                  BillingCycle.weekly,
-                ])
-                  FilterChip(
-                    selected: _cycle == cycle,
-                    onSelected: (_) => setState(() => _cycle = cycle),
-                    label: Text(_cycleLabel(cycle), style: ZadType.labelSmall),
-                  ),
+              if (_type == 'installment') ...<Widget>[
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller: _total,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'إجمالي المبلغ',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _remaining,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'الأقساط المتبقية',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
-            if (_title.text.length >= 3) ...<Widget>[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _title,
+                decoration: const InputDecoration(
+                  labelText: 'اسم الاشتراك (مثال: Netflix)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _amount,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'المبلغ ($symbol)',
+                  border: const OutlineInputBorder(),
+                  errorText:
+                      _amount.text.trim().isNotEmpty &&
+                          (amount == null || amount <= 0)
+                      ? ''
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _provider,
+                decoration: const InputDecoration(
+                  labelText: 'مزود الخدمة',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _date,
+                decoration: InputDecoration(
+                  labelText: 'تاريخ التجديد (YYYY-MM-DD)',
+                  hintText: 'YYYY-MM-DD',
+                  border: const OutlineInputBorder(),
+                  errorText: _date.text.trim().isNotEmpty && parsed == null
+                      ? ''
+                      : null,
+                  suffixIcon: IconButton(
+                    tooltip: 'اختر التاريخ',
+                    onPressed: () => unawaited(_pickDate()),
+                    icon: Icon(Icons.calendar_month, color: scheme.primary),
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               Text(
-                'الفئة المقترحة: $_category',
-                style: ZadType.labelSmall.copyWith(
+                'دورة الفوترة',
+                style: ZadType.labelMedium.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: <Widget>[
+                  for (final cycle in const <BillingCycle>[
+                    BillingCycle.monthly,
+                    BillingCycle.yearly,
+                    BillingCycle.weekly,
+                  ])
+                    FilterChip(
+                      selected: _cycle == cycle,
+                      onSelected: (_) => setState(() => _cycle = cycle),
+                      label: Text(
+                        _cycleLabel(cycle),
+                        style: ZadType.labelSmall,
+                      ),
+                    ),
+                ],
+              ),
+              if (_title.text.length >= 3) ...<Widget>[
+                const SizedBox(height: 12),
+                Text(
+                  'الفئة المقترحة: $_category',
+                  style: ZadType.labelSmall.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       actions: <Widget>[

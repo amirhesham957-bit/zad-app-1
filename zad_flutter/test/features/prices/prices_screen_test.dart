@@ -1,9 +1,6 @@
-// What the prices screen says: the cheapest price and where, the customer's
-// reports still on the phone (and which one the server refused), who reports
-// most without naming anybody, and the form's reason when a report cannot go.
-//
-// The controller is a recording fake; the form autofocuses, so no
-// pumpAndSettle (the cursor blinks forever).
+// Kotlin's «لوحة الأسعار»: the cheapest price and where, «أكثر المشاركين 🏆»
+// as «المساهم N», the empty states, and «سجّل السعر» — its reason when a
+// report cannot go, and the thanks when it does.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,7 +80,9 @@ void main() {
     );
   }
 
-  testWidgets('the cheapest price, where it was, and how sure', (tester) async {
+  testWidgets('the cheapest price, where it was, and who reports most', (
+    tester,
+  ) async {
     await pump(
       tester,
       _view(
@@ -104,64 +103,65 @@ void main() {
       ),
     );
 
+    expect(find.text('لوحة الأسعار'), findsOneWidget);
     expect(find.text('طماطم'), findsOneWidget);
-    expect(find.text('أرخص سعر: كارفور، القاهرة'), findsOneWidget);
-    expect(find.text('المتوسط 11.5 · 3 بلاغات'), findsOneWidget);
-    expect(find.textContaining('10'), findsWidgets);
-    expect(find.text('إنت'), findsOneWidget);
-    expect(find.text('مساهم'), findsOneWidget);
+    expect(find.text('كارفور، القاهرة · 3 بلاغ'), findsOneWidget);
+    expect(find.text('المساهم 1'), findsOneWidget);
+    expect(find.text('9 مساهمات'), findsOneWidget);
+    expect(find.text('المساهم 2'), findsOneWidget);
   });
 
-  testWidgets('reports on the phone say whether they wait or were refused', (
-    tester,
-  ) async {
-    await pump(
-      tester,
-      _view(
-        queued: const <QueuedReport>[
-          QueuedReport(item: 'لبن', price: 30, refused: false),
-          QueuedReport(item: 'سكر', price: 0.5, refused: true),
-        ],
-      ),
-    );
-
-    expect(find.text('مستني النت'), findsOneWidget);
-    expect(find.text('ماتقبلش'), findsOneWidget);
-    expect(find.text('مفيش أسعار لسه'), findsOneWidget);
+  testWidgets("nothing yet: Kotlin's two empty states", (tester) async {
+    await pump(tester, _view());
+    expect(find.text('لسه مفيش بلاغات هنا'), findsOneWidget);
+    expect(find.text('لسه مفيش مساهمات'), findsOneWidget);
+    expect(find.text('سجّل أول سعر'), findsNWidgets(2));
   });
+
+  Future<void> openForm(WidgetTester tester) async {
+    await tester.tap(find.text('سجّل سعر جديد'));
+    await tester.pumpAndSettle();
+    expect(find.text('سجّل السعر'), findsOneWidget);
+  }
 
   testWidgets('the form says why a report cannot go, and stays open', (
     tester,
   ) async {
-    await pump(tester, _view(), answer: ReportProblem.noPrice);
-
-    await tester.tap(find.text('بلّغ عن سعر'));
+    await pump(tester, _view(), answer: ReportProblem.priceTooHigh);
+    await openForm(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'مثل: خبز، لبن، بيض'),
+      'طماطم',
+    );
+    await tester.enterText(find.widgetWithText(TextField, 'مثل: 15.50'), '12');
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.enterText(find.byType(TextField).first, 'طماطم');
-    await tester.tap(find.text('ابعت'));
-    await tester.pump();
+    await tester.tap(find.text('أرسل السعر'));
+    await tester.pumpAndSettle();
 
-    expect(prices.calls, <String>['report:طماطم:']);
-    expect(find.text('اكتب السعر'), findsOneWidget);
-    expect(find.text('ابعت'), findsOneWidget);
+    expect(prices.calls, <String>['report:طماطم:12']);
+    expect(find.text('الرقم ده كبير أوي'), findsOneWidget);
+    expect(find.text('أرسل السعر'), findsOneWidget);
   });
 
   testWidgets('a report that goes closes the form and says thanks', (
     tester,
   ) async {
     await pump(tester, _view());
-
-    await tester.tap(find.text('بلّغ عن سعر'));
+    await openForm(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'مثل: خبز، لبن، بيض'),
+      'طماطم',
+    );
+    await tester.enterText(find.widgetWithText(TextField, 'مثل: 15.50'), '12');
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.enterText(find.byType(TextField).at(0), 'طماطم');
-    await tester.enterText(find.byType(TextField).at(1), '12');
-    await tester.tap(find.text('ابعت'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('أرسل السعر'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('ابعت'), findsNothing);
-    expect(find.textContaining('شكراً على البلاغ'), findsOneWidget);
+    expect(find.text('أرسل السعر'), findsNothing);
+    expect(find.text('لوحة الأسعار'), findsOneWidget);
+    expect(
+      find.text('تم تسجيل السعر بنجاح! شكراً على مساهمتك.'),
+      findsOneWidget,
+    );
   });
 }

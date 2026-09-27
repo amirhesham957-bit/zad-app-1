@@ -29,11 +29,16 @@ class ZadListCard extends StatelessWidget {
     this.radius = 20,
     this.color,
     this.padding = const EdgeInsets.all(16),
+    this.fillWidth = true,
     super.key,
   });
 
   /// The content.
   final Widget child;
+
+  /// Stretch to the available width — off inside a horizontal list, where
+  /// that width is unbounded.
+  final bool fillWidth;
 
   /// Corner radius.
   final double radius;
@@ -46,7 +51,7 @@ class ZadListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: double.infinity,
+    width: fillWidth ? double.infinity : null,
     padding: padding,
     decoration: BoxDecoration(
       color: color ?? Theme.of(context).colorScheme.surface,

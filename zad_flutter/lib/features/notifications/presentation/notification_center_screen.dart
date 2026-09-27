@@ -66,6 +66,10 @@ class NotificationCenterScreen extends ConsumerStatefulWidget {
 }
 
 class _CenterState extends ConsumerState<NotificationCenterScreen> {
+  // Created on the first read-aloud, kept for dispose (where `ref` is off
+  // limits).
+  ZadVoice? _voice;
+
   @override
   void initState() {
     super.initState();
@@ -97,10 +101,10 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
       for (final a in bell) '${a.title}. ${a.body}',
       for (final n in unread) '${n.title}. ${n.message}',
     ];
+    final voice = ref.read(zadVoiceProvider);
+    _voice = voice;
     unawaited(
-      ref
-          .read(zadVoiceProvider)
-          .speak(spoken.isEmpty ? 'مفيش تنبيهات جديدة' : spoken.join('. ')),
+      voice.speak(spoken.isEmpty ? 'مفيش تنبيهات جديدة' : spoken.join('. ')),
     );
   }
 
@@ -122,7 +126,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
 
   @override
   void dispose() {
-    ref.read(zadVoiceProvider).stop();
+    _voice?.stop();
     super.dispose();
   }
 

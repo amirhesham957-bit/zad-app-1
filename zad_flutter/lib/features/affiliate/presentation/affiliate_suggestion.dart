@@ -283,6 +283,7 @@ class _ConsentBanner extends StatelessWidget {
             FilledButton(
               onPressed: onAccept,
               style: FilledButton.styleFrom(
+                minimumSize: const Size(64, 40),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -498,6 +499,7 @@ class _ProductCard extends ConsumerWidget {
                 child: FilledButton.icon(
                   onPressed: onBuy,
                   style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 40),
                     backgroundColor: amazon,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     shape: RoundedRectangleBorder(

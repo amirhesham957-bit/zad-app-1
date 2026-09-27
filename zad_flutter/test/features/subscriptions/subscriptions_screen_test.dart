@@ -1,5 +1,5 @@
-// What the customer sees: the charge that comes next, the one they stopped,
-// the date "paid" pays, and an empty list that says what to do.
+// Kotlin's SubscriptionsScreen: the banner, «النشطة»/«الكل», the renewal
+// line, «تم الدفع ✓» on a running row only, and AddEditSubscriptionDialog.
 //
 // The controller is a recording fake: every write in this app ends in a Hive
 // put, and one inside a widget test never completes under the fake clock.
@@ -100,83 +100,83 @@ void main() {
     );
   }
 
-  testWidgets('an empty list says what to do, and offers to do it', (
+  testWidgets("an empty list: Kotlin's banner, empty state and FAB", (
     tester,
   ) async {
     await pump(tester, <Subscription>[]);
-
-    expect(find.text('مفيش اشتراكات ولا فواتير لسه'), findsOneWidget);
-    expect(find.text('ضيف أول واحد'), findsOneWidget);
-    // One way to add, not two: no floating button over the empty state.
-    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.text('إجمالي الاشتراكات الشهرية'), findsOneWidget);
+    expect(find.text('لا توجد اشتراكات'), findsOneWidget);
+    expect(find.byTooltip('إضافة'), findsOneWidget);
   });
 
-  testWidgets('rows say when they renew, and a stopped one says so', (
+  testWidgets('rows say when they renew; a stopped one shows under «الكل»', (
     tester,
   ) async {
     await pump(tester, <Subscription>[
       _sub('a', 'Netflix', renewalDate: '2026-09-22'),
-      _sub('b', 'الكهربا', renewalDate: '2026-10-05', amount: 400),
-      _sub('c', 'Shahid', active: false),
-      _sub('d', 'جمعية'),
+      _sub('b', 'Shahid', renewalDate: '2026-09-25', active: false),
     ]);
+    await tester.pumpAndSettle();
+    expect(find.text('يُجدد بعد 1 يوم'), findsOneWidget);
+    expect(find.text('Shahid'), findsNothing, reason: 'النشطة only');
 
-    expect(find.text('بكرة'), findsOneWidget);
-    expect(find.text('متوقف'), findsOneWidget);
-    expect(find.text('ميعاده مش محدد'), findsOneWidget);
-    // Running rows only: 150 + 400 + 150, the stopped Shahid excluded.
-    expect(find.text('700'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilterChip, 'الكل'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shahid'), findsOneWidget);
   });
 
-  testWidgets('"paid" names the renewal it pays, and pays that row', (
-    tester,
-  ) async {
+  testWidgets('«تم الدفع ✓» pays that row', (tester) async {
     await pump(tester, <Subscription>[
       _sub('a', 'Netflix', renewalDate: '2026-09-25'),
     ]);
-
-    await tester.tap(find.text('Netflix'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('دفعت — 25 سبتمبر'), findsOneWidget);
-
-    await tester.tap(find.textContaining('دفعت — '));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('تم الدفع ✓'));
+    await tester.pump();
     expect(subs.calls, <String>['paid:a']);
   });
 
-  testWidgets('a stopped row is not offered "paid"', (tester) async {
-    await pump(tester, <Subscription>[_sub('c', 'Shahid', active: false)]);
-
-    await tester.tap(find.text('Shahid'));
+  testWidgets('a stopped row is not offered «تم الدفع ✓»', (tester) async {
+    await pump(tester, <Subscription>[
+      _sub('b', 'Shahid', renewalDate: '2026-09-25', active: false),
+    ]);
+    await tester.tap(find.widgetWithText(FilterChip, 'الكل'));
     await tester.pumpAndSettle();
-
-    expect(find.textContaining('دفعت'), findsNothing);
-    await tester.tap(find.text('شغّله تاني'));
-    await tester.pumpAndSettle();
-    expect(subs.calls, <String>['active:c:true']);
+    expect(find.text('تم الدفع ✓'), findsNothing);
+    await tester.tap(find.byTooltip('تفعيل'));
+    await tester.pump();
+    expect(subs.calls, <String>['active:b:true']);
   });
 
-  testWidgets('the sheet saves only with a name and an amount', (tester) async {
+  testWidgets('the dialog saves only with a name and an amount', (
+    tester,
+  ) async {
     await pump(tester, <Subscription>[]);
-    await tester.tap(find.text('ضيف أول واحد'));
-    // Not pumpAndSettle: the name field autofocuses and its cursor blinks
-    // forever.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byTooltip('إضافة'));
+    await tester.pumpAndSettle();
+    expect(find.text('إضافة اشتراك جديد'), findsOneWidget);
 
     FilledButton save() =>
-        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'احفظ'));
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'حفظ'));
     expect(save().onPressed, isNull);
 
-    await tester.enterText(find.byType(TextField).at(0), 'الكهربا');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'اسم الاشتراك (مثال: Netflix)'),
+      'الكهربا',
+    );
     await tester.pump();
     expect(save().onPressed, isNull, reason: 'no amount yet');
 
-    await tester.tap(find.text('فاتورة'));
-    await tester.enterText(find.byType(TextField).at(1), '420');
+    await tester.tap(find.widgetWithText(FilterChip, 'فاتورة'));
+    await tester.enterText(
+      find.ancestor(
+        of: find.textContaining('المبلغ'),
+        matching: find.byType(TextField),
+      ),
+      '420',
+    );
     await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'احفظ'));
-    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
+    await tester.pumpAndSettle();
 
     expect(subs.calls, <String>['add:الكهربا:420.0:MONTHLY:utility']);
   });
