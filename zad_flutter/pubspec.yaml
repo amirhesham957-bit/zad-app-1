@@ -111,6 +111,7 @@ dependencies:
   # ── Lottie, for the same res/raw animations the Kotlin app plays
   # (garden burst, confetti, success check, scan line…).
   lottie: ^3.6.1
+  pdf: ^3.13.1
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen

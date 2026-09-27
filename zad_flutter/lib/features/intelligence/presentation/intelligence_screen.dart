@@ -31,6 +31,7 @@ import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/application/family_life_controller.dart';
 import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
+import 'package:zad/features/intelligence/presentation/export_report_button.dart';
 import 'package:zad/features/intelligence/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
@@ -164,6 +165,7 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                         total: budget?.spent ?? 0,
                         categories: categoryList,
                       ),
+                      const ExportReportButton(),
                     ],
                     ChatSectionCard(
                       expanded: _chatExpanded,
