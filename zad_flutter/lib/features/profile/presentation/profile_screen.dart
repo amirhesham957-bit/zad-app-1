@@ -146,8 +146,8 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _MenuRow(
                     icon: ZadIcons.savings,
-                    title: 'هدف جديد',
-                    subtitle: 'خلّي زاد يتابع معاك هدف ادخار أو عادة',
+                    title: 'هدف حياة جديد',
+                    subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
                     onTap: () => unawaited(_newGoal(context, ref)),
                   ),
                   _MenuRow(
@@ -316,7 +316,9 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _newGoal(BuildContext context, WidgetRef ref) async {
     final goal = await showDialog<(String, String, String)>(
       context: context,
-      builder: (_) => const _NewGoalDialog(),
+      builder: (_) => _NewGoalDialog(
+        egypt: ref.read(settingsControllerProvider).settings?.country == 'EG',
+      ),
     );
     if (goal == null || !context.mounted) return;
     final (title, metric, deadline) = goal;
@@ -647,7 +649,10 @@ class _EditNameDialogState extends State<_EditNameDialog> {
 }
 
 class _NewGoalDialog extends StatefulWidget {
-  const new();
+  const new({required this.egypt});
+
+  /// Kotlin's `values-ar-rEG` metric hint says جنيه, `values-ar-rSA` ريال.
+  final bool egypt;
 
   @override
   State<_NewGoalDialog> createState() => _NewGoalDialogState();
@@ -668,7 +673,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('هدف جديد'),
+    title: const Text('هدف حياة جديد'),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -682,8 +687,10 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
           const SizedBox(height: 10),
           TextField(
             controller: _metric,
-            decoration: const InputDecoration(
-              labelText: 'هنقيسه إزاي؟ (مثلاً 500 ريال في الشهر)',
+            decoration: InputDecoration(
+              labelText: widget.egypt
+                  ? 'إزاي بنقيسه؟ (مثال: 500 جنيه شهرياً)'
+                  : 'إزاي بنقيسه؟ (مثال: 500 ريال شهرياً)',
             ),
           ),
           const SizedBox(height: 10),
@@ -691,7 +698,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
             controller: _deadline,
             decoration: const InputDecoration(
               labelText: 'الاستحقاق (اختياري)',
-              hintText: 'مثلاً 2026-12-31',
+              hintText: 'مثال: 2026-12-31',
             ),
           ),
         ],
@@ -710,7 +717,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
                 _metric.text.trim(),
                 _deadline.text.trim(),
               )),
-        child: const Text('حفظ'),
+        child: const Text('احفظ'),
       ),
     ],
   );

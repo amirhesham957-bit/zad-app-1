@@ -69,15 +69,26 @@ def norm(s):
 
 
 def main():
-    xml = open(ROOT + '/app/src/main/res/values/strings.xml', encoding='utf8').read()
-    S = {}
-    for m in re.finditer(r'<string name="([^"]+)"[^>]*>(.*?)</string>', xml, re.S):
-        S[m.group(1)] = html.unescape(m.group(2)).replace("\\'", "'").replace('\\"', '"').replace('\\n', '\n')
+    def load(folder):
+        path = ROOT + '/app/src/main/res/' + folder + '/strings.xml'
+        if not os.path.exists(path):
+            return {}
+        xml = open(path, encoding='utf8').read()
+        return {
+            m.group(1): html.unescape(m.group(2)).replace("\\'", "'").replace('\\"', '"').replace('\\n', '\n')
+            for m in re.finditer(r'<string name="([^"]+)"[^>]*>(.*?)</string>', xml, re.S)
+        }
+    S = load('values')
+    # What an Arabic phone actually shows: the market's regional variant wins
+    # over the default, and a match on any of them counts as copied.
+    VARIANTS = [load('values-ar-rEG'), load('values-ar-rSA')]
     fl = ''
     for p in glob.glob(ROOT + '/zad_flutter/lib/**/*.dart', recursive=True):
         t = open(p, encoding='utf8').read()
         t = re.sub(r"'\s*\n\s*'", '', t)
         t = re.sub(r"'\s+'", '', t)
+        # A Dart escape reads as the character it stands for.
+        t = t.replace('\\n', '\n')
         fl += t + '\n'
     fln = norm(fl)
 
@@ -111,7 +122,7 @@ def main():
             if r is None:
                 continue
             tot += 1
-            if not r:
+            if not r and not any(k in V and present(V[k]) for V in VARIANTS):
                 miss.append((k, S[k]))
         for t, lv in lits.items():
             if not lv:
