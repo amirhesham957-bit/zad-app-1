@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { type WhisperOptions, whisperOptions } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
@@ -688,7 +689,7 @@ async function callVisionModel(systemPrompt: string, userPrompt: string, imageBa
   return gemini.content;
 }
 
-async function transcribeAudio(audioBase64: string, mimeType: string) {
+async function transcribeAudio(audioBase64: string, mimeType: string, options: WhisperOptions = {}) {
   if (GROQ_DIRECT_KEYS.length === 0) return { text: null, raw: { error: "GROQ_API_KEY not set" }, ok: false, status: 0 };
   try {
     const binary = atob(audioBase64);
@@ -700,7 +701,9 @@ async function transcribeAudio(audioBase64: string, mimeType: string) {
       const form = new FormData();
       form.append("file", new Blob([bytes], { type: mimeType }), `audio.${ext}`);
       form.append("model", "whisper-large-v3-turbo");
-      form.append("language", "ar");
+      // من بلد الحساب (whisper.ts) — كان "ar" ثابت لكل الناس.
+      if (options.language) form.append("language", options.language);
+      if (options.prompt) form.append("prompt", options.prompt);
       form.append("response_format", "json");
       const resp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
         method: "POST",
@@ -2281,31 +2284,31 @@ Deno.serve(async (req: Request) => {
         const { audio_base64, mime_type } = payload || {};
         if (!audio_base64) return jsonResponse({ action: "chat", message: "", data: null });
 
-        const sttResult = await logged(user_id, action, "transcribeAudio", { args: [audio_base64, mime_type || "audio/m4a"] }, () => transcribeAudio(audio_base64, mime_type || "audio/m4a"));
+        // لغة/لهجة Whisper من بلد الحساب. فشل القراءة = من غير language، Whisper يكتشف لوحده.
+        let country: string | null = null;
+        const voiceUser = tokenSubject(bearerToken(req)) ?? (typeof user_id === "string" ? user_id : null);
+        if (voiceUser) {
+          try {
+            const { data: acct } = await supabase.from("zad_users").select("country").eq("id", voiceUser).maybeSingle();
+            country = (acct as { country?: string | null } | null)?.country ?? null;
+          } catch (_e) {
+            country = null;
+          }
+        }
+        const whisper = whisperOptions(country);
+
+        const sttResult = await logged(user_id, action, "transcribeAudio", { args: [audio_base64, mime_type || "audio/m4a", whisper] }, () => transcribeAudio(audio_base64, mime_type || "audio/m4a", whisper));
         const transcript = sttResult.text;
         if (!transcript) {
           console.error("[CoreIntel] voice_agent: transcription failed or empty");
           return jsonResponse({ action: "chat", message: "لم أتمكن من فهم الصوت، حاول مرة أخرى.", data: null });
         }
-        console.log("[CoreIntel] voice_agent transcript:", transcript);
 
-        const nowTime = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-        const systemPrompt = dialectPrefix + "You are a voice command processor for a family finance app (ZAD). " +
-          "The user spoke a command, possibly with local dialect and colloquial number words. " +
-          "Determine the intent and extract structured data. Parse spoken amounts (e.g. \"خمسين ريال\" = 50, \"مية وعشرين\" = 120) into a numeric value. " +
-          "The current time is " + nowTime + " (24h). " +
-          "Return ONLY JSON: {\"action\":\"chat|add_expense|add_income|check_budget|add_inventory|log_pharmacy_dose|add_pharmacy\",\"message\":\"short confirmation reply matching the requested dialect/language\",\"data\":{\"amount\":0,\"title\":\"\",\"category\":\"\",\"dosage\":\"\",\"daily_dose_count\":1,\"dose_times\":\"\",\"unit\":\"\"}}. " +
-          "Use action=\"add_expense\" when the user says they spent/paid money, \"add_income\" when they received money, \"check_budget\" when they ask about their budget/balance, \"add_inventory\" when they mention buying/adding a physical item to track, " +
-          "\"log_pharmacy_dose\" when the user says they took/used a medication they already track (put the medication name in data.title, leave data.amount as 0), " +
-          "\"add_pharmacy\" when the user describes a NEW medication with a dose schedule to start tracking (e.g. \"باخد دواء ضغط كونكور قرص كل 8 ساعات وفكرني الساعة 5\") — put the medicine name in data.title, the free-text dosage description in data.dosage, the number of daily doses in data.daily_dose_count, the computed dose times as comma-separated 24h HH:mm (never 24:00, use 00:00) anchored to the current time in data.dose_times, the unit (قرص/مل/كريم) in data.unit, and the available quantity in data.amount (1 if unspecified), otherwise \"chat\".";
-        // Intent parsing off one utterance — routine tier.
-        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, transcript, 1500, "routine"] }, () => callJsonModel(systemPrompt, transcript, 1500, "routine"));
-        return jsonResponse({
-          action: result?.action || "chat",
-          message: result?.message || "",
-          data: result?.data || null,
-          transcript,
-        });
+        // التفريغ بس (٢٠٢٦-٠٩-٢٧). كان فيه نداء موديل تاني هنا بيستخرج «نية» (add_expense…)
+        // من الكلام — ومفيش حد بيستعمله: التطبيق وتليجرام الاتنين بياخدوا transcript ويبعتوه
+        // لعقل زاد (agent_turn) اللي بيعمل الشغل ده بأدوات حقيقية. كان بيزوّد ثانية أو اتنين
+        // على كل رسالة صوتية ونداء موديل من الكوتة من غير فايدة. الشكل القديم للرد متساب.
+        return jsonResponse({ action: "chat", message: "", data: null, transcript });
       }
 
       // ──────────────────────────────────────────────
