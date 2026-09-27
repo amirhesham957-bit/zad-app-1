@@ -9,7 +9,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,14 +23,12 @@ import 'package:zad/features/voice/zad_voice.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
-  final personas = <String?>[];
   final pending = <Completer<SpokenAudio>>[];
   bool fail = false;
 
   @override
-  Future<SpokenAudio> synthesize(String text, {String? persona}) {
+  Future<SpokenAudio> synthesize(String text) {
     requested.add(text);
-    personas.add(persona);
     if (fail) return Future<SpokenAudio>.error(StateError('502'));
     final c = Completer<SpokenAudio>();
     pending.add(c);
@@ -244,7 +241,7 @@ void main() {
         expect(body['action'], 'voice_synthesize');
         expect(body['payload'], <String, dynamic>{
           'text': 'أهلاً',
-          'persona': 'sarah_warm',
+          'persona': 'zad',
         });
         expect(sent!.url.path, endsWith('/functions/v1/zad-core-intelligence'));
       },
@@ -271,15 +268,10 @@ void main() {
     });
   });
 
-  test('the persona reaches the server, Sarah when none is saved', () async {
-    final voice = c.read(voiceOutputControllerProvider.notifier);
-    unawaited(voice.speak('مرحبا.', persona: 'karim_pro'));
+  test('every request asks for Zad, the one voice', () async {
+    unawaited(c.read(voiceOutputControllerProvider.notifier).speak('مرحبا.'));
     await settle();
-    expect(synth.personas.single, 'karim_pro');
-
-    unawaited(voice.speak('تاني.'));
-    await settle();
-    expect(synth.personas.last, 'sarah_warm', reason: 'no device store here');
+    expect(synth.requested, hasLength(1));
   });
 
   test('the playing chunk carries its loudness', () async {
@@ -298,27 +290,21 @@ void main() {
   test(
     'ZadVoice goes through the same player, so stop is a real stop',
     () async {
-      final box = await Hive.openBox<String>(
-        'zad_voice_test_${DateTime.now().microsecondsSinceEpoch}',
-        bytes: Uint8List(0),
-      );
       final zc = ProviderContainer(
         overrides: [
           voiceSynthesizerProvider.overrideWithValue(synth),
           voicePlayerProvider.overrideWithValue(player),
           voiceInputControllerProvider.overrideWith(_Mic.new),
           chatControllerProvider.overrideWith(_Chat.new),
-          zadVoiceProvider.overrideWith((ref) => ZadVoice(ref, box)),
         ],
       );
       addTearDown(zc.dispose);
-      final zad = zc.read(zadVoiceProvider)..persona = 'pet_mascot';
+      final zad = zc.read(zadVoiceProvider);
       await settle();
 
       unawaited(zad.speak('مرحبا.'));
       await settle();
       expect(zad.speaking.value, isTrue, reason: 'the orb and pill see it');
-      expect(synth.personas.last, 'pet_mascot', reason: 'the chosen voice');
       synth.answer(synth.pending.length - 1);
       await settle();
       expect(player.played, isNotEmpty);

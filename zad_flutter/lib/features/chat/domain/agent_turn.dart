@@ -52,6 +52,15 @@ class AgentExecuted {
       tool.contains('budget') ||
       tool.contains('obligation');
 
+  /// Whether this tool changed the household — the pantry, the shopping
+  /// list, the pharmacy or the subscriptions — so those screens are stale
+  /// the moment the turn returns, just as the figures are for money.
+  bool get touchedHousehold =>
+      tool.contains('inventory') ||
+      tool.contains('shopping') ||
+      tool.contains('pharmacy') ||
+      tool.contains('subscription');
+
   /// Round-trips through the cache.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'tool': tool,
@@ -188,6 +197,9 @@ class AgentTurn {
 
   /// Whether anything in this turn moved money.
   bool get touchedMoney => executed.any((e) => e.ok && e.touchedMoney);
+
+  /// Whether anything in this turn changed the household screens.
+  bool get touchedHousehold => executed.any((e) => e.ok && e.touchedHousehold);
 
   static List<T> _list<T>(Object? raw, T? Function(Object?) read) =>
       (raw as List<Object?>? ?? const <Object?>[])

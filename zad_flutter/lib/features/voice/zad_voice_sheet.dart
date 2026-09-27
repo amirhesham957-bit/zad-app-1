@@ -1,8 +1,9 @@
 /// Kotlin's `ZadVoiceBottomSheet`, in the turn-by-turn mode Kotlin falls back
-/// to: hold the microphone and speak, let go and زاد answers in the chosen
-/// persona's voice. The dark sheet, the status pill, the settings panel with
-/// the three personas, the orb, the 26 wave bars, the hold-to-talk button and
-/// the ready questions — as Kotlin draws them.
+/// to: hold the microphone and speak, let go and زاد answers in her voice —
+/// one voice, a girl's, in the account's dialect (the owner's decision,
+/// 2026-09-27; Kotlin's Sarah/Karim/pet persona picker is not carried over).
+/// The dark sheet, the status pill, the orb, the 26 wave bars, the
+/// hold-to-talk button and the ready questions — as Kotlin draws them.
 ///
 /// The live call (`zad-voice-live`) is cancelled for good, so this is the
 /// sheet's only mode, and Kotlin's «المكالمة المباشرة مش متاحة» note and its
@@ -71,7 +72,6 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
   }
 
   final ValueNotifier<double> _mic = ValueNotifier<double>(0);
-  bool _showSettings = false;
   String _recognized = '';
 
   /// A turn this sheet sent that has not settled yet.
@@ -227,13 +227,6 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                       Row(
                         children: <Widget>[
                           _SheetIconButton(
-                            icon: Icons.settings,
-                            label: 'إعدادات الصوت',
-                            onTap: () =>
-                                setState(() => _showSettings = !_showSettings),
-                          ),
-                          const SizedBox(width: 8),
-                          _SheetIconButton(
                             icon: Icons.close,
                             label: 'إغلاق',
                             onTap: () => Navigator.of(context).pop(),
@@ -241,20 +234,6 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                         ],
                       ),
                     ],
-                  ),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeOutCubic,
-                    child: _showSettings
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: _SettingsPanel(
-                              voice: _voice,
-                              onDismiss: () =>
-                                  setState(() => _showSettings = false),
-                            ),
-                          )
-                        : const SizedBox(width: double.infinity),
                   ),
                   const SizedBox(height: 16),
                   CompanionOrb(
@@ -438,135 +417,6 @@ class _SheetIconButton extends StatelessWidget {
           size: 20,
           color: Colors.white.withValues(alpha: 0.9),
           semanticLabel: label,
-        ),
-      ),
-    ),
-  );
-}
-
-/// Kotlin's `SettingsPanel`: the persona, and nothing else — the same voice
-/// answers here and reads the notifications.
-class _SettingsPanel extends StatefulWidget {
-  const new({required this.voice, required this.onDismiss});
-
-  final ZadVoice voice;
-  final VoidCallback onDismiss;
-
-  @override
-  State<_SettingsPanel> createState() => _SettingsPanelState();
-}
-
-class _SettingsPanelState extends State<_SettingsPanel> {
-  @override
-  Widget build(BuildContext context) {
-    final current = widget.voice.persona;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  'إعدادات الصوت',
-                  style: ZadType.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: widget.onDismiss,
-                tooltip: 'إغلاق',
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'شخصية الصوت',
-            style: ZadType.labelLarge.copyWith(color: ZadPalette.voiceTextSoft),
-          ),
-          const SizedBox(height: 12),
-          for (final (id, name) in VoicePersona.all) ...<Widget>[
-            _PersonaRow(
-              name: name,
-              selected: id == current,
-              onTap: () => setState(() => widget.voice.persona = id),
-            ),
-            const SizedBox(height: 8),
-          ],
-          const SizedBox(height: 4),
-          Text(
-            'نفس الصوت اللي بتختاره هنا بيرد عليك في المكالمة وبيقرا '
-            'الإشعارات. وتقدر تقاطع زاد وهو بيتكلم في أي وقت.',
-            style: ZadType.bodySmall.copyWith(color: ZadPalette.voiceTextSoft),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PersonaRow extends StatelessWidget {
-  const new({required this.name, required this.selected, required this.onTap});
-
-  final String name;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: selected
-        ? ZadPalette.voiceWaveEmerald.withValues(alpha: 0.22)
-        : Colors.white.withValues(alpha: 0.05),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(
-        color: selected
-            ? ZadPalette.voiceWaveEmerald.withValues(alpha: 0.55)
-            : Colors.white.withValues(alpha: 0.12),
-      ),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  name,
-                  style: ZadType.bodyMedium.copyWith(
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                    color: selected
-                        ? ZadPalette.voiceWaveMint
-                        : Colors.white.withValues(alpha: 0.85),
-                  ),
-                ),
-              ),
-              if (selected)
-                const Icon(
-                  Icons.check,
-                  size: 20,
-                  color: ZadPalette.voiceWaveMint,
-                ),
-            ],
-          ),
         ),
       ),
     ),
