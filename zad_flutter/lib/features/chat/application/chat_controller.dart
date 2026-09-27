@@ -24,6 +24,7 @@ import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
 
@@ -247,7 +248,9 @@ class ChatController extends Notifier<ChatView> {
     if (turn.touchedMoney) _refreshMoney();
     // Only the first: two screens pushed from one reply would bury the first
     // under the second before anybody saw it.
-    if (turn.appCommands.isNotEmpty) {
+    // Kids mode opens nothing: a child reaches no money screen by asking the
+    // agent any more than by tapping (Kotlin's kidsModeEffective guard).
+    if (turn.appCommands.isNotEmpty && !ref.read(kidsModeActiveProvider)) {
       ref.read(agentCommandProvider.notifier).request(turn.appCommands.first);
     }
     return settled;

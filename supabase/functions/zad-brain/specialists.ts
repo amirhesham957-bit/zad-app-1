@@ -255,6 +255,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
     "suggest_product", "check_price_online", "find_nearby_stores", "web_search",
+    "suggest_recipes",
   ],
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",

@@ -31,6 +31,7 @@ import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
@@ -181,7 +182,7 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer containerWith() {
+  ProviderContainer containerWith({bool kids = false}) {
     late TransactionsRepository txns;
     final outbox = Outbox(
       box: outboxBox,
@@ -219,6 +220,7 @@ void main() {
         voiceSynthesizerProvider.overrideWithValue(synth),
         voicePlayerProvider.overrideWithValue(_SilentPlayer()),
         voiceInputControllerProvider.overrideWith(_Mic.new),
+        kidsModeActiveProvider.overrideWithValue(kids),
         chatRepositoryProvider.overrideWithValue(
           ChatRepository(box: chat, newId: () => 'm${ids++}'),
         ),
@@ -319,6 +321,30 @@ void main() {
 
       expect(seen, hasLength(2)); // null, then the one request
       expect(seen.last!.command.screen, AgentScreen.appointments);
+    });
+
+    test('kids mode opens nothing', () async {
+      final container = containerWith(kids: true);
+      addTearDown(container.dispose);
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('وريني الديون');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(
+        AgentDone(
+          AgentTurn.fromJson(<String, dynamic>{
+            'reply': 'تمام.',
+            'app_commands': <Map<String, dynamic>>[
+              <String, dynamic>{'screen': 'debts', 'action': 'open'},
+            ],
+          }),
+        ),
+      );
+      await agent.live!.close();
+      await pending;
+
+      expect(container.read(agentCommandProvider), isNull);
     });
 
     test('the same command twice is two requests', () async {

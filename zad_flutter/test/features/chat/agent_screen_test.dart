@@ -32,6 +32,13 @@ void main() {
     }
   });
 
+  test('and every screen here is one the server accepts', () {
+    final server = _serverScreens().toSet();
+    for (final s in AgentScreen.values) {
+      expect(server, contains(s.wireName), reason: s.name);
+    }
+  });
+
   test('wire names are unique', () {
     final names = AgentScreen.values.map((s) => s.wireName).toList();
     expect(names.toSet(), hasLength(names.length));

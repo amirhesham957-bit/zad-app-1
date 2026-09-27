@@ -501,7 +501,14 @@ one commit, full verification, report, then continue.
      (notifications/doses read aloud), the wake greeting, persona choice
      (fixed to Sarah).
    - Agent screen commands are ported (`chat/domain/agent_screen.dart`):
-     `app_commands` from a turn open the named screen over the chat.
+     `app_commands` from a turn open the named screen over the chat — never
+     in kids mode. The server list now also has `recipes`, `prices`,
+     `goals`, `nearby`; Kotlin logs and ignores those four (its
+     `MainScreen` whitelist was not extended — no Android SDK in the session
+     that added them).
+   - The agent has a chef: zad-brain's `suggest_recipes` calls the same
+     `meal_suggestions` as the Chef screen with the snapshot's pantry
+     (`zad-brain/chef.ts`); the chat prompt forbids inventing recipes.
    - No Lottie: confetti on the kids savings goal and the tasbiha level-up
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,

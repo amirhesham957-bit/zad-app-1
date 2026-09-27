@@ -570,6 +570,9 @@ export const APP_COMMAND_SCREENS = [
   "maintenance", "subscriptions", "debts", "obligations", "insights",
   "camera", "camera_receipt", "home", "tasbiha", "notifications",
   "profile", "statement", "appointments",
+  // شيف زاد، أسعار الناس، أهداف الحياة، والمحلات القريبة — شاشات موجودة في التطبيق
+  // والعقل ماكانش يقدر يفتحها («افتحلي الشيف»).
+  "recipes", "prices", "goals", "nearby",
   // «زاد عارف عني إيه» (ملف العميل + العادات + الملاحظات)، «سجل تعديلات زاد» (تراجع)، وإعدادات
   // التنبيهات وقراءة البنك — كانت شاشات موجودة بس العقل مايقدرش يفتحها («وريني إنت عارف عني إيه»).
   "zad_memory", "agent_action_log", "assistant_alerts",
@@ -843,6 +846,10 @@ export const VALIDATORS: Record<string, Validator> = {
   link_memory: validateLinkMemory,
   // قراءة بس — مفيش كتابة ولا حد استدعاء، زي query_family بالظبط.
   family_digest: () => ({ ok: true }),
+  // قراءة بس، بس كل نداء = نداء موديل في zad-core-intelligence — مرة في اللفة كفاية.
+  suggest_recipes: (_i, _s, ctx) =>
+    (ctx.counts["suggest_recipes"] ?? 0) >= 1
+      ? { ok: false, reason: "سألت شيف زاد خلاص في اللفة دي" } : { ok: true },
   home_health_score: (_i, _s, ctx) =>
     (ctx.counts["home_health_score"] ?? 0) >= 2
       ? { ok: false, reason: "حسبت الدرجة خلاص في اللفة دي" } : { ok: true },
