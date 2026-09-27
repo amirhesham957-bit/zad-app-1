@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,15 +20,18 @@ import 'package:zad/features/orb/domain/companion_state.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
 import 'package:zad/features/voice/data/voice_player.dart';
 import 'package:zad/features/voice/data/voice_synthesizer.dart';
+import 'package:zad/features/voice/zad_voice.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
+  final personas = <String?>[];
   final pending = <Completer<SpokenAudio>>[];
   bool fail = false;
 
   @override
-  Future<SpokenAudio> synthesize(String text) {
+  Future<SpokenAudio> synthesize(String text, {String? persona}) {
     requested.add(text);
+    personas.add(persona);
     if (fail) return Future<SpokenAudio>.error(StateError('502'));
     final c = Completer<SpokenAudio>();
     pending.add(c);
@@ -266,4 +270,68 @@ void main() {
       );
     });
   });
+
+  test('the persona reaches the server, Sarah when none is saved', () async {
+    final voice = c.read(voiceOutputControllerProvider.notifier);
+    unawaited(voice.speak('مرحبا.', persona: 'karim_pro'));
+    await settle();
+    expect(synth.personas.single, 'karim_pro');
+
+    unawaited(voice.speak('تاني.'));
+    await settle();
+    expect(synth.personas.last, 'sarah_warm', reason: 'no device store here');
+  });
+
+  test('the playing chunk carries its loudness', () async {
+    unawaited(c.read(voiceOutputControllerProvider.notifier).speak('مرحبا.'));
+    await settle();
+    // Two samples at full scale: loud.
+    synth.pending.single.complete((
+      pcm: Uint8List.fromList(<int>[0xFF, 0x7F, 0xFF, 0x7F]),
+      provider: 'gemini',
+    ));
+    await settle();
+    expect(c.read(voiceOutputControllerProvider).level, greaterThan(0.9));
+    expect(pcmLoudness(Uint8List(8)), 0, reason: 'silence');
+  });
+
+  test(
+    'ZadVoice goes through the same player, so stop is a real stop',
+    () async {
+      final box = await Hive.openBox<String>(
+        'zad_voice_test_${DateTime.now().microsecondsSinceEpoch}',
+        bytes: Uint8List(0),
+      );
+      final zc = ProviderContainer(
+        overrides: [
+          voiceSynthesizerProvider.overrideWithValue(synth),
+          voicePlayerProvider.overrideWithValue(player),
+          voiceInputControllerProvider.overrideWith(_Mic.new),
+          chatControllerProvider.overrideWith(_Chat.new),
+          zadVoiceProvider.overrideWith((ref) => ZadVoice(ref, box)),
+        ],
+      );
+      addTearDown(zc.dispose);
+      final zad = zc.read(zadVoiceProvider)..persona = 'pet_mascot';
+      await settle();
+
+      unawaited(zad.speak('مرحبا.'));
+      await settle();
+      expect(zad.speaking.value, isTrue, reason: 'the orb and pill see it');
+      expect(synth.personas.last, 'pet_mascot', reason: 'the chosen voice');
+      synth.answer(synth.pending.length - 1);
+      await settle();
+      expect(player.played, isNotEmpty);
+
+      final stopsBefore = player.stops;
+      zad.stop();
+      await settle();
+      expect(
+        player.stops,
+        greaterThan(stopsBefore),
+        reason: 'the player stops',
+      );
+      expect(zad.speaking.value, isFalse);
+    },
+  );
 }

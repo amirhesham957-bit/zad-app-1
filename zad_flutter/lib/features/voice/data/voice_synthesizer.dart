@@ -20,8 +20,9 @@ typedef SpokenAudio = ({Uint8List pcm, String provider});
 
 /// Text to speech.
 abstract interface class VoiceSynthesizer {
-  /// The speech for [text], or throws.
-  Future<SpokenAudio> synthesize(String text);
+  /// The speech for [text] in [persona]'s voice (a `voice_synthesize`
+  /// persona id; the synthesizer's own default when null), or throws.
+  Future<SpokenAudio> synthesize(String text, {String? persona});
 }
 
 /// The personas `voice_synthesize` accepts (`_shared/zadVoice.ts`).
@@ -58,7 +59,7 @@ class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
   static const Duration timeout = Duration(seconds: 30);
 
   @override
-  Future<SpokenAudio> synthesize(String text) async {
+  Future<SpokenAudio> synthesize(String text, {String? persona}) async {
     final client = _clientFactory?.call() ?? http.Client();
     try {
       final response = await client
@@ -79,7 +80,7 @@ class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
               'user_id': _client.auth.currentUser?.id,
               'payload': <String, dynamic>{
                 'text': text,
-                'persona': persona.wireName,
+                'persona': persona ?? this.persona.wireName,
               },
             }),
           )
