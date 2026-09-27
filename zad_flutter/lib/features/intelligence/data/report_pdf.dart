@@ -3,9 +3,10 @@
 /// 13pt right to left, and the red round «زاد — معتمد من عقل زاد» stamp,
 /// tilted −14°, on the last page. Same content as `buildExportText`.
 ///
-/// The one difference is the emoji: Android's PDF canvas falls back to the
-/// system's emoji font, the PDF here embeds Cairo alone, so the emoji are
-/// left out of the file rather than printed as empty boxes.
+/// The font is the monthly report's `cairo_pdf.ttf` with its word
+/// bracketing (see `monthly_report_pdf.dart`): the variable Cairo drops a lone
+/// «ي» under `package:pdf`. The one difference from Kotlin is the emoji —
+/// Cairo has none, so they are left out rather than printed as boxes.
 library;
 
 import 'dart:io';
@@ -15,6 +16,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:zad/features/intelligence/data/monthly_report_pdf.dart'
+    show monthlyReportFontAsset, pdfWords;
 
 const PdfColor _red = PdfColor.fromInt(0xFFC62828);
 
@@ -25,9 +28,7 @@ final RegExp _emoji = RegExp(
 
 /// Writes the PDF for [text] and returns the file.
 Future<File> buildReportPdf(String text, {required DateTime today}) async {
-  final font = pw.Font.ttf(
-    await rootBundle.load('assets/fonts/cairo_variable.ttf'),
-  );
+  final font = pw.Font.ttf(await rootBundle.load(monthlyReportFontAsset));
   final body = text
       .replaceAll(_emoji, '')
       .split('\n')
@@ -71,7 +72,7 @@ Future<File> buildReportPdf(String text, {required DateTime today}) async {
                           mainAxisAlignment: pw.MainAxisAlignment.center,
                           children: <pw.Widget>[
                             pw.Text(
-                              'زاد',
+                              pdfWords('زاد'),
                               style: pw.TextStyle(
                                 fontSize: 20,
                                 color: stampRed,
@@ -79,7 +80,7 @@ Future<File> buildReportPdf(String text, {required DateTime today}) async {
                               ),
                             ),
                             pw.Text(
-                              'معتمد من عقل زاد',
+                              pdfWords('معتمد من عقل زاد'),
                               style: pw.TextStyle(
                                 fontSize: 10,
                                 color: stampRed,
@@ -99,7 +100,7 @@ Future<File> buildReportPdf(String text, {required DateTime today}) async {
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: <pw.Widget>[
                   pw.Text(
-                    'تقرير زاد الشهري',
+                    pdfWords('تقرير زاد الشهري'),
                     style: const pw.TextStyle(
                       fontSize: 26,
                       color: _red,
@@ -108,8 +109,10 @@ Future<File> buildReportPdf(String text, {required DateTime today}) async {
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'صادر بتاريخ ${today.day}/${today.month}/${today.year} — '
-                    'تحليل عقل زاد لسلوكك المالي',
+                    pdfWords(
+                      'صادر بتاريخ ${today.day}/${today.month}/${today.year} — '
+                      'تحليل عقل زاد لسلوكك المالي',
+                    ),
                     style: const pw.TextStyle(
                       fontSize: 12,
                       color: PdfColor.fromInt(0xFF5A5A5A),
@@ -125,7 +128,7 @@ Future<File> buildReportPdf(String text, {required DateTime today}) async {
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 4),
               child: pw.Text(
-                line.isEmpty ? ' ' : line,
+                line.isEmpty ? ' ' : pdfWords(line),
                 style: const pw.TextStyle(
                   fontSize: 13,
                   lineSpacing: 1.1,
