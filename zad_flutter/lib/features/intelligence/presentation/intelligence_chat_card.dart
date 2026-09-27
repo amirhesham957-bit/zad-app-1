@@ -244,7 +244,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
           padding: const EdgeInsets.only(top: 12),
           child: CompanionOrb(state: mood, size: 64),
         ),
-        if (messages.length > 1)
+        if (messages.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
@@ -270,7 +270,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
             controller: _scroll,
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              if (messages.length <= 1) ...<Widget>[
+              if (messages.isEmpty) ...<Widget>[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -331,6 +331,12 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   const SizedBox(height: 8),
                 ],
               ],
+              // Kotlin's opening message, while there is nothing else.
+              if (messages.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _IntChatBubble(message: kZadWelcomeMessage),
+                ),
               for (final m in messages)
                 if (!(m.isStreaming && m.text.isEmpty))
                   Padding(

@@ -10,7 +10,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -185,13 +184,33 @@ class _Welcome extends StatelessWidget {
   const new();
 
   @override
-  Widget build(BuildContext context) => const ZadEmptyState(
-    icon: ZadIcons.assistant,
-    title: 'اسألني عن فلوسك',
-    message:
-        'اكتب زي ما بتتكلم — "صرفت ٥٠ قهوة"، "أقدر أشتري كوتشي بـ٤٠٠؟"، '
-        '"ميزانيتي عاملة إيه؟"',
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(ZadSpacing.gutter),
+    children: <Widget>[_Bubble(message: kZadWelcomeMessage)],
   );
+}
+
+/// Kotlin's opening message (`zad_welcome_message`): shown while the
+/// conversation is empty, never saved and never sent.
+final ChatMessage kZadWelcomeMessage = ChatMessage(
+  id: 'init',
+  text:
+      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي '
+      'النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة '
+      'التسوق!',
+  isUser: false,
+  createdAt: DateTime.utc(2000),
+);
+
+/// Kotlin's reply when a turn fails: `zad_ai_busy` when the providers were
+/// out of capacity, `zad_unexpected_error` otherwise.
+String chatFailureReply(Object? error) {
+  final e = '$error';
+  return e.contains('429') ||
+          e.contains('503') ||
+          e.contains('ProviderUnavailable')
+      ? 'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'
+      : 'حصل خطأ غير متوقع.';
 }
 
 /// One message.
@@ -268,6 +287,16 @@ class _Bubble extends ConsumerWidget {
 
           if (failed && mine) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
+            _Bubble(
+              message: ChatMessage(
+                id: '${message.id}:failure',
+                text: chatFailureReply(
+                  ref.watch(chatControllerProvider.select((v) => v.error)),
+                ),
+                isUser: false,
+                createdAt: message.createdAt,
+              ),
+            ),
             TextButton.icon(
               onPressed: () =>
                   ref.read(chatControllerProvider.notifier).retry(message.id),

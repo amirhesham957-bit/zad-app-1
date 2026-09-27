@@ -17,6 +17,7 @@ import 'package:zad/design/components/zad_balance_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
 import 'package:zad/design/components/zad_trailing_gap.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
+import 'package:zad/features/bank/presentation/stuck_notifications.dart';
 import 'package:zad/features/brain/presentation/why_changed_sheet.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
@@ -126,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           const ZadAppearOnEntry(delayMs: 105, child: HomeChefSection()),
           const HomeProposalsSection(),
+          const StuckNotificationsSlot(),
           ZadTrailingGap(
             gap: 18,
             child: HomeInsightsSection(onOpenCamera: onOpenCamera),
