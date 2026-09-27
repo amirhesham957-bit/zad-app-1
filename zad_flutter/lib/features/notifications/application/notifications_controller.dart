@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/notifications/application/smart_notifications.dart';
 import 'package:zad/features/notifications/domain/app_notification.dart';
 
 /// What the screen draws.
@@ -33,6 +34,7 @@ class NotificationsController extends Notifier<NotificationsView> {
 
   DateTime? _lastFetch;
   bool _fetching = false;
+  bool _generating = false;
 
   @override
   NotificationsView build() {
@@ -55,6 +57,23 @@ class NotificationsController extends Notifier<NotificationsView> {
       if (!ref.mounted) return;
       _lastFetch = now;
       state = NotificationsView(items: items);
+      // Kotlin's loadNotifications: the smart alerts right after, and the
+      // list read again when any were written.
+      if (!_generating) {
+        _generating = true;
+        try {
+          final written = await generateSmartNotifications(ref, items);
+          if (written > 0 && ref.mounted) {
+            state = NotificationsView(
+              items: await ref.read(notificationsRepositoryProvider).refresh(),
+            );
+          }
+        } on Object catch (_) {
+          // A failed alert is not a failed list.
+        } finally {
+          _generating = false;
+        }
+      }
     } on Object catch (error) {
       if (!ref.mounted) return;
       state = NotificationsView(items: state.items, error: error);

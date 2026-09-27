@@ -18,12 +18,17 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/features/budget/presentation/finances_screen.dart';
+import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
+import 'package:zad/features/insights/application/local_insights.dart';
 import 'package:zad/features/insights/domain/insight.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
+import 'package:zad/features/intelligence/presentation/intelligence_screen.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
+import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/voice/zad_voice.dart';
 
 /// Opens the screen.
@@ -99,6 +104,22 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
     );
   }
 
+  /// Kotlin's routing for a local insight.
+  void _openFor(LocalInsight a) {
+    final t = a.title;
+    if (a.actionType == 'cancel_subscription') {
+      unawaited(showSubscriptionsScreen(context));
+    } else if (a.actionType == 'increase_budget') {
+      unawaited(showFinancesScreen(context));
+    } else if (t.contains('دواء') || t.contains('جرعة')) {
+      unawaited(showHouseholdSection(context, HouseholdSection.pharmacy));
+    } else if (t.contains('مخزون') || t.contains('طعام')) {
+      unawaited(showHouseholdSection(context, HouseholdSection.pantry));
+    } else {
+      unawaited(showIntelligenceScreen(context));
+    }
+  }
+
   @override
   void dispose() {
     ref.read(zadVoiceProvider).stop();
@@ -133,7 +154,12 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
       ),
     );
 
-    final empty = notifications.isEmpty && bell.isEmpty && proposals.isEmpty;
+    final local = ref.watch(alertInsightsProvider);
+    final empty =
+        notifications.isEmpty &&
+        bell.isEmpty &&
+        proposals.isEmpty &&
+        local.isEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('الإشعارات')),
@@ -183,6 +209,18 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                           const SizedBox(height: 8),
                         ],
                         const SizedBox(height: 12),
+                      ],
+                      if (local.isNotEmpty) ...<Widget>[
+                        section('تنبيهات ذكاء زاد'),
+                        for (final a in local)
+                          NotificationCard(
+                            title: a.title,
+                            message: a.description,
+                            color: scheme.primary,
+                            isRead: true,
+                            onTap: () => _openFor(a),
+                          ),
+                        const SizedBox(height: 20),
                       ],
                       if (bell.isNotEmpty) ...<Widget>[
                         section('تنبيهات عقل زاد'),

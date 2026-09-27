@@ -133,7 +133,8 @@ class HomeScreen extends ConsumerWidget {
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
           const HomeAmazonRow(),
-          // Kotlin: «العقل → الوصفات», the last card before the gap.
+          // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
+          const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),
           // Kotlin: room under the last card for the floating companion.
           const SizedBox(height: 112),

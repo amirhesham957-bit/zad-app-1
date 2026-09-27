@@ -16,9 +16,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/design/tokens/zad_extended_colors.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/features/insights/application/local_insights.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/data/consumption_learner.dart';
 
@@ -174,6 +177,57 @@ class UrgentRecipeCard extends StatelessWidget {
                 style: ZadType.labelSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.tertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kotlin's `AiAlertBanner`: the first local Alert/Warning insight, on the
+/// theme's alert pair, with Kotlin's 18dp under it.
+class AiAlertBannerSlot extends ConsumerWidget {
+  /// Creates the slot.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(alertInsightsProvider);
+    if (alerts.isEmpty) return const SizedBox.shrink();
+    final first = alerts.first;
+    final ext = context.zadExt;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: ZadListCard(
+        color: ext.alertBannerContainer,
+        padding: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.warning, size: 32, color: ext.onAlertBanner),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      first.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: ext.onAlertBanner,
+                      ),
+                    ),
+                    Text(
+                      first.description,
+                      style: ZadType.labelMedium.copyWith(
+                        color: ext.onAlertBanner,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

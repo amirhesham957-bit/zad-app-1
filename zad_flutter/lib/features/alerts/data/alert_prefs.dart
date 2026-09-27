@@ -43,6 +43,10 @@ class AlertPrefs {
   /// Whether [key] is on. Off unless the customer turned it on.
   bool isEnabled(String key) => _box.get(_k(key)) == 'true';
 
+  /// Whether [key] is on, with Kotlin's generator default: never set counts
+  /// as on (`ZadViewModel` reads `alert_low_inventory` with `true`).
+  bool isEnabledUnlessOff(String key) => _box.get(_k(key)) != 'false';
+
   /// Turns [key] on or off.
   void setEnabled(String key, {required bool enabled}) =>
       unawaited(_box.put(_k(key), '$enabled'));
