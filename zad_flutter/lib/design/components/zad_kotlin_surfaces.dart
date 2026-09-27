@@ -307,6 +307,8 @@ class KtEmptyState extends StatelessWidget {
     this.icon,
     this.subtitle,
     this.action,
+    this.iconTint,
+    this.iconBackground,
     super.key,
   });
 
@@ -315,6 +317,12 @@ class KtEmptyState extends StatelessWidget {
 
   /// The glyph.
   final IconData? icon;
+
+  /// Kotlin's `iconTint`; primary at 50% by default.
+  final Color? iconTint;
+
+  /// Kotlin's `iconBackground`; primary at 8% by default.
+  final Color? iconBackground;
 
   /// The guidance.
   final String? subtitle;
@@ -339,13 +347,14 @@ class KtEmptyState extends StatelessWidget {
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.08),
+                  color:
+                      iconBackground ?? scheme.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
                   size: 44,
-                  color: scheme.primary.withValues(alpha: 0.5),
+                  color: iconTint ?? scheme.primary.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 20),

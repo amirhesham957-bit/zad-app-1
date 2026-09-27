@@ -5,6 +5,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/affiliate/domain/affiliate.dart';
 
@@ -46,6 +47,21 @@ Future<void> openAffiliateProduct(
     debugPrint('affiliate click not recorded: $e');
   }
   final uri = Uri.parse(affiliateUrl(product));
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
+  } on Object catch (e) {
+    debugPrint('affiliate browser tab failed: $e');
+  }
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
+
+/// Kotlin's `AffiliateHelper.open` over `productUrl(asin = null, …)`:
+/// a tagged search for [term], in a browser tab rather than the Amazon app.
+Future<void> openAmazonSearch(String term) async {
+  final uri = Uri.parse(
+    'https://www.amazon.sa/s?k=${Uri.encodeQueryComponent(term)}'
+    '&tag=${ZadEnv.amazonAssociateTag}',
+  );
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
   } on Object catch (e) {
