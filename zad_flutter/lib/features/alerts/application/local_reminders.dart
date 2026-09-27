@@ -61,6 +61,15 @@ class LocalReminders {
 
   tz.Location get _zone => tz.getLocation(_ref.read(accountTimeZoneProvider));
 
+  /// Whether Android lets reminders ring on time («المنبهات الدقيقة»).
+  Future<bool> canScheduleExact() async =>
+      await _android?.canScheduleExactNotifications() ?? true;
+
+  /// Opens the system's exact-alarm setting for this app.
+  Future<void> requestExact() async {
+    await _android?.requestExactAlarmsPermission();
+  }
+
   Future<AndroidScheduleMode> _mode() async {
     final exact = await _android?.canScheduleExactNotifications() ?? false;
     return exact
