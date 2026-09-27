@@ -20,7 +20,6 @@ import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
-import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// The chat screen.
@@ -118,12 +117,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     });
 
-    // «وريني مواعيدي»: the agent's app_command, opened over the chat so back
-    // returns here.
-    ref.listen(agentCommandProvider, (previous, next) {
-      if (next == null || next.serial == previous?.serial) return;
-      openAgentScreen(context, ref, next.command);
-    });
+    // The agent's app_command is opened by ZadShell, for every surface.
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),

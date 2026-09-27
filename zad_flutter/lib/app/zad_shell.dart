@@ -20,6 +20,8 @@ import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
+import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
@@ -150,6 +152,15 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   @override
   Widget build(BuildContext context) {
+    // «وريني مواعيدي»: the agent's app_command, from whichever surface sent
+    // the turn — the chat, the mic sheet, the brain card. Heard here, not in
+    // ChatScreen, so a spoken request opens its screen without the chat being
+    // open; pushed over whatever is showing, so back returns to it.
+    ref.listen(agentCommandProvider, (previous, next) {
+      if (next == null || next.serial == previous?.serial) return;
+      openAgentScreen(context, ref, next.command);
+    });
+
     // A destination asked for from outside — a tapped alert, a tile, "اسأل
     // زاد". Whatever was pushed over the shell is closed first, or the tab
     // would change behind it.

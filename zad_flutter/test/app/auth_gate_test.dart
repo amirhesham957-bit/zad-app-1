@@ -27,6 +27,10 @@ import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/chat/application/chat_controller.dart';
+import 'package:zad/features/chat/domain/agent_screen.dart';
+import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
@@ -407,6 +411,32 @@ void main() {
 
       expect(bar().current, ZadNavDestination.inventory);
       expect(container.read(shellNavigationProvider), isNull);
+    });
+
+    testWidgets('a screen the agent asks for opens with no chat on screen', (
+      tester,
+    ) async {
+      // «وريني العيلة» said into the mic sheet: the turn is sent from there,
+      // not from ChatScreen, so the shell is what has to open it.
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      expect(find.byType(ChatScreen), findsNothing);
+
+      container
+          .read(agentCommandProvider.notifier)
+          .request(
+            const AgentAppCommand(
+              screen: AgentScreen.family,
+              action: AgentScreenAction.open,
+            ),
+          );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(FamilyScreen), findsOneWidget);
     });
 
     testWidgets('opens straight onto the shell, and asks nobody', (
