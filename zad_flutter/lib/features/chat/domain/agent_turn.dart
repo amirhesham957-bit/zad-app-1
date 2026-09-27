@@ -12,6 +12,8 @@
 /// server stopped and is waiting to be told yes.
 library;
 
+import 'package:zad/features/chat/domain/agent_screen.dart';
+
 /// A tool the server already ran.
 class AgentExecuted {
   /// Creates a receipt.
@@ -138,6 +140,7 @@ class AgentTurn {
     this.proposals = const <AgentProposal>[],
     this.memoryAvailable = const <AgentMemory>[],
     this.specialist,
+    this.appCommands = const <AgentAppCommand>[],
   });
 
   /// Reads the `agent_turn` response.
@@ -146,6 +149,7 @@ class AgentTurn {
     executed: _list(json['executed'], AgentExecuted.fromJson),
     proposals: _list(json['proposals'], AgentProposal.fromJson),
     memoryAvailable: _list(json['memory_available'], AgentMemory.fromJson),
+    appCommands: _list(json['app_commands'], AgentAppCommand.fromJson),
     specialist: switch (json['specialist']) {
       // "general" is the absence of a specialist, not one of them — showing a
       // badge for it would put a label on every ordinary message.
@@ -168,6 +172,11 @@ class AgentTurn {
 
   /// Which specialist handled the message, or null for the generalist.
   final String? specialist;
+
+  /// Screens the agent asked the app to open. Acted on once, when the turn
+  /// arrives — never kept with the message, so reopening the chat does not
+  /// open them again.
+  final List<AgentAppCommand> appCommands;
 
   /// Whether this turn said or did anything at all.
   ///

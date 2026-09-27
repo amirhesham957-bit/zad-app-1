@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
+import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
@@ -225,6 +226,11 @@ class ChatController extends Notifier<ChatView> {
     );
     _replace(settled);
     if (turn.touchedMoney) _refreshMoney();
+    // Only the first: two screens pushed from one reply would bury the first
+    // under the second before anybody saw it.
+    if (turn.appCommands.isNotEmpty) {
+      ref.read(agentCommandProvider.notifier).request(turn.appCommands.first);
+    }
     return settled;
   }
 
@@ -333,3 +339,25 @@ class ChatPrefill extends Notifier<String?> {
 final chatPrefillProvider = NotifierProvider<ChatPrefill, String?>(
   ChatPrefill.new,
 );
+
+/// A screen the agent asked to open, stamped so that the same command twice
+/// in a row is still two requests.
+typedef AgentCommandRequest = ({int serial, AgentAppCommand command});
+
+/// The screen the agent last asked for. The chat screen listens and opens it
+/// — a listener, not a read, so a request made while the chat was closed is
+/// not carried out later, out of context, when it reopens.
+class AgentCommands extends Notifier<AgentCommandRequest?> {
+  var _serial = 0;
+
+  @override
+  AgentCommandRequest? build() => null;
+
+  /// Asks for [command].
+  void request(AgentAppCommand command) =>
+      state = (serial: ++_serial, command: command);
+}
+
+/// The agent's latest screen request.
+final agentCommandProvider =
+    NotifierProvider<AgentCommands, AgentCommandRequest?>(AgentCommands.new);

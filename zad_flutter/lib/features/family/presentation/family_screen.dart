@@ -22,18 +22,26 @@ import 'package:zad/features/family/presentation/family_chat_tab.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_tabs.dart';
 
-/// Opens the screen.
-Future<void> showFamilyScreen(BuildContext context) => Navigator.of(context)
-    .push<void>(MaterialPageRoute<void>(builder: (_) => const FamilyScreen()));
+/// Opens the screen on [initialTab] — 0 الشات, 1 المهام, 2 الأعضاء,
+/// 3 البقالة (and, for a parent, 4 الأبناء, 5 الأهداف).
+Future<void> showFamilyScreen(BuildContext context, {int initialTab = 0}) =>
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => FamilyScreen(initialTab: initialTab),
+      ),
+    );
 
 /// The screen.
 class FamilyScreen extends ConsumerWidget {
   /// Creates the screen; [showFinancials] false is Kotlin's kids mode — no
   /// balances, goals, limits or rewards.
-  const new({this.showFinancials = true, super.key});
+  const new({this.showFinancials = true, this.initialTab = 0, super.key});
 
   /// Whether money is shown.
   final bool showFinancials;
+
+  /// The tab showing first, once the family has loaded.
+  final int initialTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,6 +64,7 @@ class FamilyScreen extends ConsumerWidget {
           family: family,
           view: view,
           showFinancials: showFinancials,
+          initialTab: initialTab,
         ),
         final status => Scaffold(
           backgroundColor: Colors.transparent,
@@ -245,18 +254,20 @@ class _ActiveFamily extends ConsumerStatefulWidget {
     required this.family,
     required this.view,
     required this.showFinancials,
+    this.initialTab = 0,
   });
 
   final Family family;
   final FamilyView view;
   final bool showFinancials;
+  final int initialTab;
 
   @override
   ConsumerState<_ActiveFamily> createState() => _ActiveFamilyState();
 }
 
 class _ActiveFamilyState extends ConsumerState<_ActiveFamily> {
-  int _tab = 0;
+  late int _tab = widget.initialTab;
 
   @override
   Widget build(BuildContext context) {

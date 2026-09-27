@@ -26,6 +26,7 @@ import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
 import 'package:zad/features/chat/data/chat_repository.dart';
+import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
@@ -217,6 +218,69 @@ void main() {
       specialist: specialist,
     ),
   );
+
+  group('the agent opens screens', () {
+    test('a turn with app_commands asks for the first one, once', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final seen = <AgentCommandRequest?>[];
+      container.listen(
+        agentCommandProvider,
+        (_, next) => seen.add(next),
+        fireImmediately: true,
+      );
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('وريني مواعيدي');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(
+        AgentDone(
+          AgentTurn.fromJson(<String, dynamic>{
+            'reply': 'فتحتلك المواعيد.',
+            'app_commands': <Map<String, dynamic>>[
+              <String, dynamic>{'screen': 'appointments', 'action': 'open'},
+              <String, dynamic>{'screen': 'pharmacy', 'action': 'open'},
+            ],
+          }),
+        ),
+      );
+      await agent.live!.close();
+      await pending;
+
+      expect(seen, hasLength(2)); // null, then the one request
+      expect(seen.last!.command.screen, AgentScreen.appointments);
+    });
+
+    test('the same command twice is two requests', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      const cmd = AgentAppCommand(
+        screen: AgentScreen.shopping,
+        action: AgentScreenAction.open,
+      );
+      final notifier = container.read(agentCommandProvider.notifier)
+        ..request(cmd);
+      final first = container.read(agentCommandProvider)!.serial;
+      notifier.request(cmd);
+      expect(container.read(agentCommandProvider)!.serial, first + 1);
+    });
+
+    test('a turn without commands asks for nothing', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('صرفت ٥٠');
+      await until(() => agent.live?.isClosed == false);
+      agent.live!.add(done());
+      await agent.live!.close();
+      await pending;
+
+      expect(container.read(agentCommandProvider), isNull);
+    });
+  });
 
   group('the message is on screen before the server answers', () {
     test('the customer text is in state and in the box immediately', () async {
