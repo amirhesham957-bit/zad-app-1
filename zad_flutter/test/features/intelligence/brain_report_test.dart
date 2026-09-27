@@ -73,8 +73,9 @@ void main() {
 
   test('Arabic renders into a PDF with the bundled Cairo', () async {
     final font = pw.Font.ttf(
-      (await File('assets/fonts/cairo_pdf.ttf').readAsBytes()).buffer
-          .asByteData(),
+      (await File(
+        'assets/fonts/cairo_pdf.ttf',
+      ).readAsBytes()).buffer.asByteData(),
     );
     final doc = pw.Document()
       ..addPage(
