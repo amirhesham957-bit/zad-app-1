@@ -938,10 +938,44 @@ export const MUTATING_TOOLS = [
  */
 export const CONFIRM_REQUIRED_TOOLS = ["log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit"];
 
+/**
+ * What a child's account may not do through the brain: the ledger, the budget and the
+ * household's commitments. A child can still ask about their own balance and savings
+ * goal, use the pantry, reminders and appointments, and run a savings challenge.
+ *
+ * Enforced here because every channel's tool call — app chat, Telegram, voice, and the
+ * agent_confirm of a proposal — passes through validateTool against a fresh snapshot.
+ * The phone's kids-mode PIN is only friction; this is the boundary (owner's decision,
+ * 2026-09-27).
+ */
+export const CHILD_BLOCKED_TOOLS = [
+  ...CONFIRM_REQUIRED_TOOLS,
+  "set_transaction_category", "merge_duplicate_expense", "reconcile_cash_balance",
+  "confirm_cycle_start", "confirm_obligation", "set_market",
+  "add_subscription", "update_subscription", "delete_subscription",
+  "add_debt", "update_debt", "delete_debt",
+  "add_obligation", "update_obligation", "delete_obligation",
+  "update_emergency_fund_balance", "set_broke_mode",
+];
+
+/** Whether the snapshot is a child's (family_members.role = 'child'). */
+export function isChildSnapshot(snap: any): boolean {
+  return snap?.family?.mine?.role === "child";
+}
+
 /** بوابة الفحص العامة — الحدود المشتركة (mutation cap, 3-strikes abort) قبل ما توصل للـ validator المتخصص */
 export async function validateTool(name: string, input: any, snap: any, ctx: RunContext): Promise<Validation> {
   if (ctx.abortedTools.has(name)) {
     return { ok: false, reason: "الأداة دي اتوقفت الجلسة دي بعد ٣ محاولات فاشلة" };
+  }
+  if (isChildSnapshot(snap) && CHILD_BLOCKED_TOOLS.includes(name)) {
+    // Straight to aborted: retrying cannot change the account's role.
+    ctx.abortedTools.add(name);
+    ctx.rejections.push({ tool: name, reason: "child_account", input });
+    return {
+      ok: false,
+      reason: "ده حساب طفل — الفلوس والميزانية والالتزامات لولي الأمر بس. قول له بلطف يطلبها من بابا أو ماما، واعرض تساعده في حاجة تانية.",
+    };
   }
   if (ctx.mutationCount >= 5 && MUTATING_TOOLS.includes(name)) {
     return { ok: false, reason: "وصلت الحد الأقصى للتعديلات في الجلسة دي" };
