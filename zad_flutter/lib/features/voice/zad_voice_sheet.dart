@@ -7,8 +7,11 @@
 /// The live call (`zad-voice-live`) is cancelled for good, so this is the
 /// sheet's only mode, and Kotlin's «المكالمة المباشرة مش متاحة» note and its
 /// retry button have nothing to point at. The turn goes through the chat —
-/// Whisper, then the same agent turn a typed message makes — and the reply is
-/// spoken once, never followed by listening on its own (Kotlin's loop fix).
+/// Whisper, then the same agent turn a typed message makes, sent with
+/// `viaVoice` (Kotlin's `voiceMode = true`: a short reply written to be heard)
+/// — and the chat controller speaks the reply once, never followed by
+/// listening on its own (Kotlin's loop fix). A failed turn says so; it never
+/// re-speaks the previous answer.
 library;
 
 import 'dart:async';
@@ -71,8 +74,11 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
   bool _showSettings = false;
   String _recognized = '';
 
-  /// A turn this sheet sent and has not yet spoken the answer to.
+  /// A turn this sheet sent that has not settled yet.
   bool _awaitingTurn = false;
+
+  /// The last turn this sheet sent failed.
+  bool _turnFailed = false;
 
   @override
   void dispose() {
@@ -87,12 +93,16 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
     setState(() {
       _recognized = text;
       _awaitingTurn = true;
+      _turnFailed = false;
     });
-    unawaited(ref.read(chatControllerProvider.notifier).send(text));
+    unawaited(
+      ref.read(chatControllerProvider.notifier).send(text, viaVoice: true),
+    );
   }
 
   Future<void> _pressDown() async {
     _voice.stop();
+    if (_turnFailed) setState(() => _turnFailed = false);
     await ref.read(voiceInputControllerProvider.notifier).start();
   }
 
@@ -122,15 +132,12 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
         now,
       ) {
         if (was != true || now || !_awaitingTurn) return;
-        _awaitingTurn = false;
-        final reply = ref
-            .read(chatControllerProvider)
-            .messages
-            .where((m) => !m.isUser)
-            .lastOrNull;
-        if (reply != null && reply.text.trim().isNotEmpty) {
-          unawaited(_voice.speak(reply.text));
-        }
+        // The chat controller speaks a good reply itself (viaVoice). A failed
+        // turn has nothing to say — and must not fall back on the last one.
+        setState(() {
+          _awaitingTurn = false;
+          _turnFailed = ref.read(chatControllerProvider).error != null;
+        });
       });
 
     return ValueListenableBuilder<bool>(
@@ -144,6 +151,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
           VoiceStage.denied => 'امنح التطبيق إذن استخدام الميكروفون',
           VoiceStage.failed => 'حدث خطأ في التعرف على الصوت',
           VoiceStage.tooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى',
+          _ when _turnFailed => 'ماقدرتش أوصل لعقل زاد دلوقتي',
           _ => null,
         };
         final indicator = error != null || isSpeaking

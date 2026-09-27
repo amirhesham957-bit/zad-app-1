@@ -145,9 +145,14 @@ class _ChatTabState extends ConsumerState<ChatTab> {
   void _send(String text, {bool voice = false}) {
     final clean = text.trim();
     if (clean.isEmpty) return;
-    if (voice || _autoTtsOn) _awaitingVoiceReply = true;
+    // Spoken words go out as a voice turn (a reply written to be heard) and
+    // the chat controller speaks it; typed ones are read aloud here only when
+    // the auto-read switch is on.
+    if (!voice && _autoTtsOn) _awaitingVoiceReply = true;
     _input.clear();
-    unawaited(ref.read(chatControllerProvider.notifier).send(clean));
+    unawaited(
+      ref.read(chatControllerProvider.notifier).send(clean, viaVoice: voice),
+    );
   }
 
   Future<void> _mic() async {
@@ -228,12 +233,10 @@ class _ChatTabState extends ConsumerState<ChatTab> {
       ) {
         if (was != true || now || !_awaitingVoiceReply) return;
         _awaitingVoiceReply = false;
-        final reply = ref
-            .read(chatControllerProvider)
-            .messages
-            .where((m) => !m.isUser)
-            .lastOrNull;
-        if (reply != null && reply.text.trim().isNotEmpty) {
+        // Only a reply that just landed: after a failure the last message is
+        // the customer's own, and the answer before it is not this turn's.
+        final reply = ref.read(chatControllerProvider).messages.lastOrNull;
+        if (reply != null && !reply.isUser && reply.text.trim().isNotEmpty) {
           unawaited(ref.read(zadVoiceProvider).speak(reply.text));
         }
       });
