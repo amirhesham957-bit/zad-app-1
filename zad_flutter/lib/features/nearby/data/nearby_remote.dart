@@ -1,7 +1,8 @@
 /// Where the shops are: our server first, OpenStreetMap when it has nothing.
 ///
-/// `nearby_pois` on `zad-core-intelligence` asks LocationIQ with the server's
-/// key and caches per ~110 m cell, so neighbours share one lookup. It answers
+/// `nearby_pois` on `zad-core-intelligence` asks Google Places, then
+/// LocationIQ, with the server's keys and caches per ~110 m cell, so
+/// neighbours share one lookup. It answers
 /// an empty list when the key is not set or LocationIQ fails; then the phone
 /// asks Overpass (OpenStreetMap, free, no key) itself — Kotlin's order too.
 ///
