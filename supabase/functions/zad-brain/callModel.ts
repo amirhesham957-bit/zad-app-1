@@ -603,9 +603,54 @@ async function sendGemini(o: {
  * this project at all, so routing Groq through cfg() would have failed with an undefined
  * bearer token the first time it was ever needed.
  */
+/**
+ * طلب Groq بيتقص لحد ما يدخل في حد الدقيقة. فحص ما بعد النشر ٢٠٢٦-٠٩-٢٨: كل ما جيميناي
+ * كان يقع ويروح لجروك، جروك بيرد **413 — TPM Limit 8000, Requested 8048..10550**: برومبت
+ * العقل + ٢٨-٤١ أداة أكبر من حد الطبقة المجانية لطلب واحد، فرجل الاحتياطي كانت ميتة دايماً
+ * (تبديل المفتاح مابيفرقش — الحد على حجم الطلب). المطلوب بيتحسب مع max_tokens.
+ *
+ * بالترتيب: max_tokens ≤ 700، الأدوات بترتيبها (قايمة المتخصص مرتّبة بالأهمية) لحد ما
+ * ميزانيتها تخلص، آخر ٦ أدوار بس، والسيستم بيتقص من النص (أوله فيه القواعد وآخره فيه سياق
+ * العميل). التقدير متحفظ: حرف ÷ ٢٫٥ (العربي أغلى من الإنجليزي في التوكنز).
+ */
+export function fitForGroq<T extends { system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number }>(
+  o: T,
+  budgetTokens = GROQ_REQUEST_BUDGET_TOKENS,
+): T {
+  const est = (chars: number) => Math.ceil(chars / 2.5);
+  const maxTokens = Math.min(o.maxTokens ?? 1500, 700);
+  const history = o.history.slice(-6);
+  const historyTokens = est(JSON.stringify(history).length);
+  let left = budgetTokens - maxTokens - historyTokens;
+
+  const toolBudget = Math.floor(left * 0.45);
+  const tools: ToolDef[] = [];
+  let used = 0;
+  for (const t of o.tools) {
+    const cost = est(JSON.stringify(t).length);
+    if (used + cost > toolBudget) break;
+    tools.push(t);
+    used += cost;
+  }
+  left -= used;
+
+  let system = o.system;
+  const maxSystemChars = Math.max(0, Math.floor(left * 2.5));
+  if (system.length > maxSystemChars) {
+    const head = Math.floor(maxSystemChars * 0.6);
+    const tail = maxSystemChars - head;
+    system = system.slice(0, head) + "\n…\n" + (tail > 0 ? system.slice(-tail) : "");
+  }
+  return { ...o, system, tools, history, maxTokens };
+}
+
+/** حد جروك المجاني ٨٠٠٠/دقيقة للموديل؛ هامش للفرق بين تقديرنا وعدّاده. */
+const GROQ_REQUEST_BUDGET_TOKENS = 6800;
+
 async function sendGroq(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
 }): Promise<ModelReply> {
+  o = fitForGroq(o);
   const start = groqKeyCursor % GROQ_KEY_POOL.length;
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
   // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
