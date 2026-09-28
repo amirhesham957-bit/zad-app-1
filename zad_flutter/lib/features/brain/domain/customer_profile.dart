@@ -48,6 +48,17 @@ abstract final class ProfileOptions {
     'irregular',
   ];
 
+  /// `cares_for`: who the customer looks after. A son responsible for his
+  /// parents is not a father responsible for children, and the brain treats
+  /// them differently.
+  static const List<String> caresFor = <String>[
+    'children',
+    'parents',
+    'spouse',
+    'siblings',
+    'grandparents',
+  ];
+
   /// `dialect`.
   static const List<String> dialects = <String>[
     'EG',
@@ -82,6 +93,7 @@ class CustomerProfile {
     this.kidsCount,
     this.city,
     this.dialect,
+    this.caresFor,
   });
 
   /// Reads a row.
@@ -97,6 +109,10 @@ class CustomerProfile {
     kidsCount: (json['kids_count'] as num?)?.toInt(),
     city: json['city'] as String?,
     dialect: json['dialect'] as String?,
+    caresFor: switch (json['cares_for']) {
+      final List<dynamic> list => list.whereType<String>().toList(),
+      _ => null,
+    },
   );
 
   /// How زاد addresses them.
@@ -132,6 +148,19 @@ class CustomerProfile {
   /// Which Arabic to answer in; null follows the market.
   final String? dialect;
 
+  /// Who the customer looks after (`cares_for`): null when never asked, empty
+  /// when no one but themselves.
+  final List<String>? caresFor;
+
+  /// Whether the three things Zad needs from the first day are known: what to
+  /// call the customer, how to address them, and their place in the home —
+  /// including who they look after.
+  bool get isIntroduced =>
+      (preferredName?.trim().isNotEmpty ?? false) &&
+      gender != null &&
+      householdRole != null &&
+      caresFor != null;
+
   /// The same profile cut to what the table accepts: text trimmed and capped,
   /// a value outside a check constraint dropped to "not known", an empty
   /// string to null. The save would otherwise be refused whole.
@@ -159,6 +188,10 @@ class CustomerProfile {
       kidsCount: within(kidsCount, 0, 20),
       city: text(city, 60),
       dialect: oneOf(dialect, ProfileOptions.dialects),
+      caresFor: caresFor
+          ?.where(ProfileOptions.caresFor.contains)
+          .toSet()
+          .toList(),
     );
   }
 
@@ -180,6 +213,9 @@ class CustomerProfile {
     'kids_count': kidsCount,
     'city': city,
     'dialect': dialect,
+    // Only when known: the older forms build a profile without it, and their
+    // save must not wipe what the introduction recorded.
+    'cares_for': ?caresFor,
   };
 
   /// Round-trips through the cache; the same columns.
@@ -198,7 +234,8 @@ class CustomerProfile {
       other.householdSize == householdSize &&
       other.kidsCount == kidsCount &&
       other.city == city &&
-      other.dialect == dialect;
+      other.dialect == dialect &&
+      listEquals(other.caresFor, caresFor);
 
   @override
   int get hashCode => Object.hash(
@@ -213,6 +250,7 @@ class CustomerProfile {
     kidsCount,
     city,
     dialect,
+    caresFor == null ? null : Object.hashAll(caresFor!),
   );
 }
 
@@ -252,6 +290,16 @@ abstract final class ProfileLabels {
     'daily' => 'يومي',
     'irregular' => 'مش ثابت',
     _ => 'شهري',
+  };
+
+  /// `cares_for`.
+  static String caresFor(String v) => switch (v) {
+    'children' => 'أولادي',
+    'parents' => 'أبويا أو أمي',
+    'spouse' => 'زوجي أو زوجتي',
+    'siblings' => 'إخواتي',
+    'grandparents' => 'جدي أو جدتي',
+    _ => v,
   };
 
   /// `dialect`.

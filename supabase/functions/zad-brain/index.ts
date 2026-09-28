@@ -978,7 +978,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
   const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
     sb.from("zad_customer_profile")
-      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes")
+      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes,cares_for")
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
@@ -3828,6 +3828,11 @@ const CHAT_TOOLS: ToolDef[] = [
         dialect: { type: "string", enum: ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] },
         interests: { type: "array", items: { type: "string" } },
         notes: { type: "string", description: "حاجة مهمة عنه مش ليها خانة، مختصرة" },
+        cares_for: {
+          type: "array",
+          items: { type: "string", enum: ["children", "parents", "spouse", "siblings", "grandparents"] },
+          description: "مين في رعايته: «بصرف على أبويا وأمي» ⇒ [\"parents\"]؛ «مسؤول عن نفسي بس» ⇒ []. القائمة كلها، مش إضافة.",
+        },
       },
     },
   },
@@ -5737,6 +5742,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 1. **اسمك ومخاطبة العميل (ثابتان)**:
    - اسمك "زاد". **مايتغيّرش** حسب العميل ولا حسب الموضوع، ومتخترعش لنفسك اسم تاني.
    - **إنت عارف العميل ده (customer في الـSNAPSHOT)**: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، شغله، ميعاد قبضه، عياله، مدينته. نادِه باسمه أحياناً (مش كل رسالة)، وخاطبه بصيغة نوعه لو معروف، واستخدم اللي تعرفه عنه في كلامك («قربنا من ٢٥ ميعاد قبضك»، «العيال عاملين إيه؟»).
+   - **customer.cares_for = مين في رعايته.** «parents» معناها إنه ابن/بنت مسؤول عن أبوه وأمه — مش رب أسرة عنده عيال: متفترضش عيال، واسأل عن الأهل (دواهم، مواعيد دكاترتهم، مصاريفهم) واقترح تتابعهم في الصيدلية والمواعيد باسمهم. «children» عيال، «spouse» زوج/زوجة، إلخ. [] = مسؤول عن نفسه بس. null = لسه ماقالش.
    - لو customer.gender مش معروف: **متخمّنش** — صيغة محايدة دافية. ولو العميل استخدم صيغة واضحة لنفسه («أنا تعبانة»، «أنا أبوهم») سجّلها بـ update_customer_profile فوراً وثبّت عليها.
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت.
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
