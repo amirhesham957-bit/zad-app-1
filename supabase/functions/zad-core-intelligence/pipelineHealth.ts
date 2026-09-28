@@ -38,12 +38,41 @@ async function rows(q: Promise<{ data: unknown; error: { message: string } | nul
   }
 }
 
+/**
+ * الحزمة بتتحط في خانة بس — messaging / bank_app / other — مش باسمها: اللوج عام، واسم
+ * تطبيق بنك بعينه بيقول العميل بيتعامل مع مين.
+ */
+export function packageKind(pkg: unknown): string {
+  const p = String(pkg ?? "");
+  if (/messaging|\.mms|sms|messages/i.test(p)) return "messaging";
+  if (/bank|pay|wallet|instapay|fawry|vodafone|valu|stc|rajhi|ahli|cib|misr/i.test(p)) return "bank_app";
+  return p ? "other" : "none";
+}
+
+type Rows = { list: Array<Record<string, unknown>>; error?: string };
+
+export function bankChannel(ingest: Rows, proposals: Rows): Record<string, unknown> {
+  const lastAt = ingest.list.map((r) => String(r.created_at ?? "")).sort().at(-1);
+  return {
+    ingested: ingest.error ? ingest.error : ingest.list.length,
+    // تاريخ بس، من غير ساعة — كفاية يقول «آخر إشعار وصل امتى».
+    last_ingested_day: lastAt ? lastAt.slice(0, 10) : null,
+    by_source_class_status: countBy(
+      ingest.list,
+      (r) => `${packageKind(r.package_name)}|${r.client_classification ?? "-"}|${r.status ?? "-"}`,
+      15,
+    ),
+    top_rejections: countBy(ingest.list.filter((r) => r.rejection_reason), (r) => sanitizeError(r.rejection_reason), 6),
+    proposals_by_status: proposals.error ? proposals.error : countBy(proposals.list, (r) => `${r.source_type ?? "-"}|${r.status ?? "-"}`, 12),
+  };
+}
+
 export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<string, unknown>> {
   const since72h = new Date(now - 72 * 3600_000).toISOString();
   const since7d = new Date(now - 7 * 86400_000).toISOString();
 
   const since14d = new Date(now - 14 * 86400_000).toISOString();
-  const [runs, moments, appts, fallbacks, actions, bindings, profiles, users, fcm, momentsAll] = await Promise.all([
+  const [runs, moments, appts, fallbacks, actions, bindings, profiles, users, fcm, momentsAll, ingest, proposals] = await Promise.all([
     rows(sb.from("zad_brain_runs").select("trigger,status,error").gte("started_at", since72h).limit(1000)),
     rows(sb.from("zad_voice_moments").select("moment,status,delivery,error").gte("created_at", since72h).limit(1000)),
     rows(sb.from("zad_appointments").select("source,status").limit(1000)),
@@ -54,6 +83,11 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     rows(sb.from("zad_users").select("country").limit(1000)),
     rows(sb.from("zad_fcm_tokens").select("updated_at").limit(1000)),
     rows(sb.from("zad_voice_moments").select("moment,status").limit(2000)),
+    // قناة البنك (٢٠٢٦-٠٩-٢٨): «التطبيق مش بيشوف إشعارات البنك» — من غير رقم مقاس مفيش
+    // طريقة نعرف الإشعار وقع فين: ماوصلش السيرفر خالص، ولا وصل واترفض، ولا اتحوّل لاقتراح
+    // ومحدش أكده. عمود النص نفسه (title/body) مابيتقراش هنا أبداً.
+    rows(sb.from("zad_notification_ingest_events").select("package_name,client_classification,status,rejection_reason,created_at").gte("created_at", since14d).limit(2000)),
+    rows(sb.from("zad_transaction_proposals").select("status,source_type,created_at").gte("created_at", since14d).limit(2000)),
   ]);
 
   let cron: unknown;
@@ -101,6 +135,7 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     // «صباح الخير» الاحتياطية بتختار اللي سجّل دخول أو حدّث توكن FCM آخر ١٤ يوم.
     fcm_tokens: fcm.error ? fcm.error : { total: fcm.list.length, fresh_14d: fcm.list.filter((t) => String(t.updated_at ?? "") > since14d).length },
     voice_moments_all_time: momentsAll.error ? momentsAll.error : countBy(momentsAll.list, (r) => `${r.moment}|${r.status}`, 20),
+    bank_channel_14d: bankChannel(ingest, proposals),
     customer_profiles: profiles.error ? profiles.error : {
       rows: profiles.list.length,
       with_gender: profiles.list.filter((p) => p.gender).length,

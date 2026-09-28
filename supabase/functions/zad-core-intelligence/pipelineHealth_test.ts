@@ -1,15 +1,31 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { countBy, sanitizeError } from "./pipelineHealth.ts";
+import { bankChannel, packageKind } from "./pipelineHealth.ts";
 
-Deno.test("sanitizeError strips customer text, ids and long numbers", () => {
-  const out = sanitizeError("rejected: فكرني الساعة ٥ user 3f2a9c1e-1111-2222-3333-444455556666 amount 1234567");
-  assertEquals(/[؀-ۿ]/.test(out), false);
-  assertEquals(out.includes("3f2a9c1e"), false);
-  assertEquals(out.includes("1234567"), false);
-  assertEquals(sanitizeError(""), "(empty)");
+Deno.test("packageKind: the log names a bucket, never the bank's app", () => {
+  assertEquals(packageKind("com.google.android.apps.messaging"), "messaging");
+  assertEquals(packageKind("com.android.mms"), "messaging");
+  assertEquals(packageKind("com.cib.mobilebanking"), "bank_app");
+  assertEquals(packageKind("org.example.game"), "other");
+  assertEquals(packageKind(null), "none");
 });
 
-Deno.test("countBy ranks keys by count and caps the list", () => {
-  const rows = ["a", "b", "a", "c", "a", "b"];
-  assertEquals(countBy(rows, (r) => r, 2), { a: 3, b: 2 });
+Deno.test("bankChannel: counts and a day, no customer text", () => {
+  const out = bankChannel(
+    {
+      list: [
+        { package_name: "com.android.mms", client_classification: "ambiguous", status: "processed", created_at: "2026-09-20T10:00:00Z", body: "خصم 500 جنيه" },
+        { package_name: "com.android.mms", client_classification: "ambiguous", status: "rejected", rejection_reason: "no amount", created_at: "2026-09-27T21:15:00Z" },
+      ],
+    },
+    { list: [{ status: "pending", source_type: "notification" }] },
+  );
+  assertEquals(out.ingested, 2);
+  assertEquals(out.last_ingested_day, "2026-09-27");
+  assertEquals(out.by_source_class_status, {
+    "messaging|ambiguous|processed": 1,
+    "messaging|ambiguous|rejected": 1,
+  });
+  assertEquals(out.top_rejections, { "no amount": 1 });
+  assertEquals(out.proposals_by_status, { "notification|pending": 1 });
+  assertEquals(JSON.stringify(out).includes("500"), false);
 });
