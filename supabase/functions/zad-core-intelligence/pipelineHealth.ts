@@ -63,6 +63,13 @@ export function bankChannel(ingest: Rows, proposals: Rows): Record<string, unkno
       15,
     ),
     top_rejections: countBy(ingest.list.filter((r) => r.rejection_reason), (r) => sanitizeError(r.rejection_reason), 6),
+    // «اتخصم منك X — إنت؟»: اتطلب إرساله (claimed) ووصل فعلاً (delivered)؟ ٤ من ٩ اقتراحات
+    // انتهت من غير رد (٢٠٢٦-٠٩-٢٨) — السؤال ماوصلش، ولا وصل والعميل ماردش؟
+    confirmation_prompts: countBy(
+      ingest.list.filter((r) => r.confirmation_prompt_claimed_at || r.status === "awaiting_confirmation"),
+      (r) => `claimed=${r.confirmation_prompt_claimed_at ? "y" : "n"}|delivered=${r.confirmation_prompt_delivered_at ? "y" : "n"}`,
+      4,
+    ),
     proposals_by_status: proposals.error ? proposals.error : countBy(proposals.list, (r) => `${r.source_type ?? "-"}|${r.status ?? "-"}`, 12),
   };
 }
@@ -86,7 +93,7 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     // قناة البنك (٢٠٢٦-٠٩-٢٨): «التطبيق مش بيشوف إشعارات البنك» — من غير رقم مقاس مفيش
     // طريقة نعرف الإشعار وقع فين: ماوصلش السيرفر خالص، ولا وصل واترفض، ولا اتحوّل لاقتراح
     // ومحدش أكده. عمود النص نفسه (title/body) مابيتقراش هنا أبداً.
-    rows(sb.from("zad_notification_ingest_events").select("package_name,client_classification,status,rejection_reason,created_at").gte("created_at", since14d).limit(2000)),
+    rows(sb.from("zad_notification_ingest_events").select("package_name,client_classification,status,rejection_reason,created_at,confirmation_prompt_claimed_at,confirmation_prompt_delivered_at").gte("created_at", since14d).limit(2000)),
     rows(sb.from("zad_transaction_proposals").select("status,source_type,created_at").gte("created_at", since14d).limit(2000)),
   ]);
 
