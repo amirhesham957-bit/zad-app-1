@@ -226,6 +226,7 @@ final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
         outbox: () => ref.read(outboxProvider),
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
+        marks: store.device,
       );
     });
 
