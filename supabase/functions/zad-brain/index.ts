@@ -5932,11 +5932,23 @@ Deno.serve(async (req: Request) => {
         const origWarn = console.warn;
         console.warn = (...a: unknown[]) => { warns.push(asciiOnly(a.map(String).join(" "))); origWarn(...a); };
         const started = Date.now();
+        // الحالة نفسها محدودة بالباقي من الميزانية: قبل كده حالة بدأت عند الثانية ٨٩ كانت
+        // تكمّل السلسلة كلها، وprovider_health كله وقع على حد المنصة (150s IDLE_TIMEOUT) —
+        // نشر ٢٠٢٦-٠٩-٢٨ ١٤:٤٦.
+        let caseTimer: ReturnType<typeof setTimeout> | undefined;
         try {
-          const reply = await callAgentModel(
-            soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
-            tools, [{ role: "user", text: c.message }], c.message, 0,
-          );
+          const reply = await Promise.race([
+            callAgentModel(
+              soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
+              tools, [{ role: "user", text: c.message }], c.message, 0,
+            ),
+            new Promise<never>((_, reject) => {
+              caseTimer = setTimeout(
+                () => reject(new Error("probe case cut at the 90s budget")),
+                Math.max(1_000, 90_000 - (Date.now() - probeStarted)),
+              );
+            }),
+          ]).finally(() => clearTimeout(caseTimer));
           const called = reply.toolCalls.map((t) => t.name);
           results.push({
             expect: c.expect, specialist: `${primary}/${secondary ?? "-"}`, tools_offered: tools.length,
