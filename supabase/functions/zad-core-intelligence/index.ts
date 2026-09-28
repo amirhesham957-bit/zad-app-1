@@ -1,6 +1,7 @@
 // deno-lint-ignore-file
 import { type WhisperOptions, whisperOptions } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
+import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
@@ -41,13 +42,9 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 // Whisper وcompound كانوا بيقروا GROQ_API_KEY المفرد بس — وده بالظبط المفتاح اللي فحص ما بعد النشر
 // لقاه بيرجع 401 (٢٠٢٦-٠٩-١٤)، يعني تفريغ فويسات تليجرام والبحث الحي كانوا واقفين والمفتاح التاني
 // شغال. دلوقتي بيلفوا على كل المفاتيح وبيعدّوا اللي مرفوض (401/403).
-const GROQ_DIRECT_KEYS: string[] = [...new Set([
-  Deno.env.get("GROQ_API_KEY"), Deno.env.get("GROQ_API_KEY_2"), Deno.env.get("GROQ_API_KEY_1"),
-].filter((k): k is string => !!k))];
-const GROQ_KEYS: string[] = [
-  Deno.env.get("GROQ_API_KEY_1") || Deno.env.get("GROQ_API_KEY"),
-  Deno.env.get("GROQ_API_KEY_2"),
-].filter((k): k is string => !!k);
+// GROQ_API_KEY_1..20 + المفرد، من غير تكرار (_shared/keyPool.ts) — مفتاح تالت كان بيتجاهل.
+const GROQ_KEYS: string[] = groqKeys((n) => Deno.env.get(n));
+const GROQ_DIRECT_KEYS: string[] = GROQ_KEYS;
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 // Model IDs are env-configurable, not hardcoded — Groq's model catalog (especially vision)
 // has churned before (Llama vision models were pulled from Groq's catalog previously over
@@ -75,26 +72,17 @@ function nextGroqKeyIndex(): number {
   return i;
 }
 
-// GEMINI_KEYS — the PRIMARY pool. ZAD_API_KEY_1..5 are deliberately the same secret names
+// GEMINI_KEYS — the PRIMARY pool. ZAD_API_KEY_n are deliberately the same secret names
 // zad-brain's callModel.ts already reads for its "gemini" provider, so both functions share
 // one pool of keys and one rotation policy instead of two separately-named sets. Falls back
 // to the legacy singular GEMINI_API_KEY (the key CLAUDE.md documents) when none of
-// ZAD_API_KEY_1..5 are set, so a half-migrated project doesn't silently lose Gemini.
+// ZAD_API_KEY_1..20 are set, so a half-migrated project doesn't silently lose Gemini.
 //
 // If this array ends up empty, vision has no provider at all — that is intentional and
 // loud (callVisionModel returns null and the action logs it) rather than silently routing
 // images back to Groq, which cannot serve them.
-const GEMINI_KEYS: string[] = [
-  Deno.env.get("ZAD_API_KEY_1"),
-  Deno.env.get("ZAD_API_KEY_2"),
-  Deno.env.get("ZAD_API_KEY_3"),
-  Deno.env.get("ZAD_API_KEY_4"),
-  Deno.env.get("ZAD_API_KEY_5"),
-].filter((k): k is string => !!k);
-if (GEMINI_KEYS.length === 0) {
-  const legacy = Deno.env.get("GEMINI_API_KEY");
-  if (legacy) GEMINI_KEYS.push(legacy);
-}
+// ZAD_API_KEY_1..20 now (_shared/keyPool.ts); a sixth key used to be silently ignored.
+const GEMINI_KEYS: string[] = geminiKeys((n) => Deno.env.get(n));
 let geminiKeyCursor = 0;
 // TTS يستخدم نفس مسبح المفاتيح — أول مفتاح متاح
 const GEMINI_API_KEY = GEMINI_KEYS[0] ?? Deno.env.get("GEMINI_API_KEY") ?? "";
@@ -554,7 +542,7 @@ async function callGeminiPool(opts: {
   thinkingBudget?: number;
 }): Promise<{ content: string | null; ok: boolean }> {
   if (GEMINI_KEYS.length === 0) {
-    console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..5 / GEMINI_API_KEY all unset)");
+    console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..20 / GEMINI_API_KEY all unset)");
     return { content: null, ok: false };
   }
   const start = nextGeminiKeyIndex();
@@ -571,6 +559,13 @@ async function callGeminiPool(opts: {
       thinkingBudget: opts.thinkingBudget,
     });
     if (result.ok && result.content) return { content: result.content, ok: true };
+    if (result.status === 503 || result.status === 404) {
+      // الموديل نفسه واقع (زحمة) أو مش متاح — مش المفتاح. باقي المفاتيح هترجع نفس الرد،
+      // فالمشي عليهم كان بيضيّع ثواني قبل ما السلسلة تنقل لموديل تاني. اتقاس ٢٠٢٦-٠٩-٢٨:
+      // gemini-3.5-flash رجّع 503 على الخمس مفاتيح في نفس الدقيقة.
+      console.warn(`[CoreIntel] ${opts.model} answered ${result.status} — model-wide, skipping the rest of the keys`);
+      return { content: null, ok: false };
+    }
     if (result.status === 429) {
       console.warn(`[CoreIntel] Gemini key ${keyIndex + 1} hit 429/quota, switching to next Gemini key...`);
     } else {
@@ -578,6 +573,52 @@ async function callGeminiPool(opts: {
     }
   }
   console.warn("[CoreIntel] All Gemini keys exhausted");
+  return { content: null, ok: false };
+}
+
+/**
+ * سلسلة موديلات للنص/JSON — زي اللي الرؤية وzad-brain عندهم من زمان. كان النص كله
+ * (شيف زاد، الدعم، التقارير، نية الصوت) رايح لموديل واحد؛ لما يقع (503 زحمة) الطلب كان
+ * بيلف على المفاتيح كلها وبعدين جروك (مفتاحه الأول 401) — فالعميل يستنى ويفشل.
+ * كل موديل = حصة جديدة على كل المفاتيح. اتقاس ٢٠٢٦-٠٩-٢٨ في لحظة زحمة:
+ * gemini-3.1-flash-lite 200 في 1.2 ث، gemini-3.6-flash 200 في 4.2 ث، والباقيين 503.
+ * الترتيب: الخفيف السريع الأول، والبطيء (3.6 علّق مرة 25 ث) في الآخر.
+ * ZAD_TEXT_FALLBACKS (مفصولة بفاصلة) بتغيّرها من غير نشر.
+ */
+const TEXT_FALLBACK_MODELS: string[] = (() => {
+  const configured = (Deno.env.get("ZAD_TEXT_FALLBACKS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return configured.length > 0 ? configured : [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3-flash-preview",
+    "gemini-flash-latest",
+    "gemini-3.6-flash",
+  ];
+})();
+
+// موديل فشل على المسبح كله بيتعدّى دقيقة في نفس الـ isolate — من غيرها كل طلب جاي كان
+// هيدفع نفس اللفة الفاشلة (مثلاً حصة يومية خلصت = 429 على كل مفتاح) قبل ما يوصل للشغال.
+const MODEL_COOLDOWN_MS = 60_000;
+const modelCooldownUntil = new Map<string, number>();
+
+async function callGeminiChain(
+  primary: string,
+  opts: Omit<Parameters<typeof callGeminiPool>[0], "model">,
+): Promise<{ content: string | null; ok: boolean }> {
+  const chain = [...new Set([primary, ...TEXT_FALLBACK_MODELS])];
+  const now = Date.now();
+  const fresh = chain.filter((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
+  // لو كله في الانتظار، جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
+  for (const model of fresh.length > 0 ? fresh : chain) {
+    const result = await callGeminiPool({ ...opts, model });
+    if (result.ok) {
+      modelCooldownUntil.delete(model);
+      return result;
+    }
+    modelCooldownUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
+    console.warn(`[CoreIntel] ${model} failed on the whole pool — next model in the chain`);
+  }
   return { content: null, ok: false };
 }
 
@@ -597,7 +638,7 @@ async function callTextModel(
   const thinkingBudget = thinkingBudgetOverride !== undefined
     ? thinkingBudgetOverride
     : (tier === "routine" ? 0 : undefined);
-  const gemini = await callGeminiPool({ model, systemPrompt, content: userPrompt, temperature, maxTokens, thinkingBudget });
+  const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature, maxTokens, thinkingBudget });
   if (gemini.ok) return gemini.content;
   console.warn("[CoreIntel] Gemini pool exhausted for text — falling back to Groq");
   const groq = await callGroqPool({ model: GROQ_TEXT_MODEL, systemPrompt, content: userPrompt, temperature, maxTokens });
@@ -617,7 +658,7 @@ async function callJsonModel(
 ) {
   const model = tier === "routine" ? GEMINI_MODEL_ROUTINE : GEMINI_MODEL_BRAIN;
   const thinkingBudget = tier === "routine" ? 0 : undefined;
-  const gemini = await callGeminiPool({ model, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
+  const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
   let raw = gemini.content;
   let groqOk = true;
   if (!gemini.ok) {
@@ -1175,7 +1216,6 @@ Deno.serve(async (req: Request) => {
       // البوابة (verify_jwt = true) اتحققت من توقيع التوكن قبل ما يوصل هنا؛ بنقرا الدور منه
       // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
-      const geminiKeys = [1, 2, 3, 4, 5].map((i) => Deno.env.get(`ZAD_API_KEY_${i}`)).filter((k): k is string => !!k);
       // فحوص حية في الفانكشنز التانية بسيكريتاتها الداخلية (مش بتطلع من السيرفر): حلقة أدوات العقل
       // بجمل مصطنعة، وفويس تنبيهات تليجرام من غير إرسال.
       const internalProbe = async (fn: string, init: RequestInit): Promise<unknown> => {
@@ -1189,7 +1229,7 @@ Deno.serve(async (req: Request) => {
       };
       const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
-        ttsHealth(geminiKeys.length ? geminiKeys : [Deno.env.get("GEMINI_API_KEY") ?? ""].filter(Boolean)),
+        ttsHealth(GEMINI_KEYS),
         azureTtsHealth(AZURE_SPEECH),
         pipelineHealth(supabase),
         internalProbe("zad-brain", {

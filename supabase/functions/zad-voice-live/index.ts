@@ -40,6 +40,7 @@
 
 import { PendingMoneyActions } from "./confirmations.ts";
 import { customerCard } from "../_shared/customerProfile.ts";
+import { geminiKeys } from "../_shared/keyPool.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildVoiceSystemInstruction } from "./persona.ts";
 import { formatVoiceContext, loadVoiceContext } from "./context.ts";
@@ -75,17 +76,11 @@ const GEMINI_LIVE_HOST = "generativelanguage.googleapis.com";
 const GEMINI_LIVE_PATH =
   "/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 
-// نفس مسبح zad-brain/zad-core-intelligence بالظبط (ZAD_API_KEY_1..5 مع fallback على
+// نفس مسبح zad-brain/zad-core-intelligence بالظبط (ZAD_API_KEY_1..20 مع fallback على
 // GEMINI_API_KEY المفرد) — سرّ مشترك عن قصد، مش تصادم أسماء. جلسة صوتية طويلة مالهاش
 // نفس منطق إعادة المحاولة عبر المسبح كله بتاع النداءات القصيرة؛ محاولة واحدة بمفتاح
 // من الدور، ولو فشلت العميل بيعيد المحاولة (فتبدأ بمفتاح تاني تلقائياً).
-const GEMINI_KEY_POOL: string[] = [1, 2, 3, 4, 5]
-  .map((n) => Deno.env.get(`ZAD_API_KEY_${n}`))
-  .filter((k): k is string => !!k);
-if (GEMINI_KEY_POOL.length === 0) {
-  const legacy = Deno.env.get("ZAD_API_KEY") || Deno.env.get("GEMINI_API_KEY");
-  if (legacy) GEMINI_KEY_POOL.push(legacy);
-}
+const GEMINI_KEY_POOL: string[] = geminiKeys((n) => Deno.env.get(n));
 let keyCursor = 0;
 function nextGeminiKey(): string | null {
   if (GEMINI_KEY_POOL.length === 0) return null;
