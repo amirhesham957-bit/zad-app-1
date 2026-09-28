@@ -71,6 +71,16 @@ export function bankChannel(ingest: Rows, proposals: Rows): Record<string, unkno
       4,
     ),
     proposals_by_status: proposals.error ? proposals.error : countBy(proposals.list, (r) => `${r.source_type ?? "-"}|${r.status ?? "-"}`, 12),
+    // كل اقتراح بحالته × هل سؤال التأكيد لحدثه وصل فعلاً. محاولة فشلت بتمسح claimed_at
+    // (zad_finish_notification_prompt_service)، فالعد على الأحداث لوحدها مابيشوفهاش — الربط
+    // بالاقتراح هو اللي بيقول «اقتراح انتهى وسؤاله ماوصلش».
+    proposals_by_prompt: proposals.error ? proposals.error : (() => {
+      const delivered = new Map(ingest.list.map((r) => [String(r.id), Boolean(r.confirmation_prompt_delivered_at)]));
+      return countBy(proposals.list, (r) => {
+        const d = delivered.get(String(r.source_event_id ?? ""));
+        return `${r.status ?? "-"}|prompt_delivered=${d === undefined ? "unknown" : d ? "y" : "n"}`;
+      }, 12);
+    })(),
   };
 }
 
@@ -93,8 +103,8 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
     // قناة البنك (٢٠٢٦-٠٩-٢٨): «التطبيق مش بيشوف إشعارات البنك» — من غير رقم مقاس مفيش
     // طريقة نعرف الإشعار وقع فين: ماوصلش السيرفر خالص، ولا وصل واترفض، ولا اتحوّل لاقتراح
     // ومحدش أكده. عمود النص نفسه (title/body) مابيتقراش هنا أبداً.
-    rows(sb.from("zad_notification_ingest_events").select("package_name,client_classification,status,rejection_reason,created_at,confirmation_prompt_claimed_at,confirmation_prompt_delivered_at").gte("created_at", since14d).limit(2000)),
-    rows(sb.from("zad_transaction_proposals").select("status,source_type,created_at").gte("created_at", since14d).limit(2000)),
+    rows(sb.from("zad_notification_ingest_events").select("id,package_name,client_classification,status,rejection_reason,created_at,confirmation_prompt_claimed_at,confirmation_prompt_delivered_at").gte("created_at", since14d).limit(2000)),
+    rows(sb.from("zad_transaction_proposals").select("status,source_type,source_event_id,created_at").gte("created_at", since14d).limit(2000)),
   ]);
 
   let cron: unknown;
