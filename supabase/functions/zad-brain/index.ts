@@ -5945,7 +5945,10 @@ Deno.serve(async (req: Request) => {
             fallovers: warns.slice(0, 4),
           });
         } catch (e) {
-          results.push({ expect: c.expect, error: asciiOnly((e as Error)?.message ?? e), ms: Date.now() - started, fallovers: warns.slice(0, 4) });
+          // الذيل مش الأول: "every gemini model unavailable [...] and groq failed too: <السبب>"
+          // — سبب جروك في آخر الرسالة، وأول ١٦٠ حرف كانوا قايمة جيميناي بس.
+          const msg = String((e as Error)?.message ?? e).replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").trim();
+          results.push({ expect: c.expect, error: msg.slice(0, 120), error_tail: msg.slice(-240), ms: Date.now() - started, fallovers: warns.slice(0, 8) });
         } finally {
           console.warn = origWarn;
         }

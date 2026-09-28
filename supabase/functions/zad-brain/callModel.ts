@@ -103,6 +103,18 @@ const DEFAULT_MODEL_CHAIN = [
   "gemini-3.6-flash",
 ];
 
+// موديل وقع (503 زحمة، مهلة، 429 على كل المفاتيح) بيتعدّى دقيقة في نفس الـ isolate.
+// فحص tools_probe بعد نشر ٢٠٢٦-٠٩-٢٨: جيميناي كله كان زحمة، وكل رسالة جديدة كانت بتبدأ من
+// أول السلسلة تاني — الرسالة التالتة نجحت بعد ٤٥ ث وأربع موديلات فاشلة، منهم مهلة ٢٠ ث.
+let modelCooldownMs = 60_000;
+const modelCooldownUntil = new Map<string, number>();
+
+/** للاختبارات بس: الاختبارات بتشغّل موديلات فاشلة ورا بعض، والانتظار بيخلّط بينهم. */
+export function setModelCooldownMsForTests(ms: number): void {
+  modelCooldownMs = ms;
+  modelCooldownUntil.clear();
+}
+
 /** The caller's model first (it is whatever ZAD_MODEL_ROUTINE/BRAIN is set to, and the
  *  operator's choice outranks this file's), then the rest of the chain, deduped. */
 function modelChain(primary: string): string[] {
@@ -174,12 +186,18 @@ export async function callModel(opts: {
   // that has a request deadline, so it is not retried, it is stepped past immediately.
   const chain = modelChain(opts.model);
   const trail: string[] = [];
-  for (const model of chain) {
+  const now = Date.now();
+  const fresh = chain.filter((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
+  // كله في الانتظار ⇒ جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
+  for (const model of fresh.length > 0 ? fresh : chain) {
     try {
-      return await withRetry(() => sendGemini({ ...opts, model }));
+      const reply = await withRetry(() => sendGemini({ ...opts, model }));
+      modelCooldownUntil.delete(model);
+      return reply;
     } catch (e) {
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
+      if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
       trail.push(`${model}: ${e.short}`);
       console.warn(`[zad-brain] model ${model} unavailable (${e.short}); falling over`);
     }
@@ -466,7 +484,9 @@ async function sendGemini(o: {
         method: "POST",
         headers: { "content-type": "application/json" },
         body,
-        signal: AbortSignal.timeout(20_000),
+        // ١٢ مش ٢٠ (٢٠٢٦-٠٩-٢٨): الرد الطبيعي بالأدوات ١-٣ ث؛ موديل معلّق كان بياكل ٢٠ ث
+        // كاملين قبل ما السلسلة تتحرك، والعميل مستني رد صوتي.
+        signal: AbortSignal.timeout(12_000),
       });
     } catch (e) {
       // موديل معلّق (timeout) أو شبكة واقعة: قبل كده الخطأ ده ماكانش ProviderUnavailableError،
@@ -475,7 +495,7 @@ async function sendGemini(o: {
       // الصوتي بيرد بعد نص دقيقة ودقيقة» وفحص tools_probe اللي عدّى ١٢٠ ث (٢٠٢٦-٠٩-٢٨).
       const name = (e as Error)?.name ?? "";
       throw new ProviderUnavailableError(
-        `gemini ${o.model} ${name === "TimeoutError" ? "timed out after 20s" : `fetch failed: ${(e as Error)?.message ?? e}`}`,
+        `gemini ${o.model} ${name === "TimeoutError" ? "timed out after 12s" : `fetch failed: ${(e as Error)?.message ?? e}`}`,
         name === "TimeoutError" ? "timeout" : "network",
       );
     }
