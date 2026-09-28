@@ -49,10 +49,16 @@ abstract interface class AuthGateway {
   /// `20260815123711_provision_zad_users_row` exists because that left a live
   /// account with no `zad_users` row at all, and every later `UPDATE ... where
   /// id = ?` against it changed nothing while still answering 200.
+  ///
+  /// [country] and [currency] ride the same metadata for the same reason: the
+  /// trigger stores them on the row it creates, so the account is born with its
+  /// market (`20260928170000_sign_up_carries_the_market`).
   Future<SignUpOutcome> signUp({
     required String email,
     required String password,
     required String name,
+    String? country,
+    String? currency,
   });
 
   /// Sends a password reset link.
@@ -87,13 +93,20 @@ class SupabaseAuthGateway implements AuthGateway {
     required String email,
     required String password,
     required String name,
+    String? country,
+    String? currency,
   }) async {
     final trimmed = name.trim();
+    final data = <String, dynamic>{
+      if (trimmed.isNotEmpty) 'name': trimmed,
+      'country': ?country,
+      if (country != null) 'currency': ?currency,
+    };
     final response = await _guard(
       () => _client.auth.signUp(
         email: email,
         password: password,
-        data: trimmed.isEmpty ? null : <String, dynamic>{'name': trimmed},
+        data: data.isEmpty ? null : data,
       ),
     );
 

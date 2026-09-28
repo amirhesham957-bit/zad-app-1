@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
+import 'package:zad/features/market/domain/market.dart';
 
 /// Which of the three things the one form is currently doing.
 enum AuthMode {
@@ -91,6 +92,7 @@ class AuthController extends Notifier<AuthFormState> {
     required String email,
     required String password,
     required String name,
+    Market? market,
   }) async {
     if (state.submitting) return;
 
@@ -119,6 +121,8 @@ class AuthController extends Notifier<AuthFormState> {
             email: address,
             password: password,
             name: name,
+            country: market?.country,
+            currency: market?.currency,
           );
           if (!ref.mounted) return;
           if (outcome == SignUpOutcome.signedIn) return;

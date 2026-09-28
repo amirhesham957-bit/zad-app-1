@@ -16,6 +16,7 @@ import 'package:zad/features/auth/presentation/login_screen.dart';
 
 class _FakeGateway implements AuthGateway {
   final List<String> calls = <String>[];
+  String? signUpMarket;
   AuthFailure? failWith;
   Completer<void>? gate;
 
@@ -40,7 +41,10 @@ class _FakeGateway implements AuthGateway {
     required String email,
     required String password,
     required String name,
+    String? country,
+    String? currency,
   }) async {
+    signUpMarket = country == null ? null : '$country/$currency';
     await _run('signUp:$email:$name');
     return SignUpOutcome.signedIn;
   }
@@ -159,6 +163,43 @@ void main() {
       tester.widget<ElevatedButton>(submit('إنشاء حساب')).onPressed,
       isNull,
     );
+  });
+
+  testWidgets('sign-up asks for the country and sends it with the account', (
+    tester,
+  ) async {
+    await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('سجل الآن'));
+    await tester.tap(find.text('سجل الآن'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'أمير');
+    await tester.enterText(find.byType(TextField).at(1), 'amir@example.com');
+    await tester.enterText(find.byType(TextField).at(2), 'secret123');
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    // Everything but the country: still closed.
+    expect(
+      tester.widget<ElevatedButton>(submit('إنشاء حساب')).onPressed,
+      isNull,
+    );
+
+    final field = find.byKey(const ValueKey<String>('sign-up-market'));
+    await tester.ensureVisible(field);
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مصر'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('مصر'), findsOneWidget);
+
+    await tester.ensureVisible(submit('إنشاء حساب'));
+    await tester.tap(submit('إنشاء حساب'));
+    await tester.pump();
+    expect(gateway.calls, <String>['signUp:amir@example.com:أمير']);
+    expect(gateway.signUpMarket, 'EG/EGP');
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('«نسيت كلمة المرور؟» sends the reset link', (tester) async {
