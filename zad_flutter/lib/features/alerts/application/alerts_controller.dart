@@ -12,6 +12,7 @@ import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
+import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 
 /// What the settings row shows.
 class AlertsView {
@@ -40,7 +41,11 @@ class AlertsController extends Notifier<AlertsView> {
   /// exists while somebody is signed in. Safe to call more than once.
   Future<void> start() async {
     final platform = ref.read(pushPlatformProvider);
-    await platform.start(onAlert: _arrived, onOpened: _opened);
+    await platform.start(
+      onAlert: _arrived,
+      onOpened: _opened,
+      onAnswer: _answered,
+    );
 
     final registrar = ref.read(pushRegistrarProvider);
     _refreshes ??= platform.tokenRefreshes.listen(
@@ -119,6 +124,21 @@ class AlertsController extends Notifier<AlertsView> {
       case null:
         break;
     }
+  }
+
+  /// «أيوه، أنا» / «مش أنا» pressed on a bank question in the notification.
+  ///
+  /// The confirmations tab opens as well: the server may ask back (a
+  /// suspected duplicate, a direction it needs), and that follow-up is a card
+  /// on that tab — answering from the shade must never swallow it.
+  Future<void> _answered(String proposalId, {required bool confirmed}) async {
+    ref.read(shellNavigationProvider.notifier).open(ShellTab.proposals);
+    await ref
+        .read(proposalsControllerProvider.notifier)
+        .decide(
+          proposalId,
+          confirmed ? ProposalDecision.confirm : ProposalDecision.reject,
+        );
   }
 }
 

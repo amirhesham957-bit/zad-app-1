@@ -23,7 +23,12 @@ enum AlertDestination {
 @immutable
 class PushAlert {
   /// Creates an alert.
-  const new({required this.title, required this.body, this.destination});
+  const new({
+    required this.title,
+    required this.body,
+    this.destination,
+    this.proposalId,
+  });
 
   /// Reads a message: the notification block when there is one, the data
   /// otherwise — the same fallback Kotlin's service makes.
@@ -31,11 +36,17 @@ class PushAlert {
     required Map<String, dynamic> data,
     String? notificationTitle,
     String? notificationBody,
-  }) => PushAlert(
-    title: (notificationTitle ?? data['title'] as String? ?? '').trim(),
-    body: (notificationBody ?? data['body'] as String? ?? '').trim(),
-    destination: destinationFor(data['route'] as String?),
-  );
+  }) {
+    final proposal = (data['proposal_id'] as String? ?? '').trim();
+    return PushAlert(
+      title: (notificationTitle ?? data['title'] as String? ?? '').trim(),
+      body: (notificationBody ?? data['body'] as String? ?? '').trim(),
+      destination: destinationFor(data['route'] as String?),
+      proposalId: data['kind'] == kConfirmTransactionKind && proposal.isNotEmpty
+          ? proposal
+          : null,
+    );
+  }
 
   /// The headline.
   final String title;
@@ -45,6 +56,10 @@ class PushAlert {
 
   /// Where a tap goes; null opens the app where it was.
   final AlertDestination? destination;
+
+  /// A bank transaction waiting for «إنت؟» — the notification then carries
+  /// the two answers as buttons, so it can be settled from the shade.
+  final String? proposalId;
 
   /// Worth showing at all.
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
@@ -56,6 +71,46 @@ AlertDestination? destinationFor(String? route) => switch (route) {
   'transaction_proposals' => AlertDestination.proposals,
   'pharmacy' => AlertDestination.pharmacy,
   'home' => AlertDestination.home,
+  _ => null,
+};
+
+/// `data.kind` of the push zad-brain sends with a bank confirmation question.
+const String kConfirmTransactionKind = 'confirm_transaction';
+
+/// The notification's «أيوه، أنا» button.
+const String kConfirmActionId = 'zad_confirm_transaction';
+
+/// The notification's «مش أنا» button.
+const String kRejectActionId = 'zad_reject_transaction';
+
+const String _proposalPayloadPrefix = 'transaction_proposal:';
+
+/// The payload of a notification that asks about one proposal. Starts with a
+/// prefix [destinationForPayload] routes to the proposals tab, so a plain tap
+/// (no button) still lands where the question is.
+String proposalPayload(String proposalId) =>
+    '$_proposalPayloadPrefix$proposalId';
+
+/// The proposal a notification payload asks about, or null.
+String? proposalIdFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_proposalPayloadPrefix)) {
+    return null;
+  }
+  final id = payload.substring(_proposalPayloadPrefix.length).trim();
+  return id.isEmpty ? null : id;
+}
+
+/// Where a tapped local notification goes, for both payload shapes.
+AlertDestination? destinationForPayload(String? payload) =>
+    proposalIdFromPayload(payload) != null
+    ? AlertDestination.proposals
+    : destinationFor(payload);
+
+/// A notification button's answer: true for «أيوه، أنا», false for «مش أنا»,
+/// null for a tap on the notification itself or any other button.
+bool? confirmationFromAction(String? actionId) => switch (actionId) {
+  kConfirmActionId => true,
+  kRejectActionId => false,
   _ => null,
 };
 

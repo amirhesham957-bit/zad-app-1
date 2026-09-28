@@ -17,24 +17,48 @@ import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
+import 'package:zad/features/proposals/application/proposals_controller.dart';
+import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 
 class _Platform extends SilentPushPlatform {
   String? current = 'token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
   final StreamController<String> refreshes =
       StreamController<String>.broadcast();
   void Function(AlertDestination?)? opened;
+  void Function(String, {required bool confirmed})? answered;
 
   @override
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
-  }) async => opened = onOpened;
+    void Function(String proposalId, {required bool confirmed})? onAnswer,
+  }) async {
+    opened = onOpened;
+    answered = onAnswer;
+  }
 
   @override
   Future<String?> token() async => current;
 
   @override
   Stream<String> get tokenRefreshes => refreshes.stream;
+}
+
+class _Proposals extends ProposalsController {
+  final List<(String, ProposalDecision)> decisions =
+      <(String, ProposalDecision)>[];
+
+  @override
+  ProposalsView build() => const ProposalsView();
+
+  @override
+  Future<ProposalOutcome?> decide(
+    String proposalId,
+    ProposalDecision decision,
+  ) async {
+    decisions.add((proposalId, decision));
+    return null;
+  }
 }
 
 class _Permission implements NotificationPermission {
@@ -101,6 +125,7 @@ void main() {
       overrides: [
         localStoreProvider.overrideWithValue(store),
         pushPlatformProvider.overrideWithValue(platform),
+        proposalsControllerProvider.overrideWith(_Proposals.new),
         notificationPermissionProvider.overrideWithValue(permission),
         pushRegistrarProvider.overrideWithValue(
           PushRegistrar(
@@ -184,4 +209,26 @@ void main() {
     platform.opened!(null);
     expect(container.read(shellNavigationProvider), isNull);
   });
+
+  test(
+    'a button on a bank question answers it and opens the confirmations tab',
+    () async {
+      await build(AlertPermission.granted);
+      await container.read(alertsControllerProvider.notifier).start();
+      final proposals =
+          container.read(proposalsControllerProvider.notifier) as _Proposals;
+
+      platform.answered!('p-1', confirmed: true);
+      await pumpEventQueue();
+      platform.answered!('p-2', confirmed: false);
+      await pumpEventQueue();
+
+      expect(proposals.decisions, <(String, ProposalDecision)>[
+        ('p-1', ProposalDecision.confirm),
+        ('p-2', ProposalDecision.reject),
+      ]);
+      // A follow-up question (duplicate, direction) lands on that tab.
+      expect(container.read(shellNavigationProvider), ShellTab.proposals);
+    },
+  );
 }
