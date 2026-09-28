@@ -85,7 +85,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
-import { pushToDevice, pushToTelegram } from "./push.ts";
+import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -5260,11 +5260,38 @@ async function deliverNotificationPrompt(
     } else if (response.ok && responseBody.reason === "not linked") {
       delivery = "not_linked";
       // تليجرام مش مربوط → FCM يغطي الفراغ (الوعي اللحظي). fire-and-forget.
-      pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+      if (prompt.job !== "confirm_transaction") {
+        pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+      }
     }
   } catch (e) {
     console.error("notification prompt to telegram failed:", (e as Error).message);
-    pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+    if (prompt.job !== "confirm_transaction") {
+      pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+    }
+  }
+
+  // سؤال «إنت؟» بيروح الموبايل **مع** تليجرام، مش بداله بس (طلب صاحب المشروع ٢٠٢٦-٠٩-٢٨):
+  // ٤ من ٩ اقتراحات وصل سؤالها تليجرام وانتهت من غير رد. data-only عشان التطبيق هو اللي
+  // يعرضه بزرارين «أيوه، أنا» / «مش أنا» (أندرويد مابيحطش أزرار على إشعار notification).
+  if (prompt.job === "confirm_transaction") {
+    try {
+      const { data: p } = await sb.from("zad_transaction_proposals")
+        .select("amount,currency,merchant_name,title,txn_kind")
+        .eq("id", prompt.proposalId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      const text = proposalPushText((p ?? {}) as Parameters<typeof proposalPushText>[0]);
+      const pushed = await pushToDevice(sb, userId, text.title, text.body, {
+        route: "transaction_proposals",
+        kind: "confirm_transaction",
+        proposal_id: prompt.proposalId,
+      }, true);
+      // وصل الموبايل = السؤال وصل العميل، حتى لو تليجرام مش مربوط أو وقع.
+      if (pushed === "sent" && delivery !== "delivered") delivery = "delivered";
+    } catch (e) {
+      console.error("confirm_transaction push failed:", (e as Error).message);
+    }
   }
 
   const { error: finishError } = await sb.rpc("zad_finish_notification_prompt_service", {
