@@ -59,7 +59,8 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { lowStockToAdd } from "./lowStock.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
+import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
+import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -5917,9 +5918,21 @@ ${JSON.stringify(snap)}
 // Main handler
 // ═══════════════════════════════════════════════════════════
 
+// Every model call a request makes draws keys from its lane (keyLanes.ts): scheduled
+// analysis from a reserved slice of the pool, everything a customer waits on from the
+// rest first. Decided by the action, before anything else runs.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
+  let action: unknown = null;
+  try {
+    action = (await req.clone().json())?.action;
+  } catch {
+    // Not JSON: handleRequest answers that as it always has.
+  }
+  return await inLane(laneFor(action), () => handleRequest(req));
+});
 
+async function handleRequest(req: Request): Promise<Response> {
   try {
     const body = await req.json();
 
@@ -6653,7 +6666,7 @@ Deno.serve(async (req: Request) => {
     console.error("zad-brain error:", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS_HEADERS });
   }
-});
+}
 
 /**
  * agent_turn_stream — رد متدفق حرف بحرف (تجربة ChatGPT).

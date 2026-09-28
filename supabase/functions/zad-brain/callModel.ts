@@ -23,6 +23,7 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
+import { keyOrder, type Lane, reservedCount } from "./keyLanes.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
@@ -63,6 +64,32 @@ function nextGeminiKeyIndex(): number {
   const i = geminiKeyCursor % Math.max(GEMINI_KEY_POOL.length, 1);
   geminiKeyCursor = (geminiKeyCursor + 1) % Math.max(GEMINI_KEY_POOL.length, 1);
   return i;
+}
+
+// ── Key lanes (keyLanes.ts) ────────────────────────────────────────────────────
+// Background work gets a reserved slice of the pool and never touches the rest, so a
+// cron cannot spend the quota a customer is about to need. The lane rides the request
+// in AsyncLocalStorage, which stays per request when the isolate serves several at
+// once. Loaded dynamically: a runtime without node:async_hooks runs everything in the
+// customer lane, which is exactly the behaviour before lanes existed.
+type LaneStore = { run<T>(lane: Lane, fn: () => T): T; getStore(): Lane | undefined };
+let laneStore: LaneStore | null = null;
+try {
+  const { AsyncLocalStorage } = await import("node:async_hooks");
+  laneStore = new AsyncLocalStorage<Lane>();
+} catch {
+  laneStore = null;
+}
+const RESERVED_KEYS = reservedCount(GEMINI_KEY_POOL.length, Deno.env.get("ZAD_BACKGROUND_KEYS"));
+
+/** Runs [fn] with every model call inside it drawing keys from [lane]. */
+export function inLane<T>(lane: Lane, fn: () => T): T {
+  return laneStore ? laneStore.run(lane, fn) : fn();
+}
+
+/** The keys this call may try, in order, for the lane it runs in. */
+function keysToTry(): number[] {
+  return keyOrder(laneStore?.getStore() ?? "customer", GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex());
 }
 
 // ── Model failover chain ───────────────────────────────────────────────────────
@@ -470,9 +497,7 @@ async function sendGemini(o: {
   let res: Response | null = null;
   let lastQuotaBody = "";
   const quotaTrail: string[] = [];
-  const start = nextGeminiKeyIndex();
-  for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-    const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+  for (const keyIndex of keysToTry()) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${o.model}` +
       `:generateContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
     // timeout 20 ثانية لكل نداء موديل — من غيره موديل معلّق بيعلّق اللفة كلها
@@ -801,9 +826,7 @@ export async function callModelStreaming(opts: {
   const contents = buildGeminiContents(opts.history);
 
   for (const model of chain) {
-    const start = nextGeminiKeyIndex();
-    for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-      const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+    for (const keyIndex of keysToTry()) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
         `:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
       try {
@@ -869,15 +892,14 @@ const EMBED_OUTPUT_DIMENSIONALITY = 768;
 export async function embedText(text: string): Promise<number[] | null> {
   if (!text.trim() || GEMINI_KEY_POOL.length === 0) return null;
   if (Date.now() < embedBreakerOpenUntil) return null; // دائرة مقفولة — متحرقش وقت
-  const start = nextGeminiKeyIndex();
+  const order = keysToTry();
   // ليه بنمسك أول خطأ؟ الكود ده كان `if (!res.ok) continue;` و`catch { continue; }`
   // من غير أي تسجيل خالص. لما الـ embeddings وقفت (صفر من ٩ ملاحظات، مسح
   // 2026-08-31) مكانش فيه أي أثر يقول السبب — لا status ولا رسالة ولا اسم موديل.
   // تشخيص مستحيل. الملاحظة الوحيدة اللي كانت بتتطبع هي "breaker OPEN" وهي
   // بتقول إن فيه فشل، مش بتقول ليه.
   let firstError: string | null = null;
-  for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-    const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+  for (const keyIndex of order) {
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`,
