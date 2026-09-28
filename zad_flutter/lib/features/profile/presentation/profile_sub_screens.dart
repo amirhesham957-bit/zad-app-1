@@ -17,6 +17,7 @@ import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/bank/domain/bank_notification.dart';
+import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/domain/family.dart';
 import 'package:zad/features/market/domain/market.dart';
@@ -458,7 +459,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
           label: 'قراءة إشعارات البنك',
           isOn: s.granted,
           actionLabel: s.granted ? null : 'تفعيل',
-          onAction: () => unawaited(notifier.openSettings()),
+          onAction: () => unawaited(showBankAccessGuide(context)),
         ),
         const SizedBox(height: 8),
         _StatusRow(

@@ -77,6 +77,20 @@ class ZadBankListener {
   Future<void> openPermissionSettings() =>
       channel.invokeMethod<void>('openPermissionSettings');
 
+  /// The Android version and who installed the app — what decides whether
+  /// Android 13+ hides the permission behind «restricted settings».
+  Future<InstallInfo> installInfo() async {
+    final map = await channel.invokeMapMethod<String, Object?>('installInfo');
+    return InstallInfo(
+      sdk: (map?['sdk'] as num?)?.toInt() ?? 0,
+      installer: map?['installer'] as String?,
+    );
+  }
+
+  /// Opens the app's own «App info» screen — where «Allow restricted
+  /// settings» and the battery settings are.
+  Future<void> openAppDetails() => channel.invokeMethod<void>('openAppDetails');
+
   /// Asks Android to bind the service again.
   ///
   /// Worth calling on every app open. Android kills notification listeners
@@ -191,4 +205,24 @@ class ListenerStatus {
 
   /// `sent`, `received_by_listener`, or null.
   final String? testResult;
+}
+
+/// How the app got onto the phone, for the restricted-settings question.
+@immutable
+class InstallInfo {
+  /// Creates the reading.
+  const new({required this.sdk, this.installer});
+
+  /// `Build.VERSION.SDK_INT`; 0 when unknown.
+  final int sdk;
+
+  /// The installing package; null for a file installed by hand, or unknown.
+  final String? installer;
+
+  /// Whether Android may be holding notification access behind «restricted
+  /// settings»: Android 13+ does that to any app not installed by a store.
+  bool get mayBeRestricted =>
+      sdk >= 33 &&
+      installer != 'com.android.vending' &&
+      installer != 'com.google.android.packageinstaller.store';
 }

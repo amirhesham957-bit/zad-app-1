@@ -58,6 +58,12 @@ class _FakeListener implements ZadBankListener {
   Stream<void> get captures => const Stream<void>.empty();
 
   @override
+  Future<InstallInfo> installInfo() async => const InstallInfo(sdk: 34);
+
+  @override
+  Future<void> openAppDetails() async {}
+
+  @override
   Future<void> openPermissionSettings() async => settingsOpened++;
 
   @override
