@@ -6,9 +6,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/money/money.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -1174,6 +1176,44 @@ class _KidCard extends ConsumerWidget {
   final ChildSpending? spending;
   final String currency;
 
+  Future<void> _sendAllowance(
+    BuildContext context,
+    FamilyLifeController controller,
+  ) async {
+    final amount = await showFieldDialog<double>(
+      context: context,
+      initial: const <String>[''],
+      builder: (dialogContext, fields) => AlertDialog(
+        title: Text('مصروف لـ${child.alias}'),
+        content: TextField(
+          controller: fields[0],
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'المبلغ ($currency)',
+            helperText: 'بيتضاف لرصيده على طول',
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = parseMoneyInput(fields[0].text);
+              if (value != null) Navigator.of(dialogContext).pop(value);
+            },
+            child: const Text('حوّل'),
+          ),
+        ],
+      ),
+    );
+    if (amount == null) return;
+    await controller.sendAllowance(child, amount);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(familyLifeControllerProvider.notifier);
@@ -1223,6 +1263,15 @@ class _KidCard extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              onPressed: () => unawaited(_sendAllowance(context, controller)),
+              icon: const Icon(ZadIcons.wallet, size: 16),
+              label: const Text('حوّل مصروف'),
+            ),
           ),
           if ((child.dailyLimit ?? 0) > 0) ...<Widget>[
             const SizedBox(height: ZadSpacing.sm),

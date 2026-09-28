@@ -1,7 +1,7 @@
 /// Kotlin's `KidsModeContent` (HomeScreen.kt): a playful home for a child —
 /// avatar greeting, the candy-gradient allowance card with the savings goal
-/// and today's limit, «محتاج مصروف زيادة؟» (a purchase request a parent
-/// approves), my chores, three badges, and the last family messages.
+/// and today's limit, «محتاج مصروف زيادة؟» (pocket money or a purchase, a
+/// parent approves), my chores, three badges, and the last family messages.
 ///
 /// Kids mode's gradients and emoji are deliberate (CLAUDE.md) — this screen
 /// keeps its own colours and does not share them.
@@ -12,7 +12,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/money/money.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
@@ -249,61 +251,28 @@ class _BalanceCard extends ConsumerWidget {
   final List<FamilyMessage> messages;
   final String currency;
 
+  // The fields belong to the dialog (showFieldDialog): disposing them right
+  // after `showDialog` returned killed them mid-exit-animation and turned the
+  // screen red — the bug a child hit on sending a request.
   Future<void> _wish(BuildContext context, WidgetRef ref) async {
-    final title = TextEditingController();
-    final amount = TextEditingController();
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('طلب مصروف أو مشتريات'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextField(
-              controller: title,
-              decoration: const InputDecoration(
-                labelText: 'ماذا تريد أن تشتري؟',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: ZadSpacing.sm),
-            TextField(
-              controller: amount,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                labelText: 'المبلغ المطلوب ($currency)',
-                border: const OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إلغاء'),
+    final request =
+        await showFieldDialog<({String what, double amount, bool allowance})>(
+          context: context,
+          initial: const <String>['', ''],
+          builder: (dialogContext, fields) => _MoneyRequestDialog(
+            what: fields[0],
+            amount: fields[1],
+            currency: currency,
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(shape: const StadiumBorder()),
-            onPressed: () {
-              final value = double.tryParse(amount.text.trim()) ?? 0;
-              final what = title.text.trim();
-              if (what.isEmpty || value <= 0) return;
-              Navigator.of(dialogContext).pop();
-              unawaited(
-                ref
-                    .read(familyLifeControllerProvider.notifier)
-                    .requestMoney(what, value),
-              );
-            },
-            child: const Text('إرسال الطلب'),
-          ),
-        ],
-      ),
-    );
-    title.dispose();
-    amount.dispose();
+        );
+    if (request == null) return;
+    await ref
+        .read(familyLifeControllerProvider.notifier)
+        .requestMoney(
+          request.what,
+          request.amount,
+          allowance: request.allowance,
+        );
   }
 
   @override
@@ -804,4 +773,97 @@ class _AffiliateRow extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// The child's request: pocket money (added to the balance when a parent
+/// agrees) or something to buy (taken off it).
+class _MoneyRequestDialog extends StatefulWidget {
+  const new({required this.what, required this.amount, required this.currency});
+
+  final TextEditingController what;
+  final TextEditingController amount;
+  final String currency;
+
+  @override
+  State<_MoneyRequestDialog> createState() => _MoneyRequestDialogState();
+}
+
+class _MoneyRequestDialogState extends State<_MoneyRequestDialog> {
+  var _allowance = true;
+  String? _error;
+
+  void _send() {
+    final value = parseMoneyInput(widget.amount.text);
+    final what = widget.what.text.trim();
+    if (value == null) {
+      setState(() => _error = 'اكتب المبلغ');
+      return;
+    }
+    if (!_allowance && what.isEmpty) {
+      setState(() => _error = 'اكتب عايز تشتري إيه');
+      return;
+    }
+    Navigator.of(context)
+        .pop((what: what, amount: value, allowance: _allowance));
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('طلب فلوس'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SegmentedButton<bool>(
+            segments: const <ButtonSegment<bool>>[
+              ButtonSegment<bool>(value: true, label: Text('مصروف')),
+              ButtonSegment<bool>(value: false, label: Text('أشتري حاجة')),
+            ],
+            selected: <bool>{_allowance},
+            onSelectionChanged: (v) => setState(() {
+              _allowance = v.first;
+              _error = null;
+            }),
+          ),
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            _allowance
+                ? 'لو اتوافق، المبلغ يتضاف لرصيدك.'
+                : 'لو اتوافق، المبلغ يتخصم من رصيدك.',
+            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.md),
+          TextField(
+            controller: widget.what,
+            decoration: InputDecoration(
+              labelText: _allowance ? 'ليه؟ (اختياري)' : 'عايز تشتري إيه؟',
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          TextField(
+            controller: widget.amount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'المبلغ (${widget.currency})',
+              border: const OutlineInputBorder(),
+              errorText: _error,
+            ),
+          ),
+        ],
+      ),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('إلغاء'),
+      ),
+      FilledButton(
+        style: FilledButton.styleFrom(shape: const StadiumBorder()),
+        onPressed: _send,
+        child: const Text('إرسال الطلب'),
+      ),
+    ],
+  );
 }

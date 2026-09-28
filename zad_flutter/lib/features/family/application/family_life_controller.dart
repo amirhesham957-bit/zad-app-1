@@ -392,15 +392,46 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     ].join('\n');
   }
 
-  /// A purchase request in the customer's own name.
-  Future<bool> requestMoney(String what, double amount) => send(
-    'أحتاج ${_plain(amount)} لشراء $what',
-    type: FamilyMessageType.purchaseRequest,
-    metadata: jsonEncode(<String, dynamic>{
-      'amount': amount,
-      'status': 'PENDING',
-    }),
-  );
+  /// A request in the customer's own name: pocket money when [allowance]
+  /// (approval adds it to their balance), otherwise a purchase (approval
+  /// takes it off).
+  Future<bool> requestMoney(
+    String what,
+    double amount, {
+    bool allowance = false,
+  }) {
+    final request = moneyRequest(
+      what: what,
+      amount: amount,
+      allowance: allowance,
+    );
+    return send(
+      request.text,
+      type: FamilyMessageType.purchaseRequest,
+      metadata: jsonEncode(request.metadata),
+    );
+  }
+
+  /// An admin adds pocket money to [member]'s balance, unasked.
+  Future<bool> sendAllowance(FamilyMember member, double amount) async {
+    try {
+      final result = await _remote.sendAllowance(member.id, amount);
+      if (result['ok'] != true) {
+        _say(switch (result['reason']) {
+          'not_an_admin' => 'تحويل المصروف للمسؤول بس.',
+          'invalid_input' => 'اكتب مبلغ أكبر من صفر.',
+          _ => 'مقدرتش أحوّل المصروف. جرّب تاني.',
+        });
+        return false;
+      }
+      await send('حوّلت لـ${member.alias} مصروف ${_plain(amount)} 💰');
+      unawaited(ref.read(familyControllerProvider.notifier).refresh());
+      return true;
+    } on Object {
+      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      return false;
+    }
+  }
 
   /// A poll.
   Future<bool> sendPoll(String question, List<String> options) => send(
@@ -417,14 +448,18 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
   Future<bool> sendSos() =>
       send('الرجاء الانتباه، حالة طوارئ!', type: FamilyMessageType.sos);
 
-  /// An admin's decision on a purchase request. The server debits the sender
-  /// on approval and notifies them.
+  /// An admin's decision on a request. On approval the server adds an
+  /// allowance to the sender's balance or takes a purchase off it (refusing a
+  /// purchase the balance cannot cover), and notifies them.
   Future<void> decide(FamilyMessage request, {required bool approve}) async {
     try {
       final result = await _remote.decideRequest(request.id, approve: approve);
       if (result['ok'] != true) {
         _say(switch (result['reason']) {
           'not_an_admin' => 'القرار ده للمسؤول بس.',
+          'insufficient_balance' =>
+            'رصيده مايكفيش الطلب ده — حوّله مصروف الأول '
+                'من «حوّل مصروف»، وبعدين وافق.',
           _ => 'مقدرتش أسجّل القرار. جرّب تاني.',
         });
         return;
