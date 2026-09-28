@@ -14,7 +14,9 @@ Deno.env.set("GROQ_API_KEY_1", "groq1");
 Deno.env.set("GROQ_API_KEY_2", "groq2");
 Deno.env.set("ZAD_MODEL_FALLBACKS", "model-b,model-c");
 
-const { callModel } = await import("./callModel.ts");
+const { callModel, setModelCooldownMsForTests } = await import("./callModel.ts");
+// الاختبارات بتشغّل موديلات فاشلة ورا بعض؛ الانتظار مقفول إلا في الاختبار بتاعه.
+setModelCooldownMsForTests(0);
 
 const BASE = {
   model: "model-a",
@@ -111,6 +113,20 @@ Deno.test("موديل معلّق (timeout) بينتقل للي بعده فورا
     assertEquals(tried, ["model-a", "model-b"]);
   } finally {
     globalThis.fetch = original;
+  }
+});
+
+Deno.test("موديل وقع بيتعدّى في الرسالة اللي بعدها — مابنبداش بيه تاني", async () => {
+  setModelCooldownMsForTests(60_000);
+  const s = stubFetch((url) => (modelOf(url) === "model-a" ? overloaded503() : geminiOk()));
+  try {
+    await callModel({ ...BASE });
+    const afterFirst = s.calls.length;
+    await callModel({ ...BASE });
+    assertEquals(s.calls.slice(afterFirst).map((c) => modelOf(c.url)), ["model-b"]);
+  } finally {
+    s.restore();
+    setModelCooldownMsForTests(0);
   }
 });
 
