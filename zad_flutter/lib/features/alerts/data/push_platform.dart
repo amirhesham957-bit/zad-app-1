@@ -120,6 +120,13 @@ Future<void> _showLocal(PushAlert alert) async {
   );
 }
 
+/// Shows [alert] from an engine with no [PushPlatform] started — the headless
+/// run street alerts use when the app is closed.
+Future<void> showAlertInBackground(PushAlert alert) async {
+  await _initLocal();
+  await _showLocal(alert);
+}
+
 /// Runs in a background isolate for messages that arrive while the app is not
 /// in front. Registered in `bootstrap()`; must be top level.
 ///

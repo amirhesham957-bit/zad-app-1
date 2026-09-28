@@ -52,6 +52,10 @@ import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/obligations/data/obligations_repository.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/features/places/application/place_engine.dart';
+import 'package:zad/features/places/data/background_location.dart';
+import 'package:zad/features/places/data/place_server.dart';
+import 'package:zad/features/places/domain/places.dart';
 import 'package:zad/features/prices/data/prices_remote.dart';
 import 'package:zad/features/prices/data/prices_repository.dart';
 import 'package:zad/features/proposals/data/proposals_repository.dart';
@@ -243,6 +247,37 @@ final Provider<NearbyRepository> nearbyRepositoryProvider =
         now: ref.watch(nowProvider),
       );
     });
+
+/// The geofence plugin. Null — street alerts unavailable — unless
+/// `bootstrap()` installed the real one, so no test reaches a plugin.
+final placeHostProvider = Provider<PlaceHost?>((ref) => null);
+
+/// "Allow all the time"; never granted unless `bootstrap()` installed the
+/// real check.
+final backgroundLocationProvider = Provider<BackgroundLocationAccess>(
+  (ref) => const NoBackgroundLocation(),
+);
+
+/// Street alerts' engine in the app's own engine; null without a host.
+final Provider<PlaceEngine?> placeEngineProvider = Provider<PlaceEngine?>((
+  ref,
+) {
+  final host = ref.watch(placeHostProvider);
+  if (host == null) return null;
+  final client = http.Client();
+  ref.onDispose(client.close);
+  final supabase = ref.watch(supabaseClientProvider);
+  final remote = ServerThenOverpassRemote(supabaseServerCall(supabase), client);
+  final push = ref.watch(pushPlatformProvider);
+  return PlaceEngine(
+    host: host,
+    server: SupabasePlaceServer(supabase),
+    findShops: (at, kind) =>
+        remote.stores(at: at, kind: kind, radius: kSearchRadius),
+    notify: push.show,
+    now: ref.watch(nowProvider),
+  );
+});
 
 /// Crowd prices: the cheapest list, the leaderboard, queued reports.
 final Provider<PricesRepository> pricesRepositoryProvider =

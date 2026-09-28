@@ -19,12 +19,13 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <!--
-      Location, in the foreground only, for "shops near you": one fix when the
-      customer taps, never a stream, never in the background. COARSE is what
-      Android offers as "approximate"; FINE lets the customer choose precise,
-      which a shop 400 m away needs. No ACCESS_BACKGROUND_LOCATION — the
-      Kotlin app's is one of Play's most scrutinised permissions, and nothing
-      here needs it.
+      Location for "shops near you": one fix when the customer taps, never a
+      stream. COARSE is what Android offers as "approximate"; FINE lets the
+      customer choose precise, which a shop 400 m away needs. Street alerts
+      (packages/zad_geofence) add ACCESS_BACKGROUND_LOCATION from their own
+      manifest: geofences, which Android watches itself — still no stream.
+      Asked only when the customer turns them on; the app is sideloaded, not
+      on Play (the owner's decision), so Play's review of it does not apply.
     -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>

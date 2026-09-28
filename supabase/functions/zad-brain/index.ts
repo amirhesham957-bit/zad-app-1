@@ -4560,7 +4560,11 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   const taskId = (taskRow as { id: string }).id;
   const telegram = await pushToTelegram(userId, message.title, message.body, fetch, taskId);
   console.log(`[store_arrival] ${category} «${storeName}» items=${message.itemCount} → telegram: ${telegram}`);
-  return json({ ok: true, sent: telegram === "delivered", telegram, items: message.itemCount, task_id: taskId, reminders: reminderStatus });
+  // title/body: the phone shows the same message as a notification (Flutter's street alerts).
+  return json({
+    ok: true, sent: telegram === "delivered", telegram, items: message.itemCount, task_id: taskId, reminders: reminderStatus,
+    title: message.title, body: message.body,
+  });
 }
 
 /**

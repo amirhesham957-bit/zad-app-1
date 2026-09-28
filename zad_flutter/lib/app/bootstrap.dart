@@ -17,7 +17,11 @@ import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/bank/background/bank_background_main.dart';
+import 'package:zad/features/places/application/place_engine.dart';
+import 'package:zad/features/places/background/place_background_main.dart';
+import 'package:zad/features/places/data/background_location.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
+import 'package:zad_geofence/zad_geofence.dart';
 
 /// Prepares the app and runs it.
 ///
@@ -72,6 +76,17 @@ Future<void> bootstrap(Widget app) async {
     );
   }
 
+  // Same for street alerts: the function a geofence event runs with the app
+  // closed.
+  final placeHandle = PluginUtilities.getCallbackHandle(placeBackgroundMain);
+  if (placeHandle != null) {
+    unawaited(
+      const ZadGeofence()
+          .registerBackgroundHandle(placeHandle.toRawHandle())
+          .catchError((Object _) {}),
+    );
+  }
+
   runApp(
     ProviderScope(
       overrides: [
@@ -82,6 +97,10 @@ Future<void> bootstrap(Widget app) async {
         pushPlatformProvider.overrideWithValue(FirebasePushPlatform()),
         notificationPermissionProvider.overrideWithValue(
           const PluginNotificationPermission(),
+        ),
+        placeHostProvider.overrideWithValue(const PluginPlaceHost()),
+        backgroundLocationProvider.overrideWithValue(
+          const PluginBackgroundLocation(),
         ),
       ],
       child: app,

@@ -520,8 +520,19 @@ one commit, full verification, report, then continue.
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,
      by the owner's no-Play decision.
-   - No store-arrival geofence, so place reminders never fire and iftar
-     reminders (home location) are not ported.
+   - **Street alerts are ported (2026-09-28)** — `features/places/` over the
+     local plugin `packages/zad_geofence` (Android geofences + a nightly
+     03:00 alarm, events stored natively and handed to Dart; headless engine
+     `placeBackgroundMain` when the app is closed, same pattern as the bank
+     listener). Settings → «وانت في الشارع», off by default, disclosure sheet
+     before "Allow all the time" (ACCESS_BACKGROUND_LOCATION now in the
+     manifest — sideloaded, no Play review). Shop ENTER → `store_arrival`
+     (which now also returns `title`/`body` for the phone's notification) and
+     fires place reminders; home learned from two nights (coordinates stay on
+     the phone) → EXIT/ENTER → `place_event` back_home. A 1.5 km exit fence
+     round the lookup point re-looks shops when the customer moves (Kotlin
+     only re-looked every 12 h). Still not ported: iftar reminders, the mall
+     category.
    - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
      app.
    - The intelligence screen's PDF: the *AI* monthly report now shares as

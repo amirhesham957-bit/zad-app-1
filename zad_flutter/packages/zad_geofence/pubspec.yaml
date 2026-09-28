@@ -1,0 +1,26 @@
+name: zad_geofence
+description: "Android geofences and a nightly location sample, delivered to Dart even when the app is closed."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+flutter:
+  plugin:
+    platforms:
+      # Android only: the app ships as an Android APK, and the geofencing
+      # client this wraps is Google Play services'.
+      android:
+        package: com.aistudio.zad.geofence
+        pluginClass: ZadGeofencePlugin

@@ -42,6 +42,10 @@ dependencies:
   # package: the service is this app's, not a general-purpose dependency.
   zad_bank_listener:
     path: packages/zad_bank_listener
+  # ── Street alerts: geofences round shops and home, and a nightly sample,
+  # delivered to Dart with the app closed. Local for the same reason.
+  zad_geofence:
+    path: packages/zad_geofence
 
   # ── Sync triggers. Reports which interface is up, not whether anything is
   # reachable, which is enough: a false "online" costs one transient failure.
