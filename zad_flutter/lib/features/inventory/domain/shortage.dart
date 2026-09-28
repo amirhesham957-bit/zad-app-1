@@ -8,6 +8,7 @@
 library;
 
 import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/inventory/domain/shopping_item.dart';
 
 /// Why something needs buying.
@@ -103,4 +104,24 @@ ShortageReason? shortageReasonFor(
     return ShortageReason.expiringSoon;
   }
   return null;
+}
+
+/// The open shopping lines a pantry restock of [item] has answered.
+///
+/// «زودت المية ومابتتشطبش»: raising a count in the pantry left the same item
+/// on the shopping list, because the pantry only ever added to the list. A
+/// line naming [item] is answered once [item] is no longer short; a + that
+/// still leaves it short answers nothing — ticking the line off would only
+/// put it straight back on the list.
+List<ShoppingItem> linesRestockedBy(
+  InventoryItem item, {
+  required List<Shortage> shortages,
+  required List<ShoppingItem> shopping,
+}) {
+  if (shortages.any((s) => s.item.id == item.id)) return const <ShoppingItem>[];
+  return <ShoppingItem>[
+    for (final line in shopping)
+      if (line.isOutstanding && itemNamesMatch(line.itemName, item.itemName))
+        line,
+  ];
 }

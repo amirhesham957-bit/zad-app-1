@@ -193,4 +193,39 @@ void main() {
       expect(priorityFor(ShortageReason.expiringSoon), ShoppingPriority.medium);
     });
   });
+
+  group('a restock ticks the item off the shopping list', () {
+    const water = InventoryItem(
+      id: 'w',
+      userId: 'u',
+      itemName: 'مياه معدنية',
+      quantity: 6,
+    );
+    ShoppingItem line(String id, String name, {bool bought = false}) =>
+        ShoppingItem(id: id, userId: 'u', itemName: name, isPurchased: bought);
+
+    test('the line naming it, once it is no longer short', () {
+      final lines = linesRestockedBy(
+        water,
+        shortages: const <Shortage>[],
+        shopping: <ShoppingItem>[
+          line('1', 'المياه المعدنية'),
+          line('2', 'عيش'),
+          line('3', 'مياه معدنيه', bought: true),
+        ],
+      );
+      expect(lines.map((l) => l.id), <String>['1']);
+    });
+
+    test('nothing while it is still short — it would only come back', () {
+      final lines = linesRestockedBy(
+        water,
+        shortages: const <Shortage>[
+          Shortage(item: water, reason: ShortageReason.runningLow),
+        ],
+        shopping: <ShoppingItem>[line('1', 'مياه معدنية')],
+      );
+      expect(lines, isEmpty);
+    });
+  });
 }
