@@ -76,7 +76,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
-import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -5417,7 +5417,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
   }
-  const gate = decideGate(verdict, knownSender);
+  const gate = decideGate(verdict, knownSender, looksLikeMoneyMoved(rawText));
   const gateTag = `gate:${verdict?.kind ?? "unavailable"}:${verdict ? verdict.confidence.toFixed(2) : "-"}${knownSender ? ":known" : ""}`;
   console.log(`[notification_gate] ${packageName} → ${gate} (${gateTag})`);
   if (gate === "ignore") {
