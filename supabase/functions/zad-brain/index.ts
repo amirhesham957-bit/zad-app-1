@@ -5917,7 +5917,15 @@ Deno.serve(async (req: Request) => {
         appointments: [], place_reminders: [], memory: [], customer: { missing_important: ["preferred_name", "gender", "pay_day"] },
       };
       const results: Array<Record<string, unknown>> = [];
+      // ميزانية كلية أقل من مهلة المنادي (١٢٠ ث في provider_health): قبل كده لو الحالات التسعة
+      // عدّت المهلة، التقرير كله كان بيرجع "Signal timed out" من غير ولا رقم — مانعرفش أنهي
+      // حالة بطيئة ولا بكام. دلوقتي اللي اتقاس بيرجع، والباقي متعلّم skipped.
+      const probeStarted = Date.now();
       for (const c of cases) {
+        if (Date.now() - probeStarted > 90_000) {
+          results.push({ expect: c.expect, skipped: "probe_budget_90s" });
+          continue;
+        }
         const { primary, secondary } = routeSpecialists(c.message);
         const tools = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary);
         const warns: string[] = [];
