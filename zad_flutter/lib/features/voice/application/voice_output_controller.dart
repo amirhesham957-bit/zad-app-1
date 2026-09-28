@@ -90,13 +90,29 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
       messageId: messageId,
     );
 
-    Future<SpokenAudio>? next = synth.synthesize(chunks.first);
+    // Two chunks ahead, not one: a chunk takes longer to synthesize than to
+    // play, so with one in flight every chunk after the first left a gap.
+    final pending = <int, Future<SpokenAudio>>{};
+    var requested = 0;
+    void fetchUpTo(int last) {
+      for (; requested <= last && requested < chunks.length; requested++) {
+        pending[requested] = synth.synthesize(chunks[requested]);
+      }
+    }
+
+    void dropPending() {
+      for (final f in pending.values) {
+        f.ignore();
+      }
+    }
+
+    fetchUpTo(1);
     try {
       for (var i = 0; i < chunks.length; i++) {
-        final audio = await next!;
-        next = i + 1 < chunks.length ? synth.synthesize(chunks[i + 1]) : null;
+        final audio = await pending.remove(i)!;
+        fetchUpTo(i + 2);
         if (!ref.mounted || generation != _generation) {
-          next?.ignore();
+          dropPending();
           return;
         }
         state = VoiceOutputView(
@@ -113,7 +129,7 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
         state = VoiceOutputView(provider: state.provider);
       }
     } on Object catch (e) {
-      next?.ignore();
+      dropPending();
       debugPrint('voice_synthesize failed: $e');
       if (ref.mounted && generation == _generation) {
         state = const VoiceOutputView(failed: true);

@@ -12,6 +12,13 @@ const int maxSpokenLength = 1200;
 /// is short enough to come back fast and long enough to sound like speech.
 const int chunkTarget = 200;
 
+/// The first chunk is kept to about one short sentence. Gemini TTS takes
+/// roughly two to three times the audio's length to produce it (measured
+/// 2026-09-28: 30 s for an 11 s clip), and nothing plays until the first
+/// chunk is back — a 200-character opener was most of the half-minute the
+/// owner waited before Zad said anything.
+const int firstChunkTarget = 90;
+
 /// The reply cleaned for speech: links become «الرابط», markdown marks and
 /// emoji/symbols become spaces (Azure reads an emoji's name aloud), runs of
 /// whitespace collapse.
@@ -46,7 +53,8 @@ List<String> speechChunks(String raw) {
   final merged = <String>[];
   final current = StringBuffer();
   for (final s in sentences) {
-    if (current.isNotEmpty && current.length + s.length > chunkTarget) {
+    final target = merged.isEmpty ? firstChunkTarget : chunkTarget;
+    if (current.isNotEmpty && current.length + s.length > target) {
       merged.add(current.toString());
       current.clear();
     }
