@@ -121,6 +121,8 @@ class AlertsController extends Notifier<AlertsView> {
         ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
       case AlertDestination.home:
         ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
+      case AlertDestination.family:
+        ref.read(shellNavigationProvider.notifier).open(ShellTab.family);
       case null:
         break;
     }

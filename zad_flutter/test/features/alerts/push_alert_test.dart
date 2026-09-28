@@ -30,6 +30,12 @@ void main() {
       AlertDestination.proposals,
     );
     // A newer server's route must not crash an older phone.
+    // A family chat message or an SOS opens the family chat.
+    expect(destinationFor('family'), AlertDestination.family);
+    expect(
+      destinationFor(payloadFor(AlertDestination.family)),
+      AlertDestination.family,
+    );
     expect(destinationFor('some_future_screen'), isNull);
     expect(destinationFor(null), isNull);
     expect(

@@ -87,6 +87,7 @@ import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
+import { familyPushText } from "./familyPush.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -6142,6 +6143,40 @@ async function handleRequest(req: Request): Promise<Response> {
     // التحليل اليومي (dailyBrain.ts): الكرون brain-daily-analysis بيصحّيه الصبح بنفس سيكريت
     // الفحص الاستباقي. بيرد على طول (202) والشغل بيكمل في الخلفية — كل حساب نداء منفصل
     // لمسار trigger=daily بمفتاح الخدمة، واللي فيه حارس الـ١٢ ساعة ضد التكرار.
+    // شات العيلة: تريجر chat_messages (20260929100000) بينادي هنا لكل رسالة جديدة، فتوصل
+    // لكل فرد غير اللي كتبها — والتطبيق مقفول. مفيش ذكاء اصطناعي هنا، FCM بس.
+    if (body.action === "family_message_push") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbFamily = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: msg } = await sbFamily.from("chat_messages")
+        .select("id,family_id,sender_id,message,message_type,metadata")
+        .eq("id", String(body.message_id ?? ""))
+        .maybeSingle();
+      if (!msg) return new Response(JSON.stringify({ ok: false, reason: "not_found" }), { headers: CORS_HEADERS });
+      const { data: members } = await sbFamily.from("family_members")
+        .select("id,user_id,alias")
+        .eq("family_id", msg.family_id);
+      const everyone = (members ?? []) as Array<{ id: string; user_id: string | null; alias: string | null }>;
+      const sender = everyone.find((m) => m.id === msg.sender_id);
+      const text = familyPushText({ ...msg, alias: sender?.alias ?? "" });
+      if (!text) return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: CORS_HEADERS });
+      const recipients = [...new Set(
+        everyone
+          .filter((m) => m.user_id && m.id !== msg.sender_id && m.user_id !== sender?.user_id)
+          .map((m) => m.user_id as string),
+      )];
+      const deliveries = await Promise.all(
+        recipients.map((userId) => pushToDevice(sbFamily, userId, text.title, text.body, { route: "family" })),
+      );
+      return new Response(JSON.stringify({
+        ok: true,
+        recipients: recipients.length,
+        sent: deliveries.filter((d) => d === "sent").length,
+      }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "run_daily_brain") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });

@@ -147,6 +147,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(builder: (_) => const TransactionsScreen()),
         );
+      case ShellTab.family:
+        // A child's shell already shows the family's latest messages on its
+        // home; the adults' family screen is not theirs to open.
+        if (ref.read(kidsModeActiveProvider)) return;
+        await showBrainFamily(context, tab: BrainFamilyTab.family);
     }
   }
 

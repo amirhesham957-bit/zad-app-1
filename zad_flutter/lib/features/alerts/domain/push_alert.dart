@@ -17,6 +17,9 @@ enum AlertDestination {
 
   /// The home — the tasbiha and seasonal reminders.
   home,
+
+  /// The family chat — a message or an SOS from someone in the family.
+  family,
 }
 
 /// An alert.
@@ -71,6 +74,7 @@ AlertDestination? destinationFor(String? route) => switch (route) {
   'transaction_proposals' => AlertDestination.proposals,
   'pharmacy' => AlertDestination.pharmacy,
   'home' => AlertDestination.home,
+  'family' => AlertDestination.family,
   _ => null,
 };
 
@@ -120,6 +124,7 @@ String? payloadFor(AlertDestination? d) => switch (d) {
   AlertDestination.proposals => 'transaction_proposals',
   AlertDestination.pharmacy => 'pharmacy',
   AlertDestination.home => 'home',
+  AlertDestination.family => 'family',
   null => null,
 };
 
