@@ -104,10 +104,42 @@ String? proposalIdFromPayload(String? payload) {
   return id.isEmpty ? null : id;
 }
 
-/// Where a tapped local notification goes, for both payload shapes.
+/// The dose notification's «أخدتها» button.
+const String kDoseTakenActionId = 'zad_dose_taken';
+
+/// The dose notification's «أجّل» button.
+const String kDoseSnoozeActionId = 'zad_dose_snooze';
+
+const String _dosePayloadPrefix = 'dose:';
+
+/// The payload of a dose reminder: which medicine and which daily time
+/// (`HH:mm`), so its buttons can answer that exact slot.
+String dosePayload(String medicineId, String time) =>
+    '$_dosePayloadPrefix$medicineId|$time';
+
+/// The medicine and time a dose payload names, or null.
+({String medicineId, String time})? doseFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_dosePayloadPrefix)) return null;
+  final parts = payload.substring(_dosePayloadPrefix.length).split('|');
+  if (parts.length != 2 || parts[0].isEmpty) return null;
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(parts[1])) return null;
+  return (medicineId: parts[0], time: parts[1]);
+}
+
+/// A dose button's answer: true for «أخدتها», false for «أجّل», null for a
+/// tap on the notification itself.
+bool? doseAnswerFromAction(String? actionId) => switch (actionId) {
+  kDoseTakenActionId => true,
+  kDoseSnoozeActionId => false,
+  _ => null,
+};
+
+/// Where a tapped local notification goes, for every payload shape.
 AlertDestination? destinationForPayload(String? payload) =>
     proposalIdFromPayload(payload) != null
     ? AlertDestination.proposals
+    : doseFromPayload(payload) != null
+    ? AlertDestination.pharmacy
     : destinationFor(payload);
 
 /// A notification button's answer: true for «أيوه، أنا», false for «مش أنا»,

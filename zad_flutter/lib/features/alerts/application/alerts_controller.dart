@@ -11,6 +11,8 @@ import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
+import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 
@@ -45,6 +47,7 @@ class AlertsController extends Notifier<AlertsView> {
       onAlert: _arrived,
       onOpened: _opened,
       onAnswer: _answered,
+      onDose: _doseAnswered,
     );
 
     final registrar = ref.read(pushRegistrarProvider);
@@ -126,6 +129,30 @@ class AlertsController extends Notifier<AlertsView> {
       case null:
         break;
     }
+  }
+
+  /// «أخدتها» / «أجّل» pressed on a dose reminder. The pharmacy opens too,
+  /// so the customer sees the dose ticked (or put off) and anything else due.
+  Future<void> _doseAnswered(
+    String medicineId,
+    String time, {
+    required bool taken,
+  }) async {
+    ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
+    final pharmacy = ref.read(pharmacyControllerProvider.notifier);
+    // A press may have started the app: today's slots are not read yet.
+    if (ref.read(pharmacyControllerProvider).today.isEmpty) {
+      await pharmacy.refresh();
+    }
+    if (!ref.mounted) return;
+    final slot = slotForDoseAnswer(
+      ref.read(pharmacyControllerProvider).today,
+      medicineId: medicineId,
+      time: time,
+      now: ref.read(nowProvider)(),
+    );
+    if (slot == null) return;
+    await (taken ? pharmacy.take(slot) : pharmacy.snooze(slot));
   }
 
   /// «أيوه، أنا» / «مش أنا» pressed on a bank question in the notification.

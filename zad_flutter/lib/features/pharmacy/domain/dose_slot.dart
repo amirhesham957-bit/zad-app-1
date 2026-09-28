@@ -245,3 +245,23 @@ DateTime? _firstUnused(
   }
   return null;
 }
+
+/// The slot a dose reminder's button answers: [medicineId]'s dose at [time]
+/// (`HH:mm`) that has most recently come due at [now] — or is due within the
+/// next hour, for a press on an early reminder. Null when it is already
+/// recorded or there is no such slot, so a second press never logs twice.
+DoseSlot? slotForDoseAnswer(
+  List<DoseSlot> slots, {
+  required String medicineId,
+  required String time,
+  required DateTime now,
+}) {
+  final latest = now.toUtc().add(const Duration(hours: 1));
+  DoseSlot? best;
+  for (final s in slots) {
+    if (s.medicine.id != medicineId || s.time.wireName != time) continue;
+    if (s.scheduledAt.isAfter(latest)) continue;
+    if (best == null || s.scheduledAt.isAfter(best.scheduledAt)) best = s;
+  }
+  return best == null || best.isTaken ? null : best;
+}

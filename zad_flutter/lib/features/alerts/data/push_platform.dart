@@ -23,11 +23,14 @@ const String kAlertChannelId = 'zad_agent_channel';
 abstract interface class PushPlatform {
   /// Starts listening. [onAlert] gets every message that arrives while the
   /// app is open; [onOpened] gets where a tapped alert should land;
-  /// [onAnswer] gets a bank confirmation settled from a notification button.
+  /// [onAnswer] gets a bank confirmation settled from a notification button;
+  /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken).
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -53,6 +56,8 @@ class SilentPushPlatform implements PushPlatform {
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
   }) async {}
 
   @override
@@ -142,18 +147,25 @@ Future<void> _showLocal(PushAlert alert) async {
   );
 }
 
-/// Routes a tapped notification: a button on a bank question answers it, any
-/// other tap opens where the notification points.
+/// Routes a tapped notification: a button on a bank question or a dose
+/// reminder answers it, any other tap opens where the notification points.
 void routeNotificationResponse({
   required String? actionId,
   required String? payload,
   required void Function(AlertDestination? destination) onOpened,
   void Function(String proposalId, {required bool confirmed})? onAnswer,
+  void Function(String medicineId, String time, {required bool taken})? onDose,
 }) {
   final proposal = proposalIdFromPayload(payload);
   final confirmed = confirmationFromAction(actionId);
   if (proposal != null && confirmed != null && onAnswer != null) {
     onAnswer(proposal, confirmed: confirmed);
+    return;
+  }
+  final dose = doseFromPayload(payload);
+  final taken = doseAnswerFromAction(actionId);
+  if (dose != null && taken != null && onDose != null) {
+    onDose(dose.medicineId, dose.time, taken: taken);
     return;
   }
   onOpened(destinationForPayload(payload));
@@ -204,6 +216,8 @@ class FirebasePushPlatform implements PushPlatform {
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
   }) async {
     if (_started) return;
     _started = true;
@@ -215,6 +229,7 @@ class FirebasePushPlatform implements PushPlatform {
         payload: response.payload,
         onOpened: onOpened,
         onAnswer: onAnswer,
+        onDose: onDose,
       ),
     );
 
@@ -250,6 +265,7 @@ class FirebasePushPlatform implements PushPlatform {
           payload: launch?.notificationResponse?.payload,
           onOpened: onOpened,
           onAnswer: onAnswer,
+          onDose: onDose,
         );
       }
     }

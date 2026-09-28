@@ -26,15 +26,19 @@ class _Platform extends SilentPushPlatform {
       StreamController<String>.broadcast();
   void Function(AlertDestination?)? opened;
   void Function(String, {required bool confirmed})? answered;
+  void Function(String, String, {required bool taken})? dosed;
 
   @override
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
   }) async {
     opened = onOpened;
     answered = onAnswer;
+    dosed = onDose;
   }
 
   @override
