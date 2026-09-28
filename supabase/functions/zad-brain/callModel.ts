@@ -24,6 +24,7 @@
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
 import { DeadKeys } from "../_shared/deadKeys.ts";
+import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
 export type Turn =
@@ -45,20 +46,15 @@ export type ModelReply = {
 
 export type Provider = "anthropic" | "gemini" | "openai_compatible";
 
-// Same ZAD_API_KEY_1..5 pool zad-core-intelligence reads — shared deliberately, not a
+// Same ZAD_API_KEY_n pool zad-core-intelligence reads — shared deliberately, not a
 // naming collision. Only consulted for provider "gemini"; anthropic/openai_compatible keep
 // using the single ZAD_API_KEY exactly as before (separate auth mechanisms, and a pool was
 // never asked for on them).
 //
-// Falls back to the legacy singular ZAD_API_KEY when none of the five are set, so a
-// half-migrated project doesn't lose Gemini access outright.
-const GEMINI_KEY_POOL: string[] = [1, 2, 3, 4, 5]
-  .map((n) => Deno.env.get(`ZAD_API_KEY_${n}`))
-  .filter((k): k is string => !!k);
-if (GEMINI_KEY_POOL.length === 0) {
-  const legacy = Deno.env.get("ZAD_API_KEY") || Deno.env.get("GEMINI_API_KEY");
-  if (legacy) GEMINI_KEY_POOL.push(legacy);
-}
+// Falls back to the legacy singular ZAD_API_KEY when none of the numbered ones are set, so
+// a half-migrated project doesn't lose Gemini access outright. Reads ZAD_API_KEY_1..20
+// (_shared/keyPool.ts) — a sixth key used to be ignored.
+const GEMINI_KEY_POOL: string[] = geminiKeys((n) => Deno.env.get(n));
 
 // Round-robin starting point across warm invocations, so consecutive requests don't all
 // hammer key 1 first. sendGemini() walks the whole pool from here on a 429.
@@ -135,16 +131,7 @@ function modelChain(primary: string): string[] {
 // الـ pool كان بيطلع فاضي والـ fallback كله بيختفي — فأي موجة 503 على Gemini بتبقى
 // فشل نهائي للدور، وهو بالظبط شكل "تعذر تنفيذ الطلب (ok:false)" المتكرر يوم 2026-08-15
 // مع "Error: gemini 503 … high demand" كأكتر خطأ متكرر.
-const GROQ_KEY_POOL: string[] = [
-  Deno.env.get("GROQ_API_KEY_1"),
-  Deno.env.get("GROQ_API_KEY_2"),
-  Deno.env.get("GROQ_API_KEY"),
-].filter((k): k is string => !!k)
-  .filter((k, i, all) => all.indexOf(k) === i);
-if (GROQ_KEY_POOL.length === 0) {
-  const legacy = Deno.env.get("GROQ_API_KEY");
-  if (legacy) GROQ_KEY_POOL.push(legacy);
-}
+const GROQ_KEY_POOL: string[] = groqKeys((n) => Deno.env.get(n));
 const GROQ_MODEL = Deno.env.get("ZAD_GROQ_TEXT_MODEL") ?? "openai/gpt-oss-120b";
 
 const cfg = () => {
@@ -459,7 +446,7 @@ async function sendGemini(o: {
   // ConfigError, and retrying a malformed request or a bad-auth response on four more keys
   // just burns them and buries the real error.
   if (GEMINI_KEY_POOL.length === 0) {
-    throw new ConfigError("gemini: no key configured (ZAD_API_KEY_1..5 / ZAD_API_KEY all unset)");
+    throw new ConfigError("gemini: no key configured (ZAD_API_KEY_1..20 / ZAD_API_KEY all unset)");
   }
 
   let res: Response | null = null;
@@ -879,7 +866,7 @@ export async function embedSelfTest(): Promise<{
     return {
       configured: EMBED_MODEL, keyPoolSize: 0, breaker,
       listedForEmbedding: [],
-      probes: [{ model: EMBED_MODEL, ok: false, error: "GEMINI_KEY_POOL فاضي — مفيش ZAD_API_KEY_1..5 ولا GEMINI_API_KEY" }],
+      probes: [{ model: EMBED_MODEL, ok: false, error: "GEMINI_KEY_POOL فاضي — مفيش ZAD_API_KEY_1..20 ولا GEMINI_API_KEY" }],
     };
   }
   const key = GEMINI_KEY_POOL[0];

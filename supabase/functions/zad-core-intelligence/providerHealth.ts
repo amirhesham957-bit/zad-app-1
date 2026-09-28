@@ -2,6 +2,8 @@
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
 // إجابة مقاسة مش تخمين. كل الشبكة بتتحقن عشان يتختبر من غير نداءات حقيقية.
 
+import { geminiKeys as geminiKeyPool, groqKeys as groqKeyPool } from "../_shared/keyPool.ts";
+
 export interface ProbeResult {
   configured: boolean;
   status?: number;
@@ -59,9 +61,8 @@ async function probe(
 }
 
 export async function providerHealth(env: Env, envNames: string[], fetchImpl: typeof fetch = fetch): Promise<Record<string, unknown>> {
-  const geminiKeys = [1, 2, 3, 4, 5].map((i) => env(`ZAD_API_KEY_${i}`)).filter((k): k is string => !!k);
-  if (geminiKeys.length === 0 && env("GEMINI_API_KEY")) geminiKeys.push(env("GEMINI_API_KEY")!);
-  const groqKeys = [env("GROQ_API_KEY_1") ?? env("GROQ_API_KEY"), env("GROQ_API_KEY_2")].filter((k): k is string => !!k);
+  const geminiKeys = geminiKeyPool(env);
+  const groqKeys = groqKeyPool(env);
 
   const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([
     probe(fetchImpl, env("LOCATIONIQ_API_KEY"), (k) => ({

@@ -14,6 +14,7 @@
 //   كلام = ~0.4 ثانية CPU، والنص مقصوص عشان يفضل تحت ده بكتير.
 
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
+import { geminiKeys } from "../_shared/keyPool.ts";
 import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
 
 export const ALERT_TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
@@ -133,12 +134,7 @@ export async function synthesizeAlertPcm(
   return null;
 }
 
-/** نفس مسبح مفاتيح جيميناي في باقي الفانكشنز (ZAD_API_KEY_1..5، وبعدها المفرد القديم). */
+/** نفس مسبح مفاتيح جيميناي في باقي الفانكشنز (_shared/keyPool.ts). */
 export function geminiKeysFromEnv(get: (name: string) => string | undefined = (n) => Deno.env.get(n)): string[] {
-  const keys = [1, 2, 3, 4, 5].map((n) => get(`ZAD_API_KEY_${n}`)).filter((k): k is string => !!k);
-  if (keys.length === 0) {
-    const legacy = get("ZAD_API_KEY") || get("GEMINI_API_KEY");
-    if (legacy) keys.push(legacy);
-  }
-  return keys;
+  return geminiKeys(get);
 }

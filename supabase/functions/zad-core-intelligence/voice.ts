@@ -25,6 +25,8 @@ import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, voice
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
+/** جملة قصيرة بتتقرا في ثواني؛ أكتر من كده يبقى معلّق، والأحسن ننقل للموديل/المفتاح اللي بعده. */
+const TTS_TIMEOUT_MS = 20_000;
 
 /** جدول الأسامي المشترك (`_shared/zadVoice.ts`) — كلها صوت زاد. */
 export const VOICE_IDS: Record<string, string> = PERSONA_VOICES;
@@ -96,12 +98,20 @@ export async function requestGeminiVoiceWithPool(
       status: 503, headers: { "Content-Type": "application/json" },
     });
   }
+  // موديل رجّع 503 (زحمة على الموديل كله، مش المفتاح) مابيتجربش تاني بمفتاح تاني في نفس الطلب —
+  // قبل كده كان بيلف بيه على كل المفاتيح، وده جزء من الـ٣٠-٦٠ ثانية اللي العميل بيستناها.
+  const downModels = new Set<string>();
   for (let ki = 0; ki < apiKeys.length; ki++) {
     for (const model of models) {
+      if (downModels.has(model)) continue;
       try {
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
         if (res.ok) return res;
         attempts.push({ key_index: ki, model, status: res.status });
+        if (res.status === 503) {
+          downModels.add(model);
+          continue;
+        }
         // موديل مش موجود/مرفوض → جرّب الموديل التالي بنفس المفتاح
         if (res.status === 404 || res.status === 400) continue;
         // المفتاح نفسه ضغط/مرفوض/سيرفر → كمل للمفتاح التالي
@@ -189,6 +199,8 @@ export async function requestGeminiVoice(
           },
         },
       }),
+      // مكانش فيه حد أصلاً: نداء معلّق كان بيسكّت زاد لحد ما المنصة نفسها تقطع.
+      signal: AbortSignal.timeout(TTS_TIMEOUT_MS),
     },
   );
   if (!res.ok) return res;
