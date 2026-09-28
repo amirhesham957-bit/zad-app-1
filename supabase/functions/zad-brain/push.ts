@@ -94,6 +94,32 @@ function pemToDer(pem: string): Uint8Array {
 export type PushDelivery = "sent" | "no_tokens" | "no_credentials" | "failed";
 
 /**
+ * نص إشعار «إنت؟» على الموبايل لاقتراح معاملة بنكية (٢٠٢٦-٠٩-٢٨). قبل كده السؤال كان بيروح
+ * تليجرام بس لما يكون مربوط — ٤ من ٩ اقتراحات في ١٤ يوم وصلت هناك وانتهت من غير رد. دلوقتي
+ * بيروح الموبايل كمان، والتطبيق بيحط عليه زرارين «أيوه، أنا» / «مش أنا».
+ * الرقم والتاجر من الاقتراح نفسه؛ لو ناقصين بيقع على صيغة عامة بدل نص مكسور.
+ */
+export function proposalPushText(p: {
+  amount?: number | null;
+  currency?: string | null;
+  merchant_name?: string | null;
+  title?: string | null;
+  txn_kind?: string | null;
+}): { title: string; body: string } {
+  const amount = typeof p.amount === "number" && Number.isFinite(p.amount) && p.amount > 0
+    ? `${Number(p.amount.toFixed(2))}${p.currency ? ` ${p.currency}` : ""}`
+    : null;
+  const verb = p.txn_kind === "income" ? "دخلك" : p.txn_kind === "transfer" ? "اتحوّل" : "اتخصم";
+  const who = (p.merchant_name ?? p.title ?? "").trim();
+  return {
+    title: amount ? `${verb} ${amount} — إنت؟` : "زاد محتاج رأيك 💭",
+    body: who
+      ? `${who}. أكّدها أو قولي مش إنت من هنا.`
+      : "في معاملة بنكية مستنية تأكيدك — أكّدها أو قولي مش إنت من هنا.",
+  };
+}
+
+/**
  * بيبعت إشعار FCM لكل أجهزة العميل. fire-and-forget — بيرجع الحالة بس للتشخيص.
  * نص الرسالة بيتاخد زي ما هو (نفس النص اللي بيتكتب في الرؤى/تليجرام).
  */
