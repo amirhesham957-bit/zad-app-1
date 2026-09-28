@@ -8,10 +8,12 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/period/account_time_zone.dart';
@@ -809,7 +811,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'ماتسجلش الميعاد، جرّب تاني';
+          _error = appointmentSaveError(e);
         });
       }
     }
@@ -1064,4 +1066,24 @@ class _AddPlaceState extends ConsumerState<_AddPlaceDialog> {
       ),
     ],
   );
+}
+
+/// Why an appointment was not saved, in words the customer can act on.
+/// Every failure used to read «ماتسجلش الميعاد، جرّب تاني», which says
+/// nothing about whether trying again will help.
+String appointmentSaveError(Object error) {
+  if (error is PostgrestException) {
+    return switch (error.code) {
+      // check_violation: a value the table refuses.
+      '23514' =>
+        'فيه قيمة مش مقبولة (العنوان من ٢ لـ١٦٠ حرف). راجعها وجرّب تاني.',
+      // insufficient_privilege / RLS: the session is gone.
+      '42501' => 'الجلسة انتهت — اخرج وادخل تاني وبعدين سجّل الميعاد.',
+      _ => 'السيرفر رفض الميعاد (${error.code ?? error.message}). جرّب تاني.',
+    };
+  }
+  if (error is SocketException || error is TimeoutException) {
+    return 'مفيش نت دلوقتي — الميعاد ماتسجلش. اتأكد من النت وجرّب تاني.';
+  }
+  return 'ماتسجلش الميعاد، جرّب تاني.';
 }
