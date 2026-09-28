@@ -107,11 +107,16 @@ class BankAccessController extends Notifier<BankAccessState> {
   @override
   BankAccessState build() {
     // Synchronous, from what is already on the device — the same rule as the
-    // budget: a screen opens with what is known and asks afterwards.
+    // budget: a screen opens with what is known and asks afterwards. That
+    // includes the last check's answer: starting from "not granted" put the
+    // enable-bank-reading step on home for a moment on every launch.
+    final marker = ref.read(bankCaptureMarkerProvider);
+    final known = marker.lastAccess();
     final state = BankAccessState(
-      granted: false,
+      granted: known.granted,
       pending: 0,
-      lastCapturedAt: ref.read(bankCaptureMarkerProvider).lastCapturedAt(),
+      lastCapturedAt: marker.lastCapturedAt(),
+      lastConnectedAt: known.connectedAt,
     );
     unawaited(Future<void>.microtask(() => ref.mounted ? refresh() : null));
     return state;
@@ -136,14 +141,20 @@ class BankAccessController extends Notifier<BankAccessState> {
       final status = await listener.listenerStatus();
 
       if (!ref.mounted) return;
+      final marker = ref.read(bankCaptureMarkerProvider);
+      // A listener that reports no bind this time keeps the last one we saw —
+      // the platform forgets it across process restarts, the step should not.
+      final connectedAt =
+          status.lastConnectedAt ?? (granted ? state.lastConnectedAt : null);
       state = BankAccessState(
         granted: granted,
         pending: pending,
-        lastCapturedAt: ref.read(bankCaptureMarkerProvider).lastCapturedAt(),
-        lastConnectedAt: status.lastConnectedAt,
+        lastCapturedAt: marker.lastCapturedAt(),
+        lastConnectedAt: connectedAt,
         lastSeenAnyAt: status.lastSeenAnyAt,
         testResult: status.testResult,
       );
+      await marker.rememberAccess(granted: granted, connectedAt: connectedAt);
     } on Object {
       // The plugin is not there — a test host, or a platform without it. Not
       // an error worth showing anyone; it just means nothing is flowing.
