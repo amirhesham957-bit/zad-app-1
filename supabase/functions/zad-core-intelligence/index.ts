@@ -13,6 +13,7 @@ import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImage
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
+import { receiptPurchaseDate } from "./receiptDate.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1857,9 +1858,12 @@ Deno.serve(async (req: Request) => {
           "summary) — for this type `items` should be empty and `total` should be the single " +
           "balance/salary figure shown, if any; \"general\" for non-grocery non-pharmacy " +
           "itemized receipts (restaurants, fuel, services); otherwise \"grocery\". " +
+          "`purchaseDate` is the date printed on the receipt as YYYY-MM-DD (convert Hijri or " +
+          "day-first dates to Gregorian YYYY-MM-DD); if no date is printed or it is unreadable, " +
+          "return an empty string — never today's date as a guess. " +
           "Return ONLY a JSON object, no markdown and no commentary: " +
-          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
-        const userPrompt = "Extract the store name, the total paid, a spending category, the receipt type, and every line item from this receipt.";
+          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
+        const userPrompt = "Extract the store name, the total paid, the printed purchase date, a spending category, the receipt type, and every line item from this receipt.";
         // callVisionModel rotates the whole Gemini key pool internally; images never hit Groq.
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
         if (visionResult) {
@@ -1875,6 +1879,9 @@ Deno.serve(async (req: Request) => {
                 // back to "أخرى" keeps the receipt usable instead of quarantining its spend.
                 category: normalizeStandardCategory(parsed.category),
                 storeName: parsed.storeName || "",
+                // null unless it is a real date in the last year: a misread date
+                // must not move the expense into some other month.
+                purchaseDate: receiptPurchaseDate(parsed.purchaseDate),
                 receiptType: parsed.receiptType || "grocery",
                 items: parsed.items || [],
               });
