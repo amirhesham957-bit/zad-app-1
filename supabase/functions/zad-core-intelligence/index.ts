@@ -1,5 +1,5 @@
 // deno-lint-ignore-file
-import { type WhisperOptions, whisperOptions } from "./whisper.ts";
+import { spokenText, type WhisperOptions, whisperOptions } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
@@ -745,7 +745,8 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
       // من بلد الحساب (whisper.ts) — كان "ar" ثابت لكل الناس.
       if (options.language) form.append("language", options.language);
       if (options.prompt) form.append("prompt", options.prompt);
-      form.append("response_format", "json");
+      // verbose_json عشان no_speech_prob لكل segment — من غيره صمت بيرجع «اشتركوا في القناة» (spokenText).
+      form.append("response_format", "verbose_json");
       const resp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
         method: "POST",
         headers: { "Authorization": "Bearer " + key },
@@ -758,7 +759,7 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
         if (resp.status === 401 || resp.status === 403) continue; // مفتاح مرفوض — اللي بعده
         return last;
       }
-      return { text: data.text || null, raw: data, ok: true, status: resp.status };
+      return { text: spokenText(data, options.prompt), raw: data, ok: true, status: resp.status };
     }
     return last;
   } catch (e) {
