@@ -5283,6 +5283,9 @@ async function deliverNotificationPrompt(
  * a parse with a usable amount becomes a durable proposal, and only a user decision can
  * turn that proposal into a transaction. Low-confidence direction requires classification.
  */
+/** مهلة بوابة «فلوس اتحركت فعلاً؟» — موديل خفيف بيرد في ثانية أو اتنين وقت الطبيعي. */
+const NOTIFICATION_GATE_TIMEOUT_MS = 15_000;
+
 async function handleNotificationIngest(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const packageName = String(body.package_name ?? "").trim();
   const title = String(body.title ?? "").trim();
@@ -5366,7 +5369,17 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   let verdict: GateVerdict | null = null;
   try {
     const g = gatePrompt({ packageName, title, text, knownSender });
-    const reply = await callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 });
+    // حد أقصى للبوابة كلها: السلسلة ممكن تمشي على ٧ موديلات × ٢٠ ث، والصف متسجل "received"
+    // قبل النداء — طلب بيموت في النص كان بيسيبه كده للأبد. تقرير ما بعد النشر ٢٠٢٦-٠٩-٢٨: ١٠
+    // معاملات مكتملة من ٢٩ إشعار واقفين "received". بعد المهلة الحكم null، وده بالظبط سلوك
+    // "الموديل وقع" الموثّق في decideGate (بنك معروف ⇒ نسأل).
+    let gateTimer: ReturnType<typeof setTimeout> | undefined;
+    const reply = await Promise.race([
+      callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 }),
+      new Promise<never>((_, reject) => {
+        gateTimer = setTimeout(() => reject(new Error(`gate timed out after ${NOTIFICATION_GATE_TIMEOUT_MS}ms`)), NOTIFICATION_GATE_TIMEOUT_MS);
+      }),
+    ]).finally(() => clearTimeout(gateTimer));
     verdict = parseGateVerdict(reply.text ?? "");
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
@@ -5904,7 +5917,15 @@ Deno.serve(async (req: Request) => {
         appointments: [], place_reminders: [], memory: [], customer: { missing_important: ["preferred_name", "gender", "pay_day"] },
       };
       const results: Array<Record<string, unknown>> = [];
+      // ميزانية كلية أقل من مهلة المنادي (١٢٠ ث في provider_health): قبل كده لو الحالات التسعة
+      // عدّت المهلة، التقرير كله كان بيرجع "Signal timed out" من غير ولا رقم — مانعرفش أنهي
+      // حالة بطيئة ولا بكام. دلوقتي اللي اتقاس بيرجع، والباقي متعلّم skipped.
+      const probeStarted = Date.now();
       for (const c of cases) {
+        if (Date.now() - probeStarted > 90_000) {
+          results.push({ expect: c.expect, skipped: "probe_budget_90s" });
+          continue;
+        }
         const { primary, secondary } = routeSpecialists(c.message);
         const tools = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary);
         const warns: string[] = [];
