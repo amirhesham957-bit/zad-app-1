@@ -460,12 +460,31 @@ async function sendGemini(o: {
     // timeout 20 ثانية لكل نداء موديل — من غيره موديل معلّق بيعلّق اللفة كلها
     // (والعميل يشوف "بيفكر..." للأبد). 20s كافية لأطول رد أدوات، والفشل السريع
     // بيخلي الـ failover chain (موديل تاني/Groq) تلحق تنقذ اللفة قبل ما الكلاينت ييأس.
-    const attempt = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-      signal: AbortSignal.timeout(20_000),
-    });
+    let attempt: Response;
+    try {
+      attempt = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch (e) {
+      // موديل معلّق (timeout) أو شبكة واقعة: قبل كده الخطأ ده ماكانش ProviderUnavailableError،
+      // فـ withRetry كان بيعيد نفس الموديل ٣ مرات (٢٠+١+٢٠+٤+٢٠ ≈ ٦٥ ثانية) وبعدين callModel
+      // يرميه بدل ما ينقل للموديل اللي بعده — الدور كله يفشل بعد دقيقة. ده شكل «المساعد
+      // الصوتي بيرد بعد نص دقيقة ودقيقة» وفحص tools_probe اللي عدّى ١٢٠ ث (٢٠٢٦-٠٩-٢٨).
+      const name = (e as Error)?.name ?? "";
+      throw new ProviderUnavailableError(
+        `gemini ${o.model} ${name === "TimeoutError" ? "timed out after 20s" : `fetch failed: ${(e as Error)?.message ?? e}`}`,
+        name === "TimeoutError" ? "timeout" : "network",
+      );
+    }
+    // 404 = الموديل اتسحب، و5xx (غير 503 تحت) = عطل عنده: الاتنين بيخصّوا الموديل مش
+    // المفتاح، وإعادة نفس الموديل بـ backoff بتحرق وقت الدور. السلسلة تنقل على طول.
+    if (attempt.status === 404 || (attempt.status >= 500 && attempt.status !== 503)) {
+      const failBody = (await attempt.text()).slice(0, 300);
+      throw new ProviderUnavailableError(`gemini ${attempt.status} on ${o.model}: ${failBody}`, `${attempt.status}`);
+    }
     if (attempt.status === 429) {
       lastQuotaBody = await attempt.text();
       const q = summarizeQuota429(lastQuotaBody);

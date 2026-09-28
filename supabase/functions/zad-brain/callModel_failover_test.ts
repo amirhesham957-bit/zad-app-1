@@ -94,6 +94,39 @@ Deno.test("503 بينتقل للموديل التالي من غير ما يحر�
   }
 });
 
+Deno.test("موديل معلّق (timeout) بينتقل للي بعده فوراً — مش ٣ إعادات على نفسه", async () => {
+  const original = globalThis.fetch;
+  const tried: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request) => {
+    const url = String(input);
+    tried.push(modelOf(url));
+    if (modelOf(url) === "model-a") {
+      return Promise.reject(new DOMException("Signal timed out.", "TimeoutError"));
+    }
+    return Promise.resolve(geminiOk());
+  }) as typeof fetch;
+  try {
+    const reply = await callModel({ ...BASE });
+    assertEquals(reply.text, "تمام");
+    assertEquals(tried, ["model-a", "model-b"]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+Deno.test("404 (موديل اتسحب) و500 بينقلوا للموديل اللي بعده", async () => {
+  for (const status of [404, 500]) {
+    const s = stubFetch((url) => (modelOf(url) === "model-a" ? new Response("gone", { status }) : geminiOk()));
+    try {
+      const reply = await callModel({ ...BASE });
+      assertEquals(reply.text, "تمام");
+      assertEquals(s.calls.map((c) => modelOf(c.url)), ["model-a", "model-b"], `status ${status}`);
+    } finally {
+      s.restore();
+    }
+  }
+});
+
 Deno.test("سلسلة جيميناي كلها مقفولة → بيقع على Groq", async () => {
   const s = stubFetch((url) => {
     if (url.includes("api.groq.com")) {
