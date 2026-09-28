@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
@@ -1697,13 +1698,13 @@ Future<void> _renameDialog(
   TasbihaController garden,
   GardenTree tree,
 ) async {
-  final name = TextEditingController(text: tree.treeName);
-  final result = await showDialog<String>(
+  final result = await showFieldDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    initial: <String>[tree.treeName],
+    builder: (dialogContext, fields) => AlertDialog(
       title: const Text('تسمية الشجرة'),
       content: TextField(
-        controller: name,
+        controller: fields[0],
         autofocus: true,
         decoration: const InputDecoration(
           labelText: 'اسم الشجرة',
@@ -1717,7 +1718,7 @@ Future<void> _renameDialog(
         ),
         TextButton(
           onPressed: () {
-            final v = name.text.trim();
+            final v = fields[0].text.trim();
             if (v.isNotEmpty) Navigator.of(dialogContext).pop(v);
           },
           child: const Text('حفظ'),
@@ -1725,7 +1726,6 @@ Future<void> _renameDialog(
       ],
     ),
   );
-  name.dispose();
   if (result != null) await garden.rename(result);
 }
 

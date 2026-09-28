@@ -25,21 +25,30 @@ class SupportAssistant {
   static const String fallback =
       'عذراً، لم أتمكن من معالجة طلبك حالياً، يرجى المحاولة لاحقاً.';
 
+  /// Long enough for the server to walk its model chain; after that the
+  /// customer gets [fallback] instead of a typing dot that never ends.
+  static const Duration timeout = Duration(seconds: 40);
+
   /// The answer, or [fallback] on any failure.
   Future<String> ask(String question) async {
     try {
-      final response = await _client.functions.invoke(
-        'zad-core-intelligence',
-        body: <String, dynamic>{
-          'action': 'ai_text',
-          'user_id': _client.auth.currentUser?.id,
-          'payload': <String, dynamic>{
-            'system_prompt': _systemPrompt,
-            'user_prompt': question,
-            'response_mime_type': 'text/plain',
-          },
-        },
-      );
+      final response = await _client.functions
+          .invoke(
+            'zad-core-intelligence',
+            body: <String, dynamic>{
+              'action': 'ai_text',
+              'user_id': _client.auth.currentUser?.id,
+              'payload': <String, dynamic>{
+                'system_prompt': _systemPrompt,
+                'user_prompt': question,
+                'response_mime_type': 'text/plain',
+                // A how-do-I question needs no reasoning trace; unbounded
+                // thinking only made the customer wait.
+                'thinking_budget': 0,
+              },
+            },
+          )
+          .timeout(timeout);
       final data = response.data;
       final text = data is Map ? data['text'] : null;
       return text is String && text.trim().isNotEmpty ? text.trim() : fallback;

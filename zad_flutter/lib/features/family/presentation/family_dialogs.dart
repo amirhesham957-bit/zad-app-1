@@ -12,6 +12,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
@@ -603,11 +604,11 @@ Future<void> showQuickTaskDialog(
   List<FamilyMember> members,
   FamilyMember me,
 ) async {
-  final title = TextEditingController();
   var assignee = me.id;
-  final result = await showDialog<(String, String)>(
+  final result = await showFieldDialog<(String, String)>(
     context: context,
-    builder: (c) => StatefulBuilder(
+    initial: const <String>[''],
+    builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) => AlertDialog(
         title: const Text('إضافة مهمة جديدة'),
         content: Column(
@@ -615,7 +616,7 @@ Future<void> showQuickTaskDialog(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             TextField(
-              controller: title,
+              controller: fields[0],
               autofocus: true,
               decoration: const InputDecoration(labelText: 'اسم المهمة'),
             ),
@@ -638,9 +639,8 @@ Future<void> showQuickTaskDialog(
           ),
           FilledButton(
             onPressed: () {
-              if (title.text.trim().isNotEmpty) {
-                Navigator.of(c).pop((assignee, title.text.trim()));
-              }
+              final title = fields[0].text.trim();
+              if (title.isNotEmpty) Navigator.of(c).pop((assignee, title));
             },
             child: const Text('إضافة'),
           ),
@@ -648,7 +648,6 @@ Future<void> showQuickTaskDialog(
       ),
     ),
   );
-  title.dispose();
   if (result == null) return;
   await ref
       .read(familyLifeControllerProvider.notifier)
@@ -673,13 +672,13 @@ Future<String?> _askText(
   required String hint,
   required String action,
 }) async {
-  final text = TextEditingController();
-  final said = await showDialog<String>(
+  final said = await showFieldDialog<String>(
     context: context,
-    builder: (c) => AlertDialog(
+    initial: const <String>[''],
+    builder: (c, fields) => AlertDialog(
       title: Text(title),
       content: TextField(
-        controller: text,
+        controller: fields[0],
         autofocus: true,
         decoration: InputDecoration(hintText: hint),
       ),
@@ -689,13 +688,12 @@ Future<String?> _askText(
           child: const Text('إلغاء'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(c).pop(text.text.trim()),
+          onPressed: () => Navigator.of(c).pop(fields[0].text.trim()),
           child: Text(action),
         ),
       ],
     ),
   );
-  text.dispose();
   return said == null || said.isEmpty ? null : said;
 }
 
@@ -706,24 +704,23 @@ Future<void> showPurchaseRequestDialog(
   BuildContext context,
   WidgetRef ref,
 ) async {
-  final what = TextEditingController();
-  final amount = TextEditingController();
   final currency = familyCurrency(ref);
-  final result = await showDialog<(String, double)>(
+  final result = await showFieldDialog<(String, double)>(
     context: context,
-    builder: (c) => AlertDialog(
+    initial: const <String>['', ''],
+    builder: (c, fields) => AlertDialog(
       title: const Text('طلب مصروف أو مشتريات'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           TextField(
-            controller: what,
+            controller: fields[0],
             autofocus: true,
             decoration: const InputDecoration(labelText: 'ماذا تريد أن تشتري؟'),
           ),
           const SizedBox(height: ZadSpacing.sm),
           TextField(
-            controller: amount,
+            controller: fields[1],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
@@ -741,9 +738,10 @@ Future<void> showPurchaseRequestDialog(
         ),
         FilledButton(
           onPressed: () {
-            final value = parseMoneyInput(amount.text);
-            if (what.text.trim().isNotEmpty && value != null) {
-              Navigator.of(c).pop((what.text.trim(), value));
+            final what = fields[0].text.trim();
+            final value = parseMoneyInput(fields[1].text);
+            if (what.isNotEmpty && value != null) {
+              Navigator.of(c).pop((what, value));
             }
           },
           child: const Text('إرسال الطلب'),
@@ -751,8 +749,6 @@ Future<void> showPurchaseRequestDialog(
       ],
     ),
   );
-  what.dispose();
-  amount.dispose();
   if (result == null) return;
   await ref
       .read(familyLifeControllerProvider.notifier)
@@ -768,12 +764,11 @@ Future<void> showSpendLimitDialog(
   String initial(double? v) => v == null || v <= 0
       ? ''
       : (v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v');
-  final daily = TextEditingController(text: initial(member.dailyLimit));
-  final weekly = TextEditingController(text: initial(member.weeklyLimit));
   final currency = familyCurrency(ref);
-  final saved = await showDialog<bool>(
+  final saved = await showFieldDialog<(double?, double?)>(
     context: context,
-    builder: (c) => AlertDialog(
+    initial: <String>[initial(member.dailyLimit), initial(member.weeklyLimit)],
+    builder: (c, fields) => AlertDialog(
       title: const Text('حد الإنفاق'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -785,14 +780,14 @@ Future<void> showSpendLimitDialog(
           ),
           const SizedBox(height: ZadSpacing.md),
           TextField(
-            controller: daily,
+            controller: fields[0],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(labelText: 'الحد اليومي ($currency)'),
           ),
           const SizedBox(height: ZadSpacing.sm),
           TextField(
-            controller: weekly,
+            controller: fields[1],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(labelText: 'الحد الأسبوعي ($currency)'),
@@ -801,24 +796,23 @@ Future<void> showSpendLimitDialog(
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.of(c).pop(false),
+          onPressed: () => Navigator.of(c).pop(),
           child: const Text('إلغاء'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(c).pop(true),
+          onPressed: () => Navigator.of(c).pop((
+            parseMoneyInput(fields[0].text),
+            parseMoneyInput(fields[1].text),
+          )),
           child: const Text('تم'),
         ),
       ],
     ),
   );
-  final d = parseMoneyInput(daily.text);
-  final w = parseMoneyInput(weekly.text);
-  daily.dispose();
-  weekly.dispose();
-  if (!(saved ?? false)) return;
+  if (saved == null) return;
   await ref
       .read(familyLifeControllerProvider.notifier)
-      .setSpendLimits(member, daily: d, weekly: w);
+      .setSpendLimits(member, daily: saved.$1, weekly: saved.$2);
 }
 
 // ── Poll ───────────────────────────────────────────────────────────────────

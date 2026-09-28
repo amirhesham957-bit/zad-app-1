@@ -16,6 +16,7 @@ import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_card.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/foundation/squircle.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
@@ -724,20 +725,19 @@ Future<void> _showConfirmQuantity(
   WidgetRef ref,
   Medicine medicine,
 ) async {
-  final count = TextEditingController(
-    text: '${medicine.remainingQuantity ?? 0}',
-  );
-  final perDose = TextEditingController(
-    text: medicine.unitsPerDoseKnown
-        ? (medicine.unitsPerDose == medicine.unitsPerDose.roundToDouble()
-              ? medicine.unitsPerDose.toStringAsFixed(0)
-              : '${medicine.unitsPerDose}')
-        : '',
-  );
   final unit = medicine.unit ?? 'حبة';
-  final result = await showDialog<(int, double?)>(
+  final result = await showFieldDialog<(int, double?)>(
     context: context,
-    builder: (c) => AlertDialog(
+    initial: <String>[
+      '${medicine.remainingQuantity ?? 0}',
+      if (!medicine.unitsPerDoseKnown)
+        ''
+      else if (medicine.unitsPerDose == medicine.unitsPerDose.roundToDouble())
+        medicine.unitsPerDose.toStringAsFixed(0)
+      else
+        '${medicine.unitsPerDose}',
+    ],
+    builder: (c, fields) => AlertDialog(
       title: const Text('فاضل قد إيه فعلاً؟'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -750,14 +750,14 @@ Future<void> _showConfirmQuantity(
           ),
           const SizedBox(height: ZadSpacing.md),
           TextField(
-            controller: count,
+            controller: fields[0],
             keyboardType: TextInputType.number,
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(labelText: unit),
           ),
           const SizedBox(height: ZadSpacing.md),
           TextField(
-            controller: perDose,
+            controller: fields[1],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
@@ -775,20 +775,18 @@ Future<void> _showConfirmQuantity(
         ),
         TextButton(
           onPressed: () {
-            final raw = count.text.trim();
+            final raw = fields[0].text.trim();
             final n = raw == '0' || raw == '٠'
                 ? 0
                 : parseMoneyInput(raw)?.round();
             if (n == null) return;
-            Navigator.of(c).pop((n, parseMoneyInput(perDose.text)));
+            Navigator.of(c).pop((n, parseMoneyInput(fields[1].text)));
           },
           child: const Text('تأكيد'),
         ),
       ],
     ),
   );
-  count.dispose();
-  perDose.dispose();
   if (result == null) return;
   await ref
       .read(pharmacyControllerProvider.notifier)
@@ -802,22 +800,22 @@ Future<void> _showRefill(
   WidgetRef ref,
   Medicine medicine,
 ) async {
-  final added = TextEditingController();
-  final price = TextEditingController(
-    text: medicine.price > 0 ? medicine.price.toStringAsFixed(0) : '',
-  );
   DateTime? expiry;
   final unit = medicine.unit ?? 'حبة';
-  final ok = await showDialog<bool>(
+  final result = await showFieldDialog<(int, double?)>(
     context: context,
-    builder: (c) => StatefulBuilder(
+    initial: <String>[
+      '',
+      if (medicine.price > 0) medicine.price.toStringAsFixed(0) else '',
+    ],
+    builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) => AlertDialog(
         title: Text('تجديد طلب ${medicine.name}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TextField(
-              controller: added,
+              controller: fields[0],
               keyboardType: TextInputType.number,
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(labelText: 'الكمية المضافة ($unit)'),
@@ -825,7 +823,7 @@ Future<void> _showRefill(
             ),
             const SizedBox(height: ZadSpacing.md),
             TextField(
-              controller: price,
+              controller: fields[1],
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -863,12 +861,15 @@ Future<void> _showRefill(
         ),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.of(c).pop(false),
+            onPressed: () => Navigator.of(c).pop(),
             child: const Text('إلغاء'),
           ),
           TextButton(
-            onPressed: (parseMoneyInput(added.text)?.round() ?? 0) > 0
-                ? () => Navigator.of(c).pop(true)
+            onPressed: (parseMoneyInput(fields[0].text)?.round() ?? 0) > 0
+                ? () => Navigator.of(c).pop((
+                    parseMoneyInput(fields[0].text)!.round(),
+                    parseMoneyInput(fields[1].text),
+                  ))
                 : null,
             child: const Text('حفظ'),
           ),
@@ -876,11 +877,8 @@ Future<void> _showRefill(
       ),
     ),
   );
-  final count = parseMoneyInput(added.text)?.round() ?? 0;
-  final newPrice = parseMoneyInput(price.text);
-  added.dispose();
-  price.dispose();
-  if (ok != true || count <= 0) return;
+  if (result == null) return;
+  final (count, newPrice) = result;
   await ref
       .read(pharmacyControllerProvider.notifier)
       .refill(
