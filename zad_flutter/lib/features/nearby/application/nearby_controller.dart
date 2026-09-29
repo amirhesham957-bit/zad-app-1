@@ -8,11 +8,13 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/nearby/data/location_source.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
 import 'package:zad/features/nearby/domain/nearby.dart';
+import 'package:zad/features/places/data/place_server.dart';
 
 /// What the tab draws.
 class NearbyView {
@@ -160,7 +162,21 @@ class NearbyController extends Notifier<NearbyView> {
       state = state.copyWith(isLocating: false, noFix: true);
       return;
     }
+    unawaited(_tellServer(fix.at));
     await _lookUp(fix.at);
+  }
+
+  /// The tap's coarse point to the account, so the brain and the Telegram bot
+  /// know where the customer is too. Only street alerts sent it before: on
+  /// 2026-09-29 the server's last location was six weeks old, and «أقرب
+  /// صيدلية» in Telegram had nothing to go on. Best effort — the shops on
+  /// this screen never wait for it.
+  Future<void> _tellServer(GeoPoint at) async {
+    try {
+      await ref.read(lastLocationSinkProvider)(at.coarse);
+    } on Object catch (e) {
+      debugPrint('[nearby] last location not saved: $e');
+    }
   }
 
   /// Filters to [metres]. What is on the phone already; no network.
@@ -207,6 +223,13 @@ class NearbyController extends Notifier<NearbyView> {
     }
   }
 }
+
+/// Where a tapped fix's coarse point is kept on the server
+/// (`zad_users.last_lat/lon`) — the column street alerts already fill.
+final lastLocationSinkProvider = Provider<Future<void> Function(GeoPoint)>(
+  (ref) =>
+      SupabasePlaceServer(ref.watch(supabaseClientProvider)).saveLastLocation,
+);
 
 /// The phone's location.
 final locationSourceProvider = Provider<LocationSource>(

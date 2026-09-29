@@ -297,11 +297,17 @@ void main() {
     });
 
     group('the tab', () {
+      final saved = <GeoPoint>[];
+      setUp(saved.clear);
+
       ProviderContainer container() {
         final c = ProviderContainer(
           overrides: [
             nowProvider.overrideWithValue(() => now),
             locationSourceProvider.overrideWithValue(phone),
+            lastLocationSinkProvider.overrideWithValue(
+              (p) async => saved.add(p),
+            ),
             nearbyRepositoryProvider.overrideWithValue(repository()),
             shoppingListRepositoryProvider.overrideWithValue(
               ShoppingListRepository(
@@ -380,6 +386,26 @@ void main() {
 
         expect(phone.calls, <String>['access', 'request', 'current']);
         expect(shops.asked, hasLength(2));
+      });
+
+      test('a tap tells the server where, coarse; opening does not', () async {
+        phone.last = (
+          at: _home,
+          takenAt: now.subtract(const Duration(minutes: 5)),
+        );
+        final c = await opened();
+        expect(
+          saved,
+          isEmpty,
+          reason: 'no tap, nothing leaves for the account',
+        );
+
+        phone.fresh = (at: _home, takenAt: now);
+        await c.read(nearbyControllerProvider.notifier).locate();
+
+        expect(saved, hasLength(1));
+        expect(saved.single.lat, 30.044, reason: 'three decimals, not the fix');
+        expect(saved.single.lon, 31.236);
       });
 
       test('"never ask again" is not asked; settings is offered', () async {
