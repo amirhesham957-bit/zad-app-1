@@ -162,8 +162,16 @@ Future<void> _showLocal(PushAlert alert) async {
   );
 }
 
-/// Routes a tapped notification: a button on a bank question or a dose
-/// reminder answers it, any other tap opens where the notification points.
+/// Shows [alert] from an engine with no [PushPlatform] started — the headless
+/// run street alerts use when the app is closed.
+Future<void> showAlertInBackground(PushAlert alert) async {
+  await _initLocal();
+  await _showLocal(alert);
+}
+
+/// Routes a tapped notification: a button on a bank question, a dose reminder
+/// or a voice moment answers it, any other tap opens where the notification
+/// points.
 void routeNotificationResponse({
   required String? actionId,
   required String? payload,

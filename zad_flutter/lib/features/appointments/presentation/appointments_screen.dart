@@ -26,7 +26,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/place_alerts/presentation/place_alerts_switch.dart';
+import 'package:zad/features/places/presentation/street_alerts_section.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -201,6 +201,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
     final date = DateFormat('EEEE d MMM', 'ar').format(local);
     final time = DateFormat.jm('ar').format(local);
     final parts = <String>[
+      if ((a.forPerson ?? '').trim().isNotEmpty) 'لـ${a.forPerson!.trim()}',
       '$date · $time',
       if ((a.placeLabel ?? '').trim().isNotEmpty) a.placeLabel!.trim(),
       if (a.recurrence != 'once') recurrenceLabel(a.recurrence),
@@ -526,7 +527,7 @@ class _PlaceReminders extends StatelessWidget {
           ),
           // Without it no reminder here can ever fire: nothing knows the
           // customer has reached the shop.
-          const PlaceAlertsSwitch(),
+          const StreetAlertsSection(),
           if (reminders.isEmpty)
             Text(
               'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
@@ -757,6 +758,7 @@ class _AddAppointmentDialog extends ConsumerStatefulWidget {
 class _AddState extends ConsumerState<_AddAppointmentDialog> {
   final TextEditingController _title = TextEditingController();
   final TextEditingController _place = TextEditingController();
+  final TextEditingController _forPerson = TextEditingController();
   String _kind = 'personal';
   late DateTime _date;
   late TimeOfDay _time;
@@ -777,6 +779,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   void dispose() {
     _title.dispose();
     _place.dispose();
+    _forPerson.dispose();
     super.dispose();
   }
 
@@ -798,6 +801,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
     });
     final client = ref.read(supabaseClientProvider);
     final place = _place.text.trim();
+    final who = _forPerson.text.trim();
     try {
       await client.from('zad_appointments').insert(<String, dynamic>{
         'user_id': client.auth.currentUser?.id,
@@ -808,6 +812,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
         'remind_minutes_before': _remind,
         'recurrence': _recurrence,
         'source': 'app',
+        if (who.isNotEmpty) 'for_person': who,
       });
       if (mounted) Navigator.of(context).pop(true);
     } on Object catch (e) {
@@ -907,6 +912,17 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
               maxLength: 120,
               decoration: const InputDecoration(
                 labelText: 'المكان (اختياري)',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: ZadSpacing.md),
+            TextField(
+              controller: _forPerson,
+              maxLength: 40,
+              decoration: const InputDecoration(
+                labelText: 'لمين؟ (سيبها فاضية لو ليك)',
+                hintText: 'ماما، بابا، يوسف…',
                 border: OutlineInputBorder(),
                 counterText: '',
               ),

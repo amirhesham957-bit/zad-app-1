@@ -23,6 +23,8 @@ import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
+import 'package:zad/features/prices/data/prices_remote.dart';
+import 'package:zad/features/prices/data/prices_repository.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
@@ -109,6 +111,27 @@ class _FakeSettingsRemote implements SettingsRemote {
     row = next;
     return next;
   }
+}
+
+class _NoPrices implements PricesRemote {
+  @override
+  Future<Map<String, dynamic>> report({
+    required String reportId,
+    required String item,
+    required double price,
+    String? currency,
+    String? store,
+    String? city,
+    String? category,
+  }) => throw StateError('offline');
+
+  @override
+  Future<List<Object?>> cheapest({required String currency, String? city}) =>
+      throw StateError('offline');
+
+  @override
+  Future<List<Object?>> leaderboard({required String currency}) =>
+      throw StateError('offline');
 }
 
 /// The shape `analyze_receipt` answers with.
@@ -215,6 +238,16 @@ void main() {
         settingsRepositoryProvider.overrideWithValue(settings),
         receiptCameraProvider.overrideWithValue(camera),
         receiptScannerProvider.overrideWithValue(scanner),
+        pricesRepositoryProvider.overrideWithValue(
+          PricesRepository(
+            cache: documents,
+            remote: _NoPrices(),
+            outbox: () => outbox,
+            newId: () => 'report-1',
+            signedInUserId: () => 'user-1',
+            now: () => now,
+          ),
+        ),
         budgetRepositoryProvider.overrideWithValue(
           BudgetRepository(
             cache: documents,
@@ -358,6 +391,41 @@ void main() {
       expect(txn.category, 'البقالة');
       expect(txn.isPending, isTrue, reason: 'it goes out through the queue');
       expect(container.read(scanControllerProvider).stage, ScanStage.idle);
+    });
+
+    test('a grocery receipt reports its lines at their unit price', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      await controller.saveAsTransaction();
+
+      final report = container
+          .read(outboxProvider)
+          .entries()
+          .singleWhere((e) => e.kind == OutboxKind.reportPrice);
+      expect(report.payload['item'], 'لبن');
+      expect(report.payload['price'], 6.25, reason: '12.5 for 2');
+      expect(report.payload['store'], 'بنده');
+    });
+
+    test('a receipt with no store name reports nothing', () async {
+      scanner.answer = _receipt(storeName: '');
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      expect(await controller.saveAsTransaction(), isTrue);
+
+      expect(
+        container
+            .read(outboxProvider)
+            .entries()
+            .where((e) => e.kind == OutboxKind.reportPrice),
+        isEmpty,
+      );
     });
 
     test('a correction is what gets saved, not what was read', () async {

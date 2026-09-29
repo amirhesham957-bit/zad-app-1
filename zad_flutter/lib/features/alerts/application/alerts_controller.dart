@@ -5,7 +5,9 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/app/shell_navigation.dart';
+import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
@@ -109,6 +111,40 @@ class AlertsController extends Notifier<AlertsView> {
       return;
     }
     unawaited(ref.read(voiceOutputControllerProvider.notifier).speak(speech));
+  }
+
+  /// The device flag for the last morning the greeting was asked for.
+  static const String morningKey = 'morning_greeting_asked';
+
+  /// Kotlin's wake greeting: the first open of the morning asks zad-brain for
+  /// «صباح الخير» (`moment_event`), which composes it from the day's doses,
+  /// appointments and budget and pushes it back — spoken by [_arrived] while
+  /// the app is open. Best effort; never throws.
+  Future<void> greetMorning() async {
+    try {
+      final zone = tz.getLocation(ref.read(accountTimeZoneProvider));
+      final local = tz.TZDateTime.from(ref.read(nowProvider)(), zone);
+      final device = ref.read(localStoreProvider).device;
+      if (!shouldAskMorningGreeting(
+        local: local,
+        lastAskedDate: device.get(morningKey),
+      )) {
+        return;
+      }
+      await device.put(morningKey, morningDateKey(local));
+      await ref
+          .read(supabaseClientProvider)
+          .functions
+          .invoke(
+            'zad-brain',
+            body: const <String, dynamic>{
+              'action': 'moment_event',
+              'moment': 'morning_greeting',
+            },
+          );
+    } on Object {
+      // No network or no session: tomorrow morning asks again.
+    }
   }
 
   void _arrived(PushAlert alert) {

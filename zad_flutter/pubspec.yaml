@@ -42,6 +42,10 @@ dependencies:
   # package: the service is this app's, not a general-purpose dependency.
   zad_bank_listener:
     path: packages/zad_bank_listener
+  # ── Street alerts: geofences round shops and home, and a nightly sample,
+  # delivered to Dart with the app closed. Local for the same reason.
+  zad_geofence:
+    path: packages/zad_geofence
 
   # ── Sync triggers. Reports which interface is up, not whether anything is
   # reachable, which is enough: a false "online" costs one transient failure.
@@ -119,7 +123,6 @@ dependencies:
   # no platform code: it shapes Arabic and lays out right-to-left itself, with
   # the bundled Cairo font, so the PDF reads the same on every phone.
   pdf: ^3.13.1
-  native_geofence: ^1.3.1
   home_widget: ^0.10.0
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public

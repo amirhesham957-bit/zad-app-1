@@ -1,3 +1,5 @@
+import { googleNearby, googlePlacesKey } from "./googlePlaces.ts";
+
 // فحص مفاتيح المزوّدين (موقع، صور، موديلات، تليجرام) — أسماء وحالات HTTP بس، ولا حرف من أي
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
 // إجابة مقاسة مش تخمين. كل الشبكة بتتحقن عشان يتختبر من غير نداءات حقيقية.
@@ -64,6 +66,17 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
   const geminiKeys = geminiKeyPool(env);
   const groqKeys = groqKeyPool(env);
 
+  // Google Places: the same call nearby_pois makes, so "configured but the Places API is not
+  // enabled on the key's project" shows here as ok:false instead of as an empty shop list.
+  const googleKey = googlePlacesKey(env);
+  const googlePlaces = (async (): Promise<ProbeResult> => {
+    if (!googleKey) return { configured: false };
+    const found = await googleNearby(fetchImpl, googleKey, { lat: 30.0444, lon: 31.2357, tag: "supermarket", radius: 2000 });
+    return found === null
+      ? { configured: true, ok: false, note: "refused — Places API (New) enabled for this key?" }
+      : { configured: true, ok: true, note: `places=${found.length}` };
+  })();
+
   const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([
     probe(fetchImpl, env("LOCATIONIQ_API_KEY"), (k) => ({
       url: `https://us1.locationiq.com/v1/nearby?key=${encodeURIComponent(k)}&lat=30.0444&lon=31.2357&tag=supermarket&radius=2000&format=json`,
@@ -92,6 +105,7 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
 
   return {
     locationiq,
+    google_places: await googlePlaces,
     pexels,
     telegram,
     elevenlabs,

@@ -14,6 +14,7 @@ import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFa
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
+import { googleNearby, googlePlacesKey } from "./googlePlaces.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -328,6 +329,8 @@ const ZAD_PERSONA_PREFIX = "أنت عقل زاد — مدير مالي ومنز�
 // anyone decompile it and burn the free-tier quota. nearby_pois below proxies it the same
 // way every other third-party AI/data call in this file already goes through the server.
 const LOCATIONIQ_API_KEY = Deno.env.get("LOCATIONIQ_API_KEY");
+// Same rule as LocationIQ: server-side only. First source for nearby_pois (googlePlaces.ts).
+const GOOGLE_PLACES_KEY = googlePlacesKey((n) => Deno.env.get(n));
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY") ?? "";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -2019,19 +2022,31 @@ Deno.serve(async (req: Request) => {
         if (typeof lat !== "number" || typeof lon !== "number" || !tag) {
           return jsonResponse({ stores: [], error: "missing lat/lon/tag" });
         }
-        if (!LOCATIONIQ_API_KEY) {
-          // مفتاح مش متظبط — الكلاينت (GroceryGeofenceManager) بيرجع لـ Overpass تلقائي
-          // لو stores فاضية، فمفيش داعي نرمي error هنا، نفس نمط callGeminiFallback.
-          return jsonResponse({ stores: [] });
-        }
-
         // شبكة تقريبية (٣ خانات عشرية ≈ ١١٠م) عشان طلبات قريبة من بعض تستخدم نفس الكاش
-        // بدل ما كل تحديث موقع دقيق يستهلك من حصة LocationIQ المجانية
+        // بدل ما كل تحديث موقع دقيق يستهلك من الحصة
         const latGrid = Math.round(lat * 1000) / 1000;
         const lonGrid = Math.round(lon * 1000) / 1000;
         const cacheKey = `nearby_pois:${tag}:${latGrid}:${lonGrid}:${radius_meters || 3000}`;
         const cached = await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
+
+        // جوجل الأول (تغطية المحلات في مصر والخليج أحسن)، وبعده LocationIQ.
+        if (GOOGLE_PLACES_KEY) {
+          const fromGoogle = await googleNearby(fetch, GOOGLE_PLACES_KEY, {
+            lat: latGrid, lon: lonGrid, tag: String(tag), radius: radius_meters || 3000,
+          });
+          if (fromGoogle && fromGoogle.length > 0) {
+            const response = { stores: fromGoogle, source: "google" };
+            await setCachedAiResponse(cacheKey, "nearby_pois", response);
+            return jsonResponse(response);
+          }
+        }
+
+        if (!LOCATIONIQ_API_KEY) {
+          // مفتاح مش متظبط — الكلاينت بيرجع لـ Overpass تلقائي لو stores فاضية، فمفيش داعي
+          // نرمي error هنا، نفس نمط callGeminiFallback.
+          return jsonResponse({ stores: [] });
+        }
 
         try {
           const url = `https://us1.locationiq.com/v1/nearby?key=${LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lon}&tag=${encodeURIComponent(tag)}&radius=${radius_meters || 3000}&format=json`;

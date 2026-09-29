@@ -21,7 +21,6 @@ import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/domain/family.dart';
 import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/place_alerts/presentation/place_alerts_switch.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 
 Future<void> _push(BuildContext context, Widget screen) =>
@@ -682,8 +681,6 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.voiceSpokenAlerts),
                 onChanged: (v) => set(AlertPrefs.voiceSpokenAlerts, v: v),
               ),
-              const PlaceAlertsSwitch(),
-              const SizedBox(height: 8),
               AlertSwitchItem(
                 title: 'تنبيهات نقص المخزون',
                 desc: 'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي',

@@ -19,19 +19,16 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <!--
-      Location, in the foreground only, for "shops near you": one fix when the
-      customer taps, never a stream, never in the background. COARSE is what
-      Android offers as "approximate"; FINE lets the customer choose precise,
-      which a shop 400 m away needs. ACCESS_BACKGROUND_LOCATION below is for
-      the store-arrival reminders only — the owner's decision, 2026-09-29.
+      Location for "shops near you": one fix when the customer taps, never a
+      stream. COARSE is what Android offers as "approximate"; FINE lets the
+      customer choose precise, which a shop 400 m away needs. Street alerts
+      (packages/zad_geofence) add ACCESS_BACKGROUND_LOCATION from their own
+      manifest: geofences, which Android watches itself — still no stream.
+      Asked only when the customer turns them on; the app is sideloaded, not
+      on Play (the owner's decision), so Play's review of it does not apply.
     -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <!-- «فكّرني لما أوصل سوبرماركت أو صيدلية» (features/place_alerts): a geofence
-         only fires with the app closed when location is allowed all the time.
-         Asked only when the customer turns the feature on, after saying why. -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <!--
       Alerts. Android 13+ asks the customer before an app may post a
@@ -124,22 +121,6 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/zad_balance_widget_info"/>
         </receiver>
-        <!-- native_geofence: the OS's geofence events, and re-registering the
-             watched shops after a reboot (Android forgets them). -->
-        <receiver
-            android:name="com.chunkytofustudios.native_geofence.receivers.NativeGeofenceBroadcastReceiver"
-            android:exported="true"/>
-        <receiver
-            android:name="com.chunkytofustudios.native_geofence.receivers.NativeGeofenceRebootBroadcastReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
-        <service
-            android:name="com.chunkytofustudios.native_geofence.NativeGeofenceForegroundService"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="true"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

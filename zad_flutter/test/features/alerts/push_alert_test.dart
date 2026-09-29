@@ -64,21 +64,73 @@ void main() {
     );
   });
 
-  test('a data-only push carries its speech; a silent one does not', () {
+  test('a voice moment carries what Zad says; a plain alert says nothing', () {
+    final spoken = PushAlert.fromMessage(
+      data: const <String, dynamic>{
+        'title': 'صباح الخير',
+        'body': 'عندك دوا ماما الساعة ٤',
+        'voice': '1',
+        'speech': ' صباح الخير يا أمير، دوا ماما الساعة أربعة ',
+        'moment': 'morning_greeting',
+      },
+    );
+    expect(spoken.speech, 'صباح الخير يا أمير، دوا ماما الساعة أربعة');
+    expect(
+      PushAlert.fromMessage(
+        data: const <String, dynamic>{'title': 'x', 'body': 'y', 'speech': 'z'},
+      ).speech,
+      isNull,
+      reason: 'speech without voice=1 is not a voice moment',
+    );
     expect(
       PushAlert.fromMessage(
         data: const <String, dynamic>{
-          'title': 'موعد',
-          'body': 'نص',
+          'title': 'x',
           'voice': '1',
-          'speech': 'اتفضل الكلام',
+          'speech': '  ',
         },
       ).speech,
-      'اتفضل الكلام',
-    );
-    expect(
-      PushAlert.fromMessage(data: const <String, dynamic>{'body': 'نص'}).speech,
       isNull,
     );
+  });
+
+  group('shouldAskMorningGreeting', () {
+    test('04:00–11:59, once a date', () {
+      expect(
+        shouldAskMorningGreeting(
+          local: DateTime(2026, 9, 29, 3, 59),
+          lastAskedDate: null,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldAskMorningGreeting(
+          local: DateTime(2026, 9, 29, 4),
+          lastAskedDate: null,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldAskMorningGreeting(
+          local: DateTime(2026, 9, 29, 9),
+          lastAskedDate: '2026-09-29',
+        ),
+        isFalse,
+      );
+      expect(
+        shouldAskMorningGreeting(
+          local: DateTime(2026, 9, 30, 9),
+          lastAskedDate: '2026-09-29',
+        ),
+        isTrue,
+      );
+      expect(
+        shouldAskMorningGreeting(
+          local: DateTime(2026, 9, 30, 12),
+          lastAskedDate: null,
+        ),
+        isFalse,
+      );
+    });
   });
 }

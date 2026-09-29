@@ -251,6 +251,10 @@ already knowing where things stand instead of re-deriving it from commit history
 `SESSION_2026_07_26_epic19.md` is archived (Epic 1+4, tasks 19-24, closed); Epic 2
 (`EPIC_2_ai_screen.md`) closed 2026-07-30.
 
+- `docs/agent/ZAD_SUPER_AGENT.md` — the "Zad as a whole-life agent" round (2026-09-28/29):
+  street alerts (geofences), Google Places, habit vs budget, «اتشاف هنا», «لمين؟», the wake
+  greeting — what shipped per commit, the **measured** weak points (0 FCM tokens, thin data,
+  empty profiles), and the ordered next steps. Read it before extending any of those.
 - `docs/agent/FLUTTER_MIGRATION.md` — **the Flutter migration's status, conventions and
   remaining plan. Read this first for any work in `zad_flutter/`** (the active stream
   since 2026-09-19); the bullet below is about the Kotlin app and the server.

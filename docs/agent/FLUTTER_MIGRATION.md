@@ -8,14 +8,15 @@
 > | ChatNotificationService (family chat + SOS with the app closed) | trigger on `chat_messages` → zad-brain `family_message_push` → FCM to every member but the writer |
 > | PharmacyReminderReceiver buttons | «أخدتها ✅» / «أجّل» on the dose reminder, answering that exact slot |
 > | VoiceMomentSpeaker | voice moments spoken in the open app; «🔊 اسمع زاد» on the notification otherwise |
-> | GroceryGeofenceManager + GeofenceBroadcastReceiver | `features/place_alerts`: nearest 20 shops as dwell geofences (native_geofence) → `store_arrival` |
+> | GroceryGeofenceManager + GeofenceBroadcastReceiver | street alerts: `features/places` + `packages/zad_geofence` (shops and home, app closed or open) |
 > | TransactionWidget | `ZadBalanceWidget` (home_widget): «متاح» + last three rows |
 > | MerchantCategoryOverrides | `MerchantCategories`, applied to statement import |
 >
 > Decided, not ported: the «يا زاد» wake word (owner, 2026-09-29 — its dead
 > switch was removed), English (Arabic only for the launch), Play Billing and
 > AdMob (no Play), Lottie. **Not ported yet:** the iftar reminder on leaving home
-> (Ramadan only; needs a home geofence on top of `place_alerts`). Everything below
+> (Ramadan only; street alerts already watch the home, so it is a new message
+> on an existing event). Everything below
 > this box is the history of the port and its conventions, still accurate.
 
 **Last updated 2026-09-21 (fourth session). HEAD `23dc6f54` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
@@ -541,8 +542,26 @@ one commit, full verification, report, then continue.
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,
      by the owner's no-Play decision.
-   - No store-arrival geofence, so place reminders never fire and iftar
-     reminders (home location) are not ported.
+   - **Wake greeting + spoken voice moments (foreground) ported
+     2026-09-29 (`b5692af6`).** Background speech is not.
+   - **The agent round of 2026-09-28/29 — street alerts, Google Places,
+     habit vs budget, «اتشاف هنا», «لمين؟», the wake greeting — is
+     summarised with its measured weak points in
+     [`ZAD_SUPER_AGENT.md`](ZAD_SUPER_AGENT.md).** Two migrations
+     (`20260929120000`, `20260929130000`) + function changes ship on push.
+   - **Street alerts are ported (2026-09-28)** — `features/places/` over the
+     local plugin `packages/zad_geofence` (Android geofences + a nightly
+     03:00 alarm, events stored natively and handed to Dart; headless engine
+     `placeBackgroundMain` when the app is closed, same pattern as the bank
+     listener). Settings → «وانت في الشارع», off by default, disclosure sheet
+     before "Allow all the time" (ACCESS_BACKGROUND_LOCATION now in the
+     manifest — sideloaded, no Play review). Shop ENTER → `store_arrival`
+     (which now also returns `title`/`body` for the phone's notification) and
+     fires place reminders; home learned from two nights (coordinates stay on
+     the phone) → EXIT/ENTER → `place_event` back_home. A 1.5 km exit fence
+     round the lookup point re-looks shops when the customer moves (Kotlin
+     only re-looked every 12 h). Still not ported: iftar reminders, the mall
+     category.
    - Dose notifications have no «أخدتها / أجّل» actions — a tap opens the
      app.
    - The intelligence screen's PDF: the *AI* monthly report now shares as

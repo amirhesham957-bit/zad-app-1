@@ -8,6 +8,7 @@ import 'package:zad/app/splash_screen.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/zad_theme.dart';
+import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Whether the app follows the phone's dark mode.
 ///
@@ -76,7 +77,11 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
     // Watched, not read, and watched here rather than deeper in the tree: this
     // is what keeps the outbox runner alive for as long as the app is. Nothing
     // is rendered from it.
-    ref.watch(outboxRunnerProvider);
+    ref
+      ..watch(outboxRunnerProvider)
+      // Street alerts' events while the app is open; nothing without a
+      // geofence plugin or an account.
+      ..watch(placesRunnerProvider);
 
     return MaterialApp(
       title: 'زاد',

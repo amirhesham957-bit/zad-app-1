@@ -484,13 +484,15 @@ class _MedicineCard extends ConsumerWidget {
         : lowStock || expiringSoon
         ? ZadColors.mustardOchre
         : ZadColors.green600;
-    final member = ref
-        .watch(familyControllerProvider)
-        .family
-        ?.members
-        .where((m) => m.id == medicine.familyMemberId)
-        .firstOrNull
-        ?.alias;
+    final member =
+        ref
+            .watch(familyControllerProvider)
+            .family
+            ?.members
+            .where((m) => m.id == medicine.familyMemberId)
+            .firstOrNull
+            ?.alias ??
+        (medicine.forPerson == null ? null : 'لـ${medicine.forPerson}');
     final badge = expired
         ? 'منتهي منذ ${-d} يوم'
         : expiringSoon
@@ -917,6 +919,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
   final TextEditingController _price = TextEditingController();
   final TextEditingController _ingredient = TextEditingController();
   final TextEditingController _dosage = TextEditingController();
+  final TextEditingController _forPerson = TextEditingController();
   String _unit = kMedicineUnits[1];
   String _category = kMedicineCategories.first;
   final List<String> _times = <String>[];
@@ -1005,6 +1008,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
       _price,
       _ingredient,
       _dosage,
+      _forPerson,
     ]) {
       c.dispose();
     }
@@ -1055,6 +1059,9 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
           category: _category,
           isRecurring: _recurring,
           familyMemberId: _member,
+          forPerson: _forPerson.text.trim().isEmpty
+              ? null
+              : _forPerson.text.trim(),
         );
     if (mounted) Navigator.of(context).pop();
   }
@@ -1126,6 +1133,16 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               autofocus: widget.scanned == null,
               decoration: const InputDecoration(labelText: 'اسم الدواء'),
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: ZadSpacing.md),
+            TextField(
+              controller: _forPerson,
+              maxLength: 40,
+              decoration: const InputDecoration(
+                labelText: 'لمين؟ (سيبها فاضية لو ليك)',
+                hintText: 'ماما، بابا، يوسف…',
+                counterText: '',
+              ),
             ),
             const SizedBox(height: ZadSpacing.md),
             TextField(

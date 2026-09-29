@@ -50,8 +50,9 @@ class PushAlert {
           ? proposal
           : null,
       speech: data['voice'] == '1'
-          ? _nonEmpty(data['speech'] as String?) ??
-                _nonEmpty(data['body'] as String?)
+          ? ((data['speech'] as String?)?.trim() ?? '').isNotEmpty
+                ? (data['speech'] as String).trim()
+                : null
           : null,
     );
   }
@@ -69,8 +70,8 @@ class PushAlert {
   /// the two answers as buttons, so it can be settled from the shade.
   final String? proposalId;
 
-  /// What زاد says aloud for a voice moment (`data.voice == "1"`) — a dose,
-  /// an appointment, the morning greeting — or null for a silent alert.
+  /// What Zad says out loud — a voice moment's `speech` (the morning
+  /// greeting, a dose, «رجعت!»). Null for a plain alert.
   final String? speech;
 
   /// Worth showing at all.
@@ -199,3 +200,21 @@ bool shouldShowLocally({
   required bool hasNotificationBlock,
   required bool inForeground,
 }) => inForeground || !hasNotificationBlock;
+
+/// Whether to ask zad-brain for the morning greeting now: 04:00–11:59 in the
+/// account's zone ([local]), and not yet asked on that date. The server
+/// dedupes per day too; this keeps an app opened ten times a morning from
+/// calling ten times.
+bool shouldAskMorningGreeting({
+  required DateTime local,
+  required String? lastAskedDate,
+}) {
+  if (local.hour < 4 || local.hour >= 12) return false;
+  return lastAskedDate != morningDateKey(local);
+}
+
+/// The date [shouldAskMorningGreeting] remembers.
+String morningDateKey(DateTime local) =>
+    '${local.year.toString().padLeft(4, '0')}-'
+    '${local.month.toString().padLeft(2, '0')}-'
+    '${local.day.toString().padLeft(2, '0')}';

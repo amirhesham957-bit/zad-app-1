@@ -325,4 +325,42 @@ void main() {
       });
     });
   });
+
+  group('receiptPriceReports', () {
+    test('unit price, tidy name, lines that fail the bounds skipped', () {
+      final out = receiptPriceReports(
+        store: 'بنده',
+        lines: [
+          (name: '  لبن  كامل ', price: 25, quantity: 2, category: 'ألبان'),
+          (name: 'x', price: 5, quantity: 1, category: 'عام'),
+          (name: 'كيس', price: 0, quantity: 1, category: 'عام'),
+          (name: 'عيش', price: 3, quantity: 0, category: 'مخبوزات'),
+        ],
+      );
+      expect(out.map((r) => r.item), <String>['لبن كامل', 'عيش']);
+      expect(out.first.unitPrice, 12.5);
+      expect(out.last.unitPrice, 3, reason: 'no quantity: the line price');
+    });
+
+    test('no store, nothing: a price nobody can place', () {
+      expect(
+        receiptPriceReports(
+          store: '  ',
+          lines: [(name: 'لبن', price: 10, quantity: 1, category: 'ألبان')],
+        ),
+        isEmpty,
+      );
+    });
+
+    test('never more than kReceiptReportsMax', () {
+      final out = receiptPriceReports(
+        store: 'بنده',
+        lines: [
+          for (var i = 0; i < 40; i++)
+            (name: 'صنف $i', price: 10, quantity: 1, category: 'عام'),
+        ],
+      );
+      expect(out, hasLength(kReceiptReportsMax));
+    });
+  });
 }

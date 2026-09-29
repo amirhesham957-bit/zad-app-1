@@ -28,6 +28,7 @@ class Medicine {
     this.doseCarry = 0,
     this.expiryDate,
     this.familyMemberId,
+    this.forPerson,
     this.serverSaysInvalidDoseTime = false,
     this.isRecurring = true,
     this.price = 0,
@@ -52,6 +53,7 @@ class Medicine {
     doseCarry: (json['dose_carry'] as num?)?.toDouble() ?? 0,
     expiryDate: _date(json['expiry_date']),
     familyMemberId: json['family_member_id'] as String?,
+    forPerson: json['for_person'] as String?,
     serverSaysInvalidDoseTime: json['has_invalid_dose_time'] as bool? ?? false,
     isRecurring: json['is_recurring'] as bool? ?? true,
     price: (json['price'] as num?)?.toDouble() ?? 0,
@@ -112,6 +114,10 @@ class Medicine {
 
   /// Which family member it belongs to, when it is not the account holder's.
   final String? familyMemberId;
+
+  /// «لمين؟» — whose it is by name, for someone with no account («ماما»).
+  /// Null is the account holder's own.
+  final String? forPerson;
 
   /// What the row's own `has_invalid_dose_time` flag says.
   ///
@@ -199,6 +205,8 @@ class Medicine {
     String? activeIngredient,
     String? familyMemberId,
     bool clearFamilyMember = false,
+    String? forPerson,
+    bool clearForPerson = false,
     bool? isRecurring,
     double? price,
     DateTime? qtyConfirmedAt,
@@ -220,6 +228,7 @@ class Medicine {
     familyMemberId: clearFamilyMember
         ? null
         : (familyMemberId ?? this.familyMemberId),
+    forPerson: clearForPerson ? null : (forPerson ?? this.forPerson),
     serverSaysInvalidDoseTime: serverSaysInvalidDoseTime,
     isRecurring: isRecurring ?? this.isRecurring,
     price: price ?? this.price,
@@ -256,6 +265,9 @@ class Medicine {
     'price': price,
     'is_recurring': isRecurring,
     'family_member_id': familyMemberId,
+    // Only when set: a phone that reaches a server without the column
+    // (20260929130000 not yet live) still saves everyone's own medicines.
+    'for_person': ?forPerson,
   };
 
   /// The row as the cache keeps it.

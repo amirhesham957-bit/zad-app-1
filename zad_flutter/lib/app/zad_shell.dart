@@ -33,7 +33,6 @@ import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/orb/presentation/floating_companion.dart';
-import 'package:zad/features/place_alerts/application/place_alerts_controller.dart';
 import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
@@ -81,12 +80,24 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       if (mounted) await alerts.askOnce();
       // Kotlin's on-phone reminders: doses, tasbih at 17:00, seasons.
       if (mounted) await ref.read(localRemindersProvider).resyncAll();
-      // The watched shops follow the customer: drawn again only after a real
-      // move, and only when «فكّرني لما أوصل» is on.
-      if (mounted) {
-        await ref.read(placeAlertsControllerProvider.notifier).refresh();
-      }
+      if (mounted) await alerts.greetMorning();
     });
+    // Back to the app in the morning is a first open too.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        if (mounted) {
+          unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
+        }
+      },
+    );
+  }
+
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   void _show(ZadNavDestination tab) => setState(() {
