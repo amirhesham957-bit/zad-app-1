@@ -75,7 +75,8 @@ import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
-import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -1657,7 +1658,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
         previous: null, next: w.rows[0],
       });
-      return `اتسجل تصحيح ${Math.abs(delta).toFixed(2)} (${isIncrease ? "زيادة" : "نقصان"}) عشان الكاش يطابق كلام العميل`;
+      return `اتسجل تصحيح ${Math.abs(delta).toFixed(2)} (${isIncrease ? "زيادة" : "نقصان"}) عشان الكاش يطابق الرصيد الفعلي`;
     }
     case "confirm_cycle_start": {
       // Task 25 — بعد ما العميل يأكد "أيوة" على سؤال cycle_start_confirm. cycle_anchor
@@ -2088,7 +2089,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_users", targetId: userId,
         previous: { currency: snap.currency, country: snap.country }, next: w.rows[0],
       });
-      return `اتسجل إن العميل في ${input.country} وعملته ${input.currency} — مش هسأل عنها تاني`;
+      return `اتسجل: البلد ${input.country} والعملة ${input.currency}`;
     }
     case "log_pharmacy_dose": {
       // مكافئ pharmacy_dose في بروتوكول [[ACTION]] القديم، ومرآة
@@ -2629,7 +2630,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutations.push({ tool: name, old: null, new: { daily_cap: cap, length_days: lengthDays } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
       const cur = state.currency ? ` ${state.currency}` : "";
-      return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم. كل صباح هقوله كسب امبارح ولا لأ، وهحتفل معاه في كل محطة.`;
+      return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم.`;
     }
     case "stop_savings_challenge": {
       const w = await writeRows(
@@ -2643,11 +2644,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: { status: "active" }, new: { status: "abandoned" } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
-      return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}. قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.`;
+      return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}.`;
     }
     case "update_customer_profile": {
       const { patch } = sanitizeProfilePatch(input as Record<string, unknown>);
       const { data: before } = await sb.from("zad_customer_profile").select("*").eq("user_id", userId).maybeSingle();
+      const clash = identityOverwrites(before as Record<string, string | null> | null, patch);
+      if (clash.length > 0 && input.confirm_overwrite !== true) {
+        const was = clash.map((k) => `${k}=«${(before as Record<string, string>)[k]}»`).join("، ");
+        return `مرفوض: متسجّل قبل كده ${was} وماغيّرتوش. لو بيهزر أو بيتقمص شخصية، جاريه في الهزار وكمّل بالمسجّل؛ ` +
+          `لو بيصحح بجد اسأله يأكد، وبعد تأكيده ابعت نفس الحقل مع confirm_overwrite=true.`;
+      }
       const w = await writeRows(
         sb.from("zad_customer_profile").upsert({
           user_id: userId, ...patch,
@@ -2660,7 +2667,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_customer_profile", targetId: userId, previous: before, next: patch });
-      return `اتسجل في ملفه: ${Object.keys(patch).join("، ")}. متقولهوش إنك سجلت — كمّل الكلام عادي وخاطبه على أساس اللي عرفته.`;
+      return `status=saved fields=${Object.keys(patch).join(",")}`;
     }
     case "set_broke_mode": {
       const src = scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat";
@@ -3833,12 +3840,16 @@ const CHAT_TOOLS: ToolDef[] = [
     description:
       "سجّل حقيقة ثابتة عن العميل نفسه أول ما يقولها، في نص الكلام ومن غير ما تسأل إذن: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، سنه، شغله ومواعيده، ميعاد قبضه ونظامه، مصدر دخله، عدد اللي في البيت والعيال، مدينته، اللهجة اللي عايز يتكلم بيها، اهتماماته. " +
       "أمثلة: «أنا أم لتلات عيال» ⇒ household_role=mother, kids_count=3. «بشتغل مهندس وبقبض يوم ٢٥» ⇒ occupation, pay_day=25, pay_frequency=monthly. «كلمني مصري» ⇒ dialect=EG. «أنا تعبانة» ⇒ gender=female. " +
-      "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش.",
+      "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش. " +
+      "بعد الحفظ كمّل الكلام طبيعي وناديه بالاسم اللي قاله — متعلنش إنك سجلت ومتذكرش أسماء الحقول. " +
+      "**الهزار مش بيانات:** «اسمي بيتر باركر»، اسم مشهور أو شخصية خيالية أو لقب بيهزر بيه ⇒ جاريه في الهزار بخفة دم ومتنادهاش الأداة. " +
+      "الاسم والنوع لو متسجلين قبل كده مابيتغيروش غير بتأكيد صريح منه (confirm_overwrite=true).",
     input_schema: {
       type: "object",
       properties: {
         preferred_name: { type: "string" },
         gender: { type: "string", enum: ["male", "female"] },
+        confirm_overwrite: { type: "boolean", description: "true بس لو العميل أكّد صراحةً إنه عايز يغيّر اسم أو نوع متسجلين قبل كده." },
         household_role: { type: "string", enum: ["father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other"] },
         age_range: { type: "string", enum: ["under_18", "18_24", "25_34", "35_44", "45_54", "55_plus"] },
         occupation: { type: "string" },
@@ -3866,7 +3877,7 @@ const CHAT_TOOLS: ToolDef[] = [
     description:
       "ابدأ تحدي توفير (افتراضي ٣٠ يوم) بسقف يومي: «عايز أعمل تحدي توفير»، «تحدي ٣٠ يوم»، «ساعدني أوفّر الشهر ده». " +
       "لو العميل قال رقم («مش هصرف أكتر من ١٠٠ في اليوم») حطه في daily_cap، وإلا سيبه فاضي وأنا هحسب ٨٠٪ من متوسط صرفه. " +
-      "كل صباح بيتحسب امبارح، وزاد بتحتفل بصوتها في المحطات.",
+      "كل صباح بيتحسب امبارح، وزاد بتحتفل بصوتها في المحطات — قوله كده في ردك بعد ما يبدأ.",
     input_schema: {
       type: "object",
       properties: {
@@ -3877,7 +3888,7 @@ const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "stop_savings_challenge",
-    description: "اقفل تحدي التوفير الشغال لما العميل يطلب («بطّلت التحدي»، «وقّف التحدي»). متقفلوش من نفسك.",
+    description: "اقفل تحدي التوفير الشغال لما العميل يطلب («بطّلت التحدي»، «وقّف التحدي»). متقفلوش من نفسك. بعد القفل قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.",
     input_schema: { type: "object", properties: {} },
   },
   {
@@ -4980,7 +4991,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         return new Response(JSON.stringify({
           ok: true,
           reply: modelText.trim(),
-          executed,
+          executed: visibleReceipts(executed),
           proposals,
           tool_attempted: true,
           partial: true,
@@ -5028,8 +5039,11 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         continue;
       }
 
+      const mutationsBefore = ctx.mutationCount;
       const result = await runTool(sb, userId, call.name, call.input, snap, ctx, scope);
-      if (!result.startsWith("مرفوض:")) {
+      // `executed` = كتابات حقيقية بس — القراءة (web_search، find_nearby_stores…) نتيجتها
+      // للموديل ومكانها toolResults تحت. شوف receipts.ts.
+      if (isWrite(call.name, result, ctx.mutationCount > mutationsBefore)) {
         executed.push({ tool: call.name, ok: true, summary: result });
         // تقرير عمل للصندوق: العقل في الرد الجاي (أو من cron) هيعرف إن الأيدجنت اشتغل.
         // fire-and-forget — فشل التسجيل مش بيكسر الرد. كانت `specialist as AgentSender`
@@ -5069,6 +5083,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply)) {
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
+  reply = silentWriteFallback(reply, executed, proposals.length);
 
   // === نقاش الوكلاء (Orchestrator review) — المرحلة ٣ ===
   // لو اللفة فيها اقتراحات مالية أو تنفيذ فعلي، وكيل مراجعة مستقل بيتصرف كـ orchestrator:
@@ -5146,7 +5161,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   return new Response(JSON.stringify({
     ok: true,
     reply,
-    executed,
+    executed: visibleReceipts(executed),
     proposals,
     // أوامر واجهة التطبيق — ZadViewModel بينفذها محلياً (فتح شاشة/تظليل عنصر).
     app_commands: appCommands,

@@ -2315,7 +2315,11 @@ async function claimUpdate(sb: SupabaseClient, updateId: unknown): Promise<boole
   return true;
 }
 
-const handleUpdate = webhookCallback(bot, "std/http", { secretToken: WEBHOOK_SECRET });
+// grammY بيستنى ١٠ ثواني بس افتراضياً، ولفة العقل (موديل + أدوات + مراجعة) بتعدّيهم:
+// ٢٠٢٦-٠٩-٢٩ ١٩:٣٨ «Request timed out after 10000 ms». الرد وصل ساعتها لأن الشغل كمّل
+// بعد ما رجّعنا 200، بس الـruntime مش ملزم يكمّله بعد الرد. ٥٠ ثانية تحت مهلة تليجرام،
+// والتكرار لو حصل بيقفله claimUpdate.
+const handleUpdate = webhookCallback(bot, "std/http", { secretToken: WEBHOOK_SECRET, timeoutMilliseconds: 50_000 });
 
 /** اسم البوت المسجّل بالتوكن ده — تشخيص، ومعلومة عامة مش سر. */
 async function identifyBot(): Promise<Record<string, unknown>> {
