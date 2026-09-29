@@ -167,6 +167,20 @@ Deno.test("morning fallback greets with today's medicine and appointment", () =>
   assertStringIncludes(momentFallback("morning_greeting", {}).text, "صباح الخير");
 });
 
+Deno.test("someone else's medicine is said as theirs, morning and night", () => {
+  const m = momentFallback("morning_greeting", {
+    meds_today: [{ name: "دوا الضغط", times: "16:00", for_person: "ماما" }],
+  });
+  assertStringIncludes(m.text, "دوا الضغط بتاع ماما");
+  assert(!m.speech.includes("وخد"), "not «take it» when it is mom's");
+  const n = momentFallback("good_night", { meds_tomorrow_morning: "كونكور", meds_tomorrow_for: "بابا" });
+  assertStringIncludes(n.text, "فكّر بابا بـكونكور");
+  const own = momentFallback("good_night", { meds_tomorrow_morning: "كونكور" });
+  assertStringIncludes(own.text, "خد كونكور");
+  const p = buildMomentPrompt({ moment: "morning_greeting", facts: {} }, "EG", null, {});
+  assertStringIncludes(p.system, "for_person");
+});
+
 Deno.test("tasbiha reminder is skipped once the user has done tasbih today", async () => {
   const { sb, updates } = fakeSb({
     zad_voice_moments: [{ id: "t1", user_id: "u1", moment: "tasbiha_reminder", status: "pending", attempts: 0,

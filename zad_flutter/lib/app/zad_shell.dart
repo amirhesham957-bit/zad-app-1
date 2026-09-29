@@ -79,7 +79,24 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       if (mounted) await alerts.askOnce();
       // Kotlin's on-phone reminders: doses, tasbih at 17:00, seasons.
       if (mounted) await ref.read(localRemindersProvider).resyncAll();
+      if (mounted) await alerts.greetMorning();
     });
+    // Back to the app in the morning is a first open too.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        if (mounted) {
+          unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
+        }
+      },
+    );
+  }
+
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   void _show(ZadNavDestination tab) => setState(() {
