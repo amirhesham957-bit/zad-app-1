@@ -246,6 +246,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       return;
     }
     await ref.read(cameraActionsProvider.notifier).addMedicine(med);
+    if (!mounted) return;
     setState(() => _image = null);
     _say('تم التعرف على: ${med.name}');
   }

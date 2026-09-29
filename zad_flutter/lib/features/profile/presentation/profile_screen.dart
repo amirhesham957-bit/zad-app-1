@@ -564,38 +564,43 @@ class _MenuGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ZadCard(
     padding: EdgeInsets.zero,
-    child: Column(
-      children: <Widget>[
-        for (final (i, row) in rows.indexed) ...<Widget>[
-          if (i > 0)
-            const Divider(
-              height: 1,
-              indent: ZadSpacing.lg,
-              endIndent: ZadSpacing.lg,
-              color: ZadColors.hairline,
-            ),
-          ListTile(
-            onTap: row.onTap,
-            leading: Icon(
-              row.icon,
-              color: row.danger ? ZadColors.terracottaRust : ZadColors.slate,
-            ),
-            title: Text(
-              row.title,
-              style: ZadType.titleSmall.copyWith(
-                color: row.danger ? ZadColors.terracottaRust : ZadColors.ink,
+    // The rows' ink draws on the nearest Material; without this one it was
+    // the page behind the card, so a tap showed no ripple at all.
+    child: Material(
+      type: MaterialType.transparency,
+      child: Column(
+        children: <Widget>[
+          for (final (i, row) in rows.indexed) ...<Widget>[
+            if (i > 0)
+              const Divider(
+                height: 1,
+                indent: ZadSpacing.lg,
+                endIndent: ZadSpacing.lg,
+                color: ZadColors.hairline,
               ),
+            ListTile(
+              onTap: row.onTap,
+              leading: Icon(
+                row.icon,
+                color: row.danger ? ZadColors.terracottaRust : ZadColors.slate,
+              ),
+              title: Text(
+                row.title,
+                style: ZadType.titleSmall.copyWith(
+                  color: row.danger ? ZadColors.terracottaRust : ZadColors.ink,
+                ),
+              ),
+              subtitle: Text(
+                row.subtitle,
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+              trailing:
+                  row.trailing ??
+                  Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
             ),
-            subtitle: Text(
-              row.subtitle,
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            ),
-            trailing:
-                row.trailing ??
-                Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
-          ),
+          ],
         ],
-      ],
+      ),
     ),
   );
 }

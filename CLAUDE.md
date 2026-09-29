@@ -45,7 +45,8 @@ Applies to every screen or widget added or touched:
 - **Empty/error/loading states**: every list-backed screen has a real empty state (`ZadEmptyState`: icon + title + guidance), never a blank list.
 - **Motion as feedback**: reuse `ZadMotion` durations/curves rather than inventing new ones per screen.
 - **Tap targets** ≥ 44dp.
-- **Dialogs with text fields**: use `showFieldDialog` (it owns the controllers); disposing controllers right after `showDialog` returns kills them mid-exit-animation (the red screen a child hit, 2026-09-28).
+- **Dialogs with text fields**: use `showFieldDialog` (it owns the controllers); disposing controllers right after `showDialog` returns kills them mid-exit-animation (the red screen a child hit, 2026-09-28, and the owner's `'_elements.contains(element)'` red screen on 2026-09-29 — the emergency-fund dialog, reproduced and fixed). Never create a controller inside a dialog's `builder` either: it is rebuilt when the keyboard opens and the text is lost.
+- **`test/app/shell_walkthrough_test.dart`** opens every section from the shell, taps every visible control on four screenfuls of each, and closes it with Android's back — on an empty account and on a full one (some rows, like the Amazon strip, only render with data). It is what found the two bugs above. Run it after touching any screen; a new section is covered automatically through `zadSections`.
 - Kids mode: playful gradients and emoji are intentional there — don't normalize them to the adult palette.
 
 ## i18n — نصوص العرض مقابل بيانات المطابقة (قاعدة قاطعة)
