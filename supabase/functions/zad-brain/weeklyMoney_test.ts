@@ -102,6 +102,9 @@ Deno.test("a queued weekly story with its numbers already computed goes out unde
     compose: () => Promise.reject(new Error("quota")),
     pushDevice: (_u, _t, _b, data) => { moments.push(`device:${data.moment}`); return Promise.resolve("sent"); },
     pushTelegram: (_u, _t, _b, _v, moment) => { moments.push(`tg:${moment}`); return Promise.resolve("delivered"); },
+    // نهار ثابت: بالليل ساعات الهدوء (الفجوة ١٠) بتمسك القصة، والاختبار ده عن النبرة مش الوقت.
+    now: () => Date.parse("2026-09-29T09:00:00Z"),
+    timeZoneOf: () => Promise.resolve("Africa/Cairo"),
   });
   assertEquals(res.sent, 1);
   assertEquals(moments, ["device:weekly_money_proud", "tg:weekly_money_proud"]);
