@@ -76,6 +76,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
@@ -958,10 +959,14 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     consumptionByItem[c.item_name] = { avgDailyQty: c.avg_daily_qty, rateKnown: c.rate_known };
     if (c.rate_known) rateKnownItems.push(c.item_name);
   }
+  // الفجوة ٧ (20260930000000): معدل من أول دورة «اشتريت ← خلص» بيدي daysLeft كمان، بس
+  // بـconfidence = approximate — يتقال «تقريباً». rateKnown ماتغيرش (٣ نزلات على يومين)،
+  // فـstock_unknown تحت لسه بيشمل التقريبي عشان العقل يقدر يسأل ويأكده.
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
-    const daysLeft = cons?.rateKnown && cons.avgDailyQty > 0 ? item.quantity / cons.avgDailyQty : null;
-    return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, rateKnown: cons?.rateKnown ?? false };
+    const confidence = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
+    const daysLeft = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
+    return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false };
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
 
@@ -1577,10 +1582,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       const samples = (obs as any)?.samples ?? 0;
       const rateKnown = (obs as any)?.rate_known === true;
+      const perDay = Number((obs as any)?.avg_daily_qty);
       ctx.observations.push({ item: input.item_name, qty: input.new_qty, samples, rateKnown });
-      return rateKnown
-        ? `اتعدلت الكمية، وبقى عندي معدل استهلاك مؤكد للصنف ده (${samples} قياسات) — مش محتاج أسأل عنه تاني`
-        : `اتعدلت الكمية واتسجلت ملاحظة للتعلم (${samples} قياسات لحد الآن، محتاج ٣)`;
+      // النص ده بيطلع للعميل كإيصال (✅ في تليجرام) — كلام ليه، مش تعليمات للموديل.
+      if (rateKnown) return `اتعدلت الكمية، وبقى عندي معدل استهلاك مؤكد للصنف ده (${samples} قياسات)`;
+      if (Number.isFinite(perDay) && perDay > 0) {
+        return `اتعدلت الكمية، وبقى عندي تقدير تقريبي: حوالي ${Math.round(perDay * 10) / 10} في اليوم (بيتظبط مع كل مرة)`;
+      }
+      return `اتعدلت الكمية واتسجلت ملاحظة للتعلم (${samples} قياسات لحد الآن)`;
     }
     case "set_transaction_category": {
       const { data: before } = await sb.from("zad_transactions").select("category").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
@@ -3111,7 +3120,8 @@ const TOOLS: ToolDef[] = [
       "يوم، أول يوم هيبقى فيه بالسالب، الالتزامات والاشتراكات اللي هتتخصم، والأصناف اللي " +
       "هتخلص وإمتى. **نادِها قبل أي رؤية عن المستقبل** — تحذير زي \"هتبقى ناقص\" أو " +
       "\"المية هتخلص\" لازم يكون رقمه من هنا مش من حسابك على الـsnapshot. اللي في " +
-      "stock_unknown معدل استهلاكه لسه مش معروف — متخمّنش ليه تاريخ.",
+      "stock_unknown معدل استهلاكه لسه مش معروف — متخمّنش ليه تاريخ. stockouts بـconfidence=approximate " +
+      "محسوبة من دورة شرا واحدة: قول التاريخ بـ«تقريباً» أو «على حسب آخر مرة»، مش كأنه أكيد.",
     input_schema: {
       type: "object",
       properties: {
