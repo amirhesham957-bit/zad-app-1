@@ -18,6 +18,7 @@ import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/features/prices/domain/prices.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
 import 'package:zad/features/scan/data/vision_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
@@ -328,6 +329,9 @@ class ScanController extends Notifier<ScanView> {
       if (state.offersPantry && state.addToPantry) {
         intake = await _intoPantry(receipt, state.excludedItems);
       }
+      if (state.offersPantry) {
+        await _reportPrices(receipt, state.excludedItems);
+      }
       PharmacyIntakeResult? pharmacy;
       if (state.offersPharmacy && state.addToPharmacy) {
         pharmacy = await _intoPharmacy(
@@ -344,6 +348,42 @@ class ScanController extends Notifier<ScanView> {
       if (!ref.mounted) return false;
       state = state.copyWith(isSaving: false, error: error);
       return false;
+    }
+  }
+
+  /// A grocery receipt's ticked lines as crowd price reports: what was on
+  /// the shelf at this store, at what price, now. They are what lets the
+  /// next customer near that store hear «اتشاف هنا» (zad-brain
+  /// store_arrival). Queued through the outbox like a typed report; best
+  /// effort, since the expense is already saved.
+  Future<void> _reportPrices(ScannedReceipt receipt, Set<int> excluded) async {
+    final reports = receiptPriceReports(
+      store: receipt.storeName,
+      lines: [
+        for (final (i, item) in receipt.items.indexed)
+          if (!excluded.contains(i))
+            (
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              category: item.category,
+            ),
+      ],
+    );
+    if (reports.isEmpty) return;
+    try {
+      final prices = ref.read(pricesRepositoryProvider);
+      for (final r in reports) {
+        await prices.report(
+          item: r.item,
+          price: r.unitPrice,
+          store: receipt.storeName,
+          category: r.category,
+        );
+      }
+    } on Object {
+      // Signed out between the save and here, or no queue: the expense and
+      // the pantry are what matter, and they are already written.
     }
   }
 

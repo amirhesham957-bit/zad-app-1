@@ -60,7 +60,7 @@ import { lowStockToAdd } from "./lowStock.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -4325,8 +4325,23 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       .map((i) => i.item_name);
   }
 
+  // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة.
+  let seenHere: SeenHere[] = [];
+  if (category !== "pharmacy") {
+    const { data: reports, error: seenErr } = await sb.from("price_index")
+      .select("item_name,store_name,timestamp")
+      .eq("source", "crowdsource").not("store_name", "is", null)
+      .gte("timestamp", new Date(Date.now() - 72 * 3_600_000).toISOString())
+      .order("timestamp", { ascending: false }).limit(500);
+    if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
+    seenHere = seenHereItems(
+      (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
+      storeName, [...shopping, ...lowStock], Date.now(),
+    );
+  }
+
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items),
+    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 

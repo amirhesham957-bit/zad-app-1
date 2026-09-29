@@ -182,6 +182,7 @@ export function buildStoreArrivalMessage(input: {
   shopping: string[];
   lowStock: string[];
   clientHints: string[];
+  seenHere?: SeenHere[];
 }): { title: string; body: string; itemCount: number } | null {
   const seen = new Set<string>();
   const items: string[] = [];
@@ -203,8 +204,76 @@ export function buildStoreArrivalMessage(input: {
   const intro = input.category === "pharmacy" ? "أدوية قربت تخلص عندك:" : "ناقص في البيت، لو هتشتري:";
   const listed = items.slice(0, STORE_ARRIVAL_MAX_LISTED).map((i) => `• ${i}`);
   const more = items.length - listed.length;
-  const body = [intro, ...listed, ...(more > 0 ? [`… و${more} كمان`] : [])].join("\n");
+  const seenLines = (input.seenHere ?? []).slice(0, 5).map((s) => `${cleanText(s.item, 40)} (${agoText(s.hours)})`);
+  const body = [
+    intro, ...listed, ...(more > 0 ? [`… و${more} كمان`] : []),
+    ...(seenLines.length > 0 ? [`👀 اتشاف في محل بنفس الاسم من فواتير عملاء زاد: ${seenLines.join("، ")}`] : []),
+  ].join("\n");
   return { title, body, itemCount: items.length };
+}
+
+/** صنف ناقص اتشاف في محل بنفس الاسم، وبقاله كام ساعة. */
+export interface SeenHere {
+  item: string;
+  hours: number;
+}
+
+/** كام ساعة، بكلام — «من شوية»، «من ٥ ساعات»، «من يومين». */
+function agoText(hours: number): string {
+  if (hours < 1) return "من شوية";
+  const count = (n: number, one: string, two: string, few: string, many: string) =>
+    n === 1 ? `من ${one}` : n === 2 ? `من ${two}` : n <= 10 ? `من ${n} ${few}` : `من ${n} ${many}`;
+  if (hours < 24) return count(Math.round(hours), "ساعة", "ساعتين", "ساعات", "ساعة");
+  return count(Math.round(hours / 24), "يوم", "يومين", "أيام", "يوم");
+}
+
+// كلمات بتتشال من اسم المحل قبل المطابقة: «كارفور ماركت» على الفاتورة و«كارفور» من جوجل نفس المحل.
+// `\b` في JS مابيعرفش الحروف العربي، فالحدود مسافة أو أول/آخر النص.
+const STORE_NOISE = /(?<=^|\s)(سوبر ?ماركت|هايبر ?ماركت|ماركت|سوبر|هايبر|فرع|اكسبريس|supermarket|hypermarket|market|super|hyper|express|branch)(?=\s|$)/giu;
+
+/** اسم المحل للمطابقة: نفس تطبيع itemKey، من غير الكلمات العامة والرموز. */
+export function storeKey(name: string): string {
+  return itemKey(name).replace(STORE_NOISE, " ").replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+/** نفس المحل؟ واحد من الاسمين جوه التاني بعد التطبيع، والأقصر ٣ حروف على الأقل. */
+export function sameStore(a: string, b: string): boolean {
+  const x = storeKey(a);
+  const y = storeKey(b);
+  if (!x || !y) return false;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  return short.length >= 3 && long.includes(short);
+}
+
+/**
+ * الناقص عند العميل اللي اتشاف في محل بنفس الاسم (بلاغات price_index — فواتير اتصوّرت أو
+ * أسعار اتكتبت) خلال [maxHours]. الأحدث لكل صنف. «بنفس الاسم» مش «نفس الفرع»: price_index
+ * مافيهوش إحداثيات، والرسالة بتقول كده بصراحة.
+ */
+export function seenHereItems(
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
+  storeName: string,
+  missing: string[],
+  nowMs: number,
+  maxHours = 72,
+): SeenHere[] {
+  const out: SeenHere[] = [];
+  for (const want of missing) {
+    const key = itemKey(want);
+    if (key.length < 2) continue;
+    let best: number | null = null;
+    for (const r of reports) {
+      if (!r.item_name || !r.store_name || !r.timestamp) continue;
+      if (!sameStore(r.store_name, storeName)) continue;
+      const reported = itemKey(r.item_name);
+      if (!reported.includes(key) && !key.includes(reported)) continue;
+      const hours = (nowMs - Date.parse(r.timestamp)) / 3_600_000;
+      if (!(hours >= 0 && hours <= maxHours)) continue;
+      if (best === null || hours < best) best = hours;
+    }
+    if (best !== null) out.push({ item: want, hours: best });
+  }
+  return out.sort((a, b) => a.hours - b.hours);
 }
 
 /**

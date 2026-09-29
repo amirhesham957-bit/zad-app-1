@@ -199,3 +199,37 @@ String? _text(Object? raw) {
   final t = tidyReportText(raw?.toString());
   return t.isEmpty ? null : t;
 }
+
+/// One line of a saved grocery receipt, as a crowd report.
+typedef ReceiptPriceReport = ({String item, double unitPrice, String category});
+
+/// The most lines one receipt reports. The server takes 30 reports an hour
+/// per account; a long receipt must leave room for the customer's own.
+const int kReceiptReportsMax = 20;
+
+/// The lines of a receipt worth reporting as "seen at [store], this price":
+/// the ticked ones with a price, at their unit price, each passing
+/// [checkReport]. None without a store name — a price nobody can place tells
+/// the next customer nothing about where to go.
+List<ReceiptPriceReport> receiptPriceReports({
+  required String store,
+  required List<({String name, double price, double quantity, String category})>
+  lines,
+}) {
+  if (tidyReportText(store).isEmpty) return const <ReceiptPriceReport>[];
+  final out = <ReceiptPriceReport>[];
+  for (final l in lines) {
+    final unit = l.quantity > 0 ? l.price / l.quantity : l.price;
+    final rounded = (unit * 100).roundToDouble() / 100;
+    if (checkReport(item: l.name, price: rounded, store: store) != null) {
+      continue;
+    }
+    out.add((
+      item: tidyReportText(l.name),
+      unitPrice: rounded,
+      category: l.category,
+    ));
+    if (out.length == kReceiptReportsMax) break;
+  }
+  return out;
+}
