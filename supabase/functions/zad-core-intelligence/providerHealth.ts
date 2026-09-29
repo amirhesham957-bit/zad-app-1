@@ -1,4 +1,4 @@
-import { googleNearby, googlePlacesKey } from "./googlePlaces.ts";
+import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 
 // فحص مفاتيح المزوّدين (موقع، صور، موديلات، تليجرام) — أسماء وحالات HTTP بس، ولا حرف من أي
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
@@ -68,13 +68,14 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
 
   // Google Places: the same call nearby_pois makes, so "configured but the Places API is not
   // enabled on the key's project" shows here as ok:false instead of as an empty shop list.
-  const googleKey = googlePlacesKey(env);
+  const googleKeys = googlePlacesKeys(env);
   const googlePlaces = (async (): Promise<ProbeResult> => {
-    if (!googleKey) return { configured: false };
-    const found = await googleNearby(fetchImpl, googleKey, { lat: 30.0444, lon: 31.2357, tag: "supermarket", radius: 2000 });
+    if (googleKeys.length === 0) return { configured: false };
+    const found = await googleNearbyAny(fetchImpl, googleKeys, { lat: 30.0444, lon: 31.2357, tag: "supermarket", radius: 2000 });
+    const tried = googleKeys.map((k) => k.name).join(",");
     return found === null
-      ? { configured: true, ok: false, note: "refused — Places API (New) enabled for this key?" }
-      : { configured: true, ok: true, note: `places=${found.length}` };
+      ? { configured: true, ok: false, note: `refused by every key (${tried}) — Places API (New) enabled for them?` }
+      : { configured: true, ok: true, note: `places=${found.places.length} via ${found.name}` };
   })();
 
   const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([

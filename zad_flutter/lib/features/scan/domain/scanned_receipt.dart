@@ -9,6 +9,8 @@
 /// exactly this case.
 library;
 
+import 'package:timezone/timezone.dart' as tz;
+
 /// The eleven categories a transaction may carry.
 ///
 /// The server prompts for this list *and* clamps the answer to it, because
@@ -129,6 +131,7 @@ class ScannedReceipt {
     required this.storeName,
     required this.type,
     this.items = const <ScannedReceiptItem>[],
+    this.purchasedOn,
   });
 
   /// Reads the `analyze_receipt` response.
@@ -141,6 +144,7 @@ class ScannedReceipt {
         .map(ScannedReceiptItem.fromJson)
         .whereType<ScannedReceiptItem>()
         .toList(),
+    purchasedOn: _printedDate(json['purchaseDate']),
   );
 
   /// The amount paid, after VAT and discounts — or, for a [ReceiptType
@@ -158,6 +162,11 @@ class ScannedReceipt {
 
   /// The line items.
   final List<ScannedReceiptItem> items;
+
+  /// The date printed on the receipt (year, month, day; the time is
+  /// meaningless), or null when none was printed or the server could not
+  /// vouch for it. It decides the expense's month — see [receiptSpentAt].
+  final DateTime? purchasedOn;
 
   /// Whether this reading is worth showing the customer at all.
   ///
@@ -190,5 +199,40 @@ class ScannedReceipt {
     storeName: storeName ?? this.storeName,
     type: type ?? this.type,
     items: items ?? this.items,
+    purchasedOn: purchasedOn,
   );
+}
+
+DateTime? _printedDate(Object? raw) {
+  if (raw is! String) return null;
+  final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(raw.trim());
+  if (m == null) return null;
+  final y = int.parse(m[1]!);
+  final mo = int.parse(m[2]!);
+  final d = int.parse(m[3]!);
+  final at = DateTime.utc(y, mo, d);
+  return at.year == y && at.month == mo && at.day == d ? at : null;
+}
+
+/// When a scanned receipt's expense happened, as the instant to record.
+///
+/// A receipt photographed today may be weeks old; recording it at the moment
+/// of the scan put last month's shopping in this month's budget. So: noon on
+/// the printed date in the account's zone — any hour of that day lands in the
+/// right day and month — unless there is no usable date, the date is today
+/// (then [now], so today's list stays in order), or it is in the future (a
+/// misread; [now] again).
+DateTime receiptSpentAt(DateTime? printedOn, DateTime now, tz.Location zone) {
+  if (printedOn == null) return now;
+  final today = tz.TZDateTime.from(now.toUtc(), zone);
+  final printed = DateTime.utc(printedOn.year, printedOn.month, printedOn.day);
+  final todayDate = DateTime.utc(today.year, today.month, today.day);
+  if (!printed.isBefore(todayDate)) return now;
+  return tz.TZDateTime(
+    zone,
+    printedOn.year,
+    printedOn.month,
+    printedOn.day,
+    12,
+  ).toUtc();
 }

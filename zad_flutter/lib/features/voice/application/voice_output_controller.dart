@@ -90,13 +90,29 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
       messageId: messageId,
     );
 
-    Future<SpokenAudio>? next = synth.synthesize(chunks.first);
+    // Two chunks ahead, not one: a chunk takes longer to synthesize than to
+    // play, so with one in flight every chunk after the first left a gap.
+    final pending = <int, Future<SpokenAudio>>{};
+    var requested = 0;
+    void fetchUpTo(int last) {
+      for (; requested <= last && requested < chunks.length; requested++) {
+        pending[requested] = synth.synthesize(chunks[requested]);
+      }
+    }
+
+    void dropPending() {
+      for (final f in pending.values) {
+        f.ignore();
+      }
+    }
+
+    fetchUpTo(1);
     try {
       for (var i = 0; i < chunks.length; i++) {
-        final audio = await next!;
-        next = i + 1 < chunks.length ? synth.synthesize(chunks[i + 1]) : null;
+        final audio = await pending.remove(i)!;
+        fetchUpTo(i + 2);
         if (!ref.mounted || generation != _generation) {
-          next?.ignore();
+          dropPending();
           return;
         }
         state = VoiceOutputView(
@@ -113,11 +129,81 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
         state = VoiceOutputView(provider: state.provider);
       }
     } on Object catch (e) {
-      next?.ignore();
+      dropPending();
       debugPrint('voice_synthesize failed: $e');
       if (ref.mounted && generation == _generation) {
         state = const VoiceOutputView(failed: true);
       }
+    }
+  }
+
+  /// Starts speaking a reply that is still arriving: feed it with
+  /// [StreamedSpeech.add] as the text streams in and end it with
+  /// [StreamedSpeech.finish]. The first chunk is asked for as soon as a
+  /// sentence ends past [firstStreamedChunk] characters, so Zad talks while
+  /// the brain is still writing instead of after it has finished.
+  StreamedSpeech speakStreaming({String? messageId}) {
+    final chunks = StreamController<String>();
+    unawaited(_speakArriving(chunks.stream, messageId: messageId));
+    return StreamedSpeech._(chunks);
+  }
+
+  Future<void> _speakArriving(
+    Stream<String> chunks, {
+    String? messageId,
+  }) async {
+    final generation = ++_generation;
+    final synth = ref.read(voiceSynthesizerProvider);
+    final player = ref.read(voicePlayerProvider);
+    final arriving = StreamIterator<String>(chunks);
+    await player.stop();
+    if (!ref.mounted || generation != _generation) {
+      await arriving.cancel();
+      return;
+    }
+    state = VoiceOutputView(
+      stage: VoiceOutputStage.preparing,
+      messageId: messageId,
+    );
+
+    // A record, not a nested future: `async` would flatten Future<Future<…>>
+    // and wait for the audio before handing back the chunk.
+    Future<({Future<SpokenAudio> audio})?> ask() async {
+      if (!await arriving.moveNext()) return null;
+      final audio = synth.synthesize(arriving.current)..ignore();
+      return (audio: audio);
+    }
+
+    // One chunk ahead, as [speak] does: the next is asked for while the
+    // current one plays, and never more than that at once.
+    var next = ask();
+    try {
+      while (true) {
+        final pending = await next;
+        if (pending == null) break;
+        final audio = await pending.audio;
+        if (!ref.mounted || generation != _generation) return;
+        next = ask();
+        state = VoiceOutputView(
+          stage: VoiceOutputStage.speaking,
+          messageId: messageId,
+          provider: audio.provider,
+          level: pcmLoudness(audio.pcm),
+        );
+        await player.play(pcmToWav(audio.pcm));
+        if (!ref.mounted || generation != _generation) return;
+      }
+      if (ref.mounted && generation == _generation) {
+        state = VoiceOutputView(provider: state.provider);
+      }
+    } on Object catch (e) {
+      debugPrint('voice_synthesize failed: $e');
+      if (ref.mounted && generation == _generation) {
+        state = const VoiceOutputView(failed: true);
+      }
+    } finally {
+      next.ignore();
+      await arriving.cancel();
     }
   }
 
@@ -126,6 +212,42 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     _generation++;
     if (state.isActive) state = const VoiceOutputView();
     await ref.read(voicePlayerProvider).stop();
+  }
+}
+
+/// A reply being spoken while it arrives. See
+/// [VoiceOutputController.speakStreaming].
+class StreamedSpeech {
+  new _(this._chunks);
+
+  final StreamController<String> _chunks;
+  final SpeechStreamSplitter _splitter = SpeechStreamSplitter();
+  var _closed = false;
+  var _heard = false;
+
+  /// Whether any text has been added.
+  bool get heardAnything => _heard;
+
+  /// More of the reply.
+  void add(String delta) {
+    if (_closed || delta.isEmpty) return;
+    _heard = true;
+    _splitter.add(delta).forEach(_chunks.add);
+  }
+
+  /// The reply is complete: whatever is left is spoken.
+  void finish() {
+    if (_closed) return;
+    _splitter.finish().forEach(_chunks.add);
+    _close();
+  }
+
+  /// The reply failed: nothing more is queued. What is already queued plays.
+  void cancel() => _close();
+
+  void _close() {
+    _closed = true;
+    unawaited(_chunks.close());
   }
 }
 

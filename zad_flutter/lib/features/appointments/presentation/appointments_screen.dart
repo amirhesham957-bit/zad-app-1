@@ -8,10 +8,13 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthException, PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/period/account_time_zone.dart';
@@ -24,6 +27,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
+import 'package:zad/features/places/presentation/street_alerts_section.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -289,19 +293,11 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
               ZadSpacing.lg,
               120,
             ),
+            // The appointments come first — they are what the page is for.
+            // The helpers (say it by voice, places, money obligations) used
+            // to sit above them and push the list below the fold (owner,
+            // 2026-09-28: «صفحة المواعيد غير منظمة»).
             children: <Widget>[
-              _VoiceHint(onTap: _openVoice),
-              const SizedBox(height: ZadSpacing.md),
-              _ObligationsLink(
-                onTap: () => unawaited(showFinancesScreen(context)),
-              ),
-              const SizedBox(height: ZadSpacing.md),
-              _PlaceReminders(
-                reminders: _places,
-                onAdd: () => unawaited(_addPlace()),
-                onCancel: (r) => unawaited(_cancelPlace(r)),
-              ),
-              const SizedBox(height: ZadSpacing.md),
               if (_loading && items == null)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
@@ -376,6 +372,18 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
                       onDone: () => unawaited(_setStatus(a, 'done')),
                     ),
                 ],
+              const SizedBox(height: ZadSpacing.lg),
+              _VoiceHint(onTap: _openVoice),
+              const SizedBox(height: ZadSpacing.md),
+              _PlaceReminders(
+                reminders: _places,
+                onAdd: () => unawaited(_addPlace()),
+                onCancel: (r) => unawaited(_cancelPlace(r)),
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              _ObligationsLink(
+                onTap: () => unawaited(showFinancesScreen(context)),
+              ),
             ],
           ),
         ),
@@ -522,6 +530,9 @@ class _PlaceReminders extends StatelessWidget {
               ),
             ],
           ),
+          // Without it no reminder here can ever fire: nothing knows the
+          // customer has reached the shop.
+          const StreetAlertsSection(),
           if (reminders.isEmpty)
             Text(
               'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
@@ -740,6 +751,15 @@ class _Row extends StatelessWidget {
 
 // ── Dialogs ─────────────────────────────────────────────────────────────────
 
+/// A short, shareable reason for a failed save: the server's code when there
+/// is one, otherwise the kind of failure.
+String _reason(Object e) => switch (e) {
+  PostgrestException(:final code?) => code,
+  AuthException() => 'auth',
+  TimeoutException() => 'timeout',
+  _ => 'network',
+};
+
 class _AddAppointmentDialog extends ConsumerStatefulWidget {
   const new({required this.zone});
 
@@ -809,12 +829,16 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
         if (who.isNotEmpty) 'for_person': who,
       });
       if (mounted) Navigator.of(context).pop(true);
-    } on Object catch (e) {
+    } on Object catch (e, st) {
+      // Kept in the crash log (support screen → 🐞): the table has never
+      // received a row from this form (post-deploy count, 2026-09-28), and a
+      // bare «جرّب تاني» left no way to see why.
       debugPrint('appointment insert failed: $e');
+      ref.read(crashLogProvider).record(e, st);
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'ماتسجلش الميعاد، جرّب تاني';
+          _error = appointmentSaveError(e);
         });
       }
     }
@@ -1013,12 +1037,13 @@ class _AddPlaceState extends ConsumerState<_AddPlaceDialog> {
         'source': 'app',
       });
       if (mounted) Navigator.of(context).pop(true);
-    } on Object catch (e) {
+    } on Object catch (e, st) {
       debugPrint('place reminder insert failed: $e');
+      ref.read(crashLogProvider).record(e, st);
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'ماتسجلش الميعاد، جرّب تاني';
+          _error = 'ماتسجلش التذكير، جرّب تاني (${_reason(e)})';
         });
       }
     }
@@ -1080,4 +1105,24 @@ class _AddPlaceState extends ConsumerState<_AddPlaceDialog> {
       ),
     ],
   );
+}
+
+/// Why an appointment was not saved, in words the customer can act on.
+/// Every failure used to read «ماتسجلش الميعاد، جرّب تاني», which says
+/// nothing about whether trying again will help.
+String appointmentSaveError(Object error) {
+  if (error is PostgrestException) {
+    return switch (error.code) {
+      // check_violation: a value the table refuses.
+      '23514' =>
+        'فيه قيمة مش مقبولة (العنوان من ٢ لـ١٦٠ حرف). راجعها وجرّب تاني.',
+      // insufficient_privilege / RLS: the session is gone.
+      '42501' => 'الجلسة انتهت — اخرج وادخل تاني وبعدين سجّل الميعاد.',
+      _ => 'السيرفر رفض الميعاد (${error.code ?? error.message}). جرّب تاني.',
+    };
+  }
+  if (error is SocketException || error is TimeoutException) {
+    return 'مفيش نت دلوقتي — الميعاد ماتسجلش. اتأكد من النت وجرّب تاني.';
+  }
+  return 'ماتسجلش الميعاد، جرّب تاني.';
 }

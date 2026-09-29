@@ -9,6 +9,8 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
@@ -283,6 +285,22 @@ class ScanController extends Notifier<ScanView> {
 
   /// Records the receipt as an expense.
   ///
+  /// The instant to record [receipt]'s expense at: its printed day when it
+  /// has one, the moment of the scan otherwise. The zone is looked up only
+  /// when a date needs it.
+  DateTime _spentAt(ScannedReceipt receipt) {
+    final now = ref.read(nowProvider)();
+    final printed = receipt.purchasedOn;
+    if (printed == null) return now;
+    tz.Location zone;
+    try {
+      zone = tz.getLocation(ref.read(accountTimeZoneProvider));
+    } on Object {
+      zone = tz.UTC;
+    }
+    return receiptSpentAt(printed, now, zone);
+  }
+
   /// Refuses a [ReceiptType.budgetCard]: its `total` is a balance the customer
   /// *has*, so recording it as money spent would be wrong in both the amount
   /// and the direction. [useAsMonthlyLimit] is what that reading is for.
@@ -306,7 +324,8 @@ class ScanController extends Notifier<ScanView> {
               userId: userId,
               amount: receipt.total,
               title: receipt.title,
-              createdAt: ref.read(nowProvider)(),
+              // The printed date's month, not the scan's.
+              createdAt: _spentAt(receipt),
               // A receipt is a card or cash purchase at a shop, and the app has
               // no way to tell which from the paper. Card is the commoner of
               // the two and the customer can change it on the row.

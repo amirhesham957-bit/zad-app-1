@@ -235,6 +235,15 @@ class _ReadingState extends ConsumerState<_Reading> {
           Text(receipt.storeName, style: ZadType.titleSmall),
           const SizedBox(height: ZadSpacing.md),
         ],
+        if (receipt.type.isPurchase && receipt.purchasedOn != null) ...<Widget>[
+          Text(
+            'تاريخ الفاتورة ${receipt.purchasedOn!.day}/'
+            '${receipt.purchasedOn!.month}/${receipt.purchasedOn!.year} — '
+            'هتتسجل على يومها وشهرها.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.md),
+        ],
 
         TextField(
           controller: _total,

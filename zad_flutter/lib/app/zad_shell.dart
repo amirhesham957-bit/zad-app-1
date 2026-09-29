@@ -23,6 +23,7 @@ import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/features/home/application/home_widget_controller.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -164,6 +165,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(builder: (_) => const TransactionsScreen()),
         );
+      case ShellTab.family:
+        // A child's shell already shows the family's latest messages on its
+        // home; the adults' family screen is not theirs to open.
+        if (ref.read(kidsModeActiveProvider)) return;
+        await showBrainFamily(context, tab: BrainFamilyTab.family);
     }
   }
 
@@ -187,6 +193,9 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       ref.read(shellNavigationProvider.notifier).shown();
       await _resolve(next);
     });
+
+    // The home-screen widget follows the balance and the newest rows.
+    ref.watch(homeWidgetSyncProvider);
 
     // Kids mode replaces the whole shell: home and family, nothing else.
     if (ref.watch(kidsModeActiveProvider)) return const KidsShell();

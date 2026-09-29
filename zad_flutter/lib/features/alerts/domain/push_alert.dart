@@ -17,6 +17,9 @@ enum AlertDestination {
 
   /// The home — the tasbiha and seasonal reminders.
   home,
+
+  /// The family chat — a message or an SOS from someone in the family.
+  family,
 }
 
 /// An alert.
@@ -75,12 +78,33 @@ class PushAlert {
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
 }
 
+String? _nonEmpty(String? s) {
+  final t = s?.trim() ?? '';
+  return t.isEmpty ? null : t;
+}
+
+/// The voice moment notification's «اسمع زاد» button.
+const String kListenActionId = 'zad_listen';
+
+const String _speakPayloadPrefix = 'speak:';
+
+/// The payload of a voice moment's notification: what to say when «اسمع زاد»
+/// is pressed.
+String speakPayload(String speech) => '$_speakPayloadPrefix$speech';
+
+/// The words a voice moment's payload carries, or null.
+String? speechFromPayload(String? payload) =>
+    payload == null || !payload.startsWith(_speakPayloadPrefix)
+    ? null
+    : _nonEmpty(payload.substring(_speakPayloadPrefix.length));
+
 /// The screen a `route` names, or null for one this app does not know — a
 /// newer server's route must not crash an older phone.
 AlertDestination? destinationFor(String? route) => switch (route) {
   'transaction_proposals' => AlertDestination.proposals,
   'pharmacy' => AlertDestination.pharmacy,
   'home' => AlertDestination.home,
+  'family' => AlertDestination.family,
   _ => null,
 };
 
@@ -110,10 +134,42 @@ String? proposalIdFromPayload(String? payload) {
   return id.isEmpty ? null : id;
 }
 
-/// Where a tapped local notification goes, for both payload shapes.
+/// The dose notification's «أخدتها» button.
+const String kDoseTakenActionId = 'zad_dose_taken';
+
+/// The dose notification's «أجّل» button.
+const String kDoseSnoozeActionId = 'zad_dose_snooze';
+
+const String _dosePayloadPrefix = 'dose:';
+
+/// The payload of a dose reminder: which medicine and which daily time
+/// (`HH:mm`), so its buttons can answer that exact slot.
+String dosePayload(String medicineId, String time) =>
+    '$_dosePayloadPrefix$medicineId|$time';
+
+/// The medicine and time a dose payload names, or null.
+({String medicineId, String time})? doseFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_dosePayloadPrefix)) return null;
+  final parts = payload.substring(_dosePayloadPrefix.length).split('|');
+  if (parts.length != 2 || parts[0].isEmpty) return null;
+  if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(parts[1])) return null;
+  return (medicineId: parts[0], time: parts[1]);
+}
+
+/// A dose button's answer: true for «أخدتها», false for «أجّل», null for a
+/// tap on the notification itself.
+bool? doseAnswerFromAction(String? actionId) => switch (actionId) {
+  kDoseTakenActionId => true,
+  kDoseSnoozeActionId => false,
+  _ => null,
+};
+
+/// Where a tapped local notification goes, for every payload shape.
 AlertDestination? destinationForPayload(String? payload) =>
     proposalIdFromPayload(payload) != null
     ? AlertDestination.proposals
+    : doseFromPayload(payload) != null
+    ? AlertDestination.pharmacy
     : destinationFor(payload);
 
 /// A notification button's answer: true for «أيوه، أنا», false for «مش أنا»,
@@ -130,6 +186,7 @@ String? payloadFor(AlertDestination? d) => switch (d) {
   AlertDestination.proposals => 'transaction_proposals',
   AlertDestination.pharmacy => 'pharmacy',
   AlertDestination.home => 'home',
+  AlertDestination.family => 'family',
   null => null,
 };
 

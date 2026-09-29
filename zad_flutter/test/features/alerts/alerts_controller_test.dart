@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,28 +14,42 @@ import 'package:zad/data/local/boxes.dart';
 import 'package:zad/data/providers.dart';
 import 'package:zad/data/sync/outbox.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
+import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
+import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
+import 'package:zad/features/voice/data/voice_player.dart';
+import 'package:zad/features/voice/data/voice_synthesizer.dart';
 
 class _Platform extends SilentPushPlatform {
   String? current = 'token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
   final StreamController<String> refreshes =
       StreamController<String>.broadcast();
+  void Function(PushAlert)? alerted;
   void Function(AlertDestination?)? opened;
   void Function(String, {required bool confirmed})? answered;
+  void Function(String, String, {required bool taken})? dosed;
+  void Function(String)? spoke;
 
   @override
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
+    void Function(String speech)? onSpeak,
   }) async {
+    alerted = onAlert;
     opened = onOpened;
     answered = onAnswer;
+    dosed = onDose;
+    spoke = onSpeak;
   }
 
   @override
@@ -89,6 +104,32 @@ class _Remote implements PushTokenRemote {
   Future<void> unregister(String token) async {}
 }
 
+class _Synth implements VoiceSynthesizer {
+  final spoken = <String>[];
+
+  @override
+  Future<SpokenAudio> synthesize(String text) async {
+    spoken.add(text);
+    return (pcm: Uint8List(2), provider: 'gemini');
+  }
+}
+
+class _SilentPlayer implements VoicePlayer {
+  @override
+  Future<void> play(Uint8List wav) async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> dispose() async {}
+}
+
+class _Mic extends VoiceInputController {
+  @override
+  VoiceInputView build() => const VoiceInputView();
+}
+
 void main() {
   late Directory dir;
   late Box<String> box;
@@ -97,6 +138,7 @@ void main() {
   late _Permission permission;
   late ProviderContainer container;
   late Outbox outbox;
+  late _Synth synth;
   var run = 0;
 
   Future<void> build(AlertPermission starting) async {
@@ -110,6 +152,7 @@ void main() {
     platform = _Platform();
     permission = _Permission(starting);
     outbox = Outbox(box: box, send: (_) async {});
+    synth = _Synth();
     final store = ZadLocalStore(
       outbox: box,
       transactions: box,
@@ -127,6 +170,9 @@ void main() {
         pushPlatformProvider.overrideWithValue(platform),
         proposalsControllerProvider.overrideWith(_Proposals.new),
         notificationPermissionProvider.overrideWithValue(permission),
+        voiceSynthesizerProvider.overrideWithValue(synth),
+        voicePlayerProvider.overrideWithValue(_SilentPlayer()),
+        voiceInputControllerProvider.overrideWith(_Mic.new),
         pushRegistrarProvider.overrideWithValue(
           PushRegistrar(
             device: device,
@@ -231,4 +277,40 @@ void main() {
       expect(container.read(shellNavigationProvider), ShellTab.proposals);
     },
   );
+
+  group("a voice moment is said in زاد's voice", () {
+    const moment = PushAlert(
+      title: 'موعد الدواء',
+      body: 'حان موعد كونكور',
+      speech: 'يا أمير ميعاد كونكور دلوقتي.',
+    );
+
+    test('arriving while the app is open, it is spoken', () async {
+      await build(AlertPermission.granted);
+      await container.read(alertsControllerProvider.notifier).start();
+      platform.alerted!(moment);
+      await pumpEventQueue();
+      expect(synth.spoken, <String>['يا أمير ميعاد كونكور دلوقتي.']);
+    });
+
+    test('«اسمع زاد» on the notification speaks it and opens home', () async {
+      await build(AlertPermission.granted);
+      await container.read(alertsControllerProvider.notifier).start();
+      platform.spoke!('صباح الخير يا أمير.');
+      await pumpEventQueue();
+      expect(synth.spoken, <String>['صباح الخير يا أمير.']);
+    });
+
+    test('with spoken alerts turned off, nothing is said', () async {
+      await build(AlertPermission.granted);
+      container
+          .read(alertPrefsProvider)
+          .setEnabled(AlertPrefs.voiceSpokenAlerts, enabled: false);
+      await pumpEventQueue();
+      await container.read(alertsControllerProvider.notifier).start();
+      platform.alerted!(moment);
+      await pumpEventQueue();
+      expect(synth.spoken, isEmpty);
+    });
+  });
 }

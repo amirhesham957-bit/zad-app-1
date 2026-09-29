@@ -1,6 +1,6 @@
 // بوابة إشعارات البنوك: الضجيج مايتحولش لأسئلة «إيداع ولا خصم».
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { decideGate, gatePrompt, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, gatePrompt, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 
 Deno.test("known banks and wallets are recognised from the sender name or the package", () => {
   assertEquals(knownFinancialSender("com.google.android.apps.messaging", "CIB"), "cib");
@@ -32,6 +32,22 @@ Deno.test("money that moved goes to confirmation; a known bank needs less certai
 Deno.test("model down: a known bank is still asked about, an unknown app is dropped", () => {
   assertEquals(decideGate(null, "nbe"), "ask");
   assertEquals(decideGate(null, null), "ignore");
+});
+
+Deno.test("model down: a bank message through the messaging app is asked about, not dropped", () => {
+  // 2026-09-28 16:13: this shape arrived from com.google.android.apps.messaging, the gate
+  // timed out, and decideGate(null, null) threw it away.
+  const sms = "تم خصم 350.50 ج.م من بطاقتك المنتهية 1234 لدى كارفور";
+  assertEquals(looksLikeMoneyMoved(sms), true);
+  assertEquals(decideGate(null, null, looksLikeMoneyMoved(sms)), "ask");
+  assertEquals(looksLikeMoneyMoved("Your account was debited with EGP 1,200"), true);
+  assertEquals(looksLikeMoneyMoved("إيداع ٥٠٠٠ جنيه في حسابك"), true);
+  // Chat without money, and money words without a number, stay out.
+  assertEquals(looksLikeMoneyMoved("هتيجي النهارده الساعة ٨؟"), false);
+  assertEquals(looksLikeMoneyMoved("حوّل الرصيد لما تفضى"), false);
+  assertEquals(decideGate(null, null, false), "ignore");
+  // A verdict still decides on its own.
+  assertEquals(decideGate({ kind: "personal_or_chat" as never, amount: 50, currency: "EGP", counterparty: null, confidence: 0.95 }, null, true), "ignore");
 });
 
 Deno.test("verdict parsing tolerates fences and rejects unknown kinds", () => {

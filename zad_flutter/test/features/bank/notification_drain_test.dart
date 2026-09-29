@@ -51,6 +51,12 @@ class _FakeListener implements ZadBankListener {
   Future<bool> isPermissionGranted() async => true;
 
   @override
+  Future<InstallInfo> installInfo() async => const InstallInfo(sdk: 34);
+
+  @override
+  Future<void> openAppDetails() async {}
+
+  @override
   Future<void> openPermissionSettings() async {}
 
   @override

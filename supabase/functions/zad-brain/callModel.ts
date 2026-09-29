@@ -23,6 +23,7 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
+import { keyOrder, type Lane, reservedCount } from "./keyLanes.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
@@ -63,6 +64,32 @@ function nextGeminiKeyIndex(): number {
   const i = geminiKeyCursor % Math.max(GEMINI_KEY_POOL.length, 1);
   geminiKeyCursor = (geminiKeyCursor + 1) % Math.max(GEMINI_KEY_POOL.length, 1);
   return i;
+}
+
+// ── Key lanes (keyLanes.ts) ────────────────────────────────────────────────────
+// Background work gets a reserved slice of the pool and never touches the rest, so a
+// cron cannot spend the quota a customer is about to need. The lane rides the request
+// in AsyncLocalStorage, which stays per request when the isolate serves several at
+// once. Loaded dynamically: a runtime without node:async_hooks runs everything in the
+// customer lane, which is exactly the behaviour before lanes existed.
+type LaneStore = { run<T>(lane: Lane, fn: () => T): T; getStore(): Lane | undefined };
+let laneStore: LaneStore | null = null;
+try {
+  const { AsyncLocalStorage } = await import("node:async_hooks");
+  laneStore = new AsyncLocalStorage<Lane>();
+} catch {
+  laneStore = null;
+}
+const RESERVED_KEYS = reservedCount(GEMINI_KEY_POOL.length, Deno.env.get("ZAD_BACKGROUND_KEYS"));
+
+/** Runs [fn] with every model call inside it drawing keys from [lane]. */
+export function inLane<T>(lane: Lane, fn: () => T): T {
+  return laneStore ? laneStore.run(lane, fn) : fn();
+}
+
+/** The keys this call may try, in order, for the lane it runs in. */
+function keysToTry(): number[] {
+  return keyOrder(laneStore?.getStore() ?? "customer", GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex());
 }
 
 // ── Model failover chain ───────────────────────────────────────────────────────
@@ -113,6 +140,27 @@ const modelCooldownUntil = new Map<string, number>();
 export function setModelCooldownMsForTests(ms: number): void {
   modelCooldownMs = ms;
   modelCooldownUntil.clear();
+}
+
+// أقصى وقت لسلسلة جيميناي كلها في دور واحد، وبعده على جروك على طول (٢٠٢٦-٠٩-٢٨).
+// تقرير ما بعد النشر: جيميناي كله كان 503/مهلة، ولفة add_appointment أخدت ٦٤ ث وهي بتلف على
+// الموديلات (مهلة ١٢ ث × كذا موديل + إعادة thinkingConfig) قبل ما توصل للرد — ده بالظبط
+// «المساعد الصوتي بيرد بعد نص دقيقة ودقيقة». جروك بيرد في ١-٤ ث، فبعد ~١٠ ث من فشل جيميناي
+// الانتظار أكتر بيخسر بس. ZAD_GEMINI_BUDGET_MS بيغيّره من غير نشر.
+const DEFAULT_GEMINI_BUDGET_MS = 10_000;
+/** أقل وقت يستاهل نبدأ بيه موديل جديد — أقل من كده نداء مالحقش يرجع أصلاً. */
+const MIN_GEMINI_ATTEMPT_MS = 2_500;
+let geminiBudgetOverrideMs: number | null = null;
+
+/** للاختبارات بس. */
+export function setGeminiBudgetMsForTests(ms: number | null): void {
+  geminiBudgetOverrideMs = ms;
+}
+
+function geminiBudgetMs(): number {
+  if (geminiBudgetOverrideMs !== null) return geminiBudgetOverrideMs;
+  const v = Number(Deno.env.get("ZAD_GEMINI_BUDGET_MS"));
+  return Number.isFinite(v) && v > 0 ? v : DEFAULT_GEMINI_BUDGET_MS;
 }
 
 /** The caller's model first (it is whatever ZAD_MODEL_ROUTINE/BRAIN is set to, and the
@@ -187,11 +235,23 @@ export async function callModel(opts: {
   const chain = modelChain(opts.model);
   const trail: string[] = [];
   const now = Date.now();
+  const deadline = now + geminiBudgetMs();
   const fresh = chain.filter((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
-  // كله في الانتظار ⇒ جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
-  for (const model of fresh.length > 0 ? fresh : chain) {
+  // كله في الانتظار: لو فيه جروك يبقى جيميناي كله واقع من أقل من دقيقة — على جروك على
+  // طول بدل ١٠ ث تانيين على نفس الحيطة (اللفة الواحدة بتنادي الموديل ٢-٣ مرات). من غير
+  // جروك، جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
+  const candidates = fresh.length > 0 ? fresh : GROQ_KEY_POOL.length > 0 ? [] : chain;
+  if (candidates.length === 0) trail.push("every gemini model cooling down");
+  for (const model of candidates) {
+    const left = deadline - Date.now();
+    // الميزانية خلصت وفيه جروك يلحق ⇒ ماتبدأش موديل جيميناي تاني.
+    if (left < MIN_GEMINI_ATTEMPT_MS && GROQ_KEY_POOL.length > 0) {
+      trail.push(`budget ${geminiBudgetMs()}ms spent`);
+      break;
+    }
+    const timeoutMs = Math.max(MIN_GEMINI_ATTEMPT_MS, Math.min(GEMINI_CALL_TIMEOUT_MS, left));
     try {
-      const reply = await withRetry(() => sendGemini({ ...opts, model }));
+      const reply = await withRetry(() => sendGemini({ ...opts, model, timeoutMs }));
       modelCooldownUntil.delete(model);
       return reply;
     } catch (e) {
@@ -425,10 +485,16 @@ export function buildGeminiContents(history: Turn[]): any[] {
  */
 const THINKING_CONFIG_UNSUPPORTED = new Set<string>();
 
+/** مهلة نداء جيميناي الواحد لما مفيش ميزانية أقصر. */
+const GEMINI_CALL_TIMEOUT_MS = 12_000;
+
 async function sendGemini(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
   thinking?: boolean;
+  /** ما فضل من ميزانية السلسلة؛ callModel بيحدده. */
+  timeoutMs?: number;
 }, retriedWithoutThinkingConfig = false): Promise<ModelReply> {
+  const timeoutMs = o.timeoutMs ?? GEMINI_CALL_TIMEOUT_MS;
   const contents = buildGeminiContents(o.history);
   const sendThinkingConfig = !o.thinking &&
     !retriedWithoutThinkingConfig &&
@@ -470,9 +536,7 @@ async function sendGemini(o: {
   let res: Response | null = null;
   let lastQuotaBody = "";
   const quotaTrail: string[] = [];
-  const start = nextGeminiKeyIndex();
-  for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-    const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+  for (const keyIndex of keysToTry()) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${o.model}` +
       `:generateContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
     // timeout 20 ثانية لكل نداء موديل — من غيره موديل معلّق بيعلّق اللفة كلها
@@ -486,7 +550,7 @@ async function sendGemini(o: {
         body,
         // ١٢ مش ٢٠ (٢٠٢٦-٠٩-٢٨): الرد الطبيعي بالأدوات ١-٣ ث؛ موديل معلّق كان بياكل ٢٠ ث
         // كاملين قبل ما السلسلة تتحرك، والعميل مستني رد صوتي.
-        signal: AbortSignal.timeout(12_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (e) {
       // موديل معلّق (timeout) أو شبكة واقعة: قبل كده الخطأ ده ماكانش ProviderUnavailableError،
@@ -495,7 +559,7 @@ async function sendGemini(o: {
       // الصوتي بيرد بعد نص دقيقة ودقيقة» وفحص tools_probe اللي عدّى ١٢٠ ث (٢٠٢٦-٠٩-٢٨).
       const name = (e as Error)?.name ?? "";
       throw new ProviderUnavailableError(
-        `gemini ${o.model} ${name === "TimeoutError" ? "timed out after 12s" : `fetch failed: ${(e as Error)?.message ?? e}`}`,
+        `gemini ${o.model} ${name === "TimeoutError" ? `timed out after ${timeoutMs}ms` : `fetch failed: ${(e as Error)?.message ?? e}`}`,
         name === "TimeoutError" ? "timeout" : "network",
       );
     }
@@ -801,9 +865,7 @@ export async function callModelStreaming(opts: {
   const contents = buildGeminiContents(opts.history);
 
   for (const model of chain) {
-    const start = nextGeminiKeyIndex();
-    for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-      const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+    for (const keyIndex of keysToTry()) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
         `:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
       try {
@@ -869,15 +931,14 @@ const EMBED_OUTPUT_DIMENSIONALITY = 768;
 export async function embedText(text: string): Promise<number[] | null> {
   if (!text.trim() || GEMINI_KEY_POOL.length === 0) return null;
   if (Date.now() < embedBreakerOpenUntil) return null; // دائرة مقفولة — متحرقش وقت
-  const start = nextGeminiKeyIndex();
+  const order = keysToTry();
   // ليه بنمسك أول خطأ؟ الكود ده كان `if (!res.ok) continue;` و`catch { continue; }`
   // من غير أي تسجيل خالص. لما الـ embeddings وقفت (صفر من ٩ ملاحظات، مسح
   // 2026-08-31) مكانش فيه أي أثر يقول السبب — لا status ولا رسالة ولا اسم موديل.
   // تشخيص مستحيل. الملاحظة الوحيدة اللي كانت بتتطبع هي "breaker OPEN" وهي
   // بتقول إن فيه فشل، مش بتقول ليه.
   let firstError: string | null = null;
-  for (let i = 0; i < GEMINI_KEY_POOL.length; i++) {
-    const keyIndex = (start + i) % GEMINI_KEY_POOL.length;
+  for (const keyIndex of order) {
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`,

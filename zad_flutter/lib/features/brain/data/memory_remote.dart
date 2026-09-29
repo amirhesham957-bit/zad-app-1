@@ -84,7 +84,8 @@ class SupabaseMemoryRemote implements MemoryRemote {
       .from('zad_customer_profile')
       .select(
         'preferred_name, gender, household_role, age_range, occupation, '
-        'pay_day, pay_frequency, household_size, kids_count, city, dialect',
+        'pay_day, pay_frequency, household_size, kids_count, city, dialect, '
+        'cares_for',
       )
       .eq('user_id', userId)
       .maybeSingle();

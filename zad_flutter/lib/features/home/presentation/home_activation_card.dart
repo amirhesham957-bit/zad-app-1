@@ -12,6 +12,7 @@ import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/design/foundation/compose_shadow.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
+import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/goals/data/life_goals_remote.dart';
 import 'package:zad/features/goals/presentation/life_goal_picker_sheet.dart';
@@ -95,8 +96,7 @@ class HomeActivationSlot extends ConsumerWidget {
       child: HomeActivationCard(
         progress: progress,
         onSetBalance: () => showMonthlyLimitSheet(context),
-        onEnableBankReading: () =>
-            ref.read(bankAccessControllerProvider.notifier).repair(),
+        onEnableBankReading: () => openBankReading(context, ref),
         onAddInventoryItem: () =>
             ref.read(shellNavigationProvider.notifier).open(ShellTab.inventory),
         onSetFirstGoal: () => showLifeGoalPickerSheet(context),

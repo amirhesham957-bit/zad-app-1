@@ -31,6 +31,9 @@ enum ShellTab {
 
   /// المخزون.
   inventory,
+
+  /// شات العيلة — opens over the shell.
+  family,
 }
 
 /// A tab somebody asked for and the shell has not shown yet.

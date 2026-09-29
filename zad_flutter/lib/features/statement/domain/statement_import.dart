@@ -226,14 +226,24 @@ String classifyStatementTitle(String title) {
   return 'أخرى';
 }
 
-/// Every row of [table] under [mapping].
-List<PreviewRow> buildPreview(CsvTable table, ColumnMapping mapping) =>
-    <PreviewRow>[
-      for (final (index, row) in table.rows.indexed)
-        _previewRow(index, row, mapping),
-    ];
+/// Every row of [table] under [mapping]. A row with no mapped category takes
+/// the customer's own category for its merchant ([customCategory], Kotlin's
+/// MerchantCategoryOverrides) before the keyword guess.
+List<PreviewRow> buildPreview(
+  CsvTable table,
+  ColumnMapping mapping, {
+  String? Function(String title)? customCategory,
+}) => <PreviewRow>[
+  for (final (index, row) in table.rows.indexed)
+    _previewRow(index, row, mapping, customCategory),
+];
 
-PreviewRow _previewRow(int index, List<String> row, ColumnMapping mapping) {
+PreviewRow _previewRow(
+  int index,
+  List<String> row,
+  ColumnMapping mapping,
+  String? Function(String title)? customCategory,
+) {
   String col(int i) => i < row.length ? row[i].trim() : '';
   final date = parseStatementDate(col(mapping.date));
   final rawTitle = col(mapping.title);
@@ -247,7 +257,9 @@ PreviewRow _previewRow(int index, List<String> row, ColumnMapping mapping) {
     title: title,
     amount: amount?.abs(),
     isExpense: (amount ?? 0) < 0,
-    category: mapped.isNotEmpty ? mapped : classifyStatementTitle(title),
+    category: mapped.isNotEmpty
+        ? mapped
+        : customCategory?.call(title) ?? classifyStatementTitle(title),
     hasError: amount == null || date == null,
   );
 }

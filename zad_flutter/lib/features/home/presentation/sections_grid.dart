@@ -22,6 +22,7 @@ import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
+import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
@@ -109,8 +110,8 @@ class ZadSection {
 }
 
 /// The sections, in Kotlin's order (`zadAppSections`, ZadSectionsGrid.kt) —
-/// the same fifteen, with the same Material glyphs and accents. The first
-/// eight are the most used.
+/// the same fifteen, with the same Material glyphs and accents, plus
+/// «نصايح زاد». The first eight are the most used.
 final List<ZadSection> zadSections = <ZadSection>[
   const ZadSection(
     id: 'inventory',
@@ -135,6 +136,15 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'مواعيدي',
     accent: ZadSectionAccent.teal,
     open: showAppointmentsScreen,
+  ),
+  // نصايح زاد in the first eight: it lived only inside the profile menu, off
+  // every path a customer takes (the owner, 2026-09-28).
+  const ZadSection(
+    id: 'tips',
+    icon: Icons.lightbulb,
+    label: 'نصايح زاد',
+    accent: ZadSectionAccent.green,
+    open: showRecommendationsScreen,
   ),
   const ZadSection(
     id: 'family',

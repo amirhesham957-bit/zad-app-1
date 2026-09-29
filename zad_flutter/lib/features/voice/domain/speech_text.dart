@@ -12,6 +12,13 @@ const int maxSpokenLength = 1200;
 /// is short enough to come back fast and long enough to sound like speech.
 const int chunkTarget = 200;
 
+/// The first chunk is kept to about one short sentence. Gemini TTS takes
+/// roughly two to three times the audio's length to produce it (measured
+/// 2026-09-28: 30 s for an 11 s clip), and nothing plays until the first
+/// chunk is back — a 200-character opener was most of the half-minute the
+/// owner waited before Zad said anything.
+const int firstChunkTarget = 90;
+
 /// The reply cleaned for speech: links become «الرابط», markdown marks and
 /// emoji/symbols become spaces (Azure reads an emoji's name aloud), runs of
 /// whitespace collapse.
@@ -46,7 +53,8 @@ List<String> speechChunks(String raw) {
   final merged = <String>[];
   final current = StringBuffer();
   for (final s in sentences) {
-    if (current.isNotEmpty && current.length + s.length > chunkTarget) {
+    final target = merged.isEmpty ? firstChunkTarget : chunkTarget;
+    if (current.isNotEmpty && current.length + s.length > target) {
       merged.add(current.toString());
       current.clear();
     }
@@ -55,6 +63,85 @@ List<String> speechChunks(String raw) {
   }
   if (current.isNotEmpty) merged.add(current.toString());
   return <String>[for (final c in merged) c.replaceAll('،', '، ...')];
+}
+
+/// How much of a streamed reply is enough to start talking: the first chunk
+/// goes to the voice as soon as a sentence ends past this many characters, so
+/// Zad starts speaking while the rest of the reply is still arriving.
+const int firstStreamedChunk = 90;
+
+/// Cuts a reply that arrives in pieces into chunks as soon as each one is
+/// ready, with the same cleaning and comma pause as [speechChunks].
+///
+/// The first chunk is released at the first sentence end past
+/// [firstStreamedChunk] characters; later ones at a sentence end past
+/// [chunkTarget]. A reply with no sentence end is cut at a space once it runs
+/// to twice the target, so a long unpunctuated answer is not held back until
+/// it finishes. Nothing past [maxSpokenLength] is ever released.
+class SpeechStreamSplitter {
+  final StringBuffer _pending = StringBuffer();
+  var _released = 0;
+  var _first = true;
+
+  /// Adds [delta] and returns the chunks it made ready, in order.
+  List<String> add(String delta) {
+    _pending.write(delta);
+    return _drain(done: false);
+  }
+
+  /// The rest, once the reply has finished arriving.
+  List<String> finish() => _drain(done: true);
+
+  List<String> _drain({required bool done}) {
+    final out = <String>[];
+    for (var chunk = _take(done: done); chunk != null;) {
+      out.add(chunk);
+      chunk = _take(done: done);
+    }
+    return out;
+  }
+
+  String? _take({required bool done}) {
+    if (_released >= maxSpokenLength) return null;
+    final text = speakableText(_pending.toString());
+    if (text.isEmpty) return null;
+    final want = _first ? firstStreamedChunk : chunkTarget;
+
+    int? cut;
+    if (done) {
+      cut = text.length;
+    } else {
+      // A sentence end followed by more text: the text after it has started,
+      // so the sentence is complete.
+      for (final m in RegExp(r'[.!؟?](?=\s)').allMatches(text)) {
+        if (m.end >= want) {
+          cut = m.end;
+          break;
+        }
+      }
+      if (cut == null && text.length >= chunkTarget * 2) {
+        final space = text.lastIndexOf(' ', chunkTarget);
+        cut = space > 0 ? space : chunkTarget;
+      }
+    }
+    if (cut == null) return null;
+
+    var chunk = text.substring(0, cut).trim();
+    final room = maxSpokenLength - _released;
+    if (chunk.length > room) chunk = chunk.substring(0, room);
+    // The remainder is kept cleaned (cleaning it again changes nothing), but
+    // a trailing space in what arrived is kept: the next piece may start with
+    // a word, and dropping the space would glue the two together.
+    final endsInSpace = RegExp(r'\s$').hasMatch(_pending.toString());
+    final rest = text.substring(cut).trim();
+    _pending
+      ..clear()
+      ..write(rest.isNotEmpty && endsInSpace ? '$rest ' : rest);
+    if (chunk.isEmpty) return null;
+    _first = false;
+    _released += chunk.length;
+    return chunk.replaceAll('،', '، ...');
+  }
 }
 
 /// Wraps `voice_synthesize`'s raw PCM (24 kHz, 16-bit, mono — the same bytes

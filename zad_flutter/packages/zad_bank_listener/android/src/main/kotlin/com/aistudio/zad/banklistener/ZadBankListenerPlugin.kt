@@ -3,6 +3,7 @@ package com.aistudio.zad.banklistener
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
@@ -88,6 +89,20 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     if (handle != 0L) BackgroundDelivery.saveCallbackHandle(context, handle)
                     result.success(null)
                 }
+                // أندرويد ١٣+ بيقفل «قراءة الإشعارات» تحت «إعدادات مقيدة» لأي تطبيق
+                // متثبت من ملف (مش من متجر). الواجهة محتاجة تعرف ده عشان تشرح الخطوة.
+                "installInfo" -> result.success(
+                    mapOf("sdk" to Build.VERSION.SDK_INT, "installer" to installerPackage()),
+                )
+                // «معلومات التطبيق» — منها ⋮ ← «السماح بالإعدادات المقيدة»، ومنها البطارية.
+                "openAppDetails" -> {
+                    val intent = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", context.packageName, null),
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    result.success(null)
+                }
                 "backgroundDone" -> {
                     if (inBackgroundEngine) BackgroundDelivery.headlessFinished()
                     result.success(null)
@@ -115,6 +130,18 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val parsed = ComponentName.unflattenFromString(it)
             parsed != null && parsed == me
         }
+    }
+
+    /** مين ثبّت التطبيق: `com.android.vending` = جوجل بلاي، null = ملف APK في الغالب. */
+    private fun installerPackage(): String? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getInstallerPackageName(context.packageName)
+        }
+    } catch (e: Exception) {
+        null
     }
 
     private fun openPermissionSettings() {

@@ -1,5 +1,24 @@
 # Flutter migration — status, conventions, and what is left
 
+> **2026-09-29 — done. Zad is Flutter only; `app/` and the root Gradle build are
+> gone** (branch `fix/launch-blockers`). What closed the §6 "Known gaps":
+>
+> | Kotlin had | Flutter now |
+> |---|---|
+> | ChatNotificationService (family chat + SOS with the app closed) | trigger on `chat_messages` → zad-brain `family_message_push` → FCM to every member but the writer |
+> | PharmacyReminderReceiver buttons | «أخدتها ✅» / «أجّل» on the dose reminder, answering that exact slot |
+> | VoiceMomentSpeaker | voice moments spoken in the open app; «🔊 اسمع زاد» on the notification otherwise |
+> | GroceryGeofenceManager + GeofenceBroadcastReceiver | street alerts: `features/places` + `packages/zad_geofence` (shops and home, app closed or open) |
+> | TransactionWidget | `ZadBalanceWidget` (home_widget): «متاح» + last three rows |
+> | MerchantCategoryOverrides | `MerchantCategories`, applied to statement import |
+>
+> Decided, not ported: the «يا زاد» wake word (owner, 2026-09-29 — its dead
+> switch was removed), English (Arabic only for the launch), Play Billing and
+> AdMob (no Play), Lottie. **Not ported yet:** the iftar reminder on leaving home
+> (Ramadan only; street alerts already watch the home, so it is a new message
+> on an existing event). Everything below
+> this box is the history of the port and its conventions, still accurate.
+
 **Last updated 2026-09-21 (fourth session). HEAD `23dc6f54` (code), pushed** to `origin` (the personal fork `amirhesham957-bit/zad-app-1` —
 see "Where the commits live" below — **a push there deploys to production**). Every
 migration in the repo is live (§5 items 7 and 9).

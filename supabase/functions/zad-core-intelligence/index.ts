@@ -13,7 +13,8 @@ import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImage
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
-import { googleNearby, googlePlacesKey } from "./googlePlaces.ts";
+import { receiptPurchaseDate } from "./receiptDate.ts";
+import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -329,7 +330,7 @@ const ZAD_PERSONA_PREFIX = "أنت عقل زاد — مدير مالي ومنز�
 // way every other third-party AI/data call in this file already goes through the server.
 const LOCATIONIQ_API_KEY = Deno.env.get("LOCATIONIQ_API_KEY");
 // Same rule as LocationIQ: server-side only. First source for nearby_pois (googlePlaces.ts).
-const GOOGLE_PLACES_KEY = googlePlacesKey((n) => Deno.env.get(n));
+const GOOGLE_PLACES_KEYS = googlePlacesKeys((n) => Deno.env.get(n));
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY") ?? "";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -1860,9 +1861,12 @@ Deno.serve(async (req: Request) => {
           "summary) — for this type `items` should be empty and `total` should be the single " +
           "balance/salary figure shown, if any; \"general\" for non-grocery non-pharmacy " +
           "itemized receipts (restaurants, fuel, services); otherwise \"grocery\". " +
+          "`purchaseDate` is the date printed on the receipt as YYYY-MM-DD (convert Hijri or " +
+          "day-first dates to Gregorian YYYY-MM-DD); if no date is printed or it is unreadable, " +
+          "return an empty string — never today's date as a guess. " +
           "Return ONLY a JSON object, no markdown and no commentary: " +
-          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
-        const userPrompt = "Extract the store name, the total paid, a spending category, the receipt type, and every line item from this receipt.";
+          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
+        const userPrompt = "Extract the store name, the total paid, the printed purchase date, a spending category, the receipt type, and every line item from this receipt.";
         // callVisionModel rotates the whole Gemini key pool internally; images never hit Groq.
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
         if (visionResult) {
@@ -1878,6 +1882,9 @@ Deno.serve(async (req: Request) => {
                 // back to "أخرى" keeps the receipt usable instead of quarantining its spend.
                 category: normalizeStandardCategory(parsed.category),
                 storeName: parsed.storeName || "",
+                // null unless it is a real date in the last year: a misread date
+                // must not move the expense into some other month.
+                purchaseDate: receiptPurchaseDate(parsed.purchaseDate),
                 receiptType: parsed.receiptType || "grocery",
                 items: parsed.items || [],
               });
@@ -2024,12 +2031,12 @@ Deno.serve(async (req: Request) => {
         if (cached) return jsonResponse(cached);
 
         // جوجل الأول (تغطية المحلات في مصر والخليج أحسن)، وبعده LocationIQ.
-        if (GOOGLE_PLACES_KEY) {
-          const fromGoogle = await googleNearby(fetch, GOOGLE_PLACES_KEY, {
+        if (GOOGLE_PLACES_KEYS.length > 0) {
+          const fromGoogle = await googleNearbyAny(fetch, GOOGLE_PLACES_KEYS, {
             lat: latGrid, lon: lonGrid, tag: String(tag), radius: radius_meters || 3000,
           });
-          if (fromGoogle && fromGoogle.length > 0) {
-            const response = { stores: fromGoogle, source: "google" };
+          if (fromGoogle && fromGoogle.places.length > 0) {
+            const response = { stores: fromGoogle.places, source: "google" };
             await setCachedAiResponse(cacheKey, "nearby_pois", response);
             return jsonResponse(response);
           }

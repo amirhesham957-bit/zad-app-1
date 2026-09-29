@@ -133,6 +133,11 @@ class FamilyMessage {
   /// A purchase request's amount.
   double get requestAmount => (meta['amount'] as num?)?.toDouble() ?? 0;
 
+  /// Whether the request asks for pocket money (approval adds it to the
+  /// balance) rather than for a purchase (approval takes it off). A request
+  /// with no kind — every one the Kotlin app sends — is a purchase.
+  bool get isAllowanceRequest => meta['kind'] == 'allowance';
+
   /// A poll's question.
   String get pollQuestion {
     final q = meta['question'];
@@ -201,7 +206,7 @@ String toggledReactions(String? reactions, String emoji) {
 }
 
 /// Kotlin's `approvedSpendSince`: what a member's approved purchase requests
-/// came to since [since].
+/// came to since [since]. Approved allowance requests are left out.
 double approvedSpendSince(
   List<FamilyMessage> messages,
   String memberId,
@@ -212,6 +217,8 @@ double approvedSpendSince(
     if (m.type != FamilyMessageType.purchaseRequest) continue;
     if (m.senderId != memberId) continue;
     if (m.requestStatus != RequestStatus.approved) continue;
+    // Pocket money received is not money spent.
+    if (m.isAllowanceRequest) continue;
     final at = m.createdAt;
     if (at == null || at.isBefore(since)) continue;
     total += m.requestAmount;
@@ -432,4 +439,28 @@ class ChildSpending {
 
   /// Their own monthly limit; 0 when none.
   final double budgetCeiling;
+}
+
+/// What a child's request says in the family chat, and the metadata the
+/// server decides it by. [allowance] asks for pocket money; otherwise it asks
+/// to buy [what]. [what] is optional for an allowance (a reason, if any).
+({String text, Map<String, dynamic> metadata}) moneyRequest({
+  required String what,
+  required double amount,
+  required bool allowance,
+}) {
+  final value = amount == amount.roundToDouble()
+      ? amount.toStringAsFixed(0)
+      : amount.toStringAsFixed(2);
+  final reason = what.trim();
+  return (
+    text: allowance
+        ? 'محتاج مصروف $value${reason.isEmpty ? '' : ' — $reason'}'
+        : 'أحتاج $value لشراء $reason',
+    metadata: <String, dynamic>{
+      'amount': amount,
+      'status': 'PENDING',
+      'kind': allowance ? 'allowance' : 'purchase',
+    },
+  );
 }

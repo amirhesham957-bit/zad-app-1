@@ -1,11 +1,30 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { googleNearby, googlePlacesKey, parseNearby } from "./googlePlaces.ts";
+import { googleNearby, googleNearbyAny, googlePlacesKeys, parseNearby } from "./googlePlaces.ts";
 
-Deno.test("googlePlacesKey takes the first name that is set", () => {
-  const env: Record<string, string> = { GOOGLE_API_KEY: "b", GOOGLE_PLACES_API_KEY: " a " };
-  assertEquals(googlePlacesKey((n) => env[n]), "a");
-  assertEquals(googlePlacesKey(() => undefined), undefined);
-  assertEquals(googlePlacesKey((n) => (n === "GOOGLE_MAPS_API_KEY" ? "  " : undefined)), undefined);
+Deno.test("googlePlacesKeys: every set key, PLACES first, no duplicates", () => {
+  const env: Record<string, string> = { GOOGLE_MAPS_API_KEY: "maps", GOOGLE_PLACES_API_KEY: " places ", GOOGLE_API_KEY: "maps" };
+  assertEquals(googlePlacesKeys((n) => env[n]), [
+    { name: "GOOGLE_PLACES_API_KEY", key: "places" },
+    { name: "GOOGLE_MAPS_API_KEY", key: "maps" },
+  ]);
+  assertEquals(googlePlacesKeys(() => undefined), []);
+  assertEquals(googlePlacesKeys((n) => (n === "GOOGLE_MAPS_API_KEY" ? "  " : undefined)), []);
+});
+
+Deno.test("googleNearbyAny: a refused key steps to the next — the 2026-09-29 case", async () => {
+  const seen: string[] = [];
+  const fake = ((_url: string, init: RequestInit) => {
+    const key = new Headers(init.headers).get("X-Goog-Api-Key")!;
+    seen.push(key);
+    return Promise.resolve(key === "blocked"
+      ? new Response("Requests to this API ... are blocked.", { status: 403 })
+      : new Response(JSON.stringify({ places: [{ displayName: { text: "كارفور" }, location: { latitude: 30, longitude: 31 } }] }), { status: 200 }));
+  }) as unknown as typeof fetch;
+  const out = await googleNearbyAny(fake, [{ name: "A", key: "blocked" }, { name: "B", key: "good" }], { lat: 30, lon: 31, tag: "supermarket", radius: 3000 });
+  assertEquals(seen, ["blocked", "good"]);
+  assertEquals(out?.name, "B");
+  assertEquals(out?.places[0].name, "كارفور");
+  assertEquals(await googleNearbyAny(fake, [{ name: "A", key: "blocked" }], { lat: 30, lon: 31, tag: "supermarket", radius: 3000 }), null);
 });
 
 Deno.test("parseNearby keeps named places with a location, nearest first", () => {

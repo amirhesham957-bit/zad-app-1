@@ -21,6 +21,7 @@ import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/transactions/data/merchant_categories.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Opens the import.
@@ -78,13 +79,14 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
   }
 
   void _preview() {
+    final custom = ref.read(merchantCategoriesProvider);
     final rows = buildPreview(_table!, (
       date: _date!,
       title: _title!,
       amount: _amount!,
       category: _category,
       invertSign: _invert,
-    ));
+    ), customCategory: custom.categoryFor);
     setState(() {
       _rows = rows;
       _checked = <int>{

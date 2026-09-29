@@ -9,10 +9,13 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
+import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
@@ -48,6 +51,8 @@ class AlertsController extends Notifier<AlertsView> {
       onAlert: _arrived,
       onOpened: _opened,
       onAnswer: _answered,
+      onDose: _doseAnswered,
+      onSpeak: _speak,
     );
 
     final registrar = ref.read(pushRegistrarProvider);
@@ -96,6 +101,18 @@ class AlertsController extends Notifier<AlertsView> {
     if (ref.mounted) state = AlertsView(permission: after);
   }
 
+  /// A voice moment — a dose, an appointment, the morning greeting — said
+  /// in زاد's voice, unless «النطق الصوتي للإشعارات والجرعات» is off. Kotlin's
+  /// VoiceMomentSpeaker: on by default (the owner's «تتكلم لوحدها»).
+  void _speak(String speech) {
+    if (!ref
+        .read(alertPrefsProvider)
+        .isEnabledUnlessOff(AlertPrefs.voiceSpokenAlerts)) {
+      return;
+    }
+    unawaited(ref.read(voiceOutputControllerProvider.notifier).speak(speech));
+  }
+
   /// The device flag for the last morning the greeting was asked for.
   static const String morningKey = 'morning_greeting_asked';
 
@@ -131,12 +148,9 @@ class AlertsController extends Notifier<AlertsView> {
   }
 
   void _arrived(PushAlert alert) {
-    // Zad says a voice moment out loud while the app is open; in the
-    // background it stays a notification.
-    final speech = alert.speech;
-    if (speech != null) {
-      unawaited(ref.read(voiceOutputControllerProvider.notifier).speak(speech));
-    }
+    // Open in front of the customer: say it now, as Kotlin did with the
+    // screen on. In the background the notification carries «اسمع زاد».
+    if (alert.speech case final speech?) _speak(speech);
     // What arrived is also on the server; the lists that show it look again.
     unawaited(
       ref
@@ -164,9 +178,35 @@ class AlertsController extends Notifier<AlertsView> {
         ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
       case AlertDestination.home:
         ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
+      case AlertDestination.family:
+        ref.read(shellNavigationProvider.notifier).open(ShellTab.family);
       case null:
         break;
     }
+  }
+
+  /// «أخدتها» / «أجّل» pressed on a dose reminder. The pharmacy opens too,
+  /// so the customer sees the dose ticked (or put off) and anything else due.
+  Future<void> _doseAnswered(
+    String medicineId,
+    String time, {
+    required bool taken,
+  }) async {
+    ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
+    final pharmacy = ref.read(pharmacyControllerProvider.notifier);
+    // A press may have started the app: today's slots are not read yet.
+    if (ref.read(pharmacyControllerProvider).today.isEmpty) {
+      await pharmacy.refresh();
+    }
+    if (!ref.mounted) return;
+    final slot = slotForDoseAnswer(
+      ref.read(pharmacyControllerProvider).today,
+      medicineId: medicineId,
+      time: time,
+      now: ref.read(nowProvider)(),
+    );
+    if (slot == null) return;
+    await (taken ? pharmacy.take(slot) : pharmacy.snooze(slot));
   }
 
   /// «أيوه، أنا» / «مش أنا» pressed on a bank question in the notification.

@@ -157,6 +157,13 @@ class ChatController extends Notifier<ChatView> {
     final repository = ref.read(chatRepositoryProvider);
     final completer = Completer<void>();
     var streamed = placeholder;
+    // Asked aloud, answered aloud — and started as soon as the first sentence
+    // arrives, not after the whole reply has.
+    final voice = viaVoice
+        ? ref
+              .read(voiceOutputControllerProvider.notifier)
+              .speakStreaming(messageId: placeholder.id)
+        : null;
 
     await _turn?.cancel();
     _turn = ref
@@ -169,6 +176,7 @@ class ChatController extends Notifier<ChatView> {
               case AgentChunk(:final text):
                 streamed = streamed.copyWith(text: streamed.text + text);
                 _replace(streamed);
+                voice?.add(text);
               case AgentDone(:final turn):
                 streamed = _settle(streamed, turn);
             }
@@ -197,14 +205,12 @@ class ChatController extends Notifier<ChatView> {
       await repository.save(streamed);
       if (!ref.mounted) return;
 
-      // Asked aloud, answered aloud. Not awaited: the turn is over when the
-      // reply is on screen, not when Zad stops talking.
-      if (viaVoice && streamed.text.trim().isNotEmpty) {
-        unawaited(
-          ref
-              .read(voiceOutputControllerProvider.notifier)
-              .speak(streamed.text, messageId: streamed.id),
-        );
+      // The JSON path (every turn that ran a tool) streams nothing; its reply
+      // is spoken whole. Either way the turn is over when the reply is on
+      // screen, not when Zad stops talking.
+      if (voice != null) {
+        if (!voice.heardAnything) voice.add(streamed.text);
+        voice.finish();
       }
 
       state = state.copyWith(
@@ -216,6 +222,7 @@ class ChatController extends Notifier<ChatView> {
         isAwaitingReply: false,
       );
     } on Object catch (error) {
+      voice?.cancel();
       if (!ref.mounted) return;
 
       // The customer's words stay, marked, so they can be sent again. The

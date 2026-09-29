@@ -59,7 +59,8 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { lowStockToAdd } from "./lowStock.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
+import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
+import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -75,7 +76,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
-import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -86,6 +87,7 @@ import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
+import { familyPushText } from "./familyPush.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -978,7 +980,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
   const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
     sb.from("zad_customer_profile")
-      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes")
+      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes,cares_for")
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
@@ -3844,6 +3846,11 @@ const CHAT_TOOLS: ToolDef[] = [
         dialect: { type: "string", enum: ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] },
         interests: { type: "array", items: { type: "string" } },
         notes: { type: "string", description: "حاجة مهمة عنه مش ليها خانة، مختصرة" },
+        cares_for: {
+          type: "array",
+          items: { type: "string", enum: ["children", "parents", "spouse", "siblings", "grandparents"] },
+          description: "مين في رعايته: «بصرف على أبويا وأمي» ⇒ [\"parents\"]؛ «مسؤول عن نفسي بس» ⇒ []. القائمة كلها، مش إضافة.",
+        },
       },
     },
   },
@@ -5446,7 +5453,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
   }
-  const gate = decideGate(verdict, knownSender);
+  const gate = decideGate(verdict, knownSender, looksLikeMoneyMoved(rawText));
   const gateTag = `gate:${verdict?.kind ?? "unavailable"}:${verdict ? verdict.confidence.toFixed(2) : "-"}${knownSender ? ":known" : ""}`;
   console.log(`[notification_gate] ${packageName} → ${gate} (${gateTag})`);
   if (gate === "ignore") {
@@ -5772,6 +5779,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 1. **اسمك ومخاطبة العميل (ثابتان)**:
    - اسمك "زاد". **مايتغيّرش** حسب العميل ولا حسب الموضوع، ومتخترعش لنفسك اسم تاني.
    - **إنت عارف العميل ده (customer في الـSNAPSHOT)**: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، شغله، ميعاد قبضه، عياله، مدينته. نادِه باسمه أحياناً (مش كل رسالة)، وخاطبه بصيغة نوعه لو معروف، واستخدم اللي تعرفه عنه في كلامك («قربنا من ٢٥ ميعاد قبضك»، «العيال عاملين إيه؟»).
+   - **customer.cares_for = مين في رعايته.** «parents» معناها إنه ابن/بنت مسؤول عن أبوه وأمه — مش رب أسرة عنده عيال: متفترضش عيال، واسأل عن الأهل (دواهم، مواعيد دكاترتهم، مصاريفهم) واقترح تتابعهم في الصيدلية والمواعيد باسمهم. «children» عيال، «spouse» زوج/زوجة، إلخ. [] = مسؤول عن نفسه بس. null = لسه ماقالش.
    - لو customer.gender مش معروف: **متخمّنش** — صيغة محايدة دافية. ولو العميل استخدم صيغة واضحة لنفسه («أنا تعبانة»، «أنا أبوهم») سجّلها بـ update_customer_profile فوراً وثبّت عليها.
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت.
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
@@ -5946,9 +5954,21 @@ ${JSON.stringify(snap)}
 // Main handler
 // ═══════════════════════════════════════════════════════════
 
+// Every model call a request makes draws keys from its lane (keyLanes.ts): scheduled
+// analysis from a reserved slice of the pool, everything a customer waits on from the
+// rest first. Decided by the action, before anything else runs.
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
+  let action: unknown = null;
+  try {
+    action = (await req.clone().json())?.action;
+  } catch {
+    // Not JSON: handleRequest answers that as it always has.
+  }
+  return await inLane(laneFor(action), () => handleRequest(req));
+});
 
+async function handleRequest(req: Request): Promise<Response> {
   try {
     const body = await req.json();
 
@@ -6158,6 +6178,40 @@ Deno.serve(async (req: Request) => {
     // التحليل اليومي (dailyBrain.ts): الكرون brain-daily-analysis بيصحّيه الصبح بنفس سيكريت
     // الفحص الاستباقي. بيرد على طول (202) والشغل بيكمل في الخلفية — كل حساب نداء منفصل
     // لمسار trigger=daily بمفتاح الخدمة، واللي فيه حارس الـ١٢ ساعة ضد التكرار.
+    // شات العيلة: تريجر chat_messages (20260929100000) بينادي هنا لكل رسالة جديدة، فتوصل
+    // لكل فرد غير اللي كتبها — والتطبيق مقفول. مفيش ذكاء اصطناعي هنا، FCM بس.
+    if (body.action === "family_message_push") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbFamily = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: msg } = await sbFamily.from("chat_messages")
+        .select("id,family_id,sender_id,message,message_type,metadata")
+        .eq("id", String(body.message_id ?? ""))
+        .maybeSingle();
+      if (!msg) return new Response(JSON.stringify({ ok: false, reason: "not_found" }), { headers: CORS_HEADERS });
+      const { data: members } = await sbFamily.from("family_members")
+        .select("id,user_id,alias")
+        .eq("family_id", msg.family_id);
+      const everyone = (members ?? []) as Array<{ id: string; user_id: string | null; alias: string | null }>;
+      const sender = everyone.find((m) => m.id === msg.sender_id);
+      const text = familyPushText({ ...msg, alias: sender?.alias ?? "" });
+      if (!text) return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: CORS_HEADERS });
+      const recipients = [...new Set(
+        everyone
+          .filter((m) => m.user_id && m.id !== msg.sender_id && m.user_id !== sender?.user_id)
+          .map((m) => m.user_id as string),
+      )];
+      const deliveries = await Promise.all(
+        recipients.map((userId) => pushToDevice(sbFamily, userId, text.title, text.body, { route: "family" })),
+      );
+      return new Response(JSON.stringify({
+        ok: true,
+        recipients: recipients.length,
+        sent: deliveries.filter((d) => d === "sent").length,
+      }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "run_daily_brain") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
@@ -6682,7 +6736,7 @@ Deno.serve(async (req: Request) => {
     console.error("zad-brain error:", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS_HEADERS });
   }
-});
+}
 
 /**
  * agent_turn_stream — رد متدفق حرف بحرف (تجربة ChatGPT).

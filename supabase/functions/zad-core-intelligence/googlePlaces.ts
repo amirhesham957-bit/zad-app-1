@@ -1,26 +1,29 @@
 // Google Places (New) Nearby Search — أول مصدر لـ nearby_pois (٢٠٢٦-٠٩-٢٨).
 //
-// المالك حط مفتاح جوجل ماب كسرّ على المشروع، واسم السر مش معروف من الريبو، فبنقرا أول اسم
-// موجود من [GOOGLE_PLACES_KEY_NAMES] — provider_health بيطبع أي سر اسمه فيه MAPS/PLACES، فلو
-// اتحط باسم تاني يبان هناك. المفتاح على السيرفر بس: الموبايل بيبعت نقطة تقريبية (٣ خانات) والرد
+// المفاتيح بتتجرّب بالترتيب لحد واحد يرد: يوم ٢٠٢٦-٠٩-٢٩ كان `GOOGLE_MAPS_API_KEY` مرفوض
+// من جوجل ("Requests to this API … SearchNearby are blocked" — مفتاح Maps مقيّد) والمالك ضاف
+// `GOOGLE_PLACES_API_KEY` جنبه؛ مع «أول اسم موجود» المفتاح المرفوض كان هيفضل هو المستخدم.
+// provider_health بيقول أنهي اسم اشتغل. المفتاح على السيرفر بس: الموبايل بيبعت نقطة تقريبية (٣ خانات) والرد
 // بيتخزن لكل خلية، فالجيران بيشاركوا نداء واحد — Nearby Search بيتحاسب بعد حد شهري مجاني.
 //
 // null = فشل (مفتاح غلط، API مش مفعّل، شبكة) → nearby_pois بيكمّل على LocationIQ ثم Overpass.
 
 export const GOOGLE_PLACES_KEY_NAMES = [
-  "GOOGLE_MAPS_API_KEY",
   "GOOGLE_PLACES_API_KEY",
+  "GOOGLE_MAPS_API_KEY",
   "GOOGLE_MAPS_KEY",
   "MAPS_API_KEY",
   "GOOGLE_API_KEY",
 ];
 
-export function googlePlacesKey(env: (name: string) => string | undefined): string | undefined {
+/** كل المفاتيح المتظبطة بالترتيب، من غير تكرار — `name` للتقارير بس، مش القيمة. */
+export function googlePlacesKeys(env: (name: string) => string | undefined): Array<{ name: string; key: string }> {
+  const out: Array<{ name: string; key: string }> = [];
   for (const name of GOOGLE_PLACES_KEY_NAMES) {
-    const v = env(name)?.trim();
-    if (v) return v;
+    const key = env(name)?.trim();
+    if (key && !out.some((k) => k.key === key)) out.push({ name, key });
   }
-  return undefined;
+  return out;
 }
 
 /** أنواع جوجل لكل tag الكلاينت بيبعته — نفس tags بتاعة LocationIQ. */
@@ -100,4 +103,17 @@ export async function googleNearby(
     console.error("[CoreIntel] google places failed:", (e as Error).message);
     return null;
   }
+}
+
+/** أول مفتاح يرد. `name` = اسم السر اللي اشتغل، null لو كلهم رفضوا. */
+export async function googleNearbyAny(
+  fetchImpl: typeof fetch,
+  keys: Array<{ name: string; key: string }>,
+  q: { lat: number; lon: number; tag: string; radius: number },
+): Promise<{ places: NearbyPlace[]; name: string } | null> {
+  for (const k of keys) {
+    const places = await googleNearby(fetchImpl, k.key, q);
+    if (places !== null) return { places, name: k.name };
+  }
+  return null;
 }

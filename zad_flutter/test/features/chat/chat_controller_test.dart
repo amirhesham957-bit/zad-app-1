@@ -281,6 +281,37 @@ void main() {
       expect(synth.spoken, <String>['فاضلك ألف جنيه.']);
     });
 
+    test('a streamed reply starts speaking before it has finished', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final pending = container
+          .read(chatControllerProvider.notifier)
+          .send('عندي كام في الميزانية؟', viaVoice: true);
+      await until(() => agent.live?.isClosed == false);
+      const opening =
+          'فاضلك في الميزانية ألف ومية جنيه، وده كويس جداً '
+          'بالنسبة لنص الشهر ده لو فضلنا ماشيين كده على طول. ';
+      agent.live!
+        ..add(const AgentChunk(opening))
+        ..add(const AgentChunk('وكمان'));
+      await until(() => synth.spoken.isNotEmpty);
+      expect(synth.spoken.single, startsWith('فاضلك في الميزانية'));
+
+      agent.live!
+        ..add(const AgentChunk(' خلي بالك من الأكل برا.'))
+        ..add(
+          done(
+            reply:
+                '$opening'
+                'وكمان خلي بالك من الأكل برا.',
+          ),
+        );
+      await agent.live!.close();
+      await pending;
+      await until(() => synth.spoken.length == 2);
+      expect(synth.spoken.last, 'وكمان خلي بالك من الأكل برا.');
+    });
+
     test('a typed message is neither', () async {
       final container = containerWith();
       addTearDown(container.dispose);

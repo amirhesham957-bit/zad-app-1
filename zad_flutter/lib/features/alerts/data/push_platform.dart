@@ -23,11 +23,16 @@ const String kAlertChannelId = 'zad_agent_channel';
 abstract interface class PushPlatform {
   /// Starts listening. [onAlert] gets every message that arrives while the
   /// app is open; [onOpened] gets where a tapped alert should land;
-  /// [onAnswer] gets a bank confirmation settled from a notification button.
+  /// [onAnswer] gets a bank confirmation settled from a notification button;
+  /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken);
+  /// [onSpeak] a voice moment's «اسمع زاد».
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
+    void Function(String speech)? onSpeak,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -53,6 +58,9 @@ class SilentPushPlatform implements PushPlatform {
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
+    void Function(String speech)? onSpeak,
   }) async {}
 
   @override
@@ -120,7 +128,17 @@ Future<void> _showLocal(PushAlert alert) async {
         // A bank question carries its two answers. showsUserInterface: the
         // decision needs the signed-in session, which lives in the app, so a
         // press brings the app up and settles it there (AlertsController).
-        actions: alert.proposalId == null
+        actions: alert.speech != null
+            ? const <AndroidNotificationAction>[
+                // Speaking needs the app's player, so the press brings the
+                // app up and زاد says it there (AlertsController).
+                AndroidNotificationAction(
+                  kListenActionId,
+                  '🔊 اسمع زاد',
+                  showsUserInterface: true,
+                ),
+              ]
+            : alert.proposalId == null
             ? null
             : const <AndroidNotificationAction>[
                 AndroidNotificationAction(
@@ -136,7 +154,9 @@ Future<void> _showLocal(PushAlert alert) async {
               ],
       ),
     ),
-    payload: alert.proposalId == null
+    payload: alert.speech != null
+        ? speakPayload(alert.speech!)
+        : alert.proposalId == null
         ? payloadFor(alert.destination)
         : proposalPayload(alert.proposalId!),
   );
@@ -149,18 +169,33 @@ Future<void> showAlertInBackground(PushAlert alert) async {
   await _showLocal(alert);
 }
 
-/// Routes a tapped notification: a button on a bank question answers it, any
-/// other tap opens where the notification points.
+/// Routes a tapped notification: a button on a bank question, a dose reminder
+/// or a voice moment answers it, any other tap opens where the notification
+/// points.
 void routeNotificationResponse({
   required String? actionId,
   required String? payload,
   required void Function(AlertDestination? destination) onOpened,
   void Function(String proposalId, {required bool confirmed})? onAnswer,
+  void Function(String medicineId, String time, {required bool taken})? onDose,
+  void Function(String speech)? onSpeak,
 }) {
   final proposal = proposalIdFromPayload(payload);
   final confirmed = confirmationFromAction(actionId);
   if (proposal != null && confirmed != null && onAnswer != null) {
     onAnswer(proposal, confirmed: confirmed);
+    return;
+  }
+  final dose = doseFromPayload(payload);
+  final taken = doseAnswerFromAction(actionId);
+  if (dose != null && taken != null && onDose != null) {
+    onDose(dose.medicineId, dose.time, taken: taken);
+    return;
+  }
+  final speech = speechFromPayload(payload);
+  if (speech != null) {
+    if (actionId == kListenActionId && onSpeak != null) onSpeak(speech);
+    onOpened(AlertDestination.home);
     return;
   }
   onOpened(destinationForPayload(payload));
@@ -170,8 +205,8 @@ void routeNotificationResponse({
 /// in front. Registered in `bootstrap()`; must be top level.
 ///
 /// A message with a notification block has already been shown by FCM; only a
-/// data-only one (a voice moment) needs putting on screen here. It is shown as
-/// text — speaking it in زاد's voice is not ported.
+/// data-only one (a voice moment) needs putting on screen here. It carries
+/// «🔊 اسمع زاد»; a press brings the app up and زاد says it.
 @pragma('vm:entry-point')
 Future<void> zadBackgroundMessage(RemoteMessage message) async {
   if (!shouldShowLocally(
@@ -211,6 +246,9 @@ class FirebasePushPlatform implements PushPlatform {
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
+    void Function(String medicineId, String time, {required bool taken})?
+    onDose,
+    void Function(String speech)? onSpeak,
   }) async {
     if (_started) return;
     _started = true;
@@ -222,6 +260,8 @@ class FirebasePushPlatform implements PushPlatform {
         payload: response.payload,
         onOpened: onOpened,
         onAnswer: onAnswer,
+        onDose: onDose,
+        onSpeak: onSpeak,
       ),
     );
 
@@ -257,6 +297,8 @@ class FirebasePushPlatform implements PushPlatform {
           payload: launch?.notificationResponse?.payload,
           onOpened: onOpened,
           onAnswer: onAnswer,
+          onDose: onDose,
+          onSpeak: onSpeak,
         );
       }
     }

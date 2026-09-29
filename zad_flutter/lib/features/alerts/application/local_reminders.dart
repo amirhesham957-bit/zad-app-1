@@ -102,6 +102,7 @@ class LocalReminders {
     String channel,
     String name, {
     bool high = false,
+    List<AndroidNotificationAction>? actions,
   }) => NotificationDetails(
     android: AndroidNotificationDetails(
       channel,
@@ -109,8 +110,26 @@ class LocalReminders {
       importance: high ? Importance.high : Importance.defaultImportance,
       priority: high ? Priority.high : Priority.defaultPriority,
       icon: 'ic_stat_zad',
+      actions: actions,
     ),
   );
+
+  /// Kotlin's PharmacyReminderReceiver buttons. showsUserInterface: logging
+  /// a dose needs the signed-in session, which lives in the app, so a press
+  /// brings it up and the dose is settled there (AlertsController).
+  static const List<AndroidNotificationAction> _doseActions =
+      <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          kDoseTakenActionId,
+          'أخدتها ✅',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          kDoseSnoozeActionId,
+          'أجّل',
+          showsUserInterface: true,
+        ),
+      ];
 
   /// Everything, from the data on the phone and a couple of small reads.
   Future<void> resyncAll() async {
@@ -157,10 +176,12 @@ class LocalReminders {
               _doseChannel,
               'زاد — مواعيد الأدوية',
               high: true,
+              actions: _doseActions,
             ),
             androidScheduleMode: mode,
             matchDateTimeComponents: DateTimeComponents.time,
-            payload: payloadFor(AlertDestination.pharmacy),
+            // Names the slot, so «أخدتها» / «أجّل» answer this exact dose.
+            payload: dosePayload(m.id, t.wireName),
           );
           scheduled.add(id);
         } on Object catch (e) {

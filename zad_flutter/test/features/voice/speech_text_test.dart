@@ -31,6 +31,14 @@ void main() {
       ]);
     });
 
+    test('the first chunk is one short sentence, so Zad starts sooner', () {
+      final chunks = speechChunks(
+        'تمام، سجلتها. ${'كلمة ' * 20}خلاص. ${'كلمة ' * 12}تمام.',
+      );
+      expect(chunks.first, 'تمام، ... سجلتها.');
+      expect(chunks, hasLength(2));
+    });
+
     test('commas pause after splitting, not before', () {
       // «، ...» holds a ". " — added before the split it would cut here.
       expect(speechChunks('أولاً، ثانياً، ثالثاً.'), <String>[
@@ -46,6 +54,60 @@ void main() {
 
     test('nothing speakable is nothing', () {
       expect(speechChunks('  🎉 '), isEmpty);
+    });
+  });
+
+  group('a reply spoken while it arrives', () {
+    const first =
+        'تمام، سجلت المصروف في الأكل وفاضلك في الميزانية '
+        'ألف ومية جنيه للأسبوع ده كله لحد يوم الخميس.';
+
+    test('nothing is released before a sentence ends past the first mark', () {
+      final s = SpeechStreamSplitter();
+      expect(s.add('تمام، سجلت المصروف. '), isEmpty);
+      expect(s.add('وفاضلك'), isEmpty);
+    });
+
+    test('the first chunk leaves as soon as a sentence ends past 90', () {
+      final s = SpeechStreamSplitter();
+      expect(first.length, greaterThan(firstStreamedChunk));
+      expect(s.add(first), isEmpty, reason: 'no text after it yet');
+      final out = s.add(' وكمان');
+      expect(out, <String>[first.replaceAll('،', '، ...')]);
+      expect(s.finish(), <String>['وكمان']);
+    });
+
+    test('streamed and whole replies speak the same words', () {
+      final text = List<String>.filled(
+        12,
+        'دي جملة فيها كلام كتير عن الميزانية.',
+      ).join(' ');
+      final s = SpeechStreamSplitter();
+      final streamed = <String>[
+        for (var i = 0; i < text.length; i += 7)
+          ...s.add(
+            text.substring(i, i + 7 > text.length ? text.length : i + 7),
+          ),
+        ...s.finish(),
+      ];
+      expect(streamed.join(' '), speechChunks(text).join(' '));
+      expect(streamed.first.length, lessThan(chunkTarget));
+    });
+
+    test('a reply with no sentence end is still cut, at a space', () {
+      final s = SpeechStreamSplitter();
+      final out = s.add(List<String>.filled(100, 'كلمة').join(' '));
+      expect(out, isNotEmpty);
+      expect(out.first.endsWith('كلمة'), isTrue);
+    });
+
+    test('never past what voice_synthesize accepts', () {
+      final s = SpeechStreamSplitter();
+      final out = <String>[
+        ...s.add(List<String>.filled(400, 'كلام.').join(' ')),
+        ...s.finish(),
+      ];
+      expect(out.join(' ').length, lessThanOrEqualTo(maxSpokenLength + 20));
     });
   });
 

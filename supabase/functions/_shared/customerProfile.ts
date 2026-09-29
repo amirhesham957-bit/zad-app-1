@@ -4,6 +4,8 @@
 export const HOUSEHOLD_ROLES = ["father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other"] as const;
 export const AGE_RANGES = ["under_18", "18_24", "25_34", "35_44", "45_54", "55_plus"] as const;
 export const PAY_FREQUENCIES = ["monthly", "biweekly", "weekly", "daily", "irregular"] as const;
+/** مين في رعاية العميل — «ابن مسؤول عن أبوه وأمه» غير «أب مسؤول عن عيال». */
+export const CARES_FOR = ["children", "parents", "spouse", "siblings", "grandparents"] as const;
 export const PROFILE_DIALECTS = ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] as const;
 
 /** نوع الدور في البيت بيحدد النوع لو مش مذكور صراحة: «أنا أم» = أنثى. */
@@ -28,6 +30,8 @@ export interface CustomerProfileRow {
   dialect?: string | null;
   interests?: string[] | null;
   notes?: string | null;
+  /** null = لسه ماتسألش؛ [] = مسؤول عن نفسه بس. */
+  cares_for?: string[] | null;
 }
 
 const text = (v: unknown, max: number): string | null => {
@@ -75,6 +79,11 @@ export function sanitizeProfilePatch(input: Record<string, unknown>): { patch: C
     return list.length ? list : null;
   });
   set("notes", input.notes, (v) => text(v, 500));
+  set("cares_for", input.cares_for, (v) => {
+    if (!Array.isArray(v)) return null;
+    if (v.some((x) => !(CARES_FOR as readonly unknown[]).includes(x))) return null;
+    return [...new Set(v as string[])];
+  });
   // «أنا أم» من غير نوع صريح = أنثى — مابنسيبش النوع مجهول والدور بيقوله.
   const role = patch.household_role as string | undefined;
   if (role && !("gender" in patch) && ROLE_GENDER[role]) patch.gender = ROLE_GENDER[role];
@@ -82,7 +91,7 @@ export function sanitizeProfilePatch(input: Record<string, unknown>): { patch: C
 }
 
 /** أهم حاجات لو ناقصة يسأل عنها بلطف — مرتبة بالأهمية. */
-const IMPORTANT: Array<keyof CustomerProfileRow> = ["preferred_name", "gender", "household_role", "pay_day", "occupation"];
+const IMPORTANT: Array<keyof CustomerProfileRow> = ["preferred_name", "gender", "household_role", "cares_for", "pay_day", "occupation"];
 
 export function customerCard(
   row: CustomerProfileRow | null,
@@ -106,10 +115,15 @@ export function customerCard(
     dialect: r.dialect ?? null,
     interests: r.interests ?? [],
     notes: r.notes ?? null,
+    cares_for: r.cares_for ?? null,
   };
   card.missing_important = IMPORTANT.filter((k) => card[k] === null || card[k] === undefined);
   return card;
 }
+
+const CARES_AR: Record<string, string> = {
+  children: "عياله", parents: "أبوه/أمه", spouse: "زوجه/زوجته", siblings: "إخواته", grandparents: "جده/جدته",
+};
 
 const ROLE_AR: Record<string, string> = {
   father: "أب", mother: "أم", husband: "زوج", wife: "زوجة", son: "ابن", daughter: "بنت",
@@ -134,6 +148,9 @@ export function addressingBlock(
     gender ? `النوع: ${gender === "male" ? "راجل" : "ست"}` : null,
     role ? `الدور في البيت: ${role}` : null,
     row?.age_range === "under_18" ? "السن: أقل من ١٨" : null,
+    Array.isArray(row?.cares_for)
+      ? `مسؤول عن: ${row!.cares_for!.length ? row!.cares_for!.map((c) => CARES_AR[c] ?? c).join("، ") : "نفسه بس"}`
+      : null,
   ].filter(Boolean);
   const rule = gender === "male"
     ? "خاطب العميل بصيغة المذكر في كل جملة (مش المؤنث أبداً)."

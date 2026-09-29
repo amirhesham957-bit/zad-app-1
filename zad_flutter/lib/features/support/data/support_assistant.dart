@@ -5,6 +5,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/features/support/domain/support_faq.dart';
 
 /// Answers one usage question.
 class SupportAssistant {
@@ -21,16 +22,22 @@ class SupportAssistant {
 - كن مهذباً، محترفاً، ومتعاطفاً.
 - أجب باللغة العربية بوضوح وإيجاز.''';
 
-  /// What Kotlin shows when the model gives nothing back.
+  /// What is left when neither the model nor a built-in answer helps: what
+  /// to do next, instead of Kotlin's bare apology.
   static const String fallback =
-      'عذراً، لم أتمكن من معالجة طلبك حالياً، يرجى المحاولة لاحقاً.';
+      'مش قادر أرد دلوقتي. جرّب تاني كمان شوية، ولو المشكلة مستمرة افتح '
+      '«سجل الأعطال» من الشاشة دي وابعته لنا — فيه اللي نحتاجه عشان نصلحها.';
 
   /// Long enough for the server to walk its model chain; after that the
   /// customer gets [fallback] instead of a typing dot that never ends.
   static const Duration timeout = Duration(seconds: 40);
 
-  /// The answer, or [fallback] on any failure.
-  Future<String> ask(String question) async {
+  /// The model's answer; when it cannot be had, the built-in answer to the
+  /// question if one fits ([faqAnswer]), and only then [fallback].
+  Future<String> ask(String question) async =>
+      await _askModel(question) ?? faqAnswer(question) ?? fallback;
+
+  Future<String?> _askModel(String question) async {
     try {
       final response = await _client.functions
           .invoke(
@@ -51,9 +58,9 @@ class SupportAssistant {
           .timeout(timeout);
       final data = response.data;
       final text = data is Map ? data['text'] : null;
-      return text is String && text.trim().isNotEmpty ? text.trim() : fallback;
+      return text is String && text.trim().isNotEmpty ? text.trim() : null;
     } on Object {
-      return fallback;
+      return null;
     }
   }
 }

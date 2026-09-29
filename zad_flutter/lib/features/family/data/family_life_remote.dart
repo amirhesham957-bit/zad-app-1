@@ -70,6 +70,13 @@ class FamilyLifeRemote {
     'p_approve': approve,
   });
 
+  /// `zad_send_allowance` — an admin adds pocket money to a member's balance.
+  Future<Map<String, dynamic>> sendAllowance(String memberId, double amount) =>
+      _rpc('zad_send_allowance', <String, dynamic>{
+        'p_member': memberId,
+        'p_amount': amount,
+      });
+
   /// The family's chores.
   Future<List<Map<String, dynamic>>> fetchChores(String familyId) => _rows(
     _client
