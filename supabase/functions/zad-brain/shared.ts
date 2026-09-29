@@ -105,6 +105,15 @@ function cleanText(raw: unknown, max: number): string {
   return raw.replace(/[\u0000-\u001f\u007f\u00ab\u00bb]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** «لمين؟» — اسم الشخص اللي الدوا/الميعاد ليه، زي ما العميل قاله. null = العميل نفسه. */
+export function normalizeForPerson(raw: unknown): string | null {
+  const name = cleanText(raw, 40);
+  if (!name) return null;
+  // «أنا»/«ليا» = العميل نفسه، مش شخص تاني اسمه «أنا».
+  if (/^(انا|أنا|ليا|لي|نفسي|me|myself)$/i.test(name)) return null;
+  return name;
+}
+
 export function sanitizeStoreName(raw: unknown): string {
   return cleanText(raw, 60);
 }

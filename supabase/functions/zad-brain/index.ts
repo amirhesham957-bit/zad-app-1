@@ -60,7 +60,7 @@ import { lowStockToAdd } from "./lowStock.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -605,7 +605,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active")
         .eq("user_id", userId).eq("is_active", true),
-      sb.from("zad_pharmacy_items").select("name,remaining_quantity,daily_dose_count,dose_times,created_at")
+      sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
         .eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -964,7 +964,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
   const { data: apptRows, error: apptErr } = await sb.from("zad_appointments")
-    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence")
+    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person")
     .eq("user_id", userId).eq("status", "upcoming")
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
@@ -1021,7 +1021,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   }
   for (const p of pharmRes.data ?? []) {
     if (p.remaining_quantity <= (p.daily_dose_count ?? 1) * 3) {
-      upcoming.push({ type: "medication_low", name: p.name, when: "قريب" });
+      upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: "قريب" });
     }
   }
 
@@ -1183,8 +1183,16 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const se = seasonFor(new Date(), budgetState.timezone ?? "UTC");
       return se?.kind ? { ...se, instruction: seasonInstruction(se) } : null;
     })(),
-    // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment.
+    // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment. for_person = لمين.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
+    // أدوية البيت كلها، ولمين كل دوا (for: null = العميل نفسه) — «دوا مامتك الساعة ٤». قبل كده
+    // العقل كان شايف الناقص والالتزام بس، مش القايمة ولا المواعيد ولا صاحب الدوا.
+    medicines: ((pharmRes.data ?? []) as Array<{ name: string; dosage: string | null; for_person: string | null; dose_times: string | null; remaining_quantity: number | null; daily_dose_count: number | null }>)
+      .slice(0, 30).map((m) => ({
+        name: m.name, for: m.for_person, dosage: m.dosage, times: m.dose_times,
+        days_left: m.remaining_quantity != null && (m.daily_dose_count ?? 0) > 0
+          ? Math.floor(m.remaining_quantity / (m.daily_dose_count as number)) : null,
+      })),
     // كارت العميل — مين بتكلمه. missing_important = اللي يستاهل يتسأل عنه بلطف لو الكلام جاب سيرته.
     customer: customerCard(profileRow as Record<string, unknown> | null, {
       name: (nameRow as { name?: string | null } | null)?.name ?? null,
@@ -1937,11 +1945,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       //
       // Re-adding a medicine the customer already has is a correction, not a second
       // medicine. Fill in whatever the new call knows and leave the rest alone.
+      // نفس الدوا لشخصين (ليا ولماما) دوايين مش تكرار — المفتاح الاسم + لمين.
+      const forPerson = normalizeForPerson(input.for_person);
       const { data: existingMeds } = await sb.from("zad_pharmacy_items")
-        .select("id,name,dosage,dose_times,remaining_quantity")
+        .select("id,name,dosage,dose_times,remaining_quantity,for_person")
         .eq("user_id", userId);
       const dupe = (existingMeds ?? []).find(
-        (row: { name: string }) => row.name.trim().toLowerCase() === medName.toLowerCase(),
+        (row: { name: string; for_person: string | null }) =>
+          row.name.trim().toLowerCase() === medName.toLowerCase() &&
+          (row.for_person ?? "").trim().toLowerCase() === (forPerson ?? "").toLowerCase(),
       ) as { id: string; dosage: string | null; dose_times: string | null } | undefined;
 
       if (dupe) {
@@ -1991,6 +2003,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           unit: normalizedUnit,
           remaining_quantity: input.quantity ?? 1,
           category: input.category ?? "عام",
+          for_person: forPerson,
         }).select("id,name,dose_times"),
         "إضافة الدواء",
       );
@@ -2535,6 +2548,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           remind_minutes_before: Number.isInteger(input.remind_minutes_before) ? input.remind_minutes_before : 0,
           recurrence: APPOINTMENT_RECURRENCES.includes(String(input.recurrence)) ? String(input.recurrence) : "once",
           source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+          for_person: normalizeForPerson(input.for_person),
         }).select("id,title,starts_at"),
         "تسجيل الميعاد",
       );
@@ -3487,6 +3501,7 @@ const CHAT_TOOLS: ToolDef[] = [
         unit: { type: "string", enum: ["قرص", "أقراص", "حبة", "حبات", "حبوب", "كبسولة", "كبسولات", "مل", "كريم", "بخاخ", "نقطة", "قطرة", "كيس", "أكياس", "أمبول", "أمبولات", "علبة"] },
         quantity: { type: "number", description: "الكمية المتاحة عنده" },
         category: { type: "string", enum: ["عام", "مسكن", "مضاد حيوي", "فيتامين", "مزمن"] },
+        for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه." },
       },
       required: ["name"],
     },
@@ -3775,6 +3790,7 @@ const CHAT_TOOLS: ToolDef[] = [
         starts_at: { type: "string", description: "ISO 8601 بالمنطقة الزمنية، مثال 2026-09-15T17:00:00+03:00" },
         kind: { type: "string", enum: ["work", "errand", "medical", "family", "personal", "other"] },
         place_label: { type: "string", description: "المكان لو العميل ذكره" },
+        for_person: { type: "string", description: "لو الميعاد لحد تاني غير العميل («دكتور بابا»، «تطعيم يوسف») اكتب اسمه زي ما العميل قاله. فاضي = العميل نفسه." },
         remind_minutes_before: {
           type: "number",
           description: "يفكّره قبلها بكام دقيقة. «فكّرني الساعة ٥» أو «فكّرني كمان ١٠ دقايق» أو «اشرب مية» = 0 (التذكير في الوقت نفسه). " +

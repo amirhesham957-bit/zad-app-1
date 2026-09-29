@@ -140,6 +140,7 @@ class PharmacyController extends Notifier<PharmacyView> {
     String? category,
     bool isRecurring = false,
     String? familyMemberId,
+    String? forPerson,
   }) async {
     final repository = ref.read(pharmacyRepositoryProvider);
     final added = await repository.add(
@@ -158,6 +159,7 @@ class PharmacyController extends Notifier<PharmacyView> {
         activeIngredient: activeIngredient,
         isRecurring: isRecurring,
         familyMemberId: familyMemberId,
+        forPerson: forPerson,
       ),
     );
     await repository.confirmQuantity(added.id, quantity);

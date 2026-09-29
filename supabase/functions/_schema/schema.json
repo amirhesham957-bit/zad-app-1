@@ -2,7 +2,7 @@
   "_meta": {
     "generated_at": "2026-09-01",
     "generated_from": "mcp__supabase__generate_typescript_types على المشروع الحي auuftqncrjsnyylolhbu",
-    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم.",
+    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم. | 2026-09-29: zad_pharmacy_items.for_person و zad_appointments.for_person (20260929130000).",
     "regenerate": "شوف supabase/functions/_schema/README.md"
   },
   "affiliate_catalog_requests": [
@@ -765,6 +765,7 @@
     "dose_times",
     "expiry_date",
     "family_member_id",
+    "for_person",
     "has_invalid_dose_time",
     "id",
     "is_recurring",
@@ -941,6 +942,7 @@
   ],
   "zad_appointments": [
     "created_at",
+    "for_person",
     "id",
     "kind",
     "notes",

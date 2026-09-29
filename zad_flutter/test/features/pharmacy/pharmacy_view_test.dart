@@ -93,6 +93,7 @@ class _Adding extends QuietPharmacy {
     String? category,
     bool isRecurring = false,
     String? familyMemberId,
+    String? forPerson,
   }) async => added.add(<String, Object?>{
     'name': name,
     'quantity': quantity,
@@ -102,6 +103,7 @@ class _Adding extends QuietPharmacy {
     'expiry': expiryDate,
     'ingredient': activeIngredient,
     'category': category,
+    'for': forPerson,
   });
 }
 
@@ -241,6 +243,14 @@ void main() {
     expect(find.widgetWithText(ChoiceChip, 'شريط'), findsOneWidget);
     expect(pharmacy.added, isEmpty);
 
+    // «لمين؟» — a medicine for someone with no account.
+    final forWhom = find.widgetWithText(
+      TextField,
+      'لمين؟ (سيبها فاضية لو ليك)',
+    );
+    await tester.ensureVisible(forWhom);
+    await tester.enterText(forWhom, ' ماما ');
+
     await tester.ensureVisible(find.text('حفظ'));
     await tester.tap(find.text('حفظ'));
     await tester.pumpAndSettle();
@@ -255,6 +265,7 @@ void main() {
         'expiry': DateTime.utc(2027, 5, 31),
         'ingredient': 'Bisoprolol',
         'category': 'مزمن',
+        'for': 'ماما',
       },
     ]);
   });

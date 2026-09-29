@@ -1,5 +1,5 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { buildStoreArrivalMessage, sameStore, seenHereItems, storeKey } from "./shared.ts";
+import { buildStoreArrivalMessage, normalizeForPerson, sameStore, seenHereItems, storeKey } from "./shared.ts";
 
 Deno.test("storeKey drops the generic words, Arabic and Latin", () => {
   assertEquals(storeKey("كارفور ماركت"), "كارفور");
@@ -39,4 +39,14 @@ Deno.test("the arrival message says where it was seen, and only when it was", ()
     storeName: "كارفور", category: "supermarket", shopping: ["لبن"], lowStock: [], clientHints: [],
   });
   assertEquals(without!.body.includes("اتشاف"), false);
+});
+
+
+Deno.test("normalizeForPerson: a name as said, the customer's own words for 'me' are null", () => {
+  assertEquals(normalizeForPerson(" ماما "), "ماما");
+  assertEquals(normalizeForPerson("أنا"), null);
+  assertEquals(normalizeForPerson(""), null);
+  assertEquals(normalizeForPerson(undefined), null);
+  assertEquals(normalizeForPerson("«يوسف»\n"), "يوسف");
+  assertEquals(normalizeForPerson("x".repeat(80))!.length, 40);
 });

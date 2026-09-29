@@ -41,6 +41,7 @@ typedef Appointment = ({
   String? placeLabel,
   String recurrence,
   String status,
+  String? forPerson,
 });
 
 /// Reads a row.
@@ -53,6 +54,7 @@ Appointment appointmentFromJson(Map<String, dynamic> j) => (
   placeLabel: j['place_label'] as String?,
   recurrence: (j['recurrence'] as String?) ?? 'once',
   status: (j['status'] as String?) ?? 'upcoming',
+  forPerson: j['for_person'] as String?,
 );
 
 /// One place reminder.
