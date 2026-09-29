@@ -55,6 +55,9 @@
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
+import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
+import { lowStockToAdd } from "./lowStock.ts";
+import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin } from "./shared.ts";
@@ -82,7 +85,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
-import { pushToDevice, pushToTelegram } from "./push.ts";
+import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -3013,185 +3016,44 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "fetch_current_exchange_rate": {
       const { from_currency, to_currency } = input;
       if (!from_currency || !to_currency) return "المفروض تحط from_currency و to_currency";
-      const from = from_currency.toUpperCase().slice(0, 3);
-      const to = to_currency.toUpperCase().slice(0, 3);
-
-      const { data: rates, error } = await sb
-        .from("currency_rates")
-        .select("rate")
-        .eq("from_currency", from)
-        .eq("to_currency", to)
-        .order("timestamp", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error || !rates) {
-        return `مفيش بيانات صرف ل${from}→${to}. الـ API ممكن تكون مش محدّثة أو العملة غير مدعومة.`;
-      }
-
-      return `1 ${from} = ${rates.rate.toFixed(4)} ${to} (محدث آخر ساعة)`;
+      const from = String(from_currency).toUpperCase().slice(0, 3);
+      const to = String(to_currency).toUpperCase().slice(0, 3);
+      const { data: fx, error } = await sb.from("zad_fx_rates").select("code, usd_rate, updated_at").in("code", [from, to]);
+      if (error) return "مقدرتش أقرا أسعار الصرف دلوقتي — قول للعميل كده، ماتخمّنش رقم.";
+      return describeRate(from, to, crossRate(fx, from, to));
     }
 
     case "check_price_trend": {
-      const { item_name, days = 30 } = input;
+      const { item_name } = input;
       if (!item_name) return "المفروض تحط item_name";
-
+      const days = Math.min(90, Math.max(1, Number(input.days) || 30));
       const since = new Date(Date.now() - days * 86400000).toISOString();
-
+      // بعملة العميل بس — price_index فيه بلاغات من كل الأسواق.
       const { data: prices, error } = await sb
         .from("price_index")
         .select("price, timestamp")
-        .ilike("item_name", `%${item_name}%`)
+        .ilike("item_name", `%${String(item_name).trim()}%`)
+        .eq("currency", snap?.currency ?? "")
         .gte("timestamp", since)
-        .order("timestamp", { ascending: false });
-
-      if (error || !prices || prices.length === 0) {
-        return `مفيش بيانات أسعار ل "${item_name}" آخر ${days} يوم. جرّب سلعة أخرى أو يوم أكتر.`;
-      }
-
-      const priceValues = prices.map((p: any) => Number(p.price));
-      const current = priceValues[0];
-      const avg = priceValues.reduce((a: number, b: number) => a + b, 0) / priceValues.length;
-      const oldest = priceValues[priceValues.length - 1];
-      const change = ((current - oldest) / oldest) * 100;
-      const trend = Math.abs(change) < 2 ? "مستقر" : change > 0 ? "صاعد ⬆️" : "هابط ⬇️";
-
-      return `📊 ${item_name}:\n• السعر الحالي: ${current.toFixed(2)} جنيه\n• المتوسط (${days} يوم): ${avg.toFixed(2)} جنيه\n• التغيير: ${change > 0 ? "+" : ""}${change.toFixed(1)}% ${trend}\n• أقدم سعر: ${oldest.toFixed(2)} جنيه`;
+        .order("timestamp", { ascending: false })
+        .limit(200);
+      if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
+      return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "");
     }
 
     case "get_nearby_deals": {
-      const { item_category, max_distance_km = 10, savings_threshold = 10 } = input;
+      const { item_category } = input;
       if (!item_category) return "المفروض تحط item_category";
-
+      const threshold = Math.max(0, Number(input.savings_threshold) || 10);
       const { data: deals, error } = await sb
         .from("price_index")
-        .select(`item_name, price, location`)
+        .select("item_name, price, location, store_name")
         .eq("item_category", item_category)
-        .gte("timestamp", new Date(Date.now() - 7 * 86400000).toISOString());
-
-      if (error || !deals || deals.length === 0) {
-        return `مفيش عروض قريبة ل "${item_category}". جرّب فئة أخرى أو فترة أطول.`;
-      }
-
-      const avgPrice = deals.reduce((s: number, d: any) => s + d.price, 0) / deals.length;
-      const filtered = deals
-        .map((d: any) => ({
-          ...d,
-          savings: ((avgPrice - d.price) / avgPrice) * 100,
-        }))
-        .filter((d: any) => d.savings >= savings_threshold)
-        .sort((a: any, b: any) => b.savings - a.savings)
-        .slice(0, 5);
-
-      if (filtered.length === 0) {
-        return `مفيش متاجر توفّر أكتر من ${savings_threshold}% في "${item_category}".`;
-      }
-
-      const lines = [`🏪 عروض قريبة في ${item_category}:`];
-      for (const deal of filtered) {
-        lines.push(`• ${deal.location}: ${deal.item_name} = ${deal.price.toFixed(2)} جنيه (توفير: ${deal.savings.toFixed(1)}%)`);
-      }
-
-      return lines.join("\n");
-    }
-
-    case "get_inflation_forecast": {
-      const { forecast_horizon, category_hint } = input;
-      if (!forecast_horizon) return "المفروض تحط forecast_horizon (next_month أو next_quarter)";
-
-      const { data: snapshot, error } = await sb
-        .from("market_snapshot")
-        .select("inflation_index, food_price_change_pct, weather_condition, expected_impact")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error || !snapshot) {
-        return "مفيش بيانات تنبؤ حالية. الـ Market Intelligence لسه بتجمع البيانات — جرّب بعد دقايق.";
-      }
-
-      const horizon = forecast_horizon === "next_month" ? "الشهر اللي جاي" : "الربع اللي جاي";
-      const inflationTrend = snapshot.inflation_index > 70 ? "عالي جداً" : snapshot.inflation_index > 50 ? "عالي" : "معتدل";
-      const weatherImpact = snapshot.expected_impact === "food_price_up" ? "موجة حر قادمة → الخضار والفواكه هتغلي" : "لا توقع طقس حاد";
-      const foodChange = snapshot.food_price_change_pct > 0 ? "صاعد" : "هابط";
-
-      return `📈 توقع التضخم ل${horizon}:\n• مؤشر التضخم: ${inflationTrend} (${snapshot.inflation_index}%)\n• أسعار الطعام: ${foodChange} (${snapshot.food_price_change_pct > 0 ? "+" : ""}${snapshot.food_price_change_pct.toFixed(1)}%)\n• تأثير الطقس: ${weatherImpact}\n💡 التوصية: ${snapshot.food_price_change_pct > 5 ? "قليل من الشراء المخطط" : "استمر بالعادي"}`;
-    }
-
-    case "get_price_forecast": {
-      const { item_name, forecast_days = 30 } = input;
-      if (!item_name) return "المفروض تحط item_name";
-
-      const { data: prices, error } = await sb
-        .from("price_index")
-        .select("price, timestamp")
-        .ilike("item_name", `%${item_name}%`)
-        .order("timestamp", { ascending: false })
-        .limit(90);
-
-      if (error || !prices || prices.length < 3) {
-        return `مش عندي بيانات تاريخية كافية ل "${item_name}" لتوقع دقيق. محتاج 3 نقاط بيانات على الأقل.`;
-      }
-
-      const priceValues = prices.map((p: any) => Number(p.price)).reverse();
-      const currentPrice = priceValues[priceValues.length - 1];
-      const avgPrice = priceValues.reduce((a: number, b: number) => a + b, 0) / priceValues.length;
-      const trend = priceValues[priceValues.length - 1] > priceValues[0] ? "صاعد" : "هابط";
-      const volatility = Math.max(...priceValues) - Math.min(...priceValues);
-
-      const forecastPrice = trend === "صاعد"
-        ? currentPrice * 1.05
-        : currentPrice * 0.95;
-
-      const confidence = 100 - Math.min(50, volatility * 10);
-      const recommendation = currentPrice < avgPrice * 0.95 ? "اشتري دلوقتي" :
-                            currentPrice > avgPrice * 1.05 ? "انتظر" : "احزّن المخزون";
-
-      return `📊 توقع ${item_name} ل ${forecast_days} يوم:\n• السعر الحالي: ${currentPrice.toFixed(2)} جنيه\n• السعر المتوقع: ${forecastPrice.toFixed(2)} جنيه (${trend === "صاعد" ? "+" : ""}${((forecastPrice - currentPrice) / currentPrice * 100).toFixed(1)}%)\n• الاتجاه: ${trend}\n• الثقة: ${confidence.toFixed(0)}%\n💡 التوصية: ${recommendation}`;
-    }
-
-    case "get_shopping_recommendations": {
-      const { budget_remaining, family_size = 4, preferences = [] } = input;
-      if (!budget_remaining) return "المفروض تحط budget_remaining";
-
-      // Fetch recent recommendations for this user
-      const { data: recommendations, error } = await sb
-        .from("shopping_recommendations")
-        .select("item_name, recommendation_type, estimated_savings, urgency, reasoning")
-        .eq("user_id", userId)
-        .is("dismissed_at", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (error || !recommendations || recommendations.length === 0) {
-        return "مش عندي توصيات حالية. الـ Gemini بيحلل البيانات دلوقتي...";
-      }
-
-      const urgent = recommendations.filter((r: any) => r.urgency === "high");
-      const lines = ["🛍️ توصيات الشراء الذكية:"];
-
-      for (const rec of recommendations.slice(0, 3)) {
-        const savingsStr = rec.estimated_savings ? ` (توفير: ${rec.estimated_savings.toFixed(0)} جنيه)` : "";
-        const urgencyIcon = rec.urgency === "high" ? "🔴" : rec.urgency === "medium" ? "🟡" : "🟢";
-        lines.push(
-          `${urgencyIcon} ${rec.item_name}: ${rec.recommendation_type}${savingsStr}`
-        );
-        lines.push(`   → ${rec.reasoning}`);
-      }
-
-      if (urgent.length > 0) {
-        lines.push(`\n⚡ ${urgent.length} توصية عاجلة تحتاج انتباه فوري!`);
-      }
-
-      lines.push(`\nالميزانية المتبقية: ${budget_remaining.toFixed(0)} جنيه`);
-      lines.push(
-        `التوفير المتوقع من هذه التوصيات: ${recommendations
-          .reduce((sum: number, r: any) => sum + (r.estimated_savings || 0), 0)
-          .toFixed(0)} جنيه`
-      );
-
-      return lines.join("\n");
+        .eq("currency", snap?.currency ?? "")
+        .gte("timestamp", new Date(Date.now() - 7 * 86400000).toISOString())
+        .limit(300);
+      if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
+      return rankDeals(deals, String(item_category), threshold, snap?.currency ?? "");
     }
 
     default:
@@ -4265,8 +4127,8 @@ const CHAT_TOOLS: ToolDef[] = [
   {
     name: "fetch_current_exchange_rate",
     description:
-      "اجلب سعر الصرف الحالي بين عملتين. استخدمها قبل أي توصية تحويل أموال أو توقعات " +
-      "بالعملات الأجنبية. البيانات محدثة من market-intelligence API (كل ساعة).",
+      "سعر الصرف التقريبي بين عملتين من جدول أسعار زاد (بيتحدّث مرة في اليوم). استخدمها قبل أي " +
+      "كلام عن تحويل عملات — ماتقولش رقم صرف من عندك.",
     input_schema: {
       type: "object",
       properties: {
@@ -4279,14 +4141,14 @@ const CHAT_TOOLS: ToolDef[] = [
   {
     name: "check_price_trend",
     description:
-      "تحليل اتجاه سعر سلعة محددة آخر 30 يوم. ترجع: السعر الحالي، المتوسط، النسبة المئوية " +
-      "للتغيير، والاتجاه (صاعد/هابط/مستقر). استخدمها قبل نصيحة شراء/توقع غلاء.",
+      "اتجاه سعر صنف من بلاغات الناس (صفحة الأسعار) بعملة العميل، آخر 30 يوم افتراضياً: آخر سعر، " +
+      "المتوسط، والتغيير. استخدمها قبل نصيحة شراء. لو مفيش بلاغات قول كده — ماتخترعش سعر.",
     input_schema: {
       type: "object",
       properties: {
         item_name: {
           type: "string",
-          description: "اسم السلعة (مثل: Milk, Bread, Oil, Coffee، بالإنجليزية)",
+          description: "اسم الصنف زي ما العميل قاله (مثل: لبن، عيش، زيت) — البلاغات بالعربي غالباً",
         },
         days: { type: "number", description: "عدد الأيام للفحص. الافتراضي 30، الأقصى 90." },
       },
@@ -4296,8 +4158,8 @@ const CHAT_TOOLS: ToolDef[] = [
   {
     name: "get_nearby_deals",
     description:
-      "اكتشف أماكن قريبة فيها السلعة أرخص من المتوسط. ترجع: أسماء المتاجر، المسافة (كيلومتر)، " +
-      "السعر، والتوفير بالنسبة المئوية. لا تحتاج location من العميل — استخدم آخر إحداثيات معروفة.",
+      "أرخص بلاغات الناس في فئة (آخر أسبوع، بعملة العميل) مقارنة بمتوسط الفئة: المحل/المكان، " +
+      "الصنف، السعر، ونسبة التوفير. مفيش مسافات — ده من بلاغات الناس مش من الخريطة.",
     input_schema: {
       type: "object",
       properties: {
@@ -4306,87 +4168,12 @@ const CHAT_TOOLS: ToolDef[] = [
           enum: ["bread", "milk", "eggs", "oil", "vegetables", "fruits", "general"],
           description: "الفئة العريضة — اكتشاف مجموعة سلع، مش سلعة واحدة",
         },
-        max_distance_km: { type: "number", description: "أقصى مسافة (default: 10 كم)" },
         savings_threshold: {
           type: "number",
           description: "اعرض فقط المتاجر اللي توفر أكتر من X% (default: 10%)",
         },
       },
       required: ["item_category"],
-    },
-  },
-  {
-    name: "get_inflation_forecast",
-    description:
-      "توقع التضخم والتغيير في الأسعار للفئات الرئيسية الشهر/الربع القادم. بناءً على " +
-      "data العائلة + بيانات السوق الحية + توقعات الطقس (موجة حر = غلاء الصيفيات).",
-    input_schema: {
-      type: "object",
-      properties: {
-        forecast_horizon: {
-          type: "string",
-          enum: ["next_month", "next_quarter"],
-          description: "الفترة الزمنية للتوقع",
-        },
-        category_hint: {
-          type: "string",
-          description: "اختياري: فئة محددة (مثل: food, utilities). لو فاضي، رجّع توقعات عام.",
-        },
-      },
-      required: ["forecast_horizon"],
-    },
-  },
-  {
-    name: "get_price_forecast",
-    description:
-      "توقعات أسعار ذكية مدعومة بـ Gemini AI. تحليل البيانات التاريخية لتوقع الأسعار في الـ 30/90 يوم " +
-      "القادمة مع توصيات شراء (اشتري الآن / انتظر / احزّن المخزون).",
-    input_schema: {
-      type: "object",
-      properties: {
-        item_name: {
-          type: "string",
-          description: "اسم السلعة (مثل: Bread, Milk, Oil)",
-        },
-        forecast_days: {
-          // كان type:"number" مع enum:[30,90] رقمي — Gemini's function-calling schema
-          // بيتطلب enum قيمه strings دايماً بغض النظر عن type المُعلن (schema.enum هو
-          // repeated string في الـ API، مش polymorphic). ده كان بيفشل بـ400 على
-          // properties[1].value.enum[0] (TYPE_STRING) — 57% من كل نداءات zad-brain
-          // النهاردة (2026-09-02) فشلت بسببه لأنه بيتبعت مع كل تعريفات الأدوات في كل
-          // نداء. forecast_days بيتستخدم للعرض بس (template literal) فمفيش أي فرق
-          // فعلي بين الرقم والنص جوه handler الأداة.
-          type: "string",
-          enum: ["30", "90"],
-          description: "الفترة الزمنية (30 أو 90 يوم)",
-        },
-      },
-      required: ["item_name"],
-    },
-  },
-  {
-    name: "get_shopping_recommendations",
-    description:
-      "توصيات شراء ذكية من Gemini بناءً على: أسعار السوق الحية، الطقس المتوقع، التضخم، الميزانية العائلية، " +
-      "والمتاجر القريبة. توصيات personalized لكل عائلة.",
-    input_schema: {
-      type: "object",
-      properties: {
-        budget_remaining: {
-          type: "number",
-          description: "الميزانية المتبقية للشهر",
-        },
-        family_size: {
-          type: "number",
-          description: "عدد أفراد العائلة",
-        },
-        preferences: {
-          type: "array",
-          items: { type: "string" },
-          description: "التفضيلات (organic, local, budget-friendly, etc)",
-        },
-      },
-      required: ["budget_remaining"],
     },
   },
 ];
@@ -5477,11 +5264,38 @@ async function deliverNotificationPrompt(
     } else if (response.ok && responseBody.reason === "not linked") {
       delivery = "not_linked";
       // تليجرام مش مربوط → FCM يغطي الفراغ (الوعي اللحظي). fire-and-forget.
-      pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+      if (prompt.job !== "confirm_transaction") {
+        pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+      }
     }
   } catch (e) {
     console.error("notification prompt to telegram failed:", (e as Error).message);
-    pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+    if (prompt.job !== "confirm_transaction") {
+      pushToDevice(sb, userId, "زاد محتاج رأيك 💭", "في معاملة بنكية مستنية تأكيدك — افتح زاد للتأكيد.", { route: "transaction_proposals" }).catch(() => {});
+    }
+  }
+
+  // سؤال «إنت؟» بيروح الموبايل **مع** تليجرام، مش بداله بس (طلب صاحب المشروع ٢٠٢٦-٠٩-٢٨):
+  // ٤ من ٩ اقتراحات وصل سؤالها تليجرام وانتهت من غير رد. data-only عشان التطبيق هو اللي
+  // يعرضه بزرارين «أيوه، أنا» / «مش أنا» (أندرويد مابيحطش أزرار على إشعار notification).
+  if (prompt.job === "confirm_transaction") {
+    try {
+      const { data: p } = await sb.from("zad_transaction_proposals")
+        .select("amount,currency,merchant_name,title,txn_kind")
+        .eq("id", prompt.proposalId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      const text = proposalPushText((p ?? {}) as Parameters<typeof proposalPushText>[0]);
+      const pushed = await pushToDevice(sb, userId, text.title, text.body, {
+        route: "transaction_proposals",
+        kind: "confirm_transaction",
+        proposal_id: prompt.proposalId,
+      }, true);
+      // وصل الموبايل = السؤال وصل العميل، حتى لو تليجرام مش مربوط أو وقع.
+      if (pushed === "sent" && delivery !== "delivered") delivery = "delivered";
+    } catch (e) {
+      console.error("confirm_transaction push failed:", (e as Error).message);
+    }
   }
 
   const { error: finishError } = await sb.rpc("zad_finish_notification_prompt_service", {
@@ -5500,6 +5314,9 @@ async function deliverNotificationPrompt(
  * a parse with a usable amount becomes a durable proposal, and only a user decision can
  * turn that proposal into a transaction. Low-confidence direction requires classification.
  */
+/** مهلة بوابة «فلوس اتحركت فعلاً؟» — موديل خفيف بيرد في ثانية أو اتنين وقت الطبيعي. */
+const NOTIFICATION_GATE_TIMEOUT_MS = 15_000;
+
 async function handleNotificationIngest(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const packageName = String(body.package_name ?? "").trim();
   const title = String(body.title ?? "").trim();
@@ -5583,7 +5400,17 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   let verdict: GateVerdict | null = null;
   try {
     const g = gatePrompt({ packageName, title, text, knownSender });
-    const reply = await callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 });
+    // حد أقصى للبوابة كلها: السلسلة ممكن تمشي على ٧ موديلات × ٢٠ ث، والصف متسجل "received"
+    // قبل النداء — طلب بيموت في النص كان بيسيبه كده للأبد. تقرير ما بعد النشر ٢٠٢٦-٠٩-٢٨: ١٠
+    // معاملات مكتملة من ٢٩ إشعار واقفين "received". بعد المهلة الحكم null، وده بالظبط سلوك
+    // "الموديل وقع" الموثّق في decideGate (بنك معروف ⇒ نسأل).
+    let gateTimer: ReturnType<typeof setTimeout> | undefined;
+    const reply = await Promise.race([
+      callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 }),
+      new Promise<never>((_, reject) => {
+        gateTimer = setTimeout(() => reject(new Error(`gate timed out after ${NOTIFICATION_GATE_TIMEOUT_MS}ms`)), NOTIFICATION_GATE_TIMEOUT_MS);
+      }),
+    ]).finally(() => clearTimeout(gateTimer));
     verdict = parseGateVerdict(reply.text ?? "");
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
@@ -6121,18 +5948,38 @@ Deno.serve(async (req: Request) => {
         appointments: [], place_reminders: [], memory: [], customer: { missing_important: ["preferred_name", "gender", "pay_day"] },
       };
       const results: Array<Record<string, unknown>> = [];
+      // ميزانية كلية أقل من مهلة المنادي (١٢٠ ث في provider_health): قبل كده لو الحالات التسعة
+      // عدّت المهلة، التقرير كله كان بيرجع "Signal timed out" من غير ولا رقم — مانعرفش أنهي
+      // حالة بطيئة ولا بكام. دلوقتي اللي اتقاس بيرجع، والباقي متعلّم skipped.
+      const probeStarted = Date.now();
       for (const c of cases) {
+        if (Date.now() - probeStarted > 90_000) {
+          results.push({ expect: c.expect, skipped: "probe_budget_90s" });
+          continue;
+        }
         const { primary, secondary } = routeSpecialists(c.message);
         const tools = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary);
         const warns: string[] = [];
         const origWarn = console.warn;
         console.warn = (...a: unknown[]) => { warns.push(asciiOnly(a.map(String).join(" "))); origWarn(...a); };
         const started = Date.now();
+        // الحالة نفسها محدودة بالباقي من الميزانية: قبل كده حالة بدأت عند الثانية ٨٩ كانت
+        // تكمّل السلسلة كلها، وprovider_health كله وقع على حد المنصة (150s IDLE_TIMEOUT) —
+        // نشر ٢٠٢٦-٠٩-٢٨ ١٤:٤٦.
+        let caseTimer: ReturnType<typeof setTimeout> | undefined;
         try {
-          const reply = await callAgentModel(
-            soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
-            tools, [{ role: "user", text: c.message }], c.message, 0,
-          );
+          const reply = await Promise.race([
+            callAgentModel(
+              soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
+              tools, [{ role: "user", text: c.message }], c.message, 0,
+            ),
+            new Promise<never>((_, reject) => {
+              caseTimer = setTimeout(
+                () => reject(new Error("probe case cut at the 90s budget")),
+                Math.max(1_000, 90_000 - (Date.now() - probeStarted)),
+              );
+            }),
+          ]).finally(() => clearTimeout(caseTimer));
           const called = reply.toolCalls.map((t) => t.name);
           results.push({
             expect: c.expect, specialist: `${primary}/${secondary ?? "-"}`, tools_offered: tools.length,
@@ -6141,7 +5988,10 @@ Deno.serve(async (req: Request) => {
             fallovers: warns.slice(0, 4),
           });
         } catch (e) {
-          results.push({ expect: c.expect, error: asciiOnly((e as Error)?.message ?? e), ms: Date.now() - started, fallovers: warns.slice(0, 4) });
+          // الذيل مش الأول: "every gemini model unavailable [...] and groq failed too: <السبب>"
+          // — سبب جروك في آخر الرسالة، وأول ١٦٠ حرف كانوا قايمة جيميناي بس.
+          const msg = String((e as Error)?.message ?? e).replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").trim();
+          results.push({ expect: c.expect, error: msg.slice(0, 120), error_tail: msg.slice(-240), ms: Date.now() - started, fallovers: warns.slice(0, 8) });
         } finally {
           console.warn = origWarn;
         }
@@ -6274,6 +6124,40 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, ...summary }), { headers: CORS_HEADERS });
     }
 
+    // التحليل اليومي (dailyBrain.ts): الكرون brain-daily-analysis بيصحّيه الصبح بنفس سيكريت
+    // الفحص الاستباقي. بيرد على طول (202) والشغل بيكمل في الخلفية — كل حساب نداء منفصل
+    // لمسار trigger=daily بمفتاح الخدمة، واللي فيه حارس الـ١٢ ساعة ضد التكرار.
+    if (body.action === "run_daily_brain") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDaily = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: accounts, error } = await sbDaily.from("zad_users").select("id").limit(500);
+      if (error) {
+        return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: CORS_HEADERS });
+      }
+      const ids = (accounts ?? []).map((a: { id: string }) => a.id);
+      const work = runDailyForUsers(ids, async (userId) => {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-brain`, {
+            method: "POST",
+            headers: { "content-type": "application/json", "authorization": `Bearer ${SERVICE_ROLE_KEY}` },
+            body: JSON.stringify({ trigger: "daily", user_id: userId }),
+            signal: AbortSignal.timeout(140_000),
+          });
+          if (!res.ok) console.error(`[daily_brain] ${userId} → ${res.status}`);
+          return res.ok;
+        } catch (e) {
+          console.error(`[daily_brain] ${userId} failed:`, (e as Error).message);
+          return false;
+        }
+      }).then((r) => console.log(`[daily_brain] started=${r.started} ok=${r.ok} failed=${r.failed}`));
+      const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+      if (runtime?.waitUntil) runtime.waitUntil(work);
+      else await work;
+      return new Response(JSON.stringify({ ok: true, accounts: ids.length }), { status: 202, headers: CORS_HEADERS });
+    }
+
     if (body.action === "run_proactive_scan") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
@@ -6319,14 +6203,17 @@ Deno.serve(async (req: Request) => {
         try {
           // zad_inventory معندهاش name (العمود item_name) ولا updated_at خالص، وzad_shopping_list
           // معندهاش unit — الكويري دي كانت بترمي 42703 على كل نداء (بند 30.1، schema_contract_test.ts).
-          const { data: pantryItems } = await sbDream.from("zad_inventory").select("id, item_name, quantity").eq("user_id", u.id);
-          for (const item of (pantryItems ?? [])) {
-            if (item.quantity <= 1) {
-              const { data: existingShop } = await sbDream.from("zad_shopping_list").select("id").eq("user_id", u.id).eq("item_name", item.item_name).maybeSingle();
-              if (!existingShop) {
-                await sbDream.from("zad_shopping_list").insert({ user_id: u.id, item_name: item.item_name, quantity: 1 });
-              }
-            }
+          // نواقص → قايمة الشراء (شوف lowStock.ts): الحد من low_stock_threshold، ومقارنة بالبنود
+          // المفتوحة بس — صف قديم اتشرى مابيمنعش الصنف يرجع للقايمة لما يخلص تاني.
+          const [{ data: pantryItems }, { data: openShop }] = await Promise.all([
+            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").eq("user_id", u.id),
+            sbDream.from("zad_shopping_list").select("item_name").eq("user_id", u.id).eq("is_purchased", false),
+          ]);
+          const toAdd = lowStockToAdd(pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name));
+          if (toAdd.length) {
+            const { error: shopErr } = await sbDream.from("zad_shopping_list")
+              .insert(toAdd.map((item_name) => ({ user_id: u.id, item_name, quantity: 1 })));
+            if (shopErr) console.error(`[dream] low-stock insert failed for ${u.id}:`, shopErr.message);
           }
 
           const { data: recentTxns } = await sbDream.from("zad_transactions").select("amount, category, created_at").eq("user_id", u.id).order("created_at", { ascending: false }).limit(20);

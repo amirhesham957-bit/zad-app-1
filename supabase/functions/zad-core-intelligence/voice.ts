@@ -9,10 +9,8 @@
 // للمحادثة الحية. لو عايز جودة أقصى لمقاطع أطول: gemini-2.5-pro-preview-tts.
 //
 // الصوت الافتراضي: Aoede — ناعم إيقاعي، الأقرب لصوت أنثوي بشري جميل بالعربي.
-// الشخصيات (personas) بتترجم لأصوات + style prompts مختلفة:
-// - sarah_warm  → Aoede   (دافئ هادئ)
-// - karim_pro   → Charon  (رجالي واضح وواثق)
-// - pet_mascot  → Leda    (شبابي مرح)
+// صوت واحد اسمه زاد (قرار المالك ٢٠٢٦-٠٩-٢٧): أي persona بيوصل — sarah_warm/karim_pro/
+// pet_mascot من نسخ قديمة، أو مفيش — بيطلع Aoede بلهجة بلد الحساب.
 //
 // الإخراج: PCM 24kHz mono 16-bit (نفس فورمات مسار التشغيل في الأندرويد بالظبط).
 // المشاعر: النص بيتغلف بتعليمات أسلوب حسب سياق الرسالة (styleForText).
@@ -23,12 +21,14 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
-import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
+/** جملة قصيرة بتتقرا في ثواني؛ أكتر من كده يبقى معلّق، والأحسن ننقل للموديل/المفتاح اللي بعده. */
+const TTS_TIMEOUT_MS = 20_000;
 
-/** نفس جدول الشخصيات المشترك (`_shared/zadVoice.ts`) — سارة/كريم/الأليف → صوت جيميناي. */
+/** جدول الأسامي المشترك (`_shared/zadVoice.ts`) — كلها صوت زاد. */
 export const VOICE_IDS: Record<string, string> = PERSONA_VOICES;
 
 export interface ValidVoiceRequest {
@@ -59,9 +59,9 @@ export function validateVoicePayload(payload: unknown): ValidVoiceRequest | null
   if (!payload || typeof payload !== "object") return null;
   const row = payload as Record<string, unknown>;
   const text = typeof row.text === "string" ? row.text.trim() : "";
-  const persona = typeof row.persona === "string" ? row.persona : "";
-  const voiceId = Object.hasOwn(VOICE_IDS, persona) ? VOICE_IDS[persona] : undefined;
-  if (!text || text.length > 1200 || !voiceId) return null;
+  // صوت واحد (زاد): الـpersona اختياري، وأي قيمة — حتى من نسخة قديمة — بتطلع نفس الصوت.
+  const voiceId = voiceForPersona(row.persona);
+  if (!text || text.length > 1200) return null;
   const emotion = isVoiceEmotion(row.emotion)
     ? row.emotion
     : (typeof row.moment === "string" ? emotionForMoment(row.moment, text) : undefined);
@@ -98,12 +98,20 @@ export async function requestGeminiVoiceWithPool(
       status: 503, headers: { "Content-Type": "application/json" },
     });
   }
+  // موديل رجّع 503 (زحمة على الموديل كله، مش المفتاح) مابيتجربش تاني بمفتاح تاني في نفس الطلب —
+  // قبل كده كان بيلف بيه على كل المفاتيح، وده جزء من الـ٣٠-٦٠ ثانية اللي العميل بيستناها.
+  const downModels = new Set<string>();
   for (let ki = 0; ki < apiKeys.length; ki++) {
     for (const model of models) {
+      if (downModels.has(model)) continue;
       try {
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
         if (res.ok) return res;
         attempts.push({ key_index: ki, model, status: res.status });
+        if (res.status === 503) {
+          downModels.add(model);
+          continue;
+        }
         // موديل مش موجود/مرفوض → جرّب الموديل التالي بنفس المفتاح
         if (res.status === 404 || res.status === 400) continue;
         // المفتاح نفسه ضغط/مرفوض/سيرفر → كمل للمفتاح التالي
@@ -191,6 +199,8 @@ export async function requestGeminiVoice(
           },
         },
       }),
+      // مكانش فيه حد أصلاً: نداء معلّق كان بيسكّت زاد لحد ما المنصة نفسها تقطع.
+      signal: AbortSignal.timeout(TTS_TIMEOUT_MS),
     },
   );
   if (!res.ok) return res;

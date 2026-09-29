@@ -2,7 +2,7 @@
   "_meta": {
     "generated_at": "2026-09-01",
     "generated_from": "mcp__supabase__generate_typescript_types على المشروع الحي auuftqncrjsnyylolhbu",
-    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت).",
+    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم.",
     "regenerate": "شوف supabase/functions/_schema/README.md"
   },
   "affiliate_catalog_requests": [
@@ -146,14 +146,6 @@
     "is_completed",
     "title"
   ],
-  "currency_rates": [
-    "from_currency",
-    "id",
-    "rate",
-    "source",
-    "timestamp",
-    "to_currency"
-  ],
   "dashboard_admins": [
     "created_at",
     "user_id"
@@ -275,19 +267,6 @@
     "market",
     "prices",
     "updated_at"
-  ],
-  "market_snapshot": [
-    "average_shopping_cost",
-    "commodity_price_change_pct",
-    "created_at",
-    "data_freshness",
-    "expected_impact",
-    "food_price_change_pct",
-    "id",
-    "inflation_index",
-    "snapshot_date",
-    "user_id",
-    "weather_condition"
   ],
   "nodes": [
     "data",

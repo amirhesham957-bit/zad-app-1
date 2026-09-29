@@ -10,7 +10,7 @@
 //
 // الأسرار: AZURE_SPEECH_KEY + AZURE_SPEECH_REGION (مثلاً westeurope). غياب أي واحد = مقفول.
 
-import { countryCode, PERSONA_VOICES } from "../_shared/zadVoice.ts";
+import { countryCode, ZAD_VOICE } from "../_shared/zadVoice.ts";
 
 export const AZURE_OUTPUT_FORMAT = "raw-24khz-16bit-mono-pcm";
 
@@ -62,8 +62,9 @@ export function azureVoiceFor(text: string, country: unknown, geminiVoiceId: str
     : countryCode(country) === "TR" || /[ğşıİĞŞ]/.test(text)
     ? TURKISH
     : ENGLISH;
-  // كريم هو الشخصية الرجالي الوحيدة؛ سارة والأليف أصوات بنات.
-  return pair[geminiVoiceId === PERSONA_VOICES.karim_pro ? 1 : 0];
+  // صوت زاد بنت دايماً — صوت البنت بتاع البلد (الأول في كل زوج). الرجالي اتشال مع شخصية كريم.
+  void geminiVoiceId;
+  return pair[0];
 }
 
 /** Gemini بيسكت على الإيموجي؛ مايكروسوفت بيقرا اسمها بصوت عالي («وجه ضاحك»). */
@@ -117,7 +118,7 @@ export async function requestAzureVoice(
 export async function azureTtsHealth(config: AzureSpeechConfig | null, fetcher: typeof fetch = fetch): Promise<Record<string, unknown>> {
   if (!config) return { configured: false };
   try {
-    const res = await requestAzureVoice({ text: "أهلاً، أنا زاد.", voiceId: PERSONA_VOICES.sarah_warm, country: "EG" }, config, fetcher);
+    const res = await requestAzureVoice({ text: "أهلاً، أنا زاد.", voiceId: ZAD_VOICE, country: "EG" }, config, fetcher);
     const bytes = (await res.arrayBuffer()).byteLength;
     return { configured: true, region: config.region, status: res.status, audio_bytes: res.ok ? bytes : 0 };
   } catch (e) {

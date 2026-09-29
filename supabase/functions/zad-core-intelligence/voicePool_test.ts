@@ -77,6 +77,32 @@ Deno.test("TTS pool: استنفاد المسبح كله يرجّع 502 بمحا�
   assertEquals(serialized.includes("KEY1") || serialized.includes("KEY2"), false);
 });
 
+Deno.test("TTS pool: 503 على موديل ينقل للاحتياطي ومايتجربش تاني بباقي المفاتيح", async () => {
+  const calls: Array<{ key: string; model: string }> = [];
+  const mockFetcher: typeof fetch = (input, init) => {
+    const url = String(input);
+    const key = String(((init as RequestInit)?.headers as Record<string, string> | undefined)?.["x-goog-api-key"] ?? "");
+    const model = url.split("/models/")[1]?.split(":")[0] ?? "";
+    calls.push({ key, model });
+    if (model === "busy") return Promise.resolve(new Response("high demand", { status: 503 }));
+    if (key === "KEY1") return Promise.resolve(new Response("rate limited", { status: 429 }));
+    return Promise.resolve(audioResponse());
+  };
+  const res = await requestGeminiVoiceWithPool(
+    { text: "مرحبا", voiceId: "Kore" } as any,
+    ["KEY1", "KEY2", "KEY3"],
+    mockFetcher,
+    "",
+    ["busy", "calm"],
+  );
+  assertEquals(res.status, 200);
+  assertEquals(calls, [
+    { key: "KEY1", model: "busy" },
+    { key: "KEY1", model: "calm" },
+    { key: "KEY2", model: "calm" },
+  ]);
+});
+
 Deno.test("TTS pool: مفيش مفاتيح أصلاً يرجّع 503 صريح", async () => {
   const res = await requestGeminiVoiceWithPool(
     { text: "مرحبا", voiceId: "Kore" } as any,

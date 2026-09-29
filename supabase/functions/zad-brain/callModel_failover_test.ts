@@ -14,7 +14,9 @@ Deno.env.set("GROQ_API_KEY_1", "groq1");
 Deno.env.set("GROQ_API_KEY_2", "groq2");
 Deno.env.set("ZAD_MODEL_FALLBACKS", "model-b,model-c");
 
-const { callModel } = await import("./callModel.ts");
+const { callModel, fitForGroq, setModelCooldownMsForTests } = await import("./callModel.ts");
+// الاختبارات بتشغّل موديلات فاشلة ورا بعض؛ الانتظار مقفول إلا في الاختبار بتاعه.
+setModelCooldownMsForTests(0);
 
 const BASE = {
   model: "model-a",
@@ -91,6 +93,53 @@ Deno.test("503 بينتقل للموديل التالي من غير ما يحر�
     assertEquals(tried[tried.length - 1], "model-b");
   } finally {
     s.restore();
+  }
+});
+
+Deno.test("موديل معلّق (timeout) بينتقل للي بعده فوراً — مش ٣ إعادات على نفسه", async () => {
+  const original = globalThis.fetch;
+  const tried: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request) => {
+    const url = String(input);
+    tried.push(modelOf(url));
+    if (modelOf(url) === "model-a") {
+      return Promise.reject(new DOMException("Signal timed out.", "TimeoutError"));
+    }
+    return Promise.resolve(geminiOk());
+  }) as typeof fetch;
+  try {
+    const reply = await callModel({ ...BASE });
+    assertEquals(reply.text, "تمام");
+    assertEquals(tried, ["model-a", "model-b"]);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+Deno.test("موديل وقع بيتعدّى في الرسالة اللي بعدها — مابنبداش بيه تاني", async () => {
+  setModelCooldownMsForTests(60_000);
+  const s = stubFetch((url) => (modelOf(url) === "model-a" ? overloaded503() : geminiOk()));
+  try {
+    await callModel({ ...BASE });
+    const afterFirst = s.calls.length;
+    await callModel({ ...BASE });
+    assertEquals(s.calls.slice(afterFirst).map((c) => modelOf(c.url)), ["model-b"]);
+  } finally {
+    s.restore();
+    setModelCooldownMsForTests(0);
+  }
+});
+
+Deno.test("404 (موديل اتسحب) و500 بينقلوا للموديل اللي بعده", async () => {
+  for (const status of [404, 500]) {
+    const s = stubFetch((url) => (modelOf(url) === "model-a" ? new Response("gone", { status }) : geminiOk()));
+    try {
+      const reply = await callModel({ ...BASE });
+      assertEquals(reply.text, "تمام");
+      assertEquals(s.calls.map((c) => modelOf(c.url)), ["model-a", "model-b"], `status ${status}`);
+    } finally {
+      s.restore();
+    }
   }
 });
 
@@ -172,6 +221,37 @@ Deno.test("موديل بيرفض thinkingConfig بيتعاد عليه من غي�
   } finally {
     s.restore();
   }
+});
+
+Deno.test("طلب جروك بيتقص لحد ما يدخل تحت حد الـ ٨٠٠٠ توكن — مابيبعتش ١٠٥٥٠", () => {
+  const tool = (i: number) => ({
+    name: `tool_${i}`,
+    description: "أداة بتعمل حاجة مهمة للعميل ".repeat(8),
+    input_schema: { type: "object", properties: { amount: { type: "number", description: "المبلغ بالعملة المحلية" } } },
+  });
+  const big = {
+    model: "m",
+    system: "قواعد أساسية في الأول. " + "سياق طويل عن العميل ومصاريفه ومواعيده. ".repeat(900) + " آخر سطر: بيانات العميل.",
+    tools: Array.from({ length: 41 }, (_, i) => tool(i)),
+    history: Array.from({ length: 10 }, (_, i) => ({ role: "user" as const, text: `رسالة ${i}` })),
+    maxTokens: 1200,
+  };
+  const fit = fitForGroq(big);
+  const estTokens = Math.ceil((fit.system.length + JSON.stringify(fit.tools).length + JSON.stringify(fit.history).length) / 2.5) +
+    (fit.maxTokens ?? 0);
+  assert(estTokens <= 7000, `المقدّر ${estTokens} لازم يبقى تحت الحد`);
+  // الأدوات بترتيبها: أول أداة (الأهم) موجودة دايماً، والتقطيع من الآخر.
+  assertEquals(fit.tools[0].name, "tool_0");
+  assert(fit.tools.length < 41 && fit.tools.length > 0);
+  // أول السيستم (القواعد) وآخره (سياق العميل) فاضلين.
+  assert(fit.system.startsWith("قواعد أساسية"));
+  assert(fit.system.endsWith("بيانات العميل."));
+  // آخر رسالة من العميل ماتتشالش.
+  assertEquals(fit.history.at(-1), { role: "user", text: "رسالة 9" });
+  // طلب صغير مايتلمسش غير max_tokens.
+  const small = fitForGroq({ ...big, system: "قصير", tools: [tool(1)], history: [{ role: "user", text: "هاي" }] });
+  assertEquals(small.system, "قصير");
+  assertEquals(small.tools.length, 1);
 });
 
 Deno.test("مفتاح Groq مرفوض (401) بيتعدّى للمفتاح التاني بدل ما رجل Groq كلها تفشل", async () => {

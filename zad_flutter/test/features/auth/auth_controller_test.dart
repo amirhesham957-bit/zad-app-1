@@ -14,6 +14,7 @@ import 'package:zad/features/auth/domain/auth_failure.dart';
 
 class _FakeGateway implements AuthGateway {
   final List<String> calls = <String>[];
+  String? signUpMarket;
   final StreamController<String?> ids = StreamController<String?>.broadcast();
 
   String? userId;
@@ -44,7 +45,10 @@ class _FakeGateway implements AuthGateway {
     required String email,
     required String password,
     required String name,
+    String? country,
+    String? currency,
   }) async {
+    signUpMarket = country == null ? null : '$country/$currency';
     await _run('signUp:$email:$name');
     return signUpOutcome;
   }

@@ -26,4 +26,34 @@ class BankCaptureMarker {
   /// Records that something arrived.
   Future<void> sawCapture(DateTime at) =>
       _box.put(_key, at.toUtc().toIso8601String());
+
+  static const String _grantedKey = 'bank_access_granted';
+  static const String _connectedKey = 'bank_listener_connected_at';
+
+  /// What the last check found: access granted, and when the listener last
+  /// bound. A launch starts from this instead of "not granted", which drew
+  /// «فعّل قراءة إشعارات البنك» for a moment on every launch until the real
+  /// check answered and hid it again.
+  ({bool granted, DateTime? connectedAt}) lastAccess() {
+    final connected = _box.get(_connectedKey);
+    return (
+      granted: _box.get(_grantedKey) == 'true',
+      connectedAt: connected == null
+          ? null
+          : DateTime.tryParse(connected)?.toUtc(),
+    );
+  }
+
+  /// Keeps the check's answer for the next launch.
+  Future<void> rememberAccess({
+    required bool granted,
+    DateTime? connectedAt,
+  }) async {
+    await _box.put(_grantedKey, '$granted');
+    if (connectedAt == null) {
+      await _box.delete(_connectedKey);
+    } else {
+      await _box.put(_connectedKey, connectedAt.toUtc().toIso8601String());
+    }
+  }
 }

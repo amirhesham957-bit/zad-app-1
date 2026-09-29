@@ -22,10 +22,12 @@ const String kAlertChannelId = 'zad_agent_channel';
 /// What the app needs from the platform.
 abstract interface class PushPlatform {
   /// Starts listening. [onAlert] gets every message that arrives while the
-  /// app is open; [onOpened] gets where a tapped alert should land.
+  /// app is open; [onOpened] gets where a tapped alert should land;
+  /// [onAnswer] gets a bank confirmation settled from a notification button.
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
+    void Function(String proposalId, {required bool confirmed})? onAnswer,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -50,6 +52,7 @@ class SilentPushPlatform implements PushPlatform {
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
+    void Function(String proposalId, {required bool confirmed})? onAnswer,
   }) async {}
 
   @override
@@ -114,9 +117,28 @@ Future<void> _showLocal(PushAlert alert) async {
         // The whole text, not one truncated line: an alert is usually a
         // sentence or two about money.
         styleInformation: BigTextStyleInformation(alert.body),
+        // A bank question carries its two answers. showsUserInterface: the
+        // decision needs the signed-in session, which lives in the app, so a
+        // press brings the app up and settles it there (AlertsController).
+        actions: alert.proposalId == null
+            ? null
+            : const <AndroidNotificationAction>[
+                AndroidNotificationAction(
+                  kConfirmActionId,
+                  'أيوه، أنا',
+                  showsUserInterface: true,
+                ),
+                AndroidNotificationAction(
+                  kRejectActionId,
+                  'مش أنا',
+                  showsUserInterface: true,
+                ),
+              ],
       ),
     ),
-    payload: payloadFor(alert.destination),
+    payload: alert.proposalId == null
+        ? payloadFor(alert.destination)
+        : proposalPayload(alert.proposalId!),
   );
 }
 
@@ -125,6 +147,23 @@ Future<void> _showLocal(PushAlert alert) async {
 Future<void> showAlertInBackground(PushAlert alert) async {
   await _initLocal();
   await _showLocal(alert);
+}
+
+/// Routes a tapped notification: a button on a bank question answers it, any
+/// other tap opens where the notification points.
+void routeNotificationResponse({
+  required String? actionId,
+  required String? payload,
+  required void Function(AlertDestination? destination) onOpened,
+  void Function(String proposalId, {required bool confirmed})? onAnswer,
+}) {
+  final proposal = proposalIdFromPayload(payload);
+  final confirmed = confirmationFromAction(actionId);
+  if (proposal != null && confirmed != null && onAnswer != null) {
+    onAnswer(proposal, confirmed: confirmed);
+    return;
+  }
+  onOpened(destinationForPayload(payload));
 }
 
 /// Runs in a background isolate for messages that arrive while the app is not
@@ -171,13 +210,19 @@ class FirebasePushPlatform implements PushPlatform {
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
+    void Function(String proposalId, {required bool confirmed})? onAnswer,
   }) async {
     if (_started) return;
     _started = true;
     final messaging = await _messaging();
 
     await _initLocal(
-      onTap: (response) => onOpened(destinationFor(response.payload)),
+      onTap: (response) => routeNotificationResponse(
+        actionId: response.actionId,
+        payload: response.payload,
+        onOpened: onOpened,
+        onAnswer: onAnswer,
+      ),
     );
 
     _subscriptions
@@ -207,7 +252,12 @@ class FirebasePushPlatform implements PushPlatform {
     } else {
       final launch = await _local.getNotificationAppLaunchDetails();
       if (launch?.didNotificationLaunchApp ?? false) {
-        onOpened(destinationFor(launch?.notificationResponse?.payload));
+        routeNotificationResponse(
+          actionId: launch?.notificationResponse?.actionId,
+          payload: launch?.notificationResponse?.payload,
+          onOpened: onOpened,
+          onAnswer: onAnswer,
+        );
       }
     }
   }

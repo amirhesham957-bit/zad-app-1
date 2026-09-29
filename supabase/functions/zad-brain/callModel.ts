@@ -24,6 +24,7 @@
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
 import { DeadKeys } from "../_shared/deadKeys.ts";
+import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
 export type Turn =
@@ -45,20 +46,15 @@ export type ModelReply = {
 
 export type Provider = "anthropic" | "gemini" | "openai_compatible";
 
-// Same ZAD_API_KEY_1..5 pool zad-core-intelligence reads — shared deliberately, not a
+// Same ZAD_API_KEY_n pool zad-core-intelligence reads — shared deliberately, not a
 // naming collision. Only consulted for provider "gemini"; anthropic/openai_compatible keep
 // using the single ZAD_API_KEY exactly as before (separate auth mechanisms, and a pool was
 // never asked for on them).
 //
-// Falls back to the legacy singular ZAD_API_KEY when none of the five are set, so a
-// half-migrated project doesn't lose Gemini access outright.
-const GEMINI_KEY_POOL: string[] = [1, 2, 3, 4, 5]
-  .map((n) => Deno.env.get(`ZAD_API_KEY_${n}`))
-  .filter((k): k is string => !!k);
-if (GEMINI_KEY_POOL.length === 0) {
-  const legacy = Deno.env.get("ZAD_API_KEY") || Deno.env.get("GEMINI_API_KEY");
-  if (legacy) GEMINI_KEY_POOL.push(legacy);
-}
+// Falls back to the legacy singular ZAD_API_KEY when none of the numbered ones are set, so
+// a half-migrated project doesn't lose Gemini access outright. Reads ZAD_API_KEY_1..20
+// (_shared/keyPool.ts) — a sixth key used to be ignored.
+const GEMINI_KEY_POOL: string[] = geminiKeys((n) => Deno.env.get(n));
 
 // Round-robin starting point across warm invocations, so consecutive requests don't all
 // hammer key 1 first. sendGemini() walks the whole pool from here on a 429.
@@ -107,6 +103,18 @@ const DEFAULT_MODEL_CHAIN = [
   "gemini-3.6-flash",
 ];
 
+// موديل وقع (503 زحمة، مهلة، 429 على كل المفاتيح) بيتعدّى دقيقة في نفس الـ isolate.
+// فحص tools_probe بعد نشر ٢٠٢٦-٠٩-٢٨: جيميناي كله كان زحمة، وكل رسالة جديدة كانت بتبدأ من
+// أول السلسلة تاني — الرسالة التالتة نجحت بعد ٤٥ ث وأربع موديلات فاشلة، منهم مهلة ٢٠ ث.
+let modelCooldownMs = 60_000;
+const modelCooldownUntil = new Map<string, number>();
+
+/** للاختبارات بس: الاختبارات بتشغّل موديلات فاشلة ورا بعض، والانتظار بيخلّط بينهم. */
+export function setModelCooldownMsForTests(ms: number): void {
+  modelCooldownMs = ms;
+  modelCooldownUntil.clear();
+}
+
 /** The caller's model first (it is whatever ZAD_MODEL_ROUTINE/BRAIN is set to, and the
  *  operator's choice outranks this file's), then the rest of the chain, deduped. */
 function modelChain(primary: string): string[] {
@@ -135,16 +143,7 @@ function modelChain(primary: string): string[] {
 // الـ pool كان بيطلع فاضي والـ fallback كله بيختفي — فأي موجة 503 على Gemini بتبقى
 // فشل نهائي للدور، وهو بالظبط شكل "تعذر تنفيذ الطلب (ok:false)" المتكرر يوم 2026-08-15
 // مع "Error: gemini 503 … high demand" كأكتر خطأ متكرر.
-const GROQ_KEY_POOL: string[] = [
-  Deno.env.get("GROQ_API_KEY_1"),
-  Deno.env.get("GROQ_API_KEY_2"),
-  Deno.env.get("GROQ_API_KEY"),
-].filter((k): k is string => !!k)
-  .filter((k, i, all) => all.indexOf(k) === i);
-if (GROQ_KEY_POOL.length === 0) {
-  const legacy = Deno.env.get("GROQ_API_KEY");
-  if (legacy) GROQ_KEY_POOL.push(legacy);
-}
+const GROQ_KEY_POOL: string[] = groqKeys((n) => Deno.env.get(n));
 const GROQ_MODEL = Deno.env.get("ZAD_GROQ_TEXT_MODEL") ?? "openai/gpt-oss-120b";
 
 const cfg = () => {
@@ -187,12 +186,18 @@ export async function callModel(opts: {
   // that has a request deadline, so it is not retried, it is stepped past immediately.
   const chain = modelChain(opts.model);
   const trail: string[] = [];
-  for (const model of chain) {
+  const now = Date.now();
+  const fresh = chain.filter((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
+  // كله في الانتظار ⇒ جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
+  for (const model of fresh.length > 0 ? fresh : chain) {
     try {
-      return await withRetry(() => sendGemini({ ...opts, model }));
+      const reply = await withRetry(() => sendGemini({ ...opts, model }));
+      modelCooldownUntil.delete(model);
+      return reply;
     } catch (e) {
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
+      if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
       trail.push(`${model}: ${e.short}`);
       console.warn(`[zad-brain] model ${model} unavailable (${e.short}); falling over`);
     }
@@ -459,7 +464,7 @@ async function sendGemini(o: {
   // ConfigError, and retrying a malformed request or a bad-auth response on four more keys
   // just burns them and buries the real error.
   if (GEMINI_KEY_POOL.length === 0) {
-    throw new ConfigError("gemini: no key configured (ZAD_API_KEY_1..5 / ZAD_API_KEY all unset)");
+    throw new ConfigError("gemini: no key configured (ZAD_API_KEY_1..20 / ZAD_API_KEY all unset)");
   }
 
   let res: Response | null = null;
@@ -473,12 +478,33 @@ async function sendGemini(o: {
     // timeout 20 ثانية لكل نداء موديل — من غيره موديل معلّق بيعلّق اللفة كلها
     // (والعميل يشوف "بيفكر..." للأبد). 20s كافية لأطول رد أدوات، والفشل السريع
     // بيخلي الـ failover chain (موديل تاني/Groq) تلحق تنقذ اللفة قبل ما الكلاينت ييأس.
-    const attempt = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-      signal: AbortSignal.timeout(20_000),
-    });
+    let attempt: Response;
+    try {
+      attempt = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        // ١٢ مش ٢٠ (٢٠٢٦-٠٩-٢٨): الرد الطبيعي بالأدوات ١-٣ ث؛ موديل معلّق كان بياكل ٢٠ ث
+        // كاملين قبل ما السلسلة تتحرك، والعميل مستني رد صوتي.
+        signal: AbortSignal.timeout(12_000),
+      });
+    } catch (e) {
+      // موديل معلّق (timeout) أو شبكة واقعة: قبل كده الخطأ ده ماكانش ProviderUnavailableError،
+      // فـ withRetry كان بيعيد نفس الموديل ٣ مرات (٢٠+١+٢٠+٤+٢٠ ≈ ٦٥ ثانية) وبعدين callModel
+      // يرميه بدل ما ينقل للموديل اللي بعده — الدور كله يفشل بعد دقيقة. ده شكل «المساعد
+      // الصوتي بيرد بعد نص دقيقة ودقيقة» وفحص tools_probe اللي عدّى ١٢٠ ث (٢٠٢٦-٠٩-٢٨).
+      const name = (e as Error)?.name ?? "";
+      throw new ProviderUnavailableError(
+        `gemini ${o.model} ${name === "TimeoutError" ? "timed out after 12s" : `fetch failed: ${(e as Error)?.message ?? e}`}`,
+        name === "TimeoutError" ? "timeout" : "network",
+      );
+    }
+    // 404 = الموديل اتسحب، و5xx (غير 503 تحت) = عطل عنده: الاتنين بيخصّوا الموديل مش
+    // المفتاح، وإعادة نفس الموديل بـ backoff بتحرق وقت الدور. السلسلة تنقل على طول.
+    if (attempt.status === 404 || (attempt.status >= 500 && attempt.status !== 503)) {
+      const failBody = (await attempt.text()).slice(0, 300);
+      throw new ProviderUnavailableError(`gemini ${attempt.status} on ${o.model}: ${failBody}`, `${attempt.status}`);
+    }
     if (attempt.status === 429) {
       lastQuotaBody = await attempt.text();
       const q = summarizeQuota429(lastQuotaBody);
@@ -577,9 +603,54 @@ async function sendGemini(o: {
  * this project at all, so routing Groq through cfg() would have failed with an undefined
  * bearer token the first time it was ever needed.
  */
+/**
+ * طلب Groq بيتقص لحد ما يدخل في حد الدقيقة. فحص ما بعد النشر ٢٠٢٦-٠٩-٢٨: كل ما جيميناي
+ * كان يقع ويروح لجروك، جروك بيرد **413 — TPM Limit 8000, Requested 8048..10550**: برومبت
+ * العقل + ٢٨-٤١ أداة أكبر من حد الطبقة المجانية لطلب واحد، فرجل الاحتياطي كانت ميتة دايماً
+ * (تبديل المفتاح مابيفرقش — الحد على حجم الطلب). المطلوب بيتحسب مع max_tokens.
+ *
+ * بالترتيب: max_tokens ≤ 700، الأدوات بترتيبها (قايمة المتخصص مرتّبة بالأهمية) لحد ما
+ * ميزانيتها تخلص، آخر ٦ أدوار بس، والسيستم بيتقص من النص (أوله فيه القواعد وآخره فيه سياق
+ * العميل). التقدير متحفظ: حرف ÷ ٢٫٥ (العربي أغلى من الإنجليزي في التوكنز).
+ */
+export function fitForGroq<T extends { system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number }>(
+  o: T,
+  budgetTokens = GROQ_REQUEST_BUDGET_TOKENS,
+): T {
+  const est = (chars: number) => Math.ceil(chars / 2.5);
+  const maxTokens = Math.min(o.maxTokens ?? 1500, 700);
+  const history = o.history.slice(-6);
+  const historyTokens = est(JSON.stringify(history).length);
+  let left = budgetTokens - maxTokens - historyTokens;
+
+  const toolBudget = Math.floor(left * 0.45);
+  const tools: ToolDef[] = [];
+  let used = 0;
+  for (const t of o.tools) {
+    const cost = est(JSON.stringify(t).length);
+    if (used + cost > toolBudget) break;
+    tools.push(t);
+    used += cost;
+  }
+  left -= used;
+
+  let system = o.system;
+  const maxSystemChars = Math.max(0, Math.floor(left * 2.5));
+  if (system.length > maxSystemChars) {
+    const head = Math.floor(maxSystemChars * 0.6);
+    const tail = maxSystemChars - head;
+    system = system.slice(0, head) + "\n…\n" + (tail > 0 ? system.slice(-tail) : "");
+  }
+  return { ...o, system, tools, history, maxTokens };
+}
+
+/** حد جروك المجاني ٨٠٠٠/دقيقة للموديل؛ هامش للفرق بين تقديرنا وعدّاده. */
+const GROQ_REQUEST_BUDGET_TOKENS = 6800;
+
 async function sendGroq(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
 }): Promise<ModelReply> {
+  o = fitForGroq(o);
   const start = groqKeyCursor % GROQ_KEY_POOL.length;
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
   // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
@@ -879,7 +950,7 @@ export async function embedSelfTest(): Promise<{
     return {
       configured: EMBED_MODEL, keyPoolSize: 0, breaker,
       listedForEmbedding: [],
-      probes: [{ model: EMBED_MODEL, ok: false, error: "GEMINI_KEY_POOL فاضي — مفيش ZAD_API_KEY_1..5 ولا GEMINI_API_KEY" }],
+      probes: [{ model: EMBED_MODEL, ok: false, error: "GEMINI_KEY_POOL فاضي — مفيش ZAD_API_KEY_1..20 ولا GEMINI_API_KEY" }],
     };
   }
   const key = GEMINI_KEY_POOL[0];

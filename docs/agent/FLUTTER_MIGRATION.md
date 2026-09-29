@@ -494,12 +494,15 @@ one commit, full verification, report, then continue.
    decided:**
    - Voice out in the chat is ported (`features/voice/`): a message the
      customer spoke goes with `voice_mode` and the reply is read aloud, and
-     every reply has a speaker button. `voice_synthesize` = Gemini (Sarah,
-     Aoede) then Azure (Salma for Egypt) — needs `AZURE_SPEECH_KEY`/`REGION`
-     on the project for the fallback. The orb shows «بيتكلم» while audio
-     plays; the microphone interrupts Zad. Still not ported: spoken alerts
-     (notifications/doses read aloud), the wake greeting, persona choice
-     (fixed to Sarah).
+     every reply has a speaker button. **One voice, a girl named زاد, in the
+     account country's dialect — owner's decision 2026-09-27; there is no
+     persona picker (Kotlin's Sarah/Karim/pet is deliberately not ported, and
+     the server maps every persona name to the same voice).**
+     `voice_synthesize` = Gemini (Aoede + the country's accent) then Azure
+     (the country's female voice, Salma for Egypt) — needs
+     `AZURE_SPEECH_KEY`/`REGION` on the project for the fallback. Whisper
+     follows the account country (ar + dialect hint, tr, or auto). The orb
+     shows «بيتكلم» while audio plays; the microphone interrupts Zad.
    - Agent screen commands are ported (`chat/domain/agent_screen.dart`):
      `app_commands` from a turn open the named screen over the chat — never
      in kids mode. The server list now also has `recipes`, `prices`,

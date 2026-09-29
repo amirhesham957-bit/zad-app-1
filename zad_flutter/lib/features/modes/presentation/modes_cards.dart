@@ -11,6 +11,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
@@ -153,11 +154,12 @@ Future<void> showBrokeModeDialog(
   WidgetRef ref,
   int daysLeft,
 ) async {
-  final controller = TextEditingController();
-  final result = await showDialog<({double? cash})>(
+  final result = await showFieldDialog<({double? cash})>(
     context: context,
-    builder: (c) => StatefulBuilder(
+    initial: const <String>[''],
+    builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) {
+        final controller = fields[0];
         final text = controller.text.trim();
         final parsed = parseMoneyInput(text);
         // parseMoneyInput refuses zero; a customer with nothing left can
@@ -203,7 +205,6 @@ Future<void> showBrokeModeDialog(
       },
     ),
   );
-  controller.dispose();
   if (result == null) return;
   await ref.read(modesControllerProvider.notifier).activateBroke(result.cash);
 }
@@ -455,14 +456,15 @@ Future<void> showChallengeDialog(BuildContext context, WidgetRef ref) async {
         ? null
         : safeDailySpend(spendable: spendable, daysLeft: daysLeft),
   );
-  final cap = TextEditingController(
-    text: suggested == null ? '' : suggested.toStringAsFixed(0),
-  );
   var length = 30;
-  final result = await showDialog<(double, int)>(
+  final result = await showFieldDialog<(double, int)>(
     context: context,
-    builder: (c) => StatefulBuilder(
+    initial: <String>[
+      if (suggested == null) '' else suggested.toStringAsFixed(0),
+    ],
+    builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) {
+        final cap = fields[0];
         final parsed = parseMoneyInput(cap.text);
         final valid = parsed != null && parsed >= 1;
         return AlertDialog(
@@ -516,7 +518,6 @@ Future<void> showChallengeDialog(BuildContext context, WidgetRef ref) async {
       },
     ),
   );
-  cap.dispose();
   if (result == null) return;
   await controller.startChallenge(result.$1, result.$2);
 }

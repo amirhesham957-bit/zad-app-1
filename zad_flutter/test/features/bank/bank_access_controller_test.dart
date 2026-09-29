@@ -176,6 +176,35 @@ void main() {
     expect(listener.rebinds, 0);
   });
 
+  test('a launch starts from the last check, not from "not granted"', () async {
+    // Starting from false drew the enable-bank-reading step on home for a
+    // moment on every launch, until the check answered and hid it again.
+    await build();
+    await container
+        .read(bankCaptureMarkerProvider)
+        .rememberAccess(granted: true, connectedAt: DateTime.utc(2026, 9, 27));
+
+    final first = container.read(bankAccessControllerProvider);
+    expect(first.granted, isTrue);
+    expect(first.lastConnectedAt, DateTime.utc(2026, 9, 27));
+  });
+
+  test('a check keeps its answer for the next launch', () async {
+    await build(granted: false);
+    await container.read(bankAccessControllerProvider.notifier).refresh();
+    expect(
+      container.read(bankCaptureMarkerProvider).lastAccess().granted,
+      isFalse,
+    );
+
+    listener.granted = true;
+    await container.read(bankAccessControllerProvider.notifier).refresh();
+    expect(
+      container.read(bankCaptureMarkerProvider).lastAccess().granted,
+      isTrue,
+    );
+  });
+
   test('a missing plugin reads as not granted, not as a crash', () async {
     await build();
     listener.failWith = MissingPluginException('no implementation');

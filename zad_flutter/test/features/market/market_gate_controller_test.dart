@@ -46,6 +46,8 @@ class _Gateway implements AuthGateway {
     required String email,
     required String password,
     required String name,
+    String? country,
+    String? currency,
   }) async => SignUpOutcome.signedIn;
 
   @override

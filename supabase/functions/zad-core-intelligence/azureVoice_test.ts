@@ -33,14 +33,15 @@ Deno.test("config: المفتاح والريجن الاتنين لازم — و�
 
 Deno.test("الصوت: بلد الحساب + لغة النص + الشخصية", () => {
   assertEquals(azureVoiceFor("إزيك يا حبيبي", "EG", "Aoede"), "ar-EG-SalmaNeural");
-  assertEquals(azureVoiceFor("إزيك يا حبيبي", "مصر", "Charon"), "ar-EG-ShakirNeural");
+  // صوت زاد بنت دايماً — حتى لو نسخة قديمة بعتت صوت كريم (Charon).
+  assertEquals(azureVoiceFor("إزيك يا حبيبي", "مصر", "Charon"), "ar-EG-SalmaNeural");
   assertEquals(azureVoiceFor("هلا والله", "SA", "Leda"), "ar-SA-ZariyahNeural");
   assertEquals(azureVoiceFor("كيفك", "PS", "Aoede"), "ar-JO-SanaNeural");
   // بلد مش معروف ونص عربي = مصري؛ بلد تركي بس النص عربي = برضه صوت عربي
   assertEquals(azureVoiceFor("أهلاً", null, "Aoede"), "ar-EG-SalmaNeural");
   assertEquals(azureVoiceFor("أهلاً", "TR", "Aoede"), "ar-EG-SalmaNeural");
   assertEquals(azureVoiceFor("Günaydın, ilacını aldın mı?", "TR", "Aoede"), "tr-TR-EmelNeural");
-  assertEquals(azureVoiceFor("Günaydın", null, "Charon"), "tr-TR-AhmetNeural");
+  assertEquals(azureVoiceFor("Günaydın", null, "Charon"), "tr-TR-EmelNeural");
   assertEquals(azureVoiceFor("Good morning", "EG", "Aoede"), "en-US-JennyNeural");
 });
 
@@ -104,7 +105,8 @@ Deno.test("مفيش مفاتيح Gemini خالص: Azure لوحده يكفي", as
   const res = await requestVoiceWithFallback({ text: "أهلاً", voiceId: "Charon" }, [], AZURE, fetcher);
   assertEquals(res.status, 200);
   assertEquals(calls.gemini, 0);
-  assert(String(calls.azure[0].init.body).includes("ar-EG-ShakirNeural"));
+  // An old client asking for Karim still gets Zad's own voice.
+  assert(String(calls.azure[0].init.body).includes("ar-EG-SalmaNeural"));
 });
 
 Deno.test("الاتنين وقعوا: 502 فيه محاولات Azure، ولا أي مادة مفتاح", async () => {

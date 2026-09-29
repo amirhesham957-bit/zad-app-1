@@ -20,6 +20,8 @@ import 'package:zad/design/tokens/zad_extended_colors.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/auth/presentation/terms_content.dart';
+import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/features/market/presentation/market_picker_grid.dart';
 
 /// The way in: Kotlin's two screens, one at a time.
 class LoginScreen extends ConsumerWidget {
@@ -487,6 +489,11 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
   bool _terms = false;
   bool _success = false;
 
+  /// Asked here, not after the first sign-in: the account is created with it
+  /// (the provisioning trigger reads it from the metadata), so a slow first
+  /// launch can no longer skip the question and leave the account on UTC.
+  Market? _market;
+
   @override
   void dispose() {
     _name.dispose();
@@ -501,6 +508,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
       email: _email.text,
       password: _password.text,
       name: _name.text,
+      market: _market,
     );
     if (!mounted) return;
     final form = ref.read(authControllerProvider);
@@ -572,6 +580,79 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
     if (agreed != null && mounted) setState(() => _terms = agreed);
   }
 
+  Future<void> _pickMarket() async {
+    final picked = await showModalBottomSheet<Market>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            16 + MediaQuery.viewInsetsOf(c).bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(c).height * 0.75,
+            ),
+            child: MarketPickerGrid(
+              selected: _market,
+              onSelect: (m) => Navigator.of(c).pop(m),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => _market = picked);
+  }
+
+  Widget _marketField() {
+    final scheme = Theme.of(context).colorScheme;
+    final market = _market;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'البلد',
+            style: ZadType.labelMedium.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          InkWell(
+            key: const ValueKey<String>('sign-up-market'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => unawaited(_pickMarket()),
+            child: InputDecorator(
+              decoration: _fieldDecoration(
+                context,
+                fill: Colors.transparent,
+                hint: '',
+                suffix: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
+              ),
+              child: Text(
+                switch (market) {
+                  null => 'اختار بلدك',
+                  final m => '${m.flag}  ${m.nameAr} · ${m.currencySymbol}',
+                },
+                style: TextStyle(
+                  color: market == null
+                      ? scheme.onSurfaceVariant
+                      : scheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _field({
     required String label,
     required TextEditingController controller,
@@ -619,6 +700,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
     final canSubmit =
         _email.text.trim().isNotEmpty &&
         _password.text.trim().isNotEmpty &&
+        _market != null &&
         _terms;
 
     return SingleChildScrollView(
@@ -670,6 +752,8 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                   hint: 'your.email@gmail.com',
                   keyboard: TextInputType.emailAddress,
                 ),
+                const SizedBox(height: 16),
+                _marketField(),
                 const SizedBox(height: 16),
                 _field(
                   label: 'كلمة المرور',

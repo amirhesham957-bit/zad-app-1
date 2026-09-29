@@ -1,8 +1,7 @@
 /// Kotlin's `SplashScreen` (MainActivity.kt): a warm off-white canvas with two
 /// blurred ambient blobs, the carrot mark bouncing in and then floating
-/// (`ZadAnimatedLogo`), «زاد», the slogan and the privacy line — two seconds,
-/// and only on a start that is not already signed in, as Kotlin skips it for
-/// a returning, set-up account.
+/// (`ZadAnimatedLogo`), «زاد», the slogan and the privacy line — two seconds
+/// on a signed-out start, a shorter beat on a signed-in one.
 library;
 
 import 'dart:async';
@@ -19,7 +18,7 @@ import 'package:zad/features/auth/application/session_controller.dart';
 const Color _canvas = Color(0xFFFBFAF8);
 Color get _textTertiary => ZadColors.textTertiary;
 
-/// The app's root: the splash on a cold, signed-out start, then the gate.
+/// The app's root: the splash on every cold start, then the gate.
 class ZadSplashGate extends ConsumerStatefulWidget {
   /// Creates the root.
   const new({super.key});
@@ -29,17 +28,28 @@ class ZadSplashGate extends ConsumerStatefulWidget {
 }
 
 class _ZadSplashGateState extends ConsumerState<ZadSplashGate> {
-  late bool _splash = ref.read(sessionControllerProvider) == null;
+  /// Every cold start shows it — the owner, signed in, only ever saw the
+  /// native white screen with the carrot and asked where the animation and
+  /// the slogan went (2026-09-28). A returning account gets a shorter one:
+  /// long enough to read «زاد» and the slogan, short of feeling like a wait.
+  late final Duration _length = ref.read(sessionControllerProvider) == null
+      ? signedOutSplash
+      : signedInSplash;
+  bool _splash = true;
   Timer? _timer;
+
+  /// The splash on a signed-out start (Kotlin's two seconds).
+  static const Duration signedOutSplash = Duration(seconds: 2);
+
+  /// The splash on a signed-in start.
+  static const Duration signedInSplash = Duration(milliseconds: 1100);
 
   @override
   void initState() {
     super.initState();
-    if (_splash) {
-      _timer = Timer(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _splash = false);
-      });
-    }
+    _timer = Timer(_length, () {
+      if (mounted) setState(() => _splash = false);
+    });
   }
 
   @override
@@ -97,7 +107,11 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: _canvas,
+    // StackFit.expand: without it the stack took the size of the column, so on
+    // a phone the whole splash — blobs, logo, «زاد», slogan — sat squeezed in
+    // the top corner of a blank screen (owner's screenshot, 2026-09-28).
     body: Stack(
+      fit: StackFit.expand,
       alignment: Alignment.center,
       children: <Widget>[
         const PositionedDirectional(
@@ -110,76 +124,78 @@ class _SplashScreenState extends State<SplashScreen>
           end: -80,
           child: _Blob(Color(0xFFBFE3D1)),
         ),
-        FadeTransition(
-          opacity: _fadeCurve,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              AnimatedBuilder(
-                animation: Listenable.merge(<Listenable>[_enter, _float]),
-                builder: (context, child) {
-                  final e = Curves.fastOutSlowIn.transform(_enter.value);
-                  final scale = e < 0.6
-                      ? 0.7 + (e / 0.6) * 0.36
-                      : 1.06 - ((e - 0.6) / 0.4) * 0.06;
-                  final degrees = e < 0.6
-                      ? -8 + (e / 0.6) * 10
-                      : 2 - ((e - 0.6) / 0.4) * 2;
-                  return Opacity(
-                    opacity: e.clamp(0, 1),
-                    child: Transform.translate(
-                      offset: Offset(0, -6 * _float.value * e.clamp(0, 1)),
-                      child: Transform.rotate(
-                        angle: degrees * math.pi / 180,
-                        child: Transform.scale(scale: scale, child: child),
+        Center(
+          child: FadeTransition(
+            opacity: _fadeCurve,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                AnimatedBuilder(
+                  animation: Listenable.merge(<Listenable>[_enter, _float]),
+                  builder: (context, child) {
+                    final e = Curves.fastOutSlowIn.transform(_enter.value);
+                    final scale = e < 0.6
+                        ? 0.7 + (e / 0.6) * 0.36
+                        : 1.06 - ((e - 0.6) / 0.4) * 0.06;
+                    final degrees = e < 0.6
+                        ? -8 + (e / 0.6) * 10
+                        : 2 - ((e - 0.6) / 0.4) * 2;
+                    return Opacity(
+                      opacity: e.clamp(0, 1),
+                      child: Transform.translate(
+                        offset: Offset(0, -6 * _float.value * e.clamp(0, 1)),
+                        child: Transform.rotate(
+                          angle: degrees * math.pi / 180,
+                          child: Transform.scale(scale: scale, child: child),
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: SvgPicture.asset(
-                  'assets/brand/carrot_logo.svg',
-                  width: 80,
-                  height: 80,
-                  semanticsLabel: 'ZAD Logo',
+                    );
+                  },
+                  child: SvgPicture.asset(
+                    'assets/brand/carrot_logo.svg',
+                    width: 80,
+                    height: 80,
+                    semanticsLabel: 'ZAD Logo',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'زاد',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: ZadColors.forestLight,
+                const SizedBox(height: 20),
+                Text(
+                  'زاد',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: ZadColors.forestLight,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'تدبير ذكي لبيت هادئ',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: ZadColors.inkMuted,
+                const SizedBox(height: 10),
+                Text(
+                  'تدبير ذكي لبيت هادئ',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ZadColors.inkMuted,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'خصوصية بياناتك أولوية، دائماً',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: _textTertiary,
+                const SizedBox(height: 2),
+                Text(
+                  'خصوصية بياناتك أولوية، دائماً',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: _textTertiary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 60),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: ZadColors.ink.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(99),
+                const SizedBox(height: 60),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: ZadColors.ink.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

@@ -1,8 +1,9 @@
 /// `zad-core-intelligence`'s `voice_synthesize`: text in, speech out.
 ///
-/// The server walks the Gemini TTS key pool with the persona's voice (Sarah
-/// = Aoede, a woman's voice) and, only if every key fails, Azure Speech in
-/// the account country's dialect — Salma (`ar-EG-SalmaNeural`) for Egypt.
+/// The server walks the Gemini TTS key pool in زاد's voice (Aoede, a girl's
+/// voice, told the account country's dialect) and, only if every key fails,
+/// Azure Speech with that country's female voice — Salma
+/// (`ar-EG-SalmaNeural`) for Egypt.
 /// Either way the body is the same raw PCM, and `X-Zad-Voice-Provider` says
 /// which one spoke.
 library;
@@ -20,46 +21,29 @@ typedef SpokenAudio = ({Uint8List pcm, String provider});
 
 /// Text to speech.
 abstract interface class VoiceSynthesizer {
-  /// The speech for [text] in [persona]'s voice (a `voice_synthesize`
-  /// persona id; the synthesizer's own default when null), or throws.
-  Future<SpokenAudio> synthesize(String text, {String? persona});
+  /// The speech for [text] in زاد's voice, or throws.
+  Future<SpokenAudio> synthesize(String text);
 }
 
-/// The personas `voice_synthesize` accepts (`_shared/zadVoice.ts`).
-enum VoicePersona {
-  /// سارة — Aoede on Gemini, a woman's voice on Azure. The default.
-  sarah('sarah_warm'),
-
-  /// كريم — Charon on Gemini, the one man's voice.
-  karim('karim_pro');
-
-  new(this.wireName);
-
-  /// The `persona` value.
-  final String wireName;
-}
+/// The one voice: زاد, a girl's voice in the account's dialect. The server
+/// maps every persona name to it; this one names her.
+const String zadVoicePersona = 'zad';
 
 /// Over plain http: `functions.invoke` decodes the body as text for a
 /// content type it does not know, and `audio/pcm` is one.
 class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
   /// Creates a synthesizer over a Supabase client.
-  const new(
-    this._client, {
-    this.persona = VoicePersona.sarah,
-    http.Client Function()? clientFactory,
-  }) : _clientFactory = clientFactory;
+  const new(this._client, {http.Client Function()? clientFactory})
+    : _clientFactory = clientFactory;
 
   final SupabaseClient _client;
   final http.Client Function()? _clientFactory;
-
-  /// Whose voice.
-  final VoicePersona persona;
 
   /// A Gemini TTS call plus, at worst, the Azure fallback.
   static const Duration timeout = Duration(seconds: 30);
 
   @override
-  Future<SpokenAudio> synthesize(String text, {String? persona}) async {
+  Future<SpokenAudio> synthesize(String text) async {
     final client = _clientFactory?.call() ?? http.Client();
     try {
       final response = await client
@@ -80,7 +64,7 @@ class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
               'user_id': _client.auth.currentUser?.id,
               'payload': <String, dynamic>{
                 'text': text,
-                'persona': persona ?? this.persona.wireName,
+                'persona': zadVoicePersona,
               },
             }),
           )
