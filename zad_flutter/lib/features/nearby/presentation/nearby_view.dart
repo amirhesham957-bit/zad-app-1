@@ -20,12 +20,35 @@ import 'package:zad/features/nearby/data/location_source.dart';
 import 'package:zad/features/nearby/domain/nearby.dart';
 
 /// The "near you" tab.
-class NearbyList extends ConsumerWidget {
+class NearbyList extends ConsumerStatefulWidget {
   /// Creates the tab.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NearbyList> createState() => _NearbyListState();
+}
+
+class _NearbyListState extends ConsumerState<NearbyList> {
+  // Back from the phone's settings: read the switch again.
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () =>
+          unawaited(ref.read(nearbyControllerProvider.notifier).recheck()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final view = ref.watch(nearbyControllerProvider);
     final controller = ref.read(nearbyControllerProvider.notifier);
     final markets = view.storesOf(StoreKind.supermarket);

@@ -10,6 +10,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
@@ -136,6 +137,23 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   Future<void> _openCamera() => openZadCamera(context);
 
+  static const MethodChannel _app = MethodChannel('zad/app');
+
+  /// Back with nothing over the shell: another tab goes to الرئيسية, and
+  /// الرئيسية hides the app. Letting Android finish the activity threw the
+  /// Flutter engine away, so every return went through the splash again.
+  void _back() {
+    if (_tab != ZadNavDestination.home) {
+      _show(ZadNavDestination.home);
+      return;
+    }
+    unawaited(
+      _app
+          .invokeMethod<bool>('background')
+          .then<void>((_) {}, onError: (Object _) => SystemNavigator.pop()),
+    );
+  }
+
   /// The mic orb: Kotlin's voice sheet — hold, speak, and زاد answers aloud.
   Future<void> _openVoice() => showZadVoiceSheet(context);
 
@@ -224,81 +242,89 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       profileControllerProvider.select((v) => v.avatarUrl),
     );
 
-    return DecoratedBox(
-      // Kotlin paints the canvas once, behind the whole scaffold.
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        key: _scaffold,
-        backgroundColor: Colors.transparent,
-        drawer: ZadDrawer(
-          current: _tab.name,
-          entries: zadDrawerEntries,
-          userName: name,
-          avatarUrl: avatar,
-          onNavigate: (id) {
-            _scaffold.currentState?.closeDrawer();
-            unawaited(_go(id));
-          },
-          onProfile: () {
-            _scaffold.currentState?.closeDrawer();
-            unawaited(showProfileScreen(context));
-          },
-        ),
-        body: Column(
-          children: <Widget>[
-            ZadTopHeader(
-              title: _title,
-              hasUnreadNotifications: unread,
-              avatarUrl: avatar,
-              onOpenDrawer: () => _scaffold.currentState?.openDrawer(),
-              onNotifications: () => unawaited(showNotificationCenter(context)),
-              onAvatar: () => unawaited(showProfileScreen(context)),
-            ),
-            Expanded(
-              // IndexedStack, not a rebuild per tab: each screen's controller
-              // reads its cache in build, and swapping the subtree would throw
-              // away a scrolled list and re-read Hive on every switch back.
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    child: IndexedStack(
-                      index: _tabs.indexOf(_tab),
-                      children: <Widget>[
-                        HomeScreen(
-                          onOpenVoice: () => unawaited(_openVoice()),
-                          onOpenCamera: () => unawaited(_openCamera()),
-                        ),
-                        if (_assistantOpened)
-                          const BrainFamilyScreen(embedded: true)
-                        else
-                          const SizedBox.shrink(),
-                        if (_inventoryOpened)
-                          const HouseholdScreen(embedded: true)
-                        else
-                          const SizedBox.shrink(),
-                      ],
-                    ),
-                  ),
-                  // Kotlin shows the floating companion on الرئيسية only —
-                  // elsewhere it covered the last icons of a row.
-                  if (_tab == ZadNavDestination.home)
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
+      },
+      child: DecoratedBox(
+        // Kotlin paints the canvas once, behind the whole scaffold.
+        decoration: BoxDecoration(gradient: ZadColors.canvas),
+        child: Scaffold(
+          key: _scaffold,
+          backgroundColor: Colors.transparent,
+          drawer: ZadDrawer(
+            current: _tab.name,
+            entries: zadDrawerEntries,
+            userName: name,
+            avatarUrl: avatar,
+            onNavigate: (id) {
+              _scaffold.currentState?.closeDrawer();
+              unawaited(_go(id));
+            },
+            onProfile: () {
+              _scaffold.currentState?.closeDrawer();
+              unawaited(showProfileScreen(context));
+            },
+          ),
+          body: Column(
+            children: <Widget>[
+              ZadTopHeader(
+                title: _title,
+                hasUnreadNotifications: unread,
+                avatarUrl: avatar,
+                onOpenDrawer: () => _scaffold.currentState?.openDrawer(),
+                onNotifications: () =>
+                    unawaited(showNotificationCenter(context)),
+                onAvatar: () => unawaited(showProfileScreen(context)),
+              ),
+              Expanded(
+                // IndexedStack, not a rebuild per tab: each screen's
+                // controller reads its cache in build, and swapping the
+                // subtree would throw away a scrolled list and re-read Hive
+                // on every switch back.
+                child: Stack(
+                  children: <Widget>[
                     Positioned.fill(
-                      child: FloatingCompanion(
-                        onOpenVoice: () => unawaited(_openVoice()),
-                        onOpenChat: () => unawaited(_openChat()),
+                      child: IndexedStack(
+                        index: _tabs.indexOf(_tab),
+                        children: <Widget>[
+                          HomeScreen(
+                            onOpenVoice: () => unawaited(_openVoice()),
+                            onOpenCamera: () => unawaited(_openCamera()),
+                          ),
+                          if (_assistantOpened)
+                            const BrainFamilyScreen(embedded: true)
+                          else
+                            const SizedBox.shrink(),
+                          if (_inventoryOpened)
+                            const HouseholdScreen(embedded: true)
+                          else
+                            const SizedBox.shrink(),
+                        ],
                       ),
                     ),
-                ],
+                    // Kotlin shows the floating companion on الرئيسية only —
+                    // elsewhere it covered the last icons of a row.
+                    if (_tab == ZadNavDestination.home)
+                      Positioned.fill(
+                        child: FloatingCompanion(
+                          onOpenVoice: () => unawaited(_openVoice()),
+                          onOpenChat: () => unawaited(_openChat()),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: ZadBottomNavBar(
-          current: _tab,
-          onNavigate: _show,
-          onOpenCamera: () => unawaited(_openCamera()),
-          onOpenVoice: () => unawaited(_openVoice()),
-          onOpenMore: () => unawaited(_openMore()),
+            ],
+          ),
+          bottomNavigationBar: ZadBottomNavBar(
+            current: _tab,
+            onNavigate: _show,
+            onOpenCamera: () => unawaited(_openCamera()),
+            onOpenVoice: () => unawaited(_openVoice()),
+            onOpenMore: () => unawaited(_openMore()),
+          ),
         ),
       ),
     );
