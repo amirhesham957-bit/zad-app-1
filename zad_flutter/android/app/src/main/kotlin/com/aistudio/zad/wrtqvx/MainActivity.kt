@@ -70,6 +70,17 @@ class MainActivity : FlutterActivity() {
                 playPcm(pcm, sampleRate)
                 result.success(null)
             }
+        // Back on the home screen hides the app instead of finishing the
+        // activity: finishing threw the Flutter engine away, so every return
+        // went through the splash again (owner, 2026-09-29).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/app")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "background") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                result.success(moveTaskToBack(true))
+            }
         // Kotlin's TravelDetector.detectCurrentCountryCode: the network's
         // country (right while roaming, unlike the SIM's), else the locale's.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/travel")

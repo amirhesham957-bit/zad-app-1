@@ -100,6 +100,10 @@ class NearbyController extends Notifier<NearbyView> {
   /// How old the phone's last position may be and still count as "here".
   static const Duration lastKnownFor = Duration(minutes: 30);
 
+  /// The customer went to the phone's settings from here, so coming back
+  /// with location on is the answer to «حدّد مكاني», not a new visit.
+  bool _sentToSettings = false;
+
   @override
   NearbyView build() {
     unawaited(Future<void>.microtask(() => ref.mounted ? _onOpen() : null));
@@ -141,6 +145,12 @@ class NearbyController extends Notifier<NearbyView> {
     if (access == LocationAccess.denied) access = await source.request();
     if (!ref.mounted) return;
     state = state.copyWith(access: access, noFix: false, clearError: true);
+    // A tap with location off goes where it can be switched on; nothing
+    // else on this screen can change it.
+    if (access == LocationAccess.serviceOff) {
+      await openSettings();
+      return;
+    }
     if (access != LocationAccess.granted) return;
 
     state = state.copyWith(isLocating: true);
@@ -158,8 +168,25 @@ class NearbyController extends Notifier<NearbyView> {
     if (ref.mounted) state = state.copyWith(radius: metres);
   }
 
+  /// Reads permission and the location switch again — the screen calls it on
+  /// every return to the app. The owner switched location on in settings and
+  /// the screen still said «الموقع مقفول في الموبايل» until a second tap
+  /// (2026-09-29). Back from settings with both on,
+  /// it finishes the tap that sent the customer there.
+  Future<void> recheck() async {
+    if (!ref.mounted || state.access == LocationAccess.granted) return;
+    final access = await ref.read(locationSourceProvider).access();
+    if (!ref.mounted) return;
+    state = state.copyWith(access: access);
+    if (access == LocationAccess.granted && _sentToSettings) {
+      _sentToSettings = false;
+      await locate();
+    }
+  }
+
   /// Opens the settings screen that can change [LocationAccess].
   Future<void> openSettings() async {
+    _sentToSettings = true;
     final source = ref.read(locationSourceProvider);
     if (state.access == LocationAccess.serviceOff) {
       await source.openLocationSettings();

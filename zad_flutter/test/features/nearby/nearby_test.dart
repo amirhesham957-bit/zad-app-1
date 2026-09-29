@@ -395,6 +395,44 @@ void main() {
         expect(phone.calls.last, 'settings');
       });
 
+      test('a tap with location off opens the location settings', () async {
+        phone.accessIs = LocationAccess.serviceOff;
+        final c = await opened();
+
+        await c.read(nearbyControllerProvider.notifier).locate();
+
+        expect(phone.calls.last, 'locationSettings');
+        expect(phone.calls, isNot(contains('current')));
+      });
+
+      test('back from settings with location on, it locates', () async {
+        phone.accessIs = LocationAccess.serviceOff;
+        final c = await opened();
+        final controller = c.read(nearbyControllerProvider.notifier);
+        await controller.locate();
+
+        phone
+          ..accessIs = LocationAccess.granted
+          ..fresh = (at: _home, takenAt: now);
+        await controller.recheck();
+
+        expect(c.read(nearbyControllerProvider).access, LocationAccess.granted);
+        expect(shops.asked, hasLength(2));
+      });
+
+      test('a return that was not from settings only re-reads', () async {
+        phone.accessIs = LocationAccess.serviceOff;
+        final c = await opened();
+
+        phone
+          ..accessIs = LocationAccess.granted
+          ..fresh = (at: _home, takenAt: now);
+        await c.read(nearbyControllerProvider.notifier).recheck();
+
+        expect(c.read(nearbyControllerProvider).access, LocationAccess.granted);
+        expect(shops.asked, isEmpty);
+      });
+
       test('no fix in time says so, and fetches nothing', () async {
         final c = await opened();
 

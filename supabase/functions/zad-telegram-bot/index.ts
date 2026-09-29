@@ -22,7 +22,7 @@ import { mediaGate } from "./entitlement.ts";
 import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
-import { botDialectFor, type BotDialect, localizeBotText } from "./botDialect.ts";
+import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import {
@@ -845,6 +845,7 @@ const bot = new Bot(BOT_CONFIGURED ? BOT_TOKEN : "0:placeholder");
 // فبيعدّي زي ما هو (هو أصلاً بلهجته). كاش ١٠ دقايق لكل شات عشان مانقراش الداتابيز مع كل رد.
 const chatDialectCache = new Map<number, { dialect: BotDialect; at: number }>();
 const chatTextHint = new Map<number, string>();
+const chatUiEnglish = new Set<number>();
 
 async function chatDialect(chatId: number): Promise<BotDialect> {
   const hit = chatDialectCache.get(chatId);
@@ -859,12 +860,13 @@ async function chatDialect(chatId: number): Promise<BotDialect> {
         sb.from("zad_customer_profile").select("dialect").eq("user_id", userId).maybeSingle().then((r) => r.data as { dialect?: string | null } | null),
       ])
       : [null, null];
-    dialect = botDialectFor(resolveDialect({
+    dialect = chatBotDialect({
       preferred: profileRow?.dialect,
       text: chatTextHint.get(chatId) ?? null,
       country: userRow?.country,
       currency: userRow?.currency,
-    }));
+      uiEnglish: chatUiEnglish.has(chatId),
+    });
   } catch (e) {
     console.warn("[botDialect] lookup failed, using Egyptian:", (e as Error)?.message);
   }
@@ -879,8 +881,9 @@ bot.use(async (ctx, next) => {
   if (chatId && text && detectDialectFromText(text)) {
     chatTextHint.set(chatId, text);
     chatDialectCache.delete(chatId);
-  } else if (chatId && ctx.from?.language_code?.startsWith("en") && !chatTextHint.has(chatId)) {
-    chatTextHint.set(chatId, "How much did I spend this week and what is left in the budget");
+  } else if (chatId && ctx.from?.language_code?.startsWith("en")) {
+    // آخر تلميح، مش كلام العميل — شوف chatBotDialect.
+    chatUiEnglish.add(chatId);
   }
   await next();
 });
@@ -2129,6 +2132,7 @@ bot.on("callback_query:data", async (ctx) => {
       reason: "إجابة العميل على سؤال متابعة المخزون",
     });
     if (!observed.ok) {
+      console.error("checkin: update_inventory_qty refused", prompt.item_name, observed.summary ?? "(no summary)");
       await ctx.reply("معلش، مقدرتش أحفظ إجابتك — جرّب تاني.");
       return;
     }

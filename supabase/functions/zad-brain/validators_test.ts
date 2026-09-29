@@ -660,6 +660,18 @@ Deno.test("log_transaction rejects non-positive, absurd, and non-numeric amounts
   }
 });
 
+Deno.test("log_transaction refuses a title the model guessed", async () => {
+  // Found in the owner's transactions, 2026-09-29.
+  for (const title of ["مصروف صلاة العصر - مثلا صدقة؟", "صدقة?", "يمكن بنزين", "مصروف غالباً مواصلات"]) {
+    const v = await validateLogTransaction({ amount: 100, txn_kind: "expense", title }, {}, freshContext("u"));
+    assertEquals(v.ok, false, title);
+  }
+  for (const title of ["صدقة", "بقالة من كارفور", "مثلث بيتزا"]) {
+    const v = await validateLogTransaction({ amount: 100, txn_kind: "expense", title }, {}, freshContext("u"));
+    assertEquals(v.ok, true, title);
+  }
+});
+
 Deno.test("log_transaction rejects an unknown txn_kind", async () => {
   const v = await validateLogTransaction(
     { amount: 50, txn_kind: "transfer", title: "x" }, {}, freshContext("u"),

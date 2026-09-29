@@ -248,8 +248,20 @@ export const validateLogTransaction: Validator = (input, _snap, ctx) => {
   if (!input.title || String(input.title).trim().length === 0) {
     return { ok: false, reason: "اكتب وصف قصير للمعاملة" };
   }
+  if (isGuessedTitle(String(input.title))) {
+    return { ok: false, reason: "الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه (ask_user) قبل ما تسجلها" };
+  }
   return { ok: true };
 };
+
+/**
+ * وصف معاملة فيه علامة سؤال أو «مثلاً/يمكن/غالباً» = الموديل بيخمّن اتصرفت على إيه.
+ * المالك لقى «مصروف صلاة العصر - مثلا صدقة؟» بـ١٠٠ جنيه في معاملاته (٢٠٢٦-٠٩-٢٩):
+ * شكلها معاملة وهمية، والمكان الصح للسؤال ده هو العميل مش عنوان المعاملة.
+ */
+export function isGuessedTitle(title: string): boolean {
+  return /[?؟]|(^|\s)(مثلا|مثلاً|يمكن|ربما|غالبا|غالباً)(\s|$)/.test(title.trim());
+}
 
 export const validateUpdateTransaction: Validator = (input, snap, ctx) => {
   if ((ctx.counts["update_transaction"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ تعديلات في المرة" };
