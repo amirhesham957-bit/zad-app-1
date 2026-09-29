@@ -63,4 +63,22 @@ void main() {
       isTrue,
     );
   });
+
+  test('a data-only push carries its speech; a silent one does not', () {
+    expect(
+      PushAlert.fromMessage(
+        data: const <String, dynamic>{
+          'title': 'موعد',
+          'body': 'نص',
+          'voice': '1',
+          'speech': 'اتفضل الكلام',
+        },
+      ).speech,
+      'اتفضل الكلام',
+    );
+    expect(
+      PushAlert.fromMessage(data: const <String, dynamic>{'body': 'نص'}).speech,
+      isNull,
+    );
+  });
 }

@@ -24,13 +24,15 @@ abstract interface class PushPlatform {
   /// Starts listening. [onAlert] gets every message that arrives while the
   /// app is open; [onOpened] gets where a tapped alert should land;
   /// [onAnswer] gets a bank confirmation settled from a notification button;
-  /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken).
+  /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken);
+  /// [onSpeak] a voice moment's «اسمع زاد».
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
     void Function(String proposalId, {required bool confirmed})? onAnswer,
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
+    void Function(String speech)? onSpeak,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -58,6 +60,7 @@ class SilentPushPlatform implements PushPlatform {
     void Function(String proposalId, {required bool confirmed})? onAnswer,
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
+    void Function(String speech)? onSpeak,
   }) async {}
 
   @override
@@ -125,7 +128,17 @@ Future<void> _showLocal(PushAlert alert) async {
         // A bank question carries its two answers. showsUserInterface: the
         // decision needs the signed-in session, which lives in the app, so a
         // press brings the app up and settles it there (AlertsController).
-        actions: alert.proposalId == null
+        actions: alert.speech != null
+            ? const <AndroidNotificationAction>[
+                // Speaking needs the app's player, so the press brings the
+                // app up and زاد says it there (AlertsController).
+                AndroidNotificationAction(
+                  kListenActionId,
+                  '🔊 اسمع زاد',
+                  showsUserInterface: true,
+                ),
+              ]
+            : alert.proposalId == null
             ? null
             : const <AndroidNotificationAction>[
                 AndroidNotificationAction(
@@ -141,7 +154,9 @@ Future<void> _showLocal(PushAlert alert) async {
               ],
       ),
     ),
-    payload: alert.proposalId == null
+    payload: alert.speech != null
+        ? speakPayload(alert.speech!)
+        : alert.proposalId == null
         ? payloadFor(alert.destination)
         : proposalPayload(alert.proposalId!),
   );
@@ -155,6 +170,7 @@ void routeNotificationResponse({
   required void Function(AlertDestination? destination) onOpened,
   void Function(String proposalId, {required bool confirmed})? onAnswer,
   void Function(String medicineId, String time, {required bool taken})? onDose,
+  void Function(String speech)? onSpeak,
 }) {
   final proposal = proposalIdFromPayload(payload);
   final confirmed = confirmationFromAction(actionId);
@@ -168,6 +184,12 @@ void routeNotificationResponse({
     onDose(dose.medicineId, dose.time, taken: taken);
     return;
   }
+  final speech = speechFromPayload(payload);
+  if (speech != null) {
+    if (actionId == kListenActionId && onSpeak != null) onSpeak(speech);
+    onOpened(AlertDestination.home);
+    return;
+  }
   onOpened(destinationForPayload(payload));
 }
 
@@ -175,8 +197,8 @@ void routeNotificationResponse({
 /// in front. Registered in `bootstrap()`; must be top level.
 ///
 /// A message with a notification block has already been shown by FCM; only a
-/// data-only one (a voice moment) needs putting on screen here. It is shown as
-/// text — speaking it in زاد's voice is not ported.
+/// data-only one (a voice moment) needs putting on screen here. It carries
+/// «🔊 اسمع زاد»; a press brings the app up and زاد says it.
 @pragma('vm:entry-point')
 Future<void> zadBackgroundMessage(RemoteMessage message) async {
   if (!shouldShowLocally(
@@ -218,6 +240,7 @@ class FirebasePushPlatform implements PushPlatform {
     void Function(String proposalId, {required bool confirmed})? onAnswer,
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
+    void Function(String speech)? onSpeak,
   }) async {
     if (_started) return;
     _started = true;
@@ -230,6 +253,7 @@ class FirebasePushPlatform implements PushPlatform {
         onOpened: onOpened,
         onAnswer: onAnswer,
         onDose: onDose,
+        onSpeak: onSpeak,
       ),
     );
 
@@ -266,6 +290,7 @@ class FirebasePushPlatform implements PushPlatform {
           onOpened: onOpened,
           onAnswer: onAnswer,
           onDose: onDose,
+          onSpeak: onSpeak,
         );
       }
     }

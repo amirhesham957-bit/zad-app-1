@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
@@ -15,6 +16,7 @@ import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
+import 'package:zad/features/voice/application/voice_output_controller.dart';
 
 /// What the settings row shows.
 class AlertsView {
@@ -48,6 +50,7 @@ class AlertsController extends Notifier<AlertsView> {
       onOpened: _opened,
       onAnswer: _answered,
       onDose: _doseAnswered,
+      onSpeak: _speak,
     );
 
     final registrar = ref.read(pushRegistrarProvider);
@@ -96,7 +99,22 @@ class AlertsController extends Notifier<AlertsView> {
     if (ref.mounted) state = AlertsView(permission: after);
   }
 
+  /// A voice moment — a dose, an appointment, the morning greeting — said
+  /// in زاد's voice, unless «النطق الصوتي للإشعارات والجرعات» is off. Kotlin's
+  /// VoiceMomentSpeaker: on by default (the owner's «تتكلم لوحدها»).
+  void _speak(String speech) {
+    if (!ref
+        .read(alertPrefsProvider)
+        .isEnabledUnlessOff(AlertPrefs.voiceSpokenAlerts)) {
+      return;
+    }
+    unawaited(ref.read(voiceOutputControllerProvider.notifier).speak(speech));
+  }
+
   void _arrived(PushAlert alert) {
+    // Open in front of the customer: say it now, as Kotlin did with the
+    // screen on. In the background the notification carries «اسمع زاد».
+    if (alert.speech case final speech?) _speak(speech);
     // What arrived is also on the server; the lists that show it look again.
     unawaited(
       ref

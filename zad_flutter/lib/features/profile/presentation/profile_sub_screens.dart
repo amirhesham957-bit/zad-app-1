@@ -661,7 +661,6 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
     bool on(String key) => prefs.isEnabled(key);
     void set(String key, {required bool v}) =>
         setState(() => prefs.setEnabled(key, enabled: v));
-    final tone = prefs.voiceToneMode;
 
     return Scaffold(
       appBar: const SubScreenTopBar(title: 'تنبيهات المساعد الذكي'),
@@ -671,88 +670,17 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              AlertSwitchItem(
-                title: '🗣️ "يا زاد" — الاستماع المستمر',
-                desc:
-                    'قول "يا زاد" في أي وقت لفتح المساعد الصوتي. الإيقاف يوفر '
-                    'البطارية.',
-                checked: on(AlertPrefs.wakeWord),
-                onChanged: (v) => set(AlertPrefs.wakeWord, v: v),
-              ),
+              // «يا زاد» (always listening) is not built, by the owner's
+              // decision (2026-09-29), and the tone picker chose between
+              // voices زاد no longer has — both switches did nothing.
               AlertSwitchItem(
                 title: '🔔 النطق الصوتي للإشعارات والجرعات',
                 desc:
-                    'نطق الإشعارات والجرعات بصوت عربي هادئ. يمكنك إيقافه إذا '
-                    'كنت تفضل التنبيه الصامت.',
-                checked: on(AlertPrefs.voiceSpokenAlerts),
+                    'زاد تقول تذكير الدوا والمواعيد بصوتها لما التطبيق مفتوح، '
+                    'ولما يكون مقفول الإشعار بيبقى عليه «اسمع زاد».',
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.voiceSpokenAlerts),
                 onChanged: (v) => set(AlertPrefs.voiceSpokenAlerts, v: v),
               ),
-              if (on(AlertPrefs.voiceSpokenAlerts)) ...<Widget>[
-                const SizedBox(height: 8),
-                Text(
-                  'نبرة صوت المساعد الصوتي',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.onSurface,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      for (final (mode, label) in const <(String, String)>[
-                        ('gentle', '🌿 هادئ وطبيعي'),
-                        ('professional', '💼 موجز ومهني'),
-                        ('silent', '🔇 صامت'),
-                      ]) ...<Widget>[
-                        if (mode != 'gentle') const SizedBox(width: 4),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() {
-                              prefs.voiceToneMode = mode;
-                              if (mode == 'silent') {
-                                prefs.setEnabled(
-                                  AlertPrefs.voiceSpokenAlerts,
-                                  enabled: false,
-                                );
-                              }
-                            }),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: tone == mode
-                                    ? scheme.surface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                label,
-                                style: ZadType.labelSmall.copyWith(
-                                  fontSize: 10,
-                                  fontWeight: tone == mode
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: tone == mode
-                                      ? scheme.primary
-                                      : scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
               AlertSwitchItem(
                 title: 'تنبيهات نقص المخزون',
                 desc: 'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي',

@@ -31,6 +31,7 @@ class PushAlert {
     required this.body,
     this.destination,
     this.proposalId,
+    this.speech,
   });
 
   /// Reads a message: the notification block when there is one, the data
@@ -48,6 +49,10 @@ class PushAlert {
       proposalId: data['kind'] == kConfirmTransactionKind && proposal.isNotEmpty
           ? proposal
           : null,
+      speech: data['voice'] == '1'
+          ? _nonEmpty(data['speech'] as String?) ??
+                _nonEmpty(data['body'] as String?)
+          : null,
     );
   }
 
@@ -64,9 +69,33 @@ class PushAlert {
   /// the two answers as buttons, so it can be settled from the shade.
   final String? proposalId;
 
+  /// What زاد says aloud for a voice moment (`data.voice == "1"`) — a dose,
+  /// an appointment, the morning greeting — or null for a silent alert.
+  final String? speech;
+
   /// Worth showing at all.
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
 }
+
+String? _nonEmpty(String? s) {
+  final t = s?.trim() ?? '';
+  return t.isEmpty ? null : t;
+}
+
+/// The voice moment notification's «اسمع زاد» button.
+const String kListenActionId = 'zad_listen';
+
+const String _speakPayloadPrefix = 'speak:';
+
+/// The payload of a voice moment's notification: what to say when «اسمع زاد»
+/// is pressed.
+String speakPayload(String speech) => '$_speakPayloadPrefix$speech';
+
+/// The words a voice moment's payload carries, or null.
+String? speechFromPayload(String? payload) =>
+    payload == null || !payload.startsWith(_speakPayloadPrefix)
+    ? null
+    : _nonEmpty(payload.substring(_speakPayloadPrefix.length));
 
 /// The screen a `route` names, or null for one this app does not know — a
 /// newer server's route must not crash an older phone.
