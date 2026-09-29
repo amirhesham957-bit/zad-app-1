@@ -22,6 +22,7 @@ import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/data/providers.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_motion.dart';
@@ -946,16 +947,19 @@ class _StressState extends ConsumerState<_StressTestCard> {
   }
 
   Future<void> _editFund() async {
-    final c = TextEditingController(text: _fund > 0 ? '$_fund' : '');
-    final value = await showDialog<double>(
+    // showFieldDialog owns the controller: disposing it right after the
+    // await killed the field mid exit-animation — the owner's red screen,
+    // `'_elements.contains(element)'` (2026-09-29).
+    final value = await showFieldDialog<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      initial: <String>[if (_fund > 0) '$_fund' else ''],
+      builder: (dialogContext, fields) => AlertDialog(
         title: Text(
           'تحديث الرصيد',
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
         ),
         content: TextField(
-          controller: c,
+          controller: fields[0],
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
@@ -971,14 +975,13 @@ class _StressState extends ConsumerState<_StressTestCard> {
           FilledButton(
             onPressed: () =>
                 Navigator.of(dialogContext)
-                    .pop(double.tryParse(c.text.trim()) ?? 0),
+                    .pop(double.tryParse(fields[0].text.trim()) ?? 0),
             child: const Text('حفظ'),
           ),
         ],
       ),
     );
-    c.dispose();
-    if (value == null) return;
+    if (value == null || !mounted) return;
     setState(() => _fund = value);
     final client = ref.read(supabaseClientProvider);
     try {

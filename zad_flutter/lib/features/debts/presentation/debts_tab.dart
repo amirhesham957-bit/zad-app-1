@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/data/providers.dart';
 import 'package:zad/design/components/zad_empty_state.dart';
+import 'package:zad/design/components/zad_field_dialog.dart';
 import 'package:zad/design/tokens/zad_colors.dart';
 import 'package:zad/design/tokens/zad_icons.dart';
 import 'package:zad/design/tokens/zad_spacing.dart';
@@ -240,10 +241,11 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
   }
 
   Future<void> _pay(Debt d) async {
-    final c = TextEditingController();
-    final paid = await showDialog<double>(
+    // showFieldDialog owns the controller — see zad_field_dialog.dart.
+    final paid = await showFieldDialog<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      initial: const <String>[''],
+      builder: (dialogContext, fields) => AlertDialog(
         title: Text(
           'دفعة على ${d.name}',
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
@@ -258,7 +260,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
             ),
             const SizedBox(height: ZadSpacing.sm),
             TextField(
-              controller: c,
+              controller: fields[0],
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -277,7 +279,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
           ),
           FilledButton(
             onPressed: () {
-              final v = double.tryParse(c.text.trim());
+              final v = double.tryParse(fields[0].text.trim());
               if (v != null) Navigator.of(dialogContext).pop(v);
             },
             child: const Text('حفظ'),
@@ -285,7 +287,6 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
         ],
       ),
     );
-    c.dispose();
     if (paid == null) return;
     // Never below zero: a payment larger than what is left closes the debt.
     final left = d.remaining - paid;

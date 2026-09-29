@@ -13,6 +13,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:url_launcher/url_launcher.dart';
@@ -414,6 +415,11 @@ class _Bleed extends StatelessWidget {
       child: OverflowBox(
         maxWidth: constraints.maxWidth + 40,
         minWidth: constraints.maxWidth + 40,
+        // Its own height from the strip. The default takes the biggest the
+        // parent allows — unbounded inside Home's column — so the row threw
+        // «given an infinite size» and never showed (found by
+        // test/app/shell_walkthrough_test.dart, 2026-09-29).
+        fit: OverflowBoxFit.deferToChild,
         child: child,
       ),
     ),

@@ -57,7 +57,15 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
 
   Future<void> _pick() async {
     setState(() => _readFailed = false);
-    final file = await FilePicker.pickFile();
+    // The picker throws on a second tap while it is open (Android's
+    // `already_active`) or when the system refuses; that was uncaught.
+    final PlatformFile? file;
+    try {
+      file = await FilePicker.pickFile();
+    } on Object {
+      if (mounted) setState(() => _readFailed = true);
+      return;
+    }
     if (file == null || !mounted) return;
     CsvTable? table;
     try {
