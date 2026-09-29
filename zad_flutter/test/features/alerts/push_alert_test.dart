@@ -60,7 +60,7 @@ void main() {
 
   test('a voice moment carries what Zad says; a plain alert says nothing', () {
     final spoken = PushAlert.fromMessage(
-      data: <String, dynamic>{
+      data: const <String, dynamic>{
         'title': 'صباح الخير',
         'body': 'عندك دوا ماما الساعة ٤',
         'voice': '1',
@@ -71,14 +71,18 @@ void main() {
     expect(spoken.speech, 'صباح الخير يا أمير، دوا ماما الساعة أربعة');
     expect(
       PushAlert.fromMessage(
-        data: <String, dynamic>{'title': 'x', 'body': 'y', 'speech': 'z'},
+        data: const <String, dynamic>{'title': 'x', 'body': 'y', 'speech': 'z'},
       ).speech,
       isNull,
       reason: 'speech without voice=1 is not a voice moment',
     );
     expect(
       PushAlert.fromMessage(
-        data: <String, dynamic>{'title': 'x', 'voice': '1', 'speech': '  '},
+        data: const <String, dynamic>{
+          'title': 'x',
+          'voice': '1',
+          'speech': '  ',
+        },
       ).speech,
       isNull,
     );

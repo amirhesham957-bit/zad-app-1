@@ -523,6 +523,13 @@ one commit, full verification, report, then continue.
      are replaced by drawn bursts or left out.
    - Play Billing and AdMob (paywall, brain ad gate, ad battery): UI only,
      by the owner's no-Play decision.
+   - **Wake greeting + spoken voice moments (foreground) ported
+     2026-09-29 (`b5692af6`).** Background speech is not.
+   - **The agent round of 2026-09-28/29 — street alerts, Google Places,
+     habit vs budget, «اتشاف هنا», «لمين؟», the wake greeting — is
+     summarised with its measured weak points in
+     [`ZAD_SUPER_AGENT.md`](ZAD_SUPER_AGENT.md).** Two migrations
+     (`20260929120000`, `20260929130000`) + function changes ship on push.
    - **Street alerts are ported (2026-09-28)** — `features/places/` over the
      local plugin `packages/zad_geofence` (Android geofences + a nightly
      03:00 alarm, events stored natively and handed to Dart; headless engine

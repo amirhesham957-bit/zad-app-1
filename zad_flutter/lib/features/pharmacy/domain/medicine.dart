@@ -265,7 +265,9 @@ class Medicine {
     'price': price,
     'is_recurring': isRecurring,
     'family_member_id': familyMemberId,
-    'for_person': forPerson,
+    // Only when set: a phone that reaches a server without the column
+    // (20260929130000 not yet live) still saves everyone's own medicines.
+    'for_person': ?forPerson,
   };
 
   /// The row as the cache keeps it.
