@@ -26,7 +26,40 @@ import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
 /** جملة قصيرة بتتقرا في ثواني؛ أكتر من كده يبقى معلّق، والأحسن ننقل للموديل/المفتاح اللي بعده. */
-const TTS_TIMEOUT_MS = 20_000;
+const TTS_TIMEOUT_MS = 10_000;
+
+/**
+ * حالة المسبح بين الطلبات (جوه نفس الـinstance).
+ *
+ * كل طلب صوت كان بيبدأ من المفتاح الأول: مفتاح خلصت كوتته في الدقيقة (TTS المجاني ضيق
+ * جداً — نداء واحد ورا التاني رجّع 429، ٢٠٢٦-٠٩-٢٩) كان بيتجرب الأول في كل جملة. ومع حد
+ * ٢٠ ثانية لكل محاولة، ٥ مفاتيح × موديلين كانوا ممكن ياخدوا دقايق قبل Azure — «المساعد
+ * الصوتي بيأخر في الرد آوي». دلوقتي: البداية بتلف، والمفتاح اللي رجّع 429 بيرتاح دقيقة،
+ * وكل محاولات Gemini ليها سقف وقت واحد.
+ */
+export interface TtsPoolState {
+  cursor: number;
+  coolingUntil: Map<number, number>;
+}
+
+export function freshTtsPool(): TtsPoolState {
+  return { cursor: 0, coolingUntil: new Map() };
+}
+
+const sharedTtsPool = freshTtsPool();
+const TTS_COOLDOWN_MS = 60_000;
+/** بعده Gemini بيتساب ويتجرب Azure — العميل مستني صوت جملة، مش دقايق. */
+const TTS_POOL_BUDGET_MS = 15_000;
+
+/** ترتيب المفاتيح لطلب واحد: من المؤشر ولفّ، والمرتاحين في الآخر (مش مستبعدين). */
+export function ttsKeyOrder(count: number, pool: TtsPoolState, now: number): number[] {
+  const start = count > 0 ? pool.cursor % count : 0;
+  pool.cursor = count > 0 ? (start + 1) % count : 0;
+  const order = Array.from({ length: count }, (_, i) => (start + i) % count);
+  const ready = order.filter((k) => (pool.coolingUntil.get(k) ?? 0) <= now);
+  const cooling = order.filter((k) => (pool.coolingUntil.get(k) ?? 0) > now);
+  return [...ready, ...cooling];
+}
 
 /** جدول الأسامي المشترك (`_shared/zadVoice.ts`) — كلها صوت زاد. */
 export const VOICE_IDS: Record<string, string> = PERSONA_VOICES;
@@ -91,6 +124,8 @@ export async function requestGeminiVoiceWithPool(
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
   models: string[] = [GEMINI_TTS_MODEL, "gemini-2.5-pro-preview-tts"],
+  pool: TtsPoolState = sharedTtsPool,
+  now: () => number = Date.now,
 ): Promise<Response> {
   const attempts: Array<{ key_index: number; model: string; status: number | null }> = [];
   if (!apiKeys.length) {
@@ -101,13 +136,19 @@ export async function requestGeminiVoiceWithPool(
   // موديل رجّع 503 (زحمة على الموديل كله، مش المفتاح) مابيتجربش تاني بمفتاح تاني في نفس الطلب —
   // قبل كده كان بيلف بيه على كل المفاتيح، وده جزء من الـ٣٠-٦٠ ثانية اللي العميل بيستناها.
   const downModels = new Set<string>();
-  for (let ki = 0; ki < apiKeys.length; ki++) {
+  const startedAt = now();
+  keys: for (const ki of ttsKeyOrder(apiKeys.length, pool, startedAt)) {
     for (const model of models) {
       if (downModels.has(model)) continue;
+      if (now() - startedAt > TTS_POOL_BUDGET_MS) {
+        console.warn(`[CoreIntel] TTS pool over ${TTS_POOL_BUDGET_MS}ms, giving up on Gemini`);
+        break keys;
+      }
       try {
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
         if (res.ok) return res;
         attempts.push({ key_index: ki, model, status: res.status });
+        if (res.status === 429) pool.coolingUntil.set(ki, now() + TTS_COOLDOWN_MS);
         if (res.status === 503) {
           downModels.add(model);
           continue;
