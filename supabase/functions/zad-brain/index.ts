@@ -88,6 +88,7 @@ import { canSeeFamilySpending } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
+import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -1539,8 +1540,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // يلاقي الصف لو مالكه الحقيقي عضو تاني في العيلة).
       const { data: fam } = await sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
       const familyId = (fam as { family_id: string } | null)?.family_id ?? null;
-      const beforeQuery = sb.from("zad_inventory").select("id,quantity").eq("item_name", input.item_name);
-      const { data: before } = await (familyId ? beforeQuery.eq("family_id", familyId) : beforeQuery.eq("user_id", userId)).maybeSingle();
+      // المطابقة في inventoryRow.ts: اسم متكرر أو صف العميل من غير family_id كانوا بيرجّعوا
+      // «مش موجود» (زرار «خلص» في تليجرام، ٢٠٢٦-٠٩-٢٩).
+      const { data: candidates } = await sb.from("zad_inventory")
+        .select("id,quantity,user_id,family_id,created_at")
+        .eq("item_name", input.item_name).or(inventoryOwnerFilter(userId, familyId));
+      const before = pickInventoryRow(candidates as any[], userId, familyId);
       if (!before) return "مرفوض: الصنف مش موجود في مخزون العميل ده — عدّل وحاول تاني.";
       const w = await writeRows(
         sb.from("zad_inventory").update({ quantity: input.new_qty })
@@ -1923,8 +1928,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // عيلة، عشان يقدر يحذف صنف عضو تاني ضافه من المخزون المشترك.
       const { data: fam } = await sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
       const familyId = (fam as { family_id: string } | null)?.family_id ?? null;
-      const beforeQuery = sb.from("zad_inventory").select("*").eq("item_name", itemName);
-      const { data: before } = await (familyId ? beforeQuery.eq("family_id", familyId) : beforeQuery.eq("user_id", userId)).maybeSingle();
+      const { data: candidates } = await sb.from("zad_inventory").select("*")
+        .eq("item_name", itemName).or(inventoryOwnerFilter(userId, familyId));
+      const before = pickInventoryRow(candidates as any[], userId, familyId);
       if (!before) return `مرفوض: مفيش صنف اسمه "${itemName}" في المخزون.`;
       const w = await writeRows(sb.from("zad_inventory").delete().eq("id", before.id).select("id"), "حذف صنف");
       if (!w.ok) return `مرفوض: ${w.reason}`;

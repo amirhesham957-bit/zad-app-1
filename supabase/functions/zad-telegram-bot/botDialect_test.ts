@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { botDialectFor, localizeBotText } from "./botDialect.ts";
+import { botDialectFor, chatBotDialect, localizeBotText } from "./botDialect.ts";
 
 Deno.test("fixed bot messages speak the customer's dialect", () => {
   assertEquals(localizeBotText("تمام، ملغيته ✖️", "GULF"), "تمام، ألغيته ✖️");
@@ -34,4 +34,17 @@ Deno.test("every fixed ctx.reply message in index.ts has dialect variants (new o
   const merged = [...src.matchAll(/ctx\.reply\(resolved\.already_resolved \? "([^"]+)" : "([^"]+)"\)/g)].flatMap((m) => [m[1], m[2]]);
   const missing = [...new Set([...literals, ...merged])].filter((t) => localizeBotText(t, "EN") === t);
   assertEquals(missing, []);
+});
+
+Deno.test("an English Telegram UI never outranks the account's country", () => {
+  // The owner's chat, 2026-09-29: Egyptian account, phone in English, got English replies.
+  assertEquals(chatBotDialect({ country: "EG", currency: "EGP", uiEnglish: true }), "EG");
+  assertEquals(chatBotDialect({ currency: "SAR", uiEnglish: true }), "GULF");
+  assertEquals(chatBotDialect({ preferred: "LEVANT", uiEnglish: true }), "LEVANT");
+});
+
+Deno.test("an English Telegram UI decides only when nothing else is known", () => {
+  assertEquals(chatBotDialect({ uiEnglish: true }), "EN");
+  assertEquals(chatBotDialect({}), "EG");
+  assertEquals(chatBotDialect({ text: "How much did I spend this week and what is left" }), "EN");
 });

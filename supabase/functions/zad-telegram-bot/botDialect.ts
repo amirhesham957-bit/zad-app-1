@@ -5,7 +5,7 @@
 // مصري. هنا ترجمة **مطابقة كاملة** للرسايل دي بس (مش استبدال كلمات جوه أي نص): رد العقل أو نص
 // فيه اسم صنف بيعدّي زي ما هو، فمفيش خطر إن كلمة من كلام العميل تتغير.
 
-import type { DialectCode } from "../_shared/dialect.ts";
+import { type DialectCode, resolveDialect } from "../_shared/dialect.ts";
 
 export type BotDialect = "EG" | "GULF" | "LEVANT" | "MAGHREB" | "EN";
 
@@ -17,6 +17,26 @@ export function botDialectFor(code: DialectCode): BotDialect {
     case "EN": case "TR": return "EN";
     default: return "EG";
   }
+}
+
+/**
+ * لهجة شات العميل: ملفه ← كلامه ← بلد السوق/العملة، وآخر حاجة لغة واجهة تليجرام.
+ *
+ * لغة الواجهة كانت بتتحط كأنها «كلام العميل» فكانت بتسبق البلد: عميل مصري موبايله
+ * إنجليزي كان بياخد «Sorry, I couldn't save your answer» (٢٠٢٦-٠٩-٢٩). دلوقتي بتتحسب بس
+ * لو مفيش أي حاجة تانية تقول لهجته.
+ */
+export function chatBotDialect(input: {
+  preferred?: unknown;
+  text?: string | null;
+  country?: unknown;
+  currency?: unknown;
+  uiEnglish?: boolean;
+}): BotDialect {
+  const knowsOtherwise = [input.preferred, input.text, input.country, input.currency]
+    .some((v) => String(v ?? "").trim() !== "");
+  if (!knowsOtherwise && input.uiEnglish) return "EN";
+  return botDialectFor(resolveDialect(input));
 }
 
 /** [مصري (الأصل في index.ts), خليجي, شامي, مغاربي, إنجليزي] */
