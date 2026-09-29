@@ -26,6 +26,7 @@ import 'package:zad/design/tokens/zad_spacing.dart';
 import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
+import 'package:zad/features/place_alerts/presentation/place_alerts_switch.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -523,6 +524,9 @@ class _PlaceReminders extends StatelessWidget {
               ),
             ],
           ),
+          // Without it no reminder here can ever fire: nothing knows the
+          // customer has reached the shop.
+          const PlaceAlertsSwitch(),
           if (reminders.isEmpty)
             Text(
               'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
