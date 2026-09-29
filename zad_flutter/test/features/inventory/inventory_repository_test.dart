@@ -79,6 +79,7 @@ void main() {
   late Box<String> pantryBox;
   late Box<String> shoppingBox;
   late Box<String> outboxBox;
+  late Box<String> marksBox;
   late _FakeInventoryRemote pantryRemote;
   late _FakeShoppingRemote shoppingRemote;
   late Outbox outbox;
@@ -96,6 +97,7 @@ void main() {
     pantryBox = await Hive.openBox<String>('pantry$run');
     shoppingBox = await Hive.openBox<String>('shopping$run');
     outboxBox = await Hive.openBox<String>('outbox$run');
+    marksBox = await Hive.openBox<String>('marks$run');
     pantryRemote = _FakeInventoryRemote();
     shoppingRemote = _FakeShoppingRemote();
     ids = 0;
@@ -124,6 +126,7 @@ void main() {
       outbox: () => outbox,
       newId: () => 's${ids++}',
       signedInUserId: () => 'user-1',
+      marks: marksBox,
     );
   });
 
@@ -397,6 +400,52 @@ void main() {
       expect(kept.quantity, 7);
       expect(kept.estimatedPrice, 40);
       expect(shopping.cached(), hasLength(2));
+    });
+
+    test('restocking takes the automatic line back off the list', () async {
+      // Owner, 2026-09-28: «لما أزود المية مبتتلغيش».
+      await shopping.addShortages(<Shortage>[
+        shortage('مياه', ShortageReason.outOfStock),
+      ]);
+      expect(shopping.outstanding().map((i) => i.itemName), <String>['مياه']);
+
+      await shopping.addShortages(const <Shortage>[]);
+
+      expect(shopping.outstanding(), isEmpty);
+      expect(queued(OutboxKind.deleteShoppingItem), hasLength(1));
+    });
+
+    test('a line the customer wrote stays after restocking', () async {
+      await shopping.add(itemName: 'مياه');
+      await shopping.addShortages(<Shortage>[
+        shortage('مياه', ShortageReason.outOfStock),
+      ]);
+
+      await shopping.addShortages(const <Shortage>[]);
+
+      expect(shopping.outstanding().map((i) => i.itemName), <String>['مياه']);
+    });
+
+    test('a deleted automatic line stays deleted while still short', () async {
+      final water = <Shortage>[shortage('مياه', ShortageReason.outOfStock)];
+      final added = await shopping.addShortages(water);
+      await shopping.remove(added.single.id);
+
+      final again = await shopping.addShortages(water);
+
+      expect(again, isEmpty);
+      expect(shopping.outstanding(), isEmpty);
+    });
+
+    test('...and comes back once it runs out again after a restock', () async {
+      final water = <Shortage>[shortage('مياه', ShortageReason.outOfStock)];
+      final added = await shopping.addShortages(water);
+      await shopping.remove(added.single.id);
+      await shopping.addShortages(const <Shortage>[]); // restocked
+
+      final again = await shopping.addShortages(water); // out again
+
+      expect(again, hasLength(1));
     });
 
     test('a blank name is never added', () async {

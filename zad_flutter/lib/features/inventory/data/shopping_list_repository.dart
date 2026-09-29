@@ -13,6 +13,18 @@
 /// * and it is idempotent, so running it on every pantry refresh cannot grow
 ///   the list.
 ///
+/// Two more, from the owner's phone (2026-09-28: «لما أزود المية مبتتلغيش»):
+///
+/// * a line this added goes away on its own once the pantry is no longer
+///   short of it — restocking the water used to leave «مياه» on the list;
+/// * a line this added and the customer then deleted stays deleted until the
+///   pantry recovers. Before, the next pantry refresh saw the water still out
+///   and put it straight back, so it could not be cancelled at all.
+///
+/// Both need to know which lines were automatic, which the table cannot say,
+/// so the device remembers it (`marks`); a line typed by the customer is
+/// never touched by either rule.
+///
 /// That last one matters more than it looks. The Kotlin app has no automatic
 /// path at all — every `addShoppingItem` call site is a button — so this is
 /// new behaviour, and new automatic writes are exactly what
@@ -37,7 +49,9 @@ class ShoppingListRepository {
     required Outbox Function() outbox,
     required String Function() newId,
     required String? Function() signedInUserId,
-  }) : _cache = cache,
+    Box<String>? marks,
+  }) : _marks = marks,
+       _cache = cache,
        _remote = remote,
        _outbox = outbox,
        _newId = newId,
@@ -48,6 +62,13 @@ class ShoppingListRepository {
   final Outbox Function() _outbox;
   final String Function() _newId;
   final String? Function() _signedInUserId;
+
+  /// Which lines were added by [addShortages], and which of those the
+  /// customer deleted. Null: nothing is remembered, as before.
+  final Box<String>? _marks;
+
+  static const String _autoPrefix = 'shopping_auto_line:';
+  static const String _dismissedPrefix = 'shopping_auto_dismissed:';
 
   /// The key two lines are considered the same under.
   ///
@@ -151,7 +172,19 @@ class ShoppingListRepository {
   }
 
   /// Removes a line.
+  ///
+  /// A line [addShortages] put there is remembered as declined, so the next
+  /// pantry refresh does not add it straight back.
   Future<void> remove(String id) async {
+    final autoKey = _marks?.get('$_autoPrefix$id');
+    if (autoKey != null) {
+      await _marks!.delete('$_autoPrefix$id');
+      await _marks.put('$_dismissedPrefix$autoKey', '1');
+    }
+    await _drop(id);
+  }
+
+  Future<void> _drop(String id) async {
     if (_read(_cache.get(id) ?? '') == null) return;
 
     await _cache.delete(id);
@@ -171,6 +204,8 @@ class ShoppingListRepository {
     List<Shortage> shortages, {
     DateTime? at,
   }) async {
+    await _settleAutomatic(shortages);
+    final marks = _marks;
     final taken = outstanding().map((i) => shortageKey(i.itemName)).toSet();
     final added = <ShoppingItem>[];
 
@@ -179,18 +214,48 @@ class ShoppingListRepository {
       // Guards against both the existing list and two shortages in the same
       // batch resolving to one name.
       if (key.isEmpty || taken.contains(key)) continue;
+      if (marks?.get('$_dismissedPrefix$key') != null) continue;
       taken.add(key);
 
-      added.add(
-        await add(
-          itemName: shortage.item.itemName,
-          priority: shortage.priority,
-          at: at,
-        ),
+      final item = await add(
+        itemName: shortage.item.itemName,
+        priority: shortage.priority,
+        at: at,
       );
+      await marks?.put('$_autoPrefix${item.id}', key);
+      added.add(item);
     }
 
     return added;
+  }
+
+  /// Takes back what the pantry no longer needs, and forgets a decline once
+  /// the pantry has recovered — running out again later is a new shortage.
+  Future<void> _settleAutomatic(List<Shortage> shortages) async {
+    final marks = _marks;
+    if (marks == null) return;
+    final short = <String>{
+      for (final s in shortages) shortageKey(s.item.itemName),
+    };
+    for (final markKey in marks.keys.whereType<String>().toList()) {
+      if (markKey.startsWith(_dismissedPrefix)) {
+        final key = markKey.substring(_dismissedPrefix.length);
+        if (!short.contains(key)) await marks.delete(markKey);
+        continue;
+      }
+      if (!markKey.startsWith(_autoPrefix)) continue;
+      final id = markKey.substring(_autoPrefix.length);
+      final line = _read(_cache.get(id) ?? '');
+      // Gone, or bought: nothing left to take back.
+      if (line == null || !line.isOutstanding) {
+        await marks.delete(markKey);
+        continue;
+      }
+      if (!short.contains(marks.get(markKey))) {
+        await marks.delete(markKey);
+        await _drop(id);
+      }
+    }
   }
 
   /// Sends one queued write.
@@ -207,7 +272,16 @@ class ShoppingListRepository {
       _remote.remove(entry.payload['id'] as String);
 
   /// Forgets the list. Called on sign-out.
-  Future<void> clear() => _cache.clear();
+  Future<void> clear() async {
+    await _cache.clear();
+    final marks = _marks;
+    if (marks == null) return;
+    await marks.deleteAll(
+      marks.keys.whereType<String>().where(
+        (k) => k.startsWith(_autoPrefix) || k.startsWith(_dismissedPrefix),
+      ),
+    );
+  }
 
   Future<void> _save(ShoppingItem item) async {
     await _cache.put(item.id, jsonEncode(item.toCacheJson()));

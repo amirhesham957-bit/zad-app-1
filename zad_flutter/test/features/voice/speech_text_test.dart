@@ -31,6 +31,14 @@ void main() {
       ]);
     });
 
+    test('the first chunk is one short sentence, so Zad starts sooner', () {
+      final chunks = speechChunks(
+        'تمام، سجلتها. ${'كلمة ' * 20}خلاص. ${'كلمة ' * 12}تمام.',
+      );
+      expect(chunks.first, 'تمام، ... سجلتها.');
+      expect(chunks, hasLength(2));
+    });
+
     test('commas pause after splitting, not before', () {
       // «، ...» holds a ". " — added before the split it would cut here.
       expect(speechChunks('أولاً، ثانياً، ثالثاً.'), <String>[

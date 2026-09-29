@@ -119,7 +119,8 @@ void main() {
       c.read(voiceOutputControllerProvider).stage,
       VoiceOutputStage.preparing,
     );
-    expect(synth.requested, hasLength(1));
+    // The first chunk and the one after it are asked for together.
+    expect(synth.requested, hasLength(2));
 
     synth.answer(0, 'azure');
     await settle();

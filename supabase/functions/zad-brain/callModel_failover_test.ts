@@ -278,3 +278,61 @@ Deno.test("مفتاح Groq مرفوض (401) بيتعدّى للمفتاح الت
     globalThis.fetch = original;
   }
 });
+
+Deno.test("جيميناي بطيء: بعد ميزانية السلسلة بيروح لجروك بدل ما يلف على كل الموديلات", async () => {
+  const { setGeminiBudgetMsForTests } = await import("./callModel.ts");
+  setGeminiBudgetMsForTests(3_000);
+  const original = globalThis.fetch;
+  const tried: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("api.groq.com")) {
+      tried.push("groq");
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ choices: [{ message: { content: "من جروك", tool_calls: [] } }], usage: {} }),
+          { status: 200 },
+        ),
+      );
+    }
+    tried.push(modelOf(url));
+    // موديل معلّق: مابيردش لحد ما المهلة تقطعه.
+    return new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+    });
+  }) as typeof fetch;
+  const started = Date.now();
+  try {
+    const reply = await callModel({ ...BASE });
+    assertEquals(reply.text, "من جروك");
+    // موديل واحد بس لحق يتجرّب (مهلته = الميزانية كلها)، وبعدين جروك — مش a ثم b ثم c.
+    assertEquals(tried, ["model-a", "groq"]);
+    assert(Date.now() - started < 6_000, `took ${Date.now() - started}ms`);
+  } finally {
+    globalThis.fetch = original;
+    setGeminiBudgetMsForTests(null);
+  }
+});
+
+Deno.test("كل موديلات جيميناي في الانتظار → جروك على طول من غير ما يلمس جيميناي", async () => {
+  setModelCooldownMsForTests(60_000);
+  const s = stubFetch((url) => {
+    if (url.includes("api.groq.com")) {
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: "من جروك", tool_calls: [] } }], usage: {} }),
+        { status: 200 },
+      );
+    }
+    return overloaded503();
+  });
+  try {
+    await callModel({ ...BASE }); // الأولى: a,b,c كلهم 503 → جروك، وكلهم يدخلوا الانتظار
+    const afterFirst = s.calls.length;
+    const reply = await callModel({ ...BASE });
+    assertEquals(reply.text, "من جروك");
+    assertEquals(s.calls.slice(afterFirst).map((c) => c.url.includes("api.groq.com") ? "groq" : modelOf(c.url)), ["groq"]);
+  } finally {
+    s.restore();
+    setModelCooldownMsForTests(0);
+  }
+});
