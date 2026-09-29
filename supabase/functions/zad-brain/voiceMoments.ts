@@ -12,7 +12,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, situationalEmotion, VOICE_EMOTIONAL_RANGE, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
-import { localNowContext } from "./shared.ts";
+import { isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 
@@ -649,6 +649,8 @@ export interface VoiceMomentDeps {
   pushDevice: (userId: string, title: string, body: string, data: Record<string, string>, dataOnly: boolean) => Promise<string>;
   pushTelegram: (userId: string, title: string, body: string, voice: boolean, moment: string, speech: string, emotion?: VoiceEmotion, doseMomentId?: string) => Promise<string>;
   now?: () => number;
+  /** توقيت سوق العميل. الافتراضي: facts.time_zone، وإلا zad_market_timezone(بلده). */
+  timeZoneOf?: (row: VoiceMomentRow) => Promise<string>;
 }
 
 export async function processVoiceMoments(
@@ -685,6 +687,13 @@ export async function processVoiceMoments(
     try {
       if (!(await isStillRelevant(sb, row))) {
         await sb.from("zad_voice_moments").update({ status: "skipped", error: "no longer relevant" }).eq("id", row.id);
+        result.skipped++;
+        continue;
+      }
+      // قبل الصياغة: لحظة مش هتتقال مالهاش لازمة تصرف نداء موديل.
+      const held = await holdMoment(sb, row, now(), deps.timeZoneOf ?? ((r) => momentTimeZone(sb, r)));
+      if (held) {
+        await sb.from("zad_voice_moments").update({ status: "skipped", error: held }).eq("id", row.id);
         result.skipped++;
         continue;
       }
@@ -908,4 +917,69 @@ export function summarizeOuting(
     .map((a) => /«([^»]{1,60})»/.exec(String(a.task_description ?? ""))?.[1]?.trim())
     .filter((x): x is string => !!x))].slice(0, 3);
   return { spent_total: Math.round(total * 100) / 100, currency, merchants, stores };
+}
+
+
+// ── ساعات الهدوء وسقف اليوم (الفجوة ١٠، قرار المالك ٢٠٢٦-٠٩-٢٩) ─────────────
+// من ١١ بالليل لـ٧ الصبح مفيش لحظات، وبحد أقصى ٥ في اليوم (بتوقيت سوق العميل).
+
+export const DAILY_VOICE_ALERT_CAP = 5;
+
+/**
+ * مابتتمسكش أبداً ومابتتعدّش في السقف: الجرعات (قرار المالك: مستثناة تماماً)، وتذكير
+ * ميعاد العميل — وقت هو اللي حدده، زي الجرعة بالظبط.
+ */
+export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "appointment_soon"]);
+
+/**
+ * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي
+ * بتفتح الهدوء، وحرفياً كانت هتتمسح كل ليلة (الـ٤٥ اللي اتبعتوا كلهم جوه الشباك).
+ * واللحظات اللي الموبايل نفسه طلبها، لأن العميل صاحي وبيعمل حاجة.
+ */
+const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS]);
+
+export type MomentHold = "quiet_hours" | "daily_cap";
+
+/** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
+export function momentGate(moment: string, localHour: number, sentToday: number): MomentHold | null {
+  if (NEVER_HELD_MOMENTS.has(moment)) return null;
+  if (isQuietHour(localHour) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
+  if (sentToday >= DAILY_VOICE_ALERT_CAP) return "daily_cap";
+  return null;
+}
+
+async function momentTimeZone(sb: SupabaseClient, row: VoiceMomentRow): Promise<string> {
+  const fromFacts = str(row.facts?.time_zone, 60);
+  if (fromFacts) return fromFacts;
+  try {
+    const { data: u } = await sb.from("zad_users").select("country").eq("id", row.user_id).maybeSingle();
+    const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: (u as { country?: string | null } | null)?.country ?? null });
+    return typeof tz === "string" && tz ? tz : "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+async function holdMoment(
+  sb: SupabaseClient, row: VoiceMomentRow, nowMs: number, timeZoneOf: (row: VoiceMomentRow) => Promise<string>,
+): Promise<MomentHold | null> {
+  if (NEVER_HELD_MOMENTS.has(row.moment)) return null;
+  const tz = await timeZoneOf(row);
+  const hour = localHourIn(tz, nowMs);
+  if (isQuietHour(hour) && !SPOKEN_IN_QUIET_HOURS.has(row.moment)) return "quiet_hours";
+  // اتقال كام النهارده بتوقيته، من غير الجرعات والمواعيد. فشل العدّ = مايمنعش.
+  let sentToday = 0;
+  try {
+    const local = localNowContext(tz, new Date(nowMs));
+    const dayStart = resolveLocalIso(`${local.date}T00:00`, local.utc_offset);
+    const { count } = await sb.from("zad_voice_moments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", row.user_id).eq("status", "sent")
+      .gte("sent_at", dayStart ?? new Date(nowMs - 86_400_000).toISOString())
+      .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`);
+    sentToday = count ?? 0;
+  } catch (e) {
+    console.warn("[voice_moments] daily count failed:", (e as Error)?.message);
+  }
+  return momentGate(row.moment, hour, sentToday);
 }

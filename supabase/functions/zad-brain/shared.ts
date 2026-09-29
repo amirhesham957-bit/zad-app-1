@@ -495,6 +495,48 @@ export function localNowContext(timeZone: string, now: Date = new Date()): {
   return { iso_local: `${date}T${time}:00${utcOffset}`, date, time, weekday, utc_offset: utcOffset, time_zone: tz };
 }
 
+// ── ساعات الهدوء (الفجوة ١٠، قرار المالك ٢٠٢٦-٠٩-٢٩) ─────────────────────────
+// من ١١ بالليل لـ٧ الصبح بتوقيت سوق العميل، مش توقيت السيرفر. الجرعات مستثناة
+// بالكامل؛ المستثنيات التانية جنب كل مستخدم (voiceMoments.ts، processDueAgentTasks).
+export const QUIET_START_HOUR = 23;
+export const QUIET_END_HOUR = 7;
+
+/** الساعة المحلية (٠-٢٣) جوه الهدوء؟ */
+export function isQuietHour(localHour: number): boolean {
+  return localHour >= QUIET_START_HOUR || localHour < QUIET_END_HOUR;
+}
+
+/** الساعة المحلية دلوقتي في [timeZone]. */
+export function localHourIn(timeZone: string, nowMs: number): number {
+  return Number(localNowContext(timeZone, new Date(nowMs)).time.slice(0, 2));
+}
+
+/**
+ * إمتى الهدوء يخلص: ٧ الصبح الجاية بتوقيت العميل، كلحظة UTC. `null` لو الوقت مش هدوء.
+ * بعد ١١ بالليل = ٧ بكرة؛ بعد نص الليل = ٧ النهارده.
+ */
+export function quietEndsAt(timeZone: string, nowMs: number): string | null {
+  const local = localNowContext(timeZone, new Date(nowMs));
+  const hour = Number(local.time.slice(0, 2));
+  if (!isQuietHour(hour)) return null;
+  let date = local.date;
+  if (hour >= QUIET_START_HOUR) {
+    const next = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000);
+    date = next.toISOString().slice(0, 10);
+  }
+  return resolveLocalIso(`${date}T${String(QUIET_END_HOUR).padStart(2, "0")}:00`, local.utc_offset);
+}
+
+/**
+ * مبادرة (مش طلب من العميل) استحقت جوه الهدوء ⇐ تتأجل لـ٧ الصبح بتوقيته. `null` = نفّذ.
+ * متابعة الدوا مستثناة زي الجرعات (قرار المالك)، وطلبات العميل (`reminder`) عمرها ما
+ * بتتأجل — هو اللي اختار الوقت.
+ */
+export function postponeForQuietHours(kind: string | null | undefined, timeZone: string, nowMs: number): string | null {
+  if (!agentTaskNotice(kind).proactive || (kind ?? "").trim() === "med_followup") return null;
+  return quietEndsAt(timeZone, nowMs);
+}
+
 /**
  * وقت كتبه الموديل ⇐ لحظة مطلقة بتوقيت العميل (٢٠٢٦-٠٩-١٩).
  *

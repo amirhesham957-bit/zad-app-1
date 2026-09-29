@@ -61,7 +61,7 @@ import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -4536,6 +4536,14 @@ function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: 
   if (runtime?.waitUntil) runtime.waitUntil(work);
 }
 
+/** توقيت سوق العميل (zad_market_timezone على بلده). فشل = UTC، زي باقي الفانكشن. */
+async function accountTimeZone(sb: SupabaseClient, userId: string): Promise<string> {
+  const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+  const { data: tz, error } = await sb.rpc("zad_market_timezone", { p_country: (u as { country?: string | null } | null)?.country ?? null });
+  if (error) console.error("[agent_tasks] zad_market_timezone failed:", error.message);
+  return typeof tz === "string" && tz ? tz : "UTC";
+}
+
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
   const { data: due } = await sb.from("agent_tasks")
     .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind")
@@ -4559,6 +4567,14 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       if (until) {
         await sb.from("agent_tasks").update({ scheduled_for: until, updated_at: new Date().toISOString() }).eq("id", task.id);
         console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${until} (muted by the user)`);
+        postponed++;
+        continue;
+      }
+      // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
+      const quietUntil = postponeForQuietHours(task.kind, await accountTimeZone(sb, task.user_id), Date.now());
+      if (quietUntil) {
+        await sb.from("agent_tasks").update({ scheduled_for: quietUntil, updated_at: new Date().toISOString() }).eq("id", task.id);
+        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${quietUntil} (quiet hours)`);
         postponed++;
         continue;
       }
