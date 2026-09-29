@@ -12,31 +12,6 @@ import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/prices/application/live_market_controller.dart';
 
-/// Kotlin's `DEFAULT_FALLBACK_STAPLES`, shown under «أسعار استرشادية
-/// تقريبية» while nothing real has been fetched.
-const List<MarketPriceItem> _fallbackStaples = <MarketPriceItem>[
-  MarketPriceItem(symbol: 'حليب 1L', price: 36),
-  MarketPriceItem(
-    symbol: 'بيض (كرتونة)',
-    price: 160,
-    changePercent: -1.2,
-    trend: 'down',
-  ),
-  MarketPriceItem(
-    symbol: 'أرز فاخر 1kg',
-    price: 32,
-    changePercent: 0.5,
-    trend: 'up',
-  ),
-  MarketPriceItem(symbol: 'سكر 1kg', price: 35),
-  MarketPriceItem(
-    symbol: 'زيت عباد 1L',
-    price: 78,
-    changePercent: -0.8,
-    trend: 'down',
-  ),
-];
-
 /// `zadCardShadow(elevation = 6.dp)`.
 final List<BoxShadow> _pillShadow = composeShadow(
   elevation: 6,
@@ -93,12 +68,10 @@ class LiveMarketTicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loading = fetchState == LiveFetchState.loading;
-    final isFallback = prices.isEmpty && !loading;
-    final effective = prices.isNotEmpty
-        ? prices
-        : isFallback
-        ? _fallbackStaples
-        : const <MarketPriceItem>[];
+    // Real prices or none. Kotlin's DEFAULT_FALLBACK_STAPLES — Egyptian prices
+    // with made-up ±% arrows — was shown to every market while nothing had
+    // arrived, as if it were live (removed 2026-09-29).
+    final effective = prices;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,16 +84,6 @@ class LiveMarketTicker extends StatelessWidget {
               for (final item in effective) _TickerPill(item: item),
             ],
           ),
-          if (isFallback)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(top: 4, start: 4),
-              child: Text(
-                'أسعار استرشادية تقريبية — اضغط للتحديث الحي',
-                style: ZadType.labelSmall.copyWith(
-                  color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
         ] else if (loading)
           SizedBox(
             height: 72,
@@ -163,10 +126,14 @@ class LiveMarketTicker extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(
-                        'تعذر جلب الأسعار الحية الآن — جرب تاني',
-                        style: ZadType.labelSmall.copyWith(
-                          color: scheme.onSurfaceVariant,
+                      Flexible(
+                        child: Text(
+                          fetchState == LiveFetchState.error
+                              ? 'تعذر جلب الأسعار الحية الآن — جرب تاني'
+                              : 'لسه مفيش أسعار حية لبلدك — اضغط للتحديث',
+                          style: ZadType.labelSmall.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                       Icon(Icons.refresh, size: 16, color: scheme.primary),

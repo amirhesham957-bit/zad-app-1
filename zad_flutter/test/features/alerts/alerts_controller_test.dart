@@ -193,18 +193,23 @@ void main() {
   });
 
   test(
-    'start registers the token once, and again only when it changes',
+    'every start registers the token again — the server may have dropped it',
     () async {
       await build(AlertPermission.granted);
       final alerts = container.read(alertsControllerProvider.notifier);
 
       await alerts.start();
       await alerts.start();
-      expect(outbox.entries(), hasLength(1));
+      expect(outbox.entries(), hasLength(1), reason: 'one entry at a time');
       await outbox.flush();
 
       await alerts.start();
-      expect(outbox.entries(), isEmpty, reason: 'same token, nothing to send');
+      expect(
+        outbox.entries(),
+        hasLength(1),
+        reason: 'same token, sent again: its row may be gone on the server',
+      );
+      await outbox.flush();
 
       platform.refreshes.add(
         'token-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',

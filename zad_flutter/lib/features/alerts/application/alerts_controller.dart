@@ -60,10 +60,13 @@ class AlertsController extends Notifier<AlertsView> {
       (t) => unawaited(registrar.register(t)),
     );
     try {
+      // Every start, not only when the token changed: the server drops a row
+      // on its own (zad-brain deletes a token FCM refuses), and the phone
+      // cannot see that. 2026-09-29 the owner's token was registered at 19:06
+      // and gone by 21:48 while this device still held it, so nothing was
+      // ever sent again. The RPC is an upsert and the outbox holds one entry.
       final token = await platform.token();
-      if (token != null && token != registrar.lastToken) {
-        await registrar.register(token);
-      }
+      if (token != null) await registrar.register(token);
     } on Object {
       // No token without Play services or a network; the next start asks
       // again, and a rotation arrives through the stream above.
