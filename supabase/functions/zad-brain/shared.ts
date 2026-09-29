@@ -47,6 +47,7 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     listener_gap_alert: "🔔 زاد لاحظ إن إشعارات البنك وقفت",
     goal_review: "🎯 زاد بيتابع هدفك",
     store_arrival: "🛒 زاد لاحظ إنك جنب محل",
+    habit_budget: "☕ زاد لاحظ عادة بتتكرر",
   };
   return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }
