@@ -19,6 +19,7 @@ import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/transactions/data/merchant_categories.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Opens the edit sheet for [txn].
@@ -134,6 +135,13 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
             category: _category,
             isExpense: _isExpense,
           );
+      // A corrected category is remembered for the merchant, so the next
+      // import from it needs no correction.
+      if (_category != widget.txn.category) {
+        await ref
+            .read(merchantCategoriesProvider)
+            .remember(widget.txn.merchantName ?? widget.txn.title, _category);
+      }
       _afterWrite(ref);
       unawaited(HapticFeedback.mediumImpact());
       if (mounted) Navigator.of(context).pop();
