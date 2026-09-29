@@ -90,6 +90,22 @@ export function sanitizeProfilePatch(input: Record<string, unknown>): { patch: C
   return { patch: patch as CustomerProfileRow, rejected };
 }
 
+/**
+ * حقول الهوية اللي التعديل ده هيكتب فوقها قيمة مختلفة متسجّلة قبل كده. «اسمي مو شريف»
+ * وبعدها «اسمي بيتر باركر» (تليجرام، ٢٠٢٦-٠٩-٢٩) كانت بتمسح الاسم الحقيقي بهزار —
+ * الكتابة فوق الاسم أو النوع محتاجة تأكيد صريح. أول تسجيل ومسح صريح (null) مش محتاجين.
+ */
+export function identityOverwrites(before: CustomerProfileRow | null | undefined, patch: CustomerProfileRow): Array<"preferred_name" | "gender"> {
+  const out: Array<"preferred_name" | "gender"> = [];
+  for (const key of ["preferred_name", "gender"] as const) {
+    const was = before?.[key];
+    const now = patch[key];
+    if (typeof was !== "string" || !was.trim() || typeof now !== "string") continue;
+    if (was.trim().toLowerCase() !== now.trim().toLowerCase()) out.push(key);
+  }
+  return out;
+}
+
 /** أهم حاجات لو ناقصة يسأل عنها بلطف — مرتبة بالأهمية. */
 const IMPORTANT: Array<keyof CustomerProfileRow> = ["preferred_name", "gender", "household_role", "cares_for", "pay_day", "occupation"];
 
