@@ -344,9 +344,6 @@ class RecipeSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(recipesControllerProvider.notifier);
-    final rating = ref.watch(
-      recipesControllerProvider.select((v) => v.ratings[recipe.name]),
-    );
     // Rebuilt when the list or the pantry changes, so the button counts what
     // is still left to add — and disappears once it is all on the list.
     ref
@@ -433,42 +430,7 @@ class RecipeSheet extends ConsumerWidget {
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
             const SizedBox(height: ZadSpacing.lg),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    'عجبتك؟ شيف زاد بتفتكر.',
-                    style: ZadType.bodySmall.copyWith(
-                      color: ZadColors.inkMuted,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () =>
-                      unawaited(controller.rate(recipe, liked: true)),
-                  isSelected: rating ?? false,
-                  color: ZadColors.inkMuted,
-                  selectedIcon: const Icon(
-                    ZadIcons.like,
-                    color: ZadColors.green700,
-                  ),
-                  icon: const Icon(ZadIcons.like),
-                  tooltip: 'عجبتني',
-                ),
-                IconButton(
-                  onPressed: () =>
-                      unawaited(controller.rate(recipe, liked: false)),
-                  isSelected: rating == false,
-                  color: ZadColors.inkMuted,
-                  selectedIcon: Icon(
-                    ZadIcons.dislike,
-                    color: ZadColors.terracottaRust,
-                  ),
-                  icon: const Icon(ZadIcons.dislike),
-                  tooltip: 'مش لذوقي',
-                ),
-              ],
-            ),
+            RecipeRatingRow(recipe: recipe),
           ],
         ),
       ),
@@ -586,3 +548,49 @@ String dishEmoji(String name) => switch (name) {
   _ when name.contains('خبز') || name.contains('عيش') => '🍞',
   _ => '🍽️',
 };
+
+/// «عجبتك؟»: like or dislike, sent through the outbox to `rate_recipe`, which
+/// the next «شيف زاد» suggestions read. On the recipe sheet and on the full
+/// recipe — the dialog is where the dish is actually cooked from, and with the
+/// row only on the sheet 98 suggestions got no opinion at all (2026-09-29).
+class RecipeRatingRow extends ConsumerWidget {
+  /// Creates the row.
+  const new({required this.recipe, super.key});
+
+  /// The recipe rated.
+  final Recipe recipe;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(recipesControllerProvider.notifier);
+    final rating = ref.watch(
+      recipesControllerProvider.select((v) => v.ratings[recipe.name]),
+    );
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            'عجبتك؟ شيف زاد بتفتكر.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+        ),
+        IconButton(
+          onPressed: () => unawaited(controller.rate(recipe, liked: true)),
+          isSelected: rating ?? false,
+          color: ZadColors.inkMuted,
+          selectedIcon: const Icon(ZadIcons.like, color: ZadColors.green700),
+          icon: const Icon(ZadIcons.like),
+          tooltip: 'عجبتني',
+        ),
+        IconButton(
+          onPressed: () => unawaited(controller.rate(recipe, liked: false)),
+          isSelected: rating == false,
+          color: ZadColors.inkMuted,
+          selectedIcon: Icon(ZadIcons.dislike, color: ZadColors.terracottaRust),
+          icon: const Icon(ZadIcons.dislike),
+          tooltip: 'مش لذوقي',
+        ),
+      ],
+    );
+  }
+}
