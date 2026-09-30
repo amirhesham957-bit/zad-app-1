@@ -7,11 +7,14 @@
 /// unread again because the server has not heard yet.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/notifications/data/notifications_remote.dart';
 import 'package:zad/features/notifications/domain/app_notification.dart';
 
@@ -174,3 +177,15 @@ class NotificationsRepository {
     return id;
   }
 }
+
+/// The notification list: the newest page, cached as one document.
+final Provider<NotificationsRepository> notificationsRepositoryProvider =
+    Provider<NotificationsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return NotificationsRepository(
+        cache: store.documents,
+        remote: SupabaseNotificationsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

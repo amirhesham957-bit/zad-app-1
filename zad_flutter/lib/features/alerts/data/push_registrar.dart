@@ -15,11 +15,13 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/data/sync/sync_failure.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 
 /// The server side of the token.
@@ -126,3 +128,15 @@ class PushRegistrar {
     await _device.delete(_tokenKey);
   }
 }
+
+/// This device's push token on the signed-in account.
+final Provider<PushRegistrar> pushRegistrarProvider = Provider<PushRegistrar>((
+  ref,
+) {
+  return PushRegistrar(
+    device: ref.watch(localStoreProvider).device,
+    remote: () => SupabasePushTokenRemote(ref.read(supabaseClientProvider)),
+    platform: ref.watch(pushPlatformProvider),
+    outbox: () => ref.read(outboxProvider),
+  );
+});

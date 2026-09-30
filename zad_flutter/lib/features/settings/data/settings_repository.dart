@@ -15,12 +15,15 @@
 /// rather than reporting a write that did not happen.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/settings/domain/account_settings.dart';
 
 /// The server side of the account's settings.
@@ -344,3 +347,21 @@ class SettingsRepository {
     return id;
   }
 }
+
+/// The account's own configuration — the ceiling and the salary day.
+///
+/// Explicitly typed for the same reason the outbox below is: it reads the
+/// outbox and the outbox dispatches back into it, and Dart cannot infer either
+/// one through the cycle.
+final Provider<SettingsRepository> settingsRepositoryProvider =
+    Provider<SettingsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return SettingsRepository(
+        cache: store.documents,
+        remote: SupabaseSettingsRemote(ref.watch(supabaseClientProvider)),
+        // Read lazily: the outbox sends through this repository.
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        now: ref.watch(nowProvider),
+      );
+    });

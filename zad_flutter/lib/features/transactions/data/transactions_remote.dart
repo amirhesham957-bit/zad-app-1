@@ -2,7 +2,11 @@
 /// can be tested without a network.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// Reads and writes `zad_transactions`.
 abstract interface class TransactionsRemote {
@@ -100,3 +104,8 @@ class SupabaseTransactionsRemote implements TransactionsRemote {
       await _client.from(_table).select('id').eq('id', id).maybeSingle() !=
       null;
 }
+
+/// The server side of transactions.
+final transactionsRemoteProvider = Provider<TransactionsRemote>(
+  (ref) => SupabaseTransactionsRemote(ref.watch(supabaseClientProvider)),
+);

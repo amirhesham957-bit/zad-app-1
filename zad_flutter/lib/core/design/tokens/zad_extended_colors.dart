@@ -13,7 +13,7 @@ library;
 // ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
 
 /// Colours with no `ColorScheme` slot, per theme.
 @immutable

@@ -8,11 +8,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
 
 /// Shows the bank channel's health, and the one action that repairs it.

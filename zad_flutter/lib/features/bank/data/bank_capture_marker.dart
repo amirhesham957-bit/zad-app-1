@@ -6,7 +6,11 @@
 /// service Android never bound.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// The marker.
 class BankCaptureMarker {
@@ -57,3 +61,8 @@ class BankCaptureMarker {
     }
   }
 }
+
+/// Remembers whether this device has ever captured anything.
+final bankCaptureMarkerProvider = Provider<BankCaptureMarker>(
+  (ref) => BankCaptureMarker(ref.watch(localStoreProvider).documents),
+);

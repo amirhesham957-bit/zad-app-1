@@ -6,10 +6,13 @@
 /// What was last read is cached for the first frame.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/modes/domain/modes.dart';
 
 /// The two tables. RLS is owner-only on both; the challenge's counters are
@@ -199,3 +202,14 @@ class ModesRepository {
     return id;
   }
 }
+
+/// Broke mode and the savings challenge: online, read back, cached.
+final Provider<ModesRepository> modesRepositoryProvider =
+    Provider<ModesRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ModesRepository(
+        cache: store.documents,
+        remote: SupabaseModesRemote(ref.watch(supabaseClientProvider)),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

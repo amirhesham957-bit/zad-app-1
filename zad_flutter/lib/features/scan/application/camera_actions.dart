@@ -5,7 +5,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
@@ -13,6 +13,7 @@ import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/data/vision_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Kotlin's `InjectionResult.summary`.

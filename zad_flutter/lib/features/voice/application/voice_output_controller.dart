@@ -13,7 +13,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/voice/data/voice_player.dart';
 import 'package:zad/features/voice/data/voice_synthesizer.dart';

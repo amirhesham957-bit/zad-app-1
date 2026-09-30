@@ -4,9 +4,10 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/settings/domain/account_settings.dart';
 
 /// What the screen draws.

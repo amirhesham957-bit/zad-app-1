@@ -3,9 +3,12 @@
 /// never registers shows its reason instead of looking like a blind agent.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/bank/domain/bank_notification.dart';
 
 /// One set-aside message.
@@ -76,3 +79,8 @@ class BankRejectedLog {
     return _box.put(_key, jsonEncode(list));
   }
 }
+
+/// The bank messages set aside, with why (Kotlin's rejected-messages table).
+final bankRejectedLogProvider = Provider<BankRejectedLog>(
+  (ref) => BankRejectedLog(ref.watch(localStoreProvider).documents),
+);

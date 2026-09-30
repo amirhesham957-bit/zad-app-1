@@ -5,8 +5,8 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/affiliate/domain/affiliate.dart';
 
 /// Kotlin's `loadAffiliateProducts`: the table, else the built-in six.

@@ -21,9 +21,9 @@ library;
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 
 /// A pane of frosted glass.
 class ZadGlass extends StatelessWidget {

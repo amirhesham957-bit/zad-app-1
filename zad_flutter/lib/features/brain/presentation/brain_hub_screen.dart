@@ -6,11 +6,11 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';

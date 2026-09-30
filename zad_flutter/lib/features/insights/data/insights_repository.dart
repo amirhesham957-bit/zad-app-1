@@ -7,12 +7,15 @@
 /// row must say the new status before the entry is dropped.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/insights/domain/insight.dart';
 
 /// The server side.
@@ -213,3 +216,15 @@ class InsightsRepository {
     return id;
   }
 }
+
+/// The brain's pending insights, for Home; decisions queued.
+final Provider<InsightsRepository> insightsRepositoryProvider =
+    Provider<InsightsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return InsightsRepository(
+        cache: store.documents,
+        remote: SupabaseInsightsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

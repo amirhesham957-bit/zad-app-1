@@ -4,8 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/presentation/alerts_settings_section.dart';
 

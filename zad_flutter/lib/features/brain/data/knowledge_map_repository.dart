@@ -7,11 +7,14 @@
 /// show a figure its own screen disagrees with.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 
 /// The four reads.
@@ -191,3 +194,13 @@ class KnowledgeMapRepository {
     );
   }
 }
+
+/// خريطة زاد's own reads: obligations, debts, appliances, pending insights.
+final knowledgeMapRepositoryProvider = Provider<KnowledgeMapRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return KnowledgeMapRepository(
+    cache: store.documents,
+    remote: SupabaseKnowledgeMapRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

@@ -14,13 +14,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
+import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// Opens the guide.

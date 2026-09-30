@@ -13,7 +13,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/auth/application/session_controller.dart';
 
 /// What the profile screen draws.

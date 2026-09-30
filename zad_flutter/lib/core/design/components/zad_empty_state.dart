@@ -10,9 +10,9 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// An empty, error, or "nothing here yet" state.
 class ZadEmptyState extends StatelessWidget {

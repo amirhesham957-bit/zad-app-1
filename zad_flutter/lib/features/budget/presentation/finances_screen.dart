@@ -11,16 +11,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/app/shell_navigation.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
@@ -36,6 +35,7 @@ import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dar
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 

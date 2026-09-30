@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
 import 'package:zad/features/prices/data/prices_repository.dart';

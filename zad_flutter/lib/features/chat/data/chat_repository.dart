@@ -11,9 +11,13 @@
 /// transactions list follow.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';
 
 /// Holds the conversation.
@@ -119,3 +123,11 @@ class ChatRepository {
     await _box.deleteAll(excess);
   }
 }
+
+/// The conversation, on this device.
+final chatRepositoryProvider = Provider<ChatRepository>(
+  (ref) => ChatRepository(
+    box: ref.watch(localStoreProvider).chat,
+    newId: const Uuid().v4,
+  ),
+);

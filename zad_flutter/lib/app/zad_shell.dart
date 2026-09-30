@@ -14,8 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
@@ -40,6 +39,7 @@ import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 import 'package:zad/features/voice/zad_voice_sheet.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Holds the tabs.
 class ZadShell extends ConsumerStatefulWidget {

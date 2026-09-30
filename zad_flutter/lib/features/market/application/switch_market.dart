@@ -7,7 +7,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';

@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';

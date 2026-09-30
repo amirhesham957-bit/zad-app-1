@@ -6,12 +6,16 @@
 /// method returns, and the network is somebody else's problem.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/period/budget_period.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
@@ -268,3 +272,18 @@ class TransactionsRepository {
     return id;
   }
 }
+
+/// Transactions, offline first.
+final Provider<TransactionsRepository>
+transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return TransactionsRepository(
+    cache: store.transactions,
+    remote: ref.watch(transactionsRemoteProvider),
+    // Read lazily: the outbox sends through this repository, so resolving it
+    // here would be a cycle.
+    outbox: () => ref.read(outboxProvider),
+    newId: const Uuid().v4,
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

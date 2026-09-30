@@ -20,8 +20,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/application/voice_input_controller.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';

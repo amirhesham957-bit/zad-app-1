@@ -9,7 +9,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/goals/data/life_goals_remote.dart';
 import 'package:zad/features/goals/domain/life_goal_seed.dart';
 

@@ -14,7 +14,8 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/features/bank/data/bank_capture_marker.dart';
+import 'package:zad/features/bank/data/notification_drain.dart';
 
 /// How the bank channel stands.
 enum BankAccessHealth {

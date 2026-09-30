@@ -4,9 +4,11 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/transactions/data/transactions_repository.dart';
 
 /// What the screen has to draw with.
 class BudgetView {

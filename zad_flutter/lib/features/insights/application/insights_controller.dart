@@ -8,7 +8,8 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/insights/domain/insight.dart';
 
 /// What Home draws.

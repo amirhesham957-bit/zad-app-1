@@ -6,13 +6,18 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
+import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
+import 'package:zad/features/inventory/data/inventory_repository.dart';
+import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
 import 'package:zad/features/inventory/domain/shopping_item.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/subscriptions/domain/subscription.dart';
 
 String _n(num v) => NumberFormat('#,##0.##', 'en').format(v);

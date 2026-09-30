@@ -7,8 +7,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/kids_home.dart';

@@ -3,7 +3,11 @@
 /// customer's tap ("تعبئة ذكية"), never on open.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// One suggestion.
 typedef GrocerySuggestion = ({String name, String quantity, String reason});
@@ -83,3 +87,9 @@ class SupabaseShoppingAiRemote implements ShoppingAiRemote {
     return avg != null && avg > 0 ? avg : null;
   }
 }
+
+/// The shopping list's two model calls, asked on a tap.
+final Provider<ShoppingAiRemote> shoppingAiRemoteProvider =
+    Provider<ShoppingAiRemote>(
+      (ref) => SupabaseShoppingAiRemote(ref.watch(supabaseClientProvider)),
+    );

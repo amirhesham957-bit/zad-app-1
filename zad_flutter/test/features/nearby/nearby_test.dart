@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/nearby/application/nearby_controller.dart';

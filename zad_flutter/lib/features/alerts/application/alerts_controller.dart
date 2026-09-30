@@ -6,11 +6,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/app/shell_navigation.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
+import 'package:zad/features/alerts/data/push_platform.dart';
+import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 import 'package:zad/features/insights/application/insights_controller.dart';
 import 'package:zad/features/notifications/application/notifications_controller.dart';
@@ -19,6 +20,7 @@ import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/proposals/application/proposals_controller.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// What the settings row shows.
 class AlertsView {

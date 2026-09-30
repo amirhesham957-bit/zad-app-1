@@ -20,7 +20,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/zad_shell.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';

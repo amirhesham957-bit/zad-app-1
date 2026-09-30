@@ -21,13 +21,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_field_dialog.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
@@ -41,6 +41,7 @@ import 'package:zad/features/intelligence/presentation/export_report_button.dart
 import 'package:zad/features/intelligence/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/orb/application/companion_mood.dart';
 import 'package:zad/features/orb/presentation/companion_orb.dart';
+import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Opens the screen.

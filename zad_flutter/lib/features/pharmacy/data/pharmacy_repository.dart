@@ -14,11 +14,15 @@
 /// The queued entry's id carries the same three parts for the same reason.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
@@ -600,3 +604,16 @@ class PharmacyRepository {
     return id;
   }
 }
+
+/// Medicines and doses, offline first.
+final Provider<PharmacyRepository> pharmacyRepositoryProvider =
+    Provider<PharmacyRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return PharmacyRepository(
+        cache: store.pharmacy,
+        remote: SupabasePharmacyRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

@@ -4,7 +4,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// True once the introduction has been seen on this phone.
 ///

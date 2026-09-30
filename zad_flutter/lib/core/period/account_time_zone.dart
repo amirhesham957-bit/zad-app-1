@@ -10,8 +10,9 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/period/market_calendar.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/features/budget/data/budget_repository.dart';
 import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
 
 /// The account's market zone, as an IANA name.
 ///

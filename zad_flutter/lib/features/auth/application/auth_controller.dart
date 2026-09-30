@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
 import 'package:zad/features/market/domain/market.dart';

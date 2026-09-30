@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 

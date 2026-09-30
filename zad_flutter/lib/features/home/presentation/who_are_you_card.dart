@@ -10,8 +10,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/application/memory_controller.dart';
 import 'package:zad/features/brain/domain/customer_profile.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';

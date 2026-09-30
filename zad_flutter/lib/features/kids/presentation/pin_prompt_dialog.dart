@@ -12,7 +12,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
 
 /// Asks for the PIN; true once it is set or verified.

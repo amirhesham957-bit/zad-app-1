@@ -4,8 +4,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/market/domain/market.dart';
 
 /// The picker.

@@ -10,23 +10,29 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/inventory/data/consumption_learner.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
+import 'package:zad/features/inventory/data/inventory_repository.dart';
+import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/features/prices/data/prices_repository.dart';
 import 'package:zad/features/prices/domain/prices.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';
 import 'package:zad/features/scan/data/vision_scanner.dart';
 import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/settings/application/settings_controller.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/features/transactions/data/transactions_repository.dart';
 import 'package:zad/features/transactions/domain/transaction.dart';
 
 /// Where a scan has got to.

@@ -6,9 +6,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';

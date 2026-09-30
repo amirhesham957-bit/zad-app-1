@@ -15,13 +15,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/affiliate/data/affiliate_repository.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart'
@@ -33,6 +32,7 @@ import 'package:zad/features/inventory/data/consumption_learner.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
 const List<String> kPantryUnits = <String>[

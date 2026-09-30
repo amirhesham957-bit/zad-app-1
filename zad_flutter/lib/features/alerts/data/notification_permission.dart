@@ -1,6 +1,9 @@
 /// Whether this app may post notifications — Android 13+ asks the customer.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Where the permission stands.
@@ -74,3 +77,9 @@ class PluginNotificationPermission implements NotificationPermission {
     await openAppSettings();
   }
 }
+
+/// The Android 13+ notification permission; unknown unless `bootstrap()`
+/// installed the real one.
+final notificationPermissionProvider = Provider<NotificationPermission>(
+  (ref) => const UnknownNotificationPermission(),
+);

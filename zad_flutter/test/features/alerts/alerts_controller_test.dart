@@ -9,10 +9,9 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
@@ -25,6 +24,7 @@ import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/voice/application/voice_output_controller.dart';
 import 'package:zad/features/voice/data/voice_player.dart';
 import 'package:zad/features/voice/data/voice_synthesizer.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 class _Platform extends SilentPushPlatform {
   String? current = 'token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';

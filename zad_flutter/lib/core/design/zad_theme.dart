@@ -14,12 +14,12 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// Builds the app theme.
 abstract final class ZadTheme {

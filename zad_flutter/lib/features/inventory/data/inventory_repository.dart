@@ -10,11 +10,15 @@
 /// refresh merely because they are not its own.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
 
@@ -186,3 +190,16 @@ class InventoryRepository {
     return id;
   }
 }
+
+/// The pantry, offline first.
+final Provider<InventoryRepository> inventoryRepositoryProvider =
+    Provider<InventoryRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return InventoryRepository(
+        cache: store.inventory,
+        remote: SupabaseInventoryRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

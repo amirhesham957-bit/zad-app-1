@@ -14,7 +14,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 
 /// Wraps [child] in this app's press behaviour.
 class ZadPressable extends StatefulWidget {

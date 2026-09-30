@@ -5,10 +5,13 @@
 /// `behavior_analysis`, one model call, asked only when the customer taps.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// Reads and writes the ceilings.
 class CategoryBudgetsStore {
@@ -126,3 +129,16 @@ class SupabaseBehaviorAnalysisRemote implements BehaviorAnalysisRemote {
     return BehaviorAnalysis.fromJson(Map<String, dynamic>.from(data));
   }
 }
+
+/// Category ceilings, on this device only — as Kotlin keeps them.
+final Provider<CategoryBudgetsStore> categoryBudgetsStoreProvider =
+    Provider<CategoryBudgetsStore>(
+      (ref) => CategoryBudgetsStore(ref.watch(localStoreProvider).documents),
+    );
+
+/// The per-category analysis, asked on a tap.
+final Provider<BehaviorAnalysisRemote> behaviorAnalysisRemoteProvider =
+    Provider<BehaviorAnalysisRemote>(
+      (ref) =>
+          SupabaseBehaviorAnalysisRemote(ref.watch(supabaseClientProvider)),
+    );

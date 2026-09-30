@@ -10,7 +10,7 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 
 /// The shadow sets.
 abstract final class ZadElevation {

@@ -5,12 +5,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/presentation/appointments_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
@@ -27,6 +26,7 @@ import 'package:zad/features/statement/presentation/statement_import_screen.dart
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Kotlin's `ZadSectionAccent`, light values: a tile's icon colour, with its
 /// container at 12%.

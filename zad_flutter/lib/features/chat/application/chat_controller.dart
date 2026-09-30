@@ -18,9 +18,10 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/chat/data/agent_remote.dart';
+import 'package:zad/features/chat/data/chat_repository.dart';
 import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 import 'package:zad/features/chat/domain/chat_message.dart';

@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/auth_gate.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Whether the app follows the phone's dark mode.

@@ -13,8 +13,8 @@
 /// an ambiguous failure cannot ingest the same notification twice.
 library;
 
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/bank/domain/bank_notification.dart';
 
 /// Builds the `notification_ingest` body zad-brain expects.

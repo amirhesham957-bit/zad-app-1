@@ -4,8 +4,9 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/proposals/data/proposals_repository.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 import 'package:zad/features/transactions/application/transactions_controller.dart';
 

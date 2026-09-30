@@ -7,7 +7,6 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';

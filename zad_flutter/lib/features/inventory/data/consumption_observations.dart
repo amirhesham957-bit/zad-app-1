@@ -12,9 +12,14 @@
 /// strict order keeps them in the order they happened.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 
 /// Where a reading came from, as `zad_inventory_observations_source_check`
 /// allows it.
@@ -115,3 +120,14 @@ class ConsumptionObservations {
     }
   }
 }
+
+/// Stock readings for the server's consumption learner.
+final Provider<ConsumptionObservations> consumptionObservationsProvider =
+    Provider<ConsumptionObservations>((ref) {
+      return ConsumptionObservations(
+        remote: SupabaseObservationRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

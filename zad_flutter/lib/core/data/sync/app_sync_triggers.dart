@@ -9,7 +9,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
-import 'package:zad/data/sync/outbox_runner.dart';
+import 'package:zad/core/data/sync/outbox_runner.dart';
 
 /// Emits a reason to flush whenever one occurs.
 class AppSyncTriggers {

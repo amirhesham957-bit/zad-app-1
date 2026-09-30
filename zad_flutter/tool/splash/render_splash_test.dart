@@ -24,7 +24,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 
 /// The splash canvas — `zad_splash_background`, `#FBFAF8`.
 const Color canvas = Color(0xFFFBFAF8);

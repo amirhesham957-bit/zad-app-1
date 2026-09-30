@@ -4,10 +4,12 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/application/local_reminders.dart';
+import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
+import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/application/brain_health_controller.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';

@@ -11,9 +11,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 
 /// Kotlin's `primary` (`ZadForestEmerald`).
 Color get _primary => ZadColors.forestEmerald;

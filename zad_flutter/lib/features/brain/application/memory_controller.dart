@@ -7,10 +7,10 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/brain/domain/customer_profile.dart';
 import 'package:zad/features/brain/domain/memory_note.dart';
+import 'package:zad/features/settings/data/settings_repository.dart';
 
 /// What the screen draws.
 class MemoryView {

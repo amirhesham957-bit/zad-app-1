@@ -4,10 +4,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/affiliate/domain/affiliate.dart';
 
 const Color _amazonOrange = Color(0xFFFF9900);

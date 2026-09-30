@@ -8,9 +8,10 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/application/local_reminders.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/domain/dose_slot.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
 

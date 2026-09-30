@@ -8,7 +8,7 @@ library;
 
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/data/family_repository.dart';

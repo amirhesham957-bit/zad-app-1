@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// The switches.
 class AlertPrefs {

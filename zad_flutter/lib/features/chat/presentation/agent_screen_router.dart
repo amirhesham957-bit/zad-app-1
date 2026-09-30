@@ -7,7 +7,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/features/appointments/presentation/appointments_screen.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
@@ -31,6 +30,7 @@ import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Opens what [command] names. Returns once the screen is pushed, not when
 /// it closes.

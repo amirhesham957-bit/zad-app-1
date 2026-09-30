@@ -10,7 +10,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/chat/data/transcriber.dart';
 import 'package:zad/features/chat/data/voice_recorder.dart';
 

@@ -12,10 +12,13 @@
 /// sent into a queue would have nobody left to ask.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/proposals/domain/transaction_proposal.dart';
 
 /// The server side.
@@ -163,3 +166,13 @@ class ProposalsRepository {
     );
   }
 }
+
+/// Bank transactions waiting for the customer to say yes.
+final proposalsRepositoryProvider = Provider<ProposalsRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return ProposalsRepository(
+    cache: store.documents,
+    remote: SupabaseProposalsRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

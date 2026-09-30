@@ -7,7 +7,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/auth/application/auth_controller.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';

@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/pharmacy/domain/medicine.dart';
 import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';

@@ -10,10 +10,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/nearby/data/location_source.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
 import 'package:zad/features/nearby/domain/nearby.dart';
+import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/features/places/data/place_server.dart';
 
 /// What the tab draws.

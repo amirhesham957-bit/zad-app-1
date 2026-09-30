@@ -9,8 +9,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';

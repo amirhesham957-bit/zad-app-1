@@ -5,7 +5,11 @@
 /// `AuthRetryableFetchException` is.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/auth/domain/auth_failure.dart';
 
 /// What a successful sign-up left behind.
@@ -145,3 +149,8 @@ class SupabaseAuthGateway implements AuthGateway {
     }
   }
 }
+
+/// Signing in, signing up, signing out.
+final authGatewayProvider = Provider<AuthGateway>(
+  (ref) => SupabaseAuthGateway(ref.watch(supabaseClientProvider)),
+);

@@ -16,7 +16,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/brain/data/memory_remote.dart';
 import 'package:zad/features/brain/domain/customer_profile.dart';
 import 'package:zad/features/brain/domain/habits.dart';
@@ -234,3 +236,14 @@ class MemoryRepository {
     return id;
   }
 }
+
+/// "زاد عارف عني إيه": notes, profile and habits; changed only online.
+final memoryRepositoryProvider = Provider<MemoryRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return MemoryRepository(
+    cache: store.documents,
+    remote: SupabaseMemoryRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+    now: ref.watch(nowProvider),
+  );
+});

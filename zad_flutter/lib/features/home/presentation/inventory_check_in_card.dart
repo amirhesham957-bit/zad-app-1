@@ -7,8 +7,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/inventory/data/consumption_learner.dart';
 

@@ -4,10 +4,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// The safe daily spend: what is spendable spread over the days that are
 /// left, or all of it on the last day — Kotlin's arithmetic exactly.

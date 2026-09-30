@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';

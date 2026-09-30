@@ -9,7 +9,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/data/receipt_scanner.dart';

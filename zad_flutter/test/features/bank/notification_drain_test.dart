@@ -9,8 +9,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/bank/data/notification_drain.dart';
 import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';

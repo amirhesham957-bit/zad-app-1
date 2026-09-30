@@ -8,8 +8,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// Kotlin's `ZadHeroGradient` — the mockup's mesh (`120deg, #0B6B4E, #0F9B76,
 /// #064E3B, #0B6B4E`), static in both themes.

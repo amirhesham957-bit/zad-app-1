@@ -8,9 +8,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
@@ -18,6 +17,7 @@ import 'package:zad/features/goals/data/life_goals_remote.dart';
 import 'package:zad/features/goals/presentation/life_goal_picker_sheet.dart';
 import 'package:zad/features/inventory/application/pantry_controller.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Kotlin's `HomeActivationStep`.
 enum HomeActivationStep {

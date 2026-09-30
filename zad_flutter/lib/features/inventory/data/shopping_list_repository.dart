@@ -31,11 +31,15 @@
 /// `detectSubscriptions()` had to be walked back for.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/inventory/data/inventory_remote.dart';
 import 'package:zad/features/inventory/domain/shopping_item.dart';
 import 'package:zad/features/inventory/domain/shortage.dart';
@@ -311,3 +315,17 @@ class ShoppingListRepository {
     return id;
   }
 }
+
+/// The shopping list, offline first.
+final Provider<ShoppingListRepository> shoppingListRepositoryProvider =
+    Provider<ShoppingListRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ShoppingListRepository(
+        cache: store.shopping,
+        remote: SupabaseShoppingListRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        marks: store.device,
+      );
+    });

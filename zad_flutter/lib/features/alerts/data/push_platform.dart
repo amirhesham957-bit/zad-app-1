@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/features/alerts/domain/push_alert.dart';
 
 /// The channel alerts arrive on. Kotlin's id, so an alert is the same channel
@@ -318,3 +319,9 @@ class FirebasePushPlatform implements PushPlatform {
   @override
   Future<void> deleteToken() async => await (await _messaging()).deleteToken();
 }
+
+/// FCM and local notifications. Silent unless `bootstrap()` started Firebase
+/// and installed the real platform — so no test ever reaches a plugin.
+final pushPlatformProvider = Provider<PushPlatform>(
+  (ref) => const SilentPushPlatform(),
+);

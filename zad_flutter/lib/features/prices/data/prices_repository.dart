@@ -9,12 +9,16 @@
 /// into the first, so a double tap is one voice either way.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/data/sync/sync_failure.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 import 'package:zad/features/prices/data/prices_remote.dart';
 import 'package:zad/features/prices/domain/prices.dart';
 
@@ -254,3 +258,17 @@ class PricesRepository {
     }
   }
 }
+
+/// Crowd prices: the cheapest list, the leaderboard, queued reports.
+final Provider<PricesRepository> pricesRepositoryProvider =
+    Provider<PricesRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return PricesRepository(
+        cache: store.documents,
+        remote: SupabasePricesRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        now: ref.watch(nowProvider),
+      );
+    });

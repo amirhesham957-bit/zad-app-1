@@ -17,12 +17,11 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/auth_gate.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
-import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/app/zad_shell.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/auth/data/auth_gateway.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/budget/data/budget_repository.dart';
@@ -44,6 +43,7 @@ import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/features/transactions/data/transactions_remote.dart';
 import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 import '../support/quiet_household.dart';
 

@@ -2,12 +2,12 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/foundation/elevation.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/foundation/elevation.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 
 /// A card.
 class ZadCard extends StatefulWidget {

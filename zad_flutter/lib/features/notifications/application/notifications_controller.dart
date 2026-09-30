@@ -4,8 +4,9 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/notifications/application/smart_notifications.dart';
+import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/notifications/domain/app_notification.dart';
 
 /// What the screen draws.

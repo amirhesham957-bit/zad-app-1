@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/data/sync/sync_failure.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 
 /// Sends one entry, or throws. The thrown error is classified by
 /// [classifySyncFailure], so an implementation should let the transport's own

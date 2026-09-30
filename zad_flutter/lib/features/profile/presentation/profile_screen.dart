@@ -10,20 +10,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:zad/app/shell_navigation.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
 import 'package:zad/features/achievements/presentation/achievements_screen.dart';
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
+import 'package:zad/features/budget/data/category_budgets_store.dart';
 import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/kids/application/kids_mode_controller.dart';
@@ -38,6 +37,7 @@ import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/support/presentation/help_support_screen.dart';
 import 'package:zad/features/support/presentation/terms_screen.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Opens the profile.
 Future<void> showProfileScreen(BuildContext context) => Navigator.of(context)

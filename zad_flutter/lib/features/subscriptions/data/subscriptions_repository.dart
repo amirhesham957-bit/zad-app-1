@@ -7,11 +7,15 @@
 /// that is wrong without saying so.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/features/subscriptions/domain/renewal.dart';
 import 'package:zad/features/subscriptions/domain/subscription.dart';
@@ -291,3 +295,16 @@ String isoDate(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-'
     '${date.month.toString().padLeft(2, '0')}-'
     '${date.day.toString().padLeft(2, '0')}';
+
+/// Subscriptions, bills, instalments and rent, offline first.
+final Provider<SubscriptionsRepository> subscriptionsRepositoryProvider =
+    Provider<SubscriptionsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return SubscriptionsRepository(
+        cache: store.subscriptions,
+        remote: SupabaseSubscriptionsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

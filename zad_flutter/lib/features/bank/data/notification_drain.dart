@@ -6,9 +6,16 @@
 /// tested place rather than in a service nobody can run on a desk.
 library;
 
-import 'package:zad/data/sync/outbox.dart';
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/features/bank/data/bank_rejected_log.dart';
 import 'package:zad/features/bank/data/notification_ingest.dart';
 import 'package:zad/features/bank/domain/bank_notification.dart';
+import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// What one drain did.
@@ -97,3 +104,26 @@ class NotificationDrain {
     return DrainReport(seen: captured.length, queued: queued);
   }
 }
+
+/// The Android capture inbox.
+final bankListenerProvider = Provider<ZadBankListener>(
+  (ref) => const ZadBankListener(),
+);
+
+/// Empties the capture inbox into the outbox.
+///
+/// Read lazily by the runner, so this provider does not need the outbox at
+/// construction time.
+final Provider<NotificationDrain> notificationDrainProvider =
+    Provider<NotificationDrain>((ref) {
+      return NotificationDrain(
+        listener: ref.watch(bankListenerProvider),
+        outbox: ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+        isTrackedFinancialApp: isTrackedFinancialApp,
+        onRejected: (source, reason, raw) => unawaited(
+          ref.read(bankRejectedLogProvider).add(source, reason, raw),
+        ),
+      );
+    });

@@ -17,8 +17,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/family/data/family_remote.dart';
 import 'package:zad/features/family/domain/family.dart';
 
@@ -241,3 +243,13 @@ class FamilyRepository {
     return id;
   }
 }
+
+/// The account's family: cached, and changed only online.
+final familyRepositoryProvider = Provider<FamilyRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return FamilyRepository(
+    cache: store.documents,
+    remote: SupabaseFamilyRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

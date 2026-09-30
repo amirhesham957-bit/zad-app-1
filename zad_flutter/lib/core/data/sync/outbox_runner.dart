@@ -8,7 +8,7 @@ library;
 
 import 'dart:async';
 
-import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox.dart';
 
 /// Why a flush is being attempted.
 enum SyncTrigger {

@@ -5,10 +5,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
 import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/features/obligations/data/obligations_repository.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 
 /// What the screen draws.

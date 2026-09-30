@@ -13,7 +13,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/family/application/family_controller.dart';
 import 'package:zad/features/family/domain/family.dart';
 

@@ -12,10 +12,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/app/wiring/zad_wiring.dart';
 import 'package:zad/core/crash/crash_log.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/bank/background/bank_background_main.dart';
@@ -46,6 +47,9 @@ import 'package:zad_geofence/zad_geofence.dart';
 /// anything else.
 Future<void> bootstrap(Widget app) async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Before anything reads a provider: the outbox and the screens reach the
+  // features through the contracts this binds.
+  wireZad();
 
   ZadEnv.requireConfigured();
   tz_data.initializeTimeZones();

@@ -8,9 +8,12 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/features/inventory/data/inventory_repository.dart';
+import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/features/recipes/data/recipes_repository.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 
 /// What the recipes section draws.

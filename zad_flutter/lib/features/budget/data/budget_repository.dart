@@ -5,10 +5,13 @@
 /// same figure a second later.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/budget/domain/budget_snapshot.dart';
 
 /// The server side of the budget, behind an interface so the repository can be
@@ -97,3 +100,13 @@ class BudgetRepository {
   /// Forgets the cached answer. Called on sign-out.
   Future<void> clear() => _cache.delete(_key);
 }
+
+/// The budget, read from `zad_budget_state()` and cached.
+final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return BudgetRepository(
+    cache: store.documents,
+    remote: SupabaseBudgetRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

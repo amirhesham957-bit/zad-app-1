@@ -21,8 +21,10 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/features/chat/domain/agent_turn.dart';
 
@@ -253,3 +255,8 @@ class SupabaseAgentRemote implements AgentRemote {
     }
   }
 }
+
+/// The agent loop.
+final agentRemoteProvider = Provider<AgentRemote>(
+  (ref) => SupabaseAgentRemote(ref.watch(supabaseClientProvider)),
+);
