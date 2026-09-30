@@ -2,6 +2,8 @@ import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import {
   buildMomentPrompt,
   dailyQuestion,
+  MOMENT_SPACING_MS,
+  tooSoonAfterLast,
   momentFallback,
   parseComposedMoment,
   processVoiceMoments,
@@ -309,4 +311,13 @@ Deno.test("the morning fallback ends with the day's question", () => {
   const m = momentFallback("morning_greeting", { daily_question: "بتقبض يوم كام في الشهر؟" });
   assertStringIncludes(m.text, "بتقبض يوم كام");
   assertStringIncludes(m.speech ?? "", "بتقبض يوم كام");
+});
+
+Deno.test("the day's moments are spaced out; doses and appointments never wait", () => {
+  const now = Date.parse("2026-09-30T18:00:00Z");
+  assertEquals(tooSoonAfterLast("good_night", now - 5 * 60_000, now), true);
+  assertEquals(tooSoonAfterLast("good_night", now - MOMENT_SPACING_MS - 1, now), false);
+  assertEquals(tooSoonAfterLast("good_night", null, now), false);
+  assertEquals(tooSoonAfterLast("dose_due", now - 60_000, now), false);
+  assertEquals(tooSoonAfterLast("appointment_soon", now - 60_000, now), false);
 });

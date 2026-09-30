@@ -695,6 +695,24 @@ export async function processVoiceMoments(
         result.skipped++;
         continue;
       }
+      // لحظة جت ورا لحظة تانية على طول: تستنى اللفة الجاية بدل ما تتقال ورا بعض.
+      if (!NEVER_HELD_MOMENTS.has(row.moment)) {
+        let lastSentMs: number | null = null;
+        try {
+          const { data: last } = await sb.from("zad_voice_moments").select("sent_at")
+            .eq("user_id", row.user_id).eq("status", "sent")
+            .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`)
+            .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+          const at = (last as { sent_at?: string | null } | null)?.sent_at;
+          lastSentMs = at ? Date.parse(at) : null;
+        } catch {
+          lastSentMs = null; // a failed read never holds a moment back
+        }
+        if (tooSoonAfterLast(row.moment, lastSentMs, now())) {
+          await sb.from("zad_voice_moments").update({ status: "pending", claimed_at: null }).eq("id", row.id);
+          continue;
+        }
+      }
       // قبل الصياغة: لحظة مش هتتقال مالهاش لازمة تصرف نداء موديل.
       const held = await holdMoment(sb, row, now(), deps.timeZoneOf ?? ((r) => momentTimeZone(sb, r)));
       if (held) {
@@ -963,6 +981,20 @@ export function summarizeOuting(
 // من ١١ بالليل لـ٧ الصبح مفيش لحظات، وبحد أقصى ٥ في اليوم (بتوقيت سوق العميل).
 
 export const DAILY_VOICE_ALERT_CAP = 5;
+
+/**
+ * «يوم زاد» (ZAD_SUPER_AGENT.md idea أ): the day's moments — good morning, the street,
+ * back home, good night — are spaced out, not said back to back. A moment that is not a
+ * dose or an appointment, due within this long of the last one said, waits and is tried
+ * again on the next pass (the processor runs every few minutes; a moment older than
+ * MOMENT_MAX_AGE_MS is dropped as before).
+ */
+export const MOMENT_SPACING_MS = 20 * 60 * 1000;
+
+export function tooSoonAfterLast(moment: string, lastSentMs: number | null, nowMs: number): boolean {
+  if (NEVER_HELD_MOMENTS.has(moment) || lastSentMs === null) return false;
+  return nowMs - lastSentMs < MOMENT_SPACING_MS;
+}
 
 /**
  * مابتتمسكش أبداً ومابتتعدّش في السقف: الجرعات (قرار المالك: مستثناة تماماً)، وتذكير
