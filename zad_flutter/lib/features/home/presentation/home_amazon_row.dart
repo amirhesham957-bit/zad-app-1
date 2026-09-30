@@ -30,7 +30,9 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Kotlin's `AmazonRecommendation`.
 @immutable
@@ -178,13 +180,15 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
       );
     }
 
-    // The needs: ran out (3), running low (2), on the list (2).
+    // The needs: ran out (3), running low (2), on the list (2) — per stock,
+    // not per brand: «مياه» once, and not while the brands together are
+    // enough (product_family.dart).
+    final stock = groupPantry(inventory);
     final needs = <(String, int, String)>[
-      for (final i in inventory)
-        if (i.quantity <= 0) (i.itemName, 3, 'خلص من مخزونك'),
-      for (final i in inventory)
-        if (i.quantity > 0 && i.quantity <= (i.lowStockThreshold ?? 2))
-          (i.itemName, 2, 'قارب على النفاد'),
+      for (final g in stock)
+        if (g.isOut) (g.name, 3, 'خلص من مخزونك'),
+      for (final g in stock)
+        if (!g.isOut && g.isLow) (g.name, 2, 'قارب على النفاد'),
       for (final s in shopping)
         if (!s.isPurchased) (s.itemName, 2, 'في قايمة التسوق'),
     ];
@@ -245,7 +249,7 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
     final picks = recs != null
         ? <_Pick>[
             for (final r in recs)
-              if (r.imageUrl != null)
+              if (r.imageUrl != null || r.productId != null)
                 (
                   product: (
                     id: r.productId ?? 'rec:${r.name}',
@@ -263,11 +267,20 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
                 ),
           ]
         : localPicks.take(8).toList();
+    // A row of real products, like the kids home's: when few match a need,
+    // the rest of the catalogue fills it, marked as a suggestion.
+    if (picks.length < 3) {
+      for (final p in products) {
+        if (picks.length >= 5) break;
+        if (!p.isActive || picks.any((x) => x.product.id == p.id)) continue;
+        picks.add((product: p, reason: 'اقتراح لبيتك', score: 0));
+      }
+    }
 
     final searchNeeds = recs != null
         ? <_Need>[
             for (final r in recs)
-              if (r.imageUrl == null)
+              if (r.imageUrl == null && r.productId == null)
                 (name: r.name, reason: r.reason, score: 1),
           ]
         : sortedNeeds.isNotEmpty
@@ -305,27 +318,23 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
             ],
           ),
           const SizedBox(height: 10),
+          // The kids home's product cards (owner, 2026-10-01: «شكلها أحلى»):
+          // name, price and «اشترِ من أمازون».
           if (picks.isNotEmpty)
             _Bleed(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 4,
-                ),
-                clipBehavior: Clip.none,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    for (var i = 0; i < picks.length; i++) ...<Widget>[
-                      if (i > 0) const SizedBox(width: 12),
-                      ZadAmazonDealCard(
-                        product: picks[i].product,
-                        reason: picks[i].reason,
-                        onTap: () => _openPick(picks[i], recs),
-                      ),
-                    ],
-                  ],
+              child: SizedBox(
+                // Room for a two-line name at a raised text size.
+                height: 176,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: picks.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, i) => ZadSlots.affiliateProductCard(
+                    width: 300,
+                    product: picks[i].product,
+                    onBuy: () => unawaited(_openPick(picks[i], recs)),
+                  ),
                 ),
               ),
             ),

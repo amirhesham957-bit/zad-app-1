@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -10,13 +11,14 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 const Color _amazonOrange = Color(0xFFFF9900);
 
 String _price(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// One product.
-class AffiliateProductCard extends StatelessWidget {
+class AffiliateProductCard extends ConsumerWidget {
   /// Creates the card.
   const new({
     required this.product,
@@ -35,8 +37,13 @@ class AffiliateProductCard extends StatelessWidget {
   final double? width;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final image = product.imageUrl;
+    // The catalogue's price is Amazon.sa's, in riyals: shown to a Saudi
+    // account only — an Egyptian one saw «45 ر.س» for a bottle of oil.
+    final showPrice =
+        product.averagePriceSar > 0 &&
+        ref.watch(accountCountryProvider) == 'SA';
     return SizedBox(
       width: width,
       child: Material(
@@ -120,7 +127,7 @@ class AffiliateProductCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (product.averagePriceSar > 0) ...<Widget>[
+                      if (showPrice) ...<Widget>[
                         const SizedBox(height: ZadSpacing.xs),
                         Text(
                           '${_price(product.averagePriceSar)} ر.س',
