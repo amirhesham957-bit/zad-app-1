@@ -122,6 +122,10 @@ abstract final class ZadScreens {
   /// Shops near the customer.
   static late OpenScreen showNearbyDealsScreen;
 
+  // ── places
+  /// «أماكني»: place reminders, outings and the habits learned from them.
+  static late OpenScreen showMyPlaces;
+
   // ── notifications
   /// The notification center.
   static late OpenScreen showNotificationCenter;

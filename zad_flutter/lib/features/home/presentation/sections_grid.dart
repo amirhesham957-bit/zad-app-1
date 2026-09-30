@@ -126,6 +126,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.teal,
     open: ZadScreens.showAppointmentsScreen,
   ),
+  ZadSection(
+    id: 'places',
+    icon: Icons.place,
+    label: 'أماكني',
+    accent: ZadSectionAccent.teal,
+    open: ZadScreens.showMyPlaces,
+  ),
   // نصايح زاد in the first eight: it lived only inside the profile menu, off
   // every path a customer takes (the owner, 2026-09-28).
   ZadSection(

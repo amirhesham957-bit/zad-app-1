@@ -14,14 +14,6 @@ const List<String> kAppointmentKinds = <String>[
   'other',
 ];
 
-/// The places a place reminder can wait for.
-const List<String> kPlaceReminderPlaces = <String>[
-  'pharmacy',
-  'supermarket',
-  'mall',
-  'any',
-];
-
 /// The repeat choices.
 const List<String> kRecurrences = <String>[
   'once',
@@ -55,16 +47,6 @@ Appointment appointmentFromJson(Map<String, dynamic> j) => (
   recurrence: (j['recurrence'] as String?) ?? 'once',
   status: (j['status'] as String?) ?? 'upcoming',
   forPerson: j['for_person'] as String?,
-);
-
-/// One place reminder.
-typedef PlaceReminder = ({String id, String note, String place});
-
-/// Reads a row.
-PlaceReminder placeReminderFromJson(Map<String, dynamic> j) => (
-  id: '${j['id']}',
-  note: (j['note'] as String?) ?? '',
-  place: (j['place'] as String?) ?? 'any',
 );
 
 /// The list's sections, in order.
@@ -142,12 +124,4 @@ String recurrenceLabel(String r) => switch (r) {
   'weekly' => 'كل أسبوع',
   'monthly' => 'كل شهر',
   _ => 'مرة واحدة',
-};
-
-/// Place names.
-String placeLabel(String place) => switch (place) {
-  'pharmacy' => 'صيدلية',
-  'supermarket' => 'سوبرماركت',
-  'mall' => 'مول',
-  _ => 'أي محل',
 };
