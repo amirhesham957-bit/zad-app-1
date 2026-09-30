@@ -63,6 +63,10 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
 
 class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
   List<Appointment>? _items;
+  // Reminders the agent scheduled as tasks («فكّرني أراجع مصاريفي بكرة»):
+  // they live in agent_tasks, and used to show nowhere.
+  List<({String text, DateTime? at})> _agentReminders =
+      const <({String text, DateTime? at})>[];
   bool _loading = true;
   bool _failed = false;
   bool _showPast = false;
@@ -120,8 +124,29 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
           .limit(200);
       unawaited(cache.write('appointments', userId, rows));
       final items = <Appointment>[for (final r in rows) appointmentFromJson(r)];
+      var reminders = _agentReminders;
+      try {
+        final tasks = await client
+            .from('agent_tasks')
+            .select('task_description,scheduled_for')
+            .eq('user_id', userId)
+            .eq('kind', 'reminder')
+            .inFilter('status', <String>['pending', 'running'])
+            .order('scheduled_for')
+            .limit(30);
+        reminders = <({String text, DateTime? at})>[
+          for (final t in tasks)
+            (
+              text: '${t['task_description'] ?? ''}'.trim(),
+              at: DateTime.tryParse('${t['scheduled_for']}'),
+            ),
+        ].where((r) => r.text.isNotEmpty).toList();
+      } on Object catch (e) {
+        debugPrint('agent reminders read failed: $e');
+      }
       if (!mounted) return;
       setState(() {
+        _agentReminders = reminders;
         _items = items;
         _failed = false;
         _loading = false;
@@ -334,6 +359,57 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
                       onDone: () => unawaited(_setStatus(a, 'done')),
                     ),
                 ],
+              if (_agentReminders.isNotEmpty) ...<Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: ZadSpacing.lg,
+                    bottom: ZadSpacing.sm,
+                  ),
+                  child: Text(
+                    'تذكيرات زاد',
+                    style: ZadType.titleSmall.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                for (final r in _agentReminders)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.alarm,
+                          size: 20,
+                          color: ZadColors.green700,
+                        ),
+                        const SizedBox(width: ZadSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                r.text,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: ZadType.bodyMedium,
+                              ),
+                              if (r.at case final at?)
+                                Text(
+                                  DateFormat(
+                                    'EEEE d MMM · h:mm a',
+                                    'ar',
+                                  ).format(_local(at)),
+                                  style: ZadType.bodySmall.copyWith(
+                                    color: ZadColors.inkMuted,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
               const SizedBox(height: ZadSpacing.lg),
               _VoiceHint(onTap: _openVoice),
               const SizedBox(height: ZadSpacing.md),
