@@ -121,7 +121,7 @@ void main() {
   ) async {
     final memory = _Memory(null);
     tester.view
-      ..physicalSize = const Size(1080, 2400)
+      ..physicalSize = const Size(1080, 3600)
       ..devicePixelRatio = 2.5;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -153,11 +153,20 @@ void main() {
     await tester.pump();
     expect(go().onPressed, isNotNull);
 
+    // Payday is optional; the 5th here.
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<int?>));
+    await tester.tap(find.byType(DropdownButtonFormField<int?>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('يوم 5').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('يلا بينا'));
     await tester.tap(find.text('يلا بينا'));
     await tester.pump();
     expect(memory.saved?.preferredName, 'أمير');
     expect(memory.saved?.gender, 'male');
     expect(memory.saved?.householdRole, 'son');
     expect(memory.saved?.caresFor, <String>['parents']);
+    expect(memory.saved?.payDay, 5);
   });
 }
