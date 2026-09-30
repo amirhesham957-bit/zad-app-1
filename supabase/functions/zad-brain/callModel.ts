@@ -221,6 +221,12 @@ export async function callModel(opts: {
    *  "سجل 50 جنيه قهوة" and came back finishReason=MAX_TOKENS. Off unless a caller has a
    *  reason to want it. */
   thinking?: boolean;
+  /** برومبت مختصر يتبعت بدل `system` لو اللفة وقعت على Groq بس (groqPrompt.ts). جيميناي
+   *  دايماً بياخد `system` الكامل. من غيره fitForGroq بتقص الكامل من النص بعدد الحروف. */
+  groqSystem?: string;
+  /** نفس الأدوات بترتيب الأهمية لـ Groq (الأدوات اللي الرسالة بتشير لها الأول): fitForGroq
+   *  بتاخدهم بالترتيب لحد ما الميزانية تخلص، فالترتيب هو اللي بيحدد مين يفضل. */
+  groqTools?: ToolDef[];
 }): Promise<ModelReply> {
   const { provider } = cfg();
   if (provider !== "gemini") {
@@ -687,7 +693,9 @@ export function fitForGroq<T extends { system: string; tools: ToolDef[]; history
   const historyTokens = est(JSON.stringify(history).length);
   let left = budgetTokens - maxTokens - historyTokens;
 
-  const toolBudget = Math.floor(left * 0.45);
+  // الأدوات بتاخد كل اللي السيستم مش محتاجه — السيستم المختصر (groqPrompt.ts) حوالي ١٠٠٠ توكن،
+  // والـ٤٥٪ الثابتة كانت بتسيب ٢٠٠٠ توكن فاضية وتشيل أدوات. أقل حاجة ٤٥٪ للسيستم الكبير.
+  const toolBudget = Math.max(Math.floor(left * 0.45), left - est(o.system.length));
   const tools: ToolDef[] = [];
   let used = 0;
   for (const t of o.tools) {
@@ -712,9 +720,9 @@ export function fitForGroq<T extends { system: string; tools: ToolDef[]; history
 const GROQ_REQUEST_BUDGET_TOKENS = 6800;
 
 async function sendGroq(o: {
-  model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
+  model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number; groqSystem?: string; groqTools?: ToolDef[];
 }): Promise<ModelReply> {
-  o = fitForGroq(o);
+  o = fitForGroq({ ...o, system: o.groqSystem ?? o.system, tools: o.groqTools ?? o.tools });
   const start = groqKeyCursor % GROQ_KEY_POOL.length;
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
   // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
