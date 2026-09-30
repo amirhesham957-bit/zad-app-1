@@ -102,6 +102,8 @@ class SettingsScreen extends ConsumerWidget {
 
               const SizedBox(height: ZadSpacing.lg),
               ZadSlots.streetAlertsSection(),
+              const SizedBox(height: ZadSpacing.md),
+              ZadSlots.keepAliveGuide(),
 
               const SizedBox(height: ZadSpacing.lg),
               _Section(

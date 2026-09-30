@@ -112,6 +112,9 @@ abstract final class ZadSlots {
   /// Street alerts.
   static late SlotBuilder streetAlertsSection;
 
+  /// The battery / auto-start guide (places feature).
+  static late SlotBuilder keepAliveGuide;
+
   // ── prices
   /// Home's live market ticker.
   static late SlotBuilder liveMarketTickerSlot;

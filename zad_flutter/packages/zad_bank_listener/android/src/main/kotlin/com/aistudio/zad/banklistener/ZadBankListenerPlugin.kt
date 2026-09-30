@@ -9,11 +9,13 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 /** يوصّل صندوق الإشعارات الملتقطة وحالة الصلاحية لـ Dart. */
-class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
@@ -27,14 +29,28 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         channel = MethodChannel(binding.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
         inBackgroundEngine = BackgroundDelivery.creatingHeadless
-        if (!inBackgroundEngine) BackgroundDelivery.uiChannel = channel
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
-        if (!inBackgroundEngine && BackgroundDelivery.uiChannel === channel) {
-            BackgroundDelivery.uiChannel = null
-        }
+        if (BackgroundDelivery.uiChannel === channel) BackgroundDelivery.uiChannel = null
+    }
+
+    // الواجهة = المحرك اللي عنده Activity، زي zad_geofence. كان أي محرك Dart غير محرك البنك
+    // نفسه بيتحسب واجهة — بما فيهم محرك FCM ومحرك الـgeofence في الخلفية — فإشعار «اتلقط»
+    // كان ممكن يروح لمحرك مالوش مستمع ويستنى لحد أول فتحة (ZAD_SUPER_AGENT.md نقطة ١٠).
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        BackgroundDelivery.uiChannel = channel
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        BackgroundDelivery.uiChannel = channel
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {}
+
+    override fun onDetachedFromActivity() {
+        if (BackgroundDelivery.uiChannel === channel) BackgroundDelivery.uiChannel = null
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {

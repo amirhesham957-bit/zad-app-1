@@ -914,11 +914,14 @@ async function payloadFingerprint(userId: string | null | undefined, action: str
 }
 
 const AI_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — short enough that prices/suggestions don't go stale
+// Shops do not move every six hours, and Google Places bills past a monthly free tier
+// (ZAD_SUPER_AGENT.md weak point 7): nearby shop lists are kept a week.
+const POI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-async function getCachedAiResponse(cacheKey: string): Promise<Record<string, unknown> | null> {
+async function getCachedAiResponse(cacheKey: string, ttlMs = AI_CACHE_TTL_MS): Promise<Record<string, unknown> | null> {
   try {
     const { data } = await supabase.from("ai_response_cache").select("response, created_at").eq("cache_key", cacheKey).maybeSingle();
-    if (data?.created_at && Date.now() - new Date(data.created_at).getTime() < AI_CACHE_TTL_MS) {
+    if (data?.created_at && Date.now() - new Date(data.created_at).getTime() < ttlMs) {
       return data.response as Record<string, unknown>;
     }
   } catch (e) {
@@ -2053,7 +2056,7 @@ Deno.serve(async (req: Request) => {
         const latGrid = Math.round(lat * 1000) / 1000;
         const lonGrid = Math.round(lon * 1000) / 1000;
         const cacheKey = `nearby_pois:${tag}:${latGrid}:${lonGrid}:${radius_meters || 3000}`;
-        const cached = await getCachedAiResponse(cacheKey);
+        const cached = await getCachedAiResponse(cacheKey, POI_CACHE_TTL_MS);
         if (cached) return jsonResponse(cached);
 
         // جوجل الأول (تغطية المحلات في مصر والخليج أحسن)، وبعده LocationIQ.

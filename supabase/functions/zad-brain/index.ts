@@ -1980,7 +1980,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const dupe = (existingMeds ?? []).find(
         (row: { name: string; for_person: string | null }) =>
           row.name.trim().toLowerCase() === medName.toLowerCase() &&
-          (row.for_person ?? "").trim().toLowerCase() === (forPerson ?? "").toLowerCase(),
+          // Rows saved before names were unified («أمي») still match «ماما».
+          (normalizeForPerson(row.for_person) ?? "").toLowerCase() === (forPerson ?? "").toLowerCase(),
       ) as { id: string; dosage: string | null; dose_times: string | null } | undefined;
 
       if (dupe) {
