@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -61,6 +62,16 @@ class _RecsState extends ConsumerState<RecommendationsScreen> {
     final client = ref.read(supabaseClientProvider);
     final uid = client.auth.currentUser?.id;
     if (uid == null) return;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's cards first; the server's answer replaces them.
+    if (_loading) {
+      if (cache.read('recommendations', uid) case final cached?) {
+        setState(() {
+          _recs = cached;
+          _loading = false;
+        });
+      }
+    }
     try {
       final rows = await client
           .from('shopping_recommendations')
@@ -74,6 +85,7 @@ class _RecsState extends ConsumerState<RecommendationsScreen> {
           .select('id')
           .eq('user_id', uid)
           .not('acted_on_at', 'is', null);
+      unawaited(cache.write('recommendations', uid, rows));
       if (!mounted) return;
       setState(() {
         _recs = rows;

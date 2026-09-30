@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -91,6 +92,18 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
       });
       return;
     }
+    final cache = ref.read(screenCacheProvider);
+    // Last time's list first; the server's answer replaces it.
+    if (_items == null) {
+      if (cache.read('appointments', userId) case final cached?) {
+        setState(() {
+          _items = <Appointment>[
+            for (final r in cached) appointmentFromJson(r),
+          ];
+          _loading = false;
+        });
+      }
+    }
     try {
       final since = ref
           .read(nowProvider)()
@@ -105,6 +118,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
           .gte('starts_at', since)
           .order('starts_at')
           .limit(200);
+      unawaited(cache.write('appointments', userId, rows));
       final items = <Appointment>[for (final r in rows) appointmentFromJson(r)];
       if (!mounted) return;
       setState(() {

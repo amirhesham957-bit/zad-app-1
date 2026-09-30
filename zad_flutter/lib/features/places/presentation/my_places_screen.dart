@@ -22,6 +22,7 @@ import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthException, PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -92,6 +93,24 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
     final userId = client.auth.currentUser?.id;
     var reminders = _reminders;
     var visits = _visits;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's rows first; the server's answer replaces them.
+    if (_loading) {
+      final cachedReminders = cache.read('place_reminders', userId);
+      final cachedVisits = cache.read('place_visits', userId);
+      if (cachedReminders != null || cachedVisits != null) {
+        setState(() {
+          _reminders = <PlaceReminder>[
+            for (final r in cachedReminders ?? const <Map<String, dynamic>>[])
+              placeReminderFromJson(r),
+          ];
+          _visits = <PlaceVisit>[
+            for (final r in cachedVisits ?? const <Map<String, dynamic>>[])
+              ?placeVisitFromJson(r),
+          ];
+        });
+      }
+    }
     if (userId != null) {
       try {
         final rows = await client
@@ -101,6 +120,7 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
             .eq('status', 'open')
             .order('created_at')
             .limit(50);
+        unawaited(cache.write('place_reminders', userId, rows));
         reminders = <PlaceReminder>[
           for (final r in rows) placeReminderFromJson(r),
         ];
@@ -114,6 +134,7 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
             .eq('user_id', userId)
             .order('returned_at', ascending: false)
             .limit(60);
+        unawaited(cache.write('place_visits', userId, rows));
         visits = <PlaceVisit>[for (final r in rows) ?placeVisitFromJson(r)];
       } on Object catch (e) {
         debugPrint('place visits read failed: $e');

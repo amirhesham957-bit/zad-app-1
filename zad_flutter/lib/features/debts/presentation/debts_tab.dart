@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
@@ -189,8 +190,16 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     final client = ref.read(supabaseClientProvider);
     final uid = client.auth.currentUser?.id;
     if (uid == null) return;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's loans first; the server's answer replaces them.
+    if (_debts.isEmpty) {
+      if (cache.read('debts', uid) case final cached? when mounted) {
+        setState(() => _debts = <Debt>[for (final r in cached) _debt(r)]);
+      }
+    }
     try {
       final rows = await client.from('zad_debts').select().eq('user_id', uid);
+      unawaited(cache.write('debts', uid, rows));
       if (mounted) {
         setState(() => _debts = <Debt>[for (final r in rows) _debt(r)]);
       }
