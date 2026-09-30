@@ -27,6 +27,7 @@ import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
 import 'package:zad/shared/voice/application/zad_voice.dart';
 
 /// Opens the sheet.
@@ -73,6 +74,9 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
 
   final ValueNotifier<double> _mic = ValueNotifier<double>(0);
   String _recognized = '';
+  // Zad's answer, shown the moment it arrives: the audio takes seconds more,
+  // and a silent sheet in between read as «مش شغال» (owner, 2026-10-01).
+  String _reply = '';
 
   /// A turn this sheet sent that has not settled yet.
   bool _awaitingTurn = false;
@@ -92,6 +96,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
     if (text.trim().isEmpty) return;
     setState(() {
       _recognized = text;
+      _reply = '';
       _awaitingTurn = true;
       _turnFailed = false;
     });
@@ -134,9 +139,18 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
         if (was != true || now || !_awaitingTurn) return;
         // The chat controller speaks a good reply itself (viaVoice). A failed
         // turn has nothing to say — and must not fall back on the last one.
+        final after = ref.read(chatControllerProvider);
         setState(() {
           _awaitingTurn = false;
-          _turnFailed = ref.read(chatControllerProvider).error != null;
+          _turnFailed = after.error != null;
+          _reply = _turnFailed
+              ? ''
+              : after.messages
+                    .lastWhere(
+                      (m) => !m.isUser,
+                      orElse: () => after.messages.last,
+                    )
+                    .text;
         });
       });
 
@@ -144,9 +158,13 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
       valueListenable: _voice.speaking,
       builder: (context, isSpeaking, _) {
         final isActive = input.isRecording;
+        final transcribing = input.stage == VoiceStage.transcribing;
         final thinking =
-            input.stage == VoiceStage.transcribing ||
-            (_awaitingTurn && chat.isAwaitingReply);
+            transcribing || (_awaitingTurn && chat.isAwaitingReply);
+        final preparingVoice =
+            !isSpeaking &&
+            ref.watch(voiceOutputControllerProvider).stage ==
+                VoiceOutputStage.preparing;
         final error = switch (input.stage) {
           VoiceStage.denied => 'امنح التطبيق إذن استخدام الميكروفون',
           VoiceStage.failed => 'حدث خطأ في التعرف على الصوت',
@@ -213,8 +231,12 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                             Text(
                               isSpeaking
                                   ? 'زاد بيتكلم…'
+                                  : transcribing
+                                  ? 'بكتب كلامك…'
                                   : thinking
                                   ? 'بيفكر…'
+                                  : preparingVoice
+                                  ? 'بيجهز صوته…'
                                   : 'مساعد زاد الصوتي',
                               style: ZadType.labelLarge.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -278,6 +300,29 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                       ),
                     ),
                   ),
+                  if (_reply.isNotEmpty &&
+                      error == null &&
+                      !isActive) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxHeight: 160),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          _reply,
+                          textAlign: TextAlign.start,
+                          style: ZadType.bodyMedium.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Semantics(
                     button: true,
