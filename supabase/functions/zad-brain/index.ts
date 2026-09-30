@@ -4552,6 +4552,17 @@ async function firePlaceReminders(
 }
 
 /**
+ * Work the reply does not depend on, done after the response is sent. Without
+ * EdgeRuntime (tests, local) the promise simply runs; it is never awaited by the
+ * turn, and its failures are logged, never thrown.
+ */
+function afterResponse(label: string, work: Promise<unknown>): void {
+  const guarded = work.catch((e) => console.warn(`${label} skipped:`, (e as Error)?.message ?? e));
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(guarded);
+}
+
+/**
  * لحظات العميل ده تتعالج في الخلفية: الـreceiver على الموبايل ليه ثواني قليلة، وكتابة الكلام
  * بالموديل ممكن تاخد أكتر. من غير EdgeRuntime (تست/محلي) بيستنى عادي.
  */
@@ -5215,8 +5226,10 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // نموذج خفيف + بوابة واضحة، مش نداء إضافي على كل رسالة عادية (الكوتة محدودة وموثّقة
   // في CLAUDE.md). دمج الاستخلاصين في نداء واحد بدل اتنين لنفس السبب — نصف التكلفة
   // لنفس الفايدة. NONE صريحة لكل سطر لو مفيش حاجة تستاهل، مفيش إجبار.
+  // After the response: the reply does not depend on it, and it was a whole
+  // model call the customer waited through on every turn that wrote something.
   if (ctx.mutationCount > 0) {
-    try {
+    afterResponse("post-turn fact/skill extraction", (async () => {
       const extraction = await callModel({
         model: MODEL_ROUTINE,
         system:
@@ -5242,12 +5255,10 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
       if (parsed.skillKey && parsed.skillNote) {
         await sb.rpc("zad_skill_upsert", { p_user: userId, p_key: parsed.skillKey, p_note: parsed.skillNote, p_conf: 0.55 });
       }
-    } catch (e) {
-      console.warn("post-turn fact/skill extraction skipped:", e);
-    }
+    })());
   }
 
-  await recordPromiseDrift(sb, userId, runId, declaredSource, reply, executed.map((x) => x.tool));
+  afterResponse("promise drift", recordPromiseDrift(sb, userId, runId, declaredSource, reply, executed.map((x) => x.tool)));
   await finishRun("success");
 
   return new Response(JSON.stringify({
@@ -6668,7 +6679,7 @@ async function handleRequest(req: Request): Promise<Response> {
         if (body.source !== "telegram") {
           const payload = await res.clone().json().catch(() => null);
           if (payload?.ok === true && typeof payload.reply === "string") {
-            await recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), payload.reply);
+            afterResponse("shared turn", recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), payload.reply));
           }
         }
         return res;
@@ -6891,7 +6902,7 @@ async function handleAgentTurnStream(sb: SupabaseClient, userId: string, body: a
   }
   // The app's turn joins the one conversation every channel reads.
   if (payload?.ok === true && typeof payload.reply === "string" && body.source !== "telegram") {
-    await recordSharedTurn(sb, userId, String(body.message ?? ""), payload.reply);
+    afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), payload.reply));
   }
   if (!payload || payload.ok !== true || typeof payload.reply !== "string" || payload.reply.length < 40) {
     // ردود قصيرة/أخطاء/تنفيذات → JSON عادي زي ما هو
