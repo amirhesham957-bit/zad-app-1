@@ -124,6 +124,7 @@ dependencies:
   # the bundled Cairo font, so the PDF reads the same on every phone.
   pdf: ^3.13.1
   home_widget: ^0.10.0
+  sentry_flutter: ^9.30.1
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen
