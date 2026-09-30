@@ -219,6 +219,15 @@ Rules that apply to every Flutter change, in short:
 - **Civil time is the account's market zone** (`accountTimeZoneProvider`), never the
   device's. Dose times follow the server regex exactly (`24:00` is invalid).
 - **Agent tools run on the server** — `executed` is a receipt, never replay it locally.
+- **Feature-first layout (2026-09-30):** `lib/{app,core,shared,features}`. A
+  feature imports only `core/`, `shared/` and itself; it opens or embeds
+  another feature's UI through `ZadScreens`/`ZadSlots` (bound in
+  `app/wiring/`), and reads another's state only from `shared/`.
+  `test/architecture/feature_boundaries_test.dart` fails the build otherwise.
+  Rules and how to add a contract: FLUTTER_MIGRATION.md §2.
+- **One splash:** the native one (`zad_flutter/flutter_native_splash.yaml`,
+  pictures rendered by `tool/splash/render_splash_test.dart`). There is no
+  Dart splash widget; don't add one back — it was a second screen.
 - **Mutation-check the guards that matter.** It has caught two real test gaps already.
 - One slice, one commit, full verification, report, then continue.
 

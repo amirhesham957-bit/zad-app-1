@@ -33,14 +33,14 @@ is already installed or already built in-house.
 
 | Package | Status in repo | Use it for | Notes |
 |---|---|---|---|
-| `flutter_animate` | ✅ `^4.5.2` | Entrance, stagger, list reveal: `.animate().fadeIn().moveY(begin: 12)` | Take durations/curves from `design/tokens/zad_motion.dart`, never inline new ones. |
+| `flutter_animate` | ✅ `^4.5.2` | Entrance, stagger, list reveal: `.animate().fadeIn().moveY(begin: 12)` | Take durations/curves from `core/design/tokens/zad_motion.dart`, never inline new ones. |
 | `rive` | ✅ `^0.14.11` | Interactive icons (bottom nav), the assistant's animated character | `.riv` assets go in `assets/`, declared in `pubspec.yaml`. |
 | `fl_chart` | ✅ `^1.2.0` | Spending curves (`isCurved: true`), gradient fills | Load the `dataviz` skill before any chart. |
-| `flutter_shaders` / `smooth_corner` | ✅ | Shader effects; squircle corners | `design/foundation/squircle.dart` wraps the corner shape, so use it. |
-| Glassmorphism | ✅ built in | Frosted cards, top bar | **`backdrop_filter` is not a package.** `BackdropFilter` is core Flutter, already wrapped in `design/foundation/glass_surface.dart`, which always clips (an unclipped blur is the costliest widget here). Use `GlassSurface`, don't hand-roll it. |
+| `flutter_shaders` / `smooth_corner` | ✅ | Shader effects; squircle corners | `core/design/foundation/squircle.dart` wraps the corner shape, so use it. |
+| Glassmorphism | ✅ built in | Frosted cards, top bar | **`backdrop_filter` is not a package.** `BackdropFilter` is core Flutter, already wrapped in `core/design/foundation/glass_surface.dart`, which always clips (an unclipped blur is the costliest widget here). Use `GlassSurface`, don't hand-roll it. |
 | Shimmer skeleton | ✅ built in (partly) | Loading placeholders instead of spinners | `ZadMotion.shimmer` (1600ms) exists. Prefer `flutter_animate`'s built-in `.shimmer()` over adding the `shimmer` package, since it's the same effect with no new dependency. |
 | `google_fonts` | ❌ rejected | — | Cairo and Inter are **bundled** (`assets/fonts/`, `kZadArabicFont`). `google_fonts` fetches at runtime by default, which breaks the offline-first rule and leaves a fresh install with no text font. |
-| Material 3 theme | ✅ | — | `design/zad_theme.dart` already sets `useMaterial3: true` and `fontFamily: kZadArabicFont`. Elevation lives in `design/foundation/elevation.dart`. |
+| Material 3 theme | ✅ | — | `core/design/zad_theme.dart` already sets `useMaterial3: true` and `fontFamily: kZadArabicFont`. Elevation lives in `core/design/foundation/elevation.dart`. |
 | `smooth_sheets` | ➖ candidate | iOS-style rubber-band bottom sheets | Not added. Adopt only when a sheet actually needs it. |
 | `wolt_modal_sheet` | ➖ candidate | Multi-page sheets (step-by-step quick-add transaction) | Not added. Same rule. |
 | `o3d` / `flutter_cube` | ➖ candidate, unverified | Real `.glb` 3D (wallet, piggy bank, gyroscope card) | Heavy for what it buys. Check the render path, APK size and Dart 3 support before adding. For spatial feel, try parallax/tilt with `Transform` first (the principles in the `zad-compose-depth` skill carry over). |
