@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
@@ -479,10 +480,10 @@ class ZadAmazonDealCard extends ConsumerWidget {
                 child: ColoredBox(
                   color: ext.surfaceContainerLow,
                   child: (product.imageUrl?.trim().isNotEmpty ?? false)
-                      ? Image.network(
+                      ? ZadNetworkImage(
                           product.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => placeholder,
+                          fallback: placeholder,
                         )
                       : placeholder,
                 ),

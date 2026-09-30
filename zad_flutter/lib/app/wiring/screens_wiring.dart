@@ -39,6 +39,7 @@ import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/features/places/presentation/my_places_screen.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/features/prices/presentation/live_market_ticker.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
@@ -69,6 +70,7 @@ import 'package:zad/shared/navigation/zad_slots.dart';
 void wireScreens() {
   ZadScreens.showAchievementsScreen = showAchievementsScreen;
   ZadScreens.showAppointmentsScreen = showAppointmentsScreen;
+  ZadScreens.showMyPlaces = showMyPlacesScreen;
   ZadScreens.confirmAndSignOut = confirmAndSignOut;
   ZadScreens.showBankAccessGuide = showBankAccessGuide;
   ZadScreens.openBankReading = openBankReading;
@@ -131,6 +133,7 @@ void wireSlots() {
   ZadSlots.chatSectionCard = ({required expanded, required onToggle}) =>
       ChatSectionCard(expanded: expanded, onToggle: onToggle);
   ZadSlots.debtsTab = () => const DebtsTab();
+  ZadSlots.liveDealsCard = () => const LiveDealsCard();
   ZadSlots.familyScreen = ({key, showFinancials = true, initialTab = 0}) =>
       FamilyScreen(
         key: key,
@@ -179,7 +182,7 @@ void wireSlots() {
       );
   ZadSlots.homeChefSection = () => const HomeChefSection();
   ZadSlots.recipesView = () => const RecipesView();
-  ZadSlots.subscriptionsScreen = ({embedded = false}) =>
-      SubscriptionsScreen(embedded: embedded);
+  ZadSlots.subscriptionsScreen = ({embedded = false, initialTab = 0}) =>
+      SubscriptionsScreen(embedded: embedded, initialTab: initialTab);
   ZadSlots.homeTelegramBlocks = () => const HomeTelegramBlocks();
 }

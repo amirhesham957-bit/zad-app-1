@@ -162,8 +162,9 @@ void main() {
         ZadBottomNavBar bar() =>
             tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
         for (final tab in <ZadNavDestination>[
-          ZadNavDestination.assistant,
+          ZadNavDestination.money,
           ZadNavDestination.inventory,
+          ZadNavDestination.family,
           ZadNavDestination.home,
         ]) {
           step = 'tab ${tab.name}';
@@ -193,12 +194,6 @@ void main() {
           bar().onNavigate(ZadNavDestination.home);
           await frames(2);
         }
-
-        step = 'more sheet';
-        bar().onOpenMore();
-        await frames();
-        await tester.binding.handlePopRoute();
-        await frames();
 
         step = 'voice sheet';
         bar().onOpenVoice();

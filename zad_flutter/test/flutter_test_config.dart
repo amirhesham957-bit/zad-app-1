@@ -5,8 +5,11 @@
 import 'dart:async';
 
 import 'package:zad/app/wiring/zad_wiring.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   wireZad();
+  // The disk cache needs plugins a test host does not have.
+  ZadNetworkImage.diskCache = false;
   await testMain();
 }

@@ -46,26 +46,32 @@ Future<void> showFinancesScreen(BuildContext context, {int initialTab = 0}) =>
 
 /// The screen.
 class FinancesScreen extends StatefulWidget {
-  /// Creates the screen.
-  const new({this.initialTab = 0, super.key});
+  /// Creates the screen; [embedded] is فلوسي, the shell's tab, which has the
+  /// shell's header and no back arrow.
+  const new({this.initialTab = 0, this.embedded = false, super.key});
 
-  /// 0 الحركات والميزانية, 1 الاشتراكات والأقساط, 2 الديون.
+  /// 0 الحركات والميزانية, 1 التزاماتي, 2 التزاماتي › قروض (was الديون).
   final int initialTab;
+
+  /// Whether the shell hosts it.
+  final bool embedded;
 
   @override
   State<FinancesScreen> createState() => _FinancesState();
 }
 
-/// Kotlin's `FinancesScreen`: three tabs over one title.
+/// Kotlin's `FinancesScreen`: its tabs over one title.
 class _FinancesState extends State<FinancesScreen> {
-  late int _tab = widget.initialTab;
+  late int _tab = widget.initialTab.clamp(0, 1);
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('الميزانية والالتزامات')),
+      appBar: widget.embedded
+          ? null
+          : AppBar(title: const Text('الميزانية والالتزامات')),
       body: Column(
         children: <Widget>[
           Padding(
@@ -82,11 +88,9 @@ class _FinancesState extends State<FinancesScreen> {
                     value: 0,
                     label: Text('الحركات والميزانية'),
                   ),
-                  ButtonSegment<int>(
-                    value: 1,
-                    label: Text('الاشتراكات والأقساط'),
-                  ),
-                  ButtonSegment<int>(value: 2, label: Text('الديون')),
+                  // «التزاماتي»: subscriptions, bills, instalments (BNPL
+                  // too) and loans in one place (owner, 2026-09-30).
+                  ButtonSegment<int>(value: 1, label: Text('التزاماتي')),
                 ],
                 selected: <int>{_tab},
                 onSelectionChanged: (s) => setState(() => _tab = s.first),
@@ -98,8 +102,10 @@ class _FinancesState extends State<FinancesScreen> {
               index: _tab,
               children: <Widget>[
                 const _DailyTab(),
-                ZadSlots.subscriptionsScreen(embedded: true),
-                ZadSlots.debtsTab(),
+                ZadSlots.subscriptionsScreen(
+                  embedded: true,
+                  initialTab: widget.initialTab == 2 ? 4 : 0,
+                ),
               ],
             ),
           ),

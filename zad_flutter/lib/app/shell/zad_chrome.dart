@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -288,12 +289,12 @@ class _Avatar extends StatelessWidget {
             dimension: 44,
             child: u == null || u.isEmpty
                 ? Center(child: fallback)
-                : Image.network(
+                : ZadNetworkImage(
                     u,
                     fit: BoxFit.cover,
                     // Kotlin's placeholder and error are the same default
                     // avatar; here the glyph stands in for it.
-                    errorBuilder: (_, _, _) => Center(child: fallback),
+                    fallback: Center(child: fallback),
                   ),
           ),
         ),
@@ -371,41 +372,49 @@ class ZadDrawerEntry {
   final String label;
 }
 
-/// Kotlin's `zadDrawerEntries`, in order.
+/// The drawer: everything, grouped by the bar's four places (2026-09-30) —
+/// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest.
 const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
-  ZadDrawerEntry(id: 'home', icon: Icons.home, label: 'الرئيسية'),
-  ZadDrawerEntry(id: 'inventory', icon: Icons.inventory_2, label: 'المخزون'),
+  ZadDrawerEntry(id: 'home', icon: Icons.auto_awesome, label: 'زاد'),
   ZadDrawerEntry(id: 'assistant', icon: Icons.psychology, label: 'عقل زاد'),
+  ZadDrawerEntry(id: 'appointments', icon: Icons.event, label: 'مواعيدي'),
+  ZadDrawerEntry(id: 'places', icon: Icons.place, label: 'أماكني'),
+  ZadDrawerEntry(
+    id: 'budget',
+    icon: Icons.account_balance_wallet,
+    label: 'فلوسي',
+  ),
   ZadDrawerEntry(
     id: 'subscriptions',
     icon: Icons.credit_card,
-    label: 'الاشتراكات والأقساط',
+    label: 'التزاماتي',
   ),
+  ZadDrawerEntry(id: 'inventory', icon: Icons.home, label: 'بيتي'),
   ZadDrawerEntry(
     id: 'shopping',
     icon: Icons.shopping_cart,
     label: 'قائمة التسوق',
   ),
-  ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'العائلة'),
-  ZadDrawerEntry(id: 'budget', icon: Icons.bar_chart, label: 'الميزانية'),
   ZadDrawerEntry(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
     label: 'صيدلية العائلة',
   ),
   ZadDrawerEntry(id: 'maintenance', icon: Icons.build, label: 'صيانة المنزل'),
+  ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'عيلتي'),
   ZadDrawerEntry(
     id: 'deals',
     icon: Icons.location_on,
     label: 'المتاجر والأسواق القريبة',
   ),
+  ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
   ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
-  ZadDrawerEntry(id: 'profile', icon: Icons.person, label: 'حسابي'),
   ZadDrawerEntry(
     id: 'notifications',
     icon: Icons.notifications,
     label: 'الإشعارات',
   ),
+  ZadDrawerEntry(id: 'profile', icon: Icons.person, label: 'حسابي'),
 ];
 
 /// `ZadDrawerContent`: 78% wide, square-edged, the carrot and «زاد», the

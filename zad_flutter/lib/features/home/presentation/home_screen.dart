@@ -18,14 +18,13 @@ import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
-import 'package:zad/features/home/presentation/glance_cards.dart';
+import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
-import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
@@ -38,13 +37,11 @@ import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Home.
 ///
-/// Laid out in Kotlin HomeScreen's order, with its gaps: 16dp on top, 20dp
-/// either side, and the blocks in the sequence Kotlin draws them — the
-/// companion row, the modes, the wallet card and its two metrics, the bank
-/// channel, the sections grid, the pantry, the pharmacy, the subscriptions,
-/// the bank's waiting proposals, what the brain noticed, and the latest
-/// transactions. Each block enters the way Kotlin's `AppearOnEntry` does,
-/// with Kotlin's per-block delays.
+/// زاد's home: the companion row, the brain's daily brief, the bank's
+/// waiting proposals, the modes, the wallet card and its two metrics, the
+/// bank channel, what the brain noticed, and the latest transactions. Each
+/// block enters the way Kotlin's `AppearOnEntry` does, with Kotlin's
+/// per-block delays.
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({this.onOpenVoice, this.onOpenCamera, super.key});
@@ -82,6 +79,13 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // «موجز زاد النهارده» first: the brain says what matters today.
+          // It replaced the grid of seventeen sections and the pantry,
+          // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
+          // in بيتي, the obligations in فلوسي, every section in the drawer.
+          const ZadAppearOnEntry(child: DailyBriefCard()),
+          const SizedBox(height: 16),
+          ZadSlots.homeProposalsSection(),
           ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
           ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
           const HomeActivationSlot(),
@@ -92,33 +96,11 @@ class HomeScreen extends ConsumerWidget {
           const FxExcludedNotice(),
           const BankListeningPill(),
           const SizedBox(height: 18),
-          // Kotlin's grid sits a further 16dp in from the page padding.
-          const ZadAppearOnEntry(
-            delayMs: 50,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SectionsGrid(),
-            ),
-          ),
-          const SizedBox(height: 16),
           ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
-          const ZadAppearOnEntry(
-            delayMs: 65,
-            child: ZadTrailingGap(gap: 18, child: PantryGlanceCard()),
-          ),
-          const ZadAppearOnEntry(
-            delayMs: 85,
-            child: ZadTrailingGap(gap: 18, child: PharmacyGlanceCard()),
-          ),
           const ZadAppearOnEntry(delayMs: 92, child: WeekWithZadSlot()),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
-          const ZadAppearOnEntry(
-            delayMs: 100,
-            child: ZadTrailingGap(gap: 18, child: SubscriptionsGlanceCard()),
-          ),
           ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
-          ZadSlots.homeProposalsSection(),
           ZadSlots.stuckNotificationsSlot(),
           ZadTrailingGap(
             gap: 18,

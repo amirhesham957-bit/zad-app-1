@@ -1,9 +1,11 @@
-/// Kotlin's الديون tab (`FinancesDebtsBody`): the debt payoff planner
+/// «قروض» under «التزاماتي»: the debt payoff planner
 /// (`DebtPayoffPlannerCard` — snowball or avalanche, each debt with its
-/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation) and
-/// «فرص واقتصاد» with the live deals for what the pantry is short of
-/// (`LiveDealsCard` — `fetch_live_deals`, a live web search, fetched only on
-/// a tap).
+/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation).
+///
+/// [LiveDealsCard] (`fetch_live_deals`, a live web search, fetched only on a
+/// tap) lives here too but is shown on the shopping list, next to the
+/// shortages it searches for — it had nothing to do with debts (owner,
+/// 2026-09-30).
 library;
 
 import 'dart:async';
@@ -11,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
@@ -134,22 +137,7 @@ class DebtsTab extends StatelessWidget {
       ZadSpacing.lg,
       120,
     ),
-    children: <Widget>[
-      const DebtPlannerCard(),
-      const SizedBox(height: ZadSpacing.md),
-      Row(
-        children: <Widget>[
-          const Icon(ZadIcons.prices),
-          const SizedBox(width: ZadSpacing.sm),
-          Text(
-            'فرص واقتصاد',
-            style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-      const SizedBox(height: ZadSpacing.md),
-      const LiveDealsCard(),
-    ],
+    children: const <Widget>[DebtPlannerCard()],
   );
 }
 
@@ -202,8 +190,16 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     final client = ref.read(supabaseClientProvider);
     final uid = client.auth.currentUser?.id;
     if (uid == null) return;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's loans first; the server's answer replaces them.
+    if (_debts.isEmpty) {
+      if (cache.read('debts', uid) case final cached? when mounted) {
+        setState(() => _debts = <Debt>[for (final r in cached) _debt(r)]);
+      }
+    }
     try {
       final rows = await client.from('zad_debts').select().eq('user_id', uid);
+      unawaited(cache.write('debts', uid, rows));
       if (mounted) {
         setState(() => _debts = <Debt>[for (final r in rows) _debt(r)]);
       }

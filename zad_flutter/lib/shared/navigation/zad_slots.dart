@@ -59,6 +59,10 @@ abstract final class ZadSlots {
   /// الحسابات' debts tab.
   static late SlotBuilder debtsTab;
 
+  /// «العروض المتاحة لنواقصك» — a live web search for the pantry's
+  /// shortages, fetched on a tap (debts feature).
+  static late SlotBuilder liveDealsCard;
+
   // ── family
   /// The family screen.
   static late Widget Function({Key? key, bool showFinancials, int initialTab})
@@ -134,7 +138,8 @@ abstract final class ZadSlots {
 
   // ── subscriptions
   /// الاشتراكات, full screen or `embedded`.
-  static late Widget Function({bool embedded}) subscriptionsScreen;
+  static late Widget Function({bool embedded, int initialTab})
+  subscriptionsScreen;
 
   // ── telegram
   /// Home's Telegram blocks.

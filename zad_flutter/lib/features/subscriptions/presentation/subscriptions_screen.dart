@@ -25,6 +25,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/shared/subscriptions/domain/bnpl.dart';
 import 'package:zad/shared/subscriptions/domain/renewal.dart';
@@ -79,25 +80,32 @@ DateTime? _storedRenewal(Subscription s) {
 /// The screen.
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   /// Creates the screen; [embedded] drops the app bar inside the finances
-  /// screen's «الاشتراكات والأقساط» tab.
-  const new({this.embedded = false, super.key});
+  /// screen's «التزاماتي» tab.
+  const new({this.embedded = false, this.initialTab = 0, super.key});
 
   /// Whether a host screen already shows the title.
   final bool embedded;
+
+  /// The filter it opens on: 0 الكل … 4 قروض.
+  final int initialTab;
 
   @override
   ConsumerState<SubscriptionsScreen> createState() => _SubsState();
 }
 
 class _SubsState extends ConsumerState<SubscriptionsScreen> {
-  int _tab = 0;
+  late int _tab = widget.initialTab.clamp(0, _loansTab);
   bool _showInactive = false;
 
+  // «التزاماتي» (owner, 2026-09-30): subscriptions, bills, instalments and
+  // loans in one place. Loans are the debt payoff planner, not rows here.
+  static const int _loansTab = 4;
   static const List<String> _tabs = <String>[
     'الكل',
     'اشتراكات',
     'فواتير',
     'أقساط',
+    'قروض',
   ];
 
   Future<void> _clearDetected(List<Subscription> targets) async {
@@ -135,6 +143,29 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
         return days(a).compareTo(days(b));
       });
     final detected = view.items.where(_isAutoDetected).toList();
+
+    final tabs = ZadSegmentedTabs(
+      tabs: _tabs,
+      selectedIndex: _tab,
+      onSelect: (i) => setState(() => _tab = i),
+    );
+    if (_tab == _loansTab) {
+      final loans = Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: tabs,
+          ),
+          Expanded(child: ZadSlots.debtsTab()),
+        ],
+      );
+      return widget.embedded
+          ? loans
+          : Scaffold(
+              appBar: AppBar(title: const Text('التزاماتي')),
+              body: loans,
+            );
+    }
 
     final list = ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
@@ -233,11 +264,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ZadSegmentedTabs(
-          tabs: _tabs,
-          selectedIndex: _tab,
-          onSelect: (i) => setState(() => _tab = i),
-        ),
+        tabs,
         if (detected.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           Padding(

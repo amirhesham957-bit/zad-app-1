@@ -13,9 +13,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
-import 'package:supabase_flutter/supabase_flutter.dart'
-    show AuthException, PostgrestException;
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -27,7 +27,6 @@ import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
-import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -53,20 +52,6 @@ Color _kindAccent(String kind) => switch (kind) {
   _ => const Color(0xFF334155),
 };
 
-IconData _placeIcon(String place) => switch (place) {
-  'pharmacy' => ZadIcons.pharmacy,
-  'supermarket' => ZadIcons.shopping,
-  'mall' => Icons.shopping_bag,
-  _ => ZadIcons.store,
-};
-
-Color _placeAccent(String place) => switch (place) {
-  'pharmacy' => const Color(0xFFBE123C),
-  'supermarket' => const Color(0xFF047857),
-  'mall' => const Color(0xFF6D28D9),
-  _ => const Color(0xFFB45309),
-};
-
 /// The screen.
 class AppointmentsScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
@@ -78,7 +63,6 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
 
 class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
   List<Appointment>? _items;
-  List<PlaceReminder> _places = const <PlaceReminder>[];
   bool _loading = true;
   bool _failed = false;
   bool _showPast = false;
@@ -108,6 +92,18 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
       });
       return;
     }
+    final cache = ref.read(screenCacheProvider);
+    // Last time's list first; the server's answer replaces it.
+    if (_items == null) {
+      if (cache.read('appointments', userId) case final cached?) {
+        setState(() {
+          _items = <Appointment>[
+            for (final r in cached) appointmentFromJson(r),
+          ];
+          _loading = false;
+        });
+      }
+    }
     try {
       final since = ref
           .read(nowProvider)()
@@ -122,24 +118,11 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
           .gte('starts_at', since)
           .order('starts_at')
           .limit(200);
+      unawaited(cache.write('appointments', userId, rows));
       final items = <Appointment>[for (final r in rows) appointmentFromJson(r)];
-      var places = _places;
-      try {
-        final p = await client
-            .from('zad_place_reminders')
-            .select()
-            .eq('user_id', userId)
-            .eq('status', 'open')
-            .order('created_at')
-            .limit(50);
-        places = <PlaceReminder>[for (final r in p) placeReminderFromJson(r)];
-      } on Object catch (e) {
-        debugPrint('place reminders read failed: $e');
-      }
       if (!mounted) return;
       setState(() {
         _items = items;
-        _places = places;
         _failed = false;
         _loading = false;
       });
@@ -178,19 +161,6 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
           .eq('id', a.id);
     } on Object catch (e) {
       debugPrint('appointment delete failed: $e');
-    }
-    await _load();
-  }
-
-  Future<void> _cancelPlace(PlaceReminder r) async {
-    try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_place_reminders')
-          .update(<String, dynamic>{'status': 'cancelled'})
-          .eq('id', r.id);
-    } on Object catch (e) {
-      debugPrint('place reminder cancel failed: $e');
     }
     await _load();
   }
@@ -250,14 +220,6 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (_) => _AddAppointmentDialog(zone: _zone),
-    );
-    if (saved ?? false) await _load();
-  }
-
-  Future<void> _addPlace() async {
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (_) => const _AddPlaceDialog(),
     );
     if (saved ?? false) await _load();
   }
@@ -375,14 +337,20 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
               const SizedBox(height: ZadSpacing.lg),
               _VoiceHint(onTap: _openVoice),
               const SizedBox(height: ZadSpacing.md),
-              _PlaceReminders(
-                reminders: _places,
-                onAdd: () => unawaited(_addPlace()),
-                onCancel: (r) => unawaited(_cancelPlace(r)),
+              // «لما توصل مكان» moved to «أماكني» (owner, 2026-09-30:
+              // location is the brain's, not the appointments page's).
+              _LinkRow(
+                icon: Icons.place,
+                label: 'أماكني: تذكيرات لما توصل مكان، وخروجاتك',
+                onTap: () => unawaited(ZadScreens.showMyPlaces(context)),
               ),
               const SizedBox(height: ZadSpacing.md),
-              _ObligationsLink(
-                onTap: () => unawaited(ZadScreens.showFinancesScreen(context)),
+              _LinkRow(
+                icon: ZadIcons.obligation,
+                label: 'التزاماتك المالية (إيجار، أقساط، فواتير)',
+                onTap: () => unawaited(
+                  ZadScreens.showFinancesScreen(context, initialTab: 1),
+                ),
               ),
             ],
           ),
@@ -447,9 +415,11 @@ class _VoiceHint extends StatelessWidget {
   );
 }
 
-class _ObligationsLink extends StatelessWidget {
-  const new({required this.onTap});
+class _LinkRow extends StatelessWidget {
+  const new({required this.icon, required this.label, required this.onTap});
 
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
   @override
@@ -471,141 +441,13 @@ class _ObligationsLink extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              Icon(ZadIcons.obligation, size: 20, color: ZadColors.inkMuted),
+              Icon(icon, size: 20, color: ZadColors.inkMuted),
               const SizedBox(width: ZadSpacing.md),
-              const Expanded(
-                child: Text(
-                  'التزاماتك المالية (إيجار، أقساط، فواتير)',
-                  style: ZadType.bodyMedium,
-                ),
-              ),
+              Expanded(child: Text(label, style: ZadType.bodyMedium)),
               Icon(ZadIcons.back, color: ZadColors.inkMuted),
             ],
           ),
         ),
-      ),
-    ),
-  );
-}
-
-class _PlaceReminders extends StatelessWidget {
-  const new({
-    required this.reminders,
-    required this.onAdd,
-    required this.onCancel,
-  });
-
-  final List<PlaceReminder> reminders;
-  final VoidCallback onAdd;
-  final ValueChanged<PlaceReminder> onCancel;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: ZadColors.outlineVariant),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(ZadSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Icon(Icons.place, size: 20, color: ZadColors.green700),
-              const SizedBox(width: ZadSpacing.sm),
-              Expanded(
-                child: Text(
-                  'لما توصل مكان',
-                  style: ZadType.titleSmall.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(ZadIcons.add, size: 18),
-                label: const Text('تذكير بمكان'),
-              ),
-            ],
-          ),
-          // Without it no reminder here can ever fire: nothing knows the
-          // customer has reached the shop.
-          ZadSlots.streetAlertsSection(),
-          if (reminders.isEmpty)
-            Text(
-              'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
-              'بصوتها أول ما توصل.',
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            )
-          else
-            for (final r in reminders)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _placeAccent(r.place).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        _placeIcon(r.place),
-                        size: 18,
-                        color: _placeAccent(r.place),
-                      ),
-                    ),
-                    const SizedBox(width: ZadSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            r.note,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: ZadType.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            placeLabel(r.place),
-                            style: ZadType.bodySmall.copyWith(
-                              color: ZadColors.inkMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'إلغاء التذكير',
-                      onPressed: () => onCancel(r),
-                      icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
-                    ),
-                  ],
-                ),
-              ),
-          const SizedBox(height: ZadSpacing.sm),
-          // Flutter has no store-arrival geofence yet, so no place reminder
-          // can fire from this phone — said plainly, as Kotlin says it when
-          // location alerts are off.
-          Row(
-            children: <Widget>[
-              Icon(Icons.location_off, size: 16, color: ZadColors.mustardOchre),
-              const SizedBox(width: ZadSpacing.sm),
-              Expanded(
-                child: Text(
-                  'تنبيهات الموقع مقفولة — التذكيرات دي مش هتشتغل غير لما '
-                  'تفعّلها من الإعدادات.',
-                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     ),
   );
@@ -750,15 +592,6 @@ class _Row extends StatelessWidget {
 }
 
 // ── Dialogs ─────────────────────────────────────────────────────────────────
-
-/// A short, shareable reason for a failed save: the server's code when there
-/// is one, otherwise the kind of failure.
-String _reason(Object e) => switch (e) {
-  PostgrestException(:final code?) => code,
-  AuthException() => 'auth',
-  TimeoutException() => 'timeout',
-  _ => 'network',
-};
 
 class _AddAppointmentDialog extends ConsumerStatefulWidget {
   const new({required this.zone});
@@ -1002,109 +835,6 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
       ],
     );
   }
-}
-
-class _AddPlaceDialog extends ConsumerStatefulWidget {
-  const new();
-
-  @override
-  ConsumerState<_AddPlaceDialog> createState() => _AddPlaceState();
-}
-
-class _AddPlaceState extends ConsumerState<_AddPlaceDialog> {
-  final TextEditingController _note = TextEditingController();
-  String _place = 'pharmacy';
-  bool _saving = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _note.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    final client = ref.read(supabaseClientProvider);
-    try {
-      await client.from('zad_place_reminders').insert(<String, dynamic>{
-        'user_id': client.auth.currentUser?.id,
-        'note': _note.text.trim(),
-        'place': _place,
-        'source': 'app',
-      });
-      if (mounted) Navigator.of(context).pop(true);
-    } on Object catch (e, st) {
-      debugPrint('place reminder insert failed: $e');
-      ref.read(crashLogProvider).record(e, st);
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _error = 'ماتسجلش التذكير، جرّب تاني (${_reason(e)})';
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      'تذكير بمكان',
-      style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
-    ),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        TextField(
-          controller: _note,
-          maxLength: 200,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'أفكّرك بإيه؟',
-            border: OutlineInputBorder(),
-            counterText: '',
-          ),
-        ),
-        const SizedBox(height: ZadSpacing.md),
-        Wrap(
-          spacing: ZadSpacing.sm,
-          runSpacing: ZadSpacing.xs,
-          children: <Widget>[
-            for (final p in kPlaceReminderPlaces)
-              FilterChip(
-                selected: _place == p,
-                onSelected: (_) => setState(() => _place = p),
-                avatar: Icon(_placeIcon(p), size: 16),
-                label: Text(placeLabel(p)),
-              ),
-          ],
-        ),
-        if (_error != null) ...<Widget>[
-          const SizedBox(height: ZadSpacing.sm),
-          Text(
-            _error!,
-            style: ZadType.bodySmall.copyWith(color: ZadColors.terracottaRust),
-          ),
-        ],
-      ],
-    ),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(false),
-        child: const Text('إلغاء'),
-      ),
-      FilledButton(
-        onPressed: _note.text.trim().length >= 2 && !_saving
-            ? () => unawaited(_save())
-            : null,
-        child: const Text('حفظ'),
-      ),
-    ],
-  );
 }
 
 /// Why an appointment was not saved, in words the customer can act on.

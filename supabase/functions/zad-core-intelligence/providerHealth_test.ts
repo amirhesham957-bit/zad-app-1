@@ -53,3 +53,19 @@ Deno.test("a Groq key's daily and per-minute limits are read from the reply's he
   assertEquals(groqLimitsNote(h), "rpd=1000 left=998 tpm=8000 tpm_left=7990");
   assertEquals(groqLimitsNote(new Headers()), undefined);
 });
+
+Deno.test("resend: a sending-only key is ok, a bad key is not", async () => {
+  const run = (status: number, body: string) =>
+    providerHealth(
+      (n) => (n === "RESEND_API_KEY" ? "re_x" : undefined),
+      [],
+      (async (input: string | URL | Request) =>
+        String(input).includes("resend.com")
+          ? new Response(body, { status })
+          : new Response("{}", { status: 200 })) as typeof fetch,
+    );
+  const restricted = (await run(401, '{"name":"restricted_api_key"}')).resend as Record<string, unknown>;
+  assertEquals(restricted.ok, true);
+  const bad = (await run(401, '{"name":"validation_error","message":"API key is invalid"}')).resend as Record<string, unknown>;
+  assertEquals(bad.ok, false);
+});

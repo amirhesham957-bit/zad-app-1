@@ -126,6 +126,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.teal,
     open: ZadScreens.showAppointmentsScreen,
   ),
+  ZadSection(
+    id: 'places',
+    icon: Icons.place,
+    label: 'أماكني',
+    accent: ZadSectionAccent.teal,
+    open: ZadScreens.showMyPlaces,
+  ),
   // نصايح زاد in the first eight: it lived only inside the profile menu, off
   // every path a customer takes (the owner, 2026-09-28).
   ZadSection(
@@ -142,12 +149,12 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.violet,
     open: _openFamily,
   ),
-  ZadSection(
+  const ZadSection(
     id: 'budget',
     icon: Icons.bar_chart,
     label: 'الميزانية',
     accent: ZadSectionAccent.blue,
-    open: ZadScreens.showFinancesScreen,
+    open: _openMoneyTab,
   ),
   ZadSection(
     id: 'subscriptions',
@@ -222,8 +229,8 @@ final List<ZadSection> zadSections = <ZadSection>[
   ),
 ];
 
-// المخزون and عقل زاد are tabs of the bar in Kotlin, so their tiles switch
-// the tab instead of pushing a second copy over it.
+// بيتي is a tab of the bar, so its tile switches the tab instead of pushing a
+// second copy over it; عقل زاد opens over the shell.
 Future<void> _openInventoryTab(BuildContext context) async =>
     ProviderScope.containerOf(
       context,
@@ -236,9 +243,18 @@ Future<void> _openAssistantTab(BuildContext context) async =>
       listen: false,
     ).read(shellNavigationProvider.notifier).open(ShellTab.assistant);
 
-// Kotlin's family route opens BrainFamily on its family tab.
-Future<void> _openFamily(BuildContext context) =>
-    ZadScreens.showBrainFamily(context, tab: BrainFamilyTab.family);
+// فلوسي and عيلتي are tabs of the bar too (2026-09-30).
+Future<void> _openMoneyTab(BuildContext context) async =>
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shellNavigationProvider.notifier).open(ShellTab.money);
+
+Future<void> _openFamily(BuildContext context) async =>
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shellNavigationProvider.notifier).open(ShellTab.family);
 
 /// How many columns the grid has.
 const int kSectionColumns = 4;

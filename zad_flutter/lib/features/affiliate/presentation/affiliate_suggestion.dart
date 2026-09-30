@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
@@ -283,10 +284,10 @@ class _ProductCard extends ConsumerWidget {
                     fit: StackFit.expand,
                     children: <Widget>[
                       if ((product.imageUrl ?? '').isNotEmpty)
-                        Image.network(
+                        ZadNetworkImage(
                           product.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          fallback: const SizedBox.shrink(),
                         )
                       else
                         Icon(

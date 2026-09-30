@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -110,11 +111,22 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's list first; the server's answer replaces it.
+    if (_loading) {
+      if (cache.read('maintenance', userId) case final cached?) {
+        setState(() {
+          _rows = cached;
+          _loading = false;
+        });
+      }
+    }
     try {
       final rows = await client
           .from('zad_maintenance_items')
           .select()
           .eq('user_id', userId);
+      unawaited(cache.write('maintenance', userId, rows));
       if (!mounted) return;
       setState(() {
         _rows = rows;
