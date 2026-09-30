@@ -48,6 +48,7 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     goal_review: "🎯 زاد بيتابع هدفك",
     store_arrival: "🛒 زاد لاحظ إنك جنب محل",
     habit_budget: "☕ زاد لاحظ عادة بتتكرر",
+    predicted_shortage: "🥛 زاد شايف حاجات هتخلص قريب",
   };
   return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }

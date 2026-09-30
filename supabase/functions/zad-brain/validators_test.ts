@@ -232,7 +232,8 @@ Deno.test("agentTaskNotice separates the user's own requests from Zad's initiati
   }
   // كل الأنواع اللي agent_proactive_scan بيكتبها فعلاً (مقيسة من الجدول 2026-09-13).
   for (const kind of ["home_weekly_digest", "spend_forecast", "spending_ahead", "med_followup",
-                      "bill_reminder", "warranty_reminder", "listener_gap_alert", "habit_budget"]) {
+                      "bill_reminder", "warranty_reminder", "listener_gap_alert", "habit_budget",
+                      "predicted_shortage"]) {
     const n = agentTaskNotice(kind);
     assertEquals(n.proactive, true, kind);
     assert(!n.title.includes("طلبتها"), `${kind}: مبادرة زاد مش طلب العميل`);
