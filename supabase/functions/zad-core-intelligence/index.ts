@@ -16,7 +16,7 @@ import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealSearchItems } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealSearchItems, sameCurrency } from "./liveDeals.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -2003,13 +2003,17 @@ Deno.serve(async (req: Request) => {
       // ──────────────────────────────────────────────
       case "estimate_price": {
         const { item_name, store } = payload || {};
-        const cacheKey = "estimate_price:" + (item_name || "") + ":" + (store || "");
+        // The customer's country and currency (the app sends them): the search asks in
+        // their market, and prices in another currency are dropped.
+        const priceLocation = typeof payload?.location === "string" ? payload.location.trim().slice(0, 40) : "";
+        const priceCurrency = typeof payload?.currency === "string" ? payload.currency.trim().slice(0, 8) : "";
+        const cacheKey = "estimate_price:" + (item_name || "") + ":" + (store || "") + ":" + priceLocation + ":" + priceCurrency;
         const cached = await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
 
         // ١) بحث حقيقي أولاً — نتائج DuckDuckGo الحية (أسعار فعلية من مواقع حقيقية).
         //    ده بيتحقق من وجود المفتاح بس، ومفيش LLM في الخطوة دي.
-        const webHits = await webSearchSnippets(`${item_name} ${store || ""} سعر price`.trim());
+        const webHits = await webSearchSnippets(`${item_name} ${store || ""} سعر ${priceLocation} price`.replace(/\s+/g, " ").trim());
         const evidence = webHits.slice(0, 6);
 
         // ٢) لو فيه نتايج حية: الموديل بيستخرج الأرقام **من النتايج بس** مع روابطها.
@@ -2032,7 +2036,8 @@ Deno.serve(async (req: Request) => {
         const extractionInput = `المنتج: ${item_name}\n\nمقاطع البحث:\n${evidence.map((h, i) => `${i + 1}. [${h.title}](${h.url})\n${h.snippet}`).join("\n\n")}`;
         const extracted = await callJsonModel(extractionPrompt, extractionInput);
 
-        const prices = (extracted?.prices ?? []).filter((p: { value?: number }) => typeof p.value === "number" && p.value > 0);
+        const prices = (extracted?.prices ?? []).filter((p: { value?: number; currency?: string }) =>
+          typeof p.value === "number" && p.value > 0 && sameCurrency(priceCurrency, p.currency));
         const values = prices.map((p: { value: number }) => p.value);
         const response = {
           item_name: item_name || "",
