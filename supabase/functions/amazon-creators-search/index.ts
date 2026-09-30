@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { computeNeeds, marketFor, matchCatalog, productUrl, searchUrl } from "./recommendations.ts";
+import { amazonImageOrNull, computeNeeds, marketFor, matchCatalog, productUrl, searchUrl } from "./recommendations.ts";
 
 // GROQ_API_KEY المفرد بيرجع 401 (فحص ما بعد النشر ٢٠٢٦-٠٩-١٤) — التاني الأول.
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY_2") || Deno.env.get("GROQ_API_KEY");
@@ -54,21 +54,11 @@ Deno.serve(async (req: Request) => {
 
         const market = marketFor((user.data as { country?: string | null } | null)?.country, (n) => Deno.env.get(n));
         const needs = computeNeeds(inv.data ?? [], cons.data ?? [], shop.data ?? [], 10);
-        const pexelsKey = Deno.env.get("PEXELS_API_KEY");
-        const imageFor = async (term: string): Promise<string | null> => {
-          if (!pexelsKey) return null;
-          try {
-            const res = await fetch(`https://api.pexels.com/v1/search?per_page=1&query=${encodeURIComponent(term)}`, {
-              headers: { Authorization: pexelsKey }, signal: AbortSignal.timeout(4000),
-            });
-            if (!res.ok) return null;
-            const body = await res.json();
-            return body?.photos?.[0]?.src?.medium ?? null;
-          } catch {
-            return null;
-          }
-        };
-        const items = await Promise.all(needs.map(async (need, i) => {
+        // No stock photos. A Pexels search on the Arabic name ("مياه") returned
+        // pictures that were not the product at all — children in a desert on
+        // the owner's phone, 2026-09-30. Only Amazon's own product image is
+        // shown; without one the app draws the product's name tile.
+        const items = needs.map((need) => {
           const product = matchCatalog(need, catalog.data ?? []);
           const verified = !!(product?.asin && product.asin_verified);
           return {
@@ -78,11 +68,11 @@ Deno.serve(async (req: Request) => {
             days_left: need.days_left,
             product_id: product?.id ?? null,
             url: verified ? productUrl(market, product!.asin!) : searchUrl(market, product?.product_name_ar ?? need.name),
-            image_url: product?.image_url ?? (i < 8 ? await imageFor(need.name) : null),
+            image_url: amazonImageOrNull(product?.image_url),
             // سعر الكتالوج بالريال — مايتعرضش على سوق تاني بعملة تانية.
             price: market.domain.endsWith("amazon.sa") ? (product?.average_price_sar ?? null) : null,
           };
-        }));
+        });
         return jsonResponse({ domain: market.domain, tag_configured: !!market.tag, items });
       }
 

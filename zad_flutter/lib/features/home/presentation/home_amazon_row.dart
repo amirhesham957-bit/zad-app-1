@@ -28,6 +28,7 @@ import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 
 /// Kotlin's `AmazonRecommendation`.
@@ -117,10 +118,7 @@ class AmazonRecommendations extends Notifier<List<AmazonRecommendation>?> {
                   name: name,
                   reason: (raw['reason'] as String?) ?? '',
                   url: url,
-                  imageUrl: switch (raw['image_url']) {
-                    final String u when u.startsWith('https://') => u,
-                    _ => null,
-                  },
+                  imageUrl: amazonImageOrNull(raw['image_url']),
                   price: switch (raw['price']) {
                     final num p when p > 0 => p.toDouble(),
                     _ => null,
@@ -454,12 +452,10 @@ class ZadAmazonDealCard extends ConsumerWidget {
       budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
     );
     final age = priceAgeDays(product, ref.read(nowProvider)());
+    // No Amazon photo: the product's own emoji, not a stock picture that is
+    // not the thing sold behind the tap.
     final placeholder = Center(
-      child: Icon(
-        Icons.shopping_bag,
-        size: 24,
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
-      ),
+      child: Text(foodEmoji(product.nameAr), style: ZadType.displayMedium),
     );
     return ZadPressable(
       haptic: false,

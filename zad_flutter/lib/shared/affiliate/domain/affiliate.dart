@@ -17,13 +17,38 @@ typedef AffiliateProduct = ({
   DateTime? priceCheckedAt,
 });
 
+/// [url] when it is a photo Amazon itself serves for a product, else null.
+///
+/// The strip showed stock photos: the server searched Pexels for the item's
+/// Arabic name ("مياه" came back as children in a desert) and the catalogue's
+/// own fallbacks were Pexels too. A picture that is not the product sold
+/// behind the tap misleads the customer, so only Amazon's own image hosts
+/// are shown; anything else falls back to the product's name tile.
+String? amazonImageOrNull(Object? url) {
+  if (url is! String) return null;
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null || uri.scheme != 'https') return null;
+  final host = uri.host.toLowerCase();
+  const amazonHosts = <String>[
+    'm.media-amazon.com',
+    'images-na.ssl-images-amazon.com',
+    'images-eu.ssl-images-amazon.com',
+    'images-fe.ssl-images-amazon.com',
+    'images-amazon.com',
+    'ssl-images-amazon.com',
+  ];
+  return amazonHosts.any((h) => host == h || host.endsWith('.$h'))
+      ? uri.toString()
+      : null;
+}
+
 /// Reads an `affiliate_products` row.
 AffiliateProduct affiliateFromJson(Map<String, dynamic> j) => (
   id: '${j['id']}',
   nameAr: (j['product_name_ar'] as String?) ?? '',
   asin: j['asin'] as String?,
   asinVerified: (j['asin_verified'] as bool?) ?? false,
-  imageUrl: j['image_url'] as String?,
+  imageUrl: amazonImageOrNull(j['image_url']),
   averagePriceSar: (j['average_price_sar'] as num?)?.toDouble() ?? 0,
   isActive: (j['is_active'] as bool?) ?? true,
   keywords: <String>[
@@ -58,14 +83,15 @@ String affiliateUrl(AffiliateProduct p) {
 }
 
 /// Kotlin's fallback when the table is empty or unreachable. ASINs are left
-/// out on purpose: these open as searches.
+/// out on purpose: these open as searches. No pictures: the Kotlin list used
+/// Pexels stock photos, which are not the products sold behind the tap.
 const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
   (
     id: 'aff_oil_1',
     nameAr: 'زيت زيتون بكر ممتاز ٥٠٠ مل',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/33783/olive-oil-salad-dressing-cooking-olive.jpg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 28.50,
     isActive: true,
     keywords: <String>[],
@@ -76,7 +102,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     nameAr: 'أرز بسمتي هندي ممتاز ٥ كجم',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/4110256/pexels-photo-4110256.jpeg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 45.00,
     isActive: true,
     keywords: <String>[],
@@ -87,7 +113,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     nameAr: 'شاي سيلاني فاخر ١٠٠ كيس',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/1493080/pexels-photo-1493080.jpeg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 19.75,
     isActive: true,
     keywords: <String>[],
@@ -98,7 +124,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     nameAr: 'سكر أبيض نقي ٥ كجم',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/2523652/pexels-photo-2523652.jpeg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 22.00,
     isActive: true,
     keywords: <String>[],
@@ -109,7 +135,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     nameAr: 'حليب طويل الأجل كامل الدسم ١ لتر',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 6.50,
     isActive: true,
     keywords: <String>[],
@@ -120,7 +146,7 @@ const List<AffiliateProduct> kDefaultAffiliateProducts = <AffiliateProduct>[
     nameAr: 'بن قهوة عربي محوج ٢٥٠ جم',
     asin: null,
     asinVerified: false,
-    imageUrl: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600',
+    imageUrl: null,
     averagePriceSar: 34.00,
     isActive: true,
     keywords: <String>[],
