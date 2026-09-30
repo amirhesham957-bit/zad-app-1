@@ -107,6 +107,9 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     }
 
     fetchUpTo(1);
+    // The next chunk, loaded into the idle player while this one plays, so
+    // one sentence runs into the next without a gap (PreparingVoicePlayer).
+    ({int index, Uint8List wav})? prepared;
     try {
       for (var i = 0; i < chunks.length; i++) {
         final audio = await pending.remove(i)!;
@@ -121,9 +124,26 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
           provider: audio.provider,
           level: pcmLoudness(audio.pcm),
         );
+        final wav = prepared?.index == i
+            ? prepared!.wav
+            : pcmToWav(smoothPcmEdges(audio.pcm));
+        prepared = null;
         // An interrupted play() returns early; the check at the top of the
         // next pass is what stops this run.
-        await player.play(pcmToWav(audio.pcm));
+        final playing = player.play(wav);
+        final upcoming = pending[i + 1];
+        if (player is PreparingVoicePlayer && upcoming != null) {
+          final next = i + 1;
+          unawaited(
+            upcoming.then((a) async {
+              if (!ref.mounted || generation != _generation) return;
+              final w = pcmToWav(smoothPcmEdges(a.pcm));
+              prepared = (index: next, wav: w);
+              await player.prepare(w);
+            }, onError: (Object _) {}),
+          );
+        }
+        await playing;
       }
       if (ref.mounted && generation == _generation) {
         state = VoiceOutputView(provider: state.provider);
@@ -177,6 +197,9 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     // One chunk ahead, as [speak] does: the next is asked for while the
     // current one plays, and never more than that at once.
     var next = ask();
+    // As in [speak]: the next chunk is loaded while this one plays.
+    var index = 0;
+    ({int index, Uint8List wav})? prepared;
     try {
       while (true) {
         final pending = await next;
@@ -190,7 +213,28 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
           provider: audio.provider,
           level: pcmLoudness(audio.pcm),
         );
-        await player.play(pcmToWav(audio.pcm));
+        final current = index++;
+        final wav = prepared?.index == current
+            ? prepared!.wav
+            : pcmToWav(smoothPcmEdges(audio.pcm));
+        prepared = null;
+        final playing = player.play(wav);
+        if (player is PreparingVoicePlayer) {
+          final upcoming = next;
+          unawaited(
+            upcoming
+                .then((p) async {
+                  if (p == null) return;
+                  final a = await p.audio;
+                  if (!ref.mounted || generation != _generation) return;
+                  final w = pcmToWav(smoothPcmEdges(a.pcm));
+                  prepared = (index: current + 1, wav: w);
+                  await player.prepare(w);
+                })
+                .catchError((Object _) {}),
+          );
+        }
+        await playing;
         if (!ref.mounted || generation != _generation) return;
       }
       if (ref.mounted && generation == _generation) {

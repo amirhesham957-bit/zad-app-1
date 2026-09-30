@@ -162,7 +162,7 @@ Deno.test("TTS pool: past the time budget Gemini is left for the fallback", asyn
     { text: "مرحبا", voiceId: "Kore" } as any, ["K1", "K2", "K3", "K4", "K5"], fetcher, "", ["m"], freshTtsPool(), () => t,
   );
   assertEquals(res.status, 502);
-  assertEquals(calls.length, 2); // 0s, 9s — the third would start at 18s, past 15s
+  assertEquals(calls.length, 1); // 0s — the next would start at 9s, past the 8s budget
 });
 
 Deno.test("TTS pool: a model's daily quota gone on a key — the next model on the same key speaks", async () => {
@@ -178,4 +178,42 @@ Deno.test("TTS pool: a model's daily quota gone on a key — the next model on t
   const res = await requestGeminiVoiceWithPool({ text: "مرحبا", voiceId: "Aoede" } as any, ["KEY1", "KEY2"], mockFetcher, "", undefined, freshTtsPool());
   assertEquals(res.status, 200);
   assertEquals(calls.map((c) => `${c.key}/${c.model}`), ["KEY1/gemini-2.5-flash-preview-tts", "KEY1/gemini-3.1-flash-tts-preview"]);
+});
+
+Deno.test("TTS pool: a key/model pair that answered 429 is skipped, not asked again", async () => {
+  const pool = freshTtsPool();
+  const calls: string[] = [];
+  const fetcher: typeof fetch = (input, init) => {
+    const key = String(((init as RequestInit)?.headers as Record<string, string>)["x-goog-api-key"]);
+    const model = String(input).split("/models/")[1]?.split(":")[0] ?? "";
+    calls.push(`${key}/${model}`);
+    return Promise.resolve(model === "a" ? new Response("quota", { status: 429 }) : audioResponse());
+  };
+  const clock = () => 1_000;
+  await requestGeminiVoiceWithPool({ text: "أ", voiceId: "Kore" } as any, ["K1"], fetcher, "", ["a", "b"], pool, clock);
+  calls.length = 0;
+  await requestGeminiVoiceWithPool({ text: "ب", voiceId: "Kore" } as any, ["K1"], fetcher, "", ["a", "b"], pool, clock);
+  assertEquals(calls, ["K1/b"]);
+});
+
+Deno.test("TTS pool: every pair out of quota — no call at all, straight to the fallback", async () => {
+  const pool = freshTtsPool();
+  let calls = 0;
+  const fetcher: typeof fetch = () => {
+    calls++;
+    return Promise.resolve(new Response("RESOURCE_EXHAUSTED GenerateRequestsPerDayPerProjectPerModel", { status: 429 }));
+  };
+  let t = 1_000;
+  const first = await requestGeminiVoiceWithPool({ text: "أ", voiceId: "Kore" } as any, ["K1", "K2"], fetcher, "", ["m"], pool, () => t);
+  assertEquals(first.status, 502);
+  assertEquals(calls, 2);
+  // Ten minutes later a daily quota is still gone: nothing is asked.
+  t += 10 * 60_000;
+  const next = await requestGeminiVoiceWithPool({ text: "ب", voiceId: "Kore" } as any, ["K1", "K2"], fetcher, "", ["m"], pool, () => t);
+  assertEquals(next.status, 503);
+  assertEquals(calls, 2);
+  // A per-minute limit would have come back after a minute; a daily one after thirty.
+  t += 25 * 60_000;
+  await requestGeminiVoiceWithPool({ text: "ج", voiceId: "Kore" } as any, ["K1", "K2"], fetcher, "", ["m"], pool, () => t);
+  assertEquals(calls > 2, true);
 });

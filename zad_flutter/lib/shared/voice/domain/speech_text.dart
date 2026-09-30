@@ -144,6 +144,35 @@ class SpeechStreamSplitter {
   }
 }
 
+/// [pcm] with its first and last [fadeMs] faded in and out, and an odd
+/// trailing byte dropped.
+///
+/// A clip that starts or stops mid-wave clicks; one after another, sentence
+/// after sentence, the clicks read as noise. An odd byte count would shift
+/// every sample after it into static.
+Uint8List smoothPcmEdges(
+  Uint8List pcm, {
+  int sampleRate = 24000,
+  int fadeMs = 8,
+}) {
+  final length = pcm.length - pcm.length % 2;
+  final out = Uint8List.fromList(pcm.sublist(0, length));
+  final samples = length ~/ 2;
+  final fade = sampleRate * fadeMs ~/ 1000;
+  // Too short to fade without eating the clip itself.
+  if (fade <= 0 || samples < fade * 4) return out;
+  final data = ByteData.sublistView(out);
+  for (var i = 0; i < fade; i++) {
+    final gain = i / fade;
+    final head = data.getInt16(i * 2, Endian.little);
+    data.setInt16(i * 2, (head * gain).round(), Endian.little);
+    final t = samples - 1 - i;
+    final tail = data.getInt16(t * 2, Endian.little);
+    data.setInt16(t * 2, (tail * gain).round(), Endian.little);
+  }
+  return out;
+}
+
 /// Wraps `voice_synthesize`'s raw PCM (24 kHz, 16-bit, mono — the same bytes
 /// Kotlin writes to AudioTrack) in a 44-byte WAV header a player can open.
 Uint8List pcmToWav(

@@ -4891,6 +4891,18 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     }), { headers: CORS_HEADERS });
   }
 
+  // Independent reads, started together instead of one after another: the
+  // snapshot, the message's embedding (a network call to the model), the drift
+  // lessons, the learned skills and the agents' mail used to run in sequence
+  // before the model was even asked — seconds of every turn, and of a voice
+  // turn most of all (owner: «المساعد الصوتي بياخد ٤٠ ثانية», 2026-09-30).
+  const embeddingEarly = embedText(message).catch((e) => {
+    console.warn("embedding skipped:", e);
+    return null;
+  });
+  const driftLessonsEarly = buildDriftLessons(sb, userId);
+  const learnedSkillsEarly = loadSkills(sb, userId);
+  const agentMailEarly = fetchUnreadAgentMail(sb, userId);
   const snap = await buildSnapshot(sb, userId);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
@@ -4903,7 +4915,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // التشابه بالمعنى بيرتّب من جديد (يلتقط "قهوتنا الصبح" لرسالة "مش بشرب قهوة").
   let relevantMemory = rankMemoryForMessage(snap.memory ?? [], message);
   try {
-    const queryVec = await embedText(message);
+    const queryVec = await embeddingEarly;
     if (queryVec) {
       const { data: sem } = await sb.rpc("zad_memory_semantic_search", {
         p_user: userId, p_query_embedding: queryVec, p_limit: 8,
@@ -4952,14 +4964,14 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     console.warn("semantic memory search skipped:", e);
   }
   // حلقة التعلم: دروس من انحرافات الوكيل السابقة مع نفس العميل
-  const driftLessons = await buildDriftLessons(sb, userId);
+  const driftLessons = await driftLessonsEarly;
   const lessonsBlock = driftLessons.length > 0
     ? "\n=== دروس من أخطائك السابقة مع هذا العميل ===\n" + driftLessons.map((l) => "- " + l).join("\n") + "\n=== نهاية الدروس ===\n"
     : "";
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
-  const learnedSkills = await loadSkills(sb, userId);
+  const learnedSkills = await learnedSkillsEarly;
   // تقارير الأيدجنتس غير المقروءة — العقل بيبقى واعي بشغل أيدجنتته بين رسالتين (Phase 3).
-  const agentMail = await fetchUnreadAgentMail(sb, userId);
+  const agentMail = await agentMailEarly;
   const systemPrompt =
     soulBlock()
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
