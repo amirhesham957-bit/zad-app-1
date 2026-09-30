@@ -18,17 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/achievements/presentation/achievements_screen.dart';
-import 'package:zad/features/auth/presentation/sign_out_action.dart';
-import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
-import 'package:zad/features/brain/presentation/memory_screen.dart';
-import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
-import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/profile/presentation/profile_sub_screens.dart';
-import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
-import 'package:zad/features/statement/presentation/statement_import_screen.dart';
-import 'package:zad/features/support/presentation/help_support_screen.dart';
-import 'package:zad/features/support/presentation/terms_screen.dart';
 import 'package:zad/shared/budget/data/category_budgets_store.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -36,6 +26,7 @@ import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/market/application/market_gate_controller.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 
@@ -112,37 +103,45 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.upload_file,
                     title: 'استيراد كشف حساب',
                     subtitle: 'استورد كشف حساب CSV من البنك',
-                    onTap: () => unawaited(showStatementImportScreen(context)),
+                    onTap: () => unawaited(
+                      ZadScreens.showStatementImportScreen(context),
+                    ),
                   ),
                   _MenuRow(
                     icon: Icons.support_agent,
                     title: 'الدعم الفني',
                     subtitle: 'تواصل معنا',
-                    onTap: () => unawaited(showHelpSupportScreen(context)),
+                    onTap: () =>
+                        unawaited(ZadScreens.showHelpSupportScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.actionLog,
                     title: 'سجل تعديلات زاد',
                     subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
-                    onTap: () => unawaited(showAgentActionLog(context)),
+                    onTap: () =>
+                        unawaited(ZadScreens.showAgentActionLog(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.memory,
                     title: 'زاد عارف عني إيه',
                     subtitle: 'الذكريات اللي اتعلمها عنك',
-                    onTap: () => unawaited(showMemoryScreen(context)),
+                    onTap: () =>
+                        unawaited(ZadScreens.showMemoryScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.leaderboard,
                     title: 'الإنجازات والرتب',
                     subtitle: 'نقاطك وإنجازاتك من المساهمة بالأسعار',
-                    onTap: () => unawaited(showAchievementsScreen(context)),
+                    onTap: () =>
+                        unawaited(ZadScreens.showAchievementsScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.shopping,
                     title: 'توصيات الشراء الذكية',
                     subtitle: 'توصيات مبنية على الأسعار والسوق',
-                    onTap: () => unawaited(showRecommendationsScreen(context)),
+                    onTap: () => unawaited(
+                      ZadScreens.showRecommendationsScreen(context),
+                    ),
                   ),
                   _MenuRow(
                     icon: ZadIcons.savings,
@@ -154,13 +153,13 @@ class ProfileScreen extends ConsumerWidget {
                     icon: Icons.auto_awesome,
                     title: 'زيّن زاد',
                     subtitle: 'كل ما عيلتك تنضم لزاد، زاد بتتزيّن',
-                    onTap: () => unawaited(showOrbPicker(context)),
+                    onTap: () => unawaited(ZadScreens.showOrbPicker(context)),
                   ),
                   _MenuRow(
                     icon: Icons.description,
                     title: 'الشروط والأحكام',
                     subtitle: 'سياسة الاستخدام والخصوصية',
-                    onTap: () => unawaited(showTermsScreen(context)),
+                    onTap: () => unawaited(ZadScreens.showTermsScreen(context)),
                   ),
                 ],
               ),
@@ -201,7 +200,8 @@ class ProfileScreen extends ConsumerWidget {
                     foregroundColor: ZadColors.terracottaRust,
                     shape: const StadiumBorder(),
                   ),
-                  onPressed: () => unawaited(confirmAndSignOut(context, ref)),
+                  onPressed: () =>
+                      unawaited(ZadScreens.confirmAndSignOut(context, ref)),
                   icon: const Icon(ZadIcons.leave, size: 20),
                   label: const Text('تسجيل الخروج'),
                 ),
@@ -1043,7 +1043,7 @@ class _KidsModeCard extends ConsumerWidget {
     if (!isAdmin) return const SizedBox.shrink();
     Future<void> enter() async {
       final kids = ref.read(kidsModeProvider.notifier);
-      if (!kids.hasPin && !await showPinPrompt(context)) return;
+      if (!kids.hasPin && !await ZadScreens.showPinPrompt(context)) return;
       kids.setManual(active: true);
       if (context.mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);

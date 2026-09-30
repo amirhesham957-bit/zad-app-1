@@ -12,9 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/brain/presentation/profile_sheet.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 
 /// Kotlin's `needsIntroduction`.
@@ -65,7 +65,7 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
             city: current?.city,
             dialect: current?.dialect,
           );
-    final edited = await showProfileSheet(context, start);
+    final edited = await ZadScreens.showProfileSheet(context, start);
     if (edited == null || !mounted) return;
     final failure = await ref
         .read(memoryControllerProvider.notifier)

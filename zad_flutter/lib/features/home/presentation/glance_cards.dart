@@ -17,14 +17,14 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
@@ -219,7 +219,8 @@ class PantryGlanceCard extends ConsumerWidget {
         if (!short.containsKey(i.id)) i,
     ];
 
-    void open() => showHouseholdSection(context, HouseholdSection.pantry);
+    void open() =>
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pantry);
 
     return _GlanceShell(
       children: <Widget>[
@@ -561,7 +562,8 @@ class PharmacyGlanceCard extends ConsumerWidget {
         ? ZadColors.mustardOchre
         : ZadColors.forestEmerald;
 
-    void open() => showHouseholdSection(context, HouseholdSection.pharmacy);
+    void open() =>
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy);
 
     return _GlanceShell(
       children: <Widget>[
@@ -809,7 +811,7 @@ class SubscriptionsGlanceCard extends ConsumerWidget {
     final next = active.isEmpty ? null : active.first;
     final nextDate = next?.nextRenewalFrom(view.today);
 
-    void open() => showSubscriptionsScreen(context);
+    void open() => ZadScreens.showSubscriptionsScreen(context);
 
     return _GlanceShell(
       children: <Widget>[

@@ -22,17 +22,12 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
 import 'package:zad/features/budget/presentation/budget_screen_parts.dart';
-import 'package:zad/features/debts/presentation/debts_tab.dart';
-import 'package:zad/features/modes/presentation/modes_cards.dart';
-import 'package:zad/features/obligations/presentation/obligations_section.dart';
-import 'package:zad/features/scan/presentation/camera_screen.dart';
-import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
-import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/application/category_budgets_controller.dart';
 import 'package:zad/shared/budget/data/category_budgets_store.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
@@ -101,10 +96,10 @@ class _FinancesState extends State<FinancesScreen> {
           Expanded(
             child: IndexedStack(
               index: _tab,
-              children: const <Widget>[
-                _DailyTab(),
-                SubscriptionsScreen(embedded: true),
-                DebtsTab(),
+              children: <Widget>[
+                const _DailyTab(),
+                ZadSlots.subscriptionsScreen(embedded: true),
+                ZadSlots.debtsTab(),
               ],
             ),
           ),
@@ -147,7 +142,7 @@ class _DailyTab extends ConsumerWidget {
           children: <Widget>[
             FloatingActionButton.small(
               heroTag: 'finances-scan',
-              onPressed: () => unawaited(openZadCamera(context)),
+              onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
               tooltip: 'Scan',
               backgroundColor: Theme.of(context).colorScheme.secondary,
               foregroundColor: Colors.white,
@@ -157,7 +152,7 @@ class _DailyTab extends ConsumerWidget {
             const SizedBox(height: 12),
             FloatingActionButton.extended(
               heroTag: 'finances-add',
-              onPressed: () => showAddTransactionSheet(context),
+              onPressed: () => ZadScreens.showAddTransactionSheet(context),
               icon: const Icon(Icons.add, size: 20),
               label: const Text(
                 'معاملة',
@@ -181,11 +176,11 @@ class _DailyTab extends ConsumerWidget {
           children: <Widget>[
             _Available(view: budget, currency: currency),
             const SizedBox(height: ZadSpacing.md),
-            const BrokeModeSlot(offerEntry: true),
+            ZadSlots.brokeModeSlot(offerEntry: true),
             const SizedBox(height: ZadSpacing.md),
-            const SavingsChallengeSlot(offerEntry: true, offerStop: true),
+            ZadSlots.savingsChallengeSlot(offerEntry: true, offerStop: true),
             const SizedBox(height: ZadSpacing.md),
-            const ObligationsSection(),
+            ZadSlots.obligationsSection(),
             const SizedBox(height: ZadSpacing.sm),
             _Summary(
               income: income,
@@ -274,7 +269,7 @@ class _Available extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => showMonthlyLimitSheet(context),
+                onPressed: () => ZadScreens.showMonthlyLimitSheet(context),
                 tooltip: 'تعديل الرصيد',
                 icon: Icon(
                   ZadIcons.edit,

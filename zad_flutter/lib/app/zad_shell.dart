@@ -36,6 +36,7 @@ import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';

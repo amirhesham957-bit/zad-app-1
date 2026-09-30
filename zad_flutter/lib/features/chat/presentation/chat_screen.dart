@@ -15,11 +15,11 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/agent_turn.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 
 /// The chat screen.
@@ -127,7 +127,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           title: const Text('زاد'),
           actions: <Widget>[
             IconButton(
-              onPressed: () => showBrainHub(context),
+              onPressed: () => ZadScreens.showBrainHub(context),
               icon: const Icon(ZadIcons.brain),
               tooltip: 'عقل زاد',
             ),

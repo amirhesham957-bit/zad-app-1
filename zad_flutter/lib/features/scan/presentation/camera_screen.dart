@@ -22,22 +22,11 @@ import 'package:zad/features/scan/application/camera_actions.dart';
 import 'package:zad/features/scan/presentation/camera_choice_sheet.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
-
-/// What the screen scans.
-enum CameraMode {
-  /// The pantry.
-  inventory,
-
-  /// A receipt.
-  receipt,
-
-  /// A medicine box.
-  pharmacy,
-}
 
 /// Opens the screen on [mode] — Kotlin's `camera/{mode}` route.
 Future<void> showCameraScreen(BuildContext context, CameraMode mode) =>

@@ -18,12 +18,12 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// What the card is about.
 typedef UrgentItems = ({List<String> triggers, bool stagnantOnly});
@@ -87,7 +87,7 @@ class UrgentRecipeSlot extends ConsumerWidget {
                 'قبل ما ${urgent.stagnantOnly ? 'تتلف' : 'تخلص'}',
               );
           Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(builder: (_) => const ChatScreen()),
+            MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
           );
         },
       ),

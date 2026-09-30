@@ -13,9 +13,9 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/domain/orb_accessory.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
@@ -99,7 +99,7 @@ class OrbPickerDialog extends ConsumerWidget {
               );
             } else {
               final navigator = Navigator.of(context)..pop();
-              unawaited(showFamilyScreen(navigator.context));
+              unawaited(ZadScreens.showFamilyScreen(navigator.context));
             }
           },
         ),

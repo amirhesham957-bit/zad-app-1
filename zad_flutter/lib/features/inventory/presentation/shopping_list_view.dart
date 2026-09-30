@@ -22,12 +22,13 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
+import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
@@ -306,7 +307,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   _Line(item: item, currency: currency),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
-                const AffiliateSuggestionSection(),
+                ZadSlots.affiliateSuggestionSection(),
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(

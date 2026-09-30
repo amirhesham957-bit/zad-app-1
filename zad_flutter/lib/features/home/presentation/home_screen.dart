@@ -17,8 +17,6 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
-import 'package:zad/features/bank/presentation/stuck_notifications.dart';
-import 'package:zad/features/brain/presentation/why_changed_sheet.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
@@ -33,17 +31,10 @@ import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
-import 'package:zad/features/insights/presentation/insight_cards.dart';
-import 'package:zad/features/intelligence/presentation/home_reports_row.dart';
-import 'package:zad/features/modes/presentation/modes_cards.dart';
-import 'package:zad/features/prices/presentation/live_market_ticker.dart';
-import 'package:zad/features/proposals/presentation/proposals_screen.dart';
-import 'package:zad/features/recipes/presentation/home_chef_section.dart';
-import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
-import 'package:zad/features/telegram/presentation/telegram_binding.dart';
-import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Home.
 ///
@@ -91,12 +82,12 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const ZadTrailingGap(gap: 16, child: BrokeModeSlot()),
-          const ZadTrailingGap(gap: 16, child: SavingsChallengeSlot()),
+          ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
+          ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
           const HomeActivationSlot(),
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
-          const ZadAppearOnEntry(child: LiveMarketTickerSlot()),
+          ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
           _Budget(view: view),
           const FxExcludedNotice(),
           const BankListeningPill(),
@@ -110,7 +101,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const ZadAppearOnEntry(delayMs: 80, child: HomeTelegramBlocks()),
+          ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
           const ZadAppearOnEntry(
             delayMs: 65,
@@ -126,12 +117,12 @@ class HomeScreen extends ConsumerWidget {
             delayMs: 100,
             child: ZadTrailingGap(gap: 18, child: SubscriptionsGlanceCard()),
           ),
-          const ZadAppearOnEntry(delayMs: 105, child: HomeChefSection()),
-          const HomeProposalsSection(),
-          const StuckNotificationsSlot(),
+          ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
+          ZadSlots.homeProposalsSection(),
+          ZadSlots.stuckNotificationsSlot(),
           ZadTrailingGap(
             gap: 18,
-            child: HomeInsightsSection(onOpenCamera: onOpenCamera),
+            child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
@@ -198,10 +189,10 @@ class _Budget extends ConsumerWidget {
             // device's arithmetic rather than the server's.
             isStale: view.isStale || view.pendingSpend > 0,
             // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
-            onTap: () => openWhyChanged(context),
-            onSetBudget: () => showMonthlyLimitSheet(context),
-            onQuickExpense: () => showQuickExpenseSheet(context),
-            onEditBalance: () => showMonthlyLimitSheet(context),
+            onTap: () => ZadScreens.openWhyChanged(context),
+            onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
+            onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
+            onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
           ),
         ),
         const SizedBox(height: 14),
@@ -218,7 +209,7 @@ class _Budget extends ConsumerWidget {
         ],
         ZadAppearOnEntry(
           delayMs: 60,
-          child: HomeReportsRow(
+          child: ZadSlots.homeReportsRow(
             spent: snapshot.spent,
             spendable: spendable,
             daysLeft: math.max(0, period.daysRemainingFrom(now)),

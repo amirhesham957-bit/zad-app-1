@@ -18,9 +18,10 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -82,7 +83,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           // always works, so it keeps the larger target.
           FloatingActionButton.small(
             heroTag: 'scan',
-            onPressed: () => showCameraScreen(context, CameraMode.receipt),
+            onPressed: () =>
+                ZadScreens.showCameraScreen(context, CameraMode.receipt),
             tooltip: 'صوّر فاتورة',
             backgroundColor: ZadColors.surface,
             foregroundColor: ZadColors.green800,

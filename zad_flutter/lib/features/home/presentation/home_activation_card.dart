@@ -10,14 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
-import 'package:zad/features/goals/presentation/life_goal_picker_sheet.dart';
-import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/goals/data/life_goals_remote.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// Kotlin's `HomeActivationStep`.
 enum HomeActivationStep {
@@ -95,11 +93,11 @@ class HomeActivationSlot extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: HomeActivationCard(
         progress: progress,
-        onSetBalance: () => showMonthlyLimitSheet(context),
-        onEnableBankReading: () => openBankReading(context, ref),
+        onSetBalance: () => ZadScreens.showMonthlyLimitSheet(context),
+        onEnableBankReading: () => ZadScreens.openBankReading(context, ref),
         onAddInventoryItem: () =>
             ref.read(shellNavigationProvider.notifier).open(ShellTab.inventory),
-        onSetFirstGoal: () => showLifeGoalPickerSheet(context),
+        onSetFirstGoal: () => ZadScreens.showLifeGoalPickerSheet(context),
       ),
     );
   }

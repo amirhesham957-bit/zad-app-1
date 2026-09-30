@@ -21,8 +21,8 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -248,14 +248,16 @@ class _CycleExpenses extends ConsumerWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () =>
-                          unawaited(showEditTransactionSheet(context, t)),
+                      onPressed: () => unawaited(
+                        ZadScreens.showEditTransactionSheet(context, t),
+                      ),
                       tooltip: 'تعديل التصنيف',
                       icon: const Icon(ZadIcons.edit, size: 18),
                     ),
                     IconButton(
-                      onPressed: () =>
-                          unawaited(confirmDeleteTransaction(context, ref, t)),
+                      onPressed: () => unawaited(
+                        ZadScreens.confirmDeleteTransaction(context, ref, t),
+                      ),
                       tooltip: 'حذف',
                       icon: Icon(
                         ZadIcons.delete,

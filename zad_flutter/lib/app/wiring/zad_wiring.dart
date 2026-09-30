@@ -10,6 +10,7 @@ library;
 
 import 'package:zad/app/wiring/account_scope_wiring.dart';
 import 'package:zad/app/wiring/outbox_senders.dart';
+import 'package:zad/app/wiring/screens_wiring.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox_wiring.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
@@ -18,6 +19,8 @@ import 'package:zad/shared/bank/data/notification_drain.dart';
 /// Connects every contract. Safe to call more than once.
 void wireZad() {
   wireAccountScope();
+  wireScreens();
+  wireSlots();
   OutboxWiring.bind(
     send: sendOutboxEntry,
     captures: (ref) => ref.read(bankListenerProvider).captures,

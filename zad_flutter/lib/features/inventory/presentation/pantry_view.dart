@@ -22,7 +22,6 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
-import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
@@ -32,6 +31,7 @@ import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
 const List<String> kPantryUnits = <String>[
@@ -398,7 +398,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
                   title: 'المخزون فارغ',
                   subtitle: 'ابدأ بإضافة منتجات لتنظم مخزون منزلك',
                   action: OutlinedButton.icon(
-                    onPressed: () => unawaited(openZadCamera(context)),
+                    onPressed: () =>
+                        unawaited(ZadScreens.openZadCamera(context)),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -471,7 +472,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
             children: <Widget>[
               FloatingActionButton(
                 heroTag: 'pantry-photo',
-                onPressed: () => unawaited(openZadCamera(context)),
+                onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
                 tooltip: 'تصوير المخزون',
                 backgroundColor: scheme.secondary,
                 foregroundColor: scheme.onSecondary,

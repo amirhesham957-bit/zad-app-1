@@ -14,8 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/fx.dart';
-import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
@@ -113,7 +113,9 @@ class _BankListeningPillState extends ConsumerState<BankListeningPill> {
       borderRadius: BorderRadius.circular(10),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: alive ? null : () => unawaited(openBankReading(context, ref)),
+        onTap: alive
+            ? null
+            : () => unawaited(ZadScreens.openBankReading(context, ref)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(

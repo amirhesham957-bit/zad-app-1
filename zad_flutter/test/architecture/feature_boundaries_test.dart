@@ -91,6 +91,27 @@ void main() {
     expect(bad, isEmpty, reason: bad.join('\n'));
   });
 
+  // A contract entry nobody binds is a LateInitializationError the first
+  // time a customer taps what calls it — so every one is checked here, not
+  // left to the walkthrough happening to tap it.
+  test('app/wiring binds every ZadScreens and ZadSlots entry', () {
+    final wiring = File('lib/app/wiring/screens_wiring.dart')
+        .readAsStringSync();
+    final unbound = <String>[
+      for (final (contract, file) in <(String, String)>[
+        ('ZadScreens', 'lib/shared/navigation/zad_screens.dart'),
+        ('ZadSlots', 'lib/shared/navigation/zad_slots.dart'),
+      ])
+        for (final m in RegExp(
+          r'static late [^;]*?\s(\w+);',
+          dotAll: true,
+        ).allMatches(File(file).readAsStringSync()))
+          if (!wiring.contains('$contract.${m.group(1)} ='))
+            '$contract.${m.group(1)}',
+    ];
+    expect(unbound, isEmpty, reason: unbound.join('\n'));
+  });
+
   test('lib/ has only app/, core/, shared/, features/ and main.dart', () {
     final top = Directory('lib')
         .listSync()

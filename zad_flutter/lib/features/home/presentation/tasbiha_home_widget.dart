@@ -15,7 +15,7 @@ import 'package:lottie/lottie.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
-import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
 import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
@@ -64,7 +64,7 @@ class _TasbihaHomeSlotState extends ConsumerState<TasbihaHomeSlot> {
       child: TasbihaHomeWidget(
         tree: view.myTrees.firstOrNull,
         onTasbih: () => ref.read(tasbihaControllerProvider.notifier).tap(),
-        onOpen: () => unawaited(showTasbihaScreen(context)),
+        onOpen: () => unawaited(ZadScreens.showTasbihaScreen(context)),
         activeChallenge: challenge,
         challengeClicks: challenge == null
             ? 0

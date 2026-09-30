@@ -19,8 +19,8 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// The gate.
@@ -126,7 +126,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                         ),
                         TextButton(
                           onPressed: () =>
-                              unawaited(showRegionalSheet(context)),
+                              unawaited(ZadScreens.showRegionalSheet(context)),
                           child: const Text('تغيير'),
                         ),
                       ],

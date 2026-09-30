@@ -18,13 +18,14 @@ import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// The section, with Kotlin's gap below it.
 class HomeChefSection extends ConsumerWidget {
@@ -67,7 +68,10 @@ class HomeChefSection extends ConsumerWidget {
                 unawaited(showRecipeDetail(context, recipes.first));
               } else {
                 unawaited(
-                  showHouseholdSection(context, HouseholdSection.recipes),
+                  ZadScreens.showHouseholdSection(
+                    context,
+                    HouseholdSection.recipes,
+                  ),
                 );
               }
             },

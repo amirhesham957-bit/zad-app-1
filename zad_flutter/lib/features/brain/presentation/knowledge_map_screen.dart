@@ -24,12 +24,10 @@ import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/chat/presentation/chat_screen.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 const Color _bg = ZadPalette.sciFiBg;
 const Color _grid = ZadPalette.sciFiGrid;
@@ -168,27 +166,31 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
   /// sends it.
   void _ask(String label) {
     ref.read(chatPrefillProvider.notifier).offer('وضّحلي أكتر عن $label');
-    Navigator.of(
-      context,
-    ).push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
+    );
   }
 
   /// Kotlin's `kmDomainRoutes`.
   VoidCallback? _opener(MapDomainKey key) => switch (key) {
-    MapDomainKey.budget => () => unawaited(showFinancesScreen(context)),
+    MapDomainKey.budget => () => unawaited(
+      ZadScreens.showFinancesScreen(context),
+    ),
     MapDomainKey.subscriptions => () => unawaited(
-      showSubscriptionsScreen(context),
+      ZadScreens.showSubscriptionsScreen(context),
     ),
     MapDomainKey.pantry => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.pantry),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.pantry),
     ),
     MapDomainKey.shopping => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.shopping),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.shopping),
     ),
     MapDomainKey.pharmacy => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.pharmacy),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
     ),
-    MapDomainKey.maintenance => () => unawaited(showMaintenanceScreen(context)),
+    MapDomainKey.maintenance => () => unawaited(
+      ZadScreens.showMaintenanceScreen(context),
+    ),
     _ => null,
   };
 

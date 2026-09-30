@@ -11,11 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
-import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/insights/domain/insight.dart';
 import 'package:zad/shared/insights/presentation/question_card.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// The section. Nothing at all when nothing is pending.
 class HomeInsightsSection extends ConsumerWidget {
@@ -95,7 +94,8 @@ class _InsightRow extends ConsumerWidget {
           Material(
             type: MaterialType.transparency,
             child: InkWell(
-              onTap: () => unawaited(showNotificationCenter(context)),
+              onTap: () =>
+                  unawaited(ZadScreens.showNotificationCenter(context)),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
@@ -151,8 +151,9 @@ class _InsightRow extends ConsumerWidget {
                                   padding: EdgeInsets.zero,
                                   minimumSize: Size.zero,
                                 ),
-                                onPressed: () =>
-                                    unawaited(showRegionalSheet(context)),
+                                onPressed: () => unawaited(
+                                  ZadScreens.showRegionalSheet(context),
+                                ),
                                 child: Text(
                                   'البلد والعملة',
                                   style: ZadType.labelMedium.copyWith(

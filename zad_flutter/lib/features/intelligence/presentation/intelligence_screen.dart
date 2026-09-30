@@ -28,8 +28,6 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
@@ -39,6 +37,8 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
@@ -176,7 +176,7 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                       ),
                       const ExportReportButton(),
                     ],
-                    ChatSectionCard(
+                    ZadSlots.chatSectionCard(
                       expanded: _chatExpanded,
                       onToggle: () =>
                           setState(() => _chatExpanded = !_chatExpanded),
@@ -228,7 +228,7 @@ class _SosBanner extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => unawaited(showFamilyScreen(context)),
+        onTap: () => unawaited(ZadScreens.showFamilyScreen(context)),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
