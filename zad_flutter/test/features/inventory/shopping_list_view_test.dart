@@ -4,14 +4,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 import '../../support/quiet_household.dart';
 

@@ -5,12 +5,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
 
 class _Map extends KnowledgeMapController {
   new(this.inputs);

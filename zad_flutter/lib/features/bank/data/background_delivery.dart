@@ -16,8 +16,8 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/features/bank/data/notification_ingest.dart';
-import 'package:zad/features/bank/domain/bank_notification.dart';
+import 'package:zad/shared/bank/data/notification_ingest.dart';
+import 'package:zad/shared/bank/domain/bank_notification.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// What one background run did.

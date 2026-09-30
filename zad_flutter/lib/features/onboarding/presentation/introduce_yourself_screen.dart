@@ -14,13 +14,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/auth/presentation/sign_out_action.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
 
 /// Implied by a role, so choosing «أم» answers the gender question too.
 const Map<String, String> _roleGender = <String, String>{
@@ -128,7 +128,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('عرّفني بيك'),
-        actions: const <Widget>[SignOutAction()],
+        actions: <Widget>[ZadSlots.signOutAction()],
       ),
       body: SafeArea(
         child: ListView(

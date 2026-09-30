@@ -5,28 +5,17 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/appointments/presentation/appointments_screen.dart';
-import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
-import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
-import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
-import 'package:zad/features/paywall/presentation/paywall_screen.dart';
-import 'package:zad/features/profile/presentation/profile_screen.dart';
-import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
-import 'package:zad/features/statement/presentation/statement_import_screen.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
-import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 
 /// Kotlin's `ZadSectionAccent`, light values: a tile's icon colour, with its
 /// container at 12%.
@@ -127,24 +116,24 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: 'قائمة التسوق',
     accent: ZadSectionAccent.amber,
     badge: SectionBadge.shopping,
-    open: (c) => showHouseholdSection(c, HouseholdSection.shopping),
+    open: (c) => ZadScreens.showHouseholdSection(c, HouseholdSection.shopping),
   ),
   // مواعيدي third: Kotlin's "a feature for the things that matter" order.
-  const ZadSection(
+  ZadSection(
     id: 'appointments',
     icon: Icons.event_note,
     label: 'مواعيدي',
     accent: ZadSectionAccent.teal,
-    open: showAppointmentsScreen,
+    open: ZadScreens.showAppointmentsScreen,
   ),
   // نصايح زاد in the first eight: it lived only inside the profile menu, off
   // every path a customer takes (the owner, 2026-09-28).
-  const ZadSection(
+  ZadSection(
     id: 'tips',
     icon: Icons.lightbulb,
     label: 'نصايح زاد',
     accent: ZadSectionAccent.green,
-    open: showRecommendationsScreen,
+    open: ZadScreens.showRecommendationsScreen,
   ),
   const ZadSection(
     id: 'family',
@@ -153,41 +142,41 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.violet,
     open: _openFamily,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'budget',
     icon: Icons.bar_chart,
     label: 'الميزانية',
     accent: ZadSectionAccent.blue,
-    open: showFinancesScreen,
+    open: ZadScreens.showFinancesScreen,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'subscriptions',
     icon: Icons.credit_card,
     label: 'الاشتراكات',
     accent: ZadSectionAccent.indigo,
     badge: SectionBadge.renewals,
-    open: showSubscriptionsScreen,
+    open: ZadScreens.showSubscriptionsScreen,
   ),
   ZadSection(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
     label: 'صيدلية العائلة',
     accent: ZadSectionAccent.rose,
-    open: (c) => showHouseholdSection(c, HouseholdSection.pharmacy),
+    open: (c) => ZadScreens.showHouseholdSection(c, HouseholdSection.pharmacy),
   ),
-  const ZadSection(
+  ZadSection(
     id: 'tasbiha',
     icon: Icons.yard,
     label: 'تسبيحة',
     accent: ZadSectionAccent.green,
-    open: showTasbihaScreen,
+    open: ZadScreens.showTasbihaScreen,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'maintenance',
     icon: Icons.build,
     label: 'صيانة المنزل',
     accent: ZadSectionAccent.brown,
-    open: showMaintenanceScreen,
+    open: ZadScreens.showMaintenanceScreen,
   ),
   const ZadSection(
     id: 'assistant',
@@ -196,40 +185,40 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.teal,
     open: _openAssistantTab,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'knowledge_map',
     icon: Icons.hub,
     label: 'خريطة زاد',
     accent: ZadSectionAccent.blue,
-    open: showKnowledgeMap,
+    open: ZadScreens.showKnowledgeMap,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'notifications',
     icon: Icons.notifications,
     label: 'الإشعارات',
     accent: ZadSectionAccent.amber,
-    open: showNotificationCenter,
+    open: ZadScreens.showNotificationCenter,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'statement',
     icon: Icons.receipt_long,
     label: 'استيراد كشف حساب',
     accent: ZadSectionAccent.slate,
-    open: showStatementImportScreen,
+    open: ZadScreens.showStatementImportScreen,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'premium',
     icon: Icons.star,
     label: 'باقات زاد الشهرية الذكية',
     accent: ZadSectionAccent.amber,
-    open: showPaywallScreen,
+    open: ZadScreens.showPaywallScreen,
   ),
-  const ZadSection(
+  ZadSection(
     id: 'profile',
     icon: Icons.person,
     label: 'حسابي',
     accent: ZadSectionAccent.slate,
-    open: showProfileScreen,
+    open: ZadScreens.showProfileScreen,
   ),
 ];
 
@@ -249,7 +238,7 @@ Future<void> _openAssistantTab(BuildContext context) async =>
 
 // Kotlin's family route opens BrainFamily on its family tab.
 Future<void> _openFamily(BuildContext context) =>
-    showBrainFamily(context, tab: BrainFamilyTab.family);
+    ZadScreens.showBrainFamily(context, tab: BrainFamilyTab.family);
 
 /// How many columns the grid has.
 const int kSectionColumns = 4;

@@ -4,10 +4,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/splash_screen.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/app/auth_gate.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Whether the app follows the phone's dark mode.
@@ -23,7 +23,10 @@ const bool followSystemDarkMode = false;
 /// The root widget.
 ///
 /// Opens on the gate, which is either the shell or the login screen — decided
-/// on the first frame, from the session already restored off disk.
+/// on the first frame, from the session already restored off disk. There is
+/// no Dart splash in front of it: the native one (flutter_native_splash.yaml)
+/// carries the design until that first frame, so the phone shows one splash,
+/// not a native one followed by a second, animated copy.
 ///
 /// Light only for now: see [followSystemDarkMode].
 class ZadApp extends ConsumerStatefulWidget {
@@ -99,7 +102,7 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const ZadSplashGate(),
+      home: const ZadAuthGate(),
     );
   }
 }

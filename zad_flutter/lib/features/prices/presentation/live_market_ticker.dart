@@ -6,11 +6,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/prices/application/live_market_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// `zadCardShadow(elevation = 6.dp)`.
 final List<BoxShadow> _pillShadow = composeShadow(
@@ -35,7 +36,7 @@ class LiveMarketTickerSlot extends ConsumerWidget {
         onRetry: () =>
             ref.read(liveMarketControllerProvider.notifier).refresh(),
         onContributePrice: () =>
-            showHouseholdSection(context, HouseholdSection.shopping),
+            ZadScreens.showHouseholdSection(context, HouseholdSection.shopping),
       ),
     );
   }

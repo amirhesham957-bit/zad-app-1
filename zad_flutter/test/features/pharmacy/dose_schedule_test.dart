@@ -12,9 +12,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/features/pharmacy/domain/dose_slot.dart';
-import 'package:zad/features/pharmacy/domain/dose_time.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/dose_time.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 Medicine medicine({
   String? doseTimes = '08:00,20:00',

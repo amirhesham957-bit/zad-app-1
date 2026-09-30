@@ -88,3 +88,15 @@ export function matchCatalog(need: Need, catalog: CatalogRow[]): CatalogRow | nu
   }
   return best;
 }
+
+/** The URL when Amazon itself serves it (a product photo), else null — never a stock picture. */
+export function amazonImageOrNull(url: unknown): string | null {
+  if (typeof url !== "string") return null;
+  let u: URL;
+  try { u = new URL(url.trim()); } catch { return null; }
+  if (u.protocol !== "https:") return null;
+  const host = u.hostname.toLowerCase();
+  const hosts = ["m.media-amazon.com", "images-na.ssl-images-amazon.com", "images-eu.ssl-images-amazon.com",
+    "images-fe.ssl-images-amazon.com", "images-amazon.com", "ssl-images-amazon.com"];
+  return hosts.some((h) => host === h || host.endsWith(`.${h}`)) ? u.toString() : null;
+}

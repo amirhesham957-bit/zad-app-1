@@ -8,17 +8,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/presentation/family_dialogs.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/orb/application/orb_accessory_controller.dart';
-import 'package:zad/features/orb/domain/orb_accessory.dart';
-import 'package:zad/features/orb/presentation/companion_orb.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
+import 'package:zad/shared/orb/domain/orb_accessory.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// Opens «زيّن زاد».
 Future<void> showOrbPicker(BuildContext context) =>
@@ -99,7 +99,7 @@ class OrbPickerDialog extends ConsumerWidget {
               );
             } else {
               final navigator = Navigator.of(context)..pop();
-              unawaited(showFamilyScreen(navigator.context));
+              unawaited(ZadScreens.showFamilyScreen(navigator.context));
             }
           },
         ),

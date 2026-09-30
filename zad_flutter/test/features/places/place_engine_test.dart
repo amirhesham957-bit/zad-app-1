@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:zad/features/alerts/domain/push_alert.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
-import 'package:zad/features/places/application/place_engine.dart';
-import 'package:zad/features/places/data/place_server.dart';
-import 'package:zad/features/places/domain/places.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad/shared/places/data/place_server.dart';
+import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
 class _Host implements PlaceHost {

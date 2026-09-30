@@ -57,6 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd } from "./lowStock.ts";
+import { loadSharedHistory, pickHistory, recordSharedTurn, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
@@ -290,7 +291,14 @@ function detectObligationCandidate(
   };
 }
 
-const BNPL_PROVIDERS = new Set(["تابي", "تمارة", "فاليو", "tabby", "tamara", "valu"]);
+// شركات "اشتري دلوقتي وادفع بعدين" في كل سوق — نفس قايمة التطبيق
+// (zad_flutter/lib/shared/subscriptions/domain/bnpl.dart). مصر كانت فاليو بس، والعميل
+// المصري بيدفع سيمبل وسهولة وكونتكت وأمان وحالاً كمان (٢٠٢٦-٠٩-٣٠).
+const BNPL_PROVIDERS = new Set([
+  "تابي", "تمارة", "تمارا", "فاليو", "سيمبل", "سهولة", "كونتكت", "أمان", "حالا", "مدفوع", "تالي",
+  "tabby", "tamara", "valu", "sympl", "souhoola", "contact", "aman", "halan", "madfu", "mispay",
+  "postpay", "cashew", "taly",
+]);
 
 /**
  * بند 32.1 — نسخة أسرع من detectObligationCandidate مخصوصة لتابي/تمارة/فاليو: مرتين
@@ -4884,6 +4892,21 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     }), { headers: CORS_HEADERS });
   }
 
+  // Independent reads, started together instead of one after another: the
+  // snapshot, the message's embedding (a network call to the model), the drift
+  // lessons, the learned skills and the agents' mail used to run in sequence
+  // before the model was even asked — seconds of every turn, and of a voice
+  // turn most of all (owner: «المساعد الصوتي بياخد ٤٠ ثانية», 2026-09-30).
+  const embeddingEarly = embedText(message).catch((e) => {
+    console.warn("embedding skipped:", e);
+    return null;
+  });
+  const driftLessonsEarly = buildDriftLessons(sb, userId);
+  const learnedSkillsEarly = loadSkills(sb, userId);
+  const agentMailEarly = fetchUnreadAgentMail(sb, userId);
+  const sharedHistoryEarly = declaredSource === "telegram"
+    ? Promise.resolve(null)
+    : loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
@@ -4896,7 +4919,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // التشابه بالمعنى بيرتّب من جديد (يلتقط "قهوتنا الصبح" لرسالة "مش بشرب قهوة").
   let relevantMemory = rankMemoryForMessage(snap.memory ?? [], message);
   try {
-    const queryVec = await embedText(message);
+    const queryVec = await embeddingEarly;
     if (queryVec) {
       const { data: sem } = await sb.rpc("zad_memory_semantic_search", {
         p_user: userId, p_query_embedding: queryVec, p_limit: 8,
@@ -4945,14 +4968,14 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     console.warn("semantic memory search skipped:", e);
   }
   // حلقة التعلم: دروس من انحرافات الوكيل السابقة مع نفس العميل
-  const driftLessons = await buildDriftLessons(sb, userId);
+  const driftLessons = await driftLessonsEarly;
   const lessonsBlock = driftLessons.length > 0
     ? "\n=== دروس من أخطائك السابقة مع هذا العميل ===\n" + driftLessons.map((l) => "- " + l).join("\n") + "\n=== نهاية الدروس ===\n"
     : "";
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
-  const learnedSkills = await loadSkills(sb, userId);
+  const learnedSkills = await learnedSkillsEarly;
   // تقارير الأيدجنتس غير المقروءة — العقل بيبقى واعي بشغل أيدجنتته بين رسالتين (Phase 3).
-  const agentMail = await fetchUnreadAgentMail(sb, userId);
+  const agentMail = await agentMailEarly;
   const systemPrompt =
     soulBlock()
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
@@ -4984,13 +5007,19 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
 
   // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
   // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
-  const history: Turn[] = [];
+  const clientHistory: SharedTurn[] = [];
   for (const h of (Array.isArray(body.history) ? body.history : []).slice(-8)) {
     const text = String(h?.text ?? "").trim();
     if (!text) continue;
-    if (h?.role === "user") history.push({ role: "user", text });
-    else if (h?.role === "assistant") history.push({ role: "assistant", text });
+    if (h?.role === "user") clientHistory.push({ role: "user", text });
+    else if (h?.role === "assistant") clientHistory.push({ role: "assistant", text });
   }
+  // One conversation on every channel (sharedConversation.ts): the app answers
+  // in the turns said by voice or on Telegram too. Telegram already sends that
+  // same table as its history.
+  const history: Turn[] = declaredSource === "telegram"
+    ? clientHistory
+    : pickHistory(await sharedHistoryEarly, clientHistory);
   history.push({ role: "user", text: message });
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
@@ -6633,7 +6662,17 @@ async function handleRequest(req: Request): Promise<Response> {
         );
       }
       const sbChat = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      if (body.action === "agent_turn") return await handleAgentTurn(sbChat, authedUserId, body);
+      if (body.action === "agent_turn") {
+        const res = await handleAgentTurn(sbChat, authedUserId, body);
+        // Telegram stores its own turns; any other caller's joins the shared conversation.
+        if (body.source !== "telegram") {
+          const payload = await res.clone().json().catch(() => null);
+          if (payload?.ok === true && typeof payload.reply === "string") {
+            await recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), payload.reply);
+          }
+        }
+        return res;
+      }
       if (body.action === "agent_turn_stream") return await handleAgentTurnStream(sbChat, authedUserId, body);
       if (body.action === "agent_confirm") return await handleAgentConfirm(sbChat, authedUserId, body);
       if (body.action === "notification_ingest") return await handleNotificationIngest(sbChat, authedUserId, body);
@@ -6849,6 +6888,10 @@ async function handleAgentTurnStream(sb: SupabaseClient, userId: string, body: a
     payload = await normal.json();
   } catch {
     return clone;
+  }
+  // The app's turn joins the one conversation every channel reads.
+  if (payload?.ok === true && typeof payload.reply === "string" && body.source !== "telegram") {
+    await recordSharedTurn(sb, userId, String(body.message ?? ""), payload.reply);
   }
   if (!payload || payload.ok !== true || typeof payload.reply !== "string" || payload.reply.length < 40) {
     // ردود قصيرة/أخطاء/تنفيذات → JSON عادي زي ما هو

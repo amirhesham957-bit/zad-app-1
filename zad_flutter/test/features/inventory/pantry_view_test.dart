@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart'
-    as pantry;
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart'
+    as pantry;
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 
 import '../../support/quiet_household.dart';
 
@@ -121,7 +121,11 @@ void main() {
       tester,
     ) async {
       await pump(tester);
-      expect(find.text('نواقص المخزون (1)'), findsOneWidget);
+      // One line of two spans since the strip stopped overflowing.
+      expect(
+        find.textContaining('نواقص المخزون (1)', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.text('ينتهي قريباً'), findsOneWidget);
       expect(find.text('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);

@@ -9,7 +9,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/features/brain/data/brain_health_repository.dart';
 import 'package:zad/features/brain/domain/brain_health.dart';
 
 /// What the screen draws.

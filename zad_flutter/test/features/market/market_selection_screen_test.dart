@@ -4,10 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/market/application/market_gate_controller.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/shared/market/application/market_gate_controller.dart';
+import 'package:zad/shared/market/domain/market.dart';
 
 /// Records the choice instead of saving it, so the test never reaches Hive.
 class _RecordingGate extends MarketGateController {

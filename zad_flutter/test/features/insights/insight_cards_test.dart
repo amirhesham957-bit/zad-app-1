@@ -4,10 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/insights/application/insights_controller.dart';
-import 'package:zad/features/insights/domain/insight.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
+import 'package:zad/shared/insights/application/insights_controller.dart';
+import 'package:zad/shared/insights/domain/insight.dart';
 
 class _Insights extends InsightsController {
   new(this.pending);

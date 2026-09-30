@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/prices/application/live_market_controller.dart';
 import 'package:zad/features/prices/presentation/live_market_ticker.dart';
 

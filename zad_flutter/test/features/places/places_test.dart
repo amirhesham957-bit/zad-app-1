@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/features/nearby/domain/nearby.dart';
-import 'package:zad/features/places/domain/places.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/places/domain/places.dart';
 
 void main() {
   setUpAll(tz_data.initializeTimeZones);

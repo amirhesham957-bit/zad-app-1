@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/providers.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// The bot's real username (`getMe`, 2026-07-31). `ZadSmartBot` is only its
 /// display name — searching Telegram for it finds nothing.

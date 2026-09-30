@@ -9,7 +9,11 @@
 /// nine plain selects, no function and no migration.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/brain/domain/brain_health.dart';
 
 /// The nine reads, as rows.
@@ -255,3 +259,12 @@ class BrainHealthRepository {
     );
   }
 }
+
+/// "صحة عقل زاد": nine reads and a verdict, never cached on disk.
+final brainHealthRepositoryProvider = Provider<BrainHealthRepository>((ref) {
+  return BrainHealthRepository(
+    remote: SupabaseBrainHealthRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+    now: ref.watch(nowProvider),
+  );
+});

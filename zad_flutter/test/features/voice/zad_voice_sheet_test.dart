@@ -9,15 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/chat/domain/chat_message.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
-import 'package:zad/features/voice/zad_voice_sheet.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/chat/domain/chat_message.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _Chat extends ChatController {
   final sent = <(String, bool)>[];

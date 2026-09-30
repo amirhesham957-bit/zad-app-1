@@ -12,17 +12,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_field_dialog.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
-import 'package:zad/features/tasbiha/domain/tasbiha.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/tasbiha/presentation/leaderboard_share.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
+import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
 /// Opens the garden.
 Future<void> showTasbihaScreen(BuildContext context) => Navigator.of(context)

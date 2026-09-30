@@ -17,11 +17,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `hide TextDirection`: the price field needs dart:ui's, digits left to right.
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
-import 'package:zad/features/prices/domain/prices.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
 
 /// Opens the prices screen.
 Future<void> showPricesScreen(BuildContext context) =>

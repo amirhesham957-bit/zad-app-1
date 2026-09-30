@@ -2,8 +2,8 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 
 /// True when the server has answered and the profile lacks a name, a gender,
 /// a household role or who the customer looks after.

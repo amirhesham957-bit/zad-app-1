@@ -5,6 +5,9 @@
 /// granted first; `LocationSource` asks for that.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// The permission.
@@ -51,3 +54,9 @@ class PluginBackgroundLocation implements BackgroundLocationAccess {
     await openAppSettings();
   }
 }
+
+/// "Allow all the time"; never granted unless `bootstrap()` installed the
+/// real check.
+final backgroundLocationProvider = Provider<BackgroundLocationAccess>(
+  (ref) => const NoBackgroundLocation(),
+);

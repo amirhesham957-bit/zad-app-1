@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 final DateTime _at = DateTime.utc(2026, 9, 20, 10);
 

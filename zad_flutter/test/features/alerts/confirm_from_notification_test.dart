@@ -2,8 +2,8 @@
 // the payload round trip, and where each kind of tap goes.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
 
 void main() {
   test('a confirm_transaction push carries its proposal; others do not', () {

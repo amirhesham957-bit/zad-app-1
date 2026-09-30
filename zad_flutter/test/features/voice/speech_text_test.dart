@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/voice/domain/speech_text.dart';
+import 'package:zad/shared/voice/domain/speech_text.dart';
 
 void main() {
   group('speakableText', () {

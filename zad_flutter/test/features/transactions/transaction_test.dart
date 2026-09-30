@@ -3,7 +3,7 @@
 // letter and a dead letter is a write the user was told had saved.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 void main() {
   final at = DateTime.utc(2026, 9, 19, 10, 30);

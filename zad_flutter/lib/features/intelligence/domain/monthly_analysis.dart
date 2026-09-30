@@ -11,7 +11,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// The four household groups of section 1, in the order the PDF shows them.
 enum FamilyGroup {

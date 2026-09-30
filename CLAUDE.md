@@ -219,6 +219,15 @@ Rules that apply to every Flutter change, in short:
 - **Civil time is the account's market zone** (`accountTimeZoneProvider`), never the
   device's. Dose times follow the server regex exactly (`24:00` is invalid).
 - **Agent tools run on the server** — `executed` is a receipt, never replay it locally.
+- **Feature-first layout (2026-09-30):** `lib/{app,core,shared,features}`. A
+  feature imports only `core/`, `shared/` and itself; it opens or embeds
+  another feature's UI through `ZadScreens`/`ZadSlots` (bound in
+  `app/wiring/`), and reads another's state only from `shared/`.
+  `test/architecture/feature_boundaries_test.dart` fails the build otherwise.
+  Rules and how to add a contract: FLUTTER_MIGRATION.md §2.
+- **One splash:** the native one (`zad_flutter/flutter_native_splash.yaml`,
+  pictures rendered by `tool/splash/render_splash_test.dart`). There is no
+  Dart splash widget; don't add one back — it was a second screen.
 - **Mutation-check the guards that matter.** It has caught two real test gaps already.
 - One slice, one commit, full verification, report, then continue.
 
@@ -256,6 +265,11 @@ already knowing where things stand instead of re-deriving it from commit history
   street alerts (geofences), Google Places, habit vs budget, «اتشاف هنا», «لمين؟», the wake
   greeting — what shipped per commit, the **measured** weak points (0 FCM tokens, thin data,
   empty profiles), and the ordered next steps. Read it before extending any of those.
+- `docs/agent/ZAD_BRAIN_PLAN.md` — **the target layout after the owner's 2026-09-30
+  review**: the brain at the centre (home = the brain's daily brief), four tabs instead
+  of 17 sections, recommendations/offers as brain skills rather than pages, «أماكني»
+  out of appointments, «الديون» into «التزاماتي», real streaming next — and the four
+  decisions the owner has to make first. Read it before restructuring any screen.
 - `docs/agent/FLUTTER_MIGRATION.md` — **the Flutter migration's status, conventions and
   remaining plan. Read this first for any work in `zad_flutter/`** (the active stream
   since 2026-09-19); the bullet below is about the Kotlin app and the server.

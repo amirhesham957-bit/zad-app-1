@@ -12,14 +12,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/orb/application/companion_mood.dart';
-import 'package:zad/features/orb/domain/companion_state.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
-import 'package:zad/features/voice/zad_voice.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/orb/application/companion_mood.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/application/zad_voice.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
@@ -64,6 +64,13 @@ class _Player implements VoicePlayer {
 
   @override
   Future<void> dispose() async {}
+}
+
+class _PreparingPlayer extends _Player implements PreparingVoicePlayer {
+  final prepared = <Uint8List>[];
+
+  @override
+  Future<void> prepare(Uint8List wav) async => prepared.add(wav);
 }
 
 class _Chat extends ChatController {
@@ -319,6 +326,40 @@ void main() {
         reason: 'the player stops',
       );
       expect(zad.speaking.value, isFalse);
+    },
+  );
+
+  test(
+    'the next chunk is loaded while this one plays, then played as is',
+    () async {
+      final preparing = _PreparingPlayer();
+      final pc = ProviderContainer(
+        overrides: [
+          voiceSynthesizerProvider.overrideWithValue(synth),
+          voicePlayerProvider.overrideWithValue(preparing),
+          voiceInputControllerProvider.overrideWith(_Mic.new),
+          chatControllerProvider.overrideWith(_Chat.new),
+        ],
+      );
+      addTearDown(pc.dispose);
+      unawaited(
+        pc
+            .read(voiceOutputControllerProvider.notifier)
+            .speak('$reply $reply', messageId: 'm1'),
+      );
+      await settle();
+      synth.answer(0);
+      await settle();
+      expect(preparing.played, hasLength(1));
+      // Chunk 1 arrives while chunk 0 is still playing: it is loaded now…
+      synth.answer(1);
+      await settle();
+      expect(preparing.prepared.map(_pcmOf), <String>['pcm1']);
+      // …and when chunk 0 ends, the very same bytes are played.
+      preparing.finish();
+      await settle();
+      expect(preparing.played, hasLength(2));
+      expect(identical(preparing.played[1], preparing.prepared.single), isTrue);
     },
   );
 }

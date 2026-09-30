@@ -2,7 +2,7 @@
 // and when the app has to show it itself.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
 
 void main() {
   test('the notification block wins; data is the fallback', () {

@@ -11,8 +11,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// Kotlin's `BrainMutationEntry`.
 typedef BrainMutation = ({

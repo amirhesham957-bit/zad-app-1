@@ -3,10 +3,10 @@
 // says.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/brain/domain/habits.dart';
-import 'package:zad/features/brain/domain/memory_note.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/habits.dart';
+import 'package:zad/shared/brain/domain/memory_note.dart';
 
 void main() {
   group('CustomerProfile.normalized', () {

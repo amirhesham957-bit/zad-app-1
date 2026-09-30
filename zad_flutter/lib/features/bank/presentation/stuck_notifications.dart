@@ -13,13 +13,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/insights/domain/insight.dart';
-import 'package:zad/features/insights/presentation/insight_cards.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/insights/domain/insight.dart';
+import 'package:zad/shared/insights/presentation/question_card.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 class _Revision extends Notifier<int> {
   @override

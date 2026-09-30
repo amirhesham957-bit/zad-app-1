@@ -15,10 +15,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 
 class _FakeRemote implements PharmacyRemote {
   /// The count a confirmation leaves on the row, as the table would.

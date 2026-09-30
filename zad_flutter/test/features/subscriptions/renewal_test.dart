@@ -7,7 +7,7 @@
 // re-run that query and paste the new answers here in the same commit.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/subscriptions/domain/renewal.dart';
+import 'package:zad/shared/subscriptions/domain/renewal.dart';
 
 typedef _Case = (
   int n,

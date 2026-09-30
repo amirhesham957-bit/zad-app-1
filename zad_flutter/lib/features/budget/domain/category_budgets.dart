@@ -3,7 +3,7 @@
 /// expenses in that category add up to.
 library;
 
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// One category's card.
 typedef CategoryLine = ({String category, double budget, double spent});

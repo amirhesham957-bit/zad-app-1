@@ -15,16 +15,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/data/consumption_observations.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart';
-import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/inventory/data/consumption_observations.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 const String _promptedKey = 'grocery_prompted_tx_ids';
 

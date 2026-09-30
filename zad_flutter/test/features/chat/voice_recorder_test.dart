@@ -15,7 +15,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
-import 'package:zad/features/chat/data/voice_recorder.dart';
+import 'package:zad/shared/chat/data/voice_recorder.dart';
 
 /// Stands in for the plugin. Only the calls this recorder makes are real; the
 /// rest throw if anything reaches for them.

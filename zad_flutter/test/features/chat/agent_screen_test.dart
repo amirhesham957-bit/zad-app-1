@@ -5,8 +5,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/chat/domain/agent_screen.dart';
-import 'package:zad/features/chat/domain/agent_turn.dart';
+import 'package:zad/shared/chat/domain/agent_screen.dart';
+import 'package:zad/shared/chat/domain/agent_turn.dart';
 
 /// `APP_COMMAND_SCREENS` as zad-brain's validators.ts declares it.
 List<String> _serverScreens() {

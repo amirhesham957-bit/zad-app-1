@@ -6,9 +6,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/features/chat/data/chat_repository.dart';
-import 'package:zad/features/chat/domain/agent_turn.dart';
-import 'package:zad/features/chat/domain/chat_message.dart';
+import 'package:zad/shared/chat/data/chat_repository.dart';
+import 'package:zad/shared/chat/domain/agent_turn.dart';
+import 'package:zad/shared/chat/domain/chat_message.dart';
 
 void main() {
   late Directory dir;

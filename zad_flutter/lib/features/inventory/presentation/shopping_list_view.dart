@@ -13,21 +13,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:share_plus/share_plus.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
@@ -306,7 +307,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   _Line(item: item, currency: currency),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
-                const AffiliateSuggestionSection(),
+                ZadSlots.affiliateSuggestionSection(),
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(

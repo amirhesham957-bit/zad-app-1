@@ -5,12 +5,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
-import 'package:zad/features/prices/domain/prices.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
 
 class _Prices extends PricesController {
   new(this.initial, {this.answer});

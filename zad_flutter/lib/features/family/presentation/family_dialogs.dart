@@ -8,39 +8,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show NumberFormat;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/design/components/zad_field_dialog.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-
-/// An amount with the account's currency.
-String familyMoney(double v, String currency) =>
-    '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
-
-/// The account's currency symbol, or empty.
-String familyCurrency(WidgetRef ref) => ref.watch(
-  budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
-);
-
-/// The invite deep link.
-String inviteLink(String code) => 'zad://invite?code=$code';
-
-/// Kotlin's `extractInviteCode`: a pasted link or message becomes its code.
-String extractInviteCode(String raw) {
-  final fromLink = RegExp(r'code=([A-Za-z0-9\-]+)').firstMatch(raw);
-  if (fromLink != null) return fromLink.group(1)!.toUpperCase();
-  final code = RegExp('ZAD-[A-Za-z0-9]+', caseSensitive: false).firstMatch(raw);
-  return (code?.group(0) ?? raw.trim()).toUpperCase();
-}
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
 
 // ── SOS ────────────────────────────────────────────────────────────────────
 

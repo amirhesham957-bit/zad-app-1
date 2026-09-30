@@ -4,13 +4,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/data/memory_repository.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/onboarding/application/introduction_gate.dart';
 import 'package:zad/features/onboarding/presentation/introduce_yourself_screen.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/data/memory_repository.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
 
 class _Memory extends MemoryController {
   new(this.profile, {this.fetched = true});

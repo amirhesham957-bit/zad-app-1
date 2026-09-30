@@ -11,27 +11,12 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/features/achievements/presentation/achievements_screen.dart';
-import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
-import 'package:zad/features/brain/presentation/brain_health_screen.dart';
-import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
-import 'package:zad/features/brain/presentation/memory_screen.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/intelligence/presentation/intelligence_screen.dart';
-import 'package:zad/features/savings/presentation/family_savings_screen.dart';
-import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
-
-/// The two tabs.
-enum BrainFamilyTab {
-  /// عقل زاد.
-  intelligence,
-
-  /// العائلة.
-  family,
-}
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the gateway on [tab].
 Future<void> showBrainFamily(
@@ -80,19 +65,35 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
     final intelligence = _tab == BrainFamilyTab.intelligence;
     final side = intelligence
         ? <Widget>[
-            _side(Icons.psychology, 'زاد عارف عني إيه', showMemoryScreen),
-            _side(Icons.hub, 'خريطة زاد', showKnowledgeMap),
-            _side(Icons.history, 'سجل تعديلات زاد', showAgentActionLog),
-            _side(Icons.monitor_heart, 'صحة عقل زاد', showBrainHealth),
+            _side(
+              Icons.psychology,
+              'زاد عارف عني إيه',
+              ZadScreens.showMemoryScreen,
+            ),
+            _side(Icons.hub, 'خريطة زاد', ZadScreens.showKnowledgeMap),
+            _side(
+              Icons.history,
+              'سجل تعديلات زاد',
+              ZadScreens.showAgentActionLog,
+            ),
+            _side(
+              Icons.monitor_heart,
+              'صحة عقل زاد',
+              ZadScreens.showBrainHealth,
+            ),
           ]
         : <Widget>[
-            _side(ZadIcons.savings, 'صناديق التجميع', showFamilySavingsScreen),
+            _side(
+              ZadIcons.savings,
+              'صناديق التجميع',
+              ZadScreens.showFamilySavingsScreen,
+            ),
             _side(
               ZadIcons.leaderboard,
               'الإنجازات والرتب',
-              showAchievementsScreen,
+              ZadScreens.showAchievementsScreen,
             ),
-            _side(ZadIcons.tree, 'تسبيحة', showTasbihaScreen),
+            _side(ZadIcons.tree, 'تسبيحة', ZadScreens.showTasbihaScreen),
           ];
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
@@ -147,11 +148,13 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: intelligence
-                    ? const IntelligenceScreen(
-                        key: ValueKey<String>('intelligence'),
+                    ? ZadSlots.intelligenceScreen(
+                        key: const ValueKey<String>('intelligence'),
                         embedded: true,
                       )
-                    : const FamilyScreen(key: ValueKey<String>('family')),
+                    : ZadSlots.familyScreen(
+                        key: const ValueKey<String>('family'),
+                      ),
               ),
             ),
           ],

@@ -12,8 +12,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 /// Kotlin's `MarketPriceItem`.
 @immutable

@@ -4,9 +4,9 @@
 // missing" button never puts on the list what is already there or at home.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 InventoryItem _stock(String name, int qty) =>
     InventoryItem(id: name, userId: 'u', itemName: name, quantity: qty);

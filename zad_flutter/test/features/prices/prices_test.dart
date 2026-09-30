@@ -11,14 +11,14 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
-import 'package:zad/features/prices/data/prices_remote.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
-import 'package:zad/features/prices/domain/prices.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/shared/prices/data/prices_remote.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 class _Server implements PricesRemote {
   final List<Map<String, Object?>> reports = <Map<String, Object?>>[];

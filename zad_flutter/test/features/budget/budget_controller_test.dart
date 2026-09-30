@@ -8,15 +8,15 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Stands in for `zad_budget_state()`.
 class _FakeBudgetRemote implements BudgetRemote {

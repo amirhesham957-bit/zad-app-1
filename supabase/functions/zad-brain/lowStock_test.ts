@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { lowStockToAdd, normalizeItemName } from "./lowStock.ts";
+import { lowStockToAdd, productFamilyOf, normalizeItemName } from "./lowStock.ts";
 
 Deno.test("an item bought from the list before comes back when it runs low", () => {
   // Only open rows are passed: the old purchased row no longer hides it.
@@ -32,4 +32,24 @@ Deno.test("each name once; blank names and junk quantities skipped", () => {
 
 Deno.test("normalizeItemName folds alef, taa marbuta, yaa and spaces", () => {
   assertEquals(normalizeItemName(" أرز  مصرى "), "ارز مصري");
+});
+
+Deno.test("٨ إزازات مية من ٥ ماركات مخزون واحد — مش ناقص", () => {
+  const pantry = [
+    { item_name: "ماء إيلان", quantity: 1 }, { item_name: "ماء بونا", quantity: 1 },
+    { item_name: "مياه إيلانو", quantity: 0 }, { item_name: "مياه داساني", quantity: 1 },
+    { item_name: "مياه نستله", quantity: 5 },
+  ];
+  assertEquals(lowStockToAdd(pantry, []), []);
+});
+
+Deno.test("السلعة الأساسية لما مجموعها يوصل الحد بتنزل مرة باسمها", () => {
+  const pantry = [{ item_name: "ماء إيلان", quantity: 0 }, { item_name: "مياه نستله", quantity: 1 }];
+  assertEquals(lowStockToAdd(pantry, []), ["مياه"]);
+  assertEquals(lowStockToAdd(pantry, ["مياه"]), []);
+});
+
+Deno.test("زيت زيتون مش زيت عباد — مابيتجمعوش", () => {
+  assertEquals(productFamilyOf("زيت زيتون"), null);
+  assertEquals(productFamilyOf("الأرز البسمتي"), "رز");
 });

@@ -87,3 +87,9 @@ verify_jwt = true
 # false، زي zad-telegram-bot بالظبط. الأمان هنا من توقيع جوجل نفسه مش من JWT.
 [functions.admob-ssv]
 verify_jwt = false
+
+# Added 2026-09-30: complaints from the app's support screen, for a person to
+# answer — saved to zad_support_tickets and emailed to the support inbox. Called
+# with the customer's own token, like zad-core-intelligence.
+[functions.zad-support]
+verify_jwt = true

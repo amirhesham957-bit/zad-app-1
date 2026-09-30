@@ -16,18 +16,18 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthException, PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/places/presentation/street_alerts_section.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -382,7 +382,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
               ),
               const SizedBox(height: ZadSpacing.md),
               _ObligationsLink(
-                onTap: () => unawaited(showFinancesScreen(context)),
+                onTap: () => unawaited(ZadScreens.showFinancesScreen(context)),
               ),
             ],
           ),
@@ -532,7 +532,7 @@ class _PlaceReminders extends StatelessWidget {
           ),
           // Without it no reminder here can ever fire: nothing knows the
           // customer has reached the shop.
-          const StreetAlertsSection(),
+          ZadSlots.streetAlertsSection(),
           if (reminders.isEmpty)
             Text(
               'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '

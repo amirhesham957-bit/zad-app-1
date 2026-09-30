@@ -10,24 +10,26 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/data/consumption_learner.dart';
-import 'package:zad/features/inventory/data/consumption_observations.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
-import 'package:zad/features/prices/domain/prices.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Where a scan has got to.
 enum ScanStage {
@@ -46,29 +48,6 @@ enum ScanStage {
 
   /// The call itself failed. Retrying the same image is exactly right.
   failed,
-}
-
-/// What a saved receipt did to the pantry.
-class PantryIntakeResult {
-  /// Creates a result.
-  const new({
-    required this.added,
-    required this.toppedUp,
-    required this.ticked,
-    this.failed = false,
-  });
-
-  /// New pantry rows.
-  final int added;
-
-  /// Existing rows that got more.
-  final int toppedUp;
-
-  /// Shopping-list lines ticked off.
-  final int ticked;
-
-  /// The expense was saved but the items did not reach the pantry.
-  final bool failed;
 }
 
 /// What a saved pharmacy receipt did to the pharmacy.
@@ -556,99 +535,7 @@ List<RestockProposal> pharmacyProposalsFor(Ref ref, ScannedReceipt receipt) {
 /// thing to do with that number is set the budget, which is otherwise typed
 /// by hand.
 
-/// Puts [lines] into the pantry and closes the shopping-list loop — a grocery
-/// receipt's ticked lines, or what a pantry photo showed.
-///
-/// Never throws: a pantry that could not be written is reported as
-/// [PantryIntakeResult.failed], because the caller may already have saved
-/// something (a receipt's expense) that must not be lost with it.
-Future<PantryIntakeResult> intakeIntoPantry(
-  Ref ref,
-  List<IntakeLine> lines, {
-  String source = ObservationSource.cameraOcr,
-}) async {
-  try {
-    final inventory = ref.read(inventoryRepositoryProvider);
-    final shopping = ref.read(shoppingListRepositoryProvider);
-    final readings = ref.read(consumptionObservationsProvider);
-
-    final plan = planIntake(
-      lines: lines,
-      pantry: inventory.cached(),
-      shopping: shopping.cached(),
-    );
-
-    for (final (:item, :add) in plan.increments) {
-      // The level before the purchase as well as after. The learner reads
-      // the drops between consecutive readings; with only the "after" one,
-      // everything eaten since the last reading vanishes into a rise.
-      await readings.record(item.itemName, item.quantity, source);
-      final updated = await inventory.adjustQuantity(item.id, add);
-      if (updated != null) {
-        await readings.record(updated.itemName, updated.quantity, source);
-      }
-    }
-    for (final line in plan.additions) {
-      final added = await inventory.add(
-        itemName: line.name,
-        quantity: line.quantity,
-        unit: line.unit,
-        category: line.category,
-      );
-      await readings.record(added.itemName, added.quantity, source);
-    }
-    for (final line in plan.bought) {
-      await shopping.setPurchased(line.id, purchased: true);
-    }
-    // Kotlin's `injectScannedItems` records a purchase for every scanned
-    // line on the on-device learner — what «هل خلص X؟» predicts from.
-    // Best effort: the pantry is already written, and a learner that could
-    // not be read must not report that write as failed.
-    try {
-      final learner = ref.read(consumptionLearnerProvider);
-      for (final line in lines) {
-        learner.recordPurchase(line.name);
-      }
-    } on Object {
-      // «هل خلص؟» simply learns from the next purchase instead.
-    }
-
-    if (ref.mounted) {
-      ref
-        ..invalidate(pantryControllerProvider)
-        ..invalidate(shoppingControllerProvider);
-    }
-    return PantryIntakeResult(
-      added: plan.additions.length,
-      toppedUp: plan.increments.length,
-      ticked: plan.bought.length,
-    );
-  } on Object {
-    return const PantryIntakeResult(
-      added: 0,
-      toppedUp: 0,
-      ticked: 0,
-      failed: true,
-    );
-  }
-}
-
-/// The camera.
-final receiptCameraProvider = Provider<ReceiptCamera>(
-  (ref) => ImagePickerCamera(),
-);
-
-/// The vision call.
-final receiptScannerProvider = Provider<ReceiptScanner>(
-  (ref) => SupabaseReceiptScanner(ref.watch(supabaseClientProvider)),
-);
-
 /// One scan.
 final scanControllerProvider = NotifierProvider<ScanController, ScanView>(
   ScanController.new,
-);
-
-/// The pantry and medicine photo reads.
-final visionScannerProvider = Provider<VisionScanner>(
-  (ref) => SupabaseVisionScanner(ref.watch(supabaseClientProvider)),
 );

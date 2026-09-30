@@ -11,7 +11,7 @@
 // fail a build; it makes a real customer's bank message stop being read.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/bank/domain/bank_notification.dart';
+import 'package:zad/shared/bank/domain/bank_notification.dart';
 
 void main() {
   group('the message that started it', () {

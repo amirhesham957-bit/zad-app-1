@@ -16,28 +16,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:zad/app/shell/zad_chrome.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/features/scan/application/camera_actions.dart';
-import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
-
-/// What the screen scans.
-enum CameraMode {
-  /// The pantry.
-  inventory,
-
-  /// A receipt.
-  receipt,
-
-  /// A medicine box.
-  pharmacy,
-}
+import 'package:zad/features/scan/presentation/camera_choice_sheet.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/data/vision_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 /// Opens the screen on [mode] — Kotlin's `camera/{mode}` route.
 Future<void> showCameraScreen(BuildContext context, CameraMode mode) =>

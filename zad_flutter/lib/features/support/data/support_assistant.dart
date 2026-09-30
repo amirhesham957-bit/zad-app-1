@@ -4,7 +4,11 @@
 /// about their own money to the real agent chat.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/support/domain/support_faq.dart';
 
 /// Answers one usage question.
@@ -64,3 +68,8 @@ class SupportAssistant {
     }
   }
 }
+
+/// The support screen's usage-help assistant.
+final supportAssistantProvider = Provider<SupportAssistant>(
+  (ref) => SupportAssistant(ref.watch(supabaseClientProvider)),
+);

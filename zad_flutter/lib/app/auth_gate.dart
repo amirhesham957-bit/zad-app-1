@@ -5,17 +5,17 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/zad_shell.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/auth/application/session_controller.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
-import 'package:zad/features/market/application/market_gate_controller.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
 import 'package:zad/features/onboarding/application/intro_controller.dart';
 import 'package:zad/features/onboarding/application/introduction_gate.dart';
 import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 import 'package:zad/features/onboarding/presentation/introduce_yourself_screen.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
+import 'package:zad/shared/market/application/market_gate_controller.dart';
 
 /// Shows the shell to a signed-in customer whose account has a market, the
 /// market picker to one whose account has none, «عرّفني بيك» to one whose

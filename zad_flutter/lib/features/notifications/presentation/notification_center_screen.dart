@@ -13,48 +13,25 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat;
-import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/insights/application/insights_controller.dart';
-import 'package:zad/features/insights/application/local_insights.dart';
-import 'package:zad/features/insights/domain/insight.dart';
-import 'package:zad/features/insights/presentation/insight_cards.dart';
-import 'package:zad/features/intelligence/presentation/intelligence_screen.dart';
-import 'package:zad/features/notifications/application/notifications_controller.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/presentation/proposals_screen.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
-import 'package:zad/features/voice/zad_voice.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/insights/application/insights_controller.dart';
+import 'package:zad/shared/insights/application/local_insights.dart';
+import 'package:zad/shared/insights/domain/insight.dart';
+import 'package:zad/shared/insights/presentation/question_card.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/voice/application/zad_voice.dart';
 
 /// Opens the screen.
 Future<void> showNotificationCenter(BuildContext context) =>
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const NotificationCenterScreen()),
     );
-
-/// "دلوقتي", "من ٥ دقايق", "من ٣ ساعات", "امبارح", or the date — counted in
-/// the account's market zone, so "yesterday" is the customer's yesterday.
-String whenLabel(DateTime at, DateTime now, String zone) {
-  final location = tz.getLocation(zone);
-  final localAt = tz.TZDateTime.from(at.toUtc(), location);
-  final localNow = tz.TZDateTime.from(now.toUtc(), location);
-  final age = localNow.difference(localAt);
-
-  if (age.inMinutes < 1) return 'دلوقتي';
-  if (age.inMinutes < 60) return 'من ${age.inMinutes} دقيقة';
-
-  final dayAt = DateTime.utc(localAt.year, localAt.month, localAt.day);
-  final dayNow = DateTime.utc(localNow.year, localNow.month, localNow.day);
-  final days = dayNow.difference(dayAt).inDays;
-  if (days == 0) return 'من ${age.inHours} ساعة';
-  if (days == 1) return 'امبارح';
-  return DateFormat('d MMMM', 'ar').format(dayAt);
-}
 
 /// The screen.
 class NotificationCenterScreen extends ConsumerStatefulWidget {
@@ -112,15 +89,19 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
   void _openFor(LocalInsight a) {
     final t = a.title;
     if (a.actionType == 'cancel_subscription') {
-      unawaited(showSubscriptionsScreen(context));
+      unawaited(ZadScreens.showSubscriptionsScreen(context));
     } else if (a.actionType == 'increase_budget') {
-      unawaited(showFinancesScreen(context));
+      unawaited(ZadScreens.showFinancesScreen(context));
     } else if (t.contains('دواء') || t.contains('جرعة')) {
-      unawaited(showHouseholdSection(context, HouseholdSection.pharmacy));
+      unawaited(
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
+      );
     } else if (t.contains('مخزون') || t.contains('طعام')) {
-      unawaited(showHouseholdSection(context, HouseholdSection.pantry));
+      unawaited(
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pantry),
+      );
     } else {
-      unawaited(showIntelligenceScreen(context));
+      unawaited(ZadScreens.showIntelligenceScreen(context));
     }
   }
 
@@ -202,7 +183,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                       if (!proposals.isEmpty) ...<Widget>[
                         section('عمليات بنكية بانتظارك'),
                         for (final p in proposals.rows) ...<Widget>[
-                          ProposalCard(
+                          ZadSlots.proposalCard(
                             proposal: p,
                             busy: proposals.deciding.contains(p.id),
                             failed: proposals.failed.contains(p.id),
