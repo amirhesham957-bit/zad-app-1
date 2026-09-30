@@ -13,7 +13,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/intelligence/presentation/executive_dossier_sheet.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart'
-    show shareBrainReportPdf;
+    show showBrainReport;
 
 /// The row.
 class HomeReportsRow extends ConsumerStatefulWidget {
@@ -49,7 +49,7 @@ class _HomeReportsRowState extends ConsumerState<HomeReportsRow> {
     if (_exporting) return;
     setState(() => _exporting = true);
     try {
-      await shareBrainReportPdf(ref);
+      await showBrainReport(context, ref);
     } on Object catch (e) {
       debugPrint('PDF export failed: $e');
       if (mounted) {

@@ -71,21 +71,15 @@ class ProfileScreen extends ConsumerWidget {
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
-                    icon: ZadIcons.brain,
-                    title: 'التحليل الذكي للسلوك',
-                    subtitle: view.behaviorConsent
-                        ? 'مفعل — يتم تحليل بياناتك لتقديم تنبؤات مخصصة'
-                        : 'غير مفعل — فعل لتحصل على تنبؤات ذكية',
-                    onTap: () => unawaited(_consent(context, ref)),
-                    trailing: Switch(
-                      value: view.behaviorConsent,
-                      onChanged: (_) => unawaited(_consent(context, ref)),
-                    ),
-                  ),
-                  _MenuRow(
                     icon: ZadIcons.memory,
                     title: 'زاد عارف عني إيه',
-                    subtitle: 'الذكريات اللي اتعلمها عنك',
+                    // «التحليل الذكي للسلوك» was a switch that saved a flag
+                    // nothing read (owner: «التفعيلات وهمية», 2026-10-01).
+                    // Zad analyses to help either way; this is where the
+                    // customer sees what it learnt and deletes any of it.
+                    subtitle:
+                        'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف '
+                        'اللي اتعلمه وامسح أي حاجة',
                     onTap: () =>
                         unawaited(ZadScreens.showMemoryScreen(context)),
                   ),
@@ -244,52 +238,6 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _consent(BuildContext context, WidgetRef ref) async {
-    final on = ref.read(profileControllerProvider).behaviorConsent;
-    final choice = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Row(
-          children: <Widget>[
-            Icon(ZadIcons.brain, color: ZadColors.green700),
-            SizedBox(width: ZadSpacing.sm),
-            Expanded(child: Text('التحليل الذكي للسلوك')),
-          ],
-        ),
-        content: const Text(
-          'زاد يحلل بيانات صرفك واستهلاكك (المعاملات، المخزون، الاشتراكات) '
-          'لتقديم:\n\n• تنبؤات مخصصة للمصاريف\n• ترشيحات ذكية للمنتجات\n'
-          '• تحليل أسبوعي للسلوك المالي\n\nهذا مطلوب بموجب نظام حماية '
-          'البيانات الشخصية السعودي (PDPL).\nيمكنك إلغاء التفعيل في أي وقت.',
-        ),
-        actions: <Widget>[
-          if (on)
-            TextButton(
-              onPressed: () => Navigator.of(c).pop(false),
-              child: Text(
-                'إلغاء التفعيل',
-                style: TextStyle(color: ZadColors.terracottaRust),
-              ),
-            )
-          else ...<Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(c).pop(),
-              child: const Text('لاحقاً'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(c).pop(true),
-              child: const Text('تفعيل'),
-            ),
-          ],
-        ],
-      ),
-    );
-    if (choice == null) return;
-    await ref
-        .read(profileControllerProvider.notifier)
-        .setBehaviorConsent(given: choice);
   }
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {

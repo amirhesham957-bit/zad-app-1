@@ -30,3 +30,28 @@ export function dealSearchItems(raw: unknown, max = MAX_DEAL_ITEMS): string[] {
   }
   return out;
 }
+
+/**
+ * Whether a price's currency, as the model read it off a page («جنيه», "EGP", «ج.م»),
+ * is the account's [code]. The shopping list's estimates came back in whatever currency
+ * the web answered — riyals for an Egyptian basket — and the total was wrong (owner,
+ * 2026-10-01). An unknown code keeps everything, as before.
+ */
+const CURRENCY_WORDS: Record<string, RegExp> = {
+  EGP: /EGP|E£|جنيه|ج\.?\s?م/i,
+  SAR: /SAR|ريال سعودي|ر\.?\s?س|^ريال$/i,
+  AED: /AED|درهم|د\.?\s?إ/i,
+  KWD: /KWD|دينار كويتي|د\.?\s?ك/i,
+  QAR: /QAR|ريال قطري|ر\.?\s?ق/i,
+  BHD: /BHD|دينار بحريني|د\.?\s?ب/i,
+  OMR: /OMR|ريال عماني|ر\.?\s?ع/i,
+  JOD: /JOD|دينار أردني|د\.?\s?أ/i,
+  TRY: /TRY|TL|₺|ليرة/i,
+};
+
+export function sameCurrency(code: string | null | undefined, text: string | null | undefined): boolean {
+  const c = (code ?? "").trim().toUpperCase();
+  const re = CURRENCY_WORDS[c];
+  if (!re) return true;
+  return re.test((text ?? "").trim());
+}

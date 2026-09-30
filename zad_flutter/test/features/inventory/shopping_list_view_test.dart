@@ -63,6 +63,8 @@ class _Ai implements ShoppingAiRemote {
   Future<double?> estimatePrice({
     required String userId,
     required String itemName,
+    String location = '',
+    String currency = '',
   }) async => null;
 }
 

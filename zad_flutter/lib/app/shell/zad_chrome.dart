@@ -375,7 +375,7 @@ class ZadDrawerEntry {
 /// The drawer: everything, grouped by the bar's four places (2026-09-30) —
 /// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest.
 const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
-  ZadDrawerEntry(id: 'home', icon: Icons.auto_awesome, label: 'زاد'),
+  ZadDrawerEntry(id: 'home', icon: Icons.home, label: 'الرئيسية'),
   ZadDrawerEntry(id: 'assistant', icon: Icons.psychology, label: 'عقل زاد'),
   ZadDrawerEntry(id: 'appointments', icon: Icons.event, label: 'مواعيدي'),
   ZadDrawerEntry(id: 'places', icon: Icons.place, label: 'أماكني'),
@@ -408,6 +408,11 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
     label: 'المتاجر والأسواق القريبة',
   ),
   ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
+  ZadDrawerEntry(
+    id: 'premium',
+    icon: Icons.star,
+    label: 'باقات زاد الشهرية',
+  ),
   ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
   ZadDrawerEntry(
     id: 'notifications',

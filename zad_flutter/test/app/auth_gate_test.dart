@@ -415,14 +415,14 @@ void main() {
       expect(container.read(shellNavigationProvider), isNull);
     });
 
-    testWidgets('the bar is زاد · فلوسي · بيتي · عيلتي, and each can be asked '
-        'for', (tester) async {
+    testWidgets('the bar is الرئيسية · فلوسي · بيتي · المزيد, and each '
+        'can be asked for', (tester) async {
       final container = containerFor('user-1');
       addTearDown(container.dispose);
 
       await pumpGate(tester, container);
       await tester.pump(Duration.zero);
-      for (final label in <String>['زاد', 'فلوسي', 'بيتي', 'عيلتي']) {
+      for (final label in <String>['الرئيسية', 'فلوسي', 'بيتي', 'المزيد']) {
         expect(
           find.descendant(
             of: find.byType(ZadBottomNavBar),

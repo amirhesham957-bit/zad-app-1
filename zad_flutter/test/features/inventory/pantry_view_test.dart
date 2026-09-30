@@ -55,6 +55,40 @@ void main() {
     });
   });
 
+  testWidgets('brands of water are one card with the house total; a tap '
+      'opens them', (tester) async {
+    final items = <InventoryItem>[
+      _i('w1', 'ماء إيلان', qty: 1, category: 'المشروبات'),
+      _i('w2', 'ماء صافي', qty: 3, category: 'المشروبات'),
+      _i('w3', 'مياه نستله', qty: 2, category: 'المشروبات'),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pantry.pantryControllerProvider.overrideWith(
+            () => QuietPantry(pantry.PantryView(items: items)),
+          ),
+          shoppingControllerProvider.overrideWith(QuietShopping.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PantryView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('مياه'), findsOneWidget);
+    expect(find.text('6'), findsOneWidget, reason: 'the house total');
+    expect(find.text('ماء صافي'), findsNothing, reason: 'closed by default');
+    await tester.tap(find.text('مياه'));
+    await tester.pump();
+    expect(find.text('ماء صافي'), findsOneWidget);
+  });
+
   group('the screen', () {
     final milk = _i('1', 'لبن', qty: 0, category: 'الألبان');
     final rice = _i('2', 'أرز', category: 'البقالة');

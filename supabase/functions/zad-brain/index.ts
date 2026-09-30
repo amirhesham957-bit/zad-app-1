@@ -56,7 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
-import { lowStockToAdd } from "./lowStock.ts";
+import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { loadSharedHistory, pickHistory, recordSharedTurn, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
@@ -978,6 +978,20 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false };
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
+  // A staple under several brands is one stock: the brain said «المية قليلة، عبوة واحدة»
+  // with six brands and eight bottles in the house (owner, 2026-10-01).
+  const familyTotals = new Map<string, { total: number; brands: string[] }>();
+  for (const item of invRes.data ?? []) {
+    const family = productFamilyOf(String(item.item_name ?? ""));
+    if (!family) continue;
+    const entry = familyTotals.get(family) ?? { total: 0, brands: [] };
+    entry.total += Number(item.quantity) || 0;
+    entry.brands.push(String(item.item_name));
+    familyTotals.set(family, entry);
+  }
+  const stockTotals = [...familyTotals.entries()]
+    .filter(([, v]) => v.brands.length > 1)
+    .map(([name, v]) => ({ name, total: v.total, brands: v.brands.slice(0, 8) }));
 
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
@@ -1088,7 +1102,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // اقتراح دورة راتب لسه محتاج تأكيد العميل — انظر تعليمات confirm_cycle_start تحت.
     // suggested_day=null يعني مفيش تجمّع دخل واضح لسه (بيانات مش كفاية، أو دخل غير منتظم).
     cycle_detection: cycleDetection,
-    byCategory, stock, stock_unknown: stockUnknownNames, anomalies, upcoming,
+    byCategory, stock, stock_totals: stockTotals, stock_unknown: stockUnknownNames, anomalies, upcoming,
     shopping_list_pending: (shopRes.data ?? []).map((s) => s.item_name),
     // evidence_count كان بيتقري من zad_memory وبيتترمي هنا من غير سبب — وهو بالظبط
     // رقم "اتقال كام مرة" (zad_memory_upsert بيزوده كل ما ملاحظة جديدة تشبه واحدة
@@ -5922,6 +5936,10 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode)}
+2ب. **واعي بالبيت وبالبلد**:
+   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
+   - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
+   - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ **web_search** قبل ما ترد، واذكر المصدر. متقولش «معنديش إنترنت».
 3. **الذكاء العاطفي (Emotional Intelligence)**:
    - استنتج الحالة المحتملة من الكلمات والسياق فقط، ولا تزعم أنك سمعت نبرة لم تصلك. لو العميل مستعجل اختصر، ولو مضغوط تكلم بهدوء وتعاطف.
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.

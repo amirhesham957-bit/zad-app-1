@@ -116,7 +116,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     ZadNavDestination.money => 'فلوسي',
     ZadNavDestination.inventory => 'بيتي',
     ZadNavDestination.family => 'عيلتي',
-    ZadNavDestination.home => 'زاد',
+    ZadNavDestination.home || ZadNavDestination.more => 'الرئيسية',
   };
 
   Future<void> _openBrain() => showBrainFamily(context);
@@ -335,6 +335,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
             onNavigate: _show,
             onOpenCamera: () => unawaited(_openCamera()),
             onOpenVoice: () => unawaited(_openVoice()),
+            onOpenMore: () => _scaffold.currentState?.openDrawer(),
           ),
         ),
       ),

@@ -44,8 +44,12 @@ enum ZadNavDestination {
   /// بيتي — the pantry, the shopping list and the pharmacy.
   inventory,
 
-  /// عيلتي — the family (and, in kids mode, a child's family screen).
+  /// عيلتي — the family (and, in kids mode, a child's family screen). Not
+  /// in the adult bar: it opens from the drawer.
   family,
+
+  /// المزيد — not a screen: it opens the drawer, where everything is.
+  more,
 }
 
 class _NavItem {
@@ -58,11 +62,13 @@ class _NavItem {
 
 // Kotlin draws these with Material's filled icons (`Icons.Default.*`), so
 // these are the same glyphs, not Lucide look-alikes.
+// The owner, 2026-10-01: الرئيسية first, and the drawer back in the bar —
+// hunting for the menu square at the top was worse. عيلتي moved into it.
 const List<_NavItem> _adultItems = <_NavItem>[
-  _NavItem(ZadNavDestination.home, Icons.auto_awesome, 'زاد'),
+  _NavItem(ZadNavDestination.home, Icons.home, 'الرئيسية'),
   _NavItem(ZadNavDestination.money, Icons.account_balance_wallet, 'فلوسي'),
-  _NavItem(ZadNavDestination.inventory, Icons.home, 'بيتي'),
-  _NavItem(ZadNavDestination.family, Icons.family_restroom, 'عيلتي'),
+  _NavItem(ZadNavDestination.inventory, Icons.kitchen, 'بيتي'),
+  _NavItem(ZadNavDestination.more, Icons.menu, 'المزيد'),
 ];
 
 const List<_NavItem> _kidsItems = <_NavItem>[
@@ -78,6 +84,7 @@ class ZadBottomNavBar extends StatelessWidget {
     required this.onNavigate,
     required this.onOpenCamera,
     required this.onOpenVoice,
+    this.onOpenMore,
     this.kidsMode = false,
     super.key,
   });
@@ -94,6 +101,9 @@ class ZadBottomNavBar extends StatelessWidget {
   /// The mic orb.
   final VoidCallback onOpenVoice;
 
+  /// المزيد: the drawer.
+  final VoidCallback? onOpenMore;
+
   /// Home and family only.
   final bool kidsMode;
 
@@ -107,7 +117,9 @@ class ZadBottomNavBar extends StatelessWidget {
         icon: item.icon,
         label: item.label,
         selected: current == item.destination,
-        onTap: () => onNavigate(item.destination),
+        onTap: () => item.destination == ZadNavDestination.more
+            ? onOpenMore?.call()
+            : onNavigate(item.destination),
       ),
     ),
   );

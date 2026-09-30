@@ -16,3 +16,16 @@ Deno.test("a comma-joined string still works; anything else is empty", () => {
   assertEquals(dealSearchItems(undefined), []);
   assertEquals(dealSearchItems({ items: ["رز"] }), []);
 });
+
+import { sameCurrency } from "./liveDeals.ts";
+
+Deno.test("a price counts only in the account's currency", () => {
+  assertEquals(sameCurrency("EGP", "جنيه"), true);
+  assertEquals(sameCurrency("EGP", "EGP"), true);
+  assertEquals(sameCurrency("EGP", "ج.م"), true);
+  assertEquals(sameCurrency("EGP", "ريال"), false);
+  assertEquals(sameCurrency("SAR", "ر.س"), true);
+  assertEquals(sameCurrency("SAR", "جنيه"), false);
+  assertEquals(sameCurrency("", "anything"), true);
+  assertEquals(sameCurrency("XYZ", "anything"), true);
+});
