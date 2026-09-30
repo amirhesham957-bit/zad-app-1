@@ -28,7 +28,6 @@ import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
-import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
@@ -98,7 +97,6 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 18),
           ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
-          const ZadAppearOnEntry(delayMs: 92, child: WeekWithZadSlot()),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
           ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
           ZadSlots.stuckNotificationsSlot(),

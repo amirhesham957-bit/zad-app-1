@@ -408,6 +408,11 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
     label: 'المتاجر والأسواق القريبة',
   ),
   ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
+  ZadDrawerEntry(
+    id: 'premium',
+    icon: Icons.star,
+    label: 'باقات زاد الشهرية',
+  ),
   ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
   ZadDrawerEntry(
     id: 'notifications',
