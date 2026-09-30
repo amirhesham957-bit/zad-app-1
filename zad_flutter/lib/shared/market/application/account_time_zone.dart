@@ -36,6 +36,19 @@ final accountTimeZoneProvider = Provider<String>((ref) {
   return 'UTC';
 });
 
+/// The account's country (ISO alpha-2) from the settings already on the
+/// device, or null — never a network read, and never an error: a screen that
+/// only tailors its suggestions to the market (the BNPL companies offered)
+/// must open without it.
+final accountCountryProvider = Provider<String?>((ref) {
+  try {
+    final country = ref.watch(settingsRepositoryProvider).cached()?.country;
+    return country == null || country.isEmpty ? null : country;
+  } on Object {
+    return null;
+  }
+});
+
 /// What to send a server function as its `p_tz` argument, read fresh on each
 /// call.
 ///

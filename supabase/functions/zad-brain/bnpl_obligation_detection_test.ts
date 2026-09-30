@@ -68,3 +68,11 @@ Deno.test("detectBnplObligationCandidate بيرجع dedupe_key مستقر لنف
   assertEquals(a?.dedupe_key, b?.dedupe_key);
   assertEquals(typeof a?.dedupe_key, "string");
 });
+
+Deno.test("detectBnplObligationCandidate بيعرف شركات مصر التانية — سيمبل وسهولة", () => {
+  const tx = [
+    { bank_name: "سيمبل", amount: 400, created_at: "2026-08-01T00:00:00Z" },
+    { bank_name: "سيمبل", amount: 400, created_at: "2026-08-31T00:00:00Z" },
+  ];
+  assertEquals(detectBnplObligationCandidate(tx, [])?.title, "قسط سيمبل");
+});

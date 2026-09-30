@@ -290,7 +290,14 @@ function detectObligationCandidate(
   };
 }
 
-const BNPL_PROVIDERS = new Set(["تابي", "تمارة", "فاليو", "tabby", "tamara", "valu"]);
+// شركات "اشتري دلوقتي وادفع بعدين" في كل سوق — نفس قايمة التطبيق
+// (zad_flutter/lib/shared/subscriptions/domain/bnpl.dart). مصر كانت فاليو بس، والعميل
+// المصري بيدفع سيمبل وسهولة وكونتكت وأمان وحالاً كمان (٢٠٢٦-٠٩-٣٠).
+const BNPL_PROVIDERS = new Set([
+  "تابي", "تمارة", "تمارا", "فاليو", "سيمبل", "سهولة", "كونتكت", "أمان", "حالا", "مدفوع", "تالي",
+  "tabby", "tamara", "valu", "sympl", "souhoola", "contact", "aman", "halan", "madfu", "mispay",
+  "postpay", "cashew", "taly",
+]);
 
 /**
  * بند 32.1 — نسخة أسرع من detectObligationCandidate مخصوصة لتابي/تمارة/فاليو: مرتين
