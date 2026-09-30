@@ -107,11 +107,31 @@ function cleanText(raw: unknown, max: number): string {
 }
 
 /** «لمين؟» — اسم الشخص اللي الدوا/الميعاد ليه، زي ما العميل قاله. null = العميل نفسه. */
+/**
+ * «ماما» و«أمي» و«والدتي» واحدة — كانوا بيتسجلوا ٣ أشخاص عند العقل (ZAD_SUPER_AGENT.md
+ * نقطة ٨). صلة القرابة المعروفة بتتوحّد لاسم واحد؛ أي اسم تاني («سارة»، «عم أحمد») بيفضل
+ * زي ما هو.
+ */
+const KIN: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^(ماما|مامتي|امي|أمي|إمي|والدتي|الوالدة|امى|أمى|mama|mom|mum|mother)$/i, "ماما"],
+  [/^(بابا|باباي|ابويا|أبويا|ابوي|أبوي|ابي|أبي|والدي|الوالد|papa|dad|father)$/i, "بابا"],
+  [/^(تيتا|ستي|ستّي|جدتي|جدّتي|نانا|grandma)$/i, "تيتا"],
+  [/^(جدو|جدي|جدّي|grandpa)$/i, "جدو"],
+  [/^(مراتي|زوجتي|المدام|wife)$/i, "مراتي"],
+  [/^(جوزي|زوجي|husband)$/i, "جوزي"],
+];
+
 export function normalizeForPerson(raw: unknown): string | null {
-  const name = cleanText(raw, 40);
+  let name = cleanText(raw, 40);
+  if (!name) return null;
+  // «لماما» / «لـ ماما» — حرف الجر مش جزء من الاسم (بس قدام صلة قرابة، عشان «لينا» تفضل اسم).
+  name = name.replace(/^لـ\s*/, "").replace(/^ل(?=(ماما|بابا|تيتا|جدو|مراتي|جوزي|امي|أمي|ابويا|أبويا|والدتي|والدي)$)/, "").trim();
   if (!name) return null;
   // «أنا»/«ليا» = العميل نفسه، مش شخص تاني اسمه «أنا».
   if (/^(انا|أنا|ليا|لي|نفسي|me|myself)$/i.test(name)) return null;
+  for (const [re, canonical] of KIN) {
+    if (re.test(name)) return canonical;
+  }
   return name;
 }
 
