@@ -39,6 +39,7 @@ import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/features/places/presentation/keep_alive_guide.dart';
 import 'package:zad/features/places/presentation/my_places_screen.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/features/prices/presentation/live_market_ticker.dart';
@@ -166,6 +167,7 @@ void wireSlots() {
   ZadSlots.obligationsSection = () => const ObligationsSection();
   ZadSlots.pharmacyView = () => const PharmacyView();
   ZadSlots.streetAlertsSection = () => const StreetAlertsSection();
+  ZadSlots.keepAliveGuide = () => const KeepAliveGuide();
   ZadSlots.liveMarketTickerSlot = () => const LiveMarketTickerSlot();
   ZadSlots.homeProposalsSection = () => const HomeProposalsSection();
   ZadSlots.proposalCard =

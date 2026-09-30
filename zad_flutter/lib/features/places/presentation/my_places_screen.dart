@@ -30,6 +30,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/places/domain/my_places.dart';
+import 'package:zad/features/places/presentation/keep_alive_guide.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -206,6 +207,8 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
                 onAdd: () => unawaited(_add()),
                 onCancel: (r) => unawaited(_cancel(r)),
               ),
+              const SizedBox(height: ZadSpacing.lg),
+              const KeepAliveGuide(),
               const SizedBox(height: ZadSpacing.lg),
               _Section(
                 icon: ZadIcons.brain,
