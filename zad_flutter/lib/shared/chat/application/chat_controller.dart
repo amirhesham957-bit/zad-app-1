@@ -163,7 +163,7 @@ class ChatController extends Notifier<ChatView> {
     final voice = viaVoice
         ? ref
               .read(voiceOutputControllerProvider.notifier)
-              .speakStreaming(messageId: placeholder.id)
+              .speakStreaming(messageId: placeholder.id, opener: true)
         : null;
 
     await _turn?.cancel();

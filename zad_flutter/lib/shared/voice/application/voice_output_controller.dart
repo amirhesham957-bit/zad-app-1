@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/voice/data/voice_openers.dart';
 import 'package:zad/shared/voice/data/voice_player.dart';
 import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 import 'package:zad/shared/voice/domain/speech_text.dart';
@@ -162,23 +163,36 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
   /// [StreamedSpeech.finish]. The first chunk is asked for as soon as a
   /// sentence ends past [firstStreamedChunk] characters, so Zad talks while
   /// the brain is still writing instead of after it has finished.
-  StreamedSpeech speakStreaming({String? messageId}) {
+  ///
+  /// With [opener], a short line زاد has said before and the device kept
+  /// («لحظة واحدة…») plays at once, while the answer is still being thought
+  /// and synthesized — a spoken question used to meet ten seconds of silence.
+  StreamedSpeech speakStreaming({String? messageId, bool opener = false}) {
     final chunks = StreamController<String>();
-    unawaited(_speakArriving(chunks.stream, messageId: messageId));
+    unawaited(
+      _speakArriving(chunks.stream, messageId: messageId, opener: opener),
+    );
     return StreamedSpeech._(chunks);
   }
+
+  /// How many chunks are synthesized at once. Each is its own request on the
+  /// server's key pool, and every one of them used to wait for the audio of
+  /// the one before it (function logs, 2026-09-30: the second sentence's
+  /// request started only after the first's 6.5 s had passed).
+  static const int _inFlight = 3;
 
   Future<void> _speakArriving(
     Stream<String> chunks, {
     String? messageId,
+    bool opener = false,
   }) async {
     final generation = ++_generation;
     final synth = ref.read(voiceSynthesizerProvider);
     final player = ref.read(voicePlayerProvider);
-    final arriving = StreamIterator<String>(chunks);
+    bool current() => ref.mounted && generation == _generation;
     await player.stop();
-    if (!ref.mounted || generation != _generation) {
-      await arriving.cancel();
+    if (!current()) {
+      await chunks.listen(null).cancel();
       return;
     }
     state = VoiceOutputView(
@@ -186,68 +200,100 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
       messageId: messageId,
     );
 
-    // A record, not a nested future: `async` would flatten Future<Future<…>>
-    // and wait for the audio before handing back the chunk.
-    Future<({Future<SpokenAudio> audio})?> ask() async {
-      if (!await arriving.moveNext()) return null;
-      final audio = synth.synthesize(arriving.current)..ignore();
-      return (audio: audio);
+    // Every chunk is asked for the moment the reply releases it, a few at
+    // once, and played in order.
+    final queue = _AudioQueue();
+    final slots = _Slots(_inFlight);
+    unawaited(() async {
+      try {
+        await for (final text in chunks) {
+          if (!current()) break;
+          await slots.acquire();
+          if (!current()) {
+            slots.release();
+            break;
+          }
+          queue.add(
+            synth.synthesize(text).whenComplete(slots.release)..ignore(),
+          );
+        }
+      } on Object catch (_) {
+        // A reply that failed mid-way: what is queued still plays.
+      } finally {
+        queue.close();
+      }
+    }());
+
+    Future<void>? openerPlaying;
+    if (opener) {
+      final clip = await _openerClip();
+      if (clip != null && current()) {
+        openerPlaying = player.play(pcmToWav(smoothPcmEdges(clip)));
+      }
     }
 
-    // One chunk ahead, as [speak] does: the next is asked for while the
-    // current one plays, and never more than that at once.
-    var next = ask();
     // As in [speak]: the next chunk is loaded while this one plays.
-    var index = 0;
     ({int index, Uint8List wav})? prepared;
     try {
-      while (true) {
-        final pending = await next;
+      for (var i = 0; ; i++) {
+        final pending = await queue.at(i);
         if (pending == null) break;
         final audio = await pending.audio;
-        if (!ref.mounted || generation != _generation) return;
-        next = ask();
+        if (!current()) return;
+        if (openerPlaying != null) {
+          await openerPlaying;
+          openerPlaying = null;
+          if (!current()) return;
+        }
         state = VoiceOutputView(
           stage: VoiceOutputStage.speaking,
           messageId: messageId,
           provider: audio.provider,
           level: pcmLoudness(audio.pcm),
         );
-        final current = index++;
-        final wav = prepared?.index == current
+        final wav = prepared?.index == i
             ? prepared!.wav
             : pcmToWav(smoothPcmEdges(audio.pcm));
         prepared = null;
         final playing = player.play(wav);
         if (player is PreparingVoicePlayer) {
-          final upcoming = next;
+          final next = i + 1;
           unawaited(
-            upcoming
+            queue
+                .at(next)
                 .then((p) async {
                   if (p == null) return;
                   final a = await p.audio;
-                  if (!ref.mounted || generation != _generation) return;
+                  if (!current()) return;
                   final w = pcmToWav(smoothPcmEdges(a.pcm));
-                  prepared = (index: current + 1, wav: w);
+                  prepared = (index: next, wav: w);
                   await player.prepare(w);
                 })
                 .catchError((Object _) {}),
           );
         }
         await playing;
-        if (!ref.mounted || generation != _generation) return;
+        if (!current()) return;
       }
-      if (ref.mounted && generation == _generation) {
-        state = VoiceOutputView(provider: state.provider);
-      }
+      await openerPlaying;
+      if (current()) state = VoiceOutputView(provider: state.provider);
     } on Object catch (e) {
       debugPrint('voice_synthesize failed: $e');
-      if (ref.mounted && generation == _generation) {
-        state = const VoiceOutputView(failed: true);
-      }
+      if (current()) state = const VoiceOutputView(failed: true);
     } finally {
-      next.ignore();
-      await arriving.cancel();
+      queue.dropAll();
+    }
+  }
+
+  /// A kept opener, or null when none is ready — never a wait on the network.
+  Future<Uint8List?> _openerClip() async {
+    try {
+      return await ref
+          .read(voiceOpenersProvider)
+          .pick()
+          .timeout(const Duration(milliseconds: 400));
+    } on Object {
+      return null;
     }
   }
 
@@ -256,6 +302,73 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     _generation++;
     if (state.isActive) state = const VoiceOutputView();
     await ref.read(voicePlayerProvider).stop();
+  }
+}
+
+/// Chunks' audio in reply order, as each request goes out.
+class _AudioQueue {
+  final List<Future<SpokenAudio>> _items = <Future<SpokenAudio>>[];
+  var _closed = false;
+  Completer<void>? _grew;
+
+  void add(Future<SpokenAudio> audio) {
+    _items.add(audio);
+    _wake();
+  }
+
+  void close() {
+    _closed = true;
+    _wake();
+  }
+
+  void _wake() {
+    final grew = _grew;
+    _grew = null;
+    if (grew != null && !grew.isCompleted) grew.complete();
+  }
+
+  /// The [i]th chunk's audio once it has been asked for, or null when the
+  /// reply ended before it. A record, not a nested future: `async` would
+  /// flatten a nested future and wait for the audio itself.
+  Future<({Future<SpokenAudio> audio})?> at(int i) async {
+    while (i >= _items.length) {
+      if (_closed) return null;
+      await (_grew ??= Completer<void>()).future;
+    }
+    return (audio: _items[i]);
+  }
+
+  /// Nothing waiting on a chunk that will not play reports its failure.
+  void dropAll() {
+    for (final f in _items) {
+      f.ignore();
+    }
+  }
+}
+
+/// A counting semaphore.
+class _Slots {
+  new(this._free);
+
+  int _free;
+  final List<Completer<void>> _waiting = <Completer<void>>[];
+
+  Future<void> acquire() {
+    if (_free > 0) {
+      _free--;
+      return Future<void>.value();
+    }
+    final c = Completer<void>();
+    _waiting.add(c);
+    return c.future;
+  }
+
+  void release() {
+    if (_waiting.isNotEmpty) {
+      _waiting.removeAt(0).complete();
+    } else {
+      _free++;
+    }
   }
 }
 
@@ -319,6 +432,14 @@ final voiceOutputControllerProvider =
 /// The server's text-to-speech.
 final voiceSynthesizerProvider = Provider<VoiceSynthesizer>(
   (ref) => SupabaseVoiceSynthesizer(ref.watch(supabaseClientProvider)),
+);
+
+/// The short lines said before an answer is ready, kept on the device.
+final voiceOpenersProvider = Provider<VoiceOpeners>(
+  (ref) => VoiceOpeners(
+    ref.watch(voiceSynthesizerProvider),
+    const FileVoiceOpenerStore(),
+  ),
 );
 
 /// The device's player.

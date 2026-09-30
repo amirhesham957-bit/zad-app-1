@@ -16,6 +16,7 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/data/voice_openers.dart';
 import 'package:zad/shared/voice/data/voice_player.dart';
 import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
@@ -72,6 +73,15 @@ class _Synth implements VoiceSynthesizer {
   }
 }
 
+/// Every opener already kept: the sheet's warm-up asks for nothing.
+class _Kept implements VoiceOpenerStore {
+  @override
+  Future<Uint8List?> read(String key) async => Uint8List(4);
+
+  @override
+  Future<void> write(String key, Uint8List pcm) async {}
+}
+
 class _Player implements VoicePlayer {
   @override
   Future<void> play(Uint8List wav) async {}
@@ -114,6 +124,9 @@ void main() {
           voiceInputControllerProvider.overrideWith(_Mic.new),
           voiceSynthesizerProvider.overrideWithValue(synth),
           voicePlayerProvider.overrideWithValue(_Player()),
+          voiceOpenersProvider.overrideWith(
+            (ref) => VoiceOpeners(ref.watch(voiceSynthesizerProvider), _Kept()),
+          ),
           localStoreProvider.overrideWithValue(store),
         ],
         child: const MaterialApp(
@@ -148,5 +161,26 @@ void main() {
 
     expect(find.textContaining('ماقدرتش أوصل لعقل زاد'), findsOneWidget);
     expect(synth.requested, isEmpty, reason: 'nothing spoken, old reply least');
+  });
+
+  testWidgets('waiting for the answer reads as thinking, not as talking', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('حلل مصاريفي'));
+    await tester.pump();
+    // What the chat does for a voice turn: the reply's speech is set up at
+    // once, before a word of it exists.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ZadVoiceSheet)),
+    );
+    container
+        .read(voiceOutputControllerProvider.notifier)
+        .speakStreaming(opener: true);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('زاد بيتكلم…'), findsNothing);
+    expect(find.text('بيفكر…'), findsOneWidget);
   });
 }

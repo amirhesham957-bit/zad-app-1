@@ -16,8 +16,9 @@ const int chunkTarget = 200;
 /// roughly two to three times the audio's length to produce it (measured
 /// 2026-09-28: 30 s for an 11 s clip), and nothing plays until the first
 /// chunk is back — a 200-character opener was most of the half-minute the
-/// owner waited before Zad said anything.
-const int firstChunkTarget = 90;
+/// owner waited before Zad said anything. On 2026-09-30 a ~90-character
+/// first chunk still took 6.5 s (function logs), so it is shorter again.
+const int firstChunkTarget = 60;
 
 /// The reply cleaned for speech: links become «الرابط», markdown marks and
 /// emoji/symbols become spaces (Azure reads an emoji's name aloud), runs of
@@ -68,7 +69,13 @@ List<String> speechChunks(String raw) {
 /// How much of a streamed reply is enough to start talking: the first chunk
 /// goes to the voice as soon as a sentence ends past this many characters, so
 /// Zad starts speaking while the rest of the reply is still arriving.
-const int firstStreamedChunk = 90;
+const int firstStreamedChunk = 40;
+
+/// When the first sentence runs past this, the first chunk ends at a comma
+/// instead (one past [firstStreamedChunk]): «يا سيدي عيوني، بس كريم البشرة ده
+/// حاجة تجميلية ولا …؟» is heard from its comma, not after the whole question
+/// has been synthesized.
+const int firstChunkCommaLimit = 100;
 
 /// Cuts a reply that arrives in pieces into chunks as soon as each one is
 /// ready, with the same cleaning and comma pause as [speechChunks].
@@ -122,6 +129,19 @@ class SpeechStreamSplitter {
       if (cut == null && text.length >= chunkTarget * 2) {
         final space = text.lastIndexOf(' ', chunkTarget);
         cut = space > 0 ? space : chunkTarget;
+      }
+    }
+    if (_first) {
+      final sentenceTooLong = cut == null
+          ? text.length >= firstChunkCommaLimit
+          : cut > firstChunkCommaLimit;
+      if (sentenceTooLong) {
+        int? comma;
+        for (final m in RegExp(r'[،,](?=\s)').allMatches(text)) {
+          if (m.end > firstChunkCommaLimit) break;
+          if (m.end >= want) comma = m.end;
+        }
+        if (comma != null) cut = comma;
       }
     }
     if (cut == null) return null;

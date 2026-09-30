@@ -70,6 +70,9 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
     super.initState();
     _voice = ref.read(zadVoiceProvider);
     _input = ref.read(voiceInputControllerProvider.notifier);
+    // «لحظة واحدة…» in her voice, kept for the next question — once per
+    // install, a few requests, never on the way of this one.
+    unawaited(ref.read(voiceOpenersProvider).warmUp());
   }
 
   final ValueNotifier<double> _mic = ValueNotifier<double>(0);
@@ -154,17 +157,20 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
         });
       });
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: _voice.speaking,
-      builder: (context, isSpeaking, _) {
+    // What the voice is doing, not whether it is busy: the reply's speech is
+    // set up the moment a turn is sent, and «زاد بيتكلم…» over ten seconds of
+    // silence read as «مش شغال» (owner, 2026-10-01).
+    final voiceStage = ref.watch(
+      voiceOutputControllerProvider.select((v) => v.stage),
+    );
+    return Builder(
+      builder: (context) {
+        final isSpeaking = voiceStage == VoiceOutputStage.speaking;
         final isActive = input.isRecording;
         final transcribing = input.stage == VoiceStage.transcribing;
         final thinking =
             transcribing || (_awaitingTurn && chat.isAwaitingReply);
-        final preparingVoice =
-            !isSpeaking &&
-            ref.watch(voiceOutputControllerProvider).stage ==
-                VoiceOutputStage.preparing;
+        final preparingVoice = voiceStage == VoiceOutputStage.preparing;
         final error = switch (input.stage) {
           VoiceStage.denied => 'امنح التطبيق إذن استخدام الميكروفون',
           VoiceStage.failed => 'حدث خطأ في التعرف على الصوت',
