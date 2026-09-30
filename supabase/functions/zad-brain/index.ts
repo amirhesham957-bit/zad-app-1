@@ -3078,6 +3078,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
       return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "");
     }
+    case "area_trends": {
+      // ترندات السوق بشرط ٥ بيوت (20260930010000) — الحد جوه SQL، مش هنا ولا في الموديل.
+      const days = Math.min(60, Math.max(7, Number(input?.days) || 14));
+      const { data, error } = await sb.rpc("zad_area_trends", { p_user: userId, p_days: days });
+      if (error) return `مقدرتش أقرا ترندات المنطقة: ${error.message}`;
+      return JSON.stringify(data);
+    }
 
     case "get_nearby_deals": {
       const { item_category } = input;
@@ -4186,6 +4193,22 @@ const CHAT_TOOLS: ToolDef[] = [
         to_currency: { type: "string", description: "مثل: EGP, USD, SAR, TRY (3 أحرف)" },
       },
       required: ["from_currency", "to_currency"],
+    },
+  },
+  {
+    name: "area_trends",
+    description:
+      "ترندات سوق العميل: الأصناف اللي بيوت كتير في بلده اشترتها أو حطّتها في قايمة التسوق آخر ١٤ يوم " +
+      "(افتراضياً)، بعدد البيوت واتجاهها (up/down/flat/new) مقارنة بالفترة اللي قبلها. " +
+      "استخدمها لـ«الناس بتشتري إيه اليومين دول؟» أو قبل ما ترشّح حاجة يخزّنها. " +
+      "الصنف مابيظهرش غير لو ٥ بيوت مختلفة على الأقل عندهم (العيلة بيت واحد) — ده حد خصوصية. " +
+      "لو items فاضية قول بصراحة إن لسه مفيش بيوت كفاية في سوقه تعمل ترند، ومتخترعش واحد. " +
+      "reason=no_market يعني العميل لسه ماختارش بلده. مفيش أسماء محلات ولا حد بعينه في النتيجة — متدّعيش إنك تعرف مين.",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "الفترة بالأيام. الافتراضي ١٤، من ٧ لـ٦٠." },
+      },
     },
   },
   {
