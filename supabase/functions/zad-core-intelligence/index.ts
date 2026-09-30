@@ -1218,6 +1218,8 @@ Deno.serve(async (req: Request) => {
 
     // فحص مفاتيح المزوّدين — مفتاح service role بس (CI بعد النشر). أسماء وحالات، ولا مفتاح.
     if (action === "provider_health") {
+      // عميق = يولّد صوت ويبعت فويس تجربة (بيصرف من كوتة الصوت الشحيحة). CI بيناديه من غيره.
+      const deep = (payload as { deep?: unknown } | null)?.deep === true;
       // البوابة (verify_jwt = true) اتحققت من توقيع التوكن قبل ما يوصل هنا؛ بنقرا الدور منه
       // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
@@ -1234,7 +1236,7 @@ Deno.serve(async (req: Request) => {
       };
       const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
-        ttsHealth(GEMINI_KEYS),
+        ttsHealth(GEMINI_KEYS, fetch, deep),
         azureTtsHealth(AZURE_SPEECH),
         pipelineHealth(supabase),
         internalProbe("zad-brain", {
@@ -1242,11 +1244,13 @@ Deno.serve(async (req: Request) => {
           headers: { "Content-Type": "application/json", "ZAD-PROACTIVE-CRON-SECRET": Deno.env.get("ZAD_PROACTIVE_CRON_SECRET") ?? "" },
           body: JSON.stringify({ action: "tools_probe" }),
         }),
-        internalProbe("zad-telegram-bot?job=voice_selftest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": Deno.env.get("ZAD_REALTIME_PUSH_SECRET") ?? "" },
-          body: "{}",
-        }),
+        deep
+          ? internalProbe("zad-telegram-bot?job=voice_selftest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": Deno.env.get("ZAD_REALTIME_PUSH_SECRET") ?? "" },
+            body: "{}",
+          })
+          : Promise.resolve("skipped — pass payload.deep=true (spends TTS quota)"),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;

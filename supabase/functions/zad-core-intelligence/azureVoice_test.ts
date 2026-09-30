@@ -95,7 +95,8 @@ Deno.test("كوتة Gemini خلصت على كل المفاتيح: Azure يرد �
   assertEquals(res.headers.get("Content-Type"), "audio/pcm");
   assertEquals(res.headers.get("X-Zad-Voice-Provider"), "azure");
   assertEquals(new Uint8Array(await res.arrayBuffer()), pcm);
-  assertEquals(calls.gemini, 3);
+  // ٣ مفاتيح × موديلات السلسلة الأربعة — كل موديل ليه عداد لوحده.
+  assertEquals(calls.gemini, 12);
   assertEquals(calls.azure.length, 1);
   assert(String(calls.azure[0].init.body).includes("ar-EG-SalmaNeural"));
 });

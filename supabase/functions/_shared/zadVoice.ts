@@ -109,6 +109,21 @@ export function accentDirection(country: unknown): string {
  * كانت فيه تلات شخصيات (سارة=Aoede، كريم=Charon رجالي، الأليف=Leda)؛ الأسامي لسه مقبولة
  * هنا عشان نسخ التطبيق القديمة اللي بتبعتها ماتاخدش 400، بس كلها بقت نفس الصوت.
  */
+/**
+ * سلسلة موديلات صوت زاد — التطبيق (zad-core-intelligence/voice.ts) وتليجرام (voiceAlert.ts).
+ *
+ * الكوتة المجانية لكل موديل صوت ١٠ طلبات في اليوم لكل مشروع (AI Studio، ٢٠٢٦-٠٩-٣٠)، وكل موديل
+ * ليه عداده. كانت السلسلة موديلين والتاني (2.5-pro-preview-tts) مالوش كوتة مجانية خالص (429
+ * من أول طلب، ومش ظاهر في AI Studio) — يعني موديل واحد بـ١٠ في اليوم. التلاتة اللي بعد الأول
+ * رجّعوا «200 audio» في provider_health بنفس الصوت. الأول هو المجرّب.
+ */
+export const GEMINI_TTS_CHAIN: readonly string[] = [
+  "gemini-2.5-flash-preview-tts",
+  "gemini-3.1-flash-tts-preview",
+  "gemini-3.8-flash-tts",
+  "gemini-3.8-flash-lite-tts",
+];
+
 export const ZAD_VOICE = "Aoede";
 export const DEFAULT_VOICE = ZAD_VOICE;
 export const PERSONA_VOICES: Record<string, string> = {
