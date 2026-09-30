@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
+import { groqLimitsNote, interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
 
 Deno.test("reports configured/status per provider and never echoes a key", async () => {
   const env: Record<string, string> = {
@@ -43,4 +43,13 @@ Deno.test("the caller's user id comes from the token, so a body user_id can't bo
   assertEquals(tokenSubject(`${b64({ alg: "HS256" })}.${b64({ role: "anon" })}.sig`), null);
   assertEquals(tokenSubject("sb_publishable_x"), null);
   assertEquals(tokenSubject(null), null);
+});
+
+Deno.test("a Groq key's daily and per-minute limits are read from the reply's headers", () => {
+  const h = new Headers({
+    "x-ratelimit-limit-requests": "1000", "x-ratelimit-remaining-requests": "998",
+    "x-ratelimit-limit-tokens": "8000", "x-ratelimit-remaining-tokens": "7990",
+  });
+  assertEquals(groqLimitsNote(h), "rpd=1000 left=998 tpm=8000 tpm_left=7990");
+  assertEquals(groqLimitsNote(new Headers()), undefined);
 });
