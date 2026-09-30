@@ -1002,6 +1002,58 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   return [];
 }
 
+/**
+ * A web search that must come back as JSON, through Gemini with Google Search grounding.
+ * «العروض المتاحة لنواقصك» ran only on groq/compound-mini and kept failing on the owner's
+ * phone after its timeout was raised (2026-10-01); the grounded search already answers the
+ * brain's web_search here. Tried first for the live searches, compound stays the fallback.
+ * Grounding cannot be combined with JSON mode, so the array is read leniently from the text.
+ * `ok` is false only when no model answered at all — an answered `[]` is a real "nothing".
+ */
+async function callGroundedJson(systemPrompt: string, userPrompt: string): Promise<{ parsed: unknown; ok: boolean }> {
+  const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+  const keys = GEMINI_KEYS.slice(0, 3);
+  // The card waits on this, and compound still needs its turn: 40s in all.
+  const deadline = Date.now() + 40_000;
+  for (const model of models) {
+    for (const [ki, key] of keys.entries()) {
+      if (Date.now() > deadline) return { parsed: null, ok: false };
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { maxOutputTokens: 1500, temperature: 0.2 },
+          }),
+          signal: AbortSignal.timeout(Math.max(1000, Math.min(25000, deadline - Date.now()))),
+        });
+        if (!res.ok) {
+          console.warn(`[CoreIntel] grounded json k${ki}/${model} HTTP ${res.status}`);
+          continue;
+        }
+        const data = await res.json();
+        const text = ((data?.candidates?.[0]?.content?.parts ?? []) as Array<{ text?: string }>)
+          .map((p) => p.text ?? "").join("").trim();
+        if (!text) continue;
+        const arrayMatch = text.match(/\[[\s\S]*\]/);
+        if (!arrayMatch) return { parsed: [], ok: true };
+        try {
+          return { parsed: JSON.parse(arrayMatch[0]), ok: true };
+        } catch {
+          console.warn(`[CoreIntel] grounded json k${ki}/${model}: unparsable array`);
+          continue;
+        }
+      } catch (e) {
+        console.warn(`[CoreIntel] grounded json k${ki}/${model} failed:`, (e as Error).message);
+      }
+    }
+  }
+  return { parsed: null, ok: false };
+}
+
 /** آخر رجل: groq/compound-mini (بحث Tavily مدمج) — المصادر من executed_tools لو موجودة، وإلا الإجابة نفسها. */
 async function compoundSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
   for (const [ki, key] of GROQ_DIRECT_KEYS.entries()) {
@@ -2264,6 +2316,11 @@ Deno.serve(async (req: Request) => {
         if (items.length === 0) return jsonResponse({ deals: [], ok: true });
         const systemPrompt = "أنت باحث عروض تسوق حقيقي. ابحث في الويب عن أحدث العروض والتخفيضات الفعلية المتاحة الآن من متاجر ومحلات سوبرماركت معروفة في المنطقة المحددة للأصناف المطلوبة. لا تخترع أي متجر أو سعر أو نسبة خصم أبداً — إذا لم تجد عرضاً حقيقياً موثقاً لصنف معين، تجاهله تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"item\":\"\",\"store\":\"\",\"price\":0.0,\"discount_percent\":0.0,\"note\":\"\"}]. إذا لم تجد أي عروض حقيقية لأي صنف، أرجع مصفوفة فارغة [].";
         const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + items.join("، ");
+        // Google-grounded Gemini first (10 keys), compound-mini only when it did not answer.
+        const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
+        if (grounded.ok && Array.isArray(grounded.parsed)) {
+          return jsonResponse({ deals: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+        }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
         return jsonResponse({ deals, sources: result?.executedTools || [], ok: result?.ok !== false });
@@ -2278,6 +2335,10 @@ Deno.serve(async (req: Request) => {
         if (!categories || categories.length === 0) return jsonResponse({ warnings: [] });
         const systemPrompt = "أنت محلل اقتصادي يعتمد على مصادر إخبارية حقيقية فقط. ابحث في الويب عن آخر الأخبار والتقارير الاقتصادية الموثوقة (خلال آخر أسبوعين فقط) عن اتجاهات أسعار السلع والتضخم في المنطقة المحددة للفئات المطلوبة. لا تخترع أي نسبة أو خبر أبداً — إذا لم تجد تقريراً حقيقياً حديثاً وموثوقاً عن فئة معينة، تجاهلها تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"category\":\"\",\"expected_change_pct\":0.0,\"direction\":\"up|down\",\"reasoning\":\"\",\"source_note\":\"\"}]. إذا لم تجد أي تقارير حقيقية حديثة، أرجع مصفوفة فارغة [].";
         const userPrompt = "المنطقة: " + (location || "السعودية") + " | الفئات المطلوب تحليل اتجاه أسعارها: " + (Array.isArray(categories) ? categories.join("، ") : categories);
+        const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
+        if (grounded.ok && Array.isArray(grounded.parsed)) {
+          return jsonResponse({ warnings: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+        }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt));
         const warnings = Array.isArray(result?.parsed) ? result.parsed : [];
         return jsonResponse({ warnings, sources: result?.executedTools || [], ok: result?.ok !== false });
