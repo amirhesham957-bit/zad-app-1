@@ -21,7 +21,7 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
-import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
@@ -123,7 +123,7 @@ export async function requestGeminiVoiceWithPool(
   apiKeys: string[],
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
-  models: string[] = [GEMINI_TTS_MODEL, "gemini-2.5-pro-preview-tts"],
+  models: string[] = [...new Set([GEMINI_TTS_MODEL, ...GEMINI_TTS_CHAIN])],
   pool: TtsPoolState = sharedTtsPool,
   now: () => number = Date.now,
 ): Promise<Response> {
@@ -148,7 +148,12 @@ export async function requestGeminiVoiceWithPool(
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
         if (res.ok) return res;
         attempts.push({ key_index: ki, model, status: res.status });
-        if (res.status === 429) pool.coolingUntil.set(ki, now() + TTS_COOLDOWN_MS);
+        // الكوتة لكل موديل: 429 على موديل = عداده خلص على المفتاح ده، والموديل اللي بعده ليه
+        // عداد لوحده بنفس المفتاح. المفتاح بيرتاح في ترتيب الطلبات الجاية بس.
+        if (res.status === 429) {
+          pool.coolingUntil.set(ki, now() + TTS_COOLDOWN_MS);
+          continue;
+        }
         if (res.status === 503) {
           downModels.add(model);
           continue;

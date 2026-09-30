@@ -31,9 +31,10 @@ Deno.test("TTS pool: 429 على المفتاح الأول ينط للتاني و
     freshTtsPool(),
   );
   assertEquals(res.status, 200);
-  assertEquals(calls.length, 2);
-  assertEquals(calls[0].key, "KEY1");
-  assertEquals(calls[1].key, "KEY2");
+  // الكوتة لكل موديل: KEY1 بيتجرب على موديلات السلسلة الأربعة (كل واحد عداده لوحده)، بعدين KEY2.
+  assertEquals(calls.length, 5);
+  assertEquals(calls.slice(0, 4).every((c) => c.key === "KEY1"), true);
+  assertEquals(calls[4].key, "KEY2");
   // نص المفتاح مايبانش في أي رد
   const bodyText = await res.clone().text();
   assertEquals(bodyText.includes("KEY1") || bodyText.includes("KEY2"), false);
@@ -162,4 +163,19 @@ Deno.test("TTS pool: past the time budget Gemini is left for the fallback", asyn
   );
   assertEquals(res.status, 502);
   assertEquals(calls.length, 2); // 0s, 9s — the third would start at 18s, past 15s
+});
+
+Deno.test("TTS pool: a model's daily quota gone on a key — the next model on the same key speaks", async () => {
+  const calls: Array<{ key: string; model: string }> = [];
+  const mockFetcher: typeof fetch = (input, init) => {
+    const url = String(input);
+    const key = String(((init as RequestInit)?.headers as Record<string, string> | undefined)?.["x-goog-api-key"] ?? "");
+    const model = url.split("/models/")[1]?.split(":")[0] ?? "";
+    calls.push({ key, model });
+    if (model === "gemini-2.5-flash-preview-tts") return Promise.resolve(new Response("quota", { status: 429 }));
+    return Promise.resolve(audioResponse());
+  };
+  const res = await requestGeminiVoiceWithPool({ text: "مرحبا", voiceId: "Aoede" } as any, ["KEY1", "KEY2"], mockFetcher, "", undefined, freshTtsPool());
+  assertEquals(res.status, 200);
+  assertEquals(calls.map((c) => `${c.key}/${c.model}`), ["KEY1/gemini-2.5-flash-preview-tts", "KEY1/gemini-3.1-flash-tts-preview"]);
 });

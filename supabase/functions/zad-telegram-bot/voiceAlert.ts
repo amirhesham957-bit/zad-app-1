@@ -15,9 +15,9 @@
 
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
 import { geminiKeys } from "../_shared/keyPool.ts";
-import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
 
-export const ALERT_TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
+export const ALERT_TTS_MODELS: readonly string[] = GEMINI_TTS_CHAIN;
 /** نفس صوت زاد في كل القنوات (`_shared/zadVoice.ts`). */
 export const ALERT_VOICE_NAME = DEFAULT_VOICE;
 export const ALERT_SPEECH_MAX_CHARS = 320;
@@ -114,7 +114,8 @@ export async function synthesizeAlertPcm(
         if (!res.ok) {
           attempts.push(`k${ki}/${model}:${res.status}`);
           await res.body?.cancel();
-          if (res.status === 404 || res.status === 400) continue;
+          // 429 = عداد الموديل ده خلص على المفتاح ده؛ الموديل اللي بعده ليه عداد لوحده.
+          if (res.status === 404 || res.status === 400 || res.status === 429) continue;
           break;
         }
         const data = await res.json();
