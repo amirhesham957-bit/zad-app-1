@@ -38,6 +38,17 @@ class _Server implements PricesRemote {
     <String, dynamic>{'item_name': 'لبن', 'min_price': 0},
   ];
   Exception? failWith;
+  Exception? trendsFailWith;
+  final List<String> trendsAskedFor = <String>[];
+  Object? trends = <String, dynamic>{
+    'country': 'EG',
+    'days': 14,
+    'min_households': 5,
+    'items': <Object?>[
+      <String, dynamic>{'item': 'زيت', 'households': 7, 'trend': 'up'},
+      <String, dynamic>{'item': 'سكر', 'households': 5, 'trend': 'new'},
+    ],
+  };
 
   @override
   Future<Map<String, dynamic>> report({
@@ -77,6 +88,13 @@ class _Server implements PricesRemote {
         <String, dynamic>{'rank': 1, 'reports': 9, 'is_me': false},
         <String, dynamic>{'rank': 2, 'reports': 4, 'is_me': true},
       ];
+
+  @override
+  Future<Object?> areaTrends({required String userId, int days = 14}) async {
+    if (trendsFailWith case final e?) throw e;
+    trendsAskedFor.add(userId);
+    return trends;
+  }
 }
 
 class _NoSettings implements SettingsRemote {
@@ -316,6 +334,28 @@ void main() {
         expect(c.read(pricesControllerProvider).lastCity, 'القاهرة');
       });
 
+      test('trends are read for the signed-in account and kept', () async {
+        final c = await container();
+        await c.read(pricesControllerProvider.notifier).refresh();
+
+        expect(server.trendsAskedFor, <String>['user-1']);
+        final trends = c.read(pricesControllerProvider).trends!;
+        expect(trends.items.map((t) => t.item), <String>['زيت', 'سكر']);
+        expect(trends.items.last.direction, TrendDirection.fresh);
+        expect(prices.cachedTrends()?.items, hasLength(2));
+      });
+
+      test('a trends failure never costs the price list', () async {
+        server.trendsFailWith = Exception('offline');
+        final c = await container();
+        await c.read(pricesControllerProvider.notifier).refresh();
+
+        final view = c.read(pricesControllerProvider);
+        expect(view.rows.single.itemName, 'طماطم');
+        expect(view.error, isNull);
+        expect(view.trends, isNull);
+      });
+
       test('without a market there is nothing to compare in', () async {
         final c = await container(country: null);
         await c.read(pricesControllerProvider.notifier).refresh();
@@ -323,6 +363,31 @@ void main() {
         expect(server.cheapestAsked, isEmpty);
         expect(c.read(pricesControllerProvider).rows, isEmpty);
       });
+    });
+  });
+
+  group('area trends', () {
+    test('only whole items; "new" and no_market read as such', () {
+      final t = AreaTrends.fromJson(<String, dynamic>{
+        'days': 14,
+        'min_households': 5,
+        'items': <Object?>[
+          <String, dynamic>{'item': ' عيش ', 'households': 6, 'trend': 'down'},
+          <String, dynamic>{'item': '', 'households': 9},
+          <String, dynamic>{'households': 9},
+          'زيت',
+        ],
+      })!;
+      expect(t.items.single.item, 'عيش');
+      expect(t.items.single.direction, TrendDirection.down);
+      expect(
+        AreaTrends.fromJson(<String, dynamic>{
+          'items': <Object?>[],
+          'reason': 'no_market',
+        })!.noMarket,
+        isTrue,
+      );
+      expect(AreaTrends.fromJson('nope'), isNull);
     });
   });
 

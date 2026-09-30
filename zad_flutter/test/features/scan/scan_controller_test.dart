@@ -132,6 +132,10 @@ class _NoPrices implements PricesRemote {
   @override
   Future<List<Object?>> leaderboard({required String currency}) =>
       throw StateError('offline');
+
+  @override
+  Future<Object?> areaTrends({required String userId, int days = 14}) =>
+      throw StateError('offline');
 }
 
 /// The shape `analyze_receipt` answers with.

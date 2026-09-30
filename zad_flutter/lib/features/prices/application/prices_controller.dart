@@ -7,6 +7,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/data/providers.dart';
@@ -23,6 +24,7 @@ class PricesView {
     this.lastCity,
     this.snapshot,
     this.leaderboard = const <LeaderboardRow>[],
+    this.trends,
     this.queued = const <QueuedReport>[],
     this.isRefreshing = false,
     this.error,
@@ -42,6 +44,10 @@ class PricesView {
 
   /// Who reports most.
   final List<LeaderboardRow> leaderboard;
+
+  /// What enough homes in the market bought or listed lately, or null before
+  /// the first answer.
+  final AreaTrends? trends;
 
   /// The customer's reports still on the phone.
   final List<QueuedReport> queued;
@@ -68,6 +74,7 @@ class PricesView {
     String? lastCity,
     CheapestSnapshot? snapshot,
     List<LeaderboardRow>? leaderboard,
+    AreaTrends? trends,
     List<QueuedReport>? queued,
     bool? isRefreshing,
     Object? error,
@@ -78,6 +85,7 @@ class PricesView {
     lastCity: lastCity ?? this.lastCity,
     snapshot: snapshot ?? this.snapshot,
     leaderboard: leaderboard ?? this.leaderboard,
+    trends: trends ?? this.trends,
     queued: queued ?? this.queued,
     isRefreshing: isRefreshing ?? this.isRefreshing,
     error: clearError ? null : (error ?? this.error),
@@ -102,6 +110,7 @@ class PricesController extends Notifier<PricesView> {
       lastCity: repository.lastCity(),
       snapshot: snapshot,
       leaderboard: repository.cachedLeaderboard(),
+      trends: repository.cachedTrends(),
       queued: repository.queuedReports(),
     );
   }
@@ -137,6 +146,18 @@ class PricesController extends Notifier<PricesView> {
       );
     } finally {
       _fetching = false;
+    }
+    await _refreshTrends(repository);
+  }
+
+  /// Apart from the prices: a trends failure never costs the price list,
+  /// and the cached trends stay on screen.
+  Future<void> _refreshTrends(PricesRepository repository) async {
+    try {
+      final trends = await repository.refreshTrends();
+      if (ref.mounted) state = state.copyWith(trends: trends);
+    } on Object catch (e) {
+      debugPrint('[prices] area trends not refreshed: $e');
     }
   }
 

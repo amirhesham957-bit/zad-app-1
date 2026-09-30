@@ -23,6 +23,10 @@ abstract interface class PricesRemote {
 
   /// Calls `zad_price_leaderboard`.
   Future<List<Object?>> leaderboard({required String currency});
+
+  /// Calls `zad_area_trends` for [userId]: the market's items with at least
+  /// the server's threshold of homes. The threshold is not the client's.
+  Future<Object?> areaTrends({required String userId, int days = 14});
 }
 
 /// The real one.
@@ -80,4 +84,11 @@ class SupabasePricesRemote implements PricesRemote {
     );
     return result is List ? result.cast<Object?>() : const <Object?>[];
   }
+
+  @override
+  Future<Object?> areaTrends({required String userId, int days = 14}) =>
+      _client.rpc<dynamic>(
+        'zad_area_trends',
+        params: <String, dynamic>{'p_user': userId, 'p_days': days},
+      );
 }
