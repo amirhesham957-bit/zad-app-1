@@ -100,24 +100,6 @@ String? _knownText(Recipe r) {
   return b.toString().trim();
 }
 
-String _deterministic(String name) =>
-    '''
-🍲 **طريقة تحضير $name**
-
-⏱️ **وقت التحضير**: ٢٥ دقيقة تقريباً
-
-🥗 **المكونات والمقادير**:
-• المكونات الأساسية المتوفرة بمخزون المنزل
-• ملعقة زيت طهي أو زبدة
-• بهارات حسب الرغبة (ملح، فلفل أسود، كمون)
-
-👩‍🍳 **خطوات التحضير السريعة**:
-1. جهّز المكونات المتاحة وقم بغسلها وتقطيعها إلى قطع متساوية.
-2. ضع المقلاة أو القدر على نار متوسطة مع قليل من الزيت أو الزبدة.
-3. شوّح المكونات تدريجياً حتى تكتسب لوناً ذهبياً شهياً وتنضج بالكامل.
-4. أضف البهارات والملح واضبط النكهة حسب رغبتك.
-5. ارفع الطبق عن النار وقدّمه ساخناً بالهناء والشفاء! ✨''';
-
 /// The dialog.
 class RecipeDetailDialog extends ConsumerStatefulWidget {
   /// Creates the dialog.
@@ -180,11 +162,25 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
           .timeout(const Duration(seconds: 12));
       final data = response.data;
       final t = data is Map ? data['text'] : null;
-      text = t is String && t.trim().isNotEmpty
-          ? t
-          : _deterministic(widget.recipe.name);
+      // An empty answer or a slow one is said as such. Kotlin's template
+      // («٢٥ دقيقة تقريباً», «المكونات الأساسية المتوفرة») read as the real
+      // recipe of any dish, with nothing real in it (removed 2026-09-29).
+      if (t is! String || t.trim().isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'شيف زاد مارجّعش الوصفة دي — جرب تاني';
+          _loading = false;
+        });
+        return;
+      }
+      text = t;
     } on TimeoutException {
-      text = _deterministic(widget.recipe.name);
+      if (!mounted) return;
+      setState(() {
+        _error = 'شيف زاد اتأخر في الرد — جرب تاني';
+        _loading = false;
+      });
+      return;
     } on Object {
       if (!mounted) return;
       setState(() {
@@ -370,6 +366,8 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           ],
                         ),
                       ],
+                      const SizedBox(height: ZadSpacing.lg),
+                      RecipeRatingRow(recipe: widget.recipe),
                     ],
                   ),
           ),
@@ -542,21 +540,28 @@ class _Section extends StatelessWidget {
         ),
       ],
     ),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            title,
-            style: ZadType.titleMedium.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
+    // The ingredients are CheckboxListTiles, and a ListTile's ink needs a
+    // Material above this box's colour: without one, debug builds threw
+    // "ListTile background color or ink splashes may be invisible" for every
+    // recipe with ingredients — a red error in place of the list.
+    child: Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              title,
+              style: ZadType.titleMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
-          ),
-          const SizedBox(height: ZadSpacing.md),
-          ...children,
-        ],
+            const SizedBox(height: ZadSpacing.md),
+            ...children,
+          ],
+        ),
       ),
     ),
   );
