@@ -93,6 +93,7 @@ class PricesRepository {
   static const String _cheapestKey = 'cheapest_prices';
   static const String _leaderboardKey = 'price_leaderboard';
   static const String _cityKey = 'price_report_city';
+  static const String _trendsKey = 'area_trends';
 
   /// The last cheapest list, or null.
   CheapestSnapshot? cachedCheapest() =>
@@ -125,6 +126,23 @@ class PricesRepository {
     );
     await _cache.put(_cheapestKey, jsonEncode(snapshot.toJson()));
     return snapshot;
+  }
+
+  /// The last market trends, or null.
+  AreaTrends? cachedTrends() =>
+      AreaTrends.fromJson(_decode(_cache.get(_trendsKey)));
+
+  /// Fetches the market trends for the signed-in account and keeps them.
+  Future<AreaTrends> refreshTrends() async {
+    final userId = _signedInUserId();
+    if (userId == null || userId.isEmpty) {
+      throw StateError('no signed-in user to read trends for');
+    }
+    final trends =
+        AreaTrends.fromJson(await _remote.areaTrends(userId: userId)) ??
+        (throw StateError('zad_area_trends answered no trends'));
+    await _cache.put(_trendsKey, jsonEncode(trends.toJson()));
+    return trends;
   }
 
   /// Fetches the leaderboard and keeps it.

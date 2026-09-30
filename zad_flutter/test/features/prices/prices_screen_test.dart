@@ -106,6 +106,17 @@ void main() {
     expect(find.text('لوحة الأسعار'), findsOneWidget);
     expect(find.text('طماطم'), findsOneWidget);
     expect(find.text('كارفور، القاهرة · 3 بلاغ'), findsOneWidget);
+    // «ترندات سوقك» sits above the leaderboard now.
+    await tester.scrollUntilVisible(
+      find.text('المساهم 2'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('المساهم 1'), findsOneWidget);
     expect(find.text('9 مساهمات'), findsOneWidget);
     expect(find.text('المساهم 2'), findsOneWidget);
@@ -114,6 +125,17 @@ void main() {
   testWidgets("nothing yet: Kotlin's two empty states", (tester) async {
     await pump(tester, _view());
     expect(find.text('لسه مفيش بلاغات هنا'), findsOneWidget);
+    expect(find.text('لسه مفيش ترند في سوقك'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('لسه مفيش مساهمات'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('لسه مفيش مساهمات'), findsOneWidget);
     expect(find.text('سجّل أول سعر'), findsNWidgets(2));
   });

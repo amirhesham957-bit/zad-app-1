@@ -233,3 +233,117 @@ List<ReceiptPriceReport> receiptPriceReports({
   }
   return out;
 }
+
+/// Which way an item moved against the previous window (`zad_area_trends`).
+enum TrendDirection {
+  /// More homes than before.
+  up,
+
+  /// Fewer.
+  down,
+
+  /// The same.
+  flat,
+
+  /// Not enough homes before to compare with.
+  fresh;
+
+  /// Reads the function's `trend`; anything unknown is [fresh].
+  static TrendDirection fromWire(Object? raw) => switch (raw) {
+    'up' => TrendDirection.up,
+    'down' => TrendDirection.down,
+    'flat' => TrendDirection.flat,
+    _ => TrendDirection.fresh,
+  };
+
+  /// As the function writes it.
+  String get wire => this == TrendDirection.fresh ? 'new' : name;
+}
+
+/// One item that enough homes in the market bought or listed lately.
+class AreaTrend {
+  /// Creates a trend.
+  const new({
+    required this.item,
+    required this.households,
+    required this.direction,
+  });
+
+  /// Reads one `items` entry; null when it is not one.
+  static AreaTrend? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final item = raw['item'];
+    final homes = raw['households'];
+    if (item is! String || item.trim().isEmpty || homes is! num) return null;
+    return AreaTrend(
+      item: item.trim(),
+      households: homes.toInt(),
+      direction: TrendDirection.fromWire(raw['trend']),
+    );
+  }
+
+  /// The item, as most homes wrote it.
+  final String item;
+
+  /// How many different homes — never fewer than the threshold.
+  final int households;
+
+  /// Against the previous window.
+  final TrendDirection direction;
+
+  /// For the cache.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'item': item,
+    'households': households,
+    'trend': direction.wire,
+  };
+}
+
+/// The market's trends: what the server may show, never below its threshold.
+///
+/// The threshold lives in SQL (`zad_area_trends`, 5 homes, a family counting
+/// once) and the phone only reads it back to say how far the market is.
+class AreaTrends {
+  /// Creates the trends.
+  const new({
+    required this.items,
+    required this.minHouseholds,
+    required this.days,
+    this.noMarket = false,
+  });
+
+  /// Reads the function's answer; null when it is not one.
+  static AreaTrends? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final items = raw['items'];
+    return AreaTrends(
+      items: <AreaTrend>[
+        if (items is List)
+          for (final i in items) ?AreaTrend.fromJson(i),
+      ],
+      minHouseholds: (raw['min_households'] as num?)?.toInt() ?? 5,
+      days: (raw['days'] as num?)?.toInt() ?? 14,
+      noMarket: raw['reason'] == 'no_market',
+    );
+  }
+
+  /// Most homes first.
+  final List<AreaTrend> items;
+
+  /// Homes an item needs before it is shown.
+  final int minHouseholds;
+
+  /// The window, in days.
+  final int days;
+
+  /// The account has no market, so there is no area.
+  final bool noMarket;
+
+  /// For the cache, in the function's own shape.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'items': <Map<String, dynamic>>[for (final i in items) i.toJson()],
+    'min_households': minHouseholds,
+    'days': days,
+    if (noMarket) 'reason': 'no_market',
+  };
+}
