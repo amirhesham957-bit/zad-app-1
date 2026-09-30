@@ -20,8 +20,9 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market.dart';
-import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// One `zad_debts` row.
 typedef Debt = ({
@@ -647,7 +648,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
   Future<void> _refresh(List<String> shortages) async {
     if (_state == _Fetch.loading) return;
     setState(() => _state = _Fetch.loading);
-    final country = ref.read(settingsControllerProvider).settings?.country;
+    final country = ref.read(accountCountryProvider);
     try {
       final client = ref.read(supabaseClientProvider);
       final response = await client.functions
@@ -697,9 +698,12 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
 
   @override
   Widget build(BuildContext context) {
+    // One name per stock, not per row: five brands of water are one
+    // shortage, and none while the brands together are above the threshold
+    // (product_family.dart). The server searches the first five.
     final shortages = <String>[
-      for (final i in ref.watch(pantryControllerProvider).items)
-        if (i.isLowStock) i.itemName,
+      for (final g in groupPantry(ref.watch(pantryControllerProvider).items))
+        if (g.isLow) g.name,
     ];
     return _Card(
       child: Column(

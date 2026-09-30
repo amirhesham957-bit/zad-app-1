@@ -16,6 +16,7 @@ import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealSearchItems } from "./liveDeals.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -812,7 +813,7 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
 // retry-on-empty (see that case below) is the mitigation for this specific
 // action — a second attempt has real odds of succeeding where the first one
 // found data but failed to extract it.
-async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500) {
+async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500, timeoutMs = UPSTREAM_TIMEOUT_MS) {
   if (GROQ_DIRECT_KEYS.length === 0) return { parsed: null, executedTools: [], ok: false };
   let keyIndex = 0;
   // groq/compound-mini runs on a shared org-level TPM budget (8000/min on this
@@ -837,7 +838,7 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
           temperature: 0.2,
           max_tokens: Math.max(maxTokens, 300),
         }),
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -846,9 +847,16 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
           keyIndex++;
           continue;
         }
-        if (resp.status === 429 && attempt === 0) {
-          await new Promise((r) => setTimeout(r, 800));
-          continue;
+        if (resp.status === 429) {
+          // Another key is another bucket: move on at once. With one key, one short wait.
+          if (keyIndex + 1 < GROQ_DIRECT_KEYS.length) {
+            keyIndex++;
+            continue;
+          }
+          if (attempt === 0) {
+            await new Promise((r) => setTimeout(r, 800));
+            continue;
+          }
         }
         return { parsed: null, executedTools: [], ok: false };
       }
@@ -2248,11 +2256,12 @@ Deno.serve(async (req: Request) => {
       // (Deal Matcher)
       // ──────────────────────────────────────────────
       case "fetch_live_deals": {
-        const { items, location } = payload || {};
-        if (!items || items.length === 0) return jsonResponse({ deals: [] });
+        const { location } = payload || {};
+        const items = dealSearchItems(payload?.items);
+        if (items.length === 0) return jsonResponse({ deals: [], ok: true });
         const systemPrompt = "أنت باحث عروض تسوق حقيقي. ابحث في الويب عن أحدث العروض والتخفيضات الفعلية المتاحة الآن من متاجر ومحلات سوبرماركت معروفة في المنطقة المحددة للأصناف المطلوبة. لا تخترع أي متجر أو سعر أو نسبة خصم أبداً — إذا لم تجد عرضاً حقيقياً موثقاً لصنف معين، تجاهله تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"item\":\"\",\"store\":\"\",\"price\":0.0,\"discount_percent\":0.0,\"note\":\"\"}]. إذا لم تجد أي عروض حقيقية لأي صنف، أرجع مصفوفة فارغة [].";
-        const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + (Array.isArray(items) ? items.join("، ") : items);
-        const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt));
+        const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + items.join("، ");
+        const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
         return jsonResponse({ deals, sources: result?.executedTools || [], ok: result?.ok !== false });
       }
