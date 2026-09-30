@@ -44,175 +44,201 @@ void main() {
   });
   setUp(harness.open);
 
-  for (final full in <bool>[false, true]) {
-    testWidgets('every section opens and closes without a framework error — '
-        '${full ? 'a full account' : 'an empty account'}', (tester) async {
-      if (full) await _seedTransactions(harness);
-      await tester.binding.setSurfaceSize(const Size(412, 915));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      // Back on الرئيسية asks Android to hide the app.
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('zad/app'),
-        (_) async => true,
-      );
+  // The owner's phone, then the two that found real overflows on 2026-09-30:
+  // a small 320dp phone (the pantry row and the bottom bar ran off it), and
+  // a common one with the font size raised to 1.3× (the bar's labels, the
+  // knowledge map's legend and title, the pantry's shortage strip).
+  const phones = <(String, Size, double)>[
+    ('412dp', Size(412, 915), 1),
+    ('320dp', Size(320, 568), 1),
+    ('360dp at 1.3× text', Size(360, 740), 1.3),
+  ];
+  for (final (phone, size, textScale) in phones) {
+    for (final full in <bool>[false, true]) {
+      testWidgets('every section opens and closes without a framework error — '
+          '${full ? 'a full account' : 'an empty account'}, $phone', (
+        tester,
+      ) async {
+        if (full) await _seedTransactions(harness);
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        // Back on الرئيسية asks Android to hide the app.
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('zad/app'),
+          (_) async => true,
+        );
 
-      final errors = <String>[];
-      final visited = <String>[];
-      var step = 'start';
+        final errors = <String>[];
+        final visited = <String>[];
+        var step = 'start';
 
-      final routes = _Depth();
-      final container = harness.container(
-        'user-1',
-        household: full ? _fullHousehold() : null,
-      );
-      addTearDown(container.dispose);
+        final routes = _Depth();
+        final container = harness.container(
+          'user-1',
+          household: full ? _fullHousehold() : null,
+        );
+        addTearDown(container.dispose);
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: MaterialApp(
-            navigatorObservers: <NavigatorObserver>[routes],
-            theme: ZadTheme.light(),
-            locale: const Locale('ar'),
-            home: const Directionality(
-              textDirection: TextDirection.rtl,
-              child: ZadShell(),
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              navigatorObservers: <NavigatorObserver>[routes],
+              theme: ZadTheme.light(),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(textScale)),
+                child: child!,
+              ),
+              locale: const Locale('ar'),
+              home: const Directionality(
+                textDirection: TextDirection.rtl,
+                child: ZadShell(),
+              ),
             ),
           ),
-        ),
-      );
-
-      Future<void> frames([int n = 6]) async {
-        for (var i = 0; i < n; i++) {
-          await tester.pump(const Duration(milliseconds: 120));
-          final e = tester.takeException();
-          if (e != null) {
-            final text = '$e';
-            errors.add(
-              '[$step] ${text.length > 1500 ? text.substring(0, 1500) : text}',
-            );
-          }
-        }
-      }
-
-      await frames();
-
-      /// Taps every visible control on the top screen, one at a time, and
-      /// closes whatever each one opened with Android's back.
-      Future<void> crawl(String name) async {
-        final base = routes.depth;
-        final done = <String>{};
-        // Four screenfuls: lists put their rows below the fold.
-        for (var page = 0; page < 4; page++) {
-          for (var i = 0; i < 40; i++) {
-            final tappables = find.byWidgetPredicate(_isTappable).hitTestable();
-            final all = tappables.evaluate().toList();
-            if (i >= all.length) break;
-            final label = _labelOf(all[i]);
-            if (_unsafe.any(label.contains) || !done.add(label)) continue;
-            step = '$name › page $page tap $i «$label»';
-            visited.add(step);
-            debugPrint('STEP $step');
-            await tester.tap(tappables.at(i), warnIfMissed: false);
-            await frames(4);
-            for (var guard = 0; routes.depth > base && guard < 4; guard++) {
-              step = '$name › back from «$label»';
-              debugPrint('STEP $step');
-              await tester.binding.handlePopRoute();
-              await frames(4);
-            }
-            if (routes.depth < base) return; // the screen closed itself
-          }
-          final scrollables = find
-              .byWidgetPredicate(
-                (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
-              )
-              .hitTestable();
-          if (scrollables.evaluate().isEmpty) return;
-          step = '$name › scroll to page ${page + 1}';
-          debugPrint('STEP $step');
-          await tester.drag(
-            scrollables.first,
-            const Offset(0, -600),
-            warnIfMissed: false,
-          );
-          await frames(4);
-        }
-      }
-
-      ZadBottomNavBar bar() =>
-          tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
-      for (final tab in <ZadNavDestination>[
-        ZadNavDestination.assistant,
-        ZadNavDestination.inventory,
-        ZadNavDestination.home,
-      ]) {
-        step = 'tab ${tab.name}';
-        bar().onNavigate(tab);
-        await frames();
-        await crawl('tab ${tab.name}');
-        bar().onNavigate(tab);
-        await frames(2);
-      }
-
-      for (final section in zadSections) {
-        step = 'section ${section.id}';
-        final context = tester.element(find.byType(HomeScreen));
-        unawaited(
-          section.open(context).catchError((Object e) {
-            errors.add('[$step] open threw: $e');
-          }),
         );
+
+        Future<void> frames([int n = 6]) async {
+          for (var i = 0; i < n; i++) {
+            await tester.pump(const Duration(milliseconds: 120));
+            final e = tester.takeException();
+            if (e != null) {
+              final text = '$e';
+              final cut = text.length > 1500 ? text.substring(0, 1500) : text;
+              errors.add('[$step] $cut');
+            }
+          }
+        }
+
         await frames();
-        await crawl(section.id);
-        // Android's back, as the phone sends it.
-        step = 'back from ${section.id}';
+
+        /// Taps every visible control on the top screen, one at a time, and
+        /// closes whatever each one opened with Android's back.
+        Future<void> crawl(String name) async {
+          final base = routes.depth;
+          final done = <String>{};
+          // Four screenfuls: lists put their rows below the fold.
+          for (var page = 0; page < 4; page++) {
+            for (var i = 0; i < 40; i++) {
+              final tappables = find
+                  .byWidgetPredicate(_isTappable)
+                  .hitTestable();
+              final all = tappables.evaluate().toList();
+              if (i >= all.length) break;
+              final label = _labelOf(all[i]);
+              if (_unsafe.any(label.contains) || !done.add(label)) continue;
+              step = '$name › page $page tap $i «$label»';
+              visited.add(step);
+              debugPrint('STEP $step');
+              await tester.tap(tappables.at(i), warnIfMissed: false);
+              await frames(4);
+              for (var guard = 0; routes.depth > base && guard < 4; guard++) {
+                step = '$name › back from «$label»';
+                debugPrint('STEP $step');
+                await tester.binding.handlePopRoute();
+                await frames(4);
+              }
+              if (routes.depth < base) return; // the screen closed itself
+            }
+            final scrollables = find
+                .byWidgetPredicate(
+                  (w) =>
+                      w is Scrollable && w.axisDirection == AxisDirection.down,
+                )
+                .hitTestable();
+            if (scrollables.evaluate().isEmpty) return;
+            step = '$name › scroll to page ${page + 1}';
+            debugPrint('STEP $step');
+            await tester.drag(
+              scrollables.first,
+              const Offset(0, -600),
+              warnIfMissed: false,
+            );
+            await frames(4);
+          }
+        }
+
+        ZadBottomNavBar bar() =>
+            tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
+        for (final tab in <ZadNavDestination>[
+          ZadNavDestination.assistant,
+          ZadNavDestination.inventory,
+          ZadNavDestination.home,
+        ]) {
+          step = 'tab ${tab.name}';
+          bar().onNavigate(tab);
+          await frames();
+          await crawl('tab ${tab.name}');
+          bar().onNavigate(tab);
+          await frames(2);
+        }
+
+        for (final section in zadSections) {
+          step = 'section ${section.id}';
+          final context = tester.element(find.byType(HomeScreen));
+          unawaited(
+            section.open(context).catchError((Object e) {
+              errors.add('[$step] open threw: $e');
+            }),
+          );
+          await frames();
+          await crawl(section.id);
+          // Android's back, as the phone sends it.
+          step = 'back from ${section.id}';
+          await tester.binding.handlePopRoute();
+          await frames();
+          // A tab section leaves the shell on another tab; go home for the
+          // next.
+          bar().onNavigate(ZadNavDestination.home);
+          await frames(2);
+        }
+
+        step = 'more sheet';
+        bar().onOpenMore();
+        await frames();
         await tester.binding.handlePopRoute();
         await frames();
-        // A tab section leaves the shell on another tab; go home for the next.
-        bar().onNavigate(ZadNavDestination.home);
-        await frames(2);
-      }
 
-      step = 'more sheet';
-      bar().onOpenMore();
-      await frames();
-      await tester.binding.handlePopRoute();
-      await frames();
+        step = 'voice sheet';
+        bar().onOpenVoice();
+        await frames();
+        await tester.binding.handlePopRoute();
+        await frames();
 
-      step = 'voice sheet';
-      bar().onOpenVoice();
-      await frames();
-      await tester.binding.handlePopRoute();
-      await frames();
+        step = 'camera';
+        bar().onOpenCamera();
+        await frames();
+        await tester.binding.handlePopRoute();
+        await frames();
 
-      step = 'camera';
-      bar().onOpenCamera();
-      await frames();
-      await tester.binding.handlePopRoute();
-      await frames();
+        step = 'drawer';
+        await tester.dragFrom(
+          Offset(size.width - 1, 400),
+          const Offset(-300, 0),
+        );
+        await frames();
+        await tester.binding.handlePopRoute();
+        await frames();
 
-      step = 'drawer';
-      await tester.dragFrom(const Offset(411, 400), const Offset(-300, 0));
-      await frames();
-      await tester.binding.handlePopRoute();
-      await frames();
+        step = 'back on home';
+        await tester.binding.handlePopRoute();
+        await frames();
 
-      step = 'back on home';
-      await tester.binding.handlePopRoute();
-      await frames();
-
-      // Offline stand-ins refuse every network call, and plugins (camera,
-      // microphone, url_launcher) are absent under a test; the screens handle
-      // both. Anything else the framework raised is a bug.
-      // Unmount, and let the screens' own timers run out.
-      await tester.pumpWidget(const SizedBox());
-      // The deals search waits up to two minutes for its answer.
-      await tester.pump(const Duration(minutes: 3));
-      debugPrint('walked ${visited.length} taps:\n${visited.join('\n')}');
-      final real = errors.where((e) => !_harnessNoise.any(e.contains)).toList();
-      expect(real, isEmpty, reason: real.join('\n\n———\n\n'));
-    });
+        // Offline stand-ins refuse every network call, and plugins (camera,
+        // microphone, url_launcher) are absent under a test; the screens handle
+        // both. Anything else the framework raised is a bug.
+        // Unmount, and let the screens' own timers run out.
+        await tester.pumpWidget(const SizedBox());
+        // The deals search waits up to two minutes for its answer.
+        await tester.pump(const Duration(minutes: 3));
+        debugPrint('walked ${visited.length} taps:\n${visited.join('\n')}');
+        final real = errors
+            .where((e) => !_harnessNoise.any(e.contains))
+            .toList();
+        expect(real, isEmpty, reason: real.join('\n\n———\n\n'));
+      });
+    }
   }
 }
 

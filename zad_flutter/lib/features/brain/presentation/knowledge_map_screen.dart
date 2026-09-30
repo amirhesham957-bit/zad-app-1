@@ -225,16 +225,22 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                                 : Navigator.of(context).maybePop(),
                             icon: const Icon(Icons.arrow_back, color: _textDim),
                           ),
-                          Text(
-                            selected == null
-                                ? 'خريطة زاد'
-                                : mapDomainLabel(selected.key),
-                            style: ZadType.titleMedium.copyWith(
-                              fontFamily: _mono,
-                              fontWeight: FontWeight.bold,
-                              color: selected == null
-                                  ? _text
-                                  : _color(selected),
+                          // Flexible: a long domain name at large text ran
+                          // 28px off a 360dp screen.
+                          Flexible(
+                            child: Text(
+                              selected == null
+                                  ? 'خريطة زاد'
+                                  : mapDomainLabel(selected.key),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ZadType.titleMedium.copyWith(
+                                fontFamily: _mono,
+                                fontWeight: FontWeight.bold,
+                                color: selected == null
+                                    ? _text
+                                    : _color(selected),
+                              ),
                             ),
                           ),
                           if (selected != null) ...<Widget>[
@@ -385,9 +391,16 @@ class _LegendDot extends StatelessWidget {
         color: color.withValues(alpha: dashed ? 0.4 : 0.8),
       ),
       const SizedBox(width: 6),
-      Text(
-        label,
-        style: ZadType.labelSmall.copyWith(fontFamily: _mono, color: _textDim),
+      // Flexible, so a label wider than the legend wraps instead of running
+      // off the screen (39px over on a 360dp phone at 1.3× text).
+      Flexible(
+        child: Text(
+          label,
+          style: ZadType.labelSmall.copyWith(
+            fontFamily: _mono,
+            color: _textDim,
+          ),
+        ),
       ),
     ],
   );
@@ -762,27 +775,31 @@ class _DomainRingState extends State<_DomainRing> {
                 width: 2,
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'زاد',
-                  style: ZadType.titleSmall.copyWith(
-                    fontFamily: _mono,
-                    fontWeight: FontWeight.w900,
-                    color: _bg,
+            // A fixed 72dp circle: scaled down at large text, not cut.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'زاد',
+                    style: ZadType.titleSmall.copyWith(
+                      fontFamily: _mono,
+                      fontWeight: FontWeight.w900,
+                      color: _bg,
+                    ),
                   ),
-                ),
-                Text(
-                  'CORE.3D',
-                  style: ZadType.labelSmall.copyWith(
-                    fontFamily: _mono,
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.bold,
-                    color: _bg.withValues(alpha: 0.85),
+                  Text(
+                    'CORE.3D',
+                    style: ZadType.labelSmall.copyWith(
+                      fontFamily: _mono,
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.bold,
+                      color: _bg.withValues(alpha: 0.85),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

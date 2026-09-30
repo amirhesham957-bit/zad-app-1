@@ -623,23 +623,31 @@ class _LowStockBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            'نواقص المخزون ($count)',
-            style: ZadType.bodySmall.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color: scheme.onErrorContainer,
-            ),
-          ),
+          // One line of two spans, ellipsized together: the title alone was
+          // a fixed Text, and at large text it pushed the row 44px off screen.
           Expanded(
-            child: Text(
-              ' (غير محدد)',
+            child: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: 'نواقص المخزون ($count)',
+                    style: ZadType.bodySmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: scheme.onErrorContainer,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' (غير محدد)',
+                    style: ZadType.labelSmall.copyWith(
+                      fontSize: 11,
+                      color: scheme.onErrorContainer.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: ZadType.labelSmall.copyWith(
-                fontSize: 11,
-                color: scheme.onErrorContainer.withValues(alpha: 0.75),
-              ),
             ),
           ),
           const SizedBox(width: 4),
@@ -953,21 +961,29 @@ class _InventoryItemCard extends StatelessWidget {
                       ),
                       if (isLow) ...<Widget>[
                         const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEE2E2),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: const Text(
-                            'منخفض',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFDC2626),
+                        // Flexible and scaled down, not fixed: on a 320dp
+                        // phone the stepper leaves this column narrower than
+                        // the badge, which overflowed by 30px.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Text(
+                                'منخفض',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFDC2626),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -996,11 +1012,15 @@ class _InventoryItemCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                       ],
-                      Text(
-                        def.key,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Color(0xFF64748B),
+                      Flexible(
+                        child: Text(
+                          def.key,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ],

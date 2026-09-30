@@ -121,7 +121,11 @@ void main() {
       tester,
     ) async {
       await pump(tester);
-      expect(find.text('نواقص المخزون (1)'), findsOneWidget);
+      // One line of two spans since the strip stopped overflowing.
+      expect(
+        find.textContaining('نواقص المخزون (1)', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.text('ينتهي قريباً'), findsOneWidget);
       expect(find.text('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);

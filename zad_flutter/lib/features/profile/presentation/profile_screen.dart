@@ -805,8 +805,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
             const SizedBox(height: ZadSpacing.xl),
-            TextField(
-              controller: TextEditingController(text: view.email),
+            // TextFormField owns its controller: a TextEditingController built
+            // here was a new, never-disposed one on every keystroke in the
+            // alias field below (each one rebuilds this screen).
+            TextFormField(
+              initialValue: view.email,
               enabled: false,
               textDirection: TextDirection.ltr,
               decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
