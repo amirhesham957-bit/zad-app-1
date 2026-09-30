@@ -1,0 +1,30 @@
+# The one splash. Android draws it from the first instant of a cold start and
+# drops it on Flutter's first frame, which is the gate itself (ZadAuthGate) —
+# there is no second, Dart-drawn splash after it any more.
+#
+# The pictures are rendered from the design by
+# tool/splash/render_splash_test.dart. After changing either, run:
+#
+#   flutter test tool/splash/render_splash_test.dart
+#   dart run flutter_native_splash:create
+flutter_native_splash:
+  # The warm canvas with its two soft blobs, and the carrot, «زاد», the slogan
+  # and the privacy line centred on it.
+  color: "#FBFAF8"
+  background_image: assets/splash/splash_background.png
+  image: assets/splash/splash_logo.png
+
+  # Android 12+ draws its own splash: an icon inside a circle, on a plain
+  # colour, with an optional branding strip at the bottom. The carrot and
+  # «زاد» go in the circle, the slogan and the privacy line in the strip.
+  android_12:
+    color: "#FBFAF8"
+    image: assets/splash/splash_android12_icon.png
+    branding: assets/splash/splash_android12_branding.png
+
+  # The app is light only (followSystemDarkMode in app/zad_app.dart), so a
+  # phone in dark mode gets the same light splash as everyone else.
+  android: true
+  ios: false
+  web: false
+  fullscreen: false
