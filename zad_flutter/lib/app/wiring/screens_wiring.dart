@@ -131,6 +131,7 @@ void wireSlots() {
   ZadSlots.chatSectionCard = ({required expanded, required onToggle}) =>
       ChatSectionCard(expanded: expanded, onToggle: onToggle);
   ZadSlots.debtsTab = () => const DebtsTab();
+  ZadSlots.liveDealsCard = () => const LiveDealsCard();
   ZadSlots.familyScreen = ({key, showFinancials = true, initialTab = 0}) =>
       FamilyScreen(
         key: key,
@@ -179,7 +180,7 @@ void wireSlots() {
       );
   ZadSlots.homeChefSection = () => const HomeChefSection();
   ZadSlots.recipesView = () => const RecipesView();
-  ZadSlots.subscriptionsScreen = ({embedded = false}) =>
-      SubscriptionsScreen(embedded: embedded);
+  ZadSlots.subscriptionsScreen = ({embedded = false, initialTab = 0}) =>
+      SubscriptionsScreen(embedded: embedded, initialTab: initialTab);
   ZadSlots.homeTelegramBlocks = () => const HomeTelegramBlocks();
 }

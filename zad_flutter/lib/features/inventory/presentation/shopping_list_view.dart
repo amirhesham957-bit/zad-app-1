@@ -308,6 +308,10 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   const SizedBox(height: ZadSpacing.sm),
                 ],
                 ZadSlots.affiliateSuggestionSection(),
+                // The live deals for what is short, next to the list it is
+                // short on — it used to sit under «الديون».
+                const SizedBox(height: ZadSpacing.md),
+                ZadSlots.liveDealsCard(),
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(

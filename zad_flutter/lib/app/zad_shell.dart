@@ -2,9 +2,10 @@
 /// pill at the bottom, the drawer behind the menu square — drawn once here
 /// and never by a screen.
 ///
-/// The bar has Kotlin's three screens (الرئيسية, عقل زاد, المخزون), the mic
-/// orb and the camera between them, and المزيد. Every other section opens
-/// over the shell from the grid, the drawer or the المزيد sheet.
+/// The bar has four places — زاد, فلوسي, بيتي, عيلتي (the owner's layout,
+/// 2026-09-30, docs/agent/ZAD_BRAIN_PLAN.md) — with the mic orb and the
+/// camera between them. عقل زاد and every other section open over the shell
+/// from زاد's brief or the drawer.
 library;
 
 import 'dart:async';
@@ -18,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
+import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
@@ -36,8 +38,8 @@ import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
-import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
@@ -56,16 +58,19 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   ZadNavDestination _tab = ZadNavDestination.home;
 
-  // عقل زاد and المخزون fetch when they first build, so each is built on its
-  // first visit and then kept — an IndexedStack builds every child up front,
-  // and a launch should not spend a round of network on tabs nobody opened.
-  bool _assistantOpened = false;
-  bool _inventoryOpened = false;
+  // فلوسي, بيتي and عيلتي fetch when they first build, so each is built on
+  // its first visit and then kept — an IndexedStack builds every child up
+  // front, and a launch should not spend a round of network on tabs nobody
+  // opened.
+  final Set<ZadNavDestination> _opened = <ZadNavDestination>{
+    ZadNavDestination.home,
+  };
 
   static const List<ZadNavDestination> _tabs = <ZadNavDestination>[
     ZadNavDestination.home,
-    ZadNavDestination.assistant,
+    ZadNavDestination.money,
     ZadNavDestination.inventory,
+    ZadNavDestination.family,
   ];
 
   @override
@@ -104,26 +109,31 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   void _show(ZadNavDestination tab) => setState(() {
     _tab = tab;
-    if (tab == ZadNavDestination.assistant) _assistantOpened = true;
-    if (tab == ZadNavDestination.inventory) _inventoryOpened = true;
+    _opened.add(tab);
   });
 
-  /// Kotlin's screen titles (`zadScreenTitle`).
   String get _title => switch (_tab) {
-    ZadNavDestination.assistant => 'عقل زاد',
-    ZadNavDestination.inventory => 'المخزون',
-    _ => 'لوحة الميزانية',
+    ZadNavDestination.money => 'فلوسي',
+    ZadNavDestination.inventory => 'بيتي',
+    ZadNavDestination.family => 'عيلتي',
+    ZadNavDestination.home => 'زاد',
   };
 
-  /// A route id from the drawer, the المزيد sheet or the grid.
+  Future<void> _openBrain() => showBrainFamily(context);
+
+  /// A route id from the drawer or a section tile.
   Future<void> _go(String id) async {
     switch (id) {
       case 'home':
         _show(ZadNavDestination.home);
+      case 'budget':
+        _show(ZadNavDestination.money);
       case 'inventory':
         _show(ZadNavDestination.inventory);
+      case 'family':
+        _show(ZadNavDestination.family);
       case 'assistant':
-        _show(ZadNavDestination.assistant);
+        await _openBrain();
       case 'deals':
         await showNearbyDealsScreen(context);
       default:
@@ -161,11 +171,6 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   Future<void> _openChat() => Navigator.of(context)
       .push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
 
-  Future<void> _openMore() async {
-    final id = await showZadMoreSheet(context);
-    if (mounted && id != null) await _go(id);
-  }
-
   Future<void> _resolve(ShellTab request) async {
     switch (request) {
       case ShellTab.home:
@@ -173,8 +178,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         // Kotlin lists the bank's waiting proposals on الرئيسية, and a
         // proposal's notification brings the customer there.
         _show(ZadNavDestination.home);
+      case ShellTab.money:
+        _show(ZadNavDestination.money);
       case ShellTab.assistant:
-        _show(ZadNavDestination.assistant);
+        await _openBrain();
       case ShellTab.inventory:
       case ShellTab.household:
         _show(ZadNavDestination.inventory);
@@ -188,7 +195,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         // A child's shell already shows the family's latest messages on its
         // home; the adults' family screen is not theirs to open.
         if (ref.read(kidsModeActiveProvider)) return;
-        await showBrainFamily(context, tab: BrainFamilyTab.family);
+        _show(ZadNavDestination.family);
     }
   }
 
@@ -294,12 +301,16 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                             onOpenVoice: () => unawaited(_openVoice()),
                             onOpenCamera: () => unawaited(_openCamera()),
                           ),
-                          if (_assistantOpened)
-                            const BrainFamilyScreen(embedded: true)
+                          if (_opened.contains(ZadNavDestination.money))
+                            const FinancesScreen(embedded: true)
                           else
                             const SizedBox.shrink(),
-                          if (_inventoryOpened)
+                          if (_opened.contains(ZadNavDestination.inventory))
                             const HouseholdScreen(embedded: true)
+                          else
+                            const SizedBox.shrink(),
+                          if (_opened.contains(ZadNavDestination.family))
+                            ZadSlots.familyScreen()
                           else
                             const SizedBox.shrink(),
                         ],
@@ -324,7 +335,6 @@ class _ZadShellState extends ConsumerState<ZadShell> {
             onNavigate: _show,
             onOpenCamera: () => unawaited(_openCamera()),
             onOpenVoice: () => unawaited(_openVoice()),
-            onOpenMore: () => unawaited(_openMore()),
           ),
         ),
       ),

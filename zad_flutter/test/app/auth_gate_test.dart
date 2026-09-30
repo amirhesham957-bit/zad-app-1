@@ -415,6 +415,37 @@ void main() {
       expect(container.read(shellNavigationProvider), isNull);
     });
 
+    testWidgets('the bar is زاد · فلوسي · بيتي · عيلتي, and each can be asked '
+        'for', (tester) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      for (final label in <String>['زاد', 'فلوسي', 'بيتي', 'عيلتي']) {
+        expect(
+          find.descendant(
+            of: find.byType(ZadBottomNavBar),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+        );
+      }
+      ZadBottomNavBar bar() =>
+          tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
+      for (final (asked, shown) in <(ShellTab, ZadNavDestination)>[
+        (ShellTab.money, ZadNavDestination.money),
+        (ShellTab.family, ZadNavDestination.family),
+        (ShellTab.household, ZadNavDestination.inventory),
+        (ShellTab.home, ZadNavDestination.home),
+      ]) {
+        container.read(shellNavigationProvider.notifier).open(asked);
+        await tester.pump();
+        await tester.pump();
+        expect(bar().current, shown, reason: '$asked');
+      }
+    });
+
     testWidgets('a screen the agent asks for opens with no chat on screen', (
       tester,
     ) async {

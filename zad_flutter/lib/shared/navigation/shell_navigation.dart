@@ -5,14 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// What somebody can ask the shell to show.
 ///
-/// The bar itself has Kotlin's three screens — [home], [assistant] and
-/// [inventory]. The rest are destinations the shell resolves the way Kotlin
-/// does: a waiting bank proposal lands on الرئيسية (where Kotlin lists
-/// them), the household on المخزون, and the chat and the transactions log
+/// The bar has four places — زاد ([home]), فلوسي ([money]), بيتي
+/// ([inventory]) and عيلتي ([family]). The rest are destinations the shell
+/// resolves: a waiting bank proposal lands on زاد (where they are listed),
+/// the household on بيتي, and عقل زاد, the chat and the transactions log
 /// open over the shell.
 enum ShellTab {
-  /// الرئيسية.
+  /// زاد.
   home,
+
+  /// فلوسي — the budget and the obligations.
+  money,
 
   /// المعاملات — opens the full log over the shell.
   transactions,
@@ -26,13 +29,13 @@ enum ShellTab {
   /// عمليات بنكية بانتظارك — on الرئيسية, as in Kotlin.
   proposals,
 
-  /// عقل زاد.
+  /// عقل زاد — opens over the shell.
   assistant,
 
-  /// المخزون.
+  /// بيتي.
   inventory,
 
-  /// شات العيلة — opens over the shell.
+  /// عيلتي.
   family,
 }
 

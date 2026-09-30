@@ -1,9 +1,11 @@
-/// Kotlin's الديون tab (`FinancesDebtsBody`): the debt payoff planner
+/// «قروض» under «التزاماتي»: the debt payoff planner
 /// (`DebtPayoffPlannerCard` — snowball or avalanche, each debt with its
-/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation) and
-/// «فرص واقتصاد» with the live deals for what the pantry is short of
-/// (`LiveDealsCard` — `fetch_live_deals`, a live web search, fetched only on
-/// a tap).
+/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation).
+///
+/// [LiveDealsCard] (`fetch_live_deals`, a live web search, fetched only on a
+/// tap) lives here too but is shown on the shopping list, next to the
+/// shortages it searches for — it had nothing to do with debts (owner,
+/// 2026-09-30).
 library;
 
 import 'dart:async';
@@ -134,22 +136,7 @@ class DebtsTab extends StatelessWidget {
       ZadSpacing.lg,
       120,
     ),
-    children: <Widget>[
-      const DebtPlannerCard(),
-      const SizedBox(height: ZadSpacing.md),
-      Row(
-        children: <Widget>[
-          const Icon(ZadIcons.prices),
-          const SizedBox(width: ZadSpacing.sm),
-          Text(
-            'فرص واقتصاد',
-            style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-      const SizedBox(height: ZadSpacing.md),
-      const LiveDealsCard(),
-    ],
+    children: const <Widget>[DebtPlannerCard()],
   );
 }
 
