@@ -410,6 +410,28 @@ void main() {
       expect(report.payload['store'], 'بنده');
     });
 
+    test('the report carries the account currency', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      await container
+          .read(settingsRepositoryProvider)
+          .setMarket(country: 'SA', currency: 'SAR');
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      await controller.saveAsTransaction();
+
+      final report = container
+          .read(outboxProvider)
+          .entries()
+          .singleWhere((e) => e.kind == OutboxKind.reportPrice);
+      expect(
+        report.payload['currency'],
+        'SAR',
+        reason: 'without it an account with no row currency is refused',
+      );
+    });
+
     test('a receipt with no store name reports nothing', () async {
       scanner.answer = _receipt(storeName: '');
       final container = containerWith();
