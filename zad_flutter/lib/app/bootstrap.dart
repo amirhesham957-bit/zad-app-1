@@ -4,10 +4,12 @@ library;
 import 'dart:async';
 import 'dart:ui' show PluginUtilities;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/crash/crash_log.dart';
@@ -55,6 +57,7 @@ Future<void> bootstrap(Widget app) async {
   await Hive.initFlutter();
   final store = await ZadLocalStore.open();
   CrashLog(store.device).install();
+  await _startSentry();
 
   await Supabase.initialize(
     url: ZadEnv.supabaseUrl,
@@ -88,22 +91,44 @@ Future<void> bootstrap(Widget app) async {
   }
 
   runApp(
-    ProviderScope(
-      overrides: [
-        localStoreProvider.overrideWithValue(store),
-        // The alerts, real on a phone. Firebase starts on first use, after
-        // the first frame; everything outside this function (every test)
-        // keeps the silent defaults.
-        pushPlatformProvider.overrideWithValue(FirebasePushPlatform()),
-        notificationPermissionProvider.overrideWithValue(
-          const PluginNotificationPermission(),
-        ),
-        placeHostProvider.overrideWithValue(const PluginPlaceHost()),
-        backgroundLocationProvider.overrideWithValue(
-          const PluginBackgroundLocation(),
-        ),
-      ],
-      child: app,
+    SentryWidget(
+      child: ProviderScope(
+        overrides: [
+          localStoreProvider.overrideWithValue(store),
+          // The alerts, real on a phone. Firebase starts on first use, after
+          // the first frame; everything outside this function (every test)
+          // keeps the silent defaults.
+          pushPlatformProvider.overrideWithValue(FirebasePushPlatform()),
+          notificationPermissionProvider.overrideWithValue(
+            const PluginNotificationPermission(),
+          ),
+          placeHostProvider.overrideWithValue(const PluginPlaceHost()),
+          backgroundLocationProvider.overrideWithValue(
+            const PluginBackgroundLocation(),
+          ),
+        ],
+        child: app,
+      ),
     ),
   );
+}
+
+/// Crash reports to Sentry, on top of [CrashLog] (whose handlers Sentry's
+/// chain onto, so the on-phone log keeps working).
+///
+/// Errors only, nothing personal: no IP or user, no screenshots, and no
+/// `debugPrint` breadcrumbs: they print whatever an error carried, and in a
+/// finance app that can be a user's own amounts or merchant text. No tracing.
+/// Background isolates (bank listener, geofences) are not covered; they never
+/// run this function.
+Future<void> _startSentry() async {
+  if (ZadEnv.sentryDsn.isEmpty) return;
+  await SentryFlutter.init((options) {
+    options
+      ..dsn = ZadEnv.sentryDsn
+      ..environment = kReleaseMode ? 'release' : 'debug'
+      ..sendDefaultPii = false
+      ..attachScreenshot = false
+      ..enablePrintBreadcrumbs = false;
+  });
 }

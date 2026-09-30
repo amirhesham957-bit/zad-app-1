@@ -36,6 +36,17 @@ abstract final class ZadEnv {
     defaultValue: 'zad0b-21',
   );
 
+  /// Where crash reports go (Sentry, org `zad-9u`, project `flutter`). A DSN
+  /// is public by design — it ships inside every APK and only lets a client
+  /// *send* events — so it defaults here, like the associate tag, and every
+  /// build reports without an env.json entry. `SENTRY_DSN=""` turns it off.
+  static const String sentryDsn = String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue:
+        'https://763634d3af16091f9a83cb8a1e854af2@o4512172184043520'
+        '.ingest.us.sentry.io/4512172230443008',
+  );
+
   /// Whether both values were supplied at build time.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

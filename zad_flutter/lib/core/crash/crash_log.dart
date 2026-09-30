@@ -1,6 +1,7 @@
-/// Kotlin's `ZadCrashLog`: the last 20 crashes, kept on the phone and sent
-/// nowhere unless the user shares them from the support screen. No crash
-/// service — "your privacy first" rules out automatic reports.
+/// Kotlin's `ZadCrashLog`: the last 20 crashes, kept on the phone for the
+/// support screen's «سجل الأعطال». Since 2026-09-29 (owner's decision) the
+/// same errors also go to Sentry — see `bootstrap`, which installs this first
+/// so Sentry's handlers chain onto it.
 library;
 
 import 'dart:async';
