@@ -9,6 +9,14 @@ Deno.test("Arabic countries: ar, with their own dialect as the hint", () => {
   assertEquals(whisperOptions("MA").prompt?.includes("دابا"), true);
 });
 
+Deno.test("Arabic accounts: the full model, and Zad's own words in the hint (2026-09-30)", () => {
+  const eg = whisperOptions("EG");
+  assertEquals(eg.model, "whisper-large-v3");
+  // «سجر لي»، «الصيدرية»، «م عيدي» — التفريغات الغلط اللي زاد ردت عليها.
+  for (const word of ["سجّلي", "الصيدلية", "مواعيدي"]) assertEquals(eg.prompt?.includes(word), true, word);
+  assertEquals(whisperOptions("TR").model, undefined);
+});
+
 Deno.test("Turkey is transcribed as Turkish, not forced into Arabic", () => {
   assertEquals(whisperOptions("TR"), { language: "tr" });
 });
@@ -51,4 +59,34 @@ Deno.test("spokenText: the dialect prompt echoed back on silence is not speech",
   assertEquals(spokenText({ text: prompt }, prompt), null);
   assertEquals(spokenText({ text: "" }), null);
   assertEquals(spokenText(null), null);
+});
+
+import { whisperWithFallback } from "./whisper.ts";
+
+Deno.test("whisperWithFallback: a refused model falls back on the same key; a refused key moves on", async () => {
+  const calls: string[] = [];
+  const r = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3", "whisper-large-v3-turbo"], async (key, model) => {
+    calls.push(`${key}:${model}`);
+    if (model === "whisper-large-v3") return { ok: false, status: 404, data: { error: "model_not_found" } };
+    return { ok: true, status: 200, data: { text: "سجّلي" } };
+  });
+  assertEquals(r.ok, true);
+  assertEquals(r.model, "whisper-large-v3-turbo");
+  assertEquals(calls, ["k1:whisper-large-v3", "k1:whisper-large-v3-turbo"]);
+
+  const keys: string[] = [];
+  const bad = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3"], async (key) => {
+    keys.push(key);
+    return key === "k1" ? { ok: false, status: 401, data: {} } : { ok: true, status: 200, data: {} };
+  });
+  assertEquals(bad.ok, true);
+  assertEquals(keys, ["k1", "k2"]);
+
+  // Anything else (a 429, a 500) is the answer, not a reason to burn every key.
+  let n = 0;
+  const busy = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3", "whisper-large-v3-turbo"], async () => {
+    n++;
+    return { ok: false, status: 429, data: {} };
+  });
+  assertEquals([busy.ok, busy.status, n], [false, 429, 1]);
 });
