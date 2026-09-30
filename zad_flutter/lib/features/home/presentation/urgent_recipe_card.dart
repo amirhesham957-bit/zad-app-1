@@ -22,6 +22,8 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 
@@ -37,8 +39,21 @@ final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
   final local = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
   final today = DateTime.utc(local.year, local.month, local.day);
 
-  final stagnant = <String>{
+  // Only what a recipe can use: «عندك إزازة ماء من فترة… وصفات» made no
+  // sense (owner, 2026-10-01). Water, tissues and drinks/cleaning rows are
+  // left out.
+  final cookable = <InventoryItem>[
     for (final i in items)
+      if (!const <String>{
+            'مياه',
+            'مناديل',
+          }.contains(productFamilyOf(i.itemName)) &&
+          !RegExp('مشروب|منظف|عناية|مياه|ماء').hasMatch(i.category ?? ''))
+        i,
+  ];
+
+  final stagnant = <String>{
+    for (final i in cookable)
       if (i.quantity > 0 && learner.isStagnant(i)) i.itemName,
   }.take(3).toList();
 
@@ -47,7 +62,7 @@ final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
       (daysLeft != null && daysLeft >= 0 && daysLeft <= 2);
 
   final urgent = <String>{
-    for (final i in items)
+    for (final i in cookable)
       if (i.quantity > 0 &&
           !stagnant.contains(i.itemName) &&
           urgentItem(
