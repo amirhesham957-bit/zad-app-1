@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -59,11 +60,11 @@ class AffiliateProductCard extends StatelessWidget {
                       children: <Widget>[
                         ColoredBox(color: ZadColors.surfaceLow),
                         if (image != null && image.isNotEmpty)
-                          Image.network(
+                          ZadNetworkImage(
                             image,
                             fit: BoxFit.cover,
                             semanticLabel: product.nameAr,
-                            errorBuilder: (_, _, _) => Icon(
+                            fallback: Icon(
                               ZadIcons.shopping,
                               size: 28,
                               color: ZadColors.outline,

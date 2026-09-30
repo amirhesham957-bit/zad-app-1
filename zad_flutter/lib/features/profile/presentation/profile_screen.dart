@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -461,13 +462,12 @@ class _Header extends ConsumerWidget {
                                   ),
                                 ),
                                 child: avatar != null && avatar.isNotEmpty
-                                    ? Image.network(
+                                    ? ZadNetworkImage(
                                         avatar,
                                         width: 64,
                                         height: 64,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) =>
-                                            _Initial(initial),
+                                        fallback: _Initial(initial),
                                       )
                                     : _Initial(initial),
                               ),

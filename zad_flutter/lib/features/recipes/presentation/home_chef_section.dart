@@ -14,6 +14,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
@@ -244,10 +245,10 @@ class _ChefRecipeCard extends ConsumerWidget {
                       color: const Color(0xFFFDF3E1),
                       child: url == null
                           ? fallback
-                          : Image.network(
+                          : ZadNetworkImage(
                               url,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => fallback,
+                              fallback: fallback,
                             ),
                     ),
                   ),

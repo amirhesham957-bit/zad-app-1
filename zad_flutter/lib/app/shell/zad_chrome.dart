@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -288,12 +289,12 @@ class _Avatar extends StatelessWidget {
             dimension: 44,
             child: u == null || u.isEmpty
                 ? Center(child: fallback)
-                : Image.network(
+                : ZadNetworkImage(
                     u,
                     fit: BoxFit.cover,
                     // Kotlin's placeholder and error are the same default
                     // avatar; here the glyph stands in for it.
-                    errorBuilder: (_, _, _) => Center(child: fallback),
+                    fallback: Center(child: fallback),
                   ),
           ),
         ),

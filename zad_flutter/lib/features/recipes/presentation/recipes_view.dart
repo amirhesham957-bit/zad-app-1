@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -312,11 +313,7 @@ class _Dish extends StatelessWidget {
           color: ZadColors.surfaceVariant,
           child: url == null
               ? glyph
-              : Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => glyph,
-                ),
+              : ZadNetworkImage(url, fit: BoxFit.cover, fallback: glyph),
         ),
       ),
     );
