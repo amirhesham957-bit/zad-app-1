@@ -10,6 +10,7 @@ import { isServiceRoleToken, providerHealth, tokenSubject } from "./providerHeal
 import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
+import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
@@ -293,7 +294,9 @@ async function attachRecipeImages(recipes: unknown[]): Promise<unknown[]> {
   }));
 }
 
-const THINKING_CONFIG_UNSUPPORTED = new Set<string>();
+// مقاس ٢٠٢٦-٠٨-١٥: الاتنين دول بيردوا 400 لو thinkingConfig موجود. بيتتعلموا وقت التشغيل
+// كمان، بس كل isolate جديد كان بيصرف نداء فاشل عشان يتعلّمهم — والنص بقى عليهم (textRouting.ts).
+const THINKING_CONFIG_UNSUPPORTED = new Set<string>(["gemini-3.5-flash-lite", "gemini-flash-lite-latest"]);
 
 /**
  * Vision fallback chain for [callVisionModel], after whatever ZAD_MODEL_ROUTINE names.
@@ -308,6 +311,9 @@ const VISION_FALLBACK_MODELS: string[] = (Deno.env.get("ZAD_VISION_FALLBACKS") ?
 
 const GEMINI_MODEL_ROUTINE = Deno.env.get("ZAD_MODEL_ROUTINE") || "gemini-3.5-flash";
 const GEMINI_MODEL_BRAIN = Deno.env.get("ZAD_MODEL_BRAIN") || "gemini-3.5-flash";
+// النص والـJSON على الخفيف (٥٠٠/يوم) بدل ZAD_MODEL_ROUTINE/BRAIN (السرّين = gemini-3.5-flash،
+// ٢٠/يوم — ومشتركين مع الصور). التقيل بقى للصور وللتصعيد لو JSON الخفيف بايظ. textRouting.ts.
+const GEMINI_MODEL_TEXT = Deno.env.get("ZAD_MODEL_TEXT") || DEFAULT_TEXT_MODEL;
 
 // Prepended to every system prompt on every provider. The per-action prompts below stay in
 // charge of their own output shape; this anchors tone/reliability once instead of being
@@ -631,7 +637,7 @@ async function callTextModel(
   tier: "routine" | "brain" = "brain",
   thinkingBudgetOverride?: number,
 ) {
-  const model = tier === "routine" ? GEMINI_MODEL_ROUTINE : GEMINI_MODEL_BRAIN;
+  const model = GEMINI_MODEL_TEXT;
   // Routine tier is deliberately non-thinking: these are extraction/classification calls
   // where reasoning tokens only eat the output budget (see callGeminiNative.thinkingBudget).
   //
@@ -660,7 +666,7 @@ async function callJsonModel(
   systemPrompt: string, userPrompt: string, maxTokens = 1500,
   tier: "routine" | "brain" = "brain",
 ) {
-  const model = tier === "routine" ? GEMINI_MODEL_ROUTINE : GEMINI_MODEL_BRAIN;
+  const model = GEMINI_MODEL_TEXT;
   const thinkingBudget = tier === "routine" ? 0 : undefined;
   const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
   let raw = gemini.content;
@@ -680,10 +686,18 @@ async function callJsonModel(
     raw = geminiRetry.content;
   }
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch (e) {
-    console.error("[CoreIntel] callJsonModel: JSON.parse failed:", (e as Error).message, "raw:", raw);
-    return null;
+  // رد وصل بس مايتقراش (من الخفيف أو من Groq) ⇒ مرة على التقيل، مش null للعميل.
+  const { value, escalated } = await escalateOnBadJson(raw, async () =>
+    model === GEMINI_MODEL_BRAIN ? null : (await callGeminiPool({
+      model: GEMINI_MODEL_BRAIN, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true,
+    })).content);
+  if (escalated) {
+    console.warn(`[CoreIntel] callJsonModel: ${model} JSON unreadable — escalated to ${GEMINI_MODEL_BRAIN}: ${value === null ? "still unreadable" : "ok"}`);
   }
+  if (value === null) console.error("[CoreIntel] callJsonModel: JSON.parse failed, raw:", raw.slice(0, 300));
+  // نفس نوع JSON.parse اللي المتصلين متعودين عليه.
+  // deno-lint-ignore no-explicit-any
+  return value as any;
 }
 
 // Vision: Gemini ONLY, routine tier, rotating across the whole key pool. There is
