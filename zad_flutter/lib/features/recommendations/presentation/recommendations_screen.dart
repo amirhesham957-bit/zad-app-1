@@ -1,8 +1,14 @@
-/// Kotlin's `RecommendationsRoute` («نصايح زاد»): the brain's open shopping
-/// recommendations (`shopping_recommendations` not yet acted on or
-/// dismissed) with the emerald savings/active/done card, and per card
-/// «لاحقاً» (dismiss) and «أضف للسلة» (onto the shopping list, then marked
-/// acted on). Reads and writes only — no model call on open.
+/// «نصايح زاد»: what زاد sees that needs the customer now — the brain's
+/// brief in full (a dose due, doses missed, an instalment or subscription in
+/// the next days, a budget already over, what ran out), each opening where
+/// it is handled — then any shopping recommendation a server job left in
+/// `shopping_recommendations`, with «لاحقاً» and «أضف للسلة».
+///
+/// Nothing has written that table since zad-market-intelligence was removed
+/// (2026-09-05), so this page used to be an empty savings card over «شغلت كل
+/// التوصيات! 🎉 — بتتحدث التوصيات كل ساعة» on an account that had never had
+/// one (owner, 2026-10-01). The brief is live; the table's cards and their
+/// card of totals show only when it holds something. No model call on open.
 library;
 
 import 'dart:async';
@@ -18,8 +24,10 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/brain/presentation/daily_brief_lines.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Opens the screen.
 Future<void> showRecommendationsScreen(BuildContext context) =>
@@ -61,7 +69,11 @@ class _RecsState extends ConsumerState<RecommendationsScreen> {
   Future<void> _load() async {
     final client = ref.read(supabaseClientProvider);
     final uid = client.auth.currentUser?.id;
-    if (uid == null) return;
+    if (uid == null) {
+      // Signed out: nothing of the table to read, and the brief still shows.
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     final cache = ref.read(screenCacheProvider);
     // Last time's cards first; the server's answer replaces them.
     if (_loading) {
@@ -160,46 +172,79 @@ class _RecsState extends ConsumerState<RecommendationsScreen> {
                   120,
                 ),
                 children: <Widget>[
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: ZadColors.forestEmerald,
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: _Stat('إجمالي التوفير', money(savings)),
-                          ),
-                          Expanded(
-                            child: _Stat('التوصيات النشطة', '${_recs.length}'),
-                          ),
-                          Expanded(child: _Stat('منفذة', '$_done')),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: ZadSpacing.lg),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: ZadSpacing.sm,
                     ),
                     child: Text(
-                      'التوصيات المقترحة',
+                      'محتاجك دلوقتي',
                       style: ZadType.titleSmall.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
+                  const SizedBox(height: ZadSpacing.sm),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: ZadColors.surface,
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(ZadSpacing.lg),
+                      child: DailyBriefLines(
+                        max: 20,
+                        empty: ZadEmptyState(
+                          icon: ZadIcons.selected,
+                          title: 'مفيش حاجة محتاجاك دلوقتي',
+                          message:
+                              'زاد بيراجع أدويتك ومخزونك والتزاماتك '
+                              'وميزانيتك أول بأول. كل ما تسجّل أكتر، '
+                              'نصايحه بتبقى أدق.',
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: ZadSpacing.md),
-                  if (_recs.isEmpty)
-                    const ZadEmptyState(
-                      icon: ZadIcons.selected,
-                      title: 'شغلت كل التوصيات! 🎉',
-                      message: 'بتتحدث التوصيات كل ساعة',
-                    )
-                  else
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).popUntil((r) => r.isFirst);
+                      ref
+                          .read(shellNavigationProvider.notifier)
+                          .open(ShellTab.chat);
+                    },
+                    icon: const Icon(ZadIcons.assistant, size: 18),
+                    label: const Text('اسأل زاد: أوفّر في إيه؟'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      shape: const StadiumBorder(),
+                    ),
+                  ),
+                  if (_recs.isNotEmpty || _done > 0) ...<Widget>[
+                    const SizedBox(height: ZadSpacing.xl),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: ZadColors.forestEmerald,
+                        borderRadius: BorderRadius.circular(ZadRadii.card),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: _Stat('إجمالي التوفير', money(savings)),
+                            ),
+                            Expanded(
+                              child: _Stat(
+                                'التوصيات النشطة',
+                                '${_recs.length}',
+                              ),
+                            ),
+                            Expanded(child: _Stat('منفذة', '$_done')),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: ZadSpacing.lg),
                     for (final r in _recs)
                       Padding(
                         padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
@@ -210,6 +255,7 @@ class _RecsState extends ConsumerState<RecommendationsScreen> {
                           onLater: () => unawaited(_dismiss(r)),
                         ),
                       ),
+                  ],
                 ],
               ),
             ),

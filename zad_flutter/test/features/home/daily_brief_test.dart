@@ -2,7 +2,7 @@
 // nothing at all when nothing needs the customer.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/home/domain/daily_brief.dart';
+import 'package:zad/shared/brain/domain/daily_brief.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/dose_time.dart';
