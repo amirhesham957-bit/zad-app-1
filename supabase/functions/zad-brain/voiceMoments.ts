@@ -100,6 +100,9 @@ export function momentLimits(moment: string): { text: number; speech: number } {
 
 /** توجيه إضافي للموديل لكل لحظة محتاجة شكل خاص (مش مجرد جملتين). */
 const MOMENT_GUIDANCE: Record<string, string> = {
+  morning_greeting:
+    "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
+    "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية.",
   dose_due:
     "ميعاد الجرعة دلوقتي بالظبط (item_name). text: سطر واحد فيه اسم الدوا وإن ميعاده دلوقتي، وإنه يدوس «خدته» بعدها. " +
     "speech: جملتين قصيرين حنينين بلهجته: فكّريه ياخده دلوقتي بالاسم. من غير أي لوم — لسه مافاتش حاجة.",
@@ -475,10 +478,12 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         meds.length ? `ماتنساش ${meds.slice(0, 2).join(" و")}` : "",
         appts.length ? `وعندك النهارده ${appts.slice(0, 2).join(" و")}` : "",
       ].filter(Boolean);
+      const ask = str(facts.daily_question, 120);
       return {
         title: "☀️ صباح الخير",
-        text: lines.length ? `صباح الخير! ${lines.join("، ")}.` : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.",
-        speech: `صباح الفل عليك! طمّني نمت كويس؟ ${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}يلا يوم حلو إن شاء الله.`,
+        text: (lines.length ? `صباح الخير! ${lines.join("، ")}.` : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
+          (ask ? ` وسؤال صغير: ${ask}` : ""),
+        speech: `صباح الفل عليك! طمّني نمت كويس؟ ${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
     }
     case "good_night": {
@@ -814,6 +819,35 @@ export const CLIENT_MOMENTS: ReadonlySet<string> = new Set(["morning_greeting", 
  * التحية كانت هتبقى جملة عامة؛ بيها بتبقى "افطر وخد دوا الضغط، وعندك البنك الساعة ٥".
  * كل مصدر بيفشل لوحده بيتساب فاضي — التحية بتتقال برضه.
  */
+/**
+ * «زاد بيسأل يوم بيوم» (ZAD_SUPER_AGENT.md idea هـ): one question a day, in the morning
+ * greeting, for what the brain still does not know about the customer. The answer comes
+ * back as a normal turn and update_customer_profile saves it. One a day, rotating by
+ * date, so a question skipped today is not the one asked again tomorrow.
+ */
+export const DAILY_QUESTIONS: ReadonlyArray<readonly [string, string]> = [
+  ["preferred_name", "أناديك بإيه؟"],
+  ["gender", "أكلمك بصيغة راجل ولا ست؟"],
+  ["household_role", "إنت مين في البيت؟ أب، أم، ولا عايش لوحدك؟"],
+  ["pay_day", "بتقبض يوم كام في الشهر؟ عشان أحسب شهرك صح"],
+  ["cares_for", "فيه حد في رعايتك؟ أولاد، أهلك، ولا مسؤول عن نفسك بس؟"],
+  ["occupation", "بتشتغل إيه؟ عشان أفهم يومك أكتر"],
+];
+
+export function dailyQuestion(
+  profile: Record<string, unknown> | null,
+  localDate: string,
+): { field: string; question: string } | null {
+  const missing = DAILY_QUESTIONS.filter(([field]) => {
+    const v = profile?.[field];
+    return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+  });
+  if (missing.length === 0) return null;
+  const day = Math.floor(Date.parse(`${localDate}T00:00:00Z`) / 86_400_000);
+  const [field, question] = missing[(Number.isFinite(day) ? day : 0) % missing.length];
+  return { field, question };
+}
+
 export async function morningFacts(
   sb: SupabaseClient,
   userId: string,
@@ -821,7 +855,7 @@ export async function morningFacts(
 ): Promise<Record<string, unknown>> {
   const dayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
   const dayEnd = new Date(new Date(dayStart).getTime() + 86_400_000).toISOString();
-  const [meds, appts, budget, challenge] = await Promise.all([
+  const [meds, appts, budget, challenge, profile] = await Promise.all([
     // الأدوية اللي لسه فيها بس (زي goodNightFacts ومولّد تذكيرات الجرعات): دوا رصيده صفر
     // كان بيتقال في تحية الصبح «خد المضاد» بعد ما الكورس خلص — بيانات وهمية (٢٠٢٦-٠٩-٢٥).
     // for_person (20260929130000): «دوا ماما» مش «دواك» — null = العميل نفسه.
@@ -835,9 +869,14 @@ export async function morningFacts(
       .then((r) => r.data as Record<string, unknown> | null, () => null),
     sb.from("zad_savings_challenges").select("started_on,length_days,daily_cap,streak").eq("user_id", userId).eq("status", "active").maybeSingle()
       .then((r) => r.data as { started_on: string; length_days: number; daily_cap: number; streak: number } | null, () => null),
+    sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation").eq("user_id", userId).maybeSingle()
+      .then((r) => r.data as Record<string, unknown> | null, () => undefined),
   ]);
+  // undefined = the read failed: ask nothing rather than ask what may be known.
+  const ask = profile === undefined ? null : dailyQuestion(profile, local.date);
   return {
     local_date: local.date,
+    ...(ask ? { daily_question: ask.question, daily_question_field: ask.field } : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
