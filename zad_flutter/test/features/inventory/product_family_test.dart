@@ -95,4 +95,63 @@ void main() {
     );
     expect(plan.bought.map((s) => s.id), <String>['s1']);
   });
+
+  group('the shopping list reads by need (owner, 2026-10-01)', () {
+    ShoppingItem line(String id, String name) =>
+        ShoppingItem(id: id, userId: 'u', itemName: name);
+
+    // The owner's outstanding list, as the database held it.
+    final owner = <ShoppingItem>[
+      line('1', 'مرتديلا لحم مقطعة'),
+      line('2', 'مياه نستله بيور لايف'),
+      line('3', 'مياه داساني جالون'),
+      line('4', 'ماء إيلان'),
+      line('5', 'عبوة مياه'),
+      line('6', 'علبة حفظ طعام'),
+      line('7', 'كرتونة ماية'),
+      line('8', 'بيض'),
+    ];
+
+    test('packing words and ماية do not hide the staple', () {
+      expect(productFamilyOf('عبوة مياه'), 'مياه');
+      expect(productFamilyOf('كرتونة ماية'), 'مياه');
+      expect(productFamilyOf('كيس سكر'), 'سكر');
+      expect(productFamilyOf('كيلو رز مصري'), 'رز');
+      // A box is not a staple, and a word alone is not skipped away.
+      expect(productFamilyOf('علبة حفظ طعام'), isNull);
+      expect(productFamilyOf('علبة'), isNull);
+    });
+
+    test("a staple's lines are one group, where its first line was", () {
+      final groups = groupShoppingLines(owner);
+      expect(groups.map((g) => g.name).toList(), <String>[
+        'مرتديلا لحم مقطعة',
+        'مياه',
+        'علبة حفظ طعام',
+        'بيض',
+      ]);
+      final water = groups[1];
+      expect(water.isFamily, isTrue);
+      expect(water.lines.map((l) => l.id), <String>['2', '3', '4', '5', '7']);
+      expect(water.allPurchased, isFalse);
+    });
+
+    test('a brand is named without its staple', () {
+      expect(brandWithinFamily('ماء إيلان'), 'إيلان');
+      expect(brandWithinFamily('مياه داساني جالون'), 'داساني');
+      expect(brandWithinFamily('عبوة مياه'), 'عبوة مياه');
+      expect(brandWithinFamily('مرتديلا لحم'), 'مرتديلا لحم');
+    });
+
+    test('the house stock of a line: the staple across brands', () {
+      final stock = pantryStockFor('كرتونة ماية', water);
+      expect(stock?.total, 8);
+      expect(stock?.isLow, isFalse);
+      expect(pantryStockFor('مرتديلا', water), isNull);
+      expect(
+        pantryStockFor('مياه', <InventoryItem>[_row('1', 'مياه صافي', 0)]),
+        isNull,
+      );
+    });
+  });
 }

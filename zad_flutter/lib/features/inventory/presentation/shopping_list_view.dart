@@ -27,6 +27,7 @@ import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market.dart';
@@ -48,11 +49,20 @@ double? basketTotal(Iterable<ShoppingItem> outstanding) {
   return known ? total : null;
 }
 
-/// The list as text to share — Kotlin's WhatsApp message.
+/// The list as text to share — Kotlin's WhatsApp message. A staple's brands
+/// are one bullet: «• مياه (إيلان / داساني)».
 String shoppingShareText(Iterable<ShoppingItem> outstanding, String currency) {
+  String bullet(ShoppingGroup g) {
+    if (g.isFamily) {
+      final brands = g.lines.map((l) => brandWithinFamily(l.itemName)).toSet();
+      return '• ${g.name} (${brands.join(' / ')})';
+    }
+    final qty = g.lines.first.quantity;
+    return '• ${g.name}${qty > 1 ? ' × $qty' : ''}';
+  }
+
   final lines = <String>[
-    for (final i in outstanding)
-      '• ${i.itemName}${i.quantity > 1 ? ' × ${i.quantity}' : ''}',
+    for (final g in groupShoppingLines(outstanding)) bullet(g),
   ];
   final total = basketTotal(outstanding);
   return <String>[
@@ -163,6 +173,10 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
     final outstanding = view.outstanding
         .where((i) => _priority == null || i.priority == _priority)
         .toList();
+    // What the house already holds, beside each line: the list is read
+    // against the pantry, not on its own (owner, 2026-10-01: «لازم يعرف ان
+    // عندي الماية قد إيه»).
+    final pantry = ref.watch(pantryControllerProvider.select((v) => v.items));
 
     return Column(
       children: <Widget>[
@@ -317,8 +331,21 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                     title: 'لا توجد عناصر بهذا التصنيف',
                     message: 'جرّب أولوية تانية.',
                   ),
-                for (final item in outstanding) ...<Widget>[
-                  _Line(item: item, currency: currency),
+                for (final group in groupShoppingLines(
+                  outstanding,
+                )) ...<Widget>[
+                  if (group.isFamily)
+                    _FamilyLine(
+                      group: group,
+                      currency: currency,
+                      stock: pantryStockFor(group.name, pantry),
+                    )
+                  else
+                    _Line(
+                      item: group.lines.first,
+                      currency: currency,
+                      stock: pantryStockFor(group.name, pantry),
+                    ),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
                 ZadSlots.affiliateSuggestionSection(),
@@ -494,11 +521,22 @@ class _Suggestions extends StatelessWidget {
   );
 }
 
+/// «في البيت 6», and whether that is still short — the list line read
+/// against the pantry.
+String? _stockNote(({int total, bool isLow})? stock) => stock == null
+    ? null
+    : stock.isLow
+    ? 'في البيت ${stock.total} بس'
+    : 'في البيت ${stock.total} — مش ناقص';
+
 class _Line extends ConsumerWidget {
-  const new({required this.item, required this.currency});
+  const new({required this.item, required this.currency, this.stock});
 
   final ShoppingItem item;
   final String currency;
+
+  /// The pantry's stock of it, when the pantry has any.
+  final ({int total, bool isLow})? stock;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -514,6 +552,7 @@ class _Line extends ConsumerWidget {
       if (item.store case final s? when s.isNotEmpty) s,
       if (item.predictedDaysLeft case final d? when !item.isPurchased)
         'ينفد بعد $d أيام',
+      if (!item.isPurchased) ?_stockNote(stock),
     ];
 
     return Dismissible(
@@ -605,6 +644,171 @@ class _Line extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A staple's lines as one: «مياه · 7 أنواع», one tick for all of them, the
+/// house's stock, and the brands on a tap.
+class _FamilyLine extends ConsumerStatefulWidget {
+  const new({required this.group, required this.currency, this.stock});
+
+  final ShoppingGroup group;
+  final String currency;
+  final ({int total, bool isLow})? stock;
+
+  @override
+  ConsumerState<_FamilyLine> createState() => _FamilyLineState();
+}
+
+class _FamilyLineState extends ConsumerState<_FamilyLine> {
+  bool _open = false;
+
+  Future<void> _removeAll() async {
+    final group = widget.group;
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('تشيل ${group.name} من القائمة؟'),
+        content: Text('هيتشالوا ${group.lines.length} سطور مع بعض.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('شيلهم'),
+          ),
+        ],
+      ),
+    );
+    if (sure != true) return;
+    final controller = ref.read(shoppingControllerProvider.notifier);
+    for (final line in group.lines) {
+      await controller.remove(line.id);
+    }
+  }
+
+  void _tickAll(bool bought) {
+    final controller = ref.read(shoppingControllerProvider.notifier);
+    for (final line in widget.group.lines) {
+      if (line.isPurchased != bought) {
+        unawaited(controller.toggle(line.id, purchased: bought));
+      }
+    }
+    if (bought) {
+      unawaited(
+        ref
+            .read(affiliateMatchProvider.notifier)
+            .onPurchased(widget.group.name),
+      );
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text('تم شراء ${widget.group.name}')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final group = widget.group;
+    final brands = group.lines
+        .map((l) => brandWithinFamily(l.itemName))
+        .toSet()
+        .toList();
+    final shown = brands.take(3).join(' · ');
+    final more = brands.length > 3 ? ' +${brands.length - 3}' : '';
+    final note = _stockNote(widget.stock);
+    final urgent = group.lines.any((l) => l.priority == ShoppingPriority.high);
+    return ZadCard(
+      padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: CheckboxListTile(
+                    value: group.allPurchased,
+                    onChanged: (v) => _tickAll(v ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    title: Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            '${group.name} · ${group.lines.length} أنواع',
+                            style: ZadType.titleSmall,
+                          ),
+                        ),
+                        if (urgent) ...<Widget>[
+                          const SizedBox(width: ZadSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: ZadColors.terracottaRust.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                ZadRadii.pill,
+                              ),
+                            ),
+                            child: Text(
+                              'حرج',
+                              style: ZadType.labelSmall.copyWith(
+                                color: ZadColors.terracottaRust,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle: Text(
+                      <String>['$shown$more', ?note].join(' · '),
+                      style: ZadType.labelSmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => setState(() => _open = !_open),
+                  tooltip: _open ? 'اخفي الأنواع' : 'وريني الأنواع',
+                  icon: Icon(
+                    _open ? Icons.expand_less : Icons.expand_more,
+                    color: ZadColors.inkMuted,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => unawaited(_removeAll()),
+                  tooltip: 'حذف',
+                  icon: Icon(
+                    ZadIcons.delete,
+                    size: 18,
+                    color: ZadColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+            if (_open)
+              Padding(
+                padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                child: Column(
+                  children: <Widget>[
+                    for (final line in group.lines) ...<Widget>[
+                      _Line(item: line, currency: widget.currency),
+                      const SizedBox(height: ZadSpacing.xs),
+                    ],
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );
