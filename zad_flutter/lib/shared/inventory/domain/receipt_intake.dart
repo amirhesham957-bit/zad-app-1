@@ -17,6 +17,7 @@
 library;
 
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 /// A receipt line, as the pantry will take it.
@@ -141,8 +142,14 @@ IntakePlan planIntake({
 
   final bought = <ShoppingItem>[
     for (final s in shopping)
+      // «مياه» on the list is bought by «ماء إيلان» on the receipt: the list
+      // names the staple (product_family.dart), the receipt names the brand.
       if (!s.isPurchased &&
-          merged.any((l) => itemNamesMatch(s.itemName, l.name)))
+          merged.any(
+            (l) =>
+                itemNamesMatch(s.itemName, l.name) ||
+                sameProductFamily(s.itemName, l.name),
+          ))
         s,
   ];
 

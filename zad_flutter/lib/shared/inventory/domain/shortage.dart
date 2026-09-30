@@ -8,6 +8,7 @@
 library;
 
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
@@ -63,13 +64,36 @@ List<Shortage> shortagesIn(
 }) {
   final shortages = <Shortage>[];
 
-  for (final item in items) {
-    final reason = shortageReasonFor(
-      item,
-      today: today,
-      expiringWithinDays: expiringWithinDays,
-    );
-    if (reason != null) shortages.add(Shortage(item: item, reason: reason));
+  for (final group in groupPantry(items)) {
+    if (!group.isFamily) {
+      final item = group.members.single;
+      final reason = shortageReasonFor(
+        item,
+        today: today,
+        expiringWithinDays: expiringWithinDays,
+      );
+      if (reason != null) shortages.add(Shortage(item: item, reason: reason));
+      continue;
+    }
+    // A staple under several brands is one stock (product_family.dart): it
+    // runs out or runs low once, under the staple's name — eight bottles of
+    // water across five brands are not five shortages. A date is still a
+    // row's own: an expired bottle is that bottle.
+    if (group.isOut) {
+      shortages.add(
+        Shortage(item: group.representative, reason: ShortageReason.outOfStock),
+      );
+    } else if (group.isLow) {
+      shortages.add(
+        Shortage(item: group.representative, reason: ShortageReason.runningLow),
+      );
+    }
+    for (final item in group.members) {
+      final days = item.daysUntilExpiry(today);
+      if (item.quantity > 0 && days != null && days < 0) {
+        shortages.add(Shortage(item: item, reason: ShortageReason.expired));
+      }
+    }
   }
 
   // Most urgent first, then by name so the order is stable between two runs
@@ -118,10 +142,19 @@ List<ShoppingItem> linesRestockedBy(
   required List<Shortage> shortages,
   required List<ShoppingItem> shopping,
 }) {
-  if (shortages.any((s) => s.item.id == item.id)) return const <ShoppingItem>[];
+  // Still short — itself, or its staple across every brand.
+  if (shortages.any(
+    (s) =>
+        s.item.id == item.id ||
+        sameProductFamily(s.item.itemName, item.itemName),
+  )) {
+    return const <ShoppingItem>[];
+  }
   return <ShoppingItem>[
     for (final line in shopping)
-      if (line.isOutstanding && itemNamesMatch(line.itemName, item.itemName))
+      if (line.isOutstanding &&
+          (itemNamesMatch(line.itemName, item.itemName) ||
+              sameProductFamily(line.itemName, item.itemName)))
         line,
   ];
 }

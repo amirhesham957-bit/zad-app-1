@@ -20,6 +20,7 @@ import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
@@ -30,6 +31,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
@@ -217,9 +219,15 @@ class _PantryViewState extends ConsumerState<PantryView> {
       for (final i in all)
         if (i.daysUntilExpiry(today) case final d? when d <= 3) i,
     ];
+    // A staple under several brands is one stock (product_family.dart):
+    // low once, under the staple's name, when the whole house is low.
     final low = <InventoryItem>[
-      for (final i in all)
-        if (i.quantity <= (i.lowStockThreshold ?? 2)) i,
+      for (final g in groupPantry(all))
+        if (g.isFamily
+            ? g.isLow
+            : g.members.single.quantity <=
+                  (g.members.single.lowStockThreshold ?? 2))
+          g.representative,
     ];
     final shortages = <InventoryItem>[
       ...low,
@@ -233,6 +241,17 @@ class _PantryViewState extends ConsumerState<PantryView> {
             (_query.isEmpty ||
                 i.itemName.toLowerCase().contains(_query.toLowerCase())))
           i,
+    ];
+
+    // The list as stock: a staple's brands under one header with the house
+    // total, then its rows; everything else one row each.
+    final rows = <(InventoryItem?, PantryGroup?, bool)>[
+      for (final g in groupPantry(filtered))
+        if (g.isFamily) ...<(InventoryItem?, PantryGroup?, bool)>[
+          (null, g, false),
+          for (final m in g.members) (m, null, true),
+        ] else
+          (g.members.single, null, false),
     ];
 
     final header = <Widget>[
@@ -433,22 +452,38 @@ class _PantryViewState extends ConsumerState<PantryView> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
               sliver: SliverList.separated(
-                itemCount: filtered.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemCount: rows.length,
+                separatorBuilder: (_, i) => SizedBox(
+                  // A family's rows sit close under its header.
+                  height:
+                      rows[i].$2 != null &&
+                          i + 1 < rows.length &&
+                          rows[i + 1].$1 != null &&
+                          rows[i + 1].$3
+                      ? 6
+                      : 12,
+                ),
                 itemBuilder: (_, i) {
-                  final item = filtered[i];
+                  final (item, group, grouped) = rows[i];
+                  final Widget child;
+                  if (group != null) {
+                    child = _FamilyHeader(group: group);
+                  } else {
+                    final row = item!;
+                    child = _InventoryItemCard(
+                      item: row,
+                      today: today,
+                      grouped: grouped,
+                      onConsume: () => unawaited(controller.adjust(row.id, -1)),
+                      onRestock: () => unawaited(controller.adjust(row.id, 1)),
+                      onEdit: () =>
+                          unawaited(showEditPantrySheet(context, row)),
+                      onDelete: () => unawaited(controller.remove(row.id)),
+                    );
+                  }
                   return ZadAppearOnEntryDelay(
                     delayMs: math.min(i * 20, 250),
-                    child: _InventoryItemCard(
-                      item: item,
-                      today: today,
-                      onConsume: () =>
-                          unawaited(controller.adjust(item.id, -1)),
-                      onRestock: () => unawaited(controller.adjust(item.id, 1)),
-                      onEdit: () =>
-                          unawaited(showEditPantrySheet(context, item)),
-                      onDelete: () => unawaited(controller.remove(item.id)),
-                    ),
+                    child: child,
                   );
                 },
               ),
@@ -879,10 +914,16 @@ class _InventoryItemCard extends StatelessWidget {
     required this.onRestock,
     required this.onEdit,
     required this.onDelete,
+    this.grouped = false,
   });
 
   final InventoryItem item;
   final DateTime today;
+
+  /// One brand of a staple under its family header, which says whether the
+  /// house is low — a single bottle of one brand is not «منخفض» when there
+  /// are seven of the others.
+  final bool grouped;
   final VoidCallback onConsume;
   final VoidCallback onRestock;
   final VoidCallback onEdit;
@@ -893,7 +934,7 @@ class _InventoryItemCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final days = item.daysUntilExpiry(today);
     final def = _defFor(item.category, item.itemName);
-    final isLow = item.quantity <= (item.lowStockThreshold ?? 2);
+    final isLow = !grouped && item.quantity <= (item.lowStockThreshold ?? 2);
 
     Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
         SizedBox.square(
@@ -1111,6 +1152,70 @@ class _InventoryItemCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A staple's header over its brands: the house total and whether it is low.
+class _FamilyHeader extends StatelessWidget {
+  const new({required this.group});
+
+  final PantryGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final units = group.members.map((m) => m.unit).toSet();
+    final unit = units.length == 1 ? (units.single ?? '') : '';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+      child: Row(
+        children: <Widget>[
+          Text(foodEmoji(group.name), style: ZadType.titleLarge),
+          const SizedBox(width: ZadSpacing.sm),
+          Flexible(
+            child: Text(
+              group.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ZadType.titleMedium,
+            ),
+          ),
+          const SizedBox(width: ZadSpacing.sm),
+          Text(
+            '${group.total} $unit'.trim(),
+            style: ZadType.titleSmall.copyWith(color: scheme.primary),
+          ),
+          const SizedBox(width: ZadSpacing.xs),
+          Flexible(
+            child: Text(
+              '· ${group.members.length} أنواع',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ZadType.labelSmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          if (group.isLow) ...<Widget>[
+            const SizedBox(width: ZadSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: scheme.errorContainer,
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                group.isOut ? 'خلص' : 'منخفض',
+                style: ZadType.labelSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: scheme.error,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
