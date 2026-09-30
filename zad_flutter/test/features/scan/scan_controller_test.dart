@@ -18,20 +18,20 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/prices/data/prices_remote.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/prices/data/prices_remote.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 class _FakeCamera implements ReceiptCamera {
   Uint8List? image = Uint8List.fromList(<int>[1, 2, 3]);
@@ -131,6 +131,10 @@ class _NoPrices implements PricesRemote {
 
   @override
   Future<List<Object?>> leaderboard({required String currency}) =>
+      throw StateError('offline');
+
+  @override
+  Future<Object?> areaTrends({required String userId, int days = 14}) =>
       throw StateError('offline');
 }
 
@@ -408,6 +412,28 @@ void main() {
       expect(report.payload['item'], 'لبن');
       expect(report.payload['price'], 6.25, reason: '12.5 for 2');
       expect(report.payload['store'], 'بنده');
+    });
+
+    test('the report carries the account currency', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      await container
+          .read(settingsRepositoryProvider)
+          .setMarket(country: 'SA', currency: 'SAR');
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      await controller.saveAsTransaction();
+
+      final report = container
+          .read(outboxProvider)
+          .entries()
+          .singleWhere((e) => e.kind == OutboxKind.reportPrice);
+      expect(
+        report.payload['currency'],
+        'SAR',
+        reason: 'without it an account with no row currency is refused',
+      );
     });
 
     test('a receipt with no store name reports nothing', () async {

@@ -13,13 +13,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
 
 /// Opens the page.
 Future<void> showFamilySavingsScreen(BuildContext context) =>
@@ -134,11 +135,15 @@ class _Progress extends StatelessWidget {
   );
 }
 
+/// The controller lives in [showFieldDialog]'s state: made in `builder` it
+/// was a new, empty one on every rebuild — the keyboard opening wiped what
+/// had been typed.
 Future<double?> _askAmount(BuildContext context, String title, String label) =>
-    showDialog<double>(
+    showFieldDialog<double>(
       context: context,
-      builder: (dialogContext) {
-        final c = TextEditingController();
+      initial: const <String>[''],
+      builder: (dialogContext, fields) {
+        final c = fields[0];
         return AlertDialog(
           title: Text(
             title,

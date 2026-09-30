@@ -13,21 +13,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:share_plus/share_plus.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
@@ -121,10 +124,18 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
           .where((i) => i.estimatedPrice <= 0)
           .take(5)
           .toList();
+      // In the customer's country and currency: an Egyptian basket was
+      // priced from whatever the web answered, riyals included, and the
+      // total came out wrong (owner, 2026-10-01).
+      final country = ref.read(accountCountryProvider);
+      final currency =
+          ref.read(budgetControllerProvider).snapshot?.currency ?? '';
       for (final item in unpriced) {
         final price = await ai.estimatePrice(
           userId: userId,
           itemName: item.itemName,
+          location: marketFor(country)?.nameAr ?? '',
+          currency: currency,
         );
         if (price != null) {
           await ref
@@ -202,6 +213,10 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
               children: <Widget>[
                 _BudgetHeader(
                   total: basketTotal(view.outstanding),
+                  priced: view.outstanding
+                      .where((i) => i.estimatedPrice > 0)
+                      .length,
+                  lines: view.outstanding.length,
                   remaining: budget.spendable,
                   limit: budget.snapshot?.openingBalance,
                   currency: currency,
@@ -306,7 +321,11 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   _Line(item: item, currency: currency),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
-                const AffiliateSuggestionSection(),
+                ZadSlots.affiliateSuggestionSection(),
+                // The live deals for what is short, next to the list it is
+                // short on — it used to sit under «الديون».
+                const SizedBox(height: ZadSpacing.md),
+                ZadSlots.liveDealsCard(),
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(
@@ -339,7 +358,14 @@ class _BudgetHeader extends StatelessWidget {
     required this.remaining,
     required this.limit,
     required this.currency,
+    this.priced = 0,
+    this.lines = 0,
   });
+
+  /// Lines with a known price, and all outstanding lines: a total over two
+  /// of eight lines is not the basket.
+  final int priced;
+  final int lines;
 
   final double? total;
   final double? remaining;
@@ -377,6 +403,13 @@ class _BudgetHeader extends StatelessWidget {
                 : '${_money(basket)} $currency',
             style: ZadType.figure(28).copyWith(color: Colors.white),
           ),
+          if (basket != null && priced < lines)
+            Text(
+              'تقدير لـ $priced من $lines صنف — «تعبئة ذكية» تقدّر الباقي',
+              style: ZadType.labelSmall.copyWith(
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
           const SizedBox(height: ZadSpacing.sm),
           Row(
             children: <Widget>[

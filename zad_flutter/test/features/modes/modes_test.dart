@@ -7,12 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/modes/application/modes_controller.dart';
-import 'package:zad/features/modes/data/modes_repository.dart';
-import 'package:zad/features/modes/domain/modes.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/modes/data/modes_repository.dart';
+import 'package:zad/shared/modes/domain/modes.dart';
 
 final DateTime _now = DateTime.utc(2026, 9, 25, 10);
 

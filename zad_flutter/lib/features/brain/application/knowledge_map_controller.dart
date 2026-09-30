@@ -6,14 +6,19 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 String _n(num v) => NumberFormat('#,##0.##', 'en').format(v);
 

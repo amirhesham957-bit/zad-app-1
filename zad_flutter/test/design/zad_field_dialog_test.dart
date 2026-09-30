@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
 
 void main() {
   testWidgets('the fields outlive the exit transition — no red screen', (

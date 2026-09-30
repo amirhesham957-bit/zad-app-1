@@ -14,8 +14,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/brain/data/agent_actions_remote.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 
@@ -154,3 +157,13 @@ class AgentActionsRepository {
     return id;
   }
 }
+
+/// "سجل تعديلات زاد": cached for an instant open, undone only online.
+final agentActionsRepositoryProvider = Provider<AgentActionsRepository>((ref) {
+  final store = ref.watch(localStoreProvider);
+  return AgentActionsRepository(
+    cache: store.documents,
+    remote: SupabaseAgentActionsRemote(ref.watch(supabaseClientProvider)),
+    signedInUserId: ref.watch(signedInUserIdProvider),
+  );
+});

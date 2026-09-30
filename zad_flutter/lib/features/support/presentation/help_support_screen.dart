@@ -1,6 +1,8 @@
 /// Kotlin's `HelpSupportScreen`: a usage-help chat (general questions only —
-/// it says plainly that it cannot see the account), and the crash-log button
-/// in the top bar that shows, shares or clears the on-phone log.
+/// it says plainly that it cannot see the account), the crash-log button in
+/// the top bar that shows, shares or clears the on-phone log — and, above the
+/// chat, «كلّم فريق الدعم»: a complaint for a person, emailed to the support
+/// inbox with the chat and (if the customer agrees) the crash log.
 library;
 
 import 'dart:async';
@@ -9,12 +11,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/support/data/support_assistant.dart';
+import 'package:zad/features/support/data/support_tickets.dart';
 
 /// Opens the support screen.
 Future<void> showHelpSupportScreen(BuildContext context) =>
@@ -81,6 +87,128 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       _typing = false;
     });
     _toBottom();
+  }
+
+  /// «كلّم فريق الدعم»: what happened, sent to a person.
+  Future<void> _contactSupport() async {
+    var attachLog = true;
+    final request = await showFieldDialog<({String subject, String message})>(
+      context: context,
+      initial: const <String>['', ''],
+      builder: (dialogContext, fields) => StatefulBuilder(
+        builder: (dialogContext, setDialog) => AlertDialog(
+          title: const Text('كلّم فريق الدعم'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'اكتب المشكلة أو الشكوى، وهيوصل لفريق الدعم على طول '
+                  'ويردوا عليك على إيميلك.',
+                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+                ),
+                const SizedBox(height: ZadSpacing.md),
+                TextField(
+                  controller: fields[0],
+                  maxLength: 120,
+                  decoration: const InputDecoration(
+                    labelText: 'الموضوع',
+                    hintText: 'مثال: صفحة الصيدلية فاضية',
+                  ),
+                ),
+                const SizedBox(height: ZadSpacing.sm),
+                TextField(
+                  controller: fields[1],
+                  minLines: 4,
+                  maxLines: 8,
+                  decoration: const InputDecoration(
+                    labelText: 'التفاصيل',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: attachLog,
+                  onChanged: (v) => setDialog(() => attachLog = v ?? false),
+                  title: const Text('أرفق سجل الأعطال (يساعدنا نصلحها أسرع)'),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final subject = fields[0].text.trim();
+                final message = fields[1].text.trim();
+                if (message.isEmpty) return;
+                Navigator.of(dialogContext).pop((
+                  subject: subject.isEmpty ? 'طلب دعم' : subject,
+                  message: message,
+                ));
+              },
+              child: const Text('إرسال'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (request == null || !mounted) return;
+
+    final log = attachLog ? ref.read(crashLogProvider).exportAll() : null;
+    final messenger = ScaffoldMessenger.of(context);
+    SupportDelivery? delivery;
+    try {
+      delivery = await ref
+          .read(supportTicketsProvider)
+          .submit(
+            subject: request.subject,
+            message: request.message,
+            conversation: _messages
+                .skip(1)
+                .map((m) => (text: m.text, isUser: m.isUser))
+                .toList(),
+            crashLog: log,
+          );
+    } on Object catch (e) {
+      debugPrint('support request not saved: $e');
+    }
+    if (!mounted) return;
+    if (delivery == SupportDelivery.emailed) {
+      setState(
+        () => _messages.add((
+          text:
+              'وصلت رسالتك لفريق الدعم ✅ — هيردوا عليك على إيميلك في أقرب '
+              'وقت.',
+          isUser: false,
+        )),
+      );
+      _toBottom();
+      return;
+    }
+    // Not emailed (no mail key on the server yet, or no network): the
+    // customer's own mail app, on the same inbox, so it still arrives.
+    final opened = await launchUrl(
+      SupportTickets.mailto(
+        subject: request.subject,
+        message: request.message,
+        crashLog: log,
+      ),
+    ).catchError((Object _) => false);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          opened
+              ? 'فتحنالك الإيميل — دوس إرسال وهتوصل لفريق الدعم'
+              : 'ابعت لنا على ${SupportTickets.inbox}',
+        ),
+      ),
+    );
   }
 
   Future<void> _crashLog() async {
@@ -156,6 +284,11 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       ),
       actions: <Widget>[
         IconButton(
+          tooltip: 'كلّم فريق الدعم',
+          icon: Icon(Icons.mail_outline, color: ZadColors.inkMuted),
+          onPressed: () => unawaited(_contactSupport()),
+        ),
+        IconButton(
           tooltip: 'سجل الأعطال',
           icon: Icon(Icons.bug_report, color: ZadColors.inkMuted),
           onPressed: () => unawaited(_crashLog()),
@@ -168,6 +301,35 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     ),
     body: Column(
       children: <Widget>[
+        // A person, not only the helper: in plain sight, not behind a menu.
+        Material(
+          color: ZadColors.mint100,
+          child: InkWell(
+            onTap: () => unawaited(_contactSupport()),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.lg,
+                vertical: ZadSpacing.md,
+              ),
+              child: Row(
+                children: <Widget>[
+                  const Icon(Icons.support_agent, color: ZadColors.green700),
+                  const SizedBox(width: ZadSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'عندك شكوى أو مشكلة؟ كلّم فريق الدعم',
+                      style: ZadType.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: ZadColors.green700,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_left, color: ZadColors.green700),
+                ],
+              ),
+            ),
+          ),
+        ),
         Expanded(
           child: ListView.separated(
             controller: _scroll,

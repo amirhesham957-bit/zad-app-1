@@ -4,13 +4,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/data/memory_repository.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/brain/domain/habits.dart';
-import 'package:zad/features/brain/domain/memory_note.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/data/memory_repository.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/habits.dart';
+import 'package:zad/shared/brain/domain/memory_note.dart';
 
 class _Memory extends MemoryController {
   new(this.initial, {this.failure});

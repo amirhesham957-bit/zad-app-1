@@ -7,9 +7,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/features/family/data/family_remote.dart';
-import 'package:zad/features/family/data/family_repository.dart';
-import 'package:zad/features/family/domain/family.dart';
+import 'package:zad/shared/family/data/family_remote.dart';
+import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/family/domain/family.dart';
 
 /// Stands in for the tables and the server functions, with the server's
 /// habits: a refused write matches nothing and says nothing.

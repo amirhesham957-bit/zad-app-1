@@ -2,7 +2,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/features/home/data/home_widget_sync.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 void main() {
   final now = DateTime.utc(2026, 9, 29, 14, 5);

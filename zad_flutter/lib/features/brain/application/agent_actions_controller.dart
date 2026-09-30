@@ -7,15 +7,14 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// What the screen draws.
 class AgentActionsView {

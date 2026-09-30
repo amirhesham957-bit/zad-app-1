@@ -5,16 +5,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/components/zad_pulses.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/components/zad_pulses.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_shell_colors.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
-
-/// Kotlin's `primary`.
-const Color kShellPrimary = Color(0xFF1B4332);
-
-/// Kotlin's `textPrimary` (`onSurface`, ZadNeutralDark).
-const Color kShellTextPrimary = Color(0xFF1F1F14);
 
 /// Kotlin's `onSurfaceVariant` / `textSecondary`.
 Color get _textSecondary => ZadColors.inkMuted;
@@ -293,12 +289,12 @@ class _Avatar extends StatelessWidget {
             dimension: 44,
             child: u == null || u.isEmpty
                 ? Center(child: fallback)
-                : Image.network(
+                : ZadNetworkImage(
                     u,
                     fit: BoxFit.cover,
                     // Kotlin's placeholder and error are the same default
                     // avatar; here the glyph stands in for it.
-                    errorBuilder: (_, _, _) => Center(child: fallback),
+                    fallback: Center(child: fallback),
                   ),
           ),
         ),
@@ -376,41 +372,54 @@ class ZadDrawerEntry {
   final String label;
 }
 
-/// Kotlin's `zadDrawerEntries`, in order.
+/// The drawer: everything, grouped by the bar's four places (2026-09-30) —
+/// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest.
 const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
   ZadDrawerEntry(id: 'home', icon: Icons.home, label: 'الرئيسية'),
-  ZadDrawerEntry(id: 'inventory', icon: Icons.inventory_2, label: 'المخزون'),
   ZadDrawerEntry(id: 'assistant', icon: Icons.psychology, label: 'عقل زاد'),
+  ZadDrawerEntry(id: 'appointments', icon: Icons.event, label: 'مواعيدي'),
+  ZadDrawerEntry(id: 'places', icon: Icons.place, label: 'أماكني'),
+  ZadDrawerEntry(
+    id: 'budget',
+    icon: Icons.account_balance_wallet,
+    label: 'فلوسي',
+  ),
   ZadDrawerEntry(
     id: 'subscriptions',
     icon: Icons.credit_card,
-    label: 'الاشتراكات والأقساط',
+    label: 'التزاماتي',
   ),
+  ZadDrawerEntry(id: 'inventory', icon: Icons.home, label: 'بيتي'),
   ZadDrawerEntry(
     id: 'shopping',
     icon: Icons.shopping_cart,
     label: 'قائمة التسوق',
   ),
-  ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'العائلة'),
-  ZadDrawerEntry(id: 'budget', icon: Icons.bar_chart, label: 'الميزانية'),
   ZadDrawerEntry(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
     label: 'صيدلية العائلة',
   ),
   ZadDrawerEntry(id: 'maintenance', icon: Icons.build, label: 'صيانة المنزل'),
+  ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'عيلتي'),
   ZadDrawerEntry(
     id: 'deals',
     icon: Icons.location_on,
     label: 'المتاجر والأسواق القريبة',
   ),
+  ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
+  ZadDrawerEntry(
+    id: 'premium',
+    icon: Icons.star,
+    label: 'باقات زاد الشهرية',
+  ),
   ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
-  ZadDrawerEntry(id: 'profile', icon: Icons.person, label: 'حسابي'),
   ZadDrawerEntry(
     id: 'notifications',
     icon: Icons.notifications,
     label: 'الإشعارات',
   ),
+  ZadDrawerEntry(id: 'profile', icon: Icons.person, label: 'حسابي'),
 ];
 
 /// `ZadDrawerContent`: 78% wide, square-edged, the carrot and «زاد», the
@@ -690,157 +699,6 @@ class _MoreTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    ),
-  );
-}
-
-// ── camera ───────────────────────────────────────────────────────────────────
-
-/// What the camera sheet was asked for.
-enum ZadCameraChoice {
-  /// مسح مخزون.
-  inventory,
-
-  /// مسح فاتورة.
-  receipt,
-}
-
-/// `ZadCameraSheet`: the title, the green 150dp plate, then مسح مخزون and
-/// مسح فاتورة side by side, and إلغاء.
-Future<ZadCameraChoice?> showZadCameraSheet(BuildContext context) =>
-    showModalBottomSheet<ZadCameraChoice>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: ZadColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _CameraSheet(),
-    );
-
-class _CameraSheet extends StatelessWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(22, 0, 22, 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Text(
-            'زاد الذكي بالكاميرا',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: kShellTextPrimary,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            height: 150,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: kShellPrimary,
-              // ZadLuxe.squircle is a plain 20dp rounded rectangle.
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              Icons.camera_alt,
-              size: 36,
-              color: Colors.white.withValues(alpha: 0.4),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _SheetButton(
-                  text: 'مسح مخزون',
-                  container: kShellPrimary,
-                  content: Colors.white,
-                  onTap: () =>
-                      Navigator.of(context).pop(ZadCameraChoice.inventory),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _SheetButton(
-                  text: 'مسح فاتورة',
-                  container: kShellPrimary.withValues(alpha: 0.06),
-                  content: kShellTextPrimary,
-                  onTap: () =>
-                      Navigator.of(context).pop(ZadCameraChoice.receipt),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Center(
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => Navigator.of(context).pop(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  child: Text(
-                    'إلغاء',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: _textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _SheetButton extends StatelessWidget {
-  const new({
-    required this.text,
-    required this.container,
-    required this.content,
-    required this.onTap,
-  });
-
-  final String text;
-  final Color container;
-  final Color content;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => ZadPressable(
-    scale: 0.96,
-    onPressed: onTap,
-    semanticLabel: text,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: container,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w700,
-          color: content,
-        ),
       ),
     ),
   );

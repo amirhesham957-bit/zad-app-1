@@ -9,15 +9,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart' as ui;
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
 
 class _Recipes extends RecipesController {
   new(this.initial);
@@ -212,5 +213,46 @@ void main() {
 
     expect(find.textContaining('ضيف الناقص'), findsNothing);
     expect(find.text('من عندك'), findsOneWidget);
+  });
+
+  // 2026-09-29: 98 suggestions, not one opinion — the row was only on the
+  // sheet, and the full recipe (opened from home too) had none.
+  testWidgets('the full recipe asks «عجبتك؟» and records the answer', (
+    tester,
+  ) async {
+    recipes = _Recipes(RecipesView(suggestions: _answer()));
+    tester.view.physicalSize = const Size(1080, 2400);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          recipesControllerProvider.overrideWith(() => recipes),
+          pantryControllerProvider.overrideWith(() => _Pantry(_kitchen)),
+          shoppingControllerProvider.overrideWith(_Shopping.new),
+          budgetControllerProvider.overrideWith(_Budget.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: RecipeDetailDialog(recipe: _answer().recipes.first),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // At the end of the steps, where the cooking finishes.
+    await tester.scrollUntilVisible(
+      find.text('عجبتك؟ شيف زاد بتفتكر.'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('عجبتك؟ شيف زاد بتفتكر.'), findsOneWidget);
+    await tester.tap(find.byTooltip('عجبتني'));
+    await tester.pump();
+    expect(recipes.calls.last, 'rate:شكشوكة:true');
   });
 }

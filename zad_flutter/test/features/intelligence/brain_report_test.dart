@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:zad/features/intelligence/domain/brain_report.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 ZadTransaction _spend(String id, double amount, DateTime at, {String? cat}) =>
     ZadTransaction.expense(

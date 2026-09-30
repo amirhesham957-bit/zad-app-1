@@ -10,11 +10,13 @@ import { isServiceRoleToken, providerHealth, tokenSubject } from "./providerHeal
 import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
+import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
 import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealSearchItems, sameCurrency } from "./liveDeals.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -293,7 +295,9 @@ async function attachRecipeImages(recipes: unknown[]): Promise<unknown[]> {
   }));
 }
 
-const THINKING_CONFIG_UNSUPPORTED = new Set<string>();
+// مقاس ٢٠٢٦-٠٨-١٥: الاتنين دول بيردوا 400 لو thinkingConfig موجود. بيتتعلموا وقت التشغيل
+// كمان، بس كل isolate جديد كان بيصرف نداء فاشل عشان يتعلّمهم — والنص بقى عليهم (textRouting.ts).
+const THINKING_CONFIG_UNSUPPORTED = new Set<string>(["gemini-3.5-flash-lite", "gemini-flash-lite-latest"]);
 
 /**
  * Vision fallback chain for [callVisionModel], after whatever ZAD_MODEL_ROUTINE names.
@@ -308,6 +312,9 @@ const VISION_FALLBACK_MODELS: string[] = (Deno.env.get("ZAD_VISION_FALLBACKS") ?
 
 const GEMINI_MODEL_ROUTINE = Deno.env.get("ZAD_MODEL_ROUTINE") || "gemini-3.5-flash";
 const GEMINI_MODEL_BRAIN = Deno.env.get("ZAD_MODEL_BRAIN") || "gemini-3.5-flash";
+// النص والـJSON على الخفيف (٥٠٠/يوم) بدل ZAD_MODEL_ROUTINE/BRAIN (السرّين = gemini-3.5-flash،
+// ٢٠/يوم — ومشتركين مع الصور). التقيل بقى للصور وللتصعيد لو JSON الخفيف بايظ. textRouting.ts.
+const GEMINI_MODEL_TEXT = Deno.env.get("ZAD_MODEL_TEXT") || DEFAULT_TEXT_MODEL;
 
 // Prepended to every system prompt on every provider. The per-action prompts below stay in
 // charge of their own output shape; this anchors tone/reliability once instead of being
@@ -631,7 +638,7 @@ async function callTextModel(
   tier: "routine" | "brain" = "brain",
   thinkingBudgetOverride?: number,
 ) {
-  const model = tier === "routine" ? GEMINI_MODEL_ROUTINE : GEMINI_MODEL_BRAIN;
+  const model = GEMINI_MODEL_TEXT;
   // Routine tier is deliberately non-thinking: these are extraction/classification calls
   // where reasoning tokens only eat the output budget (see callGeminiNative.thinkingBudget).
   //
@@ -660,7 +667,7 @@ async function callJsonModel(
   systemPrompt: string, userPrompt: string, maxTokens = 1500,
   tier: "routine" | "brain" = "brain",
 ) {
-  const model = tier === "routine" ? GEMINI_MODEL_ROUTINE : GEMINI_MODEL_BRAIN;
+  const model = GEMINI_MODEL_TEXT;
   const thinkingBudget = tier === "routine" ? 0 : undefined;
   const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
   let raw = gemini.content;
@@ -680,10 +687,18 @@ async function callJsonModel(
     raw = geminiRetry.content;
   }
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch (e) {
-    console.error("[CoreIntel] callJsonModel: JSON.parse failed:", (e as Error).message, "raw:", raw);
-    return null;
+  // رد وصل بس مايتقراش (من الخفيف أو من Groq) ⇒ مرة على التقيل، مش null للعميل.
+  const { value, escalated } = await escalateOnBadJson(raw, async () =>
+    model === GEMINI_MODEL_BRAIN ? null : (await callGeminiPool({
+      model: GEMINI_MODEL_BRAIN, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true,
+    })).content);
+  if (escalated) {
+    console.warn(`[CoreIntel] callJsonModel: ${model} JSON unreadable — escalated to ${GEMINI_MODEL_BRAIN}: ${value === null ? "still unreadable" : "ok"}`);
   }
+  if (value === null) console.error("[CoreIntel] callJsonModel: JSON.parse failed, raw:", raw.slice(0, 300));
+  // نفس نوع JSON.parse اللي المتصلين متعودين عليه.
+  // deno-lint-ignore no-explicit-any
+  return value as any;
 }
 
 // Vision: Gemini ONLY, routine tier, rotating across the whole key pool. There is
@@ -798,7 +813,7 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
 // retry-on-empty (see that case below) is the mitigation for this specific
 // action — a second attempt has real odds of succeeding where the first one
 // found data but failed to extract it.
-async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500) {
+async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500, timeoutMs = UPSTREAM_TIMEOUT_MS) {
   if (GROQ_DIRECT_KEYS.length === 0) return { parsed: null, executedTools: [], ok: false };
   let keyIndex = 0;
   // groq/compound-mini runs on a shared org-level TPM budget (8000/min on this
@@ -823,7 +838,7 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
           temperature: 0.2,
           max_tokens: Math.max(maxTokens, 300),
         }),
-        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -832,9 +847,16 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
           keyIndex++;
           continue;
         }
-        if (resp.status === 429 && attempt === 0) {
-          await new Promise((r) => setTimeout(r, 800));
-          continue;
+        if (resp.status === 429) {
+          // Another key is another bucket: move on at once. With one key, one short wait.
+          if (keyIndex + 1 < GROQ_DIRECT_KEYS.length) {
+            keyIndex++;
+            continue;
+          }
+          if (attempt === 0) {
+            await new Promise((r) => setTimeout(r, 800));
+            continue;
+          }
         }
         return { parsed: null, executedTools: [], ok: false };
       }
@@ -892,11 +914,14 @@ async function payloadFingerprint(userId: string | null | undefined, action: str
 }
 
 const AI_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — short enough that prices/suggestions don't go stale
+// Shops do not move every six hours, and Google Places bills past a monthly free tier
+// (ZAD_SUPER_AGENT.md weak point 7): nearby shop lists are kept a week.
+const POI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-async function getCachedAiResponse(cacheKey: string): Promise<Record<string, unknown> | null> {
+async function getCachedAiResponse(cacheKey: string, ttlMs = AI_CACHE_TTL_MS): Promise<Record<string, unknown> | null> {
   try {
     const { data } = await supabase.from("ai_response_cache").select("response, created_at").eq("cache_key", cacheKey).maybeSingle();
-    if (data?.created_at && Date.now() - new Date(data.created_at).getTime() < AI_CACHE_TTL_MS) {
+    if (data?.created_at && Date.now() - new Date(data.created_at).getTime() < ttlMs) {
       return data.response as Record<string, unknown>;
     }
   } catch (e) {
@@ -975,6 +1000,58 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
     }
   }
   return [];
+}
+
+/**
+ * A web search that must come back as JSON, through Gemini with Google Search grounding.
+ * «العروض المتاحة لنواقصك» ran only on groq/compound-mini and kept failing on the owner's
+ * phone after its timeout was raised (2026-10-01); the grounded search already answers the
+ * brain's web_search here. Tried first for the live searches, compound stays the fallback.
+ * Grounding cannot be combined with JSON mode, so the array is read leniently from the text.
+ * `ok` is false only when no model answered at all — an answered `[]` is a real "nothing".
+ */
+async function callGroundedJson(systemPrompt: string, userPrompt: string): Promise<{ parsed: unknown; ok: boolean }> {
+  const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+  const keys = GEMINI_KEYS.slice(0, 3);
+  // The card waits on this, and compound still needs its turn: 40s in all.
+  const deadline = Date.now() + 40_000;
+  for (const model of models) {
+    for (const [ki, key] of keys.entries()) {
+      if (Date.now() > deadline) return { parsed: null, ok: false };
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { maxOutputTokens: 1500, temperature: 0.2 },
+          }),
+          signal: AbortSignal.timeout(Math.max(1000, Math.min(25000, deadline - Date.now()))),
+        });
+        if (!res.ok) {
+          console.warn(`[CoreIntel] grounded json k${ki}/${model} HTTP ${res.status}`);
+          continue;
+        }
+        const data = await res.json();
+        const text = ((data?.candidates?.[0]?.content?.parts ?? []) as Array<{ text?: string }>)
+          .map((p) => p.text ?? "").join("").trim();
+        if (!text) continue;
+        const arrayMatch = text.match(/\[[\s\S]*\]/);
+        if (!arrayMatch) return { parsed: [], ok: true };
+        try {
+          return { parsed: JSON.parse(arrayMatch[0]), ok: true };
+        } catch {
+          console.warn(`[CoreIntel] grounded json k${ki}/${model}: unparsable array`);
+          continue;
+        }
+      } catch (e) {
+        console.warn(`[CoreIntel] grounded json k${ki}/${model} failed:`, (e as Error).message);
+      }
+    }
+  }
+  return { parsed: null, ok: false };
 }
 
 /** آخر رجل: groq/compound-mini (بحث Tavily مدمج) — المصادر من executed_tools لو موجودة، وإلا الإجابة نفسها. */
@@ -1218,6 +1295,8 @@ Deno.serve(async (req: Request) => {
 
     // فحص مفاتيح المزوّدين — مفتاح service role بس (CI بعد النشر). أسماء وحالات، ولا مفتاح.
     if (action === "provider_health") {
+      // عميق = يولّد صوت ويبعت فويس تجربة (بيصرف من كوتة الصوت الشحيحة). CI بيناديه من غيره.
+      const deep = (payload as { deep?: unknown } | null)?.deep === true;
       // البوابة (verify_jwt = true) اتحققت من توقيع التوكن قبل ما يوصل هنا؛ بنقرا الدور منه
       // بدل مقارنة نص المفتاح — مفتاح CLI (JWT قديم) وSUPABASE_SERVICE_ROLE_KEY ممكن يختلفوا شكلاً.
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
@@ -1234,7 +1313,7 @@ Deno.serve(async (req: Request) => {
       };
       const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
-        ttsHealth(GEMINI_KEYS),
+        ttsHealth(GEMINI_KEYS, fetch, deep),
         azureTtsHealth(AZURE_SPEECH),
         pipelineHealth(supabase),
         internalProbe("zad-brain", {
@@ -1242,11 +1321,13 @@ Deno.serve(async (req: Request) => {
           headers: { "Content-Type": "application/json", "ZAD-PROACTIVE-CRON-SECRET": Deno.env.get("ZAD_PROACTIVE_CRON_SECRET") ?? "" },
           body: JSON.stringify({ action: "tools_probe" }),
         }),
-        internalProbe("zad-telegram-bot?job=voice_selftest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": Deno.env.get("ZAD_REALTIME_PUSH_SECRET") ?? "" },
-          body: "{}",
-        }),
+        deep
+          ? internalProbe("zad-telegram-bot?job=voice_selftest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": Deno.env.get("ZAD_REALTIME_PUSH_SECRET") ?? "" },
+            body: "{}",
+          })
+          : Promise.resolve("skipped — pass payload.deep=true (spends TTS quota)"),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;
@@ -1922,13 +2003,17 @@ Deno.serve(async (req: Request) => {
       // ──────────────────────────────────────────────
       case "estimate_price": {
         const { item_name, store } = payload || {};
-        const cacheKey = "estimate_price:" + (item_name || "") + ":" + (store || "");
+        // The customer's country and currency (the app sends them): the search asks in
+        // their market, and prices in another currency are dropped.
+        const priceLocation = typeof payload?.location === "string" ? payload.location.trim().slice(0, 40) : "";
+        const priceCurrency = typeof payload?.currency === "string" ? payload.currency.trim().slice(0, 8) : "";
+        const cacheKey = "estimate_price:" + (item_name || "") + ":" + (store || "") + ":" + priceLocation + ":" + priceCurrency;
         const cached = await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
 
         // ١) بحث حقيقي أولاً — نتائج DuckDuckGo الحية (أسعار فعلية من مواقع حقيقية).
         //    ده بيتحقق من وجود المفتاح بس، ومفيش LLM في الخطوة دي.
-        const webHits = await webSearchSnippets(`${item_name} ${store || ""} سعر price`.trim());
+        const webHits = await webSearchSnippets(`${item_name} ${store || ""} سعر ${priceLocation} price`.replace(/\s+/g, " ").trim());
         const evidence = webHits.slice(0, 6);
 
         // ٢) لو فيه نتايج حية: الموديل بيستخرج الأرقام **من النتايج بس** مع روابطها.
@@ -1951,7 +2036,8 @@ Deno.serve(async (req: Request) => {
         const extractionInput = `المنتج: ${item_name}\n\nمقاطع البحث:\n${evidence.map((h, i) => `${i + 1}. [${h.title}](${h.url})\n${h.snippet}`).join("\n\n")}`;
         const extracted = await callJsonModel(extractionPrompt, extractionInput);
 
-        const prices = (extracted?.prices ?? []).filter((p: { value?: number }) => typeof p.value === "number" && p.value > 0);
+        const prices = (extracted?.prices ?? []).filter((p: { value?: number; currency?: string }) =>
+          typeof p.value === "number" && p.value > 0 && sameCurrency(priceCurrency, p.currency));
         const values = prices.map((p: { value: number }) => p.value);
         const response = {
           item_name: item_name || "",
@@ -2027,7 +2113,7 @@ Deno.serve(async (req: Request) => {
         const latGrid = Math.round(lat * 1000) / 1000;
         const lonGrid = Math.round(lon * 1000) / 1000;
         const cacheKey = `nearby_pois:${tag}:${latGrid}:${lonGrid}:${radius_meters || 3000}`;
-        const cached = await getCachedAiResponse(cacheKey);
+        const cached = await getCachedAiResponse(cacheKey, POI_CACHE_TTL_MS);
         if (cached) return jsonResponse(cached);
 
         // جوجل الأول (تغطية المحلات في مصر والخليج أحسن)، وبعده LocationIQ.
@@ -2230,11 +2316,17 @@ Deno.serve(async (req: Request) => {
       // (Deal Matcher)
       // ──────────────────────────────────────────────
       case "fetch_live_deals": {
-        const { items, location } = payload || {};
-        if (!items || items.length === 0) return jsonResponse({ deals: [] });
+        const { location } = payload || {};
+        const items = dealSearchItems(payload?.items);
+        if (items.length === 0) return jsonResponse({ deals: [], ok: true });
         const systemPrompt = "أنت باحث عروض تسوق حقيقي. ابحث في الويب عن أحدث العروض والتخفيضات الفعلية المتاحة الآن من متاجر ومحلات سوبرماركت معروفة في المنطقة المحددة للأصناف المطلوبة. لا تخترع أي متجر أو سعر أو نسبة خصم أبداً — إذا لم تجد عرضاً حقيقياً موثقاً لصنف معين، تجاهله تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"item\":\"\",\"store\":\"\",\"price\":0.0,\"discount_percent\":0.0,\"note\":\"\"}]. إذا لم تجد أي عروض حقيقية لأي صنف، أرجع مصفوفة فارغة [].";
-        const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + (Array.isArray(items) ? items.join("، ") : items);
-        const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt));
+        const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + items.join("، ");
+        // Google-grounded Gemini first (10 keys), compound-mini only when it did not answer.
+        const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
+        if (grounded.ok && Array.isArray(grounded.parsed)) {
+          return jsonResponse({ deals: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+        }
+        const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
         return jsonResponse({ deals, sources: result?.executedTools || [], ok: result?.ok !== false });
       }
@@ -2248,6 +2340,10 @@ Deno.serve(async (req: Request) => {
         if (!categories || categories.length === 0) return jsonResponse({ warnings: [] });
         const systemPrompt = "أنت محلل اقتصادي يعتمد على مصادر إخبارية حقيقية فقط. ابحث في الويب عن آخر الأخبار والتقارير الاقتصادية الموثوقة (خلال آخر أسبوعين فقط) عن اتجاهات أسعار السلع والتضخم في المنطقة المحددة للفئات المطلوبة. لا تخترع أي نسبة أو خبر أبداً — إذا لم تجد تقريراً حقيقياً حديثاً وموثوقاً عن فئة معينة، تجاهلها تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"category\":\"\",\"expected_change_pct\":0.0,\"direction\":\"up|down\",\"reasoning\":\"\",\"source_note\":\"\"}]. إذا لم تجد أي تقارير حقيقية حديثة، أرجع مصفوفة فارغة [].";
         const userPrompt = "المنطقة: " + (location || "السعودية") + " | الفئات المطلوب تحليل اتجاه أسعارها: " + (Array.isArray(categories) ? categories.join("، ") : categories);
+        const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
+        if (grounded.ok && Array.isArray(grounded.parsed)) {
+          return jsonResponse({ warnings: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+        }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt));
         const warnings = Array.isArray(result?.parsed) ? result.parsed : [];
         return jsonResponse({ warnings, sources: result?.executedTools || [], ok: result?.ok !== false });

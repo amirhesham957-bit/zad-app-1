@@ -8,9 +8,9 @@
 // answer either side of midnight.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 
 final today = DateTime.utc(2026, 9, 20);
 

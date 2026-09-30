@@ -51,7 +51,22 @@ Deno.test("TTS rotates past a rate-limited key and returns the audio bytes", asy
   }) as typeof fetch;
   const pcm = await synthesizeAlertPcm("تنبيه", ["k1", "k2"], fetcher);
   assertEquals(Array.from(pcm ?? []), [1, 2, 3, 4]);
-  assertEquals(calls, ["k1", "k2"]);
+  // k1 على موديلات السلسلة الأربعة (كل موديل عداده لوحده)، بعدين k2.
+  assertEquals(calls, ["k1", "k1", "k1", "k1", "k2"]);
+});
+
+Deno.test("TTS: one model's quota gone — the next model on the same key speaks", async () => {
+  const tried: string[] = [];
+  const audio = btoa(String.fromCharCode(9, 9));
+  const fetcher = ((url: string, init: RequestInit) => {
+    const model = String(url).split("/models/")[1]?.split(":")[0] ?? "";
+    tried.push(`${(init.headers as Record<string, string>)["x-goog-api-key"]}/${model}`);
+    if (model === "gemini-2.5-flash-preview-tts") return Promise.resolve(new Response("{}", { status: 429 }));
+    return Promise.resolve(Response.json({ candidates: [{ content: { parts: [{ inlineData: { data: audio } }] } }] }));
+  }) as typeof fetch;
+  const pcm = await synthesizeAlertPcm("تنبيه", ["k1", "k2"], fetcher);
+  assertEquals(Array.from(pcm ?? []), [9, 9]);
+  assertEquals(tried, ["k1/gemini-2.5-flash-preview-tts", "k1/gemini-3.1-flash-tts-preview"]);
 });
 
 Deno.test("TTS gives up quietly when every key fails", async () => {

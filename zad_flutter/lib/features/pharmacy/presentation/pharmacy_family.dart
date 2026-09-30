@@ -14,14 +14,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/alerts/application/local_reminders.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 /// Whether the family view is showing.
 class PharmacyFamilyToggle extends Notifier<bool> {

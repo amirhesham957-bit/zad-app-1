@@ -10,8 +10,8 @@
 library;
 
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/features/subscriptions/domain/subscription.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// A category's month.
 class CategorySpend {

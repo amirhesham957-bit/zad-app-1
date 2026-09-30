@@ -13,11 +13,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/period/payday.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/settings/domain/account_settings.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
 
 /// Stands in for `zad_users`.
 class _FakeRemote implements SettingsRemote {

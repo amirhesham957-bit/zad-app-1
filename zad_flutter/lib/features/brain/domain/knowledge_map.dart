@@ -14,7 +14,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart'
+import 'package:zad/shared/inventory/domain/receipt_intake.dart'
     show itemNamesMatch;
 
 /// The areas.

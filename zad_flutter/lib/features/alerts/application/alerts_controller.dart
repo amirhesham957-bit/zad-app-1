@@ -6,19 +6,21 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/alerts/data/alert_prefs.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
-import 'package:zad/features/insights/application/insights_controller.dart';
-import 'package:zad/features/notifications/application/notifications_controller.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/pharmacy/domain/dose_slot.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
+import 'package:zad/features/alerts/data/push_registrar.dart';
+import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/insights/application/insights_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
 
 /// What the settings row shows.
 class AlertsView {
@@ -60,10 +62,13 @@ class AlertsController extends Notifier<AlertsView> {
       (t) => unawaited(registrar.register(t)),
     );
     try {
+      // Every start, not only when the token changed: the server drops a row
+      // on its own (zad-brain deletes a token FCM refuses), and the phone
+      // cannot see that. 2026-09-29 the owner's token was registered at 19:06
+      // and gone by 21:48 while this device still held it, so nothing was
+      // ever sent again. The RPC is an upsert and the outbox holds one entry.
       final token = await platform.token();
-      if (token != null && token != registrar.lastToken) {
-        await registrar.register(token);
-      }
+      if (token != null) await registrar.register(token);
     } on Object {
       // No token without Play services or a network; the next start asks
       // again, and a rotation arrives through the stream above.

@@ -25,6 +25,7 @@ import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
+import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
@@ -247,8 +248,10 @@ async function deliverVoiceAlert(
 /** Server-side low-stock detection against zad_inventory + zad_consumption (Task 18's
  * learning loop) — deliberately NOT a port of ConsumptionLearner's on-device
  * SharedPreferences model, which never leaves the Android client. "Needs a check-in" here
- * means: at/under its low_stock_threshold, OR — when a real consumption rate has been
- * learned (rate_known) — predicted to run out within 2 days at that rate. Items with an
+ * means: at/under its low_stock_threshold, OR — when a consumption rate exists, known or
+ * approximate from one cycle (20260930000000) — predicted to run out within 2 days at that
+ * rate. The question is itself the confirmation, so an approximate rate is exactly when
+ * asking helps. Same rule as SQL's _inventory_needs_checkin. Items with an
  * already-pending prompt are excluded (the unique index on telegram_checkin_prompts is the
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
@@ -268,13 +271,7 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null }>)
     .filter((item) => {
       if (pendingItems.has(item.item_name)) return false;
-      const threshold = item.low_stock_threshold ?? 2;
-      if (item.quantity <= threshold) return true;
-      const rate = consByItem.get(item.item_name);
-      if (rate?.rate_known && rate.avg_daily_qty > 0) {
-        return item.quantity / rate.avg_daily_qty <= 2;
-      }
-      return false;
+      return needsCheckIn(item.quantity, item.low_stock_threshold, consByItem.get(item.item_name)?.avg_daily_qty);
     })
     .map((item) => ({ item_name: item.item_name, quantity: item.quantity }));
 }
@@ -2315,7 +2312,11 @@ async function claimUpdate(sb: SupabaseClient, updateId: unknown): Promise<boole
   return true;
 }
 
-const handleUpdate = webhookCallback(bot, "std/http", { secretToken: WEBHOOK_SECRET });
+// grammY بيستنى ١٠ ثواني بس افتراضياً، ولفة العقل (موديل + أدوات + مراجعة) بتعدّيهم:
+// ٢٠٢٦-٠٩-٢٩ ١٩:٣٨ «Request timed out after 10000 ms». الرد وصل ساعتها لأن الشغل كمّل
+// بعد ما رجّعنا 200، بس الـruntime مش ملزم يكمّله بعد الرد. ٥٠ ثانية تحت مهلة تليجرام،
+// والتكرار لو حصل بيقفله claimUpdate.
+const handleUpdate = webhookCallback(bot, "std/http", { secretToken: WEBHOOK_SECRET, timeoutMilliseconds: 50_000 });
 
 /** اسم البوت المسجّل بالتوكن ده — تشخيص، ومعلومة عامة مش سر. */
 async function identifyBot(): Promise<Record<string, unknown>> {

@@ -8,9 +8,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/features/tasbiha/domain/tasbiha.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
 const double _w = 1080;
 const double _h = 1350;

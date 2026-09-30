@@ -1,8 +1,10 @@
 /// Kotlin's `ZadBottomNavBar` (`ui/components/ZadShell.kt`), measure for
 /// measure: a floating 64dp capsule 16dp in from the sides and 22dp above the
-/// system bar, four tabs — الرئيسية · عقل زاد · [mic + camera] · المخزون ·
-/// المزيد — and the raised action cluster over the middle: the pulsing
-/// emerald mic orb and the camera button beside it.
+/// system bar, four tabs — زاد · فلوسي · [mic + camera] · بيتي · عيلتي
+/// (the owner's layout, 2026-09-30: the brain in the middle and four places,
+/// not seventeen sections) — and the raised action cluster over the middle:
+/// the pulsing emerald mic orb and the camera button beside it. Every other
+/// section is in the drawer behind the header's menu square.
 ///
 /// Kids mode collapses it to الرئيسية · العائلة, with no mic and no camera.
 library;
@@ -11,9 +13,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 
 /// Kotlin's `primary` (`ZadForestEmerald`).
 Color get _primary => ZadColors.forestEmerald;
@@ -31,22 +33,23 @@ Color get _surfaceContainerLow => ZadColors.surfaceLow;
 /// Kotlin's `ZadDarkSlate`.
 const Color _darkSlate = Color(0xFF0F172A);
 
-/// A destination in the bar. `more` is not a screen: it opens the sheet.
+/// A destination in the bar.
 enum ZadNavDestination {
-  /// الرئيسية.
+  /// زاد — the brain's daily brief, the chat and the voice.
   home,
 
-  /// عقل زاد.
-  assistant,
+  /// فلوسي — the budget, the transactions and the obligations.
+  money,
 
-  /// المخزون.
+  /// بيتي — the pantry, the shopping list and the pharmacy.
   inventory,
 
-  /// المزيد.
-  more,
-
-  /// العائلة — kids mode only.
+  /// عيلتي — the family (and, in kids mode, a child's family screen). Not
+  /// in the adult bar: it opens from the drawer.
   family,
+
+  /// المزيد — not a screen: it opens the drawer, where everything is.
+  more,
 }
 
 class _NavItem {
@@ -59,11 +62,13 @@ class _NavItem {
 
 // Kotlin draws these with Material's filled icons (`Icons.Default.*`), so
 // these are the same glyphs, not Lucide look-alikes.
+// The owner, 2026-10-01: الرئيسية first, and the drawer back in the bar —
+// hunting for the menu square at the top was worse. عيلتي moved into it.
 const List<_NavItem> _adultItems = <_NavItem>[
   _NavItem(ZadNavDestination.home, Icons.home, 'الرئيسية'),
-  _NavItem(ZadNavDestination.assistant, Icons.psychology, 'عقل زاد'),
-  _NavItem(ZadNavDestination.inventory, Icons.inventory_2, 'المخزون'),
-  _NavItem(ZadNavDestination.more, Icons.grid_view, 'المزيد'),
+  _NavItem(ZadNavDestination.money, Icons.account_balance_wallet, 'فلوسي'),
+  _NavItem(ZadNavDestination.inventory, Icons.kitchen, 'بيتي'),
+  _NavItem(ZadNavDestination.more, Icons.menu, 'المزيد'),
 ];
 
 const List<_NavItem> _kidsItems = <_NavItem>[
@@ -79,13 +84,12 @@ class ZadBottomNavBar extends StatelessWidget {
     required this.onNavigate,
     required this.onOpenCamera,
     required this.onOpenVoice,
-    required this.onOpenMore,
+    this.onOpenMore,
     this.kidsMode = false,
     super.key,
   });
 
-  /// What is showing. `null` means a screen the bar has no tab for, which
-  /// Kotlin shows by lighting المزيد.
+  /// What is showing.
   final ZadNavDestination? current;
 
   /// A tab was tapped.
@@ -97,28 +101,27 @@ class ZadBottomNavBar extends StatelessWidget {
   /// The mic orb.
   final VoidCallback onOpenVoice;
 
-  /// المزيد.
-  final VoidCallback onOpenMore;
+  /// المزيد: the drawer.
+  final VoidCallback? onOpenMore;
 
   /// Home and family only.
   final bool kidsMode;
 
-  bool _selected(ZadNavDestination d) {
-    if (d == ZadNavDestination.more) {
-      return current != ZadNavDestination.home &&
-          current != ZadNavDestination.assistant &&
-          current != ZadNavDestination.inventory;
-    }
-    return current == d;
-  }
-
-  Widget _tab(_NavItem item) => _ZadNavTab(
-    icon: item.icon,
-    label: item.label,
-    selected: _selected(item.destination),
-    onTap: () => item.destination == ZadNavDestination.more
-        ? onOpenMore()
-        : onNavigate(item.destination),
+  // Flexible and scaled down: on a 320dp phone the four tabs and the mic
+  // slot need more than the pill has, and the row overflowed by 30px. Where
+  // they fit, nothing changes.
+  Widget _tab(_NavItem item) => Flexible(
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: _ZadNavTab(
+        icon: item.icon,
+        label: item.label,
+        selected: current == item.destination,
+        onTap: () => item.destination == ZadNavDestination.more
+            ? onOpenMore?.call()
+            : onNavigate(item.destination),
+      ),
+    ),
   );
 
   @override
@@ -126,46 +129,53 @@ class ZadBottomNavBar extends StatelessWidget {
     final items = kidsMode ? _kidsItems : _adultItems;
     // Kotlin: `.navigationBarsPadding()` outermost, then 16dp sides and 22dp
     // below, in a 74dp box — ten taller than the pill, for the raised mic.
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
-        child: SizedBox(
-          height: 74,
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: <Widget>[
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: 64,
-                child: _Pill(
-                  children: kidsMode
-                      ? <Widget>[for (final i in items) _tab(i)]
-                      : <Widget>[
-                          _tab(items[0]),
-                          _tab(items[1]),
-                          // The slot the action cluster floats over.
-                          const SizedBox(width: 108),
-                          _tab(items[2]),
-                          _tab(items[3]),
-                        ],
-                ),
-              ),
-              if (!kidsMode)
+    // The bar's geometry is fixed — a 64dp pill whose tab column sums to
+    // exactly 64 at 1× text, with a 108dp slot for the mic and camera — so
+    // its labels do not follow the phone's font size: at 1.3× every tab
+    // overflowed the pill and the row overflowed the screen. The screens
+    // above it still scale.
+    return MediaQuery.withNoTextScaling(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
+          child: SizedBox(
+            height: 74,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: <Widget>[
                 Positioned(
-                  top: 0,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      _MicOrb(onTap: onOpenVoice, onLongPress: onOpenCamera),
-                      const SizedBox(width: 8),
-                      _CameraFab(onTap: onOpenCamera),
-                    ],
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 64,
+                  child: _Pill(
+                    children: kidsMode
+                        ? <Widget>[for (final i in items) _tab(i)]
+                        : <Widget>[
+                            _tab(items[0]),
+                            _tab(items[1]),
+                            // The slot the action cluster floats over.
+                            const SizedBox(width: 108),
+                            _tab(items[2]),
+                            _tab(items[3]),
+                          ],
                   ),
                 ),
-            ],
+                if (!kidsMode)
+                  Positioned(
+                    top: 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        _MicOrb(onTap: onOpenVoice, onLongPress: onOpenCamera),
+                        const SizedBox(width: 8),
+                        _CameraFab(onTap: onOpenCamera),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

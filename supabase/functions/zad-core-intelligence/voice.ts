@@ -21,7 +21,7 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
-import { buildTtsPrompt, emotionForMoment, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
@@ -40,16 +40,27 @@ const TTS_TIMEOUT_MS = 10_000;
 export interface TtsPoolState {
   cursor: number;
   coolingUntil: Map<number, number>;
+  /**
+   * `مفتاح|موديل` اللي رجّع 429 — الكوتة لكل موديل على كل مفتاح. الزوج اللي خلص بيتساب
+   * لحد ما يرتاح، بدل ما كل جملة تجربه تاني وتستنى رفضه (٢٠٢٦-٠٩-٣٠: «المساعد الصوتي
+   * بياخد ٤٠ ثانية»). ولو كل الأزواج مرتاحة، Gemini بيتساب فوراً لـAzure.
+   */
+  pairCoolingUntil: Map<string, number>;
 }
 
 export function freshTtsPool(): TtsPoolState {
-  return { cursor: 0, coolingUntil: new Map() };
+  return { cursor: 0, coolingUntil: new Map(), pairCoolingUntil: new Map() };
 }
 
 const sharedTtsPool = freshTtsPool();
 const TTS_COOLDOWN_MS = 60_000;
-/** بعده Gemini بيتساب ويتجرب Azure — العميل مستني صوت جملة، مش دقايق. */
-const TTS_POOL_BUDGET_MS = 15_000;
+/** كوتة اليوم خلصت على الزوج ده (`...PerDay...` في رد 429): مفيش فايدة نجربه تاني قريب. */
+const TTS_DAY_COOLDOWN_MS = 30 * 60_000;
+/**
+ * بعده Gemini بيتساب ويتجرب Azure — العميل مستني صوت جملة، مش دقايق. كان ١٥ ثانية، والجملة
+ * الأولى كانت بتستنى ده كله قبل ما تتقال لما الكوتة تخلص.
+ */
+const TTS_POOL_BUDGET_MS = 8_000;
 
 /** ترتيب المفاتيح لطلب واحد: من المؤشر ولفّ، والمرتاحين في الآخر (مش مستبعدين). */
 export function ttsKeyOrder(count: number, pool: TtsPoolState, now: number): number[] {
@@ -123,7 +134,7 @@ export async function requestGeminiVoiceWithPool(
   apiKeys: string[],
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
-  models: string[] = [GEMINI_TTS_MODEL, "gemini-2.5-pro-preview-tts"],
+  models: string[] = [...new Set([GEMINI_TTS_MODEL, ...GEMINI_TTS_CHAIN])],
   pool: TtsPoolState = sharedTtsPool,
   now: () => number = Date.now,
 ): Promise<Response> {
@@ -137,9 +148,17 @@ export async function requestGeminiVoiceWithPool(
   // قبل كده كان بيلف بيه على كل المفاتيح، وده جزء من الـ٣٠-٦٠ ثانية اللي العميل بيستناها.
   const downModels = new Set<string>();
   const startedAt = now();
+  const pairCooling = (ki: number, model: string) => (pool.pairCoolingUntil.get(`${ki}|${model}`) ?? 0) > startedAt;
+  // كل مفتاح × كل موديل خلص كوتته قريب: ولا نداء — Azure على طول، في ملّي ثانية مش ١٥ ثانية.
+  if (apiKeys.every((_, ki) => models.every((m) => pairCooling(ki, m)))) {
+    return new Response(JSON.stringify({ error: "voice_provider_unavailable", reason: "pool_cooling", attempts }), {
+      status: 503, headers: { "Content-Type": "application/json" },
+    });
+  }
   keys: for (const ki of ttsKeyOrder(apiKeys.length, pool, startedAt)) {
     for (const model of models) {
       if (downModels.has(model)) continue;
+      if (pairCooling(ki, model)) continue;
       if (now() - startedAt > TTS_POOL_BUDGET_MS) {
         console.warn(`[CoreIntel] TTS pool over ${TTS_POOL_BUDGET_MS}ms, giving up on Gemini`);
         break keys;
@@ -148,7 +167,15 @@ export async function requestGeminiVoiceWithPool(
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
         if (res.ok) return res;
         attempts.push({ key_index: ki, model, status: res.status });
-        if (res.status === 429) pool.coolingUntil.set(ki, now() + TTS_COOLDOWN_MS);
+        // الكوتة لكل موديل: 429 على موديل = عداده خلص على المفتاح ده، والموديل اللي بعده ليه
+        // عداد لوحده بنفس المفتاح. المفتاح بيرتاح في ترتيب الطلبات الجاية بس.
+        if (res.status === 429) {
+          pool.coolingUntil.set(ki, now() + TTS_COOLDOWN_MS);
+          const body = await res.text().catch(() => "");
+          const perDay = /per\s*day|perday/i.test(body);
+          pool.pairCoolingUntil.set(`${ki}|${model}`, now() + (perDay ? TTS_DAY_COOLDOWN_MS : TTS_COOLDOWN_MS));
+          continue;
+        }
         if (res.status === 503) {
           downModels.add(model);
           continue;

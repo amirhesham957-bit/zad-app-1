@@ -4,10 +4,10 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/home/data/home_widget_sync.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// Kept alive by the shell. Rebuilds — and pushes — when the spendable
 /// figure, the currency or the newest transactions change; nothing else.

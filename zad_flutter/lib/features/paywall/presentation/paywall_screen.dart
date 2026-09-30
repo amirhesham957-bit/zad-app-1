@@ -2,21 +2,22 @@
 /// banner, the three plans (quota, badge, perks) to pick from, the subscribe
 /// button, the trust row, and the free-ads alternative.
 ///
-/// Payment in Kotlin is Google Play Billing and the free option is AdMob.
-/// This build is a sideloaded, debug-signed APK with no Play listing (the
-/// owner's decision, 2026-09-21), so Play has no products to sell it and no
-/// ad unit to show. The buttons say exactly that instead of pretending a
-/// purchase went through; the plans and their perks are Kotlin's, word for
-/// word.
+/// Payment is Google Play Billing (play_billing.dart): Play takes the money,
+/// `verify-purchase` checks the token with Google and grants the plan. A
+/// phone that did not get زاد from Play, or a plan not yet set up in the Play
+/// Console, is told so plainly — nothing pretends a purchase went through.
 library;
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/paywall/data/play_billing.dart';
 
 /// Opens the plans.
 Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
@@ -60,16 +61,67 @@ enum _Plan {
 }
 
 /// The plans.
-class PaywallScreen extends StatefulWidget {
+class PaywallScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
   const new({super.key});
 
   @override
-  State<PaywallScreen> createState() => _PaywallState();
+  ConsumerState<PaywallScreen> createState() => _PaywallState();
 }
 
-class _PaywallState extends State<PaywallScreen> {
+class _PaywallState extends ConsumerState<PaywallScreen> {
   _Plan _selected = _Plan.plus;
+  PlayBilling? _billing;
+  StreamSubscription<BillingResult>? _results;
+  bool _buying = false;
+
+  @override
+  void dispose() {
+    unawaited(_results?.cancel());
+    unawaited(_billing?.dispose());
+    super.dispose();
+  }
+
+  String get _productId => switch (_selected) {
+    _Plan.basic => ZadPlayProducts.basic,
+    _Plan.plus => ZadPlayProducts.plus,
+    _Plan.ultra => ZadPlayProducts.ultra,
+  };
+
+  Future<void> _subscribe() async {
+    if (_buying) return;
+    setState(() => _buying = true);
+    final billing = _billing ??= PlayBilling(ref.read(supabaseClientProvider));
+    _results ??= billing.results.listen((r) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(r.message)));
+      if (r.granted) Navigator.of(context).maybePop();
+    });
+    final outcome = await billing.buy(_productId);
+    if (!mounted) return;
+    setState(() => _buying = false);
+    switch (outcome) {
+      case BillingOutcome.started:
+        break;
+      case BillingOutcome.unavailable:
+        await _explain(
+          'Google Play مش متاح',
+          'الاشتراك بيتم من Google Play. لو زاد متثبت من ملف مش من المتجر، '
+              'نزّله من Google Play وبعدين اشترك من هنا.',
+        );
+      case BillingOutcome.notOnPlay:
+        await _explain(
+          'الباقة لسه مش على المتجر',
+          'الباقة دي لسه ماتفعّلتش على Google Play. جرّب تاني قريب.',
+        );
+      case BillingOutcome.failed:
+        await _explain(
+          'مقدرناش نفتح Google Play',
+          'حصلت مشكلة وإحنا بنفتح الدفع. اتأكد من النت وجرّب تاني.',
+        );
+    }
+  }
 
   Future<void> _explain(String title, String body) => showDialog<void>(
     context: context,
@@ -159,15 +211,7 @@ class _PaywallState extends State<PaywallScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            onPressed: () => unawaited(
-              _explain(
-                'الاشتراك من Google Play',
-                'الدفع في زاد بيتم من خلال Google Play بس. النسخة اللي على '
-                    'موبايلك متثبتة مباشرة مش من المتجر، فـGoogle Play مايقدرش '
-                    'يبيع لها اشتراك. لما زاد ينزل على المتجر هتقدر تشترك من '
-                    'هنا.',
-              ),
-            ),
+            onPressed: _buying ? null : () => unawaited(_subscribe()),
             icon: const Icon(Icons.shopping_bag, size: 20),
             label: Text(
               'اشترك في ${_selected.title} عبر Google Play',

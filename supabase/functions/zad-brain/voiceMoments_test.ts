@@ -1,6 +1,9 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import {
   buildMomentPrompt,
+  dailyQuestion,
+  MOMENT_SPACING_MS,
+  tooSoonAfterLast,
   momentFallback,
   parseComposedMoment,
   processVoiceMoments,
@@ -290,4 +293,41 @@ Deno.test("تذكير مجموعة الأدوية بيقول مواعيد كل �
   const c = momentFallback("dose_due", facts);
   if (!c.text.includes("01:30") || !c.text.includes("مضاد للالتهاب")) throw new Error(c.text);
   if (!mentionsRealMedicine(c, facts)) throw new Error("guard rejected the grouped template");
+});
+
+Deno.test("one question a day for what the brain does not know, and none once it knows", () => {
+  const none = dailyQuestion({ preferred_name: "أمير", gender: "male", household_role: "son", pay_day: 25, cares_for: [], occupation: "مهندس" }, "2026-09-30");
+  assertEquals(none, null);
+  const q = dailyQuestion({ preferred_name: "أمير", gender: "male", household_role: "son", pay_day: null, cares_for: ["parents"], occupation: "" }, "2026-09-30");
+  assert(q !== null && ["pay_day", "occupation"].includes(q.field));
+  // Rotates: the next day asks the other one.
+  const next = dailyQuestion({ preferred_name: "أمير", gender: "male", household_role: "son", pay_day: null, cares_for: ["parents"], occupation: "" }, "2026-10-01");
+  assert(next !== null && next.field !== q!.field);
+  // No profile row at all: something is asked.
+  assert(dailyQuestion(null, "2026-09-30") !== null);
+});
+
+Deno.test("the morning fallback ends with the day's question", () => {
+  const m = momentFallback("morning_greeting", { daily_question: "بتقبض يوم كام في الشهر؟" });
+  assertStringIncludes(m.text, "بتقبض يوم كام");
+  assertStringIncludes(m.speech ?? "", "بتقبض يوم كام");
+});
+
+Deno.test("the day's moments are spaced out; doses and appointments never wait", () => {
+  const now = Date.parse("2026-09-30T18:00:00Z");
+  assertEquals(tooSoonAfterLast("good_night", now - 5 * 60_000, now), true);
+  assertEquals(tooSoonAfterLast("good_night", now - MOMENT_SPACING_MS - 1, now), false);
+  assertEquals(tooSoonAfterLast("good_night", null, now), false);
+  assertEquals(tooSoonAfterLast("dose_due", now - 60_000, now), false);
+  assertEquals(tooSoonAfterLast("appointment_soon", now - 60_000, now), false);
+});
+
+Deno.test("the prompt carries what was said last time, to be avoided", () => {
+  const p = buildMomentPrompt({ moment: "good_night", facts: {} }, "EG", "أمير", {
+    recent: ["تصبح على خير يا أمير، نام وارتاح"],
+  });
+  assertStringIncludes(p.user, "ماتكرريش");
+  assertStringIncludes(p.user, "نام وارتاح");
+  const none = buildMomentPrompt({ moment: "good_night", facts: {} }, "EG", "أمير", {});
+  assert(!none.user.includes("ماتكرريش"));
 });

@@ -1,3 +1,4 @@
+import { GEMINI_TTS_CHAIN } from "../_shared/zadVoice.ts";
 // عدّادات تشخيص المسارات بعد النشر (٢٠٢٦-٠٩-١٤) — أعداد وحالات وأسماء أخطاء بس.
 //
 // بلاغ من تجربة حقيقية: «البوت مابيبعتش فويسات التذكير ولا صباح الخير»، «العقل أعمى عن مواعيدي
@@ -167,7 +168,12 @@ export async function pipelineHealth(sb: Sb, now = Date.now()): Promise<Record<s
  * وعيلة 2.5 النصية بترجع 404 «مش متاحة لمستخدمين جداد» على المشروع ده. هنا بنسأل الكتالوج
  * عن كل موديل tts/live، وبنجرّب توليد كلمة واحدة بكل موديل tts — حالة HTTP بس.
  */
-export async function ttsHealth(keys: string[], fetchImpl: typeof fetch = fetch): Promise<Record<string, unknown>> {
+/**
+ * `generate` بيولّد صوت حقيقي لكل موديل على المفتاح الأول — ده بيصرف من كوتة ١٠ في اليوم لكل
+ * موديل صوت. كان بيحصل في كل نشر (٨ نشرات يوم ٢٠٢٦-٠٩-٣٠ = ١٠-١١ من ١٠ على موديلات مش مستخدمة
+ * في الإنتاج أصلاً)، فبقى بطلب صريح بس (`payload.deep`). من غيره: الكتالوج بس، ومجاني.
+ */
+export async function ttsHealth(keys: string[], fetchImpl: typeof fetch = fetch, generate = false): Promise<Record<string, unknown>> {
   const key = keys[0];
   if (!key) return { configured: false };
   const out: Record<string, unknown> = {};
@@ -183,7 +189,11 @@ export async function ttsHealth(keys: string[], fetchImpl: typeof fetch = fetch)
   } catch (e) {
     out.catalog_error = sanitizeError((e as Error)?.message ?? e);
   }
-  const candidates = [...new Set(["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts", ...listed.filter((n) => /tts/i.test(n))])].slice(0, 6);
+  if (!generate) {
+    out.generate_probe_key1 = "skipped — pass payload.deep=true (spends TTS quota)";
+    return out;
+  }
+  const candidates = [...new Set([...GEMINI_TTS_CHAIN, ...listed.filter((n) => /tts/i.test(n))])].slice(0, 6);
   const probe = async (model: string): Promise<[string, string]> => {
     try {
       const res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {

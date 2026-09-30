@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 class _Access extends BankAccessController {

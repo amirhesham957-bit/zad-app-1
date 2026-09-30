@@ -9,20 +9,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/settings/domain/account_settings.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
-import 'package:zad/features/subscriptions/domain/renewal.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/subscriptions/domain/renewal.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 class _Subs implements SubscriptionsRemote {
   final Map<String, Map<String, dynamic>> rows =

@@ -50,3 +50,14 @@ Deno.test("normalizeForPerson: a name as said, the customer's own words for 'me'
   assertEquals(normalizeForPerson("«يوسف»\n"), "يوسف");
   assertEquals(normalizeForPerson("x".repeat(80))!.length, 40);
 });
+
+Deno.test("normalizeForPerson: the same relative is one person, whatever word is used", () => {
+  for (const w of ["ماما", "أمي", "امي", "والدتي", "لماما", "لـ ماما", "Mom"]) assertEquals(normalizeForPerson(w), "ماما", w);
+  for (const w of ["بابا", "أبويا", "والدي", "لبابا"]) assertEquals(normalizeForPerson(w), "بابا", w);
+  assertEquals(normalizeForPerson("جدتي"), "تيتا");
+  assertEquals(normalizeForPerson("زوجتي"), "مراتي");
+  // Names stay names, even ones starting with «ل».
+  assertEquals(normalizeForPerson("لينا"), "لينا");
+  assertEquals(normalizeForPerson("سارة"), "سارة");
+  assertEquals(normalizeForPerson("ليا"), null);
+});

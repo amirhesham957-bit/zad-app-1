@@ -7,16 +7,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/insights/application/insights_controller.dart';
-import 'package:zad/features/insights/application/local_insights.dart';
-import 'package:zad/features/insights/domain/insight.dart';
-import 'package:zad/features/notifications/application/notifications_controller.dart';
-import 'package:zad/features/notifications/domain/app_notification.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/insights/application/insights_controller.dart';
+import 'package:zad/shared/insights/application/local_insights.dart';
+import 'package:zad/shared/insights/domain/insight.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/notifications/domain/app_notification.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
 
 class _Notifications extends NotificationsController {
   new(this.items);

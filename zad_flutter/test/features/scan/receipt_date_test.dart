@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 
 void main() {
   tz_data.initializeTimeZones();

@@ -5,11 +5,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/features/achievements/domain/achievements.dart';
 
 /// Opens the achievements.
@@ -231,24 +231,29 @@ class _LevelCard extends StatelessWidget {
         children: <Widget>[
           SizedBox.square(
             dimension: 80,
-            child: Column(
-              children: <Widget>[
-                Text(
-                  'المستوى',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.8),
+            // A fixed 80dp square: scaled down at large text, not cut.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topCenter,
+              child: Column(
+                children: <Widget>[
+                  Text(
+                    'المستوى',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
                   ),
-                ),
-                Text(
-                  '${stats.level}',
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                  Text(
+                    '${stats.level}',
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(width: ZadSpacing.lg),
@@ -317,21 +322,26 @@ class _MiniStat extends StatelessWidget {
           side: const BorderSide(width: 0.5, color: ZadColors.hairline),
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: ZadSpacing.xs),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: ZadColors.forestEmerald,
+      // Scaled down rather than cut: the box is a fixed 80dp, and at 1.5×
+      // text its three lines overflowed it.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(icon, style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: ZadSpacing.xs),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: ZadColors.forestEmerald,
+              ),
             ),
-          ),
-          Text(label, style: const TextStyle(fontSize: 10, color: _slate)),
-        ],
+            Text(label, style: const TextStyle(fontSize: 10, color: _slate)),
+          ],
+        ),
       ),
     ),
   );
@@ -357,36 +367,52 @@ class _AchievementCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(ZadSpacing.md),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
-              child: Text(item.def.icon, style: const TextStyle(fontSize: 32)),
-            ),
-            Text(
-              item.def.name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _ink,
+        // The grid gives each card a fixed cell; at 1.5× text the column
+        // overflowed it. The column keeps the cell's width, so the name still
+        // wraps to two lines, and only shrinks when it cannot fit.
+        child: LayoutBuilder(
+          builder: (context, cell) => FittedBox(
+            fit: BoxFit.scaleDown,
+            child: SizedBox(
+              width: cell.maxWidth,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
+                    child: Text(
+                      item.def.icon,
+                      style: const TextStyle(fontSize: 32),
+                    ),
+                  ),
+                  Text(
+                    item.def.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                    ),
+                  ),
+                  const SizedBox(height: ZadSpacing.xs),
+                  Text(
+                    item.unlocked ? '+${item.def.points}' : 'مقفول',
+                    style: TextStyle(
+                      fontSize: item.unlocked ? 10 : 9,
+                      fontWeight: item.unlocked
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: item.unlocked
+                          ? ZadColors.mustardOchre
+                          : const Color(0xFFA1A5AB),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: ZadSpacing.xs),
-            Text(
-              item.unlocked ? '+${item.def.points}' : 'مقفول',
-              style: TextStyle(
-                fontSize: item.unlocked ? 10 : 9,
-                fontWeight: item.unlocked ? FontWeight.w600 : FontWeight.w400,
-                color: item.unlocked
-                    ? ZadColors.mustardOchre
-                    : const Color(0xFFA1A5AB),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     ),

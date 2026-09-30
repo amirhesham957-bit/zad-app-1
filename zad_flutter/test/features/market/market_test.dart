@@ -4,7 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/period/market_calendar.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/shared/market/domain/market.dart';
 
 void main() {
   test('nineteen markets, one per country', () {

@@ -12,23 +12,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_field_dialog.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/affiliate/data/affiliate_repository.dart';
-import 'package:zad/features/affiliate/presentation/affiliate_product_card.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-import 'package:zad/features/family/domain/family_life.dart';
-import 'package:zad/features/family/presentation/family_dialogs.dart';
-import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
-import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
 
 const Color _kidsPrimary = Color(0xFF6B46C1);
 const Color _kidsPrimaryDark = Color(0xFF442B82);
@@ -694,7 +694,7 @@ class _TasbihaCardState extends ConsumerState<_TasbihaCard> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => unawaited(showTasbihaScreen(context)),
+        onTap: () => unawaited(ZadScreens.showTasbihaScreen(context)),
         child: Padding(
           padding: const EdgeInsets.all(ZadSpacing.lg),
           child: Row(
@@ -757,7 +757,7 @@ class _AffiliateRow extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
             separatorBuilder: (_, _) => const SizedBox(width: ZadSpacing.md),
-            itemBuilder: (context, i) => AffiliateProductCard(
+            itemBuilder: (context, i) => ZadSlots.affiliateProductCard(
               width: 320,
               product: products[i],
               onBuy: () => unawaited(

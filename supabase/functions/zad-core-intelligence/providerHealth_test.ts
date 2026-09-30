@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
+import { groqLimitsNote, interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
 
 Deno.test("reports configured/status per provider and never echoes a key", async () => {
   const env: Record<string, string> = {
@@ -43,4 +43,29 @@ Deno.test("the caller's user id comes from the token, so a body user_id can't bo
   assertEquals(tokenSubject(`${b64({ alg: "HS256" })}.${b64({ role: "anon" })}.sig`), null);
   assertEquals(tokenSubject("sb_publishable_x"), null);
   assertEquals(tokenSubject(null), null);
+});
+
+Deno.test("a Groq key's daily and per-minute limits are read from the reply's headers", () => {
+  const h = new Headers({
+    "x-ratelimit-limit-requests": "1000", "x-ratelimit-remaining-requests": "998",
+    "x-ratelimit-limit-tokens": "8000", "x-ratelimit-remaining-tokens": "7990",
+  });
+  assertEquals(groqLimitsNote(h), "rpd=1000 left=998 tpm=8000 tpm_left=7990");
+  assertEquals(groqLimitsNote(new Headers()), undefined);
+});
+
+Deno.test("resend: a sending-only key is ok, a bad key is not", async () => {
+  const run = (status: number, body: string) =>
+    providerHealth(
+      (n) => (n === "RESEND_API_KEY" ? "re_x" : undefined),
+      [],
+      (async (input: string | URL | Request) =>
+        String(input).includes("resend.com")
+          ? new Response(body, { status })
+          : new Response("{}", { status: 200 })) as typeof fetch,
+    );
+  const restricted = (await run(401, '{"name":"restricted_api_key"}')).resend as Record<string, unknown>;
+  assertEquals(restricted.ok, true);
+  const bad = (await run(401, '{"name":"validation_error","message":"API key is invalid"}')).resend as Record<string, unknown>;
+  assertEquals(bad.ok, false);
 });

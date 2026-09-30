@@ -1,4 +1,4 @@
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// A September cycle for a family of four, plus a lighter August before it —
 /// the fixture the monthly-report tests and the PDF render check share.

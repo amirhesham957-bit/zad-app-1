@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart'
-    as pantry;
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart'
+    as pantry;
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 
 import '../../support/quiet_household.dart';
 
@@ -53,6 +53,40 @@ void main() {
       expect(pantryEmojiOf('بيض بلدي', null), '🥚');
       expect(pantryEmojiOf('خيار', null), '🥦');
     });
+  });
+
+  testWidgets('brands of water are one card with the house total; a tap '
+      'opens them', (tester) async {
+    final items = <InventoryItem>[
+      _i('w1', 'ماء إيلان', qty: 1, category: 'المشروبات'),
+      _i('w2', 'ماء صافي', qty: 3, category: 'المشروبات'),
+      _i('w3', 'مياه نستله', qty: 2, category: 'المشروبات'),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pantry.pantryControllerProvider.overrideWith(
+            () => QuietPantry(pantry.PantryView(items: items)),
+          ),
+          shoppingControllerProvider.overrideWith(QuietShopping.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PantryView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('مياه'), findsOneWidget);
+    expect(find.text('6'), findsOneWidget, reason: 'the house total');
+    expect(find.text('ماء صافي'), findsNothing, reason: 'closed by default');
+    await tester.tap(find.text('مياه'));
+    await tester.pump();
+    expect(find.text('ماء صافي'), findsOneWidget);
   });
 
   group('the screen', () {
@@ -121,7 +155,11 @@ void main() {
       tester,
     ) async {
       await pump(tester);
-      expect(find.text('نواقص المخزون (1)'), findsOneWidget);
+      // One line of two spans since the strip stopped overflowing.
+      expect(
+        find.textContaining('نواقص المخزون (1)', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.text('ينتهي قريباً'), findsOneWidget);
       expect(find.text('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);

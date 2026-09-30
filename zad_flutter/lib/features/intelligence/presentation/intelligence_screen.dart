@@ -21,26 +21,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_motion.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family_life.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
-import 'package:zad/features/intelligence/presentation/intelligence_chat_card.dart';
-import 'package:zad/features/orb/application/companion_mood.dart';
-import 'package:zad/features/orb/presentation/companion_orb.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/features/intelligence/presentation/spending_charts.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/orb/application/companion_mood.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the screen.
 Future<void> showIntelligenceScreen(BuildContext context) =>
@@ -154,6 +157,10 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                     if (!enough)
                       _NotEnough(count: expenses.length, onTalk: _ask)
                     else ...<Widget>[
+                      SpendingCharts(
+                        rows: all,
+                        currency: budget?.currency ?? '',
+                      ),
                       _ReportCard(
                         transactions: all,
                         budget: budget?.openingBalance ?? 0,
@@ -169,12 +176,18 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                         available: budget?.spendable ?? 0,
                       ),
                       _DistributionCard(
-                        total: budget?.spent ?? 0,
+                        // The same rows as the bars under it: the cycle's
+                        // server figure read «EGP 0» over 1,104 of bars
+                        // on the first day of a new cycle.
+                        total: categoryList.fold<double>(
+                          0,
+                          (sum, e) => sum + e.value,
+                        ),
                         categories: categoryList,
                       ),
                       const ExportReportButton(),
                     ],
-                    ChatSectionCard(
+                    ZadSlots.chatSectionCard(
                       expanded: _chatExpanded,
                       onToggle: () =>
                           setState(() => _chatExpanded = !_chatExpanded),
@@ -226,7 +239,7 @@ class _SosBanner extends ConsumerWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => unawaited(showFamilyScreen(context)),
+        onTap: () => unawaited(ZadScreens.showFamilyScreen(context)),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -946,16 +959,19 @@ class _StressState extends ConsumerState<_StressTestCard> {
   }
 
   Future<void> _editFund() async {
-    final c = TextEditingController(text: _fund > 0 ? '$_fund' : '');
-    final value = await showDialog<double>(
+    // showFieldDialog owns the controller: disposing it right after the
+    // await killed the field mid exit-animation — the owner's red screen,
+    // `'_elements.contains(element)'` (2026-09-29).
+    final value = await showFieldDialog<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      initial: <String>[if (_fund > 0) '$_fund' else ''],
+      builder: (dialogContext, fields) => AlertDialog(
         title: Text(
           'تحديث الرصيد',
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
         ),
         content: TextField(
-          controller: c,
+          controller: fields[0],
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
@@ -971,14 +987,13 @@ class _StressState extends ConsumerState<_StressTestCard> {
           FilledButton(
             onPressed: () =>
                 Navigator.of(dialogContext)
-                    .pop(double.tryParse(c.text.trim()) ?? 0),
+                    .pop(double.tryParse(fields[0].text.trim()) ?? 0),
             child: const Text('حفظ'),
           ),
         ],
       ),
     );
-    c.dispose();
-    if (value == null) return;
+    if (value == null || !mounted) return;
     setState(() => _fund = value);
     final client = ref.read(supabaseClientProvider);
     try {

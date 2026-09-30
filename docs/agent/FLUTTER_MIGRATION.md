@@ -76,11 +76,35 @@ done without them.
 Read one existing feature end to end before adding one; `features/settings/`
 and `features/inventory/` are the cleanest examples.
 
-- **Slices:** `features/<name>/{domain,data,application,presentation}`. Domain
-  is pure (no clock, no storage, no network). Data holds a `*Remote` interface
-  plus its `Supabase*Remote`, and a `*Repository`. Application holds Riverpod
-  `Notifier`s. `lib/data/providers.dart` is the only place singletons are
-  built; nothing else touches `Supabase.instance` or `Hive.box`.
+- **Layout (feature-first, since 2026-09-30 — enforced by
+  `test/architecture/feature_boundaries_test.dart` on every `flutter test`):**
+  - `lib/app/` — the composition root: bootstrap, gate, shell, and
+    `app/wiring/`, which binds every contract below. May import anything.
+  - `lib/core/` — infrastructure that knows no feature: env, crash log, money,
+    periods, the local store and outbox (`core/data/`), the design system
+    (`core/design/`). Imports `core/` only.
+  - `lib/shared/<domain>/` — the shared kernel: the domain services several
+    features read (budget, transactions, settings, market, pantry, pharmacy,
+    family, subscriptions, the assistant, session…), plus the contracts in
+    `shared/navigation/` and `shared/session/`. Imports `core/` and `shared/`.
+  - `lib/features/<name>/` — one feature's own UI, state, data and models.
+    Imports `core/`, `shared/` and itself — **never another feature, never
+    `app/`**.
+- **When a feature needs another one:** open its screen or embed its section
+  through `ZadScreens` / `ZadSlots` (`shared/navigation/`), and bind the new
+  entry in `app/wiring/screens_wiring.dart` (the architecture test fails on an
+  unbound entry). Read or change its state only if that state lives in
+  `shared/`; if it does not and a second feature now needs it, move it there
+  (with its repository and models) instead of importing across. Account-scoped
+  state that must reset on sign-out goes in
+  `app/wiring/account_scope_wiring.dart`, not in the session.
+- **Slices:** `features/<name>/{domain,data,application,presentation}` (and
+  `background/`), the same inside `shared/<domain>/`. Domain is pure (no clock,
+  no storage, no network). Data holds a `*Remote` interface plus its
+  `Supabase*Remote`, a `*Repository`, **and that repository's provider**.
+  Application holds Riverpod `Notifier`s. `core/data/providers.dart` builds the
+  infrastructure singletons only; nothing else touches `Supabase.instance` or
+  `Hive.box`.
 - **Constructors** use the `const new(...)` / `factory fromJson(...)` style the
   codebase already has. `very_good_analysis` is strict; `flutter analyze` must
   be clean before a commit.
@@ -94,18 +118,19 @@ and `features/inventory/` are the cleanest examples.
   - is **read back** after the upsert and compared — `upsert` returning without
     an exception is not proof (Kotlin shipped for months on that assumption);
   - takes the **server's row as the winner** in the cache afterwards;
-  - is dispatched by `OutboxKind` in `outboxProvider` — a new kind needs a
-    branch there, and deletes are queued too (or the row comes back on refresh).
+  - is dispatched by `OutboxKind` in `app/wiring/outbox_senders.dart` — a new
+    kind needs a branch there, and deletes are queued too (or the row comes
+    back on refresh).
 - **Refresh keeps queued rows.** A refresh replaces settled rows and drops ones
   the server no longer has, but never a row still pending.
 - **Time:** anything civil (a dose time, an expiry date, "today") is computed
   in the **account's market zone** via `accountTimeZoneProvider`
-  (`lib/core/period/account_time_zone.dart`): `marketTimeZone(country)` →
+  (`lib/shared/market/application/account_time_zone.dart`): `marketTimeZone(country)` →
   budget snapshot zone → `UTC`. Never the device zone. Pure domain functions
   take the day/zone as arguments instead of reading the clock.
 - **Data vs display strings:** categories, units, anything stored or matched on
   stays Arabic (CLAUDE.md i18n rule). E.g. the eleven transaction categories in
-  `features/scan/domain/scanned_receipt.dart`, pantry units in `pantry_view.dart`.
+  `shared/scan/domain/scanned_receipt.dart`, pantry units in `pantry_view.dart`.
 - **Adding a Hive box** changes `ZadLocalStore`'s constructor, and every test
   harness that builds one must be updated (8 files at present:
   `auth_gate_test`, `session_controller_test`, `scan_controller_test`,
@@ -139,6 +164,14 @@ and `features/inventory/` are the cleanest examples.
 
 ## 3. What is done
 
+> **2026-09-30 — paths moved.** The rows below name where each piece was
+> built; since the feature-first refactor (`5c115c3`, `311a731`, `cc6fe5c`)
+> `design/` and `data/` live under `core/`, and a feature's controllers,
+> repositories and models live under `shared/<feature>/` when another feature
+> reads them. Same file names. Same day: one native splash (`82bd3a8`), and
+> overflows fixed on 320dp phones and at 1.3× text, with the walkthrough now
+> run on three phone sizes (`706df64`).
+
 | Area | Where | Notes |
 |---|---|---|
 | Skeleton, design system, budget period (shared with SQL) | `app/`, `design/`, `core/period/` | earlier commits `4290096d`…`5e20b208` |
@@ -161,9 +194,9 @@ and `features/inventory/` are the cleanest examples.
 | Onboarding intro — 4 pages before login, once per phone (`device` box) | `features/onboarding` | `133adb79` |
 | Notification center — `app_notifications`, read / mark-all, bell on Home | `features/notifications` | `388ee145` |
 | Family membership — create / join (server functions), members, roles, leave | `features/family` | `52d80640` |
-| Receipt items → pantry (grocery), shopping list ticked, consumption readings | `features/inventory/domain/receipt_intake.dart`, `features/scan` | `7124f68b` |
-| Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `features/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` |
-| Pantry −/+ and hand-added rows → `manual` consumption readings | `features/inventory/application/pantry_controller.dart` | `9db280c2` |
+| Receipt items → pantry (grocery), shopping list ticked, consumption readings | `shared/inventory/domain/receipt_intake.dart`, `features/scan` | `7124f68b` |
+| Receipt items → pharmacy (restock / start medicines, per-line counts), list ticked | `shared/pharmacy/domain/pharmacy_intake.dart`, `features/scan` | `b4ae5a31` |
+| Pantry −/+ and hand-added rows → `manual` consumption readings | `shared/inventory/application/pantry_controller.dart` | `9db280c2` |
 | Recipes — شيف زاد as البيت's fourth section, recipe sheet, add-missing, like/dislike | `features/recipes` | `84c53a25` |
 | Crowd prices — cheapest reported, city filter, leaderboard (no names), queued reports | `features/prices` (tag icon on البيت) | `912c23c5` |
 | Shops near you — second tab of the prices screen, radius chips, list/medicine hints | `features/nearby` | `30019e51` |
@@ -317,7 +350,7 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
   count and `is_me`, never an id. On the phone a report is checked against
   the same bounds before it is queued (`checkReport`), so the queue never
   holds one the server will refuse.
-- **`ServerRefusal` is permanent** (`data/sync/sync_failure.dart`). An RPC that
+- **`ServerRefusal` is permanent** (`core/data/sync/sync_failure.dart`). An RPC that
   answers refusals as data (`{ok:false, reason}`) should throw it for reasons
   that retrying cannot change, so the outbox dead-letters at once instead of
   burning eight attempts. Transient reasons (`too_many`) throw anything else.
@@ -487,7 +520,11 @@ one commit, full verification, report, then continue.
    behind the PIN, `KidsHome` without the affiliate row and the confetti,
    which wait for affiliate/Lottie; plus Kotlin's launcher
    icon at every density, the native splash (API 31 styles + layer-list) and
-   the Dart `SplashScreen`),
+   the Dart `SplashScreen` — removed 2026-09-30: the native splash now carries
+   the whole coloured design, generated by `flutter_native_splash` from
+   `zad_flutter/flutter_native_splash.yaml` and the PNGs
+   `tool/splash/render_splash_test.dart` renders, and the first Flutter frame
+   is the gate),
    ~~`ZadSubscriptionPaywallScreen`~~ (UI only: Play Billing and AdMob are
    not in a sideloaded build, so its buttons say so), ~~`TermsOfServiceScreen`,
    `HelpSupportScreen`, `OrbAccessoryPicker`~~ (done 2026-09-25 — terms word

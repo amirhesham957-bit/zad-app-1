@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/features/bank/data/background_delivery.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
-import 'package:zad/features/bank/domain/tracked_financial_apps.dart';
+import 'package:zad/shared/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// Entry point for the headless engine. Must stay top-level and keep the

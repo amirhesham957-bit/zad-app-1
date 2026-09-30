@@ -17,16 +17,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/domain/renewal.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/bnpl.dart';
+import 'package:zad/shared/subscriptions/domain/renewal.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 /// Opens the screen.
 Future<void> showSubscriptionsScreen(BuildContext context) =>
@@ -77,25 +80,32 @@ DateTime? _storedRenewal(Subscription s) {
 /// The screen.
 class SubscriptionsScreen extends ConsumerStatefulWidget {
   /// Creates the screen; [embedded] drops the app bar inside the finances
-  /// screen's «الاشتراكات والأقساط» tab.
-  const new({this.embedded = false, super.key});
+  /// screen's «التزاماتي» tab.
+  const new({this.embedded = false, this.initialTab = 0, super.key});
 
   /// Whether a host screen already shows the title.
   final bool embedded;
+
+  /// The filter it opens on: 0 الكل … 4 قروض.
+  final int initialTab;
 
   @override
   ConsumerState<SubscriptionsScreen> createState() => _SubsState();
 }
 
 class _SubsState extends ConsumerState<SubscriptionsScreen> {
-  int _tab = 0;
+  late int _tab = widget.initialTab.clamp(0, _loansTab);
   bool _showInactive = false;
 
+  // «التزاماتي» (owner, 2026-09-30): subscriptions, bills, instalments and
+  // loans in one place. Loans are the debt payoff planner, not rows here.
+  static const int _loansTab = 4;
   static const List<String> _tabs = <String>[
     'الكل',
     'اشتراكات',
     'فواتير',
     'أقساط',
+    'قروض',
   ];
 
   Future<void> _clearDetected(List<Subscription> targets) async {
@@ -122,11 +132,40 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
       ..sort((a, b) {
         final byActive = (a.isActive ? 0 : 1).compareTo(b.isActive ? 0 : 1);
         if (byActive != 0) return byActive;
+        // On the instalments tab, BNPL plans first, under their own header:
+        // they end in weeks and are the ones people forget they took.
+        if (_tab == 3) {
+          final byBnpl = (isBnpl(a) ? 0 : 1).compareTo(isBnpl(b) ? 0 : 1);
+          if (byBnpl != 0) return byBnpl;
+        }
         int days(Subscription s) =>
             s.nextRenewalFrom(today)?.difference(today).inDays ?? 999;
         return days(a).compareTo(days(b));
       });
     final detected = view.items.where(_isAutoDetected).toList();
+
+    final tabs = ZadSegmentedTabs(
+      tabs: _tabs,
+      selectedIndex: _tab,
+      onSelect: (i) => setState(() => _tab = i),
+    );
+    if (_tab == _loansTab) {
+      final loans = Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: tabs,
+          ),
+          Expanded(child: ZadSlots.debtsTab()),
+        ],
+      );
+      return widget.embedded
+          ? loans
+          : Scaffold(
+              appBar: AppBar(title: const Text('التزاماتي')),
+              body: loans,
+            );
+    }
 
     final list = ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
@@ -225,11 +264,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ZadSegmentedTabs(
-          tabs: _tabs,
-          selectedIndex: _tab,
-          onSelect: (i) => setState(() => _tab = i),
-        ),
+        tabs,
         if (detected.isNotEmpty) ...<Widget>[
           const SizedBox(height: 12),
           Padding(
@@ -268,7 +303,16 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
           )
         else
           for (final (i, sub) in filtered.indexed) ...<Widget>[
-            if (i > 0) const SizedBox(height: 12),
+            if (_tab == 3 &&
+                (i == 0 || isBnpl(filtered[i - 1]) != isBnpl(sub))) ...<Widget>[
+              if (i > 0) const SizedBox(height: 16),
+              Text(
+                isBnpl(sub) ? 'اشتري دلوقتي وادفع بعدين' : 'أقساط وقروض وإيجار',
+                style: ZadType.titleSmall,
+              ),
+              const SizedBox(height: 8),
+            ] else if (i > 0)
+              const SizedBox(height: 12),
             _ListItemEnter(
               key: ValueKey<String>(sub.id),
               index: i,
@@ -567,6 +611,28 @@ class SubscriptionCardFull extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 3),
+                              if (bnplProviderOf(sub.title, sub.provider)
+                                  case final bnpl?) ...<Widget>[
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: scheme.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: Text(
+                                    'اشتري وادفع بعدين · ${bnpl.name}',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: scheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               Text(
                                 switch (daysLeft) {
                                   null => sub.provider ?? '',
@@ -716,6 +782,10 @@ typedef _Preset = ({
   String type,
 });
 
+/// The streaming services at the head of [_presets]; the market's BNPL
+/// companies are shown after them, then the bills.
+const int _subscriptionPresetCount = 6;
+
 final List<_Preset> _presets = <_Preset>[
   (
     name: 'Netflix',
@@ -764,22 +834,6 @@ final List<_Preset> _presets = <_Preset>[
     icon: Icons.movie,
     color: ZadPalette.brandWatchIt,
     type: 'subscription',
-  ),
-  (
-    name: 'تابي Tabby',
-    provider: 'Tabby',
-    category: 'أقساط',
-    icon: Icons.shopping_bag,
-    color: ZadPalette.brandTabby,
-    type: 'installment',
-  ),
-  (
-    name: 'تمارا Tamara',
-    provider: 'Tamara',
-    category: 'أقساط',
-    icon: Icons.shopping_bag,
-    color: ZadPalette.brandTamara,
-    type: 'installment',
   ),
   (
     name: 'فاتورة كهرباء',
@@ -1066,6 +1120,22 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
       color: scheme.onSurfaceVariant,
       fontWeight: FontWeight.w600,
     );
+    // The account's own BNPL companies — valU in Egypt, Tabby and Tamara in
+    // the Gulf — instead of Tabby and Tamara for everybody.
+    final country = ref.watch(accountCountryProvider);
+    final presets = <_Preset>[
+      ..._presets.take(_subscriptionPresetCount),
+      for (final b in bnplProvidersFor(country))
+        (
+          name: b.name,
+          provider: b.provider,
+          category: 'أقساط',
+          icon: Icons.shopping_bag,
+          color: scheme.secondary,
+          type: 'installment',
+        ),
+      ..._presets.skip(_subscriptionPresetCount),
+    ];
 
     return AlertDialog(
       title: Text(
@@ -1087,10 +1157,10 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                 height: 36,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _presets.length,
+                  itemCount: presets.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
-                    final p = _presets[i];
+                    final p = presets[i];
                     final on = _title.text == p.name;
                     return Material(
                       color: on

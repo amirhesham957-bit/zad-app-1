@@ -7,12 +7,16 @@
 /// box of their own; sign-out clears that box whole.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 
 /// Reads and writes `zad_obligations`. RLS is `user_own_obligations`.
@@ -262,3 +266,17 @@ class ObligationsRepository {
     return id;
   }
 }
+
+/// Fixed obligations — rent, instalments, bills — cached in the documents
+/// box.
+final Provider<ObligationsRepository> obligationsRepositoryProvider =
+    Provider<ObligationsRepository>((ref) {
+      final store = ref.watch(localStoreProvider);
+      return ObligationsRepository(
+        cache: store.documents,
+        remote: SupabaseObligationsRemote(ref.watch(supabaseClientProvider)),
+        outbox: () => ref.read(outboxProvider),
+        newId: const Uuid().v4,
+        signedInUserId: ref.watch(signedInUserIdProvider),
+      );
+    });

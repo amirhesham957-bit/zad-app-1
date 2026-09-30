@@ -14,16 +14,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/inventory/data/inventory_remote.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/nearby/application/nearby_controller.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
-import 'package:zad/features/nearby/data/nearby_remote.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/inventory/data/inventory_remote.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 
 const GeoPoint _home = GeoPoint(30.044420, 31.235712);
 
@@ -297,11 +297,17 @@ void main() {
     });
 
     group('the tab', () {
+      final saved = <GeoPoint>[];
+      setUp(saved.clear);
+
       ProviderContainer container() {
         final c = ProviderContainer(
           overrides: [
             nowProvider.overrideWithValue(() => now),
             locationSourceProvider.overrideWithValue(phone),
+            lastLocationSinkProvider.overrideWithValue(
+              (p) async => saved.add(p),
+            ),
             nearbyRepositoryProvider.overrideWithValue(repository()),
             shoppingListRepositoryProvider.overrideWithValue(
               ShoppingListRepository(
@@ -380,6 +386,26 @@ void main() {
 
         expect(phone.calls, <String>['access', 'request', 'current']);
         expect(shops.asked, hasLength(2));
+      });
+
+      test('a tap tells the server where, coarse; opening does not', () async {
+        phone.last = (
+          at: _home,
+          takenAt: now.subtract(const Duration(minutes: 5)),
+        );
+        final c = await opened();
+        expect(
+          saved,
+          isEmpty,
+          reason: 'no tap, nothing leaves for the account',
+        );
+
+        phone.fresh = (at: _home, takenAt: now);
+        await c.read(nearbyControllerProvider.notifier).locate();
+
+        expect(saved, hasLength(1));
+        expect(saved.single.lat, 30.044, reason: 'three decimals, not the fix');
+        expect(saved.single.lon, 31.236);
       });
 
       test('"never ask again" is not asked; settings is offered', () async {

@@ -9,17 +9,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/brain/domain/habits.dart';
-import 'package:zad/features/brain/domain/memory_note.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/habits.dart';
+import 'package:zad/shared/brain/domain/memory_note.dart';
 
 /// Opens the screen.
 Future<void> showMemoryScreen(BuildContext context) => Navigator.of(context)

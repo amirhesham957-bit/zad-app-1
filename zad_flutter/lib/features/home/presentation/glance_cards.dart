@@ -10,25 +10,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/pharmacy/domain/dose_slot.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/food_emoji.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 // ── The shared shell ────────────────────────────────────────────────────────
 
@@ -218,7 +219,8 @@ class PantryGlanceCard extends ConsumerWidget {
         if (!short.containsKey(i.id)) i,
     ];
 
-    void open() => showHouseholdSection(context, HouseholdSection.pantry);
+    void open() =>
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pantry);
 
     return _GlanceShell(
       children: <Widget>[
@@ -505,74 +507,6 @@ class _FoodTile extends StatelessWidget {
   };
 }
 
-/// A picture for a pantry line, from words in its name — Kotlin's
-/// `resolveFoodEmoji`, rule for rule. The Arabic words are matched against
-/// what the customer typed, so they are data and stay as they are.
-String foodEmoji(String name) {
-  final n = name.trim().toLowerCase();
-  bool has(List<String> words) => words.any(n.contains);
-  const rules = <(List<String>, String)>[
-    (<String>['موز', 'banana'], '🍌'),
-    (<String>['تفاح', 'apple'], '🍎'),
-    (<String>['برتقال', 'يوسفي', 'orange'], '🍊'),
-    (<String>['فراول', 'strawberr'], '🍓'),
-    (<String>['عنب', 'grape'], '🍇'),
-    (<String>['بطيخ', 'شمام', 'melon'], '🍉'),
-    (<String>['تمر', 'بلح', 'رطب', 'date'], '🌴'),
-    (<String>['ليمون', 'lemon'], '🍋'),
-    (<String>['طماطم', 'بندورة', 'tomato'], '🍅'),
-    (<String>['بطاطس', 'بطاطا', 'potato'], '🥔'),
-    (<String>['بصل', 'onion'], '🧅'),
-    (<String>['ثوم', 'garlic'], '🧄'),
-    (<String>['خيار', 'cucumber'], '🥒'),
-    (<String>['جزر', 'carrot'], '🥕'),
-    (<String>['خس', 'سلطة', 'جرجير', 'salad'], '🥬'),
-    (<String>['فلفل', 'شطة', 'pepper'], '🫑'),
-    (<String>['أرز', 'رز', 'عيش', 'rice'], '🍚'),
-    (<String>['دجاج', 'فراخ', 'شاورما', 'chicken'], '🍗'),
-    (<String>['لحم', 'كفتة', 'برجر', 'ستيك', 'meat', 'beef'], '🥩'),
-    (<String>['سمك', 'تونة', 'جمبري', 'سالمون', 'fish', 'tuna'], '🐟'),
-    (<String>['بيض', 'egg'], '🥚'),
-    (<String>['حليب', 'لبن', 'milk'], '🥛'),
-    (<String>['زبادي', 'لبنة', 'روب', 'yogurt'], '🥣'),
-    (<String>['جبن', 'جبنة', 'قشطة', 'cheese'], '🧀'),
-    (<String>['زبدة', 'سمن', 'butter'], '🧈'),
-    (<String>['خبز', 'توست', 'صامولي', 'فينو', 'فطير', 'bread'], '🍞'),
-    (
-      <String>[
-        'مكرونة',
-        'معكرونة',
-        'باستا',
-        'نودلز',
-        'اندومي',
-        'pasta',
-        'noodle',
-      ],
-      '🍝',
-    ),
-    (<String>['زيت', 'زيتون', 'oil', 'olive'], '🫒'),
-    (<String>['سكر', 'sugar'], '🧂'),
-    (<String>['ملح', 'بهار', 'salt'], '🧂'),
-    (<String>['شاي', 'كرك', 'tea'], '🫖'),
-    (<String>['قهوة', 'بن', 'نسكافيه', 'اسبريسو', 'coffee'], '☕'),
-    (<String>['عصير', 'juice'], '🧃'),
-    (<String>['ماء', 'مياه', 'water'], '💧'),
-    (<String>['مايونيز', 'mayo'], '🥫'),
-    (<String>['كاتشب', 'صلصة', 'طحينة', 'sauce'], '🥫'),
-    (<String>['شيبس', 'شيبسي', 'chips'], '🍟'),
-    (<String>['شوكولات', 'نوتيلا', 'كيك', 'chocolate'], '🍫'),
-    (<String>['بسكويت', 'كوكيز', 'cookie'], '🍪'),
-    (<String>['صابون', 'مسحوق', 'شامبو', 'كلور', 'تايد', 'soap'], '🧼'),
-    (<String>['مناديل', 'فاين', 'tissue'], '🧻'),
-    (<String>['بنزين', 'وقود', 'fuel'], '⛽'),
-    (<String>['دواء', 'علاج', 'مسكن', 'بنادول', 'panadol'], '💊'),
-  ];
-  for (final (words, emoji) in rules) {
-    if (has(words)) return emoji;
-  }
-  return '🍽️';
-}
-
 // ── 2. The pharmacy ─────────────────────────────────────────────────────────
 
 /// The dose Home offers: the earliest one that can be answered now, else the
@@ -628,7 +562,8 @@ class PharmacyGlanceCard extends ConsumerWidget {
         ? ZadColors.mustardOchre
         : ZadColors.forestEmerald;
 
-    void open() => showHouseholdSection(context, HouseholdSection.pharmacy);
+    void open() =>
+        ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy);
 
     return _GlanceShell(
       children: <Widget>[
@@ -876,7 +811,7 @@ class SubscriptionsGlanceCard extends ConsumerWidget {
     final next = active.isEmpty ? null : active.first;
     final nextDate = next?.nextRenewalFrom(view.today);
 
-    void open() => showSubscriptionsScreen(context);
+    void open() => ZadScreens.showSubscriptionsScreen(context);
 
     return _GlanceShell(
       children: <Widget>[

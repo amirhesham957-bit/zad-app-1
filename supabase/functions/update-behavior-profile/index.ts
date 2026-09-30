@@ -1,11 +1,18 @@
 // deno-lint-ignore-file
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
+import { secretMatches } from "../_shared/cronSecret.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 Deno.serve(async (req: Request) => {
+  // verify_jwt = false والدالة شغالة بمفتاح الخدمة على كل العملاء — من غير الحارس ده أي
+  // حد على النت كان يقدر يشغّلها (ويشوف user_id في `errors`). الكرون الوحيد اللي بيندهها
+  // بيبعت سر العقل من الـvault (20260929220000)، نفس اللي brain-daily-analysis بيبعته.
+  if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
   try {
     // Get all active users (those with transactions)
     const { data: users, error: userError } = await supabase

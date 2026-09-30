@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 ZadTransaction _t(
   String id,

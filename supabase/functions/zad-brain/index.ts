@@ -56,12 +56,13 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
-import { lowStockToAdd } from "./lowStock.ts";
+import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
+import { loadSharedHistory, pickHistory, recordSharedTurn, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -75,7 +76,10 @@ import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
-import { customerCard, IDENTITY_MEMORY_SCOPES, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
+import { rateConfidence } from "../_shared/consumptionRate.ts";
+import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
+import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -287,7 +291,14 @@ function detectObligationCandidate(
   };
 }
 
-const BNPL_PROVIDERS = new Set(["تابي", "تمارة", "فاليو", "tabby", "tamara", "valu"]);
+// شركات "اشتري دلوقتي وادفع بعدين" في كل سوق — نفس قايمة التطبيق
+// (zad_flutter/lib/shared/subscriptions/domain/bnpl.dart). مصر كانت فاليو بس، والعميل
+// المصري بيدفع سيمبل وسهولة وكونتكت وأمان وحالاً كمان (٢٠٢٦-٠٩-٣٠).
+const BNPL_PROVIDERS = new Set([
+  "تابي", "تمارة", "تمارا", "فاليو", "سيمبل", "سهولة", "كونتكت", "أمان", "حالا", "مدفوع", "تالي",
+  "tabby", "tamara", "valu", "sympl", "souhoola", "contact", "aman", "halan", "madfu", "mispay",
+  "postpay", "cashew", "taly",
+]);
 
 /**
  * بند 32.1 — نسخة أسرع من detectObligationCandidate مخصوصة لتابي/تمارة/فاليو: مرتين
@@ -957,12 +968,30 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     consumptionByItem[c.item_name] = { avgDailyQty: c.avg_daily_qty, rateKnown: c.rate_known };
     if (c.rate_known) rateKnownItems.push(c.item_name);
   }
+  // الفجوة ٧ (20260930000000): معدل من أول دورة «اشتريت ← خلص» بيدي daysLeft كمان، بس
+  // بـconfidence = approximate — يتقال «تقريباً». rateKnown ماتغيرش (٣ نزلات على يومين)،
+  // فـstock_unknown تحت لسه بيشمل التقريبي عشان العقل يقدر يسأل ويأكده.
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
-    const daysLeft = cons?.rateKnown && cons.avgDailyQty > 0 ? item.quantity / cons.avgDailyQty : null;
-    return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, rateKnown: cons?.rateKnown ?? false };
+    const confidence = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
+    const daysLeft = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
+    return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false };
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
+  // A staple under several brands is one stock: the brain said «المية قليلة، عبوة واحدة»
+  // with six brands and eight bottles in the house (owner, 2026-10-01).
+  const familyTotals = new Map<string, { total: number; brands: string[] }>();
+  for (const item of invRes.data ?? []) {
+    const family = productFamilyOf(String(item.item_name ?? ""));
+    if (!family) continue;
+    const entry = familyTotals.get(family) ?? { total: 0, brands: [] };
+    entry.total += Number(item.quantity) || 0;
+    entry.brands.push(String(item.item_name));
+    familyTotals.set(family, entry);
+  }
+  const stockTotals = [...familyTotals.entries()]
+    .filter(([, v]) => v.brands.length > 1)
+    .map(([name, v]) => ({ name, total: v.total, brands: v.brands.slice(0, 8) }));
 
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
@@ -1073,7 +1102,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // اقتراح دورة راتب لسه محتاج تأكيد العميل — انظر تعليمات confirm_cycle_start تحت.
     // suggested_day=null يعني مفيش تجمّع دخل واضح لسه (بيانات مش كفاية، أو دخل غير منتظم).
     cycle_detection: cycleDetection,
-    byCategory, stock, stock_unknown: stockUnknownNames, anomalies, upcoming,
+    byCategory, stock, stock_totals: stockTotals, stock_unknown: stockUnknownNames, anomalies, upcoming,
     shopping_list_pending: (shopRes.data ?? []).map((s) => s.item_name),
     // evidence_count كان بيتقري من zad_memory وبيتترمي هنا من غير سبب — وهو بالظبط
     // رقم "اتقال كام مرة" (zad_memory_upsert بيزوده كل ما ملاحظة جديدة تشبه واحدة
@@ -1576,10 +1605,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       const samples = (obs as any)?.samples ?? 0;
       const rateKnown = (obs as any)?.rate_known === true;
+      const perDay = Number((obs as any)?.avg_daily_qty);
       ctx.observations.push({ item: input.item_name, qty: input.new_qty, samples, rateKnown });
-      return rateKnown
-        ? `اتعدلت الكمية، وبقى عندي معدل استهلاك مؤكد للصنف ده (${samples} قياسات) — مش محتاج أسأل عنه تاني`
-        : `اتعدلت الكمية واتسجلت ملاحظة للتعلم (${samples} قياسات لحد الآن، محتاج ٣)`;
+      // النص ده بيطلع للعميل كإيصال (✅ في تليجرام) — كلام ليه، مش تعليمات للموديل.
+      if (rateKnown) return `اتعدلت الكمية، وبقى عندي معدل استهلاك مؤكد للصنف ده (${samples} قياسات)`;
+      if (Number.isFinite(perDay) && perDay > 0) {
+        return `اتعدلت الكمية، وبقى عندي تقدير تقريبي: حوالي ${Math.round(perDay * 10) / 10} في اليوم (بيتظبط مع كل مرة)`;
+      }
+      return `اتعدلت الكمية واتسجلت ملاحظة للتعلم (${samples} قياسات لحد الآن)`;
     }
     case "set_transaction_category": {
       const { data: before } = await sb.from("zad_transactions").select("category").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
@@ -1657,7 +1690,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
         previous: null, next: w.rows[0],
       });
-      return `اتسجل تصحيح ${Math.abs(delta).toFixed(2)} (${isIncrease ? "زيادة" : "نقصان"}) عشان الكاش يطابق كلام العميل`;
+      return `اتسجل تصحيح ${Math.abs(delta).toFixed(2)} (${isIncrease ? "زيادة" : "نقصان"}) عشان الكاش يطابق الرصيد الفعلي`;
     }
     case "confirm_cycle_start": {
       // Task 25 — بعد ما العميل يأكد "أيوة" على سؤال cycle_start_confirm. cycle_anchor
@@ -1961,7 +1994,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const dupe = (existingMeds ?? []).find(
         (row: { name: string; for_person: string | null }) =>
           row.name.trim().toLowerCase() === medName.toLowerCase() &&
-          (row.for_person ?? "").trim().toLowerCase() === (forPerson ?? "").toLowerCase(),
+          // Rows saved before names were unified («أمي») still match «ماما».
+          (normalizeForPerson(row.for_person) ?? "").toLowerCase() === (forPerson ?? "").toLowerCase(),
       ) as { id: string; dosage: string | null; dose_times: string | null } | undefined;
 
       if (dupe) {
@@ -2088,7 +2122,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_users", targetId: userId,
         previous: { currency: snap.currency, country: snap.country }, next: w.rows[0],
       });
-      return `اتسجل إن العميل في ${input.country} وعملته ${input.currency} — مش هسأل عنها تاني`;
+      return `اتسجل: البلد ${input.country} والعملة ${input.currency}`;
     }
     case "log_pharmacy_dose": {
       // مكافئ pharmacy_dose في بروتوكول [[ACTION]] القديم، ومرآة
@@ -2629,7 +2663,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutations.push({ tool: name, old: null, new: { daily_cap: cap, length_days: lengthDays } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
       const cur = state.currency ? ` ${state.currency}` : "";
-      return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم. كل صباح هقوله كسب امبارح ولا لأ، وهحتفل معاه في كل محطة.`;
+      return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم.`;
     }
     case "stop_savings_challenge": {
       const w = await writeRows(
@@ -2643,11 +2677,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: { status: "active" }, new: { status: "abandoned" } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
-      return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}. قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.`;
+      return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}.`;
     }
     case "update_customer_profile": {
       const { patch } = sanitizeProfilePatch(input as Record<string, unknown>);
       const { data: before } = await sb.from("zad_customer_profile").select("*").eq("user_id", userId).maybeSingle();
+      const clash = identityOverwrites(before as Record<string, string | null> | null, patch);
+      if (clash.length > 0 && input.confirm_overwrite !== true) {
+        const was = clash.map((k) => `${k}=«${(before as Record<string, string>)[k]}»`).join("، ");
+        return `مرفوض: متسجّل قبل كده ${was} وماغيّرتوش. لو بيهزر أو بيتقمص شخصية، جاريه في الهزار وكمّل بالمسجّل؛ ` +
+          `لو بيصحح بجد اسأله يأكد، وبعد تأكيده ابعت نفس الحقل مع confirm_overwrite=true.`;
+      }
       const w = await writeRows(
         sb.from("zad_customer_profile").upsert({
           user_id: userId, ...patch,
@@ -2660,7 +2700,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_customer_profile", targetId: userId, previous: before, next: patch });
-      return `اتسجل في ملفه: ${Object.keys(patch).join("، ")}. متقولهوش إنك سجلت — كمّل الكلام عادي وخاطبه على أساس اللي عرفته.`;
+      return `status=saved fields=${Object.keys(patch).join(",")}`;
     }
     case "set_broke_mode": {
       const src = scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat";
@@ -3062,6 +3102,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
       return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "");
     }
+    case "area_trends": {
+      // ترندات السوق بشرط ٥ بيوت (20260930010000) — الحد جوه SQL، مش هنا ولا في الموديل.
+      const days = Math.min(60, Math.max(7, Number(input?.days) || 14));
+      const { data, error } = await sb.rpc("zad_area_trends", { p_user: userId, p_days: days });
+      if (error) return `مقدرتش أقرا ترندات المنطقة: ${error.message}`;
+      return JSON.stringify(data);
+    }
 
     case "get_nearby_deals": {
       const { item_category } = input;
@@ -3104,7 +3151,8 @@ const TOOLS: ToolDef[] = [
       "يوم، أول يوم هيبقى فيه بالسالب، الالتزامات والاشتراكات اللي هتتخصم، والأصناف اللي " +
       "هتخلص وإمتى. **نادِها قبل أي رؤية عن المستقبل** — تحذير زي \"هتبقى ناقص\" أو " +
       "\"المية هتخلص\" لازم يكون رقمه من هنا مش من حسابك على الـsnapshot. اللي في " +
-      "stock_unknown معدل استهلاكه لسه مش معروف — متخمّنش ليه تاريخ.",
+      "stock_unknown معدل استهلاكه لسه مش معروف — متخمّنش ليه تاريخ. stockouts بـconfidence=approximate " +
+      "محسوبة من دورة شرا واحدة: قول التاريخ بـ«تقريباً» أو «على حسب آخر مرة»، مش كأنه أكيد.",
     input_schema: {
       type: "object",
       properties: {
@@ -3833,12 +3881,16 @@ const CHAT_TOOLS: ToolDef[] = [
     description:
       "سجّل حقيقة ثابتة عن العميل نفسه أول ما يقولها، في نص الكلام ومن غير ما تسأل إذن: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، سنه، شغله ومواعيده، ميعاد قبضه ونظامه، مصدر دخله، عدد اللي في البيت والعيال، مدينته، اللهجة اللي عايز يتكلم بيها، اهتماماته. " +
       "أمثلة: «أنا أم لتلات عيال» ⇒ household_role=mother, kids_count=3. «بشتغل مهندس وبقبض يوم ٢٥» ⇒ occupation, pay_day=25, pay_frequency=monthly. «كلمني مصري» ⇒ dialect=EG. «أنا تعبانة» ⇒ gender=female. " +
-      "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش.",
+      "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش. " +
+      "بعد الحفظ كمّل الكلام طبيعي وناديه بالاسم اللي قاله — متعلنش إنك سجلت ومتذكرش أسماء الحقول. " +
+      "**الهزار مش بيانات:** «اسمي بيتر باركر»، اسم مشهور أو شخصية خيالية أو لقب بيهزر بيه ⇒ جاريه في الهزار بخفة دم ومتنادهاش الأداة. " +
+      "الاسم والنوع لو متسجلين قبل كده مابيتغيروش غير بتأكيد صريح منه (confirm_overwrite=true).",
     input_schema: {
       type: "object",
       properties: {
         preferred_name: { type: "string" },
         gender: { type: "string", enum: ["male", "female"] },
+        confirm_overwrite: { type: "boolean", description: "true بس لو العميل أكّد صراحةً إنه عايز يغيّر اسم أو نوع متسجلين قبل كده." },
         household_role: { type: "string", enum: ["father", "mother", "husband", "wife", "son", "daughter", "single", "student", "grandparent", "other"] },
         age_range: { type: "string", enum: ["under_18", "18_24", "25_34", "35_44", "45_54", "55_plus"] },
         occupation: { type: "string" },
@@ -3866,7 +3918,7 @@ const CHAT_TOOLS: ToolDef[] = [
     description:
       "ابدأ تحدي توفير (افتراضي ٣٠ يوم) بسقف يومي: «عايز أعمل تحدي توفير»، «تحدي ٣٠ يوم»، «ساعدني أوفّر الشهر ده». " +
       "لو العميل قال رقم («مش هصرف أكتر من ١٠٠ في اليوم») حطه في daily_cap، وإلا سيبه فاضي وأنا هحسب ٨٠٪ من متوسط صرفه. " +
-      "كل صباح بيتحسب امبارح، وزاد بتحتفل بصوتها في المحطات.",
+      "كل صباح بيتحسب امبارح، وزاد بتحتفل بصوتها في المحطات — قوله كده في ردك بعد ما يبدأ.",
     input_schema: {
       type: "object",
       properties: {
@@ -3877,7 +3929,7 @@ const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "stop_savings_challenge",
-    description: "اقفل تحدي التوفير الشغال لما العميل يطلب («بطّلت التحدي»، «وقّف التحدي»). متقفلوش من نفسك.",
+    description: "اقفل تحدي التوفير الشغال لما العميل يطلب («بطّلت التحدي»، «وقّف التحدي»). متقفلوش من نفسك. بعد القفل قوله إن ده مش فشل وإنه يقدر يبدأ تاني وقت ما يحب.",
     input_schema: { type: "object", properties: {} },
   },
   {
@@ -4165,6 +4217,22 @@ const CHAT_TOOLS: ToolDef[] = [
         to_currency: { type: "string", description: "مثل: EGP, USD, SAR, TRY (3 أحرف)" },
       },
       required: ["from_currency", "to_currency"],
+    },
+  },
+  {
+    name: "area_trends",
+    description:
+      "ترندات سوق العميل: الأصناف اللي بيوت كتير في بلده اشترتها أو حطّتها في قايمة التسوق آخر ١٤ يوم " +
+      "(افتراضياً)، بعدد البيوت واتجاهها (up/down/flat/new) مقارنة بالفترة اللي قبلها. " +
+      "استخدمها لـ«الناس بتشتري إيه اليومين دول؟» أو قبل ما ترشّح حاجة يخزّنها. " +
+      "الصنف مابيظهرش غير لو ٥ بيوت مختلفة على الأقل عندهم (العيلة بيت واحد) — ده حد خصوصية. " +
+      "لو items فاضية قول بصراحة إن لسه مفيش بيوت كفاية في سوقه تعمل ترند، ومتخترعش واحد. " +
+      "reason=no_market يعني العميل لسه ماختارش بلده. مفيش أسماء محلات ولا حد بعينه في النتيجة — متدّعيش إنك تعرف مين.",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "الفترة بالأيام. الافتراضي ١٤، من ٧ لـ٦٠." },
+      },
     },
   },
   {
@@ -4499,6 +4567,17 @@ async function firePlaceReminders(
 }
 
 /**
+ * Work the reply does not depend on, done after the response is sent. Without
+ * EdgeRuntime (tests, local) the promise simply runs; it is never awaited by the
+ * turn, and its failures are logged, never thrown.
+ */
+function afterResponse(label: string, work: Promise<unknown>): void {
+  const guarded = work.catch((e) => console.warn(`${label} skipped:`, (e as Error)?.message ?? e));
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(guarded);
+}
+
+/**
  * لحظات العميل ده تتعالج في الخلفية: الـreceiver على الموبايل ليه ثواني قليلة، وكتابة الكلام
  * بالموديل ممكن تاخد أكتر. من غير EdgeRuntime (تست/محلي) بيستنى عادي.
  */
@@ -4513,6 +4592,14 @@ function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: 
     .catch((e) => console.error(`${label} processing failed:`, (e as Error)?.message));
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
   if (runtime?.waitUntil) runtime.waitUntil(work);
+}
+
+/** توقيت سوق العميل (zad_market_timezone على بلده). فشل = UTC، زي باقي الفانكشن. */
+async function accountTimeZone(sb: SupabaseClient, userId: string): Promise<string> {
+  const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+  const { data: tz, error } = await sb.rpc("zad_market_timezone", { p_country: (u as { country?: string | null } | null)?.country ?? null });
+  if (error) console.error("[agent_tasks] zad_market_timezone failed:", error.message);
+  return typeof tz === "string" && tz ? tz : "UTC";
 }
 
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
@@ -4541,18 +4628,27 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         postponed++;
         continue;
       }
+      // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
+      const quietUntil = postponeForQuietHours(task.kind, await accountTimeZone(sb, task.user_id), Date.now());
+      if (quietUntil) {
+        await sb.from("agent_tasks").update({ scheduled_for: quietUntil, updated_at: new Date().toISOString() }).eq("id", task.id);
+        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${quietUntil} (quiet hours)`);
+        postponed++;
+        continue;
+      }
     }
     await sb.from("agent_tasks").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", task.id);
     try {
       const snap = await buildSnapshot(sb, task.user_id);
       const systemPrompt = soulBlock() + buildChatSystemPrompt(snap);
+      const groqSystem = groqSystemFor(snap);
       const ctx: RunContext = freshContext(task.user_id);
       const scope: AuditScope = { source: "event", runId: null };
       const history: Turn[] = [{ role: "user", text: task.task_description }];
       let resultText = "";
 
       for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
-        const reply = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: CHAT_TOOLS, history, maxTokens: 1200 });
+        const reply = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: CHAT_TOOLS, history, maxTokens: 1200, groqSystem });
         if (reply.text) resultText = reply.text;
         if (reply.toolCalls.length === 0) break;
         history.push({ role: "assistant", text: reply.text || undefined, toolCalls: reply.toolCalls });
@@ -4688,14 +4784,19 @@ const INTENT_RETRY_NOTE =
  * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
-async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number) {
-  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200 });
-  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
+async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string) {
   const hinted = intentToolHints(message);
+  // Groq بيشيل ٩-١٤ أداة بس تحت ٨٠٠٠/دقيقة (مقاس ٢٠٢٦-٠٩-٣٠) — اللي الرسالة بتشير لها الأول.
+  const groqTools = groqToolOrder(tools, hinted, message);
+  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
+  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
   const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
   if (narrowed.length === 0) return { ...first, intentRetry: null };
   try {
-    const retry = await callModel({ model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200 });
+    const retry = await callModel({
+      model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200,
+      groqSystem: groqSystem ? groqSystem + INTENT_RETRY_NOTE : undefined,
+    });
     const usage = { inTok: first.usage.inTok + retry.usage.inTok, outTok: first.usage.outTok + retry.usage.outTok };
     if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted };
     return { ...first, usage, intentRetry: hinted };
@@ -4817,6 +4918,21 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     }), { headers: CORS_HEADERS });
   }
 
+  // Independent reads, started together instead of one after another: the
+  // snapshot, the message's embedding (a network call to the model), the drift
+  // lessons, the learned skills and the agents' mail used to run in sequence
+  // before the model was even asked — seconds of every turn, and of a voice
+  // turn most of all (owner: «المساعد الصوتي بياخد ٤٠ ثانية», 2026-09-30).
+  const embeddingEarly = embedText(message).catch((e) => {
+    console.warn("embedding skipped:", e);
+    return null;
+  });
+  const driftLessonsEarly = buildDriftLessons(sb, userId);
+  const learnedSkillsEarly = loadSkills(sb, userId);
+  const agentMailEarly = fetchUnreadAgentMail(sb, userId);
+  const sharedHistoryEarly = declaredSource === "telegram"
+    ? Promise.resolve(null)
+    : loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
@@ -4829,7 +4945,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // التشابه بالمعنى بيرتّب من جديد (يلتقط "قهوتنا الصبح" لرسالة "مش بشرب قهوة").
   let relevantMemory = rankMemoryForMessage(snap.memory ?? [], message);
   try {
-    const queryVec = await embedText(message);
+    const queryVec = await embeddingEarly;
     if (queryVec) {
       const { data: sem } = await sb.rpc("zad_memory_semantic_search", {
         p_user: userId, p_query_embedding: queryVec, p_limit: 8,
@@ -4878,14 +4994,14 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     console.warn("semantic memory search skipped:", e);
   }
   // حلقة التعلم: دروس من انحرافات الوكيل السابقة مع نفس العميل
-  const driftLessons = await buildDriftLessons(sb, userId);
+  const driftLessons = await driftLessonsEarly;
   const lessonsBlock = driftLessons.length > 0
     ? "\n=== دروس من أخطائك السابقة مع هذا العميل ===\n" + driftLessons.map((l) => "- " + l).join("\n") + "\n=== نهاية الدروس ===\n"
     : "";
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
-  const learnedSkills = await loadSkills(sb, userId);
+  const learnedSkills = await learnedSkillsEarly;
   // تقارير الأيدجنتس غير المقروءة — العقل بيبقى واعي بشغل أيدجنتته بين رسالتين (Phase 3).
-  const agentMail = await fetchUnreadAgentMail(sb, userId);
+  const agentMail = await agentMailEarly;
   const systemPrompt =
     soulBlock()
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
@@ -4907,16 +5023,29 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         message,
       ].join(" ").slice(-1500),
     }, body.voice_mode === true);
+  // لو جيميناي كله وقع ووصلنا لـ Groq: برومبت مختصر بنفس اللهجة (الفجوة ١٣).
+  const groqSystem = groqSystemFor(snap, [
+    ...(Array.isArray(body.history) ? body.history : [])
+      .filter((h: { role?: string }) => h?.role === "user")
+      .map((h: { text?: string }) => String(h?.text ?? "")),
+    message,
+  ].join(" ").slice(-1500));
 
   // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
   // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
-  const history: Turn[] = [];
+  const clientHistory: SharedTurn[] = [];
   for (const h of (Array.isArray(body.history) ? body.history : []).slice(-8)) {
     const text = String(h?.text ?? "").trim();
     if (!text) continue;
-    if (h?.role === "user") history.push({ role: "user", text });
-    else if (h?.role === "assistant") history.push({ role: "assistant", text });
+    if (h?.role === "user") clientHistory.push({ role: "user", text });
+    else if (h?.role === "assistant") clientHistory.push({ role: "assistant", text });
   }
+  // One conversation on every channel (sharedConversation.ts): the app answers
+  // in the turns said by voice or on Telegram too. Telegram already sends that
+  // same table as its history.
+  const history: Turn[] = declaredSource === "telegram"
+    ? clientHistory
+    : pickHistory(await sharedHistoryEarly, clientHistory);
   history.push({ role: "user", text: message });
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
@@ -4968,7 +5097,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
-      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn);
+      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem);
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
       await finishRun("failed", String(e));
@@ -4980,7 +5109,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         return new Response(JSON.stringify({
           ok: true,
           reply: modelText.trim(),
-          executed,
+          executed: visibleReceipts(executed),
           proposals,
           tool_attempted: true,
           partial: true,
@@ -5028,8 +5157,11 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         continue;
       }
 
+      const mutationsBefore = ctx.mutationCount;
       const result = await runTool(sb, userId, call.name, call.input, snap, ctx, scope);
-      if (!result.startsWith("مرفوض:")) {
+      // `executed` = كتابات حقيقية بس — القراءة (web_search، find_nearby_stores…) نتيجتها
+      // للموديل ومكانها toolResults تحت. شوف receipts.ts.
+      if (isWrite(call.name, result, ctx.mutationCount > mutationsBefore)) {
         executed.push({ tool: call.name, ok: true, summary: result });
         // تقرير عمل للصندوق: العقل في الرد الجاي (أو من cron) هيعرف إن الأيدجنت اشتغل.
         // fire-and-forget — فشل التسجيل مش بيكسر الرد. كانت `specialist as AgentSender`
@@ -5069,6 +5201,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply)) {
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
+  reply = silentWriteFallback(reply, executed, proposals.length);
 
   // === نقاش الوكلاء (Orchestrator review) — المرحلة ٣ ===
   // لو اللفة فيها اقتراحات مالية أو تنفيذ فعلي، وكيل مراجعة مستقل بيتصرف كـ orchestrator:
@@ -5108,8 +5241,10 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // نموذج خفيف + بوابة واضحة، مش نداء إضافي على كل رسالة عادية (الكوتة محدودة وموثّقة
   // في CLAUDE.md). دمج الاستخلاصين في نداء واحد بدل اتنين لنفس السبب — نصف التكلفة
   // لنفس الفايدة. NONE صريحة لكل سطر لو مفيش حاجة تستاهل، مفيش إجبار.
+  // After the response: the reply does not depend on it, and it was a whole
+  // model call the customer waited through on every turn that wrote something.
   if (ctx.mutationCount > 0) {
-    try {
+    afterResponse("post-turn fact/skill extraction", (async () => {
       const extraction = await callModel({
         model: MODEL_ROUTINE,
         system:
@@ -5135,18 +5270,16 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
       if (parsed.skillKey && parsed.skillNote) {
         await sb.rpc("zad_skill_upsert", { p_user: userId, p_key: parsed.skillKey, p_note: parsed.skillNote, p_conf: 0.55 });
       }
-    } catch (e) {
-      console.warn("post-turn fact/skill extraction skipped:", e);
-    }
+    })());
   }
 
-  await recordPromiseDrift(sb, userId, runId, declaredSource, reply, executed.map((x) => x.tool));
+  afterResponse("promise drift", recordPromiseDrift(sb, userId, runId, declaredSource, reply, executed.map((x) => x.tool)));
   await finishRun("success");
 
   return new Response(JSON.stringify({
     ok: true,
     reply,
-    executed,
+    executed: visibleReceipts(executed),
     proposals,
     // أوامر واجهة التطبيق — ZadViewModel بينفذها محلياً (فتح شاشة/تظليل عنصر).
     app_commands: appCommands,
@@ -5770,6 +5903,16 @@ function getAssistantName(_snap: any): { nameAr: string; nameEn: string } {
   return { nameAr: "زاد", nameEn: "Zad" };
 }
 
+/** البرومبت المختصر لـ Groq بنفس لهجة البرومبت الكامل (groqPrompt.ts، الفجوة ١٣). */
+function groqSystemFor(snap: any, dialectHintText?: string): string {
+  const profile = conversationProfile(snap?.country, {
+    preferred: snap?.customer?.dialect,
+    text: dialectHintText ?? snap?.dialect_hint_text,
+    currency: snap?.currency,
+  });
+  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect), dialectReminder(profile.dialect));
+}
+
 function buildChatSystemPrompt(snap: any, voiceMode = false): string {
   const assistant = getAssistantName(snap);
   const profile = conversationProfile(snap?.country, {
@@ -5793,6 +5936,10 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode)}
+2ب. **واعي بالبيت وبالبلد**:
+   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
+   - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
+   - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ **web_search** قبل ما ترد، واذكر المصدر. متقولش «معنديش إنترنت».
 3. **الذكاء العاطفي (Emotional Intelligence)**:
    - استنتج الحالة المحتملة من الكلمات والسياق فقط، ولا تزعم أنك سمعت نبرة لم تصلك. لو العميل مستعجل اختصر، ولو مضغوط تكلم بهدوء وتعاطف.
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.
@@ -6545,7 +6692,17 @@ async function handleRequest(req: Request): Promise<Response> {
         );
       }
       const sbChat = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      if (body.action === "agent_turn") return await handleAgentTurn(sbChat, authedUserId, body);
+      if (body.action === "agent_turn") {
+        const res = await handleAgentTurn(sbChat, authedUserId, body);
+        // Telegram stores its own turns; any other caller's joins the shared conversation.
+        if (body.source !== "telegram") {
+          const payload = await res.clone().json().catch(() => null);
+          if (payload?.ok === true && typeof payload.reply === "string") {
+            afterResponse("shared turn", recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), payload.reply));
+          }
+        }
+        return res;
+      }
       if (body.action === "agent_turn_stream") return await handleAgentTurnStream(sbChat, authedUserId, body);
       if (body.action === "agent_confirm") return await handleAgentConfirm(sbChat, authedUserId, body);
       if (body.action === "notification_ingest") return await handleNotificationIngest(sbChat, authedUserId, body);
@@ -6761,6 +6918,10 @@ async function handleAgentTurnStream(sb: SupabaseClient, userId: string, body: a
     payload = await normal.json();
   } catch {
     return clone;
+  }
+  // The app's turn joins the one conversation every channel reads.
+  if (payload?.ok === true && typeof payload.reply === "string" && body.source !== "telegram") {
+    afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), payload.reply));
   }
   if (!payload || payload.ok !== true || typeof payload.reply !== "string" || payload.reply.length < 40) {
     // ردود قصيرة/أخطاء/تنفيذات → JSON عادي زي ما هو

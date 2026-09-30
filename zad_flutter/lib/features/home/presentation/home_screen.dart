@@ -10,50 +10,37 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_appear.dart';
+import 'package:zad/core/design/components/zad_balance_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_trailing_gap.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_appear.dart';
-import 'package:zad/design/components/zad_balance_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_trailing_gap.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/features/bank/presentation/stuck_notifications.dart';
-import 'package:zad/features/brain/presentation/why_changed_sheet.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
-import 'package:zad/features/home/presentation/glance_cards.dart';
+import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
-import 'package:zad/features/home/presentation/home_chef_section.dart';
-import 'package:zad/features/home/presentation/home_reports_row.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
-import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
-import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
-import 'package:zad/features/insights/presentation/insight_cards.dart';
-import 'package:zad/features/modes/presentation/modes_cards.dart';
-import 'package:zad/features/prices/presentation/live_market_ticker.dart';
-import 'package:zad/features/proposals/presentation/proposals_screen.dart';
-import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
-import 'package:zad/features/telegram/presentation/telegram_binding.dart';
-import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Home.
 ///
-/// Laid out in Kotlin HomeScreen's order, with its gaps: 16dp on top, 20dp
-/// either side, and the blocks in the sequence Kotlin draws them — the
-/// companion row, the modes, the wallet card and its two metrics, the bank
-/// channel, the sections grid, the pantry, the pharmacy, the subscriptions,
-/// the bank's waiting proposals, what the brain noticed, and the latest
-/// transactions. Each block enters the way Kotlin's `AppearOnEntry` does,
-/// with Kotlin's per-block delays.
+/// زاد's home: the companion row, the brain's daily brief, the bank's
+/// waiting proposals, the modes, the wallet card and its two metrics, the
+/// bank channel, what the brain noticed, and the latest transactions. Each
+/// block enters the way Kotlin's `AppearOnEntry` does, with Kotlin's
+/// per-block delays.
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({this.onOpenVoice, this.onOpenCamera, super.key});
@@ -91,47 +78,31 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const ZadTrailingGap(gap: 16, child: BrokeModeSlot()),
-          const ZadTrailingGap(gap: 16, child: SavingsChallengeSlot()),
+          // «موجز زاد النهارده» first: the brain says what matters today.
+          // It replaced the grid of seventeen sections and the pantry,
+          // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
+          // in بيتي, the obligations in فلوسي, every section in the drawer.
+          const ZadAppearOnEntry(child: DailyBriefCard()),
+          const SizedBox(height: 16),
+          ZadSlots.homeProposalsSection(),
+          ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
+          ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
           const HomeActivationSlot(),
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
-          const ZadAppearOnEntry(child: LiveMarketTickerSlot()),
+          ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
           _Budget(view: view),
           const FxExcludedNotice(),
           const BankListeningPill(),
           const SizedBox(height: 18),
-          // Kotlin's grid sits a further 16dp in from the page padding.
-          const ZadAppearOnEntry(
-            delayMs: 50,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: SectionsGrid(),
-            ),
-          ),
+          ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
-          const ZadAppearOnEntry(delayMs: 80, child: HomeTelegramBlocks()),
-          const SizedBox(height: 16),
-          const ZadAppearOnEntry(
-            delayMs: 65,
-            child: ZadTrailingGap(gap: 18, child: PantryGlanceCard()),
-          ),
-          const ZadAppearOnEntry(
-            delayMs: 85,
-            child: ZadTrailingGap(gap: 18, child: PharmacyGlanceCard()),
-          ),
-          const ZadAppearOnEntry(delayMs: 92, child: WeekWithZadSlot()),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
-          const ZadAppearOnEntry(
-            delayMs: 100,
-            child: ZadTrailingGap(gap: 18, child: SubscriptionsGlanceCard()),
-          ),
-          const ZadAppearOnEntry(delayMs: 105, child: HomeChefSection()),
-          const HomeProposalsSection(),
-          const StuckNotificationsSlot(),
+          ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
+          ZadSlots.stuckNotificationsSlot(),
           ZadTrailingGap(
             gap: 18,
-            child: HomeInsightsSection(onOpenCamera: onOpenCamera),
+            child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
@@ -198,10 +169,10 @@ class _Budget extends ConsumerWidget {
             // device's arithmetic rather than the server's.
             isStale: view.isStale || view.pendingSpend > 0,
             // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
-            onTap: () => openWhyChanged(context),
-            onSetBudget: () => showMonthlyLimitSheet(context),
-            onQuickExpense: () => showQuickExpenseSheet(context),
-            onEditBalance: () => showMonthlyLimitSheet(context),
+            onTap: () => ZadScreens.openWhyChanged(context),
+            onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
+            onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
+            onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
           ),
         ),
         const SizedBox(height: 14),
@@ -218,7 +189,7 @@ class _Budget extends ConsumerWidget {
         ],
         ZadAppearOnEntry(
           delayMs: 60,
-          child: HomeReportsRow(
+          child: ZadSlots.homeReportsRow(
             spent: snapshot.spent,
             spendable: spendable,
             daysLeft: math.max(0, period.daysRemainingFrom(now)),

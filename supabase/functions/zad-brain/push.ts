@@ -178,17 +178,22 @@ export async function pushToDevice(
           return;
         }
         // توكن مات (UNREGISTERED/INVALID_ARGUMENT على التوكن) → نمسحه عشان المرة الجاية ميفشلش
+        // الجسم بيتقرا مرة واحدة ويتسجل في كل فرع. ٢٠٢٦-٠٩-٢٩: توكن اتسجل ١٩:٠٦ واتبعتله
+        // ٢٠:٠٠ ففشل واختفى، ومفيش سطر لوج واحد يقول ليه — فرع 404 كان بيمسح ساكت، والفرع
+        // الأخير كان بيطبع "" دايماً (`.then?.(() => "")` بترمي النص).
+        const errText = await res.text().catch(() => "");
         if (res.status === 404) {
+          console.error("FCM v1 404 — token removed:", errText.slice(0, 300));
           await sb.from("zad_fcm_tokens").delete().eq("token", token);
         } else if (res.status === 400) {
-          const errText = await res.text().catch(() => "");
           if (errText.includes("UNREGISTERED") || errText.includes("not a valid FCM registration token")) {
+            console.error("FCM v1 400 unregistered — token removed:", errText.slice(0, 300));
             await sb.from("zad_fcm_tokens").delete().eq("token", token);
           } else {
             console.error("FCM v1 400:", errText.slice(0, 300));
           }
         } else {
-          console.error(`FCM v1 send failed ${res.status}:`, await res.text().catch(() => "").then?.(() => "") ?? "");
+          console.error(`FCM v1 send failed ${res.status}:`, errText.slice(0, 300));
         }
       } catch (e) {
         console.error("FCM token send threw:", e);

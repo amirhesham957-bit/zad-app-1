@@ -5,12 +5,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
-import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
 import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 
 class _Scan extends ScanController {
   new(this.initial);

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/family/domain/family_life.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
 
 void main() {
   group('a child asks for money', () {

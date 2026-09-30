@@ -17,33 +17,33 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/auth_gate.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
-import 'package:zad/app/shell_navigation.dart';
 import 'package:zad/app/zad_shell.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/auth/data/auth_gateway.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/insights/data/insights_repository.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
-import 'package:zad/features/notifications/data/notifications_remote.dart';
-import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/onboarding/presentation/intro_screen.dart';
-import 'package:zad/features/proposals/data/proposals_repository.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/settings/domain/account_settings.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/auth/data/auth_gateway.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/domain/agent_screen.dart';
+import 'package:zad/shared/insights/data/insights_repository.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/notifications/data/notifications_remote.dart';
+import 'package:zad/shared/notifications/data/notifications_repository.dart';
+import 'package:zad/shared/proposals/data/proposals_repository.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 import '../support/quiet_household.dart';
 
@@ -413,6 +413,37 @@ void main() {
 
       expect(bar().current, ZadNavDestination.inventory);
       expect(container.read(shellNavigationProvider), isNull);
+    });
+
+    testWidgets('the bar is الرئيسية · فلوسي · بيتي · المزيد, and each '
+        'can be asked for', (tester) async {
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      for (final label in <String>['الرئيسية', 'فلوسي', 'بيتي', 'المزيد']) {
+        expect(
+          find.descendant(
+            of: find.byType(ZadBottomNavBar),
+            matching: find.text(label),
+          ),
+          findsOneWidget,
+        );
+      }
+      ZadBottomNavBar bar() =>
+          tester.widget<ZadBottomNavBar>(find.byType(ZadBottomNavBar));
+      for (final (asked, shown) in <(ShellTab, ZadNavDestination)>[
+        (ShellTab.money, ZadNavDestination.money),
+        (ShellTab.family, ZadNavDestination.family),
+        (ShellTab.household, ZadNavDestination.inventory),
+        (ShellTab.home, ZadNavDestination.home),
+      ]) {
+        container.read(shellNavigationProvider.notifier).open(asked);
+        await tester.pump();
+        await tester.pump();
+        expect(bar().current, shown, reason: '$asked');
+      }
     });
 
     testWidgets('a screen the agent asks for opens with no chat on screen', (

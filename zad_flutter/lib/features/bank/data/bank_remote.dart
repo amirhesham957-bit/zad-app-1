@@ -1,7 +1,11 @@
 /// The server side of the bank channel.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// Hands a notification to `zad-brain`.
 abstract interface class BankRemote {
@@ -31,3 +35,8 @@ class SupabaseBankRemote implements BankRemote {
     return null;
   }
 }
+
+/// Hands bank notifications to zad-brain.
+final bankRemoteProvider = Provider<BankRemote>(
+  (ref) => SupabaseBankRemote(ref.watch(supabaseClientProvider)),
+);

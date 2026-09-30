@@ -13,18 +13,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/alerts/presentation/alerts_settings_section.dart';
-import 'package:zad/features/auth/presentation/sign_out_action.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
-import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
-import 'package:zad/features/places/presentation/street_alerts_section.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// Opens the settings screen.
 Future<void> showSettingsScreen(BuildContext context) => Navigator.of(
@@ -100,15 +98,17 @@ class SettingsScreen extends ConsumerWidget {
               const _BankChannelSection(),
 
               const SizedBox(height: ZadSpacing.lg),
-              const AlertsSettingsSection(),
+              ZadSlots.alertsSettingsSection(),
 
               const SizedBox(height: ZadSpacing.lg),
-              const StreetAlertsSection(),
+              ZadSlots.streetAlertsSection(),
+              const SizedBox(height: ZadSpacing.md),
+              ZadSlots.keepAliveGuide(),
 
               const SizedBox(height: ZadSpacing.lg),
-              const _Section(
+              _Section(
                 title: 'الحساب',
-                children: <Widget>[SignOutTile()],
+                children: <Widget>[ZadSlots.signOutTile()],
               ),
 
               const SizedBox(height: ZadSpacing.xxl),
@@ -280,7 +280,7 @@ class _BankChannelSection extends ConsumerWidget {
               FilledButton(
                 onPressed: state.granted
                     ? controller.openSettings
-                    : () => unawaited(showBankAccessGuide(context)),
+                    : () => unawaited(ZadScreens.showBankAccessGuide(context)),
                 child: Text(
                   state.granted ? 'افتح إعدادات النظام' : 'فعّلها خطوة بخطوة',
                 ),

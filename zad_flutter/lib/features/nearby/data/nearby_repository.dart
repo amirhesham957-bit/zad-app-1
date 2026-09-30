@@ -8,11 +8,15 @@
 /// in memory.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/features/nearby/data/nearby_remote.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
+import 'package:http/http.dart' as http;
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
 
 /// What was found around one point.
 class NearbySnapshot {
@@ -138,3 +142,18 @@ class NearbyRepository {
     return snapshot;
   }
 }
+
+/// Shops near the customer, kept per ~500 m and a day.
+final Provider<NearbyRepository> nearbyRepositoryProvider =
+    Provider<NearbyRepository>((ref) {
+      final client = http.Client();
+      ref.onDispose(client.close);
+      return NearbyRepository(
+        cache: ref.watch(localStoreProvider).documents,
+        remote: ServerThenOverpassRemote(
+          supabaseServerCall(ref.watch(supabaseClientProvider)),
+          client,
+        ),
+        now: ref.watch(nowProvider),
+      );
+    });

@@ -5,12 +5,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
-import 'package:zad/features/market/domain/market.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
-import 'package:zad/features/prices/domain/prices.dart';
 import 'package:zad/features/prices/presentation/prices_screen.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
 
 class _Prices extends PricesController {
   new(this.initial, {this.answer});
@@ -106,6 +106,17 @@ void main() {
     expect(find.text('لوحة الأسعار'), findsOneWidget);
     expect(find.text('طماطم'), findsOneWidget);
     expect(find.text('كارفور، القاهرة · 3 بلاغ'), findsOneWidget);
+    // «ترندات سوقك» sits above the leaderboard now.
+    await tester.scrollUntilVisible(
+      find.text('المساهم 2'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('المساهم 1'), findsOneWidget);
     expect(find.text('9 مساهمات'), findsOneWidget);
     expect(find.text('المساهم 2'), findsOneWidget);
@@ -114,6 +125,17 @@ void main() {
   testWidgets("nothing yet: Kotlin's two empty states", (tester) async {
     await pump(tester, _view());
     expect(find.text('لسه مفيش بلاغات هنا'), findsOneWidget);
+    expect(find.text('لسه مفيش ترند في سوقك'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('لسه مفيش مساهمات'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('لسه مفيش مساهمات'), findsOneWidget);
     expect(find.text('سجّل أول سعر'), findsNWidgets(2));
   });

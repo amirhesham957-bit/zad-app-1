@@ -6,15 +6,12 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/inventory/presentation/pantry_view.dart';
-import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
-import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
-import 'package:zad/features/prices/presentation/prices_screen.dart';
-import 'package:zad/features/recipes/presentation/recipes_view.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the household on [section], as its own page — how Home's glance
 /// cards and the knowledge map reach one section directly.
@@ -26,21 +23,6 @@ Future<void> showHouseholdSection(
     builder: (_) => HouseholdScreen(initialSection: section),
   ),
 );
-
-/// Which part of the household is showing.
-enum HouseholdSection {
-  /// What is in the kitchen.
-  pantry,
-
-  /// What to buy.
-  shopping,
-
-  /// Medicines and doses.
-  pharmacy,
-
-  /// What to cook from what is in the kitchen.
-  recipes,
-}
 
 /// The household screen.
 class HouseholdScreen extends StatefulWidget {
@@ -84,12 +66,12 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
               title: const Text('البيت'),
               actions: <Widget>[
                 IconButton(
-                  onPressed: () => showPricesScreen(context),
+                  onPressed: () => ZadScreens.showPricesScreen(context),
                   icon: const Icon(ZadIcons.prices),
                   tooltip: 'الأسعار',
                 ),
                 IconButton(
-                  onPressed: () => showFamilyScreen(context),
+                  onPressed: () => ZadScreens.showFamilyScreen(context),
                   icon: const Icon(ZadIcons.family),
                   tooltip: 'العيلة',
                 ),
@@ -137,10 +119,10 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
                 for (final section in HouseholdSection.values)
                   if (_opened.contains(section))
                     switch (section) {
-                      HouseholdSection.pantry => const PantryView(),
-                      HouseholdSection.shopping => const ShoppingListView(),
-                      HouseholdSection.pharmacy => const PharmacyView(),
-                      HouseholdSection.recipes => const RecipesView(),
+                      HouseholdSection.pantry => ZadSlots.pantryView(),
+                      HouseholdSection.shopping => ZadSlots.shoppingListView(),
+                      HouseholdSection.pharmacy => ZadSlots.pharmacyView(),
+                      HouseholdSection.recipes => ZadSlots.recipesView(),
                     }
                   else
                     const SizedBox.shrink(),

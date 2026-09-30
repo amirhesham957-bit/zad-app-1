@@ -10,19 +10,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/components/zad_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/foundation/squircle.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 
 /// The recipes section.
 class RecipesView extends ConsumerWidget {
@@ -312,11 +313,7 @@ class _Dish extends StatelessWidget {
           color: ZadColors.surfaceVariant,
           child: url == null
               ? glyph
-              : Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => glyph,
-                ),
+              : ZadNetworkImage(url, fit: BoxFit.cover, fallback: glyph),
         ),
       ),
     );
@@ -344,9 +341,6 @@ class RecipeSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(recipesControllerProvider.notifier);
-    final rating = ref.watch(
-      recipesControllerProvider.select((v) => v.ratings[recipe.name]),
-    );
     // Rebuilt when the list or the pantry changes, so the button counts what
     // is still left to add — and disappears once it is all on the list.
     ref
@@ -433,42 +427,7 @@ class RecipeSheet extends ConsumerWidget {
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
             const SizedBox(height: ZadSpacing.lg),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    'عجبتك؟ شيف زاد بتفتكر.',
-                    style: ZadType.bodySmall.copyWith(
-                      color: ZadColors.inkMuted,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () =>
-                      unawaited(controller.rate(recipe, liked: true)),
-                  isSelected: rating ?? false,
-                  color: ZadColors.inkMuted,
-                  selectedIcon: const Icon(
-                    ZadIcons.like,
-                    color: ZadColors.green700,
-                  ),
-                  icon: const Icon(ZadIcons.like),
-                  tooltip: 'عجبتني',
-                ),
-                IconButton(
-                  onPressed: () =>
-                      unawaited(controller.rate(recipe, liked: false)),
-                  isSelected: rating == false,
-                  color: ZadColors.inkMuted,
-                  selectedIcon: Icon(
-                    ZadIcons.dislike,
-                    color: ZadColors.terracottaRust,
-                  ),
-                  icon: const Icon(ZadIcons.dislike),
-                  tooltip: 'مش لذوقي',
-                ),
-              ],
-            ),
+            RecipeRatingRow(recipe: recipe),
           ],
         ),
       ),
@@ -586,3 +545,49 @@ String dishEmoji(String name) => switch (name) {
   _ when name.contains('خبز') || name.contains('عيش') => '🍞',
   _ => '🍽️',
 };
+
+/// «عجبتك؟»: like or dislike, sent through the outbox to `rate_recipe`, which
+/// the next «شيف زاد» suggestions read. On the recipe sheet and on the full
+/// recipe — the dialog is where the dish is actually cooked from, and with the
+/// row only on the sheet 98 suggestions got no opinion at all (2026-09-29).
+class RecipeRatingRow extends ConsumerWidget {
+  /// Creates the row.
+  const new({required this.recipe, super.key});
+
+  /// The recipe rated.
+  final Recipe recipe;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(recipesControllerProvider.notifier);
+    final rating = ref.watch(
+      recipesControllerProvider.select((v) => v.ratings[recipe.name]),
+    );
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            'عجبتك؟ شيف زاد بتفتكر.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+        ),
+        IconButton(
+          onPressed: () => unawaited(controller.rate(recipe, liked: true)),
+          isSelected: rating ?? false,
+          color: ZadColors.inkMuted,
+          selectedIcon: const Icon(ZadIcons.like, color: ZadColors.green700),
+          icon: const Icon(ZadIcons.like),
+          tooltip: 'عجبتني',
+        ),
+        IconButton(
+          onPressed: () => unawaited(controller.rate(recipe, liked: false)),
+          isSelected: rating == false,
+          color: ZadColors.inkMuted,
+          selectedIcon: Icon(ZadIcons.dislike, color: ZadColors.terracottaRust),
+          icon: const Icon(ZadIcons.dislike),
+          tooltip: 'مش لذوقي',
+        ),
+      ],
+    );
+  }
+}

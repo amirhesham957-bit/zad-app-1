@@ -11,14 +11,14 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 /// Refuses at once, so nothing in these tests waits on a budget fetch.
 class _OfflineBudget implements BudgetRemote {

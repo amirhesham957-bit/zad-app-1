@@ -169,6 +169,27 @@ Deno.test("سلسلة جيميناي كلها مقفولة → بيقع على G
   }
 });
 
+Deno.test("على Groq بيتبعت البرومبت المختصر، وجيميناي بياخد الكامل (الفجوة ١٣)", async () => {
+  const s = stubFetch((url) => {
+    if (url.includes("api.groq.com")) {
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: "تمام", tool_calls: [] } }], usage: { prompt_tokens: 3, completion_tokens: 1 } }),
+        { status: 200 },
+      );
+    }
+    return quota429();
+  });
+  try {
+    await callModel({ ...BASE, system: "الكامل", groqSystem: "المختصر" });
+    const groqCall = s.calls.find((c) => c.url.includes("api.groq.com"))!;
+    assertEquals(groqCall.body.messages[0].content, "المختصر");
+    const geminiCall = s.calls.find((c) => c.url.includes("generativelanguage"))!;
+    assertEquals(JSON.stringify(geminiCall.body).includes("الكامل"), true);
+  } finally {
+    s.restore();
+  }
+});
+
 Deno.test("التفكير مقفول افتراضياً ومفتوح لما يتطلب صراحة", async () => {
   const s = stubFetch(() => geminiOk());
   try {

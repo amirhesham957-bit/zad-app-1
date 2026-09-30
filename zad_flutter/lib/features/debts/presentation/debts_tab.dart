@@ -1,9 +1,11 @@
-/// Kotlin's الديون tab (`FinancesDebtsBody`): the debt payoff planner
+/// «قروض» under «التزاماتي»: the debt payoff planner
 /// (`DebtPayoffPlannerCard` — snowball or avalanche, each debt with its
-/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation) and
-/// «فرص واقتصاد» with the live deals for what the pantry is short of
-/// (`LiveDealsCard` — `fetch_live_deals`, a live web search, fetched only on
-/// a tap).
+/// payoff month, «سجّل دفعة» and delete, add, totals, the AI explanation).
+///
+/// [LiveDealsCard] (`fetch_live_deals`, a live web search, fetched only on a
+/// tap) lives here too but is shown on the shopping list, next to the
+/// shortages it searches for — it had nothing to do with debts (owner,
+/// 2026-09-30).
 library;
 
 import 'dart:async';
@@ -11,16 +13,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
+import 'package:zad/core/data/local/screen_cache.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/domain/market.dart';
 
 /// One `zad_debts` row.
 typedef Debt = ({
@@ -132,22 +137,7 @@ class DebtsTab extends StatelessWidget {
       ZadSpacing.lg,
       120,
     ),
-    children: <Widget>[
-      const DebtPlannerCard(),
-      const SizedBox(height: ZadSpacing.md),
-      Row(
-        children: <Widget>[
-          const Icon(ZadIcons.prices),
-          const SizedBox(width: ZadSpacing.sm),
-          Text(
-            'فرص واقتصاد',
-            style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-      const SizedBox(height: ZadSpacing.md),
-      const LiveDealsCard(),
-    ],
+    children: const <Widget>[DebtPlannerCard()],
   );
 }
 
@@ -200,8 +190,16 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     final client = ref.read(supabaseClientProvider);
     final uid = client.auth.currentUser?.id;
     if (uid == null) return;
+    final cache = ref.read(screenCacheProvider);
+    // Last time's loans first; the server's answer replaces them.
+    if (_debts.isEmpty) {
+      if (cache.read('debts', uid) case final cached? when mounted) {
+        setState(() => _debts = <Debt>[for (final r in cached) _debt(r)]);
+      }
+    }
     try {
       final rows = await client.from('zad_debts').select().eq('user_id', uid);
+      unawaited(cache.write('debts', uid, rows));
       if (mounted) {
         setState(() => _debts = <Debt>[for (final r in rows) _debt(r)]);
       }
@@ -240,10 +238,11 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
   }
 
   Future<void> _pay(Debt d) async {
-    final c = TextEditingController();
-    final paid = await showDialog<double>(
+    // showFieldDialog owns the controller — see zad_field_dialog.dart.
+    final paid = await showFieldDialog<double>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      initial: const <String>[''],
+      builder: (dialogContext, fields) => AlertDialog(
         title: Text(
           'دفعة على ${d.name}',
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
@@ -258,7 +257,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
             ),
             const SizedBox(height: ZadSpacing.sm),
             TextField(
-              controller: c,
+              controller: fields[0],
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -277,7 +276,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
           ),
           FilledButton(
             onPressed: () {
-              final v = double.tryParse(c.text.trim());
+              final v = double.tryParse(fields[0].text.trim());
               if (v != null) Navigator.of(dialogContext).pop(v);
             },
             child: const Text('حفظ'),
@@ -285,7 +284,6 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
         ],
       ),
     );
-    c.dispose();
     if (paid == null) return;
     // Never below zero: a payment larger than what is left closes the debt.
     final left = d.remaining - paid;
@@ -646,7 +644,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
   Future<void> _refresh(List<String> shortages) async {
     if (_state == _Fetch.loading) return;
     setState(() => _state = _Fetch.loading);
-    final country = ref.read(settingsControllerProvider).settings?.country;
+    final country = ref.read(accountCountryProvider);
     try {
       final client = ref.read(supabaseClientProvider);
       final response = await client.functions
@@ -696,9 +694,12 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
 
   @override
   Widget build(BuildContext context) {
+    // One name per stock, not per row: five brands of water are one
+    // shortage, and none while the brands together are above the threshold
+    // (product_family.dart). The server searches the first five.
     final shortages = <String>[
-      for (final i in ref.watch(pantryControllerProvider).items)
-        if (i.isLowStock) i.itemName,
+      for (final g in groupPantry(ref.watch(pantryControllerProvider).items))
+        if (g.isLow) g.name,
     ];
     return _Card(
       child: Column(

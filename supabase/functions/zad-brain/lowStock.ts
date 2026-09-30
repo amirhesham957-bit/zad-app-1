@@ -22,12 +22,36 @@ export function normalizeItemName(s: string): string {
 }
 
 /**
+ * عائلات المنتجات — نفس جدول التطبيق (zad_flutter/lib/shared/inventory/domain/product_family.dart).
+ * ٨ إزازات مية من ٥ ماركات كانت بتتحسب ٥ نواقص وتنزل القايمة ٥ مرات (٢٠٢٦-٠٩-٣٠). السلعة
+ * الأساسية بماركاتها مخزون واحد: مجموعهم، وأعلى حد، وبتنزل القايمة مرة باسم السلعة.
+ * الكلمات دي بتتطابق مع اللي العميل والماسح كتبوه — بيانات، مش نص واجهة.
+ */
+const STAPLES: Record<string, string> = {
+  "ماء": "مياه", "مياه": "مياه", "ميه": "مياه", "water": "مياه",
+  "رز": "رز", "ارز": "رز", "سكر": "سكر", "ملح": "ملح", "دقيق": "دقيق",
+  "بيض": "بيض", "بيضه": "بيض", "عيش": "عيش", "خبز": "عيش",
+  "مكرونه": "مكرونه", "معكرونه": "مكرونه", "شاي": "شاي",
+  "حليب": "حليب", "لبن": "لبن", "زبادي": "زبادي", "مناديل": "مناديل",
+};
+
+/** العائلة اللي الاسم ده منها، أو null لو مش سلعة أساسية. */
+export function productFamilyOf(name: string): string | null {
+  const first = normalizeItemName(name).split(" ")[0] ?? "";
+  const word = first.startsWith("ال") ? first.slice(2) : first;
+  return STAPLES[word] ?? null;
+}
+
+/**
  * الأصناف اللي وصلت حدها (low_stock_threshold لو محطوط، وإلا ١) ومش على القايمة كبند
- * مفتوح. كل اسم مرة واحدة حتى لو متكرر في المخزون.
+ * مفتوح. كل اسم مرة واحدة حتى لو متكرر في المخزون، وكل سلعة أساسية مرة واحدة باسمها
+ * لما مجموع ماركاتها يوصل الحد.
  */
 export function lowStockToAdd(pantry: PantryRow[] | null | undefined, openShoppingNames: Array<string | null>): string[] {
   const open = new Set(openShoppingNames.filter((n): n is string => !!n?.trim()).map(normalizeItemName));
   const out: string[] = [];
+  const families = new Map<string, { total: number; threshold: number }>();
+  const familyOrder: string[] = [];
   for (const row of pantry ?? []) {
     const name = row.item_name?.trim();
     if (!name) continue;
@@ -35,11 +59,31 @@ export function lowStockToAdd(pantry: PantryRow[] | null | undefined, openShoppi
     if (!Number.isFinite(qty) || qty < 0) continue;
     const t = Number(row.low_stock_threshold);
     const threshold = Number.isFinite(t) && t > 0 ? t : 1;
+    const family = productFamilyOf(name);
+    if (family) {
+      const f = families.get(family);
+      if (f) {
+        f.total += qty;
+        f.threshold = Math.max(f.threshold, threshold);
+      } else {
+        families.set(family, { total: qty, threshold });
+        familyOrder.push(family);
+      }
+      continue;
+    }
     if (qty > threshold) continue;
     const key = normalizeItemName(name);
     if (open.has(key)) continue;
     open.add(key);
     out.push(name);
+  }
+  for (const family of familyOrder) {
+    const f = families.get(family)!;
+    if (f.total > f.threshold) continue;
+    const key = normalizeItemName(family);
+    if (open.has(key)) continue;
+    open.add(key);
+    out.push(family);
   }
   return out;
 }

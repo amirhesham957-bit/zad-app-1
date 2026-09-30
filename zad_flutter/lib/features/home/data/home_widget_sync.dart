@@ -8,7 +8,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// The Android class, fully named: the package is not the application id.
 const String kZadWidgetProvider = 'com.aistudio.zad.wrtqvx.ZadBalanceWidget';

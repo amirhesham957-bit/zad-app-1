@@ -11,9 +11,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/chat/data/transcriber.dart';
-import 'package:zad/features/chat/data/voice_recorder.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/chat/data/transcriber.dart';
+import 'package:zad/shared/chat/data/voice_recorder.dart';
 
 class _FakeRecorder implements VoiceRecorder {
   bool permitted = true;

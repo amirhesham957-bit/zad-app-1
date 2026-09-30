@@ -7,7 +7,7 @@ import 'package:pdf/src/pdf/font/ttf_parser.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 import 'sample_month.dart';
 

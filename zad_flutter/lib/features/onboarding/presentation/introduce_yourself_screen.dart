@@ -14,13 +14,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/auth/presentation/sign_out_action.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
 
 /// Implied by a role, so choosing «أم» answers the gender question too.
 const Map<String, String> _roleGender = <String, String>{
@@ -55,6 +55,9 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
   late String? _role = _start?.householdRole;
   // Null until answered; «محدش» is the empty set.
   late Set<String>? _caresFor = _start?.caresFor?.toSet();
+  // Optional: the day the salary lands. The brain counts the month from it
+  // (the salary cycle) and knows when money is tight.
+  late int? _payDay = _start?.payDay;
   bool _saving = false;
   String? _error;
 
@@ -89,7 +92,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       householdRole: _role,
       ageRange: base.ageRange,
       occupation: base.occupation,
-      payDay: base.payDay,
+      payDay: _payDay,
       payFrequency: base.payFrequency,
       householdSize: base.householdSize,
       kidsCount: base.kidsCount,
@@ -128,7 +131,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('عرّفني بيك'),
-        actions: const <Widget>[SignOutAction()],
+        actions: <Widget>[ZadSlots.signOutAction()],
       ),
       body: SafeArea(
         child: ListView(
@@ -140,7 +143,8 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
           ),
           children: <Widget>[
             Text(
-              'أربع أسئلة بس، عشان أكلمك صح وآخد بالي من اللي في رعايتك.',
+              'أربع أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في '
+              'رعايتك.',
               style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xl),
@@ -197,6 +201,23 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            _Question(
+              title: 'بتقبض يوم كام في الشهر؟',
+              hint: 'اختياري — عشان أحسب شهرك من يوم القبض.',
+              child: DropdownButtonFormField<int?>(
+                initialValue: _payDay,
+                isExpanded: true,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                items: <DropdownMenuItem<int?>>[
+                  const DropdownMenuItem<int?>(
+                    child: Text('مش ثابت / مش عايز أقول'),
+                  ),
+                  for (var d = 1; d <= 31; d++)
+                    DropdownMenuItem<int?>(value: d, child: Text('يوم $d')),
+                ],
+                onChanged: (d) => setState(() => _payDay = d),
               ),
             ),
             if (_error case final error?) ...<Widget>[

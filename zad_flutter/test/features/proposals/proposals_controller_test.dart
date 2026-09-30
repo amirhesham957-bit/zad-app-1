@@ -7,11 +7,11 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/data/proposals_repository.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/data/proposals_repository.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
 
 class _FakeRemote implements ProposalsRemote {
   List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];

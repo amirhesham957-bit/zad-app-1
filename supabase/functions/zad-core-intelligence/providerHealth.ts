@@ -45,6 +45,18 @@ export function interestingSecretNames(allNames: string[]): string[] {
   return allNames.filter((n) => INTERESTING_NAME.test(n)).sort();
 }
 
+/**
+ * حدود مفتاح Groq من هيدرز الرد: limit-requests = طلبات في اليوم، limit-tokens = توكنز في
+ * الدقيقة، ومعاهم الباقي. `undefined` لو الهيدرز مش موجودة (رد خطأ قبل الحد مثلاً).
+ */
+export function groqLimitsNote(h: Headers): string | undefined {
+  const rpd = h.get("x-ratelimit-limit-requests");
+  const tpm = h.get("x-ratelimit-limit-tokens");
+  if (!rpd && !tpm) return undefined;
+  return `rpd=${rpd ?? "?"} left=${h.get("x-ratelimit-remaining-requests") ?? "?"} ` +
+    `tpm=${tpm ?? "?"} tpm_left=${h.get("x-ratelimit-remaining-tokens") ?? "?"}`;
+}
+
 async function probe(
   fetchImpl: typeof fetch,
   key: string | undefined,
@@ -78,6 +90,19 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
       : { configured: true, ok: true, note: `places=${found.places.length} via ${found.name}` };
   })();
 
+  // Resend (zad-support's complaint email). A sending-only key answers /domains with 401
+  // "restricted_api_key" — valid for what we use it for, so that reads as ok.
+  const resend = (async (): Promise<ProbeResult> => {
+    const r = await probe(fetchImpl, env("RESEND_API_KEY"), (k) => ({
+      url: "https://api.resend.com/domains",
+      init: { headers: { Authorization: `Bearer ${k}` } },
+    }), async (res) => (res.ok ? undefined : (await res.text()).slice(0, 120)));
+    if (r.status === 401 && /restricted/i.test(r.note ?? "")) {
+      return { configured: true, status: 401, ok: true, note: "sending-only key" };
+    }
+    return r;
+  })();
+
   const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([
     probe(fetchImpl, env("LOCATIONIQ_API_KEY"), (k) => ({
       url: `https://us1.locationiq.com/v1/nearby?key=${encodeURIComponent(k)}&lat=30.0444&lon=31.2357&tag=supermarket&radius=2000&format=json`,
@@ -98,10 +123,20 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
       url: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
       init: { headers: { "x-goog-api-key": key } },
     }))),
+    // طلب chat بتوكن واحد على موديل العقل، مش /models: Groq بيرجّع حدود المفتاح في هيدرز الرد
+    // (x-ratelimit-*) — «الحد في اليوم كام» بيتقرا من غير ما نوصله ونحرق كوتة اليوم.
     ...groqKeys.map((k) => probe(fetchImpl, k, (key) => ({
-      url: "https://api.groq.com/openai/v1/models",
-      init: { headers: { Authorization: `Bearer ${key}` } },
-    }))),
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      init: {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: env("ZAD_GROQ_TEXT_MODEL") || "openai/gpt-oss-120b",
+          messages: [{ role: "user", content: "ok" }],
+          max_tokens: 1,
+        }),
+      },
+    }), async (res) => groqLimitsNote(res.headers))),
   ]);
 
   return {
@@ -112,6 +147,7 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     elevenlabs,
     exchange_rate,
     usda,
+    resend: await resend,
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),

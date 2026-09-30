@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { computeNeeds, marketFor, matchCatalog, searchUrl } from "./recommendations.ts";
+import { amazonImageOrNull, computeNeeds, marketFor, matchCatalog, searchUrl } from "./recommendations.ts";
 
 Deno.test("needs rank run-outs by consumption above low stock and the shopping list", () => {
   const needs = computeNeeds(
@@ -29,4 +29,13 @@ Deno.test("catalog match needs a real name/keyword overlap", () => {
   const cat = [{ id: "1", product_name_ar: "زيت زيتون بكر", product_name_search_keywords: ["زيت"], asin: null, asin_verified: false, image_url: "x", average_price_sar: 28, is_active: true }];
   assertEquals(matchCatalog({ name: "زيت", reason: "", score: 3, days_left: null }, cat)?.id, "1");
   assertEquals(matchCatalog({ name: "بيض", reason: "", score: 3, days_left: null }, cat), null);
+});
+
+Deno.test("amazonImageOrNull: only Amazon's own product photos", () => {
+  assertEquals(amazonImageOrNull("https://m.media-amazon.com/images/I/71abc.jpg"), "https://m.media-amazon.com/images/I/71abc.jpg");
+  assertEquals(amazonImageOrNull("https://images-na.ssl-images-amazon.com/images/I/x.jpg"), "https://images-na.ssl-images-amazon.com/images/I/x.jpg");
+  assertEquals(amazonImageOrNull("https://images.pexels.com/photos/1.jpeg"), null);
+  assertEquals(amazonImageOrNull("http://m.media-amazon.com/x.jpg"), null);
+  assertEquals(amazonImageOrNull("https://evil.com/m.media-amazon.com.jpg"), null);
+  assertEquals(amazonImageOrNull(null), null);
 });

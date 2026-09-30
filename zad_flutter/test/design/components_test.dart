@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/core/design/components/zad_balance_card.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/core/period/payday.dart';
-import 'package:zad/design/components/zad_balance_card.dart';
-import 'package:zad/design/components/zad_empty_state.dart';
-import 'package:zad/design/components/zad_pressable.dart';
-import 'package:zad/design/tokens/zad_icons.dart';
-import 'package:zad/design/tokens/zad_spacing.dart';
-import 'package:zad/design/zad_theme.dart';
 
 void main() {
   setUpAll(tz_data.initializeTimeZones);

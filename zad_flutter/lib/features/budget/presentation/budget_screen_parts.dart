@@ -15,19 +15,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
-import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 // Kotlin's `zad_prefs` / `dismissed_budget_suggestion`.
 const String _dismissedKey = 'zad_prefs:dismissed_budget_suggestion';
@@ -539,7 +540,9 @@ class _TxRowItemState extends ConsumerState<_TxRowItem> {
                         tooltip: 'تعديل المعاملة',
                         onPressed: () {
                           setState(() => _actions = false);
-                          unawaited(showEditTransactionSheet(context, tx));
+                          unawaited(
+                            ZadScreens.showEditTransactionSheet(context, tx),
+                          );
                         },
                         icon: Icon(
                           Icons.edit,

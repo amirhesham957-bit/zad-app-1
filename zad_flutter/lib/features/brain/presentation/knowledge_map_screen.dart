@@ -18,18 +18,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/presentation/chat_screen.dart';
-import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
-import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 const Color _bg = ZadPalette.sciFiBg;
 const Color _grid = ZadPalette.sciFiGrid;
@@ -168,27 +166,31 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
   /// sends it.
   void _ask(String label) {
     ref.read(chatPrefillProvider.notifier).offer('وضّحلي أكتر عن $label');
-    Navigator.of(
-      context,
-    ).push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
+    );
   }
 
   /// Kotlin's `kmDomainRoutes`.
   VoidCallback? _opener(MapDomainKey key) => switch (key) {
-    MapDomainKey.budget => () => unawaited(showFinancesScreen(context)),
+    MapDomainKey.budget => () => unawaited(
+      ZadScreens.showFinancesScreen(context),
+    ),
     MapDomainKey.subscriptions => () => unawaited(
-      showSubscriptionsScreen(context),
+      ZadScreens.showSubscriptionsScreen(context),
     ),
     MapDomainKey.pantry => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.pantry),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.pantry),
     ),
     MapDomainKey.shopping => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.shopping),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.shopping),
     ),
     MapDomainKey.pharmacy => () => unawaited(
-      showHouseholdSection(context, HouseholdSection.pharmacy),
+      ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
     ),
-    MapDomainKey.maintenance => () => unawaited(showMaintenanceScreen(context)),
+    MapDomainKey.maintenance => () => unawaited(
+      ZadScreens.showMaintenanceScreen(context),
+    ),
     _ => null,
   };
 
@@ -225,16 +227,22 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                                 : Navigator.of(context).maybePop(),
                             icon: const Icon(Icons.arrow_back, color: _textDim),
                           ),
-                          Text(
-                            selected == null
-                                ? 'خريطة زاد'
-                                : mapDomainLabel(selected.key),
-                            style: ZadType.titleMedium.copyWith(
-                              fontFamily: _mono,
-                              fontWeight: FontWeight.bold,
-                              color: selected == null
-                                  ? _text
-                                  : _color(selected),
+                          // Flexible: a long domain name at large text ran
+                          // 28px off a 360dp screen.
+                          Flexible(
+                            child: Text(
+                              selected == null
+                                  ? 'خريطة زاد'
+                                  : mapDomainLabel(selected.key),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ZadType.titleMedium.copyWith(
+                                fontFamily: _mono,
+                                fontWeight: FontWeight.bold,
+                                color: selected == null
+                                    ? _text
+                                    : _color(selected),
+                              ),
                             ),
                           ),
                           if (selected != null) ...<Widget>[
@@ -385,9 +393,16 @@ class _LegendDot extends StatelessWidget {
         color: color.withValues(alpha: dashed ? 0.4 : 0.8),
       ),
       const SizedBox(width: 6),
-      Text(
-        label,
-        style: ZadType.labelSmall.copyWith(fontFamily: _mono, color: _textDim),
+      // Flexible, so a label wider than the legend wraps instead of running
+      // off the screen (39px over on a 360dp phone at 1.3× text).
+      Flexible(
+        child: Text(
+          label,
+          style: ZadType.labelSmall.copyWith(
+            fontFamily: _mono,
+            color: _textDim,
+          ),
+        ),
       ),
     ],
   );
@@ -762,27 +777,31 @@ class _DomainRingState extends State<_DomainRing> {
                 width: 2,
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'زاد',
-                  style: ZadType.titleSmall.copyWith(
-                    fontFamily: _mono,
-                    fontWeight: FontWeight.w900,
-                    color: _bg,
+            // A fixed 72dp circle: scaled down at large text, not cut.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'زاد',
+                    style: ZadType.titleSmall.copyWith(
+                      fontFamily: _mono,
+                      fontWeight: FontWeight.w900,
+                      color: _bg,
+                    ),
                   ),
-                ),
-                Text(
-                  'CORE.3D',
-                  style: ZadType.labelSmall.copyWith(
-                    fontFamily: _mono,
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.bold,
-                    color: _bg.withValues(alpha: 0.85),
+                  Text(
+                    'CORE.3D',
+                    style: ZadType.labelSmall.copyWith(
+                      fontFamily: _mono,
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.bold,
+                      color: _bg.withValues(alpha: 0.85),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

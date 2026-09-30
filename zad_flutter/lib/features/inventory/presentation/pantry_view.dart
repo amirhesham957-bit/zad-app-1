@@ -15,24 +15,26 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/foundation/compose_shadow.dart';
-import 'package:zad/design/tokens/zad_extended_colors.dart';
-import 'package:zad/design/tokens/zad_palette.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
-import 'package:zad/features/affiliate/data/affiliate_repository.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/home/presentation/glance_cards.dart'
-    show foodEmoji;
-import 'package:zad/features/inventory/application/pantry_controller.dart'
-    hide PantryView;
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/data/consumption_learner.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/foundation/compose_shadow.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
-import 'package:zad/features/scan/presentation/camera_screen.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart'
+    hide PantryView;
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/domain/food_emoji.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
 const List<String> kPantryUnits = <String>[
@@ -171,6 +173,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
   late int _tab = widget.shortagesFirst ? 1 : 0;
   String _category = 'الكل';
   String _query = '';
+  // Staples whose brands are open under their card. Closed by default: the
+  // house has «مياه: 8», not six rows of one bottle each (owner, 2026-10-01).
+  final Set<String> _openFamilies = <String>{};
 
   DateTime _today() {
     final now = ref.read(nowProvider)();
@@ -218,9 +223,15 @@ class _PantryViewState extends ConsumerState<PantryView> {
       for (final i in all)
         if (i.daysUntilExpiry(today) case final d? when d <= 3) i,
     ];
+    // A staple under several brands is one stock (product_family.dart):
+    // low once, under the staple's name, when the whole house is low.
     final low = <InventoryItem>[
-      for (final i in all)
-        if (i.quantity <= (i.lowStockThreshold ?? 2)) i,
+      for (final g in groupPantry(all))
+        if (g.isFamily
+            ? g.isLow
+            : g.members.single.quantity <=
+                  (g.members.single.lowStockThreshold ?? 2))
+          g.representative,
     ];
     final shortages = <InventoryItem>[
       ...low,
@@ -234,6 +245,18 @@ class _PantryViewState extends ConsumerState<PantryView> {
             (_query.isEmpty ||
                 i.itemName.toLowerCase().contains(_query.toLowerCase())))
           i,
+    ];
+
+    // The list as stock: a staple's brands under one header with the house
+    // total, then its rows; everything else one row each.
+    final rows = <(InventoryItem?, PantryGroup?, bool)>[
+      for (final g in groupPantry(filtered))
+        if (g.isFamily) ...<(InventoryItem?, PantryGroup?, bool)>[
+          (null, g, false),
+          if (_openFamilies.contains(g.family))
+            for (final m in g.members) (m, null, true),
+        ] else
+          (g.members.single, null, false),
     ];
 
     final header = <Widget>[
@@ -399,7 +422,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
                   title: 'المخزون فارغ',
                   subtitle: 'ابدأ بإضافة منتجات لتنظم مخزون منزلك',
                   action: OutlinedButton.icon(
-                    onPressed: () => unawaited(openZadCamera(context)),
+                    onPressed: () =>
+                        unawaited(ZadScreens.openZadCamera(context)),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -433,22 +457,62 @@ class _PantryViewState extends ConsumerState<PantryView> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
               sliver: SliverList.separated(
-                itemCount: filtered.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemCount: rows.length,
+                separatorBuilder: (_, i) => SizedBox(
+                  // A family's rows sit close under its header.
+                  height:
+                      rows[i].$2 != null &&
+                          i + 1 < rows.length &&
+                          rows[i + 1].$1 != null &&
+                          rows[i + 1].$3
+                      ? 6
+                      : 12,
+                ),
                 itemBuilder: (_, i) {
-                  final item = filtered[i];
+                  final (item, group, grouped) = rows[i];
+                  final Widget child;
+                  if (group != null) {
+                    final open = _openFamilies.contains(group.family);
+                    child = _FamilyCard(
+                      group: group,
+                      open: open,
+                      onToggle: () => setState(
+                        () => open
+                            ? _openFamilies.remove(group.family)
+                            : _openFamilies.add(group.family!),
+                      ),
+                      // One bottle drunk comes off the fullest brand; one
+                      // bought goes on the one there is most of.
+                      onConsume: group.total <= 0
+                          ? null
+                          : () => unawaited(
+                              controller.adjust(
+                                group.members
+                                    .firstWhere((m) => m.quantity > 0)
+                                    .id,
+                                -1,
+                              ),
+                            ),
+                      onRestock: () => unawaited(
+                        controller.adjust(group.members.first.id, 1),
+                      ),
+                    );
+                  } else {
+                    final row = item!;
+                    child = _InventoryItemCard(
+                      item: row,
+                      today: today,
+                      grouped: grouped,
+                      onConsume: () => unawaited(controller.adjust(row.id, -1)),
+                      onRestock: () => unawaited(controller.adjust(row.id, 1)),
+                      onEdit: () =>
+                          unawaited(showEditPantrySheet(context, row)),
+                      onDelete: () => unawaited(controller.remove(row.id)),
+                    );
+                  }
                   return ZadAppearOnEntryDelay(
                     delayMs: math.min(i * 20, 250),
-                    child: _InventoryItemCard(
-                      item: item,
-                      today: today,
-                      onConsume: () =>
-                          unawaited(controller.adjust(item.id, -1)),
-                      onRestock: () => unawaited(controller.adjust(item.id, 1)),
-                      onEdit: () =>
-                          unawaited(showEditPantrySheet(context, item)),
-                      onDelete: () => unawaited(controller.remove(item.id)),
-                    ),
+                    child: child,
                   );
                 },
               ),
@@ -472,7 +536,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
             children: <Widget>[
               FloatingActionButton(
                 heroTag: 'pantry-photo',
-                onPressed: () => unawaited(openZadCamera(context)),
+                onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
                 tooltip: 'تصوير المخزون',
                 backgroundColor: scheme.secondary,
                 foregroundColor: scheme.onSecondary,
@@ -623,23 +687,31 @@ class _LowStockBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            'نواقص المخزون ($count)',
-            style: ZadType.bodySmall.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color: scheme.onErrorContainer,
-            ),
-          ),
+          // One line of two spans, ellipsized together: the title alone was
+          // a fixed Text, and at large text it pushed the row 44px off screen.
           Expanded(
-            child: Text(
-              ' (غير محدد)',
+            child: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: 'نواقص المخزون ($count)',
+                    style: ZadType.bodySmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: scheme.onErrorContainer,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' (غير محدد)',
+                    style: ZadType.labelSmall.copyWith(
+                      fontSize: 11,
+                      color: scheme.onErrorContainer.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: ZadType.labelSmall.copyWith(
-                fontSize: 11,
-                color: scheme.onErrorContainer.withValues(alpha: 0.75),
-              ),
             ),
           ),
           const SizedBox(width: 4),
@@ -871,10 +943,16 @@ class _InventoryItemCard extends StatelessWidget {
     required this.onRestock,
     required this.onEdit,
     required this.onDelete,
+    this.grouped = false,
   });
 
   final InventoryItem item;
   final DateTime today;
+
+  /// One brand of a staple under its family header, which says whether the
+  /// house is low — a single bottle of one brand is not «منخفض» when there
+  /// are seven of the others.
+  final bool grouped;
   final VoidCallback onConsume;
   final VoidCallback onRestock;
   final VoidCallback onEdit;
@@ -885,7 +963,7 @@ class _InventoryItemCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final days = item.daysUntilExpiry(today);
     final def = _defFor(item.category, item.itemName);
-    final isLow = item.quantity <= (item.lowStockThreshold ?? 2);
+    final isLow = !grouped && item.quantity <= (item.lowStockThreshold ?? 2);
 
     Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
         SizedBox.square(
@@ -953,21 +1031,29 @@ class _InventoryItemCard extends StatelessWidget {
                       ),
                       if (isLow) ...<Widget>[
                         const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEE2E2),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: const Text(
-                            'منخفض',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFDC2626),
+                        // Flexible and scaled down, not fixed: on a 320dp
+                        // phone the stepper leaves this column narrower than
+                        // the badge, which overflowed by 30px.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Text(
+                                'منخفض',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFDC2626),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -996,11 +1082,15 @@ class _InventoryItemCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                       ],
-                      Text(
-                        def.key,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Color(0xFF64748B),
+                      Flexible(
+                        child: Text(
+                          def.key,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ],
@@ -1090,6 +1180,118 @@ class _InventoryItemCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A staple as one stock: the house total across its brands, − and +, and
+/// whether it is low. A tap opens the brands under it.
+class _FamilyCard extends StatelessWidget {
+  const new({
+    required this.group,
+    required this.open,
+    required this.onToggle,
+    required this.onRestock,
+    this.onConsume,
+  });
+
+  final PantryGroup group;
+  final bool open;
+  final VoidCallback onToggle;
+  final VoidCallback? onConsume;
+  final VoidCallback onRestock;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final units = group.members.map((m) => m.unit).toSet();
+    final unit = units.length == 1 ? (units.single ?? '') : '';
+    return Material(
+      color: scheme.surface,
+      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.all(ZadSpacing.lg),
+          child: Row(
+            children: <Widget>[
+              Text(foodEmoji(group.name), style: ZadType.titleLarge),
+              const SizedBox(width: ZadSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            group.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.titleMedium,
+                          ),
+                        ),
+                        if (group.isLow) ...<Widget>[
+                          const SizedBox(width: ZadSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.errorContainer,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              group.isOut ? 'خلص' : 'منخفض',
+                              style: ZadType.labelSmall.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: scheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${group.members.length} أنواع · '
+                      '${open ? 'اخفي الأنواع' : 'اعرض الأنواع'}',
+                      style: ZadType.labelSmall.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'استهلكت واحدة',
+                onPressed: onConsume,
+                icon: Icon(
+                  Icons.remove_circle_outline,
+                  color: onConsume == null
+                      ? scheme.outlineVariant
+                      : ZadColors.terracottaRust,
+                ),
+              ),
+              Text(
+                '${group.total} $unit'.trim(),
+                style: ZadType.titleSmall.copyWith(color: scheme.primary),
+              ),
+              IconButton(
+                tooltip: 'زوّد واحدة',
+                onPressed: onRestock,
+                icon: Icon(Icons.add_circle_outline, color: scheme.primary),
+              ),
+              Icon(
+                open ? Icons.expand_less : Icons.expand_more,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -9,22 +9,22 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/app/shell_navigation.dart';
-import 'package:zad/data/local/boxes.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
-import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
+import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _Platform extends SilentPushPlatform {
   String? current = 'token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -193,18 +193,23 @@ void main() {
   });
 
   test(
-    'start registers the token once, and again only when it changes',
+    'every start registers the token again — the server may have dropped it',
     () async {
       await build(AlertPermission.granted);
       final alerts = container.read(alertsControllerProvider.notifier);
 
       await alerts.start();
       await alerts.start();
-      expect(outbox.entries(), hasLength(1));
+      expect(outbox.entries(), hasLength(1), reason: 'one entry at a time');
       await outbox.flush();
 
       await alerts.start();
-      expect(outbox.entries(), isEmpty, reason: 'same token, nothing to send');
+      expect(
+        outbox.entries(),
+        hasLength(1),
+        reason: 'same token, sent again: its row may be gone on the server',
+      );
+      await outbox.flush();
 
       platform.refreshes.add(
         'token-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',

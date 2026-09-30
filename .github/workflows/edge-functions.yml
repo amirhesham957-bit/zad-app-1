@@ -107,6 +107,10 @@ jobs:
         working-directory: supabase/functions/zad-fx-refresh
         run: deno test --allow-all
 
+      - name: Test zad-support
+        working-directory: supabase/functions/zad-support
+        run: deno test --allow-all
+
       - name: Test _shared
         working-directory: supabase/functions/_shared
         run: deno test --allow-all

@@ -3,7 +3,11 @@
 /// customer's tap ("تعبئة ذكية"), never on open.
 library;
 
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/providers.dart';
 
 /// One suggestion.
 typedef GrocerySuggestion = ({String name, String quantity, String reason});
@@ -17,10 +21,12 @@ abstract interface class ShoppingAiRemote {
     int familySize = 4,
   });
 
-  /// A typical price for [itemName], or null.
+  /// A typical price for [itemName] in [location] and [currency], or null.
   Future<double?> estimatePrice({
     required String userId,
     required String itemName,
+    String location = '',
+    String currency = '',
   });
 }
 
@@ -74,12 +80,22 @@ class SupabaseShoppingAiRemote implements ShoppingAiRemote {
   Future<double?> estimatePrice({
     required String userId,
     required String itemName,
+    String location = '',
+    String currency = '',
   }) async {
     final data = await _call('estimate_price', userId, <String, dynamic>{
       'item_name': itemName,
       'store': '',
+      'location': location,
+      'currency': currency,
     });
     final avg = (data['avg_price'] as num?)?.toDouble();
     return avg != null && avg > 0 ? avg : null;
   }
 }
+
+/// The shopping list's two model calls, asked on a tap.
+final Provider<ShoppingAiRemote> shoppingAiRemoteProvider =
+    Provider<ShoppingAiRemote>(
+      (ref) => SupabaseShoppingAiRemote(ref.watch(supabaseClientProvider)),
+    );

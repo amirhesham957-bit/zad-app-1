@@ -5,7 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/nearby/presentation/nearby_view.dart';
 
 /// Opens the page.

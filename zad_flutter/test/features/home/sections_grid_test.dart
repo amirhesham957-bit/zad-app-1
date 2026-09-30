@@ -4,14 +4,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';

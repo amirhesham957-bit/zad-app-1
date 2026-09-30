@@ -48,6 +48,7 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     goal_review: "🎯 زاد بيتابع هدفك",
     store_arrival: "🛒 زاد لاحظ إنك جنب محل",
     habit_budget: "☕ زاد لاحظ عادة بتتكرر",
+    predicted_shortage: "🥛 زاد شايف حاجات هتخلص قريب",
   };
   return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }
@@ -106,11 +107,31 @@ function cleanText(raw: unknown, max: number): string {
 }
 
 /** «لمين؟» — اسم الشخص اللي الدوا/الميعاد ليه، زي ما العميل قاله. null = العميل نفسه. */
+/**
+ * «ماما» و«أمي» و«والدتي» واحدة — كانوا بيتسجلوا ٣ أشخاص عند العقل (ZAD_SUPER_AGENT.md
+ * نقطة ٨). صلة القرابة المعروفة بتتوحّد لاسم واحد؛ أي اسم تاني («سارة»، «عم أحمد») بيفضل
+ * زي ما هو.
+ */
+const KIN: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^(ماما|مامتي|امي|أمي|إمي|والدتي|الوالدة|امى|أمى|mama|mom|mum|mother)$/i, "ماما"],
+  [/^(بابا|باباي|ابويا|أبويا|ابوي|أبوي|ابي|أبي|والدي|الوالد|papa|dad|father)$/i, "بابا"],
+  [/^(تيتا|ستي|ستّي|جدتي|جدّتي|نانا|grandma)$/i, "تيتا"],
+  [/^(جدو|جدي|جدّي|grandpa)$/i, "جدو"],
+  [/^(مراتي|زوجتي|المدام|wife)$/i, "مراتي"],
+  [/^(جوزي|زوجي|husband)$/i, "جوزي"],
+];
+
 export function normalizeForPerson(raw: unknown): string | null {
-  const name = cleanText(raw, 40);
+  let name = cleanText(raw, 40);
+  if (!name) return null;
+  // «لماما» / «لـ ماما» — حرف الجر مش جزء من الاسم (بس قدام صلة قرابة، عشان «لينا» تفضل اسم).
+  name = name.replace(/^لـ\s*/, "").replace(/^ل(?=(ماما|بابا|تيتا|جدو|مراتي|جوزي|امي|أمي|ابويا|أبويا|والدتي|والدي)$)/, "").trim();
   if (!name) return null;
   // «أنا»/«ليا» = العميل نفسه، مش شخص تاني اسمه «أنا».
   if (/^(انا|أنا|ليا|لي|نفسي|me|myself)$/i.test(name)) return null;
+  for (const [re, canonical] of KIN) {
+    if (re.test(name)) return canonical;
+  }
   return name;
 }
 
@@ -493,6 +514,48 @@ export function localNowContext(timeZone: string, now: Date = new Date()): {
   const time = `${hour}:${parts.minute}`;
   const weekday = new Intl.DateTimeFormat("ar-EG", { timeZone: tz, weekday: "long" }).format(now);
   return { iso_local: `${date}T${time}:00${utcOffset}`, date, time, weekday, utc_offset: utcOffset, time_zone: tz };
+}
+
+// ── ساعات الهدوء (الفجوة ١٠، قرار المالك ٢٠٢٦-٠٩-٢٩) ─────────────────────────
+// من ١١ بالليل لـ٧ الصبح بتوقيت سوق العميل، مش توقيت السيرفر. الجرعات مستثناة
+// بالكامل؛ المستثنيات التانية جنب كل مستخدم (voiceMoments.ts، processDueAgentTasks).
+export const QUIET_START_HOUR = 23;
+export const QUIET_END_HOUR = 7;
+
+/** الساعة المحلية (٠-٢٣) جوه الهدوء؟ */
+export function isQuietHour(localHour: number): boolean {
+  return localHour >= QUIET_START_HOUR || localHour < QUIET_END_HOUR;
+}
+
+/** الساعة المحلية دلوقتي في [timeZone]. */
+export function localHourIn(timeZone: string, nowMs: number): number {
+  return Number(localNowContext(timeZone, new Date(nowMs)).time.slice(0, 2));
+}
+
+/**
+ * إمتى الهدوء يخلص: ٧ الصبح الجاية بتوقيت العميل، كلحظة UTC. `null` لو الوقت مش هدوء.
+ * بعد ١١ بالليل = ٧ بكرة؛ بعد نص الليل = ٧ النهارده.
+ */
+export function quietEndsAt(timeZone: string, nowMs: number): string | null {
+  const local = localNowContext(timeZone, new Date(nowMs));
+  const hour = Number(local.time.slice(0, 2));
+  if (!isQuietHour(hour)) return null;
+  let date = local.date;
+  if (hour >= QUIET_START_HOUR) {
+    const next = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000);
+    date = next.toISOString().slice(0, 10);
+  }
+  return resolveLocalIso(`${date}T${String(QUIET_END_HOUR).padStart(2, "0")}:00`, local.utc_offset);
+}
+
+/**
+ * مبادرة (مش طلب من العميل) استحقت جوه الهدوء ⇐ تتأجل لـ٧ الصبح بتوقيته. `null` = نفّذ.
+ * متابعة الدوا مستثناة زي الجرعات (قرار المالك)، وطلبات العميل (`reminder`) عمرها ما
+ * بتتأجل — هو اللي اختار الوقت.
+ */
+export function postponeForQuietHours(kind: string | null | undefined, timeZone: string, nowMs: number): string | null {
+  if (!agentTaskNotice(kind).proactive || (kind ?? "").trim() === "med_followup") return null;
+  return quietEndsAt(timeZone, nowMs);
 }
 
 /**

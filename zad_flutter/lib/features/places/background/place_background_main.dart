@@ -10,11 +10,11 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/env/zad_env.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
-import 'package:zad/features/nearby/data/nearby_remote.dart';
-import 'package:zad/features/places/application/place_engine.dart';
-import 'package:zad/features/places/data/place_server.dart';
-import 'package:zad/features/places/domain/places.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad/shared/places/data/place_server.dart';
+import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
 /// Entry point for the headless engine. Must stay top-level with the pragma,

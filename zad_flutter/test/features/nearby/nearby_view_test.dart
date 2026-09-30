@@ -6,12 +6,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/design/zad_theme.dart';
+import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/nearby/application/nearby_controller.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
 import 'package:zad/features/nearby/presentation/nearby_view.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
 
 class _Nearby extends NearbyController {
   new(this.initial);

@@ -17,10 +17,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `hide TextDirection`: the price field needs dart:ui's, digits left to right.
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:zad/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
-import 'package:zad/features/prices/domain/prices.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
 
 /// Opens the prices screen.
 Future<void> showPricesScreen(BuildContext context) =>
@@ -446,7 +447,9 @@ class _DashboardState extends ConsumerState<CrowdsourceDashboard> {
           onSearch: () => unawaited(controller.setCity(_location.text)),
           onReportPrice: widget.onReportPrice,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
+        AreaTrendsSection(trends: view.trends),
+        const SizedBox(height: 24),
         Text(
           'أكثر المشاركين 🏆',
           style: ZadType.titleMedium.copyWith(
@@ -775,3 +778,99 @@ class _CheapestNearYou extends StatelessWidget {
 /// A price without grouping noise: `12.5`, `1,250`.
 String formatPrice(double value) =>
     NumberFormat('#,##0.##', 'en').format(value);
+
+/// «ترندات سوقك»: what enough homes in the market bought or listed lately.
+///
+/// Only what the server let through — an item at five homes or more, a
+/// family counting once — so there are no stores, prices or people here,
+/// and an empty list is the honest answer while the market is small.
+class AreaTrendsSection extends StatelessWidget {
+  /// Creates the section.
+  const new({required this.trends, super.key});
+
+  /// The last answer, or null before the first.
+  final AreaTrends? trends;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = trends;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          'ترندات سوقك',
+          style: ZadType.titleMedium.copyWith(
+            fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر '
+          '${t?.days ?? 14} يوم — من غير أسماء ولا محلات',
+          style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 12),
+        if (t == null || t.items.isEmpty)
+          KtEmptyState(
+            icon: Icons.groups_outlined,
+            title: t?.noMarket ?? false
+                ? 'اختار بلدك الأول'
+                : 'لسه مفيش ترند في سوقك',
+            subtitle: t?.noMarket ?? false
+                ? 'الترندات بتتحسب لكل بلد لوحده.'
+                : 'الصنف بيظهر هنا لما ${t?.minHouseholds ?? 5} بيوت مختلفة '
+                      'على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش '
+                      'يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.',
+          )
+        else
+          for (final trend in t.items) _TrendRow(trend: trend),
+      ],
+    );
+  }
+}
+
+class _TrendRow extends StatelessWidget {
+  const new({required this.trend});
+
+  final AreaTrend trend;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final (
+      IconData icon,
+      Color color,
+      String label,
+    ) = switch (trend.direction) {
+      TrendDirection.up => (Icons.trending_up, ZadColors.green700, 'بيزيد'),
+      TrendDirection.down => (
+        Icons.trending_down,
+        ZadColors.terracottaRust,
+        'بيقل',
+      ),
+      TrendDirection.flat => (Icons.trending_flat, scheme.outline, 'ثابت'),
+      TrendDirection.fresh => (Icons.fiber_new, scheme.primary, 'جديد'),
+    };
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, color: color, size: 20, semanticLabel: label),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              trend.item,
+              style: ZadType.bodyLarge.copyWith(color: scheme.onSurface),
+            ),
+          ),
+          Text(
+            '${trend.households} بيوت',
+            style: ZadType.labelMedium.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -11,19 +11,19 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:zad/data/providers.dart';
-import 'package:zad/data/sync/outbox.dart';
-import 'package:zad/data/sync/outbox_entry.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/inventory/data/inventory_remote.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/inventory/data/inventory_remote.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 class _Camera implements ReceiptCamera {
   @override
