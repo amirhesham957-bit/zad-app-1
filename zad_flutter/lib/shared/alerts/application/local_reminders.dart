@@ -46,6 +46,14 @@ int _stableId(String key) {
   return (h & 0x0FFFFFFF) | 0x10000000;
 }
 
+/// The medicines that get a daily reminder on the phone: the ones the
+/// server's cron would remind about too ([Medicine.isScheduled]). Every
+/// medicine with dose times used to get one — the owner's two finished
+/// courses (nothing left, 2026-10-01) still rang at 01:00 and 13:00 every
+/// day, though the pharmacy screen and the server had stopped asking.
+Iterable<Medicine> medicinesToRemind(List<Medicine> medicines) =>
+    medicines.where((m) => m.isScheduled);
+
 /// Schedules and cancels the local reminders.
 class LocalReminders {
   /// Wraps a provider container's reader.
@@ -155,7 +163,7 @@ class LocalReminders {
     final zone = _zone;
     final now = tz.TZDateTime.now(zone);
     final scheduled = <int>{};
-    for (final m in medicines) {
+    for (final m in medicinesToRemind(medicines)) {
       for (final t in m.doseTimes) {
         final id = _stableId('${m.id}|$t');
         var at = tz.TZDateTime(
