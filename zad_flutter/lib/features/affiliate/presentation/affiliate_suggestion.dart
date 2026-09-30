@@ -24,9 +24,9 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/affiliate/data/affiliate_repository.dart';
-import 'package:zad/features/affiliate/domain/affiliate.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
 
 String _price(double v) => NumberFormat('#,##0.##', 'en').format(v);
 

@@ -11,10 +11,10 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/data/family_repository.dart';
-import 'package:zad/features/family/domain/family.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/family/domain/family.dart';
 
 import '../../support/quiet_household.dart';
 

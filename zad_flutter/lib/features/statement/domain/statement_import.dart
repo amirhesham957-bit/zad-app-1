@@ -5,7 +5,7 @@
 library;
 
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// A read CSV: the header row and the rest.
 typedef CsvTable = ({List<String> headers, List<List<String>> rows});

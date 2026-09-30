@@ -13,18 +13,18 @@ import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/alerts/application/local_reminders.dart';
-import 'package:zad/features/alerts/data/alert_prefs.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
-import 'package:zad/features/bank/data/bank_rejected_log.dart';
-import 'package:zad/features/bank/data/notification_drain.dart';
-import 'package:zad/features/bank/domain/bank_notification.dart';
 import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/bank/data/bank_rejected_log.dart';
+import 'package:zad/shared/bank/data/notification_drain.dart';
+import 'package:zad/shared/bank/domain/bank_notification.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 Future<void> _push(BuildContext context, Widget screen) =>
     Navigator.of(context)

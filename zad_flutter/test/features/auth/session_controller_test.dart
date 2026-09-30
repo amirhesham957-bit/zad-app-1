@@ -16,18 +16,18 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/data/sync/outbox_runner.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
-import 'package:zad/features/auth/application/session_controller.dart';
-import 'package:zad/features/auth/data/auth_gateway.dart';
-import 'package:zad/features/auth/domain/auth_failure.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/application/brain_health_controller.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/data/memory_repository.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
+import 'package:zad/shared/auth/data/auth_gateway.dart';
+import 'package:zad/shared/auth/domain/auth_failure.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/data/memory_repository.dart';
 
 class _FakeGateway implements AuthGateway {
   new(this.userId);

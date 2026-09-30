@@ -15,15 +15,15 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
-import 'package:zad/features/inventory/data/consumption_observations.dart';
-import 'package:zad/features/inventory/data/inventory_remote.dart';
-import 'package:zad/features/inventory/data/inventory_repository.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/scan/application/photo_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
+import 'package:zad/shared/inventory/data/consumption_observations.dart';
+import 'package:zad/shared/inventory/data/inventory_remote.dart';
+import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/data/vision_scanner.dart';
 
 class _Camera implements ReceiptCamera {
   Uint8List? image = Uint8List.fromList(<int>[1]);

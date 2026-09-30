@@ -12,14 +12,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/orb/application/companion_mood.dart';
-import 'package:zad/features/orb/domain/companion_state.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
-import 'package:zad/features/voice/zad_voice.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/orb/application/companion_mood.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/application/zad_voice.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];

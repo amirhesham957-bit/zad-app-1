@@ -14,12 +14,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
-import 'package:zad/features/inventory/data/inventory_remote.dart';
-import 'package:zad/features/inventory/data/inventory_repository.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
-import 'package:zad/features/inventory/domain/shortage.dart';
+import 'package:zad/shared/inventory/data/inventory_remote.dart';
+import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 
 class _FakeInventoryRemote implements InventoryRemote {
   List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];

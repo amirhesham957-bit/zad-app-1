@@ -15,15 +15,15 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/inventory/data/inventory_remote.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
 import 'package:zad/features/nearby/application/nearby_controller.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
-import 'package:zad/features/nearby/data/nearby_remote.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_remote.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/inventory/data/inventory_remote.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_remote.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 
 const GeoPoint _home = GeoPoint(30.044420, 31.235712);
 

@@ -16,11 +16,12 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
 
 const EdgeInsets _listPadding = EdgeInsets.fromLTRB(
   ZadSpacing.gutter,

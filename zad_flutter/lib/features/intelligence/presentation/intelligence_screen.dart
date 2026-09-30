@@ -28,21 +28,21 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family_life.dart';
+import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
-import 'package:zad/features/intelligence/presentation/intelligence_chat_card.dart';
-import 'package:zad/features/orb/application/companion_mood.dart';
-import 'package:zad/features/orb/presentation/companion_orb.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
+import 'package:zad/shared/orb/application/companion_mood.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the screen.
 Future<void> showIntelligenceScreen(BuildContext context) =>

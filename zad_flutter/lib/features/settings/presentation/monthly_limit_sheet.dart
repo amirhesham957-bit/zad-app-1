@@ -21,11 +21,11 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
 import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the sheet.
 Future<void> showMonthlyLimitSheet(BuildContext context) =>

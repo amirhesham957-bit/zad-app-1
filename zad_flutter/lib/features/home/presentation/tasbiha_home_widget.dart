@@ -15,9 +15,9 @@ import 'package:lottie/lottie.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
-import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
-import 'package:zad/features/tasbiha/domain/tasbiha.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
+import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
 // ZadSprings.Celebrate (0.4 / 500) out, ZadSprings.Press (0.55 / 600) back.
 const SpringDescription _celebrate = SpringDescription(

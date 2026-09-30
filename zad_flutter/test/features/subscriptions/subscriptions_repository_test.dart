@@ -9,11 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_remote.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
-import 'package:zad/features/subscriptions/domain/renewal.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_remote.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/subscriptions/domain/renewal.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 /// Stands in for `zad_subscriptions`.
 class _FakeRemote implements SubscriptionsRemote {

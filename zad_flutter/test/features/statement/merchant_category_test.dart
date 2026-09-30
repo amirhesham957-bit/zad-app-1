@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
-import 'package:zad/features/transactions/data/merchant_categories.dart';
+import 'package:zad/shared/transactions/data/merchant_categories.dart';
 
 void main() {
   const table = (

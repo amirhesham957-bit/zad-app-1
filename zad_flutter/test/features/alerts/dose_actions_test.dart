@@ -2,11 +2,11 @@
 // buttons: the press answers that exact dose, once.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
-import 'package:zad/features/pharmacy/domain/dose_slot.dart';
-import 'package:zad/features/pharmacy/domain/dose_time.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/dose_time.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 void main() {
   test('the payload names the medicine and the time, and nothing else', () {

@@ -8,7 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
 
 /// Opens the form over [current].
 Future<CustomerProfile?> showProfileSheet(

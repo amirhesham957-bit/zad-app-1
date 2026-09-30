@@ -23,10 +23,10 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/period/account_time_zone.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Opens the screen.

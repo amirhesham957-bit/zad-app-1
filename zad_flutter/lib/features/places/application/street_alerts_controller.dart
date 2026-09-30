@@ -7,13 +7,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/auth/application/session_controller.dart';
-import 'package:zad/features/nearby/application/nearby_controller.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
-import 'package:zad/features/places/application/place_engine.dart';
 import 'package:zad/features/places/data/background_location.dart';
-import 'package:zad/features/places/domain/places.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
 /// Where the switch stands.

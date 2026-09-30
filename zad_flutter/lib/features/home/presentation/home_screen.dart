@@ -19,16 +19,12 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/bank/presentation/stuck_notifications.dart';
 import 'package:zad/features/brain/presentation/why_changed_sheet.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
-import 'package:zad/features/home/presentation/home_chef_section.dart';
-import 'package:zad/features/home/presentation/home_reports_row.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
@@ -38,12 +34,16 @@ import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/week_with_zad.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/insights/presentation/insight_cards.dart';
+import 'package:zad/features/intelligence/presentation/home_reports_row.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/prices/presentation/live_market_ticker.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
+import 'package:zad/features/recipes/presentation/home_chef_section.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/telegram/presentation/telegram_binding.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 
 /// Home.
 ///

@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
-import 'package:zad/features/bank/data/notification_ingest.dart';
+import 'package:zad/shared/bank/data/notification_ingest.dart';
 
 void main() {
   late Directory dir;

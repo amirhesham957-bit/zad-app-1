@@ -18,8 +18,9 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/photo_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
+import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/data/vision_scanner.dart';
 
 /// Opens the pantry photo.
 Future<void> showPantryPhotoSheet(BuildContext context) =>

@@ -14,10 +14,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/fx.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// Kotlin's `unconvertibleTxCount`: transactions in a currency other than
 /// the account's with no rate to convert them, left out of the totals.

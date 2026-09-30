@@ -25,11 +25,11 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
 
 const Color _bg = ZadPalette.sciFiBg;
 const Color _grid = ZadPalette.sciFiGrid;

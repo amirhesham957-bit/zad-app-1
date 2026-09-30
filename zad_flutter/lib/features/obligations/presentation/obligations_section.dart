@@ -15,9 +15,9 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 

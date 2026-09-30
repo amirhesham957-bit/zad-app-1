@@ -20,11 +20,11 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/alerts/presentation/alerts_settings_section.dart';
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
 import 'package:zad/features/bank/presentation/bank_access_guide_screen.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// Opens the settings screen.
 Future<void> showSettingsScreen(BuildContext context) => Navigator.of(

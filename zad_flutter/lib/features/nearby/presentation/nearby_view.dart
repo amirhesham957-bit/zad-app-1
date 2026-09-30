@@ -16,8 +16,8 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/nearby/application/nearby_controller.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
 
 /// The "near you" tab.
 class NearbyList extends ConsumerStatefulWidget {

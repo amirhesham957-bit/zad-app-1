@@ -13,9 +13,9 @@
 /// whole answers.
 library;
 
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 /// One recipe.
 class Recipe {

@@ -10,7 +10,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:zad/features/auth/domain/auth_failure.dart';
+import 'package:zad/shared/auth/domain/auth_failure.dart';
 
 void main() {
   group('a failure that never reached the server', () {

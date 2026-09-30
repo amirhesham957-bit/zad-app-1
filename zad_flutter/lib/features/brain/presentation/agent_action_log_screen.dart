@@ -16,12 +16,11 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/period/account_time_zone.dart';
+import 'package:zad/core/period/when_label.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
-import 'package:zad/features/notifications/presentation/notification_center_screen.dart'
-    show whenLabel;
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// Opens the log.
 Future<void> showAgentActionLog(BuildContext context) => Navigator.of(context)

@@ -19,8 +19,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
-import 'package:zad/features/bank/data/notification_drain.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 /// Opens the guide.

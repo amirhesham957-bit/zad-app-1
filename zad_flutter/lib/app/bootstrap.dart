@@ -18,11 +18,11 @@ import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/bank/background/bank_background_main.dart';
-import 'package:zad/features/places/application/place_engine.dart';
 import 'package:zad/features/places/background/place_background_main.dart';
 import 'package:zad/features/places/data/background_location.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 

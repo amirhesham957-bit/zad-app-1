@@ -11,12 +11,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
-import 'package:zad/features/nearby/data/location_source.dart';
 import 'package:zad/features/nearby/data/nearby_repository.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
-import 'package:zad/features/places/data/place_server.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/places/data/place_server.dart';
 
 /// What the tab draws.
 class NearbyView {
@@ -231,11 +231,6 @@ class NearbyController extends Notifier<NearbyView> {
 final lastLocationSinkProvider = Provider<Future<void> Function(GeoPoint)>(
   (ref) =>
       SupabasePlaceServer(ref.watch(supabaseClientProvider)).saveLastLocation,
-);
-
-/// The phone's location.
-final locationSourceProvider = Provider<LocationSource>(
-  (ref) => const GeolocatorSource(),
 );
 
 /// Shops near the customer.

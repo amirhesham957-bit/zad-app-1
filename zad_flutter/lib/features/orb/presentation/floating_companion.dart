@@ -17,10 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/features/orb/application/companion_mood.dart';
-import 'package:zad/features/orb/application/pet_sound.dart';
-import 'package:zad/features/orb/domain/companion_state.dart';
-import 'package:zad/features/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/orb/application/companion_mood.dart';
+import 'package:zad/shared/orb/application/pet_sound.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// The floating orb. Put it in a [Stack] over the screen's body.
 class FloatingCompanion extends ConsumerStatefulWidget {

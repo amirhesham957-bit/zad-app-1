@@ -14,13 +14,14 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/data/family_repository.dart';
-import 'package:zad/features/family/domain/family.dart';
 import 'package:zad/features/family/presentation/family_chat_tab.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_tabs.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/family/domain/family.dart';
 
 /// Opens the screen on [initialTab] — 0 الشات, 1 المهام, 2 الأعضاء,
 /// 3 البقالة (and, for a parent, 4 الأبناء, 5 الأهداف).

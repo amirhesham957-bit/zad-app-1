@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/home/presentation/metrics_duo.dart';
+import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
 
 void main() {
   test('the safe daily spend spreads what is spendable over the days left', () {

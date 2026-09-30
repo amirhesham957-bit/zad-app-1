@@ -19,8 +19,8 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// Opens the screen.
 Future<void> showMaintenanceScreen(BuildContext context) =>

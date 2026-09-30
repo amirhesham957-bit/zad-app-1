@@ -5,9 +5,9 @@
 // and what the plan does with duplicates and the shopping list.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
-import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 
 Medicine _med(String id, String name, {String unit = 'قرص', int left = 3}) =>
     Medicine(

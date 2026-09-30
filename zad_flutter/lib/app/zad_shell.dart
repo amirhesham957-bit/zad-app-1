@@ -16,30 +16,30 @@ import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
-import 'package:zad/features/alerts/application/local_reminders.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/kids_shell.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
-import 'package:zad/features/notifications/application/notifications_controller.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/orb/presentation/floating_companion.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
-import 'package:zad/features/voice/zad_voice_sheet.dart';
+import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// Holds the tabs.
 class ZadShell extends ConsumerStatefulWidget {

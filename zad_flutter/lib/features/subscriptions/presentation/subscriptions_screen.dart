@@ -22,11 +22,11 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/domain/renewal.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/renewal.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 /// Opens the screen.
 Future<void> showSubscriptionsScreen(BuildContext context) =>

@@ -13,18 +13,18 @@ import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
-import 'package:zad/features/alerts/data/alert_prefs.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
-import 'package:zad/features/alerts/domain/push_alert.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
+import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _Platform extends SilentPushPlatform {
   String? current = 'token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';

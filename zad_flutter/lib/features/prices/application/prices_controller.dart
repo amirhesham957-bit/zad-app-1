@@ -10,10 +10,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
-import 'package:zad/features/prices/domain/prices.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/prices/domain/prices.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 /// What the prices screen draws.
 class PricesView {

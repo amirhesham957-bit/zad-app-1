@@ -17,10 +17,10 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/proposals/application/proposals_controller.dart';
-import 'package:zad/features/proposals/domain/transaction_proposal.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 /// The list of things to answer.
 class ProposalsScreen extends ConsumerWidget {

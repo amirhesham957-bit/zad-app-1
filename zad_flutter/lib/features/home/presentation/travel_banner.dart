@@ -11,9 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/market/application/switch_market.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
+import 'package:zad/shared/market/application/switch_market.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
 
 const MethodChannel _channel = MethodChannel('zad/travel');
 const String _dismissedKey = 'dismissed_travel_country';

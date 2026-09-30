@@ -10,10 +10,11 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/inventory/domain/receipt_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
+import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/data/vision_scanner.dart';
 
 /// What was photographed.
 enum PhotoKind {

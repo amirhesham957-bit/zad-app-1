@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/goals/data/life_goals_remote.dart';
-import 'package:zad/features/goals/domain/life_goal_seed.dart';
+import 'package:zad/shared/goals/data/life_goals_remote.dart';
+import 'package:zad/shared/goals/domain/life_goal_seed.dart';
 
 /// Opens the sheet. Resolves true when a goal was saved.
 Future<bool> showLifeGoalPickerSheet(BuildContext context) async {

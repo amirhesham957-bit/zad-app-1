@@ -22,22 +22,22 @@ import 'package:zad/features/achievements/presentation/achievements_screen.dart'
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
-import 'package:zad/features/budget/data/category_budgets_store.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
-import 'package:zad/features/market/application/market_gate_controller.dart';
-import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
 import 'package:zad/features/profile/presentation/profile_sub_screens.dart';
 import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/support/presentation/help_support_screen.dart';
 import 'package:zad/features/support/presentation/terms_screen.dart';
+import 'package:zad/shared/budget/data/category_budgets_store.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/market/application/market_gate_controller.dart';
+import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
 
 /// Opens the profile.
 Future<void> showProfileScreen(BuildContext context) => Navigator.of(context)

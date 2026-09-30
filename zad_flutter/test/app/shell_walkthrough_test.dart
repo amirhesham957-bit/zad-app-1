@@ -23,10 +23,10 @@ import 'package:zad/app/zad_shell.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 import '../support/fonts.dart';
 import '../support/quiet_household.dart';

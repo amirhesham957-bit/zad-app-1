@@ -18,9 +18,9 @@ import 'package:uuid/uuid.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
 import 'package:zad/features/recipes/data/recipes_remote.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
 
 /// The chef answered, but with nothing — the model failed upstream.
 class ChefUnavailable implements Exception {

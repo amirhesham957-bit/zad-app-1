@@ -23,10 +23,11 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 
 /// Opens the scanner.
 Future<void> showReceiptScanSheet(BuildContext context, WidgetRef ref) {

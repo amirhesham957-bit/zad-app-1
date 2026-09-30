@@ -9,15 +9,15 @@ library;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/alerts/application/local_reminders.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/data/family_repository.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/modes/application/modes_controller.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
-import 'package:zad/features/pharmacy/domain/dose_slot.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 /// A pantry that shows [view] and does nothing else.
 class QuietPantry extends PantryController {

@@ -12,19 +12,18 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/budget/presentation/finances_screen.dart'
-    show categoryBudgetsProvider;
 import 'package:zad/features/intelligence/data/report_pdf.dart';
 import 'package:zad/features/intelligence/domain/brain_report.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/data/consumption_learner.dart';
-import 'package:zad/features/scan/domain/scanned_receipt.dart'
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/application/category_budgets_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/scan/domain/scanned_receipt.dart'
     show kStandardCategories;
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// Builds the month's report on the phone, writes Kotlin's PDF and hands it
 /// to the share sheet. Shared by the brain screen's button and the home

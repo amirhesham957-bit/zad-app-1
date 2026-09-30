@@ -15,18 +15,18 @@ import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 
 /// Kotlin's `ZadSectionAccent`, light values: a tile's icon colour, with its
 /// container at 12%.

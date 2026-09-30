@@ -22,21 +22,21 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/chat/application/chat_controller.dart';
-import 'package:zad/features/chat/application/voice_input_controller.dart';
-import 'package:zad/features/chat/data/agent_remote.dart';
-import 'package:zad/features/chat/data/chat_repository.dart';
-import 'package:zad/features/chat/domain/agent_screen.dart';
-import 'package:zad/features/chat/domain/agent_turn.dart';
-import 'package:zad/features/chat/domain/chat_message.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/voice/application/voice_output_controller.dart';
-import 'package:zad/features/voice/data/voice_player.dart';
-import 'package:zad/features/voice/data/voice_synthesizer.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/chat/data/agent_remote.dart';
+import 'package:zad/shared/chat/data/chat_repository.dart';
+import 'package:zad/shared/chat/domain/agent_screen.dart';
+import 'package:zad/shared/chat/domain/agent_turn.dart';
+import 'package:zad/shared/chat/domain/chat_message.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/voice/data/voice_player.dart';
+import 'package:zad/shared/voice/data/voice_synthesizer.dart';
 
 class _FakeAgent implements AgentRemote {
   /// Driven by the test, so a turn can be observed mid-flight.

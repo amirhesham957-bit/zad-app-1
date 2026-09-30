@@ -19,10 +19,10 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
-import 'package:zad/features/tasbiha/domain/tasbiha.dart';
 import 'package:zad/features/tasbiha/presentation/leaderboard_share.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
+import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
 /// Opens the garden.
 Future<void> showTasbihaScreen(BuildContext context) => Navigator.of(context)

@@ -12,10 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/brain/application/memory_controller.dart';
-import 'package:zad/features/brain/domain/customer_profile.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';
-import 'package:zad/features/profile/application/profile_controller.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
+import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/profile/application/profile_controller.dart';
 
 /// Kotlin's `needsIntroduction`.
 bool needsIntroduction(CustomerProfile? profile) =>

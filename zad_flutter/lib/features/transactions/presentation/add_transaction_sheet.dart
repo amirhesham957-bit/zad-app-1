@@ -17,10 +17,10 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the sheet.
 Future<void> showAddTransactionSheet(BuildContext context) =>

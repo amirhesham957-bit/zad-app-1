@@ -18,15 +18,15 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/auth/data/auth_gateway.dart';
-import 'package:zad/features/budget/data/budget_repository.dart';
-import 'package:zad/features/market/application/market_gate_controller.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/settings/domain/account_settings.dart';
-import 'package:zad/features/transactions/data/transactions_remote.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/auth/data/auth_gateway.dart';
+import 'package:zad/shared/budget/data/budget_repository.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/application/market_gate_controller.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
+import 'package:zad/shared/transactions/data/transactions_remote.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 class _Gateway implements AuthGateway {
   @override

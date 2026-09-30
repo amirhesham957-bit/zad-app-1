@@ -25,12 +25,11 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/period/account_time_zone.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/home/presentation/metrics_duo.dart'
-    show safeDailySpend;
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 
 /// What the sheet shows.
 class ExecutiveDossier {

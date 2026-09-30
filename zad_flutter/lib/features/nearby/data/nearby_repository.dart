@@ -15,8 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/nearby/data/nearby_remote.dart';
-import 'package:zad/features/nearby/domain/nearby.dart';
+import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/nearby/domain/nearby.dart';
 
 /// What was found around one point.
 class NearbySnapshot {

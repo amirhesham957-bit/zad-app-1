@@ -13,12 +13,12 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/orb/application/orb_accessory_controller.dart';
-import 'package:zad/features/orb/domain/orb_accessory.dart';
-import 'package:zad/features/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
+import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
+import 'package:zad/shared/orb/domain/orb_accessory.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// Opens «زيّن زاد».
 Future<void> showOrbPicker(BuildContext context) =>

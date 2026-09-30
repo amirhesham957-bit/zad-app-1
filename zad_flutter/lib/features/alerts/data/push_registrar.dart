@@ -22,7 +22,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/data/sync/sync_failure.dart';
-import 'package:zad/features/alerts/data/push_platform.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
 
 /// The server side of the token.
 abstract interface class PushTokenRemote {

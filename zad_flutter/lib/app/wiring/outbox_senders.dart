@@ -8,18 +8,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
-import 'package:zad/features/insights/data/insights_repository.dart';
-import 'package:zad/features/inventory/data/consumption_observations.dart';
-import 'package:zad/features/inventory/data/inventory_repository.dart';
-import 'package:zad/features/inventory/data/shopping_list_repository.dart';
-import 'package:zad/features/notifications/data/notifications_repository.dart';
 import 'package:zad/features/obligations/data/obligations_repository.dart';
-import 'package:zad/features/pharmacy/data/pharmacy_repository.dart';
-import 'package:zad/features/prices/data/prices_repository.dart';
 import 'package:zad/features/recipes/data/recipes_repository.dart';
-import 'package:zad/features/settings/data/settings_repository.dart';
-import 'package:zad/features/subscriptions/data/subscriptions_repository.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/insights/data/insights_repository.dart';
+import 'package:zad/shared/inventory/data/consumption_observations.dart';
+import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/notifications/data/notifications_repository.dart';
+import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 /// Sends [entry] through the repository its kind belongs to.
 Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>

@@ -23,12 +23,12 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/env/zad_env.dart';
-import 'package:zad/features/affiliate/data/affiliate_repository.dart';
-import 'package:zad/features/affiliate/domain/affiliate.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/inventory/application/pantry_controller.dart';
-import 'package:zad/features/inventory/application/shopping_controller.dart';
-import 'package:zad/features/modes/application/modes_controller.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/modes/application/modes_controller.dart';
 
 /// Kotlin's `AmazonRecommendation`.
 @immutable

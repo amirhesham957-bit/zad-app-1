@@ -13,11 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
+import 'package:zad/core/design/components/zad_auth_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/auth/presentation/login_screen.dart';
-import 'package:zad/features/market/application/market_gate_controller.dart';
-import 'package:zad/features/market/domain/market.dart';
-import 'package:zad/features/market/presentation/market_picker_grid.dart';
+import 'package:zad/shared/market/application/market_gate_controller.dart';
+import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/market/presentation/market_picker_grid.dart';
 
 /// The market picker.
 class MarketSelectionScreen extends ConsumerStatefulWidget {

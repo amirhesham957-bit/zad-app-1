@@ -16,11 +16,11 @@ import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/modes/application/modes_controller.dart';
-import 'package:zad/features/tasbiha/application/tasbiha_controller.dart';
-import 'package:zad/features/transactions/data/transactions_repository.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
+import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Kotlin's `WeekSummary.Tone`.
 enum WeekTone {

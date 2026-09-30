@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/auth/application/session_controller.dart';
-import 'package:zad/features/auth/domain/auth_failure.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
+import 'package:zad/shared/auth/domain/auth_failure.dart';
 
 /// Signs out, after asking — and after saying what it would cost.
 class SignOutAction extends ConsumerWidget {

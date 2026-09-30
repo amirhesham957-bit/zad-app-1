@@ -9,18 +9,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
-import 'package:zad/features/family/application/family_controller.dart';
-import 'package:zad/features/family/data/family_repository.dart';
-import 'package:zad/features/pharmacy/application/pharmacy_controller.dart'
-    as pc;
-import 'package:zad/features/pharmacy/domain/medicine.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
-import 'package:zad/features/scan/application/scan_controller.dart';
-import 'package:zad/features/scan/data/receipt_scanner.dart';
-import 'package:zad/features/scan/data/vision_scanner.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as pc;
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/data/vision_scanner.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 import '../../support/quiet_household.dart';
 

@@ -8,11 +8,11 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
-import 'package:zad/features/budget/domain/budget_snapshot.dart';
-import 'package:zad/features/inventory/domain/inventory_item.dart';
-import 'package:zad/features/inventory/domain/shopping_item.dart';
-import 'package:zad/features/pharmacy/domain/medicine.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 
 const _milk = MapStock('لبن', '1 علبة');
 const _milkLine = MapStock('لبن كامل الدسم', '× 2', price: 60);

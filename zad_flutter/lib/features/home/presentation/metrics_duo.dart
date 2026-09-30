@@ -8,11 +8,7 @@ import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-
-/// The safe daily spend: what is spendable spread over the days that are
-/// left, or all of it on the last day — Kotlin's arithmetic exactly.
-double safeDailySpend({required double spendable, required int daysLeft}) =>
-    daysLeft > 0 ? spendable / daysLeft : spendable;
+import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
 
 /// The pair.
 class HomeMetricsDuo extends StatelessWidget {

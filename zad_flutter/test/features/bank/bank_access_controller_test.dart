@@ -12,9 +12,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/bank/application/bank_access_controller.dart';
-import 'package:zad/features/bank/data/bank_capture_marker.dart';
-import 'package:zad/features/bank/data/notification_drain.dart';
+import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/bank/data/bank_capture_marker.dart';
+import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 class _FakeListener implements ZadBankListener {

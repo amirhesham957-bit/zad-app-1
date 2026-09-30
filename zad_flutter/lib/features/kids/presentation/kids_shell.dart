@@ -10,9 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
-import 'package:zad/features/kids/application/kids_mode_controller.dart';
 import 'package:zad/features/kids/presentation/kids_home.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
+import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 
 const Color _kidsPrimary = Color(0xFF6B46C1);
 

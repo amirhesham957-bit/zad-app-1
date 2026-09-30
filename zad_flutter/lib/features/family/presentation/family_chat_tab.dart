@@ -15,10 +15,10 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/family/application/family_life_controller.dart';
-import 'package:zad/features/family/domain/family.dart';
-import 'package:zad/features/family/domain/family_life.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/family/domain/family_life.dart';
 
 /// The chat.
 class FamilyChatTab extends ConsumerStatefulWidget {

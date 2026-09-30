@@ -12,18 +12,19 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
-import 'package:zad/features/budget/application/budget_controller.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/modes/application/modes_controller.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
-import 'package:zad/features/settings/application/settings_controller.dart';
-import 'package:zad/features/settings/domain/account_settings.dart';
-import 'package:zad/features/subscriptions/application/subscriptions_controller.dart';
-import 'package:zad/features/subscriptions/domain/subscription.dart';
-import 'package:zad/features/transactions/application/transactions_controller.dart';
-import 'package:zad/features/transactions/domain/transaction.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/application/category_budgets_controller.dart';
+import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 import '../../support/quiet_household.dart';
 

@@ -11,7 +11,6 @@ import 'package:zad/features/appointments/presentation/appointments_screen.dart'
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
-import 'package:zad/features/chat/domain/agent_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/goals/presentation/life_goal_picker_sheet.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -30,6 +29,7 @@ import 'package:zad/features/settings/presentation/settings_screen.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/features/tasbiha/presentation/tasbiha_screen.dart';
+import 'package:zad/shared/chat/domain/agent_screen.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 
 /// Opens what [command] names. Returns once the screen is pushed, not when
