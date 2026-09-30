@@ -90,6 +90,19 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
       : { configured: true, ok: true, note: `places=${found.places.length} via ${found.name}` };
   })();
 
+  // Resend (zad-support's complaint email). A sending-only key answers /domains with 401
+  // "restricted_api_key" — valid for what we use it for, so that reads as ok.
+  const resend = (async (): Promise<ProbeResult> => {
+    const r = await probe(fetchImpl, env("RESEND_API_KEY"), (k) => ({
+      url: "https://api.resend.com/domains",
+      init: { headers: { Authorization: `Bearer ${k}` } },
+    }), async (res) => (res.ok ? undefined : (await res.text()).slice(0, 120)));
+    if (r.status === 401 && /restricted/i.test(r.note ?? "")) {
+      return { configured: true, status: 401, ok: true, note: "sending-only key" };
+    }
+    return r;
+  })();
+
   const [locationiq, pexels, telegram, elevenlabs, exchange_rate, usda, ...rest] = await Promise.all([
     probe(fetchImpl, env("LOCATIONIQ_API_KEY"), (k) => ({
       url: `https://us1.locationiq.com/v1/nearby?key=${encodeURIComponent(k)}&lat=30.0444&lon=31.2357&tag=supermarket&radius=2000&format=json`,
@@ -134,6 +147,7 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     elevenlabs,
     exchange_rate,
     usda,
+    resend: await resend,
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),
