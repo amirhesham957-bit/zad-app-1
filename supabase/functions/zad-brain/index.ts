@@ -77,6 +77,7 @@ import { conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
+import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
@@ -4606,13 +4607,14 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     try {
       const snap = await buildSnapshot(sb, task.user_id);
       const systemPrompt = soulBlock() + buildChatSystemPrompt(snap);
+      const groqSystem = groqSystemFor(snap);
       const ctx: RunContext = freshContext(task.user_id);
       const scope: AuditScope = { source: "event", runId: null };
       const history: Turn[] = [{ role: "user", text: task.task_description }];
       let resultText = "";
 
       for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
-        const reply = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: CHAT_TOOLS, history, maxTokens: 1200 });
+        const reply = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: CHAT_TOOLS, history, maxTokens: 1200, groqSystem });
         if (reply.text) resultText = reply.text;
         if (reply.toolCalls.length === 0) break;
         history.push({ role: "assistant", text: reply.text || undefined, toolCalls: reply.toolCalls });
@@ -4748,14 +4750,19 @@ const INTENT_RETRY_NOTE =
  * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
-async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number) {
-  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200 });
-  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
+async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string) {
   const hinted = intentToolHints(message);
+  // Groq بيشيل ٩-١٤ أداة بس تحت ٨٠٠٠/دقيقة (مقاس ٢٠٢٦-٠٩-٣٠) — اللي الرسالة بتشير لها الأول.
+  const groqTools = groqToolOrder(tools, hinted, message);
+  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
+  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
   const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
   if (narrowed.length === 0) return { ...first, intentRetry: null };
   try {
-    const retry = await callModel({ model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200 });
+    const retry = await callModel({
+      model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200,
+      groqSystem: groqSystem ? groqSystem + INTENT_RETRY_NOTE : undefined,
+    });
     const usage = { inTok: first.usage.inTok + retry.usage.inTok, outTok: first.usage.outTok + retry.usage.outTok };
     if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted };
     return { ...first, usage, intentRetry: hinted };
@@ -4967,6 +4974,13 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
         message,
       ].join(" ").slice(-1500),
     }, body.voice_mode === true);
+  // لو جيميناي كله وقع ووصلنا لـ Groq: برومبت مختصر بنفس اللهجة (الفجوة ١٣).
+  const groqSystem = groqSystemFor(snap, [
+    ...(Array.isArray(body.history) ? body.history : [])
+      .filter((h: { role?: string }) => h?.role === "user")
+      .map((h: { text?: string }) => String(h?.text ?? "")),
+    message,
+  ].join(" ").slice(-1500));
 
   // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
   // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
@@ -5028,7 +5042,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
-      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn);
+      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem);
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
       await finishRun("failed", String(e));
@@ -5832,6 +5846,16 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
  */
 function getAssistantName(_snap: any): { nameAr: string; nameEn: string } {
   return { nameAr: "زاد", nameEn: "Zad" };
+}
+
+/** البرومبت المختصر لـ Groq بنفس لهجة البرومبت الكامل (groqPrompt.ts، الفجوة ١٣). */
+function groqSystemFor(snap: any, dialectHintText?: string): string {
+  const profile = conversationProfile(snap?.country, {
+    preferred: snap?.customer?.dialect,
+    text: dialectHintText ?? snap?.dialect_hint_text,
+    currency: snap?.currency,
+  });
+  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect), dialectReminder(profile.dialect));
 }
 
 function buildChatSystemPrompt(snap: any, voiceMode = false): string {
