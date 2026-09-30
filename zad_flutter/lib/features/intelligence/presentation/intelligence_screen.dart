@@ -32,6 +32,7 @@ import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
+import 'package:zad/features/intelligence/presentation/spending_charts.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -156,6 +157,10 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                     if (!enough)
                       _NotEnough(count: expenses.length, onTalk: _ask)
                     else ...<Widget>[
+                      SpendingCharts(
+                        rows: all,
+                        currency: budget?.currency ?? '',
+                      ),
                       _ReportCard(
                         transactions: all,
                         budget: budget?.openingBalance ?? 0,
@@ -171,7 +176,13 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                         available: budget?.spendable ?? 0,
                       ),
                       _DistributionCard(
-                        total: budget?.spent ?? 0,
+                        // The same rows as the bars under it: the cycle's
+                        // server figure read «EGP 0» over 1,104 of bars
+                        // on the first day of a new cycle.
+                        total: categoryList.fold<double>(
+                          0,
+                          (sum, e) => sum + e.value,
+                        ),
                         categories: categoryList,
                       ),
                       const ExportReportButton(),
