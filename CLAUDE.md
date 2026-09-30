@@ -265,6 +265,11 @@ already knowing where things stand instead of re-deriving it from commit history
   street alerts (geofences), Google Places, habit vs budget, «اتشاف هنا», «لمين؟», the wake
   greeting — what shipped per commit, the **measured** weak points (0 FCM tokens, thin data,
   empty profiles), and the ordered next steps. Read it before extending any of those.
+- `docs/agent/ZAD_BRAIN_PLAN.md` — **the target layout after the owner's 2026-09-30
+  review**: the brain at the centre (home = the brain's daily brief), four tabs instead
+  of 17 sections, recommendations/offers as brain skills rather than pages, «أماكني»
+  out of appointments, «الديون» into «التزاماتي», real streaming next — and the four
+  decisions the owner has to make first. Read it before restructuring any screen.
 - `docs/agent/FLUTTER_MIGRATION.md` — **the Flutter migration's status, conventions and
   remaining plan. Read this first for any work in `zad_flutter/`** (the active stream
   since 2026-09-19); the bullet below is about the Kotlin app and the server.
