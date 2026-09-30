@@ -61,7 +61,64 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 14),
               const _KidsModeCard(),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('الإعدادات'),
+              // Grouped by what the customer is looking for, Zad's brain first:
+              // the smart-analysis switch and what Zad knows used to sit at the
+              // bottom of one sixteen-row «الإعدادات» list (owner: «التفعيلات
+              // مستخبية جوه البروفايل», 2026-09-30).
+              const _SectionTitle('عقل زاد'),
+              const SizedBox(height: ZadSpacing.md),
+              _MenuGroup(
+                rows: <_MenuRow>[
+                  _MenuRow(
+                    icon: ZadIcons.brain,
+                    title: 'التحليل الذكي للسلوك',
+                    subtitle: view.behaviorConsent
+                        ? 'مفعل — يتم تحليل بياناتك لتقديم تنبؤات مخصصة'
+                        : 'غير مفعل — فعل لتحصل على تنبؤات ذكية',
+                    onTap: () => unawaited(_consent(context, ref)),
+                    trailing: Switch(
+                      value: view.behaviorConsent,
+                      onChanged: (_) => unawaited(_consent(context, ref)),
+                    ),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.memory,
+                    title: 'زاد عارف عني إيه',
+                    subtitle: 'الذكريات اللي اتعلمها عنك',
+                    onTap: () =>
+                        unawaited(ZadScreens.showMemoryScreen(context)),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.actionLog,
+                    title: 'سجل تعديلات زاد',
+                    subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
+                    onTap: () =>
+                        unawaited(ZadScreens.showAgentActionLog(context)),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.notifications,
+                    title: 'تنبيهات المساعد الذكي',
+                    subtitle: 'التحكم في التنبيهات الذكية',
+                    onTap: () => unawaited(showAssistantAlertsScreen(context)),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.savings,
+                    title: 'هدف حياة جديد',
+                    subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
+                    onTap: () => unawaited(_newGoal(context, ref)),
+                  ),
+                  _MenuRow(
+                    icon: ZadIcons.shopping,
+                    title: 'توصيات الشراء الذكية',
+                    subtitle: 'توصيات مبنية على الأسعار والسوق',
+                    onTap: () => unawaited(
+                      ZadScreens.showRecommendationsScreen(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.xl),
+              const _SectionTitle('أنا وعيلتي'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
@@ -82,22 +139,23 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(showFamilyManagementScreen(context)),
                   ),
                   _MenuRow(
-                    icon: ZadIcons.budget,
-                    title: 'الميزانية وطرق الدفع',
-                    subtitle: 'الميزانية الشهرية والربط البنكي',
-                    onTap: () => unawaited(showPaymentAndBudgetScreen(context)),
-                  ),
-                  _MenuRow(
                     icon: ZadIcons.market,
                     title: 'الإعدادات الإقليمية',
                     subtitle: 'البلد والعملة',
                     onTap: () => unawaited(showRegionalSheet(context)),
                   ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.xl),
+              const _SectionTitle('فلوسي'),
+              const SizedBox(height: ZadSpacing.md),
+              _MenuGroup(
+                rows: <_MenuRow>[
                   _MenuRow(
-                    icon: ZadIcons.notifications,
-                    title: 'تنبيهات المساعد الذكي',
-                    subtitle: 'التحكم في التنبيهات الذكية',
-                    onTap: () => unawaited(showAssistantAlertsScreen(context)),
+                    icon: ZadIcons.budget,
+                    title: 'الميزانية وطرق الدفع',
+                    subtitle: 'الميزانية الشهرية والربط البنكي',
+                    onTap: () => unawaited(showPaymentAndBudgetScreen(context)),
                   ),
                   _MenuRow(
                     icon: Icons.upload_file,
@@ -107,27 +165,13 @@ class ProfileScreen extends ConsumerWidget {
                       ZadScreens.showStatementImportScreen(context),
                     ),
                   ),
-                  _MenuRow(
-                    icon: Icons.support_agent,
-                    title: 'الدعم الفني',
-                    subtitle: 'تواصل معنا',
-                    onTap: () =>
-                        unawaited(ZadScreens.showHelpSupportScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.actionLog,
-                    title: 'سجل تعديلات زاد',
-                    subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
-                    onTap: () =>
-                        unawaited(ZadScreens.showAgentActionLog(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.memory,
-                    title: 'زاد عارف عني إيه',
-                    subtitle: 'الذكريات اللي اتعلمها عنك',
-                    onTap: () =>
-                        unawaited(ZadScreens.showMemoryScreen(context)),
-                  ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.xl),
+              const _SectionTitle('زاد بتاعي'),
+              const SizedBox(height: ZadSpacing.md),
+              _MenuGroup(
+                rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.leaderboard,
                     title: 'الإنجازات والرتب',
@@ -136,24 +180,24 @@ class ProfileScreen extends ConsumerWidget {
                         unawaited(ZadScreens.showAchievementsScreen(context)),
                   ),
                   _MenuRow(
-                    icon: ZadIcons.shopping,
-                    title: 'توصيات الشراء الذكية',
-                    subtitle: 'توصيات مبنية على الأسعار والسوق',
-                    onTap: () => unawaited(
-                      ZadScreens.showRecommendationsScreen(context),
-                    ),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.savings,
-                    title: 'هدف حياة جديد',
-                    subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
-                    onTap: () => unawaited(_newGoal(context, ref)),
-                  ),
-                  _MenuRow(
                     icon: Icons.auto_awesome,
                     title: 'زيّن زاد',
                     subtitle: 'كل ما عيلتك تنضم لزاد، زاد بتتزيّن',
                     onTap: () => unawaited(ZadScreens.showOrbPicker(context)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.xl),
+              const _SectionTitle('المساعدة'),
+              const SizedBox(height: ZadSpacing.md),
+              _MenuGroup(
+                rows: <_MenuRow>[
+                  _MenuRow(
+                    icon: Icons.support_agent,
+                    title: 'الدعم الفني',
+                    subtitle: 'شكوى أو مشكلة؟ كلّم فريق الدعم',
+                    onTap: () =>
+                        unawaited(ZadScreens.showHelpSupportScreen(context)),
                   ),
                   _MenuRow(
                     icon: Icons.description,
@@ -168,18 +212,6 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.brain,
-                    title: 'التحليل الذكي للسلوك',
-                    subtitle: view.behaviorConsent
-                        ? 'مفعل — يتم تحليل بياناتك لتقديم تنبؤات مخصصة'
-                        : 'غير مفعل — فعل لتحصل على تنبؤات ذكية',
-                    onTap: () => unawaited(_consent(context, ref)),
-                    trailing: Switch(
-                      value: view.behaviorConsent,
-                      onChanged: (_) => unawaited(_consent(context, ref)),
-                    ),
-                  ),
                   _MenuRow(
                     icon: ZadIcons.delete,
                     title: 'حذف الحساب',
