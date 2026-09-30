@@ -136,3 +136,43 @@ Deno.test("«جاهز، سُجلت!» على طلب تذكير من غير أي 
   // مش طلب تذكير أصلاً: «سجلت» هنا عن مصروف، والحارس ده مالوش دعوة.
   assertEquals(unbackedReminderClaim("صرفت ٥٠ جنيه قهوة", "سجلت ٥٠ جنيه قهوة"), false);
 });
+
+Deno.test("الصحيان تذكير: «الساعة ٢ الظهر عاوز اصحى» بعد سؤال زاد عن الوقت بيطلب أداة الميعاد (2026-09-30)", () => {
+  // اللفة الحقيقية: زاد سأل «قولي عايز أصحيك الساعة كام بالظبط»، والعميل رد بالوقت، وزاد قال
+  // «ظبطتهالك وهصحيك» ومفيش ولا أداة اتنادت.
+  const prior = "يا سيدي أنا مش مسجلة عندي ميعاد صحيان ولا منبه ليك بكرة الصبح، بس لو حابب أصحيك، قولي عايز أصحيك الساعة كام بالظبط وتؤمر أمر! ⏰😊";
+  const message = "الساعة 2 الظهر عاوز اصحي";
+  assertEquals(intentToolHints(message, prior).includes("add_appointment"), true);
+  // الوقت لوحده، رد على سؤال زاد: النية جاية من السؤال مش من الرسالة.
+  assertEquals(intentToolHints("الساعة 2 الظهر", prior).includes("add_appointment"), true);
+  assertEquals(intentToolHints("الساعة 2 الظهر"), []);
+  assertEquals(intentToolHints("صحيني بكرة ٧ الصبح").includes("add_appointment"), true);
+  assertEquals(intentToolHints("اظبطلي منبه الساعة ٦").includes("add_appointment"), true);
+  assertEquals(intentToolHints("عاوز أصحى بدري بكرة").includes("add_appointment"), true);
+  assertEquals(unbackedReminderClaim("صحيني بكرة ٧ الصبح", "حاضر، هصحيك ٧ الصبح"), true);
+  assertEquals(unbackedReminderClaim("صحيني بكرة ٧ الصبح", "تحب أصحيك ٧ ولا ٧ ونص؟"), false);
+  assertEquals(
+    unbackedReminderClaim(message, "ولا يهمك يا أمير، ظبطتهالك وهصحيك بكرة الساعة 2 الظهر بالضبط متخافش!", prior),
+    true,
+  );
+});
+
+Deno.test("الصحيان مايلخبطش الكلام العادي: «أكل صحي» و«قللت المنبهات» مش تذكير", () => {
+  assertEquals(intentToolHints("عايز أكل صحي النهارده"), []);
+  assertEquals(intentToolHints("بقلل المنبهات والقهوة"), []);
+  // ساعة من غير سؤال تذكير قبلها مش طلب تذكير: «اشتريت عيش الساعة ٨ الصبح».
+  assertEquals(intentToolHints("اشتريت عيش الساعة ٨ الصبح", "تمام، سجلتلك العيش"), []);
+});
+
+Deno.test("priorAssistantText: الرد اللي قبل آخر رسالة، حتى لو بعدها نداءات أدوات", async () => {
+  const { priorAssistantText } = await import("./specialists.ts");
+  const history = [
+    { role: "user", text: "هتصحيني امتي" },
+    { role: "assistant", text: "قولي عايز أصحيك الساعة كام بالظبط" },
+    { role: "user", text: "الساعة 2 الظهر" },
+    { role: "assistant", text: "" },
+    { role: "tool" },
+  ];
+  assertEquals(priorAssistantText(history), "قولي عايز أصحيك الساعة كام بالظبط");
+  assertEquals(priorAssistantText([{ role: "user", text: "أهلا" }]), "");
+});

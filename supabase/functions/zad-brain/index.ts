@@ -82,7 +82,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
@@ -4785,7 +4785,7 @@ const INTENT_RETRY_NOTE =
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
 async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string) {
-  const hinted = intentToolHints(message);
+  const hinted = intentToolHints(message, priorAssistantText(history));
   // Groq بيشيل ٩-١٤ أداة بس تحت ٨٠٠٠/دقيقة (مقاس ٢٠٢٦-٠٩-٣٠) — اللي الرسالة بتشير لها الأول.
   const groqTools = groqToolOrder(tools, hinted, message);
   const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
@@ -5198,7 +5198,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // ضد "وهم التنفيذ": لو الموديل قال "ضفتلك اللحمة" ومنداش أي أداة، مفيش تنفيذ يتأكد
   // وبالتالي مفيش كارت تأكيد يتعرض — والنص اللي بيتعرض هو نصه هو، من غير ادعاء.
   let reply = modelText.trim();
-  if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply)) {
+  if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply, priorAssistantText(history))) {
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
   reply = silentWriteFallback(reply, executed, proposals.length);
