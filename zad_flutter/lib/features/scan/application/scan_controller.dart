@@ -18,6 +18,7 @@ import 'package:zad/features/inventory/application/shopping_controller.dart';
 import 'package:zad/features/inventory/data/consumption_learner.dart';
 import 'package:zad/features/inventory/data/consumption_observations.dart';
 import 'package:zad/features/inventory/domain/receipt_intake.dart';
+import 'package:zad/features/market/domain/market.dart';
 import 'package:zad/features/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/features/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/features/prices/domain/prices.dart';
@@ -392,10 +393,19 @@ class ScanController extends Notifier<ScanView> {
     if (reports.isEmpty) return;
     try {
       final prices = ref.read(pricesRepositoryProvider);
+      // The account's currency, as a typed report sends it. The server uses
+      // the account's own first and this only when the row has none yet —
+      // a market chosen offline, still queued ahead of this in the outbox.
+      // Without it such a report was refused `invalid_currency` and
+      // dead-lettered, and «اتشاف هنا» never heard of the shop (gap 11).
+      final account = ref.read(settingsRepositoryProvider).cached();
+      final currency =
+          account?.currency ?? marketFor(account?.country)?.currency;
       for (final r in reports) {
         await prices.report(
           item: r.item,
           price: r.unitPrice,
+          currency: currency,
           store: receipt.storeName,
           category: r.category,
         );
