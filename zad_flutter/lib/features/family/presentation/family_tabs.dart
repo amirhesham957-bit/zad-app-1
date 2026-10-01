@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/features/family/presentation/family_follow.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
@@ -327,6 +328,7 @@ class FamilyMembersTab extends ConsumerWidget {
         children: <Widget>[
           const Text('أفراد العائلة', style: ZadType.titleLarge),
           _subtitle('اضغط على أي عضو لتفاصيل إنجازاته'),
+          const FamilyFollowRequestsCard(),
           for (final m in family.members)
             Padding(
               padding: const EdgeInsets.only(bottom: ZadSpacing.md),
@@ -686,6 +688,10 @@ class _MemberSheet extends ConsumerWidget {
               _StatItem(label: 'الأشجار', value: '${trees.length}'),
             ],
           ),
+          if (viewerIsAdmin && !isMe) ...<Widget>[
+            const SizedBox(height: ZadSpacing.xl),
+            MemberFollowSection(ownerId: member.userId, currency: currency),
+          ],
           const SizedBox(height: ZadSpacing.xl),
           _SheetSection(
             icon: ZadIcons.selected,

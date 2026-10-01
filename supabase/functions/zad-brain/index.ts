@@ -88,7 +88,7 @@ import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport }
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
 import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
-import { canSeeFamilySpending } from "./familyAccess.ts";
+import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -1287,10 +1287,19 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (!canSeeFamilySpending(fam.role)) {
         return "الوساطة بتعرض صرف كل فرد في العيلة، ودي لمدير العيلة بس. قول للعميل يطلبها من ولي الأمر.";
       }
-      const { data: members } = await sb.from("family_members")
+      const { data: allMembers } = await sb.from("family_members")
         .select("user_id, alias").eq("family_id", fam.family_id);
-      if (!members || members.length < 2) return "العيلة فيها فرد واحد — مفيش حد يتوسّط معاه 😊";
-      const ids = members.map((m: any) => m.user_id);
+      if (!allMembers || allMembers.length < 2) return "العيلة فيها فرد واحد — مفيش حد يتوسّط معاه 😊";
+      // بالموافقة بس: صرف أي فرد بيبان لو هو وافق إن الأدمن يتابع مصروفه.
+      const { data: grants } = await sb.from("zad_family_shares")
+        .select("owner_id").eq("viewer_id", userId).eq("family_id", fam.family_id)
+        .eq("scope", "spending").eq("status", "granted");
+      const members = visibleSpenders(userId, allMembers as Array<{ user_id: string; alias: string | null }>,
+        ((grants ?? []) as Array<{ owner_id: string }>).map((g) => g.owner_id));
+      if (members.length < 2) {
+        return "محدش من العيلة وافق لسه إنك تتابع مصروفه. اطلب المتابعة من «عيلتي» — وكل فرد بيوافق بنفسه.";
+      }
+      const ids = members.map((m) => m.user_id);
       let q = sb.from("zad_transactions").select("user_id, amount, category, created_at")
         .eq("is_expense", true).gte("created_at", since).in("user_id", ids);
       if (hint) q = q.ilike("category", `%${hint}%`);
