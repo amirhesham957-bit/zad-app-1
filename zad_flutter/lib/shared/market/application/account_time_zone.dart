@@ -24,8 +24,8 @@ import 'package:zad/shared/settings/data/settings_repository.dart';
 /// 2. the `timezone` the last budget snapshot came back with, which the server
 ///    computed the same way and which is present even before the settings row
 ///    has been fetched;
-/// 3. `UTC` — the SQL's own fallback for an unknown country, and deliberately
-///    not the device's zone.
+/// 3. `Africa/Cairo` — the SQL's own fallback for an unknown country, and
+///    deliberately not the device's zone.
 final accountTimeZoneProvider = Provider<String>((ref) {
   final country = ref.watch(settingsRepositoryProvider).cached()?.country;
   if (country != null && country.isNotEmpty) return marketTimeZone(country);
@@ -33,7 +33,7 @@ final accountTimeZoneProvider = Provider<String>((ref) {
   final fromBudget = ref.watch(budgetRepositoryProvider).cached()?.timeZone;
   if (fromBudget != null && fromBudget.isNotEmpty) return fromBudget;
 
-  return 'UTC';
+  return 'Africa/Cairo';
 });
 
 /// The account's country (ISO alpha-2) from the settings already on the
