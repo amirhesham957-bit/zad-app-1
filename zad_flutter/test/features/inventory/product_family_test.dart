@@ -154,4 +154,16 @@ void main() {
       );
     });
   });
+
+  test(
+    'brand-first water joins the family; other staples need to come first',
+    () {
+      // The owner's pantry, 2026-10-01: «صافي مياه معدنية 1.5 لتر» beside nine
+      // other water rows.
+      expect(productFamilyOf('صافي مياه معدنية 1.5 لتر'), 'مياه');
+      expect(productFamilyOf('نستله مياه'), 'مياه');
+      expect(productFamilyOf('بسكويت شاي'), isNull);
+      expect(productFamilyOf('عصير سكر'), isNull);
+    },
+  );
 }

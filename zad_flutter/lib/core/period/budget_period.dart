@@ -184,6 +184,12 @@ class BudgetPeriod {
     return periodEnd.difference(today).inDays - 1;
   }
 
+  /// The days the money has to last, today included — the server's
+  /// `days_left`. On 2026-10-01 with payday on the 16th the home card said 14
+  /// ([daysRemainingFrom]) while the brain said 15 and divided the money by
+  /// 15: two «safe daily» figures for one account.
+  int daysToLiveOn(DateTime at) => daysRemainingFrom(at) + 1;
+
   /// Value equality.
   ///
   /// A period is a value, not an identity, and without this it behaves like

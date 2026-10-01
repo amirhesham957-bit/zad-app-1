@@ -118,7 +118,7 @@ class ZadBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final daysLeft = math.max(0, period.daysRemainingFrom(now));
+    final daysLeft = math.max(1, period.daysToLiveOn(now));
     final amount = spendable;
 
     return ZadPressable(

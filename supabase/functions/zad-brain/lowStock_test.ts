@@ -61,3 +61,12 @@ Deno.test("التعبئة والـ«ماية» مابتخبيش السلعة —
   assertEquals(productFamilyOf("علبة حفظ طعام"), null);
   assertEquals(productFamilyOf("علبة"), null);
 });
+
+Deno.test("productFamilyOf: brand-first water joins the water family, other staples do not", () => {
+  // The owner's pantry on 2026-10-01: «صافي مياه معدنية 1.5 لتر» beside nine other water rows.
+  assertEquals(productFamilyOf("صافي مياه معدنية 1.5 لتر"), "مياه");
+  assertEquals(productFamilyOf("نستله مياه"), "مياه");
+  assertEquals(productFamilyOf("ماء صافى"), "مياه");
+  assertEquals(productFamilyOf("بسكويت شاي"), null);
+  assertEquals(productFamilyOf("عصير سكر"), null);
+});

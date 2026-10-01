@@ -364,7 +364,13 @@ void main() {
 
     expect(find.byType(HomeMetricsDuo), findsOneWidget);
     expect(find.text('معدل الصرف اليومي الآمن'), findsOneWidget);
-    expect(find.text('يوم متبقي'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text && (w.data == 'لحد القبض' || w.data == 'لحد آخر الشهر'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
