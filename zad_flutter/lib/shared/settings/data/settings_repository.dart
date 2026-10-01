@@ -125,7 +125,16 @@ class SettingsRepository {
   /// It comes back when the queue drains, which makes it look like a glitch
   /// rather than the sync it is.
   Future<AccountSettings> refresh() async {
+    final before = _cache.get(_key);
     final row = await _remote.fetch(userId: _requireUserId());
+    // A setter wrote while the read was out: the row may predate that write,
+    // and caching it would put the old value back on screen. The salary day
+    // set right after opening the screen read back empty this way — under
+    // load in `settings_controller_test`, and on a slow phone the same.
+    // What is on the phone now is newer than what came back.
+    if (_cache.get(_key) != before) {
+      return cached() ?? AccountSettings.fromJson(row ?? <String, dynamic>{});
+    }
     // No row yet — the trigger has not run, or this is a brand-new account.
     // That is an empty configuration, not an error: nothing has been set.
     final server = AccountSettings.fromJson(row ?? <String, dynamic>{});

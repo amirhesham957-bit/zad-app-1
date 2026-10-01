@@ -415,16 +415,15 @@ void main() {
 
         expect(settingsRemote.upserts, 1);
 
-        // The stale read lands and caches the server's old null. Waiting on
-        // the cache alone would pass before that happens — the send has just
-        // cached EG — so the test waits for the one thing only the fix does:
-        // the pick said a second time.
+        // The stale read lands. The repository sees the pick was written
+        // while it was out and drops the old null instead of caching it, so
+        // the pick is not undone and does not need saying again.
         settingsRemote.holdFetch!.complete();
         settingsRemote.holdFetch = null;
-        await until(() => settingsRemote.upserts == 2);
-        await until(() => outbox.entries(includeDead: false).isEmpty);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
         expect(settings.cached()?.country, 'EG');
+        expect(settingsRemote.upserts, 1);
 
         expect(gate(), MarketGate.chosen, reason: 'the picker came back');
         expect(container.read(accountTimeZoneProvider), 'Africa/Cairo');
