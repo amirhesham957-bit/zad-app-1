@@ -55,6 +55,13 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * لحظات بتسمّي دوا — حراسة الاسم الحقيقي (mentionsRealMedicine) بتشتغل عليها كلها. أوسع من
+ * DOSE_MOMENTS: تنبيه ولي الأمر (family_dose_missed، 20261001140000) بيسمّي دوا الفرد، بس
+ * مالوش زرار «خدتها» — الجرعة مش بتاعته.
+ */
+export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed"]);
+
+/**
  * حراسة منع الهلوسة الدوائية (٢٠٢٦-٠٩-١٩).
  *
  * بلاغ: «البوت بيولّد أدوية وهمية مش موجودة». المصدر مش الجدول — `facts.item_name`
@@ -103,6 +110,10 @@ const MOMENT_GUIDANCE: Record<string, string> = {
   morning_greeting:
     "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
     "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية.",
+  family_dose_missed:
+    "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
+    "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
+    "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد. لو again = true قولي إنها تاني جرعة تفوته النهارده.",
   dose_due:
     "ميعاد الجرعة دلوقتي بالظبط (item_name). text: سطر واحد فيه اسم الدوا وإن ميعاده دلوقتي، وإنه يدوس «خدته» بعدها. " +
     "speech: جملتين قصيرين حنينين بلهجته: فكّريه ياخده دلوقتي بالاسم. من غير أي لوم — لسه مافاتش حاجة.",
@@ -321,6 +332,15 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         text: `ميعاد ${item}${at ? ` كان الساعة ${at}` : ""} — لما تاخده دوس "خدته" عشان أطمن عليك.`,
         speech: "",
       };
+    case "family_dose_missed": {
+      const who = str(facts.member_alias, 40) || "فرد من العيلة";
+      const again = facts.again === true;
+      return {
+        title: `💊 ${who} فاتته جرعة ${item}`,
+        text: `${again ? "تاني جرعة تفوت النهارده: " : ""}${who} ماسجلش إنه خد ${item}${at ? ` بتاعة ${at}` : ""}. اطمن عليه.`,
+        speech: `${who} لسه ماخدش ${item}${at ? ` بتاعة ${at}` : ""}. ممكن تكلمه تطمن عليه؟`,
+      };
+    }
     case "dose_missed":
       return {
         title: `💊 ${item} لسه مستنيك`,
@@ -631,6 +651,15 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     const { data: trees } = await sb.from("family_tasbiha").select("last_tasbih_at").eq("user_id", row.user_id);
     return !((trees ?? []) as Array<{ last_tasbih_at: string | null }>).some((t) => String(t.last_tasbih_at ?? "").slice(0, 10) === localDate);
   }
+  // تنبيه ولي الأمر: الفرد خد الجرعة بعدها، أو لغى المتابعة = مفيش تنبيه.
+  if (row.moment === "family_dose_missed") {
+    const memberId = str(row.facts?.member_id, 60);
+    if (!memberId) return false;
+    const { data: share } = await sb.from("zad_family_shares").select("id")
+      .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
+    if (!share || (share as unknown[]).length === 0) return false;
+    return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
+  }
   if (!row.moment.startsWith("dose_")) return true;
   // لحظات الجرعة من السيرفر (20260915001000): item_ids + scheduled_at. لو اتسجل إنه خد أي دوا منهم
   // بعد ما اللحظة اتسجلت، مفيش زعل.
@@ -791,7 +820,7 @@ export async function processVoiceMoments(
         console.warn(`[voice_moments] compose failed for ${row.moment}:`, (e as Error)?.message);
       }
       // صياغة تنبيه جرعة مش فيها اسم الدوا الحقيقي = اسم مخترع. تترمي كلها.
-      if (composed && DOSE_MOMENTS.has(deliveryMoment) && !mentionsRealMedicine(composed, row.facts ?? {})) {
+      if (composed && MEDICINE_NAMED_MOMENTS.has(deliveryMoment) && !mentionsRealMedicine(composed, row.facts ?? {})) {
         console.error(`[voice_moments] ${deliveryMoment} ${row.id}: composed text does not name the real medicine — using template`);
         composed = null;
       }
