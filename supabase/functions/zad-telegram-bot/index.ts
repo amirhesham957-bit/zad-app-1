@@ -1330,12 +1330,16 @@ bot.on("message:text", async (ctx) => {
     `${context}\n\n=== سؤال العميل ===\n${ctx.message.text}`,
   );
 
+  // الرد ده لازم يتحفظ: سؤال اتحفظ من غير رد بيفضل «مستني» ويترد عليه في رسالة بعدين
+  // («مرحبا» اترد عليها بسعر الدهب، ٢٠٢٦-١٠-٠١ ٢٠:٠٢).
   if (answer) {
     await ctx.reply(clampForTelegram(notice + answer));
+    await recordChatTurn(sb, userId, "assistant", answer);
   } else {
     await ctx.reply(clampForTelegram(notice + "معلش، مش قادر أرد دلوقتي — جرب تاني كمان شوية، أو اختار من القائمة:"), {
       reply_markup: toGrammyKeyboard(mainMenuKeyboard()),
     });
+    await recordChatTurn(sb, userId, "assistant", "ماقدرتش أرد على الرسالة دي وقتها.");
   }
 });
 
@@ -1411,6 +1415,7 @@ bot.on("message:voice", async (ctx) => {
   await ctx.reply(clampForTelegram(
     heard + `⚠️ ${userFacingFailure(turnReply.errorReason ?? "")}. اللي قلته **ماتسجّلش** — جرب تبعته تاني كمان شوية.`,
   ));
+  await recordChatTurn(sb, userId, "assistant", "ماقدرتش أنفّذ الرسالة الصوتية دي وقتها، ومااتسجلش منها حاجة.");
 });
 
 // صورة (فاتورة أو صنف) — نفس مبدأ التسجيل الصوتي: الأصناف بتتضاف للمخزون مباشرة (زي

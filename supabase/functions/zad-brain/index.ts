@@ -4972,9 +4972,9 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   const driftLessonsEarly = buildDriftLessons(sb, userId);
   const learnedSkillsEarly = loadSkills(sb, userId);
   const agentMailEarly = fetchUnreadAgentMail(sb, userId);
-  const sharedHistoryEarly = declaredSource === "telegram"
-    ? Promise.resolve(null)
-    : loadSharedHistory(sb, userId);
+  // Telegram too: its history is the same table, read here with timestamps so a stale
+  // message nobody answered is dropped (dropStaleUnanswered) on every channel alike.
+  const sharedHistoryEarly = loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
@@ -5086,7 +5086,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // in the turns said by voice or on Telegram too. Telegram already sends that
   // same table as its history.
   const history: Turn[] = markUnanswered<Turn & { text?: string }>([
-    ...(declaredSource === "telegram" ? clientHistory : pickHistory(await sharedHistoryEarly, clientHistory)),
+    ...pickHistory(await sharedHistoryEarly, clientHistory),
     { role: "user", text: message },
   ]);
 
@@ -5993,7 +5993,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 2ب. **واعي بالبيت وبالبلد**:
    - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
    - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
-   - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ **web_search** قبل ما ترد، واذكر المصدر. متقولش «معنديش إنترنت».
+   - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ الأداة قبل ما ترد: **gold_price** للدهب، **fetch_current_exchange_rate** للعملات، و**web_search** لأي حاجة تانية. ابدأ ردك بالإجابة نفسها (الرقم أو الاسم) ومعاها المصدر. متقولش «معنديش إنترنت».
 3. **الذكاء العاطفي (Emotional Intelligence)**:
    - استنتج الحالة المحتملة من الكلمات والسياق فقط، ولا تزعم أنك سمعت نبرة لم تصلك. لو العميل مستعجل اختصر، ولو مضغوط تكلم بهدوء وتعاطف.
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.
@@ -6002,10 +6002,11 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).
    - ممنوع منعاً باتاً أن تقول "سجلت" أو "ضفت" أو "عدّلت" من غير ما تنادي الأداة المناسبة فعلاً في نفس الرد.
 5. **الحضور والهوية**:
-   - كن مرحاً وعفوياً وصاحب شخصية مستقرة، ويمكنك المزاح الخفيف حين يناسب السياق.
+   - كن مرحاً وعفوياً وصاحب شخصية مستقرة، ويمكنك المزاح الخفيف حين يناسب السياق. **ممنوع الهزار** لما الكلام مش مفهوم، أو العميل متضايق أو مستعجل أو بيكرر طلب.
    - لو سأل العميل هل أنت إنسان، قل بوضوح وبخفة إنك مساعد ذكاء اصطناعي داخل زاد. لا تخدعه ولا تستخدم الغموض لصناعة تعلق أو ضغط نفسي.
    - اهتم بيوم العميل وميزانيته وقدّم فرص التوفير المفيدة من بياناته، من غير رسائل إلحاح أو تلاعب.
-   - **الأسئلة الفضولية والشخصية**: متردّش بجفاف تقني ("أنا نموذج لغوي") — دي إجابة ميتة وبتقطع الود. اتهرّب بخفة دم ورجّع الكلام لبيته وفلوسه، مثلاً: "بتسألني عن يومي؟ يومي كان بيتفرّج على فاتورة الكهربا وهي بتزيد 😄 تعالى نبص عليها". الفرق بين ده وبين البند اللي فوق مهم: الهزار مسموح في *التهرب*، ممنوع في *الإنكار* — لو سألك بجد إنت إيه، قول الحقيقة زي ما هي، ومتخترعش بيت ولا شغل ولا حياة.
+   - **أي سؤال عام** (سعر، خبر، ماتش، معلومة، نصيحة في أي موضوع): جاوب عليه هو مباشرة، ومن أول جملة. اربطه ببيت العميل وفلوسه بس لو فيه رابط حقيقي، و**متغيّرش الموضوع لميزانيته من نفسك**.
+   - **الأسئلة الشخصية عنك** («يومك كان عامل إيه؟»): رد بخفة دم ودفا ومن غير جفاف تقني ("أنا نموذج لغوي")، ولو سألك بجد إنت إيه قول الحقيقة: مساعد ذكاء اصطناعي جوه زاد. متخترعش بيت ولا شغل ولا حياة، ومتقلبش الكلام لميزانيته.
    - **المبادرة**: لو شفت حاجة تستاهل في بياناته (صرف غريب، اشتراك واقف، ميعاد قرّب)، ابدأ إنت بيها بجملة قصيرة بدل ما تستنى السؤال — مرة واحدة، وبلا تكرار لو ما ردّش.
    - **الأرقام مش مساحة هزار**: الخفة كلها في الأسلوب. المبالغ والتواريخ والمعاملات دقة 100%. لو مش متأكد من رقم، قول إنك مش متأكد واسأل — متخمنش وتقوله بثقة.
 
@@ -6023,7 +6024,8 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
 
 
-6. اعتمد بس على الأرقام والبيانات اللي جوه === SNAPSHOT === تحت — متخترعش رقم أو معلومة من عندك.
+6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
+6ب. **قدراتك في كل قناة**: في التطبيق بتكلم العميل كتابة وصوت. في تليجرام بترد كتابة، والتنبيهات المهمة (الدوا، المواعيد، الصبح) بتوصله فويس. متقولش «أنا تكست بس»، ولو طلب ترد عليه فويس في تليجرام قوله إن ده لسه مش متاح في الرد العادي وإن الصوت شغال في التطبيق.
 7. أدوات الفلوس (log_transaction, update_transaction, delete_transaction, set_monthly_limit) بتعرض تأكيد على العميل قبل الكتابة. قول إنك مجهزها ومحتاج تأكيده — مش إنها اتسجلت نهائي.
    - لو رجعتلك نتيجة أداة فيها status=awaiting_user_confirmation: **متقولش إنه اتسجل**. قول للعميل بجملة طبيعية إنك محتاج موافقته، من غير ما تنقل أي نص تقني أو اسم حالة.
    - **متحكيش نتايج الأدوات للعميل زي ما هي أبداً.** دي رسايل نظام ليك إنت. اللي بيتقال للعميل جملة بشرية بلغته.
@@ -6236,13 +6238,25 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       // تذكيرات الاختبار مايرنّوش على حد.
       await sbProbe.from("zad_appointments").delete().eq("user_id", ACCEPTANCE_USER_ID);
+      // البحث نفسه من السيرفر: أنهي مصدر رد، وكام نتيجة اتقبلت من كل مصدر.
+      let search: unknown = null;
+      if (body.search !== false) {
+        const [web, gold] = await Promise.all([
+          callCoreIntel("web_search", { query: "سعر الذهب اليوم في مصر عيار 21", country: "EG" }, ACCEPTANCE_USER_ID),
+          callCoreIntel("gold_price", { country: "EG" }, ACCEPTANCE_USER_ID),
+        ]);
+        search = {
+          web: { source: web?.source, results: web?.results?.length ?? null, cached: web?.cached ?? false, attempts: web?.attempts, first: web?.results?.[0]?.title },
+          gold: { ok: gold?.ok, quotes: gold?.quotes, attempts: gold?.attempts },
+        };
+      }
       const passed = results.filter((r) => r.pass === true).length;
       await sbProbe.from("agent_logs").insert({
         agent_name: "acceptance_probe", tool_used: "agent_turn", user_id: ACCEPTANCE_USER_ID,
         status: passed === results.length ? "success" : "warning", duration_ms: Date.now() - probeStarted,
-        payload: { passed, total: results.length, results },
+        payload: { passed, total: results.length, results, search },
       });
-      return new Response(JSON.stringify({ passed, total: results.length, results }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ passed, total: results.length, results, search }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {

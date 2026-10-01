@@ -450,7 +450,15 @@ export function summarizeQuota429(body: string): {
  * تحويل الـ history لشكل `contents` بتاع جيميناي. متصدّرة عشان تتختبر لوحدها: الباج اللي
  * كانت هنا (مكان `thoughtSignature`) ما كانتش تتكشف بأي اختبار لأن الدالة كانت جوّه نداء شبكة.
  */
-export function buildGeminiContents(history: Turn[]): any[] {
+/**
+ * Google's documented placeholder for a function call that came from a model which wrote no
+ * thought signature. Gemini 3 models reject the history without one: on 2026-10-01 a turn
+ * whose first call came from gemini-3.5-flash-lite fell over (503) to gemini-3-flash-preview,
+ * which answered 400 «Function call is missing a thought_signature», and the turn died.
+ */
+export const DUMMY_THOUGHT_SIGNATURE = "skip_thought_signature_validator";
+
+export function buildGeminiContents(history: Turn[], dummySignatures = false): any[] {
   const contents: any[] = [];
   for (const t of history) {
     if (t.role === "user") {
@@ -466,7 +474,9 @@ export function buildGeminiContents(history: Turn[]): any[] {
       for (const c of t.toolCalls ?? [])
         parts.push({
           functionCall: { name: c.name, args: c.input },
-          ...(c.thoughtSignature ? { thoughtSignature: c.thoughtSignature } : {}),
+          ...(c.thoughtSignature
+            ? { thoughtSignature: c.thoughtSignature }
+            : dummySignatures ? { thoughtSignature: DUMMY_THOUGHT_SIGNATURE } : {}),
         });
       contents.push({ role: "model", parts });
     } else {
@@ -506,9 +516,9 @@ async function sendGemini(o: {
   thinking?: boolean;
   /** ما فضل من ميزانية السلسلة؛ callModel بيحدده. */
   timeoutMs?: number;
-}, retriedWithoutThinkingConfig = false): Promise<ModelReply> {
+}, retriedWithoutThinkingConfig = false, withDummySignatures = false): Promise<ModelReply> {
   const timeoutMs = o.timeoutMs ?? GEMINI_CALL_TIMEOUT_MS;
-  const contents = buildGeminiContents(o.history);
+  const contents = buildGeminiContents(o.history, withDummySignatures);
   const sendThinkingConfig = !o.thinking &&
     !retriedWithoutThinkingConfig &&
     !THINKING_CONFIG_UNSUPPORTED.has(o.model);
@@ -608,10 +618,22 @@ async function sendGemini(o: {
     // whole run — which is exactly what the first deploy of this change did. Retry once
     // without the field and remember, so the cost is one wasted call per model per
     // instance, not a dead brain.
-    if (attempt.status === 400 && sendThinkingConfig) {
-      THINKING_CONFIG_UNSUPPORTED.add(o.model);
-      console.warn(`[zad-brain] ${o.model} rejects thinkingConfig; retrying without it`);
-      return await sendGemini(o, true);
+    if (attempt.status === 400) {
+      const badBody = await attempt.text();
+      // A call another model made without a signature: one retry with Google's placeholder.
+      // Before, this 400 was read as «rejects thinkingConfig», the model was wrongly learned
+      // as such, and the retry died on the same missing signature.
+      if (/thought_signature/i.test(badBody) && !withDummySignatures) {
+        console.warn(`[zad-brain] ${o.model} wants thought signatures; retrying with the placeholder`);
+        return await sendGemini(o, retriedWithoutThinkingConfig, true);
+      }
+      if (sendThinkingConfig) {
+        THINKING_CONFIG_UNSUPPORTED.add(o.model);
+        console.warn(`[zad-brain] ${o.model} rejects thinkingConfig; retrying without it`);
+        return await sendGemini(o, true, withDummySignatures);
+      }
+      res = new Response(badBody, { status: 400, headers: attempt.headers });
+      break;
     }
     res = attempt;
     break;
