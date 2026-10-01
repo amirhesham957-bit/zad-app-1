@@ -161,12 +161,13 @@ void main() {
       tester,
     ) async {
       // Paid on the 25th, asked on the 19th: the period runs 25 Aug – 25 Sep,
-      // so five whole days remain — the 20th to the 24th. A calendar month
-      // would have said eleven.
+      // so the money has six days to last — the 19th (today) to the 24th, the
+      // count the server and the brain use. A calendar month would have said
+      // twelve.
       await pumpCard(tester, cycleStartDay: 25);
 
       final semantics = tester.getSemantics(find.byType(ZadBalanceCard).first);
-      expect(semantics.label, contains('باقي 5 يوم'));
+      expect(semantics.label, contains('باقي 6 يوم'));
       expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
     });
 
