@@ -357,3 +357,11 @@ Deno.test("كل موديلات جيميناي في الانتظار → جروك
     setModelCooldownMsForTests(0);
   }
 });
+
+Deno.test("the two measured lite models are sent without thinkingConfig from the first call", async () => {
+  const { THINKING_CONFIG_UNSUPPORTED } = await import("./callModel.ts");
+  assertEquals(THINKING_CONFIG_UNSUPPORTED.has("gemini-3.5-flash-lite"), true);
+  assertEquals(THINKING_CONFIG_UNSUPPORTED.has("gemini-flash-lite-latest"), true);
+  // 3.1-lite accepts the field (measured 2026-08-15): not seeded.
+  assertEquals(THINKING_CONFIG_UNSUPPORTED.has("gemini-3.1-flash-lite"), false);
+});

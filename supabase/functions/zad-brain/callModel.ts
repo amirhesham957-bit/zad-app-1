@@ -489,7 +489,14 @@ export function buildGeminiContents(history: Turn[]): any[] {
  * field, while gemini-3.1-flash-lite accepts it — same "-lite" suffix, opposite behaviour.
  * They are all already 0-thought-token models, so dropping the field costs nothing.
  */
-const THINKING_CONFIG_UNSUPPORTED = new Set<string>();
+export const THINKING_CONFIG_UNSUPPORTED = new Set<string>([
+  // Seeded with the two measured on 2026-08-15. Every cold instance used to learn it again
+  // with a wasted 400 round trip, and cold instances are most turns: the log printed
+  // «gemini-3.5-flash-lite rejects thinkingConfig; retrying» on the owner's turns of
+  // 2026-10-01. Anything else is still learned at runtime.
+  "gemini-3.5-flash-lite",
+  "gemini-flash-lite-latest",
+]);
 
 /** مهلة نداء جيميناي الواحد لما مفيش ميزانية أقصر. */
 const GEMINI_CALL_TIMEOUT_MS = 12_000;

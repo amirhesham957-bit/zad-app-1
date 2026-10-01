@@ -41,3 +41,22 @@ export function silentWriteFallback(reply: string, executed: readonly { tool: st
   if (executed.length === 0 || visibleReceipts(executed).length > 0) return reply;
   return "تمام 👍";
 }
+
+/**
+ * لفة نادت أدوات قراية بس (بحث على النت، قراية أسعار…) والموديل رجع بعد النتايج من غير ولا كلمة:
+ * «كم سعر الذهب اليوم» على تليجرام ٢٠٢٦-١٠-٠١ ١١:٥٢ — web_search اتنده والرد فضي، فالبوت وقع
+ * على المسار الاحتياطي. اللفة دي تستاهل نداء واحد كمان يكتب الرد من النتايج.
+ */
+export function needsAnswerAfterTools(o: {
+  reply: string;
+  toolAttempted: boolean;
+  executed: number;
+  proposals: number;
+}): boolean {
+  return !o.reply.trim() && o.toolAttempted && o.executed === 0 && o.proposals === 0;
+}
+
+/** التعليمة للنداء ده. */
+export const ANSWER_FROM_RESULTS_NOTE =
+  "\n\n**مهم:** نتايج الأدوات قدامك في المحادثة. اكتب دلوقتي ردك للعميل منها على سؤاله الأخير — " +
+  "من غير ما تنادي أدوات تاني. لو النتايج مافيهاش إجابة، قول كده بصراحة وقول اللي تعرفه.";

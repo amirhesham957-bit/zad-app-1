@@ -572,3 +572,13 @@ export function doseSlots(facts: Record<string, unknown> | null | undefined, fal
   }
   return (itemId) => map.get(itemId) ?? fallback;
 }
+
+/**
+ * «أخدتها» على جرعة متسجلة قبل كده — تذكيرين لنفس الخانة، أو ضغطة على رسالة قديمة. الـRPC
+ * مابيعدّهاش مرتين (duplicate) بس البوت كان بيرد «اتسجلت جرعة … ✅» كل مرة: يوم ٢٠٢٦-١٠-٠١
+ * خمس رسايل تأكيد على تلات جرعات، فبانت كأن الدوا اتسجل خمس مرات.
+ */
+export function doseAlreadyReply(names: readonly string[]): string {
+  const label = [...new Set(names)].join(" و");
+  return `جرعة ${label} دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.`;
+}

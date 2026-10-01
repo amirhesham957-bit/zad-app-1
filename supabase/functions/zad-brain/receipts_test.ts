@@ -41,3 +41,14 @@ Deno.test("profile: a joke name cannot overwrite the real one without confirmati
   assertEquals(identityOverwrites({ gender: "male" }, { gender: "female" }), ["gender"]);
   assertEquals(identityOverwrites({ gender: "male" }, { city: "جدة" }), []);
 });
+
+Deno.test("needsAnswerAfterTools: a search that came back to silence gets one more call, nothing else does", async () => {
+  const { needsAnswerAfterTools } = await import("./receipts.ts");
+  // «كم سعر الذهب اليوم» — web_search ran, the reply was empty (2026-10-01).
+  assertEquals(needsAnswerAfterTools({ reply: "", toolAttempted: true, executed: 0, proposals: 0 }), true);
+  assertEquals(needsAnswerAfterTools({ reply: "الجرام بـ٤٠٠٠", toolAttempted: true, executed: 0, proposals: 0 }), false);
+  // A write has its receipt; a proposal has its card; no tool means the model chose silence.
+  assertEquals(needsAnswerAfterTools({ reply: "", toolAttempted: true, executed: 1, proposals: 0 }), false);
+  assertEquals(needsAnswerAfterTools({ reply: "", toolAttempted: true, executed: 0, proposals: 1 }), false);
+  assertEquals(needsAnswerAfterTools({ reply: "", toolAttempted: false, executed: 0, proposals: 0 }), false);
+});

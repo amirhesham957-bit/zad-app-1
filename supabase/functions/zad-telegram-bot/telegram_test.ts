@@ -356,3 +356,10 @@ Deno.test("proactiveDismissReply never claims success when the write failed", ()
     assert(!reply.includes("✅"), JSON.stringify(result));
   }
 });
+
+import { doseAlreadyReply } from "./telegram.ts";
+
+Deno.test("a dose answered twice says it is already recorded, not «اتسجلت» again (2026-10-01)", () => {
+  assertEquals(doseAlreadyReply(["كريم بشرة"]), "جرعة كريم بشرة دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.");
+  assertEquals(doseAlreadyReply(["كريم بشرة", "كريم بشرة"]).includes("كريم بشرة وكريم"), false);
+});

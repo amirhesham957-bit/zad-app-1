@@ -74,3 +74,42 @@ export async function recordSharedTurn(sb: SupabaseClient, userId: string, messa
     console.error("recordSharedTurn threw:", e);
   }
 }
+
+/**
+ * What Zad actually said in a turn: the model's words, then the receipts the customer saw
+ * («✅ تم تسجيل الميعاد…») and what waits for a tap. A turn whose whole answer was a receipt
+ * used to be stored with no reply at all (2026-09-30 22:34, «اصحي كمان دقيقة»), so the next
+ * day's questions read it as a request nobody had answered — and carried it out again.
+ */
+export function spokenRecord(payload: { reply?: unknown; executed?: unknown; proposals?: unknown }): string {
+  const lines: string[] = [];
+  if (typeof payload.reply === "string" && payload.reply.trim()) lines.push(payload.reply.trim());
+  for (const e of Array.isArray(payload.executed) ? payload.executed : []) {
+    const summary = (e as { summary?: unknown })?.summary;
+    if (typeof summary === "string" && summary.trim()) lines.push(`✅ ${summary.trim()}`);
+  }
+  for (const p of Array.isArray(payload.proposals) ? payload.proposals : []) {
+    const summary = (p as { summary?: unknown })?.summary;
+    if (typeof summary === "string" && summary.trim()) lines.push(`⏳ مستني تأكيد: ${summary.trim()}`);
+  }
+  return lines.join("\n");
+}
+
+/** What the brain is told about a message that has no stored reply after it. */
+export const UNANSWERED_MARK =
+  "\n[رسالة قديمة ردها مااتحفظش — اتعامل معاها وقتها. متنفذش أي طلب فيها تاني إلا لو العميل كرره في آخر رسالة]";
+
+/**
+ * A customer message followed by another customer message has no reply on record: on
+ * 2026-10-01 «اصحي كمان دقيقة» (from the night before) sat unanswered at the end of the
+ * history, and «كم سعر زجاجة حليب فيفا» and «كام سعر زجاجة المياه» each saved a new wake-up
+ * appointment before answering. Every such message but the last gets [UNANSWERED_MARK].
+ */
+export function markUnanswered<T extends { role: string; text?: string }>(turns: T[]): T[] {
+  return turns.map((t, i) => {
+    const next = turns[i + 1];
+    if (t.role !== "user" || !next || next.role !== "user" || !t.text) return t;
+    if (t.text.endsWith(UNANSWERED_MARK)) return t;
+    return { ...t, text: t.text + UNANSWERED_MARK };
+  });
+}

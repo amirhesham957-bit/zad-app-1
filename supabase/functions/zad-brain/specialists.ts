@@ -128,6 +128,12 @@ function reminderIntent(norm: string, priorNorm: string): boolean {
 }
 const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه|عمري|عندي\s*[0-9٠-٩]+\s*سنه|مواليد/;
 
+// سؤال عن سعر أو ترند حي — مكانه البحث على النت، مش أدوات التطبيق: «كم سعر الذهب اليوم»،
+// «كام سعر زجاجة المياه في السعودية» (تليجرام ٢٠٢٦-١٠-٠١). مصروف العميل نفسه («صرفت كام»،
+// «دفعت ٥٠») مش منها — دي فلوسه هو.
+const WEB_PRICE_INTENT = /(كام|كم|بكام|بكم)\s*(سعر|تمن|ثمن)|سعر\s*\S+.*(النهارده|اليوم|دلوقتي|الحين)|(اسعار|أسعار)\s|ترند/;
+const OWN_MONEY = /صرفت|دفعت|اشتريت|قبضت/;
+
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
@@ -138,6 +144,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
+  if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   return [...new Set(tools)];
 }
 
