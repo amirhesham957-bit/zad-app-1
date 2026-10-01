@@ -58,9 +58,9 @@ Deno.test("prompt keeps the directive-before / generate-after shape and carries 
   assertStringIncludes(p, "\nافطر وخد دواك\n");
 });
 
-Deno.test("persona voices stay identical to the live-call table", async () => {
-  const { LIVE_VOICE_BY_PERSONA } = await import("../zad-voice-live/protocol.ts");
-  assertEquals(PERSONA_VOICES, LIVE_VOICE_BY_PERSONA);
+Deno.test("every persona name is Zad's one voice", () => {
+  // The live call (zad-voice-live) and its own voice table were removed on 2026-10-01.
+  for (const voice of Object.values(PERSONA_VOICES)) assertEquals(voice, "Aoede");
   assertEquals(voiceForPersona("sarah_warm"), "Aoede");
   assertEquals(voiceForPersona("nope"), "Aoede");
 });

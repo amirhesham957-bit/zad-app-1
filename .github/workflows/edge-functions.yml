@@ -95,10 +95,6 @@ jobs:
         working-directory: supabase/functions/zad-telegram-bot
         run: deno test --allow-all
 
-      - name: Test zad-voice-live
-        working-directory: supabase/functions/zad-voice-live
-        run: deno test --allow-all
-
       - name: Test admob-ssv
         working-directory: supabase/functions/admob-ssv
         run: deno test --allow-all
@@ -229,6 +225,20 @@ jobs:
             echo "::group::deploy $fn"
             supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
+          done
+
+      # فانكشنز اتشالت من الريبو بتفضل منشورة لحد ما تتمسح: zad-market-intelligence فضلت شغالة
+      # على السيرفر من ٢٠٢٦-٠٩-٠٥ لحد ٢٠٢٦-١٠-٠١ بعد ما اتمسحت من الكود. أي اسم هنا مالوش مجلد
+      # بيتمسح من السيرفر؛ لو مش موجود أصلاً الأمر بيفشل والخطوة بتكمّل.
+      - name: Delete retired functions
+        if: steps.preflight.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          for fn in zad-market-intelligence zad-voice-live voice-selftest zad-ai-proxy; do
+            if [ -d "supabase/functions/$fn" ]; then echo "$fn still has a folder, kept"; continue; fi
+            yes | supabase functions delete "$fn" --project-ref "$PROJECT_REF" && echo "deleted $fn" || echo "$fn not deployed"
           done
 
       # مفاتيح المزوّدين: «المفتاح اتحط؟ وشغال؟» مقاسة بعد كل نشر مش تخمين. أسماء الأسرار
