@@ -82,7 +82,7 @@ import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
-import { ANSWER_FROM_RESULTS_NOTE, isWrite, needsAnswerAfterTools, silentWriteFallback, visibleReceipts } from "./receipts.ts";
+import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -157,6 +157,11 @@ const MAX_AGENT_TURNS = 8;
 // أكبر بكتير من أي حوار طبيعي (لفة أو اتنين، ~1200-2500 توكن) عشان مايأثرش على أي طلب
 // حقيقي، ومحسوب على مجموع كل نداءات الموديل في اللفة دي (input+output).
 const MAX_AGENT_TOKENS_PER_RUN = 20000;
+// نفس الحارس للشات، بأرقام النهارده: نداء الشات الواحد بقى ~١١-١٥ ألف توكن دخل (البرومبت
+// والملخص و٢٠ أداة، #50)، مش ١٢٠٠-٢٥٠٠ زي ما الرقم فوق اتحسب. بـ٢٠ ألف، أي سؤال محتاج
+// أداتين كان بيقف بعد التانية من غير رد (اختبار القبول ٨، ٢٠٢٦-١٠-٠١: بحثين = ٢٩ ألف ⇒ وقف).
+// ٦٠ ألف = ٤ نداءات تقريباً: أداتين ورد، ولسه بيوقف لفة هربانة قبل سقف الـ٨ لفات بكتير.
+const MAX_CHAT_TOKENS_PER_RUN = 60000;
 
 // W4 — سقف استخدام يومي لكل مستخدم عبر قناة الشات (agent_turn). الخطر الأصلي اللي ده
 // بيحميه: ingestion تلقائي (إشعارات بنكية) ممكن يستهلك نداءات موديل بلا حدود لو بق
@@ -5336,7 +5341,7 @@ async function handleAgentTurn(
     // الموديل لسه بينادي أدوات بنجاح (طلب متسلسل زي "راجع مصاريف الأسبوع وقلل السقف"
     // بيحتاج أكتر من أداة واحدة بالتتابع). دلوقتي اللفة بتكمل طالما لسه فيه نداءات أدوات
     // وتحت سقف اللفات/التوكنز — النهاية الطبيعية هي reply.toolCalls.length === 0 فوق.
-    if (inputTokens + outputTokens >= MAX_AGENT_TOKENS_PER_RUN) {
+    if (inputTokens + outputTokens >= MAX_CHAT_TOKENS_PER_RUN) {
       // سقف التوكنز — وقف الاستدعاء بس سيب اللي اتنفذ فعلاً زي ما هو، مش نلغيه.
       break;
     }
@@ -5347,8 +5352,10 @@ async function handleAgentTurn(
   // وبالتالي مفيش كارت تأكيد يتعرض — والنص اللي بيتعرض هو نصه هو، من غير ادعاء.
   if (needsAnswerAfterTools({ reply: modelText, toolAttempted: anyToolAttempted, executed: executed.length, proposals: proposals.length })) {
     try {
+      // من غير أدوات: النداء ده لكتابة الرد بس (historyForAnswer في receipts.ts).
       const answer = await callModel({
-        model: MODEL_ROUTINE, system: systemPrompt + ANSWER_FROM_RESULTS_NOTE, tools: scopedTools, history, maxTokens: 1200,
+        model: MODEL_ROUTINE, system: systemPrompt + ANSWER_FROM_RESULTS_NOTE, tools: [],
+        history: historyForAnswer(history), maxTokens: 1200,
       });
       inputTokens += answer.usage.inTok;
       outputTokens += answer.usage.outTok;
