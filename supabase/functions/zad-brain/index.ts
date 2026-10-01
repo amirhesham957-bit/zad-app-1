@@ -62,7 +62,7 @@ import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -2003,6 +2003,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         if (doseTimes && doseTimes !== dupe.dose_times) patch.dose_times = doseTimes;
         if (input.dosage && !dupe.dosage) patch.dosage = String(input.dosage).trim();
         if (input.quantity != null) patch.remaining_quantity = input.quantity;
+        if (typeof input.is_recurring === "boolean") patch.is_recurring = input.is_recurring;
         if (Object.keys(patch).length > 0) {
           const u = await writeRows(
             sb.from("zad_pharmacy_items").update(patch)
@@ -2046,6 +2047,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           remaining_quantity: input.quantity ?? 1,
           category: input.category ?? "عام",
           for_person: forPerson,
+          ...(pharmacyIsRecurring(input) == null ? {} : { is_recurring: pharmacyIsRecurring(input) }),
         }).select("id,name,dose_times"),
         "إضافة الدواء",
       );
@@ -2071,6 +2073,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const patch: Record<string, unknown> = {};
       if (input.dosage !== undefined) patch.dosage = String(input.dosage).trim();
       if (input.remaining_quantity !== undefined) patch.remaining_quantity = input.remaining_quantity;
+      if (typeof input.is_recurring === "boolean") patch.is_recurring = input.is_recurring;
       if (input.dose_times !== undefined) {
         const normalized = normalizeDoseTimes(input.dose_times, input.daily_dose_count, input.times_explicit);
         if (normalized === null) return `مرفوض: مواعيد الجرعات مش مفهومة — لازم تكون بصيغة HH:MM مفصولة بفاصلة.`;
@@ -3399,6 +3402,12 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
+/** متجدد ولا كورس — بيقرر هل الدوا ينزل قايمة البقالة لوحده لما يقرب يخلص (قرار المالك ٢٠٢٦-١٠-٠١). */
+const RECURRING_HINT =
+  "true لو دوا مزمن أو مستمر بيتجدد (ضغط، سكر، غدة، «باخده على طول»، «كل شهر»). false لو كورس ليه نهاية " +
+  "(مضاد حيوي، «لمدة ٥ أيام»، مسكن وقت اللزوم، كريم لفترة). سيبه فاضي لو العميل ماقالش ومش باين. " +
+  "المتجدد بس هو اللي بينزل قايمة التسوق لوحده لما يقرب يخلص.";
+
 // ═══════════════════════════════════════════════════════════
 // المرحلة ٢-ب — أدوات المحادثة (agent_turn بس، مش التشغيل الخلفي).
 //
@@ -3407,6 +3416,7 @@ const TOOLS: ToolDef[] = [
 // محادثة — المستخدم قدامك، رد عليه. والعكس صحيح: الأدوات دي بتتنفذ بطلب صريح من
 // المستخدم، فمالهاش لازمة في تشغيلة كرون.
 // ═══════════════════════════════════════════════════════════
+
 const CHAT_TOOLS: ToolDef[] = [
   {
     name: "log_transaction",
@@ -3558,6 +3568,7 @@ const CHAT_TOOLS: ToolDef[] = [
         quantity: { type: "number", description: "الكمية المتاحة عنده" },
         category: { type: "string", enum: ["عام", "مسكن", "مضاد حيوي", "فيتامين", "مزمن"] },
         for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه." },
+        is_recurring: { type: "boolean", description: RECURRING_HINT },
       },
       required: ["name"],
     },
@@ -3584,6 +3595,7 @@ const CHAT_TOOLS: ToolDef[] = [
         daily_dose_count: { type: "number" },
         dose_times: { type: "string", description: "HH:MM مفصولة بفاصلة — الساعات اللي العميل نطقها بس" },
         times_explicit: { type: "boolean", description: "true بس لو العميل نطق الساعات دي حرفياً" },
+        is_recurring: { type: "boolean", description: RECURRING_HINT },
       }, required: ["name"],
     },
   },
