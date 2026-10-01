@@ -2924,6 +2924,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       return JSON.stringify(hits.map((h, i) => `${i + 1}. ${h.title}\n${h.url}\n${h.snippet}`).join("\n\n"));
     }
+    case "read_house": {
+      const section = String(input.section ?? "");
+      if (!HOUSE_SECTIONS_ON_REQUEST.includes(section)) {
+        return `مرفوض: الجزء ده مش موجود. الأجزاء: ${HOUSE_SECTIONS_ON_REQUEST.join("، ")}`;
+      }
+      return JSON.stringify((snap as Record<string, unknown>)?.[section] ?? null).slice(0, 12000);
+    }
     case "open_support_ticket": {
       // شكوى لإنسان (٢٠٢٦-١٠-٠١: محادثة الدعم الذكي كانت بترد وبس، وصفر تذاكر اتفتحت من يومها).
       const subject = String(input.subject ?? "").trim().slice(0, 200);
@@ -4289,6 +4296,20 @@ const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "read_house",
+    description:
+      "يقرا جزء من بيانات البيت اللي مش في الملخص اللي قدامك. الأجزاء: recent_transactions (آخر ٢٠ حركة بأرقامها " +
+      "ومعرّفاتها)، stock (صفوف المخزون كلها)، stock_unknown، notifications_sent (التنبيهات اللي اتبعتت)، " +
+      "observations، lifestyle، behavior_profile (سلوك الصرف)، obligation_rows، obligation_detection، " +
+      "cash_reconciliation، cycle_detection، self_review، debts، maintenance_due، dose_adherence، recent_outings، " +
+      "upcoming، anomalies، distinct_categories، dismissal_reasons. نادِها قبل أي إجابة أو تعديل محتاج الجزء ده.",
+    input_schema: {
+      type: "object",
+      properties: { section: { type: "string", description: "اسم الجزء بالظبط من القايمة" } },
+      required: ["section"],
+    },
+  },
+  {
     name: "open_support_ticket",
     description:
       "يفتح شكوى أو طلب دعم لفريق زاد البشري ويبعته على إيميل الدعم ومعاه آخر المحادثة. استخدمها لما العميل " +
@@ -5202,7 +5223,9 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   let inputTokens = 0, outputTokens = 0;
   // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
   // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا.
-  const scopedTools = scopeToolsForSpecialist(CHAT_TOOLS, specialist, specialistConsult);
+  const scopedTools = scopeToolsForSpecialist(
+    CHAT_TOOLS, specialist, specialistConsult, intentToolHints(message, priorAssistantText(history)),
+  );
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
@@ -5323,6 +5346,11 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
   reply = silentWriteFallback(reply, executed, proposals.length);
+  // لفة خلصت من غير ولا كلمة ولا تنفيذ: العميل كان هيشوف رد فاضي (اختبار القبول ٢٠٢٦-١٠-٠١، سؤال
+  // عام بعد بحث فاضي). جملة صريحة أحسن من صمت، ومن غير ما نخترع إجابة.
+  if (!reply.trim() && executed.length === 0 && proposals.length === 0) {
+    reply = "معلش، مقدرتش أوصل لإجابة أكيدة دلوقتي 🙏 جرّب تسألني بطريقة تانية أو كمان شوية.";
+  }
 
   // كان هنا «مراجع» بموديل تاني بعد كل لفة فيها كتابة، وحكمه بيتلزق قبل الرد اللي العميل بيقراه.
   // اتشال ٢٠٢٦-١٠-٠١: اختبار القبول الحي طلّع للعميل «المساعد وعد بحاجة متنفذتش (تذكير شرب المية مش
@@ -6010,6 +6038,25 @@ function groqSystemFor(snap: any, dialectHintText?: string): string {
   return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect), dialectReminder(profile.dialect));
 }
 
+/**
+ * أجزاء البيت التقيلة اللي مابتتبعتش مع كل رسالة — بتتقري بـ read_house لما الكلام يحتاجها.
+ * مقاس على حساب المالك (٢٠٢٦-١٠-٠١): الملخص كان ١٥ ألف حرف، أكبرها الحركات (٢٦٥٠ + معرّفاتها ٧٨١)
+ * وصفوف المخزون (٢٢٨٩) والتنبيهات المبعوتة (٦٩٩). التحقق من الأدوات لسه شايف البيت كله.
+ */
+const HOUSE_SECTIONS_ON_REQUEST = [
+  "recent_transactions", "recent_transaction_ids", "stock", "stock_unknown", "notifications_sent", "observations",
+  "lifestyle", "behavior_profile", "obligation_rows", "obligation_detection", "cash_reconciliation",
+  "cycle_detection", "self_review", "debts", "maintenance_due", "dose_adherence", "recent_outings", "upcoming",
+  "anomalies", "distinct_categories", "dismissal_reasons", "dismissed_keys", "asked_recently", "rate_known_items",
+];
+
+/** الملخص اللي بيتبعت مع الرسالة: البيت من غير الأجزاء اللي بتتقري عند الحاجة. */
+function promptSnapshot(snap: any): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(snap ?? {}) };
+  for (const key of HOUSE_SECTIONS_ON_REQUEST) delete out[key];
+  return out;
+}
+
 function buildChatSystemPrompt(snap: any, voiceMode = false): string {
   const assistant = getAssistantName(snap);
   const profile = conversationProfile(snap?.country, {
@@ -6090,8 +6137,9 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).
 
 === SNAPSHOT ===
-${JSON.stringify(snap)}
+${JSON.stringify(promptSnapshot(snap))}
 === نهاية SNAPSHOT ===
+(أجزاء تانية من البيت بتتقري بـ read_house لما تحتاجها.)
 
 ${dialectReminder(profile.dialect)}`;
 }
@@ -6319,8 +6367,11 @@ async function handleRequest(req: Request): Promise<Response> {
         const chatPrompt = buildChatSystemPrompt(snap);
         context = {
           snapshot_chars: JSON.stringify(snap).length, snapshot_keys: keys,
-          chat_prompt_chars: chatPrompt.length, rules_chars: chatPrompt.length - JSON.stringify(snap).length,
+          chat_prompt_chars: chatPrompt.length, rules_chars: chatPrompt.length - JSON.stringify(promptSnapshot(snap)).length,
           soul_chars: soulBlock().length, tools: CHAT_TOOLS.length, tools_chars: JSON.stringify(CHAT_TOOLS).length,
+          prompt_snapshot_chars: JSON.stringify(promptSnapshot(snap)).length,
+          general_tools: scopeToolsForSpecialist(CHAT_TOOLS, "general").length,
+          general_tools_chars: JSON.stringify(scopeToolsForSpecialist(CHAT_TOOLS, "general")).length,
         };
       }
       const passed = results.filter((r) => r.pass === true).length;

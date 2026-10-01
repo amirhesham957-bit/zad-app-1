@@ -211,3 +211,11 @@ Deno.test("intentToolHints: a question about a recent event searches the web", (
   assertEquals(intentToolHints("إيه أخبار الدوري النهارده"), ["web_search"]);
   assertEquals(intentToolHints("مين في عيلتي ماخدش دواه"), []);
 });
+
+Deno.test("scopeToolsForSpecialist: a general message gets the core set plus what its intent points to", () => {
+  const all = ["read_house", "web_search", "add_appointment", "delete_debt", "update_obligation", "add_maintenance_item"].map((name) => ({ name }));
+  const general = scopeToolsForSpecialist(all, "general").map((t) => t.name);
+  assertEquals(general, ["read_house", "web_search", "add_appointment"]);
+  const hinted = scopeToolsForSpecialist(all, "general", null, ["delete_debt"]).map((t) => t.name);
+  assertEquals(hinted, ["read_house", "web_search", "add_appointment", "delete_debt"]);
+});

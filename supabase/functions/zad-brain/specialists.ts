@@ -325,12 +325,28 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
  * "أطبخ إيه بـ٥٠ جنيه؟" (مطبخ أساسي، فلوس استشاري) لازم يقدر يستخدم check_price_online
  * *و* يشوف الميزانية من غير ما يفقد أدوات المخزون.
  */
+/**
+ * الأدوات اللي الرسالة العامة بتاخدها (تحية، سؤال، طلب سريع). قبل كده الرسالة العامة كانت
+ * بتاخد الـ٦١ أداة كلها: ٣٣ ألف حرف تعريفات أدوات مع «مرحبا» — نص حمل كل رسالة (اختبار
+ * القبول، ٢٠٢٦-١٠-٠١). الأداة اللي نية الرسالة بتشاور عليها بتنضاف فوقهم (extra).
+ */
+export const GENERAL_CORE_TOOLS: readonly string[] = [
+  "read_house", "remember", "update_customer_profile", "web_search", "gold_price", "fetch_current_exchange_rate",
+  "app_command", "open_support_ticket", "add_appointment", "update_appointment", "add_place_reminder",
+  "log_transaction", "add_shopping_item", "add_inventory_item", "update_inventory_qty", "add_pharmacy_item",
+  "log_pharmacy_dose", "set_broke_mode", "suggest_recipes", "find_nearby_stores",
+];
+
 export function scopeToolsForSpecialist<T extends { name: string }>(
   tools: T[],
   specialist: SpecialistId,
   secondary?: SpecialistId | null,
+  extra: readonly string[] = [],
 ): T[] {
-  if (specialist === "general") return tools;
+  if (specialist === "general") {
+    const core = new Set([...GENERAL_CORE_TOOLS, ...extra]);
+    return tools.filter((t) => core.has(t.name));
+  }
   const allowed = new Set([
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
@@ -351,6 +367,9 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "start_savings_challenge", "stop_savings_challenge",
     // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
     "update_customer_profile",
+    // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
+    "read_house",
+    ...extra,
   ]);
   return tools.filter((t) => allowed.has(t.name));
 }
