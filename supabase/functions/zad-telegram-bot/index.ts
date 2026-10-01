@@ -23,6 +23,7 @@ import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
+import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import type { VoiceEmotion } from "../_shared/zadVoice.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
@@ -121,6 +122,27 @@ async function resolveUserId(sb: SupabaseClient, chatId: number): Promise<string
     .not("bound_at", "is", null)
     .maybeSingle();
   return (data as { user_id: string } | null)?.user_id ?? null;
+}
+
+/** «انت في أنهي بلد؟» — مرة واحدة لحساب من غير بلد (countryAsk.ts). مابيوقفش الرسالة:
+ * السؤال بيتبعت والرد على كلام العميل بيكمل عادي. أي فشل هنا بيتسجل ومابيكسرش الرد. */
+async function maybeAskCountry(sb: SupabaseClient, chatId: number, userId: string): Promise<void> {
+  try {
+    const [{ data: user }, { data: binding }] = await Promise.all([
+      sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+      sb.from("telegram_bindings").select("id,country_asked_at").eq("chat_id", chatId).not("bound_at", "is", null).maybeSingle(),
+    ]);
+    const b = binding as { id: string; country_asked_at: string | null } | null;
+    if (!b || !shouldAskCountry((user as { country?: string | null } | null)?.country, b.country_asked_at)) return;
+    // العلامة الأول: رسالتين ورا بعض مايسألوش مرتين.
+    const { data: claimed } = await sb.from("telegram_bindings")
+      .update({ country_asked_at: new Date().toISOString() })
+      .eq("id", b.id).is("country_asked_at", null).select("id");
+    if (!claimed?.length) return;
+    await sendTelegramMessage(chatId, COUNTRY_QUESTION, countryKeyboard());
+  } catch (e) {
+    console.error("country ask failed:", e);
+  }
 }
 
 /** Reverse of resolveUserId — the realtime_push job only knows user_id (from a DB trigger
@@ -929,6 +951,8 @@ bot.command("start", async (ctx) => {
     await ctx.reply("فشل الربط — الحساب ده ممكن يكون مربوط بيوزر تاني بالفعل.");
   } else {
     await ctx.reply("تم الربط بنجاح ✅ اختار من تحت:", { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
+    const userId = await resolveUserId(sb, chatId);
+    if (userId) await maybeAskCountry(sb, chatId, userId);
   }
 });
 
@@ -1293,6 +1317,7 @@ bot.on("message:text", async (ctx) => {
     await ctx.reply("أهلاً! لو عندك كود ربط من تطبيق زاد ابعته كده: /start الكود");
     return;
   }
+  await maybeAskCountry(sb, ctx.chat.id, userId);
 
   // تأكيد/رفض بالنص — العميل يقدر يرد "أيوه"/"لا" بدل الضغط على الزر (نفس اللي
   // بيعمله التطبيق). بنقرا أحدث pending write/tool لسه pending بتاعه، ولو رده
@@ -1817,6 +1842,19 @@ bot.on("callback_query:data", async (ctx) => {
   }
 
   const data = ctx.callbackQuery.data;
+
+  const country = parseCountryCallback(data);
+  if (country) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    // نفس اللي شاشة اختيار السوق في التطبيق بتكتبه (setMarket)، ونقرا الصف تاني قبل ما نقول «تمام».
+    const { data: saved, error } = await sb.from("zad_users")
+      .update({ country: country.country, currency: country.currency })
+      .eq("id", userId).select("country").maybeSingle();
+    const ok = !error && (saved as { country?: string } | null)?.country === country.country;
+    if (!ok) console.error("country save failed:", error?.message ?? "row not read back");
+    await ctx.reply(ok ? countrySavedReply(country.label) : "ماقدرتش أحفظ البلد دلوقتي — جرّب تاني بعد شوية، أو اختارها من إعدادات التطبيق.");
+    return;
+  }
 
   // ── زر الجرعة: قاعدة البيانات الأول، الشكر بعدين (٢٠٢٦-٠٩-١٩) ─────────────
   //
