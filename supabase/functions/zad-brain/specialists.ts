@@ -135,6 +135,9 @@ const WEB_PRICE_INTENT = /(كام|كم|بكام|بكم)\s*(سعر|تمن|ثمن)
 const OWN_MONEY = /صرفت|دفعت|اشتريت|قبضت/;
 // «سعر الدهب» من غير «النهارده» ماكانش بيعدّي WEB_PRICE_INTENT (٢٠٢٦-١٠-٠١ ٢٠:٠٥ تليجرام).
 const GOLD_INTENT = /دهب|ذهب|عيار\s*(24|21|18|٢٤|٢١|١٨)/;
+// سؤال عن حدث أو «آخر مرة»: معلومات الموديل قديمة. «مين كسب كاس العالم للأندية آخر مرة؟» اترد عليه
+// «مانشستر سيتي ٢٠٢٣» من الذاكرة، والنسخة الأحدث (٢٠٢٥) كسبها تشيلسي (اختبار القبول، ٢٠٢٦-١٠-٠١).
+const RECENT_FACT_INTENT = /(مين|من)\s*(اللي)?\s*(كسب|فاز|اخد|بطل)|(اخر|آخر)\s*(مره|نسخه|بطوله|ماتش|مباراه)|(اخبار|أخبار)|نتيجه\s*(ماتش|مباراه)|مين\s*(رئيس|وزير|مدرب)/;
 const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)\s*(بكام|بكم|كام|كم|النهارده|اليوم|دلوقتي)|(بكام|بكم|كام|كم|سعر)\s*(ال)?(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)|سعر\s*(ال)?صرف/;
 
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
@@ -150,6 +153,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (GOLD_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("gold_price");
   else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
+  else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
   return [...new Set(tools)];
 }
 

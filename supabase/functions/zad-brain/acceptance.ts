@@ -84,6 +84,8 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
       if (o.reply.trim().length < 15) return "empty answer";
       if (NOT_FOUND.test(firstSentence(o.reply))) return "said it could not find it";
       if (BUDGET_DEFLECTION.test(o.reply)) return "steered to the budget";
+      // The 2025 edition (32 clubs) was won by Chelsea; «Manchester City 2023» is the model's memory.
+      if (!/تشيلسي|تشلسي|Chelsea|2025|٢٠٢٥/i.test(o.reply)) return "out of date: not the 2025 winner";
       return null;
     },
   },

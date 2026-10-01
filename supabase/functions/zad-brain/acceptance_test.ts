@@ -20,6 +20,8 @@ Deno.test("the replies the owner asked for pass", () => {
   assertEquals(run("2_dollar", "الدولار النهارده بحوالي 48.6 جنيه."), null);
   assertEquals(run("3_reminder_once", "تمام، هفكرك 5:12", ["add_appointment"], 1), null);
   assertEquals(run("8_general_question", "مانشستر سيتي كسب آخر كاس عالم للأندية بنظامها القديم، وتشيلسي كسب نسخة 2025."), null);
+  // The live probe's answer on 2026-10-01, from the model's memory.
+  assertEquals(run("8_general_question", "آخر مرة كسب كأس العالم للأندية كان نادي مانشستر سيتي الإنجليزي في نسخة 2023."), "out of date: not the 2025 winner");
   assertEquals(run("8_general_question", "معرفش، تعالى نبص على ميزانيتك"), "said it could not find it");
 });
 

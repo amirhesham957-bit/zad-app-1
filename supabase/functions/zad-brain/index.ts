@@ -6299,13 +6299,29 @@ async function handleRequest(req: Request): Promise<Response> {
           gold: { ok: gold?.ok, quotes: gold?.quotes, attempts: gold?.attempts },
         };
       }
+      // مقاسات السياق (أطوال بس، مفيش محتوى): مم بيتكوّن الـ٢٣ ألف توكن في كل رسالة. للحساب اللي
+      // اتبعت في context_for (حساب الاختبار لو مفيش).
+      let context: unknown = null;
+      if (body.context !== false) {
+        const who = typeof body.context_for === "string" && /^[0-9a-f-]{36}$/.test(body.context_for) ? body.context_for : ACCEPTANCE_USER_ID;
+        const snap = await buildSnapshot(sbProbe, who);
+        const keys = Object.fromEntries(Object.entries(snap as Record<string, unknown>)
+          .map(([k, v]) => [k, JSON.stringify(v ?? null).length])
+          .sort((a, b) => (b[1] as number) - (a[1] as number)));
+        const chatPrompt = buildChatSystemPrompt(snap);
+        context = {
+          snapshot_chars: JSON.stringify(snap).length, snapshot_keys: keys,
+          chat_prompt_chars: chatPrompt.length, rules_chars: chatPrompt.length - JSON.stringify(snap).length,
+          soul_chars: soulBlock().length, tools: CHAT_TOOLS.length, tools_chars: JSON.stringify(CHAT_TOOLS).length,
+        };
+      }
       const passed = results.filter((r) => r.pass === true).length;
       await sbProbe.from("agent_logs").insert({
         agent_name: "acceptance_probe", tool_used: "agent_turn", user_id: ACCEPTANCE_USER_ID,
         status: passed === results.length ? "success" : "warning", duration_ms: Date.now() - probeStarted,
-        payload: { passed, total: results.length, results, search },
+        payload: { passed, total: results.length, results, search, context },
       });
-      return new Response(JSON.stringify({ passed, total: results.length, results, search }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ passed, total: results.length, results, search, context }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {
