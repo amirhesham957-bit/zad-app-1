@@ -1,7 +1,12 @@
 /// Kotlin's achievements logic (`AchievementsScreen.kt`): the fixed catalogue
-/// from `zad-market-intelligence/gamification.ts`, unlocked state from real
-/// `user_achievements` rows, and progress from the user's crowdsourced
-/// `price_index` rows. Nothing is computed as unlocked here.
+/// from `zad-market-intelligence/gamification.ts`, and progress from the
+/// user's crowdsourced `price_index` rows.
+///
+/// An achievement is unlocked when a `user_achievements` row says so **or**
+/// when the measured progress reaches it. The rows were written by
+/// zad-market-intelligence, which was removed on 2026-09-05; since then
+/// nothing writes them, so «مقفول» stayed on every badge whatever the
+/// customer contributed (found 2026-10-01: 0 rows ever).
 library;
 
 /// What unlocks an achievement.
@@ -116,14 +121,30 @@ int contributionStreak(DateTime? last, DateTime now) {
   required int contributions,
   required int streak,
 }) {
+  final points = <String, int>{
+    for (final r in unlocked) r.achievementId: r.points,
+    for (final d in kAchievementCatalog) d.id: d.points,
+  };
   final ids = {for (final r in unlocked) r.achievementId};
-  final total = unlocked.fold<int>(0, (sum, r) => sum + r.points);
+  var total = 0;
 
   bool met(AchievementDef d) => switch (d.condition) {
     AchievementCondition.contributionCount => contributions >= d.threshold,
     AchievementCondition.streak => streak >= d.threshold,
     AchievementCondition.totalScore => total >= d.threshold,
   };
+
+  // Earned points can unlock a points badge, whose points can unlock the
+  // next: settle until nothing changes.
+  for (var changed = true; changed;) {
+    total = ids.fold<int>(0, (sum, id) => sum + (points[id] ?? 0));
+    final more = <String>{
+      for (final d in kAchievementCatalog)
+        if (!ids.contains(d.id) && met(d)) d.id,
+    };
+    changed = more.isNotEmpty;
+    ids.addAll(more);
+  }
 
   // Kotlin's minByOrNull: the first entry with the smallest threshold.
   AchievementDef? next;
@@ -148,7 +169,7 @@ int contributionStreak(DateTime? last, DateTime now) {
       totalPoints: total,
       contributions: contributions,
       streak: streak,
-      unlocked: unlocked.length,
+      unlocked: ids.length,
       nextName: next?.name,
       nextProgress: progress,
     ),
