@@ -1,4 +1,5 @@
-/// عقل زاد: the four windows onto what the assistant knows and does.
+/// عقل زاد: the windows onto what the assistant knows and does — its staff's
+/// notes first.
 ///
 /// Kotlin puts the same four behind icons over its intelligence tab. Here they
 /// hang off the chat, since that is where the customer talks to the thing they
@@ -15,6 +16,7 @@ import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
+import 'package:zad/features/brain/presentation/staff_screen.dart';
 
 /// Opens the hub.
 Future<void> showBrainHub(BuildContext context) => Navigator.of(
@@ -29,6 +31,12 @@ class BrainHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const entries = <_Entry>[
+      _Entry(
+        icon: ZadIcons.assistant,
+        title: 'فريق زاد',
+        subtitle: 'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك',
+        open: showStaffScreen,
+      ),
       _Entry(
         icon: ZadIcons.memory,
         title: 'زاد عارف عني إيه',

@@ -89,6 +89,7 @@ import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport }
 import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
+import { runStaffRound, staffBlock } from "./staff.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -6788,7 +6789,10 @@ async function handleRequest(req: Request): Promise<Response> {
     const allTurnRejections: string[] = [];
     let anyActionAttempted = false;
 
-    const history: Turn[] = [{ role: "user", text: userMessage ?? `trigger: ${trigger}` }];
+    // «فريق زاد»: الموظفين بيلفّوا على البيت قبل التحليل اليومي (staff.ts) — من غير نداء موديل —
+    // وملاحظاتهم بتدخل الصندوق اللي الشات بيقراه، وبتدخل برومبت التحليل ده.
+    const staff = trigger === "daily" ? await runStaffRound(sb, userId) : [];
+    const history: Turn[] = [{ role: "user", text: (userMessage ?? `trigger: ${trigger}`) + staffBlock(staff) }];
 
     // نداء أدوات حقيقي دلوقتي (مش JSON مكتوب في نص)، عن طريق turn حقيقي role:"tool" مش
     // نص بنعيد صياغته يدوي. سقف اللفات/التوكنز مشترك مع agent_turn — انظر تعليق
