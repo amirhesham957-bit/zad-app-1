@@ -719,3 +719,15 @@ export function doseAdherence(
     skipped: newRows.filter((r) => r.status === "skipped").length,
   };
 }
+
+/**
+ * هل الدوا متجدد (مزمن/مستمر) ولا كورس ليه نهاية — قرار المالك ٢٠٢٦-١٠-٠١: الدوا ينزل قايمة البقالة
+ * لوحده لما يقرب يخلص **بس لو متجدد**؛ المضاد الحيوي والعلاج المؤقت لأ. `is_recurring` الصريح من
+ * الموديل بيكسب؛ من غيره تصنيف «مزمن» = متجدد؛ وإلا null (الجدول افتراضيه false).
+ */
+export function pharmacyIsRecurring(input: { is_recurring?: unknown; category?: unknown }): boolean | null {
+  if (typeof input.is_recurring === "boolean") return input.is_recurring;
+  if (input.category === "مزمن") return true;
+  if (input.category === "مضاد حيوي") return false;
+  return null;
+}

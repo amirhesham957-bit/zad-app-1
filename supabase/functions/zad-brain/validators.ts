@@ -659,7 +659,7 @@ export const validateUpdatePharmacyItem: Validator = (input, _snap, ctx) => {
     if (!times.length || !times.every((t: string) => DOSE_TIME_RE.test(t))) return { ok: false, reason: "المواعيد لازم تكون HH:MM مفصولة بفاصلة" };
     if (input.daily_dose_count !== undefined && input.daily_dose_count !== times.length) return { ok: false, reason: "عدد الجرعات لازم يساوي عدد المواعيد" };
   }
-  if (input.dosage === undefined && input.remaining_quantity === undefined && input.dose_times === undefined && input.daily_dose_count === undefined) return { ok: false, reason: "حدد الكمية أو الجرعة أو المواعيد المطلوب تعديلها" };
+  if (input.dosage === undefined && input.remaining_quantity === undefined && input.dose_times === undefined && input.daily_dose_count === undefined && typeof input.is_recurring !== "boolean") return { ok: false, reason: "حدد الكمية أو الجرعة أو المواعيد أو هل هو مزمن، المطلوب تعديله" };
   return { ok: true };
 };
 
