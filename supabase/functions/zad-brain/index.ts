@@ -63,7 +63,7 @@ import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
+import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
@@ -4909,13 +4909,25 @@ const INTENT_RETRY_NOTE =
  * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
-async function callAgentModel(system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string) {
+async function callAgentModel(
+  system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string,
+  onText?: (delta: string) => void,
+) {
   const hinted = intentToolHints(message, priorAssistantText(history));
   // Groq بيشيل ٩-١٤ أداة بس تحت ٨٠٠٠/دقيقة (مقاس ٢٠٢٦-٠٩-٣٠) — اللي الرسالة بتشير لها الأول.
   const groqTools = groqToolOrder(tools, hinted, message);
-  const first = await callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
-  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
   const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
+  const plain = () => callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
+  // بث حقيقي (تشخيص زاد ٢.٢): أول لفة بس، ولما الرسالة مش بتشير لأداة — رسالة فيها تلميح
+  // أداة ممكن تتعاد بأدوات أضيق تحت، والنص اللي اتبث كان هيتشال. أي فشل في البث ⇒ النداء العادي.
+  const first = turn === 0 && onText && narrowed.length === 0
+    ? await streamGeminiTurn({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, onText })
+      .catch((e) => {
+        console.warn("[agent_turn] streaming fell back:", (e as Error)?.message ?? e);
+        return plain();
+      })
+    : await plain();
+  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
   if (narrowed.length === 0) return { ...first, intentRetry: null };
   try {
     const retry = await callModel({
@@ -4938,7 +4950,9 @@ async function callAgentModel(system: string, tools: ToolDef[], history: Turn[],
  * الفرق الجوهري عن مسار التحليل: مفيش كتابة في zad_insights هنا خالص (CHAT_TOOLS مافيهاش
  * emit_insight/ask_user) — العميل قدامك، الرد بيروح ليه مباشرة.
  */
-async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
+async function handleAgentTurn(
+  sb: SupabaseClient, userId: string, body: any, onText?: (delta: string) => void,
+): Promise<Response> {
   const message: string = String(body.message ?? "").trim();
   if (!message) {
     return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: CORS_HEADERS });
@@ -5229,7 +5243,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
-      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem);
+      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText);
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
       await finishRun("failed", String(e));
@@ -7194,46 +7208,52 @@ async function handleRequest(req: Request): Promise<Response> {
 }
 
 /**
- * agent_turn_stream — رد متدفق حرف بحرف (تجربة ChatGPT).
+ * What still has to be sent as `{t}` chunks once the turn is over: the whole reply when
+ * nothing streamed (a tool turn, a fast reply), the rest when the reply grew past what
+ * streamed, and nothing when a guard changed it — the `done` frame's `reply` carries that.
+ */
+export function streamTail(streamed: string, finalReply: string): string {
+  if (!streamed) return finalReply;
+  return finalReply.startsWith(streamed) ? finalReply.slice(streamed.length) : "";
+}
+
+/**
+ * agent_turn_stream — الرد بيتبث وهو بيتكتب (تشخيص زاد ٢.٢، ٢٠٢٦-١٠-٠١).
  *
- * المسار الذكي: نفّذ نفس منطق agent_turn الكامل (توجيه، ذاكرة، أدوات، مراجعة).
- * الفرق الوحيد: لفة الموديل الأخيرة لو طلعت نص خالص بدون functionCalls، نعيد
- * النص كـ SSE chunks صغيرة بدل JSON واحد — فالكلاينت يعرض الكلام وهو بينزل.
- * لو فيه أدوات، بنرجع JSON عادي زي أي وقت (الأدوات محتاجة تأكيد منظم).
+ * كان بيستنى اللفة كلها وبعدين يقطّع الرد حتت، فالصوت ماكانش يقدر يبدأ قبل ما العقل يخلص.
+ * دلوقتي نفس handleAgentTurn بالظبط (توجيه، ذاكرة، أدوات، كل الحراس) بس أول نداء موديل
+ * متدفق: النص بيطلع `{t}` وهو بيتكتب لحد ما الموديل يطلب أداة (الشرط في
+ * callAgentModel). الحراس اللي بتغيّر الرد بعد ما يخلص (unbackedReminderClaim، الرد الفاضي،
+ * مسار الأدوات) لسه شغالة: فريم `done` فيه `reply` النهائي، والكلاينت بيعرضه بدل اللي اتبث.
+ * لو مفيش حاجة اتبثت (لفة أدوات، رد سريع)، الرد بيتبعت حتت زي الأول — نسخ التطبيق القديمة
+ * بتبني الرد من الحتت بس.
  */
 async function handleAgentTurnStream(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
-  // نستخدم نفس المعالج العادي أولاً — هو اللي بيعمل كل المنطق الآمن
-  const normal = await handleAgentTurn(sb, userId, { ...body, message: body.message });
-  const clone = normal.clone();
-  let payload: any;
-  try {
-    payload = await normal.json();
-  } catch {
-    return clone;
-  }
-  // The app's turn joins the one conversation every channel reads.
-  if (payload?.ok === true && body.source !== "telegram") {
-    afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), spokenRecord(payload)));
-  }
-  if (!payload || payload.ok !== true || typeof payload.reply !== "string" || payload.reply.length < 40) {
-    // ردود قصيرة/أخطاء/تنفيذات → JSON عادي زي ما هو
-    return new Response(JSON.stringify(payload), { headers: { ...CORS_HEADERS, "content-type": "application/json" } });
-  }
-
-  // نص طويل نظيف → نكسره chunks ونبثه SSE
-  const text = payload.reply as string;
   const encoder = new TextEncoder();
+  const frame = (o: unknown) => encoder.encode(`data: ${JSON.stringify(o)}\n\n`);
   const stream = new ReadableStream({
-    start(controller) {
-      const CHUNK = 24; // ~كلمة ونص عربي
-      for (let i = 0; i < text.length; i += CHUNK) {
-        const piece = text.slice(i, i + CHUNK);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ t: piece })}\n\n`));
+    async start(controller) {
+      let streamed = "";
+      let payload: any = null;
+      try {
+        const normal = await handleAgentTurn(sb, userId, { ...body, message: body.message }, (delta) => {
+          streamed += delta;
+          controller.enqueue(frame({ t: delta }));
+        });
+        payload = await normal.json().catch(() => ({ ok: false, error: `status ${normal.status}` }));
+      } catch (e) {
+        console.error("agent_turn_stream failed:", e);
+        payload = { ok: false, error: "turn_failed" };
       }
-      // حدث نهائي فيه باقي الحقول (proposals، specialist...) عشان الكلاينت يكمل شغله
-      const meta = { ...payload };
-      delete meta.reply;
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, ...meta })}\n\n`));
+      // The app's turn joins the one conversation every channel reads.
+      if (payload?.ok === true && body.source !== "telegram") {
+        afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), spokenRecord(payload)));
+      }
+      const finalReply = typeof payload?.reply === "string" ? payload.reply : "";
+      const rest = streamTail(streamed, finalReply);
+      const CHUNK = 24; // ~كلمة ونص عربي
+      for (let i = 0; i < rest.length; i += CHUNK) controller.enqueue(frame({ t: rest.slice(i, i + CHUNK) }));
+      controller.enqueue(frame({ done: true, ...payload, reply: finalReply }));
       controller.close();
     },
   });
