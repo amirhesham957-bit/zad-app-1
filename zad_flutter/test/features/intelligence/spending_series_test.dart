@@ -79,4 +79,66 @@ void main() {
       ]);
     },
   );
+
+  group('behaviour (owner, 2026-10-01: «تحليل الصرف والسلوك»)', () {
+    final today = DateTime.utc(2026, 10); // a Thursday
+    DateTime local(DateTime utc) => utc;
+
+    test('the weekday spent on most, averaged over the weeks', () {
+      final rows = <ZadTransaction>[
+        // Two Thursdays and one Saturday inside the 8 weeks.
+        _t('a', 400, DateTime.utc(2026, 10, 1, 10)),
+        _t('b', 400, DateTime.utc(2026, 9, 24, 10)),
+        _t('c', 160, DateTime.utc(2026, 9, 26, 10)),
+        _t('in', 9000, DateTime.utc(2026, 9, 25), kind: TxnKind.income),
+      ];
+      final week = weekdayAverages(rows, today: today, local: local);
+      expect(week.first.$1, 'السبت');
+      expect(week[5], ('الخميس', 100.0)); // 800 over 8 weeks
+      expect(week[0], ('السبت', 20.0));
+      expect(week[6].$2, 0, reason: 'income is not spending');
+    });
+
+    test('where the money goes: merchant first, else the title', () {
+      final rows = <ZadTransaction>[
+        ZadTransaction.expense(
+          id: 'c1',
+          userId: 'u',
+          amount: 50,
+          title: 'قهوة',
+          createdAt: today,
+          wallet: Wallet.bank,
+          merchantName: 'Starbucks',
+        ),
+        ZadTransaction.expense(
+          id: 'c2',
+          userId: 'u',
+          amount: 70,
+          title: 'قهوة',
+          createdAt: today,
+          wallet: Wallet.bank,
+          merchantName: 'Starbucks',
+        ),
+        _t('بقالة', 300, today),
+      ];
+      expect(topPlaces(rows), <(String, double, int)>[
+        ('بقالة', 300, 1),
+        ('Starbucks', 120, 2),
+      ]);
+    });
+
+    test('what changed since last month, the largest move first', () {
+      final rows = <ZadTransaction>[
+        _t('1', 100, DateTime.utc(2026, 9, 25), category: 'قهوة'),
+        _t('2', 50, DateTime.utc(2026, 8, 20), category: 'قهوة'),
+        _t('3', 400, DateTime.utc(2026, 9, 20), category: 'إلكترونيات'),
+        _t('4', 200, DateTime.utc(2026, 8, 25), category: 'بقالة'),
+        _t('5', 210, DateTime.utc(2026, 9, 10), category: 'بقالة'),
+      ];
+      final changes = categoryChanges(rows, today: today, local: local);
+      expect(changes.first, ('إلكترونيات', 400.0, 0.0));
+      expect(changes[1], ('قهوة', 100.0, 50.0));
+      expect(changes.length, 3);
+    });
+  });
 }

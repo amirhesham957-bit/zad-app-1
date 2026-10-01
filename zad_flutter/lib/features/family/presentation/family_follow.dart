@@ -411,3 +411,113 @@ class _Tasks extends StatelessWidget {
     ),
   );
 }
+
+/// «تقرير العيلة» in one line per member — what [view] shows of them, or what
+/// is still to be asked. Pure, so it can be tested without a server.
+String familyReportLine(FollowedMember? view, String currency) {
+  if (view == null) return 'بجيب…';
+  final parts = <String>[];
+  if (view.medicines case final meds?) {
+    final slots = [for (final m in meds) ...m.today];
+    final taken = slots.where((s) => s.state == FollowedDoseState.taken).length;
+    final missed = slots
+        .where((s) => s.state == FollowedDoseState.missed)
+        .length;
+    final late = missed > 0 ? ' — $missed فاتت' : '';
+    parts.add(
+      slots.isEmpty
+          ? 'مفيش جرعات النهارده'
+          : 'جرعات: $taken من ${slots.length}$late',
+    );
+  }
+  if (view.spent30d case final spent?) {
+    parts.add(
+      'صرف ٣٠ يوم: ${NumberFormat('#,##0', 'en').format(spent)} $currency'
+          .trim(),
+    );
+  }
+  if (view.choresOpen case final open?) {
+    parts.add(open == 0 ? 'مفيش مهام مفتوحة' : '$open مهام مفتوحة');
+  }
+  if (parts.isEmpty) return 'لسه ماوافقش على أي متابعة';
+  final missing = <String>[
+    for (final s in FamilyShareScope.values)
+      if (view.statusOf(s) != FamilyShareStatus.granted) s.label,
+  ];
+  return [
+    ...parts,
+    if (missing.isNotEmpty) 'مش متشارك: ${missing.join('، ')}',
+  ].join(' · ');
+}
+
+/// Opens «تقرير العيلة» for the admin.
+Future<void> showFamilyReport(BuildContext context, String currency) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _FamilyReportSheet(currency: currency),
+    );
+
+class _FamilyReportSheet extends ConsumerWidget {
+  const new({required this.currency});
+
+  final String currency;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(signedInUserIdProvider)();
+    final members = <FamilyMember>[
+      for (final m
+          in ref.watch(familyControllerProvider).family?.members ??
+              const <FamilyMember>[])
+        if (m.userId != me) m,
+    ];
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      builder: (_, scroll) => ListView(
+        controller: scroll,
+        padding: const EdgeInsets.all(ZadSpacing.xl),
+        children: <Widget>[
+          const Text('تقرير العيلة', style: ZadType.titleLarge),
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            'اللي كل فرد وافق يشاركه بس — والباقي بيبان بعد موافقته.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.lg),
+          if (members.isEmpty)
+            Text(
+              'لسه محدش انضم للعيلة. ابعت كود الدعوة من «عيلتي».',
+              style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
+            ),
+          for (final m in members)
+            Padding(
+              padding: const EdgeInsets.only(bottom: ZadSpacing.md),
+              child: ZadCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      m.alias.isEmpty ? 'فرد من العيلة' : m.alias,
+                      style: ZadType.titleSmall,
+                    ),
+                    const SizedBox(height: ZadSpacing.xs),
+                    Text(
+                      familyReportLine(
+                        ref.watch(followedMemberProvider(m.userId)).value,
+                        currency,
+                      ),
+                      style: ZadType.bodySmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

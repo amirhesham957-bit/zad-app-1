@@ -31,6 +31,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
+import 'package:zad/features/intelligence/presentation/behavior_card.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
 import 'package:zad/features/intelligence/presentation/spending_charts.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -161,6 +162,7 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
                         rows: all,
                         currency: budget?.currency ?? '',
                       ),
+                      BehaviorCard(rows: all, currency: budget?.currency ?? ''),
                       _ReportCard(
                         transactions: all,
                         budget: budget?.openingBalance ?? 0,

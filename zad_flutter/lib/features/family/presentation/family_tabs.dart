@@ -329,6 +329,16 @@ class FamilyMembersTab extends ConsumerWidget {
           const Text('أفراد العائلة', style: ZadType.titleLarge),
           _subtitle('اضغط على أي عضو لتفاصيل إنجازاته'),
           const FamilyFollowRequestsCard(),
+          if (view.isAdmin && !sole)
+            Padding(
+              padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
+              child: OutlinedButton.icon(
+                onPressed: () => unawaited(showFamilyReport(context, currency)),
+                icon: const Icon(Icons.summarize_outlined, size: 18),
+                label: const Text('تقرير العيلة'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+              ),
+            ),
           for (final m in family.members)
             Padding(
               padding: const EdgeInsets.only(bottom: ZadSpacing.md),
