@@ -205,3 +205,9 @@ Deno.test("scopeToolsForSpecialist: today's prices are offered to every speciali
   const names = scopeToolsForSpecialist(tools, "pharmacy").map((t) => t.name);
   assert(names.includes("gold_price") && names.includes("fetch_current_exchange_rate"));
 });
+
+Deno.test("intentToolHints: a question about a recent event searches the web", () => {
+  assertEquals(intentToolHints("مين كسب كاس العالم للأندية آخر مرة؟"), ["web_search"]);
+  assertEquals(intentToolHints("إيه أخبار الدوري النهارده"), ["web_search"]);
+  assertEquals(intentToolHints("مين في عيلتي ماخدش دواه"), []);
+});
