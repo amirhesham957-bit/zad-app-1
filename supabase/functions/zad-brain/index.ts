@@ -57,7 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
-import { loadSharedHistory, pickHistory, recordSharedTurn, type SharedTurn } from "./sharedConversation.ts";
+import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
@@ -79,7 +79,7 @@ import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
-import { isWrite, silentWriteFallback, visibleReceipts } from "./receipts.ts";
+import { ANSWER_FROM_RESULTS_NOTE, isWrite, needsAnswerAfterTools, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -4789,7 +4789,7 @@ async function answerFastPath(
 }
 
 const INTENT_RETRY_NOTE =
-  "\n\n**مهم:** طلب العميل ده محتاج تنفيذ بأداة من الأدوات المتاحة دلوقتي (ميعاد/تذكير أو معلومة عنه نفسه). " +
+  "\n\n**مهم:** طلب العميل ده محتاج أداة من الأدوات المتاحة دلوقتي (ميعاد/تذكير، معلومة عنه نفسه، أو بحث على النت لسعر أو ترند حي). " +
   "نادِ الأداة المناسبة بالبيانات اللي قالها، ومتردش بكلام بس. لو فيه تفصيلة ناقصة فعلاً (مثلاً الساعة مش مفهومة) اسأله عنها.";
 
 /**
@@ -5055,10 +5055,10 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // One conversation on every channel (sharedConversation.ts): the app answers
   // in the turns said by voice or on Telegram too. Telegram already sends that
   // same table as its history.
-  const history: Turn[] = declaredSource === "telegram"
-    ? clientHistory
-    : pickHistory(await sharedHistoryEarly, clientHistory);
-  history.push({ role: "user", text: message });
+  const history: Turn[] = markUnanswered<Turn & { text?: string }>([
+    ...(declaredSource === "telegram" ? clientHistory : pickHistory(await sharedHistoryEarly, clientHistory)),
+    { role: "user", text: message },
+  ]);
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
   // أوامر واجهة التطبيق (app_command) — بتترجع للكلاينت عشان ZadViewModel يفتح الشاشة/
@@ -5209,6 +5209,18 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // الرد المعروض مبني على نتيجة التنفيذ الفعلية، مش على كلام الموديل الحر. ده الحارس
   // ضد "وهم التنفيذ": لو الموديل قال "ضفتلك اللحمة" ومنداش أي أداة، مفيش تنفيذ يتأكد
   // وبالتالي مفيش كارت تأكيد يتعرض — والنص اللي بيتعرض هو نصه هو، من غير ادعاء.
+  if (needsAnswerAfterTools({ reply: modelText, toolAttempted: anyToolAttempted, executed: executed.length, proposals: proposals.length })) {
+    try {
+      const answer = await callModel({
+        model: MODEL_ROUTINE, system: systemPrompt + ANSWER_FROM_RESULTS_NOTE, tools: scopedTools, history, maxTokens: 1200,
+      });
+      inputTokens += answer.usage.inTok;
+      outputTokens += answer.usage.outTok;
+      if (answer.text?.trim()) modelText = answer.text;
+    } catch (e) {
+      console.warn("[agent_turn] answer after tools failed:", (e as Error)?.message ?? e);
+    }
+  }
   let reply = modelText.trim();
   if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply, priorAssistantText(history))) {
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
@@ -6709,8 +6721,8 @@ async function handleRequest(req: Request): Promise<Response> {
         // Telegram stores its own turns; any other caller's joins the shared conversation.
         if (body.source !== "telegram") {
           const payload = await res.clone().json().catch(() => null);
-          if (payload?.ok === true && typeof payload.reply === "string") {
-            afterResponse("shared turn", recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), payload.reply));
+          if (payload?.ok === true) {
+            afterResponse("shared turn", recordSharedTurn(sbChat, authedUserId, String(body.message ?? ""), spokenRecord(payload)));
           }
         }
         return res;
@@ -6932,8 +6944,8 @@ async function handleAgentTurnStream(sb: SupabaseClient, userId: string, body: a
     return clone;
   }
   // The app's turn joins the one conversation every channel reads.
-  if (payload?.ok === true && typeof payload.reply === "string" && body.source !== "telegram") {
-    afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), payload.reply));
+  if (payload?.ok === true && body.source !== "telegram") {
+    afterResponse("shared turn", recordSharedTurn(sb, userId, String(body.message ?? ""), spokenRecord(payload)));
   }
   if (!payload || payload.ok !== true || typeof payload.reply !== "string" || payload.reply.length < 40) {
     // ردود قصيرة/أخطاء/تنفيذات → JSON عادي زي ما هو

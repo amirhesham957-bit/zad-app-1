@@ -176,3 +176,14 @@ Deno.test("priorAssistantText: الرد اللي قبل آخر رسالة، حت
   assertEquals(priorAssistantText(history), "قولي عايز أصحيك الساعة كام بالظبط");
   assertEquals(priorAssistantText([{ role: "user", text: "أهلا" }]), "");
 });
+
+Deno.test("a live price question points at web_search, not at the app's tools (2026-10-01)", () => {
+  for (const q of ["كم سعر الذهب اليوم", "كام سعر زجاجة المياه في السعودية", "كم سعر زجاجة حليب فيفا في مصر", "أسعار الطماطم النهارده"]) {
+    const hints = intentToolHints(q);
+    assertEquals(hints.includes("web_search"), true, q);
+    assertEquals(hints.includes("add_appointment"), false, q);
+  }
+  // His own spending is not a web question.
+  assertEquals(intentToolHints("صرفت كام على الأكل الشهر ده").includes("web_search"), false);
+  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
+});

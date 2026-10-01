@@ -45,3 +45,31 @@ Deno.test("an app turn is stored as the words, then the reply", async () => {
   await recordSharedTurn(sb, "u1", "كلام", "  ");
   assertEquals(inserted, []);
 });
+
+import { markUnanswered, spokenRecord, UNANSWERED_MARK } from "./sharedConversation.ts";
+
+Deno.test("an unanswered message is marked, so the next question does not carry it out again (2026-10-01)", () => {
+  const history = markUnanswered([
+    { role: "assistant", text: "تمام" },
+    { role: "user", text: "ممكن تسجل في م عيدي اصحي كمان دقيقة و تنبهني" },
+    { role: "user", text: "كم سعر زجاجة حليب فيفا في مصر" },
+  ]);
+  assertEquals(history[1].text?.endsWith(UNANSWERED_MARK), true);
+  // The message being answered now is never marked; answered ones are left alone.
+  assertEquals(history[2].text, "كم سعر زجاجة حليب فيفا في مصر");
+  assertEquals(history[0].text, "تمام");
+  // Marking twice does not stack.
+  assertEquals(markUnanswered(history)[1].text, history[1].text);
+});
+
+Deno.test("spokenRecord keeps the receipts a turn answered with", () => {
+  assertEquals(
+    spokenRecord({ reply: "", executed: [{ tool: "add_appointment", summary: "تم تسجيل الميعاد «اصحى»" }], proposals: [] }),
+    "✅ تم تسجيل الميعاد «اصحى»",
+  );
+  assertEquals(
+    spokenRecord({ reply: "تمام", executed: [], proposals: [{ summary: "صرف ٥٠ قهوة" }] }),
+    "تمام\n⏳ مستني تأكيد: صرف ٥٠ قهوة",
+  );
+  assertEquals(spokenRecord({ reply: "  " }), "");
+});

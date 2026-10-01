@@ -44,6 +44,7 @@ import {
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
+  doseAlreadyReply,
 } from "./telegram.ts";
 import {
   AgentContextInput, agentSystemPrompt, buildAgentContext, clampForTelegram,
@@ -1054,10 +1055,12 @@ async function agentTurnReply(
 
   const lines: string[] = [];
   if (turn.reply.trim()) lines.push(turn.reply.trim());
-  // رد العقل بيتسجل كمان — من غيره العميل يفتكر إن البوت سأله سؤال، والبوت
-  // يشوف رسالة العميل بلا السؤال اللي ردّت عليه.
-  await recordChatTurn(sb, userId, "assistant", turn.reply);
   for (const done of turn.executed) lines.push(`✅ ${isolate(sanitizeName(done.summary))}`);
+  // رد العقل بيتسجل كمان — من غيره العميل يفتكر إن البوت سأله سؤال، والبوت
+  // يشوف رسالة العميل بلا السؤال اللي ردّت عليه. بالإيصالات (✅) كمان: لفة ردها كله
+  // إيصال كانت بتتسجل من غير رد خالص (٢٠٢٦-٠٩-٣٠ ٢٢:٣٤ «اصحي كمان دقيقة»)، فتاني يوم
+  // سؤال «سعر حليب فيفا» قرا الطلب كأنه لسه مستني وسجّل ميعاد صحيان تاني.
+  await recordChatTurn(sb, userId, "assistant", lines.join("\n"));
 
   const money = turn.proposals.find((p) => p.tool === "log_transaction");
   const rest = turn.proposals.filter((p) => p !== money);
@@ -1653,6 +1656,7 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
   }
 
   const names: string[] = [];
+  const already: string[] = [];
   const failed: string[] = [];
   if (action === "skipped") {
     // صف `skipped` في نفس الخانة الزمنية: الفهرس الفريد (user_id, item_id, scheduled_at)
@@ -1684,14 +1688,20 @@ async function settleDose(sb: SupabaseClient, userId: string, momentId: string, 
         p_scheduled_at: slotOf(itemId),
         p_taken_at: new Date().toISOString(),
       });
-      const r = result as { ok?: boolean; name?: string; remaining_quantity?: number } | null;
+      const r = result as { ok?: boolean; duplicate?: boolean; name?: string; remaining_quantity?: number } | null;
       if (error || !r?.ok) {
         console.error("[dose] log failed:", itemId, error?.message ?? JSON.stringify(r));
         failed.push(itemId);
+      } else if (r.duplicate) {
+        // الخانة دي اتسجلت قبل كده (تذكيرين لنفس الجرعة، أو ضغطة تانية): مش جرعة جديدة.
+        already.push(String(r.name ?? "الدوا"));
       } else {
         names.push(String(r.name ?? "الدوا"));
       }
     }
+  }
+  if (names.length === 0 && already.length > 0 && failed.length === 0) {
+    return doseAlreadyReply(already);
   }
   if (names.length === 0) {
     return "معلش، مقدرتش أسجّل ده دلوقتي — ماتسجلش، جرّب من صفحة الصيدلية في التطبيق.";
