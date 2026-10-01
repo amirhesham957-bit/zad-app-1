@@ -104,6 +104,15 @@ abstract final class ZadSlots {
   /// Fixed obligations.
   static late SlotBuilder obligationsSection;
 
+  /// The obligations of some kinds (stored `kind` values; empty = all), for
+  /// «التزاماتي»'s tabs. `whenEmpty` shows when there are none.
+  static late Widget Function({
+    required Set<String> kinds,
+    String? title,
+    Widget? whenEmpty,
+  })
+  obligationRows;
+
   // ── pharmacy
   /// The medicine cabinet.
   static late SlotBuilder pharmacyView;

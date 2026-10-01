@@ -165,6 +165,8 @@ void wireSlots() {
   ZadSlots.savingsChallengeSlot = ({offerEntry = false, offerStop = false}) =>
       SavingsChallengeSlot(offerEntry: offerEntry, offerStop: offerStop);
   ZadSlots.obligationsSection = () => const ObligationsSection();
+  ZadSlots.obligationRows = ({required kinds, title, whenEmpty}) =>
+      ObligationRows(kinds: kinds, title: title, whenEmpty: whenEmpty);
   ZadSlots.pharmacyView = () => const PharmacyView();
   ZadSlots.streetAlertsSection = () => const StreetAlertsSection();
   ZadSlots.keepAliveGuide = () => const KeepAliveGuide();

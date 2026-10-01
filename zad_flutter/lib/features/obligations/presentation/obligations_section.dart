@@ -452,3 +452,57 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
     );
   }
 }
+
+/// The obligations of [kinds] inside «التزاماتي»'s tabs, under [title].
+///
+/// A bill or a plan saved as an obligation (by the brain, by the budget
+/// screen) lives in `zad_obligations`, not in the subscriptions table the
+/// tabs list — so the water bill was under «فواتير» nowhere and a valU plan
+/// the brain confirmed was missing from «أقساط» (تشخيص زاد ١.٦,
+/// 2026-10-01). [whenEmpty] shows only when there is nothing of these kinds
+/// either, so a tab's empty state never says «nothing» over a real row.
+class ObligationRows extends ConsumerWidget {
+  /// Creates the rows.
+  const new({
+    required this.kinds,
+    this.title,
+    this.whenEmpty,
+    super.key,
+  });
+
+  /// The stored `kind` values to show; empty means all of them.
+  final Set<String> kinds;
+
+  /// A header over the rows, when they follow other rows.
+  final String? title;
+
+  /// What to show when there are no rows of these kinds.
+  final Widget? whenEmpty;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final view = ref.watch(obligationsControllerProvider);
+    final currency = ref.watch(
+      budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
+    );
+    final rows = <Obligation>[
+      for (final o in view.items)
+        if (kinds.isEmpty || kinds.contains(o.kind.wire)) o,
+    ];
+    if (rows.isEmpty) return whenEmpty ?? const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (title != null) ...<Widget>[
+          const SizedBox(height: ZadSpacing.lg),
+          Text(title!, style: ZadType.titleSmall),
+          const SizedBox(height: ZadSpacing.sm),
+        ],
+        for (final (i, o) in rows.indexed) ...<Widget>[
+          if (i > 0) const SizedBox(height: ZadSpacing.md),
+          ObligationCard(obligation: o, today: view.today, currency: currency),
+        ],
+      ],
+    );
+  }
+}

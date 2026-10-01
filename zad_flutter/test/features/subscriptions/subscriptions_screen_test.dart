@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/features/obligations/application/obligations_controller.dart';
+import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
@@ -52,6 +54,18 @@ class _Subs extends SubscriptionsController {
       calls.add('active:${sub.id}:$active');
 }
 
+class _Obligations extends ObligationsController {
+  new(this.items);
+
+  final List<Obligation> items;
+
+  @override
+  ObligationsView build() => ObligationsView(items: items, today: _today);
+
+  @override
+  Future<void> refresh({bool force = false}) async {}
+}
+
 class _Budget extends BudgetController {
   @override
   BudgetView build() => const BudgetView();
@@ -81,12 +95,19 @@ void main() {
   // Arabic month names, as `bootstrap` loads them. DateFormat throws without.
   setUpAll(() => initializeDateFormatting('ar'));
 
-  Future<void> pump(WidgetTester tester, List<Subscription> items) async {
+  Future<void> pump(
+    WidgetTester tester,
+    List<Subscription> items, {
+    List<Obligation> obligations = const <Obligation>[],
+  }) async {
     subs = _Subs(items);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           subscriptionsControllerProvider.overrideWith(() => subs),
+          obligationsControllerProvider.overrideWith(
+            () => _Obligations(obligations),
+          ),
           budgetControllerProvider.overrideWith(_Budget.new),
         ],
         child: MaterialApp(
@@ -107,6 +128,54 @@ void main() {
     expect(find.text('إجمالي الاشتراكات الشهرية'), findsOneWidget);
     expect(find.text('لا توجد اشتراكات'), findsOneWidget);
     expect(find.byTooltip('إضافة'), findsOneWidget);
+  });
+
+  testWidgets('a bill and a plan saved as obligations sit in their tabs', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      <Subscription>[_sub('a', 'Netflix', renewalDate: '2026-09-22')],
+      obligations: const <Obligation>[
+        Obligation(
+          id: 'w',
+          userId: 'u',
+          title: 'فاتورة المية',
+          amount: 120,
+          dueDay: 5,
+          kind: ObligationKind.utility,
+        ),
+        Obligation(
+          id: 'v',
+          userId: 'u',
+          title: 'قسط فاليو',
+          amount: 900,
+          dueDay: 10,
+          kind: ObligationKind.installment,
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+    // «الكل»: the subscription, then both obligations under their header.
+    expect(find.text('التزامات ثابتة'), findsOneWidget);
+    expect(find.text('فاتورة المية'), findsOneWidget);
+    expect(find.text('قسط فاليو'), findsOneWidget);
+
+    await tester.tap(find.text('فواتير'));
+    await tester.pumpAndSettle();
+    expect(find.text('فاتورة المية'), findsOneWidget);
+    expect(find.text('قسط فاليو'), findsNothing);
+    expect(find.text('لا توجد عناصر في هذا التصنيف'), findsNothing);
+
+    await tester.tap(find.text('أقساط'));
+    await tester.pumpAndSettle();
+    expect(find.text('قسط فاليو'), findsOneWidget);
+    expect(find.text('فاتورة المية'), findsNothing);
+
+    await tester.tap(find.text('اشتراكات'));
+    await tester.pumpAndSettle();
+    expect(find.text('فاتورة المية'), findsNothing);
+    expect(find.text('Netflix'), findsOneWidget);
   });
 
   testWidgets('rows say when they renew; a stopped one shows under «الكل»', (

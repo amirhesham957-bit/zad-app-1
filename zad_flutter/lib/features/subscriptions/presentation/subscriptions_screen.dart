@@ -62,6 +62,16 @@ bool _inTab(Subscription s, int tab) => switch (tab) {
   _ => true,
 };
 
+/// The `zad_obligations` kinds each tab also lists (stored values): a bill
+/// or a plan saved as an obligation belongs beside the subscriptions of its
+/// kind, not only on the budget screen. «قروض» is the payoff planner.
+Set<String>? _obligationKinds(int tab) => switch (tab) {
+  0 => const <String>{},
+  2 => const <String>{'utility'},
+  3 => const <String>{'installment', 'rent'},
+  _ => null,
+};
+
 /// Rows an old AI detector wrote, which no customer would have: Kotlin's
 /// «مسح الكل» targets.
 bool _isAutoDetected(Subscription s) =>
@@ -166,6 +176,15 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
               body: loans,
             );
     }
+
+    final empty = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: KtEmptyState(
+        icon: Icons.credit_card,
+        title: _tab == 0 ? 'لا توجد اشتراكات' : 'لا توجد عناصر في هذا التصنيف',
+      ),
+    );
+    final obligationKinds = _obligationKinds(_tab);
 
     final list = ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
@@ -292,15 +311,13 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
         ],
         const SizedBox(height: 12),
         if (filtered.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: KtEmptyState(
-              icon: Icons.credit_card,
-              title: _tab == 0
-                  ? 'لا توجد اشتراكات'
-                  : 'لا توجد عناصر في هذا التصنيف',
+          switch (_obligationKinds(_tab)) {
+            null => empty,
+            final kinds => ZadSlots.obligationRows(
+              kinds: kinds,
+              whenEmpty: empty,
             ),
-          )
+          }
         else
           for (final (i, sub) in filtered.indexed) ...<Widget>[
             if (_tab == 3 &&
@@ -344,6 +361,11 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
               ),
             ),
           ],
+        if (filtered.isNotEmpty && obligationKinds != null)
+          ZadSlots.obligationRows(
+            kinds: obligationKinds,
+            title: 'التزامات ثابتة',
+          ),
       ],
     );
 
