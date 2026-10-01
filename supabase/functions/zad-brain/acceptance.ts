@@ -27,6 +27,19 @@ export interface AcceptanceCase {
   check: (o: TurnOutcome, extra: { appointmentsCreated: number }) => string | null;
 }
 
+/**
+ * Text meant for the model, never for the customer: a reviewer's verdict about «المساعد», a
+ * tool name, a status code. On 2026-10-01 the reminder reply opened with «المساعد وعد بحاجة
+ * متنفذتش (تذكير شرب المية مش موجود في الأدوات المنفذة)».
+ */
+export function internalLeak(reply: string): string | null {
+  if (/المساعد|الأدوات المنفذة|رد المساعد/.test(reply)) return "internal reviewer text in the reply";
+  const tool = reply.match(/\b(add|update|delete|log|set|fetch|web|gold)_[a-z_]+\b/);
+  if (tool) return `tool name in the reply: ${tool[0]}`;
+  if (/awaiting_user_confirmation|SNAPSHOT/.test(reply)) return "system word in the reply";
+  return null;
+}
+
 /** null = passed; otherwise what the customer would have seen go wrong. */
 export const ACCEPTANCE_CASES: AcceptanceCase[] = [
   {

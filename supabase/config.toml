@@ -44,9 +44,6 @@ verify_jwt = false
 [functions.update-behavior-profile]
 verify_jwt = false
 
-[functions.voice-selftest]
-verify_jwt = false
-
 [functions.verify-purchase]
 verify_jwt = true
 
@@ -80,9 +77,6 @@ verify_jwt = false
 # بتوكن Supabase حقيقي (مش cron ولا webhook) — نفس وضع zad-core-intelligence بالظبط،
 # true هي القيمة الصح والافتراضية أصلاً؛ متسجّلة هنا صراحة زي باقي الملف عشان مفيش
 # فانكشن يفضل "غير معرَّف" ويعتمد على افتراض ضمني.
-[functions.zad-voice-live]
-verify_jwt = true
-
 # جوجل بتنادي الـcallback من غير أي Authorization header — verify_jwt لازم تفضل
 # false، زي zad-telegram-bot بالظبط. الأمان هنا من توقيع جوجل نفسه مش من JWT.
 [functions.admob-ssv]

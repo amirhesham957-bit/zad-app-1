@@ -59,7 +59,9 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
-import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID } from "./acceptance.ts";
+import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
+import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
+import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
@@ -2914,6 +2916,38 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       return JSON.stringify(hits.map((h, i) => `${i + 1}. ${h.title}\n${h.url}\n${h.snippet}`).join("\n\n"));
     }
+    case "open_support_ticket": {
+      // شكوى لإنسان (٢٠٢٦-١٠-٠١: محادثة الدعم الذكي كانت بترد وبس، وصفر تذاكر اتفتحت من يومها).
+      const subject = String(input.subject ?? "").trim().slice(0, 200);
+      const message = String(input.message ?? "").trim().slice(0, 8000);
+      if (!subject || !message) return "مرفوض: اكتب الموضوع والمشكلة بكلام العميل.";
+      const [{ data: who }, { data: turns }] = await Promise.all([
+        sb.auth.admin.getUserById(userId),
+        sb.from("zad_chat_turns").select("role,text").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
+      ]);
+      const contactEmail = who?.user?.email ?? null;
+      const conversation = ((turns ?? []) as Array<{ role: string; text: string }>).reverse()
+        .map((t) => ({ text: t.text.slice(0, 2000), isUser: t.role === "user" }));
+      const { data: row, error } = await sb.from("zad_support_tickets").insert({
+        user_id: userId, contact_email: contactEmail, subject, message, conversation, app_version: "agent",
+      }).select("id, created_at").single();
+      if (error || !row) return `مرفوض: الشكوى ماتحفظتش (${error?.message ?? "?"}) — قول للعميل يجرب زرار «كلّم فريق الدعم».`;
+      const emailed = await sendSupportEmail(
+        buildSupportEmail({
+          id: row.id, userId, contactEmail, subject, message, conversation,
+          crashLog: null, appVersion: "agent", device: null, createdAt: row.created_at,
+        }),
+        Deno.env.get("SUPPORT_INBOX") || DEFAULT_SUPPORT_INBOX,
+        Deno.env.get("RESEND_API_KEY"),
+        Deno.env.get("SUPPORT_FROM") || "Zad Support <onboarding@resend.dev>",
+      );
+      if (emailed) await sb.from("zad_support_tickets").update({ emailed_at: new Date().toISOString() }).eq("id", row.id);
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { subject } });
+      return contactEmail
+        ? `اتفتحت شكوى لفريق الدعم «${subject}»، والرد هيوصل على ${contactEmail}.`
+        : `اتفتحت شكوى لفريق الدعم «${subject}». العميل مالوش إيميل في الحساب، فالفريق هيرد عليه جوه التطبيق.`;
+    }
     case "gold_price": {
       // سعر الدهب من عناوين أخبار بلد العميل النهارده — رقم مقري بقاعدة، مش من الموديل.
       const res = await callCoreIntel("gold_price", { country: snap?.country ?? null }, userId);
@@ -4247,6 +4281,20 @@ const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "open_support_ticket",
+    description:
+      "يفتح شكوى أو طلب دعم لفريق زاد البشري ويبعته على إيميل الدعم ومعاه آخر المحادثة. استخدمها لما العميل " +
+      "يشتكي من عطل، أو يطلب يكلم حد من الفريق، أو مشكلة في التطبيق مقدرتش تحلها معاه. اكتب الموضوع وملخص المشكلة بكلامه.",
+    input_schema: {
+      type: "object",
+      properties: {
+        subject: { type: "string", description: "موضوع قصير (مثال: صفحة الصيدلية فاضية)" },
+        message: { type: "string", description: "المشكلة بالتفصيل بكلام العميل" },
+      },
+      required: ["subject", "message"],
+    },
+  },
+  {
     name: "gold_price",
     description:
       "سعر جرام الدهب النهارده (عيار 24 و21 و18) في بلد العميل، من الأخبار المنشورة النهارده. " +
@@ -5055,6 +5103,11 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
     + agentMailBlock(agentMail)
     + skillsBlock(learnedSkills)
+    // صفحة «المساعدة والدعم» بقت بتكلم العقل نفسه (كانت موديل لوحده من غير حساب العميل).
+    + (body.surface === "support"
+      ? "\n=== صفحة المساعدة والدعم ===\nالعميل بيكلمك من صفحة المساعدة والدعم. ساعده يحل مشكلته خطوة بخطوة بأسامي الشاشات اللي في التطبيق، " +
+        "ومن بياناته هو لو المشكلة فيها. لو المشكلة عطل، أو هو عايز يشتكي أو يكلم حد، نادِ open_support_ticket.\n"
+      : "")
     + buildChatSystemPrompt({
       ...snap,
       // الملاحظات اللي بتوصف العميل نفسه (العيلة، الراتب، السكن...) بتدخل دايماً — كانت بتقع
@@ -5263,35 +5316,11 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   }
   reply = silentWriteFallback(reply, executed, proposals.length);
 
-  // === نقاش الوكلاء (Orchestrator review) — المرحلة ٣ ===
-  // لو اللفة فيها اقتراحات مالية أو تنفيذ فعلي، وكيل مراجعة مستقل بيتصرف كـ orchestrator:
-  // بيبص على الرد + اللي اتنفذ فعلاً ويتأكد إن مفيش ادعاء زايد. مفيش نداء موديل إضافي
-  // إلا لما فيه حاجة تخطر — التكلفة صفر في الحالة العادية. الفشل هنا غير حرج.
-  if (proposals.length > 0 || executed.length > 0) {
-    try {
-      const claims = [
-        `أدوات اتنفذت فعلاً: ${executed.map((x) => x.tool).join("، ") || "ولا واحدة"}`,
-        `اقتراحات مستنية تأكيد: ${proposals.map((x) => x.tool).join("، ") || "ولا واحدة"}`,
-      ].join("\n");
-      const review = await callModel({
-        model: MODEL_ROUTINE,
-        system:
-          "انت مراجع جودة ردود مساعد منزلي. راجع أن رد المساعد مبيادعش تنفيذ حاجة مش موجودة في قائمة التنفيذ الفعلي، ومبيوعدش بحاجة اتمنعت عليه. رد بكلمة OK لو سليم، أو جملة تصحيح واحدة قصيرة بالعربية لو فيه ادعاء خاطئ.",
-        tools: [],
-        history: [
-          { role: "user", text: `رد المساعد:\n${reply}\n\nالحقائق:\n${claims}` },
-        ],
-        maxTokens: 120,
-      });
-      const verdict = review.text?.trim() ?? "";
-      if (verdict && !/^ok\b/i.test(verdict) && verdict.length < 200) {
-        // استبدال الرد بالتصحيح — الإيصالات نفسها متتلمسش
-        reply = `${verdict}\n\n${reply}`;
-      }
-    } catch (e) {
-      console.error("orchestrator review skipped:", e);
-    }
-  }
+  // كان هنا «مراجع» بموديل تاني بعد كل لفة فيها كتابة، وحكمه بيتلزق قبل الرد اللي العميل بيقراه.
+  // اتشال ٢٠٢٦-١٠-٠١: اختبار القبول الحي طلّع للعميل «المساعد وعد بحاجة متنفذتش (تذكير شرب المية مش
+  // موجود في الأدوات المنفذة)» والتذكير كان اتسجل فعلاً — مراجع غلطان، وكلام داخلي للعميل، ونداء
+  // موديل زيادة على كل كتابة. الحماية الفعلية فاضلة: unbackedReminderClaim فوق، والإيصالات من
+  // التنفيذ نفسه، وrecordPromiseDrift بعد الرد.
 
   // بند 31.2 + 31.5 — استخلاص تلقائي بعد اللفة: زي link_memory بالظبط، remember()
   // و learn_skill نفسهم أدوات اختيارية والموديل نادرًا ما بيفتكر ينده عليهم لحقيقة/نمط
@@ -6031,6 +6060,7 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
 
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
+6ج. **شكوى أو مشكلة محتاجة إنسان** (عطل في التطبيق، «عايز أكلم حد»، حاجة مقدرتش تحلها معاه) ⇒ open_support_ticket بملخص المشكلة بكلامه، وقوله إن الفريق هيرد عليه.
 6ب. **قدراتك في كل قناة**: في التطبيق بتكلم العميل كتابة وصوت. في تليجرام بترد كتابة، والتنبيهات المهمة (الدوا، المواعيد، الصبح) بتوصله فويس. متقولش «أنا تكست بس»، ولو طلب ترد عليه فويس في تليجرام قوله إن ده لسه مش متاح في الرد العادي وإن الصوت شغال في التطبيق.
 7. أدوات الفلوس (log_transaction, update_transaction, delete_transaction, set_monthly_limit) بتعرض تأكيد على العميل قبل الكتابة. قول إنك مجهزها ومحتاج تأكيده — مش إنها اتسجلت نهائي.
    - لو رجعتلك نتيجة أداة فيها status=awaiting_user_confirmation: **متقولش إنه اتسجل**. قول للعميل بجملة طبيعية إنك محتاج موافقته، من غير ما تنقل أي نص تقني أو اسم حالة.
@@ -6232,7 +6262,7 @@ async function handleRequest(req: Request): Promise<Response> {
             proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
           };
           const failure = payload?.ok === true
-            ? c.check(outcome, { appointmentsCreated: count ?? 0 })
+            ? internalLeak(outcome.reply) ?? c.check(outcome, { appointmentsCreated: count ?? 0 })
             : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
           results.push({
             id: c.id, pass: failure === null, failure, reply: outcome.reply.slice(0, 500),
@@ -6829,6 +6859,37 @@ async function handleRequest(req: Request): Promise<Response> {
         pushTelegram: (userId, title, text, voice, m, speech, emotion, doseId) => pushToTelegram(userId, title, text, fetch, undefined, voice, m, speech, emotion, doseId),
       }, 5, eventUserId);
       return new Response(JSON.stringify({ ok: true, status: "processed", ...summary }), { headers: CORS_HEADERS });
+    }
+
+    // «اشرحلي ده» من شاشات التطبيق (الصمود، سلوك الصرف، خطة القروض) بصوت زاد نفسه — قبل كده كل
+    // شاشة كانت بتكلم الموديل بشخصية لوحدها (explain.ts). سياق صغير: الشرح مش محتاج البيت كله.
+    if (body.action === "explain") {
+      const uid = await resolveRequestUserId(req, body);
+      if (!uid) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      const data = explainData(body.data);
+      if (!isExplainTopic(body.topic) || !data) {
+        return new Response(JSON.stringify({ ok: false, error: "bad_request" }), { status: 400, headers: CORS_HEADERS });
+      }
+      const sbx = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const [{ data: u }, { data: prof }] = await Promise.all([
+        sbx.from("zad_users").select("country,currency,name").eq("id", uid).maybeSingle(),
+        sbx.from("zad_customer_profile").select("preferred_name,dialect").eq("user_id", uid).maybeSingle(),
+      ]);
+      const urow = u as { country?: string | null; currency?: string | null; name?: string | null } | null;
+      const prow = prof as { preferred_name?: string | null; dialect?: string | null } | null;
+      const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency });
+      const system = explainSystem(body.topic, {
+        soul: soulBlock(), dialectBlock: dialectPromptBlock(profile.dialect), dialectReminder: dialectReminder(profile.dialect),
+        customerName: prow?.preferred_name ?? urow?.name ?? null,
+      });
+      try {
+        const reply = await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: data }], maxTokens: 400 });
+        const text = reply.text?.trim() || null;
+        return new Response(JSON.stringify({ ok: text !== null, text }), { headers: CORS_HEADERS });
+      } catch (e) {
+        console.error("[explain] model failed:", (e as Error)?.message ?? e);
+        return new Response(JSON.stringify({ ok: false, text: null }), { headers: CORS_HEADERS });
+      }
     }
 
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {

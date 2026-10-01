@@ -989,11 +989,60 @@ bot.command("tahlil", async (ctx) => {
  * بترجّع null بس لما اللفة نفسها تقع (نت/موديل/مهلة) — ساعتها المنادي بيقع على
  * الرد القرائي، وبيقول للعميل صراحةً إن التنفيذ ماحصلش.
  */
+const TELEGRAM_RETRY_TRIGGER = "telegram_retry";
+/** بعدها الرسالة بتتساب والعميل بيتقاله يبعتها تاني — رد بعد نص ساعة مابقاش رد. */
+const RETRY_WINDOW_MS = 30 * 60 * 1000;
+const RETRY_MAX_ATTEMPTS = 3;
+
+/** يعيد رسايل تليجرام اللي العقل وقع عليها. كل صف بيتحجز بزيادة attempts قبل التنفيذ. */
+async function retryFailedTurns(sb: SupabaseClient): Promise<{ answered: number; dropped: number; waiting: number }> {
+  const { data: rows } = await sb.from("zad_brain_queue")
+    .select("id,user_id,user_message,attempts,created_at")
+    .eq("trigger", TELEGRAM_RETRY_TRIGGER)
+    .order("created_at", { ascending: true })
+    .limit(5);
+  let answered = 0, dropped = 0, waiting = 0;
+  for (const row of (rows ?? []) as Array<{ id: string; user_id: string; user_message: string; attempts: number; created_at: string }>) {
+    let msg: { chat_id?: number; text?: string } = {};
+    try { msg = JSON.parse(row.user_message ?? "{}"); } catch { /* صف بايظ: بيتشال تحت */ }
+    const chatId = Number(msg.chat_id);
+    const text = String(msg.text ?? "").trim();
+    const expired = Date.now() - Date.parse(row.created_at) > RETRY_WINDOW_MS || row.attempts >= RETRY_MAX_ATTEMPTS;
+    if (!chatId || !text || expired) {
+      await sb.from("zad_brain_queue").delete().eq("id", row.id);
+      if (chatId && text) {
+        const giveUp = `معلش، ماقدرتش أرد على «${text.slice(0, 80)}» — ابعتها تاني لو لسه محتاجها 🙏`;
+        await sendTelegramMessage(chatId, giveUp);
+        await recordChatTurn(sb, row.user_id, "assistant", giveUp);
+      }
+      dropped++;
+      continue;
+    }
+    // الحجز: لو نسخة تانية من الجوب حجزته قبلنا، attempts اتغيّر وده مابيرجعش صف.
+    const { data: claimed } = await sb.from("zad_brain_queue")
+      .update({ attempts: row.attempts + 1 }).eq("id", row.id).eq("attempts", row.attempts).select("id");
+    if (!claimed?.length) continue;
+    const turn = await agentTurnReply(sb, row.user_id, chatId, text, false);
+    if (turn.lines.length === 0) {
+      waiting++;
+      continue;
+    }
+    const body = clampForTelegram(`بخصوص «${text.slice(0, 60)}»:\n\n${turn.lines.join("\n\n")}`);
+    const keyboard = turn.pendingId ? confirmSpendKeyboard(turn.pendingId)
+      : turn.toolPendingId ? confirmToolKeyboard(turn.toolPendingId) : undefined;
+    await sendTelegramMessage(chatId, body, keyboard);
+    await sb.from("zad_brain_queue").delete().eq("id", row.id);
+    answered++;
+  }
+  return { answered, dropped, waiting };
+}
+
 async function agentTurnReply(
   sb: SupabaseClient,
   userId: string,
   chatId: number,
   text: string,
+  recordUser = true,
 ): Promise<{ lines: string[]; pendingId?: string; toolPendingId?: string; errorReason?: string; needsAdCredit?: boolean }> {
   // ── ربط الإجابة بالسؤال ──────────────────────────────────────────────────
   // زاد بيبعت أسئلة على تليجرام ("راتبك بيجي يوم ١٦ من كل شهر — أظبط الشهر عندك على
@@ -1035,7 +1084,7 @@ async function agentTurnReply(
   const { result: turn, errorReason } = await agentTurn(userId, outgoing, history);
   // بتتسجل حتى لو اللفة فشلت: العميل قالها فعلاً، والرسالة الجاية محتاجة تشوفها.
   // ده بالظبط سيناريو "اخصم 50 جنيه" ← "مصروف" — الأولى لازم تعيش عشان التانية تفهم.
-  await recordChatTurn(sb, userId, "user", outgoing);
+  if (recordUser) await recordChatTurn(sb, userId, "user", outgoing);
   if (!turn) return { lines: [], errorReason: errorReason ?? "agent turn unavailable" };
 
   // لفة رجعت 200 وهي فاضية تماماً — لا رد، ولا أداة اتنفذت، ولا اقتراح — كانت بتخرج
@@ -1307,40 +1356,23 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  // fallback: الوكيل مش متاح (نت/موديل/مهلة) — الرد القرائي القديم أحسن من صمت.
-  // بيتشال في المرحلة ٢-هـ بعد ما agent_turn يثبت نفسه على مستخدمين حقيقيين.
-  //
-  // errorReason دلوقتي بيتحط في الحالتين اللي بيوصلوا هنا: الوكيل مش متاح (turn === null)
-  // **و** لفة رجعت 200 وهي فاضية. الافتراض القديم إنه بيبقى موجود في الحالة الأولى بس هو
-  // اللي كان بيخلي اللفة الفاضية تعدي من غير أي تحذير. لو أي أمر تنفيذي (عدّل/ذكرني/ضيف)
-  // وقع على المسار ده، لازم العميل يعرف إنه رد قراءة بس ومحصلش تنفيذ فعلي، بدل ما يفتكر
-  // إن التعديل اتسجل وهو ماتسجلش. صمت هنا هو بالظبط الشكوى اللي البلاغ ده بيوصفها.
+  // العقل مش متاح (نت/موديل/مهلة): مفيش عقل تاني يخمّن بتعليمات تانية (كان بيرد من بيانات
+  // قديمة وبرده ماكانش بيتحفظ، ٢٠٢٦-١٠-٠١). الرسالة بتدخل طابور، والرد الحقيقي بيوصل أول ما
+  // العقل يرجع (job=retry_failed كل دقيقتين).
   if (errorReason) {
-    console.error("agent turn fell back to read-only:", errorReason);
+    console.error("agent turn failed, queued for retry:", errorReason);
     logAgentFallback(sb, userId, "text", errorReason);
   }
-  const notice = errorReason
-    ? `⚠️ ${userFacingFailure(errorReason)}. اللي تحت رد قراءة من بياناتك المسجّلة — لو كنت طالب تعديل أو إضافة أو تذكير، **هو ماتسجّلش**، جرب تاني كمان شوية.\n\n`
-    : "";
-
-  const agentInput = await fetchAgentContext(sb, userId);
-  const context = buildAgentContext(agentInput);
-  const answer = await askZad(
-    agentSystemPrompt(resolveDialect({ text: ctx.message.text, country: agentInput.country, currency: agentInput.currency })),
-    `${context}\n\n=== سؤال العميل ===\n${ctx.message.text}`,
-  );
-
-  // الرد ده لازم يتحفظ: سؤال اتحفظ من غير رد بيفضل «مستني» ويترد عليه في رسالة بعدين
-  // («مرحبا» اترد عليها بسعر الدهب، ٢٠٢٦-١٠-٠١ ٢٠:٠٢).
-  if (answer) {
-    await ctx.reply(clampForTelegram(notice + answer));
-    await recordChatTurn(sb, userId, "assistant", answer);
-  } else {
-    await ctx.reply(clampForTelegram(notice + "معلش، مش قادر أرد دلوقتي — جرب تاني كمان شوية، أو اختار من القائمة:"), {
-      reply_markup: toGrammyKeyboard(mainMenuKeyboard()),
-    });
-    await recordChatTurn(sb, userId, "assistant", "ماقدرتش أرد على الرسالة دي وقتها.");
-  }
+  const { error: queueErr } = await sb.from("zad_brain_queue").insert({
+    user_id: userId, trigger: TELEGRAM_RETRY_TRIGGER,
+    user_message: JSON.stringify({ chat_id: ctx.chat.id, text: ctx.message.text }),
+    last_error: (errorReason ?? "").slice(0, 300),
+  });
+  const holding = queueErr
+    ? "معلش، مش قادر أرد دلوقتي ومقدرتش أحفظ رسالتك — ابعتها تاني كمان شوية 🙏"
+    : "معلش، مش قادر أرد دلوقتي 🙏 رسالتك محفوظة، وهرد عليك هنا أول ما أرجع — مش محتاج تبعتها تاني.";
+  await ctx.reply(holding);
+  await recordChatTurn(sb, userId, "assistant", holding);
 });
 
 // رسالة صوتية — نفس فكرة رسالة الكتابة العادية، بس بعد تفريغ الصوت لنص عبر
@@ -2393,6 +2425,17 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
     }
   }
+  // رسايل تليجرام اللي العقل ماقدرش يرد عليها وقتها: بتتعاد كل دقيقتين، والرد بيتبعت في نفس الشات.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "retry_failed") {
+    if (!(await secretMatches(req.headers.get("X-Checkin-Cron-Secret"), "ZAD_CHECKIN_CRON_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    if (!BOT_CONFIGURED) return new Response(JSON.stringify({ ok: false, reason: "bot not configured" }), { status: 503 });
+    const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const result = await retryFailedTurns(sb);
+    return new Response(JSON.stringify({ ok: true, ...result }), { headers: { "Content-Type": "application/json" } });
+  }
+
   // Daily subscription/bill renewal cron trigger — same shape as daily_checkins above,
   // own secret (ZAD_SUBSCRIPTION_CRON_SECRET).
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "subscription_alerts") {
