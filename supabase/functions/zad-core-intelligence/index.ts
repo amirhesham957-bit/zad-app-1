@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, marketOf } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
@@ -937,7 +938,7 @@ async function setCachedAiResponse(cacheKey: string, action: string, response: R
 // ── webSearchSnippets — بحث ويب حقيقي عبر DuckDuckGo (بدون مفتاح، بدون LLM).
 // بترجع عناوين/روابط/مقاطع فعلية من نتايج البحث. الفشل بيرجع [] والمستدعي بيعرف
 // يتصرف («مقدرتش أتأكد») بدل ما الموديل يخترع.
-interface WebHit { title: string; url: string; snippet: string }
+interface WebHit { title: string; url: string; snippet: string; published?: string }
 
 export let lastWebSearchSource = "none";
 /** محاولات آخر بحث (موديل:حالة) — للتشخيص بس، من غير مفاتيح. */
@@ -1093,40 +1094,15 @@ const decodeEntities = (v: string) => v
   .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
 
-/** DuckDuckGo lite (GET) — صفحة أخف من html/ وأحياناً مابتتمنعش لما التانية تتمنع. */
-async function ddgLiteSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+/** أخبار جوجل RSS (من غير مفتاح) — للأسئلة عن أحداث وأخبار وأسعار اليوم، بصحافة بلد العميل. */
+async function googleNewsSnippets(query: string, arabic: boolean, maxResults: number, country?: unknown): Promise<WebHit[]> {
   try {
-    const res = await fetch(`https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`, {
-      headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Mobile Safari/537.36" },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) { lastWebSearchAttempts.push(`ddg_lite:${res.status}`); return []; }
-    const html = await res.text();
-    const links = [...html.matchAll(/<a[^>]*href="([^"]+)"[^>]*class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>/g)];
-    const snippets = [...html.matchAll(/<td[^>]*class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/g)].map((m) => decodeEntities(m[1]));
-    const hits: WebHit[] = [];
-    links.forEach((m, i) => {
-      let url = m[1];
-      const uddg = /[?&]uddg=([^&]+)/.exec(url);
-      if (uddg) url = decodeURIComponent(uddg[1]);
-      if (url.startsWith("http") && hits.length < maxResults) hits.push({ title: decodeEntities(m[2]), url, snippet: snippets[i] ?? "" });
-    });
-    lastWebSearchAttempts.push(`ddg_lite:200 hits=${hits.length}`);
-    return hits;
-  } catch (e) {
-    lastWebSearchAttempts.push(`ddg_lite:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
-    return [];
-  }
-}
-
-/** أخبار جوجل RSS (من غير مفتاح) — للأسئلة عن أحداث وأخبار وأسعار اليوم. */
-async function googleNewsSnippets(query: string, arabic: boolean, maxResults: number): Promise<WebHit[]> {
-  try {
-    const locale = arabic ? "hl=ar&gl=EG&ceid=EG:ar" : "hl=en-US&gl=US&ceid=US:en";
-    const res = await fetch(`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${locale}`, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)" }, signal: AbortSignal.timeout(10000),
+    const res = await fetch(googleNewsUrl(query, country, arabic), {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)", "Cookie": GOOGLE_CONSENT_COOKIE },
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) { lastWebSearchAttempts.push(`google_news:${res.status}`); return []; }
+    if (res.url.includes("consent.")) { lastWebSearchAttempts.push("google_news:consent_page"); await res.body?.cancel(); return []; }
     const xml = await res.text();
     const hits: WebHit[] = [];
     for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
@@ -1135,7 +1111,7 @@ async function googleNewsSnippets(query: string, arabic: boolean, maxResults: nu
       const link = decodeEntities(item.match(/<link>([\s\S]*?)<\/link>/)?.[1] ?? "");
       const date = decodeEntities(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ?? "");
       const source = decodeEntities(item.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] ?? "");
-      if (title && link.startsWith("http")) hits.push({ title, url: link, snippet: [source, date].filter(Boolean).join(" — ") });
+      if (title && link.startsWith("http")) hits.push({ title, url: link, snippet: [source, date].filter(Boolean).join(" — "), published: date || undefined });
       if (hits.length >= maxResults) break;
     }
     lastWebSearchAttempts.push(`google_news:200 hits=${hits.length}`);
@@ -1168,73 +1144,53 @@ async function wikipediaSnippets(query: string, lang: "ar" | "en", maxResults: n
   }
 }
 
-export async function webSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
+/**
+ * البحث بترتيب حسب نوع السؤال، وكل مصدر نتايجه بتتفلتر: نتيجة مافيهاش نص كلمات السؤال (ولرقم في سؤال
+ * السعر) مش إجابة. قبل كده السلسلة كانت بتقف عند أول مصدر يرجّع أي حاجة — وويكيبيديا دايماً بترجّع
+ * (سؤال الدهب ⇒ «حفل زفاف الأمير وليم»، ٢٠٢٦-١٠-٠١). DuckDuckGo اتشال: من سيرفرات Supabase بيرجّع صفر.
+ * السؤال الحي (سعر، خبر، ماتش): أخبار جوجل بلد العميل ← Groq compound ← بحث جوجل من Gemini، من غير
+ * ويكيبيديا. الباقي: Groq ← Gemini ← الأخبار ← ويكيبيديا.
+ */
+export async function webSearchSnippets(query: string, maxResults = 8, country?: unknown): Promise<WebHit[]> {
   lastWebSearchAttempts = [];
-  const ddg = await ddgSearchSnippets(query, maxResults);
-  if (ddg.length > 0) { lastWebSearchSource = "duckduckgo"; return ddg; }
-  lastWebSearchAttempts.push("duckduckgo:0");
-  const lite = await ddgLiteSnippets(query, maxResults);
-  if (lite.length > 0) { lastWebSearchSource = "duckduckgo_lite"; return lite; }
-  // أخبار + ويكيبيديا مع بعض: الأخبار للي حصل مؤخراً، ويكيبيديا للمعلومة الثابتة. مفيش مفاتيح ولا كوتة.
   const arabic = /[\u0600-\u06FF]/.test(query);
-  const [news, wikiPrimary, wikiEn] = await Promise.all([
-    googleNewsSnippets(query, arabic, 5),
-    wikipediaSnippets(query, arabic ? "ar" : "en", 3),
-    arabic ? wikipediaSnippets(query, "en", 2) : Promise.resolve([] as WebHit[]),
-  ]);
-  const free = [...news.slice(0, 5), ...wikiPrimary, ...wikiEn].slice(0, maxResults);
-  if (free.length > 0) { lastWebSearchSource = news.length > 0 ? "google_news+wikipedia" : "wikipedia"; return free; }
-  const grounded = await groundedSearchSnippets(query, maxResults);
-  if (grounded.length > 0) { lastWebSearchSource = "gemini_google_search"; return grounded; }
-  const compound = await compoundSearchSnippets(query, maxResults);
-  lastWebSearchSource = compound.length > 0 ? "groq_compound" : "none";
-  return compound;
+  const live = isLiveQuery(query);
+  const sources: Array<[string, () => Promise<WebHit[]>]> = live
+    ? [
+      ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
+      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
+      ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
+    ]
+    : [
+      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
+      ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
+      ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
+      ["wikipedia", async () => [
+        ...(await wikipediaSnippets(query, arabic ? "ar" : "en", 3)),
+        ...(arabic ? await wikipediaSnippets(query, "en", 2) : []),
+      ]],
+    ];
+  for (const [name, run] of sources) {
+    const raw = await run();
+    // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
+    const kept = keepAnswering(query, raw);
+    lastWebSearchAttempts.push(`${name}:kept ${kept.length}/${raw.length}`);
+    if (kept.length > 0) {
+      lastWebSearchSource = name;
+      return kept.slice(0, maxResults);
+    }
+  }
+  lastWebSearchSource = "none";
+  return [];
 }
 
-async function ddgSearchSnippets(query: string, maxResults = 8): Promise<WebHit[]> {
-  try {
-    const res = await fetch(
-      "https://html.duckduckgo.com/html/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)",
-        },
-        body: new URLSearchParams({ q: query }).toString(),
-      },
-    );
-    if (!res.ok) {
-      console.error(`[CoreIntel] DDG search HTTP ${res.status}`);
-      return [];
-    }
-    const html = await res.text();
-    const hits: WebHit[] = [];
-    // نتائج DDG HTML: <a rel="nofollow" class="result__a" href="...">TITLE</a>
-    // + <a class="result__snippet" ...>SNIPPET</a>
-    const linkRe = /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
-    const snipRe = /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-    const titles: Array<{ url: string; title: string }> = [];
-    let m: RegExpExecArray | null;
-    while ((m = linkRe.exec(html)) !== null) {
-      let url = m[1];
-      // DDG بيلف اللينكات في //duckduckgo.com/l/?uddg=<encoded>
-      const uddg = /[?&]uddg=([^&]+)/.exec(url);
-      if (uddg) url = decodeURIComponent(uddg[1]);
-      const title = m[2].replace(/<[^>]+>/g, "").trim();
-      if (title && url.startsWith("http")) titles.push({ url, title });
-    }
-    const snippets: string[] = [];
-    while ((m = snipRe.exec(html)) !== null) snippets.push(m[1].replace(/<[^>]+>/g, "").trim());
-    for (let i = 0; i < titles.length && hits.length < maxResults; i++) {
-      hits.push({ title: titles[i].title, url: titles[i].url, snippet: snippets[i] ?? "" });
-    }
-    return hits;
-  } catch (e) {
-    console.error("[CoreIntel] webSearchSnippets failed:", (e as Error).message);
-    return [];
-  }
+/** سعر الدهب النهارده من عناوين أخبار بلد العميل — قاعدة ثابتة، من غير موديل. */
+export async function goldPriceToday(country?: unknown): Promise<{ quotes: GoldQuote[]; market: string; currency: string }> {
+  const market = marketOf(country);
+  const hits = await googleNewsSnippets(`سعر الذهب اليوم في ${market.name}`, true, 30, market.code);
+  return { quotes: goldQuotes(hits, market.currency), market: market.code, currency: market.currency };
 }
+
 
 // Observability: fire-and-forget log of every AI call to `agent_logs`, read live by the
 // React Flow dashboard (dashboard/) over Supabase Realtime. Never throws into the caller —
@@ -2051,16 +2007,29 @@ Deno.serve(async (req: Request) => {
 
       case "web_search": {
         // بحث ويب عام حقيقي — للأسئلة اللي برّه بيانات البيت ("أنهي زيت أحسن دلوقتي؟").
-        // النتايج بترجع بعناوينها وروابطها عشان الوكيل يقول المصدر، مش يختلق.
+        // النتايج بترجع بعناوينها وروابطها عشان الوكيل يقول المصدر، مش يختلق. نتيجة اتقبلت بس
+        // بتتحفظ: ٢٠ دقيقة للسؤال الحي، ٦ ساعات للمعلومة الثابتة.
         const q = String(payload?.query ?? "").trim();
         if (!q) return jsonResponse({ results: [], error: "empty_query" });
-        const cacheKey = "web_search:" + q;
-        const cached = await getCachedAiResponse(cacheKey);
-        if (cached) return jsonResponse(cached);
-        const hits = await webSearchSnippets(q);
-        const response = { query: q, results: hits.slice(0, 8) };
+        const country = typeof payload?.country === "string" ? payload.country.toUpperCase().slice(0, 2) : "";
+        const cacheKey = `web_search:v2:${country}:${q}`;
+        const cached = await getCachedAiResponse(cacheKey, cacheTtlMs(q));
+        if (cached) return jsonResponse({ ...cached, cached: true });
+        const hits = await webSearchSnippets(q, 8, country || null);
+        const response = { query: q, results: hits.slice(0, 8), source: lastWebSearchSource };
         if (hits.length > 0) await setCachedAiResponse(cacheKey, "web_search", response);
-        return jsonResponse(response);
+        return jsonResponse({ ...response, attempts: lastWebSearchAttempts.slice(0, 12) });
+      }
+
+      case "gold_price": {
+        const country = typeof payload?.country === "string" ? payload.country : null;
+        const cacheKey = `gold_price:${marketOf(country).code}`;
+        const cached = await getCachedAiResponse(cacheKey, 20 * 60 * 1000);
+        if (cached) return jsonResponse({ ...cached, cached: true });
+        const result = await goldPriceToday(country);
+        const response = { ok: result.quotes.length > 0, ...result };
+        if (response.ok) await setCachedAiResponse(cacheKey, "gold_price", response);
+        return jsonResponse({ ...response, attempts: lastWebSearchAttempts.slice(0, 6) });
       }
 
       // ──────────────────────────────────────────────

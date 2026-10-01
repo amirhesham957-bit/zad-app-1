@@ -1,5 +1,5 @@
 // specialists_test.ts — اختبارات توجيه الوكلاء المتخصصين.
-import { assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals } from "jsr:@std/assert@1";
 import {
   intentToolHints,
   routeSpecialist,
@@ -178,7 +178,8 @@ Deno.test("priorAssistantText: الرد اللي قبل آخر رسالة، حت
 });
 
 Deno.test("a live price question points at web_search, not at the app's tools (2026-10-01)", () => {
-  for (const q of ["كم سعر الذهب اليوم", "كام سعر زجاجة المياه في السعودية", "كم سعر زجاجة حليب فيفا في مصر", "أسعار الطماطم النهارده"]) {
+  // The gold question now goes to gold_price (test below); the rest still search the web.
+  for (const q of ["كام سعر زجاجة المياه في السعودية", "كم سعر زجاجة حليب فيفا في مصر", "أسعار الطماطم النهارده"]) {
     const hints = intentToolHints(q);
     assertEquals(hints.includes("web_search"), true, q);
     assertEquals(hints.includes("add_appointment"), false, q);
@@ -186,4 +187,21 @@ Deno.test("a live price question points at web_search, not at the app's tools (2
   // His own spending is not a web question.
   assertEquals(intentToolHints("صرفت كام على الأكل الشهر ده").includes("web_search"), false);
   assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
+});
+
+Deno.test("intentToolHints: gold and currency questions get the price tools, own spending does not", () => {
+  // «سعر الدهب» من غير «النهارده» (تليجرام ٢٠٢٦-١٠-٠١ ٢٠:٠٥) ماكانش بياخد أي تلميح.
+  assertEquals(intentToolHints("سعر الدهب"), ["gold_price"]);
+  assertEquals(intentToolHints("كم سعر الذهب اليوم"), ["gold_price"]);
+  assertEquals(intentToolHints("عيار 21 بكام"), ["gold_price"]);
+  assertEquals(intentToolHints("الدولار بكام؟"), ["fetch_current_exchange_rate"]);
+  assertEquals(intentToolHints("سعر الريال النهارده"), ["fetch_current_exchange_rate"]);
+  assertEquals(intentToolHints("كام سعر زجاجة المياه في السعودية"), ["web_search"]);
+  assertEquals(intentToolHints("صرفت 500 على دهب"), []);
+});
+
+Deno.test("scopeToolsForSpecialist: today's prices are offered to every specialist", () => {
+  const tools = ["gold_price", "fetch_current_exchange_rate", "web_search", "add_pharmacy_item"].map((name) => ({ name }));
+  const names = scopeToolsForSpecialist(tools, "pharmacy").map((t) => t.name);
+  assert(names.includes("gold_price") && names.includes("fetch_current_exchange_rate"));
 });

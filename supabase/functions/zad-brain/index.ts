@@ -2901,11 +2901,23 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
       // بترجع بمصادرها — الموديل ملزم يقول المصدر، وpromise-drift هيمسك أي ادعاء.
-      const res = await callCoreIntel("web_search", { query: input.query ?? "" }, userId);
+      const res = await callCoreIntel("web_search", { query: input.query ?? "", country: snap?.country ?? null }, userId);
       if (!res || res.ok === false) return "مقدرتش أبحث دلوقتي — قول للعميل إن البحث مش متاح مؤقتاً، متختلقش إجابة.";
       const hits = (res as { results?: Array<{ title: string; url: string; snippet: string }> }).results ?? [];
       if (hits.length === 0) return "مفيش نتايج بحث — قول للعميل إنك ملقتش حاجة موثوقة، متخترعش.";
       return JSON.stringify(hits.map((h, i) => `${i + 1}. ${h.title}\n${h.url}\n${h.snippet}`).join("\n\n"));
+    }
+    case "gold_price": {
+      // سعر الدهب من عناوين أخبار بلد العميل النهارده — رقم مقري بقاعدة، مش من الموديل.
+      const res = await callCoreIntel("gold_price", { country: snap?.country ?? null }, userId);
+      const quotes = (res?.quotes ?? []) as Array<{ karat: string; price: number; currency: string; source: string; published?: string }>;
+      if (!res || quotes.length === 0) {
+        return "مالقيتش سعر دهب منشور النهارده في أخبار بلد العميل. نادِ web_search بسؤال «سعر الذهب اليوم» قبل ما تقول إنك مش لاقي.";
+      }
+      const when = (iso?: string) => iso ? new Date(iso).toLocaleString("ar-EG", { timeZone: snap?.now_local?.time_zone ?? "Africa/Cairo", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }) : "النهارده";
+      const lines = quotes.map((q) => `عيار ${q.karat}: ${q.price.toLocaleString("en-US")} ${q.currency} (المصدر: ${q.source}، ${when(q.published)})`);
+      return "سعر الدهب النهارده من الأخبار المنشورة:\n" + lines.join("\n") +
+        "\nابدأ ردك بالرقم المطلوب ومصدره ووقته في أول جملة. ده سعر بيع تقريبي من الأخبار، مش سعر محل بعينه.";
     }
     case "family_digest": {
       // الأرقام مجمّعة عن قصد: الأب يشوف "أحمد صرف ٨٠٪ من سقفه"، مش معاملاته واحدة واحدة.
@@ -4226,6 +4238,13 @@ const CHAT_TOOLS: ToolDef[] = [
       },
       required: ["screen", "action"],
     },
+  },
+  {
+    name: "gold_price",
+    description:
+      "سعر جرام الدهب النهارده (عيار 24 و21 و18) في بلد العميل، من الأخبار المنشورة النهارده. " +
+      "استخدمها لأي سؤال عن سعر الدهب قبل أي حاجة تانية، وابدأ ردك بالرقم ومصدره ووقته.",
+    input_schema: { type: "object", properties: {}, required: [] },
   },
   {
     name: "fetch_current_exchange_rate",
