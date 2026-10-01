@@ -331,3 +331,31 @@ Deno.test("the prompt carries what was said last time, to be avoided", () => {
   const none = buildMomentPrompt({ moment: "good_night", facts: {} }, "EG", "أمير", {});
   assert(!none.user.includes("ماتكرريش"));
 });
+
+import { isStillRelevant, MEDICINE_NAMED_MOMENTS } from "./voiceMoments.ts";
+
+Deno.test("a guardian's missed-dose alert: only with consent, and only while the dose is still missing (2026-10-01)", async () => {
+  const row = {
+    id: "g1", user_id: "dad", moment: "family_dose_missed", status: "pending", attempts: 0,
+    created_at: new Date().toISOString(),
+    facts: { member_id: "son", member_alias: "يوسف", item_name: "فيتامين", scheduled_at: "2026-10-01T05:00:00Z", dose_log_id: "d1" },
+  };
+  const tables = (shared: boolean, taken: string | null) => ({
+    zad_family_shares: shared ? [{ id: "s1", owner_id: "son", viewer_id: "dad", scope: "medicines", status: "granted" }] : [],
+    zad_dose_log: [{ id: "d1", taken_at: taken, pharmacy_item_id: "p1", scheduled_at: "2026-10-01T05:00:00Z" }],
+    zad_pharmacy_doses: [],
+  });
+  // deno-lint-ignore no-explicit-any
+  const relevant = (shared: boolean, taken: string | null) => isStillRelevant(fakeSb(tables(shared, taken)).sb, row as any);
+  assertEquals(await relevant(true, null), true);
+  assertEquals(await relevant(false, null), false, "no consent (or revoked): no alert");
+  assertEquals(await relevant(true, "2026-10-01T05:40:00Z"), false, "he took it after all");
+});
+
+Deno.test("the guardian's alert names the member and the real medicine, and is checked for it", () => {
+  const f = momentFallback("family_dose_missed", { member_alias: "يوسف", item_name: "فيتامين", again: true });
+  assertStringIncludes(f.title, "يوسف");
+  assertStringIncludes(f.text, "فيتامين");
+  assertStringIncludes(f.text, "تاني جرعة");
+  assertEquals(MEDICINE_NAMED_MOMENTS.has("family_dose_missed"), true);
+});
