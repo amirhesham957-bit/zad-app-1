@@ -22,7 +22,11 @@ typedef SpokenAudio = ({Uint8List pcm, String provider});
 /// Text to speech.
 abstract interface class VoiceSynthesizer {
   /// The speech for [text] in زاد's voice, or throws.
-  Future<SpokenAudio> synthesize(String text);
+  ///
+  /// [feelingFrom] is the first chunk of the reply [text] belongs to: the
+  /// server reads one feeling from it for every chunk, so a reply has
+  /// feeling and still one voice.
+  Future<SpokenAudio> synthesize(String text, {String? feelingFrom});
 }
 
 /// The one voice: زاد, a girl's voice in the account's dialect. The server
@@ -43,7 +47,7 @@ class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
   static const Duration timeout = Duration(seconds: 30);
 
   @override
-  Future<SpokenAudio> synthesize(String text) async {
+  Future<SpokenAudio> synthesize(String text, {String? feelingFrom}) async {
     final client = _clientFactory?.call() ?? http.Client();
     try {
       final response = await client
@@ -65,6 +69,7 @@ class SupabaseVoiceSynthesizer implements VoiceSynthesizer {
               'payload': <String, dynamic>{
                 'text': text,
                 'persona': zadVoicePersona,
+                'feeling_from': ?feelingFrom,
               },
             }),
           )

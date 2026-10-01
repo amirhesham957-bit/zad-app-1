@@ -67,7 +67,7 @@ class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
 
   @override
-  Future<SpokenAudio> synthesize(String text) {
+  Future<SpokenAudio> synthesize(String text, {String? feelingFrom}) {
     requested.add(text);
     return Completer<SpokenAudio>().future;
   }

@@ -12,7 +12,7 @@ import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
-import { bearerToken, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
+import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
@@ -1475,10 +1475,13 @@ Deno.serve(async (req: Request) => {
         voiceRequest.country = null;
       }
 
-      // رد شات (مش لحظة من لحظات اليوم): إحساس واحد للرد كله. كان كل جملة بتاخد إحساس من كلامها، فجمل
-      // نفس الرد بتطلع بأداء مختلف («صوتين»، ٢٠٢٦-١٠-٠١). واللحظات بتفضل بمشاعرها.
+      // رد شات (مش لحظة من لحظات اليوم): إحساس واحد للرد كله، من أول جملة فيه (chatReplyEmotion).
+      // كان كل جملة بتاخد إحساس من كلامها، فجمل نفس الرد بتطلع بأداء مختلف («صوتين»، ٢٠٢٦-١٠-٠١).
+      // واللحظات بتفضل بمشاعرها.
       const chatReply = !(payload as { moment?: unknown } | null)?.moment;
-      if (chatReply && !voiceRequest.emotion) voiceRequest.emotion = "warm";
+      if (chatReply && !voiceRequest.emotion) {
+        voiceRequest.emotion = chatReplyEmotion((payload as { feeling_from?: unknown } | null)?.feeling_from);
+      }
       const upstream = await requestVoiceWithFallback(
         voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload), chatReply,
       );
