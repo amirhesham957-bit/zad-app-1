@@ -1,5 +1,8 @@
 /// Kotlin's `ZadMinimalMetricsDuo`: two small white cards under the green one —
-/// what can be spent per day without running out, and how many days are left.
+/// what can be spent per day without running out, and how many days are left
+/// until payday (today included, like the server and the brain), with the
+/// payday's date: «14 يوم متبقي» on the 1st read as a bug when the cycle
+/// actually ran to the 16th (owner, 2026-10-01).
 library;
 
 import 'package:flutter/material.dart';
@@ -17,6 +20,7 @@ class HomeMetricsDuo extends StatelessWidget {
     required this.spendable,
     required this.daysLeft,
     required this.currency,
+    this.payday,
     super.key,
   });
 
@@ -28,6 +32,9 @@ class HomeMetricsDuo extends StatelessWidget {
 
   /// The account's currency.
   final String currency;
+
+  /// The first day of the next salary cycle, or null for a calendar month.
+  final DateTime? payday;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +49,13 @@ class HomeMetricsDuo extends StatelessWidget {
         ),
         const SizedBox(width: ZadSpacing.md),
         Expanded(
-          child: _Metric(label: 'يوم متبقي', value: '$daysLeft يوم'),
+          child: _Metric(
+            label: payday == null ? 'لحد آخر الشهر' : 'لحد القبض',
+            value: '$daysLeft يوم',
+            caption: payday == null
+                ? null
+                : 'يوم ${payday!.day} ${_arabicMonths[payday!.month - 1]}',
+          ),
         ),
       ],
     );
@@ -50,10 +63,11 @@ class HomeMetricsDuo extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const new({required this.label, required this.value});
+  const new({required this.label, required this.value, this.caption});
 
   final String label;
   final String value;
+  final String? caption;
 
   @override
   Widget build(BuildContext context) => ZadCard(
@@ -77,9 +91,31 @@ class _Metric extends StatelessWidget {
             style: ZadType.titleLarge.copyWith(color: ZadColors.ink),
           ),
         ),
+        if (caption != null)
+          Text(
+            caption!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+          ),
       ],
     ),
   );
 }
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
+
+const List<String> _arabicMonths = <String>[
+  'يناير',
+  'فبراير',
+  'مارس',
+  'أبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+];

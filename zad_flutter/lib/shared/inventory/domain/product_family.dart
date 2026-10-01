@@ -80,7 +80,12 @@ String? productFamilyOf(String name) {
     i++;
   }
   if (i >= words.length) return null;
-  return _staples[words[i]];
+  final first = _staples[words[i]];
+  if (first != null) return first;
+  // Brand first: «صافي مياه معدنية 1.5 لتر» stood alone beside nine water
+  // rows (2026-10-01). Water only — «بسكويت شاي» is not tea.
+  final next = i + 1 < words.length ? _staples[words[i + 1]] : null;
+  return next == 'مياه' ? next : null;
 }
 
 /// What tells [name] apart inside its family: «ماء إيلان» → «إيلان». The

@@ -181,8 +181,9 @@ class _Budget extends ConsumerWidget {
             delayMs: 40,
             child: HomeMetricsDuo(
               spendable: spendable,
-              daysLeft: math.max(0, period.daysRemainingFrom(now)),
+              daysLeft: math.max(1, period.daysToLiveOn(now)),
               currency: snapshot.currency,
+              payday: period.isCalendarMonth ? null : period.periodEnd,
             ),
           ),
           const SizedBox(height: 14),
@@ -192,7 +193,7 @@ class _Budget extends ConsumerWidget {
           child: ZadSlots.homeReportsRow(
             spent: snapshot.spent,
             spendable: spendable,
-            daysLeft: math.max(0, period.daysRemainingFrom(now)),
+            daysLeft: math.max(1, period.daysToLiveOn(now)),
             currency: snapshot.currency,
           ),
         ),
