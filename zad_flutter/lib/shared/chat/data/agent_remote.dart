@@ -1,21 +1,21 @@
 /// Talking to `zad-brain`.
 ///
-/// ## About the "streaming"
+/// ## Streaming
 ///
-/// `agent_turn_stream` does **not** stream the model. `handleAgentTurnStream`
-/// runs the whole of `handleAgentTurn` to completion — routing, memory, tools,
-/// review — and only then slices the finished reply into 24-character pieces
-/// and emits them as SSE. The wait before the first chunk is the entire turn.
+/// `agent_turn_stream` streams the model since 2026-10-01 (تشخيص زاد ٢.٢):
+/// the turn's first model call is `streamGenerateContent`, and its text goes
+/// out as `{t}` frames while it is being written — until the model asks for
+/// a tool. So the first chunk now does mean "the model has started", and the
+/// voice starts on the first sentence.
 ///
-/// So the typewriter is a presentation effect, not progress, and this client
-/// reproduces it because the Kotlin one does and the two should feel the same
-/// — not because it makes the answer arrive sooner. Anything built on top of
-/// this that treats the first chunk as "the model has started" would be wrong.
+/// The server's guards still run after the text is written (an unbacked
+/// reminder claim, an empty turn, a tool turn's answer), so the final `done`
+/// frame carries the turn's `reply`, and that wins over what streamed. When
+/// nothing streamed (a tool turn, a fast reply) the server sends the reply as
+/// chunks, as it always did. A `done` frame with `ok: false` is a failed turn.
 ///
-/// The server also falls back to plain JSON in three cases it does not
-/// announce: a reply under 40 characters, any turn that ran tools, and any
-/// error. A client that only handled `text/event-stream` would break on the
-/// most important turns — the ones that did something.
+/// The server may still answer plain JSON (an older deploy), so both content
+/// types are accepted.
 library;
 
 import 'dart:async';
@@ -94,8 +94,7 @@ class SupabaseAgentRemote implements AgentRemote {
   /// How long to wait for a turn.
   ///
   /// Generous on purpose: a turn may route to a specialist, run tools, and
-  /// call the model more than once, and the first byte does not arrive until
-  /// all of that is done.
+  /// call the model more than once before its reply is final.
   static const Duration timeout = Duration(seconds: 90);
 
   /// How many earlier messages travel with a turn.
@@ -169,12 +168,19 @@ class SupabaseAgentRemote implements AgentRemote {
           yield AgentChunk(piece);
         } else if (frame['done'] == true) {
           sawDone = true;
-          // The final frame carries everything but the reply — the server
-          // deletes that key before sending it, because the text already went
-          // out as chunks.
+          if (frame['ok'] == false) {
+            throw StateError(
+              'agent_turn refused: ${frame['error'] ?? 'no reason'}',
+            );
+          }
+          // The server's final reply wins: a guard may have changed what
+          // streamed. An older deploy left it out; then the chunks are it.
+          final reply = frame['reply'];
           meta = AgentTurn.fromJson(<String, dynamic>{
             ...frame,
-            'reply': buffer.toString(),
+            'reply': reply is String && reply.isNotEmpty
+                ? reply
+                : buffer.toString(),
           });
         }
       }

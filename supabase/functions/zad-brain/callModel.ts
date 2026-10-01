@@ -880,50 +880,130 @@ export async function smokeTestTools(model: string) {
 }
 
 /**
- * نسخة streaming من نداء Gemini — بترجع ReadableStream من مقاطع النص.
+ * لفة جيميناي متدفقة بجد (تشخيص زاد ٢.٢، ٢٠٢٦-١٠-٠١): `streamGenerateContent` بنفس
+ * جسم sendGemini (الأدوات + thinkingConfig)، والنص بيطلع لـ`onText` وهو بيتكتب.
  *
- * ليه؟ تجربة ChatGPT: العميل يشوف الكلام بيتكتب حرف حرف بدل ما يحدق في
- * "بيفكر..." لمدة ٣ ثواني. نفس الـ body بتاع sendGemini بالظبط، بس
- * :streamGenerateContent?alt=sse وكل سطر data: فيه chunk نصي.
- * الأدوات (functionCall) مش مدعومة هنا — دي للردود النصية النهائية فقط،
- * والـ caller بيعيد اللفة العادية لو الموديل طلب أداة.
+ * أول ما يظهر functionCall بيقف البث (اللي بعده مايطلعش)، والرد بيتجمع كامل ويرجع بنفس
+ * شكل callModel — فالكالر بيكمّل مسار الأدوات العادي من غير نداء تاني. أي فشل قبل الرد
+ * (429 على كل المفاتيح، 503، 400، timeout) بيترمي، والكالر يرجع لـcallModel العادي
+ * بسلسلته وجروك. جيميناي بس: جروك بيفضل احتياطي غير متدفق.
  */
-export async function callModelStreaming(opts: {
+export async function streamGeminiTurn(opts: {
   model: string;
   system: string;
+  tools: ToolDef[];
   history: Turn[];
   maxTokens?: number;
-}): Promise<ReadableStream<Uint8Array>> {
+  onText: (delta: string) => void;
+  timeoutMs?: number;
+}): Promise<ModelReply> {
   const { provider } = cfg();
-  // fallback: مزودين تانيين مش مسنتريمين — نرجع null والكالر يستخدم الطريق العادي
-  if (provider !== "gemini") throw new ProviderUnavailableError("streaming gemini-only", "provider");
+  if (provider !== "gemini") throw new ProviderUnavailableError("streaming is gemini-only", "provider");
+  if (GEMINI_KEY_POOL.length === 0) throw new ConfigError("gemini: no key configured");
+  const now = Date.now();
+  // أول موديل مش في الانتظار بس: البث محاولة سريعة، والسلسلة كاملة شغلة callModel.
+  const model = modelChain(opts.model).find((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
+  if (!model) throw new ProviderUnavailableError("every gemini model cooling down", "cooldown");
+  const sendThinkingConfig = !THINKING_CONFIG_UNSUPPORTED.has(model);
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: opts.system }] },
+    contents: buildGeminiContents(opts.history),
+    tools: [{
+      functionDeclarations: opts.tools.map((t) => ({
+        name: t.name, description: t.description, parameters: sanitizeSchema(t.input_schema),
+      })),
+    }],
+    generationConfig: {
+      maxOutputTokens: opts.maxTokens ?? 1500,
+      temperature: 0.4,
+      ...(sendThinkingConfig ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+    },
+  });
+  for (const keyIndex of keysToTry()) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
+      `:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 30_000),
+      });
+    } catch (e) {
+      throw new ProviderUnavailableError(`gemini stream ${model}: ${(e as Error)?.message ?? e}`, "network");
+    }
+    if (res.status === 429) {
+      await res.body?.cancel();
+      continue;
+    }
+    if (!res.ok || !res.body) {
+      const failBody = (await res.text().catch(() => "")).slice(0, 300);
+      throw new ProviderUnavailableError(`gemini stream ${res.status} on ${model}: ${failBody}`, `${res.status}`);
+    }
+    const lines = res.body.pipeThrough(new TextDecoderStream());
+    const reply = await accumulateGeminiStream(sseData(lines), opts.onText);
+    modelCooldownUntil.delete(model);
+    return reply;
+  }
+  throw new ProviderUnavailableError(`gemini stream 429 on ${model} (every key)`, "429");
+}
 
-  const chain = modelChain(opts.model);
-  const contents = buildGeminiContents(opts.history);
-
-  for (const model of chain) {
-    for (const keyIndex of keysToTry()) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
-        `:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          signal: AbortSignal.timeout(30_000),
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: opts.system }] },
-            contents,
-            generationConfig: { maxOutputTokens: opts.maxTokens ?? 1200, temperature: 0.4 },
-          }),
-        });
-        if (!res.ok || !res.body) continue; // جرب المفتاح/الموديل الجاي
-        return res.body; // SSE raw — الفانكشن الرئيسية بتفكه وتمره للكلاينت
-      } catch {
-        continue;
-      }
+/** The `data:` payloads of an SSE body, one per event. */
+export async function* sseData(chunks: AsyncIterable<string>): AsyncGenerator<string> {
+  let buffered = "";
+  for await (const chunk of chunks) {
+    buffered += chunk;
+    let cut: number;
+    while ((cut = buffered.indexOf("\n")) >= 0) {
+      const line = buffered.slice(0, cut).replace(/\r$/, "");
+      buffered = buffered.slice(cut + 1);
+      if (line.startsWith("data:")) yield line.slice(5).trim();
     }
   }
-  throw new ProviderUnavailableError("all models failed for streaming", "unavailable");
+  if (buffered.startsWith("data:")) yield buffered.slice(5).trim();
+}
+
+/**
+ * يجمّع أحداث `streamGenerateContent` في رد واحد. النص بيطلع لـ`onText` لحد أول
+ * functionCall بس؛ أفكار الموديل (`thought: true`) مابتطلعش أبداً.
+ */
+export async function accumulateGeminiStream(
+  events: AsyncIterable<string>,
+  onText: (delta: string) => void,
+): Promise<ModelReply> {
+  let text = "";
+  let sawCall = false;
+  let inTok = 0, outTok = 0;
+  const calls: ToolCall[] = [];
+  for await (const raw of events) {
+    if (!raw) continue;
+    let d: any;
+    try {
+      d = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    for (const p of d.candidates?.[0]?.content?.parts ?? []) {
+      if (p.functionCall) {
+        sawCall = true;
+        calls.push({
+          id: `gem_${p.functionCall.name}_${calls.length}`,
+          name: p.functionCall.name,
+          input: p.functionCall.args ?? {},
+          thoughtSignature: p.thoughtSignature ?? p.functionCall.thoughtSignature,
+        });
+      } else if (typeof p.text === "string" && !p.thought) {
+        text += p.text;
+        if (!sawCall && p.text) onText(p.text);
+      }
+    }
+    if (d.usageMetadata) {
+      inTok = d.usageMetadata.promptTokenCount ?? inTok;
+      outTok = d.usageMetadata.candidatesTokenCount ?? outTok;
+    }
+  }
+  return { text, toolCalls: calls, usage: { inTok, outTok } };
 }
 
 // ============================================================
