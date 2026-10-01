@@ -955,7 +955,15 @@ export let lastWebSearchAttempts: string[] = [];
  * (٢٠٢٦-٠٩-١٤): DDG HTML من سيرفرات الإيدج رجّع صفر نتيجة في ٢١٩ms (صفحة منع مش نتايج)، فأداة
  * web_search بتاعة العقل كانت بتتنادى صح وترجع «مفيش نتايج» على أي سؤال.
  */
+/** بعد ما بحث جوجل من Gemini يرجّع 429 على كل الموديلات، بيتساب ٣٠ دقيقة بدل ٨ محاولات فاشلة في كل سؤال. */
+let groundedQuotaUntil = 0;
+
 async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  if (Date.now() < groundedQuotaUntil) {
+    lastWebSearchAttempts.push("gemini_google_search:resting (quota)");
+    return [];
+  }
+  let sawOnly429 = true;
   const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"];
   // موديل × مفتاح، بس بحد أقصى ٨ محاولات — الأداة جوه لفة شات والعميل مستني.
   const plan = models.flatMap((model) => GEMINI_KEYS.slice(0, 2).map((key, ki) => ({ model, key, ki })));
@@ -977,9 +985,11 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           const msg = (errText.match(/"message":\s*"([^"]{0,90})/)?.[1] ?? "").replace(/[^\x20-\x7E]/g, "");
           lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
           console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
+          if (res.status !== 429) sawOnly429 = false;
           // الكوتة لكل موديل لوحده (CLAUDE.md) — 429 على موديل مش معناه إن التاني مقفول.
           continue;
         }
+        sawOnly429 = false;
         const data = await res.json();
         const cand = data?.candidates?.[0];
         const answer = ((cand?.content?.parts ?? []) as Array<{ text?: string }>).map((p) => p.text ?? "").join("").trim();
@@ -997,11 +1007,13 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
         lastWebSearchAttempts.push(`k${ki}/${model}:200 chunks=${chunks.length} answer=${answer.length}`);
         if (hits.length > 0) return hits;
       } catch (e) {
+        sawOnly429 = false;
         lastWebSearchAttempts.push(`k${ki}/${model}:threw ${String((e as Error)?.message ?? e).slice(0, 60)}`);
         console.warn(`[CoreIntel] grounded search ${model} failed:`, (e as Error).message);
       }
     }
   }
+  if (sawOnly429) groundedQuotaUntil = Date.now() + 30 * 60 * 1000;
   return [];
 }
 
@@ -1114,6 +1126,60 @@ const decodeEntities = (v: string) => v
   .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
 
+/**
+ * محرك بحث حقيقي بمفتاح، لو موجود: Tavily (TAVILY_API_KEY) أو Brave (BRAVE_SEARCH_API_KEY). من
+ * سيرفر Supabase مفيش بحث مجاني بيشتغل لكل الأسئلة (٢٠٢٦-١٠-٠١): DuckDuckGo صفر، جوجل نيوز 503،
+ * Groq compound اتشال، بحث Gemini خلصت كوتته، وBing News أخبار بس — «مين كسب كاس العالم للأندية
+ * آخر مرة؟» مالوش إجابة فيها. الاتنين ليهم باقة مجانية؛ أول ما مفتاح يتحط في Supabase يبقى أول مصدر.
+ */
+async function keyedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  const tavily = Deno.env.get("TAVILY_API_KEY");
+  if (tavily) {
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tavily}` },
+        body: JSON.stringify({ query, max_results: maxResults, include_answer: true, search_depth: "basic" }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const hits: WebHit[] = ((data?.results ?? []) as Array<{ title?: string; url?: string; content?: string }>)
+          .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.content ?? "").slice(0, 500) }));
+        if (data?.answer) hits.unshift({ title: "ملخص البحث", url: hits[0]?.url ?? "https://tavily.com", snippet: String(data.answer).slice(0, 800) });
+        lastWebSearchAttempts.push(`tavily:200 hits=${hits.length}`);
+        if (hits.length > 0) return hits.slice(0, maxResults);
+      } else {
+        lastWebSearchAttempts.push(`tavily:${res.status}`);
+        await res.body?.cancel();
+      }
+    } catch (e) {
+      lastWebSearchAttempts.push(`tavily:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    }
+  }
+  const brave = Deno.env.get("BRAVE_SEARCH_API_KEY");
+  if (brave) {
+    try {
+      const res = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${maxResults}`, {
+        headers: { Accept: "application/json", "X-Subscription-Token": brave },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const hits: WebHit[] = ((data?.web?.results ?? []) as Array<{ title?: string; url?: string; description?: string }>)
+          .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.description ?? "").replace(/<[^>]+>/g, "").slice(0, 500) }));
+        lastWebSearchAttempts.push(`brave:200 hits=${hits.length}`);
+        return hits.slice(0, maxResults);
+      }
+      lastWebSearchAttempts.push(`brave:${res.status}`);
+      await res.body?.cancel();
+    } catch (e) {
+      lastWebSearchAttempts.push(`brave:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    }
+  }
+  return [];
+}
+
 /** أخبار Bing RSS (من غير مفتاح) — من سيرفر Supabase شغالة وجوجل بيرجّع 503 (٢٠٢٦-١٠-٠١). الوصف فيه الأرقام. */
 async function bingNewsSnippets(query: string, arabic: boolean, maxResults: number, country?: unknown): Promise<WebHit[]> {
   try {
@@ -1210,14 +1276,16 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
   const sources: Array<[string, () => Promise<WebHit[]>]> = live
     ? [
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
+      ["search_api", () => keyedSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
-      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
+      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
     ]
     : [
-      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
+      ["search_api", () => keyedSearchSnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
+      ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
       ["wikipedia", async () => [
         ...(await wikipediaSnippets(query, arabic ? "ar" : "en", 3)),

@@ -78,6 +78,20 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
     },
   },
   {
+    id: "5_water_total",
+    message: "عندي مية قد إيه؟",
+    check: (o) => {
+      // The probe account holds 2 + 3 + 1 water across three brands (migration 20261001200000).
+      if (!/(^|[^\d])6([^\d]|$)|٦|ست/.test(o.reply)) return "not the total of 6";
+      return null;
+    },
+  },
+  {
+    id: "money_expense_needs_yes",
+    message: "صرفت 50 جنيه قهوة",
+    check: (o) => (o.proposals.length >= 1 || o.executed.some((e) => e.tool === "log_transaction") ? null : "no expense proposed"),
+  },
+  {
     id: "8_general_question",
     message: "مين كسب كاس العالم للأندية آخر مرة؟",
     check: (o) => {

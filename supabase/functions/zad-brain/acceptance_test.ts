@@ -31,3 +31,11 @@ Deno.test("internal text in a reply fails every case", async () => {
   assertEquals(internalLeak("تمام، نديت add_appointment"), "tool name in the reply: add_appointment");
   assertEquals(internalLeak("ولا يهمك، سجلتهالك 👌 هفكّرك تشرب مية كمان دقيقتين."), null);
 });
+
+Deno.test("water total and expense lines", () => {
+  assertEquals(run("5_water_total", "عندك 6 إزايز مية (إيلان وصافي وكرتونة)."), null);
+  assertEquals(run("5_water_total", "عندك إزازة مية إيلان واحدة."), "not the total of 6");
+  const exp = byId("money_expense_needs_yes");
+  assertEquals(exp.check({ reply: "تمام", executed: [], proposals: [{}] }, { appointmentsCreated: 0 }), null);
+  assertEquals(exp.check({ reply: "تمام سجلتها", executed: [], proposals: [] }, { appointmentsCreated: 0 }), "no expense proposed");
+});
