@@ -129,12 +129,24 @@ export function extractDialectHint(payload: unknown): string {
  * (404=اتسحب / 400=اترفض) بيروح للموديل الاحتياطي بنفس المفتاح الحالي.
  * بيرجّع Response جاهز (PCM) أو JSON خطأ فيه محاولات بدون أي مادة مفتاح.
  */
+/**
+ * آخر موديل صوت نطق بنجاح. جمل الرد الواحد بتتولد كل جملة في طلب لوحدها، والسلسلة كانت بتبدأ من
+ * أول موديل في كل جملة — فجملة تطلع من موديل وجملة من موديل تاني بصوت مختلف («صوتين في نفس الرد»،
+ * المالك ٢٠٢٦-١٠-٠١). الموديل اللي نجح بيتجرب الأول في الجملة اللي بعدها.
+ */
+let lastGoodTtsModel: string | null = null;
+
+/** ترتيب الموديلات للطلب ده: آخر واحد نجح الأول، والباقي بترتيبه. */
+export function stickyModelOrder(models: string[], lastGood: string | null): string[] {
+  return lastGood && models.includes(lastGood) ? [lastGood, ...models.filter((m) => m !== lastGood)] : models;
+}
+
 export async function requestGeminiVoiceWithPool(
   input: ValidVoiceRequest,
   apiKeys: string[],
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
-  models: string[] = [...new Set([GEMINI_TTS_MODEL, ...GEMINI_TTS_CHAIN])],
+  models: string[] = stickyModelOrder([...new Set([GEMINI_TTS_MODEL, ...GEMINI_TTS_CHAIN])], lastGoodTtsModel),
   pool: TtsPoolState = sharedTtsPool,
   now: () => number = Date.now,
 ): Promise<Response> {
@@ -165,7 +177,10 @@ export async function requestGeminiVoiceWithPool(
       }
       try {
         const res = await requestGeminiVoice(input, apiKeys[ki], fetcher, dialectInstruction, model);
-        if (res.ok) return res;
+        if (res.ok) {
+          lastGoodTtsModel = model;
+          return res;
+        }
         attempts.push({ key_index: ki, model, status: res.status });
         // الكوتة لكل موديل: 429 على موديل = عداده خلص على المفتاح ده، والموديل اللي بعده ليه
         // عداد لوحده بنفس المفتاح. المفتاح بيرتاح في ترتيب الطلبات الجاية بس.
@@ -206,7 +221,22 @@ export async function requestVoiceWithFallback(
   azure: AzureSpeechConfig | null,
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
+  preferAzure = false,
 ): Promise<Response> {
+  // ردود الشات: سلمى (Azure) الأول لما تكون مضبوطة — نفس الصوت في كل جملة ومن غير كوتة ١٠ نداءات
+  // في اليوم (قرار المالك ٢٠٢٦-١٠-٠١). لحظات اليوم بمشاعرها بتفضل على Gemini.
+  if (preferAzure && azure) {
+    try {
+      const res = await requestAzureVoice(input, azure, fetcher);
+      if (res.ok && res.body) {
+        return new Response(res.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "azure" } });
+      }
+      console.error(`[CoreIntel] Azure TTS (primary) failed: HTTP ${res.status}; trying Gemini`);
+      await res.body?.cancel();
+    } catch (e) {
+      console.error(`[CoreIntel] Azure TTS (primary) threw: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
+    }
+  }
   const gemini = await requestGeminiVoiceWithPool(input, geminiKeys, fetcher, dialectInstruction);
   if (gemini.ok && gemini.body) {
     return new Response(gemini.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "gemini" } });

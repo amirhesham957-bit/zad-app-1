@@ -1475,7 +1475,13 @@ Deno.serve(async (req: Request) => {
         voiceRequest.country = null;
       }
 
-      const upstream = await requestVoiceWithFallback(voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload));
+      // رد شات (مش لحظة من لحظات اليوم): إحساس واحد للرد كله. كان كل جملة بتاخد إحساس من كلامها، فجمل
+      // نفس الرد بتطلع بأداء مختلف («صوتين»، ٢٠٢٦-١٠-٠١). واللحظات بتفضل بمشاعرها.
+      const chatReply = !(payload as { moment?: unknown } | null)?.moment;
+      if (chatReply && !voiceRequest.emotion) voiceRequest.emotion = "warm";
+      const upstream = await requestVoiceWithFallback(
+        voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload), chatReply,
+      );
       if (!upstream.ok || !upstream.body) {
         // جرّبنا المسبح كله + Azure — نرجّع تفاصيل المحاولات (بدون أي مادة مفتاح) عشان اللوج يقول الحقيقة
         let attempts: unknown = null;

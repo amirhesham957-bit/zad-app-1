@@ -88,3 +88,11 @@ Deno.test("one voice named Zad: any persona, or none, is Aoede", () => {
     assertEquals(v?.voiceId, "Aoede", String(persona));
   }
 });
+
+Deno.test("stickyModelOrder: the model that spoke last goes first, the rest keep their order", async () => {
+  const { stickyModelOrder } = await import("./voice.ts");
+  const chain = ["a", "b", "c"];
+  if (JSON.stringify(stickyModelOrder(chain, "b")) !== JSON.stringify(["b", "a", "c"])) throw new Error("b first");
+  if (JSON.stringify(stickyModelOrder(chain, null)) !== JSON.stringify(chain)) throw new Error("unchanged");
+  if (JSON.stringify(stickyModelOrder(chain, "zzz")) !== JSON.stringify(chain)) throw new Error("unknown ignored");
+});
