@@ -115,8 +115,12 @@ class PharmacyFamilyBody extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 32),
             child: KtEmptyState(
               icon: Icons.local_pharmacy,
-              title: 'لسه مفيش أدوية مسجّلة',
-              subtitle: 'أي دوا يسجّله أي فرد في العيلة هيظهر هنا',
+              title: 'لسه مفيش أدوية تقدر تشوفها',
+              // Since 20261001130000 a member's medicines show only after they
+              // agreed to it; the old text promised everyone's.
+              subtitle:
+                  'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من '
+                  'صفحته في «عيلتي»',
             ),
           );
         }
