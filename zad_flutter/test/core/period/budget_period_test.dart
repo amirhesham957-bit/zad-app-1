@@ -379,11 +379,12 @@ void main() {
     });
 
     test(
-      'an unknown or null country falls back to UTC, not the device zone',
+      'an unknown or null country falls back to Cairo time like the SQL, '
+      'not the device zone',
       () {
-        expect(marketTimeZone(null), 'UTC');
-        expect(marketTimeZone(''), 'UTC');
-        expect(marketTimeZone('ZZ'), 'UTC');
+        expect(marketTimeZone(null), 'Africa/Cairo');
+        expect(marketTimeZone(''), 'Africa/Cairo');
+        expect(marketTimeZone('ZZ'), 'Africa/Cairo');
       },
     );
 

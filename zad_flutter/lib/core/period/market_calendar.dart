@@ -45,9 +45,11 @@ const Set<String> _sundayWeekendMarkets = <String>{
   'LB',
 };
 
-/// The IANA zone for [country] (an ISO-3166 alpha-2 code), or `UTC`.
+/// The IANA zone for [country] (an ISO-3166 alpha-2 code). An unknown country
+/// keeps Egypt's time, the same fallback as `zad_market_timezone` since
+/// 2026-10-01 (it was UTC: greetings at 13:00 and 02:00 Cairo time).
 String marketTimeZone(String? country) =>
-    _marketTimeZones[(country ?? '').toUpperCase()] ?? 'UTC';
+    _marketTimeZones[(country ?? '').toUpperCase()] ?? 'Africa/Cairo';
 
 /// The weekend days in [country], in Postgres `extract(dow)` numbering:
 /// 0 = Sunday … 6 = Saturday.

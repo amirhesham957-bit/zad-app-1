@@ -302,7 +302,7 @@ void main() {
       addTearDown(container.dispose);
 
       // The SQL's own fallback for an unknown country.
-      expect(container.read(accountTimeZoneProvider), 'UTC');
+      expect(container.read(accountTimeZoneProvider), 'Africa/Cairo');
     });
 
     test('uses the budget snapshot when there is no country yet', () async {

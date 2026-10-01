@@ -280,7 +280,7 @@ void main() {
       };
       // Read before the check, so the test proves the zone is invalidated
       // afterwards rather than computed late.
-      expect(container.read(accountTimeZoneProvider), 'UTC');
+      expect(container.read(accountTimeZoneProvider), 'Africa/Cairo');
 
       expect(gate(), MarketGate.checking);
       await until(() => gate() != MarketGate.checking);
@@ -357,7 +357,7 @@ void main() {
     test('opens the app before anything is sent', () async {
       await seedSettings(const AccountSettings());
       settingsRemote.offline = true;
-      expect(container.read(accountTimeZoneProvider), 'UTC');
+      expect(container.read(accountTimeZoneProvider), 'Africa/Cairo');
 
       await container.read(marketGateProvider.notifier).choose(egypt);
 
