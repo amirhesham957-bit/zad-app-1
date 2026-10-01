@@ -112,7 +112,9 @@ Medicine _m(
   DateTime? expiry,
   String? dosage,
   double price = 0,
+  bool recurring = true,
 }) => Medicine.fromJson(<String, dynamic>{
+  'is_recurring': recurring,
   'id': id,
   'user_id': 'u',
   'name': 'دواء $id',
@@ -155,6 +157,61 @@ void main() {
       ],
     );
     expect(cost, 200);
+  });
+
+  test('a finished course is done, not short', () {
+    final course = _m('c', remaining: 0, recurring: false);
+    final chronic = _m('r', remaining: 0);
+    expect(course.isFinishedCourse, isTrue);
+    expect(chronic.isFinishedCourse, isFalse);
+    expect(_m('d', recurring: false).isFinishedCourse, isFalse);
+  });
+
+  testWidgets('a finished course goes last and is not counted as low', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(420, 2400));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pc.pharmacyControllerProvider.overrideWith(
+            () => QuietPharmacy(
+              pc.PharmacyView(
+                medicines: <Medicine>[
+                  _m('1', remaining: 0, recurring: false),
+                  _m('2'),
+                ],
+              ),
+            ),
+          ),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          transactionsControllerProvider.overrideWith(_Txns.new),
+          familyControllerProvider.overrideWith(_NoFamily.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PharmacyView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('الكورس خلص ✓'), findsOneWidget);
+    final low = find.ancestor(
+      of: find.text('مخزون منخفض'),
+      matching: find.byType(Row),
+    );
+    expect(
+      find.descendant(of: low.first, matching: find.text('0')),
+      findsOneWidget,
+    );
+    final active = tester.getTopLeft(find.text('دواء 2')).dy;
+    final done = tester.getTopLeft(find.text('دواء 1')).dy;
+    expect(active, lessThan(done));
   });
 
   testWidgets('the stats, the expired warning and each card', (tester) async {

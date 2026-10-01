@@ -60,7 +60,7 @@ MapInputs mapInputsFrom({
     ],
     lowPharmacy: <MapStock>[
       for (final m in medicines)
-        if (m.isRunningOut || m.isOutOfStock)
+        if (!m.isFinishedCourse && (m.isRunningOut || m.isOutOfStock))
           MapStock(
             m.name,
             'فاضل ${m.remainingQuantity ?? 0} ${m.unit ?? ''}'.trim(),

@@ -119,7 +119,8 @@ class NearbyController extends Notifier<NearbyView> {
       ],
       runningOut: <String>[
         for (final m in ref.read(pharmacyRepositoryProvider).cached())
-          if (m.isRunningOut || m.isOutOfStock) m.name,
+          if (!m.isFinishedCourse && (m.isRunningOut || m.isOutOfStock))
+            m.name,
       ],
     );
   }

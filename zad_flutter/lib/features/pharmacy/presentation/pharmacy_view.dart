@@ -45,15 +45,18 @@ const List<String> kMedicineCategories = <String>[
   'مزمن',
 ];
 
-/// Kotlin's units.
+/// The units a medicine is counted in. Stored and matched, so Arabic.
+///
+/// The same names `zad_pharmacy_unit` stores on the server (migration
+/// `20261001220000`): no «حبة» beside «قرص» (one kind, two names), and a
+/// cream or ointment is «دهان», whose doses never take from the count.
 const List<String> kMedicineUnits = <String>[
-  'حبة',
   'قرص',
   'كبسولة',
   'مل',
   'بخاخ',
   'نقطة',
-  'كريم',
+  'دهان',
   'كيس',
   'أمبول',
   'علبة',
@@ -109,6 +112,10 @@ class PharmacyView extends ConsumerWidget {
 
     final medicines = <Medicine>[...view.medicines]
       ..sort((a, b) {
+        // Finished courses go last: they are history, not today's care.
+        if (a.isFinishedCourse != b.isFinishedCourse) {
+          return a.isFinishedCourse ? 1 : -1;
+        }
         final da = daysTo(a);
         final db = daysTo(b);
         final ea = da != null && da < 0 ? 0 : 1;
@@ -124,9 +131,10 @@ class PharmacyView extends ConsumerWidget {
     final low = medicines
         .where(
           (m) =>
-              m.isOutOfStock ||
-              m.isRunningOut ||
-              (m.daysOfSupplyLeft ?? 99) <= 5,
+              !m.isFinishedCourse &&
+              (m.isOutOfStock ||
+                  m.isRunningOut ||
+                  (m.daysOfSupplyLeft ?? 99) <= 5),
         )
         .length;
     final currency = ref.watch(
@@ -478,7 +486,10 @@ class _MedicineCard extends ConsumerWidget {
     final supply = medicine.daysOfSupplyLeft;
     final remaining = medicine.remainingQuantity ?? 0;
     final lowStock = medicine.isOutOfStock || (supply ?? 99) <= 5;
-    final status = expired || remaining <= 0 || (supply != null && supply <= 3)
+    final finished = medicine.isFinishedCourse;
+    final status = finished
+        ? ZadColors.inkMuted
+        : expired || remaining <= 0 || (supply != null && supply <= 3)
         ? ZadColors.terracottaRust
         : lowStock || expiringSoon
         ? ZadColors.mustardOchre
@@ -492,7 +503,9 @@ class _MedicineCard extends ConsumerWidget {
             .firstOrNull
             ?.alias ??
         (medicine.forPerson == null ? null : 'لـ${medicine.forPerson}');
-    final badge = expired
+    final badge = finished
+        ? 'الكورس خلص ✓'
+        : expired
         ? 'منتهي منذ ${-d} يوم'
         : expiringSoon
         ? 'تنتهي خلال $d يوم'
@@ -726,7 +739,7 @@ Future<void> _showConfirmQuantity(
   WidgetRef ref,
   Medicine medicine,
 ) async {
-  final unit = medicine.unit ?? 'حبة';
+  final unit = medicine.unit ?? 'قرص';
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -802,7 +815,7 @@ Future<void> _showRefill(
   Medicine medicine,
 ) async {
   DateTime? expiry;
-  final unit = medicine.unit ?? 'حبة';
+  final unit = medicine.unit ?? 'قرص';
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -919,7 +932,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
   final TextEditingController _ingredient = TextEditingController();
   final TextEditingController _dosage = TextEditingController();
   final TextEditingController _forPerson = TextEditingController();
-  String _unit = kMedicineUnits[1];
+  String _unit = kMedicineUnits.first;
   String _category = kMedicineCategories.first;
   final List<String> _times = <String>[];
   DateTime? _expiry;
