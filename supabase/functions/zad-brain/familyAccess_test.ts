@@ -16,9 +16,10 @@ Deno.test("a child or a plain member does not", () => {
 });
 
 /** A Supabase client that answers from fixed rows and records which tables were read. */
-function fakeFamily(role: string) {
+function fakeFamily(role: string, grants: string[] = []) {
   const touched: string[] = [];
   const rows: Record<string, unknown[]> = {
+    zad_family_shares: grants.map((owner_id) => ({ owner_id })),
     family_members: [
       { user_id: "me", alias: "سارة", family_id: "f1", role },
       { user_id: "dad", alias: "بابا", family_id: "f1", role: "admin" },
@@ -51,9 +52,24 @@ Deno.test("family_mediation refuses a child and never reads the family's transac
   assert(!touched.includes("zad_transactions"), touched.join(","));
 });
 
-Deno.test("family_mediation still works for the family's admin", async () => {
-  const { sb, touched } = fakeFamily("admin");
+Deno.test("family_mediation works for the admin once the others agreed", async () => {
+  const { sb, touched } = fakeFamily("admin", ["dad"]);
   const out = await executeTool(sb, "me", "family_mediation", {}, {}, freshContext("me"), {} as any);
   assert(touched.includes("zad_transactions"));
   assertStringIncludes(out, "بقالة");
+});
+
+Deno.test("an admin alone is not enough: nobody agreed, nobody's spending is read (2026-10-01)", async () => {
+  const { sb, touched } = fakeFamily("admin");
+  const out = await executeTool(sb, "me", "family_mediation", {}, {}, freshContext("me"), {} as any);
+  assertStringIncludes(out, "محدش من العيلة وافق");
+  assert(!touched.includes("zad_transactions"), touched.join(","));
+});
+
+import { visibleSpenders } from "./familyAccess.ts";
+
+Deno.test("family spending shows the viewer and whoever agreed, not every member (2026-10-01)", () => {
+  const members = [{ user_id: "dad" }, { user_id: "son" }, { user_id: "daughter" }];
+  assertEquals(visibleSpenders("dad", members, []).map((m) => m.user_id), ["dad"]);
+  assertEquals(visibleSpenders("dad", members, ["daughter"]).map((m) => m.user_id), ["dad", "daughter"]);
 });

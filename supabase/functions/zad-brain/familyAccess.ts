@@ -7,3 +7,17 @@
 export function canSeeFamilySpending(role: string | null | undefined): boolean {
   return ["admin", "parent", "owner"].includes(String(role ?? "").trim().toLowerCase());
 }
+
+/**
+ * Whose spending a family view may show to [viewerId]: theirs, and each member who granted
+ * them the `spending` share (zad_family_shares, owner's decision 2026-10-01 — opt-in, the
+ * member agrees first). The admin role alone used to be enough.
+ */
+export function visibleSpenders<T extends { user_id: string }>(
+  viewerId: string,
+  members: readonly T[],
+  grantedOwnerIds: Iterable<string>,
+): T[] {
+  const granted = new Set(grantedOwnerIds);
+  return members.filter((m) => m.user_id === viewerId || granted.has(m.user_id));
+}
