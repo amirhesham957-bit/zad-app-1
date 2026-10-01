@@ -365,3 +365,32 @@ Deno.test("the two measured lite models are sent without thinkingConfig from the
   // 3.1-lite accepts the field (measured 2026-08-15): not seeded.
   assertEquals(THINKING_CONFIG_UNSUPPORTED.has("gemini-3.1-flash-lite"), false);
 });
+
+Deno.test("a call made without a thought signature is retried with Google's placeholder", async () => {
+  // 2026-10-01: a tool call from gemini-3.5-flash-lite (no signature) fell over to
+  // gemini-3-flash-preview, which answered 400 «missing a thought_signature». The 400 used to
+  // be read as «rejects thinkingConfig» and the turn died on the same error.
+  const s = stubFetch((_url, body) => {
+    const call = body?.contents?.find((c: any) => c.role === "model")?.parts?.find((p: any) => p.functionCall);
+    return call && !call.thoughtSignature
+      ? new Response(JSON.stringify({ error: { code: 400, message: "Function call is missing a thought_signature in functionCall parts." } }), { status: 400 })
+      : geminiOk();
+  });
+  try {
+    const reply = await callModel({
+      ...BASE,
+      model: "signature-model",
+      history: [
+        { role: "user", text: "الدولار بكام" },
+        { role: "assistant", text: "", toolCalls: [{ id: "c1", name: "t", input: {} }] },
+        { role: "tool", results: [{ id: "c1", name: "t", content: "48.6" }] },
+      ],
+    });
+    assertEquals(reply.text, "تمام");
+    assertEquals(s.calls.length, 2);
+    const retried = s.calls[1].body.contents.find((c: any) => c.role === "model").parts[0];
+    assertEquals(retried.thoughtSignature, "skip_thought_signature_validator");
+  } finally {
+    s.restore();
+  }
+});

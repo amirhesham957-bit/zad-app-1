@@ -122,3 +122,15 @@ Deno.test("summarizeQuota429 مابيرميش لو الرد مش JSON أو نا�
     retryDelay: "?",
   });
 });
+
+Deno.test("buildGeminiContents: a real signature is kept; the placeholder only fills a missing one", () => {
+  const history: Turn[] = [
+    { role: "user", text: "x" },
+    { role: "assistant", text: "", toolCalls: [{ id: "a", name: "t", input: {}, thoughtSignature: "real" }, { id: "b", name: "t", input: {} }] },
+  ];
+  const plain = buildGeminiContents(history)[1].parts;
+  assertEquals(plain[1].thoughtSignature, undefined);
+  const filled = buildGeminiContents(history, true)[1].parts;
+  assertEquals(filled[0].thoughtSignature, "real");
+  assertEquals(filled[1].thoughtSignature, "skip_thought_signature_validator");
+});
