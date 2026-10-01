@@ -2035,16 +2035,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return `"${medName}" مسجل عندك خلاص بنفس البيانات — مضفتش نسخة تانية`;
       }
 
-      const rawUnit = String(input.unit ?? "حبة").trim();
-      const normalizedUnit = rawUnit.startsWith("قرص") || rawUnit.startsWith("أقراص") ? "قرص"
+      // zad_pharmacy_unit (migration 20261001220000) is the rule for every path; this
+      // mirrors it so the row the tool writes is already what the trigger keeps.
+      const rawUnit = String(input.unit ?? "قرص").trim();
+      const normalizedUnit = /^(حب|قرص|أقراص|اقراص)/.test(rawUnit) ? "قرص"
         : rawUnit.startsWith("كبسول") ? "كبسولة"
         : rawUnit.startsWith("كيس") || rawUnit.startsWith("أكياس") ? "كيس"
         : rawUnit.startsWith("أمبول") ? "أمبول"
         : rawUnit.startsWith("مل") ? "مل"
-        : rawUnit.startsWith("كريم") ? "كريم"
+        : /^(كريم|مرهم|جل|جيل|دهان|لوشن)/.test(rawUnit) ? "دهان"
         : rawUnit.startsWith("بخاخ") ? "بخاخ"
         : rawUnit.startsWith("نقط") || rawUnit.startsWith("قطر") ? "نقطة"
-        : "حبة";
+        : "قرص";
 
       const w = await writeRows(
         sb.from("zad_pharmacy_items").insert({
@@ -3642,7 +3644,7 @@ const CHAT_TOOLS: ToolDef[] = [
         daily_dose_count: { type: "number", description: "لازم يساوي عدد المواعيد في dose_times" },
         dose_times: { type: "string", description: "الساعات اللي العميل نطقها بنفسه بس، HH:MM مفصولة بفاصلة، ٢٤ ساعة. ممنوع 24:00 — استخدم 00:00. سيبها فاضية لو هو قال عدد مرات بس." },
         times_explicit: { type: "boolean", description: "true بس لو العميل نطق الساعات دي حرفياً في كلامه" },
-        unit: { type: "string", enum: ["قرص", "أقراص", "حبة", "حبات", "حبوب", "كبسولة", "كبسولات", "مل", "كريم", "بخاخ", "نقطة", "قطرة", "كيس", "أكياس", "أمبول", "أمبولات", "علبة"] },
+        unit: { type: "string", enum: ["قرص", "أقراص", "حبة", "حبات", "حبوب", "كبسولة", "كبسولات", "مل", "كريم", "مرهم", "دهان", "بخاخ", "نقطة", "قطرة", "كيس", "أكياس", "أمبول", "أمبولات", "علبة"] },
         quantity: { type: "number", description: "الكمية المتاحة عنده" },
         category: { type: "string", enum: ["عام", "مسكن", "مضاد حيوي", "فيتامين", "مزمن"] },
         for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه." },

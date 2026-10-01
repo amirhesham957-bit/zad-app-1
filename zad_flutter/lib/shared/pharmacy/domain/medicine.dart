@@ -177,6 +177,11 @@ class Medicine {
   /// Whether it has run out.
   bool get isOutOfStock => remainingQuantity != null && remainingQuantity! <= 0;
 
+  /// A course (not a recurring medicine) that has run out: it is done, not
+  /// short. The owner's finished antibiotic showed red «متبقي 0» and counted as
+  /// running low (2026-10-01).
+  bool get isFinishedCourse => !isRecurring && isOutOfStock;
+
   /// Whether there is roughly less than a day's worth left.
   ///
   /// The same comparison `zad_log_pharmacy_dose_atomic` makes before it puts

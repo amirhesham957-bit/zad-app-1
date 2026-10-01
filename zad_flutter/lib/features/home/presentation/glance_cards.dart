@@ -546,7 +546,12 @@ class PharmacyGlanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(pharmacyControllerProvider);
     final now = ref.read(nowProvider)();
-    final medicines = view.medicines;
+    // A finished course is history, not today's care: it is not «نشط» and
+    // its empty box is not a shortage (2026-10-01).
+    final medicines = <Medicine>[
+      for (final m in view.medicines)
+        if (!m.isFinishedCourse) m,
+    ];
     final adherence = view.adherence;
     final next = nextDoseOf(view.today, now);
 
