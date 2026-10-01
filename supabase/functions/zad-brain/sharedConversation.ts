@@ -10,16 +10,40 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-export type SharedTurn = { role: "user" | "assistant"; text: string };
+export type SharedTurn = { role: "user" | "assistant"; text: string; at?: string };
 
 /** What handleAgentTurn takes (`.slice(-8)`). */
 export const SHARED_HISTORY_TURNS = 8;
 
 /** zad_chat_turns rows (newest first) → the brain's history (oldest first). */
-export function toSharedHistory(rows: Array<{ role: string; text: string }>): SharedTurn[] {
+export function toSharedHistory(rows: Array<{ role: string; text: string; created_at?: string }>): SharedTurn[] {
   return [...rows].reverse()
     .filter((r) => typeof r.text === "string" && r.text.trim())
-    .map((r) => ({ role: r.role === "assistant" ? "assistant" as const : "user" as const, text: r.text }));
+    .map((r) => ({
+      role: r.role === "assistant" ? "assistant" as const : "user" as const,
+      text: r.text,
+      ...(r.created_at ? { at: r.created_at } : {}),
+    }));
+}
+
+/** A customer message with no reply after it is dropped once it is this old. */
+export const STALE_UNANSWERED_MS = 10 * 60 * 1000;
+
+/**
+ * Drops a customer message that never got a stored reply and is older than ten minutes.
+ *
+ * Marking it (markUnanswered) did not stop the model: on 2026-10-01 at 20:02 «مرحبا» by
+ * voice was answered with «مش طالع قدامي سعر الذهب…», the 14:52 Telegram question whose
+ * reply was never stored. A fresh one stays (marked): «اخصم 50» then «مصروف» seconds
+ * later must still read as one request.
+ */
+export function dropStaleUnanswered(turns: SharedTurn[], now = Date.now()): SharedTurn[] {
+  return turns.filter((t, i) => {
+    if (t.role !== "user" || !t.at) return true;
+    const next = turns[i + 1];
+    const unanswered = !next || next.role === "user";
+    return !(unanswered && now - Date.parse(t.at) > STALE_UNANSWERED_MS);
+  });
 }
 
 /**
@@ -27,15 +51,16 @@ export function toSharedHistory(rows: Array<{ role: string; text: string }>): Sh
  * what the client sent (an account whose app turns were never stored yet, or a
  * failed read — a turn without memory, never a broken one).
  */
-export function pickHistory(shared: SharedTurn[] | null, client: SharedTurn[]): SharedTurn[] {
-  return shared && shared.length > 0 ? shared.slice(-SHARED_HISTORY_TURNS) : client.slice(-SHARED_HISTORY_TURNS);
+export function pickHistory(shared: SharedTurn[] | null, client: SharedTurn[], now = Date.now()): SharedTurn[] {
+  const turns = shared && shared.length > 0 ? dropStaleUnanswered(shared, now) : client;
+  return turns.slice(-SHARED_HISTORY_TURNS).map(({ role, text }) => ({ role, text }));
 }
 
 /** The last turns on any channel, or null when they could not be read. */
 export async function loadSharedHistory(sb: SupabaseClient, userId: string): Promise<SharedTurn[] | null> {
   try {
     const { data, error } = await sb.from("zad_chat_turns")
-      .select("role,text")
+      .select("role,text,created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(SHARED_HISTORY_TURNS);

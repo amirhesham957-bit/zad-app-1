@@ -4972,9 +4972,9 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   const driftLessonsEarly = buildDriftLessons(sb, userId);
   const learnedSkillsEarly = loadSkills(sb, userId);
   const agentMailEarly = fetchUnreadAgentMail(sb, userId);
-  const sharedHistoryEarly = declaredSource === "telegram"
-    ? Promise.resolve(null)
-    : loadSharedHistory(sb, userId);
+  // Telegram too: its history is the same table, read here with timestamps so a stale
+  // message nobody answered is dropped (dropStaleUnanswered) on every channel alike.
+  const sharedHistoryEarly = loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
@@ -5086,7 +5086,7 @@ async function handleAgentTurn(sb: SupabaseClient, userId: string, body: any): P
   // in the turns said by voice or on Telegram too. Telegram already sends that
   // same table as its history.
   const history: Turn[] = markUnanswered<Turn & { text?: string }>([
-    ...(declaredSource === "telegram" ? clientHistory : pickHistory(await sharedHistoryEarly, clientHistory)),
+    ...pickHistory(await sharedHistoryEarly, clientHistory),
     { role: "user", text: message },
   ]);
 

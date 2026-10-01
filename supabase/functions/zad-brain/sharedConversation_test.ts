@@ -73,3 +73,29 @@ Deno.test("spokenRecord keeps the receipts a turn answered with", () => {
   );
   assertEquals(spokenRecord({ reply: "  " }), "");
 });
+
+Deno.test("an unanswered question older than ten minutes leaves the history; a fresh one stays", () => {
+  const now = Date.parse("2026-10-01T17:02:00Z");
+  // The owner's history at 20:02 Cairo: the 14:52 gold question was never answered.
+  const shared = toSharedHistory([
+    { role: "user", text: "كم سعر الذهب اليوم", created_at: "2026-10-01T11:52:41Z" },
+    { role: "assistant", text: "سعر المية حوالي ريال", created_at: "2026-10-01T11:52:29Z" },
+    { role: "user", text: "كام سعر زجاجة المياه في السعودية", created_at: "2026-10-01T11:52:28Z" },
+  ]);
+  assertEquals(pickHistory(shared, [], now).map((t) => t.text), ["كام سعر زجاجة المياه في السعودية", "سعر المية حوالي ريال"]);
+  // «اخصم 50» seconds ago, then «مصروف»: still one request.
+  const fresh = toSharedHistory([{ role: "user", text: "اخصم 50 جنيه", created_at: "2026-10-01T17:01:40Z" }]);
+  assertEquals(pickHistory(fresh, [], now).map((t) => t.text), ["اخصم 50 جنيه"]);
+  // The model never sees the timestamp.
+  assertEquals(Object.keys(pickHistory(fresh, [], now)[0]).sort(), ["role", "text"]);
+});
+
+Deno.test("a stale message followed by another customer message is dropped too", () => {
+  const now = Date.parse("2026-10-01T12:00:00Z");
+  const shared = toSharedHistory([
+    { role: "user", text: "كم سعر زجاجة حليب فيفا في مصر", created_at: "2026-10-01T11:51:45Z" },
+    { role: "user", text: "ممكن تسجل اصحي كمان دقيقة", created_at: "2026-09-30T22:34:07Z" },
+  ]);
+  // The night's wake-up request (no reply) is gone; the newer question has no reply yet but is fresh.
+  assertEquals(pickHistory(shared, [], now).map((t) => t.text), ["كم سعر زجاجة حليب فيفا في مصر"]);
+});
