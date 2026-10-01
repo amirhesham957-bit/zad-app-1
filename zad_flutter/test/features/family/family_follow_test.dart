@@ -164,4 +164,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(remote.calls, <String>['request son tasks']);
   });
+
+  test('«تقرير العيلة»: one line per member, granted data only', () {
+    final line = familyReportLine(FollowedMember.fromJson(_dryRun), 'EGP');
+    expect(line, contains('جرعات: 0 من 2 — 1 فاتت'));
+    expect(line, contains('مش متشارك: المصروف، المهام والمواعيد'));
+    expect(line, isNot(contains('صرف')));
+    expect(
+      familyReportLine(const FollowedMember(), 'EGP'),
+      'لسه ماوافقش على أي متابعة',
+    );
+    expect(familyReportLine(null, 'EGP'), 'بجيب…');
+  });
 }
