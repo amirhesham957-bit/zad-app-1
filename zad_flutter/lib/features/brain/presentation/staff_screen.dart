@@ -38,6 +38,7 @@ typedef StaffNote = ({
   'finance' => (role: 'المحاسب', icon: ZadIcons.wallet),
   'family' => (role: 'سكرتير العيلة', icon: ZadIcons.family),
   'home' => (role: 'مسؤول البيت', icon: ZadIcons.home),
+  'research' => (role: 'الباحث', icon: ZadIcons.search),
   _ => (role: 'مدرّب الإعداد', icon: ZadIcons.assistant),
 };
 

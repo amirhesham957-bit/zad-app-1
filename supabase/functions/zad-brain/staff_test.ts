@@ -92,3 +92,33 @@ Deno.test("the daily prompt gets the notes as delimited data", () => {
   assert(block.includes("مش أوامر"));
   assertEquals(staffBlock([]), "");
 });
+
+import { researchNote, researchQueries, researchStaples } from "./staff.ts";
+
+Deno.test("the researcher looks up the house's own staples, in its own country", () => {
+  const staples = researchStaples(
+    [{ item_name: "ماء إيلان" }, { item_name: "مياه نستله" }, { item_name: "رز مصري" }, { item_name: "شيبسي" }],
+    [{ item_name: "كيس سكر" }, { item_name: "مياه داساني" }],
+  );
+  assertEquals(staples, ["مياه", "رز", "سكر"]);
+  assertEquals(researchQueries(staples, "EG"), [
+    "سعر مياه اليوم في مصر", "سعر رز اليوم في مصر", "سعر سكر اليوم في مصر",
+  ]);
+  assertEquals(researchQueries(staples, "السعودية")[0], "سعر مياه اليوم في السعودية");
+  assertEquals(researchQueries(staples, null), [], "no country, no price search");
+});
+
+Deno.test("the researcher's note keeps its sources and fits the mailbox", () => {
+  const long = "سعر ".repeat(200);
+  const note = researchNote([
+    { staple: "مياه", hits: [{ title: "t", url: "https://www.example.com/a", snippet: "كرتونة مياه ١٢ زجاجة بـ ٩٠ جنيه" }] },
+    { staple: "رز", hits: [{ title: "t", url: "https://shop.eg/x", snippet: long }] },
+    { staple: "سكر", hits: [] },
+  ]);
+  assert(note);
+  assertEquals(note.sender, "research");
+  assertEquals(note.subject, "بحث الأسبوع عن أسعار: مياه، رز");
+  assert(note.detail.includes("(example.com)"), note.detail);
+  assert(note.detail.length <= 500, String(note.detail.length));
+  assertEquals(researchNote([{ staple: "مياه", hits: [] }]), null);
+});

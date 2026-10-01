@@ -36,6 +36,7 @@ void main() {
     final feed = staffFeed(rows);
     expect(feed.map((n) => n.role), <String>['مدرّب الإعداد', 'الممرضة']);
     expect(feed.any((n) => n.subject.startsWith('نفّذ')), isFalse);
+    expect(staffMember('research').role, 'الباحث');
   });
 
   Future<void> pump(WidgetTester tester, List<StaffNote> notes) =>

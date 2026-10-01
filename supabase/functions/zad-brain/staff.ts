@@ -13,9 +13,12 @@
 //   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر.
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية.
+//   research الباحث: مرة في الأسبوع، أسعار أهم ٣ سلع في البيت في بلد العميل من النت (بحث نصي،
+//            من غير موديل)، بمصادرها — العقل بيرد منها لما العميل يسأل عن سعر.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AgentSender } from "./agentMail.ts";
+import { countryCode } from "../_shared/dialect.ts";
 import { productFamilyOf } from "./lowStock.ts";
 
 export interface StaffNote {
@@ -292,7 +295,8 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
     const fresh = freshNotes(notes, ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
-        fresh.map((n) => ({ user_id: userId, sender: n.sender, subject: n.subject.slice(0, 200), detail: n.detail.slice(0, 1000) })),
+        // detail ≤ 500 (zad_agent_messages_detail_check): أطول من كده كان هيرفض الدفعة كلها.
+        fresh.map((n) => ({ user_id: userId, sender: n.sender, subject: n.subject.slice(0, 200), detail: n.detail.slice(0, 500) })),
       );
       if (error) console.error("[staff] mailbox insert failed:", error.message);
     }
@@ -300,5 +304,107 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
     return [];
+  }
+}
+
+// ── الباحث ────────────────────────────────────────────────────────────────
+
+const COUNTRY_AR: Record<string, string> = {
+  EG: "مصر", SA: "السعودية", AE: "الإمارات", KW: "الكويت", QA: "قطر", BH: "البحرين", OM: "عمان",
+  JO: "الأردن", LB: "لبنان", IQ: "العراق", SY: "سوريا", YE: "اليمن", PS: "فلسطين", LY: "ليبيا",
+  SD: "السودان", MA: "المغرب", TN: "تونس", DZ: "الجزائر", TR: "تركيا",
+};
+
+export type SearchHit = { title: string; url: string; snippet: string };
+
+/** أهم السلع اللي البيت بيعتمد عليها: أكتر عائلة ليها سطور في المخزن، وبعدها القايمة. */
+export function researchStaples(
+  pantry: Array<{ item_name: string }>,
+  shopping: Array<{ item_name: string }>,
+  max = 3,
+): string[] {
+  const counts = new Map<string, number>();
+  for (const p of pantry) {
+    const fam = productFamilyOf(p.item_name);
+    if (fam) counts.set(fam, (counts.get(fam) ?? 0) + 1);
+  }
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([f]) => f);
+  for (const s of shopping) {
+    const fam = productFamilyOf(s.item_name);
+    if (fam && !ranked.includes(fam)) ranked.push(fam);
+  }
+  return ranked.slice(0, max);
+}
+
+/** البحث لكل سلعة في بلد العميل — من غير بلد مفيش بحث (سعر من غير بلد مالوش معنى). */
+export function researchQueries(staples: string[], country: unknown): string[] {
+  const where = COUNTRY_AR[countryCode(country) ?? ""];
+  return where ? staples.map((s) => `سعر ${s} اليوم في ${where}`) : [];
+}
+
+/** ملاحظة الباحث من النتايج — بمصادرها، وفي حدود عمود الصندوق (٥٠٠ حرف). */
+export function researchNote(found: Array<{ staple: string; hits: SearchHit[] }>): StaffNote | null {
+  const withHits = found.filter((f) => f.hits.length > 0);
+  if (withHits.length === 0) return null;
+  const host = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  };
+  const per = Math.floor(480 / withHits.length);
+  const detail = withHits.map((f) => {
+    const h = f.hits[0];
+    const line = `${f.staple}: ${h.snippet.replace(/\s+/g, " ").trim()} (${host(h.url)})`;
+    return line.length > per ? line.slice(0, per - 1) + "…" : line;
+  }).join("\n");
+  return {
+    sender: "research",
+    subject: `بحث الأسبوع عن أسعار: ${withHits.map((f) => f.staple).join("، ")}`,
+    detail: detail.slice(0, 500),
+  };
+}
+
+/**
+ * مرة في الأسبوع: لو مفيش ملاحظة من الباحث آخر ٧ أيام، بيدوّر ويكتب. [search] هو web_search بتاع
+ * zad-core-intelligence (بحث نصي، مش موديل). مابيرميش.
+ */
+export async function runResearch(
+  sb: SupabaseClient,
+  userId: string,
+  search: (query: string) => Promise<SearchHit[]>,
+  now = new Date(),
+): Promise<StaffNote | null> {
+  try {
+    const since7 = new Date(now.getTime() - 7 * DAY).toISOString();
+    const { data: recent } = await sb.from("zad_agent_messages").select("id")
+      .eq("user_id", userId).eq("sender", "research").gte("created_at", since7).limit(1);
+    if ((recent ?? []).length > 0) return null;
+    const [{ data: pantry }, { data: shopping }, { data: user }] = await Promise.all([
+      sb.from("zad_inventory").select("item_name").eq("user_id", userId),
+      sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
+      sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+    ]);
+    const staples = researchStaples((pantry ?? []) as Array<{ item_name: string }>, (shopping ?? []) as Array<{ item_name: string }>);
+    const queries = researchQueries(staples, (user as { country: unknown } | null)?.country);
+    if (queries.length === 0) return null;
+    const found = await Promise.all(queries.map(async (q, i) => ({
+      staple: staples[i],
+      hits: await search(q).catch(() => [] as SearchHit[]),
+    })));
+    const note = researchNote(found);
+    if (!note) return null;
+    const { error } = await sb.from("zad_agent_messages").insert({
+      user_id: userId, sender: note.sender, subject: note.subject.slice(0, 200), detail: note.detail,
+    });
+    if (error) {
+      console.error("[staff] research insert failed:", error.message);
+      return null;
+    }
+    return note;
+  } catch (e) {
+    console.error("[staff] research failed:", (e as Error)?.message ?? e);
+    return null;
   }
 }
