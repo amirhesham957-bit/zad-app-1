@@ -22,3 +22,10 @@ Deno.test("the replies the owner asked for pass", () => {
   assertEquals(run("8_general_question", "مانشستر سيتي كسب آخر كاس عالم للأندية بنظامها القديم، وتشيلسي كسب نسخة 2025."), null);
   assertEquals(run("8_general_question", "معرفش، تعالى نبص على ميزانيتك"), "said it could not find it");
 });
+
+Deno.test("internal text in a reply fails every case", async () => {
+  const { internalLeak } = await import("./acceptance.ts");
+  assertEquals(internalLeak("المساعد وعد بحاجة متنفذتش (تذكير شرب المية مش موجود في الأدوات المنفذة).\n\nولا يهمك، سجلتهالك 👌"), "internal reviewer text in the reply");
+  assertEquals(internalLeak("تمام، نديت add_appointment"), "tool name in the reply: add_appointment");
+  assertEquals(internalLeak("ولا يهمك، سجلتهالك 👌 هفكّرك تشرب مية كمان دقيقتين."), null);
+});

@@ -334,6 +334,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
     // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
     "gold_price", "fetch_current_exchange_rate",
+    // الشكوى بتتقال في أي موضوع.
+    "open_support_ticket",
     "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
     "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
     // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
