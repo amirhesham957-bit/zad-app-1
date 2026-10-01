@@ -2,7 +2,8 @@
 /// four local checks that write `app_notifications` rows for this account
 /// (the bell reads them back like any other):
 ///
-/// 1. «⚠️ تنبيه الميزانية — N%» at 85% of the monthly ceiling;
+/// 1. «⚠️ تنبيه الميزانية — N%» at 85% of the monthly ceiling (unless the
+///    customer turned «تنبيهات تخطي الميزانية» off);
 /// 2. «🔔 تجديد X قريب!» for a renewal within three days;
 /// 3. «📦 مخزون منخفض» for up to three low items (unless the customer
 ///    turned «تنبيهات نقص المخزون» off);
@@ -29,6 +30,29 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 
 String _money(double v, String currency) =>
     '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
+
+/// «⚠️ تنبيه الميزانية — N%» once [spent] reaches 85% of [limit], or null:
+/// no ceiling, under 85%, the same percentage already unread, or the switch
+/// «تنبيهات تخطي الميزانية» off. That switch used to be read by nothing —
+/// the alert came whatever it said (owner, 2026-10-01: «تفعيلها وهمي»).
+(String, String)? budgetAlert({
+  required double spent,
+  required double? limit,
+  required bool enabled,
+  required String currency,
+  required bool Function(String title) alreadyUnread,
+}) {
+  if (!enabled || limit == null || limit <= 0 || spent < limit * 0.85) {
+    return null;
+  }
+  final pct = (spent / limit * 100).toInt();
+  if (alreadyUnread('⚠️ تنبيه الميزانية — $pct%')) return null;
+  return (
+    '⚠️ تنبيه الميزانية — $pct%',
+    'لقد صرفت ${_money(spent, currency)} من ميزانيتك '
+        '${_money(limit, currency)}. راجع مصاريفك!',
+  );
+}
 
 /// Writes the alerts that are due. Returns how many were written.
 Future<int> generateSmartNotifications(
@@ -57,16 +81,16 @@ Future<int> generateSmartNotifications(
       final d = tz.TZDateTime.from(t.createdAt.toUtc(), zone);
       if (d.year == local.year && d.month == local.month) spent += t.amount;
     }
-    if (spent >= limit * 0.85) {
-      final pct = (spent / limit * 100).toInt();
-      if (!unreadWith((t) => t.contains('ميزانية') && t.contains('$pct%'))) {
-        alerts.add((
-          '⚠️ تنبيه الميزانية — $pct%',
-          'لقد صرفت ${_money(spent, currency)} من ميزانيتك '
-              '${_money(limit, currency)}. راجع مصاريفك!',
-        ));
-      }
-    }
+    final alert = budgetAlert(
+      spent: spent,
+      limit: limit,
+      enabled: ref
+          .read(alertPrefsProvider)
+          .isEnabledUnlessOff(AlertPrefs.budgetOverrun),
+      currency: currency,
+      alreadyUnread: (title) => unreadWith((t) => t == title),
+    );
+    if (alert != null) alerts.add(alert);
   }
 
   // 2. A renewal within three days.

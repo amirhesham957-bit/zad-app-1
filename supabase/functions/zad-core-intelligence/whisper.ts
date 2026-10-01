@@ -10,7 +10,23 @@ import { countryCode } from "../_shared/zadVoice.ts";
 export interface WhisperOptions {
   language?: string;
   prompt?: string;
+  /** أول موديل يتجرب؛ transcribeAudio بيرجع لـturbo لو اترفض (404/400). */
+  model?: string;
 }
+
+/**
+ * الموديل الكامل للعربي. turbo (٤ طبقات فك بدل ٣٢) بيغلط في العامية أكتر: تفريغات المالك
+ * ٢٠٢٦-٠٩-٣٠ — «سجر لي» (سجّلي)، «الصيدرية» (الصيدلية)، «م عيدي» (مواعيدي)، و«افسد عليها»
+ * اللي زاد ردت عليها بهزار. Groq بيقدمهم الاتنين بنفس السرعة تقريباً.
+ */
+export const WHISPER_ARABIC_MODEL = "whisper-large-v3";
+export const WHISPER_DEFAULT_MODEL = "whisper-large-v3-turbo";
+
+/**
+ * كلمات زاد نفسها — نفس فكرة جملة اللهجة: Whisper بيقرا الـprompt كسياق سابق، فبيكتب اسم
+ * الشاشة أو الأمر صح بدل أقرب كلمة شبهه. بيانات للموديل، مش نص واجهة.
+ */
+const ZAD_WORDS = "زاد، سجّلي، الصيدلية، مواعيدي، فكّرني، صحّيني، المخزن، قايمة التسوق، الميزانية، الدوا، جرعة.";
 
 // ⚠️ بيانات لهجات للموديل، مش نصوص واجهة — ماتترجمهاش.
 const EGYPT = "عايز، دلوقتي، ازاي، فين، كام، جنيه، اشتريت، دفعت، صرفت.";
@@ -92,6 +108,42 @@ export function spokenText(data: unknown, prompt?: string): string | null {
 export function whisperOptions(country: unknown): WhisperOptions {
   const code = countryCode(country);
   if (code === "TR") return { language: "tr" };
-  if (code && DIALECT_HINT[code]) return { language: "ar", prompt: DIALECT_HINT[code] };
+  if (code && DIALECT_HINT[code]) {
+    return { language: "ar", prompt: `${DIALECT_HINT[code]} ${ZAD_WORDS}`, model: WHISPER_ARABIC_MODEL };
+  }
   return {};
+}
+
+/** نتيجة محاولة Whisper واحدة. */
+export interface WhisperAttempt {
+  ok: boolean;
+  status: number;
+  data: unknown;
+}
+
+/**
+ * كل مفتاح بالترتيب؛ ولو الموديل نفسه اترفض (404/400) نفس المفتاح بالموديل اللي بعده —
+ * الموديل الكامل ممكن يتشال من كتالوج Groq زي ما Llama اتشال (٢٠٢٦-٠٨-٣١)، والصوت مايقفش.
+ * مفتاح مرفوض (401/403) ⇒ المفتاح اللي بعده. أي خطأ تاني بيرجع زي ما هو.
+ */
+export async function whisperWithFallback(
+  keys: readonly string[],
+  models: readonly string[],
+  send: (key: string, model: string) => Promise<WhisperAttempt>,
+): Promise<WhisperAttempt & { model?: string }> {
+  let last: WhisperAttempt = { ok: false, status: 0, data: {} };
+  let m = 0;
+  for (let k = 0; k < keys.length; k++) {
+    const r = await send(keys[k], models[m]);
+    if (r.ok) return { ...r, model: models[m] };
+    last = r;
+    if (r.status === 401 || r.status === 403) continue;
+    if ((r.status === 404 || r.status === 400) && m < models.length - 1) {
+      m++;
+      k--;
+      continue;
+    }
+    return r;
+  }
+  return last;
 }

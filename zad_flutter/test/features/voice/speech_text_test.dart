@@ -77,6 +77,22 @@ void main() {
       expect(s.finish(), <String>['وكمان']);
     });
 
+    test('a long first sentence is heard from its comma', () {
+      // The owner's reply of 2026-09-30, a 75-character question: its
+      // comma after «ولا» is past the mark, so Zad starts from there.
+      final s = SpeechStreamSplitter();
+      const reply =
+          'يا سيدي عيوني بس كريم البشرة ده حاجة تجميلية ولا دوا، '
+          'ولا هندهن بيه حاجة معينة على البشرة كل يوم الصبح وبالليل؟ '
+          'وقبل ما أسجله قولي المواعيد.';
+      final out = s.add(reply);
+      expect(
+        out.first,
+        'يا سيدي عيوني بس كريم البشرة ده حاجة تجميلية ولا دوا، ...',
+      );
+      expect(<String>[...out, ...s.finish()].join(' '), contains('معينة'));
+    });
+
     test('streamed and whole replies speak the same words', () {
       final text = List<String>.filled(
         12,

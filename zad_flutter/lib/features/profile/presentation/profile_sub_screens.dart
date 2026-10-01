@@ -687,13 +687,15 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
               AlertSwitchItem(
                 title: 'تنبيهات نقص المخزون',
                 desc: 'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي',
-                checked: on(AlertPrefs.lowInventory),
+                // What the alerts read: on until turned off. Shown with
+                // isEnabled, it read «off» while the alerts kept coming.
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.lowInventory),
                 onChanged: (v) => set(AlertPrefs.lowInventory, v: v),
               ),
               AlertSwitchItem(
                 title: 'تنبيهات تخطي الميزانية',
                 desc: 'تحذير مبكر عند صرف جزء كبير من الميزانية',
-                checked: on(AlertPrefs.budgetOverrun),
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.budgetOverrun),
                 onChanged: (v) => set(AlertPrefs.budgetOverrun, v: v),
               ),
               AlertSwitchItem(

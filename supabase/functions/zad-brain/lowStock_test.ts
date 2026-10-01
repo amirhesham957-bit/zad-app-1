@@ -53,3 +53,11 @@ Deno.test("زيت زيتون مش زيت عباد — مابيتجمعوش", () 
   assertEquals(productFamilyOf("زيت زيتون"), null);
   assertEquals(productFamilyOf("الأرز البسمتي"), "رز");
 });
+
+Deno.test("التعبئة والـ«ماية» مابتخبيش السلعة — نفس جدول التطبيق (2026-10-01)", () => {
+  assertEquals(productFamilyOf("عبوة مياه"), "مياه");
+  assertEquals(productFamilyOf("كرتونة ماية"), "مياه");
+  assertEquals(productFamilyOf("كيس سكر"), "سكر");
+  assertEquals(productFamilyOf("علبة حفظ طعام"), null);
+  assertEquals(productFamilyOf("علبة"), null);
+});

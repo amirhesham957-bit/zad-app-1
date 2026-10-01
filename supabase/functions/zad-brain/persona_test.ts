@@ -18,3 +18,12 @@ Deno.test("voice mode asks for speech-sized turns", () => {
   assertMatch(voiceModeInstruction(true), /بنت حرة/);
   assertMatch(voiceModeInstruction(false), /محادثة مكتوبة/);
 });
+
+Deno.test("voice mode treats an odd transcript as mishearing, not as a joke (2026-09-30)", () => {
+  const voice = voiceModeInstruction(true);
+  assertMatch(voice, /تفريغ صوت/);
+  assertMatch(voice, /ماسمعتيهاش كويس/);
+  assertMatch(voice, /بالافتراضي/);
+  // Typed text is what the customer wrote: no such rule.
+  assertEquals(/تفريغ صوت/.test(voiceModeInstruction(false)), false);
+});

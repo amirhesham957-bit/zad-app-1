@@ -1,5 +1,5 @@
 // deno-lint-ignore-file
-import { spokenText, type WhisperOptions, whisperOptions } from "./whisper.ts";
+import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
@@ -756,11 +756,11 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const ext = mimeType.includes("mp3") ? "mp3" : mimeType.includes("wav") ? "wav" : mimeType.includes("ogg") ? "ogg" : "m4a";
-    let last: { text: string | null; raw: unknown; ok: boolean; status: number } = { text: null, raw: {}, ok: false, status: 0 };
-    for (const key of GROQ_DIRECT_KEYS) {
+    const models = [...new Set([options.model ?? WHISPER_DEFAULT_MODEL, WHISPER_DEFAULT_MODEL])];
+    const result = await whisperWithFallback(GROQ_DIRECT_KEYS, models, async (key, model) => {
       const form = new FormData();
       form.append("file", new Blob([bytes], { type: mimeType }), `audio.${ext}`);
-      form.append("model", "whisper-large-v3-turbo");
+      form.append("model", model);
       // من بلد الحساب (whisper.ts) — كان "ar" ثابت لكل الناس.
       if (options.language) form.append("language", options.language);
       if (options.prompt) form.append("prompt", options.prompt);
@@ -772,15 +772,11 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
         body: form,
       });
       const data = await resp.json();
-      if (!resp.ok) {
-        console.error("[CoreIntel] Whisper HTTP error:", resp.status, JSON.stringify(data));
-        last = { text: null, raw: data, ok: false, status: resp.status };
-        if (resp.status === 401 || resp.status === 403) continue; // مفتاح مرفوض — اللي بعده
-        return last;
-      }
-      return { text: spokenText(data, options.prompt), raw: data, ok: true, status: resp.status };
-    }
-    return last;
+      if (!resp.ok) console.error("[CoreIntel] Whisper HTTP error:", model, resp.status, JSON.stringify(data));
+      return { ok: resp.ok, status: resp.status, data };
+    });
+    if (!result.ok) return { text: null, raw: result.data, ok: false, status: result.status };
+    return { text: spokenText(result.data, options.prompt), raw: result.data, ok: true, status: result.status };
   } catch (e) {
     console.error("[CoreIntel] transcribeAudio failed:", (e as Error).message);
     return { text: null, raw: { error: (e as Error).message }, ok: false, status: 0 };

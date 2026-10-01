@@ -113,14 +113,28 @@ function normalize(text: string): string {
  */
 // كلمة تذكير أو ميعاد صريحة، مش ساعة لوحدها: «سجلي جرعة الدوا الساعة ٨» جرعة صيدلية مش ميعاد.
 const APPOINTMENT_INTENT = /(فكر|ذكر|نبه)(ني|يني|نى)|ميعاد|موعد|مواعيد|اجتماع|مشوار/;
+// «الساعة ٢ الظهر عاوز اصحى» — رد «ظبطتهالك وهصحيك» من غير أي أداة (zad_brain_runs ٢٠٢٦-٠٩-٣٠ ٠٢:٤٦).
+// الصحيان تذكير بميعاد، بس ولا كلمة فيه كانت في APPOINTMENT_INTENT. «صحي» لوحدها مش منها: «أكل صحي».
+const WAKE_INTENT = /صحي(ني|يني)|(^|\s)[اهح]صحي(\s|$)|(^|\s)منبه(\s|$)|صحيان/;
+// ساعة أو مدة في الرسالة: «الساعة ٢ الظهر»، «٧ الصبح»، «كمان ١٠ دقايق».
+const CLOCK_TIME = /الساعه\s*[0-9٠-٩]|[0-9٠-٩]{1,2}(:[0-9٠-٩]{2})?\s*(الصبح|الظهر|العصر|المغرب|بالليل|صباحا|مساء|ص|م)(\s|$)|كمان\s*[0-9٠-٩]+\s*(دقيقه|دقايق|د|ساعه|ساعات)/;
+// الرد اللي قبلها كان بيسأل عن وقت تذكير: «عايز أصحيك الساعة كام بالظبط؟» — ساعتها الرد اللي بعده
+// («الساعة ٢ الظهر») هو الطلب نفسه حتى لو مافيهوش ولا كلمة تذكير.
+const ASKED_REMINDER_TIME = /(افكرك|اصحيك|انبهك|اسجلهولك|اسجله|اسجلها).{0,40}(الساعه كام|امتي|بالظبط|وقت)|(الساعه كام|امتي بالظبط).{0,40}(افكرك|اصحيك|انبهك)/;
+
+function reminderIntent(norm: string, priorNorm: string): boolean {
+  if (APPOINTMENT_INTENT.test(norm) || WAKE_INTENT.test(norm)) return true;
+  return CLOCK_TIME.test(norm) && ASKED_REMINDER_TIME.test(priorNorm);
+}
 const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه|عمري|عندي\s*[0-9٠-٩]+\s*سنه|مواليد/;
 
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 
-export function intentToolHints(message: string): string[] {
+/** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
+export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
   const tools: string[] = [];
-  if (APPOINTMENT_INTENT.test(norm)) tools.push("add_appointment", "update_appointment", "add_place_reminder");
+  if (reminderIntent(norm, normalize(priorReply))) tools.push("add_appointment", "update_appointment", "add_place_reminder");
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
@@ -129,18 +143,33 @@ export function intentToolHints(message: string): string[] {
 
 // «جاهز، سُجلت! 👌» على «فكرني كمان ٥ د وبعدين كل ساعة» — ولا أداة اتنادت، ولا رفض (zad_brain_runs
 // ٢٠٢٦-٠٩-١٥ ٠٤:٢٢). مراجعة الادعاءات في العقل بتشتغل بس لو فيه تنفيذ؛ اللفة اللي مفيهاش أي أداة كانت بتعدّي.
-const REMINDER_DONE_CLAIM = /سجلت|سجلته|سجلتها|اتسجل|ظبطت|ظبطته|خليته يفكرك|خليته هيفكرك|هفكرك|حطيته|ضفته|ضفتلك/;
+const REMINDER_DONE_CLAIM = /سجلت|سجلته|سجلتها|اتسجل|ظبطت|ظبطته|خليته يفكرك|خليته هيفكرك|هفكرك|هصحيك|هنبهك|حطيته|ضفته|ضفتلك/;
 
 /** طلب تذكير واضح + رد بيقول إنه اتعمل، من غير أي أداة ⇒ الرد كذب ولازم يتصحح. */
-export function unbackedReminderClaim(message: string, reply: string): boolean {
-  return intentToolHints(message).includes("add_appointment") && REMINDER_DONE_CLAIM.test(normalize(reply));
+export function unbackedReminderClaim(message: string, reply: string, priorReply = ""): boolean {
+  return intentToolHints(message, priorReply).includes("add_appointment") && REMINDER_DONE_CLAIM.test(normalize(reply));
+}
+
+/**
+ * رد زاد اللي قبل آخر رسالة للعميل في [history]. بيدوّر على آخر رسالة عميل الأول، لأن بعدها ممكن
+ * يكون فيه نداءات أدوات ونتايجها من اللفة نفسها.
+ */
+export function priorAssistantText(history: ReadonlyArray<{ role: string; text?: string }>): string {
+  let i = history.length - 1;
+  while (i >= 0 && history[i].role !== "user") i--;
+  for (i--; i >= 0; i--) {
+    const turn = history[i];
+    if (turn.role === "user") return "";
+    if (turn.role === "assistant" && turn.text?.trim()) return turn.text;
+  }
+  return "";
 }
 
 /** نقاط كل وكيل لرسالة واحدة، بترتيب `ORDER` (general مش فيها لأنها مالهاش كلمات). */
 function scoreAll(message: string): Array<{ id: SpecialistId; score: number }> {
   const norm = normalize(message);
   // نية ميعاد/تذكير واضحة بتكسب التعادل لوكيل العيلة: «فكّريني أروح البنك» ميعاد، مش عملية فلوس.
-  const appointmentBonus = APPOINTMENT_INTENT.test(norm) ? 1 : 0;
+  const appointmentBonus = APPOINTMENT_INTENT.test(norm) || WAKE_INTENT.test(norm) ? 1 : 0;
   return ORDER.map((id) => ({
     id,
     score: SPECIALISTS[id].keywords.reduce(

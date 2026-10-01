@@ -28,18 +28,26 @@ export function normalizeItemName(s: string): string {
  * الكلمات دي بتتطابق مع اللي العميل والماسح كتبوه — بيانات، مش نص واجهة.
  */
 const STAPLES: Record<string, string> = {
-  "ماء": "مياه", "مياه": "مياه", "ميه": "مياه", "water": "مياه",
+  "ماء": "مياه", "مياه": "مياه", "ميه": "مياه", "مايه": "مياه", "ميا": "مياه", "water": "مياه",
   "رز": "رز", "ارز": "رز", "سكر": "سكر", "ملح": "ملح", "دقيق": "دقيق",
   "بيض": "بيض", "بيضه": "بيض", "عيش": "عيش", "خبز": "عيش",
   "مكرونه": "مكرونه", "معكرونه": "مكرونه", "شاي": "شاي",
   "حليب": "حليب", "لبن": "لبن", "زبادي": "زبادي", "مناديل": "مناديل",
 };
 
+/** التعبئة قبل السلعة («عبوة مياه»، «كرتونة ماية»، «كيس سكر») — بتتفوت، نفس جدول التطبيق. */
+const PACKAGING = new Set([
+  "عبوه", "كرتونه", "كرتون", "زجاجه", "ازازه", "قزازه", "جالون", "باكو", "باكت", "كيس", "علبه",
+  "شكاره", "كيلو", "لتر", "صندوق",
+]);
+
 /** العائلة اللي الاسم ده منها، أو null لو مش سلعة أساسية. */
 export function productFamilyOf(name: string): string | null {
-  const first = normalizeItemName(name).split(" ")[0] ?? "";
-  const word = first.startsWith("ال") ? first.slice(2) : first;
-  return STAPLES[word] ?? null;
+  const words = normalizeItemName(name).split(" ").filter(Boolean)
+    .map((w) => (w.startsWith("ال") ? w.slice(2) : w));
+  let i = 0;
+  while (i < words.length - 1 && PACKAGING.has(words[i])) i++;
+  return STAPLES[words[i] ?? ""] ?? null;
 }
 
 /**

@@ -18,8 +18,10 @@ import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 import 'package:zad/shared/voice/application/zad_voice.dart';
+import 'package:zad/shared/voice/data/voice_openers.dart';
 import 'package:zad/shared/voice/data/voice_player.dart';
 import 'package:zad/shared/voice/data/voice_synthesizer.dart';
+import 'package:zad/shared/voice/domain/speech_text.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
@@ -87,18 +89,34 @@ class _Mic extends VoiceInputController {
 
 String _pcmOf(Uint8List wav) => utf8.decode(wav.sublist(44));
 
+class _Kept implements VoiceOpenerStore {
+  final Map<String, Uint8List> files = <String, Uint8List>{};
+
+  @override
+  Future<Uint8List?> read(String key) async => files[key];
+
+  @override
+  Future<void> write(String key, Uint8List pcm) async => files[key] = pcm;
+}
+
 void main() {
   late _Synth synth;
   late _Player player;
   late ProviderContainer c;
 
+  late _Kept kept;
+
   setUp(() {
     synth = _Synth();
     player = _Player();
+    kept = _Kept();
     c = ProviderContainer(
       overrides: [
         voiceSynthesizerProvider.overrideWithValue(synth),
         voicePlayerProvider.overrideWithValue(player),
+        voiceOpenersProvider.overrideWith(
+          (ref) => VoiceOpeners(ref.watch(voiceSynthesizerProvider), kept),
+        ),
         voiceInputControllerProvider.overrideWith(_Mic.new),
         chatControllerProvider.overrideWith(_Chat.new),
       ],
@@ -362,4 +380,119 @@ void main() {
       expect(identical(preparing.played[1], preparing.prepared.single), isTrue);
     },
   );
+
+  group('a spoken question (owner, 2026-10-01: «بيرد بعد دقيقة»)', () {
+    // Five sentences past the chunk size: five chunks.
+    final sentences = <String>[
+      for (var i = 0; i < 5; i++)
+        'جملة رقم $i ${'فيها كلام كتير ' * 14}عشان تبقى حتة لوحدها.',
+    ];
+
+    test(
+      'every released chunk is asked for at once, three at a time',
+      () async {
+        final speech = c
+            .read(voiceOutputControllerProvider.notifier)
+            .speakStreaming(messageId: 'm');
+        expect(sentences.first.length, greaterThan(chunkTarget));
+        speech
+          ..add(sentences.join(' '))
+          ..finish();
+        await settle();
+        // Nothing has come back yet, and three requests are already out —
+        // the second used to wait for the first one's audio.
+        expect(synth.requested, hasLength(3));
+        expect(player.played, isEmpty);
+
+        synth.answer(0);
+        await settle();
+        expect(synth.requested, hasLength(4), reason: 'a slot came free');
+        expect(_pcmOf(player.played.single), 'pcm0');
+
+        var n = 0;
+        while (c.read(voiceOutputControllerProvider).isActive && n++ < 50) {
+          for (var i = 0; i < synth.pending.length; i++) {
+            if (!synth.pending[i].isCompleted) synth.answer(i);
+          }
+          player.finish();
+          await settle();
+        }
+        expect(player.played.map(_pcmOf).toList(), <String>[
+          for (var i = 0; i < synth.requested.length; i++) 'pcm$i',
+        ]);
+      },
+    );
+
+    test(
+      'a kept opener plays at once; the answer waits for it to end',
+      () async {
+        kept.files[VoiceOpeners.keyOf(voiceOpenerLines.first)] =
+            Uint8List.fromList(utf8.encode('opener'));
+        final speech = c
+            .read(voiceOutputControllerProvider.notifier)
+            .speakStreaming(opener: true);
+        await settle();
+        expect(player.played.map(_pcmOf), <String>['opener']);
+        expect(
+          c.read(voiceOutputControllerProvider).stage,
+          VoiceOutputStage.preparing,
+          reason: 'the opener is not the answer',
+        );
+
+        speech
+          ..add('${sentences.first} ')
+          ..finish();
+        await settle();
+        synth.answer(0);
+        await settle();
+        expect(player.played, hasLength(1), reason: 'the opener is not cut');
+
+        player.finish();
+        await settle();
+        expect(player.played.map(_pcmOf), <String>['opener', 'pcm0']);
+      },
+    );
+
+    test('no opener kept: silence until the answer, never a wait', () async {
+      final speech = c
+          .read(voiceOutputControllerProvider.notifier)
+          .speakStreaming(opener: true);
+      await settle();
+      expect(player.played, isEmpty);
+      speech
+        ..add(sentences.first)
+        ..finish();
+      await settle();
+      synth.answer(0);
+      await settle();
+      expect(player.played.map(_pcmOf), <String>['pcm0']);
+    });
+
+    test(
+      'warmUp keeps each line once, and stops at the first failure',
+      () async {
+        final openers = VoiceOpeners(synth, kept);
+        final warming = openers.warmUp();
+        await settle();
+        synth.answer(0);
+        await settle();
+        synth.answer(1);
+        await settle();
+        synth.answer(2);
+        await warming;
+        expect(synth.requested, voiceOpenerLines);
+        expect(kept.files, hasLength(voiceOpenerLines.length));
+        expect(await openers.pick(), isNotNull);
+
+        await openers.warmUp();
+        expect(synth.requested, hasLength(3), reason: 'nothing asked again');
+
+        final failing = _Synth()..fail = true;
+        final empty = _Kept();
+        await VoiceOpeners(failing, empty).warmUp();
+        expect(failing.requested, hasLength(1));
+        expect(empty.files, isEmpty);
+      },
+    );
+  });
 }

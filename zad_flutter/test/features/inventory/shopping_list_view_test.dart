@@ -11,6 +11,7 @@ import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 import '../../support/quiet_household.dart';
@@ -89,18 +90,38 @@ void main() {
     expect(text, contains('الإجمالي: 40 ج.م'));
   });
 
-  Future<_Ai> pump(WidgetTester tester) async {
+  test('the share text gives a staple one bullet, with its brands', () {
+    final text = shoppingShareText(<ShoppingItem>[
+      _s('1', 'ماء إيلان'),
+      _s('2', 'مياه داساني'),
+      _s('3', 'لبن'),
+    ], '');
+    expect(text, contains('• مياه (إيلان / داساني)'));
+    expect(text, contains('• لبن'));
+    expect(text, isNot(contains('ماء إيلان')));
+  });
+
+  Future<_Ai> pump(
+    WidgetTester tester, {
+    List<ShoppingItem>? items,
+    List<InventoryItem> pantry = const <InventoryItem>[],
+  }) async {
     final ai = _Ai();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           shoppingControllerProvider.overrideWith(
-            () => _List(<ShoppingItem>[
-              _s('1', 'لبن', priority: ShoppingPriority.high),
-              _s('2', 'مناديل', priority: ShoppingPriority.low),
-            ]),
+            () => _List(
+              items ??
+                  <ShoppingItem>[
+                    _s('1', 'لبن', priority: ShoppingPriority.high),
+                    _s('2', 'مناديل', priority: ShoppingPriority.low),
+                  ],
+            ),
           ),
-          pantryControllerProvider.overrideWith(QuietPantry.new),
+          pantryControllerProvider.overrideWith(
+            () => QuietPantry(PantryView(items: pantry)),
+          ),
           budgetControllerProvider.overrideWith(_Budget.new),
           shoppingAiRemoteProvider.overrideWithValue(ai),
           signedInUserIdProvider.overrideWithValue(() => 'u'),
@@ -139,5 +160,39 @@ void main() {
     expect(ai.calls, 1);
     expect(find.text('قد تحتاج أيضاً'), findsOneWidget);
     expect(find.text('بيض · 30'), findsOneWidget);
+  });
+
+  testWidgets('seven lines of water are one line, read against the pantry', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      items: <ShoppingItem>[
+        _s('1', 'ماء إيلان', qty: 4),
+        _s('2', 'مياه داساني جالون', qty: 4),
+        _s('3', 'عبوة مياه', qty: 5),
+        _s('4', 'كرتونة ماية', qty: 4),
+        _s('5', 'بيض', qty: 3),
+      ],
+      pantry: const <InventoryItem>[
+        InventoryItem(
+          id: 'p1',
+          userId: 'u',
+          itemName: 'مياه نستله',
+          quantity: 6,
+          unit: 'زجاجة',
+        ),
+      ],
+    );
+    expect(find.text('مياه · 4 أنواع'), findsOneWidget);
+    expect(find.textContaining('في البيت 6 — مش ناقص'), findsOneWidget);
+    expect(find.text('ماء إيلان × 4'), findsNothing);
+    expect(find.text('بيض × 3'), findsOneWidget);
+
+    // The brands are there, on a tap.
+    await tester.tap(find.byTooltip('وريني الأنواع'));
+    await tester.pump();
+    expect(find.text('ماء إيلان × 4'), findsOneWidget);
+    expect(find.text('كرتونة ماية × 4'), findsOneWidget);
   });
 }
