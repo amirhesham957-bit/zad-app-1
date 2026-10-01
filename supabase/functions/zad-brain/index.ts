@@ -6238,13 +6238,25 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       // تذكيرات الاختبار مايرنّوش على حد.
       await sbProbe.from("zad_appointments").delete().eq("user_id", ACCEPTANCE_USER_ID);
+      // البحث نفسه من السيرفر: أنهي مصدر رد، وكام نتيجة اتقبلت من كل مصدر.
+      let search: unknown = null;
+      if (body.search !== false) {
+        const [web, gold] = await Promise.all([
+          callCoreIntel("web_search", { query: "سعر الذهب اليوم في مصر عيار 21", country: "EG" }, ACCEPTANCE_USER_ID),
+          callCoreIntel("gold_price", { country: "EG" }, ACCEPTANCE_USER_ID),
+        ]);
+        search = {
+          web: { source: web?.source, results: web?.results?.length ?? null, cached: web?.cached ?? false, attempts: web?.attempts, first: web?.results?.[0]?.title },
+          gold: { ok: gold?.ok, quotes: gold?.quotes, attempts: gold?.attempts },
+        };
+      }
       const passed = results.filter((r) => r.pass === true).length;
       await sbProbe.from("agent_logs").insert({
         agent_name: "acceptance_probe", tool_used: "agent_turn", user_id: ACCEPTANCE_USER_ID,
         status: passed === results.length ? "success" : "warning", duration_ms: Date.now() - probeStarted,
-        payload: { passed, total: results.length, results },
+        payload: { passed, total: results.length, results, search },
       });
-      return new Response(JSON.stringify({ passed, total: results.length, results }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ passed, total: results.length, results, search }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {
