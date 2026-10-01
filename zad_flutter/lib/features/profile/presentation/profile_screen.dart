@@ -120,7 +120,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuRow(
                     icon: ZadIcons.profile,
                     title: 'تعديل الملف الشخصي',
-                    subtitle: 'الاسم، الصورة، والبريد',
+                    subtitle: 'الاسم أو اللقب',
                     onTap: () => Navigator.of(context).push<void>(
                       MaterialPageRoute<void>(
                         builder: (_) => const EditProfileScreen(),
