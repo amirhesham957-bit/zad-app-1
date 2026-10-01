@@ -58,3 +58,14 @@ Deno.test("the quote is the median of fresh headlines, credited to the newest", 
   assertEquals(q.samples, 3);
   assertEquals(q.source, "مصراوي");
 });
+
+Deno.test("gold is read off Bing's descriptions too (measured 2026-10-01)", () => {
+  const now = Date.parse("Thu, 01 Oct 2026 18:00:00 GMT");
+  const hits = [{
+    title: "أسعار الذهب اليوم الخميس 1-10-2026 فى مصر.. عيار 21 بكام؟ - اليوم السابع", url: "u", published: "Wed, 30 Sep 2026 23:00:00 GMT",
+    snippet: "سجلت أسعار الذهب اليوم الخميس 1-10-2026، عيار 21 مبلغ 6145 جنيهًا، وسجل عيار 24 مبلغ 7022جنيهًا للجرام وسجل الجنيه الذهب 49160 جنيهًا.",
+  }];
+  const quotes = goldQuotes(hits, "EGP", now);
+  assertEquals(quotes.map((q) => [q.karat, q.price]), [["24", 7022], ["21", 6145]]);
+  assertEquals(quotes[0].source, "اليوم السابع");
+});

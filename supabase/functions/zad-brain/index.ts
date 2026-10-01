@@ -2905,7 +2905,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const res = await callCoreIntel("web_search", { query: input.query ?? "", country: snap?.country ?? null }, userId);
       if (!res || res.ok === false) return "مقدرتش أبحث دلوقتي — قول للعميل إن البحث مش متاح مؤقتاً، متختلقش إجابة.";
       const hits = (res as { results?: Array<{ title: string; url: string; snippet: string }> }).results ?? [];
-      if (hits.length === 0) return "مفيش نتايج بحث — قول للعميل إنك ملقتش حاجة موثوقة، متخترعش.";
+      if (hits.length === 0) {
+        // سؤال حي (سعر، خبر النهارده): مفيش رقم من غير مصدر. سؤال ثابت (مين كسب، عاصمة، معلومة):
+        // الموديل يعرف كتير — يجاوب ويقول إنها من معلوماته، بدل «مش لاقي» لأسئلة بسيطة.
+        return (res as { live?: boolean }).live
+          ? "مفيش نتايج بحث للسؤال ده دلوقتي — قول للعميل كده في جملة واحدة، متخترعش رقم، ومتغيّرش الموضوع."
+          : "مفيش نتايج من النت دلوقتي. جاوب من معلوماتك لو متأكد، وقول في نفس الجملة إنها من معلوماتك وممكن تكون اتغيّرت. لو مش متأكد قول كده.";
+      }
       return JSON.stringify(hits.map((h, i) => `${i + 1}. ${h.title}\n${h.url}\n${h.snippet}`).join("\n\n"));
     }
     case "gold_price": {
@@ -6245,7 +6251,20 @@ async function handleRequest(req: Request): Promise<Response> {
           callCoreIntel("web_search", { query: "سعر الذهب اليوم في مصر عيار 21", country: "EG" }, ACCEPTANCE_USER_ID),
           callCoreIntel("gold_price", { country: "EG" }, ACCEPTANCE_USER_ID),
         ]);
+        // أسامي موديلات البحث المتاحة في Groq دلوقتي (compound-mini رجّع 404 يوم ٢٠٢٦-١٠-٠١).
+        let groqSearchModels: unknown = null;
+        const groqKey = ["GROQ_API_KEY_1", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY"].map((n) => Deno.env.get(n)).find(Boolean);
+        if (groqKey) {
+          try {
+            const r = await fetch("https://api.groq.com/openai/v1/models", { headers: { Authorization: `Bearer ${groqKey}` }, signal: AbortSignal.timeout(8000) });
+            const j = await r.json();
+            groqSearchModels = ((j?.data ?? []) as Array<{ id: string }>).map((m) => m.id).filter((id) => /compound|search|browse/i.test(id));
+          } catch (e) {
+            groqSearchModels = `error: ${String((e as Error)?.message ?? e).slice(0, 80)}`;
+          }
+        }
         search = {
+          groq_search_models: groqSearchModels,
           web: { source: web?.source, results: web?.results?.length ?? null, cached: web?.cached ?? false, attempts: web?.attempts, first: web?.results?.[0]?.title },
           gold: { ok: gold?.ok, quotes: gold?.quotes, attempts: gold?.attempts },
         };

@@ -1,5 +1,5 @@
 // deno-lint-ignore-file
-import { cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, marketOf } from "./searchQuality.ts";
+import { bingNewsUrl, cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, marketOf } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
@@ -813,12 +813,13 @@ async function transcribeAudio(audioBase64: string, mimeType: string, options: W
 async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxTokens = 1500, timeoutMs = UPSTREAM_TIMEOUT_MS) {
   if (GROQ_DIRECT_KEYS.length === 0) return { parsed: null, executedTools: [], ok: false };
   let keyIndex = 0;
+  let modelIndex = 0;
   // groq/compound-mini runs on a shared org-level TPM budget (8000/min on this
   // account's tier) that a single agentic call can consume most of — a second
   // call landing in the same window gets a 429 with a sub-second suggested
   // retry ("Please try again in 37.5ms"), verified live. One short-delay retry
   // absorbs that without surfacing a false failure to the user.
-  for (let attempt = 0; attempt < 2 + GROQ_DIRECT_KEYS.length; attempt++) {
+  for (let attempt = 0; attempt < 2 + GROQ_DIRECT_KEYS.length + GROQ_SEARCH_MODELS.length; attempt++) {
     try {
       const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -827,7 +828,7 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "groq/compound-mini",
+          model: GROQ_SEARCH_MODELS[modelIndex] ?? "groq/compound",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -840,6 +841,11 @@ async function callCompoundSearch(systemPrompt: string, userPrompt: string, maxT
       const data = await resp.json();
       if (!resp.ok) {
         console.error("[CoreIntel] Groq compound HTTP error:", resp.status, JSON.stringify(data));
+        // A retired model (compound-mini answered 404 on every key, 2026-10-01): the next one.
+        if (resp.status === 404 && modelIndex + 1 < GROQ_SEARCH_MODELS.length) {
+          modelIndex++;
+          continue;
+        }
         if ((resp.status === 401 || resp.status === 403) && keyIndex + 1 < GROQ_DIRECT_KEYS.length) {
           keyIndex++;
           continue;
@@ -1052,22 +1058,36 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
 }
 
 /** آخر رجل: groq/compound-mini (بحث Tavily مدمج) — المصادر من executed_tools لو موجودة، وإلا الإجابة نفسها. */
+/** نماذج البحث في Groq بالترتيب. compound-mini رجّع 404 على كل المفاتيح (٢٠٢٦-١٠-٠١). */
+const GROQ_SEARCH_MODELS = (Deno.env.get("ZAD_GROQ_SEARCH_MODELS") ?? "groq/compound-mini,groq/compound")
+  .split(",").map((m) => m.trim()).filter(Boolean);
+
 async function compoundSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  for (const model of GROQ_SEARCH_MODELS) {
+    const hits = await compoundSearchWith(model, query, maxResults);
+    if (hits !== "model_missing") return hits;
+  }
+  return [];
+}
+
+/** "model_missing" لما الموديل مش موجود (404) على أول مفتاح — يبقى نجرب الموديل اللي بعده. */
+async function compoundSearchWith(model: string, query: string, maxResults: number): Promise<WebHit[] | "model_missing"> {
   for (const [ki, key] of GROQ_DIRECT_KEYS.entries()) {
     try {
       const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "groq/compound-mini",
+          model,
           messages: [{ role: "user", content: `Search the web and answer briefly with the key facts: ${query}` }],
           temperature: 0.2, max_tokens: 700,
         }),
         signal: AbortSignal.timeout(25000),
       });
       if (!resp.ok) {
-        lastWebSearchAttempts.push(`groq${ki}/compound-mini:${resp.status}`);
+        lastWebSearchAttempts.push(`groq${ki}/${model}:${resp.status}`);
         await resp.body?.cancel();
+        if (resp.status === 404) return "model_missing";
         continue;
       }
       const data = await resp.json();
@@ -1080,10 +1100,10 @@ async function compoundSearchSnippets(query: string, maxResults: number): Promis
         }
       }
       if (answer) hits.unshift({ title: "ملخص البحث", url: hits[0]?.url ?? "", snippet: answer.slice(0, 800) });
-      lastWebSearchAttempts.push(`groq${ki}/compound-mini:200 hits=${hits.length}`);
+      lastWebSearchAttempts.push(`groq${ki}/${model}:200 hits=${hits.length}`);
       if (hits.length > 0) return hits.slice(0, maxResults);
     } catch (e) {
-      lastWebSearchAttempts.push(`groq${ki}/compound-mini:threw ${String((e as Error)?.message ?? e).slice(0, 60)}`);
+      lastWebSearchAttempts.push(`groq${ki}/${model}:threw ${String((e as Error)?.message ?? e).slice(0, 60)}`);
     }
   }
   return [];
@@ -1093,6 +1113,38 @@ const decodeEntities = (v: string) => v
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, "")
   .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
   .replace(/\s+/g, " ").trim();
+
+/** أخبار Bing RSS (من غير مفتاح) — من سيرفر Supabase شغالة وجوجل بيرجّع 503 (٢٠٢٦-١٠-٠١). الوصف فيه الأرقام. */
+async function bingNewsSnippets(query: string, arabic: boolean, maxResults: number, country?: unknown): Promise<WebHit[]> {
+  try {
+    const res = await fetch(bingNewsUrl(query, country, arabic), {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ZadAssistant/1.0)" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) { lastWebSearchAttempts.push(`bing_news:${res.status}`); await res.body?.cancel(); return []; }
+    const xml = await res.text();
+    const hits: WebHit[] = [];
+    for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+      const item = m[1];
+      const title = decodeEntities(item.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? "");
+      const rawLink = decodeEntities(item.match(/<link>([\s\S]*?)<\/link>/)?.[1] ?? "");
+      // Bing wraps the article: …apiclick.aspx?…&url=<encoded>&…
+      const wrapped = /[?&]url=([^&]+)/.exec(rawLink)?.[1];
+      const link = wrapped ? decodeURIComponent(wrapped) : rawLink;
+      const description = decodeEntities(item.match(/<description>([\s\S]*?)<\/description>/)?.[1] ?? "");
+      const date = decodeEntities(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ?? "");
+      const source = decodeEntities(item.match(/<News:Source>([\s\S]*?)<\/News:Source>/)?.[1] ?? "");
+      // « - المصدر» في آخر العنوان زي أخبار جوجل، عشان المصدر يتقري بنفس الطريقة.
+      if (title && link.startsWith("http")) hits.push({ title: source ? `${title} - ${source}` : title, url: link, snippet: description, published: date || undefined });
+      if (hits.length >= maxResults) break;
+    }
+    lastWebSearchAttempts.push(`bing_news:200 hits=${hits.length}`);
+    return hits;
+  } catch (e) {
+    lastWebSearchAttempts.push(`bing_news:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    return [];
+  }
+}
 
 /** أخبار جوجل RSS (من غير مفتاح) — للأسئلة عن أحداث وأخبار وأسعار اليوم، بصحافة بلد العميل. */
 async function googleNewsSnippets(query: string, arabic: boolean, maxResults: number, country?: unknown): Promise<WebHit[]> {
@@ -1157,6 +1209,7 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
   const live = isLiveQuery(query);
   const sources: Array<[string, () => Promise<WebHit[]>]> = live
     ? [
+      ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
@@ -1164,6 +1217,7 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     : [
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
+      ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
       ["wikipedia", async () => [
         ...(await wikipediaSnippets(query, arabic ? "ar" : "en", 3)),
@@ -1187,8 +1241,12 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
 /** سعر الدهب النهارده من عناوين أخبار بلد العميل — قاعدة ثابتة، من غير موديل. */
 export async function goldPriceToday(country?: unknown): Promise<{ quotes: GoldQuote[]; market: string; currency: string }> {
   const market = marketOf(country);
-  const hits = await googleNewsSnippets(`سعر الذهب اليوم في ${market.name}`, true, 30, market.code);
-  return { quotes: goldQuotes(hits, market.currency), market: market.code, currency: market.currency };
+  const query = `سعر الذهب اليوم في ${market.name}`;
+  const [bing, google] = await Promise.all([
+    bingNewsSnippets(query, true, 30, market.code),
+    googleNewsSnippets(query, true, 30, market.code),
+  ]);
+  return { quotes: goldQuotes([...bing, ...google], market.currency), market: market.code, currency: market.currency };
 }
 
 
@@ -2016,7 +2074,7 @@ Deno.serve(async (req: Request) => {
         const cached = await getCachedAiResponse(cacheKey, cacheTtlMs(q));
         if (cached) return jsonResponse({ ...cached, cached: true });
         const hits = await webSearchSnippets(q, 8, country || null);
-        const response = { query: q, results: hits.slice(0, 8), source: lastWebSearchSource };
+        const response = { query: q, results: hits.slice(0, 8), source: lastWebSearchSource, live: isLiveQuery(q) };
         if (hits.length > 0) await setCachedAiResponse(cacheKey, "web_search", response);
         return jsonResponse({ ...response, attempts: lastWebSearchAttempts.slice(0, 12) });
       }

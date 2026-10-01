@@ -106,6 +106,17 @@ export function googleNewsUrl(query: string, country: unknown, arabic: boolean):
 }
 
 /**
+ * Bing News RSS for a market. Measured 2026-10-01: from the Supabase function Google News
+ * answered 503 (blocked) while Bing News returned the day's gold headlines, and its item
+ * descriptions carry the figures («عيار 21 مبلغ 6145 جنيهًا، وسجل عيار 24 مبلغ 7022»).
+ */
+export function bingNewsUrl(query: string, country: unknown, arabic: boolean): string {
+  const cc = marketOf(country).code;
+  const locale = arabic ? `setlang=ar&cc=${cc}` : "setlang=en&cc=US";
+  return `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&${locale}`;
+}
+
+/**
  * Google answers an EU address with its cookie-consent page instead of the feed; Supabase's
  * functions run in Europe, which is the likeliest reason the news feed came back empty there
  * while it returned 92 items from elsewhere the same day. These cookies say consent was given.
@@ -135,7 +146,11 @@ export function goldQuotes(hits: SearchHit[], currency: string, now = Date.now()
   });
   const byKarat = new Map<string, Array<{ price: number; hit: SearchHit }>>();
   for (const hit of fresh) {
-    for (const q of goldPricesInTitle(hit.title)) {
+    // Bing's descriptions carry the figures more often than the headlines do.
+    const seen = new Set<string>();
+    for (const q of [...goldPricesInTitle(hit.title), ...goldPricesInTitle(hit.snippet)]) {
+      if (seen.has(q.karat)) continue;
+      seen.add(q.karat);
       byKarat.set(q.karat, [...(byKarat.get(q.karat) ?? []), { price: q.price, hit }]);
     }
   }
