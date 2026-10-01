@@ -265,3 +265,35 @@ jobs:
             -d '{"action":"provider_health"}' > provider_health.json || true
           echo "### Provider health" >> "$GITHUB_STEP_SUMMARY"
           { echo '```json'; jq . provider_health.json 2>/dev/null || cat provider_health.json; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # اختبار القبول الحي بعد كل نشر (تشخيص زاد: «خلص» = جمل المالك عدّت على العقل الحقيقي،
+      # مش التستات). بينادي acceptance_probe على حساب الاختبار المخصص، وبيكتب كل حالة ونتيجتها
+      # في ملخص الرن، وبيحط تحذير لو حالة فشلت. محتاج سر GitHub اسمه ZAD_PROACTIVE_CRON_SECRET
+      # بنفس قيمة سر Supabase اللي بنفس الاسم (CI مايقدرش يقرا قيم أسرار Supabase). من غيره
+      # الخطوة بتتخطى بتحذير ظاهر. مابيفشّلش النشر — النشر خلص؛ ده قياس اللي اتنشر.
+      - name: Acceptance probe (owner's lines on the live brain)
+        if: steps.preflight.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          PROBE_SECRET: ${{ secrets.ZAD_PROACTIVE_CRON_SECRET }}
+        run: |
+          if [ -z "$PROBE_SECRET" ]; then
+            echo "::warning::ZAD_PROACTIVE_CRON_SECRET is not a GitHub secret — acceptance probe skipped"
+            echo "Acceptance probe skipped: add the GitHub secret ZAD_PROACTIVE_CRON_SECRET (same value as the Supabase one)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::add-mask::$PROBE_SECRET"
+          curl -sS --max-time 170 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
+            -H "ZAD-PROACTIVE-CRON-SECRET: $PROBE_SECRET" -H "Content-Type: application/json" \
+            -d '{"action":"acceptance_probe"}' > acceptance.json || true
+          echo "### Acceptance probe" >> "$GITHUB_STEP_SUMMARY"
+          if ! jq -e '.results' acceptance.json >/dev/null 2>&1; then
+            echo "::warning::acceptance probe did not answer with results"
+            { echo '```'; head -c 2000 acceptance.json; echo; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r '"passed \(.passed) of \(.total)"' acceptance.json | tee -a "$GITHUB_STEP_SUMMARY"
+          jq -r '.results[] | "- \(if .pass then "✅" else "❌" end) \(.id)\(if .pass then "" else ": \(.failure // "")" end)"' acceptance.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          FAILED=$(jq '[.results[] | select(.pass != true)] | length' acceptance.json)
+          if [ "$FAILED" != "0" ]; then echo "::warning::acceptance probe: $FAILED case(s) failed — see the run summary"; fi
