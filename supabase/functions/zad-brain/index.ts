@@ -2716,6 +2716,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_customer_profile", targetId: userId, previous: before, next: patch });
+      // يوم القبض واحد: الميزانية بتعد عليه. قبل كده الملف كان بيقول ٣٠ والدورة ١٦ (٢٠٢٦-١٠-٠١).
+      // الشهري بس — المرتب الأسبوعي أو اليومي مالوش يوم في الشهر.
+      const payDay = Number((patch as { pay_day?: unknown }).pay_day);
+      const frequency = (patch as { pay_frequency?: unknown }).pay_frequency ?? (before as { pay_frequency?: unknown } | null)?.pay_frequency;
+      if (Number.isInteger(payDay) && payDay >= 1 && payDay <= 31 && (frequency == null || frequency === "monthly")) {
+        const { error: cycleErr } = await sb.from("zad_users").update({ cycle_start_day: payDay }).eq("id", userId);
+        if (cycleErr) console.error("[update_customer_profile] cycle_start_day sync failed:", cycleErr.message);
+      }
       return `status=saved fields=${Object.keys(patch).join(",")}`;
     }
     case "set_broke_mode": {

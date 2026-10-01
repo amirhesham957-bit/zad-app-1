@@ -47,7 +47,11 @@ export function productFamilyOf(name: string): string | null {
     .map((w) => (w.startsWith("ال") ? w.slice(2) : w));
   let i = 0;
   while (i < words.length - 1 && PACKAGING.has(words[i])) i++;
-  return STAPLES[words[i] ?? ""] ?? null;
+  const first = STAPLES[words[i] ?? ""];
+  if (first) return first;
+  // الماركة قبل السلعة: «صافي مياه معدنية 1.5 لتر» كانت صف لوحدها جنب ٩ صفوف مية (٢٠٢٦-١٠-٠١).
+  // للمية بس: «بسكويت شاي» مش شاي، و«عصير بالسكر» مش سكر.
+  return STAPLES[words[i + 1] ?? ""] === "مياه" ? "مياه" : null;
 }
 
 /**
