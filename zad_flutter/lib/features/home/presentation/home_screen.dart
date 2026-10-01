@@ -21,10 +21,10 @@ import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
-import 'package:zad/features/home/presentation/home_amazon_row.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
+import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
@@ -84,6 +84,10 @@ class HomeScreen extends ConsumerWidget {
           // in بيتي, the obligations in فلوسي, every section in the drawer.
           const ZadAppearOnEntry(child: DailyBriefCard()),
           const SizedBox(height: 16),
+          // The sections back under the brief, eight at a glance and the rest
+          // behind «المزيد» (owner, 2026-10-01: the squares were missed).
+          const ZadAppearOnEntry(delayMs: 30, child: SectionsGrid()),
+          const SizedBox(height: 16),
           ZadSlots.homeProposalsSection(),
           ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
           ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
@@ -106,7 +110,8 @@ class HomeScreen extends ConsumerWidget {
           ),
           const HomeRecentTransactions(),
           const SizedBox(height: 18),
-          const HomeAmazonRow(),
+          // The Amazon row is hidden until there is a product API key: its five
+          // seeded products had stock photos and Saudi prices (2026-10-01).
           // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),
