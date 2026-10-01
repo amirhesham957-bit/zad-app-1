@@ -25,12 +25,14 @@ import 'package:zad/shared/voice/domain/speech_text.dart';
 
 class _Synth implements VoiceSynthesizer {
   final requested = <String>[];
+  final feelings = <String?>[];
   final pending = <Completer<SpokenAudio>>[];
   bool fail = false;
 
   @override
-  Future<SpokenAudio> synthesize(String text) {
+  Future<SpokenAudio> synthesize(String text, {String? feelingFrom}) {
     requested.add(text);
+    feelings.add(feelingFrom);
     if (fail) return Future<SpokenAudio>.error(StateError('502'));
     final c = Completer<SpokenAudio>();
     pending.add(c);
@@ -420,6 +422,20 @@ void main() {
         expect(player.played.map(_pcmOf).toList(), <String>[
           for (var i = 0; i < synth.requested.length; i++) 'pcm$i',
         ]);
+      },
+    );
+
+    test(
+      'every chunk of a reply carries its first chunk for the feeling',
+      () async {
+        c
+            .read(voiceOutputControllerProvider.notifier)
+            .speakStreaming(messageId: 'm')
+          ..add(sentences.join(' '))
+          ..finish();
+        await settle();
+        expect(synth.requested, hasLength(3));
+        expect(synth.feelings, everyElement(synth.requested.first));
       },
     );
 

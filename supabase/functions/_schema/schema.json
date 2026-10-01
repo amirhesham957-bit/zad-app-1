@@ -402,6 +402,7 @@
     "bound_at",
     "chat_id",
     "code_expires_at",
+    "country_asked_at",
     "created_at",
     "id",
     "user_id"

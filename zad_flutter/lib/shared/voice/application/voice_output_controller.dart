@@ -97,7 +97,10 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     var requested = 0;
     void fetchUpTo(int last) {
       for (; requested <= last && requested < chunks.length; requested++) {
-        pending[requested] = synth.synthesize(chunks[requested]);
+        pending[requested] = synth.synthesize(
+          chunks[requested],
+          feelingFrom: chunks.first,
+        );
       }
     }
 
@@ -204,9 +207,11 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
     // once, and played in order.
     final queue = _AudioQueue();
     final slots = _Slots(_inFlight);
+    String? first;
     unawaited(() async {
       try {
         await for (final text in chunks) {
+          first ??= text;
           if (!current()) break;
           await slots.acquire();
           if (!current()) {
@@ -214,7 +219,10 @@ class VoiceOutputController extends Notifier<VoiceOutputView> {
             break;
           }
           queue.add(
-            synth.synthesize(text).whenComplete(slots.release)..ignore(),
+            synth
+                .synthesize(text, feelingFrom: first)
+                .whenComplete(slots.release)
+              ..ignore(),
           );
         }
       } on Object catch (_) {

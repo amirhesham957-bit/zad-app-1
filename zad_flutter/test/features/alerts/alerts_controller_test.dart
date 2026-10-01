@@ -108,7 +108,7 @@ class _Synth implements VoiceSynthesizer {
   final spoken = <String>[];
 
   @override
-  Future<SpokenAudio> synthesize(String text) async {
+  Future<SpokenAudio> synthesize(String text, {String? feelingFrom}) async {
     spoken.add(text);
     return (pcm: Uint8List(2), provider: 'gemini');
   }

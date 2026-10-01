@@ -21,8 +21,20 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
-import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
+
+/**
+ * إحساس رد الشات كله: من أول جملة فيه (`feeling_from` من التطبيق)، ونفس الإحساس لكل
+ * حتة في الرد. كان كل جملة بتاخد إحساس من كلامها («صوتين»)، وبعدها كله بقى «warm» ثابت
+ * (#51) فالرد طلع من غير مشاعر. أول جملة واحدة لكل الحتت = مشاعر وصوت واحد (٢٠٢٦-١٠-٠٢).
+ * نسخة تطبيق قديمة مابتبعتهاش ⇒ «warm» زي #51.
+ */
+export function chatReplyEmotion(feelingFrom: unknown): VoiceEmotion {
+  return typeof feelingFrom === "string" && feelingFrom.trim()
+    ? inferEmotion(feelingFrom.slice(0, 400))
+    : "warm";
+}
 
 export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
 /** جملة قصيرة بتتقرا في ثواني؛ أكتر من كده يبقى معلّق، والأحسن ننقل للموديل/المفتاح اللي بعده. */

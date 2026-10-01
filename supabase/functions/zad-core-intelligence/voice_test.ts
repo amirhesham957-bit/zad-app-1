@@ -1,5 +1,5 @@
 import { assertEquals, assertExists } from "jsr:@std/assert@1";
-import { bearerToken, requestGeminiVoice, validateVoicePayload, VOICE_IDS } from "./voice.ts";
+import { bearerToken, chatReplyEmotion, requestGeminiVoice, validateVoicePayload, VOICE_IDS } from "./voice.ts";
 
 Deno.test("voice synthesis requires bounded, non-empty text", () => {
   assertEquals(validateVoicePayload({ text: "", persona: "sarah_warm" }), null);
@@ -95,4 +95,13 @@ Deno.test("stickyModelOrder: the model that spoke last goes first, the rest keep
   if (JSON.stringify(stickyModelOrder(chain, "b")) !== JSON.stringify(["b", "a", "c"])) throw new Error("b first");
   if (JSON.stringify(stickyModelOrder(chain, null)) !== JSON.stringify(chain)) throw new Error("unchanged");
   if (JSON.stringify(stickyModelOrder(chain, "zzz")) !== JSON.stringify(chain)) throw new Error("unknown ignored");
+});
+
+Deno.test("a chat reply takes one feeling from its first sentence", () => {
+  assertEquals(chatReplyEmotion("مبروك! وفرت ٣٠٠ جنيه الشهر ده"), "proud");
+  assertEquals(chatReplyEmotion("يا خبر، زعلت إنك تعبان"), "sad");
+  assertEquals(chatReplyEmotion("تمام، الرصيد ١٢٠٠"), "warm");
+  // An older app sends nothing: the steady delivery of #51.
+  assertEquals(chatReplyEmotion(undefined), "warm");
+  assertEquals(chatReplyEmotion("  "), "warm");
 });
