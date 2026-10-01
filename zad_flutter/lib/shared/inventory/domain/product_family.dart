@@ -69,6 +69,33 @@ const Set<String> _packaging = <String>{
   'صندوق',
 };
 
+/// Water brands a row can be named by alone: «إيلان», «داساني», «صافي 1.5
+/// لتر» were water rows on the owner's list beside «ماء …» ones, and stood
+/// apart (تشخيص زاد ١.٥, 2026-10-01). Only when the brand is the whole name,
+/// or the brand and a size: «نستله» is water, «نستله نيدو» is not.
+/// Normalised like [normalizeItemName]; data, not UI text.
+const Set<String> _waterBrands = <String>{
+  'ايلان',
+  'ايلانو',
+  'داساني',
+  'بوفانا',
+  'اكوافينا',
+  'بركه',
+  'صافي',
+  'صافى',
+  'نستله',
+  'حياه',
+  'نوفا',
+  'مسافي',
+  'اروي',
+};
+
+/// A word that only says how much: «1.5», «لتر», «مل», «×6».
+bool _isSize(String w) =>
+    RegExp(r'^[x×]?[0-9٠-٩.,/]+[x×]?$').hasMatch(w) ||
+    const <String>{'لتر', 'مل', 'ملي', 'ml', 'l', 'جالون'}.contains(w) ||
+    _packaging.contains(w);
+
 /// The family [name] belongs to, or null when it is not a grouped staple.
 String? productFamilyOf(String name) {
   final words = normalizeItemName(name)
@@ -82,6 +109,9 @@ String? productFamilyOf(String name) {
   if (i >= words.length) return null;
   final first = _staples[words[i]];
   if (first != null) return first;
+  if (_waterBrands.contains(words[i]) && words.skip(i + 1).every(_isSize)) {
+    return 'مياه';
+  }
   // Brand first: «صافي مياه معدنية 1.5 لتر» stood alone beside nine water
   // rows (2026-10-01). Water only — «بسكويت شاي» is not tea.
   final next = i + 1 < words.length ? _staples[words[i + 1]] : null;

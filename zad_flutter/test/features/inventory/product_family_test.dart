@@ -38,6 +38,41 @@ void main() {
     expect(productFamilyOf('شيبسي'), isNull);
   });
 
+  test('a water brand alone, or with its size, is water', () {
+    for (final name in <String>[
+      'إيلان',
+      'إيلانو',
+      'داساني',
+      'بوفانا',
+      'نستله',
+      'صافي 1.5 لتر',
+      'إزازة ماء',
+      'ماء صافى',
+    ]) {
+      expect(productFamilyOf(name), 'مياه', reason: name);
+    }
+    expect(productFamilyOf('نستله نيدو'), isNull);
+    expect(productFamilyOf('صافي لبن'), isNull);
+  });
+
+  test("the owner's ten water rows are one stock of 13", () {
+    final rows = <InventoryItem>[
+      _row('1', 'إزازة ماء', 1),
+      _row('2', 'صافي 1.5 لتر', 2),
+      _row('3', 'ماء صافى', 1),
+      _row('4', 'كرتونة ماية', 1),
+      _row('5', 'عبوة مياه', 1),
+      _row('6', 'إيلان', 2),
+      _row('7', 'إيلانو', 1),
+      _row('8', 'بوفانا', 1),
+      _row('9', 'داساني', 2),
+      _row('10', 'نستله', 1),
+    ];
+    final groups = groupPantry(rows);
+    expect(groups, hasLength(1));
+    expect(groups.single.total, 13);
+  });
+
   test('five water rows are one group with the house total', () {
     final groups = groupPantry(water);
     expect(groups, hasLength(1));
