@@ -13,8 +13,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
@@ -76,6 +78,17 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   @override
   void initState() {
     super.initState();
+    // Where the customer was before Android killed the backgrounded app
+    // (last_tab.dart) — not الرئيسية every time.
+    try {
+      _tab = readLastTab(
+        ref.read(localStoreProvider).device,
+        ref.read(nowProvider)(),
+      );
+      _opened.add(_tab);
+    } on Object {
+      _tab = ZadNavDestination.home;
+    }
     // The shell exists only while somebody is signed in, which is exactly
     // when this device's token belongs on an account. After the first frame:
     // starting changes provider state, and the permission prompt should come
@@ -91,6 +104,19 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     });
     // Back to the app in the morning is a first open too.
     _lifecycle = AppLifecycleListener(
+      onHide: () {
+        try {
+          unawaited(
+            saveLastTab(
+              ref.read(localStoreProvider).device,
+              _tab,
+              ref.read(nowProvider)(),
+            ),
+          );
+        } on Object {
+          // No store (a test): nothing to remember.
+        }
+      },
       onResume: () {
         if (mounted) {
           unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
