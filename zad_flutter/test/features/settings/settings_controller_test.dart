@@ -5,6 +5,7 @@
 // and the screen has to say both halves: saved, not sent. The controller is
 // what draws that line, so these pin it from both directions.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -59,6 +60,10 @@ class _FakeSettingsRemote implements SettingsRemote {
   Exception? failWith;
   int upserts = 0;
 
+  /// When set, a fetch reads the row at once but answers only when this
+  /// completes — a read that left before a write and came back after it.
+  Completer<void>? holdFetch;
+
   /// Answers the upsert without error and then has no row to show for it —
   /// the 200-that-changed-nothing the repository reads back to catch.
   bool swallowsWrites = false;
@@ -66,7 +71,9 @@ class _FakeSettingsRemote implements SettingsRemote {
   @override
   Future<Map<String, dynamic>?> fetch({required String userId}) async {
     if (failWith case final e?) throw e;
-    return row;
+    final snapshot = row == null ? null : <String, dynamic>{...row!};
+    await holdFetch?.future;
+    return snapshot;
   }
 
   @override
@@ -240,6 +247,30 @@ void main() {
     );
     expect(remote.row?['cycle_start_day'], 25);
   });
+
+  test(
+    'a read that left before the salary day was set does not undo it',
+    () async {
+      remote
+        ..row = <String, dynamic>{'cycle_start_day': 1}
+        ..holdFetch = Completer<void>();
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(settingsControllerProvider.notifier);
+      await Future<void>.delayed(Duration.zero); // build's refresh is out
+
+      expect(await controller.setCycleStartDay(25), isTrue);
+      remote.holdFetch!.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(settingsControllerProvider).settings?.cycleStartDay,
+        25,
+      );
+      expect(remote.row?['cycle_start_day'], 25);
+    },
+  );
 
   test('a refresh failure keeps the figures that were on screen', () async {
     await documents.put(
