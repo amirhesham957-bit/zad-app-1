@@ -133,6 +133,9 @@ const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|
 // «دفعت ٥٠») مش منها — دي فلوسه هو.
 const WEB_PRICE_INTENT = /(كام|كم|بكام|بكم)\s*(سعر|تمن|ثمن)|سعر\s*\S+.*(النهارده|اليوم|دلوقتي|الحين)|(اسعار|أسعار)\s|ترند/;
 const OWN_MONEY = /صرفت|دفعت|اشتريت|قبضت/;
+// «سعر الدهب» من غير «النهارده» ماكانش بيعدّي WEB_PRICE_INTENT (٢٠٢٦-١٠-٠١ ٢٠:٠٥ تليجرام).
+const GOLD_INTENT = /دهب|ذهب|عيار\s*(24|21|18|٢٤|٢١|١٨)/;
+const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)\s*(بكام|بكم|كام|كم|النهارده|اليوم|دلوقتي)|(بكام|بكم|كام|كم|سعر)\s*(ال)?(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)|سعر\s*(ال)?صرف/;
 
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 
@@ -144,7 +147,9 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
-  if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
+  if (GOLD_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("gold_price");
+  else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");
+  else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   return [...new Set(tools)];
 }
 
@@ -327,6 +332,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
     // الأدوات العابرة للنطاقات — متاحة دايمًا
     "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
+    // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
+    "gold_price", "fetch_current_exchange_rate",
     "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
     "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
     // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»

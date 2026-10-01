@@ -59,6 +59,7 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
+import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID } from "./acceptance.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
@@ -2901,11 +2902,23 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
       // بترجع بمصادرها — الموديل ملزم يقول المصدر، وpromise-drift هيمسك أي ادعاء.
-      const res = await callCoreIntel("web_search", { query: input.query ?? "" }, userId);
+      const res = await callCoreIntel("web_search", { query: input.query ?? "", country: snap?.country ?? null }, userId);
       if (!res || res.ok === false) return "مقدرتش أبحث دلوقتي — قول للعميل إن البحث مش متاح مؤقتاً، متختلقش إجابة.";
       const hits = (res as { results?: Array<{ title: string; url: string; snippet: string }> }).results ?? [];
       if (hits.length === 0) return "مفيش نتايج بحث — قول للعميل إنك ملقتش حاجة موثوقة، متخترعش.";
       return JSON.stringify(hits.map((h, i) => `${i + 1}. ${h.title}\n${h.url}\n${h.snippet}`).join("\n\n"));
+    }
+    case "gold_price": {
+      // سعر الدهب من عناوين أخبار بلد العميل النهارده — رقم مقري بقاعدة، مش من الموديل.
+      const res = await callCoreIntel("gold_price", { country: snap?.country ?? null }, userId);
+      const quotes = (res?.quotes ?? []) as Array<{ karat: string; price: number; currency: string; source: string; published?: string }>;
+      if (!res || quotes.length === 0) {
+        return "مالقيتش سعر دهب منشور النهارده في أخبار بلد العميل. نادِ web_search بسؤال «سعر الذهب اليوم» قبل ما تقول إنك مش لاقي.";
+      }
+      const when = (iso?: string) => iso ? new Date(iso).toLocaleString("ar-EG", { timeZone: snap?.now_local?.time_zone ?? "Africa/Cairo", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }) : "النهارده";
+      const lines = quotes.map((q) => `عيار ${q.karat}: ${q.price.toLocaleString("en-US")} ${q.currency} (المصدر: ${q.source}، ${when(q.published)})`);
+      return "سعر الدهب النهارده من الأخبار المنشورة:\n" + lines.join("\n") +
+        "\nابدأ ردك بالرقم المطلوب ومصدره ووقته في أول جملة. ده سعر بيع تقريبي من الأخبار، مش سعر محل بعينه.";
     }
     case "family_digest": {
       // الأرقام مجمّعة عن قصد: الأب يشوف "أحمد صرف ٨٠٪ من سقفه"، مش معاملاته واحدة واحدة.
@@ -4226,6 +4239,13 @@ const CHAT_TOOLS: ToolDef[] = [
       },
       required: ["screen", "action"],
     },
+  },
+  {
+    name: "gold_price",
+    description:
+      "سعر جرام الدهب النهارده (عيار 24 و21 و18) في بلد العميل، من الأخبار المنشورة النهارده. " +
+      "استخدمها لأي سؤال عن سعر الدهب قبل أي حاجة تانية، وابدأ ردك بالرقم ومصدره ووقته.",
+    input_schema: { type: "object", properties: {}, required: [] },
   },
   {
     name: "fetch_current_exchange_rate",
@@ -6164,6 +6184,67 @@ async function handleRequest(req: Request): Promise<Response> {
     // غير ما ينادي الأدوات الجديدة. هنا نفس المسار (توجيه الوكيل + تقليل الأدوات + برومبت الشات +
     // callModel) على snapshot مصطنع — مفيش أي بيانات عميل — وبنرجّع أسماء الأدوات اللي اتنادت
     // وأي تحذير سقوط موديل. بيتنادى من provider_health بعد النشر.
+    // اختبار القبول الحي (٢٠٢٦-١٠-٠١): جُمل المالك نفسها على العقل الحقيقي (الموديل والأدوات والجداول
+    // والمحادثة المشتركة) على حساب الاختبار، والحكم على الرد اللي العميل كان هيشوفه. التستات كانت بتعدّي
+    // والغلط نفسه بيوصل للمالك؛ ده اللي بيقول «اتصلح» من هنا ورايح. نداء بسر الكرون بس.
+    if (body.action === "acceptance_probe") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbProbe = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const only = Array.isArray(body.cases) ? new Set((body.cases as unknown[]).map(String)) : null;
+      const results: Array<Record<string, unknown>> = [];
+      // صفحة نضيفة: محادثة حساب الاختبار ومواعيده بس.
+      await sbProbe.from("zad_chat_turns").delete().eq("user_id", ACCEPTANCE_USER_ID);
+      await sbProbe.from("zad_appointments").delete().eq("user_id", ACCEPTANCE_USER_ID);
+      const probeStarted = Date.now();
+      for (const c of ACCEPTANCE_CASES) {
+        if (only && !only.has(c.id)) continue;
+        if (Date.now() - probeStarted > 115_000) {
+          results.push({ id: c.id, pass: false, failure: "skipped: probe budget" });
+          continue;
+        }
+        if (c.staleUnanswered) {
+          await sbProbe.from("zad_chat_turns").insert({
+            user_id: ACCEPTANCE_USER_ID, role: "user", text: c.staleUnanswered.text,
+            created_at: new Date(Date.now() - c.staleUnanswered.minutesAgo * 60_000).toISOString(),
+          });
+        }
+        const before = new Date().toISOString();
+        const t0 = Date.now();
+        try {
+          const res = await handleAgentTurn(sbProbe, ACCEPTANCE_USER_ID, { message: c.message, history: [] });
+          const payload = await res.json().catch(() => null);
+          if (payload?.ok === true) await recordSharedTurn(sbProbe, ACCEPTANCE_USER_ID, c.message, spokenRecord(payload));
+          const { count } = await sbProbe.from("zad_appointments").select("id", { count: "exact", head: true })
+            .eq("user_id", ACCEPTANCE_USER_ID).gte("created_at", before);
+          const outcome = {
+            reply: String(payload?.reply ?? ""),
+            executed: Array.isArray(payload?.executed) ? payload.executed : [],
+            proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
+          };
+          const failure = payload?.ok === true
+            ? c.check(outcome, { appointmentsCreated: count ?? 0 })
+            : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
+          results.push({
+            id: c.id, pass: failure === null, failure, reply: outcome.reply.slice(0, 500),
+            executed: outcome.executed.map((e: { tool?: string }) => e.tool), ms: Date.now() - t0,
+          });
+        } catch (e) {
+          results.push({ id: c.id, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 });
+        }
+      }
+      // تذكيرات الاختبار مايرنّوش على حد.
+      await sbProbe.from("zad_appointments").delete().eq("user_id", ACCEPTANCE_USER_ID);
+      const passed = results.filter((r) => r.pass === true).length;
+      await sbProbe.from("agent_logs").insert({
+        agent_name: "acceptance_probe", tool_used: "agent_turn", user_id: ACCEPTANCE_USER_ID,
+        status: passed === results.length ? "success" : "warning", duration_ms: Date.now() - probeStarted,
+        payload: { passed, total: results.length, results },
+      });
+      return new Response(JSON.stringify({ passed, total: results.length, results }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "tools_probe") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
