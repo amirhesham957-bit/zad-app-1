@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/chat/data/zad_explain.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -340,34 +341,14 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               '- ${s.debt.name}: ترتيب ${s.order}, يُسدد خلال ${s.months} شهر',
         )
         .join('\n');
-    String? text;
-    try {
-      final client = ref.read(supabaseClientProvider);
-      final response = await client.functions.invoke(
-        'zad-core-intelligence',
-        body: <String, dynamic>{
-          'action': 'ai_text',
-          'user_id': client.auth.currentUser?.id,
-          'payload': <String, dynamic>{
-            'system_prompt':
-                'أنت مستشار ديون داخل تطبيق زاد. اشرح خطة السداد أدناه '
-                'بجملتين بالعربي، بدون اختراع أرقام غير الموجودة في البيانات.',
-            'user_prompt':
-                '=== بيانات خطة السداد ===\n'
-                'الاستراتيجية: ${_strategy.name.toUpperCase()}\n'
-                'المدة الكلية: ${plan.months} شهر\n'
-                'إجمالي الفوائد المدفوعة: ${plan.interest}\n'
-                'الخطوات:\n$steps\n'
-                '=== نهاية البيانات ===',
-            'response_mime_type': 'text/plain',
-          },
-        },
-      );
-      final t = _asMap(response.data)?['text'];
-      if (t is String && t.trim().isNotEmpty) text = t.trim();
-    } on Object catch (e) {
-      debugPrint('debt narration failed: $e');
-    }
+    final text = await explainWithZad(
+      ref.read(supabaseClientProvider),
+      ZadExplainTopic.debtPlan,
+      'الاستراتيجية: ${_strategy.name.toUpperCase()}\n'
+      'المدة الكلية: ${plan.months} شهر\n'
+      'إجمالي الفوائد المدفوعة: ${plan.interest}\n'
+      'الخطوات:\n$steps',
+    );
     if (!mounted) return;
     setState(() {
       _narrative = text;

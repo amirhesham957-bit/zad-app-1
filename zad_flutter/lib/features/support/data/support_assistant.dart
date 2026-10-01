@@ -1,7 +1,10 @@
-/// The usage-help assistant behind the support screen: one `ai_text` call on
-/// `zad-core-intelligence`, with Kotlin's `HelpSupportScreen` prompt word for
-/// word. It sees no account data — the prompt says so and sends anyone asking
-/// about their own money to the real agent chat.
+/// The support screen's assistant: زاد herself (zad-brain's `agent_turn` with
+/// `surface: support`), who sees the account, solves what she can and opens a
+/// ticket for the team when a person is needed (`open_support_ticket`).
+///
+/// It used to be a separate model with its own prompt that saw no account
+/// data and could not reach a person: zero tickets were ever opened from it
+/// (the «تشخيص زاد» report, 2026-10-01).
 library;
 
 import 'dart:async';
@@ -17,14 +20,6 @@ class SupportAssistant {
   const new(this._client);
 
   final SupabaseClient _client;
-
-  static const String _systemPrompt = '''
-أنت مساعد أسئلة استخدام تطبيق "زاد ZAD" لإدارة المصاريف العائلية والمخزون.
-مهمتك الرد على أسئلة عامة عن استخدام التطبيق وميزاته وحل مشاكل تقنية شائعة فقط.
-- التطبيق يحتوي على: إدارة ميزانية، شات عائلي، كاميرا ذكية لقراءة الفواتير، مخزون المنزل، إحصائيات، عقل زاد (المساعد الذكي الشخصي).
-- قاعدة إلزامية: معندكش أي وصول لبيانات المستخدم الفعلية (مصاريفه، رصيده، اشتراكاته، مخزونه). لو سأل عن أي حاجة من دي، وضّح إنك مش شايف حسابه، ووجّهه لشات "عقل زاد" اللي شايف بياناته الحقيقية.
-- كن مهذباً، محترفاً، ومتعاطفاً.
-- أجب باللغة العربية بوضوح وإيجاز.''';
 
   /// What is left when neither the model nor a built-in answer helps: what
   /// to do next, instead of Kotlin's bare apology.
@@ -45,24 +40,27 @@ class SupportAssistant {
     try {
       final response = await _client.functions
           .invoke(
-            'zad-core-intelligence',
+            'zad-brain',
             body: <String, dynamic>{
-              'action': 'ai_text',
-              'user_id': _client.auth.currentUser?.id,
-              'payload': <String, dynamic>{
-                'system_prompt': _systemPrompt,
-                'user_prompt': question,
-                'response_mime_type': 'text/plain',
-                // A how-do-I question needs no reasoning trace; unbounded
-                // thinking only made the customer wait.
-                'thinking_budget': 0,
-              },
+              'action': 'agent_turn',
+              'message': question,
+              'surface': 'support',
             },
           )
           .timeout(timeout);
       final data = response.data;
-      final text = data is Map ? data['text'] : null;
-      return text is String && text.trim().isNotEmpty ? text.trim() : null;
+      if (data is! Map || data['ok'] != true) return null;
+      final reply = (data['reply'] as String?)?.trim() ?? '';
+      final receipts = <String>[
+        for (final e
+            in (data['executed'] as List<Object?>?) ?? const <Object?>[])
+          if (e is Map && e['summary'] is String) '✅ ${e['summary']}',
+      ];
+      final answer = <String>[
+        if (reply.isNotEmpty) reply,
+        ...receipts,
+      ].join('\n');
+      return answer.isEmpty ? null : answer;
     } on Object {
       return null;
     }

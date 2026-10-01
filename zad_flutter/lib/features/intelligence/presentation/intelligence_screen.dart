@@ -36,6 +36,7 @@ import 'package:zad/features/intelligence/presentation/export_report_button.dart
 import 'package:zad/features/intelligence/presentation/spending_charts.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/chat/data/zad_explain.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
@@ -68,31 +69,6 @@ const List<Color> _palette = <Color>[
 ];
 
 bool _isExpense(ZadTransaction t) => t.kind == TxnKind.expense;
-
-/// `ai_text` on zad-core-intelligence — Kotlin's `callGeminiText`.
-Future<String?> _aiText(WidgetRef ref, String system, String user) async {
-  try {
-    final client = ref.read(supabaseClientProvider);
-    final response = await client.functions.invoke(
-      'zad-core-intelligence',
-      body: <String, dynamic>{
-        'action': 'ai_text',
-        'user_id': client.auth.currentUser?.id,
-        'payload': <String, dynamic>{
-          'system_prompt': system,
-          'user_prompt': user,
-          'response_mime_type': 'text/plain',
-        },
-      },
-    );
-    final data = response.data;
-    final text = data is Map ? data['text'] : null;
-    return text is String && text.trim().isNotEmpty ? text.trim() : null;
-  } on Object catch (e) {
-    debugPrint('ai_text failed: $e');
-    return null;
-  }
-}
 
 /// The screen.
 class IntelligenceScreen extends ConsumerStatefulWidget {
@@ -428,9 +404,9 @@ class _Header extends StatelessWidget {
 
 /// Kotlin's `AiNarrativeSection`: «اشرح بالذكاء الاصطناعي», then the answer.
 class _Narrative extends ConsumerStatefulWidget {
-  const new({required this.system, required this.user});
+  const new({required this.topic, required this.user});
 
-  final String system;
+  final ZadExplainTopic topic;
   final String Function() user;
 
   @override
@@ -443,7 +419,11 @@ class _NarrativeState extends ConsumerState<_Narrative> {
 
   Future<void> _explain() async {
     setState(() => _loading = true);
-    final text = await _aiText(ref, widget.system, widget.user());
+    final text = await explainWithZad(
+      ref.read(supabaseClientProvider),
+      widget.topic,
+      widget.user(),
+    );
     if (!mounted) return;
     setState(() {
       _text = text;
@@ -1170,12 +1150,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
           ],
           const SizedBox(height: ZadSpacing.md),
           _Narrative(
-            system:
-                'أنت محلل مالي شخصي داخل تطبيق زاد. لخص وضع صمود المستخدم '
-                'المالي في جملة أو جملتين بالعربي، بدون اختراع أرقام غير '
-                "الموجودة في البيانات. لو أيام التغطية 'غير محسوبة'، قول إنها "
-                'لسه محتاجة مصروفات مسجلة أكتر — وممنوع تعتبرها صفر أو تقول '
-                'إن المستخدم مكشوف.',
+            topic: ZadExplainTopic.resilience,
             user: () =>
                 '=== بيانات اختبار الصمود المالي ===\n'
                 'أيام التغطية عند الطوارئ: $coverage\n'
@@ -1285,10 +1260,7 @@ class _DistributionCard extends ConsumerWidget {
           ],
           const SizedBox(height: ZadSpacing.md),
           _Narrative(
-            system:
-                'أنت خبير تحليل سلوك مالي داخل تطبيق زاد. حلل توزيع المصروفات '
-                'أدناه وقدم ملاحظة سلوكية ذكية وودودة في جملة أو جملتين '
-                'بالعربي، مع توجيه واقعي لتحسين الصرف.',
+            topic: ZadExplainTopic.spendingBehavior,
             user: () =>
                 '=== بيانات توزيع المصروفات ===\n'
                 'إجمالي المصروفات: $total\n'
