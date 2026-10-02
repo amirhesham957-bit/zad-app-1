@@ -3502,7 +3502,7 @@ const RECURRING_HINT =
 // المستخدم، فمالهاش لازمة في تشغيلة كرون.
 // ═══════════════════════════════════════════════════════════
 
-const CHAT_TOOLS: ToolDef[] = [
+export const CHAT_TOOLS: ToolDef[] = [
   {
     name: "log_transaction",
     description: "سجّل مصروف أو دخل حصل فعلاً. نادِها بس لما العميل يقول إن فلوس اتصرفت أو اتقبضت (مثال: \"صرفت ٥٠ بقالة\"، \"قبضت الراتب\")، مش على سؤال أو استفسار. العميل هيشوف تأكيد قبل الكتابة.",
@@ -5144,6 +5144,33 @@ async function handleAgentTurn(
   const lessonsBlock = driftLessons.length > 0
     ? "\n=== دروس من أخطائك السابقة مع هذا العميل ===\n" + driftLessons.map((l) => "- " + l).join("\n") + "\n=== نهاية الدروس ===\n"
     : "";
+  // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
+  // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
+  const clientHistory: SharedTurn[] = [];
+  for (const h of (Array.isArray(body.history) ? body.history : []).slice(-8)) {
+    const text = String(h?.text ?? "").trim();
+    if (!text) continue;
+    if (h?.role === "user") clientHistory.push({ role: "user", text });
+    else if (h?.role === "assistant") clientHistory.push({ role: "assistant", text });
+  }
+  // One conversation on every channel (sharedConversation.ts): the app answers
+  // in the turns said by voice or on Telegram too. Telegram already sends that
+  // same table as its history.
+  const history: Turn[] = markUnanswered<Turn & { text?: string }>([
+    ...pickHistory(await sharedHistoryEarly, clientHistory),
+    { role: "user", text: message },
+  ]);
+
+  // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
+  // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا. قبل البرومبت:
+  // قواعد الأدوات اللي مش معروضة مابتتبعتش (buildChatSystemPrompt).
+  const scopedTools = scopeToolsForSpecialist(
+    CHAT_TOOLS, specialist, specialistConsult, [
+      ...intentToolHints(message, priorAssistantText(history)),
+      // صفحة الدعم: الشكوى هي سبب الصفحة.
+      ...(body.surface === "support" ? ["open_support_ticket"] : []),
+    ],
+  );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
   const learnedSkills = await learnedSkillsEarly;
   // تقارير الأيدجنتس غير المقروءة — العقل بيبقى واعي بشغل أيدجنتته بين رسالتين (Phase 3).
@@ -5173,7 +5200,7 @@ async function handleAgentTurn(
           .map((h: { text?: string }) => String(h?.text ?? "")),
         message,
       ].join(" ").slice(-1500),
-    }, body.voice_mode === true);
+    }, body.voice_mode === true, new Set(scopedTools.map((t) => t.name)));
   // لو جيميناي كله وقع ووصلنا لـ Groq: برومبت مختصر بنفس اللهجة (الفجوة ١٣).
   const groqSystem = groqSystemFor(snap, [
     ...(Array.isArray(body.history) ? body.history : [])
@@ -5181,23 +5208,6 @@ async function handleAgentTurn(
       .map((h: { text?: string }) => String(h?.text ?? "")),
     message,
   ].join(" ").slice(-1500));
-
-  // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
-  // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
-  const clientHistory: SharedTurn[] = [];
-  for (const h of (Array.isArray(body.history) ? body.history : []).slice(-8)) {
-    const text = String(h?.text ?? "").trim();
-    if (!text) continue;
-    if (h?.role === "user") clientHistory.push({ role: "user", text });
-    else if (h?.role === "assistant") clientHistory.push({ role: "assistant", text });
-  }
-  // One conversation on every channel (sharedConversation.ts): the app answers
-  // in the turns said by voice or on Telegram too. Telegram already sends that
-  // same table as its history.
-  const history: Turn[] = markUnanswered<Turn & { text?: string }>([
-    ...pickHistory(await sharedHistoryEarly, clientHistory),
-    { role: "user", text: message },
-  ]);
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
   // أوامر واجهة التطبيق (app_command) — بتترجع للكلاينت عشان ZadViewModel يفتح الشاشة/
@@ -5242,11 +5252,6 @@ async function handleAgentTurn(
   };
 
   let inputTokens = 0, outputTokens = 0;
-  // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
-  // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا.
-  const scopedTools = scopeToolsForSpecialist(
-    CHAT_TOOLS, specialist, specialistConsult, intentToolHints(message, priorAssistantText(history)),
-  );
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
@@ -6080,7 +6085,13 @@ function promptSnapshot(snap: any): Record<string, unknown> {
   return out;
 }
 
-function buildChatSystemPrompt(snap: any, voiceMode = false): string {
+/**
+ * [offered]: أسامي الأدوات المعروضة في اللفة دي. قاعدة عن أداة مش معروضة، أو عن جزء من البيت
+ * فاضي، مابتتبعتش (تشخيص زاد ٢.١، ٢٠٢٦-١٠-٠٢): «مرحبا» كانت بتشيل قواعد الشيف وتحدي التوفير
+ * ووضع الطوارئ والمواسم مع كل رسالة. من غيره (الكرون، الفحص) كل القواعد زي ما كانت.
+ */
+export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: ReadonlySet<string>): string {
+  const offers = (tool: string) => !offered || offered.has(tool);
   const assistant = getAssistantName(snap);
   const profile = conversationProfile(snap?.country, {
     preferred: snap?.customer?.dialect,
@@ -6144,8 +6155,8 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
    - لو رجعتلك نتيجة أداة فيها status=awaiting_user_confirmation: **متقولش إنه اتسجل**. قول للعميل بجملة طبيعية إنك محتاج موافقته، من غير ما تنقل أي نص تقني أو اسم حالة.
    - **متحكيش نتايج الأدوات للعميل زي ما هي أبداً.** دي رسايل نظام ليك إنت. اللي بيتقال للعميل جملة بشرية بلغته.
 8. متكتبش أي اسم تقني في ردك. تكلم بشكل طبيعي يناسب ${voiceMode ? "المكالمة الصوتية" : "المحادثة المكتوبة"}.
-9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.
-10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.
+${(snap?.family) ? `9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.` : ""}
+${(Array.isArray(snap?.life_goals) && snap.life_goals.length > 0) ? `10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.` : ""}
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
 11b. **الأدوية — صفر اختراع، وصفر شكر من غير تسجيل (قاعدة سلامة، مش قاعدة أسلوب)**:
    - **ممنوع منعاً باتاً تذكر أو تقترح أو تجدول أي دوا مش موجود بالاسم في pharmacy جوه الـsnapshot.** مفيش استثناء: لا اسم علمي، لا بديل، لا ماركة قريبة، لا جرعة من معلوماتك العامة. الجدول هو المصدر الوحيد لأسماء أدوية العميل.
@@ -6154,10 +6165,10 @@ function buildChatSystemPrompt(snap: any, voiceMode = false): string {
    - لو الاسم بيطابق أكتر من دوا، اسأله يحدد بالاسم كامل. متختارش بالنيابة عنه: تسجيل جرعة على الدوا الغلط غلط طبي.
    - إلغاء أو تعديل تذكير أو ميعاد = **نداء أداة** (update_appointment / update_pharmacy_item)، مش وعد في الكلام. «تمام هظبطها» من غير أداة معناها إن التنبيهات هتفضل تيجي زي ما هي والعميل هيفتكر إنك عدّلتها.
 
-12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).
-13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.
-14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.
-15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).
+${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).` : ""}
+${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
+${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
+${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
 
 === SNAPSHOT ===
 ${JSON.stringify(promptSnapshot(snap))}
