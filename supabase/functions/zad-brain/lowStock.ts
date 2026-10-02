@@ -41,6 +41,20 @@ const PACKAGING = new Set([
   "شكاره", "كيلو", "لتر", "صندوق",
 ]);
 
+/**
+ * ماركات مية بتتكتب لوحدها: «إيلان»، «داساني»، «صافي 1.5 لتر» — نفس جدول التطبيق (#56). من غيرها
+ * العقل كان بيعدّ «إيلان» لوحدها والشاشة بتحطها تحت المية: رقمين لنفس المخزون (٢٠٢٦-١٠-٠٢).
+ * بس لما الماركة هي الاسم كله أو الماركة ومقاس: «نستله» مية، «نستله نيدو» لأ.
+ */
+const WATER_BRANDS = new Set([
+  "ايلان", "ايلانو", "داساني", "بوفانا", "اكوافينا", "بركه", "صافي", "صافى", "نستله", "حياه", "نوفا", "مسافي", "اروي",
+]);
+
+/** كلمة بتقول الكمية بس: «1.5»، «لتر»، «مل»، «×6». */
+function isSize(w: string): boolean {
+  return /^[x×]?[0-9٠-٩.,/]+[x×]?$/.test(w) || ["لتر", "مل", "ملي", "ml", "l", "جالون"].includes(w) || PACKAGING.has(w);
+}
+
 /** العائلة اللي الاسم ده منها، أو null لو مش سلعة أساسية. */
 export function productFamilyOf(name: string): string | null {
   const words = normalizeItemName(name).split(" ").filter(Boolean)
@@ -49,6 +63,7 @@ export function productFamilyOf(name: string): string | null {
   while (i < words.length - 1 && PACKAGING.has(words[i])) i++;
   const first = STAPLES[words[i] ?? ""];
   if (first) return first;
+  if (WATER_BRANDS.has(words[i] ?? "") && words.slice(i + 1).every(isSize)) return "مياه";
   // الماركة قبل السلعة: «صافي مياه معدنية 1.5 لتر» كانت صف لوحدها جنب ٩ صفوف مية (٢٠٢٦-١٠-٠١).
   // للمية بس: «بسكويت شاي» مش شاي، و«عصير بالسكر» مش سكر.
   return STAPLES[words[i + 1] ?? ""] === "مياه" ? "مياه" : null;
