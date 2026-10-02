@@ -141,6 +141,11 @@ const RECENT_FACT_INTENT = /(مين|من)\s*(اللي)?\s*(كسب|فاز|اخد|
 const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)\s*(بكام|بكم|كام|كم|النهارده|اليوم|دلوقتي)|(بكام|بكم|كام|كم|سعر)\s*(ال)?(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)|سعر\s*(ال)?صرف/;
 
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
+// نوايا الأدوات اللي خرجت من الأساسي (٢٠٢٦-١٠-٠٢). النص متطبّع (normalize): ة→ه، أ/إ/آ→ا، ى→ي.
+const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
+const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
+const NEARBY_INTENT = /اقرب|قريب مني|قريبه مني|جنبي|حواليا|فين الاقي|فين القي|محلات قريبه/;
+const SUPPORT_INTENT = /شكوي|اشتكي|اكلم حد|الدعم|خدمه العملاء|التطبيق\s*(فيه مشكله|بايظ|واقف|مش شغال|بيقفل)|عطل في التطبيق|بلاغ/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
 export function intentToolHints(message: string, priorReply = ""): string[] {
@@ -154,6 +159,10 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
+  if (BROKE_INTENT.test(norm)) tools.push("set_broke_mode");
+  if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
+  if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
+  if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
   return [...new Set(tools)];
 }
 
@@ -331,11 +340,14 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
  * القبول، ٢٠٢٦-١٠-٠١). الأداة اللي نية الرسالة بتشاور عليها بتنضاف فوقهم (extra).
  */
 export const GENERAL_CORE_TOOLS: readonly string[] = [
-  "read_house", "remember", "update_customer_profile", "web_search", "gold_price", "fetch_current_exchange_rate",
-  "app_command", "open_support_ticket", "add_appointment", "update_appointment", "add_place_reminder",
+  "read_house", "remember", "update_customer_profile", "web_search",
+  "app_command", "add_appointment", "update_appointment",
   "log_transaction", "add_shopping_item", "add_inventory_item", "update_inventory_qty", "add_pharmacy_item",
-  "log_pharmacy_dose", "set_broke_mode", "suggest_recipes", "find_nearby_stores",
+  "log_pharmacy_dose",
 ];
+// برّه الأساسي من ٢٠٢٦-١٠-٠٢ (تشخيص زاد ٢.١): الدهب، العملات، تذكير المكان، الشكوى، وضع الطوارئ،
+// الشيف، المحلات القريبة — ٧ أدوات (~٣ آلاف حرف) كانت بتتبعت مع كل «مرحبا». بتيجي بنية الرسالة
+// (intentToolHints) أو بالوكيل المتخصص، وقواعدها في البرومبت معاها (buildChatSystemPrompt).
 
 export function scopeToolsForSpecialist<T extends { name: string }>(
   tools: T[],
