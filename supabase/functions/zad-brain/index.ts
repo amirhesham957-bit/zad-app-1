@@ -2919,7 +2919,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
       // بترجع بمصادرها — الموديل ملزم يقول المصدر، وpromise-drift هيمسك أي ادعاء.
-      const res = await callCoreIntel("web_search", { query: input.query ?? "", country: snap?.country ?? null }, userId);
+      const res = await callCoreIntel("web_search", {
+        query: input.query ?? "", query_en: input.query_en ?? null, country: snap?.country ?? null,
+      }, userId);
       if (!res || res.ok === false) return "مقدرتش أبحث دلوقتي — قول للعميل إن البحث مش متاح مؤقتاً، متختلقش إجابة.";
       const hits = (res as { results?: Array<{ title: string; url: string; snippet: string }> }).results ?? [];
       if (hits.length === 0) {
@@ -4210,6 +4212,7 @@ export const CHAT_TOOLS: ToolDef[] = [
       type: "object",
       properties: {
         query: { type: "string", description: "سؤال البحث" },
+        query_en: { type: "string", description: "نفس السؤال بالإنجليزي، لمعلومة عالمية (رياضة، علوم، أحداث، مشاهير)" },
       },
       required: ["query"],
     },

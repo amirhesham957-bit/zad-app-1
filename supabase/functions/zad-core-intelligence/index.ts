@@ -1241,18 +1241,26 @@ async function googleNewsSnippets(query: string, arabic: boolean, maxResults: nu
 }
 
 /** ويكيبيديا (عربي/إنجليزي، من غير مفتاح) — للمعلومات العامة. */
+/**
+ * مقدمة المقالة، مش مقتطف البحث (٢٠٢٦-١٠-٠٢): مقتطف البحث جملة متقطعة حوالين الكلمة، ومقدمة
+ * «2029 FIFA Club World Cup» فيها «Chelsea are the reigning champions… in 2025» — الإجابة نفسها.
+ * اختبار القبول ٨ كان بيرد من ذاكرة الموديل («مانشستر سيتي ٢٠٢٣») لأن البحث مالقاش حاجة تجاوب.
+ */
 async function wikipediaSnippets(query: string, lang: "ar" | "en", maxResults: number): Promise<WebHit[]> {
   try {
     const res = await fetch(
-      `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=${maxResults}&format=json&utf8=1`,
+      `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}` +
+        `&gsrlimit=${maxResults}&prop=extracts&exintro=1&explaintext=1&exchars=700&format=json&utf8=1`,
       { headers: { "User-Agent": "ZadAssistant/1.0 (household app; contact via app store listing)" }, signal: AbortSignal.timeout(6000) },
     );
     if (!res.ok) { lastWebSearchAttempts.push(`wikipedia_${lang}:${res.status}`); return []; }
     const data = await res.json();
-    const hits = ((data?.query?.search ?? []) as Array<{ title: string; snippet?: string }>).map((r) => ({
-      title: r.title,
-      url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(r.title.replace(/ /g, "_"))}`,
-      snippet: decodeEntities(r.snippet ?? ""),
+    const pages = Object.values((data?.query?.pages ?? {}) as Record<string, { title: string; index?: number; extract?: string }>)
+      .sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
+    const hits = pages.map((p) => ({
+      title: p.title,
+      url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}`,
+      snippet: (p.extract ?? "").replace(/\s+/g, " ").trim(),
     }));
     lastWebSearchAttempts.push(`wikipedia_${lang}:200 hits=${hits.length}`);
     return hits;
@@ -1269,7 +1277,11 @@ async function wikipediaSnippets(query: string, lang: "ar" | "en", maxResults: n
  * السؤال الحي (سعر، خبر، ماتش): أخبار جوجل بلد العميل ← Groq compound ← بحث جوجل من Gemini، من غير
  * ويكيبيديا. الباقي: Groq ← Gemini ← الأخبار ← ويكيبيديا.
  */
-export async function webSearchSnippets(query: string, maxResults = 8, country?: unknown): Promise<WebHit[]> {
+/**
+ * [queryEn]: نفس السؤال بالإنجليزي من العقل، لويكيبيديا الإنجليزي — المعلومة العالمية (رياضة، علوم،
+ * أحداث) أحدث وأكمل هناك. نتايجها بتتفلتر على السؤال الإنجليزي، مش العربي.
+ */
+export async function webSearchSnippets(query: string, maxResults = 8, country?: unknown, queryEn?: string): Promise<WebHit[]> {
   lastWebSearchAttempts = [];
   const arabic = /[\u0600-\u06FF]/.test(query);
   const live = isLiveQuery(query);
@@ -1284,18 +1296,21 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     : [
       ["search_api", () => keyedSearchSnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
+      // معلومة ثابتة أو حدث عدّى: الموسوعة قبل الأخبار (٢٠٢٦-١٠-٠٢). بتتفلتر هنا لكل لغة على سؤالها.
+      ["wikipedia", async () => {
+        const local = keepAnswering(query, await wikipediaSnippets(query, arabic ? "ar" : "en", 3));
+        const en = queryEn && arabic ? keepAnswering(queryEn, await wikipediaSnippets(queryEn, "en", 3)) : [];
+        return [...en, ...local];
+      }],
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
-      ["wikipedia", async () => [
-        ...(await wikipediaSnippets(query, arabic ? "ar" : "en", 3)),
-        ...(arabic ? await wikipediaSnippets(query, "en", 2) : []),
-      ]],
     ];
   for (const [name, run] of sources) {
     const raw = await run();
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
-    const kept = keepAnswering(query, raw);
+    // ويكيبيديا اتفلترت جوه، كل لغة على سؤالها.
+    const kept = name === "wikipedia" ? raw : keepAnswering(query, raw);
     lastWebSearchAttempts.push(`${name}:kept ${kept.length}/${raw.length}`);
     if (kept.length > 0) {
       lastWebSearchSource = name;
@@ -2147,10 +2162,11 @@ Deno.serve(async (req: Request) => {
         const q = String(payload?.query ?? "").trim();
         if (!q) return jsonResponse({ results: [], error: "empty_query" });
         const country = typeof payload?.country === "string" ? payload.country.toUpperCase().slice(0, 2) : "";
-        const cacheKey = `web_search:v2:${country}:${q}`;
+        const qEn = typeof payload?.query_en === "string" ? payload.query_en.trim().slice(0, 200) : "";
+        const cacheKey = `web_search:v3:${country}:${q}|${qEn}`;
         const cached = await getCachedAiResponse(cacheKey, cacheTtlMs(q));
         if (cached) return jsonResponse({ ...cached, cached: true });
-        const hits = await webSearchSnippets(q, 8, country || null);
+        const hits = await webSearchSnippets(q, 8, country || null, qEn || undefined);
         const response = { query: q, results: hits.slice(0, 8), source: lastWebSearchSource, live: isLiveQuery(q) };
         if (hits.length > 0) await setCachedAiResponse(cacheKey, "web_search", response);
         return jsonResponse({ ...response, attempts: lastWebSearchAttempts.slice(0, 12) });
