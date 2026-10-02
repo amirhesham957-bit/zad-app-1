@@ -132,6 +132,13 @@ jobs:
     # Actions بيعمل الفحص ويتخطى النشر بصمت — وهو بالظبط الزرار اللي حد هيدوس عليه لما
     # يعوز ينشر من غير ما يستنى تعديل جديد.
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # نشر واحد في المرة (٢٠٢٦-١٠-٠٢): ٣ دمجات ورا بعض شغّلوا ٣ نشرات في نفس الوقت — مايجريشنز
+    # بتتطبق من رنين، وفحص القبول بتاع كل رن بيمسح محادثة ومواعيد حساب الاختبار بتاع التاني
+    # («3_reminder_once: 0 appointments saved» في رن، ونفس الكود عدّى في اللي بعده). الطابور
+    # بيكمّل كل نشر، مابيلغيش نشر شغال.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
