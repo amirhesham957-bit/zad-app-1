@@ -359,3 +359,9 @@ Deno.test("the guardian's alert names the member and the real medicine, and is c
   assertStringIncludes(f.text, "تاني جرعة");
   assertEquals(MEDICINE_NAMED_MOMENTS.has("family_dose_missed"), true);
 });
+
+Deno.test("a moment is written by the same Zad as the chat (one identity)", () => {
+  const { system } = buildMomentPrompt({ moment: "morning_greeting", facts: {} }, "EG", null, {});
+  assert(system.includes("=== SOUL — هويتك ==="));
+  assert(system.startsWith("=== SOUL"), "the identity comes first, before the moment's task");
+});
