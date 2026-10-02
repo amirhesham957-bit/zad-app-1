@@ -12,6 +12,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, situationalEmotion, VOICE_EMOTIONAL_RANGE, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
+import { soulBlock } from "./soul.ts";
 import { isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
@@ -566,7 +567,10 @@ export function buildMomentPrompt(
       ? "العميل راجل — خاطبيه بصيغة المذكر."
       : "";
   const system = [
-    "أنتِ \"زاد\" — صاحبة العميل المقربة ومساعدته في إدارة بيته وصحته وفلوسه.",
+    // نفس هوية الشات (تشخيص زاد ١.١): لحظات اليوم كانت بتعريف لوحدها، فـ«صباح الخير» شخصية
+    // و«الرد على سؤال» شخصية تانية.
+    soulBlock().trim(),
+    "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
     conversationProfile(country, { preferred: customer.dialect }).instruction,
     genderLine,
     VOICE_EMOTIONAL_RANGE,
