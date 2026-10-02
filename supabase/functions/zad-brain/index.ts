@@ -162,6 +162,8 @@ const MAX_AGENT_TOKENS_PER_RUN = 20000;
 // أداتين كان بيقف بعد التانية من غير رد (اختبار القبول ٨، ٢٠٢٦-١٠-٠١: بحثين = ٢٩ ألف ⇒ وقف).
 // ٦٠ ألف = ٤ نداءات تقريباً: أداتين ورد، ولسه بيوقف لفة هربانة قبل سقف الـ٨ لفات بكتير.
 const MAX_CHAT_TOKENS_PER_RUN = 60000;
+/** بحث النت في رسالة واحدة. */
+export const MAX_SEARCHES_PER_TURN = 2;
 
 // W4 — سقف استخدام يومي لكل مستخدم عبر قناة الشات (agent_turn). الخطر الأصلي اللي ده
 // بيحميه: ingestion تلقائي (إشعارات بنكية) ممكن يستهلك نداءات موديل بلا حدود لو بق
@@ -2919,6 +2921,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
       // بترجع بمصادرها — الموديل ملزم يقول المصدر، وpromise-drift هيمسك أي ادعاء.
+      // مرتين في الرسالة بالكتير (٢٠٢٦-١٠-٠٢): سؤال واحد عام خد ٧٤ ألف توكن والموديل بيعيد البحث
+      // بصيغ تانية. التالتة بتتقاله يجاوب من اللي معاه.
+      if ((ctx.counts["web_search"] ?? 0) > MAX_SEARCHES_PER_TURN) {
+        return `بحثت مرتين في الرسالة دي. جاوب دلوقتي من النتايج اللي فوق، ولو مافيهاش إجابة قول كده بصراحة وقول اللي تعرفه وإنه من معلوماتك.`;
+      }
       const res = await callCoreIntel("web_search", {
         query: input.query ?? "", query_en: input.query_en ?? null, country: snap?.country ?? null,
       }, userId);
