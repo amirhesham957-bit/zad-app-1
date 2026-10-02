@@ -1538,7 +1538,7 @@ Deno.serve(async (req: Request) => {
 
     // الأكشنات دي بتتنادى مع كل فتحة للشاشة الرئيسية. الكاش هنا مش تحسين أداء —
     // هو اللي بيمنع أربع نداءات موديل تتحرق على بيانات ماتغيّرتش.
-    const HOME_CACHED_ACTIONS = ["agent_summary", "auto_suggest", "expense_prediction", "brain_evaluate"];
+    const HOME_CACHED_ACTIONS = ["agent_summary", "auto_suggest", "expense_prediction"];
     let homeCacheKey: string | null = null;
     if (HOME_CACHED_ACTIONS.includes(action)) {
       homeCacheKey = await payloadFingerprint(user_id, action, personTag ? { payload, personTag } : payload);
@@ -2507,34 +2507,10 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ prices, sources: result?.executedTools || [], ok: result?.ok !== false, cached: false });
       }
 
-      // ──────────────────────────────────────────────
-      // AI_TEXT — Generic text generation
-      // ──────────────────────────────────────────────
-      case "ai_text": {
-        const { system_prompt, user_prompt, response_mime_type, thinking_budget } = payload || {};
-        if (response_mime_type === "application/json") {
-          const result = await logged(user_id, action, "callJsonModel", { args: [system_prompt || "", user_prompt || ""] }, () => callJsonModel(system_prompt || "", user_prompt || ""));
-          return jsonResponse({ text: JSON.stringify(result) });
-        }
-        // thinking_budget is optional and caller-supplied; an older client that
-        // doesn't send it keeps the previous unbounded-thinking behaviour.
-        const budget = typeof thinking_budget === "number" ? thinking_budget : undefined;
-        const result = await logged(user_id, action, "callTextModel", { args: [system_prompt || "", user_prompt || "", 1000, 0.7, "brain", budget] }, () => callTextModel(system_prompt || "", user_prompt || "", 1000, 0.7, "brain", budget));
-        // same honest-failure contract — null/ok:false on genuine upstream failure, no baked
-        // Arabic fallback text (was previously blaming "الاتصال" for what's actually an
-        // OpenRouter free-tier rate limit/timeout, not a real connectivity failure).
-        return jsonResponse({ text: result, ok: result !== null });
-      }
-
-      // ──────────────────────────────────────────────
-      // BRAIN_EVALUATE — Evaluate state and decide actions
-      // ──────────────────────────────────────────────
-      case "brain_evaluate": {
-        const { system_prompt, user_prompt } = payload || {};
-        const result = await logged(user_id, action, "callTextModel", { args: [system_prompt || "", user_prompt || "", 2000, 0.3] }, () => callTextModel(system_prompt || "", user_prompt || "", 2000, 0.3));
-        if (result === null) return jsonResponse({ text: null, ok: false });
-        return await cacheAndRespond(homeCacheKey, action, { text: result, ok: true });
-      }
+      // ai_text و brain_evaluate اتشالوا (٢٠٢٦-١٠-٠٢): كانوا بياخدوا البرومبت كله من الطالب، وأي حد
+      // معاه مفتاح التطبيق العام (anon JWT بيعدّي verify_jwt) كان يقدر يستخدم مفاتيح جيميناي بتاعتنا
+      // كموديل عام ببرومبت من عنده. آخر مستخدم كان «عقل تليجرام الاحتياطي» في /tahlil، واتشال هو كمان.
+      // أي كلام مع العميل مكانه zad-brain (تشخيص زاد ١.١ و١.٢).
 
       // ──────────────────────────────────────────────
       // VOICE_AGENT — Process voice command
