@@ -4,11 +4,10 @@
 // v2 — hold a real conversation. No writes beyond dismissal; the agent is explicitly
 // told (context.ts rule 5) not to claim it logged anything, because it can't.
 //
-// v2 (conversational): free text goes to Zad itself instead of bouncing back a button
-// menu. The customer's full picture is assembled server-side by context.ts using the
-// same === SECTION === contract as the Kotlin client's buildFullChatContext(), and the
-// model call routes through zad-core-intelligence's `ai_text` action so the bot
-// inherits the app's Groq-pool-primary/Gemini-fallback policy instead of forking it.
+// v2 (conversational): free text goes to Zad itself — the same zad-brain agent turn the
+// app uses (agentTurn). There is no second model path here any more: the read-only
+// fallback that answered through zad-core-intelligence's `ai_text` with its own persona
+// was removed on 2026-10-02 (تشخيص زاد ١.٢), and so was `ai_text`.
 //
 // Identity: EPIC_1_4.md's own warning — "a chat_id is never an identity". A user
 // generates a one-time binding code in the app (telegram_bindings row, user_id set,
@@ -21,7 +20,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
-import { detectDialectFromText, resolveDialect } from "../_shared/dialect.ts";
+import { detectDialectFromText } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
@@ -48,7 +47,7 @@ import {
   doseAlreadyReply,
 } from "./telegram.ts";
 import {
-  AgentContextInput, agentSystemPrompt, buildAgentContext, clampForTelegram,
+  clampForTelegram,
   confirmSpendMessage, deriveWebhookSecret, money,
   confirmMedicationMessage,
   isolate, sanitizeName,
@@ -449,101 +448,7 @@ async function runDailySubscriptionAlerts(sb: SupabaseClient): Promise<{ usersCh
   return { usersChecked: rows.length, alertsSent };
 }
 
-/** Pulls the same picture of the customer the in-app chat gets. Every query is
- * user-scoped explicitly — this runs on the service-role key, so RLS is NOT the
- * guard here; the .eq("user_id", userId) on each query is. */
-async function fetchAgentContext(sb: SupabaseClient, userId: string): Promise<AgentContextInput> {
-  const today = new Date().toISOString().slice(0, 10);
 
-  // العيلة بتتجاب على خطوتين لأن family_members مالهاش عمود بيربط عضو بعضو مباشرة: الأول
-  // نلاقي عضوية المستخدم عشان نعرف family_id، وبعدين نجيب كل أعضاء العيلة دي.
-  const { data: myMembership } = await sb.from("family_members")
-    .select("family_id").eq("user_id", userId).maybeSingle();
-  const familyId = (myMembership as { family_id: string } | null)?.family_id ?? null;
-
-  const [user, txs, inv, subs, obligations, debts, pharmacy, shopping, insights, tasbiha, memory, family, budget, domainObs, lifeObs] = await Promise.all([
-    sb.from("zad_users").select("name,monthly_limit,currency,country").eq("id", userId).maybeSingle(),
-    // The 200-newest window is what the prompt's "آخر 30 معاملة" section is sliced from.
-    // It is no longer what any total is computed over — totals come from the RPC below,
-    // which sees every row regardless of this limit, so a heavy month can no longer
-    // silently under-report.
-    sb.from("zad_transactions").select("title,amount,txn_kind,category,created_at")
-      .eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
-    sb.from("zad_inventory").select("item_name,quantity,unit,expiry_date").eq("user_id", userId).limit(60),
-    sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active").eq("user_id", userId).limit(30),
-    // zad_obligations معندهاش status — active/confirmed بس (بند 30.1، schema_contract_test.ts).
-    sb.from("zad_obligations").select("title,amount,due_date,active").eq("user_id", userId).limit(30),
-    sb.from("zad_debts").select("name,remaining_balance,interest_rate,minimum_payment,due_day").eq("user_id", userId).eq("is_active", true).limit(30),
-    sb.from("zad_pharmacy_items").select("name,remaining_quantity,unit,dosage").eq("user_id", userId).limit(30),
-    sb.from("zad_shopping_list").select("item_name,is_purchased").eq("user_id", userId).limit(40),
-    sb.from("zad_insights").select("title,body").eq("user_id", userId).eq("status", "pending").limit(8),
-    sb.from("family_tasbiha").select("garden_name,tree_emoji,level,score,total_clicks,streak_days").eq("user_id", userId).limit(10),
-    sb.from("zad_memory").select("scope,note").eq("user_id", userId).limit(20),
-    familyId
-      ? sb.from("family_members").select("role,alias,balance,savings_goal").eq("family_id", familyId).limit(20)
-      : Promise.resolve({ data: [] as unknown[] }),
-    // Phase 0 — the single authority for every budget figure the bot states. Shared with
-    // the app's own screens and with zad-brain; see
-    // migrations/20260809120000_single_budget_authority.sql.
-    sb.rpc("zad_budget_state", { p_user: userId }),
-    // نفس الملاحظات اللي العقل بيشوفها في buildSnapshot. من غيرها نفس السؤال بياخد
-    // إجابة أغنى في التطبيق منها في تيليجرام — وده بالظبط التفاوت اللي اتقفل النهارده
-    // في الذاكرة ورجع من هنا مع كل ملاحظة جديدة اتضافت.
-    sb.rpc("zad_domain_observations", { p_user: userId }),
-    sb.rpc("zad_lifestyle_observations", { p_user: userId }),
-  ]);
-
-  if ((budget as any)?.error) {
-    console.error(`[zad-telegram-bot] zad_budget_state FAILED: ${String((budget as any).error.message ?? (budget as any).error)}`);
-  }
-
-  return {
-    userName: (user.data as any)?.name ?? null,
-    budget: ((budget as any)?.data ?? null) as any,
-    // "غير معروف" بدل "ر.س" — كان افتراض ميت خلّى البوت يرد على عميل في مصر "مفيش
-    // ولا ريال" وهو فلوسه بالمصري. لو العمود موجود، قيمته الحقيقية (EGP/SAR/TRY)
-    // هي اللي بتوصل من الكلاينت (MarketPrefs → syncMarketProfile).
-    currency: (user.data as any)?.currency ?? "غير معروف",
-    country: (user.data as any)?.country ?? null,
-    today,
-    family: (family.data ?? []) as any,
-    transactions: (txs.data ?? []) as any,
-    inventory: (inv.data ?? []) as any,
-    subscriptions: (subs.data ?? []) as any,
-    obligations: (obligations.data ?? []) as any,
-    debts: (debts.data ?? []) as any,
-    pharmacy: (pharmacy.data ?? []) as any,
-    shopping: (shopping.data ?? []) as any,
-    insights: (insights.data ?? []) as any,
-    tasbiha: (tasbiha.data ?? []) as any,
-    memory: (memory.data ?? []) as any,
-    // الاتنين بيتلموا في مصفوفة واحدة: الموديل مايهموش الملاحظة جت من أنهي دالة، يهمه
-    // إيه اللي محتاج تصرّف. الترتيب بالأهمية بيحصل في buildAgentContext.
-    observations: ([...(domainObs.data ?? []), ...(lifeObs.data ?? [])]) as any,
-  };
-}
-
-/** Routes through zad-core-intelligence's `ai_text` rather than calling Groq directly,
- * so the bot inherits the exact same multi-key Groq pool + Gemini fallback the app uses
- * — one provider policy, not a second one drifting out of sync here. */
-async function askZad(systemPrompt: string, userPrompt: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-core-intelligence`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
-      body: JSON.stringify({ action: "ai_text", payload: { system_prompt: systemPrompt, user_prompt: userPrompt } }),
-    });
-    if (!res.ok) {
-      console.error("askZad: core-intelligence returned", res.status);
-      return null;
-    }
-    const json = await res.json();
-    return json?.ok === false ? null : (json?.text ?? null);
-  } catch (e) {
-    console.error("askZad failed:", e);
-    return null;
-  }
-}
 
 /** أداة اتنفذت فعلاً سيرفر-سايد، أو اقتراح مالي مستني تأكيد — نفس شكل رد agent_turn. */
 interface AgentExecuted { tool: string; summary: string }
@@ -779,7 +684,7 @@ async function agentExecute(userId: string, tool: string, input: Record<string, 
   }
 }
 
-/** Generic version of askZad's fetch for any zad-core-intelligence action (voice_agent,
+/** A fetch for any zad-core-intelligence action (voice_agent,
  * analyze_receipt, ...) that returns a structured JSON body rather than a plain string. */
 async function callCoreIntelligence<T>(action: string, payload: Record<string, unknown>): Promise<T | null> {
   try {
@@ -978,27 +883,18 @@ bot.command("tahlil", async (ctx) => {
     return;
   }
   await ctx.replyWithChatAction("typing");
-  // كان بيروح مباشرة لسياق منفصل (fetchAgentContext + askZad) بدل agentTurn — نفس
-  // مسار الرسالة النصية العادية تحت، فالتحليل ممكن يختلف عن رد الشات العادي لأنهم
-  // مبنيين من دالتين مختلفتين لنفس الصورة. دلوقتي بيفضّل الوكيل الموحد الأول، ونفس
-  // fallback بس لو فشل — مش تنفيذ جديد، نفس البنية.
+  // نفس لفة العقل اللي الرسالة النصية بتاخدها — عقل واحد.
   const analysisPrompt = "اعملي تحليل سريع لوضعي المالي وحالة البيت: أهم ٣ ملاحظات، وأهم حاجة أعملها دلوقتي.";
   const { result: turn, errorReason } = await agentTurn(userId, analysisPrompt);
   if (turn?.reply.trim()) {
     await ctx.reply(clampForTelegram(turn.reply.trim()));
     return;
   }
-  if (errorReason) console.error("photo analysis fell back to read-only:", errorReason);
-  const notice = errorReason
-    ? `⚠️ ${userFacingFailure(errorReason)}، فده تحليل مبدئي من البيانات المسجّلة:\n\n`
-    : "";
-  const agentInput = await fetchAgentContext(sb, userId);
-  const context = buildAgentContext(agentInput);
-  const answer = await askZad(
-    agentSystemPrompt(resolveDialect({ country: agentInput.country, currency: agentInput.currency })),
-    `${context}\n\n=== سؤال العميل ===\n${analysisPrompt}`,
-  );
-  await ctx.reply(answer ? clampForTelegram(notice + answer) : clampForTelegram(notice + "معلش، التحليل مش متاح دلوقتي — جرب كمان شوية."));
+  // من غير عقل احتياطي (تشخيص زاد ١.٢): كان بيرد بتحليل من موديل تاني بشخصية تانية لما العقل يقع.
+  if (errorReason) console.error("tahlil: the brain did not answer:", errorReason);
+  await ctx.reply(errorReason
+    ? `⚠️ ${userFacingFailure(errorReason)} — ابعت /tahlil تاني كمان شوية.`
+    : "معلش، التحليل مش متاح دلوقتي — جرب كمان شوية.");
 });
 
 // المحادثة الحقيقية — أي كلام عادي بيروح لزاد بنفس السياق والشخصية بتوع الشات
