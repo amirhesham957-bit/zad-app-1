@@ -57,7 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
-import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote } from "./consolidation.ts";
+import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
@@ -66,7 +66,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -7020,6 +7020,7 @@ async function handleRequest(req: Request): Promise<Response> {
           try {
             const { data: tzData } = await sbDream.rpc("zad_market_timezone", { p_country: (u as { country?: string | null }).country ?? null });
             const timeZone = typeof tzData === "string" && tzData ? tzData : "Africa/Cairo";
+            let openShopping: Promise<Set<string>> | null = null;
             const night = await consolidateDay({
               dueTurns: async () => {
                 const { data, error } = await sbDream.rpc("zad_memory_consolidation_due", {
@@ -7047,12 +7048,36 @@ async function handleRequest(req: Request): Promise<Response> {
               markDone: async (at) => {
                 await sbDream.rpc("zad_memory_mark_consolidated", { p_user: u.id, p_at: at });
               },
+              // «محتاجين عيش» من شات العيلة ⇒ اقتراح في موجز الصبح (قرار المالك 2026-10-03)، مش رسالة
+              // في الشات. التطبيق بيعرف السطر ده من action_type، وبيقوم بيضيفه للقايمة بلمسة. صنف موجود
+              // في القايمة المفتوحة أصلاً مابيتقترحش، ونفس الصنف في نفس اليوم صف واحد (dedupe_key).
+              writeNeed: async (need) => {
+                openShopping ??= (async () => {
+                  const { data } = await sbDream.from("zad_shopping_list")
+                    .select("item_name").eq("user_id", u.id).eq("is_purchased", false);
+                  return new Set(((data ?? []) as Array<{ item_name: string | null }>).map((r) => itemKey(r.item_name ?? "")));
+                })();
+                if ((await openShopping).has(itemKey(need.item))) return false;
+                const day = localNowContext(timeZone).date;
+                const { data, error } = await sbDream.from("zad_insights").upsert({
+                  user_id: u.id, kind: "insight", surface: "home_card", priority: "normal",
+                  title: need.item,
+                  body: need.who ? `${need.who} قال في شات العيلة إنه ناقص` : "اتقال في شات العيلة إنه ناقص",
+                  about_item: need.item, action_type: SHOPPING_ADD_ACTION,
+                  dedupe_key: `${SHOPPING_ADD_ACTION}:${itemKey(need.item)}:${day}`, status: "pending",
+                }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }).select("id");
+                if (error) {
+                  console.warn("[dream] family need not written:", error.message);
+                  return false;
+                }
+                return (data ?? []).length > 0;
+              },
               today: localNowContext(timeZone).date,
               timeZone,
               nowMs: Date.now(),
             });
             if (night.status === "done") {
-              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused`);
+              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused, ${night.needs} needs`);
             }
           } catch (e) {
             console.error("[dream] consolidation failed for user", u.id, e);

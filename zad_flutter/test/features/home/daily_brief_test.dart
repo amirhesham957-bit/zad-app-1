@@ -97,4 +97,41 @@ void main() {
     );
     expect(brief, isEmpty);
   });
+
+  test('a family-chat need is one line naming who asked, carrying the items '
+      '«ضيفهم» adds', () {
+    final brief = dailyBrief(
+      pantry: const <InventoryItem>[],
+      doses: const <DoseSlot>[],
+      subscriptions: const <Subscription>[],
+      today: _today,
+      now: _now,
+      familyNeeds: const <FamilyNeed>[
+        (id: 'i1', item: 'عيش', who: 'ماما'),
+        (id: 'i2', item: 'بيض', who: 'ماما'),
+      ],
+    );
+    expect(brief.single.kind, BriefKind.familyNeed);
+    expect(brief.single.title, 'من شات العيلة: عيش، بيض');
+    expect(brief.single.detail, 'ماما قال إنهم ناقصين — ضيفهم لقايمة التسوق؟');
+    expect(brief.single.needs.map((n) => n.id), <String>['i1', 'i2']);
+  });
+
+  test('family needs come after what is more urgent', () {
+    final brief = dailyBrief(
+      pantry: <InventoryItem>[_item('رز', 0)],
+      doses: const <DoseSlot>[],
+      subscriptions: const <Subscription>[],
+      today: _today,
+      now: _now,
+      spendable: -50,
+      familyNeeds: const <FamilyNeed>[(id: 'i1', item: 'عيش', who: null)],
+    );
+    expect(brief.map((b) => b.kind), <BriefKind>[
+      BriefKind.overspent,
+      BriefKind.shortage,
+      BriefKind.familyNeed,
+    ]);
+    expect(brief.last.detail, 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟');
+  });
 }
