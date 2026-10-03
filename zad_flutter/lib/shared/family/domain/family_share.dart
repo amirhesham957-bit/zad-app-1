@@ -360,3 +360,22 @@ class FollowedMember {
   /// Where [scope] stands, or null when it was never asked for.
   FamilyShareStatus? statusOf(FamilyShareScope scope) => shares[scope]?.status;
 }
+
+/// Who lets زاد read their own messages in the family chat, and whether this
+/// account does (`zad_family_chat_consent_view`, migration 20261003120000).
+/// Each writer agrees for themself; the brain never reads the others.
+typedef ChatConsent = ({bool mine, List<String> readers});
+
+/// Reads `zad_family_chat_consent_view`; anything malformed is a no.
+ChatConsent chatConsentFromJson(Object? json) {
+  if (json is! Map || json['ok'] != true) {
+    return (mine: false, readers: const <String>[]);
+  }
+  return (
+    mine: json['mine'] == true,
+    readers: <String>[
+      for (final r in (json['readers'] as List?) ?? const <dynamic>[])
+        if (r is String && r.isNotEmpty) r,
+    ],
+  );
+}

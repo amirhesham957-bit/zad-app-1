@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
+import 'package:zad/features/family/presentation/family_follow.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
@@ -67,6 +68,7 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
 
     return Column(
       children: <Widget>[
+        const FamilyChatConsentStrip(),
         if (online.isNotEmpty)
           Container(
             width: double.infinity,

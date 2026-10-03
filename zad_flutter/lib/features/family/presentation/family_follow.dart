@@ -1008,3 +1008,88 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
     );
   }
 }
+
+/// What a writer reads before letting زاد read their family-chat messages:
+/// whose messages, what for, that they go to an AI model, that the family
+/// sees the yes, and how to stop.
+const String chatReadingDisclosure =
+    'زاد هيقرا رسايلك انت بس في شات العيلة — مش رسايل حد تاني ماوافقش — '
+    'عشان يفهم طلبات البيت زي «محتاجين عيش» ويرد لو حد من العيلة سأله عن '
+    'اللي اتقال. الرسايل بتتبعت لموديل ذكاء اصطناعي (Google Gemini) عشان '
+    'تتفهم. العيلة كلها هتشوف إنك موافق، وتقدر توقف في أي وقت من هنا.';
+
+/// «زاد بيقرا رسايل: بابا، ماما» at the top of the family chat, with this
+/// account's own switch (migration 20261003120000). Nothing while it loads
+/// or when the server cannot be reached.
+class FamilyChatConsentStrip extends ConsumerWidget {
+  /// Creates the strip.
+  const new({super.key});
+
+  Future<void> _set(BuildContext context, WidgetRef ref, bool on) async {
+    if (on) {
+      final agreed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('زاد يقرا رسايلك؟'),
+          content: const Text(chatReadingDisclosure),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialog).pop(false),
+              child: const Text('مش دلوقتي'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialog).pop(true),
+              child: const Text('موافق'),
+            ),
+          ],
+        ),
+      );
+      if (agreed != true || !context.mounted) return;
+    }
+    try {
+      await ref.read(familySharesRemoteProvider).setChatConsent(on: on);
+      ref.invalidate(familyChatConsentProvider);
+      if (context.mounted) {
+        _say(
+          context,
+          on ? 'تمام — زاد هيقرا رسايلك.' : 'وقفت — زاد مش هيقرا رسايلك.',
+        );
+      }
+    } on Object {
+      if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final consent = ref.watch(familyChatConsentProvider).value;
+    if (consent == null) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      color: ZadColors.mint50,
+      padding: const EdgeInsetsDirectional.only(
+        start: ZadSpacing.lg,
+        end: ZadSpacing.xs,
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(ZadIcons.assistant, size: 16, color: ZadColors.forestEmerald),
+          const SizedBox(width: ZadSpacing.sm),
+          Expanded(
+            child: Text(
+              consent.readers.isEmpty
+                  ? 'زاد مش بيقرا رسايل الشات'
+                  : 'زاد بيقرا رسايل: ${consent.readers.join('، ')}',
+              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => unawaited(_set(context, ref, !consent.mine)),
+            style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
+            child: Text(consent.mine ? 'وقّف لرسايلي' : 'خلّيه يقرا رسايلي'),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -85,6 +85,15 @@ class _Remote implements FamilySharesRemote {
 
   MyZones zones = (zones: const <ChildZone>[], watchers: const <String>[]);
 
+  ChatConsent consent = (mine: false, readers: const <String>['بابا']);
+
+  @override
+  Future<ChatConsent> chatConsent() async => consent;
+
+  @override
+  Future<void> setChatConsent({required bool on}) async =>
+      calls.add('chat ${on ? 'on' : 'off'}');
+
   @override
   Future<MyZones> myZones() async {
     calls.add('myZones');
@@ -439,5 +448,48 @@ void main() {
       familyReportLine(FollowedMember.fromJson(_dryRun), 'EGP'),
       isNot(contains('الأماكن')),
     );
+  });
+
+  testWidgets('the chat says who lets زاد read; turning it on asks first, '
+      'and only for this account', (tester) async {
+    final remote = _Remote();
+    await pump(tester, remote, const FamilyChatConsentStrip());
+    await tester.pump();
+    expect(find.text('زاد بيقرا رسايل: بابا'), findsOneWidget);
+
+    await tester.tap(find.text('خلّيه يقرا رسايلي'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Google Gemini'), findsOneWidget);
+    expect(find.textContaining('رسايلك انت بس'), findsOneWidget);
+    await tester.tap(find.text('مش دلوقتي'));
+    await tester.pumpAndSettle();
+    expect(remote.calls, isEmpty);
+
+    await tester.tap(find.text('خلّيه يقرا رسايلي'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('موافق'));
+    await tester.pumpAndSettle();
+    expect(remote.calls, <String>['chat on']);
+  });
+
+  testWidgets('stopping needs no question', (tester) async {
+    final remote = _Remote()
+      ..consent = (mine: true, readers: const <String>['ماما']);
+    await pump(tester, remote, const FamilyChatConsentStrip());
+    await tester.pump();
+    await tester.tap(find.text('وقّف لرسايلي'));
+    await tester.pumpAndSettle();
+    expect(remote.calls, <String>['chat off']);
+  });
+
+  test('zad_family_chat_consent_view reads, and anything else is a no', () {
+    final c = chatConsentFromJson(const <String, dynamic>{
+      'ok': true,
+      'mine': true,
+      'readers': <dynamic>['بابا', '', 4],
+    });
+    expect(c.mine, isTrue);
+    expect(c.readers, <String>['بابا']);
+    expect(chatConsentFromJson(null).mine, isFalse);
   });
 }

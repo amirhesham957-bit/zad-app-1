@@ -46,6 +46,13 @@ abstract interface class FamilySharesRemote {
 
   /// The zones this phone's owner agreed to share, and who follows them.
   Future<MyZones> myZones();
+
+  /// Whether this account lets زاد read its own family-chat messages, and
+  /// who in the family does.
+  Future<ChatConsent> chatConsent();
+
+  /// Turns that on or off, for this account only.
+  Future<void> setChatConsent({required bool on});
 }
 
 /// Over Supabase.
@@ -142,6 +149,19 @@ class SupabaseFamilySharesRemote implements FamilySharesRemote {
       myZonesFromJson(await _client.rpc<Object?>('zad_family_my_zones'));
 
   @override
+  Future<ChatConsent> chatConsent() async => chatConsentFromJson(
+    await _client.rpc<Object?>('zad_family_chat_consent_view'),
+  );
+
+  @override
+  Future<void> setChatConsent({required bool on}) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_chat_consent_set',
+      params: <String, dynamic>{'p_on': on},
+    ),
+  );
+
+  @override
   Future<FollowedMember> memberView(String ownerId) async {
     final result = await _client.rpc<Object?>(
       'zad_family_member_view',
@@ -168,4 +188,11 @@ final FutureProviderFamily<FollowedMember, String> followedMemberProvider =
     FutureProvider.autoDispose.family<FollowedMember, String>(
       (ref, ownerId) =>
           ref.watch(familySharesRemoteProvider).memberView(ownerId),
+    );
+
+/// Who lets زاد read their chat messages; refetched with `ref.invalidate`
+/// after a change.
+final FutureProvider<ChatConsent> familyChatConsentProvider =
+    FutureProvider.autoDispose<ChatConsent>(
+      (ref) => ref.watch(familySharesRemoteProvider).chatConsent(),
     );

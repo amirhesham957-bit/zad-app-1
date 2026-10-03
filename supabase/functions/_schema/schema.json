@@ -2,7 +2,7 @@
   "_meta": {
     "generated_at": "2026-09-01",
     "generated_from": "mcp__supabase__generate_typescript_types على المشروع الحي auuftqncrjsnyylolhbu",
-    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم. | 2026-09-29: zad_pharmacy_items.for_person و zad_appointments.for_person (20260929130000). | 2026-09-29: zad_customer_profile.cares_for (20260928190000). | 2026-09-30: zad_support_tickets أضيف يدويًا مع ميجريشن 20260930120000 (نفس الكوميت). | 2026-10-01: zad_family_shares أضيف يدويًا مع ميجريشن 20261001130000 (نفس الكوميت). | 2026-10-03: zad_memory.valid_from/valid_until/superseded_by و zad_memory_entities و zad_memory_mentions أضيفوا يدويًا مع ميجريشن 20261003100000 (نفس الكوميت). | 2026-10-03: zad_family_zones و zad_family_zone_events أضيفوا يدويًا مع ميجريشن 20261003110000 (نفس الكوميت).",
+    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم. | 2026-09-29: zad_pharmacy_items.for_person و zad_appointments.for_person (20260929130000). | 2026-09-29: zad_customer_profile.cares_for (20260928190000). | 2026-09-30: zad_support_tickets أضيف يدويًا مع ميجريشن 20260930120000 (نفس الكوميت). | 2026-10-01: zad_family_shares أضيف يدويًا مع ميجريشن 20261001130000 (نفس الكوميت). | 2026-10-03: zad_memory.valid_from/valid_until/superseded_by و zad_memory_entities و zad_memory_mentions أضيفوا يدويًا مع ميجريشن 20261003100000 (نفس الكوميت). | 2026-10-03: zad_family_zones و zad_family_zone_events أضيفوا يدويًا مع ميجريشن 20261003110000 (نفس الكوميت). | 2026-10-03: zad_family_chat_consent أضيف يدويًا مع ميجريشن 20261003120000 (نفس الكوميت).",
     "regenerate": "شوف supabase/functions/_schema/README.md"
   },
   "affiliate_catalog_requests": [
@@ -593,6 +593,11 @@
     "updated_at",
     "user_id",
     "voice_left"
+  ],
+  "zad_family_chat_consent": [
+    "family_id",
+    "granted_at",
+    "user_id"
   ],
   "zad_family_shares": [
     "decided_at",
