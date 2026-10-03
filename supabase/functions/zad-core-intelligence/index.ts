@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { bingNewsUrl, cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, marketOf } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
@@ -2479,7 +2480,8 @@ Deno.serve(async (req: Request) => {
       case "fetch_live_market_prices": {
         const { location } = payload || {};
         const marketLoc = location || "السعودية";
-        const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+        // ساعتين مش ١٢: الدهب بيتغير كذا مرة في اليوم، والمصدر دلوقتي أخبار وجدول، مش نداء بحث غالي.
+        const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
         const { data: cached } = await supabase
           .from("market_price_cache")
@@ -2489,6 +2491,26 @@ Deno.serve(async (req: Request) => {
 
         if (cached?.updated_at && Date.now() - new Date(cached.updated_at).getTime() < CACHE_TTL_MS) {
           return jsonResponse({ prices: cached.prices || [], cached: true, ok: true });
+        }
+
+        // الأول من غير موديل (liveTicker.ts): الدهب من الأخبار والعملات من zad_fx_rates. البحث بالموديل
+        // (تحت) احتياطي بس — Groq مالوش موديلات بحث على المشروع ده دلوقتي.
+        const tickerCountry = countryForLocation(marketLoc);
+        if (tickerCountry) {
+          const code = tickerCountry;
+          const market = marketOf(code);
+          const [gold, fx] = await Promise.all([
+            goldPriceToday(code).catch(() => null),
+            supabase.from("zad_fx_rates").select("code,usd_rate"),
+          ]);
+          const usdRates = Object.fromEntries(
+            ((fx.data ?? []) as Array<{ code: string; usd_rate: number | string }>).map((r) => [r.code, Number(r.usd_rate)]),
+          );
+          const ticker = buildTicker(gold?.quotes ?? [], usdRates, market.currency, market.currencyAr);
+          if (ticker.length > 0) {
+            await supabase.from("market_price_cache").upsert({ market: marketLoc, prices: ticker, updated_at: new Date().toISOString() });
+            return jsonResponse({ prices: ticker, sources: ["news", "zad_fx_rates"], ok: true, cached: false });
+          }
         }
 
         // Narrowed from an earlier 6-item basket (fuel, tomato, gold, sugar, rice, chicken) —
