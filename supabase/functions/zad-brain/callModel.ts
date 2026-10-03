@@ -24,7 +24,7 @@
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
 import { keyOrder, type Lane, reservedCount } from "./keyLanes.ts";
-import { DeadKeys } from "../_shared/deadKeys.ts";
+import { DeadKeys, RATE_LIMIT_DEFAULT_MS } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
@@ -756,22 +756,40 @@ async function sendGroq(o: {
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
   // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
   // Groq كلها نص المرات. دلوقتي المرفوض بيتعلّم ميت ونكمل على اللي بعده (_shared/deadKeys.ts).
+  // و429 كان بيترمي لـwithRetry: بيستنى retry-after (ممكن دقايق لحد اليوم) وبيجرّب ٣ مرات
+  // بس، فمفتاح رابع في المسبح عمره ما كان بيتوصله. دلوقتي اللي بعده فوراً، واللي خلصت حصته
+  // بيرتاح على قد retry-after.
   let lastError: unknown = null;
+  let shortestWaitMs = Infinity;
   for (const key of groqDeadKeys.order(GROQ_KEY_POOL, start)) {
     try {
       return await sendOpenAICompatible(o, { key, baseUrl: "https://api.groq.com/openai/v1", who: "groq" });
     } catch (e) {
-      const status = e instanceof ConfigError ? Number(/groq (\d{3})/.exec(e.message)?.[1]) : undefined;
+      const status = Number(/groq (\d{3})/.exec(e instanceof Error ? e.message : "")?.[1]);
       if (groqDeadKeys.markIfRejected(key, status)) {
         console.error(`[zad-brain] groq key rejected (${status}) — skipping it for 30 min`);
+        lastError = e;
+        continue;
+      }
+      const retryAfterMs = e instanceof RetryableError ? e.retryAfterMs : undefined;
+      if (groqDeadKeys.markIfRateLimited(key, status, retryAfterMs)) {
+        shortestWaitMs = Math.min(shortestWaitMs, retryAfterMs ?? RATE_LIMIT_DEFAULT_MS);
+        console.warn(`[zad-brain] groq key 429 (retry-after ${retryAfterMs ?? "?"}ms) — resting it, next key`);
         lastError = e;
         continue;
       }
       throw e;
     }
   }
+  if (shortestWaitMs !== Infinity) {
+    // كل المفاتيح 429: انتظار قصير (حد الدقيقة) يستاهل، أطول من كده الفانكشن بتنام على حيطة.
+    if (shortestWaitMs <= GROQ_MAX_WAIT_MS) throw new RetryableError("groq: 429 on every key", shortestWaitMs);
+    throw new ProviderUnavailableError("groq: 429 on every key", "groq 429 on every key");
+  }
   throw lastError ?? new ConfigError("groq: no usable key");
 }
+/** أطول انتظار يستاهل لما كل مفاتيح جروك ترد 429 مع بعض. */
+const GROQ_MAX_WAIT_MS = 5_000;
 let groqKeyCursor = 0;
 const groqDeadKeys = new DeadKeys();
 

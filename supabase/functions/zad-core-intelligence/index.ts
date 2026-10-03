@@ -383,7 +383,7 @@ async function callOpenAICompatibleChat(opts: {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
-}): Promise<{ content: string | null; status: number; ok: boolean; raw: unknown }> {
+}): Promise<{ content: string | null; status: number; ok: boolean; raw: unknown; retryAfterMs?: number }> {
   try {
     const body: Record<string, unknown> = {
       model: opts.model,
@@ -402,7 +402,11 @@ async function callOpenAICompatibleChat(opts: {
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
     const data = await resp.json();
-    return { content: data.choices?.[0]?.message?.content || null, status: resp.status, ok: resp.ok, raw: data };
+    const retryAfter = Number(resp.headers.get("retry-after"));
+    return {
+      content: data.choices?.[0]?.message?.content || null, status: resp.status, ok: resp.ok, raw: data,
+      ...(retryAfter > 0 ? { retryAfterMs: retryAfter * 1000 } : {}),
+    };
   } catch (e) {
     return { content: null, status: 0, ok: false, raw: { error: (e as Error).message } };
   }
@@ -433,8 +437,9 @@ async function callGroqPool(opts: {
     if (result.ok && result.content) return { content: result.content, ok: true };
     if (groqDeadKeys.markIfRejected(key, result.status)) {
       console.error(`[CoreIntel] Groq key ${keyIndex + 1} rejected (${result.status}) — skipping it for 30 min`);
-    } else if (result.status === 429) {
-      console.warn(`[CoreIntel] Groq key ${keyIndex + 1} hit 429, switching to next Groq key...`);
+    } else if (groqDeadKeys.markIfRateLimited(key, result.status, result.retryAfterMs)) {
+      // بيرتاح على قد retry-after، فالنداء الجاي مايبدأش بمفتاح خلصت حصته.
+      console.warn(`[CoreIntel] Groq key ${keyIndex + 1} hit 429 — resting it, switching to next Groq key...`);
     } else {
       console.error(`[CoreIntel] Groq key ${keyIndex + 1} failed (status ${result.status}):`, JSON.stringify(result.raw));
     }

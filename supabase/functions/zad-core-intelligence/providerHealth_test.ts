@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { groqLimitsNote, interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
+import { groqLimitsNote, interestingSecretNames, isServiceRoleToken, providerHealth, tokenSubject, unreadAiKeyNames } from "./providerHealth.ts";
 
 Deno.test("reports configured/status per provider and never echoes a key", async () => {
   const env: Record<string, string> = {
@@ -68,4 +68,14 @@ Deno.test("resend: a sending-only key is ok, a bad key is not", async () => {
   assertEquals(restricted.ok, true);
   const bad = (await run(401, '{"name":"validation_error","message":"API key is invalid"}')).resend as Record<string, unknown>;
   assertEquals(bad.ok, false);
+});
+
+Deno.test("a Groq/Gemini key under a name no pool reads is reported, the read ones and model names are not", () => {
+  assertEquals(
+    unreadAiKeyNames([
+      "GROQ_API_KEY", "GROQ_API_KEY_7", "ZAD_API_KEY_5", "GEMINI_API_KEY", "ZAD_GROQ_TEXT_MODEL", "SUPABASE_URL",
+      "GROK_API_KEY_1", "GROQ_KEY_3", "GROQ_API_KEY_21", "GEMINI_API_KEY_2", "XAI_API_KEY",
+    ]),
+    ["GEMINI_API_KEY_2", "GROK_API_KEY_1", "GROQ_API_KEY_21", "GROQ_KEY_3", "XAI_API_KEY"],
+  );
 });
