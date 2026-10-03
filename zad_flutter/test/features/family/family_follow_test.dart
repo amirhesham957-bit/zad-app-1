@@ -492,4 +492,42 @@ void main() {
     expect(c.readers, <String>['بابا']);
     expect(chatConsentFromJson(null).mine, isFalse);
   });
+
+  test('without kids geofencing, location is never offered — not even for a '
+      'child', () {
+    expect(
+      FollowedMember.fromJson(_childView).followableIn(kidsGeofencing: false),
+      isNot(contains(FamilyShareScope.location)),
+    );
+  });
+
+  testWidgets('without kids geofencing, a pending location request is not '
+      'shown, but one already granted can still be stopped', (tester) async {
+    final remote = _Remote(
+      rows: const <FamilyShare>[
+        FamilyShare(
+          id: 'l1',
+          ownerId: 'me',
+          viewerId: 'dad',
+          scope: FamilyShareScope.location,
+          status: FamilyShareStatus.pending,
+        ),
+        FamilyShare(
+          id: 'l2',
+          ownerId: 'me',
+          viewerId: 'mum',
+          scope: FamilyShareScope.location,
+          status: FamilyShareStatus.granted,
+        ),
+      ],
+    );
+    await pump(
+      tester,
+      remote,
+      const FamilyFollowRequestsCard(kidsGeofencing: false),
+    );
+    await tester.pump();
+    expect(find.textContaining('عايز يعرف لما تدخل'), findsNothing);
+    expect(find.text('إلغاء'), findsOneWidget);
+  });
 }

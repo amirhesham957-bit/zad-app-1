@@ -1,9 +1,27 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+// ENABLE_KIDS_GEOFENCING (docs/agent/ZAD_LIVING_BRAIN.md): the same --dart-define
+// lib/core/env/zad_env.dart reads. Flutter hands every define, env.json's too, to
+// Gradle as base64 "KEY=VALUE" items in the dart-defines property. Off only when
+// it says exactly false, so a build without it keeps the feature.
+val dartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?)
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?.mapNotNull { item ->
+            val pair = String(Base64.getDecoder().decode(item)).split("=", limit = 2)
+            if (pair.size == 2) pair[0] to pair[1] else null
+        }
+        ?.toMap()
+        ?: emptyMap()
+val kidsGeofencing = dartDefines["ENABLE_KIDS_GEOFENCING"]?.trim()?.lowercase() != "false"
 
 android {
     namespace = "com.aistudio.zad.wrtqvx"
@@ -30,6 +48,10 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Play's monitoring declaration names this meta-data; without kids
+        // geofencing the entry is renamed to something Play does not read.
+        manifestPlaceholders["monitoringToolKey"] =
+            if (kidsGeofencing) "isMonitoringTool" else "zad.kids_geofencing_off"
     }
 
     buildTypes {

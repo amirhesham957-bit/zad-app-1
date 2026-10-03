@@ -102,4 +102,22 @@ void main() {
     );
     expect(myZonesFromJson(null).zones, isEmpty);
   });
+
+  test('a build without kids geofencing fetches nothing and takes the '
+      'notice down', () async {
+    final remote = _Remote()
+      ..zones = (
+        zones: const <ChildZone>[school],
+        watchers: const <String>['بابا'],
+      );
+    final notice = _Notice()..shown = 'قديم';
+    final mine = await ChildZonesSync(
+      remote: remote,
+      engine: null,
+      notice: notice,
+      enabled: false,
+    ).sync();
+    expect(mine.zones, isEmpty);
+    expect(notice.cleared, isTrue);
+  });
 }

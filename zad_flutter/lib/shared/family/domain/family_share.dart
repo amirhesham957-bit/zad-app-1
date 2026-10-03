@@ -6,6 +6,7 @@
 /// the yes, and the server, not this file, is what enforces it.
 library;
 
+import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/places/domain/places.dart' show ChildZone;
 
 /// What can be followed.
@@ -351,11 +352,20 @@ class FollowedMember {
   /// The child's zones and last state; null when not shared.
   final List<FollowedZone>? zones;
 
-  /// The scopes that can be asked of this member: location only for a child.
-  List<FamilyShareScope> get followable => <FamilyShareScope>[
-    for (final s in FamilyShareScope.values)
-      if (s != FamilyShareScope.location || canFollowLocation) s,
-  ];
+  /// The scopes that can be asked of this member: location only for a child,
+  /// and only in a build with kids geofencing on.
+  List<FamilyShareScope> get followable => followableIn(
+    kidsGeofencing: ZadEnv.kidsGeofencing,
+  );
+
+  /// [followable] for a build with [kidsGeofencing] on or off.
+  List<FamilyShareScope> followableIn({required bool kidsGeofencing}) =>
+      <FamilyShareScope>[
+        for (final s in FamilyShareScope.values)
+          if (s != FamilyShareScope.location ||
+              (canFollowLocation && kidsGeofencing))
+            s,
+      ];
 
   /// Where [scope] stands, or null when it was never asked for.
   FamilyShareStatus? statusOf(FamilyShareScope scope) => shares[scope]?.status;

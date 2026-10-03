@@ -197,6 +197,9 @@ abstract final class ZadIcons {
   /// How the customer's areas connect.
   static const IconData knowledgeMap = Icons.hub;
 
+  /// شبكة زاد: the people, places and things زاد knows, and how they connect.
+  static const IconData memoryGraph = Icons.bubble_chart_outlined;
+
   /// Whether the brain is working.
   static const IconData brainHealth = Icons.monitor_heart;
 
