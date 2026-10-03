@@ -85,7 +85,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
@@ -4918,6 +4918,9 @@ async function answerFastPath(
   };
 }
 
+const WIDEN_NOTE =
+  "\n\n**مهم:** كل أدوات زاد متاحة ليك دلوقتي. نفّذ طلب العميل بنفسك بالأداة المناسبة (مسح، تعديل، شكوى، تسجيل) — " +
+  "ممنوع توجّهه لشاشة في التطبيق يعملها بإيده، وممنوع تقول إنك عملت حاجة من غير ما تنادي أداتها. لو الطلب ممسوح فعلاً قول كده.";
 const INTENT_RETRY_NOTE =
   "\n\n**مهم:** طلب العميل ده محتاج أداة من الأدوات المتاحة دلوقتي (ميعاد/تذكير، معلومة عنه نفسه، أو بحث على النت لسعر أو ترند حي). " +
   "نادِ الأداة المناسبة بالبيانات اللي قالها، ومتردش بكلام بس. لو فيه تفصيلة ناقصة فعلاً (مثلاً الساعة مش مفهومة) اسأله عنها.";
@@ -4945,11 +4948,16 @@ async function callAgentModel(
       })
     : await plain();
   if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
-  if (narrowed.length === 0) return { ...first, intentRetry: null };
+  // رد بيتهرب («ادخل على صفحة الصيدلية») أو بيدّعي تنفيذ من غير أداة ⇒ الأداة ماكانتش معروضة؛ مرة
+  // واحدة بكل الأدوات. بيتكلف نداء زيادة بس في اللفات دي (shouldWidenTools في specialists.ts).
+  const widen = shouldWidenTools(first.text);
+  if (narrowed.length === 0 && !widen) return { ...first, intentRetry: null };
+  const retryTools = widen ? CHAT_TOOLS : narrowed;
+  const note = widen ? WIDEN_NOTE : INTENT_RETRY_NOTE;
   try {
     const retry = await callModel({
-      model: MODEL_ROUTINE, system: system + INTENT_RETRY_NOTE, tools: narrowed, history, maxTokens: 1200,
-      groqSystem: groqSystem ? groqSystem + INTENT_RETRY_NOTE : undefined,
+      model: MODEL_ROUTINE, system: system + note, tools: retryTools, history, maxTokens: 1200,
+      groqSystem: groqSystem ? groqSystem + note : undefined,
     });
     const usage = { inTok: first.usage.inTok + retry.usage.inTok, outTok: first.usage.outTok + retry.usage.outTok };
     if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted };
