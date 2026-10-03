@@ -12,6 +12,9 @@ Deno.env.set("ZAD_API_KEY_1", "k1");
 Deno.env.set("ZAD_API_KEY_2", "k2");
 Deno.env.set("GROQ_API_KEY_1", "groq1");
 Deno.env.set("GROQ_API_KEY_2", "groq2");
+// ٤ مفاتيح جروك عشان اختبار الـ429: مفتاح خلصت حصته مايوقّفش الباقيين.
+Deno.env.set("GROQ_API_KEY_3", "groq3");
+Deno.env.set("GROQ_API_KEY_4", "groq4");
 Deno.env.set("ZAD_MODEL_FALLBACKS", "model-b,model-c");
 
 const { callModel, fitForGroq, setModelCooldownMsForTests } = await import("./callModel.ts");
@@ -390,6 +393,65 @@ Deno.test("a call made without a thought signature is retried with Google's plac
     assertEquals(s.calls.length, 2);
     const retried = s.calls[1].body.contents.find((c: any) => c.role === "model").parts[0];
     assertEquals(retried.thoughtSignature, "skip_thought_signature_validator");
+  } finally {
+    s.restore();
+  }
+});
+
+/** جروك: المفاتيح اللي في [exhausted] بترد 429 + retry-after، والباقي بيرد من اسمه. */
+function stubGroq(exhausted: Set<string>, retryAfterSec: number) {
+  const original = globalThis.fetch;
+  const used: string[] = [];
+  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (!url.includes("api.groq.com")) return Promise.resolve(quota429());
+    const key = String((init?.headers as Record<string, string>)?.authorization ?? "").replace("Bearer ", "");
+    used.push(key);
+    if (exhausted.has(key)) {
+      return Promise.resolve(new Response(
+        JSON.stringify({ error: { message: "Rate limit reached on requests per day (RPD)", code: "rate_limit_exceeded" } }),
+        { status: 429, headers: { "retry-after": String(retryAfterSec) } },
+      ));
+    }
+    return Promise.resolve(new Response(
+      JSON.stringify({ choices: [{ message: { content: `من ${key}`, tool_calls: [] } }], usage: {} }),
+      { status: 200 },
+    ));
+  }) as typeof fetch;
+  return { used, restore: () => { globalThis.fetch = original; } };
+}
+
+Deno.test("مفتاح Groq رجّع 429 → المفتاح اللي بعده فوراً، من غير انتظار retry-after، وبيرتاح في النداء الجاي", async () => {
+  // حصة اليوم خلصت على ٣ من ٤: كان الـ429 بيترمي لـwithRetry اللي بيستنى retry-after (هنا ٣٠ ث)
+  // وبيجرّب ٣ مرات بس — فالمفتاح الرابع ماكانش بيتوصله أبداً.
+  const s = stubGroq(new Set(["groq1", "groq2", "groq3"]), 30);
+  const started = Date.now();
+  try {
+    // ٤ نداءات = كل نقطة بداية في الدوران مرة، فكل مفتاح خلصت حصته اتجرب.
+    for (let i = 0; i < 4; i++) assertEquals((await callModel({ ...BASE })).text, "من groq4");
+    assert(Date.now() - started < 2_000, `took ${Date.now() - started}ms`);
+    // واتجرب مرة واحدة بس: بعدها في الراحة (groq1 ممكن يكون ميت من اختبار الـ401 فوق).
+    for (const k of ["groq1", "groq2", "groq3"]) assert(s.used.filter((u) => u === k).length <= 1, k);
+    const before = s.used.length;
+    assertEquals((await callModel({ ...BASE })).text, "من groq4");
+    assertEquals(s.used.slice(before), ["groq4"]);
+  } finally {
+    s.restore();
+  }
+});
+
+Deno.test("كل مفاتيح Groq رجعت 429 بانتظار طويل → فشل سريع بدل ما الفانكشن تنام", async () => {
+  const s = stubGroq(new Set(["groq1", "groq2", "groq3", "groq4"]), 600);
+  const started = Date.now();
+  try {
+    let failed = false;
+    try {
+      await callModel({ ...BASE });
+    } catch {
+      failed = true;
+    }
+    assert(failed, "المفروض يفشل");
+    assert(Date.now() - started < 2_000, `took ${Date.now() - started}ms`);
   } finally {
     s.restore();
   }

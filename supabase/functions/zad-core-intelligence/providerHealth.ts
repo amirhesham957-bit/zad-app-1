@@ -4,7 +4,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
 // إجابة مقاسة مش تخمين. كل الشبكة بتتحقن عشان يتختبر من غير نداءات حقيقية.
 
-import { geminiKeys as geminiKeyPool, groqKeys as groqKeyPool } from "../_shared/keyPool.ts";
+import { geminiKeys as geminiKeyPool, groqKeys as groqKeyPool, MAX_KEYS } from "../_shared/keyPool.ts";
 
 export interface ProbeResult {
   configured: boolean;
@@ -43,6 +43,17 @@ const INTERESTING_NAME = /LOCATION|MAPS|GEO|PLACES|PEXELS|UNSPLASH|PIXABAY|SERP|
 
 export function interestingSecretNames(allNames: string[]): string[] {
   return allNames.filter((n) => INTERESTING_NAME.test(n)).sort();
+}
+
+/**
+ * أسرار شكلها مفاتيح ذكاء اصطناعي ومفيش مسبح بيقراها (_shared/keyPool.ts) — مفتاح اتحط باسم
+ * `GROK_API_KEY_1` أو `GROQ_KEY_3` أو رقم فوق [MAX_KEYS] بيتجاهل بصمت، والسعة اللي اتدفع
+ * فيها مابتوصلش. الأسامي بس، ولا حرف من القيم.
+ */
+export function unreadAiKeyNames(allNames: string[]): string[] {
+  const read = new Set(["ZAD_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY"]);
+  for (let n = 1; n <= MAX_KEYS; n++) read.add(`ZAD_API_KEY_${n}`).add(`GROQ_API_KEY_${n}`);
+  return allNames.filter((n) => /GROQ|GROK|XAI|GEMINI|ZAD_API/i.test(n) && /KEY/i.test(n) && !read.has(n)).sort();
 }
 
 /**
@@ -151,6 +162,7 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),
+    unread_ai_key_names: unreadAiKeyNames(envNames),
     other_key_like_secret_names: interestingSecretNames(envNames).filter((n) => !["LOCATIONIQ_API_KEY", "PEXELS_API_KEY"].includes(n)),
   };
 }
