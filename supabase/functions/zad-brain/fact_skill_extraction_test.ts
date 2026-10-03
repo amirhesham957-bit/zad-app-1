@@ -41,6 +41,6 @@ Deno.test("parseFactSkillExtraction بيقص الحقيقة عند 200 حرف", 
 });
 
 Deno.test("parseFactSkillExtraction بيتعامل مع رد فاضي أو ناقص من غير ما يرمي استثناء", () => {
-  assertEquals(parseFactSkillExtraction(""), { fact: null, skillKey: null, skillNote: null });
-  assertEquals(parseFactSkillExtraction("كلام عشوائي من غير السطرين المتوقعين"), { fact: null, skillKey: null, skillNote: null });
+  assertEquals(parseFactSkillExtraction(""), { fact: null, skillKey: null, skillNote: null, about: [], until: null });
+  assertEquals(parseFactSkillExtraction("كلام عشوائي من غير السطرين المتوقعين"), { fact: null, skillKey: null, skillNote: null, about: [], until: null });
 });

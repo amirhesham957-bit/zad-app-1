@@ -103,6 +103,16 @@ abstract interface class PlaceServer {
 
   /// `zad_users.last_*`, so the chat's "what is near me" has a point. Coarse.
   Future<void> saveLastLocation(GeoPoint coarse);
+
+  /// `zad_family_zone_event`: this phone entered or left a child zone. The
+  /// server decides whether a parent hears of it. A refusal (sharing
+  /// stopped, zone gone) is an answer, not an error; throws only when the
+  /// server cannot be reached.
+  Future<void> zoneEvent({
+    required String zoneId,
+    required PlaceTransition transition,
+    required DateTime at,
+  });
 }
 
 /// Shops of [kind] around [at] (already coarse).
@@ -159,14 +169,61 @@ class PlaceEngine {
   }
 
   /// Street alerts off. Home and the nights are kept: turning it back on
-  /// should not mean two more nights of learning.
+  /// should not mean two more nights of learning. A child's zones stay
+  /// watched — they are a separate yes.
   Future<void> disable() async {
-    await _host.clear();
     await _host.cancelNight();
-    final state = await this.state();
-    await _save(
-      state.copyWith(enabled: false, shops: const <String, FencedShop>{}),
+    final state = (await this.state()).copyWith(
+      enabled: false,
+      shops: const <String, FencedShop>{},
+      shopFences: const <Fence>[],
     );
+    await _save(state);
+    await _registerAll(state);
+  }
+
+  /// Every fence this phone should watch: the street ones while street
+  /// alerts are on, and the child zones always. `register` replaces them
+  /// all, so they always go together.
+  Future<void> _registerAll(PlaceState state) async {
+    final fences = <Fence>[
+      if (state.enabled) ...state.shopFences,
+      ...zoneFences(state.zones.values),
+    ];
+    if (fences.isEmpty) {
+      await _host.clear();
+    } else {
+      await _host.register(fences);
+    }
+  }
+
+  /// The child zones from the server (`zad_family_my_zones`). Registers only
+  /// when they changed: Android reports «entered» straight away for a fence
+  /// the phone is already inside, so registering the same zones on every
+  /// sync would report the school again each time. Throws when Android
+  /// refuses the fences (no "all the time" permission).
+  Future<void> setZones(List<ChildZone> zones) async {
+    var state = await this.state();
+    final next = <String, ChildZone>{
+      for (final z in zones) zoneFenceId(z.id): z,
+    };
+    if (mapEquals(next, state.zones)) return;
+    state = state.copyWith(zones: next);
+    // A blob from before the street fences were kept: look the shops up
+    // again rather than drop them by registering the zones alone.
+    final center = state.center;
+    if (state.enabled && state.shopFences.isEmpty && center != null) {
+      try {
+        await refresh(center, state: state);
+        return;
+      } on Object catch (e) {
+        debugPrint('[places] refresh for zones failed: $e');
+      }
+    }
+    // Saved only once Android took them: a refusal leaves the old zones
+    // stored, so the next sync tries again instead of thinking it is done.
+    await _registerAll(state);
+    await _save(state);
   }
 
   /// Looks the shops up again round [at] and registers them, home and the
@@ -183,12 +240,13 @@ class PlaceEngine {
       }
     }
     final plan = planFences(shops: shops, center: at, home: current.home);
-    await _host.register(plan.fences);
     current = current.copyWith(
       shops: plan.shops,
+      shopFences: plan.fences,
       refreshedAt: _now(),
       center: at,
     );
+    await _registerAll(current);
     await _save(current);
     try {
       await _server.saveLastLocation(at.coarse);
@@ -201,8 +259,32 @@ class PlaceEngine {
   /// Deals with every stored event, oldest first.
   Future<void> handlePending() async {
     var state = await this.state();
-    final events = [...await _host.peek()]
-      ..sort((a, b) => a.at.compareTo(b.at));
+    final all = [...await _host.peek()]..sort((a, b) => a.at.compareTo(b.at));
+    if (all.isEmpty) return;
+    // Child zones first, street alerts on or off: each goes to the server,
+    // which decides whether a parent hears of it. One that cannot be sent
+    // waits, with the ones after it, for the next run.
+    final zoneDone = <int>[];
+    for (final e in all.where((e) => zoneIdOfFence(e.fence) != null)) {
+      if (e.transition != PlaceTransition.night) {
+        try {
+          await _server.zoneEvent(
+            zoneId: zoneIdOfFence(e.fence)!,
+            transition: e.transition,
+            at: e.at,
+          );
+        } on Object catch (err) {
+          debugPrint('[places] zone event not sent: $err');
+          break;
+        }
+      }
+      zoneDone.add(e.key);
+    }
+    if (zoneDone.isNotEmpty) await _host.acknowledge(zoneDone);
+    final events = <PlaceEvent>[
+      for (final e in all)
+        if (zoneIdOfFence(e.fence) == null) e,
+    ];
     if (events.isEmpty) return;
     if (!state.enabled) {
       await _host.acknowledge(events.map((e) => e.key));

@@ -76,6 +76,18 @@ class _Server implements PlaceServer {
 
   @override
   Future<void> saveLastLocation(GeoPoint coarse) async => locations.add(coarse);
+
+  final List<String> zoneEvents = <String>[];
+
+  @override
+  Future<void> zoneEvent({
+    required String zoneId,
+    required PlaceTransition transition,
+    required DateTime at,
+  }) async {
+    if (offline) throw StateError('offline');
+    zoneEvents.add('$zoneId ${transition.name}');
+  }
 }
 
 void main() {
@@ -346,6 +358,130 @@ void main() {
         }, StoreKind.supermarket),
         isNull,
       );
+    });
+  });
+
+  group('child zones (ZAD_LIVING_BRAIN.md slice 2)', () {
+    const school = (
+      id: 'z1',
+      label: 'المدرسة',
+      lat: 30.05,
+      lon: 31.24,
+      radius: 150.0,
+    );
+
+    test(
+      'zones are watched with street alerts off, entering and leaving',
+      () async {
+        seed(const PlaceState(zone: 'Africa/Cairo'));
+        await engine.setZones(<ChildZone>[school]);
+        final fence = host.registered!.single;
+        expect(fence.id, zoneFenceId('z1'));
+        expect(fence.enter, isTrue);
+        expect(fence.exit, isTrue);
+        expect(fence.radius, 150);
+      },
+    );
+
+    test('the same zones again register nothing: Android would report '
+        '«entered» again for the school the phone is in', () async {
+      seed(const PlaceState(zone: 'Africa/Cairo'));
+      await engine.setZones(<ChildZone>[school]);
+      host.registered = null;
+      await engine.setZones(<ChildZone>[school]);
+      expect(host.registered, isNull);
+    });
+
+    test(
+      'zones go with the street fences, which are kept, not looked up again',
+      () async {
+        await engine.enable(at: home, zone: 'Africa/Cairo');
+        final street = host.registered!.map((f) => f.id).toList();
+        lookedUp.clear();
+        await engine.setZones(<ChildZone>[school]);
+        expect(lookedUp, isEmpty);
+        expect(host.registered!.map((f) => f.id), <String>[
+          ...street,
+          zoneFenceId('z1'),
+        ]);
+      },
+    );
+
+    test('turning street alerts off keeps the zones watched', () async {
+      await engine.enable(at: home, zone: 'Africa/Cairo');
+      await engine.setZones(<ChildZone>[school]);
+      await engine.disable();
+      expect(host.registered!.map((f) => f.id), <String>[zoneFenceId('z1')]);
+    });
+
+    test('no zone left and street alerts off clears every fence', () async {
+      seed(const PlaceState(zone: 'Africa/Cairo'));
+      await engine.setZones(<ChildZone>[school]);
+      await engine.setZones(const <ChildZone>[]);
+      expect(host.registered, isNull);
+    });
+
+    test(
+      'a refusal leaves the zones unsaved, so the next sync tries again',
+      () async {
+        seed(const PlaceState(zone: 'Africa/Cairo'));
+        host.refuse = true;
+        await expectLater(
+          engine.setZones(<ChildZone>[school]),
+          throwsStateError,
+        );
+        expect(host.state.zones, isEmpty);
+        host.refuse = false;
+        await engine.setZones(<ChildZone>[school]);
+        expect(host.registered!.single.id, zoneFenceId('z1'));
+      },
+    );
+
+    test('zone events reach the server with street alerts off', () async {
+      seed(const PlaceState(zone: 'Africa/Cairo'));
+      host.events.addAll(<PlaceEvent>[
+        event(zoneFenceId('z1'), PlaceTransition.exit, now),
+        event('supermarket_0', PlaceTransition.enter, now),
+      ]);
+      await engine.handlePending();
+      expect(server.zoneEvents, <String>['z1 exit']);
+      expect(server.arrivals, isEmpty, reason: 'street alerts are off');
+      expect(host.acked, hasLength(2));
+    });
+
+    test('a zone event that cannot be sent waits for the next run', () async {
+      seed(const PlaceState(zone: 'Africa/Cairo'));
+      final e = event(zoneFenceId('z1'), PlaceTransition.enter, now);
+      host.events.add(e);
+      server.offline = true;
+      await engine.handlePending();
+      expect(host.acked, isNot(contains(e.key)));
+      server.offline = false;
+      await engine.handlePending();
+      expect(server.zoneEvents, <String>['z1 enter']);
+      expect(host.acked, contains(e.key));
+    });
+
+    test('the zones survive the blob', () {
+      final state = PlaceState(
+        zones: <String, ChildZone>{zoneFenceId('z1'): school},
+        shopFences: const <Fence>[
+          Fence(
+            id: 'zad_area',
+            lat: 1,
+            lon: 2,
+            radius: 1500,
+            enter: false,
+            exit: true,
+          ),
+        ],
+      );
+      final back = PlaceState.fromJson(
+        jsonDecode(jsonEncode(state.toJson())) as Map<String, dynamic>,
+      );
+      expect(back.zones, state.zones);
+      expect(back.shopFences.single.exit, isTrue);
+      expect(back.shopFences.single.enter, isFalse);
     });
   });
 }

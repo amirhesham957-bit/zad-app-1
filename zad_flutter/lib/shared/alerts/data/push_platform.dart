@@ -87,7 +87,14 @@ FlutterLocalNotificationsPlugin get zadLocalNotifications => _local;
 const String _channelName = 'تنبيهات زاد';
 const String _channelDescription = 'تنبيهات استباقية من مساعد زاد';
 
+/// Whether this engine initialized the plugin. The app's engine does it in
+/// [FirebasePushPlatform.start] with the tap router; a later initialize
+/// without it would drop the router, so the sharing notice only initializes
+/// an engine that has not been.
+bool _localReady = false;
+
 Future<void> _initLocal({DidReceiveNotificationResponseCallback? onTap}) async {
+  _localReady = true;
   await _local.initialize(
     settings: const InitializationSettings(
       android: AndroidInitializationSettings('ic_stat_zad'),
@@ -162,6 +169,114 @@ Future<void> _showLocal(PushAlert alert) async {
         : proposalPayload(alert.proposalId!),
   );
 }
+
+/// The notice that stays up on a child's phone for as long as their coming
+/// and going is shared (docs/agent/ZAD_LIVING_BRAIN.md slice 2). Google Play's
+/// stalkerware policy asks a monitoring app for a persistent notification at
+/// all times; it also keeps the child from forgetting that it is on.
+abstract interface class SharingNotice {
+  /// Puts it up, or updates it: who follows, and which places.
+  Future<void> show({
+    required List<String> watchers,
+    required List<String> places,
+  });
+
+  /// Takes it down — sharing stopped, or no zone is left.
+  Future<void> clear();
+}
+
+/// Tests, and anything before `bootstrap()`.
+class SilentSharingNotice implements SharingNotice {
+  /// Creates it.
+  const new();
+
+  @override
+  Future<void> show({
+    required List<String> watchers,
+    required List<String> places,
+  }) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
+/// The notice's fixed id: one notice, updated in place.
+const int kSharingNoticeId = 7301;
+
+/// Its own quiet channel, so the alerts channel keeps its sound.
+const String kSharingChannelId = 'zad_family_sharing';
+
+/// «بابا بيعرف لما تدخل أو تخرج من: المدرسة». Pure, for tests.
+({String title, String body}) sharingNoticeText({
+  required List<String> watchers,
+  required List<String> places,
+}) => (
+  title: '📍 بتشارك دخولك وخروجك',
+  body:
+      '${watchers.isEmpty ? 'حد من العيلة' : watchers.join(' و')} '
+      'بيعرف لما تدخل أو تخرج من: ${places.join('، ')}. '
+      'مش مكانك طول الوقت. تقدر توقفها من «عيلتي».',
+);
+
+/// The real one, on the local notifications plugin; works in the app's
+/// engine and in the headless one.
+class LocalSharingNotice implements SharingNotice {
+  /// Creates it.
+  const new();
+
+  @override
+  Future<void> show({
+    required List<String> watchers,
+    required List<String> places,
+  }) async {
+    if (!_localReady) await _initLocal();
+    final android = _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        kSharingChannelId,
+        'مشاركة الأماكن مع العيلة',
+        description: 'بيفضل ظاهر طول ما مشاركة الدخول والخروج شغالة',
+        importance: Importance.low,
+      ),
+    );
+    final text = sharingNoticeText(watchers: watchers, places: places);
+    await _local.show(
+      id: kSharingNoticeId,
+      title: text.title,
+      body: text.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          kSharingChannelId,
+          'مشاركة الأماكن مع العيلة',
+          channelDescription: 'بيفضل ظاهر طول ما مشاركة الدخول والخروج شغالة',
+          importance: Importance.low,
+          priority: Priority.low,
+          icon: 'ic_stat_zad',
+          ongoing: true,
+          autoCancel: false,
+          onlyAlertOnce: true,
+          showWhen: false,
+          styleInformation: BigTextStyleInformation(text.body),
+        ),
+      ),
+      payload: payloadFor(AlertDestination.family),
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    if (!_localReady) await _initLocal();
+    await _local.cancel(id: kSharingNoticeId);
+  }
+}
+
+/// The sharing notice; silent unless `bootstrap()` installed the real one.
+final sharingNoticeProvider = Provider<SharingNotice>(
+  (ref) => const SilentSharingNotice(),
+);
 
 /// Shows [alert] from an engine with no [PushPlatform] started — the headless
 /// run street alerts use when the app is closed.
