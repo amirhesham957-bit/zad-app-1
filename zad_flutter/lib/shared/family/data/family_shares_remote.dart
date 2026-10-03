@@ -26,6 +26,26 @@ abstract interface class FamilySharesRemote {
 
   /// What [ownerId] shares with this account.
   Future<FollowedMember> memberView(String ownerId);
+
+  /// Adds a zone for a child who agreed (`zad_family_zone_save`); the server
+  /// checks the yes and tells the child.
+  Future<void> saveZone({
+    required String memberId,
+    required String label,
+    required String kind,
+    required double lat,
+    required double lon,
+    required int radiusM,
+    required List<int> days,
+    required String from,
+    required String to,
+  });
+
+  /// Stops watching a zone.
+  Future<void> deleteZone(String zoneId);
+
+  /// The zones this phone's owner agreed to share, and who follows them.
+  Future<MyZones> myZones();
 }
 
 /// Over Supabase.
@@ -80,6 +100,46 @@ class SupabaseFamilySharesRemote implements FamilySharesRemote {
       params: <String, dynamic>{'p_share': shareId},
     ),
   );
+
+  @override
+  Future<void> saveZone({
+    required String memberId,
+    required String label,
+    required String kind,
+    required double lat,
+    required double lon,
+    required int radiusM,
+    required List<int> days,
+    required String from,
+    required String to,
+  }) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_zone_save',
+      params: <String, dynamic>{
+        'p_member': memberId,
+        'p_label': label,
+        'p_kind': kind,
+        'p_lat': lat,
+        'p_lng': lon,
+        'p_radius': radiusM,
+        'p_days': days,
+        'p_from': from,
+        'p_to': to,
+      },
+    ),
+  );
+
+  @override
+  Future<void> deleteZone(String zoneId) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_zone_delete',
+      params: <String, dynamic>{'p_zone': zoneId},
+    ),
+  );
+
+  @override
+  Future<MyZones> myZones() async =>
+      myZonesFromJson(await _client.rpc<Object?>('zad_family_my_zones'));
 
   @override
   Future<FollowedMember> memberView(String ownerId) async {

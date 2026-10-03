@@ -7,11 +7,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/places/data/background_location.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/places/application/child_zones.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad/shared/places/data/background_location.dart';
 import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
@@ -182,6 +183,9 @@ final Provider<void> placesRunnerProvider = Provider<void>((ref) {
   ref.onDispose(arrivals.cancel);
 
   run(engine.handlePending);
+  // A child's school zones (ZAD_LIVING_BRAIN.md slice 2): picked up on every
+  // start, so a zone the parent added since is watched from now on.
+  run(() => ref.read(childZonesSyncProvider).sync());
   run(() async {
     final saved = await engine.state();
     final last = saved.refreshedAt;

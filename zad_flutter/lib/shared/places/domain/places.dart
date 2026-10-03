@@ -56,6 +56,60 @@ const Duration kRefreshEvery = Duration(hours: 12);
 /// Fence ids that are not shops.
 const String kHomeFence = 'zad_home';
 
+/// A child's zone fence id is this and the zone's server id
+/// (`zad_family_zones`, docs/agent/ZAD_LIVING_BRAIN.md slice 2).
+const String kZoneFencePrefix = 'zad_zone:';
+
+/// A zone a parent set for this phone's owner — a child who agreed to share
+/// coming and going there (`zad_family_my_zones`). Its centre is the parent's
+/// pick; nothing about where the child is goes into it.
+typedef ChildZone = ({
+  String id,
+  String label,
+  double lat,
+  double lon,
+  double radius,
+});
+
+/// The fence id for [zoneId].
+String zoneFenceId(String zoneId) => '$kZoneFencePrefix$zoneId';
+
+/// The zone id in [fence], or null when it is not a zone fence.
+String? zoneIdOfFence(String fence) => fence.startsWith(kZoneFencePrefix)
+    ? fence.substring(kZoneFencePrefix.length)
+    : null;
+
+/// Fences for [zones]: entering and leaving both count.
+List<Fence> zoneFences(Iterable<ChildZone> zones) => <Fence>[
+  for (final z in zones)
+    Fence(
+      id: zoneFenceId(z.id),
+      lat: z.lat,
+      lon: z.lon,
+      radius: z.radius,
+      exit: true,
+    ),
+];
+
+Fence? _fenceFromJson(Object? raw) {
+  if (raw is! Map) return null;
+  final id = raw['id'];
+  final lat = raw['lat'];
+  final lon = raw['lon'];
+  final radius = raw['radius'];
+  if (id is! String || lat is! num || lon is! num || radius is! num) {
+    return null;
+  }
+  return Fence(
+    id: id,
+    lat: lat.toDouble(),
+    lon: lon.toDouble(),
+    radius: radius.toDouble(),
+    enter: raw['enter'] != false,
+    exit: raw['exit'] == true,
+  );
+}
+
 /// See [kAreaRadius].
 const String kAreaFence = 'zad_area';
 
@@ -170,6 +224,8 @@ class PlaceState {
     this.leftAt,
     this.refreshedAt,
     this.center,
+    this.shopFences = const <Fence>[],
+    this.zones = const <String, ChildZone>{},
   });
 
   /// Reads the blob; anything unreadable is the default.
@@ -218,6 +274,31 @@ class PlaceState {
         if (at != null && date is String) nights.add((at: at, date: date));
       }
     }
+    final zones = <String, ChildZone>{};
+    final rawZones = json['zones'];
+    if (rawZones is Map) {
+      for (final MapEntry(:key, :value) in rawZones.entries) {
+        if (value is! Map) continue;
+        final id = value['id'];
+        final label = value['label'];
+        final lat = value['lat'];
+        final lon = value['lon'];
+        final radius = value['radius'];
+        if (id is String &&
+            label is String &&
+            lat is num &&
+            lon is num &&
+            radius is num) {
+          zones[key.toString()] = (
+            id: id,
+            label: label,
+            lat: lat.toDouble(),
+            lon: lon.toDouble(),
+            radius: radius.toDouble(),
+          );
+        }
+      }
+    }
     return PlaceState(
       enabled: json['enabled'] == true,
       zone: json['zone'] is String ? json['zone'] as String : 'UTC',
@@ -228,6 +309,11 @@ class PlaceState {
       leftAt: time(json['left_at']),
       refreshedAt: time(json['refreshed_at']),
       center: point(json['center']),
+      shopFences: <Fence>[
+        for (final f in (json['shop_fences'] as List<dynamic>?) ?? const [])
+          ?_fenceFromJson(f),
+      ],
+      zones: zones,
     );
   }
 
@@ -258,6 +344,15 @@ class PlaceState {
   /// Where they were looked up from.
   final GeoPoint? center;
 
+  /// The street fences last planned (shops, home, the area), kept so a
+  /// change of zones can register everything again without looking the
+  /// shops up — `register` replaces every fence at once.
+  final List<Fence> shopFences;
+
+  /// This phone's child zones, by fence id. Watched whether or not street
+  /// alerts are on.
+  final Map<String, ChildZone> zones;
+
   /// A copy with the given fields replaced. [leftAt] is cleared with
   /// `clearLeftAt`, since null means "keep".
   PlaceState copyWith({
@@ -271,6 +366,8 @@ class PlaceState {
     bool clearLeftAt = false,
     DateTime? refreshedAt,
     GeoPoint? center,
+    List<Fence>? shopFences,
+    Map<String, ChildZone>? zones,
   }) => PlaceState(
     enabled: enabled ?? this.enabled,
     zone: zone ?? this.zone,
@@ -281,6 +378,8 @@ class PlaceState {
     leftAt: clearLeftAt ? null : (leftAt ?? this.leftAt),
     refreshedAt: refreshedAt ?? this.refreshedAt,
     center: center ?? this.center,
+    shopFences: shopFences ?? this.shopFences,
+    zones: zones ?? this.zones,
   );
 
   /// The blob.
@@ -310,6 +409,17 @@ class PlaceState {
       'left_at': ?leftAt?.millisecondsSinceEpoch,
       'refreshed_at': ?refreshedAt?.millisecondsSinceEpoch,
       if (center != null) 'center': point(center),
+      'shop_fences': <Object>[for (final f in shopFences) f.toJson()],
+      'zones': <String, Object>{
+        for (final MapEntry(:key, :value) in zones.entries)
+          key: <String, Object>{
+            'id': value.id,
+            'label': value.label,
+            'lat': value.lat,
+            'lon': value.lon,
+            'radius': value.radius,
+          },
+      },
     };
   }
 }

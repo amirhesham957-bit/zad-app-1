@@ -8,7 +8,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show NumberFormat;
+import 'package:intl/intl.dart' show DateFormat, NumberFormat;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -19,6 +20,10 @@ import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/family/domain/family_share.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/nearby/data/location_source.dart';
+import 'package:zad/shared/places/application/child_zones.dart';
+import 'package:zad/shared/places/data/background_location.dart';
 
 String _aliasOf(WidgetRef ref, String userId) {
   final members = ref.read(familyControllerProvider).family?.members;
@@ -31,6 +36,40 @@ String _aliasOf(WidgetRef ref, String userId) {
 void _say(BuildContext context, String text) =>
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(SnackBar(content: Text(text)));
+
+/// What a child reads before agreeing to share coming and going — Google
+/// Play's prominent disclosure for background location, said plainly: what
+/// is shared, that it works with the app closed, what is not shared, the
+/// notice that stays up, and how to stop.
+String locationDisclosure(String asker) =>
+    'زاد هيعرف لما تدخل أو تخرج من الأماكن اللي $asker يحددها (زي المدرسة) '
+    '— حتى والتطبيق مقفول — ويقوله لو خرجت في المواعيد اللي حددها. '
+    'مش هيتبعت مكانك طول الوقت ولا خط سيرك. '
+    'هيفضل فيه إشعار ظاهر طول ما المشاركة شغالة، '
+    'وتقدر توقفها من «عيلتي» في أي وقت. '
+    'في الخطوة الجاية اختار «السماح طول الوقت».';
+
+/// While-in-use, then "all the time": what zones need to fire with the app
+/// closed. True when both are granted.
+Future<bool> _askLocationAlways(WidgetRef ref) async {
+  final source = ref.read(locationSourceProvider);
+  var access = await source.access();
+  if (access == LocationAccess.denied) access = await source.request();
+  if (access != LocationAccess.granted) return false;
+  final always = ref.read(backgroundLocationProvider);
+  return await always.granted() || await always.request();
+}
+
+/// The child's phone catching up after a yes or a stop. Failing is said, not
+/// thrown: the answer itself already reached the server.
+Future<bool> _syncZones(WidgetRef ref) async {
+  try {
+    await ref.read(childZonesSyncProvider).sync();
+    return true;
+  } on Object {
+    return false;
+  }
+}
 
 /// For the member being followed: what was asked of them, with وافق / لأ, and
 /// who follows what, with «إلغاء». Nothing when there is neither.
@@ -51,6 +90,52 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
     } on Object {
       if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
     }
+  }
+
+  /// A yes to location goes through the disclosure first, then the two
+  /// location permissions, then the zones are fetched and registered.
+  Future<void> _acceptLocation(
+    BuildContext context,
+    WidgetRef ref,
+    FamilyShare share,
+  ) async {
+    final agreed = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: const Text('مشاركة دخولك وخروجك'),
+        content: Text(locationDisclosure(_aliasOf(ref, share.viewerId))),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(false),
+            child: const Text('مش دلوقتي'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialog).pop(true),
+            child: const Text('موافق، كمّل'),
+          ),
+        ],
+      ),
+    );
+    if (agreed != true || !context.mounted) return;
+    try {
+      await ref.read(familySharesRemoteProvider).answer(share.id, accept: true);
+      ref.invalidate(familySharesProvider);
+    } on Object {
+      if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
+      return;
+    }
+    final always = await _askLocationAlways(ref);
+    final synced = await _syncZones(ref);
+    if (!context.mounted) return;
+    _say(
+      context,
+      !always
+          ? 'وافقت، بس محتاج «السماح طول الوقت» للموقع '
+                'عشان يشتغل والتطبيق مقفول.'
+          : synced
+          ? 'وافقت — هيشتغل على الأماكن اللي هيحددها.'
+          : 'وافقت. هكمّل لما النت يرجع.',
+    );
   }
 
   @override
@@ -87,8 +172,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          '${_aliasOf(ref, s.viewerId)} عايز يتابع '
-                          '${s.scope.label}',
+                          shareAskText(s.scope, _aliasOf(ref, s.viewerId)),
                           style: ZadType.bodyMedium,
                         ),
                       ),
@@ -105,12 +189,14 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                       ),
                       FilledButton(
                         onPressed: () => unawaited(
-                          _act(
-                            context,
-                            ref,
-                            (r) => r.answer(s.id, accept: true),
-                            'وافقت — يقدر يتابع ${s.scope.label}.',
-                          ),
+                          s.scope == FamilyShareScope.location
+                              ? _acceptLocation(context, ref, s)
+                              : _act(
+                                  context,
+                                  ref,
+                                  (r) => r.answer(s.id, accept: true),
+                                  'وافقت — يقدر يتابع ${s.scope.label}.',
+                                ),
                         ),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 44),
@@ -135,14 +221,18 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => unawaited(
-                        _act(
+                      onPressed: () => unawaited(() async {
+                        await _act(
                           context,
                           ref,
                           (r) => r.revoke(s.id),
                           'اتلغت المتابعة.',
-                        ),
-                      ),
+                        );
+                        // The zones and the notice come off this phone too.
+                        if (s.scope == FamilyShareScope.location) {
+                          await _syncZones(ref);
+                        }
+                      }()),
                       child: const Text('إلغاء'),
                     ),
                   ],
@@ -173,7 +263,7 @@ class MemberFollowSection extends ConsumerWidget {
     FollowedMember view,
   ) async {
     final askable = <FamilyShareScope>{
-      for (final s in FamilyShareScope.values)
+      for (final s in view.followable)
         if (view.statusOf(s) case final st when st == null || st.canAskAgain) s,
     };
     final chosen = await showModalBottomSheet<Set<FamilyShareScope>>(
@@ -219,7 +309,7 @@ class MemberFollowSection extends ConsumerWidget {
             spacing: ZadSpacing.sm,
             runSpacing: ZadSpacing.xs,
             children: <Widget>[
-              for (final scope in FamilyShareScope.values)
+              for (final scope in view.followable)
                 Chip(
                   label: Text(
                     '${scope.label}: ${switch (view.statusOf(scope)) {
@@ -234,7 +324,7 @@ class MemberFollowSection extends ConsumerWidget {
                 ),
             ],
           ),
-          if (FamilyShareScope.values.any(
+          if (view.followable.any(
             (s) => view.statusOf(s) == null || view.statusOf(s)!.canAskAgain,
           ))
             Align(
@@ -254,6 +344,8 @@ class MemberFollowSection extends ConsumerWidget {
             ),
           if (view.appointments case final appts?)
             _Tasks(appointments: appts, choresOpen: view.choresOpen ?? 0),
+          if (view.zones case final zones?)
+            _Zones(memberId: ownerId, zones: zones),
         ],
       ],
     );
@@ -439,9 +531,22 @@ String familyReportLine(FollowedMember? view, String currency) {
   if (view.choresOpen case final open?) {
     parts.add(open == 0 ? 'مفيش مهام مفتوحة' : '$open مهام مفتوحة');
   }
+  if (view.zones case final zones? when zones.isNotEmpty) {
+    parts.add(
+      zones
+          .map(
+            (z) => switch (z.state) {
+              ZoneState.inside => 'جوه ${z.label}',
+              ZoneState.left => 'خرج من ${z.label}',
+              ZoneState.unknown => '${z.label}: لسه',
+            },
+          )
+          .join('، '),
+    );
+  }
   if (parts.isEmpty) return 'لسه ماوافقش على أي متابعة';
   final missing = <String>[
-    for (final s in FamilyShareScope.values)
+    for (final s in view.followable)
       if (view.statusOf(s) != FamilyShareStatus.granted) s.label,
   ];
   return [
@@ -517,6 +622,388 @@ class _FamilyReportSheet extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+const List<String> _weekdays = <String>[
+  'الأحد',
+  'الاتنين',
+  'التلات',
+  'الأربع',
+  'الخميس',
+  'الجمعة',
+  'السبت',
+];
+
+/// «جوه من 7:45» / «خرج 11:20» / «خرج امبارح 13:10» — the zone's last state,
+/// in the account's market zone. Pure, for tests.
+String zoneStateLine(FollowedZone z, tz.Location zone, DateTime now) {
+  final since = z.since;
+  if (z.state == ZoneState.unknown || since == null) {
+    return 'لسه مفيش دخول ولا خروج';
+  }
+  final at = tz.TZDateTime.from(since.toUtc(), zone);
+  final today = tz.TZDateTime.from(now.toUtc(), zone);
+  final time = DateFormat('HH:mm').format(at);
+  final sameDay =
+      at.year == today.year && at.month == today.month && at.day == today.day;
+  final day = sameDay ? '' : '${_weekdays[at.weekday % 7]} ';
+  return z.state == ZoneState.inside ? 'جوه من $day$time' : 'خرج $day$time';
+}
+
+/// The parent's view of a child's zones: each one's last state, «شيل», and
+/// «ضيف نطاق».
+class _Zones extends ConsumerWidget {
+  const new({required this.memberId, required this.zones});
+
+  final String memberId;
+  final List<FollowedZone> zones;
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final draft = await showModalBottomSheet<_ZoneDraft>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _AddZoneSheet(),
+    );
+    if (draft == null) return;
+    try {
+      await ref
+          .read(familySharesRemoteProvider)
+          .saveZone(
+            memberId: memberId,
+            label: draft.label,
+            kind: draft.kind,
+            lat: draft.lat,
+            lon: draft.lon,
+            radiusM: draft.radiusM,
+            days: draft.days,
+            from: draft.from,
+            to: draft.to,
+          );
+      ref.invalidate(followedMemberProvider(memberId));
+      if (context.mounted) {
+        _say(context, 'اتحفظ «${draft.label}» — هيوصله إشعار بيه.');
+      }
+    } on Object {
+      if (context.mounted) _say(context, 'مقدرتش أحفظ النطاق. جرّب تاني.');
+    }
+  }
+
+  Future<void> _remove(
+    BuildContext context,
+    WidgetRef ref,
+    FollowedZone z,
+  ) async {
+    try {
+      await ref.read(familySharesRemoteProvider).deleteZone(z.id);
+      ref.invalidate(followedMemberProvider(memberId));
+      if (context.mounted) _say(context, 'اتشال «${z.label}».');
+    } on Object {
+      if (context.mounted) _say(context, 'مقدرتش أشيله. جرّب تاني.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    final now = ref.read(nowProvider)();
+    return Padding(
+      padding: const EdgeInsets.only(top: ZadSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text('الأماكن', style: ZadType.labelLarge),
+          const SizedBox(height: ZadSpacing.xs),
+          if (zones.isEmpty)
+            Text(
+              'لسه مفيش نطاقات. وانت في المدرسة نفسها، دوس «ضيف نطاق».',
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          for (final z in zones)
+            Row(
+              children: <Widget>[
+                Icon(
+                  z.state == ZoneState.left
+                      ? Icons.directions_walk
+                      : Icons.place_outlined,
+                  size: 18,
+                  color: z.state == ZoneState.left
+                      ? ZadColors.mustardOchre
+                      : ZadColors.forestEmerald,
+                ),
+                const SizedBox(width: ZadSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(z.label, style: ZadType.bodyMedium),
+                      Text(
+                        zoneStateLine(z, zone, now),
+                        style: ZadType.bodySmall.copyWith(
+                          color: ZadColors.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => unawaited(_remove(context, ref, z)),
+                  tooltip: 'شيل النطاق',
+                  icon: const Icon(ZadIcons.dismiss, size: 18),
+                ),
+              ],
+            ),
+          if (zones.length < 5)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: () => unawaited(_add(context, ref)),
+                icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                label: const Text('ضيف نطاق'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What «ضيف نطاق» returns.
+typedef _ZoneDraft = ({
+  String label,
+  String kind,
+  double lat,
+  double lon,
+  int radiusM,
+  List<int> days,
+  String from,
+  String to,
+});
+
+const List<({String kind, String label})> _zoneKinds =
+    <({String kind, String label})>[
+      (kind: 'school', label: 'مدرسة'),
+      (kind: 'club', label: 'نادي'),
+      (kind: 'home', label: 'البيت'),
+      (kind: 'other', label: 'مكان تاني'),
+    ];
+
+/// A new zone: its name, the parent's own position as its centre (they stand
+/// at the school), how wide, and the days and hours a leaving is worth an
+/// alert.
+class _AddZoneSheet extends ConsumerStatefulWidget {
+  const new();
+
+  @override
+  ConsumerState<_AddZoneSheet> createState() => _AddZoneSheetState();
+}
+
+class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
+  final TextEditingController _label = TextEditingController();
+  String _kind = 'school';
+  int _radius = 150;
+  // extract(dow): Sunday = 0. Egypt's and the Gulf's school week.
+  final Set<int> _days = <int>{0, 1, 2, 3, 4};
+  TimeOfDay _from = const TimeOfDay(hour: 7, minute: 30);
+  TimeOfDay _to = const TimeOfDay(hour: 14, minute: 30);
+  ({double lat, double lon})? _point;
+  bool _locating = false;
+  String? _problem;
+
+  @override
+  void dispose() {
+    _label.dispose();
+    super.dispose();
+  }
+
+  String _hhmm(TimeOfDay t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(t.hour)}:${two(t.minute)}';
+  }
+
+  Future<void> _here() async {
+    setState(() {
+      _locating = true;
+      _problem = null;
+    });
+    final source = ref.read(locationSourceProvider);
+    var access = await source.access();
+    if (access == LocationAccess.denied) access = await source.request();
+    final fix = access == LocationAccess.granted
+        ? await source.current() ?? await source.lastKnown()
+        : null;
+    if (!mounted) return;
+    setState(() {
+      _locating = false;
+      _point = fix == null ? _point : (lat: fix.at.lat, lon: fix.at.lon);
+      _problem = fix == null
+          ? 'مقدرتش أعرف مكانك. شغّل الموقع وجرّب تاني.'
+          : null;
+    });
+  }
+
+  Future<void> _pick({required bool from}) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: from ? _from : _to,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => from ? _from = picked : _to = picked);
+  }
+
+  bool get _hoursOk =>
+      _from.hour * 60 + _from.minute < _to.hour * 60 + _to.minute;
+
+  @override
+  Widget build(BuildContext context) {
+    final point = _point;
+    final canSave =
+        _label.text.trim().isNotEmpty &&
+        point != null &&
+        _days.isNotEmpty &&
+        _hoursOk;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(ZadSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const Text('نطاق جديد', style: ZadType.titleMedium),
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                'هيوصلك تنبيه لو خرج منه في الأيام والساعات دي. '
+                'برّاها بيتسجل من غير تنبيه.',
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              TextField(
+                controller: _label,
+                maxLength: 40,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'اسمه',
+                  hintText: 'مدرسة النيل',
+                ),
+              ),
+              Wrap(
+                spacing: ZadSpacing.sm,
+                children: <Widget>[
+                  for (final k in _zoneKinds)
+                    ChoiceChip(
+                      label: Text(k.label),
+                      selected: _kind == k.kind,
+                      onSelected: (_) => setState(() => _kind = k.kind),
+                    ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              FilledButton.tonalIcon(
+                onPressed: _locating ? null : () => unawaited(_here()),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                icon: _locating
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location, size: 18),
+                label: Text(
+                  point == null
+                      ? 'استخدم المكان اللي أنا فيه دلوقتي'
+                      : 'اتحدد المكان ✓ — دوس تاني لو اتحركت',
+                ),
+              ),
+              Text(
+                _problem ?? 'لازم تكون في المكان نفسه وانت بتحدده.',
+                style: ZadType.bodySmall.copyWith(
+                  color: _problem == null
+                      ? ZadColors.inkMuted
+                      : ZadColors.terracottaRust,
+                ),
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              const Text('قد إيه حواليه', style: ZadType.labelLarge),
+              Wrap(
+                spacing: ZadSpacing.sm,
+                children: <Widget>[
+                  for (final r in const <int>[150, 300, 500])
+                    ChoiceChip(
+                      label: Text('$r م'),
+                      selected: _radius == r,
+                      onSelected: (_) => setState(() => _radius = r),
+                    ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              const Text('أيام التنبيه', style: ZadType.labelLarge),
+              Wrap(
+                spacing: ZadSpacing.xs,
+                children: <Widget>[
+                  for (var d = 0; d < 7; d++)
+                    FilterChip(
+                      label: Text(_weekdays[d]),
+                      selected: _days.contains(d),
+                      onSelected: (on) =>
+                          setState(() => on ? _days.add(d) : _days.remove(d)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              const Text('ساعات التنبيه', style: ZadType.labelLarge),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => unawaited(_pick(from: true)),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      child: Text('من ${_hhmm(_from)}'),
+                    ),
+                  ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => unawaited(_pick(from: false)),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      child: Text('لحد ${_hhmm(_to)}'),
+                    ),
+                  ),
+                ],
+              ),
+              if (!_hoursOk)
+                Text(
+                  'ساعة البداية لازم تبقى قبل النهاية.',
+                  style: ZadType.bodySmall.copyWith(
+                    color: ZadColors.terracottaRust,
+                  ),
+                ),
+              const SizedBox(height: ZadSpacing.lg),
+              FilledButton(
+                onPressed: !canSave
+                    ? null
+                    : () => Navigator.of(context).pop<_ZoneDraft>((
+                        label: _label.text.trim(),
+                        kind: _kind,
+                        lat: point.lat,
+                        lon: point.lon,
+                        radiusM: _radius,
+                        days: (_days.toList()..sort()),
+                        from: _hhmm(_from),
+                        to: _hhmm(_to),
+                      )),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                child: const Text('احفظ النطاق'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

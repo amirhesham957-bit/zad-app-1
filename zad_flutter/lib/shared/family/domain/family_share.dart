@@ -6,6 +6,8 @@
 /// the yes, and the server, not this file, is what enforces it.
 library;
 
+import 'package:zad/shared/places/domain/places.dart' show ChildZone;
+
 /// What can be followed.
 enum FamilyShareScope {
   /// Medicines and today's doses.
@@ -15,7 +17,12 @@ enum FamilyShareScope {
   spending('spending', 'المصروف'),
 
   /// Upcoming appointments and open chores.
-  tasks('tasks', 'المهام والمواعيد');
+  tasks('tasks', 'المهام والمواعيد'),
+
+  /// Coming to and leaving the zones a parent sets (school, club) — for a
+  /// child only. Google Play forbids following an adult's location, a
+  /// spouse's included, even with their yes (migration 20261003110000).
+  location('location', 'الأماكن (المدرسة…)');
 
   new(this.wire, this.label);
 
@@ -59,6 +66,14 @@ enum FamilyShareStatus {
   /// Whether a new request can be sent.
   bool get canAskAgain => this == declined || this == revoked;
 }
+
+/// What the member is asked, in full, before they answer: the scope's label
+/// is too short to agree to.
+String shareAskText(FamilyShareScope scope, String asker) => switch (scope) {
+  FamilyShareScope.location =>
+    '$asker عايز يعرف لما تدخل أو تخرج من أماكن هو يحددها (زي المدرسة)',
+  _ => '$asker عايز يتابع ${scope.label}',
+};
 
 /// One row: [ownerId]'s [scope], followed by [viewerId].
 class FamilyShare {
@@ -135,6 +150,71 @@ typedef FollowedMedicine = ({
   List<({String time, FollowedDoseState state})> today,
 });
 
+/// Where a child stands with one zone: the last thing their phone reported.
+enum ZoneState {
+  /// Last came in.
+  inside,
+
+  /// Last went out.
+  left,
+
+  /// Nothing reported yet.
+  unknown;
+
+  /// The state named [wire].
+  static ZoneState fromWire(String? wire) => switch (wire) {
+    'inside' => inside,
+    'left' => left,
+    _ => unknown,
+  };
+}
+
+/// A zone a parent set for a child, as the parent sees it.
+typedef FollowedZone = ({
+  String id,
+  String label,
+  String kind,
+  int radiusM,
+  List<int> days,
+  String? from,
+  String? to,
+  ZoneState state,
+  DateTime? since,
+});
+
+/// The child zones this phone watches and who follows them
+/// (`zad_family_my_zones`) — the second for the notice that stays up while
+/// it is shared.
+typedef MyZones = ({List<ChildZone> zones, List<String> watchers});
+
+/// Reads `zad_family_my_zones`; anything malformed is skipped.
+MyZones myZonesFromJson(Object? json) {
+  if (json is! Map || json['ok'] != true) {
+    return (zones: const <ChildZone>[], watchers: const <String>[]);
+  }
+  return (
+    zones: <ChildZone>[
+      for (final z in (json['zones'] as List?) ?? const <dynamic>[])
+        if (z is Map &&
+            z['id'] is String &&
+            z['lat'] is num &&
+            z['lng'] is num &&
+            z['radius_m'] is num)
+          (
+            id: z['id'] as String,
+            label: (z['label'] as String?) ?? '',
+            lat: (z['lat'] as num).toDouble(),
+            lon: (z['lng'] as num).toDouble(),
+            radius: (z['radius_m'] as num).toDouble(),
+          ),
+    ],
+    watchers: <String>[
+      for (final w in (json['watchers'] as List?) ?? const <dynamic>[])
+        if (w is String && w.isNotEmpty) w,
+    ],
+  );
+}
+
 /// What `zad_family_member_view` returned: each scope's status, and only the
 /// granted scopes' data.
 class FollowedMember {
@@ -147,6 +227,8 @@ class FollowedMember {
     this.topCategories = const <({String category, double amount})>[],
     this.appointments,
     this.choresOpen,
+    this.canFollowLocation = false,
+    this.zones,
   });
 
   /// Reads the function's answer.
@@ -167,6 +249,7 @@ class FollowedMember {
     final meds = json['medicines'];
     final spending = json['spending'];
     final tasks = json['tasks'];
+    final location = json['location'];
     return FollowedMember(
       shares: shares,
       medicines: meds is List
@@ -217,6 +300,29 @@ class FollowedMember {
             ]
           : null,
       choresOpen: tasks is Map ? (tasks['chores_open'] as num?)?.toInt() : null,
+      canFollowLocation: json['can_follow_location'] == true,
+      zones: location is Map
+          ? <FollowedZone>[
+              for (final z
+                  in ((location['zones'] as List?) ?? const <dynamic>[])
+                      .whereType<Map<dynamic, dynamic>>())
+                if (z['zone_id'] is String)
+                  (
+                    id: z['zone_id'] as String,
+                    label: (z['zone'] as String?) ?? '',
+                    kind: (z['kind'] as String?) ?? 'other',
+                    radiusM: (z['radius_m'] as num?)?.toInt() ?? 150,
+                    days: <int>[
+                      for (final d in (z['days'] as List?) ?? const <dynamic>[])
+                        if (d is num) d.toInt(),
+                    ],
+                    from: z['from'] as String?,
+                    to: z['to'] as String?,
+                    state: ZoneState.fromWire(z['state'] as String?),
+                    since: DateTime.tryParse((z['since'] as String?) ?? ''),
+                  ),
+            ]
+          : null,
     );
   }
 
@@ -237,6 +343,19 @@ class FollowedMember {
 
   /// Chores still open; null when not shared.
   final int? choresOpen;
+
+  /// Whether the member is a child, the only one whose places may be
+  /// followed (the server says so).
+  final bool canFollowLocation;
+
+  /// The child's zones and last state; null when not shared.
+  final List<FollowedZone>? zones;
+
+  /// The scopes that can be asked of this member: location only for a child.
+  List<FamilyShareScope> get followable => <FamilyShareScope>[
+    for (final s in FamilyShareScope.values)
+      if (s != FamilyShareScope.location || canFollowLocation) s,
+  ];
 
   /// Where [scope] stands, or null when it was never asked for.
   FamilyShareStatus? statusOf(FamilyShareScope scope) => shares[scope]?.status;

@@ -5,10 +5,12 @@
 /// refreshed.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad_geofence/zad_geofence.dart';
 
 /// The real one.
 class SupabasePlaceServer implements PlaceServer {
@@ -42,6 +44,26 @@ class SupabasePlaceServer implements PlaceServer {
       'left_at': leftAt.toUtc().toIso8601String(),
     },
   );
+
+  @override
+  Future<void> zoneEvent({
+    required String zoneId,
+    required PlaceTransition transition,
+    required DateTime at,
+  }) async {
+    final result = await _client.rpc<Object?>(
+      'zad_family_zone_event',
+      params: <String, dynamic>{
+        'p_zone': zoneId,
+        'p_transition': transition == PlaceTransition.exit ? 'exit' : 'enter',
+        'p_at': at.toUtc().toIso8601String(),
+      },
+    );
+    // A refusal (sharing stopped, zone gone) is final for this event.
+    if (result is Map && result['ok'] != true) {
+      debugPrint('[places] zone event refused: ${result['reason']}');
+    }
+  }
 
   @override
   Future<void> saveLastLocation(GeoPoint coarse) async {

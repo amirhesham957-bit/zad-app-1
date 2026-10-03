@@ -409,6 +409,25 @@ async function callCoreIntel(action: string, payload: unknown, userId: string): 
 // «موقعك قديم» حتى والإذن مفعّل. ١٤ ساعة = دورة التحديث + هامش؛ وفتح الرئيسية بيحدّثه كمان.
 const LOCATION_MAX_AGE_MS = 14 * 60 * 60 * 1000;
 
+/**
+ * نطاقات الأولاد في سناب شوت العيلة: «kids_places» = لكل نطاق، الطفل وآخر حالة (inside =
+ * آخر حاجة دخل، left = آخر حاجة خرج، unknown = لسه) ومن إمتى. مفيش إحداثيات. بيتحط بس لو فيه
+ * نطاق — وفشل القراية مابيوقفش السناب شوت (قبل نشر المايجريشن الدالة مش موجودة).
+ */
+export function kidsPlaces(res: { data?: unknown; error?: { message?: string } | null }): { kids_places?: unknown[] } {
+  if (res?.error) {
+    console.warn("[snapshot] kids places skipped:", res.error.message);
+    return {};
+  }
+  const rows = Array.isArray(res?.data) ? res.data as Array<Record<string, unknown>> : [];
+  if (rows.length === 0) return {};
+  return {
+    kids_places: rows.map((r) => ({
+      child: r.member_alias, place: r.zone, state: r.state, since: r.since ?? null,
+    })),
+  };
+}
+
 /** صف ذاكرة زي ما zad_memory_live_notes / zad_memory_recall_entities بيرجّعوه. */
 type MemoryRow = {
   id: string; scope: string; note: string; confidence: number; evidence_count: number;
@@ -844,7 +863,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   let familySharedMemory: MemoryRow[] = [];
   if (famMembership?.family_id) {
     const familyId = famMembership.family_id;
-    const [membersRes, choresRes, goalsRes, tasRes, sharedMemRes] = await Promise.all([
+    const [membersRes, choresRes, goalsRes, tasRes, sharedMemRes, kidsPlacesRes] = await Promise.all([
       sb.from("family_members").select("role,alias,balance,savings_goal,last_seen_at").eq("family_id", familyId).limit(20),
       sb.from("family_chores").select("title,assigned_to,due_date,reward_amount,is_completed")
         .eq("family_id", familyId).order("created_at", { ascending: false }).limit(40),
@@ -856,6 +875,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("family_id", familyId).neq("user_id", userId)
         .is("superseded_by", null).or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`)
         .limit(20),
+      // «الولد فين؟» — نطاقات الأولاد اللي وافقوا (20261003110000): آخر دخول/خروج بس، مش مكان.
+      sb.rpc("zad_family_zone_status", { p_viewer: userId }),
     ]);
     familySharedMemory = (sharedMemRes.data ?? []) as typeof familySharedMemory;
     for (const [name, res] of [["family_chores", choresRes], ["family_goals", goalsRes], ["family_tasbiha", tasRes]] as const) {
@@ -890,6 +911,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         name: t.tree_name ?? "", level: t.level ?? 1, score: t.score ?? 0,
         clicks: t.total_clicks ?? 0, streak: t.streak_days ?? 0, mature: !!t.is_mature,
       })),
+      ...kidsPlaces(kidsPlacesRes),
     };
   }
 
@@ -6290,7 +6312,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - لو رجعتلك نتيجة أداة فيها status=awaiting_user_confirmation: **متقولش إنه اتسجل**. قول للعميل بجملة طبيعية إنك محتاج موافقته، من غير ما تنقل أي نص تقني أو اسم حالة.
    - **متحكيش نتايج الأدوات للعميل زي ما هي أبداً.** دي رسايل نظام ليك إنت. اللي بيتقال للعميل جملة بشرية بلغته.
 8. متكتبش أي اسم تقني في ردك. تكلم بشكل طبيعي يناسب ${voiceMode ? "المكالمة الصوتية" : "المحادثة المكتوبة"}.
-${(snap?.family) ? `9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.` : ""}
+${(snap?.family) ? `9. **عيلة العميل (family)**: لو مش null، العميل عنده عيلة — أفرادها ومحافظ أطفالهم ومهامهم وأهدافهم وأشجار التسبيحة كلها جوه الـsnapshot. استخدمها عشان تتابع معاه: "أحمد خلّص مهام النهاردة؟" أو "هدف العيلة الشهر ده وصل نصه" — برقم من snapshot ومحفوظ بأدب العائلة (ماتعرضش تفاصيل صرف فرد لأفراد تانيين). لو null فالعميل مش منضم لعيلة، ومتقولش "مش منضم" إلا لما يسأل عن عيلته.${Array.isArray(snap.family.kids_places) ? ' **family.kids_places** = آخر دخول (inside) أو خروج (left) لكل طفل من نطاق حدده الأهل، ومن إمتى (since) — **مش مكانه دلوقتي**: قول «آخر حاجة دخل المدرسة الساعة ٧:٤٥»، ماتقولش «هو في المدرسة».' : ""}` : ""}
 ${(Array.isArray(snap?.life_goals) && snap.life_goals.length > 0) ? `10. **أهداف حياة العميل (life_goals)**: دي أهداف هو بنفسه حطها — تابعها بنفسك: لو هدف current وصل قريب من target شجّعه بالرقم الحقيقي، ولو هدف واقف من غير تقدم اسأل عنه بغير لوم واقترح تفكيكه لمهام أصغر (schedule_task بـ goal_title). لما يسجل هدف جديد، فكّكه فوراً لمهام مرتبطة — هدف من غير مهام مجدولة بيتنسي.` : ""}
 11. **المواعيد والتذكيرات (appointments + now_local)**: «فكّريني بكذا الساعة كذا»، «عندي ميعاد/دكتور/مشوار/اجتماع» ⇒ add_appointment فوراً. احسب الوقت من now_local (اليوم والساعة وutc_offset)، ولو الساعة ملتبسة (٥ الصبح ولا العصر) خُد الأقرب في المستقبل المنطقي وقوله الوقت اللي سجلته. لو سأل «عندي إيه النهارده/بكرة؟» جاوب من appointments ومن مواعيد الأدوية. schedule_task للتحليل المؤجل بس، مش للتذكير. ولو التذكير مربوط بمكان مش بوقت («لما أروح الصيدلية/السوبرماركت/المول») ⇒ add_place_reminder، ولو سأل «فكّرتني بإيه؟» جاوب من place_reminders.
 11b. **الأدوية — صفر اختراع، وصفر شكر من غير تسجيل (قاعدة سلامة، مش قاعدة أسلوب)**:
