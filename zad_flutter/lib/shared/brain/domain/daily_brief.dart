@@ -32,7 +32,13 @@ enum BriefKind {
 
   /// Things that ran out or are running low.
   shortage,
+
+  /// Things someone in the family chat said the house needs («محتاجين عيش»).
+  familyNeed,
 }
+
+/// A family-chat need: the insight it came as, the item, and who said it.
+typedef FamilyNeed = ({String id, String item, String? who});
 
 /// One line of the brief.
 class BriefItem {
@@ -42,6 +48,7 @@ class BriefItem {
     required this.title,
     required this.detail,
     this.dose,
+    this.needs = const <FamilyNeed>[],
   });
 
   /// What it is about, which decides where a tap goes.
@@ -55,6 +62,9 @@ class BriefItem {
 
   /// For [BriefKind.doseDue]: the dose «خدتها» records.
   final DoseSlot? dose;
+
+  /// For [BriefKind.familyNeed]: what «ضيفهم» puts on the shopping list.
+  final List<FamilyNeed> needs;
 }
 
 String _money(double v, String currency) {
@@ -79,6 +89,7 @@ List<BriefItem> dailyBrief({
   required DateTime now,
   double? spendable,
   String currency = '',
+  List<FamilyNeed> familyNeeds = const <FamilyNeed>[],
   int renewalWithinDays = 3,
   int max = 5,
 }) {
@@ -160,6 +171,28 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.shortage,
         title: 'ناقصك $named$more',
         detail: 'افتح بيتي وضيفهم لقايمة التسوق',
+      ),
+    );
+  }
+
+  if (familyNeeds.isNotEmpty) {
+    final named = familyNeeds.take(3).map((n) => n.item).join('، ');
+    final more = familyNeeds.length > 3
+        ? ' و${familyNeeds.length - 3} كمان'
+        : '';
+    final who = <String>{
+      for (final n in familyNeeds)
+        if (n.who case final w? when w.isNotEmpty) w,
+    };
+    items.add(
+      BriefItem(
+        kind: BriefKind.familyNeed,
+        title: 'من شات العيلة: $named$more',
+        detail: who.isEmpty
+            ? 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟'
+            : '${who.join(' و')} ${who.length == 1 ? 'قال' : 'قالوا'} إنهم '
+                  'ناقصين — ضيفهم لقايمة التسوق؟',
+        needs: familyNeeds,
       ),
     );
   }

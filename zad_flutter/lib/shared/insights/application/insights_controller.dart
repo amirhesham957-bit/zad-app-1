@@ -66,6 +66,13 @@ class InsightsController extends Notifier<InsightsView> {
     _afterDecision();
   }
 
+  /// Marks [insight] done without an answer — a family need added to the
+  /// shopping list from the brief.
+  Future<void> markActed(ZadInsight insight) async {
+    await ref.read(insightsRepositoryProvider).markActed(insight);
+    _afterDecision();
+  }
+
   /// Kotlin's `answerBrainQuestion`: the card is marked acted, and the
   /// answer reaches zad-brain as an event (`trigger: event`) — the same
   /// pipeline as the daily run, which may raise a fresh card. Insights are

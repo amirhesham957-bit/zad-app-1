@@ -254,6 +254,44 @@ export function entityRecallText(message: string): string {
   return (variant === base ? base : `${base} | ${variant}`).slice(0, 1000);
 }
 
+// ── وضع السفر (20261003140000، ZAD_LIVING_BRAIN.md الشريحة ٦) ──────────────────
+
+/** أسماء البلاد اللي الناس بتسافرلها أكتر — للقالب الاحتياطي والسناب شوت. غيرها = الكود نفسه. */
+const COUNTRY_NAME_AR: Readonly<Record<string, string>> = {
+  EG: "مصر", SA: "السعودية", AE: "الإمارات", KW: "الكويت", QA: "قطر", BH: "البحرين", OM: "عُمان",
+  JO: "الأردن", LB: "لبنان", IQ: "العراق", SY: "سوريا", YE: "اليمن", PS: "فلسطين", LY: "ليبيا",
+  SD: "السودان", MA: "المغرب", TN: "تونس", DZ: "الجزائر", TR: "تركيا", GB: "بريطانيا", US: "أمريكا",
+  FR: "فرنسا", DE: "ألمانيا", IT: "إيطاليا", ES: "إسبانيا", GR: "اليونان", CY: "قبرص", MY: "ماليزيا",
+  ID: "إندونيسيا", TH: "تايلاند", GE: "جورجيا", AZ: "أذربيجان", RU: "روسيا", CN: "الصين", IN: "الهند",
+  PK: "باكستان", MV: "المالديف", CH: "سويسرا", AT: "النمسا", NL: "هولندا", BE: "بلجيكا", CA: "كندا",
+};
+
+/** اسم البلد بالعربي، أو الكود لو مش في القايمة. */
+export function countryNameAr(code: unknown): string {
+  const c = String(code ?? "").trim().toUpperCase();
+  return COUNTRY_NAME_AR[c] ?? c;
+}
+
+/** بعد المدة دي من غير ما الموبايل يأكد، الرحلة بتتعتبر قديمة ومابتدخلش السناب شوت. */
+export const TRAVEL_STALE_DAYS = 45;
+
+/**
+ * سياق السفر للسناب شوت: فين ومن إمتى وبلد السوق. `null` = في بلده، أو الرحلة قديمة (الموبايل
+ * مابلّغش من ٤٥ يوم — غالباً رجع ومافتحش التطبيق).
+ */
+export function travelContext(
+  row: { travel_country?: string | null; travel_since?: string | null; country?: string | null } | null | undefined,
+  nowMs: number,
+): { in: string; country_name: string; home: string; since: string; days: number } | null {
+  const away = String(row?.travel_country ?? "").trim().toUpperCase();
+  const home = String(row?.country ?? "").trim().toUpperCase();
+  const since = row?.travel_since ? Date.parse(row.travel_since) : NaN;
+  if (!/^[A-Z]{2}$/.test(away) || away === home || !Number.isFinite(since)) return null;
+  const days = Math.floor((nowMs - since) / 86_400_000);
+  if (days < 0 || days > TRAVEL_STALE_DAYS) return null;
+  return { in: away, country_name: countryNameAr(away), home, since: new Date(since).toISOString(), days };
+}
+
 /**
  * تذكيرات المكان (20260914007000) — «فكّريني لما أروح الصيدلية». 'any' = أي محل.
  */

@@ -214,6 +214,8 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   // نطاقات الأولاد (20261003110000): خبر لولي أمر، بهدوء — مش تخويف.
   family_zone_exit: "caring",
   family_zone_back: "warm",
+  // وصل بلد تانية (20261003140000): مبسوطة ليه، ومش بتبيع حاجة.
+  travel_arrived: "cheerful",
 };
 
 export function emotionForMoment(moment: unknown, fallbackText = ""): VoiceEmotion {

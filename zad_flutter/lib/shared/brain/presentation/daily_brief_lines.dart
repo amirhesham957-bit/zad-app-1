@@ -14,7 +14,9 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -27,6 +29,7 @@ List<BriefItem> watchDailyBrief(WidgetRef ref, {int max = 5}) {
   final doses = ref.watch(pharmacyControllerProvider).today;
   final subs = ref.watch(subscriptionsControllerProvider);
   final budget = ref.watch(budgetControllerProvider);
+  final needs = ref.watch(familyNeedsProvider);
   return dailyBrief(
     pantry: pantry,
     doses: doses,
@@ -35,8 +38,43 @@ List<BriefItem> watchDailyBrief(WidgetRef ref, {int max = 5}) {
     now: ref.read(nowProvider)(),
     spendable: budget.snapshot == null ? null : budget.spendable,
     currency: budget.snapshot?.currency ?? '',
+    familyNeeds: needs,
     max: max,
   );
+}
+
+/// The family-chat needs the nightly review left as suggestions. Empty when
+/// the insights cannot be read: the brief is read on every open of Home and
+/// must never fail because one of its sources did.
+final familyNeedsProvider = Provider<List<FamilyNeed>>((ref) {
+  try {
+    return <FamilyNeed>[
+      for (final i in ref.watch(insightsControllerProvider).pending)
+        if (i.isShoppingSuggestion)
+          (id: i.id, item: i.aboutItem ?? i.title, who: _whoOf(i.body)),
+    ];
+  } on Object {
+    return const <FamilyNeed>[];
+  }
+});
+
+/// «ماما قال في شات العيلة…» → «ماما», as zad-brain wrote it.
+String? _whoOf(String body) {
+  final at = body.indexOf(' قال في شات العيلة');
+  return at > 0 ? body.substring(0, at).trim() : null;
+}
+
+/// «ضيفهم»: each need onto the shopping list, then its suggestion is done.
+Future<void> addFamilyNeeds(WidgetRef ref, List<FamilyNeed> needs) async {
+  final shopping = ref.read(shoppingControllerProvider.notifier);
+  final insights = ref.read(insightsControllerProvider.notifier);
+  final pending = ref.read(insightsControllerProvider).pending;
+  for (final need in needs) {
+    await shopping.add(need.item);
+    for (final i in pending) {
+      if (i.id == need.id) await insights.markActed(i);
+    }
+  }
 }
 
 /// The brief's lines, or [empty] when nothing needs the customer.
@@ -67,7 +105,7 @@ class DailyBriefLines extends ConsumerWidget {
         ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
       ),
       BriefKind.overspent || BriefKind.renewal => open(ShellTab.money),
-      BriefKind.shortage => open(ShellTab.household),
+      BriefKind.shortage || BriefKind.familyNeed => open(ShellTab.household),
     };
 
     return Column(
@@ -84,6 +122,9 @@ class DailyBriefLines extends ConsumerWidget {
                         .read(pharmacyControllerProvider.notifier)
                         .take(item.dose!),
                   ),
+            onAdd: item.needs.isEmpty
+                ? null
+                : () => unawaited(addFamilyNeeds(ref, item.needs)),
           ),
       ],
     );
@@ -91,11 +132,12 @@ class DailyBriefLines extends ConsumerWidget {
 }
 
 class _Line extends StatelessWidget {
-  const new({required this.item, required this.onTap, this.onTake});
+  const new({required this.item, required this.onTap, this.onTake, this.onAdd});
 
   final BriefItem item;
   final VoidCallback onTap;
   final VoidCallback? onTake;
+  final VoidCallback? onAdd;
 
   (IconData, Color) get _look => switch (item.kind) {
     BriefKind.doseDue => (ZadIcons.pharmacy, ZadColors.terracottaRust),
@@ -103,6 +145,7 @@ class _Line extends StatelessWidget {
     BriefKind.overspent => (ZadIcons.budget, ZadColors.terracottaRust),
     BriefKind.renewal => (ZadIcons.card, ZadColors.info),
     BriefKind.shortage => (ZadIcons.shopping, ZadColors.forestEmerald),
+    BriefKind.familyNeed => (ZadIcons.family, ZadColors.forestEmerald),
   };
 
   @override
@@ -146,6 +189,15 @@ class _Line extends StatelessWidget {
                     shape: const StadiumBorder(),
                   ),
                   child: const Text('خدتها'),
+                ),
+              if (onAdd != null)
+                FilledButton(
+                  onPressed: onAdd,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text('ضيفهم'),
                 ),
             ],
           ),

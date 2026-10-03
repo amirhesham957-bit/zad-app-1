@@ -72,6 +72,9 @@ class ZadInsight {
   /// A question the brain needs answered.
   bool get isQuestion => kind == 'question';
 
+  /// A family-chat need to put on the shopping list (the brief shows it).
+  bool get isShoppingSuggestion => actionType == kShoppingAddAction;
+
   /// Critical.
   bool get isCritical => priority == 'critical';
 
@@ -99,17 +102,27 @@ class ZadInsight {
 /// How many cards Home shows — Kotlin's three.
 const int kHomeInsightLimit = 3;
 
+/// `action_type` of a family-chat need the nightly review found («محتاجين
+/// عيش», docs/agent/ZAD_LIVING_BRAIN.md): it is a line in «موجز زاد
+/// النهارده» with «ضيفهم», not a card of its own. zad-brain's
+/// `SHOPPING_ADD_ACTION` is the same string.
+const String kShoppingAddAction = 'shopping_add';
+
 /// Kotlin's home filter: `surface == "home_card"`, critical first, then
 /// newest, three at most. `bell` ones belong to the notification center.
 List<ZadInsight> homeInsights(List<ZadInsight> pending) {
-  final sorted = [...pending.where((i) => i.surface == 'home_card')]
-    ..sort((a, b) {
-      if (a.isCritical != b.isCritical) return a.isCritical ? -1 : 1;
-      final at = a.createdAt;
-      final bt = b.createdAt;
-      if (at == null || bt == null) return 0;
-      return bt.compareTo(at);
-    });
+  final sorted =
+      [
+        ...pending.where(
+          (i) => i.surface == 'home_card' && !i.isShoppingSuggestion,
+        ),
+      ]..sort((a, b) {
+        if (a.isCritical != b.isCritical) return a.isCritical ? -1 : 1;
+        final at = a.createdAt;
+        final bt = b.createdAt;
+        if (at == null || bt == null) return 0;
+        return bt.compareTo(at);
+      });
   return sorted.take(kHomeInsightLimit).toList();
 }
 

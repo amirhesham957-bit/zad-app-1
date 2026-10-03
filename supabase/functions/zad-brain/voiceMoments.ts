@@ -13,7 +13,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, situationalEmotion, VOICE_EMOTIONAL_RANGE, type VoiceEmotion } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
-import { isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
+import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 
@@ -118,6 +118,10 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
     "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد. لو again = true قولي إنها تاني جرعة تفوته النهارده.",
+  travel_arrived:
+    "العميل لسه واصل بلد تانية (country = كود البلد، وبلده home_country) — قولي اسم البلد بالعربي. text: سطر ترحيب قصير بالبلد واسمها، وعرض واحد: " +
+    "يرشحله سوبرماركت أو أماكن قريبة فيها اللي بيحبه لو عايز. speech: جملتين مبسوطين بلهجته. " +
+    "من غير نصايح سفر عامة، ومن غير ما تفترضي هو رايح ليه.",
   family_zone_exit:
     "تنبيه لولي أمر: ابنه/بنته (member_alias) خرج من «zone_label» الساعة local_time، جوه المواعيد اللي هو حددها. " +
     "text: سطر واحد هادي فيه مين، والمكان، والساعة — واقتراح يكلّمه يطمّن. speech: جملتين بلهجته من غير تخويف ولا " +
@@ -350,6 +354,14 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         title: `💊 ${who} فاتته جرعة ${item}`,
         text: `${again ? "تاني جرعة تفوت النهارده: " : ""}${who} ماسجلش إنه خد ${item}${at ? ` بتاعة ${at}` : ""}. اطمن عليه.`,
         speech: `${who} لسه ماخدش ${item}${at ? ` بتاعة ${at}` : ""}. ممكن تكلمه تطمن عليه؟`,
+      };
+    }
+    case "travel_arrived": {
+      const where = str(facts.country_name, 40) || (facts.country ? countryNameAr(facts.country) : "") || "هناك";
+      return {
+        title: `✈️ حمد الله على السلامة في ${where}`,
+        text: `شكلك وصلت ${where}! لو عايز، أرشحلك سوبرماركت أو أماكن قريبة فيها اللي بتحبه — قولّي بس.`,
+        speech: `حمد الله على السلامة! شكلك وصلت ${where}. عايزني أرشحلك أماكن قريبة فيها الحاجات اللي بتحبها؟`,
       };
     }
     case "family_zone_exit":
@@ -691,6 +703,12 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
       .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
     if (!share || (share as unknown[]).length === 0) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
+  }
+  // رجع بلده (أو راح بلد تالتة) قبل ما الترحيب يتبعت = مفيش ترحيب.
+  if (row.moment === "travel_arrived") {
+    const country = str(row.facts?.country, 2);
+    const { data: u } = await sb.from("zad_users").select("travel_country").eq("id", row.user_id).maybeSingle();
+    return !!country && (u as { travel_country?: string | null } | null)?.travel_country === country;
   }
   // نطاقات الأولاد: الطفل وقّف المشاركة (أو دوره اتغير) بعد ما اللحظة اتسجلت = مفيش تنبيه.
   if (FAMILY_ZONE_MOMENTS.has(row.moment)) {

@@ -7,7 +7,9 @@ import {
   type ConsolidatedFact,
   consolidateDay,
   type DayTurn,
+  type ConsolidatedNeed,
   parseConsolidation,
+  parseConsolidationNeeds,
 } from "./consolidation.ts";
 
 // 2026-10-03 12:00 بتوقيت القاهرة.
@@ -88,6 +90,7 @@ Deno.test("يوم فيه أقل من ٣ رسايل من العميل: مفيش �
     markDone: async (at) => {
       marked = at;
     },
+    writeNeed: async () => true,
     today: "2026-10-03",
     timeZone: CAIRO,
     nowMs: NOW,
@@ -123,12 +126,13 @@ Deno.test("يوم يستاهل: نداء واحد، كل حقيقة بتتكتب
     markDone: async (at) => {
       marked = at;
     },
+    writeNeed: async () => true,
     today: "2026-10-03",
     timeZone: CAIRO,
     nowMs: NOW,
   });
   assertEquals(calls, 1);
-  assertEquals(r, { status: "done", written: 1, refused: 1 });
+  assertEquals(r, { status: "done", written: 1, refused: 1, needs: 0 });
   assertEquals(written[0].about[0].name, "ماما");
   assertEquals(marked, day[day.length - 1].at);
 });
@@ -148,6 +152,7 @@ Deno.test("الموديل وقع: المراجعة مابتتعلّمش خلصا
       markDone: async () => {
         marked = true;
       },
+      writeNeed: async () => true,
       today: "2026-10-03",
       timeZone: CAIRO,
       nowMs: NOW,
@@ -158,3 +163,69 @@ Deno.test("الموديل وقع: المراجعة مابتتعلّمش خلصا
   assert(threw);
   assertEquals(marked, false);
 });
+
+Deno.test("طلبات البيت: اسم الصنف ومين قال، من غير تكرار بنفس مفتاح المقارنة", () => {
+  const out = parseConsolidationNeeds(JSON.stringify({
+    facts: [],
+    needs: [
+      { item: "عيش", who: "ماما" },
+      { item: "عَيش", who: "بابا" },
+      { item: "", who: "حد" },
+      { item: "لبن" },
+    ],
+  }));
+  assertEquals(out, [{ item: "عيش", who: "ماما" }, { item: "لبن", who: null }]);
+  assertEquals(parseConsolidationNeeds("كلام"), []);
+});
+
+Deno.test("شات العيلة لوحده يكفي: «محتاجين عيش» مابتستناش العميل يكلّم زاد، ومفيش علامة", async () => {
+  const needs: ConsolidatedNeed[] = [];
+  let marked = false;
+  let calls = 0;
+  const r = await consolidateDay({
+    dueTurns: async () => [],
+    familyChat: async () => [{ who: "ماما", text: "محتاجين عيش وبيض" }],
+    known: async () => [],
+    compose: async (_s, user) => {
+      calls++;
+      assert(!user.includes("العميل:"));
+      return JSON.stringify({ facts: [], needs: [{ item: "عيش", who: "ماما" }, { item: "بيض", who: "ماما" }] });
+    },
+    write: async () => "inserted",
+    markDone: async () => {
+      marked = true;
+    },
+    writeNeed: async (n) => {
+      needs.push(n);
+      return n.item !== "بيض"; // بيض كان في القايمة أصلاً
+    },
+    today: "2026-10-03",
+    timeZone: CAIRO,
+    nowMs: NOW,
+  });
+  assertEquals(calls, 1);
+  assertEquals(needs.map((n) => n.item), ["عيش", "بيض"]);
+  assertEquals(r.needs, 1);
+  assertEquals(marked, false);
+});
+
+Deno.test("طلبات من غير شات عيلة بتتجاهل — الموديل مايخترعش «ناقص» من محادثة العميل", async () => {
+  let wroteNeed = false;
+  await consolidateDay({
+    dueTurns: async () => turns(7),
+    familyChat: async () => [],
+    known: async () => [],
+    compose: async () => JSON.stringify({ facts: [], needs: [{ item: "عيش" }] }),
+    write: async () => "inserted",
+    markDone: async () => {},
+    writeNeed: async () => {
+      wroteNeed = true;
+      return true;
+    },
+    today: "2026-10-03",
+    timeZone: CAIRO,
+    nowMs: NOW,
+  });
+  assertEquals(wroteNeed, false);
+});
+
