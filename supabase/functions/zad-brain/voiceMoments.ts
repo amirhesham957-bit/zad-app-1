@@ -62,6 +62,9 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
  */
 export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed"]);
 
+/** نطاقات الأولاد (20261003110000): خرج من نطاق جوه مواعيده، ورجع بعدها. */
+export const FAMILY_ZONE_MOMENTS: ReadonlySet<string> = new Set(["family_zone_exit", "family_zone_back"]);
+
 /**
  * حراسة منع الهلوسة الدوائية (٢٠٢٦-٠٩-١٩).
  *
@@ -115,6 +118,13 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
     "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد. لو again = true قولي إنها تاني جرعة تفوته النهارده.",
+  family_zone_exit:
+    "تنبيه لولي أمر: ابنه/بنته (member_alias) خرج من «zone_label» الساعة local_time، جوه المواعيد اللي هو حددها. " +
+    "text: سطر واحد هادي فيه مين، والمكان، والساعة — واقتراح يكلّمه يطمّن. speech: جملتين بلهجته من غير تخويف ولا " +
+    "افتراض إن فيه مشكلة (ممكن خرج مع المدرسة نفسها). ماتقوليش مكانه دلوقتي — إحنا عارفين إنه خرج بس.",
+  family_zone_back:
+    "تنبيه لولي أمر: ابنه/بنته (member_alias) رجع «zone_label» الساعة local_time بعد ما كان خرج. " +
+    "text: سطر واحد مطمّن. speech: جملة أو اتنين دافيين قصيرين.",
   dose_due:
     "ميعاد الجرعة دلوقتي بالظبط (item_name). text: سطر واحد فيه اسم الدوا وإن ميعاده دلوقتي، وإنه يدوس «خدته» بعدها. " +
     "speech: جملتين قصيرين حنينين بلهجته: فكّريه ياخده دلوقتي بالاسم. من غير أي لوم — لسه مافاتش حاجة.",
@@ -341,6 +351,24 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         text: `${again ? "تاني جرعة تفوت النهارده: " : ""}${who} ماسجلش إنه خد ${item}${at ? ` بتاعة ${at}` : ""}. اطمن عليه.`,
         speech: `${who} لسه ماخدش ${item}${at ? ` بتاعة ${at}` : ""}. ممكن تكلمه تطمن عليه؟`,
       };
+    }
+    case "family_zone_exit":
+    case "family_zone_back": {
+      const who = str(facts.member_alias, 40) || "ابنك";
+      const zone = str(facts.zone_label, 40) || "النطاق";
+      const time = str(facts.local_time, 5);
+      const at = time ? ` الساعة ${time}` : "";
+      return moment === "family_zone_exit"
+        ? {
+          title: `📍 ${who} خرج من ${zone}`,
+          text: `${who} خرج من «${zone}»${at}. لو مش متوقع، كلّمه تطمن عليه.`,
+          speech: `${who} خرج من ${zone}${at}. ممكن تكلمه تطمن عليه؟`,
+        }
+        : {
+          title: `📍 ${who} رجع ${zone}`,
+          text: `${who} رجع «${zone}»${at}.`,
+          speech: `اطمن، ${who} رجع ${zone}${at}.`,
+        };
     }
     case "dose_missed":
       return {
@@ -663,6 +691,15 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
       .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
     if (!share || (share as unknown[]).length === 0) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
+  }
+  // نطاقات الأولاد: الطفل وقّف المشاركة (أو دوره اتغير) بعد ما اللحظة اتسجلت = مفيش تنبيه.
+  if (FAMILY_ZONE_MOMENTS.has(row.moment)) {
+    const memberId = str(row.facts?.member_id, 60);
+    if (!memberId) return false;
+    const { data: granted } = await sb.rpc("zad_family_share_granted", {
+      p_viewer: row.user_id, p_owner: memberId, p_scope: "location",
+    });
+    return granted === true;
   }
   if (!row.moment.startsWith("dose_")) return true;
   // لحظات الجرعة من السيرفر (20260915001000): item_ids + scheduled_at. لو اتسجل إنه خد أي دوا منهم
@@ -1066,7 +1103,12 @@ export function tooSoonAfterLast(moment: string, lastSentMs: number | null, nowM
  * مابتتمسكش أبداً ومابتتعدّش في السقف: الجرعات (قرار المالك: مستثناة تماماً)، وتذكير
  * ميعاد العميل — وقت هو اللي حدده، زي الجرعة بالظبط.
  */
-export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "appointment_soon"]);
+export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
+  ...DOSE_MOMENTS, "appointment_soon",
+  // ابنك خرج من المدرسة (20261003110000) خبر أمان مش دردشة: مايستناش ٢٠ دقيقة ولا الهدوء
+  // ولا السقف. الشباك نفسه (ساعات الدراسة) ولي الأمر هو اللي حدده.
+  ...FAMILY_ZONE_MOMENTS,
+]);
 
 /**
  * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي

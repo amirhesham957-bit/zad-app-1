@@ -26,6 +26,33 @@ abstract interface class FamilySharesRemote {
 
   /// What [ownerId] shares with this account.
   Future<FollowedMember> memberView(String ownerId);
+
+  /// Adds a zone for a child who agreed (`zad_family_zone_save`); the server
+  /// checks the yes and tells the child.
+  Future<void> saveZone({
+    required String memberId,
+    required String label,
+    required String kind,
+    required double lat,
+    required double lon,
+    required int radiusM,
+    required List<int> days,
+    required String from,
+    required String to,
+  });
+
+  /// Stops watching a zone.
+  Future<void> deleteZone(String zoneId);
+
+  /// The zones this phone's owner agreed to share, and who follows them.
+  Future<MyZones> myZones();
+
+  /// Whether this account lets زاد read its own family-chat messages, and
+  /// who in the family does.
+  Future<ChatConsent> chatConsent();
+
+  /// Turns that on or off, for this account only.
+  Future<void> setChatConsent({required bool on});
 }
 
 /// Over Supabase.
@@ -82,6 +109,59 @@ class SupabaseFamilySharesRemote implements FamilySharesRemote {
   );
 
   @override
+  Future<void> saveZone({
+    required String memberId,
+    required String label,
+    required String kind,
+    required double lat,
+    required double lon,
+    required int radiusM,
+    required List<int> days,
+    required String from,
+    required String to,
+  }) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_zone_save',
+      params: <String, dynamic>{
+        'p_member': memberId,
+        'p_label': label,
+        'p_kind': kind,
+        'p_lat': lat,
+        'p_lng': lon,
+        'p_radius': radiusM,
+        'p_days': days,
+        'p_from': from,
+        'p_to': to,
+      },
+    ),
+  );
+
+  @override
+  Future<void> deleteZone(String zoneId) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_zone_delete',
+      params: <String, dynamic>{'p_zone': zoneId},
+    ),
+  );
+
+  @override
+  Future<MyZones> myZones() async =>
+      myZonesFromJson(await _client.rpc<Object?>('zad_family_my_zones'));
+
+  @override
+  Future<ChatConsent> chatConsent() async => chatConsentFromJson(
+    await _client.rpc<Object?>('zad_family_chat_consent_view'),
+  );
+
+  @override
+  Future<void> setChatConsent({required bool on}) async => _ok(
+    await _client.rpc<Object?>(
+      'zad_family_chat_consent_set',
+      params: <String, dynamic>{'p_on': on},
+    ),
+  );
+
+  @override
   Future<FollowedMember> memberView(String ownerId) async {
     final result = await _client.rpc<Object?>(
       'zad_family_member_view',
@@ -108,4 +188,11 @@ final FutureProviderFamily<FollowedMember, String> followedMemberProvider =
     FutureProvider.autoDispose.family<FollowedMember, String>(
       (ref, ownerId) =>
           ref.watch(familySharesRemoteProvider).memberView(ownerId),
+    );
+
+/// Who lets زاد read their chat messages; refetched with `ref.invalidate`
+/// after a change.
+final FutureProvider<ChatConsent> familyChatConsentProvider =
+    FutureProvider.autoDispose<ChatConsent>(
+      (ref) => ref.watch(familySharesRemoteProvider).chatConsent(),
     );

@@ -52,18 +52,34 @@ class SupabaseMemoryRemote implements MemoryRemote {
 
   final SupabaseClient _client;
 
+  /// `zad_memory_live_notes` (20261003100000): only what still holds — not
+  /// a temporary note past its day, nor a belief the customer replaced — each
+  /// with who it is about and until when. Before that migration reaches the
+  /// project the function is missing, and the plain table read stands in.
   @override
   Future<List<Map<String, dynamic>>> fetchNotes({
     required String userId,
     required int limit,
   }) async {
-    final rows = await _client
-        .from('zad_memory')
-        .select('id, scope, note, confidence, evidence_count')
-        .eq('user_id', userId)
-        .order('confidence', ascending: false)
-        .limit(limit);
-    return rows.cast<Map<String, dynamic>>();
+    try {
+      final rows = await _client.rpc<dynamic>(
+        'zad_memory_live_notes',
+        params: <String, dynamic>{'p_user': userId, 'p_limit': limit},
+      );
+      return <Map<String, dynamic>>[
+        for (final r in (rows as List<dynamic>? ?? const <dynamic>[]))
+          Map<String, dynamic>.from(r as Map),
+      ];
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow;
+      final rows = await _client
+          .from('zad_memory')
+          .select('id, scope, note, confidence, evidence_count')
+          .eq('user_id', userId)
+          .order('confidence', ascending: false)
+          .limit(limit);
+      return rows.cast<Map<String, dynamic>>();
+    }
   }
 
   @override

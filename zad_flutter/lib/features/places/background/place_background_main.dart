@@ -11,7 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/nearby/data/nearby_remote.dart';
+import 'package:zad/shared/places/application/child_zones.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/data/place_server.dart';
 import 'package:zad/shared/places/domain/places.dart';
@@ -41,14 +43,26 @@ Future<void> placeBackgroundMain() async {
       supabaseServerCall(client),
       httpClient,
     );
-    await PlaceEngine(
+    final engine = PlaceEngine(
       host: const PluginPlaceHost(),
       server: SupabasePlaceServer(client),
       findShops: (at, kind) =>
           remote.stores(at: at, kind: kind, radius: kSearchRadius),
       notify: showAlertInBackground,
       now: DateTime.now,
-    ).handlePending();
+    );
+    await engine.handlePending();
+    // A zone the parent added, or a share the child stopped, while the app
+    // stayed closed: caught up on whatever event woke this engine.
+    try {
+      await ChildZonesSync(
+        remote: SupabaseFamilySharesRemote(client),
+        engine: engine,
+        notice: const LocalSharingNotice(),
+      ).sync();
+    } on Object catch (e) {
+      debugPrint('[place_background] zones not synced: $e');
+    }
   } on Object catch (e) {
     // Unhandled events stay stored; the next event or the app runs them.
     debugPrint('[place_background] failed: $e');

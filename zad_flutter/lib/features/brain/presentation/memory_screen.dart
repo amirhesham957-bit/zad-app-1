@@ -8,7 +8,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show NumberFormat;
+import 'package:intl/intl.dart' show DateFormat, NumberFormat;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -20,6 +22,7 @@ import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/brain/domain/habits.dart';
 import 'package:zad/shared/brain/domain/memory_note.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// Opens the screen.
 Future<void> showMemoryScreen(BuildContext context) => Navigator.of(context)
@@ -123,7 +126,14 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
   Widget build(BuildContext context) {
     final view = ref.watch(memoryControllerProvider);
     final snapshot = view.snapshot;
-    final notes = snapshot.notes;
+    // A temporary note past its day stays in the cache until the next refresh;
+    // it is no longer something زاد knows.
+    final now = ref.read(nowProvider)();
+    final notes = <MemoryNote>[
+      for (final n in snapshot.notes)
+        if (n.isLiveAt(now)) n,
+    ];
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
     // Before the first answer an empty snapshot is "not read yet".
     final loading = !view.hasFetched && view.isRefreshing && notes.isEmpty;
 
@@ -183,6 +193,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
                 for (final note in notes) ...<Widget>[
                   _NoteCard(
                     note: note,
+                    lastDay: lastDayLabel(note.validUntil, zone),
                     forgetting: view.forgettingId == note.id,
                     onForget: view.forgettingId == null
                         ? () => _forget(note)
@@ -423,14 +434,28 @@ class _HabitsCard extends StatelessWidget {
   );
 }
 
+/// «لحد ٩ أكتوبر» for a temporary note: the last day it holds, in the
+/// account's zone. [until] is the first instant it no longer does — midnight
+/// after that day — so a second earlier is the day itself.
+String? lastDayLabel(DateTime? until, tz.Location zone) {
+  if (until == null) return null;
+  final last = tz.TZDateTime.from(
+    until.toUtc().subtract(const Duration(seconds: 1)),
+    zone,
+  );
+  return 'لحد ${DateFormat('d MMMM', 'ar').format(last)}';
+}
+
 class _NoteCard extends StatelessWidget {
   const new({
     required this.note,
+    required this.lastDay,
     required this.forgetting,
     required this.onForget,
   });
 
   final MemoryNote note;
+  final String? lastDay;
   final bool forgetting;
   final VoidCallback? onForget;
 
@@ -454,7 +479,10 @@ class _NoteCard extends StatelessWidget {
             children: <Widget>[
               Text(note.note, style: ZadType.bodyMedium),
               const SizedBox(height: ZadSpacing.sm),
-              Row(
+              Wrap(
+                spacing: ZadSpacing.sm,
+                runSpacing: ZadSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: <Widget>[
                   DecoratedBox(
                     decoration: BoxDecoration(
@@ -474,15 +502,27 @@ class _NoteCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (note.evidenceCount > 1) ...<Widget>[
-                    const SizedBox(width: ZadSpacing.sm),
+                  if (note.evidenceCount > 1)
                     Text(
                       'اتأكدت ${note.evidenceCount} مرة',
                       style: ZadType.labelSmall.copyWith(
                         color: ZadColors.inkMuted,
                       ),
                     ),
-                  ],
+                  if (lastDay case final day?)
+                    Text(
+                      day,
+                      style: ZadType.labelSmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  if (note.about.isNotEmpty)
+                    Text(
+                      'عن: ${note.about.join('، ')}',
+                      style: ZadType.labelSmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
                 ],
               ),
             ],

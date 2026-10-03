@@ -4,6 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
@@ -11,6 +14,7 @@ import 'package:zad/shared/brain/data/memory_repository.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/brain/domain/habits.dart';
 import 'package:zad/shared/brain/domain/memory_note.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 class _Memory extends MemoryController {
   new(this.initial, {this.failure});
@@ -52,8 +56,16 @@ const _note = MemoryNote(
   evidenceCount: 3,
 );
 
+// 2026-10-03 12:00 in Cairo.
+final _now = DateTime.utc(2026, 10, 3, 9);
+
 void main() {
   late _Memory fake;
+
+  setUpAll(() async {
+    tz_data.initializeTimeZones();
+    await initializeDateFormatting('ar');
+  });
 
   Future<void> pump(
     WidgetTester tester,
@@ -69,7 +81,11 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [memoryControllerProvider.overrideWith(() => fake)],
+        overrides: [
+          memoryControllerProvider.overrideWith(() => fake),
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+          nowProvider.overrideWithValue(() => _now),
+        ],
         child: MaterialApp(
           theme: ZadTheme.light(),
           home: const Directionality(
@@ -100,6 +116,41 @@ void main() {
     expect(find.text('صرفك'), findsOneWidget);
     expect(find.text('اتأكدت 3 مرة'), findsOneWidget);
     expect(find.textContaining('spending_pattern'), findsNothing);
+  });
+
+  testWidgets('a temporary note says its last day and who it is about', (
+    tester,
+  ) async {
+    final temporary = MemoryNote(
+      id: 'n2',
+      scope: 'general',
+      note: 'أخو العميل أحمد قاعد عندهم في البيت',
+      // Midnight after 9 October in Cairo (+03:00): the 9th is the last day.
+      validUntil: DateTime.utc(2026, 10, 9, 21),
+      about: const <String>['أحمد', 'البيت'],
+    );
+    await pump(tester, MemorySnapshot(notes: <MemoryNote>[temporary]));
+    await tester.scrollUntilVisible(find.text(temporary.note), 200);
+
+    expect(find.text('لحد 9 أكتوبر'), findsOneWidget);
+    expect(find.text('عن: أحمد، البيت'), findsOneWidget);
+  });
+
+  testWidgets('a cached note past its last day is not shown', (tester) async {
+    final over = MemoryNote(
+      id: 'n3',
+      scope: 'general',
+      note: 'كان عندهم ضيوف الأسبوع اللي فات',
+      validUntil: DateTime.utc(2026, 10, 2, 21),
+    );
+    await pump(
+      tester,
+      MemorySnapshot(notes: <MemoryNote>[over, _note]),
+    );
+    await tester.scrollUntilVisible(find.text(_note.note), 200);
+
+    expect(find.text(over.note), findsNothing);
+    expect(find.text('لحد 2 أكتوبر'), findsNothing);
   });
 
   testWidgets('forgetting is asked first; "wait" keeps the note', (

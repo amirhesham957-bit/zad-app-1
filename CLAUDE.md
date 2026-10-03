@@ -270,6 +270,12 @@ already knowing where things stand instead of re-deriving it from commit history
   of 17 sections, recommendations/offers as brain skills rather than pages, «أماكني»
   out of appointments, «الديون» into «التزاماتي», real streaming next — and the four
   decisions the owner has to make first. Read it before restructuring any screen.
+- `docs/agent/ZAD_LIVING_BRAIN.md` — **the architectural reference for the "living brain"
+  (owner's request 2026-10-03)**: the server is the brain and the phone a copy; entities
+  and time extend `zad_memory` (not a second graph — EPIC_1_4's rejection still holds);
+  children's school zones and family-chat reading by explicit per-member consent, within
+  Google Play's stalkerware policy (**tracking an adult, a spouse included, is forbidden
+  even with consent**). Read it before touching memory, family location or family chat.
 - `docs/agent/FLUTTER_MIGRATION.md` — **the Flutter migration's status, conventions and
   remaining plan. Read this first for any work in `zad_flutter/`** (the active stream
   since 2026-09-19); the bullet below is about the Kotlin app and the server.
