@@ -83,9 +83,12 @@ class MainActivity : FlutterActivity() {
             }
         // Kotlin's TravelDetector.detectCurrentCountryCode: the network's
         // country (right while roaming, unlike the SIM's), else the locale's.
+        // networkCountry is the network's country alone, or null (Wi-Fi only, no
+        // SIM): the trip zad-brain is told about (docs/agent/ZAD_LIVING_BRAIN.md
+        // slice 6) must not come from a phone set to English (US) in Cairo.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/travel")
             .setMethodCallHandler { call, result ->
-                if (call.method != "detectCountry") {
+                if (call.method != "detectCountry" && call.method != "networkCountry") {
                     result.notImplemented()
                     return@setMethodCallHandler
                 }
@@ -95,7 +98,11 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     null
                 }
-                val code = networkIso ?: Locale.getDefault().country.takeIf { it.isNotBlank() }
+                val code = if (call.method == "networkCountry") {
+                    networkIso
+                } else {
+                    networkIso ?: Locale.getDefault().country.takeIf { it.isNotBlank() }
+                }
                 result.success(code?.uppercase(Locale.US))
             }
     }
