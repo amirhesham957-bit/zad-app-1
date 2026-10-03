@@ -16,6 +16,7 @@ import { soulBlock } from "./soul.ts";
 import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
+import { curiosityQuestion } from "./curiosity.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -113,7 +114,8 @@ export function momentLimits(moment: string): { text: number; speech: number } {
 const MOMENT_GUIDANCE: Record<string, string> = {
   morning_greeting:
     "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
-    "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية.",
+    "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية. لو daily_question_kind = curiosity فده حاجة لاحظتيها في حساباته: " +
+    "اسأليها بفضول صاحب مش بمحاسبة، ومن غير أرقام غير اللي في السؤال.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -821,6 +823,9 @@ export async function processVoiceMoments(
         try {
           const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC");
           row.facts = { ...(row.facts ?? {}), ...(await morningFacts(sb, row.user_id, local)) };
+          // تتحفظ في الصف: الشات بيقرا منها السؤال اللي اتسأل (asked_this_morning)، والفضول بيقرا
+          // منها اللي اتسأل قبل كده عشان مايعيدوش.
+          await sb.from("zad_voice_moments").update({ facts: row.facts }).eq("id", row.id);
         } catch (e) {
           console.warn("[voice_moments] morning facts failed:", (e as Error)?.message);
         }
@@ -999,9 +1004,18 @@ export async function morningFacts(
   ]);
   // undefined = the read failed: ask nothing rather than ask what may be known.
   const ask = profile === undefined ? null : dailyQuestion(profile, local.date);
+  // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
+  const curious = profile === undefined || ask ? null : await curiosityQuestion(sb, userId, Date.parse(dayStart));
   return {
     local_date: local.date,
-    ...(ask ? { daily_question: ask.question, daily_question_field: ask.field } : {}),
+    ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
+    ...(curious
+      ? {
+        daily_question: curious.question,
+        daily_question_kind: "curiosity",
+        curiosity: { key: curious.key, kind: curious.kind, record: curious.record, ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}) },
+      }
+      : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,

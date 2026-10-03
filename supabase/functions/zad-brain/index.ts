@@ -94,6 +94,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
+import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -1163,6 +1164,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .eq("user_id", userId).gte("returned_at", new Date(Date.now() - 7 * 86400000).toISOString())
     .order("returned_at", { ascending: false }).limit(10);
 
+  // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية.
+  const { data: morningRow } = await sb.from("zad_voice_moments")
+    .select("facts,sent_at")
+    .eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
+    .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
+    .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
   for (const sub of subRes.data ?? []) {
     if (sub.renewal_date) upcoming.push({ type: "subscription", name: sub.title, when: sub.renewal_date });
@@ -1361,6 +1369,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     place_reminders: (placeReminderRows ?? []) as Array<Record<string, unknown>>,
     // خروجاته من البيت آخر أسبوع (وقت + صرف + محلات) — لو فعّل تنبيهات الموقع.
     recent_outings: (outingRows ?? []) as Array<Record<string, unknown>>,
+    // null = مفيش سؤال صبح اتبعت آخر ٢٠ ساعة.
+    asked_this_morning: askedThisMorning(morningRow as { facts?: unknown; sent_at?: string | null } | null),
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين
     // "مفيش مصاريف" و"مقدرتش أقرا المصاريف"، والعقل كان بيقول الأولانية وهو يقصد التانية.
     data_errors: dataErrors,
@@ -6308,6 +6318,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت.
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
+   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode)}
