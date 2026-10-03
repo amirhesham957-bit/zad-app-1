@@ -58,8 +58,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
+        <!-- ${monitoringToolKey} is "isMonitoringTool" unless the build passed
+             ENABLE_KIDS_GEOFENCING=false (android/app/build.gradle.kts). -->
         <meta-data
-            android:name="isMonitoringTool"
+            android:name="${monitoringToolKey}"
             android:value="child_monitoring"/>
         <!--
           geolocator declares a location foreground service for position

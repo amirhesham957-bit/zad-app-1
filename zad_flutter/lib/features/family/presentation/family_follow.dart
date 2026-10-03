@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -75,7 +76,12 @@ Future<bool> _syncZones(WidgetRef ref) async {
 /// who follows what, with «إلغاء». Nothing when there is neither.
 class FamilyFollowRequestsCard extends ConsumerWidget {
   /// Creates the card.
-  const new({super.key});
+  const new({super.key, this.kidsGeofencing = ZadEnv.kidsGeofencing});
+
+  /// Off in a build without kids geofencing: a location request is not shown
+  /// (it could not be honoured), though a share already on can still be
+  /// stopped.
+  final bool kidsGeofencing;
 
   Future<void> _act(
     BuildContext context,
@@ -143,7 +149,12 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
     final me = ref.watch(signedInUserIdProvider)();
     final shares = ref.watch(familySharesProvider).value ?? const [];
     final asked = shares
-        .where((s) => s.ownerId == me && s.status == FamilyShareStatus.pending)
+        .where(
+          (s) =>
+              s.ownerId == me &&
+              s.status == FamilyShareStatus.pending &&
+              (kidsGeofencing || s.scope != FamilyShareScope.location),
+        )
         .toList();
     final following = shares
         .where((s) => s.ownerId == me && s.status == FamilyShareStatus.granted)

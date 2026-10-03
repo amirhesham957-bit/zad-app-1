@@ -47,6 +47,16 @@ abstract final class ZadEnv {
         '.ingest.us.sentry.io/4512172230443008',
   );
 
+  /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). On by
+  /// default — the sideloaded APK. A Google Play build can pass
+  /// `--dart-define=ENABLE_KIDS_GEOFENCING=false` if review asks for it
+  /// (owner, 2026-10-03): the app then offers no zones and watches none, and
+  /// android/app/build.gradle.kts drops the isMonitoringTool declaration.
+  static const bool kidsGeofencing = bool.fromEnvironment(
+    'ENABLE_KIDS_GEOFENCING',
+    defaultValue: true,
+  );
+
   /// Whether both values were supplied at build time.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
