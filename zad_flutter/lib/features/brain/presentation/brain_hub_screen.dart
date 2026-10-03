@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
+import 'package:zad/features/brain/presentation/memory_graph_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/brain/presentation/staff_screen.dart';
 
@@ -42,6 +43,14 @@ class BrainHubScreen extends StatelessWidget {
         title: 'زاد عارف عني إيه',
         subtitle: 'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه',
         open: showMemoryScreen,
+      ),
+      _Entry(
+        icon: ZadIcons.memoryGraph,
+        title: 'شبكة زاد',
+        subtitle:
+            'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي '
+            '— وصدّرها لأوبسيديان',
+        open: showMemoryGraph,
       ),
       _Entry(
         icon: ZadIcons.knowledgeMap,
