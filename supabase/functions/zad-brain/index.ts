@@ -57,6 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
+import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
@@ -6904,8 +6905,8 @@ async function handleRequest(req: Request): Promise<Response> {
       const targetUserId = body.user_id;
 
       const { data: users } = targetUserId
-        ? await sbDream.from("zad_users").select("id, currency, monthly_limit").eq("id", targetUserId)
-        : await sbDream.from("zad_users").select("id, currency, monthly_limit").limit(50);
+        ? await sbDream.from("zad_users").select("id, currency, monthly_limit, country").eq("id", targetUserId)
+        : await sbDream.from("zad_users").select("id, currency, monthly_limit, country").limit(50);
 
       let synthesized = 0;
       for (const u of (users ?? [])) {
@@ -7011,6 +7012,50 @@ async function handleRequest(req: Request): Promise<Response> {
               );
               if (weeklyErr) console.error("weekly_synthesis memory write failed:", weeklyErr);
             }
+          }
+
+          // الشريحة ٤ من ZAD_LIVING_BRAIN.md — مراجعة اليوم كله بالموديل (consolidation.ts):
+          // حقايق بكياناتها وزمنها من محادثة اليوم وشات العيلة (الموافقين بس). البوابة SQL: يوم
+          // مافيهوش ≥ ٣ رسايل من العميل من آخر مراجعة = مفيش نداء موديل. فشلها مابيوقفش الباقي.
+          try {
+            const { data: tzData } = await sbDream.rpc("zad_market_timezone", { p_country: (u as { country?: string | null }).country ?? null });
+            const timeZone = typeof tzData === "string" && tzData ? tzData : "Africa/Cairo";
+            const night = await consolidateDay({
+              dueTurns: async () => {
+                const { data, error } = await sbDream.rpc("zad_memory_consolidation_due", {
+                  p_user: u.id, p_min_user_turns: CONSOLIDATION_MIN_USER_TURNS,
+                });
+                if (error) throw new Error(error.message);
+                return (Array.isArray(data) ? data : []) as DayTurn[];
+              },
+              familyChat: async () => {
+                const { data } = await sbDream.rpc("zad_family_chat_for_brain", { p_viewer: u.id });
+                return (Array.isArray(data) ? data : []) as FamilyLine[];
+              },
+              known: async () => {
+                const { data } = await sbDream.rpc("zad_memory_live_notes", { p_user: u.id, p_limit: 30 });
+                return (Array.isArray(data) ? data : []) as KnownNote[];
+              },
+              compose: async (system, user) =>
+                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 700, thinking: false })).text ?? "",
+              write: async (fact) => {
+                const r = await writeMemoryNoteWithLinking(sbDream, u.id, "general", fact.note, fact.confidence, null, {
+                  validUntil: fact.validUntil, about: fact.about,
+                });
+                return r.status;
+              },
+              markDone: async (at) => {
+                await sbDream.rpc("zad_memory_mark_consolidated", { p_user: u.id, p_at: at });
+              },
+              today: localNowContext(timeZone).date,
+              timeZone,
+              nowMs: Date.now(),
+            });
+            if (night.status === "done") {
+              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused`);
+            }
+          } catch (e) {
+            console.error("[dream] consolidation failed for user", u.id, e);
           }
 
           synthesized++;
