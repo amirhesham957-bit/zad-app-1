@@ -2,6 +2,8 @@
 // failure returns a reason string that becomes the tool_result the model reads back.
 // Kept in their own module (no Deno.serve here) so they're importable by tests directly.
 
+import { resolveValidUntil } from "./shared.ts";
+
 export type Validation = { ok: true } | { ok: false; reason: string };
 
 export interface RunContext {
@@ -186,6 +188,15 @@ export const validateRemember: Validator = (input, snap, ctx) => {
   if (len > 200) return { ok: false, reason: "طويلة أوي، لخّصها في جملة" };
   if (input.confidence !== undefined && (typeof input.confidence !== "number" || input.confidence < 0 || input.confidence > 1)) {
     return { ok: false, reason: "confidence لازم يكون رقم بين 0 و 1، مش كلمة زي \"medium\"" };
+  }
+  // حقيقة مؤقتة بتاريخ مش مفهوم كانت هتتسجل دائمة («ضيوف لحد الجمعة» للأبد) — نرفض ونقول ليه.
+  if (input.valid_until !== undefined && input.valid_until !== null && String(input.valid_until).trim() !== ""
+      && !resolveValidUntil(input.valid_until, snap?.now_local?.time_zone ?? "UTC", Date.now())) {
+    return {
+      ok: false,
+      reason: "valid_until لازم يبقى يوم جاي بصيغة YYYY-MM-DD (النهارده " + (snap?.now_local?.date ?? "؟") +
+        ") وفي حدود سنتين. لو الحقيقة دائمة سيبه فاضي.",
+    };
   }
   return { ok: true };
 };

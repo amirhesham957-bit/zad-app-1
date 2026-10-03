@@ -65,7 +65,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -409,6 +409,22 @@ async function callCoreIntel(action: string, payload: unknown, userId: string): 
 // «موقعك قديم» حتى والإذن مفعّل. ١٤ ساعة = دورة التحديث + هامش؛ وفتح الرئيسية بيحدّثه كمان.
 const LOCATION_MAX_AGE_MS = 14 * 60 * 60 * 1000;
 
+/** صف ذاكرة زي ما zad_memory_live_notes / zad_memory_recall_entities بيرجّعوه. */
+type MemoryRow = {
+  id: string; scope: string; note: string; confidence: number; evidence_count: number;
+  last_seen: string | null; valid_until?: string | null; about?: string[] | null;
+};
+
+/** شكل الملاحظة في الـSNAPSHOT: «until» و«about» بس لو ليهم قيمة. */
+export function memoryForSnapshot(m: MemoryRow) {
+  return {
+    id: m.id, scope: m.scope, note: m.note, confidence: m.confidence,
+    evidence_count: m.evidence_count, last_seen: m.last_seen,
+    ...(m.valid_until ? { until: String(m.valid_until).slice(0, 10) } : {}),
+    ...(m.about && m.about.length ? { about: m.about } : {}),
+  };
+}
+
 /**
  * استرجاع ذاكرة مرتبط بالرسالة — deterministic بدون LLM:
  * كل ملاحظة بتاخد نتيجة = (عدد الكلمات المشتركة مع الرسالة × 2) + confidence + evidence
@@ -463,14 +479,28 @@ const SKILL_KEYS = new Set([
  */
 export function parseFactSkillExtraction(
   text: string,
-): { fact: string | null; skillKey: string | null; skillNote: string | null } {
+): {
+  fact: string | null; skillKey: string | null; skillNote: string | null;
+  about: MemoryEntity[]; until: string | null;
+} {
   const lines = text.split("\n").map((l) => l.trim());
   const factLine = lines.find((l) => /^FACT:/i.test(l))?.replace(/^FACT:\s*/i, "").trim();
   const skillLine = lines.find((l) => /^SKILL:/i.test(l))?.replace(/^SKILL:\s*/i, "").trim();
+  // الشريحة ١ من ZAD_LIVING_BRAIN.md: الحقيقة عن مين/إيه، ولحد إمتى. «kind:اسم» مفصولين بفاصلة.
+  const aboutLine = lines.find((l) => /^ABOUT:/i.test(l))?.replace(/^ABOUT:\s*/i, "").trim();
+  const untilLine = lines.find((l) => /^UNTIL:/i.test(l))?.replace(/^UNTIL:\s*/i, "").trim();
+  const isNone = (v: string | undefined) => !v || /^none[.!؟]?$/i.test(v);
 
-  const fact = (factLine && !/^none[.!؟]?$/i.test(factLine) && factLine.length >= 10)
+  const fact = (factLine && !isNone(factLine) && factLine.length >= 10)
     ? factLine.slice(0, 200)
     : null;
+  const about = !fact || isNone(aboutLine) ? [] : normalizeMemoryEntities(
+    aboutLine!.split(/[,،]/).map((part) => {
+      const at = part.indexOf(":");
+      return at < 0 ? null : { kind: part.slice(0, at).trim(), name: part.slice(at + 1).trim() };
+    }),
+  );
+  const until = !fact || isNone(untilLine) ? null : untilLine!;
 
   let skillKey: string | null = null;
   let skillNote: string | null = null;
@@ -482,7 +512,7 @@ export function parseFactSkillExtraction(
       skillNote = note;
     }
   }
-  return { fact, skillKey, skillNote };
+  return { fact, skillKey, skillNote, about, until };
 }
 
 /**
@@ -493,16 +523,39 @@ export function parseFactSkillExtraction(
 async function writeMemoryNoteWithLinking(
   sb: SupabaseClient, userId: string, scope: string, note: string, confidence: number,
   familyId: string | null = null,
-): Promise<{ status: "inserted" | "strengthened" | "conflict" } | { status: "error"; message: string }> {
+  time: { validUntil?: string | null; about?: MemoryEntity[] } = {},
+): Promise<{ status: "inserted" | "strengthened" | "conflict" | "expired" } | { status: "error"; message: string }> {
   const { data, error } = await sb.rpc("zad_memory_upsert", {
     p_user: userId, p_scope: scope, p_note: note, p_conf: confidence, p_family_id: familyId,
+    p_valid_until: time.validUntil ?? null,
   });
   if (error) return { status: "error", message: error.message };
-  const upsertStatus = data as "inserted" | "strengthened" | "conflict";
+  const upsertStatus = data as "inserted" | "strengthened" | "conflict" | "expired";
+  if (upsertStatus === "expired") return { status: upsertStatus };
 
-  await embedAndLinkNote(sb, userId, scope, note, { link: upsertStatus !== "conflict" });
+  const noteId = upsertStatus === "conflict" ? null : await liveNoteId(sb, userId, scope, note);
+  if (noteId && time.about?.length) await attachEntities(sb, userId, noteId, time.about);
+  await embedAndLinkNote(sb, userId, scope, note, { link: upsertStatus !== "conflict", noteId });
 
   return { status: upsertStatus };
+}
+
+/**
+ * الـid بتاع الملاحظة **الحية** اللي نصها كده. نفس النص ممكن يكون في ملاحظة قديمة اتحلّ
+ * محلها (العميل رجع لرأيه القديم) — دي تاريخ، مش اللي اتكتبت دلوقتي.
+ */
+async function liveNoteId(sb: SupabaseClient, userId: string, scope: string, note: string): Promise<string | null> {
+  const { data } = await sb.from("zad_memory")
+    .select("id").eq("user_id", userId).eq("scope", scope).eq("note", note)
+    .is("superseded_by", null)
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return (data as { id: string } | null)?.id ?? null;
+}
+
+/** ربط ملاحظة بكياناتها — fail-open زي الـembedding: فشله مايبطّلش ملاحظة اتحفظت. */
+async function attachEntities(sb: SupabaseClient, userId: string, noteId: string, about: MemoryEntity[]): Promise<void> {
+  const { error } = await sb.rpc("zad_memory_attach_entities", { p_user: userId, p_note: noteId, p_entities: about });
+  if (error) console.warn("memory entities not attached:", error.message);
 }
 
 /**
@@ -522,7 +575,7 @@ async function writeMemoryNoteWithLinking(
  */
 async function embedAndLinkNote(
   sb: SupabaseClient, userId: string, scope: string, note: string,
-  opts: { link: boolean } = { link: true },
+  opts: { link: boolean; noteId?: string | null } = { link: true },
 ): Promise<void> {
   try {
     const vec = await embedText(note);
@@ -534,10 +587,7 @@ async function embedAndLinkNote(
     // كأضعف علاقة ممكنة — تشابه المتجهات بيقول "الملاحظتين قريبين من بعض"، مش "دي سبب
     // دي" أو "دي بتفسر دي". عتبة ٠.٥٥ بداية تحفظية مش مقايسة.
     if (!opts.link) return;
-    const { data: ownRow } = await sb.from("zad_memory")
-      .select("id").eq("user_id", userId).eq("scope", scope).eq("note", note)
-      .maybeSingle();
-    const ownId = (ownRow as { id: string } | null)?.id;
+    const ownId = opts.noteId ?? await liveNoteId(sb, userId, scope, note);
     if (!ownId) return;
     const { data: neighbors } = await sb.rpc("zad_memory_semantic_search", {
       p_user: userId, p_query_embedding: vec, p_limit: 4,
@@ -634,8 +684,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
-      sb.from("zad_memory").select("id,scope,note,confidence,evidence_count,last_seen")
-        .eq("user_id", userId).order("confidence", { ascending: false }).limit(20),
+      // الحية بس، كل واحدة بأسماء كياناتها وانتهائها (20261003100000). نفس الترتيب بالثقة.
+      sb.rpc("zad_memory_live_notes", { p_user: userId, p_limit: 20 }),
       sb.from("zad_insights").select("dedupe_key,dismiss_reason").eq("user_id", userId).eq("status", "dismissed"),
       sb.rpc("zad_brain_self_review", { p_user: userId }),
       // Task 18 cooldown data. Deliberately NOT filtered by status: an answered ("acted")
@@ -791,7 +841,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // بند 34.2 — ملاحظات شاركها فرد تاني في العيلة (remember(share_with_family=true)).
   // مستبعد ملاحظات العميل نفسه (neq user_id) عشان ما تتكررش — دي أصلاً بترجع من
   // memRes العادية تحت.
-  let familySharedMemory: Array<{ id: string; scope: string; note: string; confidence: number; evidence_count: number; last_seen: string | null }> = [];
+  let familySharedMemory: MemoryRow[] = [];
   if (famMembership?.family_id) {
     const familyId = famMembership.family_id;
     const [membersRes, choresRes, goalsRes, tasRes, sharedMemRes] = await Promise.all([
@@ -802,8 +852,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("family_id", familyId).order("created_at", { ascending: false }).limit(12),
       sb.from("family_tasbiha").select("tree_name,level,score,total_clicks,streak_days,is_mature,last_tasbih_at")
         .eq("family_id", familyId).order("last_tasbih_at", { ascending: false, nullsFirst: false }).limit(10),
-      sb.from("zad_memory").select("id,scope,note,confidence,evidence_count,last_seen")
-        .eq("family_id", familyId).neq("user_id", userId).limit(20),
+      sb.from("zad_memory").select("id,scope,note,confidence,evidence_count,last_seen,valid_until")
+        .eq("family_id", familyId).neq("user_id", userId)
+        .is("superseded_by", null).or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`)
+        .limit(20),
     ]);
     familySharedMemory = (sharedMemRes.data ?? []) as typeof familySharedMemory;
     for (const [name, res] of [["family_chores", choresRes], ["family_goals", goalsRes], ["family_tasbiha", tasRes]] as const) {
@@ -1127,9 +1179,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // اتضافت النهاردة، رغم إن deno test مرّت (كل fixtures الاختبار كانت بتبعت last_seen
     // صراحة، مش عن طريق المسار الحقيقي ده). بند 34.2: family-shared notes من أفراد
     // تانيين في العيلة بتتضاف هنا كمان — نفس الشكل بالظبط.
+    // ZAD_LIVING_BRAIN.md الشريحة ١: «about» = أسماء الكيانات، «until» = آخر يوم لحقيقة مؤقتة.
+    // بيتحطوا بس لو موجودين — توكنز البرومبت محسوبة (~٩ آلاف للنداء).
     memory: [
-      ...(memRes.data ?? []).map((m) => ({ id: m.id, scope: m.scope, note: m.note, confidence: m.confidence, evidence_count: m.evidence_count, last_seen: m.last_seen })),
-      ...familySharedMemory.map((m) => ({ id: m.id, scope: m.scope, note: m.note, confidence: m.confidence, evidence_count: m.evidence_count, last_seen: m.last_seen })),
+      ...((memRes.data ?? []) as MemoryRow[]).map(memoryForSnapshot),
+      ...familySharedMemory.map(memoryForSnapshot),
     ],
     // Task 28 — "timing" (عرفت خلاص) دايماً مؤقت بالتصميم: مقصود متستبعدش من
     // dismissed_keys، عشان upsert لاحق بنفس dedupe_key (مناسبة الشهر الجاي مثلاً) يرجّع
@@ -1495,10 +1549,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "remember": {
       const scope = input.scope ?? "general";
+      // الكيانات والزمن (ZAD_LIVING_BRAIN.md الشريحة ١). الـvalidator اتأكد إن valid_until
+      // لو موجود بيتقري ومستقبلي، فـnull هنا = حقيقة دائمة.
+      const about = normalizeMemoryEntities(input.about);
+      const validUntil = resolveValidUntil(input.valid_until, snap?.now_local?.time_zone ?? "UTC", Date.now());
 
-      // The customer already settled a conflict this tool reported last turn. Replace the
-      // old belief, record the contradiction, and drop the old note's confidence rather
-      // than deleting it — having been wrong once is itself evidence about a note.
+      // The customer already settled a conflict this tool reported last turn. The old belief
+      // is closed (superseded, not deleted — having been wrong once is evidence too) and the
+      // new one inherits its entities; a 'contradicts' link keeps the history visible.
       if (input.replaces_note_id) {
         const { data: resolved, error: resolveErr } = await sb.rpc("zad_memory_resolve_conflict", {
           p_user: userId, p_old_id: input.replaces_note_id, p_scope: scope,
@@ -1506,7 +1564,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         if (resolveErr) return `فشل الحفظ: ${resolveErr.message}`;
         if (!(resolved as any)?.ok) return "مرفوض: الملاحظة القديمة اللي بتشاور عليها مش موجودة.";
-        return "سجّلت الجديدة وربطتها بالقديمة كتناقض، وقلّلت ثقتي في القديمة";
+        const newId = (resolved as { new_id?: string }).new_id;
+        if (newId && about.length) await attachEntities(sb, userId, newId, about);
+        return "سجّلت الجديدة، والقديمة بقت تاريخ (اتقفلت ومربوطة بالجديدة كتناقض)";
       }
 
       // بند 34.2 — العميل لازم يكون في عيلة فعلاً عشان share_with_family تعمل حاجة.
@@ -1516,8 +1576,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         const { data: fam } = await sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
         shareFamilyId = (fam as { family_id: string } | null)?.family_id ?? null;
       }
-      const written = await writeMemoryNoteWithLinking(sb, userId, scope, input.note, input.confidence ?? 0.5, shareFamilyId);
+      const written = await writeMemoryNoteWithLinking(
+        sb, userId, scope, input.note, input.confidence ?? 0.5, shareFamilyId, { validUntil, about },
+      );
       if (written.status === "error") return `فشل الحفظ: ${written.message}`;
+      if (written.status === "expired") return "مرفوض: الميعاد اللي الحقيقة دي صحيحة لحده عدّى — ماسجلتهاش.";
       const data = written.status;
 
       // zad_memory_upsert used to read a contradiction as agreement: a near-identical note
@@ -1535,7 +1598,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           + `الجديدة مع replaces_note_id="${existing.id}".`;
       }
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
-      return "اتحفظت";
+      return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
     }
     case "link_memory": {
       // الدالة نفسها بتتحقق إن الملاحظتين بتوع نفس العميل قبل أي كتابة — العقل شغال
@@ -3240,6 +3303,34 @@ async function runTool(sb: SupabaseClient, userId: string, name: string, input: 
 // documented and validators.ts already enforces — only the transport changed.
 // ═══════════════════════════════════════════════════════════
 
+/**
+ * الكيانات والزمن في remember (ZAD_LIVING_BRAIN.md الشريحة ١) — نفس الشكل في أداة التحليل
+ * اليومي وأداة الشات. الـschema sanitizer بيشيل maxItems، فحد التلاتة في الوصف وفي
+ * normalizeMemoryEntities.
+ */
+const REMEMBER_ABOUT_AND_UNTIL = {
+  about: {
+    type: "array",
+    description:
+      "مين/إيه الملاحظة دي عنهم، ٣ بالكتير: شخص («ماما»، «يوسف»)، مكان («مدرسة النيل»، «كارفور المعادي»)، " +
+      "صنف («قهوة»)، أو جهة («البنك الأهلي»). العميل نفسه مش كيان — ماتحطوش.",
+    items: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["person", "place", "item", "org"] },
+        name: { type: "string" },
+      },
+      required: ["kind", "name"],
+    },
+  },
+  valid_until: {
+    type: "string",
+    description:
+      "بس لو الحقيقة مؤقتة («أخويا عندنا لحد الجمعة»، «صايم الشهر ده»، «في إجازة الأسبوع ده»): آخر يوم ليها " +
+      "YYYY-MM-DD. من غيرها الملاحظة دائمة.",
+  },
+} as const;
+
 const TOOLS: ToolDef[] = [
   {
     name: "forward_ledger",
@@ -3363,6 +3454,7 @@ const TOOLS: ToolDef[] = [
         scope: { type: "string" },
         note: { type: "string", description: "بين ١٠ و٢٠٠ حرف" },
         confidence: { type: "number", description: "رقم بين 0 و1" },
+        ...REMEMBER_ABOUT_AND_UNTIL,
         share_with_family: {
           type: "boolean",
           description:
@@ -4267,6 +4359,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         scope: { type: "string" },
         note: { type: "string", description: "بين ١٠ و٢٠٠ حرف" },
         confidence: { type: "number", description: "رقم بين 0 و1" },
+        ...REMEMBER_ABOUT_AND_UNTIL,
         share_with_family: {
           type: "boolean",
           description:
@@ -5084,6 +5177,17 @@ async function handleAgentTurn(
     return null;
   });
   const driftLessonsEarly = buildDriftLessons(sb, userId);
+  // «ماما عاملة إيه؟» — ملاحظات أي كيان اسمه في الرسالة (ZAD_LIVING_BRAIN.md الشريحة ١).
+  // مطابقة نصية في الداتابيز، من غير موديل ومن غير أداة زيادة.
+  const entityRecallEarly = Promise.resolve(
+    sb.rpc("zad_memory_recall_entities", { p_user: userId, p_text: entityRecallText(message), p_limit: 8 }),
+  ).then(({ data, error }) => {
+    if (error) console.warn("entity recall skipped:", error.message);
+    return (data ?? []) as MemoryRow[];
+  }).catch((e) => {
+    console.warn("entity recall skipped:", e);
+    return [] as MemoryRow[];
+  });
   const learnedSkillsEarly = loadSkills(sb, userId);
   const agentMailEarly = fetchUnreadAgentMail(sb, userId);
   // Telegram too: its history is the same table, read here with timestamps so a stale
@@ -5148,6 +5252,16 @@ async function handleAgentTurn(
     }
   } catch (e) {
     console.warn("semantic memory search skipped:", e);
+  }
+  // الكيان اللي اتذكر بالاسم أقوى دليل على الصلة من أي تشابه: ملاحظاته الحية في الأول، حتى
+  // لو مش من أقوى ٢٠ ملاحظة في السناب شوت.
+  const byEntity = await entityRecallEarly;
+  if (byEntity.length > 0) {
+    const named = new Set(byEntity.map((m) => m.id));
+    relevantMemory = [
+      ...byEntity.map(memoryForSnapshot),
+      ...relevantMemory.filter((m) => !named.has(m.id)),
+    ].slice(0, 12);
   }
   // حلقة التعلم: دروس من انحرافات الوكيل السابقة مع نفس العميل
   const driftLessons = await driftLessonsEarly;
@@ -5418,17 +5532,27 @@ async function handleAgentTurn(
           "لو فيه، اكتب SKILL: <key>|<وصف قصير>، وlist لازم يكون واحد بالظبط من: reminder_style, " +
           "budget_talk, shopping_nudge, med_tone, meal_suggest, digest_style, confirm_flow, general_pattern. " +
           "لو مفيش نمط واضح، اكتب SKILL: NONE.\n" +
+          "السطر الثالث ABOUT: مين/إيه الحقيقة عنهم، ٣ بالكتير بصيغة kind:اسم مفصولين بفاصلة — kind واحد من " +
+          "person, place, item, org (مثال: ABOUT: person:ماما, item:قهوة). العميل نفسه مش كيان. لو مفيش، ABOUT: NONE.\n" +
+          `السطر الرابع UNTIL: لو الحقيقة مؤقتة (ضيف لحد يوم، صيام الشهر، إجازة)، آخر يوم ليها YYYY-MM-DD — النهارده ${snap?.now_local?.date ?? new Date().toISOString().slice(0, 10)}. لو دائمة، UNTIL: NONE.\n` +
           "كل وصف (لو موجود) جملة عربية واحدة قصيرة (١٠-٢٠٠ حرف)، من غير أي سطر إضافي أو تعليق.",
         tools: [],
         history: [
           { role: "user", text: `رسالة العميل: ${message}\nاللي اتنفذ: ${executed.map((x) => x.summary).join("؛ ") || "-"}\nرد المساعد: ${reply}` },
         ],
-        maxTokens: 150,
+        maxTokens: 220,
         thinking: false,
       });
       const parsed = parseFactSkillExtraction(extraction.text ?? "");
-      if (parsed.fact) {
-        await writeMemoryNoteWithLinking(sb, userId, "general", parsed.fact, 0.55);
+      // تاريخ انتهاء مش مفهوم = الحقيقة متتسجلش خالص؛ تتسجل دائمة كان هيبقى أوحش
+      // («عندنا ضيوف» للأبد).
+      const factUntil = parsed.until
+        ? resolveValidUntil(parsed.until, snap?.now_local?.time_zone ?? "UTC", Date.now())
+        : null;
+      if (parsed.fact && (!parsed.until || factUntil)) {
+        await writeMemoryNoteWithLinking(sb, userId, "general", parsed.fact, 0.55, null, {
+          validUntil: factUntil, about: parsed.about,
+        });
       }
       if (parsed.skillKey && parsed.skillNote) {
         await sb.rpc("zad_skill_upsert", { p_user: userId, p_key: parsed.skillKey, p_note: parsed.skillNote, p_conf: 0.55 });
@@ -6156,6 +6280,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **اكتب الاستنتاج مش الجملة الخام.** "عنده عيّلين في سن المدرسة (أحمد ونور)" أنفع من نسخ كلامه. وحطّ "confidence" صادقة: تصريح مباشر عالي، استنتاج من إشارة واحدة منخفض.
    - **متستنتجش من معاملة واحدة.** خصم يوم ٢٧ مرة واحدة مش ميعاد راتب؛ تكراره شهرين هو اللي يبقى نمط. الملاحظة الغلط بتفضل وتوجّه كل قرار جاي.
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
+   - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
 
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.

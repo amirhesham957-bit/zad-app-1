@@ -19,6 +19,8 @@ class MemoryNote {
     required this.note,
     this.confidence = 0.5,
     this.evidenceCount = 1,
+    this.validUntil,
+    this.about = const <String>[],
   });
 
   /// Reads a row.
@@ -28,6 +30,11 @@ class MemoryNote {
     note: (json['note'] as String?) ?? '',
     confidence: (json['confidence'] as num?)?.toDouble() ?? 0.5,
     evidenceCount: (json['evidence_count'] as num?)?.toInt() ?? 1,
+    validUntil: DateTime.tryParse((json['valid_until'] as String?) ?? ''),
+    about: <String>[
+      for (final a in (json['about'] as List<dynamic>?) ?? const <dynamic>[])
+        if (a is String && a.isNotEmpty) a,
+    ],
   );
 
   /// The row id.
@@ -47,6 +54,18 @@ class MemoryNote {
   /// said once differs from one confirmed nine times.
   final int evidenceCount;
 
+  /// The first instant a temporary note («أخويا عندنا لحد الجمعة») stops being
+  /// true; null for a lasting one. The server stops sending it after that, but
+  /// the cached list can still hold it until the next refresh.
+  final DateTime? validUntil;
+
+  /// Who or what the note is about («ماما»، «قهوة») — its
+  /// `zad_memory_entities` names.
+  final List<String> about;
+
+  /// Whether the note still holds at [now].
+  bool isLiveAt(DateTime now) => validUntil?.isAfter(now) ?? true;
+
   /// Round-trips through the cache.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
@@ -54,6 +73,8 @@ class MemoryNote {
     'note': note,
     'confidence': confidence,
     'evidence_count': evidenceCount,
+    'valid_until': ?validUntil?.toUtc().toIso8601String(),
+    'about': about,
   };
 }
 

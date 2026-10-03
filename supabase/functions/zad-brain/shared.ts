@@ -121,6 +121,14 @@ const KIN: ReadonlyArray<readonly [RegExp, string]> = [
   [/^(جوزي|زوجي|husband)$/i, "جوزي"],
 ];
 
+/** الاسم الواحد لصلة قرابة («أمي» ← «ماما»)، أو null لو الكلمة مش صلة قرابة معروفة. */
+export function kinCanonical(word: string): string | null {
+  for (const [re, canonical] of KIN) {
+    if (re.test(word)) return canonical;
+  }
+  return null;
+}
+
 export function normalizeForPerson(raw: unknown): string | null {
   let name = cleanText(raw, 40);
   if (!name) return null;
@@ -158,6 +166,92 @@ export function itemKey(name: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+// ── الذاكرة بكيانات وزمن (20261003100000، docs/agent/ZAD_LIVING_BRAIN.md) ─────
+
+/** أنواع zad_memory_entities.kind — نفس الـcheck في الداتابيز. */
+export const MEMORY_ENTITY_KINDS = ["person", "place", "item", "org"] as const;
+export type MemoryEntityKind = typeof MEMORY_ENTITY_KINDS[number];
+export type MemoryEntity = { kind: MemoryEntityKind; name: string; key: string };
+
+/**
+ * الكيانات اللي ملاحظة بتشاور عليها، من أداة remember أو سطر ABOUT في الاستخلاص.
+ * نفس التوحيد الموجود بالظبط: الشخص عبر [normalizeForPerson] («أمي» = «ماما»، و«أنا» =
+ * العميل نفسه ⇒ مش كيان)، والمفتاح [itemKey]. عنصر ناقص أو نوعه مش معروف بيتشال بصمت —
+ * الملاحظة نفسها أهم من كياناتها. ٣ بالكتير، من غير تكرار.
+ */
+export function normalizeMemoryEntities(raw: unknown): MemoryEntity[] {
+  if (!Array.isArray(raw)) return [];
+  const out: MemoryEntity[] = [];
+  const seen = new Set<string>();
+  for (const r of raw) {
+    if (out.length >= 3) break;
+    const item = (r ?? {}) as { kind?: unknown; name?: unknown };
+    const kind = String(item.kind ?? "").trim().toLowerCase();
+    if (!(MEMORY_ENTITY_KINDS as readonly string[]).includes(kind)) continue;
+    const name = kind === "person" ? normalizeForPerson(item.name) : (cleanText(item.name, 60) || null);
+    if (!name) continue;
+    const key = itemKey(name).slice(0, 60);
+    if (!key || seen.has(`${kind}:${key}`)) continue;
+    seen.add(`${kind}:${key}`);
+    out.push({ kind: kind as MemoryEntityKind, name, key });
+  }
+  return out;
+}
+
+/** أطول مدة لحقيقة «مؤقتة». أبعد من كده = حقيقة دائمة، مش مؤقتة. */
+export const MEMORY_MAX_VALIDITY_DAYS = 730;
+
+/**
+ * انتهاء حقيقة مؤقتة (zad_memory.valid_until) زي ما الموديل كتبه. «YYYY-MM-DD» = لحد آخر
+ * اليوم ده بتوقيت العميل (يعني أول بكرته)، ووقت كامل بيتقري زي [resolveLocalIso]. `null` = مش
+ * وقت، أو فات، أو أبعد من سنتين — والمنادي هو اللي يقرر يرفض.
+ */
+export function resolveValidUntil(raw: unknown, timeZone: string, nowMs: number): string | null {
+  const text = String(raw ?? "").trim();
+  if (!text) return null;
+  const offset = localNowContext(timeZone, new Date(nowMs)).utc_offset;
+  let iso: string | null;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (dateOnly) {
+    const [y, m, d] = dateOnly.slice(1).map(Number);
+    const day = new Date(Date.UTC(y, m - 1, d));
+    // «2026-02-30» مش يوم — Date.UTC كانت هتقلبه ٢ مارس من غير ما تقول.
+    if (day.getUTCFullYear() !== y || day.getUTCMonth() !== m - 1 || day.getUTCDate() !== d) return null;
+    const next = new Date(day.getTime() + 86_400_000).toISOString().slice(0, 10);
+    iso = resolveLocalIso(next, offset);
+  } else {
+    iso = resolveLocalIso(text, offset);
+  }
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (t <= nowMs || t > nowMs + MEMORY_MAX_VALIDITY_DAYS * 86_400_000) return null;
+  return iso;
+}
+
+/**
+ * نص الرسالة لـ`zad_memory_recall_entities`: [itemKey] للرسالة كلها (عشان «كارفور المعادي»
+ * تتطابق كعبارة)، وبعد « | » نسخة كل كلمة فيها متوحّدة: صلة القرابة باسمها الواحد («أمي» ←
+ * «ماما»)، ومن غير حرف لازق في أولها («وماما»، «بالقهوة» ← «قهوه»). المطابقة نفسها في
+ * الداتابيز على كلمة أو عبارة كاملة.
+ */
+export function entityRecallText(message: string): string {
+  const words = message.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  const base = itemKey(words.join(" "));
+  const variant = words.map((w) => {
+    let k = itemKey(w);
+    // «وبالقهوة» فيها حرفين لازقين. صلة القرابة بتقف التقشير: «بابا» مش «ب» + «ابا».
+    for (let i = 0; i < 3; i++) {
+      const kin = kinCanonical(k);
+      if (kin) return itemKey(kin);
+      if (k.length > 3 && /^[وبلف]/.test(k)) k = k.slice(1);
+      else break;
+    }
+    if (k.length > 4 && k.startsWith("ال")) k = k.slice(2);
+    return k;
+  }).join(" ");
+  return (variant === base ? base : `${base} | ${variant}`).slice(0, 1000);
 }
 
 /**
