@@ -97,7 +97,7 @@ import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
-import { householdLoad, householdLoadRule } from "./householdLoad.ts";
+import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
@@ -1384,6 +1384,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     household_load: householdLoad({
       threat, available, budget, brokeMode: brokeActive,
       localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
+      appointmentsToday: appointmentsOnLocalDay((apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC"),
     }),
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
     savings_challenge: challengeRow

@@ -1158,12 +1158,24 @@ const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_
  */
 const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS]);
 
-export type MomentHold = "quiet_hours" | "daily_cap";
+export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day";
+
+/**
+ * «يوم مزحوم» (ZAD_LIVING_BRAIN.md الشريحة ١٨): لحظات تقدر تستنى يوم تاني — تذكير، عتاب على الغياب، حكاية
+ * الأسبوع، «رجعت وصرفت»، سلسلة اتقطعت. يوم فيه ٣ مواعيد أو أكتر بيتخطاهم، والباقي (جرعات، مواعيد، أمان،
+ * صباح الخير) زي ما هو.
+ */
+export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
+  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken",
+  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach",
+]);
+export const BUSY_DAY_APPOINTMENTS = 3;
 
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
-export function momentGate(moment: string, localHour: number, sentToday: number): MomentHold | null {
+export function momentGate(moment: string, localHour: number, sentToday: number, appointmentsToday = 0): MomentHold | null {
   if (NEVER_HELD_MOMENTS.has(moment)) return null;
   if (isQuietHour(localHour) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
+  if (BUSY_DAY_OPTIONAL_MOMENTS.has(moment) && appointmentsToday >= BUSY_DAY_APPOINTMENTS) return "busy_day";
   if (sentToday >= DAILY_VOICE_ALERT_CAP) return "daily_cap";
   return null;
 }
@@ -1201,5 +1213,23 @@ async function holdMoment(
   } catch (e) {
     console.warn("[voice_moments] daily count failed:", (e as Error)?.message);
   }
-  return momentGate(row.moment, hour, sentToday);
+  // مواعيد النهارده بتوقيته — بس للحظة تقدر تستنى. فشل العدّ = مايمنعش.
+  let appointmentsToday = 0;
+  if (BUSY_DAY_OPTIONAL_MOMENTS.has(row.moment)) {
+    try {
+      const local = localNowContext(tz, new Date(nowMs));
+      const dayStart = resolveLocalIso(`${local.date}T00:00`, local.utc_offset);
+      if (dayStart) {
+        const { count } = await sb.from("zad_appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", row.user_id).neq("status", "cancelled")
+          .gte("starts_at", dayStart)
+          .lt("starts_at", new Date(Date.parse(dayStart) + 86_400_000).toISOString());
+        appointmentsToday = count ?? 0;
+      }
+    } catch (e) {
+      console.warn("[voice_moments] appointments count failed:", (e as Error)?.message);
+    }
+  }
+  return momentGate(row.moment, hour, sentToday, appointmentsToday);
 }

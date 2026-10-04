@@ -21,6 +21,8 @@ export function householdLoad(input: {
   brokeMode: boolean;
   /** الساعة المحلية بتوقيت سوق الحساب. */
   localHour: number;
+  /** مواعيد النهارده (الشريحة ١٨، «يوم مزحوم»). */
+  appointmentsToday?: number;
 }): HouseholdLoad {
   const reasons: string[] = [];
   const available = Number(input.available);
@@ -32,12 +34,23 @@ export function householdLoad(input: {
     reasons.push("المتاح بالسالب");
   }
   if (input.localHour >= 0 && input.localHour < 5) reasons.push("الوقت متأخر بالليل");
+  if ((input.appointmentsToday ?? 0) >= 3) reasons.push(`النهارده فيه ${input.appointmentsToday} مواعيد`);
   if (reasons.length > 0) return { level: "high", reasons };
 
   if (input.threat === "SAFE" && budget > 0 && Number.isFinite(available) && available >= 0.3 * budget) {
     return { level: "easy", reasons: [`المتاح ${Math.round(available)} — أكتر من ٣٠٪ من الميزانية`] };
   }
   return { level: "normal", reasons: [] };
+}
+
+/** مواعيد النهارده بتوقيت سوق الحساب، من صفوف المواعيد الجاية في السناب شوت. */
+export function appointmentsOnLocalDay(
+  rows: ReadonlyArray<{ starts_at?: string | null }>, timeZone: string, now = new Date(),
+): number {
+  const day = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(iso));
+  const today = day(now.toISOString());
+  return rows.filter((r) => r.starts_at && Number.isFinite(Date.parse(r.starts_at)) && day(r.starts_at) === today).length;
 }
 
 /** قاعدة البرومبت — نفس الكلام في الشات والتحليل اليومي. "" لو مفيش household_load. */
