@@ -17,7 +17,9 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
+import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
+import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
@@ -81,6 +83,8 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // The occasion's banner (app_campaigns), under the greeting.
+          const ZadAppearOnEntry(child: CampaignBannerSlot()),
           // «موجز زاد النهارده» first: the brain says what matters today.
           // It replaced the grid of seventeen sections and the pantry,
           // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
@@ -176,6 +180,8 @@ class _Budget extends ConsumerWidget {
             // local write is still queued and the number on screen is this
             // device's arithmetic rather than the server's.
             isStale: view.isStale || view.pendingSpend > 0,
+            // The occasion's colours, when a campaign runs and they read.
+            gradient: campaignGradient(ref.watch(homeCampaignProvider)),
             // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
             onTap: () => ZadScreens.openWhyChanged(context),
             onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
