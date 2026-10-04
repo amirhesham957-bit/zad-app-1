@@ -57,7 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
-import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION } from "./consolidation.ts";
+import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
@@ -66,7 +66,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -101,6 +101,8 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
+import { DECISION_OPEN_MAX } from "./decisionReview.ts";
+import { monthlyTotals, resilience } from "./longMemory.ts";
 import { emergencyCard } from "./emergency.ts";
 import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollSummaries } from "./familyPolls.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -1199,6 +1201,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
     .order("sent_at", { ascending: false }).limit(1).maybeSingle();
 
+  // القرارات الكبيرة اللي اتسجّلت (الشريحة ٢٦) — عشان مايتسجّلش نفس القرار مرتين، ولو العميل سأل «قرار العربية طلع إزاي؟».
+  const { data: decisionRows } = await sb.from("zad_decision_log")
+    .select("label,decided_at,reviews,outcome").eq("user_id", userId)
+    .gte("decided_at", new Date(Date.now() - 120 * 86_400_000).toISOString())
+    .order("decided_at", { ascending: false }).limit(5);
+
   // جدول الحصص (school.ts، الشريحة ٢١): مين عنده إيه النهارده وبكرة.
   const { data: timetableRows } = await sb.from("zad_school_timetable")
     .select("person,weekday,period,starts,subject").eq("user_id", userId).limit(300);
@@ -1432,6 +1440,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const today = localNowContext(budgetState.timezone ?? "UTC").date;
       return { today: schoolDay(rows, weekdayOfDate(today)), tomorrow: schoolDay(rows, weekdayOfDate(today, 1)) };
     })(),
+    // null = مفيش قرار كبير اتسجّل آخر ١٢٠ يوم. outcome = آخر مراجعة (decisionReview.ts).
+    decisions: (decisionRows ?? []).length
+      ? ((decisionRows ?? []) as Array<{ label: string; decided_at: string; reviews: number; outcome: Record<string, unknown> | null }>).map((d) => ({
+        label: d.label, decided_on: String(d.decided_at).slice(0, 10), reviews: d.reviews,
+        last_review: d.outcome && !d.outcome.no_data
+          ? { outcome: d.outcome.outcome, predicted_surplus: d.outcome.predicted_surplus, actual_surplus: d.outcome.actual_surplus }
+          : null,
+      }))
+      : null,
     // منسّق الانتباه (attention.ts): الكروت المفتوحة قدام العميل، وعناوين كروت آخر ٢٤ ساعة (مايتقالوش تاني في الشات).
     attention: insightHistErr ? null : {
       open_cards: openCards((insightHistory ?? []) as Array<{ dedupe_key: string | null; status: string | null; priority: string | null; surface: string | null; created_at: string }>),
@@ -3385,6 +3402,68 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         ...impact,
       });
     }
+    case "household_resilience": {
+      // الشريحة ٢٧ — الشهور الصعبة اللي فاتت والبيت رجع منها في كام شهر، من حركاته (حتمي، صفر كوتة). بالطلب بس:
+      // ٤٠٠ يوم حركات مش حاجة تتقري في كل لقطة.
+      const { data: txns, error } = await sb.from("zad_transactions")
+        .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
+        .gte("created_at", new Date(Date.now() - 400 * 86_400_000).toISOString()).limit(10000);
+      if (error) return `مقدرتش أقرا التاريخ دلوقتي: ${error.message}`;
+      const currentMonth = localNowContext(snap?.cycle?.timezone ?? "UTC").date.slice(0, 7);
+      const r = resilience(monthlyTotals((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>), currentMonth);
+      if (!r) {
+        return "التاريخ أقل من ٦ شهور كاملة — مفيش صمود أتكلم عنه. ماتقولش أرقام عن «قبل كده»؛ ساعده في الشهر ده بس.";
+      }
+      return JSON.stringify({
+        ...r,
+        guidance: r.typical_recovery_months !== null
+          ? "قولها كحقيقة من تاريخه («قبل كده عدّيتوا شهر زي ده ورجعتوا في شهرين») — طمأنة مش وعظ ولا وعد. ماتقترحش إلغاء التزام ثابت."
+          : r.hard_months.length
+          ? "فيه شهور صعبة قبل كده بس البيت لسه مارجعش منها بالكامل — ماتقولش «هترجعوا»؛ ساعده بخطوة واحدة."
+          : "مفيش شهر صعب في تاريخه قبل كده — الشهر ده استثناء، وقوله كده لو بيطمّنه.",
+      });
+    }
+    case "log_decision": {
+      // الشريحة ٢٦ — قرار اتاخد فعلاً بأرقامه ومتوسطات البيت دلوقتي، عشان المحاسب يراجعه بعد ٣٠ و٩٠ يوم
+      // (decisionReview.ts). سؤال افتراضي («لو اشتريت…») مش قرار — الوصف والبرومبت بيقولوا كده.
+      const label = typeof input?.label === "string" ? input.label.replace(/\s+/g, " ").trim().slice(0, 80) : "";
+      if (!label) return "مرفوض: القرار محتاج اسم بكلام العميل.";
+      const oneTime = Math.max(0, Number(input?.one_time_cost) || 0);
+      const monthly = Math.max(0, Number(input?.monthly_cost) || 0);
+      const incomeChange = Number(input?.monthly_income_change) || 0;
+      if (oneTime === 0 && monthly === 0 && incomeChange === 0) {
+        return "مرفوض: محتاج تكلفة القرار (مرة واحدة أو كل شهر) أو تغيير في الدخل — من غيرها مفيش حاجة تتراجع.";
+      }
+      const { data: txns, error: txErr } = await sb.from("zad_transactions")
+        .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
+        .gte("created_at", new Date(Date.now() - 95 * 86_400_000).toISOString()).limit(2000);
+      if (txErr) return `مقدرتش أسجّل القرار دلوقتي: ${txErr.message}`;
+      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>);
+      if (avg.historyDays === 0) return "مرفوض: مفيش حركات أقيس عليها — المراجعة بعدين هتبقى من غير أساس.";
+      const { data: open, error: openErr } = await sb.from("zad_decision_log")
+        .select("id,label,decided_at").eq("user_id", userId).lt("reviews", 2)
+        .order("decided_at", { ascending: false }).limit(50);
+      if (openErr) return `مقدرتش أسجّل القرار دلوقتي: ${openErr.message}`;
+      const fields = {
+        one_time_cost: oneTime, monthly_cost: monthly, monthly_income_change: incomeChange,
+        baseline_income: avg.income, baseline_spend: avg.spend, baseline_days: avg.historyDays,
+      };
+      // نفس القرار آخر ٣٠ يوم = تصحيح أرقامه، مش قرار تاني.
+      const same = ((open ?? []) as Array<{ id: string; label: string; decided_at: string }>).find((d) =>
+        itemKey(d.label) === itemKey(label) && Date.now() - Date.parse(d.decided_at) <= 30 * 86_400_000
+      );
+      if (same) {
+        const { error } = await sb.from("zad_decision_log").update(fields).eq("id", same.id).eq("user_id", userId);
+        if (error) return `مقدرتش أحدّث القرار: ${error.message}`;
+        ctx.mutationCount++;
+        return `اتحدّثت أرقام «${label}». هراجعه معاه بعد شهر من يوم القرار وبعد ٣ شهور.`;
+      }
+      if ((open ?? []).length >= DECISION_OPEN_MAX) return "مرفوض: فيه قرارات كتير مستنية مراجعة — كفاية دول دلوقتي.";
+      const { error } = await sb.from("zad_decision_log").insert({ user_id: userId, label, ...fields });
+      if (error) return `مقدرتش أسجّل القرار: ${error.message}`;
+      ctx.mutationCount++;
+      return `اتسجّل «${label}». هراجع معاه بعد شهر وبعد ٣ شهور: الفايض الفعلي قصاد المحسوب.`;
+    }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
       // الهدف: العميل يشوف "بيته صح قد إيه" كرقم واحد، والعقل يشرح أكبر نقطة ضعف.
@@ -4555,6 +4634,30 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "household_resilience",
+    description:
+      "الشهور الصعبة اللي فاتت (المصاريف عدّت الدخل) والبيت رجع منها في كام شهر — من حركاته الفعلية، حتمي. " +
+      "نادِها لما العميل يقلق من شهر صعب («الشهر ده تقيل»، «مش هنعدّي»، «إحنا في أزمة»). أقل من ٦ شهور تاريخ = مفيش أرقام.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "log_decision",
+    description:
+      "سجّل قرار كبير **اتاخد فعلاً** («خلاص اشتريت العربية»، «قررنا ننقل عمر المدرسة الجديدة»، «مسكت الشغل الجديد») " +
+      "بنفس أرقام decision_impact، عشان زاد يراجع معاه بعد شهر وبعد ٣ شهور: الحسبة طلعت صح ولا لأ. " +
+      "**مش** لسؤال افتراضي («لو اشتريت…»، «أفكر في…») — ده decision_impact بس. محتاج تكلفة أو تغيير في الدخل.",
+    input_schema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "القرار بكلام العميل (عربية، مدرسة عمر الجديدة…)" },
+        one_time_cost: { type: "number", description: "تكلفة مرة واحدة (المقدم، الرسوم، التمن)" },
+        monthly_cost: { type: "number", description: "تكلفة جديدة كل شهر (قسط، مصاريف المدرسة، بنزين)" },
+        monthly_income_change: { type: "number", description: "تغيير في الدخل الشهري (+ زيادة، - نقص)" },
+      },
+      required: ["label"],
+    },
+  },
+  {
     name: "query_family",
     description: "اقرا حالة العيلة والأولاد (عددهم، أدوارهم، أرصدتهم). نادِها لما العميل يسأل عن عيلته أو أولاده.",
     input_schema: { type: "object", properties: {} },
@@ -4952,23 +5055,27 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       .map((i) => i.item_name);
   }
 
-  // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة.
+  // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة. و«أرخص هنا» (الشريحة ٢٨): آخر سعر
+  // هنا (١٤ يوم) قصاد وسيط باقي المحلات (٣٠ يوم) — بعملة العميل بس؛ من غير عملة معروفة مفيش مقارنة أسعار.
   let seenHere: SeenHere[] = [];
+  let cheaperHere: CheaperHere[] = [];
   if (category !== "pharmacy") {
+    const { data: me } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
+    const currency = (me as { currency?: string | null } | null)?.currency ?? null;
     const { data: reports, error: seenErr } = await sb.from("price_index")
-      .select("item_name,store_name,timestamp")
+      .select("item_name,store_name,timestamp,price,currency")
       .eq("source", "crowdsource").not("store_name", "is", null)
-      .gte("timestamp", new Date(Date.now() - 72 * 3_600_000).toISOString())
-      .order("timestamp", { ascending: false }).limit(500);
+      .gte("timestamp", new Date(Date.now() - 30 * 86_400_000).toISOString())
+      .order("timestamp", { ascending: false }).limit(2000);
     if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
-    seenHere = seenHereItems(
-      (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
-      storeName, [...shopping, ...lowStock], Date.now(),
-    );
+    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null }>;
+    const missing = [...shopping, ...lowStock];
+    seenHere = seenHereItems(rows, storeName, missing, Date.now());
+    if (currency) cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now());
   }
 
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere,
+    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere, cheaperHere,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
@@ -6553,6 +6660,8 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
+   - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
+   - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
@@ -6590,6 +6699,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **متستنتجش من معاملة واحدة.** خصم يوم ٢٧ مرة واحدة مش ميعاد راتب؛ تكراره شهرين هو اللي يبقى نمط. الملاحظة الغلط بتفضل وتوجّه كل قرار جاي.
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
    - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
+   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.
 
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
@@ -7304,7 +7414,7 @@ async function handleRequest(req: Request): Promise<Response> {
                 return (Array.isArray(data) ? data : []) as KnownNote[];
               },
               compose: async (system, user) =>
-                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 700, thinking: false })).text ?? "",
+                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 900, thinking: false })).text ?? "",
               write: async (fact) => {
                 const r = await writeMemoryNoteWithLinking(sbDream, u.id, "general", fact.note, fact.confidence, null, {
                   validUntil: fact.validUntil, about: fact.about,
@@ -7338,12 +7448,27 @@ async function handleRequest(req: Request): Promise<Response> {
                 }
                 return (data ?? []).length > 0;
               },
+              // الشريحة ٢٥ — صفة مجرّدة بأدلتها: الصفة بتفسّر (explains) كل دليل. ربط فاشل مايشيلش الصفة؛
+              // zad_memory_link_upsert نفسها بتتأكد إن الاتنين بتوع نفس العميل.
+              writeTrait: async (trait) => {
+                const r = await writeMemoryNoteWithLinking(sbDream, u.id, TRAIT_SCOPE, trait.note, TRAIT_CONFIDENCE);
+                if (r.status !== "inserted" && r.status !== "strengthened") return false;
+                const traitId = await liveNoteId(sbDream, u.id, TRAIT_SCOPE, trait.note);
+                if (!traitId) return false;
+                for (const evidence of trait.evidence) {
+                  const { error } = await sbDream.rpc("zad_memory_link_upsert", {
+                    p_user: u.id, p_from: traitId, p_to: evidence, p_relation: "explains", p_strength: 0.6,
+                  });
+                  if (error) console.warn("[dream] trait link not written:", error.message);
+                }
+                return true;
+              },
               today: localNowContext(timeZone).date,
               timeZone,
               nowMs: Date.now(),
             });
             if (night.status === "done") {
-              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused, ${night.needs} needs`);
+              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused, ${night.needs} needs, ${night.traits} traits`);
             }
           } catch (e) {
             console.error("[dream] consolidation failed for user", u.id, e);

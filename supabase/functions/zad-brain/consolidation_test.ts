@@ -8,8 +8,11 @@ import {
   consolidateDay,
   type DayTurn,
   type ConsolidatedNeed,
+  type KnownNote,
   parseConsolidation,
   parseConsolidationNeeds,
+  parseConsolidationTraits,
+  TRAIT_SCOPE,
 } from "./consolidation.ts";
 
 // 2026-10-03 12:00 بتوقيت القاهرة.
@@ -90,6 +93,7 @@ Deno.test("يوم فيه أقل من ٣ رسايل من العميل: مفيش �
     markDone: async (at) => {
       marked = at;
     },
+    writeTrait: async () => false,
     writeNeed: async () => true,
     today: "2026-10-03",
     timeZone: CAIRO,
@@ -126,13 +130,14 @@ Deno.test("يوم يستاهل: نداء واحد، كل حقيقة بتتكتب
     markDone: async (at) => {
       marked = at;
     },
+    writeTrait: async () => false,
     writeNeed: async () => true,
     today: "2026-10-03",
     timeZone: CAIRO,
     nowMs: NOW,
   });
   assertEquals(calls, 1);
-  assertEquals(r, { status: "done", written: 1, refused: 1, needs: 0 });
+  assertEquals(r, { status: "done", written: 1, refused: 1, needs: 0, traits: 0 });
   assertEquals(written[0].about[0].name, "ماما");
   assertEquals(marked, day[day.length - 1].at);
 });
@@ -152,6 +157,7 @@ Deno.test("الموديل وقع: المراجعة مابتتعلّمش خلصا
       markDone: async () => {
         marked = true;
       },
+      writeTrait: async () => false,
       writeNeed: async () => true,
       today: "2026-10-03",
       timeZone: CAIRO,
@@ -195,6 +201,7 @@ Deno.test("شات العيلة لوحده يكفي: «محتاجين عيش» م
     markDone: async () => {
       marked = true;
     },
+    writeTrait: async () => false,
     writeNeed: async (n) => {
       needs.push(n);
       return n.item !== "بيض"; // بيض كان في القايمة أصلاً
@@ -218,6 +225,7 @@ Deno.test("طلبات من غير شات عيلة بتتجاهل — المود�
     compose: async () => JSON.stringify({ facts: [], needs: [{ item: "عيش" }] }),
     write: async () => "inserted",
     markDone: async () => {},
+    writeTrait: async () => false,
     writeNeed: async () => {
       wroteNeed = true;
       return true;
@@ -229,3 +237,96 @@ Deno.test("طلبات من غير شات عيلة بتتجاهل — المود�
   assertEquals(wroteNeed, false);
 });
 
+
+// ── الشريحة ٢٥: التجريد ─────────────────────────────────────────────────────────────
+
+const known: KnownNote[] = [
+  { id: "a", scope: "general", note: "بيشتري خضار كل أسبوع" },
+  { id: "b", scope: "general", note: "بطّل المشروبات الغازية" },
+  { id: "c", scope: "general", note: "بيسأل عن السعرات في الأكل" },
+  { id: "d", scope: TRAIT_SCOPE, note: "بيحب يطبخ في البيت" },
+  { scope: "general", note: "ملاحظة من غير id" },
+];
+
+Deno.test("trait: three saved facts make a trait, linked to exactly those", () => {
+  const out = parseConsolidationTraits(
+    JSON.stringify({ traits: [{ note: "مهتم بالأكل الصحي", because: [1, 2, 3] }] }),
+    known,
+  );
+  assertEquals(out, [{ note: "مهتم بالأكل الصحي", evidence: ["a", "b", "c"] }]);
+});
+
+Deno.test("trait: fewer than three real facts is no trait", () => {
+  // [4] صفة مش دليل، [5] مالهاش id، [9] مش في القايمة، و[1] مكررة — يفضل دليل واحد بس.
+  const out = parseConsolidationTraits(
+    JSON.stringify({ traits: [{ note: "مهتم بالأكل الصحي", because: [1, 1, 4, 5, 9, "2"] }] }),
+    known,
+  );
+  assertEquals(out, []);
+});
+
+Deno.test("trait: a trait is not evidence for another trait", () => {
+  // دليلين حقيقيين + صفة = مش ٣ أدلة: الصفة استنتاج، والاستنتاج على استنتاج بيبعد عن الكلام اللي اتقال.
+  const out = parseConsolidationTraits(
+    JSON.stringify({ traits: [{ note: "بيهتم بأكل البيت", because: [1, 2, 4] }] }),
+    known,
+  );
+  assertEquals(out, []);
+});
+
+Deno.test("trait: a sensitive inference is dropped; a lookalike word is not", () => {
+  const out = parseConsolidationTraits(
+    JSON.stringify({
+      traits: [
+        { note: "غالباً عنده اكتئاب", because: [1, 2, 3] },
+        { note: "مزنوق في الفلوس آخر الشهر", because: [1, 2, 3] },
+        { note: "بيهتم بتاريخ الصلاحية", because: [1, 2, 3] },
+      ],
+    }),
+    known,
+  );
+  assertEquals(out.map((t) => t.note), ["بيهتم بتاريخ الصلاحية"]);
+});
+
+Deno.test("trait: an existing note is not written again, and two at most", () => {
+  const out = parseConsolidationTraits(
+    JSON.stringify({
+      traits: [
+        { note: "بيحب يطبخ في البيت", because: [1, 2, 3] },
+        { note: "بيخطط مشترياته", because: [1, 2, 3] },
+        { note: "بيقارن الأسعار", because: [1, 2, 3] },
+        { note: "بيحب العروض", because: [1, 2, 3] },
+      ],
+    }),
+    known,
+  );
+  assertEquals(out.map((t) => t.note), ["بيخطط مشترياته", "بيقارن الأسعار"]);
+});
+
+Deno.test("trait: the nightly run writes it, numbered list in the prompt", async () => {
+  const written: string[] = [];
+  let prompt = "";
+  const r = await consolidateDay({
+    dueTurns: async () => turns(6),
+    familyChat: async () => [],
+    known: async () => known,
+    compose: async (_s, u) => {
+      prompt = u;
+      return JSON.stringify({ facts: [], traits: [{ note: "مهتم بالأكل الصحي", because: [1, 2, 3] }] });
+    },
+    write: async () => "inserted",
+    markDone: async () => {},
+    writeTrait: async (t) => {
+      written.push(`${t.note}:${t.evidence.join(",")}`);
+      return true;
+    },
+    writeNeed: async () => true,
+    today: "2026-10-03",
+    timeZone: CAIRO,
+    nowMs: NOW,
+  });
+  assertEquals(r.traits, 1);
+  assertEquals(written, ["مهتم بالأكل الصحي:a,b,c"]);
+  assert(prompt.includes("[1] بيشتري خضار كل أسبوع"));
+  assert(prompt.includes("[4] بيحب يطبخ في البيت (صفة)"));
+});

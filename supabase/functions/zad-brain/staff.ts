@@ -10,10 +10,12 @@
 //
 //   pantry   أمين المخزن: سلعة على القايمة والبيت فيه كفاية، وسطور قديمة محدش اشتراها.
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
-//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات).
+//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات)،
+//            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦).
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
-//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة.
+//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
+//            و«زي النهارده من سنة» (longMemory.ts، الشريحة ٢٧).
 //   research الباحث: مرة في الأسبوع، أسعار أهم ٣ سلع في البيت في بلد العميل من النت (بحث نصي،
 //            من غير موديل)، بمصادرها — العقل بيرد منها لما العميل يسأل عن سعر.
 
@@ -23,6 +25,8 @@ import { countryCode } from "../_shared/dialect.ts";
 import { productFamilyOf } from "./lowStock.ts";
 import { goalPace, type GoalPaceInput } from "./goalPace.ts";
 import { upcomingSeason } from "../_shared/season.ts";
+import { DECISION_REVIEW_DAYS, type LoggedDecision, type ReviewTxn, reviewDecision, reviewNote } from "./decisionReview.ts";
+import { type CapsuleGoal, type CapsuleMemory, capsuleNote } from "./longMemory.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -478,18 +482,85 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       kidsWeek,
       seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
-    const fresh = freshNotes(notes, ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    const [decisions, capsule] = await Promise.all([staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now)]);
+    const fresh = freshNotes([...notes, ...decisions.notes, ...(capsule ? [capsule] : [])], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    let delivered = true;
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
         // detail ≤ 500 (zad_agent_messages_detail_check): أطول من كده كان هيرفض الدفعة كلها.
         fresh.map((n) => ({ user_id: userId, sender: n.sender, subject: n.subject.slice(0, 200), detail: n.detail.slice(0, 500) })),
       );
       if (error) console.error("[staff] mailbox insert failed:", error.message);
+      delivered = !error;
     }
+    // المراجعة بتتعلّم اتعملت بعد ما ملاحظتها اتكتبت بس — صندوق فشل = تتعاد بكرة، مش تضيع.
+    if (delivered) await decisions.commit();
     return fresh;
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
     return [];
+  }
+}
+
+/** «زي النهارده من سنة» (الشريحة ٢٧): حقيقة قالها أو هدف حققه من ٣٦٥ يوم ±يوم. قبل أغسطس ٢٠٢٧ مفيش داتا ⇒ null. */
+async function staffCapsule(sb: SupabaseClient, userId: string, now: Date): Promise<StaffNote | null> {
+  try {
+    const from = new Date(now.getTime() - 366 * DAY).toISOString();
+    const to = new Date(now.getTime() - 364 * DAY).toISOString();
+    const [{ data: memories }, { data: goals }] = await Promise.all([
+      sb.from("zad_memory").select("note,scope,created_at").eq("user_id", userId).eq("scope", "general")
+        .gte("created_at", from).lte("created_at", to).order("confidence", { ascending: false }).limit(10),
+      sb.from("agent_goals").select("title,updated_at").eq("user_id", userId).eq("status", "achieved")
+        .gte("updated_at", from).lte("updated_at", to).limit(5),
+    ]);
+    return capsuleNote((memories ?? []) as CapsuleMemory[], (goals ?? []) as CapsuleGoal[], now.getTime());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * مراجعات القرارات المستحقة (الشريحة ٢٦): الملاحظات، و commit بيعلّم كل قرار اتراجع. قرار من غير داتا كفاية بيتعلّم
+ * برضه (من غير ملاحظة) — البنك الساكت مايخلّيش المراجعة تتعاد كل صبح.
+ */
+async function staffDecisionReviews(
+  sb: SupabaseClient, userId: string, now: Date,
+): Promise<{ notes: StaffNote[]; commit: () => Promise<void> }> {
+  const none = { notes: [], commit: async () => {} };
+  try {
+    const firstDue = new Date(now.getTime() - DECISION_REVIEW_DAYS[0] * DAY).toISOString();
+    const { data: rows, error } = await sb.from("zad_decision_log")
+      .select("id,label,decided_at,one_time_cost,monthly_cost,monthly_income_change,baseline_income,baseline_spend,baseline_days,reviews")
+      .eq("user_id", userId).lt("reviews", 2).lte("decided_at", firstDue).order("decided_at").limit(5);
+    if (error || !rows?.length) return none;
+    const decisions = rows as LoggedDecision[];
+    const since = decisions.reduce((m, d) => (d.decided_at < m ? d.decided_at : m), decisions[0].decided_at);
+    const { data: txns, error: txErr } = await sb.from("zad_transactions")
+      .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId).gte("created_at", since).limit(5000);
+    if (txErr) return none;
+    const notes: StaffNote[] = [];
+    const updates: Array<{ id: string; reviews: number; outcome: Record<string, unknown> }> = [];
+    for (const d of decisions) {
+      const review = reviewDecision(d, (txns ?? []) as ReviewTxn[], now.getTime());
+      const due = DECISION_REVIEW_DAYS[Math.max(0, Number(d.reviews ?? 0))];
+      if (due === undefined || now.getTime() - Date.parse(d.decided_at) < due * DAY) continue;
+      if (review) notes.push(reviewNote(d, review));
+      updates.push({ id: d.id, reviews: Math.max(0, Number(d.reviews ?? 0)) + 1, outcome: review ? { ...review } : { no_data: true, checkpoint: due } });
+    }
+    return {
+      notes,
+      commit: async () => {
+        for (const u of updates) {
+          const { error: upErr } = await sb.from("zad_decision_log")
+            .update({ reviews: u.reviews, outcome: u.outcome, reviewed_at: now.toISOString() })
+            .eq("id", u.id).eq("user_id", userId);
+          if (upErr) console.warn("[staff] decision review not marked:", upErr.message);
+        }
+      },
+    };
+  } catch (e) {
+    console.warn("[staff] decision reviews skipped:", (e as Error)?.message ?? e);
+    return none;
   }
 }
 

@@ -100,6 +100,8 @@ const GROQ_PRIORITY_TOOLS: ReadonlyArray<string> = [
 const GROQ_KEYWORD_TOOLS: ReadonlyArray<[RegExp, string]> = [
   [/ترند|الناس بتشتري|بيشتروا ايه|بيشترو ايه|الاكثر شراء/, "area_trends"],
   [/اخر الشهر|اخر الدوره|هيكفي|هتكفي|يكفيني|كفايه|هخلص فلوس|هتخلص فلوس|هبقي ناقص/, "forward_ledger"],
+  [/خلاص اشتريت|خلاص قررت|قررنا|مسكت الشغل|نقلنا المدرسه/, "log_decision"],
+  [/الشهر ده تقيل|الشهر ده صعب|مش هنعدي|مش هنكمل الشهر|في ازمه|مزنوقين/, "household_resilience"],
   [/مدرسه جديده|عربيه|سفريه|رحله|شقه|قسط جديد|شغل جديد|قرار/, "decision_impact"],
   [/بكام|سعر|اسعار|غلي|رخص/, "check_price_trend"],
   [/جنبي|قريب مني|اقرب|حواليا/, "find_nearby_stores"],
