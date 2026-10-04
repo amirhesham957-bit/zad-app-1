@@ -10,7 +10,7 @@
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
 import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
@@ -805,7 +805,7 @@ export async function processVoiceMoments(
         try {
           const { data: last } = await sb.from("zad_voice_moments").select("sent_at")
             .eq("user_id", row.user_id).eq("status", "sent")
-            .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`)
+            .not("moment", "in", `(${UNCOUNTED_MOMENTS.join(",")})`)
             .order("sent_at", { ascending: false }).limit(1).maybeSingle();
           const at = (last as { sent_at?: string | null } | null)?.sent_at;
           lastSentMs = at ? Date.parse(at) : null;
@@ -1148,6 +1148,9 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
   ...FAMILY_ZONE_MOMENTS,
 ]);
 
+/** مابتتعدّش في السقف ولا في المسافة: اللي مابيتمسكش، وردود شات تليجرام بالصوت (رد مش تنبيه). */
+const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT];
+
 /**
  * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي
  * بتفتح الهدوء، وحرفياً كانت هتتمسح كل ليلة (الـ٤٥ اللي اتبعتوا كلهم جوه الشباك).
@@ -1193,7 +1196,7 @@ async function holdMoment(
       .select("id", { count: "exact", head: true })
       .eq("user_id", row.user_id).eq("status", "sent")
       .gte("sent_at", dayStart ?? new Date(nowMs - 86_400_000).toISOString())
-      .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`);
+      .not("moment", "in", `(${UNCOUNTED_MOMENTS.join(",")})`);
     sentToday = count ?? 0;
   } catch (e) {
     console.warn("[voice_moments] daily count failed:", (e as Error)?.message);

@@ -45,3 +45,14 @@ Deno.test("zad voice: the emotional range speaks of Zad in the chosen gender", (
   assertEquals(voiceEmotionalRange("male").includes("بتهزري"), false);
   assertEquals(voiceEmotionalRange("female").includes("بدلع"), false);
 });
+
+Deno.test("inferEmotion: an emoji is read whole, not by half of its surrogate pair", async () => {
+  const { inferEmotion } = await import("./zadVoice.ts");
+  assertEquals(inferEmotion("تمام 😊"), "warm");
+  assertEquals(inferEmotion("شكراً 🙏"), "warm");
+  assertEquals(inferEmotion("يلا ❤️"), "warm");
+  assertEquals(inferEmotion("زعلان 😢"), "sad");
+  assertEquals(inferEmotion("⚠️ خلي بالك"), "worried");
+  assertEquals(inferEmotion("خلصت 🎉"), "proud");
+  assertEquals(inferEmotion("😂 حلوة دي"), "playful");
+});

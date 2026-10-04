@@ -24,7 +24,8 @@ import { detectDialectFromText } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
-import { type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { voiceReplyEmotion } from "./voiceReply.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
@@ -242,6 +243,34 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 function runInBackground(task: Promise<unknown>): void {
   const guarded = task.catch((e) => console.error("[background] task failed:", e));
   if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(guarded);
+}
+
+/**
+ * رد الشات بصوت زاد (الشريحة ١٣). النص اتبعت خلاص؛ ده زيادة ومايوقعش حاجة. شروطه: الرد يستاهل
+ * (voiceReplyEmotion)، والعميل مشترك في وسائط تليجرام لو الرد على نص (الفويس الوارد اتحاسب في
+ * mediaGate)، و٤ في آخر ٢٤ ساعة بالكتير. الصف بيتسجل قبل التوليد — العدّ مايتخطاش لو التوليد وقع.
+ */
+async function maybeVoiceReply(sb: SupabaseClient, userId: string, chatId: number, text: string, inboundVoice: boolean): Promise<void> {
+  const emotion = voiceReplyEmotion({ text, inboundVoice, transactional: false });
+  if (!emotion) return;
+  if (!inboundVoice) {
+    const { data: status, error } = await sb.rpc("zad_entitlement_status", { p_user: userId });
+    if (error || (status as { telegram_media?: unknown } | null)?.telegram_media !== true) return;
+  }
+  const { count, error: countErr } = await sb.from("zad_voice_moments")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId).eq("moment", CHAT_VOICE_REPLY_MOMENT)
+    .gte("created_at", new Date(Date.now() - 86_400_000).toISOString());
+  if (countErr || (count ?? 0) >= CHAT_VOICE_REPLIES_PER_DAY) return;
+  const { error: claimErr } = await sb.from("zad_voice_moments").insert({
+    user_id: userId, moment: CHAT_VOICE_REPLY_MOMENT, facts: { emotion, inbound_voice: inboundVoice },
+    dedupe_key: `voice_reply:${crypto.randomUUID()}`, status: "sent", sent_at: new Date().toISOString(),
+  });
+  if (claimErr) {
+    console.error("[voiceReply] claim failed:", claimErr.message);
+    return;
+  }
+  await deliverVoiceAlert(sb, userId, chatId, "", text, emotion);
 }
 
 async function deliverVoiceAlert(
@@ -1279,6 +1308,8 @@ bot.on("message:text", async (ctx) => {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
       await ctx.reply(body);
+      // رد فيه إحساس (تشجيع، قلق، عتاب خفيف) ⇒ بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
+      runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), false));
     }
     return;
   }
@@ -1361,6 +1392,8 @@ bot.on("message:voice", async (ctx) => {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
       await ctx.reply(body);
+      // بعت فويس ⇒ الرد يتقال بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
+      runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), true));
     }
     return;
   }

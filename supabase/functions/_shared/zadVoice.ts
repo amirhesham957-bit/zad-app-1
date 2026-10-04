@@ -158,6 +158,14 @@ export const GEMINI_TTS_CHAIN: readonly string[] = [
   "gemini-3.8-flash-lite-tts",
 ];
 
+/**
+ * رد شات تليجرام بصوت زاد (ZAD_LIVING_BRAIN.md الشريحة ١٣): بيتسجل في zad_voice_moments
+ * كـ`sent` عشان العدّ اليومي، ومابيتحسبش في سقف التنبيهات الصوتية ولا في المسافة بينها — ده
+ * رد على كلام العميل نفسه، مش تنبيه.
+ */
+export const CHAT_VOICE_REPLY_MOMENT = "chat_voice_reply";
+export const CHAT_VOICE_REPLIES_PER_DAY = 4;
+
 export const ZAD_VOICE = "Aoede";
 export const DEFAULT_VOICE = ZAD_VOICE;
 /**
@@ -188,14 +196,16 @@ export function voiceForPersona(_persona: unknown): string {
  * هو اللي عارف الموقف (دوا اتفوّت مش زي دوا ميعاده جه).
  */
 export function inferEmotion(text: string): VoiceEmotion {
-  if (/[😢😭💔]|زعلانة|زعلت|وحشتني|نسيتني/.test(text)) return "sad";
-  if (/[😤😒]|متقمصة|مش بتكلمني|مخاصماك/.test(text)) return "sulky";
-  if (/كده برضه|تاني\s*[؟?]|ليه ماخدتش|نسيت (الدوا|تاخد)/.test(text)) return "reproachful";
-  if (/[🚨⚠️⛔]|خطر|انتبه|تجاوزت|وصلت لحد|قاربت النفاد|وقفت/.test(text)) return "worried";
-  if (/[🎉🏆⭐]|مبروك|أحسنت|برافو|حققت|وفرت/.test(text)) return "proud";
-  if (/صباح الخير|صباح النور|يا صباح|Günaydın/i.test(text)) return "cheerful";
-  if (/دوا|جرعة|دكتور|صيدلية|ميعاد|موعد/.test(text)) return "caring";
-  if (/[😂🤣😜]|هههه/.test(text)) return "playful";
+  // الإيموجي بالبدائل (`|`) مش بين أقواس `[]`: من غير فلاج u الكلاس بيتقري نص الحرف (surrogate)
+  // لوحده، فـ«تمام 😊» كانت بتطلع sad و«يلا ❤️» worried (اتمسك ٢٠٢٦-١٠-٠٤، voiceReply_test).
+  if (/😢|😭|💔|زعلانة|زعلت|وحشتني|نسيتني/u.test(text)) return "sad";
+  if (/😤|😒|متقمصة|مش بتكلمني|مخاصماك/u.test(text)) return "sulky";
+  if (/كده برضه|تاني\s*[؟?]|ليه ماخدتش|نسيت (الدوا|تاخد)/u.test(text)) return "reproachful";
+  if (/🚨|⚠|⛔|خطر|انتبه|تجاوزت|وصلت لحد|قاربت النفاد|وقفت/u.test(text)) return "worried";
+  if (/🎉|🏆|⭐|مبروك|أحسنت|برافو|حققت|وفرت/u.test(text)) return "proud";
+  if (/صباح الخير|صباح النور|يا صباح|Günaydın/iu.test(text)) return "cheerful";
+  if (/دوا|جرعة|دكتور|صيدلية|ميعاد|موعد/u.test(text)) return "caring";
+  if (/😂|🤣|😜|هههه/u.test(text)) return "playful";
   return "warm";
 }
 
