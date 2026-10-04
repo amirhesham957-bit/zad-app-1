@@ -99,6 +99,7 @@ import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
+import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -3258,6 +3259,39 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (!simulated) return `مقدرتش أحسب الشراء ده: التاريخ ${onDate ?? ""} برّه مدى التوقّع (${horizon} يوم).`;
       return JSON.stringify({ what_if: { ...simulated, label: typeof input?.label === "string" ? input.label.slice(0, 60) : null }, ledger });
     }
+    case "decision_impact": {
+      // قرار كبير على الشهور الجاية (decisionImpact.ts): من متوسط الدخل والصرف الفعلي آخر ٩٠ يوم،
+      // ونفس الرصيد اللي forward_ledger بيبدأ منه. حساب حتمي، صفر كوتة.
+      const [{ data: txns, error: txErr }, { data: state, error: stateErr }] = await Promise.all([
+        sb.from("zad_transactions").select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
+          .gte("created_at", new Date(Date.now() - 95 * 86_400_000).toISOString()).limit(2000),
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: snap?.cycle?.timezone ?? "UTC" }),
+      ]);
+      if (txErr || stateErr) return `مقدرتش أحسب الأثر دلوقتي: ${(txErr ?? stateErr)?.message}`;
+      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>);
+      if (avg.historyDays === 0) return "مفيش حركات كفاية أحسب منها أثر قرار — محتاج دخل ومصاريف متسجلة الأول.";
+      const now = new Date();
+      const startMatch = /^(\d{4})-(\d{2})$/.exec(String(input?.start_month ?? ""));
+      const startOffset = startMatch
+        ? (Number(startMatch[1]) - now.getUTCFullYear()) * 12 + (Number(startMatch[2]) - 1 - now.getUTCMonth())
+        : 0;
+      const impact = projectDecision({
+        opening: Number((state as { balance?: number } | null)?.balance ?? 0),
+        avgMonthlyIncome: avg.income, avgMonthlySpend: avg.spend, historyDays: avg.historyDays,
+        decision: {
+          one_time_cost: input?.one_time_cost, monthly_cost: input?.monthly_cost,
+          monthly_income_change: input?.monthly_income_change, start_offset: Math.max(0, startOffset),
+        },
+        months: input?.months, now,
+      });
+      if (!impact) return "قولّي تكلفة القرار: مبلغ مرة واحدة، أو كل شهر، أو تغيير في الدخل.";
+      return JSON.stringify({
+        decision: typeof input?.label === "string" ? input.label.slice(0, 80) : null,
+        averages: { monthly_income: avg.income, monthly_spend: avg.spend, history_days: avg.historyDays },
+        opening_balance: Number((state as { balance?: number } | null)?.balance ?? 0),
+        ...impact,
+      });
+    }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
       // الهدف: العميل يشوف "بيته صح قد إيه" كرقم واحد، والعقل يشرح أكبر نقطة ضعف.
@@ -4373,6 +4407,26 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
         on_date: { type: "string", description: "يوم الشراء YYYY-MM-DD لو مش النهارده." },
         label: { type: "string", description: "اسم الحاجة اللي هيشتريها بكلامه (للرد بس)." },
+      },
+    },
+  },
+  {
+    name: "decision_impact",
+    description:
+      "أثر قرار كبير على الشهور الجاية (٦ افتراضي، ١٢ أقصى): مدرسة جديدة، عربية، رحلة، قسط جديد، شغل جديد. " +
+      "بيحسب من متوسط دخل العميل وصرفه الفعلي آخر ٩٠ يوم (حتمي، صفر كوتة): الرصيد شهر بشهر من غير القرار ومعاه، " +
+      "أول شهر بالسالب، كام شهر الفايض يرجّع التكلفة (payback_months)، وكام يقلل صرفه في اليوم لو الفايض بقى سالب " +
+      "(daily_cut_needed). confidence = low يعني التاريخ أقل من شهرين — قولها صراحة. لو القرار بيغيّر مصروفه " +
+      "الثابت، اقترح سقف جديد بأداة الميزانية والعميل يأكد. متحسبش الأرقام دي بنفسك.",
+    input_schema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "القرار بكلام العميل (مدرسة جديدة لعمر، عربية…)" },
+        one_time_cost: { type: "number", description: "تكلفة مرة واحدة (مقدم، رسوم، تمن الرحلة)" },
+        monthly_cost: { type: "number", description: "تكلفة جديدة كل شهر (مصاريف المدرسة الشهرية، قسط، بنزين)" },
+        monthly_income_change: { type: "number", description: "تغيير في الدخل الشهري (+ زيادة، - نقص)" },
+        start_month: { type: "string", description: "شهر البداية YYYY-MM لو مش الشهر ده" },
+        months: { type: "number", description: "كام شهر قدام، الافتراضي ٦ والأقصى ١٢" },
       },
     },
   },

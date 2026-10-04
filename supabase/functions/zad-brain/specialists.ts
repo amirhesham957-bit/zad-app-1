@@ -310,7 +310,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_obligation", "update_obligation", "delete_obligation",
     "add_subscription", "update_subscription", "delete_subscription",
     "forward_ledger", "check_price_online", "query_family", "weekly_savings_plan",
-    "home_health_score", "propose_next_month_budget",
+    "home_health_score", "propose_next_month_budget", "decision_impact",
   ],
   pantry: [
     "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
@@ -327,7 +327,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "app_command",
     "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",
     "add_obligation", "update_obligation", "delete_obligation",
-    "forward_ledger", "web_search", "home_health_score",
+    "forward_ledger", "web_search", "home_health_score", "decision_impact",
   ],
 };
 
