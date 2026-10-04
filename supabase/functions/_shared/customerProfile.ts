@@ -32,7 +32,7 @@ export interface CustomerProfileRow {
   notes?: string | null;
   /** null = لسه ماتسألش؛ [] = مسؤول عن نفسه بس. */
   cares_for?: string[] | null;
-  /** صوت زاد اللي العميل اختاره في «ملفي»؛ null = بنت (20261003130000). */
+  /** صوت زاد اللي العميل اختاره في «ملفي»؛ null = بنت (20261004090000). */
   zad_voice?: string | null;
 }
 

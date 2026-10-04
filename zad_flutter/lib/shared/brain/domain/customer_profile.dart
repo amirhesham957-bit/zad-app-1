@@ -60,7 +60,7 @@ abstract final class ProfileOptions {
   ];
 
   /// `zad_voice`: زاد's own voice, the customer's explicit choice
-  /// (20261003130000). Null is a girl's voice; it is never read from
+  /// (20261004090000). Null is a girl's voice; it is never read from
   /// [CustomerProfile.gender].
   static const List<String> zadVoices = <String>['female', 'male'];
 

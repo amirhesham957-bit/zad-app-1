@@ -94,7 +94,7 @@ export async function synthesizeAlertPcm(
   if (!text || apiKeys.length === 0) return null;
   const attempts: string[] = [];
   const prompt = buildTtsPrompt({ text, emotion: style.emotion, country: style.country, voice: style.voice });
-  // صوت زاد اللي العميل اختاره في «ملفي» (20261003130000)؛ من غيره البنت.
+  // صوت زاد اللي العميل اختاره في «ملفي» (20261004090000)؛ من غيره البنت.
   const voiceName = style.voice ? voiceNameFor(style.voice) : ALERT_VOICE_NAME;
   for (let ki = 0; ki < apiKeys.length; ki++) {
     for (const model of ALERT_TTS_MODELS) {

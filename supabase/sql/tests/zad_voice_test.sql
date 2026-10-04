@@ -1,4 +1,4 @@
--- Zad's voice is the customer's explicit choice (migration 20261003130000,
+-- Zad's voice is the customer's explicit choice (migration 20261004090000,
 -- docs/agent/ZAD_LIVING_BRAIN.md §8), on a scratch database:
 --
 --   docker run -d --name zadpg -e POSTGRES_PASSWORD=pg postgres:17-alpine
@@ -6,7 +6,7 @@
 --   psql < supabase/sql/tests/scratch_scaffold.sql
 --   psql < supabase/migrations/20260914012000_customer_profile.sql
 --   psql < supabase/migrations/20260928190000_who_you_care_for.sql
---   psql < supabase/migrations/20261003130000_zad_voice_choice.sql
+--   psql < supabase/migrations/20261004090000_zad_voice_choice.sql
 --   psql < supabase/sql/tests/zad_voice_test.sql
 --
 -- A is the customer, B someone else. Raises on the first failed check; each

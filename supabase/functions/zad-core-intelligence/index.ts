@@ -1496,7 +1496,7 @@ Deno.serve(async (req: Request) => {
       } catch (_e) {
         voiceRequest.country = null;
       }
-      // صوت زاد من اختيار العميل في «ملفي» (20261003130000) — من السيرفر، زي البلد. فشل القراءة
+      // صوت زاد من اختيار العميل في «ملفي» (20261004090000) — من السيرفر، زي البلد. فشل القراءة
       // (أو العمود لسه مااتعملش) = الصوت الافتراضي، بنت.
       try {
         const { data: voiceProfile } = await supabase.from("zad_customer_profile").select("zad_voice").eq("user_id", caller.user.id).maybeSingle();

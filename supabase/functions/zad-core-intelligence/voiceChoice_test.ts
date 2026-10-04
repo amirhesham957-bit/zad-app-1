@@ -1,4 +1,4 @@
-// صوت زاد اختيار العميل في «ملفي» (20261003130000): Gemini بصوت الولد وAzure بالصوت الرجالي لنفس البلد.
+// صوت زاد اختيار العميل في «ملفي» (20261004090000): Gemini بصوت الولد وAzure بالصوت الرجالي لنفس البلد.
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { azureVoiceFor } from "./azureVoice.ts";
 import { requestGeminiVoice } from "./voice.ts";

@@ -100,7 +100,7 @@ class SupabaseMemoryRemote implements MemoryRemote {
       'pay_day, pay_frequency, household_size, kids_count, city, dialect, '
       'cares_for';
 
-  /// The profile, with زاد's voice (`zad_voice`, 20261003130000). Before that
+  /// The profile, with زاد's voice (`zad_voice`, 20261004090000). Before that
   /// migration reaches the project the column is missing (42703), and the
   /// read without it stands in.
   @override

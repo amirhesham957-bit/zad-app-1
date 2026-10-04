@@ -1,4 +1,4 @@
-// صوت زاد اختيار العميل في «ملفي» (20261003130000) — نفس زاد، بصوت بنت أو ولد.
+// صوت زاد اختيار العميل في «ملفي» (20261004090000) — نفس زاد، بصوت بنت أو ولد.
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import {
   buildTtsPrompt,

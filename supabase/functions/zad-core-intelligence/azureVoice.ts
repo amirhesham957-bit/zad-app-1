@@ -62,7 +62,7 @@ export function azureVoiceFor(text: string, country: unknown, geminiVoiceId: str
     : countryCode(country) === "TR" || /[ğşıİĞŞ]/.test(text)
     ? TURKISH
     : ENGLISH;
-  // صوت زاد اختيار العميل (20261003130000): البنت (الأول في كل زوج) هي الافتراضي، والولد
+  // صوت زاد اختيار العميل (20261004090000): البنت (الأول في كل زوج) هي الافتراضي، والولد
   // (التاني) لما الصوت اللي اتختار هو صوت الولد في Gemini.
   return geminiVoiceId === ZAD_MALE_VOICE ? pair[1] : pair[0];
 }
