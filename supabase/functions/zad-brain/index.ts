@@ -95,6 +95,7 @@ import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
+import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -3215,7 +3216,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // that the model stops doing arithmetic on the snapshot in its head — every number
       // below came from zad_forward_ledger walking the next N days one at a time.
       const days = Number(input?.days);
-      const horizon = Number.isFinite(days) && days >= 1 ? Math.min(Math.trunc(days), 120) : 30;
+      // «لو اشتريت…» (whatIf.ts): نفس التوقّع، والمبلغ بيتطرح من يوم الشراء لقدام. المدى أطول شوية
+      // عشان التزام آخر الدورة يبان.
+      const spend = Number(input?.hypothetical_spend);
+      const whatIf = Number.isFinite(spend) && spend > 0;
+      const horizon = Number.isFinite(days) && days >= 1 ? Math.min(Math.trunc(days), 120) : whatIf ? 45 : 30;
       const { data: ledger, error } = await sb.rpc("zad_forward_ledger", {
         // Same timezone the cycle boundaries were resolved in — projecting in UTC while
         // the app renders in Africa/Cairo is how a day-edge event lands on the wrong day.
@@ -3223,7 +3228,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       });
       if (error) return `مقدرتش أحسب التوقّع دلوقتي: ${error.message}`;
       if (!ledger) return "مفيش بيانات كفاية أحسب منها توقّع للأيام الجاية.";
-      return JSON.stringify(ledger);
+      if (!whatIf) return JSON.stringify(ledger);
+      const onDate = typeof input?.on_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.on_date) ? input.on_date : null;
+      const simulated = simulatePurchase(ledger as ForwardLedger, spend, onDate);
+      if (!simulated) return `مقدرتش أحسب الشراء ده: التاريخ ${onDate ?? ""} برّه مدى التوقّع (${horizon} يوم).`;
+      return JSON.stringify({ what_if: { ...simulated, label: typeof input?.label === "string" ? input.label.slice(0, 60) : null }, ledger });
     }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
@@ -3410,6 +3419,14 @@ const TOOLS: ToolDef[] = [
       type: "object",
       properties: {
         days: { type: "number", description: "عدد الأيام للأمام. الافتراضي ٣٠، الأقصى ١٢٠." },
+        hypothetical_spend: {
+          type: "number",
+          description: "«لو اشتريت…»: مبلغ شراء العميل بيفكر فيه (أو قاله إنه هيشتريه). الرد فيه what_if: الرصيد قبل وبعد، " +
+            "أول يوم بالسالب بعده، والالتزامات اللي الرصيد كان مغطيها ومش هيغطيها (newly_uncovered). verdict: ok / tight / already_short — " +
+            "محكوم لحد آخر الدورة (window_end) بس، لأن القبض بعدها والتوقّع مابيحسبوش.",
+        },
+        on_date: { type: "string", description: "يوم الشراء YYYY-MM-DD لو مش النهارده." },
+        label: { type: "string", description: "اسم الحاجة اللي هيشتريها بكلامه (للرد بس)." },
       },
     },
   },
@@ -4316,11 +4333,22 @@ export const CHAT_TOOLS: ToolDef[] = [
       "نادِها لأي سؤال عن المستقبل (\"هعرف أكمّل للراتب؟\"، \"كام هيفضل معايا يوم ٢٤؟\"، " +
       "\"المية هتكفيني كام يوم؟\"). **متحسبش الأرقام دي بنفسك من الـsnapshot** — الأداة " +
       "دي بتحسبها بالظبط ومن غير أي استهلاك للكوتة. اللي في stock_unknown معناه إن معدل " +
-      "استهلاكه لسه مش معروف — قول كده صراحة، متخمّنش ليه تاريخ.",
+      "استهلاكه لسه مش معروف — قول كده صراحة، متخمّنش ليه تاريخ. " +
+      "**قبل شراء كبير** (العميل بيسأل «أقدر أشتري…؟» أو قال إنه ناوي يشتري حاجة بمبلغ): ابعت hypothetical_spend. " +
+      "لو verdict = tight قوله بالتاريخ والالتزام اللي هيتأثر («لو اشتريتها النهارده، قسط المدرسة يوم ١٥ مش هيتغطى») " +
+      "واقترح تأجيل أو مبلغ أقل — القرار قراره. لو ok قول إنه آمن بالرقم اللي هيفضل.",
     input_schema: {
       type: "object",
       properties: {
         days: { type: "number", description: "عدد الأيام للأمام. الافتراضي ٣٠، الأقصى ١٢٠." },
+        hypothetical_spend: {
+          type: "number",
+          description: "«لو اشتريت…»: مبلغ شراء العميل بيفكر فيه (أو قاله إنه هيشتريه). الرد فيه what_if: الرصيد قبل وبعد، " +
+            "أول يوم بالسالب بعده، والالتزامات اللي الرصيد كان مغطيها ومش هيغطيها (newly_uncovered). verdict: ok / tight / already_short — " +
+            "محكوم لحد آخر الدورة (window_end) بس، لأن القبض بعدها والتوقّع مابيحسبوش.",
+        },
+        on_date: { type: "string", description: "يوم الشراء YYYY-MM-DD لو مش النهارده." },
+        label: { type: "string", description: "اسم الحاجة اللي هيشتريها بكلامه (للرد بس)." },
       },
     },
   },
