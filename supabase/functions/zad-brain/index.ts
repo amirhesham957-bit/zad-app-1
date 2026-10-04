@@ -57,7 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
-import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION } from "./consolidation.ts";
+import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
@@ -6590,6 +6590,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **متستنتجش من معاملة واحدة.** خصم يوم ٢٧ مرة واحدة مش ميعاد راتب؛ تكراره شهرين هو اللي يبقى نمط. الملاحظة الغلط بتفضل وتوجّه كل قرار جاي.
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
    - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
+   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.
 
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
@@ -7304,7 +7305,7 @@ async function handleRequest(req: Request): Promise<Response> {
                 return (Array.isArray(data) ? data : []) as KnownNote[];
               },
               compose: async (system, user) =>
-                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 700, thinking: false })).text ?? "",
+                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 900, thinking: false })).text ?? "",
               write: async (fact) => {
                 const r = await writeMemoryNoteWithLinking(sbDream, u.id, "general", fact.note, fact.confidence, null, {
                   validUntil: fact.validUntil, about: fact.about,
@@ -7338,12 +7339,27 @@ async function handleRequest(req: Request): Promise<Response> {
                 }
                 return (data ?? []).length > 0;
               },
+              // الشريحة ٢٥ — صفة مجرّدة بأدلتها: الصفة بتفسّر (explains) كل دليل. ربط فاشل مايشيلش الصفة؛
+              // zad_memory_link_upsert نفسها بتتأكد إن الاتنين بتوع نفس العميل.
+              writeTrait: async (trait) => {
+                const r = await writeMemoryNoteWithLinking(sbDream, u.id, TRAIT_SCOPE, trait.note, TRAIT_CONFIDENCE);
+                if (r.status !== "inserted" && r.status !== "strengthened") return false;
+                const traitId = await liveNoteId(sbDream, u.id, TRAIT_SCOPE, trait.note);
+                if (!traitId) return false;
+                for (const evidence of trait.evidence) {
+                  const { error } = await sbDream.rpc("zad_memory_link_upsert", {
+                    p_user: u.id, p_from: traitId, p_to: evidence, p_relation: "explains", p_strength: 0.6,
+                  });
+                  if (error) console.warn("[dream] trait link not written:", error.message);
+                }
+                return true;
+              },
               today: localNowContext(timeZone).date,
               timeZone,
               nowMs: Date.now(),
             });
             if (night.status === "done") {
-              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused, ${night.needs} needs`);
+              console.log(`[dream] consolidated ${u.id}: ${night.written} written, ${night.refused} refused, ${night.needs} needs, ${night.traits} traits`);
             }
           } catch (e) {
             console.error("[dream] consolidation failed for user", u.id, e);
