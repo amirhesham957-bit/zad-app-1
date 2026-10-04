@@ -120,6 +120,12 @@ abstract final class ZadIcons {
   /// Scan a receipt.
   static const IconData scan = Icons.camera_alt;
 
+  /// A prescription photographed (slice 21).
+  static const IconData prescription = Icons.medication_liquid;
+
+  /// A school timetable photographed (slice 21).
+  static const IconData timetable = Icons.calendar_view_week;
+
   /// Speak.
   static const IconData voice = Icons.mic;
 

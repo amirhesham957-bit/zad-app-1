@@ -18,10 +18,16 @@ enum ZadCameraChoice {
 
   /// مسح فاتورة.
   receipt,
+
+  /// روشتة (الشريحة ٢١).
+  prescription,
+
+  /// جدول حصص (الشريحة ٢١).
+  timetable,
 }
 
 /// `ZadCameraSheet`: the title, the green 150dp plate, then مسح مخزون and
-/// مسح فاتورة side by side, and إلغاء.
+/// مسح فاتورة side by side, روشتة and جدول حصص under them, and إلغاء.
 Future<ZadCameraChoice?> showZadCameraSheet(BuildContext context) =>
     showModalBottomSheet<ZadCameraChoice>(
       context: context,
@@ -88,6 +94,30 @@ class _CameraSheet extends StatelessWidget {
                   content: kShellTextPrimary,
                   onTap: () =>
                       Navigator.of(context).pop(ZadCameraChoice.receipt),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _SheetButton(
+                  text: 'روشتة',
+                  container: kShellPrimary.withValues(alpha: 0.06),
+                  content: kShellTextPrimary,
+                  onTap: () =>
+                      Navigator.of(context).pop(ZadCameraChoice.prescription),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _SheetButton(
+                  text: 'جدول حصص',
+                  container: kShellPrimary.withValues(alpha: 0.06),
+                  content: kShellTextPrimary,
+                  onTap: () =>
+                      Navigator.of(context).pop(ZadCameraChoice.timetable),
                 ),
               ),
             ],

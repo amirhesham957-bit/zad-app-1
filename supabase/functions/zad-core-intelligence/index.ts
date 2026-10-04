@@ -16,6 +16,7 @@ import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
 import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETABLE_PROMPT } from "./documentScan.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
@@ -2027,6 +2028,33 @@ Deno.serve(async (req: Request) => {
           }
         }
         return jsonResponse({ medicine: null });
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANALYZE_DOCUMENT_IMAGE — روشتة أو جدول حصص (documentScan.ts، الشريحة ٢١)
+      // ──────────────────────────────────────────────────────────
+      case "analyze_document_image": {
+        const { image_base64, mime_type, kind } = payload || {};
+        if (!image_base64 || (kind !== "prescription" && kind !== "timetable")) {
+          return jsonResponse({ document: null, reason: "bad_request" });
+        }
+        const systemPrompt = kind === "prescription" ? PRESCRIPTION_PROMPT : TIMETABLE_PROMPT;
+        const userPrompt = kind === "prescription"
+          ? "Transcribe this prescription."
+          : "Transcribe this school timetable.";
+        // نفس مسار الفاتورة: مسبح مفاتيح جيميناي، والصور مابتروحش Groq أبداً.
+        const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
+        const objectMatch = visionResult ? visionResult.match(/\{[\s\S]*\}/) : null;
+        if (!objectMatch) return jsonResponse({ document: null, reason: "unreadable" });
+        try {
+          const parsed = JSON.parse(objectMatch[0]);
+          const document = kind === "prescription" ? normalizePrescription(parsed) : normalizeTimetable(parsed);
+          const empty = document.kind === "prescription" ? document.medicines.length === 0 : document.days.length === 0;
+          return jsonResponse(empty ? { document: null, reason: "nothing_found" } : { document });
+        } catch (e) {
+          console.error("[CoreIntel] analyze_document_image JSON parse error:", (e as Error).message);
+          return jsonResponse({ document: null, reason: "unreadable" });
+        }
       }
 
       // ──────────────────────────────────────────────
