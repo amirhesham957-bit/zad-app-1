@@ -20,11 +20,13 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/features/scan/application/camera_actions.dart';
 import 'package:zad/features/scan/presentation/camera_choice_sheet.dart';
+import 'package:zad/features/scan/presentation/document_scan_sheet.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
+import 'package:zad/shared/scan/domain/scanned_document.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
 
@@ -39,12 +41,16 @@ Future<void> showCameraScreen(BuildContext context, CameraMode mode) =>
 Future<void> openZadCamera(BuildContext context) async {
   final choice = await showZadCameraSheet(context);
   if (!context.mounted || choice == null) return;
-  await showCameraScreen(
-    context,
-    choice == ZadCameraChoice.receipt
-        ? CameraMode.receipt
-        : CameraMode.inventory,
-  );
+  switch (choice) {
+    case ZadCameraChoice.prescription:
+      await showDocumentScanSheet(context, DocumentKind.prescription);
+    case ZadCameraChoice.timetable:
+      await showDocumentScanSheet(context, DocumentKind.timetable);
+    case ZadCameraChoice.receipt:
+      await showCameraScreen(context, CameraMode.receipt);
+    case ZadCameraChoice.inventory:
+      await showCameraScreen(context, CameraMode.inventory);
+  }
 }
 
 const List<(ReceiptType, String)> _receiptTypes = <(ReceiptType, String)>[

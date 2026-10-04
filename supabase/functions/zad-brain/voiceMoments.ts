@@ -17,6 +17,7 @@ import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalI
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -171,9 +172,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "سلسلة التحدي اتقطعت امبارح (broken_streak يوم) لأنه صرف فوق السقف. text: سطر لطيف فيه صرف امبارح والسقف. " +
     "speech: جملتين زعلانة شوية بس حنينة — مش لوم — وإن النهارده يوم جديد يبدأ فيه سلسلة تانية.",
   good_night:
-    "تصبح على خير — آخر كلمة من زاد قبل ما العميل ينام. text: سطر دافي، ولو فيه tomorrow_appointments أو meds_tomorrow_morning فكّريه بأهم حاجة واحدة بكرة. " +
+    "تصبح على خير — آخر كلمة من زاد قبل ما العميل ينام. text: سطر دافي، ولو فيه tomorrow_appointments أو school_tomorrow (شنطة كل طفل بمواده) أو meds_tomorrow_morning فكّريه بأهم حاجة واحدة بكرة. " +
     "speech: من ٢ لـ٣ جمل ناعمة وحنينة جداً بصوت هادي كأنك بتطمني عليه قبل النوم: ناديه باسمه لو معروف، اتمنّي له نوم هادي وأحلام حلوة، " +
-    "وقولي إنك مستنياه الصبح، وفكّريه بحاجة واحدة بس لبكرة لو موجودة. دلع ودفا زي حد قريب أوي — من غير كلام غرامي صريح ولا ادعاء علاقة، " +
+    "وقولي إنك مستنياه الصبح، وفكّريه بحاجة واحدة بس لبكرة لو موجودة. دفا زي حد قريب من العيلة — من غير دلع ولا أي كلام غرامي ولا ادعاء علاقة (قرار المالك ٢٠٢٦-١٠-٠٣)، " +
     "ومن غير أي كلام عن فلوس أو لوم.",
   weekly_money_story:
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس (المصروف، المقارنة، أكبر فئة، الهدر لو فيه) " +
@@ -554,7 +555,12 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const appts = Array.isArray(facts.tomorrow_appointments) ? (facts.tomorrow_appointments as Array<{ title?: string }>).map((a) => a?.title).filter(Boolean) : [];
       const med = str(facts.meds_tomorrow_morning, 60);
       const medFor = str(facts.meds_tomorrow_for, 40);
+      const school = Array.isArray(facts.school_tomorrow) ? (facts.school_tomorrow as Array<{ person?: string; subjects?: string[] }>)[0] : null;
+      const bag = school?.person && Array.isArray(school.subjects) && school.subjects.length
+        ? `وجهّز شنطة ${str(school.person, 30)} لبكرة: ${school.subjects.slice(0, 4).map((x) => str(x, 30)).join("، ")}`
+        : "";
       const reminder = appts.length ? `وماتنساش إن بكرة عندك ${appts[0]}`
+        : bag ? bag
         : med ? (medFor ? `وأول ما تصحى فكّر ${medFor} بـ${med}` : `وأول ما تصحى خد ${med}`) : "";
       return {
         title: "🌙 تصبح على خير",
@@ -1043,7 +1049,7 @@ export async function goodNightFacts(
   const tomorrowStart = new Date(new Date(`${local.date}T00:00:00${local.utc_offset}`).getTime() + 86_400_000).toISOString();
   const tomorrowEnd = new Date(new Date(tomorrowStart).getTime() + 86_400_000).toISOString();
   const todayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
-  const [appts, meds, spentRows, pantryRows] = await Promise.all([
+  const [appts, meds, spentRows, pantryRows, timetable] = await Promise.all([
     sb.from("zad_appointments").select("title,starts_at,place_label,for_person").eq("user_id", userId).eq("status", "upcoming")
       .gte("starts_at", tomorrowStart).lt("starts_at", tomorrowEnd).order("starts_at", { ascending: true }).limit(3)
       .then((r) => (r.data ?? []) as Array<Record<string, unknown>>, () => []),
@@ -1055,6 +1061,10 @@ export async function goodNightFacts(
       .then((r) => (r.data ?? []) as Array<{ amount: number | string | null; merchant_name: string | null; title: string | null }>, () => []),
     sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId).limit(200)
       .then((r) => (r.data ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null }>, () => []),
+    // جدول الحصص (الشريحة ٢١): مواد بكرة لكل طفل ⇒ «جهّز الشنطة».
+    sb.from("zad_school_timetable").select("person,weekday,period,starts,subject").eq("user_id", userId)
+      .eq("weekday", weekdayOfDate(local.date, 1)).limit(60)
+      .then((r) => (r.data ?? []) as TimetableRow[], () => []),
   ]);
   const spentToday = Math.round(spentRows.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0) * 100) / 100;
   const whereToday = [...new Set(spentRows.map((t) => String(t.merchant_name || t.title || "").trim()).filter(Boolean))].slice(0, 3);
@@ -1074,6 +1084,10 @@ export async function goodNightFacts(
     ...(spentToday > 0 ? { spent_today: spentToday, spent_where: whereToday } : {}),
     ...(runningLow.length ? { running_low: runningLow } : {}),
     ...(morning ? { meds_tomorrow_morning: morning.name, meds_tomorrow_time: morning.t, meds_tomorrow_for: morning.who } : {}),
+    ...(() => {
+      const school = schoolDay(timetable, weekdayOfDate(local.date, 1));
+      return school.length ? { school_tomorrow: school } : {};
+    })(),
   };
 }
 
