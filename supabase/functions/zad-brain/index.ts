@@ -100,6 +100,7 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
+import { emergencyCard } from "./emergency.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
@@ -3265,6 +3266,40 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (!simulated) return `مقدرتش أحسب الشراء ده: التاريخ ${onDate ?? ""} برّه مدى التوقّع (${horizon} يوم).`;
       return JSON.stringify({ what_if: { ...simulated, label: typeof input?.label === "string" ? input.label.slice(0, 60) : null }, ledger });
     }
+    case "emergency_card": {
+      // كارت الطوارئ (emergency.ts): كله قراية من بيانات العميل نفسه — مفيش تشخيص ولا دوا مقترح.
+      const person = input?.for_person ? normalizeForPerson(input.for_person) : null;
+      const now = Date.now();
+      const [meds, doses, appts, family, user, notes] = await Promise.all([
+        sb.from("zad_pharmacy_items").select("id,name,dosage,dose_times,remaining_quantity,for_person").eq("user_id", userId),
+        sb.from("zad_pharmacy_doses").select("item_id,taken_at,status").eq("user_id", userId)
+          .gte("taken_at", new Date(now - 86_400_000).toISOString()),
+        sb.from("zad_appointments").select("title,starts_at,kind,for_person").eq("user_id", userId)
+          .gte("starts_at", new Date(now - 30 * 86_400_000).toISOString())
+          .lte("starts_at", new Date(now + 30 * 86_400_000).toISOString()).order("starts_at", { ascending: true }),
+        (async () => {
+          const { data: me } = await sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
+          if (!(me as { family_id?: string } | null)?.family_id) return [];
+          const { data } = await sb.from("family_members").select("alias,role,user_id").eq("family_id", (me as { family_id: string }).family_id);
+          return ((data ?? []) as Array<{ alias: string | null; role: string | null; user_id: string | null }>)
+            .map((m) => ({ alias: m.alias, role: m.role, is_me: m.user_id === userId }));
+        })().catch(() => []),
+        sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+        person
+          ? sb.rpc("zad_memory_recall_entities", { p_user: userId, p_text: entityRecallText(person), p_limit: 5 })
+            .then((r) => (r.error ? [] : ((r.data ?? []) as Array<{ note: string }>).map((n) => n.note)), () => [])
+          : Promise.resolve([] as string[]),
+      ]);
+      if (meds.error) return `مقدرتش أجيب الأدوية دلوقتي: ${meds.error.message} — المهم دلوقتي الإسعاف.`;
+      return JSON.stringify(emergencyCard({
+        person,
+        country: (user.data as { country?: string | null } | null)?.country ?? null,
+        medicines: (meds.data ?? []) as Parameters<typeof emergencyCard>[0]["medicines"],
+        doses: (doses.data ?? []) as Parameters<typeof emergencyCard>[0]["doses"],
+        appointments: (appts.data ?? []) as Parameters<typeof emergencyCard>[0]["appointments"],
+        notes, family, now,
+      }));
+    }
     case "decision_impact": {
       // قرار كبير على الشهور الجاية (decisionImpact.ts): من متوسط الدخل والصرف الفعلي آخر ٩٠ يوم،
       // ونفس الرصيد اللي forward_ledger بيبدأ منه. حساب حتمي، صفر كوتة.
@@ -4413,6 +4448,20 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
         on_date: { type: "string", description: "يوم الشراء YYYY-MM-DD لو مش النهارده." },
         label: { type: "string", description: "اسم الحاجة اللي هيشتريها بكلامه (للرد بس)." },
+      },
+    },
+  },
+  {
+    name: "emergency_card",
+    description:
+      "كارت طوارئ لشخص في البيت (أو للعميل نفسه): رقم الإسعاف لو معروف في بلده، أدويته وجرعات آخر ٢٤ ساعة، مواعيده الطبية، " +
+      "اللي زاد عارفه عنه (حساسية/حالة مزمنة)، وأفراد العيلة. نادِها **فوراً** لما العميل يقول إن حد تعبان فجأة، وقع، " +
+      "اتحرق، أو أي طارئ. أول سطر في ردك: «كلّم الإسعاف» بالرقم لو رجع (ambulance) — وإلا «كلّم الإسعاف في بلدك». " +
+      "بعدها الكارت باختصار. ممنوع تشخّص أو تقترح دوا أو جرعة. لو محتاج صيدلية: find_nearby_stores بـ pharmacy.",
+    input_schema: {
+      type: "object",
+      properties: {
+        for_person: { type: "string", description: "مين (ماما، عمر…) — فاضي لو العميل نفسه" },
       },
     },
   },
