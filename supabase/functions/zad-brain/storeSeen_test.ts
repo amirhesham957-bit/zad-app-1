@@ -1,5 +1,5 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { buildStoreArrivalMessage, normalizeForPerson, sameStore, seenHereItems, storeKey } from "./shared.ts";
+import { buildStoreArrivalMessage, cheaperHereItems, normalizeForPerson, sameStore, seenHereItems, storeKey } from "./shared.ts";
 
 Deno.test("storeKey drops the generic words, Arabic and Latin", () => {
   assertEquals(storeKey("كارفور ماركت"), "كارفور");
@@ -41,6 +41,45 @@ Deno.test("the arrival message says where it was seen, and only when it was", ()
   assertEquals(without!.body.includes("اتشاف"), false);
 });
 
+
+// ── الشريحة ٢٨: «أرخص هنا» ──────────────────────────────────────────────────────────
+
+const NOW = Date.parse("2026-10-04T12:00:00Z");
+const r = (item: string, store: string, price: number, daysAgo: number) => ({
+  item_name: item, store_name: store, price, timestamp: new Date(NOW - daysAgo * 86_400_000).toISOString(),
+});
+
+Deno.test("cheaperHere: the latest price here against the median elsewhere", () => {
+  const reports = [
+    r("لبن جهينة", "كارفور ماركت", 38, 5), r("لبن", "كارفور", 35, 1), // الأحدث هنا: 35
+    r("لبن", "خير زمان", 40, 3), r("لبن", "سعودي", 42, 10), r("لبن", "هايبر وان", 39, 20),
+    r("عيش", "كارفور", 10, 1), r("عيش", "خير زمان", 10, 2), r("عيش", "سعودي", 10, 3), r("عيش", "هايبر وان", 10, 4),
+  ];
+  assertEquals(cheaperHereItems(reports, "كارفور", ["لبن", "عيش"], NOW), [{ item: "لبن", price: 35, typical: 40 }]);
+});
+
+Deno.test("cheaperHere: under three reports elsewhere is not a market price", () => {
+  const reports = [r("لبن", "كارفور", 30, 1), r("لبن", "خير زمان", 40, 3), r("لبن", "سعودي", 42, 10)];
+  assertEquals(cheaperHereItems(reports, "كارفور", ["لبن"], NOW), []);
+});
+
+Deno.test("cheaperHere: an old price here, or within 5%, says nothing", () => {
+  const elsewhere = [r("لبن", "خير زمان", 40, 3), r("لبن", "سعودي", 40, 4), r("لبن", "هايبر وان", 40, 5)];
+  assertEquals(cheaperHereItems([...elsewhere, r("لبن", "كارفور", 30, 20)], "كارفور", ["لبن"], NOW), [], "20 days old");
+  assertEquals(cheaperHereItems([...elsewhere, r("لبن", "كارفور", 39, 1)], "كارفور", ["لبن"], NOW), [], "only 2.5% cheaper");
+});
+
+Deno.test("the arrival message names the cheaper price, and only when there is one", () => {
+  const msg = buildStoreArrivalMessage({
+    storeName: "كارفور", category: "supermarket", shopping: ["لبن"], lowStock: [], clientHints: [],
+    cheaperHere: [{ item: "لبن", price: 35, typical: 40 }],
+  });
+  assertStringIncludes(msg!.body, "💰 أرخص هنا من فواتير عملاء زاد: لبن 35 (في محلات تانية حوالي 40)");
+  const none = buildStoreArrivalMessage({
+    storeName: "كارفور", category: "supermarket", shopping: ["لبن"], lowStock: [], clientHints: [],
+  });
+  assertEquals(none!.body.includes("أرخص"), false);
+});
 
 Deno.test("normalizeForPerson: a name as said, the customer's own words for 'me' are null", () => {
   assertEquals(normalizeForPerson(" ماما "), "ماما");

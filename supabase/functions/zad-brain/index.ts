@@ -66,7 +66,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -5055,23 +5055,27 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       .map((i) => i.item_name);
   }
 
-  // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة.
+  // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة. و«أرخص هنا» (الشريحة ٢٨): آخر سعر
+  // هنا (١٤ يوم) قصاد وسيط باقي المحلات (٣٠ يوم) — بعملة العميل بس؛ من غير عملة معروفة مفيش مقارنة أسعار.
   let seenHere: SeenHere[] = [];
+  let cheaperHere: CheaperHere[] = [];
   if (category !== "pharmacy") {
+    const { data: me } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
+    const currency = (me as { currency?: string | null } | null)?.currency ?? null;
     const { data: reports, error: seenErr } = await sb.from("price_index")
-      .select("item_name,store_name,timestamp")
+      .select("item_name,store_name,timestamp,price,currency")
       .eq("source", "crowdsource").not("store_name", "is", null)
-      .gte("timestamp", new Date(Date.now() - 72 * 3_600_000).toISOString())
-      .order("timestamp", { ascending: false }).limit(500);
+      .gte("timestamp", new Date(Date.now() - 30 * 86_400_000).toISOString())
+      .order("timestamp", { ascending: false }).limit(2000);
     if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
-    seenHere = seenHereItems(
-      (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
-      storeName, [...shopping, ...lowStock], Date.now(),
-    );
+    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null }>;
+    const missing = [...shopping, ...lowStock];
+    seenHere = seenHereItems(rows, storeName, missing, Date.now());
+    if (currency) cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now());
   }
 
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere,
+    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere, cheaperHere,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
