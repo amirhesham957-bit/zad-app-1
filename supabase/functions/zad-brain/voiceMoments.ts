@@ -10,12 +10,13 @@
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, situationalEmotion, VOICE_EMOTIONAL_RANGE, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
 import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
+import { curiosityQuestion } from "./curiosity.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -113,7 +114,8 @@ export function momentLimits(moment: string): { text: number; speech: number } {
 const MOMENT_GUIDANCE: Record<string, string> = {
   morning_greeting:
     "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
-    "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية.",
+    "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية. لو daily_question_kind = curiosity فده حاجة لاحظتيها في حساباته: " +
+    "اسأليها بفضول صاحب مش بمحاسبة، ومن غير أرقام غير اللي في السؤال.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -586,6 +588,8 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
 export interface MomentCustomer {
   gender?: string | null;
   dialect?: string | null;
+  /** صوت زاد اللي العميل اختاره (zad_customer_profile.zad_voice)؛ null = بنت. */
+  zad_voice?: string | null;
   /** What was said the last times in this same moment — not to be repeated. */
   recent?: string[];
 }
@@ -601,6 +605,8 @@ export function buildMomentPrompt(
   const range = emotionRangeForMoment(row.moment);
   const fallbackEmotion = situationalEmotion(row.moment, row.facts ?? {});
   const voice = !TEXT_ONLY_MOMENTS.has(row.moment);
+  const male = zadVoiceGender(customer.zad_voice) === "male";
+  const directions = male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS;
   const genderLine = customer.gender === "female"
     ? "العميلة ست — خاطبيها بصيغة المؤنث في كل كلمة."
     : customer.gender === "male"
@@ -609,16 +615,18 @@ export function buildMomentPrompt(
   const system = [
     // نفس هوية الشات (تشخيص زاد ١.١): لحظات اليوم كانت بتعريف لوحدها، فـ«صباح الخير» شخصية
     // و«الرد على سؤال» شخصية تانية.
-    soulBlock().trim(),
-    "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
+    soulBlock(customer.zad_voice).trim(),
+    male
+      ? "دلوقتي بتكتب رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك، وهو صوت ولد) — صاحبه المقرب اللي شايل معاه بيته وصحته وفلوسه. كلامك عن نفسك بصيغة المذكر."
+      : "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
     conversationProfile(country, { preferred: customer.dialect }).instruction,
     genderLine,
-    VOICE_EMOTIONAL_RANGE,
+    voiceEmotionalRange(zadVoiceGender(customer.zad_voice)),
     range.length > 1
       ? "اختاري إحساس اللحظة دي من دول بس، حسب البيانات (نوع الميعاد، الساعة عنده، أول مرة ولا متكرر)، واكتبي اسمه في emotion:\n" +
-        range.map((e) => `- ${e}: ${EMOTION_DIRECTIONS[e]}`).join("\n") +
+        range.map((e) => `- ${e}: ${directions[e]}`).join("\n") +
         `\nالأنسب لو مش متأكدة: ${fallbackEmotion}. الكلام نفسه لازم يطابق الإحساس اللي اخترتيه — ماتبقيش زعلانة في لحظة مالهاش سبب زعل.`
-      : `الإحساس المطلوب في اللحظة دي: ${fallbackEmotion} — ${EMOTION_DIRECTIONS[fallbackEmotion]}`,
+      : `الإحساس المطلوب في اللحظة دي: ${fallbackEmotion} — ${directions[fallbackEmotion]}`,
     "اكتبي رد JSON بس، من غير أي كلام قبله أو بعده، بالشكل ده بالظبط:",
     '{"title": "عنوان إشعار قصير فيه إيموجي واحد", "text": "نص الإشعار المكتوب، جملة أو اتنين، واضح ومفيد", "emotion": "' + range.join("|") + '", "speech": "' +
       (voice
@@ -797,7 +805,7 @@ export async function processVoiceMoments(
         try {
           const { data: last } = await sb.from("zad_voice_moments").select("sent_at")
             .eq("user_id", row.user_id).eq("status", "sent")
-            .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`)
+            .not("moment", "in", `(${UNCOUNTED_MOMENTS.join(",")})`)
             .order("sent_at", { ascending: false }).limit(1).maybeSingle();
           const at = (last as { sent_at?: string | null } | null)?.sent_at;
           lastSentMs = at ? Date.parse(at) : null;
@@ -821,6 +829,9 @@ export async function processVoiceMoments(
         try {
           const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC");
           row.facts = { ...(row.facts ?? {}), ...(await morningFacts(sb, row.user_id, local)) };
+          // تتحفظ في الصف: الشات بيقرا منها السؤال اللي اتسأل (asked_this_morning)، والفضول بيقرا
+          // منها اللي اتسأل قبل كده عشان مايعيدوش.
+          await sb.from("zad_voice_moments").update({ facts: row.facts }).eq("id", row.id);
         } catch (e) {
           console.warn("[voice_moments] morning facts failed:", (e as Error)?.message);
         }
@@ -852,10 +863,10 @@ export async function processVoiceMoments(
       const voice = !TEXT_ONLY_MOMENTS.has(deliveryMoment);
       const [{ data: userRow }, { data: profileRow }] = await Promise.all([
         sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle(),
-        sb.from("zad_customer_profile").select("preferred_name,gender,dialect").eq("user_id", row.user_id).maybeSingle(),
+        sb.from("zad_customer_profile").select("preferred_name,gender,dialect,zad_voice").eq("user_id", row.user_id).maybeSingle(),
       ]);
       const u = userRow as { country?: string | null; name?: string | null } | null;
-      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null } | null;
+      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null; zad_voice?: string | null } | null;
 
       let composed: ComposedMoment | null = null;
       let composedBy = "model";
@@ -872,7 +883,7 @@ export async function processVoiceMoments(
         }
         const prompt = buildMomentPrompt(
           { moment: deliveryMoment, facts: row.facts }, u?.country ?? null, cp?.preferred_name || u?.name || null,
-          { gender: cp?.gender, dialect: cp?.dialect, recent },
+          { gender: cp?.gender, dialect: cp?.dialect, zad_voice: cp?.zad_voice, recent },
         );
         composed = parseComposedMoment(await deps.compose(prompt.system, prompt.user), voice, momentLimits(deliveryMoment), emotionRangeForMoment(deliveryMoment));
       } catch (e) {
@@ -999,9 +1010,18 @@ export async function morningFacts(
   ]);
   // undefined = the read failed: ask nothing rather than ask what may be known.
   const ask = profile === undefined ? null : dailyQuestion(profile, local.date);
+  // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
+  const curious = profile === undefined || ask ? null : await curiosityQuestion(sb, userId, Date.parse(dayStart));
   return {
     local_date: local.date,
-    ...(ask ? { daily_question: ask.question, daily_question_field: ask.field } : {}),
+    ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
+    ...(curious
+      ? {
+        daily_question: curious.question,
+        daily_question_kind: "curiosity",
+        curiosity: { key: curious.key, kind: curious.kind, record: curious.record, ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}) },
+      }
+      : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
@@ -1128,6 +1148,9 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
   ...FAMILY_ZONE_MOMENTS,
 ]);
 
+/** مابتتعدّش في السقف ولا في المسافة: اللي مابيتمسكش، وردود شات تليجرام بالصوت (رد مش تنبيه). */
+const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT];
+
 /**
  * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي
  * بتفتح الهدوء، وحرفياً كانت هتتمسح كل ليلة (الـ٤٥ اللي اتبعتوا كلهم جوه الشباك).
@@ -1135,12 +1158,24 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
  */
 const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS]);
 
-export type MomentHold = "quiet_hours" | "daily_cap";
+export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day";
+
+/**
+ * «يوم مزحوم» (ZAD_LIVING_BRAIN.md الشريحة ١٨): لحظات تقدر تستنى يوم تاني — تذكير، عتاب على الغياب، حكاية
+ * الأسبوع، «رجعت وصرفت»، سلسلة اتقطعت. يوم فيه ٣ مواعيد أو أكتر بيتخطاهم، والباقي (جرعات، مواعيد، أمان،
+ * صباح الخير) زي ما هو.
+ */
+export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
+  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken",
+  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach",
+]);
+export const BUSY_DAY_APPOINTMENTS = 3;
 
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
-export function momentGate(moment: string, localHour: number, sentToday: number): MomentHold | null {
+export function momentGate(moment: string, localHour: number, sentToday: number, appointmentsToday = 0): MomentHold | null {
   if (NEVER_HELD_MOMENTS.has(moment)) return null;
   if (isQuietHour(localHour) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
+  if (BUSY_DAY_OPTIONAL_MOMENTS.has(moment) && appointmentsToday >= BUSY_DAY_APPOINTMENTS) return "busy_day";
   if (sentToday >= DAILY_VOICE_ALERT_CAP) return "daily_cap";
   return null;
 }
@@ -1173,10 +1208,28 @@ async function holdMoment(
       .select("id", { count: "exact", head: true })
       .eq("user_id", row.user_id).eq("status", "sent")
       .gte("sent_at", dayStart ?? new Date(nowMs - 86_400_000).toISOString())
-      .not("moment", "in", `(${[...NEVER_HELD_MOMENTS].join(",")})`);
+      .not("moment", "in", `(${UNCOUNTED_MOMENTS.join(",")})`);
     sentToday = count ?? 0;
   } catch (e) {
     console.warn("[voice_moments] daily count failed:", (e as Error)?.message);
   }
-  return momentGate(row.moment, hour, sentToday);
+  // مواعيد النهارده بتوقيته — بس للحظة تقدر تستنى. فشل العدّ = مايمنعش.
+  let appointmentsToday = 0;
+  if (BUSY_DAY_OPTIONAL_MOMENTS.has(row.moment)) {
+    try {
+      const local = localNowContext(tz, new Date(nowMs));
+      const dayStart = resolveLocalIso(`${local.date}T00:00`, local.utc_offset);
+      if (dayStart) {
+        const { count } = await sb.from("zad_appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", row.user_id).neq("status", "cancelled")
+          .gte("starts_at", dayStart)
+          .lt("starts_at", new Date(Date.parse(dayStart) + 86_400_000).toISOString());
+        appointmentsToday = count ?? 0;
+      }
+    } catch (e) {
+      console.warn("[voice_moments] appointments count failed:", (e as Error)?.message);
+    }
+  }
+  return momentGate(row.moment, hour, sentToday, appointmentsToday);
 }

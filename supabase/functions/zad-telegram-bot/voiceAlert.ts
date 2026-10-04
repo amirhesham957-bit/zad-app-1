@@ -15,7 +15,7 @@
 
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
 import { geminiKeys } from "../_shared/keyPool.ts";
-import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, type VoiceEmotion, voiceNameFor, type ZadVoiceGender } from "../_shared/zadVoice.ts";
 
 export const ALERT_TTS_MODELS: readonly string[] = GEMINI_TTS_CHAIN;
 /** نفس صوت زاد في كل القنوات (`_shared/zadVoice.ts`). */
@@ -89,11 +89,13 @@ export async function synthesizeAlertPcm(
   text: string,
   apiKeys: string[],
   fetcher: typeof fetch = fetch,
-  style: { emotion?: VoiceEmotion; country?: string | null } = {},
+  style: { emotion?: VoiceEmotion; country?: string | null; voice?: ZadVoiceGender } = {},
 ): Promise<Uint8Array | null> {
   if (!text || apiKeys.length === 0) return null;
   const attempts: string[] = [];
-  const prompt = buildTtsPrompt({ text, emotion: style.emotion, country: style.country });
+  const prompt = buildTtsPrompt({ text, emotion: style.emotion, country: style.country, voice: style.voice });
+  // صوت زاد اللي العميل اختاره في «ملفي» (20261004090000)؛ من غيره البنت.
+  const voiceName = style.voice ? voiceNameFor(style.voice) : ALERT_VOICE_NAME;
   for (let ki = 0; ki < apiKeys.length; ki++) {
     for (const model of ALERT_TTS_MODELS) {
       try {
@@ -106,7 +108,7 @@ export async function synthesizeAlertPcm(
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
                 responseModalities: ["AUDIO"],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: ALERT_VOICE_NAME } } },
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } },
               },
             }),
           },

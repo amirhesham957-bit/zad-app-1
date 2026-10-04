@@ -21,7 +21,7 @@
 // أندرويد الآلي. `voice-selftest` كان افتراضيه صح طول الوقت، فالفحص الذاتي كان أخضر
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
-import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion, type ZadVoiceGender } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 
 /**
@@ -95,6 +95,8 @@ export interface ValidVoiceRequest {
   emotion?: VoiceEmotion;
   /** بلد الحساب (zad_users.country) — السيرفر بيملاه، مش الجهاز. */
   country?: string | null;
+  /** صوت زاد اللي العميل اختاره في «ملفي» (zad_customer_profile.zad_voice) — السيرفر بيملاه. */
+  voice?: ZadVoiceGender;
 }
 
 /** تعليمات لهجة اختيارية قادمة من جهاز العميل (مصري/سعودي/...) */
@@ -287,7 +289,7 @@ export async function requestGeminiVoice(
   // اللي لسه مابتبعتش emotion — وبرومبت الأداء نفسه في `_shared/zadVoice.ts` (نفس صوت
   // ومشاعر تليجرام والمكالمة).
   const country = input.country ?? legacyDialectCountry(dialectInstruction);
-  const prompt = buildTtsPrompt({ text: input.text, emotion: input.emotion, country });
+  const prompt = buildTtsPrompt({ text: input.text, emotion: input.emotion, country, voice: input.voice });
   const res = await fetcher(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {

@@ -10,6 +10,10 @@
 /// The lines are synthesized once, through the same `voice_synthesize` as
 /// every answer, and kept on the device. Until they are kept there is no
 /// opener: never a wait on the network, and never a robotic voice.
+///
+/// They are kept per voice: the customer picks زاد's voice in «ملفي»
+/// (`zad_voice`, 2026-10-03), the server speaks in it, and a line kept in the
+/// other voice would answer in a voice they did not choose.
 library;
 
 import 'dart:io';
@@ -65,17 +69,24 @@ class FileVoiceOpenerStore implements VoiceOpenerStore {
 /// The openers.
 class VoiceOpeners {
   /// Creates the openers.
-  new(this._synth, this._store, {math.Random? random})
-    : _random = random ?? math.Random();
+  new(this._synth, this._store, {math.Random? random, String Function()? voice})
+    : _random = random ?? math.Random(),
+      _voice = voice ?? _girl;
 
   final VoiceSynthesizer _synth;
   final VoiceOpenerStore _store;
   final math.Random _random;
+  final String Function() _voice;
   bool _warming = false;
 
-  /// The key a line is kept under: its text, so a changed line is made again.
-  static String keyOf(String line) {
-    final hash = line.codeUnits.fold<int>(
+  static String _girl() => 'female';
+
+  /// The key a line is kept under: its text, so a changed line is made again,
+  /// and the voice it was said in. A girl's voice keeps the key it always had,
+  /// so lines already kept are not made again.
+  static String keyOf(String line, {String voice = 'female'}) {
+    final said = voice == 'male' ? 'male|$line' : line;
+    final hash = said.codeUnits.fold<int>(
       7,
       (h, c) => (h * 31 + c) & 0x7fffffff,
     );
@@ -86,8 +97,9 @@ class VoiceOpeners {
   Future<Uint8List?> pick() async {
     final order = List<int>.generate(voiceOpenerLines.length, (i) => i)
       ..shuffle(_random);
+    final voice = _voice();
     for (final i in order) {
-      final pcm = await _store.read(keyOf(voiceOpenerLines[i]));
+      final pcm = await _store.read(keyOf(voiceOpenerLines[i], voice: voice));
       if (pcm != null && pcm.isNotEmpty) return pcm;
     }
     return null;
@@ -100,8 +112,9 @@ class VoiceOpeners {
     if (_warming) return;
     _warming = true;
     try {
+      final voice = _voice();
       for (final line in voiceOpenerLines) {
-        final key = keyOf(line);
+        final key = keyOf(line, voice: voice);
         if (await _store.read(key) != null) continue;
         final audio = await _synth.synthesize(line);
         if (audio.pcm.isEmpty) return;

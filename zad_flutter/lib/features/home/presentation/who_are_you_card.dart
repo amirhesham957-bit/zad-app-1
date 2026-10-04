@@ -64,6 +64,8 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
             kidsCount: current?.kidsCount,
             city: current?.city,
             dialect: current?.dialect,
+            caresFor: current?.caresFor,
+            zadVoice: current?.zadVoice,
           );
     final edited = await ZadScreens.showProfileSheet(context, start);
     if (edited == null || !mounted) return;

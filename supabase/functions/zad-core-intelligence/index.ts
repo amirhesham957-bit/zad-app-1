@@ -15,6 +15,7 @@ import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImage
 import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
 import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
+import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
@@ -1495,6 +1496,15 @@ Deno.serve(async (req: Request) => {
       } catch (_e) {
         voiceRequest.country = null;
       }
+      // صوت زاد من اختيار العميل في «ملفي» (20261004090000) — من السيرفر، زي البلد. فشل القراءة
+      // (أو العمود لسه مااتعملش) = الصوت الافتراضي، بنت.
+      try {
+        const { data: voiceProfile } = await supabase.from("zad_customer_profile").select("zad_voice").eq("user_id", caller.user.id).maybeSingle();
+        voiceRequest.voice = zadVoiceGender((voiceProfile as { zad_voice?: string | null } | null)?.zad_voice);
+      } catch (_e) {
+        voiceRequest.voice = "female";
+      }
+      voiceRequest.voiceId = voiceNameFor(voiceRequest.voice);
 
       // رد شات (مش لحظة من لحظات اليوم): إحساس واحد للرد كله، من أول جملة فيه (chatReplyEmotion).
       // كان كل جملة بتاخد إحساس من كلامها، فجمل نفس الرد بتطلع بأداء مختلف («صوتين»، ٢٠٢٦-١٠-٠١).

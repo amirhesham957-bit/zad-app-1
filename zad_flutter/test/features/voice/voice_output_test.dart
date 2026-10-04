@@ -510,5 +510,43 @@ void main() {
         expect(empty.files, isEmpty);
       },
     );
+
+    const perVoice =
+        "the lines are kept per chosen voice: a boy's voice never plays a "
+        "girl's line, and a girl's lines keep the key they always had";
+    test(perVoice, () async {
+      // A girl's voice keeps the key lines were kept under before the choice.
+      final before = voiceOpenerLines.first.codeUnits.fold<int>(
+        7,
+        (h, c) => (h * 31 + c) & 0x7fffffff,
+      );
+      expect(VoiceOpeners.keyOf(voiceOpenerLines.first), 'opener_$before');
+      expect(
+        VoiceOpeners.keyOf(voiceOpenerLines.first, voice: 'male'),
+        isNot(VoiceOpeners.keyOf(voiceOpenerLines.first)),
+      );
+
+      var voice = 'female';
+      final openers = VoiceOpeners(synth, kept, voice: () => voice);
+      for (final line in voiceOpenerLines) {
+        kept.files[VoiceOpeners.keyOf(line)] = Uint8List.fromList(
+          utf8.encode('girl'),
+        );
+      }
+      expect(await openers.pick(), isNotNull);
+
+      voice = 'male';
+      expect(await openers.pick(), isNull, reason: 'none kept in his voice');
+      final warming = openers.warmUp();
+      await settle();
+      synth.answer(0);
+      await settle();
+      synth.answer(1);
+      await settle();
+      synth.answer(2);
+      await warming;
+      expect(synth.requested, voiceOpenerLines);
+      expect(utf8.decode((await openers.pick())!), isNot('girl'));
+    });
   });
 }

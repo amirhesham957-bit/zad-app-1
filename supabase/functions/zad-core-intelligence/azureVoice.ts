@@ -10,7 +10,7 @@
 //
 // الأسرار: AZURE_SPEECH_KEY + AZURE_SPEECH_REGION (مثلاً westeurope). غياب أي واحد = مقفول.
 
-import { countryCode, ZAD_VOICE } from "../_shared/zadVoice.ts";
+import { countryCode, ZAD_MALE_VOICE, ZAD_VOICE } from "../_shared/zadVoice.ts";
 
 export const AZURE_OUTPUT_FORMAT = "raw-24khz-16bit-mono-pcm";
 
@@ -62,9 +62,9 @@ export function azureVoiceFor(text: string, country: unknown, geminiVoiceId: str
     : countryCode(country) === "TR" || /[ğşıİĞŞ]/.test(text)
     ? TURKISH
     : ENGLISH;
-  // صوت زاد بنت دايماً — صوت البنت بتاع البلد (الأول في كل زوج). الرجالي اتشال مع شخصية كريم.
-  void geminiVoiceId;
-  return pair[0];
+  // صوت زاد اختيار العميل (20261004090000): البنت (الأول في كل زوج) هي الافتراضي، والولد
+  // (التاني) لما الصوت اللي اتختار هو صوت الولد في Gemini.
+  return geminiVoiceId === ZAD_MALE_VOICE ? pair[1] : pair[0];
 }
 
 /** Gemini بيسكت على الإيموجي؛ مايكروسوفت بيقرا اسمها بصوت عالي («وجه ضاحك»). */

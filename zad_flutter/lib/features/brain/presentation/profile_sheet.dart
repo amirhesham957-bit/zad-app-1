@@ -70,6 +70,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
   late String? _age = widget.initial.ageRange;
   late String? _frequency = widget.initial.payFrequency;
   late String? _dialect = widget.initial.dialect;
+  late String? _voice = widget.initial.zadVoice;
 
   @override
   void dispose() {
@@ -99,6 +100,10 @@ class _ProfileSheetState extends State<ProfileSheet> {
       kidsCount: parseWholeNumber(_kids.text),
       city: _city.text,
       dialect: _dialect,
+      // Not on this form: carried as it was, or the save reads back as a
+      // different profile and is reported as not saved.
+      caresFor: widget.initial.caresFor,
+      zadVoice: _voice,
     ).normalized(),
   );
 
@@ -207,6 +212,15 @@ class _ProfileSheetState extends State<ProfileSheet> {
                 selected: _dialect,
                 label: ProfileLabels.dialect,
                 onChanged: (v) => setState(() => _dialect = v),
+              ),
+              // Always one of the two: a voice that was never chosen is a
+              // girl's, and tapping the chosen one keeps it.
+              _Chips(
+                title: 'صوت زاد',
+                options: ProfileOptions.zadVoices,
+                selected: _voice ?? 'female',
+                label: ProfileLabels.zadVoice,
+                onChanged: (v) => setState(() => _voice = v ?? _voice),
               ),
               const SizedBox(height: ZadSpacing.xl),
               FilledButton(

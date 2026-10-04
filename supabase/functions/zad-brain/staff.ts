@@ -10,9 +10,10 @@
 //
 //   pantry   أمين المخزن: سلعة على القايمة والبيت فيه كفاية، وسطور قديمة محدش اشتراها.
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
-//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر.
+//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات).
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
-//   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية.
+//   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
+//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة.
 //   research الباحث: مرة في الأسبوع، أسعار أهم ٣ سلع في البيت في بلد العميل من النت (بحث نصي،
 //            من غير موديل)، بمصادرها — العقل بيرد منها لما العميل يسأل عن سعر.
 
@@ -20,6 +21,8 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AgentSender } from "./agentMail.ts";
 import { countryCode } from "../_shared/dialect.ts";
 import { productFamilyOf } from "./lowStock.ts";
+import { goalPace, type GoalPaceInput } from "./goalPace.ts";
+import { upcomingSeason } from "../_shared/season.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -50,6 +53,34 @@ export interface StaffInput {
   familyMembers: number | null;
   /** مهام العيلة المسندة للعميل ولسه مفتوحة. */
   myOpenChores: Array<{ title: string; due_date: string | null }>;
+  /** أهداف العميل النشطة (agent_goals) — هو اللي حطها. */
+  goals?: Array<{ title: string } & GoalPaceInput>;
+  /**
+   * أسبوع كل طفل في العيلة (الشريحة ١٧) — لولي الأمر (admin) بس، ويوم الخميس بس. assigned = مهامه اللي ميعادها
+   * أو إنجازها آخر ٧ أيام، completed = اللي خلصت منهم. week = مفتاح الأسبوع (منع التكرار).
+   */
+  kidsWeek?: { week: string; kids: Array<{ alias: string; assigned: number; completed: number; reward_total: number }> } | null;
+  /** الموسم الجاي جوه ٣ أسابيع (الشريحة ١٩) — upcomingSeason في _shared/season.ts. */
+  seasonAhead?: { kind: "ramadan" | "dhul_hijjah"; in_days: number; hijri_year: number } | null;
+  /** الاشتراكات الشغالة (zad_subscriptions) — للدرع (الشريحة ١٥). */
+  subscriptions?: Array<{ title: string; amount: number | null; category: string | null; type: string | null; billing_cycle: string | null }>;
+}
+
+/** شهرياً: السنوي على ١٢. */
+export function monthlyCost(s: { amount: number | null; billing_cycle: string | null }): number {
+  const amount = Number(s.amount) || 0;
+  return String(s.billing_cycle ?? "").toUpperCase() === "YEARLY" ? amount / 12 : amount;
+}
+
+/**
+ * اشتراكات اختيارية — مش فواتير ولا التزامات (كهربا، مية، نت البيت). CLAUDE.md: «never suggest cancelling
+ * fixed obligations»، فدول برّه الدرع خالص.
+ */
+function isOptionalSubscription(s: { type: string | null; category: string | null }): boolean {
+  const type = String(s.type ?? "").toLowerCase();
+  const cat = String(s.category ?? "");
+  if (type && type !== "subscription") return false;
+  return !/فواتير|فاتورة|التزام|قسط|إيجار|ايجار/.test(cat);
 }
 
 const DAY = 86_400_000;
@@ -210,6 +241,84 @@ export function staffNotes(input: StaffInput, now: Date): StaffNote[] {
     });
   }
 
+  // ── مدرّب الأهداف (الشريحة ٩): هدف حطه العميل ومتأخر عن جدوله ⇒ خطوة واحدة لبكرة ────────
+  const lagging = (input.goals ?? [])
+    .map((g) => ({ g, p: goalPace(g, now) }))
+    .filter((x) => x.p && (x.p.pace === "behind" || x.p.pace === "overdue"))
+    .slice(0, 2);
+  for (const { g, p } of lagging) {
+    const where = p!.pace === "overdue"
+      ? "ميعاده عدّى"
+      : `والمفروض ~${p!.expected_by_now} لحد النهارده، وفاضل ${p!.days_left} يوم`;
+    notes.push({
+      sender: "brain",
+      subject: `هدف متأخر: «${g.title.slice(0, 80)}»`,
+      detail: `وصل ${Number(g.current_value ?? 0)} من ${Number(g.target_value)} ${where}. في أول كلام مناسب اقترح عليه خطوة ` +
+        "واحدة صغيرة لبكرة تقرّبه، مربوطة ببياناته — مش خطة جديدة، ومن غير لوم. لو الهدف مابقاش يهمه اسأله نلغيه.",
+    });
+  }
+
+  // ── سكرتير العيلة، أسبوع الأولاد (الشريحة ١٧): نسبة المهام ⇒ مكافأة أو مهمة أصغر — لولي الأمر ──
+  for (const kid of input.kidsWeek?.kids ?? []) {
+    if (kid.assigned < 2) continue; // مهمة واحدة مش أسبوع
+    const pct = Math.round((kid.completed / kid.assigned) * 100);
+    const name = kid.alias.slice(0, 30);
+    if (pct >= 80) {
+      notes.push({
+        sender: "family",
+        subject: `أسبوع ${name} (${input.kidsWeek!.week}): ${kid.completed} من ${kid.assigned}`,
+        detail: `${name} خلّص ${pct}% من مهامه الأسبوع ده. اقترح على ولي الأمر مكافأة تشجّعه جوه الميزانية: لو household_load = easy ` +
+          "خروجة صغيرة أو حاجة بيحبها، غير كده مكافأة من غير فلوس (وقت لعب، يختار أكلة الجمعة). من غير مقارنة بإخواته.",
+      });
+    } else if (pct < 40) {
+      notes.push({
+        sender: "family",
+        subject: `أسبوع ${name} (${input.kidsWeek!.week}): ${kid.completed} من ${kid.assigned}`,
+        detail: `${name} خلّص ${pct}% بس من مهامه الأسبوع ده. اقترح على ولي الأمر مهمة واحدة أصغر بدل اللوم، ` +
+          "أو يسأله إيه اللي صعب عليه — ومن غير ما زاد نفسه يعاتب الطفل.",
+      });
+    }
+  }
+
+  // ── المحاسب، درع الاشتراكات (الشريحة ١٥): اشتراكين أو أكتر في نفس النوع، أو الاشتراكات بقت تقيلة ──
+  const optional = (input.subscriptions ?? []).filter(isOptionalSubscription);
+  const byCategory = new Map<string, typeof optional>();
+  for (const sub of optional) {
+    const cat = String(sub.category ?? "").trim() || "غير مصنف";
+    byCategory.set(cat, [...(byCategory.get(cat) ?? []), sub]);
+  }
+  for (const [cat, subs] of byCategory) {
+    if (subs.length < 2) continue;
+    const total = Math.round(subs.reduce((sum, x) => sum + monthlyCost(x), 0));
+    notes.push({
+      sender: "finance",
+      subject: `اشتراكات في نفس النوع «${cat}»: ${list(subs.map((x) => x.title))}`,
+      detail: `${subs.length} اشتراكات في «${cat}» بحوالي ${total} في الشهر. اسأله مرة لو بيستخدمهم كلهم — سؤال مش نصيحة إلغاء. ` +
+        "لو قال واحد مالوش لازمة: اعرض تفكّره قبل تجديده، أو تكتبله خطوات/رسالة الإلغاء، أو تشوف لو فيه باقة عيلة أرخص.",
+    });
+  }
+  const optionalMonthly = optional.reduce((sum, x) => sum + monthlyCost(x), 0);
+  if (input.monthlyLimit && input.monthlyLimit > 0 && optionalMonthly >= 0.1 * input.monthlyLimit) {
+    notes.push({
+      sender: "finance",
+      subject: "الاشتراكات بقت ١٠٪ أو أكتر من مصروف الشهر",
+      detail: `الاشتراكات الاختيارية بحوالي ${Math.round(optionalMonthly)} في الشهر من سقف ${Math.round(input.monthlyLimit)}. ` +
+        "لو جه سياقه (ميزانية ضيقة، سؤال عن التوفير) قوله الرقم واسأله أنهي يستاهل.",
+    });
+  }
+
+  // ── أمين المخزن، الموسم الجاي (الشريحة ١٩): قايمة تجهيز قبل ما الأسعار تعلى — مرة في الأسبوع بالكتير ──
+  if (input.seasonAhead) {
+    const name = input.seasonAhead.kind === "ramadan" ? "رمضان" : "ذي الحجة";
+    notes.push({
+      sender: "pantry",
+      subject: `${name} ${input.seasonAhead.hijri_year} جاي`,
+      detail: `${name} بعد حوالي ${input.seasonAhead.in_days} يوم. ` + (input.seasonAhead.kind === "ramadan"
+        ? "اقترح قايمة تجهيز من اللي ناقص في المخزن فعلاً (تمر، زيت، سكر، رز، مكرونة، ياميش) قبل ما الأسعار تعلى — بس لو الميزانية تسمح."
+        : "اسأله مرة لو هيضحّي السنة دي؛ الحجز بدري أرخص، واللحمة والعيدية مصاريف تتحسب."),
+    });
+  }
+
   // ── مدرّب الإعداد ───────────────────────────────────────────────────────
   if (!input.hasPushToken) {
     notes.push({
@@ -250,12 +359,81 @@ export function staffBlock(notes: StaffNote[]): string {
     "\n=== نهاية الملاحظات ===\nاستخدم المهم منها: سؤال واحد أو رؤية واحدة لكل ملاحظة تستاهل، ومتكررش اللي العميل عارفه.";
 }
 
+/** الموسم الجاي بتوقيت سوق العميل. فشل = مفيش. */
+async function staffSeasonAhead(sb: SupabaseClient, userId: string, now: Date): Promise<StaffInput["seasonAhead"]> {
+  try {
+    const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: (u as { country?: string | null } | null)?.country ?? null });
+    return upcomingSeason(now, typeof tz === "string" && tz ? tz : "UTC");
+  } catch {
+    return null;
+  }
+}
+
+/** مفتاح الأسبوع: «2026-W40» (ISO). */
+export function isoWeekKey(now: Date): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
+  const week = Math.ceil(((d.getTime() - yearStart) / 86_400_000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/** أسبوع الأولاد — لولي الأمر يوم الخميس بس (آخر يوم دراسة في أغلب أسواق زاد). فشل = مفيش. */
+async function staffKidsWeek(
+  sb: SupabaseClient, member: { id: string; family_id: string; role?: string | null }, now: Date,
+): Promise<StaffInput["kidsWeek"]> {
+  if (member.role !== "admin" || now.getUTCDay() !== 4) return null;
+  try {
+    const { data: kids } = await sb.from("family_members").select("id,alias")
+      .eq("family_id", member.family_id).eq("role", "child");
+    if (!kids?.length) return null;
+    const { data: chores } = await sb.from("family_chores").select("assigned_to,is_completed,completed_at,due_date,created_at,reward_amount")
+      .eq("family_id", member.family_id).in("assigned_to", kids.map((k: { id: string }) => k.id));
+    return { week: isoWeekKey(now), kids: kidsWeekFrom(kids as Array<{ id: string; alias: string | null }>, (chores ?? []) as ChoreRow[], now) };
+  } catch {
+    return null;
+  }
+}
+
+export interface ChoreRow {
+  assigned_to: string | null;
+  is_completed: boolean | null;
+  completed_at: string | null;
+  due_date: string | null;
+  created_at: string | null;
+  reward_amount: number | null;
+}
+
+/** مهام الطفل اللي ميعادها (أو إنشاؤها لو مالهاش ميعاد) أو إنجازها في آخر ٧ أيام. */
+export function kidsWeekFrom(
+  kids: ReadonlyArray<{ id: string; alias: string | null }>, chores: readonly ChoreRow[], now: Date,
+): Array<{ alias: string; assigned: number; completed: number; reward_total: number }> {
+  const since = now.getTime() - 7 * DAY;
+  const inWeek = (iso: string | null) => {
+    const t = iso ? Date.parse(iso) : NaN;
+    return Number.isFinite(t) && t >= since && t <= now.getTime() + DAY;
+  };
+  return kids.map((k) => {
+    const mine = chores.filter((c) => c.assigned_to === k.id &&
+      (inWeek(c.completed_at) || inWeek(c.due_date) || (!c.due_date && inWeek(c.created_at))));
+    const done = mine.filter((c) => c.is_completed === true);
+    return {
+      alias: (k.alias ?? "").trim() || "الطفل",
+      assigned: mine.length,
+      completed: done.length,
+      reward_total: done.reduce((sum, c) => sum + (Number(c.reward_amount) || 0), 0),
+    };
+  });
+}
+
 /** الجولة: بتقرا، بتحسب، وبتكتب الجديد في الصندوق. مابترميش — موظف واقع مايوقفش العقل. */
 export async function runStaffRound(sb: SupabaseClient, userId: string, now = new Date()): Promise<StaffNote[]> {
   try {
     const since30 = new Date(now.getTime() - 30 * DAY).toISOString();
     const since7 = new Date(now.getTime() - 7 * DAY).toISOString();
-    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail] = await Promise.all([
+    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail, goals, subs] = await Promise.all([
       sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").eq("user_id", userId),
       sb.from("zad_pharmacy_items").select("name,remaining_quantity,is_recurring,dose_times,daily_dose_count,units_per_dose,expiry_date").eq("user_id", userId),
@@ -264,12 +442,15 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       sb.from("zad_fcm_tokens").select("id").eq("user_id", userId).limit(1),
       sb.from("telegram_bindings").select("chat_id").eq("user_id", userId).limit(1),
       sb.from("zad_family_shares").select("requested_at").eq("owner_id", userId).eq("status", "pending"),
-      sb.from("family_members").select("id,family_id").eq("user_id", userId).maybeSingle(),
+      sb.from("family_members").select("id,family_id,role").eq("user_id", userId).maybeSingle(),
       sb.from("zad_agent_messages").select("subject").eq("user_id", userId).gte("created_at", since7),
+      sb.from("agent_goals").select("title,target_value,current_value,deadline_date,created_at").eq("user_id", userId).eq("status", "active").limit(10),
+      sb.from("zad_subscriptions").select("title,amount,category,type,billing_cycle").eq("user_id", userId).eq("is_active", true).limit(50),
     ]);
-    const member = membership.data as { id: string; family_id: string } | null;
+    const member = membership.data as { id: string; family_id: string; role?: string | null } | null;
     let familyMembers: number | null = null;
     let myOpenChores: StaffInput["myOpenChores"] = [];
+    let kidsWeek: StaffInput["kidsWeek"] = null;
     if (member) {
       const [{ data: members }, { data: chores }] = await Promise.all([
         sb.from("family_members").select("id").eq("family_id", member.family_id),
@@ -278,6 +459,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       ]);
       familyMembers = (members ?? []).length;
       myOpenChores = (chores ?? []) as StaffInput["myOpenChores"];
+      kidsWeek = await staffKidsWeek(sb, member, now);
     }
     const telegram = ((tg.data ?? []) as Array<{ chat_id: unknown }>).some((b) => b.chat_id != null);
     const notes = staffNotes({
@@ -291,6 +473,10 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       pendingShareRequests: (shares.data ?? []) as StaffInput["pendingShareRequests"],
       familyMembers,
       myOpenChores,
+      goals: (goals.data ?? []) as StaffInput["goals"],
+      subscriptions: (subs.data ?? []) as StaffInput["subscriptions"],
+      kidsWeek,
+      seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
     const fresh = freshNotes(notes, ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     if (fresh.length > 0) {

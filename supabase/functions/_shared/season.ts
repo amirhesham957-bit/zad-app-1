@@ -57,3 +57,29 @@ export function seasonInstruction(season: Season | null): string {
       return "";
   }
 }
+
+/**
+ * الموسم الجاي (ZAD_LIVING_BRAIN.md الشريحة ١٩): «يجهّز قوائم الاحتياجات قبل موسم ارتفاع الأسعار». أول يوم
+ * في رمضان أو في ذي الحجة جوه [horizonDays] يوم. null لو مفيش، أو لو إحنا فيه أصلاً (seasonFor بيغطيه).
+ */
+export function upcomingSeason(
+  date: Date, timeZone: string, horizonDays = 21,
+): { kind: "ramadan" | "dhul_hijjah"; in_days: number; hijri_year: number } | null {
+  for (let d = 1; d <= horizonDays; d++) {
+    const s = seasonFor(new Date(date.getTime() + d * 86_400_000), timeZone);
+    if (!s || s.hijri_day !== 1) continue;
+    if (s.hijri_month === 9) return { kind: "ramadan", in_days: d, hijri_year: s.hijri_year };
+    if (s.hijri_month === 12) return { kind: "dhul_hijjah", in_days: d, hijri_year: s.hijri_year };
+  }
+  return null;
+}
+
+/** سطر للموديل عن الموسم الجاي — تجهيز قبل ما الأسعار تعلى، مش ضغط شراء. */
+export function upcomingSeasonInstruction(u: { kind: "ramadan" | "dhul_hijjah"; in_days: number } | null): string {
+  if (!u) return "";
+  return u.kind === "ramadan"
+    ? `رمضان بعد حوالي ${u.in_days} يوم، والسلع الأساسية والياميش أسعارها بتعلى قبله. لو جه سياقه، اقترح قايمة تجهيز من اللي ` +
+      "ناقص في البيت فعلاً (تمر، زيت، سكر، رز، مكرونة، ياميش) يشتريها بدري — وبس لو الميزانية تسمح، من غير ضغط."
+    : `ذي الحجة بعد حوالي ${u.in_days} يوم (والعيد بعدها بعشرة): لو بيضحّي، الحجز بدري أرخص؛ واللحمة والعيدية مصاريف جاية ` +
+      "تستاهل تتحسب. اسأله مرة لو هيضحّي السنة دي — من غير افتراض.";
+}
