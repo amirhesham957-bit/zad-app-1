@@ -101,6 +101,7 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
+import { DECISION_OPEN_MAX } from "./decisionReview.ts";
 import { emergencyCard } from "./emergency.ts";
 import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollSummaries } from "./familyPolls.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -1199,6 +1200,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
     .order("sent_at", { ascending: false }).limit(1).maybeSingle();
 
+  // القرارات الكبيرة اللي اتسجّلت (الشريحة ٢٦) — عشان مايتسجّلش نفس القرار مرتين، ولو العميل سأل «قرار العربية طلع إزاي؟».
+  const { data: decisionRows } = await sb.from("zad_decision_log")
+    .select("label,decided_at,reviews,outcome").eq("user_id", userId)
+    .gte("decided_at", new Date(Date.now() - 120 * 86_400_000).toISOString())
+    .order("decided_at", { ascending: false }).limit(5);
+
   // جدول الحصص (school.ts، الشريحة ٢١): مين عنده إيه النهارده وبكرة.
   const { data: timetableRows } = await sb.from("zad_school_timetable")
     .select("person,weekday,period,starts,subject").eq("user_id", userId).limit(300);
@@ -1432,6 +1439,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const today = localNowContext(budgetState.timezone ?? "UTC").date;
       return { today: schoolDay(rows, weekdayOfDate(today)), tomorrow: schoolDay(rows, weekdayOfDate(today, 1)) };
     })(),
+    // null = مفيش قرار كبير اتسجّل آخر ١٢٠ يوم. outcome = آخر مراجعة (decisionReview.ts).
+    decisions: (decisionRows ?? []).length
+      ? ((decisionRows ?? []) as Array<{ label: string; decided_at: string; reviews: number; outcome: Record<string, unknown> | null }>).map((d) => ({
+        label: d.label, decided_on: String(d.decided_at).slice(0, 10), reviews: d.reviews,
+        last_review: d.outcome && !d.outcome.no_data
+          ? { outcome: d.outcome.outcome, predicted_surplus: d.outcome.predicted_surplus, actual_surplus: d.outcome.actual_surplus }
+          : null,
+      }))
+      : null,
     // منسّق الانتباه (attention.ts): الكروت المفتوحة قدام العميل، وعناوين كروت آخر ٢٤ ساعة (مايتقالوش تاني في الشات).
     attention: insightHistErr ? null : {
       open_cards: openCards((insightHistory ?? []) as Array<{ dedupe_key: string | null; status: string | null; priority: string | null; surface: string | null; created_at: string }>),
@@ -3385,6 +3401,47 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         ...impact,
       });
     }
+    case "log_decision": {
+      // الشريحة ٢٦ — قرار اتاخد فعلاً بأرقامه ومتوسطات البيت دلوقتي، عشان المحاسب يراجعه بعد ٣٠ و٩٠ يوم
+      // (decisionReview.ts). سؤال افتراضي («لو اشتريت…») مش قرار — الوصف والبرومبت بيقولوا كده.
+      const label = typeof input?.label === "string" ? input.label.replace(/\s+/g, " ").trim().slice(0, 80) : "";
+      if (!label) return "مرفوض: القرار محتاج اسم بكلام العميل.";
+      const oneTime = Math.max(0, Number(input?.one_time_cost) || 0);
+      const monthly = Math.max(0, Number(input?.monthly_cost) || 0);
+      const incomeChange = Number(input?.monthly_income_change) || 0;
+      if (oneTime === 0 && monthly === 0 && incomeChange === 0) {
+        return "مرفوض: محتاج تكلفة القرار (مرة واحدة أو كل شهر) أو تغيير في الدخل — من غيرها مفيش حاجة تتراجع.";
+      }
+      const { data: txns, error: txErr } = await sb.from("zad_transactions")
+        .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
+        .gte("created_at", new Date(Date.now() - 95 * 86_400_000).toISOString()).limit(2000);
+      if (txErr) return `مقدرتش أسجّل القرار دلوقتي: ${txErr.message}`;
+      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>);
+      if (avg.historyDays === 0) return "مرفوض: مفيش حركات أقيس عليها — المراجعة بعدين هتبقى من غير أساس.";
+      const { data: open, error: openErr } = await sb.from("zad_decision_log")
+        .select("id,label,decided_at").eq("user_id", userId).lt("reviews", 2)
+        .order("decided_at", { ascending: false }).limit(50);
+      if (openErr) return `مقدرتش أسجّل القرار دلوقتي: ${openErr.message}`;
+      const fields = {
+        one_time_cost: oneTime, monthly_cost: monthly, monthly_income_change: incomeChange,
+        baseline_income: avg.income, baseline_spend: avg.spend, baseline_days: avg.historyDays,
+      };
+      // نفس القرار آخر ٣٠ يوم = تصحيح أرقامه، مش قرار تاني.
+      const same = ((open ?? []) as Array<{ id: string; label: string; decided_at: string }>).find((d) =>
+        itemKey(d.label) === itemKey(label) && Date.now() - Date.parse(d.decided_at) <= 30 * 86_400_000
+      );
+      if (same) {
+        const { error } = await sb.from("zad_decision_log").update(fields).eq("id", same.id).eq("user_id", userId);
+        if (error) return `مقدرتش أحدّث القرار: ${error.message}`;
+        ctx.mutationCount++;
+        return `اتحدّثت أرقام «${label}». هراجعه معاه بعد شهر من يوم القرار وبعد ٣ شهور.`;
+      }
+      if ((open ?? []).length >= DECISION_OPEN_MAX) return "مرفوض: فيه قرارات كتير مستنية مراجعة — كفاية دول دلوقتي.";
+      const { error } = await sb.from("zad_decision_log").insert({ user_id: userId, label, ...fields });
+      if (error) return `مقدرتش أسجّل القرار: ${error.message}`;
+      ctx.mutationCount++;
+      return `اتسجّل «${label}». هراجع معاه بعد شهر وبعد ٣ شهور: الفايض الفعلي قصاد المحسوب.`;
+    }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
       // الهدف: العميل يشوف "بيته صح قد إيه" كرقم واحد، والعقل يشرح أكبر نقطة ضعف.
@@ -4552,6 +4609,23 @@ export const CHAT_TOOLS: ToolDef[] = [
         start_month: { type: "string", description: "شهر البداية YYYY-MM لو مش الشهر ده" },
         months: { type: "number", description: "كام شهر قدام، الافتراضي ٦ والأقصى ١٢" },
       },
+    },
+  },
+  {
+    name: "log_decision",
+    description:
+      "سجّل قرار كبير **اتاخد فعلاً** («خلاص اشتريت العربية»، «قررنا ننقل عمر المدرسة الجديدة»، «مسكت الشغل الجديد») " +
+      "بنفس أرقام decision_impact، عشان زاد يراجع معاه بعد شهر وبعد ٣ شهور: الحسبة طلعت صح ولا لأ. " +
+      "**مش** لسؤال افتراضي («لو اشتريت…»، «أفكر في…») — ده decision_impact بس. محتاج تكلفة أو تغيير في الدخل.",
+    input_schema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "القرار بكلام العميل (عربية، مدرسة عمر الجديدة…)" },
+        one_time_cost: { type: "number", description: "تكلفة مرة واحدة (المقدم، الرسوم، التمن)" },
+        monthly_cost: { type: "number", description: "تكلفة جديدة كل شهر (قسط، مصاريف المدرسة، بنزين)" },
+        monthly_income_change: { type: "number", description: "تغيير في الدخل الشهري (+ زيادة، - نقص)" },
+      },
+      required: ["label"],
     },
   },
   {
@@ -6553,6 +6627,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
+   - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
