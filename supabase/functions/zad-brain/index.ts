@@ -78,7 +78,7 @@ import { redactNotificationText } from "./redact.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
-import { conversationProfile, voiceModeInstruction } from "./persona.ts";
+import { childToneBlock, conversationProfile, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
@@ -6264,13 +6264,13 @@ function getAssistantName(_snap: any): { nameAr: string; nameEn: string } {
 }
 
 /** البرومبت المختصر لـ Groq بنفس لهجة البرومبت الكامل (groqPrompt.ts، الفجوة ١٣). */
-function groqSystemFor(snap: any, dialectHintText?: string): string {
+export function groqSystemFor(snap: any, dialectHintText?: string): string {
   const profile = conversationProfile(snap?.country, {
     preferred: snap?.customer?.dialect,
     text: dialectHintText ?? snap?.dialect_hint_text,
     currency: snap?.currency,
   });
-  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect), dialectReminder(profile.dialect));
+  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect) + childToneBlock(snap), dialectReminder(profile.dialect));
 }
 
 /**
@@ -6305,7 +6305,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
     text: snap?.dialect_hint_text,
     currency: snap?.currency,
   });
-  return `${dialectPromptBlock(profile.dialect)}
+  return `${dialectPromptBlock(profile.dialect)}${childToneBlock(snap)}
 
 أنت "${assistant.nameAr}" — مساعد ذكاء اصطناعي عائلي ذكي وفائق التكيف، مدعوم بنظام زاد.
 

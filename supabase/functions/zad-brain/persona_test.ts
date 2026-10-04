@@ -27,3 +27,25 @@ Deno.test("voice mode treats an odd transcript as mishearing, not as a joke (202
   // Typed text is what the customer wrote: no such rule.
   assertEquals(/تفريغ صوت/.test(voiceModeInstruction(false)), false);
 });
+
+Deno.test("child tone: only a child's account gets it, and it keeps money talk and strangers out", async () => {
+  const { childToneBlock } = await import("./persona.ts");
+  const child = { family: { mine: { role: "child", alias: "سارة", balance: 40, savings_goal: 100 } } };
+  const parent = { family: { mine: { role: "admin", alias: "بابا" } } };
+  assertEquals(childToneBlock(parent), "");
+  assertEquals(childToneBlock({}), "");
+  assertEquals(childToneBlock(null), "");
+  const block = childToneBlock(child);
+  assertMatch(block, /بتكلم طفل/);
+  assertMatch(block, /مشجع مرح/);
+  assertMatch(block, /يكلم بابا أو ماما/);
+  assertMatch(block, /مشاكل فلوس البيت/);
+});
+
+Deno.test("child tone: the chat prompt carries it for a child, and the Groq fallback too", async () => {
+  const { buildChatSystemPrompt, groqSystemFor } = await import("./index.ts");
+  const child = { family: { mine: { role: "child", alias: "سارة" } } };
+  assertMatch(buildChatSystemPrompt(child), /بتكلم طفل/);
+  assertEquals(/بتكلم طفل/.test(buildChatSystemPrompt({ family: { mine: { role: "admin" } } })), false);
+  assertMatch(groqSystemFor(child), /بتكلم طفل/);
+});
