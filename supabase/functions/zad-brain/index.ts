@@ -102,6 +102,7 @@ import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./hous
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
+import { monthlyTotals, resilience } from "./longMemory.ts";
 import { emergencyCard } from "./emergency.ts";
 import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollSummaries } from "./familyPolls.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -3401,6 +3402,27 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         ...impact,
       });
     }
+    case "household_resilience": {
+      // الشريحة ٢٧ — الشهور الصعبة اللي فاتت والبيت رجع منها في كام شهر، من حركاته (حتمي، صفر كوتة). بالطلب بس:
+      // ٤٠٠ يوم حركات مش حاجة تتقري في كل لقطة.
+      const { data: txns, error } = await sb.from("zad_transactions")
+        .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
+        .gte("created_at", new Date(Date.now() - 400 * 86_400_000).toISOString()).limit(10000);
+      if (error) return `مقدرتش أقرا التاريخ دلوقتي: ${error.message}`;
+      const currentMonth = localNowContext(snap?.cycle?.timezone ?? "UTC").date.slice(0, 7);
+      const r = resilience(monthlyTotals((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>), currentMonth);
+      if (!r) {
+        return "التاريخ أقل من ٦ شهور كاملة — مفيش صمود أتكلم عنه. ماتقولش أرقام عن «قبل كده»؛ ساعده في الشهر ده بس.";
+      }
+      return JSON.stringify({
+        ...r,
+        guidance: r.typical_recovery_months !== null
+          ? "قولها كحقيقة من تاريخه («قبل كده عدّيتوا شهر زي ده ورجعتوا في شهرين») — طمأنة مش وعظ ولا وعد. ماتقترحش إلغاء التزام ثابت."
+          : r.hard_months.length
+          ? "فيه شهور صعبة قبل كده بس البيت لسه مارجعش منها بالكامل — ماتقولش «هترجعوا»؛ ساعده بخطوة واحدة."
+          : "مفيش شهر صعب في تاريخه قبل كده — الشهر ده استثناء، وقوله كده لو بيطمّنه.",
+      });
+    }
     case "log_decision": {
       // الشريحة ٢٦ — قرار اتاخد فعلاً بأرقامه ومتوسطات البيت دلوقتي، عشان المحاسب يراجعه بعد ٣٠ و٩٠ يوم
       // (decisionReview.ts). سؤال افتراضي («لو اشتريت…») مش قرار — الوصف والبرومبت بيقولوا كده.
@@ -4610,6 +4632,13 @@ export const CHAT_TOOLS: ToolDef[] = [
         months: { type: "number", description: "كام شهر قدام، الافتراضي ٦ والأقصى ١٢" },
       },
     },
+  },
+  {
+    name: "household_resilience",
+    description:
+      "الشهور الصعبة اللي فاتت (المصاريف عدّت الدخل) والبيت رجع منها في كام شهر — من حركاته الفعلية، حتمي. " +
+      "نادِها لما العميل يقلق من شهر صعب («الشهر ده تقيل»، «مش هنعدّي»، «إحنا في أزمة»). أقل من ٦ شهور تاريخ = مفيش أرقام.",
+    input_schema: { type: "object", properties: {} },
   },
   {
     name: "log_decision",
@@ -6627,6 +6656,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
+   - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
    - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.

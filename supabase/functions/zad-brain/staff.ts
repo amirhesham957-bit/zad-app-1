@@ -14,7 +14,8 @@
 //            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦).
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
-//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة.
+//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
+//            و«زي النهارده من سنة» (longMemory.ts، الشريحة ٢٧).
 //   research الباحث: مرة في الأسبوع، أسعار أهم ٣ سلع في البيت في بلد العميل من النت (بحث نصي،
 //            من غير موديل)، بمصادرها — العقل بيرد منها لما العميل يسأل عن سعر.
 
@@ -25,6 +26,7 @@ import { productFamilyOf } from "./lowStock.ts";
 import { goalPace, type GoalPaceInput } from "./goalPace.ts";
 import { upcomingSeason } from "../_shared/season.ts";
 import { DECISION_REVIEW_DAYS, type LoggedDecision, type ReviewTxn, reviewDecision, reviewNote } from "./decisionReview.ts";
+import { type CapsuleGoal, type CapsuleMemory, capsuleNote } from "./longMemory.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -480,8 +482,8 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       kidsWeek,
       seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
-    const decisions = await staffDecisionReviews(sb, userId, now);
-    const fresh = freshNotes([...notes, ...decisions.notes], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    const [decisions, capsule] = await Promise.all([staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now)]);
+    const fresh = freshNotes([...notes, ...decisions.notes, ...(capsule ? [capsule] : [])], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     let delivered = true;
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
@@ -497,6 +499,23 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
     return [];
+  }
+}
+
+/** «زي النهارده من سنة» (الشريحة ٢٧): حقيقة قالها أو هدف حققه من ٣٦٥ يوم ±يوم. قبل أغسطس ٢٠٢٧ مفيش داتا ⇒ null. */
+async function staffCapsule(sb: SupabaseClient, userId: string, now: Date): Promise<StaffNote | null> {
+  try {
+    const from = new Date(now.getTime() - 366 * DAY).toISOString();
+    const to = new Date(now.getTime() - 364 * DAY).toISOString();
+    const [{ data: memories }, { data: goals }] = await Promise.all([
+      sb.from("zad_memory").select("note,scope,created_at").eq("user_id", userId).eq("scope", "general")
+        .gte("created_at", from).lte("created_at", to).order("confidence", { ascending: false }).limit(10),
+      sb.from("agent_goals").select("title,updated_at").eq("user_id", userId).eq("status", "achieved")
+        .gte("updated_at", from).lte("updated_at", to).limit(5),
+    ]);
+    return capsuleNote((memories ?? []) as CapsuleMemory[], (goals ?? []) as CapsuleGoal[], now.getTime());
+  } catch {
+    return null;
   }
 }
 
