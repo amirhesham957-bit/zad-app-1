@@ -31,6 +31,12 @@ abstract final class ZadDuration {
 
   /// 1600ms — one pass of a loading shimmer.
   static const Duration shimmer = Duration(milliseconds: 1600);
+
+  /// 8s — one loop of a seasonal banner's snow or confetti. The one piece of
+  /// decoration here, asked for by the owner (2026-10-04): slow enough to sit
+  /// behind the text, confined to the banner, and still when the phone asks
+  /// for reduced motion.
+  static const Duration ambient = Duration(seconds: 8);
 }
 
 /// What shape.

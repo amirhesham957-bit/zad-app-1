@@ -41,6 +41,7 @@ class ZadBalanceCard extends StatelessWidget {
     this.onQuickExpense,
     this.onEditBalance,
     this.isStale = false,
+    this.gradient,
     super.key,
   });
 
@@ -95,6 +96,10 @@ class ZadBalanceCard extends StatelessWidget {
   /// says so, because a number presented with no qualification is a promise.
   final bool isStale;
 
+  /// The panel's colours; null = زاد's wallet green. A seasonal campaign
+  /// passes its own, already checked to keep the white text readable.
+  final Gradient? gradient;
+
   /// How much of the opening balance is gone, 0..1.
   double get _spentFraction {
     final opening = openingBalance;
@@ -132,7 +137,7 @@ class ZadBalanceCard extends StatelessWidget {
         child: ZadSquircleClip(
           radius: ZadRadii.hero,
           child: DecoratedBox(
-            decoration: const BoxDecoration(gradient: ZadColors.wallet),
+            decoration: BoxDecoration(gradient: gradient ?? ZadColors.wallet),
             child: CustomPaint(
               // Two soft radial glows. They are what stop a large saturated
               // panel reading as flat fill, and they cost one paint — no blur,

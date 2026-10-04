@@ -204,6 +204,7 @@ and `features/inventory/` are the cleanest examples.
 | زاد عارف عني إيه: profile (edit), habits (wipe outings), memory notes (forget) — online writes, read back | `features/brain` | `18cc32a6` |
 | صحة عقل زاد: Kotlin's BrainHealth v2 verdict ported with its 20 cases; no disk cache on purpose | `features/brain` | `4fa99070` |
 | خريطة زاد: areas around the budget, real edges only, "اسأل زاد" prefills the chat | `features/brain` | `23dc6f54` |
+| Seasonal campaigns — `app_campaigns` (dashboard-edited, RLS read-only), picked on the phone by account-zone date, network country → market, profile dialect → country; banner + header rim + orb badge + wallet gradient; the button sends a brain prompt | `shared/campaigns`, `features/home` | `8d169864` (server), the commit that added this row (app) |
 
 Shell tabs: الرئيسية · المعاملات · زاد (chat) · البيت · تأكيدات.
 
@@ -437,6 +438,19 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
    aggregates see the report, a second account reads none of the first's
    rows but its aggregates count them, `is_me` only for the reporter, anon
    reads nothing and calls nothing. `price_index` still had 0 rows afterwards.
+
+10. **Seasonal campaigns sell nothing yet** (owner, 2026-10-04). The banner's
+    button sends `cta_prompt` to the brain. Premium and any discount wait for
+    Play: Play Billing does not work on the sideloaded build (§6 item 11), and
+    a discount must be read from Play's `ProductDetails`, never typed into
+    `app_campaigns` — a figure in the banner that differs from what Play
+    charges is misleading pricing. When Play is live, add a `cta_kind`
+    (`brain` | `paywall`) rather than reusing `cta_prompt`, and keep any upsell
+    out of kids mode (Play Families policy). Not built yet from the same
+    request: the once-a-day welcome modal, the seasonal home-widget skin, the
+    24-hour trial, stories, family seasonal badges. Halloween and New Year
+    run in every country (owner). Hijri campaigns need a
+    `seasonal_event_windows` row for the year — seeded only to 2027.
 
 ---
 
