@@ -50,6 +50,34 @@ void main() {
     });
   });
 
+  test('the voice is one of two, sent only once chosen', () {
+    expect(
+      const CustomerProfile(zadVoice: 'robot').normalized().zadVoice,
+      isNull,
+    );
+    expect(
+      const CustomerProfile(zadVoice: 'male').normalized().zadVoice,
+      'male',
+    );
+    expect(
+      CustomerProfile.fromJson(const <String, dynamic>{'zad_voice': 'male'})
+          .zadVoice,
+      'male',
+    );
+    expect(
+      const CustomerProfile().toFormJson().containsKey('zad_voice'),
+      isFalse,
+    );
+    expect(
+      const CustomerProfile(zadVoice: 'female').toFormJson()['zad_voice'],
+      'female',
+    );
+    expect(
+      const CustomerProfile(zadVoice: 'male'),
+      isNot(const CustomerProfile(zadVoice: 'female')),
+    );
+  });
+
   test('the form sends only the columns it shows', () {
     // work_schedule, income_source, interests and notes come from the brain;
     // an upsert that leaves them out keeps them.

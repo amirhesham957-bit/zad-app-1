@@ -59,6 +59,11 @@ abstract final class ProfileOptions {
     'grandparents',
   ];
 
+  /// `zad_voice`: زاد's own voice, the customer's explicit choice
+  /// (20261003130000). Null is a girl's voice; it is never read from
+  /// [CustomerProfile.gender].
+  static const List<String> zadVoices = <String>['female', 'male'];
+
   /// `dialect`.
   static const List<String> dialects = <String>[
     'EG',
@@ -94,6 +99,7 @@ class CustomerProfile {
     this.city,
     this.dialect,
     this.caresFor,
+    this.zadVoice,
   });
 
   /// Reads a row.
@@ -113,6 +119,7 @@ class CustomerProfile {
       final List<dynamic> list => list.whereType<String>().toList(),
       _ => null,
     },
+    zadVoice: json['zad_voice'] as String?,
   );
 
   /// How زاد addresses them.
@@ -151,6 +158,10 @@ class CustomerProfile {
   /// Who the customer looks after (`cares_for`): null when never asked, empty
   /// when no one but themselves.
   final List<String>? caresFor;
+
+  /// The voice زاد speaks in, chosen by the customer: `female` or `male`;
+  /// null has never been chosen and sounds like `female`.
+  final String? zadVoice;
 
   /// Whether the three things Zad needs from the first day are known: what to
   /// call the customer, how to address them, and their place in the home —
@@ -192,6 +203,7 @@ class CustomerProfile {
           ?.where(ProfileOptions.caresFor.contains)
           .toSet()
           .toList(),
+      zadVoice: oneOf(zadVoice, ProfileOptions.zadVoices),
     );
   }
 
@@ -216,6 +228,9 @@ class CustomerProfile {
     // Only when known: the older forms build a profile without it, and their
     // save must not wipe what the introduction recorded.
     'cares_for': ?caresFor,
+    // Only when chosen, for the same reason — and so a save before the column
+    // reaches the project still goes through when the voice was not touched.
+    'zad_voice': ?zadVoice,
   };
 
   /// Round-trips through the cache; the same columns.
@@ -235,7 +250,8 @@ class CustomerProfile {
       other.kidsCount == kidsCount &&
       other.city == city &&
       other.dialect == dialect &&
-      listEquals(other.caresFor, caresFor);
+      listEquals(other.caresFor, caresFor) &&
+      other.zadVoice == zadVoice;
 
   @override
   int get hashCode => Object.hash(
@@ -251,6 +267,7 @@ class CustomerProfile {
     city,
     dialect,
     caresFor == null ? null : Object.hashAll(caresFor!),
+    zadVoice,
   );
 }
 
@@ -258,6 +275,9 @@ class CustomerProfile {
 abstract final class ProfileLabels {
   /// `gender`.
   static String gender(String v) => v == 'female' ? 'أنثى' : 'ذكر';
+
+  /// `zad_voice`.
+  static String zadVoice(String v) => v == 'male' ? 'صوت ولد' : 'صوت بنت';
 
   /// `household_role`.
   static String role(String v) => switch (v) {

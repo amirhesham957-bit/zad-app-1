@@ -1127,7 +1127,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
   const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
     sb.from("zad_customer_profile")
-      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes,cares_for")
+      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes,cares_for,zad_voice")
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
@@ -4940,7 +4940,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     await sb.from("agent_tasks").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", task.id);
     try {
       const snap = await buildSnapshot(sb, task.user_id);
-      const systemPrompt = soulBlock() + buildChatSystemPrompt(snap);
+      const systemPrompt = soulBlock(snap?.customer?.zad_voice) + buildChatSystemPrompt(snap);
       const groqSystem = groqSystemFor(snap);
       const ctx: RunContext = freshContext(task.user_id);
       const scope: AuditScope = { source: "event", runId: null };
@@ -5373,7 +5373,7 @@ async function handleAgentTurn(
   // تقارير الأيدجنتس غير المقروءة — العقل بيبقى واعي بشغل أيدجنتته بين رسالتين (Phase 3).
   const agentMail = await agentMailEarly;
   const systemPrompt =
-    soulBlock()
+    soulBlock(snap?.customer?.zad_voice)
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
     + agentMailBlock(agentMail)
     + skillsBlock(learnedSkills)
@@ -6318,10 +6318,11 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت.
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
+   - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
    - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
-   - ${voiceModeInstruction(voiceMode)}
+   - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
 2ب. **واعي بالبيت وبالبلد**:
    - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
    - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
@@ -6390,7 +6391,7 @@ ${dialectReminder(profile.dialect)}`;
 export function buildSystemPrompt(snap: any): string {
   // نفس هوية الشات (تشخيص زاد ١.١): الرؤى اللي التحليل اليومي بيكتبها العميل بيقراها بصوت زاد،
   // مش بصوت «عقل مالي استباقي» تاني.
-  return `${soulBlock()}
+  return `${soulBlock(snap?.customer?.zad_voice)}
 مهمتك دلوقتي (تحليل في الخلفية، مش محادثة): تحلل البيانات اللي جوه === SNAPSHOT === وتقرر لو محتاج تسجل رؤية/سؤال/تعديل عن طريق نداء الأدوات المتاحة لك. أي رؤية بتكتبها العميل هيقراها — اكتبها بنفس صوتك ولهجته.
 
 قواعد صارمة:
@@ -7263,13 +7264,13 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbx = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const [{ data: u }, { data: prof }] = await Promise.all([
         sbx.from("zad_users").select("country,currency,name").eq("id", uid).maybeSingle(),
-        sbx.from("zad_customer_profile").select("preferred_name,dialect").eq("user_id", uid).maybeSingle(),
+        sbx.from("zad_customer_profile").select("preferred_name,dialect,zad_voice").eq("user_id", uid).maybeSingle(),
       ]);
       const urow = u as { country?: string | null; currency?: string | null; name?: string | null } | null;
-      const prow = prof as { preferred_name?: string | null; dialect?: string | null } | null;
+      const prow = prof as { preferred_name?: string | null; dialect?: string | null; zad_voice?: string | null } | null;
       const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency });
       const system = explainSystem(body.topic, {
-        soul: soulBlock(), dialectBlock: dialectPromptBlock(profile.dialect), dialectReminder: dialectReminder(profile.dialect),
+        soul: soulBlock(prow?.zad_voice), dialectBlock: dialectPromptBlock(profile.dialect), dialectReminder: dialectReminder(profile.dialect),
         customerName: prow?.preferred_name ?? urow?.name ?? null,
       });
       try {

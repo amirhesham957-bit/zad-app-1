@@ -24,7 +24,7 @@ import { detectDialectFromText } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
-import type { VoiceEmotion } from "../_shared/zadVoice.ts";
+import { type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
@@ -260,8 +260,14 @@ async function deliverVoiceAlert(
     const { data } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
     country = (data as { country?: string | null } | null)?.country ?? null;
   } catch (_e) { /* من غير لهجة */ }
+  // صوت زاد اللي العميل اختاره في «ملفي» — نفس الصوت اللي بيسمعه في التطبيق. فشل القراءة = بنت.
+  let voice: ZadVoiceGender = "female";
+  try {
+    const { data } = await sb.from("zad_customer_profile").select("zad_voice").eq("user_id", userId).maybeSingle();
+    voice = zadVoiceGender((data as { zad_voice?: string | null } | null)?.zad_voice);
+  } catch (_e) { /* الافتراضي */ }
   const text = speech?.trim() ? alertSpeechText("", speech, speechLimitForMoment(moment)) : alertSpeechText(title, body);
-  const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion, country });
+  const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion, country, voice });
   if (!pcm) return; // السبب اتسجّل جوه synthesizeAlertPcm — النص وصل خلاص.
   await sendTelegramVoice(chatId, pcmToMp3(pcm));
   console.log(`[voiceAlert] delivered ${pcm.byteLength} bytes PCM as voice note`);

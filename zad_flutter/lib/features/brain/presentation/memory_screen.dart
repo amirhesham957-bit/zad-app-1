@@ -357,6 +357,7 @@ class _ProfileCard extends StatelessWidget {
             'اللهجة',
             p.dialect.labelled(ProfileLabels.dialect) ?? 'زي بلدك وكلامك',
           ),
+          _Line('صوت زاد', ProfileLabels.zadVoice(p.zadVoice ?? 'female')),
         ],
       ),
     );

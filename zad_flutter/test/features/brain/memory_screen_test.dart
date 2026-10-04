@@ -42,9 +42,12 @@ class _Memory extends MemoryController {
     return failure;
   }
 
+  CustomerProfile? saved;
+
   @override
   Future<MemoryWriteFailure?> saveProfile(CustomerProfile profile) async {
     calls.add('save:${profile.preferredName}:${profile.gender}');
+    saved = profile;
     return failure;
   }
 }
@@ -143,10 +146,7 @@ void main() {
       note: 'كان عندهم ضيوف الأسبوع اللي فات',
       validUntil: DateTime.utc(2026, 10, 2, 21),
     );
-    await pump(
-      tester,
-      MemorySnapshot(notes: <MemoryNote>[over, _note]),
-    );
+    await pump(tester, MemorySnapshot(notes: <MemoryNote>[over, _note]));
     await tester.scrollUntilVisible(find.text(_note.note), 200);
 
     expect(find.text(over.note), findsNothing);
@@ -250,5 +250,38 @@ void main() {
 
     expect(fake.calls, <String>['save:أمير:male']);
     expect(find.text('اتحفظ'), findsOneWidget);
+  });
+
+  testWidgets("Zad's voice is chosen in the form, and what the form does not "
+      'show is saved as it was', (tester) async {
+    await pump(
+      tester,
+      const MemorySnapshot(
+        profile: CustomerProfile(
+          preferredName: 'أمير',
+          gender: 'male',
+          caresFor: <String>['parents'],
+        ),
+      ),
+    );
+    expect(find.text('صوت بنت'), findsOneWidget, reason: 'never chosen');
+
+    await tester.tap(find.text('تعديل'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('صوت ولد'));
+    await tester.pump();
+    await tester.tap(find.text('صوت ولد'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('احفظ'));
+    await tester.pump();
+    await tester.tap(find.text('احفظ'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(fake.saved?.zadVoice, 'male');
+    // The form has no «مين في رعايتك» field; dropping it made the save read
+    // back as a different profile and report «ماتحفظش».
+    expect(fake.saved?.caresFor, <String>['parents']);
   });
 }

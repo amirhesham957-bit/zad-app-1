@@ -55,8 +55,42 @@ export const EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
   proud:
     "Proud and delighted, celebrating them — excited, warm, a happy laugh, like she is cheering for a friend who just achieved something.",
   tender:
-    "Very soft, slow and affectionate, a little sleepy and close to the mic, like a sweet late-night good-night to someone she is truly fond of — a gentle smile in the voice, a soft sigh, never loud.",
+    "Very soft, slow and kind, a little sleepy, like a warm late-night good-night to a dear friend or family member — a gentle smile in the voice, a soft sigh, never loud.",
 };
+
+/**
+ * نفس المشاعر بصوت ولد (اختيار العميل في «ملفي»، 20261003130000). الدفا هنا دفا صاحب أو أخ —
+ * مفيش «تقمّص» ولا حنية بمعنى عاطفي (قرار المالك ٢٠٢٦-١٠-٠٣: الهزار حسب السياق، من غير مغازلة).
+ */
+export const MALE_EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
+  warm:
+    "Warm, relaxed and completely natural, like a young man chatting with his closest friend on the phone. Casual rhythm, small natural pauses, a smile in the voice.",
+  cheerful:
+    "Bright, upbeat and full of energy, genuinely happy to talk to them. Quick lively rhythm, a light laugh in the voice where it fits.",
+  playful:
+    "Teasing and witty, like a good friend joking around. Playful ups and downs, a short chuckle where it fits.",
+  caring:
+    "Calm, kind and attentive, like a caring older brother asking about their health. Gentle and unhurried, very clear on names, times and numbers.",
+  worried:
+    "Genuinely concerned, slightly faster and more serious, but still gentle — he is on their side, not scolding.",
+  reproachful:
+    "Friendly reproach, like a close friend saying 'really? again?' — a small disappointed sigh, then softening at the end.",
+  sulky:
+    "Pretending to be a bit hurt in a funny, exaggerated way — a mock huff, clearly joking, then letting it go.",
+  sad:
+    "Sad and sincere, voice lower and slower, a heavy breath between phrases, then a hopeful lift at the end.",
+  proud:
+    "Proud and excited, celebrating them — a happy laugh, like he is cheering for a friend who just achieved something.",
+  tender:
+    "Soft, slow and calm, like a kind older brother saying good night — a gentle smile in the voice, never loud.",
+};
+
+/** صوت زاد اللي العميل اختاره (zad_customer_profile.zad_voice). أي حاجة غير male = الافتراضي، بنت. */
+export type ZadVoiceGender = "female" | "male";
+
+export function zadVoiceGender(value: unknown): ZadVoiceGender {
+  return value === "male" ? "male" : "female";
+}
 
 /** لهجة كل بلد — نفس خريطة zad-voice-live/persona.ts، بصياغة أداء صوتي بدل تعليمات كتابة. */
 const ACCENTS: Record<string, string> = {
@@ -126,6 +160,17 @@ export const GEMINI_TTS_CHAIN: readonly string[] = [
 
 export const ZAD_VOICE = "Aoede";
 export const DEFAULT_VOICE = ZAD_VOICE;
+/**
+ * صوت الولد (Gemini prebuilt «Puck»: شبابي ومنطلق — أقرب نظير لـAoede). اتشال مع شخصية كريم
+ * يوم ٢٠٢٦-٠٩-٢٧ (كان Charon، نبرة مذيع)، ورجع ٢٠٢٦-١٠-٠٣ كاختيار صريح من العميل مش شخصية تانية:
+ * نفس زاد ونفس الاسم، بصوت ولد.
+ */
+export const ZAD_MALE_VOICE = "Puck";
+
+/** اسم صوت Gemini لاختيار العميل. */
+export function voiceNameFor(voice: ZadVoiceGender): string {
+  return voice === "male" ? ZAD_MALE_VOICE : ZAD_VOICE;
+}
 export const PERSONA_VOICES: Record<string, string> = {
   zad: ZAD_VOICE,
   sarah_warm: ZAD_VOICE,
@@ -159,13 +204,16 @@ export function inferEmotion(text: string): VoiceEmotion {
  * tried to generate text") أي برومبت شكله طلب نص (googleapis/js-genai#1058)، والتركيبة دي
  * هي اللي اتحقق إنها بترجع صوت.
  */
-export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; country?: unknown }): string {
+export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; country?: unknown; voice?: ZadVoiceGender }): string {
   const emotion = input.emotion ?? inferEmotion(input.text);
+  const male = input.voice === "male";
   return [
     "Read the following text aloud as a voice performance — generate audio only, no written text.",
-    "Voice: a young, cute, very natural-sounding woman, never robotic or announcer-like.",
+    male
+      ? "Voice: a young, friendly, very natural-sounding man, never robotic or announcer-like."
+      : "Voice: a young, cute, very natural-sounding woman, never robotic or announcer-like.",
     accentDirection(input.country),
-    `Delivery: ${EMOTION_DIRECTIONS[emotion]}`,
+    `Delivery: ${(male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS)[emotion]}`,
     "Say exactly the words in the text, in its own language; express the emotion through the voice (sighs, laughs, trembles) without adding words.",
     "",
     input.text,
@@ -311,7 +359,18 @@ export function situationalEmotion(moment: string, facts: Record<string, unknown
  */
 export const VOICE_EMOTIONAL_RANGE =
   "مشاعرك حقيقية وواضحة في صوتك وكلامك حسب الموقف: بتهزري وتضحكي لما الجو حلو، بتفرحي بجد وتسقفيله لما يحقق حاجة، " +
-  "حنينة ومهتمة بصحته ومواعيده، قلقانة بصدق لما فلوسه في خطر، بتعاتبيه بدلع لما ينسى دواه أو يطنّش (\"كده برضه؟\")، " +
+  "حنينة ومهتمة بصحته ومواعيده، قلقانة بصدق لما فلوسه في خطر، بتعاتبيه بخفة دم لما ينسى دواه أو يطنّش (\"كده برضه؟\")، " +
   "بتتقمصي وتعملي زعلانة بخفة دم لما يغيب عنك أو يتجاهلك، ولو الموضوع يزعّل بجد صوتك يترعش كأنك هتعيطي — " +
   "وبعدها على طول ترجعي تطمنيه وتشجعيه. المشاعر دي أسلوب صاحبة قريبة مش ضغط: عمرك ما تهدديه ولا تحسسيه بالذنب على فلوس صرفها، " +
   "ولو قالك إنه مضايق من الأسلوب ده هدّي فورًا.";
+
+/** نفس المدى بصوت ولد — صاحب قريب: بيهزر ويفرح ويقلق ويعاتب، من غير تقمّص ولا دموع. */
+export const MALE_VOICE_EMOTIONAL_RANGE =
+  "مشاعرك حقيقية وواضحة في صوتك وكلامك حسب الموقف: بتهزر وتضحك لما الجو حلو، بتفرح بجد وتشجّعه لما يحقق حاجة، " +
+  "مهتم بصحته ومواعيده زي أخ كبير، قلقان بصدق لما فلوسه في خطر، بتعاتبه بخفة دم لما ينسى دواه أو يطنّش (\"كده برضه؟\")، " +
+  "ولو الموضوع يزعّل بجد صوتك يبقى هادي وتقيل — وبعدها على طول ترجع تطمنه وتشجعه. المشاعر دي أسلوب صاحب قريب مش ضغط: " +
+  "عمرك ما تهدده ولا تحسسه بالذنب على فلوس صرفها، ولو قالك إنه مضايق من الأسلوب ده هدّي فورًا.";
+
+export function voiceEmotionalRange(voice: ZadVoiceGender): string {
+  return voice === "male" ? MALE_VOICE_EMOTIONAL_RANGE : VOICE_EMOTIONAL_RANGE;
+}

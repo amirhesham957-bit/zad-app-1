@@ -14,6 +14,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/brain/data/memory_repository.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/voice/data/voice_openers.dart';
 import 'package:zad/shared/voice/data/voice_player.dart';
@@ -447,6 +448,11 @@ final voiceOpenersProvider = Provider<VoiceOpeners>(
   (ref) => VoiceOpeners(
     ref.watch(voiceSynthesizerProvider),
     const FileVoiceOpenerStore(),
+    // The voice chosen in «ملفي», read when a line is picked or made — a
+    // change shows on the next spoken turn.
+    voice: () =>
+        ref.read(memoryRepositoryProvider).cached().profile?.zadVoice ??
+        'female',
   ),
 );
 

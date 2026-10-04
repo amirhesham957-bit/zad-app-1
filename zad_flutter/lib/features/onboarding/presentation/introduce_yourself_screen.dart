@@ -99,6 +99,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       city: base.city,
       dialect: base.dialect,
       caresFor: _caresFor!.toList(),
+      zadVoice: base.zadVoice,
     );
     final failure = await ref
         .read(memoryControllerProvider.notifier)

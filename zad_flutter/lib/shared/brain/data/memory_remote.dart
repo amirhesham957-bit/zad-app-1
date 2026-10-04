@@ -95,16 +95,31 @@ class SupabaseMemoryRemote implements MemoryRemote {
           .maybeSingle() !=
       null;
 
+  static const String _profileColumns =
+      'preferred_name, gender, household_role, age_range, occupation, '
+      'pay_day, pay_frequency, household_size, kids_count, city, dialect, '
+      'cares_for';
+
+  /// The profile, with زاد's voice (`zad_voice`, 20261003130000). Before that
+  /// migration reaches the project the column is missing (42703), and the
+  /// read without it stands in.
   @override
-  Future<Map<String, dynamic>?> fetchProfile(String userId) => _client
-      .from('zad_customer_profile')
-      .select(
-        'preferred_name, gender, household_role, age_range, occupation, '
-        'pay_day, pay_frequency, household_size, kids_count, city, dialect, '
-        'cares_for',
-      )
-      .eq('user_id', userId)
-      .maybeSingle();
+  Future<Map<String, dynamic>?> fetchProfile(String userId) async {
+    try {
+      return await _client
+          .from('zad_customer_profile')
+          .select('$_profileColumns, zad_voice')
+          .eq('user_id', userId)
+          .maybeSingle();
+    } on PostgrestException catch (e) {
+      if (e.code != '42703') rethrow;
+      return await _client
+          .from('zad_customer_profile')
+          .select(_profileColumns)
+          .eq('user_id', userId)
+          .maybeSingle();
+    }
+  }
 
   @override
   Future<void> upsertProfile(String userId, Map<String, dynamic> columns) =>

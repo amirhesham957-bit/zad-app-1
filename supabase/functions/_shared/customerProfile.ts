@@ -32,6 +32,8 @@ export interface CustomerProfileRow {
   notes?: string | null;
   /** null = لسه ماتسألش؛ [] = مسؤول عن نفسه بس. */
   cares_for?: string[] | null;
+  /** صوت زاد اللي العميل اختاره في «ملفي»؛ null = بنت (20261003130000). */
+  zad_voice?: string | null;
 }
 
 const text = (v: unknown, max: number): string | null => {
@@ -132,6 +134,8 @@ export function customerCard(
     interests: r.interests ?? [],
     notes: r.notes ?? null,
     cares_for: r.cares_for ?? null,
+    // اختيار صريح، مش «ناقص» لو null — مابيدخلش missing_important.
+    zad_voice: r.zad_voice === "male" ? "male" : "female",
   };
   card.missing_important = IMPORTANT.filter((k) => card[k] === null || card[k] === undefined);
   return card;

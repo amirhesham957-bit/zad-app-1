@@ -10,7 +10,7 @@
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, situationalEmotion, VOICE_EMOTIONAL_RANGE, type VoiceEmotion } from "../_shared/zadVoice.ts";
+import { EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
 import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
@@ -588,6 +588,8 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
 export interface MomentCustomer {
   gender?: string | null;
   dialect?: string | null;
+  /** صوت زاد اللي العميل اختاره (zad_customer_profile.zad_voice)؛ null = بنت. */
+  zad_voice?: string | null;
   /** What was said the last times in this same moment — not to be repeated. */
   recent?: string[];
 }
@@ -603,6 +605,8 @@ export function buildMomentPrompt(
   const range = emotionRangeForMoment(row.moment);
   const fallbackEmotion = situationalEmotion(row.moment, row.facts ?? {});
   const voice = !TEXT_ONLY_MOMENTS.has(row.moment);
+  const male = zadVoiceGender(customer.zad_voice) === "male";
+  const directions = male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS;
   const genderLine = customer.gender === "female"
     ? "العميلة ست — خاطبيها بصيغة المؤنث في كل كلمة."
     : customer.gender === "male"
@@ -611,16 +615,18 @@ export function buildMomentPrompt(
   const system = [
     // نفس هوية الشات (تشخيص زاد ١.١): لحظات اليوم كانت بتعريف لوحدها، فـ«صباح الخير» شخصية
     // و«الرد على سؤال» شخصية تانية.
-    soulBlock().trim(),
-    "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
+    soulBlock(customer.zad_voice).trim(),
+    male
+      ? "دلوقتي بتكتب رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك، وهو صوت ولد) — صاحبه المقرب اللي شايل معاه بيته وصحته وفلوسه. كلامك عن نفسك بصيغة المذكر."
+      : "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
     conversationProfile(country, { preferred: customer.dialect }).instruction,
     genderLine,
-    VOICE_EMOTIONAL_RANGE,
+    voiceEmotionalRange(zadVoiceGender(customer.zad_voice)),
     range.length > 1
       ? "اختاري إحساس اللحظة دي من دول بس، حسب البيانات (نوع الميعاد، الساعة عنده، أول مرة ولا متكرر)، واكتبي اسمه في emotion:\n" +
-        range.map((e) => `- ${e}: ${EMOTION_DIRECTIONS[e]}`).join("\n") +
+        range.map((e) => `- ${e}: ${directions[e]}`).join("\n") +
         `\nالأنسب لو مش متأكدة: ${fallbackEmotion}. الكلام نفسه لازم يطابق الإحساس اللي اخترتيه — ماتبقيش زعلانة في لحظة مالهاش سبب زعل.`
-      : `الإحساس المطلوب في اللحظة دي: ${fallbackEmotion} — ${EMOTION_DIRECTIONS[fallbackEmotion]}`,
+      : `الإحساس المطلوب في اللحظة دي: ${fallbackEmotion} — ${directions[fallbackEmotion]}`,
     "اكتبي رد JSON بس، من غير أي كلام قبله أو بعده، بالشكل ده بالظبط:",
     '{"title": "عنوان إشعار قصير فيه إيموجي واحد", "text": "نص الإشعار المكتوب، جملة أو اتنين، واضح ومفيد", "emotion": "' + range.join("|") + '", "speech": "' +
       (voice
@@ -857,10 +863,10 @@ export async function processVoiceMoments(
       const voice = !TEXT_ONLY_MOMENTS.has(deliveryMoment);
       const [{ data: userRow }, { data: profileRow }] = await Promise.all([
         sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle(),
-        sb.from("zad_customer_profile").select("preferred_name,gender,dialect").eq("user_id", row.user_id).maybeSingle(),
+        sb.from("zad_customer_profile").select("preferred_name,gender,dialect,zad_voice").eq("user_id", row.user_id).maybeSingle(),
       ]);
       const u = userRow as { country?: string | null; name?: string | null } | null;
-      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null } | null;
+      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null; zad_voice?: string | null } | null;
 
       let composed: ComposedMoment | null = null;
       let composedBy = "model";
@@ -877,7 +883,7 @@ export async function processVoiceMoments(
         }
         const prompt = buildMomentPrompt(
           { moment: deliveryMoment, facts: row.facts }, u?.country ?? null, cp?.preferred_name || u?.name || null,
-          { gender: cp?.gender, dialect: cp?.dialect, recent },
+          { gender: cp?.gender, dialect: cp?.dialect, zad_voice: cp?.zad_voice, recent },
         );
         composed = parseComposedMoment(await deps.compose(prompt.system, prompt.user), voice, momentLimits(deliveryMoment), emotionRangeForMoment(deliveryMoment));
       } catch (e) {

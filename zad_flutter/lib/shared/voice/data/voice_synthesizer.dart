@@ -29,8 +29,9 @@ abstract interface class VoiceSynthesizer {
   Future<SpokenAudio> synthesize(String text, {String? feelingFrom});
 }
 
-/// The one voice: زاد, a girl's voice in the account's dialect. The server
-/// maps every persona name to it; this one names her.
+/// زاد, in the account's dialect. The server picks the voice the customer
+/// chose in «ملفي» (`zad_voice`: a girl's by default, or a boy's) whatever
+/// persona name is sent; this one names زاد.
 const String zadVoicePersona = 'zad';
 
 /// Over plain http: `functions.invoke` decodes the body as text for a
