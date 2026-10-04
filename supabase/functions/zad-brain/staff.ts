@@ -10,7 +10,7 @@
 //
 //   pantry   أمين المخزن: سلعة على القايمة والبيت فيه كفاية، وسطور قديمة محدش اشتراها.
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
-//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر.
+//   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات).
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
 //            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة.
@@ -54,6 +54,25 @@ export interface StaffInput {
   myOpenChores: Array<{ title: string; due_date: string | null }>;
   /** أهداف العميل النشطة (agent_goals) — هو اللي حطها. */
   goals?: Array<{ title: string } & GoalPaceInput>;
+  /** الاشتراكات الشغالة (zad_subscriptions) — للدرع (الشريحة ١٥). */
+  subscriptions?: Array<{ title: string; amount: number | null; category: string | null; type: string | null; billing_cycle: string | null }>;
+}
+
+/** شهرياً: السنوي على ١٢. */
+export function monthlyCost(s: { amount: number | null; billing_cycle: string | null }): number {
+  const amount = Number(s.amount) || 0;
+  return String(s.billing_cycle ?? "").toUpperCase() === "YEARLY" ? amount / 12 : amount;
+}
+
+/**
+ * اشتراكات اختيارية — مش فواتير ولا التزامات (كهربا، مية، نت البيت). CLAUDE.md: «never suggest cancelling
+ * fixed obligations»، فدول برّه الدرع خالص.
+ */
+function isOptionalSubscription(s: { type: string | null; category: string | null }): boolean {
+  const type = String(s.type ?? "").toLowerCase();
+  const cat = String(s.category ?? "");
+  if (type && type !== "subscription") return false;
+  return !/فواتير|فاتورة|التزام|قسط|إيجار|ايجار/.test(cat);
 }
 
 const DAY = 86_400_000;
@@ -231,6 +250,33 @@ export function staffNotes(input: StaffInput, now: Date): StaffNote[] {
     });
   }
 
+  // ── المحاسب، درع الاشتراكات (الشريحة ١٥): اشتراكين أو أكتر في نفس النوع، أو الاشتراكات بقت تقيلة ──
+  const optional = (input.subscriptions ?? []).filter(isOptionalSubscription);
+  const byCategory = new Map<string, typeof optional>();
+  for (const sub of optional) {
+    const cat = String(sub.category ?? "").trim() || "غير مصنف";
+    byCategory.set(cat, [...(byCategory.get(cat) ?? []), sub]);
+  }
+  for (const [cat, subs] of byCategory) {
+    if (subs.length < 2) continue;
+    const total = Math.round(subs.reduce((sum, x) => sum + monthlyCost(x), 0));
+    notes.push({
+      sender: "finance",
+      subject: `اشتراكات في نفس النوع «${cat}»: ${list(subs.map((x) => x.title))}`,
+      detail: `${subs.length} اشتراكات في «${cat}» بحوالي ${total} في الشهر. اسأله مرة لو بيستخدمهم كلهم — سؤال مش نصيحة إلغاء. ` +
+        "لو قال واحد مالوش لازمة: اعرض تفكّره قبل تجديده، أو تكتبله خطوات/رسالة الإلغاء، أو تشوف لو فيه باقة عيلة أرخص.",
+    });
+  }
+  const optionalMonthly = optional.reduce((sum, x) => sum + monthlyCost(x), 0);
+  if (input.monthlyLimit && input.monthlyLimit > 0 && optionalMonthly >= 0.1 * input.monthlyLimit) {
+    notes.push({
+      sender: "finance",
+      subject: "الاشتراكات بقت ١٠٪ أو أكتر من مصروف الشهر",
+      detail: `الاشتراكات الاختيارية بحوالي ${Math.round(optionalMonthly)} في الشهر من سقف ${Math.round(input.monthlyLimit)}. ` +
+        "لو جه سياقه (ميزانية ضيقة، سؤال عن التوفير) قوله الرقم واسأله أنهي يستاهل.",
+    });
+  }
+
   // ── مدرّب الإعداد ───────────────────────────────────────────────────────
   if (!input.hasPushToken) {
     notes.push({
@@ -276,7 +322,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   try {
     const since30 = new Date(now.getTime() - 30 * DAY).toISOString();
     const since7 = new Date(now.getTime() - 7 * DAY).toISOString();
-    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail, goals] = await Promise.all([
+    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail, goals, subs] = await Promise.all([
       sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").eq("user_id", userId),
       sb.from("zad_pharmacy_items").select("name,remaining_quantity,is_recurring,dose_times,daily_dose_count,units_per_dose,expiry_date").eq("user_id", userId),
@@ -288,6 +334,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       sb.from("family_members").select("id,family_id").eq("user_id", userId).maybeSingle(),
       sb.from("zad_agent_messages").select("subject").eq("user_id", userId).gte("created_at", since7),
       sb.from("agent_goals").select("title,target_value,current_value,deadline_date,created_at").eq("user_id", userId).eq("status", "active").limit(10),
+      sb.from("zad_subscriptions").select("title,amount,category,type,billing_cycle").eq("user_id", userId).eq("is_active", true).limit(50),
     ]);
     const member = membership.data as { id: string; family_id: string } | null;
     let familyMembers: number | null = null;
@@ -314,6 +361,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       familyMembers,
       myOpenChores,
       goals: (goals.data ?? []) as StaffInput["goals"],
+      subscriptions: (subs.data ?? []) as StaffInput["subscriptions"],
     }, now);
     const fresh = freshNotes(notes, ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     if (fresh.length > 0) {
