@@ -3,6 +3,7 @@
 // Kept in their own module (no Deno.serve here) so they're importable by tests directly.
 
 import { quietTopicRejection } from "./engagement.ts";
+import { cardBudgetRejection } from "./attention.ts";
 import { resolveValidUntil } from "./shared.ts";
 
 export type Validation = { ok: true } | { ok: false; reason: string };
@@ -39,6 +40,9 @@ export const validateEmitInsight: Validator = (input, snap, ctx) => {
   // التجاهل الصامت (engagement.ts): ٣ مرات ورا بعض في نفس الموضوع ⇒ الحرج بس.
   const quietEmit = quietTopicRejection(input, snap.engagement);
   if (quietEmit) return { ok: false, reason: quietEmit };
+  // منسّق الانتباه: ٣ كروت مفتوحة ⇒ الحرج بس.
+  const fullEmit = cardBudgetRejection(input, snap.attention);
+  if (fullEmit) return { ok: false, reason: fullEmit };
   if (input.priority === "critical") {
     const overdueDose = (snap.upcoming ?? []).some((u: any) => u.type === "medication_low");
     // Task 26 — available (بعد خصم الالتزامات الثابتة) مش remaining، عشان "المتاح صفر أو
@@ -59,6 +63,8 @@ export const validateAskUser: Validator = (input, snap, ctx) => {
   // نفس حارس التجاهل الصامت — السؤال مالوش critical، فالساكت ساكت.
   const quietAsk = quietTopicRejection(input, snap.engagement);
   if (quietAsk) return { ok: false, reason: quietAsk };
+  const fullAsk = cardBudgetRejection(input, snap.attention);
+  if (fullAsk) return { ok: false, reason: fullAsk };
   if (!["number", "yes_no", "camera"].includes(input.answer_type)) {
     return { ok: false, reason: "answer_type لازم يكون number أو yes_no أو camera" };
   }
