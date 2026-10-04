@@ -2,6 +2,7 @@
 // failure returns a reason string that becomes the tool_result the model reads back.
 // Kept in their own module (no Deno.serve here) so they're importable by tests directly.
 
+import { quietTopicRejection } from "./engagement.ts";
 import { resolveValidUntil } from "./shared.ts";
 
 export type Validation = { ok: true } | { ok: false; reason: string };
@@ -35,6 +36,9 @@ export const validateEmitInsight: Validator = (input, snap, ctx) => {
   if (!DEDUPE_KEY_RE.test(input.dedupe_key ?? "")) return { ok: false, reason: "dedupe_key لازم حروف صغيرة وأرقام و_ فقط" };
   if (ACCUSATORY_RE.test(input.body)) return { ok: false, reason: 'صيغة اتهام — قول "معندناش تسجيل إن..."' };
   if (snap.dismissed_keys?.includes(input.dedupe_key)) return { ok: false, reason: "العميل رفض ده قبل كده" };
+  // التجاهل الصامت (engagement.ts): ٣ مرات ورا بعض في نفس الموضوع ⇒ الحرج بس.
+  const quietEmit = quietTopicRejection(input, snap.engagement);
+  if (quietEmit) return { ok: false, reason: quietEmit };
   if (input.priority === "critical") {
     const overdueDose = (snap.upcoming ?? []).some((u: any) => u.type === "medication_low");
     // Task 26 — available (بعد خصم الالتزامات الثابتة) مش remaining، عشان "المتاح صفر أو
@@ -52,6 +56,9 @@ export const validateEmitInsight: Validator = (input, snap, ctx) => {
 export const validateAskUser: Validator = (input, snap, ctx) => {
   if (ctx.insightCount >= 3) return { ok: false, reason: "وصلت ٣ رؤى — اختار الأهم وسيب الباقي" };
   if ((ctx.counts["ask_user"] ?? 0) >= 1) return { ok: false, reason: "سؤال واحد في المرة" };
+  // نفس حارس التجاهل الصامت — السؤال مالوش critical، فالساكت ساكت.
+  const quietAsk = quietTopicRejection(input, snap.engagement);
+  if (quietAsk) return { ok: false, reason: quietAsk };
   if (!["number", "yes_no", "camera"].includes(input.answer_type)) {
     return { ok: false, reason: "answer_type لازم يكون number أو yes_no أو camera" };
   }
