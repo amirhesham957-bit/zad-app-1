@@ -941,6 +941,7 @@ export const VALIDATORS: Record<string, Validator> = {
  * مش هنا عمداً.
  */
 export const MUTATING_TOOLS = [
+  "start_family_poll",
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب

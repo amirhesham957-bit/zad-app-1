@@ -280,8 +280,9 @@ class _MessageRow extends ConsumerWidget {
       ),
       FamilyMessageType.poll => _PollBubble(
         message: message,
-        alias: alias,
+        alias: isAi ? 'زاد' : alias,
         myId: me.id,
+        canClose: isMe || me.role == FamilyRole.admin,
       ),
       FamilyMessageType.text => _TextBubble(
         message: message,
@@ -703,11 +704,19 @@ class _Status extends StatelessWidget {
 }
 
 class _PollBubble extends ConsumerWidget {
-  const new({required this.message, required this.alias, required this.myId});
+  const new({
+    required this.message,
+    required this.alias,
+    required this.myId,
+    required this.canClose,
+  });
 
   final FamilyMessage message;
   final String alias;
   final String myId;
+
+  /// The poll's creator or an admin (the server checks it again).
+  final bool canClose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -715,6 +724,9 @@ class _PollBubble extends ConsumerWidget {
     final votes = message.pollVotes;
     final total = votes.length;
     final mine = votes[myId];
+    final closed = message.pollClosed;
+    final winner = message.pollWinner;
+    final closesAt = message.pollClosesAt;
     return FractionallySizedBox(
       widthFactor: 0.9,
       alignment: AlignmentDirectional.centerStart,
@@ -746,11 +758,13 @@ class _PollBubble extends ConsumerWidget {
             for (final (i, option) in options.indexed) ...<Widget>[
               InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => unawaited(
-                  ref
-                      .read(familyLifeControllerProvider.notifier)
-                      .vote(message, i),
-                ),
+                onTap: closed
+                    ? null
+                    : () => unawaited(
+                        ref
+                            .read(familyLifeControllerProvider.notifier)
+                            .vote(message, i),
+                      ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: ZadSpacing.md,
@@ -767,7 +781,14 @@ class _PollBubble extends ConsumerWidget {
                   ),
                   child: Row(
                     children: <Widget>[
-                      if (mine == i) ...<Widget>[
+                      if (closed && winner == i) ...<Widget>[
+                        Icon(
+                          ZadIcons.admin,
+                          size: 16,
+                          color: ZadColors.mustardOchre,
+                        ),
+                        const SizedBox(width: 6),
+                      ] else if (mine == i) ...<Widget>[
                         Icon(
                           ZadIcons.selected,
                           size: 16,
@@ -802,15 +823,68 @@ class _PollBubble extends ConsumerWidget {
               ),
               const SizedBox(height: ZadSpacing.xs),
             ],
-            Text(
-              _time(message.createdAt),
-              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            if (closed) ...<Widget>[
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                _pollOutcome(message, winner, options),
+                style: ZadType.labelMedium.copyWith(
+                  color: ZadColors.mustardOchre,
+                ),
+              ),
+            ],
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    closed || closesAt == null
+                        ? _time(message.createdAt)
+                        : '${_time(message.createdAt)} · بيقفل '
+                              '${_closesIn(closesAt, ref.read(nowProvider)())}',
+                    style: ZadType.labelSmall.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+                ),
+                if (canClose && !closed)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(44, 44),
+                    ),
+                    onPressed: () => unawaited(
+                      ref
+                          .read(familyLifeControllerProvider.notifier)
+                          .closePoll(message),
+                    ),
+                    child: const Text('اقفل التصويت'),
+                  ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
+
+/// The closed poll's line: the winner and whether the adults agreed, a tie,
+/// or nobody voted.
+String _pollOutcome(FamilyMessage poll, int? winner, List<String> options) {
+  if (poll.pollVotes.isEmpty) return 'اتقفل من غير أصوات';
+  if (winner == null || winner >= options.length) {
+    return 'اتقفل بتعادل — القرار لكم';
+  }
+  return poll.pollConsensus
+      ? 'الكبار كلهم اتفقوا على «${options[winner]}» ✅'
+      : 'الأغلبية اختارت «${options[winner]}»';
+}
+
+/// How long until the poll closes, roughly.
+String _closesIn(DateTime closesAt, DateTime now) {
+  final left = closesAt.difference(now);
+  if (left.inMinutes < 60) return 'خلال ساعة';
+  if (left.inHours < 24) return 'بعد ${left.inHours} ساعة';
+  final days = (left.inHours / 24).round();
+  return days == 1 ? 'بكرة' : 'بعد $days أيام';
 }
 
 class _Composer extends StatelessWidget {

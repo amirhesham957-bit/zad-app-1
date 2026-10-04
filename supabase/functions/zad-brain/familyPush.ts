@@ -19,10 +19,19 @@ export function familyPushText(m: {
   sender_id?: string | null;
   alias: string;
 }): { title: string; body: string } | null {
-  if (m.sender_id === ZAD_SENDER_ID) return null;
   const text = (m.message ?? "").replace(/\s+/g, " ").trim();
   if (!text) return null;
   const body = text.length > 160 ? `${text.slice(0, 157)}…` : text;
+  // رسايل زاد في الشات (رد على «@زاد»، تكليف مهمة) اللي سأل شايفها أصلاً — إلا تصويت فتحه زاد أو نتيجة تصويت
+  // (20261004130000): دول للعيلة كلها.
+  if (m.sender_id === ZAD_SENDER_ID) {
+    if (m.message_type === "POLL") return { title: "زاد بيسأل العيلة", body };
+    let kind: unknown = null;
+    try {
+      kind = JSON.parse(m.metadata ?? "{}")?.kind;
+    } catch { /* not a result */ }
+    return kind === "poll_result" ? { title: "نتيجة تصويت العيلة", body } : null;
+  }
   const who = m.alias.trim() || "حد من العيلة";
   switch (m.message_type) {
     case "SOS":

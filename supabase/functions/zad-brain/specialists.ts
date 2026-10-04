@@ -322,7 +322,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
     "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card",
   ],
-  family: ["schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card"],
+  family: ["schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll"],
   home: [
     "app_command",
     "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",

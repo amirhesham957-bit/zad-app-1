@@ -161,6 +161,28 @@ class FamilyMessage {
     };
   }
 
+  /// Whether the poll is closed (20261004130000): by its creator, an admin,
+  /// or the hour its `closes_at` passed.
+  bool get pollClosed => meta['closed'] == true;
+
+  /// When the poll closes on its own, if it does.
+  DateTime? get pollClosesAt => switch (meta['closes_at']) {
+    final String s => DateTime.tryParse(s),
+    _ => null,
+  };
+
+  /// The winning option's index once closed; null for a tie or no votes.
+  int? get pollWinner => switch (meta['result']) {
+    final Map<dynamic, dynamic> r => int.tryParse('${r['winner']}'),
+    _ => null,
+  };
+
+  /// Whether every adult chose the winner.
+  bool get pollConsensus => switch (meta['result']) {
+    final Map<dynamic, dynamic> r => r['consensus'] == true,
+    _ => false,
+  };
+
   /// The reactions, in order: emoji and count.
   List<(String, int)> get reactionCounts => <(String, int)>[
     for (final entry in (reactions ?? '').split(', '))
