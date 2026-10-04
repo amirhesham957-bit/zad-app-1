@@ -12,7 +12,8 @@
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
 //   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر.
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
-//   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية.
+//   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
+//            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة.
 //   research الباحث: مرة في الأسبوع، أسعار أهم ٣ سلع في البيت في بلد العميل من النت (بحث نصي،
 //            من غير موديل)، بمصادرها — العقل بيرد منها لما العميل يسأل عن سعر.
 
@@ -20,6 +21,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AgentSender } from "./agentMail.ts";
 import { countryCode } from "../_shared/dialect.ts";
 import { productFamilyOf } from "./lowStock.ts";
+import { goalPace, type GoalPaceInput } from "./goalPace.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -50,6 +52,8 @@ export interface StaffInput {
   familyMembers: number | null;
   /** مهام العيلة المسندة للعميل ولسه مفتوحة. */
   myOpenChores: Array<{ title: string; due_date: string | null }>;
+  /** أهداف العميل النشطة (agent_goals) — هو اللي حطها. */
+  goals?: Array<{ title: string } & GoalPaceInput>;
 }
 
 const DAY = 86_400_000;
@@ -210,6 +214,23 @@ export function staffNotes(input: StaffInput, now: Date): StaffNote[] {
     });
   }
 
+  // ── مدرّب الأهداف (الشريحة ٩): هدف حطه العميل ومتأخر عن جدوله ⇒ خطوة واحدة لبكرة ────────
+  const lagging = (input.goals ?? [])
+    .map((g) => ({ g, p: goalPace(g, now) }))
+    .filter((x) => x.p && (x.p.pace === "behind" || x.p.pace === "overdue"))
+    .slice(0, 2);
+  for (const { g, p } of lagging) {
+    const where = p!.pace === "overdue"
+      ? "ميعاده عدّى"
+      : `والمفروض ~${p!.expected_by_now} لحد النهارده، وفاضل ${p!.days_left} يوم`;
+    notes.push({
+      sender: "brain",
+      subject: `هدف متأخر: «${g.title.slice(0, 80)}»`,
+      detail: `وصل ${Number(g.current_value ?? 0)} من ${Number(g.target_value)} ${where}. في أول كلام مناسب اقترح عليه خطوة ` +
+        "واحدة صغيرة لبكرة تقرّبه، مربوطة ببياناته — مش خطة جديدة، ومن غير لوم. لو الهدف مابقاش يهمه اسأله نلغيه.",
+    });
+  }
+
   // ── مدرّب الإعداد ───────────────────────────────────────────────────────
   if (!input.hasPushToken) {
     notes.push({
@@ -255,7 +276,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   try {
     const since30 = new Date(now.getTime() - 30 * DAY).toISOString();
     const since7 = new Date(now.getTime() - 7 * DAY).toISOString();
-    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail] = await Promise.all([
+    const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail, goals] = await Promise.all([
       sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").eq("user_id", userId),
       sb.from("zad_pharmacy_items").select("name,remaining_quantity,is_recurring,dose_times,daily_dose_count,units_per_dose,expiry_date").eq("user_id", userId),
@@ -266,6 +287,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       sb.from("zad_family_shares").select("requested_at").eq("owner_id", userId).eq("status", "pending"),
       sb.from("family_members").select("id,family_id").eq("user_id", userId).maybeSingle(),
       sb.from("zad_agent_messages").select("subject").eq("user_id", userId).gte("created_at", since7),
+      sb.from("agent_goals").select("title,target_value,current_value,deadline_date,created_at").eq("user_id", userId).eq("status", "active").limit(10),
     ]);
     const member = membership.data as { id: string; family_id: string } | null;
     let familyMembers: number | null = null;
@@ -291,6 +313,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       pendingShareRequests: (shares.data ?? []) as StaffInput["pendingShareRequests"],
       familyMembers,
       myOpenChores,
+      goals: (goals.data ?? []) as StaffInput["goals"],
     }, now);
     const fresh = freshNotes(notes, ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     if (fresh.length > 0) {
