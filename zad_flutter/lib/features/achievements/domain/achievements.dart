@@ -21,12 +21,14 @@ enum AchievementCondition {
   totalScore,
 }
 
-/// One catalogue entry.
+/// One catalogue entry. `lottieAsset` is the badge's animation, drawn by
+/// `tool/make_badge_lottie.py`; `icon` is what shows if it cannot load.
 typedef AchievementDef = ({
   String id,
   String name,
   String description,
   String icon,
+  String lottieAsset,
   int points,
   AchievementCondition condition,
   int threshold,
@@ -39,6 +41,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'الخطوة الأولى',
     description: 'أضف سعرك الأول',
     icon: '🌟',
+    lottieAsset: 'assets/lottie/badges/badge_first_step.json',
     points: 10,
     condition: AchievementCondition.contributionCount,
     threshold: 1,
@@ -48,6 +51,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'نجم صاعد',
     description: 'أضف 10 أسعار',
     icon: '⭐',
+    lottieAsset: 'assets/lottie/badges/badge_rising_star.json',
     points: 50,
     condition: AchievementCondition.contributionCount,
     threshold: 10,
@@ -57,6 +61,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'محلل أسواق',
     description: 'أضف 50 سعر',
     icon: '📊',
+    lottieAsset: 'assets/lottie/badges/badge_market_analyst.json',
     points: 200,
     condition: AchievementCondition.contributionCount,
     threshold: 50,
@@ -66,6 +71,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'خبير التقارير',
     description: 'أضف 100 سعر',
     icon: '🏆',
+    lottieAsset: 'assets/lottie/badges/badge_expert_reporter.json',
     points: 500,
     condition: AchievementCondition.contributionCount,
     threshold: 100,
@@ -75,6 +81,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'أسبوع متتالي',
     description: 'ساهم 7 أيام متتالية',
     icon: '🔥',
+    lottieAsset: 'assets/lottie/badges/badge_on_fire.json',
     points: 100,
     condition: AchievementCondition.streak,
     threshold: 7,
@@ -84,6 +91,7 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
     name: 'الصبر والمثابرة',
     description: 'مجموع 500 نقطة',
     icon: '💪',
+    lottieAsset: 'assets/lottie/badges/badge_consistency.json',
     points: 150,
     condition: AchievementCondition.totalScore,
     threshold: 500,
