@@ -500,7 +500,7 @@ class TelegramLinkBanner extends StatelessWidget {
   /// Creates the banner.
   const new({required this.onLink, required this.onSnooze, super.key});
 
-  /// اربط دلوقتي.
+  /// تشغيل البوت الآن.
   final VoidCallback onLink;
 
   /// مش دلوقتي.
@@ -536,7 +536,7 @@ class TelegramLinkBanner extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'اربط تليجرام عشان زاد توصلك',
+                      'ربط بوت تليجرام (مهم لاكتمال التجربة) ⚠️',
                       style: ZadType.titleSmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: scheme.onSurface,
@@ -544,9 +544,8 @@ class TelegramLinkBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'التقارير وتأكيد حركات البنك وفويسات زاد (صباح الخير، '
-                      'الدوا، المواعيد) كلها بتوصل على تليجرام. من غير الربط '
-                      'مش هتوصلك.',
+                      'لتفعيل التنبيهات اللحظية وإرسال المعاملات والفواتير '
+                      'بالصوت والصورة، يجب تفعيل وتوصيل بوت تليجرام الخاص بك.',
                       style: ZadType.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -569,7 +568,7 @@ class TelegramLinkBanner extends StatelessWidget {
                     shape: const StadiumBorder(),
                   ),
                   child: const Text(
-                    'اربط دلوقتي',
+                    'تشغيل البوت الآن 🚀',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
