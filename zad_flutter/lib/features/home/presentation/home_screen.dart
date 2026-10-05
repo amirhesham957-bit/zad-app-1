@@ -24,6 +24,7 @@ import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
+import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
@@ -99,6 +100,9 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
+          // products (owner, 2026-10-05; the product row stays off home).
+          const HomeAmazonStrip(),
           // «موجز زاد النهارده»: the brain says what matters today.
           // It replaced the grid of seventeen sections and the pantry,
           // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
@@ -131,8 +135,9 @@ class HomeScreen extends ConsumerWidget {
             gap: 18,
             child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
-          // The Amazon row is hidden until there is a product API key: its five
-          // seeded products had stock photos and Saudi prices (2026-10-01).
+          // The Amazon product row is hidden until there is a product API
+          // key: its five seeded products had stock photos and Saudi prices
+          // (2026-10-01). Its empty strip sits under the budget.
           // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),

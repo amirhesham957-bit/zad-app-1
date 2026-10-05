@@ -82,6 +82,28 @@ String affiliateUrl(AffiliateProduct p) {
       '&tag=$tag';
 }
 
+/// The Amazon store of the account's market. Every link here was
+/// `amazon.sa`, which showed an Egyptian customer Saudi prices (owner,
+/// 2026-10-01); a market with no store of its own keeps the Saudi one.
+String amazonStoreFor(String? country) =>
+    switch ((country ?? '').trim().toUpperCase()) {
+      'EG' => 'www.amazon.eg',
+      'AE' => 'www.amazon.ae',
+      'TR' => 'www.amazon.com.tr',
+      _ => 'www.amazon.sa',
+    };
+
+/// A tagged search for [term] in the account's store; with no term, the
+/// store's deals page.
+String amazonSuggestUrl(String? term, String? country) {
+  const tag = ZadEnv.amazonAssociateTag;
+  final host = amazonStoreFor(country);
+  final t = (term ?? '').trim();
+  return t.isEmpty
+      ? 'https://$host/deals?tag=$tag'
+      : 'https://$host/s?k=${Uri.encodeQueryComponent(t)}&tag=$tag';
+}
+
 /// Kotlin's fallback when the table is empty or unreachable. ASINs are left
 /// out on purpose: these open as searches. No pictures: the Kotlin list used
 /// Pexels stock photos, which are not the products sold behind the tap.
