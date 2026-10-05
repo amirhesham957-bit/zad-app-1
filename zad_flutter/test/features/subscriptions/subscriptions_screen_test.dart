@@ -58,6 +58,16 @@ class _Obligations extends ObligationsController {
   new(this.items);
 
   final List<Obligation> items;
+  final List<String> calls = <String>[];
+
+  @override
+  Future<void> add({
+    required String title,
+    required double amount,
+    required ObligationKind kind,
+    required Recurrence recurrence,
+    int? dueDay,
+  }) async => calls.add('add:$title:$amount:${kind.name}:${recurrence.name}');
 
   @override
   ObligationsView build() => ObligationsView(items: items, today: _today);
@@ -91,6 +101,7 @@ Subscription _sub(
 
 void main() {
   late _Subs subs;
+  late _Obligations obligationsFake;
 
   // Arabic month names, as `bootstrap` loads them. DateFormat throws without.
   setUpAll(() => initializeDateFormatting('ar'));
@@ -106,7 +117,7 @@ void main() {
         overrides: [
           subscriptionsControllerProvider.overrideWith(() => subs),
           obligationsControllerProvider.overrideWith(
-            () => _Obligations(obligations),
+            () => obligationsFake = _Obligations(obligations),
           ),
           budgetControllerProvider.overrideWith(_Budget.new),
         ],
@@ -247,6 +258,10 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
     await tester.pumpAndSettle();
 
-    expect(subs.calls, <String>['add:الكهربا:420.0:MONTHLY:utility']);
+    // A new bill is an obligation — bills have one home (20261005235107).
+    expect(subs.calls, isEmpty);
+    expect(obligationsFake.calls, <String>[
+      'add:الكهربا:420.0:utility:monthly',
+    ]);
   });
 }

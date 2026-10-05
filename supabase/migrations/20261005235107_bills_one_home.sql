@@ -38,7 +38,9 @@ begin
     values (
       p_sub.user_id, btrim(p_sub.title), p_sub.amount, 'utility',
       case when upper(coalesce(p_sub.billing_cycle, 'MONTHLY')) in ('YEARLY', 'ANNUAL') then 'yearly' else 'monthly' end,
-      coalesce(p_sub.due_day, extract(day from public.zad_try_date(p_sub.renewal_date))::int),
+      -- الاشتراكات مافيهاش قيد على اليوم والالتزامات فيها (١..٣١): يوم برّه المدى يبقى «من غير ميعاد» مش خطأ يوقف النقل.
+      (select d from (select coalesce(p_sub.due_day, extract(day from public.zad_try_date(p_sub.renewal_date))::int) as d) x
+        where d between 1 and 31),
       nullif(btrim(coalesce(p_sub.provider, '')), ''),
       true, true, false
     );

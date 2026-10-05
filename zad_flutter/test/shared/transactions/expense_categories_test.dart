@@ -1,4 +1,5 @@
-// اسم واحد لكل فئة (ZAD_LIVING_BRAIN.md §١١): التطبيق والماسح والسيرفر نفس القاموس، والتخمين من العنوان.
+// اسم واحد لكل فئة (ZAD_LIVING_BRAIN.md §١١): التطبيق والماسح والسيرفر
+// نفس القاموس، والتخمين من العنوان.
 
 import 'dart:io';
 
@@ -17,7 +18,7 @@ void main() {
     // zad_canonical_category's targets, read from the migration itself.
     final sql = File('../supabase/migrations/20261005233809_audit_gaps.sql')
         .readAsStringSync();
-    final targets = RegExp(r"then '([^']+)'")
+    final targets = RegExp("then '([^']+)'")
         .allMatches(sql)
         .map((m) => m.group(1)!)
         .toSet();

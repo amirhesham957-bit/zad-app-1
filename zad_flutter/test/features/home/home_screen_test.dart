@@ -394,11 +394,11 @@ void main() {
       );
       expect(send().onPressed, isNull, reason: 'nothing typed yet');
 
-      await tester.enterText(find.byType(TextField).at(2), '0');
+      await tester.enterText(find.byType(TextField).at(1), '0');
       await tester.pump();
       expect(send().onPressed, isNull, reason: 'a zero is not an expense');
 
-      await tester.enterText(find.byType(TextField).at(2), '75');
+      await tester.enterText(find.byType(TextField).at(1), '75');
       await tester.pump();
       expect(send().onPressed, isNull, reason: 'an amount with no name');
 
