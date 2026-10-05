@@ -22,6 +22,7 @@ import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/debts/presentation/debts_tab.dart';
+import 'package:zad/features/documents/presentation/documents_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/goals/presentation/life_goal_picker_sheet.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -92,6 +93,7 @@ void wireScreens() {
   ZadScreens.showAddShoppingSheet = showAddShoppingSheet;
   ZadScreens.showPinPrompt = showPinPrompt;
   ZadScreens.showMaintenanceScreen = showMaintenanceScreen;
+  ZadScreens.showDocumentsScreen = showDocumentsScreen;
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
   ZadScreens.showOrbPicker = showOrbPicker;

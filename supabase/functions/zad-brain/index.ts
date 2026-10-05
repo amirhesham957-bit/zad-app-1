@@ -95,6 +95,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
+import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
@@ -722,7 +723,7 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const cashKey = isoWeekKey(new Date());
-  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes] =
+  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since").eq("id", userId).maybeSingle(),
       // `id` مضاف عشان set_transaction_category و update_transaction يقدروا يشاوروا على
@@ -820,6 +821,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       // فلازم نعرف family_id الأول (جولة تانية تحت بعد ما العضوية تتحل).
       sb.from("family_members").select("family_id,role,alias,balance,savings_goal,daily_limit,weekly_limit,last_seen_at")
         .eq("user_id", userId).maybeSingle(),
+      // حارس المستندات (الشريحة ٣٢): النوع وصاحبه والتاريخ بس. آخر عنصر — نفس سبب ملاحظة الترتيب فوق.
+      sb.from("zad_documents").select("kind,holder,label,expires_on").eq("user_id", userId).limit(50),
     ]);
 
   // ── الحاجة اللي خلّت كل ده يفضل مستخبي سنة ──────────────────────────────
@@ -850,6 +853,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     "zad_obligations": "التزاماتك الثابتة",
     "zad_debts": "ديونك",
     "zad_maintenance_items": "صيانة البيت",
+    "zad_documents": "مستنداتك (الجواز والبطاقة والرخص)",
     "user_behavior_profile": "ملف سلوكك في الصرف",
     "app_notifications": "الإشعارات اللي اتبعتت",
     "zad_dose_log": "سجل جرعات الدوا",
@@ -869,7 +873,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     ["zad_insights.cash_asked", cashAskedRes], ["zad_obligations", obligRes],
     ["zad_debts", debtRes], ["zad_maintenance_items", maintRes],
     ["user_behavior_profile", behaviorRes], ["app_notifications", notifRes], ["zad_dose_log", doseRes],
-    ["zad_budget_state", budgetRes], ["family_members", famRes],
+    ["zad_budget_state", budgetRes], ["family_members", famRes], ["zad_documents", docsRes],
   ];
   const dataErrors: Array<{ source: string }> = [];
   for (const [name, res] of sources) {
@@ -1363,6 +1367,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       })
       .filter((m: any) => (m.warranty_days_left !== null && m.warranty_days_left <= 60) ||
         (m.service_days_left !== null && m.service_days_left <= 30)),
+    // حارس المستندات (الشريحة ٣٢): كلها، بالأيام الفاضلة بتوقيت السوق. بتتقري بـread_house لما العميل يسأل.
+    documents: ((docsRes?.data ?? []) as DocumentRow[]).map((d) => ({
+      name: documentName(d), kind: d.kind, holder: d.holder || null, label: d.label || null, expires_on: d.expires_on,
+      days_left: daysLeft(d.expires_on, localNowContext(budgetState.timezone ?? "UTC").date),
+    })),
     // أرقام سلوك محسوبة سيرفر-سايد من المعاملات (update-behavior-profile) — حقائق مش تخمين.
     behavior_profile: behaviorRes?.data
       ? {
@@ -2768,6 +2777,57 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         previous: match, next: null,
       });
       return `اتحذف "${match.name}" من متابعة الصيانة`;
+    }
+    case "save_document": {
+      // حارس المستندات (الشريحة ٣٢): صف واحد لكل (نوع، صاحب، اسم) — التجديد بيعدّل التاريخ.
+      const row = {
+        user_id: userId,
+        kind: String(input.kind) as DocumentKind,
+        holder: String(input.holder ?? "").trim(),
+        label: String(input.label ?? "").trim(),
+        expires_on: String(input.expires_on),
+      };
+      const { data: before } = await sb.from("zad_documents").select("*").eq("user_id", userId)
+        .eq("kind", row.kind).eq("holder", row.holder).eq("label", row.label).maybeSingle();
+      const w = await writeRows(
+        sb.from("zad_documents").upsert(row, { onConflict: "user_id,kind,holder,label" }).select("*"),
+        "حفظ المستند",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const saved = w.rows[0] as any;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before ?? null, new: { kind: row.kind, expires_on: row.expires_on } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_documents", targetId: saved.id,
+        previous: before ?? null, next: saved,
+      });
+      return `${before ? "اتعدّل" : "اتسجّل"} ${documentName(row)} — بينتهي ${row.expires_on}. زاد هيفكّر قبلها.`;
+    }
+    case "delete_document": {
+      const kind = String(input.kind) as DocumentKind;
+      const holder = String(input.holder ?? "").trim();
+      const label = String(input.label ?? "").trim();
+      const { data: rows } = await sb.from("zad_documents").select("*").eq("user_id", userId).eq("kind", kind);
+      const all = (rows ?? []) as Array<{ id: string; kind: DocumentKind; holder: string; label: string; expires_on: string }>;
+      // الاسم بالظبط الأول؛ لو مستند واحد بس من النوع ده ومفيش اسم اتقال، هو المقصود.
+      const match = all.find((r) => r.holder === holder && (kind !== "other" || r.label === label)) ??
+        (!holder && !label && all.length === 1 ? all[0] : undefined);
+      if (!match) {
+        return `مرفوض: مش لاقي ${KIND_NAMES[kind]}${holder ? ` بتاع «${holder}»` : ""}. ` +
+          (all.length ? `المسجّل: ${all.map((r) => documentName(r)).join("، ")} — اسأل العميل يقصد أنهي.` : "مفيش منه حاجة متسجلة.");
+      }
+      const w = await writeRows(
+        sb.from("zad_documents").delete().eq("id", match.id).eq("user_id", userId).select("id"),
+        "حذف المستند",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: match, new: null });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_documents", targetId: match.id,
+        previous: match, next: null,
+      });
+      return `اتشال ${documentName(match)} من متابعة المستندات`;
     }
     case "update_emergency_fund_balance": {
       const { data: before } = await sb.from("zad_users").select("emergency_fund_balance").eq("id", userId).maybeSingle();
@@ -4423,6 +4483,36 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "save_document",
+    description:
+      "سجّل أو جدّد تاريخ انتهاء مستند رسمي عشان زاد يفكّر قبل ما ينتهي: جواز سفر، بطاقة شخصية، إقامة، رخصة قيادة، " +
+      "رخصة عربية، أو غيره. لما العميل يقول «جوازي بينتهي في مارس ٢٠٢٧» أو «جددت رخصتي لحد ٢٠٣٠». التاريخ بس — " +
+      "**ماتطلبش ولا تسجّل رقم المستند** حتى لو قاله.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: [...DOCUMENT_KINDS], description: "passport جواز، national_id بطاقة، residence إقامة، driving_license رخصة قيادة، vehicle_license رخصة عربية، other غيره" },
+        holder: { type: "string", description: "لمين — اسم فرد في البيت («سلمى»، «ماما»). فاضي لو بتاع العميل نفسه" },
+        label: { type: "string", description: "اسم المستند لو kind = other بس (زي «كارنيه النادي»)" },
+        expires_on: { type: "string", description: "تاريخ الانتهاء YYYY-MM-DD. لو قال شهر وسنة بس، اسأله اليوم" },
+      },
+      required: ["kind", "expires_on"],
+    },
+  },
+  {
+    name: "delete_document",
+    description: "شيل مستند من متابعة المستندات — لما العميل يقول «مش محتاج تفكرني برخصة العربية، بعتها».",
+    input_schema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: [...DOCUMENT_KINDS] },
+        holder: { type: "string", description: "لمين — فاضي لو بتاع العميل نفسه" },
+        label: { type: "string", description: "اسم المستند لو kind = other" },
+      },
+      required: ["kind"],
+    },
+  },
+  {
     name: "update_emergency_fund_balance",
     description: "عدّل رصيد صندوق الطوارئ المُدخل يدوياً. لما العميل يقول \"حطيت X في صندوق الطوارئ\" أو \"رصيد الطوارئ بقى كذا\".",
     input_schema: {
@@ -4928,7 +5018,8 @@ export const CHAT_TOOLS: ToolDef[] = [
       "ومعرّفاتها)، stock (صفوف المخزون كلها)، stock_unknown، notifications_sent (التنبيهات اللي اتبعتت)، " +
       "observations، lifestyle، behavior_profile (سلوك الصرف)، obligation_rows، obligation_detection، " +
       "cash_reconciliation، cycle_detection، self_review، debts، maintenance_due، dose_adherence، recent_outings، " +
-      "upcoming، anomalies، distinct_categories، dismissal_reasons. نادِها قبل أي إجابة أو تعديل محتاج الجزء ده.",
+      "upcoming، anomalies، distinct_categories، dismissal_reasons، documents (الجواز والبطاقة والرخص وانتهاؤها). " +
+      "نادِها قبل أي إجابة أو تعديل محتاج الجزء ده.",
     input_schema: {
       type: "object",
       properties: { section: { type: "string", description: "اسم الجزء بالظبط من القايمة" } },
@@ -6743,6 +6834,7 @@ const HOUSE_SECTIONS_ON_REQUEST = [
   "lifestyle", "behavior_profile", "obligation_rows", "obligation_detection", "cash_reconciliation",
   "cycle_detection", "self_review", "debts", "maintenance_due", "dose_adherence", "recent_outings", "upcoming",
   "anomalies", "distinct_categories", "dismissal_reasons", "dismissed_keys", "asked_recently", "rate_known_items",
+  "documents",
 ];
 
 /** الملخص اللي بيتبعت مع الرسالة: البيت من غير الأجزاء اللي بتتقري عند الحاجة. */

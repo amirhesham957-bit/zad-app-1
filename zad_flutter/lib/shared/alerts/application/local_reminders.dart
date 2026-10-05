@@ -8,6 +8,10 @@
 ///   member has not said tasbih yet — «🌱 وقت التسبيح».
 /// - **Seasons** (`SeasonalEventReminderWorker`): once per event per year,
 ///   at 09:00, from 30 days before it — «📅 X قريباً».
+/// - **Documents** (ZAD_LIVING_BRAIN.md slice 32): at 10:00 on each stage day
+///   still ahead of a passport, ID, residence or licence — «🪪 X بينتهي…».
+///   No server and no push token needed; the brain hears the same stages
+///   through its staff round.
 ///
 /// All times are in the account's market zone, not the device's. The
 /// morning summary is not here because Kotlin itself moved it to the server.
@@ -23,6 +27,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
@@ -31,9 +36,11 @@ import 'package:zad/shared/pharmacy/domain/medicine.dart';
 const String _doseChannel = 'zad_pharmacy_reminders';
 const String _tasbihChannel = 'zad_tasbih_reminder';
 const String _seasonChannel = 'zad_seasonal_reminders';
+const String _documentChannel = 'zad_document_reminders';
 
 const String _doseIdsKey = 'reminder_dose_ids';
 const String _seasonKeyPrefix = 'reminder_season_';
+const String _documentIdsKey = 'reminder_document_ids';
 const int _tasbihId = 0x7A000001;
 
 int _stableId(String key) {
@@ -105,6 +112,12 @@ class LocalReminders {
         'زاد — المناسبات القادمة',
       ),
     );
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _documentChannel,
+        'زاد — المستندات قبل ما تنتهي',
+      ),
+    );
   }
 
   NotificationDetails _details(
@@ -147,6 +160,7 @@ class LocalReminders {
       await syncDoses(_ref.read(pharmacyRepositoryProvider).cached());
       await syncTasbih();
       await syncSeasons();
+      await syncDocuments();
     } on Object catch (e) {
       debugPrint('local reminders resync failed: $e');
     }
@@ -316,11 +330,74 @@ class LocalReminders {
     }
   }
 
+  /// One reminder per document stage still ahead, 10:00 that day; the ones
+  /// for a document deleted or renewed are cancelled. [documents] when the
+  /// caller has them (the screen, right after a change); read otherwise.
+  Future<void> syncDocuments([List<ImportantDocument>? documents]) async {
+    final device = _ref.read(localStoreProvider).device;
+    final client = _ref.read(supabaseClientProvider);
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return;
+    var docs = documents;
+    if (docs == null) {
+      final rows = await client
+          .from('zad_documents')
+          .select('id,kind,holder,label,expires_on')
+          .eq('user_id', userId);
+      docs = <ImportantDocument>[
+        for (final r in rows) ?ImportantDocument.fromRow(r),
+      ];
+    }
+    final previous = <int>{
+      for (final v in (jsonDecode(device.get(_documentIdsKey) ?? '[]') as List))
+        (v as num).toInt(),
+    };
+    final zone = _zone;
+    final now = tz.TZDateTime.now(zone);
+    final scheduled = <int>{};
+    for (final d in docs) {
+      for (final (stage, day) in d.reminderDays(now)) {
+        final at = tz.TZDateTime(zone, day.year, day.month, day.day, 10);
+        if (!at.isAfter(now)) continue;
+        // The date is in the key: a renewal's reminders replace the old ones.
+        final id = _stableId('document|${d.id}|${d.expiresOnIso}|$stage');
+        final who = d.holder.isEmpty ? '' : ' بتاع ${d.holder}';
+        try {
+          await _plugin.zonedSchedule(
+            id: id,
+            title: stage == 0
+                ? '🪪 ${d.title}$who بينتهي النهارده'
+                : '🪪 ${d.title}$who بينتهي بعد $stage يوم',
+            body: stage == 180
+                ? 'دول كتير بتطلب الجواز صالح ٦ شهور للسفر — '
+                      'لو فيه سفر، جدّده بدري.'
+                : 'آخر يوم ${d.expiresOnIso} — ابدأ التجديد بدري.',
+            scheduledDate: at,
+            notificationDetails: _details(
+              _documentChannel,
+              'زاد — المستندات قبل ما تنتهي',
+            ),
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            payload: payloadFor(AlertDestination.home),
+          );
+          scheduled.add(id);
+        } on Object catch (e) {
+          debugPrint('document reminder ${d.title} $stage failed: $e');
+        }
+      }
+    }
+    for (final stale in previous.difference(scheduled)) {
+      await _plugin.cancel(id: stale);
+    }
+    await device.put(_documentIdsKey, jsonEncode(scheduled.toList()));
+  }
+
   /// Kotlin's `cancelAll` before an account leaves the phone.
   Future<void> cancelAll() async {
     final device = _ref.read(localStoreProvider).device;
     await _plugin.cancelAll();
     await device.delete(_doseIdsKey);
+    await device.delete(_documentIdsKey);
     for (final k in device.keys.whereType<String>().toList()) {
       if (k.startsWith(_seasonKeyPrefix)) await device.delete(k);
     }

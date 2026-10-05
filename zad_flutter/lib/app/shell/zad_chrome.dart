@@ -401,6 +401,11 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
     label: 'صيدلية العائلة',
   ),
   ZadDrawerEntry(id: 'maintenance', icon: Icons.build, label: 'صيانة المنزل'),
+  ZadDrawerEntry(
+    id: 'documents',
+    icon: Icons.badge_outlined,
+    label: 'مستنداتي',
+  ),
   ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'عيلتي'),
   ZadDrawerEntry(
     id: 'deals',
@@ -408,11 +413,7 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
     label: 'المتاجر والأسواق القريبة',
   ),
   ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
-  ZadDrawerEntry(
-    id: 'premium',
-    icon: Icons.star,
-    label: 'باقات زاد الشهرية',
-  ),
+  ZadDrawerEntry(id: 'premium', icon: Icons.star, label: 'باقات زاد الشهرية'),
   ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
   ZadDrawerEntry(
     id: 'notifications',

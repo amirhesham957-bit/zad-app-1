@@ -12,9 +12,11 @@
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
 //   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات)،
 //            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦)، والتحول السلوكي مرة في
-//            الأسبوع (lifeShift.ts، الشريحة ٣٠).
+//            الأسبوع (lifeShift.ts، الشريحة ٣٠)، ورادار الفواتير (billAnomaly.ts، الشريحة ٣٣): فاتورة مرفق الشهر ده أعلى
+//            بكتير من تاريخ البيت نفسه، مرة لكل مرفق وشهر.
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة، وميزان الرفاهية (wellbeing.ts،
-//            الشريحة ٣١): الروتين غالب والترفيه شبه صفر، وفيه توفير ⇒ نشاط بسيط في حدود جزء منه.
+//            الشريحة ٣١): الروتين غالب والترفيه شبه صفر، وفيه توفير ⇒ نشاط بسيط في حدود جزء منه؛ وحارس المستندات
+//            (documents.ts، الشريحة ٣٢): جواز أو بطاقة أو رخصة دخلت مرحلة تنبيه، كل مرحلة مرة واحدة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
 //            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
 //            و«زي النهارده من سنة» (longMemory.ts، الشريحة ٢٧).
@@ -32,6 +34,9 @@ import { type CapsuleGoal, type CapsuleMemory, capsuleNote } from "./longMemory.
 import { alreadyKnown, detectShifts, SHIFT_ACTIVE_DAYS, type ShiftRow, shiftNote, type ShiftTxn, type Span } from "./lifeShift.ts";
 import { activityBudget, balanceFrom, type BudgetPace, isOutOfBalance, savedSoFar, wellbeingNote, type WellbeingTxn } from "./wellbeing.ts";
 import { loadCircumstance } from "./circumstances.ts";
+import { type DocumentRow, documentNotes } from "./documents.ts";
+import { billAnomalies, billNote, billSubject, type BillTxn } from "./billAnomaly.ts";
+import { localNowContext } from "./shared.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -487,12 +492,14 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       kidsWeek,
       seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
-    const [decisions, capsule, shifts, wellbeing] = await Promise.all([
+    const [decisions, capsule, shifts, wellbeing, documents, bills] = await Promise.all([
       staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now), staffLifeShifts(sb, userId, now),
-      staffWellbeing(sb, userId, now, member !== null && (familyMembers ?? 0) > 1),
+      staffWellbeing(sb, userId, now, member !== null && (familyMembers ?? 0) > 1), staffDocuments(sb, userId, now),
+      staffBills(sb, userId, now),
     ]);
     const fresh = freshNotes(
-      [...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts, ...(wellbeing ? [wellbeing] : [])], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+      [...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts, ...(wellbeing ? [wellbeing] : []), ...documents, ...bills],
+      ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     let delivered = true;
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
@@ -507,6 +514,53 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
     return fresh;
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
+    return [];
+  }
+}
+
+/**
+ * حارس المستندات (الشريحة ٣٢). النهارده بتوقيت سوق العميل — المرحلة بتتحسب بالأيام، ويوم غلط عند نص الليل
+ * يقول «فاضل ٧» وهي ٨. «اتقالت قبل كده؟» على الصندوق كله من غير حد زمني: الجواز بيفضل في مرحلة الـ١٨٠ يوم
+ * خمس شهور، ومنع التكرار العادي (أسبوع) كان هيعيدها كل أسبوع.
+ */
+async function staffDocuments(sb: SupabaseClient, userId: string, now: Date): Promise<StaffNote[]> {
+  try {
+    const { data: docs, error } = await sb.from("zad_documents").select("kind,holder,label,expires_on").eq("user_id", userId).limit(50);
+    if (error || !(docs ?? []).length) return [];
+    const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: (u as { country?: string | null } | null)?.country ?? null });
+    const today = localNowContext(typeof tz === "string" && tz ? tz : "UTC", now).date;
+    const { data: said } = await sb.from("zad_agent_messages").select("subject").eq("user_id", userId)
+      .like("subject", "مستند: %").limit(500);
+    return documentNotes(docs as DocumentRow[], today, new Set(((said ?? []) as Array<{ subject: string }>).map((m) => m.subject)));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * رادار الفواتير (الشريحة ٣٣). ١٣ شهر حركات (السنة + نفس الشهر اللي فات للمقارنة الموسمية)، والشهور بتوقيت السوق — فاتورة
+ * اتدفعت ١١ بالليل يوم ٣٠ تتحسب على شهرها. «اتقالت قبل كده؟» على الصندوق كله: مرة لكل مرفق وشهر.
+ */
+async function staffBills(sb: SupabaseClient, userId: string, now: Date): Promise<StaffNote[]> {
+  try {
+    const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
+    const user = u as { country?: string | null; currency?: string | null } | null;
+    const { data: txns, error } = await sb.from("zad_transactions")
+      .select("amount,is_expense,txn_kind,category,title,merchant_name,currency,created_at").eq("user_id", userId)
+      .gte("created_at", new Date(now.getTime() - 400 * DAY).toISOString()).limit(5000);
+    if (error || !(txns ?? []).length) return [];
+    const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: user?.country ?? null });
+    const timeZone = typeof tz === "string" && tz ? tz : "UTC";
+    const found = billAnomalies(txns as BillTxn[], {
+      thisMonth: localNowContext(timeZone, now).date.slice(0, 7), timeZone, currency: user?.currency ?? null,
+    });
+    if (!found.length) return [];
+    const { data: said } = await sb.from("zad_agent_messages").select("subject").eq("user_id", userId)
+      .like("subject", "فاتورة أعلى من العادي: %").limit(500);
+    const seen = new Set(((said ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    return found.filter((a) => !seen.has(billSubject(a))).map((a) => billNote(a, user?.currency ?? null));
+  } catch {
     return [];
   }
 }

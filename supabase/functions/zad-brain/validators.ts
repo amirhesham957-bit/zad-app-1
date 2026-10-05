@@ -5,6 +5,7 @@
 import { quietTopicRejection } from "./engagement.ts";
 import { cardBudgetRejection } from "./attention.ts";
 import { resolveValidUntil } from "./shared.ts";
+import { DOCUMENT_KINDS } from "./documents.ts";
 
 export type Validation = { ok: true } | { ok: false; reason: string };
 
@@ -573,6 +574,38 @@ export const validateDeleteMaintenanceItem: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+/** خمس أرقام ورا بعض في اسم صاحب المستند أو اسمه = غالباً رقم المستند نفسه، واحنا مابنخزنهوش (الشريحة ٣٢). */
+const DOCUMENT_NUMBER_RE = /[0-9٠-٩]{5,}/;
+
+export const validateSaveDocument: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["save_document"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ مستندات في المرة" };
+  if (!(DOCUMENT_KINDS as readonly string[]).includes(String(input.kind))) {
+    return { ok: false, reason: `نوع المستند لازم واحد من: ${DOCUMENT_KINDS.join("، ")}` };
+  }
+  const date = String(input.expires_on ?? "");
+  const t = Date.parse(`${date}T00:00:00Z`);
+  if (!DATE_RE.test(date) || !Number.isFinite(t) || new Date(t).toISOString().slice(0, 10) !== date) {
+    return { ok: false, reason: "تاريخ الانتهاء لازم يوم حقيقي بصيغة YYYY-MM-DD — لو العميل قال شهر وسنة بس، اسأله اليوم" };
+  }
+  if (date < "2000-01-01" || date > "2100-12-31") return { ok: false, reason: "تاريخ الانتهاء مش معقول" };
+  const holder = String(input.holder ?? "").trim();
+  const label = String(input.label ?? "").trim();
+  if (holder.length > 40 || label.length > 40) return { ok: false, reason: "الاسم طويل أوي — ٤٠ حرف بالكتير" };
+  if (DOCUMENT_NUMBER_RE.test(holder) || DOCUMENT_NUMBER_RE.test(label)) {
+    return { ok: false, reason: "زاد مابيسجلش رقم المستند — التاريخ ولمين بس. شيل الرقم وحاول تاني" };
+  }
+  if (input.kind === "other" && label.length < 2) return { ok: false, reason: "مستند «other» محتاج اسم (label)" };
+  return { ok: true };
+};
+
+export const validateDeleteDocument: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["delete_document"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ حذف مستندات في المرة" };
+  if (!(DOCUMENT_KINDS as readonly string[]).includes(String(input.kind))) {
+    return { ok: false, reason: `نوع المستند لازم واحد من: ${DOCUMENT_KINDS.join("، ")}` };
+  }
+  return { ok: true };
+};
+
 export const validateUpdateEmergencyFundBalance: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["update_emergency_fund_balance"] ?? 0) >= 1) return { ok: false, reason: "تعديل واحد بس في المرة" };
   if (typeof input.new_balance !== "number" || !Number.isFinite(input.new_balance) || input.new_balance < 0) {
@@ -612,6 +645,8 @@ export const APP_COMMAND_SCREENS = [
   // «زاد عارف عني إيه» (ملف العميل + العادات + الملاحظات)، «سجل تعديلات زاد» (تراجع)، وإعدادات
   // التنبيهات وقراءة البنك — كانت شاشات موجودة بس العقل مايقدرش يفتحها («وريني إنت عارف عني إيه»).
   "zad_memory", "agent_action_log", "assistant_alerts",
+  // «مستنداتي» — حارس المستندات (الشريحة ٣٢).
+  "documents",
 ] as const;
 export const APP_COMMAND_ACTIONS = [
   "open",            // افتح الشاشة
@@ -922,6 +957,8 @@ export const VALIDATORS: Record<string, Validator> = {
   add_maintenance_item: validateAddMaintenanceItem,
   update_maintenance_item: validateUpdateMaintenanceItem,
   delete_maintenance_item: validateDeleteMaintenanceItem,
+  save_document: validateSaveDocument,
+  delete_document: validateDeleteDocument,
   update_emergency_fund_balance: validateUpdateEmergencyFundBalance,
   app_command: validateAppCommand,
   learn_skill: validateLearnSkill,
@@ -956,6 +993,8 @@ export const MUTATING_TOOLS = [
   "add_obligation", "update_obligation", "delete_obligation",
   "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",
   "update_emergency_fund_balance",
+  // حارس المستندات (الشريحة ٣٢) — تواريخ بس، نفس مستوى الصيانة.
+  "save_document", "delete_document",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",

@@ -86,7 +86,10 @@ enum AgentScreen {
   goals('goals'),
 
   /// محلات قريبة وعروضها.
-  nearby('nearby');
+  nearby('nearby'),
+
+  /// مستنداتي — حارس المستندات.
+  documents('documents');
 
   new(this.wireName);
 

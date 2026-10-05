@@ -118,6 +118,10 @@ abstract final class ZadScreens {
   /// الصيانة.
   static late OpenScreen showMaintenanceScreen;
 
+  // ── documents
+  /// مستنداتي — حارس المستندات.
+  static late OpenScreen showDocumentsScreen;
+
   // ── nearby
   /// Shops near the customer.
   static late OpenScreen showNearbyDealsScreen;

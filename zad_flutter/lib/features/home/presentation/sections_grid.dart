@@ -185,6 +185,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.brown,
     open: ZadScreens.showMaintenanceScreen,
   ),
+  ZadSection(
+    id: 'documents',
+    icon: Icons.badge_outlined,
+    label: 'مستنداتي',
+    accent: ZadSectionAccent.slate,
+    open: ZadScreens.showDocumentsScreen,
+  ),
   const ZadSection(
     id: 'assistant',
     icon: Icons.psychology,

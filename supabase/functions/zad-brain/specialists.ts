@@ -151,6 +151,13 @@ const NEARBY_INTENT = /اقرب|قريب مني|قريبه مني|جنبي|حو�
 // «عاوز اتواصل مع موظف» ماكانتش بتعدّي (٢٠٢٦-١٠-٠٢ ٠١:٢٥): الأداة ماتعرضتش والموديل قال «فتحت لك تيكت» من غير تيكت.
 const SUPPORT_INTENT = /شكوي|اشتكي|اكلم حد|اكلم (موظف|مسؤول|انسان|بني ادم)|موظف|اتواصل|تواصل مع|الدعم|خدمه العملاء|التطبيق\s*(فيه مشكله|بايظ|واقف|مش شغال|بيقفل)|عطل في التطبيق|مشكله في (التطبيق|الصفحه|الشاشه)|بلاغ/;
 // «خلصت كافة ادويتي شلها من الليستة» — الأداة موجودة والموديل قال «مش بعرف أشيلها» (٢٠٢٦-١٠-٠٢ ٠١:٢٧).
+// حارس المستندات (الشريحة ٣٢). «جواز» لوحدها = زواج في المصري («جوازي»)، فلازم «سفر» أو كلام عن انتهاء/تجديد جنبها.
+const DOCUMENT_TIME = "(نتهي|انتهت|خلصت|تجديد|اجدد|جددت|صلاحي|لحد)";
+const DOCUMENT_INTENT = new RegExp(
+  "جواز (ال)?سفر|باسبور|passport|" +
+    `(جواز|البطاقه|بطاقتي|الرقم القومي|اقامه|اقامتي|الاقامه|رخصه|رخصتي|الرخصه).{0,30}${DOCUMENT_TIME}|` +
+    `${DOCUMENT_TIME}.{0,20}(جواز|البطاقه|بطاقتي|اقامه|اقامتي|الاقامه|رخصه|رخصتي|الرخصه)`,
+);
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
@@ -170,6 +177,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
   if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
   if (MEDICINE_EDIT_INTENT.test(norm)) tools.push("delete_pharmacy_item", "update_pharmacy_item");
+  if (DOCUMENT_INTENT.test(norm)) tools.push("save_document", "delete_document", "read_house");
   return [...new Set(tools)];
 }
 
@@ -331,6 +339,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
   home: [
     "app_command",
     "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",
+    "save_document", "delete_document",
     "add_obligation", "update_obligation", "delete_obligation",
     "forward_ledger", "web_search", "home_health_score", "decision_impact", "log_decision",
     "set_life_circumstance", "end_life_circumstance",
