@@ -86,6 +86,7 @@ class ZadBottomNavBar extends StatelessWidget {
     required this.onOpenVoice,
     this.onOpenMore,
     this.kidsMode = false,
+    this.accent,
     super.key,
   });
 
@@ -107,6 +108,11 @@ class ZadBottomNavBar extends StatelessWidget {
   /// Home and family only.
   final bool kidsMode;
 
+  /// A seasonal campaign's colours (already checked to keep white text
+  /// readable): the mic orb wears them and the selected tab takes the first.
+  /// Null = زاد's green.
+  final LinearGradient? accent;
+
   // Flexible and scaled down: on a 320dp phone the four tabs and the mic
   // slot need more than the pill has, and the row overflowed by 30px. Where
   // they fit, nothing changes.
@@ -117,6 +123,7 @@ class ZadBottomNavBar extends StatelessWidget {
         icon: item.icon,
         label: item.label,
         selected: current == item.destination,
+        accent: accent?.colors.first,
         onTap: () => item.destination == ZadNavDestination.more
             ? onOpenMore?.call()
             : onNavigate(item.destination),
@@ -168,7 +175,11 @@ class ZadBottomNavBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        _MicOrb(onTap: onOpenVoice, onLongPress: onOpenCamera),
+                        _MicOrb(
+                          onTap: onOpenVoice,
+                          onLongPress: onOpenCamera,
+                          gradient: accent,
+                        ),
                         const SizedBox(width: 8),
                         _CameraFab(onTap: onOpenCamera),
                       ],
@@ -235,12 +246,14 @@ class _ZadNavTab extends StatefulWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.accent,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final Color? accent;
 
   @override
   State<_ZadNavTab> createState() => _ZadNavTabState();
@@ -283,7 +296,7 @@ class _ZadNavTabState extends State<_ZadNavTab>
 
   @override
   Widget build(BuildContext context) {
-    final tint = widget.selected ? _primary : _textTertiary;
+    final tint = widget.selected ? (widget.accent ?? _primary) : _textTertiary;
     return ScaleTransition(
       scale: _scale,
       child: Material(
@@ -323,7 +336,9 @@ class _ZadNavTabState extends State<_ZadNavTab>
                     width: 16,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: widget.selected ? _primary : Colors.transparent,
+                      color: widget.selected
+                          ? (widget.accent ?? _primary)
+                          : Colors.transparent,
                       borderRadius: const BorderRadius.all(Radius.circular(99)),
                     ),
                   ),
@@ -340,10 +355,11 @@ class _ZadNavTabState extends State<_ZadNavTab>
 /// The mic orb: a 68dp glow ring breathing between 25% and 55% over 1400ms
 /// (FastOutSlowIn, reversing), and the 52dp green orb inside it.
 class _MicOrb extends StatefulWidget {
-  const new({required this.onTap, required this.onLongPress});
+  const new({required this.onTap, required this.onLongPress, this.gradient});
 
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final LinearGradient? gradient;
 
   @override
   State<_MicOrb> createState() => _MicOrbState();
@@ -398,15 +414,17 @@ class _MicOrbState extends State<_MicOrb> with SingleTickerProviderStateMixin {
                 shape: BoxShape.circle,
                 // Compose's linearGradient runs from the top-left corner to
                 // the bottom-right one unless told otherwise.
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: <Color>[
-                    Color(0xFF0B6B4E),
-                    Color(0xFF064E3B),
-                    Color(0xFF052E16),
-                  ],
-                ),
+                gradient:
+                    widget.gradient ??
+                    const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[
+                        Color(0xFF0B6B4E),
+                        Color(0xFF064E3B),
+                        Color(0xFF052E16),
+                      ],
+                    ),
                 boxShadow: composeShadow(
                   elevation: 20,
                   ambient: _primary.withValues(alpha: 0.40),
