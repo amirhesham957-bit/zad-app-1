@@ -2450,12 +2450,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const spoken = String(input.name ?? "").trim();
       const { data: items } = await sb.from("zad_pharmacy_items").select("*").eq("user_id", userId);
       const rows = (items ?? []) as Array<{ id: string; name: string }>;
-      const match = rows.find((r) => {
-        const a = r.name.trim().toLowerCase();
-        const b = spoken.toLowerCase();
-        return a.includes(b) || b.includes(a);
-      });
-      if (!match) return `مرفوض: مفيش دواء اسمه "${spoken}" في قايمة العميل — عدّل وحاول تاني.`;
+      // نفس المطابقة الصارمة بتاعة log_pharmacy_dose. كانت «جزء من الاسم في أي اتجاه، وأول
+      // واحد»: «مضاد» كانت بتمسح «مضاد حيوي» والعميل عنده «مضاد للالتهاب» كمان.
+      const { item: match, ambiguous } = matchMedicineByName(rows, spoken);
+      if (ambiguous) {
+        return `مرفوض: "${spoken}" بيطابق أكتر من دوا (${ambiguous.join("، ")}) — اسأل العميل أنهي واحد بالاسم كامل قبل ما تحذف.`;
+      }
+      if (!match) {
+        return rows.length === 0
+          ? `مرفوض: مفيش أي دوا مسجّل في جدول العميل — مفيش حاجة تتحذف. ماتقولش إنك حذفت.`
+          : `مرفوض: مفيش دواء اسمه "${spoken}" في جدول العميل. الأدوية المسجّلة: ${rows.map((r) => r.name).join("، ")}. لو قصده واحد منهم نادي تاني بالاسم ده بالظبط، ولو مش واضح اسأله — وماتقولش إنك حذفت.`;
+      }
       const w = await writeRows(
         sb.from("zad_pharmacy_items").delete().eq("id", match.id).eq("user_id", userId).select("id"),
         "حذف الدواء",
