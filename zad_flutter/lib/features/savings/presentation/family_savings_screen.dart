@@ -19,6 +19,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/campaigns/application/market_season.dart';
+import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
 
@@ -559,15 +561,26 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
     await _load();
   }
 
-  Future<void> _create() async {
+  /// A new challenge; with [season], one tied to the occasion: its title and
+  /// badge, ending with it.
+  Future<void> _create({ActiveCampaign? season}) async {
     final familyId = ref.read(familyControllerProvider).family?.id;
     if (familyId == null) return;
+    final now = ref.read(nowProvider)().toUtc();
+    final c = season?.campaign;
     final result = await showDialog<(String, double, double, int)>(
       context: context,
-      builder: (_) => const _NewChallengeDialog(),
+      builder: (_) => _NewChallengeDialog(
+        initialTitle: c == null ? '' : 'تحدي ${c.eventName} ${c.badge}'.trim(),
+        initialDays: season == null
+            ? 7
+            : season.end
+                      .difference(DateTime.utc(now.year, now.month, now.day))
+                      .inDays +
+                  1,
+      ),
     );
     if (result == null) return;
-    final now = DateTime.now().toUtc();
     try {
       await ref
           .read(supabaseClientProvider)
@@ -581,6 +594,8 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
             'start_date': now.toIso8601String(),
             'end_date': now.add(Duration(days: result.$4)).toIso8601String(),
             'is_active': true,
+            if (c != null) 'season_key': c.eventKey,
+            if (c != null && c.badge.isNotEmpty) 'badge': c.badge,
           });
     } on Object catch (e) {
       debugPrint('financial challenge insert failed: $e');
@@ -598,6 +613,14 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
   Widget build(BuildContext context) {
     final family = ref.watch(familyControllerProvider).family;
     final currency = familyCurrency(ref);
+    // The occasion's challenge, offered while it runs and until one is made.
+    final season = ref.watch(marketSeasonProvider);
+    final seasonName = season?.campaign.eventName;
+    final offerSeason =
+        family != null &&
+        season != null &&
+        seasonName != null &&
+        !_challenges.any((c) => c['season_key'] == season.campaign.eventKey);
     return _Card(
       icon: Icon(Icons.emoji_events, size: 22, color: ZadColors.ink),
       title: 'تحديات العائلة المالية',
@@ -608,6 +631,12 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
               child: const Text('تحدٍ جديد'),
             ),
       children: <Widget>[
+        if (offerSeason)
+          _SeasonOffer(
+            badge: season.campaign.badge,
+            name: seasonName,
+            onStart: () => unawaited(_create(season: season)),
+          ),
         if (family == null)
           const _Hint('انضم إلى عائلة لتتمكن من المشاركة في التحديات')
         else if (_challenges.isEmpty)
@@ -620,6 +649,9 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
               final target = _num(c['target_amount']);
               final done = mine?['is_completed'] == true;
               final reward = _num(c['reward_amount']);
+              final badge = (c['badge'] as String?)?.trim().isEmpty ?? true
+                  ? null
+                  : (c['badge'] as String).trim();
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: ZadSpacing.sm),
                 child: Column(
@@ -630,6 +662,9 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
                         Expanded(
                           child: Text(
                             '${c['title']}',
+                            semanticsLabel: badge == null
+                                ? null
+                                : '${c['title']}، وسامه $badge',
                             style: ZadType.bodyMedium.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -637,7 +672,9 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
                         ),
                         if (done)
                           Text(
-                            'تم إنجاز التحدي! 🎉',
+                            badge == null
+                                ? 'تم إنجاز التحدي! 🎉'
+                                : 'كسبت وسام $badge',
                             style: ZadType.labelSmall.copyWith(
                               color: ZadColors.green600,
                             ),
@@ -685,17 +722,24 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
 }
 
 class _NewChallengeDialog extends StatefulWidget {
-  const new();
+  const new({this.initialTitle = '', this.initialDays = 7});
+
+  final String initialTitle;
+  final int initialDays;
 
   @override
   State<_NewChallengeDialog> createState() => _NewChallengeState();
 }
 
 class _NewChallengeState extends State<_NewChallengeDialog> {
-  final TextEditingController _title = TextEditingController();
+  late final TextEditingController _title = TextEditingController(
+    text: widget.initialTitle,
+  );
   final TextEditingController _target = TextEditingController();
   final TextEditingController _reward = TextEditingController();
-  final TextEditingController _days = TextEditingController(text: '7');
+  late final TextEditingController _days = TextEditingController(
+    text: '${widget.initialDays < 1 ? 1 : widget.initialDays}',
+  );
 
   @override
   void dispose() {
@@ -760,5 +804,40 @@ class _NewChallengeState extends State<_NewChallengeDialog> {
         child: const Text('حفظ'),
       ),
     ],
+  );
+}
+
+/// «تحدي رمضان 🌙»: the occasion's challenge, one tap from starting.
+class _SeasonOffer extends StatelessWidget {
+  const new({required this.badge, required this.name, required this.onStart});
+
+  final String badge;
+  final String name;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    child: Row(
+      children: <Widget>[
+        if (badge.isNotEmpty) ...<Widget>[
+          Text(badge, style: ZadType.titleLarge),
+          const SizedBox(width: ZadSpacing.sm),
+        ],
+        Expanded(
+          child: Text(
+            'تحدي $name: وفّروا سوا، واللي يخلّصه ياخد الوسام',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+        ),
+        FilledButton.tonal(
+          onPressed: onStart,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, kZadMinTapTarget),
+          ),
+          child: const Text('ابدأه'),
+        ),
+      ],
+    ),
   );
 }
