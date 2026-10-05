@@ -451,6 +451,9 @@ permission** — geolocator's `GeolocatorLocationService` is removed with
     24-hour trial, stories, family seasonal badges. Halloween and New Year
     run in every country (owner). Hijri campaigns need a
     `seasonal_event_windows` row for the year — seeded only to 2027.
+    **Merged and live** (`6d3c201d`, PR #86, 2026-10-05): migration recorded,
+    19 active rows, one read policy — status and next steps in
+    `SESSION_HANDOFF.md`'s 2026-10-04/05 section.
 
 ---
 
