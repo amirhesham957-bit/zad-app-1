@@ -486,3 +486,17 @@ class ChildSpending {
     },
   );
 }
+
+/// The purchase pause's answer to an approval that came too early
+/// (20261005231147): how long until it may go through — or that it may be
+/// refused now. [readyAt] null (an old server) still says it waits.
+String coolingOffMessage(DateTime? readyAt, DateTime now) {
+  const tail = ' — أو ارفضه دلوقتي لو مش مقتنع.';
+  if (readyAt == null) {
+    return 'وقفة التفكير شغالة: الطلب لسه ماكملش ٢٤ ساعة$tail';
+  }
+  final left = readyAt.difference(now.toUtc());
+  final hours = (left.inMinutes / 60).ceil();
+  if (hours <= 1) return 'وقفة التفكير: تقدر توافق خلال ساعة$tail';
+  return 'وقفة التفكير: تقدر توافق بعد $hours ساعة$tail';
+}
