@@ -311,6 +311,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_subscription", "update_subscription", "delete_subscription",
     "forward_ledger", "check_price_online", "query_family", "weekly_savings_plan",
     "home_health_score", "propose_next_month_budget", "decision_impact", "log_decision", "household_resilience",
+    "confirm_life_shift",
   ],
   pantry: [
     "add_inventory_item", "update_inventory_qty", "delete_inventory_item",

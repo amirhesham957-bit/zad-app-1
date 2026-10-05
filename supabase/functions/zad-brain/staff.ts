@@ -11,7 +11,8 @@
 //   pantry   أمين المخزن: سلعة على القايمة والبيت فيه كفاية، وسطور قديمة محدش اشتراها.
 //   pharmacy الممرضة: كورس خلص ولسه مسجل، دوا متجدد قرب يخلص، دوا من غير مواعيد، صلاحية قربت.
 //   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات)،
-//            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦).
+//            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦)، والتحول السلوكي مرة في
+//            الأسبوع (lifeShift.ts، الشريحة ٣٠).
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
 //            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
@@ -27,6 +28,7 @@ import { goalPace, type GoalPaceInput } from "./goalPace.ts";
 import { upcomingSeason } from "../_shared/season.ts";
 import { DECISION_REVIEW_DAYS, type LoggedDecision, type ReviewTxn, reviewDecision, reviewNote } from "./decisionReview.ts";
 import { type CapsuleGoal, type CapsuleMemory, capsuleNote } from "./longMemory.ts";
+import { alreadyKnown, detectShifts, SHIFT_ACTIVE_DAYS, type ShiftRow, shiftNote, type ShiftTxn, type Span } from "./lifeShift.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -482,8 +484,10 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       kidsWeek,
       seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
-    const [decisions, capsule] = await Promise.all([staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now)]);
-    const fresh = freshNotes([...notes, ...decisions.notes, ...(capsule ? [capsule] : [])], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    const [decisions, capsule, shifts] = await Promise.all([
+      staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now), staffLifeShifts(sb, userId, now),
+    ]);
+    const fresh = freshNotes([...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     let delivered = true;
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
@@ -498,6 +502,44 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
     return fresh;
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
+    return [];
+  }
+}
+
+/**
+ * التحول السلوكي (الشريحة ٣٠): مرة في الأسبوع (الحد بتوقيت UTC). التحول بيتسجل ظرف `shift_*` على طول — «إعادة الضبط
+ * تلقائياً» مابتستناش الجواب — والملاحظة بتخلّي العقل يسأل مرة. نفس النوع (ونفس الفئة) آخر ٣٠ يوم مابيتسجلش تاني.
+ */
+async function staffLifeShifts(sb: SupabaseClient, userId: string, now: Date): Promise<StaffNote[]> {
+  if (now.getUTCDay() !== 0) return [];
+  try {
+    const since = new Date(now.getTime() - 120 * DAY).toISOString();
+    const [{ data: txns, error }, { data: rows }] = await Promise.all([
+      sb.from("zad_transactions").select("amount,is_expense,txn_kind,category,created_at")
+        .eq("user_id", userId).gte("created_at", since).limit(5000),
+      sb.from("zad_life_circumstances").select("kind,started_at,ends_at,ended_at,confirmed,detail")
+        .eq("user_id", userId).gte("ends_at", since).limit(50),
+    ]);
+    if (error) return [];
+    const known = (rows ?? []) as ShiftRow[];
+    const travel: Span[] = known.filter((r) => r.kind === "travel")
+      .map((r) => ({ from: Date.parse(r.started_at), to: Date.parse(r.ended_at ?? r.ends_at) }));
+    const notes: StaffNote[] = [];
+    for (const shift of detectShifts((txns ?? []) as ShiftTxn[], now.getTime(), travel)) {
+      if (alreadyKnown(shift, known, now.getTime())) continue;
+      const { error: insErr } = await sb.from("zad_life_circumstances").insert({
+        user_id: userId, kind: shift.kind, source: "detected", started_at: shift.since,
+        ends_at: new Date(now.getTime() + SHIFT_ACTIVE_DAYS * DAY).toISOString(), detail: shift.detail,
+      });
+      if (insErr) {
+        console.warn("[staff] life shift not recorded:", insErr.message);
+        continue;
+      }
+      notes.push(shiftNote(shift));
+    }
+    return notes;
+  } catch (e) {
+    console.warn("[staff] life shifts skipped:", (e as Error)?.message ?? e);
     return [];
   }
 }

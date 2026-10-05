@@ -70,7 +70,7 @@ do $$ begin
     insert into zad_life_circumstances (user_id, kind, source, started_at, ends_at)
     values ('00000000-0000-0000-0000-0000000000a1', 'exams', 'customer', now(), now() + interval '200 days');
     raise exception 'FAIL: a 200-day circumstance went in';
-  exception when check_violation then raise notice 'ok: 120 days at most';
+  exception when check_violation then raise notice 'ok: 180 days at most';
   end;
 end $$;
 

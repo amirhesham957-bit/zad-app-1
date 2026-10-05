@@ -104,6 +104,7 @@ import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
 import { monthlyTotals, resilience } from "./longMemory.ts";
 import { attentionBudget, DECLARED_DEFAULT_DAYS, DECLARED_MAX_DAYS, loadCircumstance } from "./circumstances.ts";
+import { activeShifts, type ShiftRow, shiftSince } from "./lifeShift.ts";
 import { emergencyCard } from "./emergency.ts";
 import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollSummaries } from "./familyPolls.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -1210,6 +1211,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // حالة البيت (circumstances.ts، الشريحة ٢٩): ظرف طارئ، امتحانات، استغاثة، أو تعافي بعدهم — زاد بيتكلم أقل.
   const circumstance = await loadCircumstance(sb, userId);
+  // التحول السلوكي القايم (lifeShift.ts، الشريحة ٣٠): الطبيعي الجديد اللي الحسابات بتقيس عليه.
+  const { data: shiftRows } = await sb.from("zad_life_circumstances")
+    .select("kind,started_at,ends_at,ended_at,confirmed,detail").eq("user_id", userId).like("kind", "shift_%")
+    .gt("ends_at", new Date().toISOString()).order("started_at", { ascending: false }).limit(10);
+  const liveShifts = activeShifts((shiftRows ?? []) as ShiftRow[], Date.now()).slice(0, 3);
 
   // جدول الحصص (school.ts، الشريحة ٢١): مين عنده إيه النهارده وبكرة.
   const { data: timetableRows } = await sb.from("zad_school_timetable")
@@ -1456,6 +1462,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // منسّق الانتباه (attention.ts): الكروت المفتوحة قدام العميل، وعناوين كروت آخر ٢٤ ساعة (مايتقالوش تاني في الشات).
     // normal = عادي. exceptional/recovery = اتبع قاعدة «حالة البيت» في البرومبت.
     circumstance,
+    // null = مفيش تحول قايم. confirmed: null = لسه ماتسألش، true = أكّد.
+    life_shift: liveShifts.length
+      ? liveShifts.map((r) => ({ kind: r.kind, since: String(r.started_at).slice(0, 10), detail: r.detail ?? {}, confirmed: r.confirmed ?? null }))
+      : null,
     attention: insightHistErr ? null : {
       max_open_cards: attentionBudget(circumstance.mode).openCards,
       open_cards: openCards((insightHistory ?? []) as Array<{ dedupe_key: string | null; status: string | null; priority: string | null; surface: string | null; created_at: string }>),
@@ -3385,7 +3395,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         sb.rpc("zad_budget_state", { p_user: userId, p_tz: snap?.cycle?.timezone ?? "UTC" }),
       ]);
       if (txErr || stateErr) return `مقدرتش أحسب الأثر دلوقتي: ${(txErr ?? stateErr)?.message}`;
-      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>);
+      // تحول قايم (الشريحة ٣٠) ⇒ المتوسط من يومه.
+      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>, Date.now(), shiftSince(snap?.life_shift));
       if (avg.historyDays === 0) return "مفيش حركات كفاية أحسب منها أثر قرار — محتاج دخل ومصاريف متسجلة الأول.";
       const now = new Date();
       const startMatch = /^(\d{4})-(\d{2})$/.exec(String(input?.start_month ?? ""));
@@ -3408,6 +3419,26 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         opening_balance: Number((state as { balance?: number } | null)?.balance ?? 0),
         ...impact,
       });
+    }
+    case "confirm_life_shift": {
+      // الشريحة ٣٠ — جواب العميل على «حصل تغيير في البيت؟». أكّد ⇒ الطبيعي الجديد بيفضل؛ نفى ⇒ التحول بيقفل، والحسابات
+      // ترجع تقيس على كل التاريخ.
+      if (typeof input?.confirmed !== "boolean") return "مرفوض: confirmed لازم true أو false.";
+      const nowIso = new Date().toISOString();
+      const { data: row } = await sb.from("zad_life_circumstances").select("id,kind,started_at")
+        .eq("user_id", userId).like("kind", "shift_%").is("confirmed", null).is("ended_at", null).gt("ends_at", nowIso)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!row) return "مفيش تحول مستني جواب.";
+      const r = row as { id: string; kind: string; started_at: string };
+      const patch = input.confirmed
+        ? { confirmed: true }
+        : { confirmed: false, ended_at: nowIso, ends_at: nowIso > r.started_at ? nowIso : r.started_at };
+      const { error } = await sb.from("zad_life_circumstances").update(patch).eq("id", r.id).eq("user_id", userId);
+      if (error) return `مقدرتش أسجّل الجواب: ${error.message}`;
+      ctx.mutationCount++;
+      return input.confirmed
+        ? "اتسجّل إنه الطبيعي الجديد. اعرض عليه سقف شهر جديد من propose_next_month_budget — هو اللي يوافق."
+        : "اتسجّل إنه مش تحول — الحسابات بترجع تقيس على كل التاريخ.";
     }
     case "set_life_circumstance": {
       // الشريحة ٢٩ — العميل قال إن البيت في ظرف (حد عيان، طوارئ) أو امتحانات. مابنخزّنش «إيه الظرف» — النوع والمدة بس.
@@ -3490,7 +3521,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         .select("amount,is_expense,txn_kind,created_at").eq("user_id", userId)
         .gte("created_at", new Date(Date.now() - 95 * 86_400_000).toISOString()).limit(2000);
       if (txErr) return `مقدرتش أسجّل القرار دلوقتي: ${txErr.message}`;
-      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>);
+      // تحول قايم (الشريحة ٣٠) ⇒ المتوسط من يومه.
+      const avg = monthlyAverages((txns ?? []) as Array<{ amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }>, Date.now(), shiftSince(snap?.life_shift));
       if (avg.historyDays === 0) return "مرفوض: مفيش حركات أقيس عليها — المراجعة بعدين هتبقى من غير أساس.";
       const { data: open, error: openErr } = await sb.from("zad_decision_log")
         .select("id,label,decided_at").eq("user_id", userId).lt("reviews", 2)
@@ -3562,13 +3594,20 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return "مفيش تاريخ صرف كفاية (محتاج شهرين على الأقل) — جرب بعد شوية.";
       }
       const spends = (monthly as Array<{ month: string; total: number }>).slice(0, 3).map((m) => m.total);
-      const avg = spends.reduce((a, b) => a + b, 0) / spends.length;
+      // تحول قايم في المصاريف (الشريحة ٣٠): الطبيعي الجديد (الأسبوع × ٣٠/٧) بدل متوسط ٣ شهور نصهم قبل التحول.
+      const spendShift = ((snap?.life_shift ?? []) as Array<{ kind: string; detail?: { after_weekly?: number } }>)
+        .find((r) => r.kind === "shift_spending" && Number(r.detail?.after_weekly) > 0);
+      const avg = spendShift
+        ? Number(spendShift.detail!.after_weekly) * 30 / 7
+        : spends.reduce((a, b) => a + b, 0) / spends.length;
       const committed = ((snap?.obligations ?? []) as Array<{ amount?: number }>)
         .reduce((a, o) => a + (Number(o.amount) || 0), 0);
       const suggested = Math.ceil((avg * 1.05 + committed) / 50) * 50; // هامش ٥٪ + تقريب لـ٥٠
       return JSON.stringify({
         suggested_budget: suggested,
-        basis: `متوسط آخر ${spends.length} شهور: ${Math.round(avg)} + التزامات ثابتة: ${committed}`,
+        basis: spendShift
+          ? `الطبيعي الجديد من يوم التحول (${Math.round(avg)} في الشهر) + التزامات ثابتة: ${committed}`
+          : `متوسط آخر ${spends.length} شهور: ${Math.round(avg)} + التزامات ثابتة: ${committed}`,
         guidance: "اعرضه للعميل كرقم مقترح وسببه، واسأله موافق. متسجلش حاجة غير بعد موافقته.",
       });
     }
@@ -4684,6 +4723,13 @@ export const CHAT_TOOLS: ToolDef[] = [
         months: { type: "number", description: "كام شهر قدام، الافتراضي ٦ والأقصى ١٢" },
       },
     },
+  },
+  {
+    name: "confirm_life_shift",
+    description:
+      "جواب العميل على سؤال «حصل تغيير في البيت؟» عن تحول في life_shift (confirmed = null): true = ده الطبيعي الجديد " +
+      "(شغل جديد، عربية، حد جه يعيش معاهم…)، false = لأ، صدفة. ماتناديهاش من غير ما هو يجاوب.",
+    input_schema: { type: "object", properties: { confirmed: { type: "boolean" } }, required: ["confirmed"] },
   },
   {
     name: "set_life_circumstance",
@@ -6735,6 +6781,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
    - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
+   - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.
    - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
    - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.
 2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.

@@ -28,7 +28,7 @@ create table if not exists public.zad_life_circumstances (
   confirmed boolean,
   created_at timestamptz not null default now(),
   check (ends_at >= started_at),
-  check (ends_at <= started_at + interval '120 days')
+  check (ends_at <= started_at + interval '180 days')
 );
 
 create index if not exists zad_life_circumstances_recent

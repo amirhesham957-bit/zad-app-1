@@ -85,9 +85,15 @@ export function projectDecision(input: {
 
 interface Txn { amount: number | null; is_expense: boolean | null; txn_kind: string | null; created_at: string }
 
-/** متوسط الدخل والصرف في الشهر من حركات آخر ٩٠ يوم (أو من أول حركة لو الحساب أحدث). */
-export function monthlyAverages(txns: readonly Txn[], now = Date.now()): { income: number; spend: number; historyDays: number } {
-  const since = now - 90 * 86_400_000;
+/**
+ * متوسط الدخل والصرف في الشهر من حركات آخر ٩٠ يوم (أو من أول حركة لو الحساب أحدث). [shiftSince] = بداية تحول سلوكي
+ * قايم (lifeShift.ts، الشريحة ٣٠): لو بقاله ٢١ يوم أو أكتر، المتوسط من يومها بس — الطبيعي الجديد مش متوسط القديم والجديد.
+ */
+export function monthlyAverages(
+  txns: readonly Txn[], now = Date.now(), shiftSince?: number | null,
+): { income: number; spend: number; historyDays: number } {
+  const fromShift = Boolean(shiftSince && Number.isFinite(shiftSince) && now - (shiftSince as number) >= 21 * 86_400_000);
+  const since = fromShift ? Math.max(shiftSince as number, now - 90 * 86_400_000) : now - 90 * 86_400_000;
   const recent = txns.filter((t) => {
     const at = Date.parse(t.created_at);
     return Number.isFinite(at) && at >= since && at <= now;
@@ -101,7 +107,8 @@ export function monthlyAverages(txns: readonly Txn[], now = Date.now()): { incom
     if (t.txn_kind === "income" || t.is_expense === false) income += amount;
     else if (!t.txn_kind || t.txn_kind === "expense") spend += amount;
   }
-  // أقل من شهر تاريخ بيتحسب كشهر — مانضربش أسبوع في أربعة.
-  const scale = 30 / Math.max(30, historyDays);
+  // أقل من شهر تاريخ بيتحسب كشهر — مانضربش أسبوع في أربعة. إلا من يوم التحول (٢١ يوم على الأقل): هناك الأيام الفعلية —
+  // ٢٥ يوم صرف مقسومين على ٣٠ كانوا هيصغّروا المصاريف ويخلّوا القرار يبان أسهل.
+  const scale = 30 / Math.max(fromShift ? 21 : 30, historyDays);
   return { income: round(income * scale), spend: round(spend * scale), historyDays };
 }

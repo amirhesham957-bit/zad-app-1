@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { itemKey } from "./shared.ts";
+import { activeShifts, type ShiftRow } from "./lifeShift.ts";
 
 const DAY_MS = 86_400_000;
 
@@ -203,11 +204,23 @@ export function curiosityFor(input: {
   askedKeys: ReadonlySet<string>;
   /** نصوص ملاحظات الذاكرة — لو فيه واحدة بتجيب سيرة الحاجة، زاد عارف ومايسألش. */
   knownNotes?: readonly string[];
+  /**
+   * تحول سلوكي قايم (lifeShift.ts، الشريحة ٣٠): الطبيعي الجديد مش «زيادة غريبة». تحول في المصاريف كلها ⇒ مفيش سؤال
+   * «فئة زادت» خالص؛ مصروف جديد ⇒ مفيش سؤال عن فئته.
+   */
+  shifts?: readonly ShiftRow[];
 }): Curiosity | null {
   const spends = input.txns.filter(isSpend);
+  const live = activeShifts(input.shifts ?? [], input.now);
+  const allSurgeQuiet = live.some((r) => r.kind === "shift_spending");
+  const quietCategories = new Set(live.filter((r) => r.kind === "shift_new_expense")
+    .map((r) => itemKey(String(r.detail?.category ?? ""))));
+  const surges = allSurgeQuiet
+    ? []
+    : categorySurge(spends, input.now).filter((c) => !quietCategories.has(c.key.slice("surge:".length)));
   const candidates = [
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
-    ...categorySurge(spends, input.now),
+    ...surges,
     ...unlabelledSpend(spends, input.now, input.todayStart),
   ];
   return candidates.find((c) => !input.askedKeys.has(c.key)) ?? null;
@@ -235,7 +248,7 @@ export async function curiosityQuestion(
   now = Date.now(),
 ): Promise<Curiosity | null> {
   try {
-    const [txRes, askedRes, notesRes] = await Promise.all([
+    const [txRes, askedRes, notesRes, shiftRes] = await Promise.all([
       sb.from("zad_transactions")
         .select("id,amount,title,category,merchant_name,is_expense,txn_kind,source_type,created_at")
         .eq("user_id", userId).gte("created_at", new Date(now - LOOKBACK_DAYS * DAY_MS).toISOString())
@@ -247,6 +260,8 @@ export async function curiosityQuestion(
       // من غير فلتر «حية»: ملاحظة اتقفلت عن نفس الحاجة سبب كفاية مانسألش (والفلتر محتاج مايجريشن
       // 20261003100000 تكون اتطبقت).
       sb.from("zad_memory").select("note").eq("user_id", userId).limit(100),
+      sb.from("zad_life_circumstances").select("kind,started_at,ends_at,ended_at,confirmed,detail")
+        .eq("user_id", userId).like("kind", "shift_%").gt("ends_at", new Date(now).toISOString()).limit(10),
     ]);
     if (txRes.error || askedRes.error || notesRes.error) return null;
     return curiosityFor({
@@ -255,6 +270,8 @@ export async function curiosityQuestion(
       todayStart,
       askedKeys: askedCuriosityKeys(askedRes.data as Array<{ facts?: unknown }>),
       knownNotes: ((notesRes.data ?? []) as Array<{ note: string | null }>).map((n) => n.note ?? ""),
+      // فشل قراية التحولات = من غيرها (سؤال زيادة أحسن من فضول ساكت للأبد).
+      shifts: (shiftRes.data ?? []) as ShiftRow[],
     });
   } catch (e) {
     console.warn("[curiosity] read failed:", (e as Error)?.message);
