@@ -20,7 +20,7 @@ import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETAB
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealSearchItems, sameCurrency } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1035,7 +1035,9 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
  */
 async function callGroundedJson(systemPrompt: string, userPrompt: string): Promise<{ parsed: unknown; ok: boolean }> {
   const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
-  const keys = GEMINI_KEYS.slice(0, 3);
+  // Every key: each is its own Google project and its own grounding quota. Three of five were
+  // tried, and on 2026-10-05 all nine answered 429 while two projects were never asked.
+  const keys = GEMINI_KEYS;
   // The card waits on this, and compound still needs its turn: 40s in all.
   const deadline = Date.now() + 40_000;
   for (const model of models) {
@@ -1075,6 +1077,24 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
     }
   }
   return { parsed: null, ok: false };
+}
+
+/**
+ * «العروض المتاحة لنواقصك» when the grounded search is out of quota: one web search per item
+ * through [webSearchSnippets], then one extraction by the JSON pool (liveDeals.ts). Null when
+ * nothing was found or no model answered — the caller tries compound, then says it failed.
+ */
+async function dealsFromWebSearch(
+  items: string[], location: string, country: unknown,
+): Promise<{ deals: ReturnType<typeof readDeals>; sources: string[] } | null> {
+  const perItem = await Promise.all(items.map((item) => webSearchSnippets(dealQuery(item, location), 4, country)));
+  const seen = new Set<string>();
+  const hits = perItem.flat().filter((h) => !seen.has(h.url) && seen.add(h.url)).slice(0, 16);
+  if (hits.length === 0) return null;
+  const { system, user } = dealsFromHitsPrompt(items, location, hits);
+  const parsed = await callJsonModel(system, user, 1200, "routine");
+  if (parsed === null) return null;
+  return { deals: readDeals(parsed), sources: hits.map((h) => h.url) };
 }
 
 /** آخر رجل: groq/compound-mini (بحث Tavily مدمج) — المصادر من executed_tools لو موجودة، وإلا الإجابة نفسها. */
@@ -2485,6 +2505,11 @@ Deno.serve(async (req: Request) => {
         const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
         if (grounded.ok && Array.isArray(grounded.parsed)) {
           return jsonResponse({ deals: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+        }
+        // Grounding out of quota: the ordinary search chain, read by the ordinary model pool.
+        const searched = await logged(user_id, action, "dealsFromWebSearch", { args: [items] }, () => dealsFromWebSearch(items, String(location ?? ""), payload?.country));
+        if (searched !== null) {
+          return jsonResponse({ deals: searched.deals, sources: searched.sources, ok: true, source: "web_search" });
         }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
