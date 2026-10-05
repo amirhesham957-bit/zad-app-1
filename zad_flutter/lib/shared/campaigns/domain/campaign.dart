@@ -52,6 +52,7 @@ class Campaign {
     this.lottieUrl,
     this.particles = CampaignParticles.none,
     this.priority = 0,
+    this.slides = const <StorySlide>[],
   });
 
   /// Reads a row; null when it cannot be shown (no window, a colour that is
@@ -103,6 +104,7 @@ class Campaign {
       ctaText: ctaText,
       ctaPrompt: ctaPrompt,
       priority: (json['priority'] as num?)?.toInt() ?? 0,
+      slides: _slides(json['story_slides']),
     );
   }
 
@@ -160,6 +162,9 @@ class Campaign {
   /// Higher wins when two occasions overlap.
   final int priority;
 
+  /// «حكايات زاد»: the occasion's story; empty = none.
+  final List<StorySlide> slides;
+
   /// Whether white text reads on both colours (WCAG AA, 4.5:1). A colour
   /// typed into the dashboard that fails this is not used on white text.
   bool get readableOnWhite =>
@@ -185,8 +190,23 @@ class Campaign {
     'cta_text': ctaText,
     'cta_prompt': ctaPrompt,
     'priority': priority,
+    'story_slides': <Map<String, String>>[
+      for (final s in slides)
+        <String, String>{'emoji': s.emoji, 'text': s.text},
+    ],
   };
 }
+
+/// One slide of «حكايات زاد».
+typedef StorySlide = ({String emoji, String text});
+
+/// The slides with both an emoji and a line; anything else is skipped.
+List<StorySlide> _slides(Object? raw) => <StorySlide>[
+  if (raw is List)
+    for (final s in raw)
+      if (s is Map && _text(s['emoji']) != null && _text(s['text']) != null)
+        (emoji: _text(s['emoji'])!, text: _text(s['text'])!),
+];
 
 /// A hijri season's dates in one year (`seasonal_event_windows`).
 @immutable
