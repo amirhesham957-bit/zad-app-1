@@ -15,6 +15,7 @@
 // code via /start <code>. Every subsequent request is authorized by chat_id → user_id
 // through that table, never by anything the client claims about itself.
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
@@ -441,10 +442,9 @@ async function runDailySubscriptionAlerts(sb: SupabaseClient): Promise<{ usersCh
       // renewal reminders below have never fired once. The user's currency is already
       // fetched from zad_users in this same Promise.all.
       sb.from("zad_subscriptions")
-        .select("title,amount,renewal_date")
+        .select("title,amount,renewal_date,due_day,billing_cycle")
         .eq("user_id", b.user_id)
-        .eq("is_active", true)
-        .not("renewal_date", "is", null),
+        .eq("is_active", true),
       sb.from("zad_obligations")
         .select("title,amount,kind,recurrence,due_day,due_date")
         .eq("user_id", b.user_id)
@@ -453,9 +453,12 @@ async function runDailySubscriptionAlerts(sb: SupabaseClient): Promise<{ usersCh
     ]);
     const currency = (userRow as { currency: string | null } | null)?.currency ?? null;
 
-    for (const sub of (subs ?? []) as Array<{ title: string; amount: number; renewal_date: string }>) {
-      const renewal = new Date(sub.renewal_date);
-      if (isNaN(renewal.getTime())) continue;
+    for (const sub of (subs ?? []) as Array<{ title: string; amount: number; renewal_date: string | null; due_day: number | null; billing_cycle: string | null }>) {
+      // التجديد الجاي، مش التاريخ المتخزن (المراجعة الشاملة ٢٠٢٦-١٠-٠٥): التاريخ اللي فات كان بيتخطى للأبد، فالتنبيه بيرن أول
+      // شهر بس. نفس zad_subscription_next_renewal اللي الميزانية بتستخدمها.
+      const next = nextRenewal(sub.renewal_date, sub.due_day, sub.billing_cycle, todayStr);
+      if (!next) continue;
+      const renewal = new Date(`${next}T00:00:00Z`);
       const daysLeft = Math.round((renewal.getTime() - today.getTime()) / 86400000);
       if (daysLeft < 0 || daysLeft > 3) continue;
       const amountText = `${sub.amount}${currency ? " " + currency : ""}`;
