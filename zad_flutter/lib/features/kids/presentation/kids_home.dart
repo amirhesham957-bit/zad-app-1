@@ -24,6 +24,7 @@ import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
+import 'package:zad/shared/family/data/seasonal_badges.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -187,6 +188,10 @@ class KidsHome extends ConsumerWidget {
                     ?.streakDays ??
                 0,
             savingsProgress: savings,
+            // Seasonal challenges finished (migration 20261005110000).
+            seasonal:
+                ref.watch(mySeasonalBadgesProvider).value ??
+                const <SeasonalBadge>[],
           ),
           const SizedBox(height: 22),
           Row(
@@ -515,11 +520,15 @@ class _BadgeRow extends StatelessWidget {
     required this.completedChores,
     required this.tasbihaStreakDays,
     required this.savingsProgress,
+    this.seasonal = const <SeasonalBadge>[],
   });
 
   final int completedChores;
   final int tasbihaStreakDays;
   final double savingsProgress;
+
+  /// Earned on seasonal family challenges; always achieved.
+  final List<SeasonalBadge> seasonal;
 
   @override
   Widget build(BuildContext context) {
@@ -527,6 +536,7 @@ class _BadgeRow extends StatelessWidget {
       ('🏅', '3 مهام', completedChores >= 3),
       ('🔥', 'أسبوع كامل', tasbihaStreakDays >= 7),
       ('💰', 'نص الهدف', savingsProgress >= 0.5),
+      for (final b in seasonal) (b.badge, b.title, true),
     ];
     const colors = <Color>[
       _kidsPrimary,
