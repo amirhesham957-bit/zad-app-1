@@ -23,6 +23,7 @@ class ZadInsight {
     this.aboutItem,
     this.actionType,
     this.createdAt,
+    this.expiresAt,
   });
 
   /// Reads a row.
@@ -36,6 +37,10 @@ class ZadInsight {
     aboutItem: json['about_item'] as String?,
     actionType: json['action_type'] as String?,
     createdAt: switch (json['created_at']) {
+      final String s => DateTime.parse(s).toUtc(),
+      _ => null,
+    },
+    expiresAt: switch (json['expires_at']) {
       final String s => DateTime.parse(s).toUtc(),
       _ => null,
     },
@@ -69,6 +74,16 @@ class ZadInsight {
   /// When it was written.
   final DateTime? createdAt;
 
+  /// When it stops being true — the end of the day a card about a day is
+  /// about («تجديد نتفليكس بكرة»). Null: open-ended.
+  final DateTime? expiresAt;
+
+  /// Past [expiresAt] at [now]: the card is about a day that is over.
+  bool isExpiredAt(DateTime now) {
+    final end = expiresAt;
+    return end != null && !end.isAfter(now);
+  }
+
   /// A question the brain needs answered.
   bool get isQuestion => kind == 'question';
 
@@ -96,6 +111,7 @@ class ZadInsight {
     'about_item': aboutItem,
     'action_type': actionType,
     'created_at': createdAt?.toIso8601String(),
+    'expires_at': expiresAt?.toIso8601String(),
   };
 }
 
@@ -110,11 +126,17 @@ const String kShoppingAddAction = 'shopping_add';
 
 /// Kotlin's home filter: `surface == "home_card"`, critical first, then
 /// newest, three at most. `bell` ones belong to the notification center.
-List<ZadInsight> homeInsights(List<ZadInsight> pending) {
+/// A card past its end is left out: «تجديد نتفليكس بكرة ٣ أكتوبر» was still
+/// on Home on 5 October (2026-10-05).
+List<ZadInsight> homeInsights(List<ZadInsight> pending, {DateTime? now}) {
+  final at = now ?? DateTime.now();
   final sorted =
       [
         ...pending.where(
-          (i) => i.surface == 'home_card' && !i.isShoppingSuggestion,
+          (i) =>
+              i.surface == 'home_card' &&
+              !i.isShoppingSuggestion &&
+              !i.isExpiredAt(at),
         ),
       ]..sort((a, b) {
         if (a.isCritical != b.isCritical) return a.isCritical ? -1 : 1;
@@ -127,8 +149,12 @@ List<ZadInsight> homeInsights(List<ZadInsight> pending) {
 }
 
 /// Kotlin's notification center: zad-brain's `surface = "bell"` insights.
-List<ZadInsight> bellInsights(List<ZadInsight> pending) =>
-    pending.where((i) => i.surface == 'bell').toList();
+List<ZadInsight> bellInsights(List<ZadInsight> pending, {DateTime? now}) {
+  final at = now ?? DateTime.now();
+  return pending
+      .where((i) => i.surface == 'bell' && !i.isExpiredAt(at))
+      .toList();
+}
 
 /// Why the customer dismissed an insight (Task 28). The wire values are what
 /// zad-brain's snapshot reads: `not_relevant` and `wrong_data` join its

@@ -1,6 +1,6 @@
 // منسّق الانتباه: ترتيب، سقف لكل قناة، ومن غير تكرار بين القنوات.
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { cardBudgetRejection, chooseNotes, noteScore, OPEN_CARDS_MAX, openCards, recentCardTitles } from "./attention.ts";
+import { ALERT_DEFAULT_TTL_MS, cardBudgetRejection, chooseNotes, insightExpiry, isLive, noteScore, OPEN_CARDS_MAX, openCards, recentCardTitles } from "./attention.ts";
 import { deliverAgentMail } from "./agentMail.ts";
 import { engagementFrom } from "./engagement.ts";
 import { freshContext, validateAskUser, validateEmitInsight } from "./validators.ts";
@@ -95,4 +95,28 @@ Deno.test("attention: generic words alone never make two different things the sa
   assert(noteScore(note("1", "pharmacy", "دوا متجدد فاضله ٣ أيام أو أقل: كونكور"), {
     now: NOW, cardTitles: ["دوا متجدد فاضله يومين: بيتادرم"],
   }) > 0);
+});
+
+Deno.test("attention: a card about a day ends with that day; an alert with no day ends after 48h", async () => {
+  // «تجديد نتفليكس بكرة ٣ أكتوبر» اتكتب ٢ أكتوبر وفضل ظاهر ٥ أكتوبر.
+  assertEquals(insightExpiry("alert", "2026-10-03T21:00:00.000Z", NOW), "2026-10-03T21:00:00.000Z");
+  assertEquals(insightExpiry("insight", "2026-10-03T21:00:00.000Z", NOW), "2026-10-03T21:00:00.000Z");
+  assertEquals(insightExpiry("alert", null, NOW), new Date(NOW + ALERT_DEFAULT_TTL_MS).toISOString());
+  assertEquals(insightExpiry("insight", null, NOW), null);
+  assertEquals(insightExpiry(undefined, null, NOW), null);
+
+  assert(isLive({ expires_at: null }, NOW));
+  assert(isLive({ expires_at: ago(-1) }, NOW));
+  assert(!isLive({ expires_at: ago(1) }, NOW));
+
+  // كارت منتهي مابيحجزش مكان في سقف الـ٣ كروت.
+  const card = (k: string, expires_at: string | null) =>
+    ({ dedupe_key: k, status: "pending", priority: "normal", surface: "home_card", created_at: ago(30), expires_at });
+  assertEquals(openCards([card("a", ago(2)), card("b", null), card("c", ago(-5))], NOW), 2);
+
+  // valid_until مش مفهوم ⇒ رفض بسبب، مش كارت من غير نهاية.
+  const snap = { now_local: { date: "2026-10-04", time_zone: "Africa/Cairo" } };
+  const bad = await validateEmitInsight(
+    { title: "تجديد", body: "300 جنيه", dedupe_key: "netflix_1", valid_until: "بكرة" }, snap, freshContext("u"));
+  assertEquals(bad.ok, false);
 });

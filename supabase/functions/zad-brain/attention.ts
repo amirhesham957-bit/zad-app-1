@@ -124,12 +124,32 @@ export interface CardRow {
   surface?: string | null;
   created_at: string;
   title?: string | null;
+  expires_at?: string | null;
+}
+
+/** عمر التنبيه اللي الموديل ماقالش هو عن أنهي يوم. */
+export const ALERT_DEFAULT_TTL_MS = 48 * 3_600_000;
+
+/**
+ * إمتى الكارت يبطل يظهر. كارت «تجديد نتفليكس بكرة ٣ أكتوبر» اتكتب ٢ أكتوبر وفضل قدام العميل ٥ أكتوبر
+ * (قياس ٢٠٢٦-١٠-٠٥): الكروت مكانش ليها نهاية. [validUntilIso] = نهاية اليوم اللي الكارت عنه (resolveValidUntil)؛
+ * من غيره التنبيه بيعيش ٤٨ ساعة، والرؤية والسؤال من غير نهاية زي ما كانوا.
+ */
+export function insightExpiry(kind: string | null | undefined, validUntilIso: string | null, nowMs = Date.now()): string | null {
+  if (validUntilIso) return validUntilIso;
+  return kind === "alert" ? new Date(nowMs + ALERT_DEFAULT_TTL_MS).toISOString() : null;
+}
+
+/** الكارت لسه ساري؟ */
+export function isLive(row: { expires_at?: string | null }, now = Date.now()): boolean {
+  return !row.expires_at || Date.parse(row.expires_at) > now;
 }
 
 /** الكروت المفتوحة قدام العميل آخر ٧٢ ساعة: مش حرجة، مش إيصالات نظام، في الرئيسية أو الجرس. */
 export function openCards(rows: readonly CardRow[], now = Date.now()): number {
   return rows.filter((r) =>
     r.status === "pending" &&
+    isLive(r, now) &&
     r.priority !== "critical" &&
     (r.surface ?? "home_card") !== "voice" &&
     !(r.dedupe_key ?? "").includes(":") &&

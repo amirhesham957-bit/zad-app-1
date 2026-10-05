@@ -89,7 +89,7 @@ import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLi
 import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
-import { chooseNotes, DAILY_NOTES_MAX, openCards, recentCardTitles } from "./attention.ts";
+import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
 // SOUL — هوية مدير الحياة الكامل (نمط Hermes) + المهارات المتعلمة.
 import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
@@ -1227,7 +1227,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // رد فعل العميل على الرؤى (engagement.ts): اللي اتجاهل ٣ مرات ورا بعض بيسكت.
   const { data: insightHistory, error: insightHistErr } = await sb.from("zad_insights")
-    .select("dedupe_key,title,status,priority,surface,created_at").eq("user_id", userId)
+    .select("dedupe_key,title,status,priority,surface,created_at,expires_at").eq("user_id", userId)
     .gte("created_at", new Date(Date.now() - ENGAGEMENT_WINDOW_DAYS * 86_400_000).toISOString())
     .order("created_at", { ascending: false }).limit(200);
   if (insightHistErr) console.error("[snapshot] insight history failed:", insightHistErr.message);
@@ -1497,10 +1497,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 export async function executeTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   switch (name) {
     case "emit_insight": {
+      const kind = input.kind ?? "insight";
+      const validUntil = resolveValidUntil(input.valid_until, snap?.now_local?.time_zone ?? "UTC", Date.now());
       const { error } = await sb.from("zad_insights").upsert({
-        user_id: userId, kind: input.kind ?? "insight", surface: input.surface ?? "home_card",
+        user_id: userId, kind, surface: input.surface ?? "home_card",
         priority: input.priority ?? "normal", title: input.title, body: input.body,
         dedupe_key: input.dedupe_key, action_type: input.action_type ?? null, about_item: input.about_item ?? null,
+        expires_at: insightExpiry(kind, validUntil),
         status: "pending", updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,dedupe_key" });
       if (error) return `فشل الحفظ: ${error.message}`;
@@ -3824,6 +3827,10 @@ const TOOLS: ToolDef[] = [
         body: { type: "string", description: "لازم يحتوي رقم محدد" },
         dedupe_key: { type: "string", description: "حروف صغيرة وأرقام و_ فقط" },
         about_item: { type: "string" },
+        valid_until: {
+          type: "string",
+          description: "YYYY-MM-DD: آخر يوم الكارت ده صحيح فيه. لازم لأي كارت عن يوم معين (تجديد، قسط، ميعاد، «بكرة»، «النهارده») = اليوم ده نفسه؛ بعده الكارت بيختفي لوحده. سيبه فاضي للرؤية العامة.",
+        },
       },
       required: ["title", "body", "dedupe_key"],
     },
