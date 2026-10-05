@@ -36,6 +36,8 @@ import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
+import 'package:zad/features/obligations/application/obligations_controller.dart';
+import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
 import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
@@ -94,6 +96,16 @@ void wireScreens() {
   ZadScreens.showPinPrompt = showPinPrompt;
   ZadScreens.showMaintenanceScreen = showMaintenanceScreen;
   ZadScreens.showDocumentsScreen = showDocumentsScreen;
+  ZadScreens.addUtilityBill =
+      (ref, {required title, required amount, dueDay, yearly = false}) => ref
+          .read(obligationsControllerProvider.notifier)
+          .add(
+            title: title,
+            amount: amount,
+            kind: ObligationKind.utility,
+            recurrence: yearly ? Recurrence.yearly : Recurrence.monthly,
+            dueDay: dueDay,
+          );
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
   ZadScreens.showOrbPicker = showOrbPicker;

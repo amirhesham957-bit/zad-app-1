@@ -25,6 +25,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/shared/subscriptions/domain/bnpl.dart';
@@ -1095,7 +1096,17 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
     final controller = ref.read(subscriptionsControllerProvider.notifier);
     final navigator = Navigator.of(context);
     final existing = _sub;
-    if (existing == null) {
+    if (existing == null && _type == 'utility' && amount > 0) {
+      // الفواتير في بيت واحد (20261005235107): فاتورة جديدة بتتسجل التزام، مش
+      // اشتراك — كانت بتتحسب مرتين لو اتسجلت كمان من العقل.
+      await ZadScreens.addUtilityBill(
+        ref,
+        title: title,
+        amount: amount,
+        dueDay: date.day,
+        yearly: _cycle == BillingCycle.yearly,
+      );
+    } else if (existing == null) {
       await controller.add(
         title: title,
         amount: amount,

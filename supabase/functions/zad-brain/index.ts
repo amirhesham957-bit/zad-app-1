@@ -4423,7 +4423,8 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "add_subscription",
-    description: "ضيف اشتراك جديد (نتفلكس، جيم، إنترنت...). لما العميل يقول \"عندي اشتراك كذا بكذا جنيه\".",
+    description: "ضيف اشتراك اختياري جديد (نتفليكس، شاهد، جيم، تطبيق...). لما العميل يقول \"عندي اشتراك كذا بكذا جنيه\". " +
+      "**الفواتير مش هنا** (كهربا، مية، غاز، نت البيت): دي add_obligation بـkind=utility — بيت واحد للفواتير.",
     input_schema: {
       type: "object",
       properties: {

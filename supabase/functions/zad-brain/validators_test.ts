@@ -850,6 +850,22 @@ Deno.test("add_subscription rejects a non-positive amount and a bad renewal_date
   assertEquals((await validateAddSubscription({ title: "نتفلكس", amount: 200, renewal_date: "10/8/2026" }, {}, freshContext("u"))).ok, false);
 });
 
+Deno.test("add_subscription refuses a bill and points to add_obligation (bills live in zad_obligations)", async () => {
+  for (const input of [
+    { title: "فاتورة الكهربا", amount: 450 },
+    { title: "الكهرباء", amount: 450 },
+    { title: "غاز", amount: 80 },
+    { title: "نت البيت", amount: 300 },
+    { title: "وي", amount: 300, category: "فواتير" },
+  ]) {
+    const v = await validateAddSubscription(input, {}, freshContext("u"));
+    assertEquals(v.ok ? "" : v.reason.includes("add_obligation"), true, input.title);
+  }
+  for (const title of ["شاهد", "جيم", "سبوتيفاي"]) {
+    assertEquals((await validateAddSubscription({ title, amount: 100 }, {}, freshContext("u"))).ok, true, title);
+  }
+});
+
 Deno.test("update_subscription requires at least a title and rejects a bad amount", async () => {
   assertEquals((await validateUpdateSubscription({ title: "نتفلكس", new_amount: 250 }, {}, freshContext("u"))).ok, true);
   assertEquals((await validateUpdateSubscription({ title: "", new_amount: 250 }, {}, freshContext("u"))).ok, false);
