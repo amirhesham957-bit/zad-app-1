@@ -17,6 +17,7 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
@@ -129,12 +130,25 @@ class HomeCompanionHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(profileControllerProvider.select((v) => v.name));
+    // A seasonal campaign rims the card in its colour and pins its badge to
+    // the orb; without one the row is exactly as it was.
+    final campaign = ref.watch(homeCampaignProvider)?.campaign;
     const radius = BorderRadius.all(Radius.circular(20));
+    final orb = CompanionOrb(
+      state: ref.watch(companionMoodProvider),
+      size: 56,
+      onTap: () {
+        playPetSound(PetSound.happyChirp);
+        onOpenVoice();
+      },
+    );
     return Material(
       color: ZadColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
-        side: BorderSide(color: _outline, width: 0.5),
+        side: campaign == null
+            ? BorderSide(color: _outline, width: 0.5)
+            : BorderSide(color: Color(campaign.primary), width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -149,14 +163,25 @@ class HomeCompanionHeader extends ConsumerWidget {
             children: <Widget>[
               // Kotlin: the living orb on the shared mood; a tap on it
               // plays its own squeeze-blink-glow before opening the voice.
-              CompanionOrb(
-                state: ref.watch(companionMoodProvider),
-                size: 56,
-                onTap: () {
-                  playPetSound(PetSound.happyChirp);
-                  onOpenVoice();
-                },
-              ),
+              if (campaign == null || campaign.badge.isEmpty)
+                orb
+              else
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    orb,
+                    PositionedDirectional(
+                      top: -6,
+                      end: -6,
+                      child: IgnorePointer(
+                        child: Text(
+                          campaign.badge,
+                          style: ZadType.titleMedium.copyWith(height: 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
