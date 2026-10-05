@@ -139,6 +139,7 @@ String agentToolLabel(String tool) => switch (tool) {
   'delete_maintenance_item' => 'حذف جهاز',
   'save_document' => 'تسجيل مستند',
   'delete_document' => 'شيل مستند',
+  'add_gathering_to_list' => 'سطور عزومة للقايمة',
   'add_appointment' => 'إضافة ميعاد',
   'update_appointment' => 'تعديل ميعاد',
   'add_place_reminder' => 'تذكير عند مكان',

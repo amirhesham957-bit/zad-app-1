@@ -96,6 +96,7 @@ import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
 import { handoverCard, HANDOVER_DEFAULT_DAYS } from "./handover.ts";
+import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gathering.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
@@ -3455,6 +3456,44 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         notes, family, now,
       }));
     }
+    case "plan_gathering":
+    case "add_gathering_to_list": {
+      // نمط العزومة (gathering.ts، الشريحة ٣٥): كميات بالفرد، اللي في البيت، ووضع الفلوس — من غير إجمالي مخترع.
+      const meal: GatheringMeal = input?.meal === "sweets" ? "sweets" : "meal";
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const [pantry, shopping, user, state, challenge, broke] = await Promise.all([
+        sb.from("zad_inventory").select("item_name,quantity,unit").eq("user_id", userId).limit(300),
+        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(100),
+        sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_savings_challenges").select("id").eq("user_id", userId).eq("status", "active").limit(1),
+        sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle(),
+      ]);
+      const u = user.data as { country?: string | null; currency?: string | null } | null;
+      const b = broke.data as { ends_at?: string | null; ended_at?: string | null } | null;
+      const plan = gatheringPlan({
+        people: Number(input.people), meal, country: u?.country ?? null,
+        pantry: (pantry.data ?? []) as Array<{ item_name: string; quantity: number | null; unit: string | null }>,
+        shopping: ((shopping.data ?? []) as Array<{ item_name: string }>).map((s) => s.item_name),
+        available: (state.data as { available?: number | null } | null)?.available ?? null,
+        currency: u?.currency ?? null,
+        budget: input.budget === undefined || input.budget === null ? null : Number(input.budget),
+        savingAgreement: (challenge.data ?? []).length > 0 ||
+          Boolean(b && !b.ended_at && b.ends_at && Date.parse(b.ends_at) > Date.now()),
+      });
+      if (name === "plan_gathering") return JSON.stringify(plan);
+      const rows = gatheringListRows(plan, Array.isArray(input.skip) ? input.skip.map(String) : []);
+      if (rows.length === 0) return "مفيش حاجة تتضاف — كل سطور العزومة في القايمة أو العميل قال عنده منها.";
+      const w = await writeRows(
+        sb.from("zad_shopping_list").insert(rows.map((r) => ({ ...r, user_id: userId, is_purchased: false }))).select("id,item_name,quantity"),
+        "إضافة سطور العزومة",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { rows: rows.length } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: w.rows });
+      return `اتضاف لقايمة التسوق: ${rows.map((r) => r.item_name).join("، ")}`;
+    }
     case "handover_card": {
       // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
       const timeZone = snap?.cycle?.timezone ?? "UTC";
@@ -4834,6 +4873,36 @@ export const CHAT_TOOLS: ToolDef[] = [
       properties: {
         for_person: { type: "string", description: "مين (ماما، عمر…) — فاضي لو العميل نفسه" },
       },
+    },
+  },
+  {
+    name: "plan_gathering",
+    description:
+      "خطة عزومة أو ضيوف: كميات تقديرية بالفرد (غدا/عشا أو قعدة حلو)، اللي في البيت منها، وهل في القايمة، ووضع الفلوس (المتاح، ولو " +
+      "حدد ميزانية: تكفي ولا لأ). نادِها لما العميل يقول «عازم ناس» أو «جايين ضيوف الخميس». اعرض السطور باختصار، واسأل «أضيفهم " +
+      "للقايمة؟» (add_gathering_to_list)، واعرض تحط ميعاد العزومة (add_appointment). **ماتخترعش إجمالي فلوس** — مفيش أسعار بوحدات. " +
+      "ولو saving_agreement = true، العميل متفق يوفّر: اقترح عزومة أبسط من غير لوم.",
+    input_schema: {
+      type: "object",
+      properties: {
+        people: { type: "number", description: "كام واحد هياكل — الضيوف + أهل البيت (٢–٦٠)" },
+        meal: { type: "string", enum: ["meal", "sweets"], description: "meal غدا/عشا، sweets حلو وشاي" },
+        budget: { type: "number", description: "ميزانية العزومة لو العميل قالها" },
+      },
+      required: ["people"],
+    },
+  },
+  {
+    name: "add_gathering_to_list",
+    description: "ضيف سطور خطة العزومة لقايمة التسوق مرة واحدة — **بعد ما العميل يوافق بس**. نفس people وmeal اللي اتعرضوا.",
+    input_schema: {
+      type: "object",
+      properties: {
+        people: { type: "number" },
+        meal: { type: "string", enum: ["meal", "sweets"] },
+        skip: { type: "array", items: { type: "string" }, description: "سطور العميل قال عنده منها (زي «رز»)" },
+      },
+      required: ["people"],
     },
   },
   {

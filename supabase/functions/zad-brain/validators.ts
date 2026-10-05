@@ -585,6 +585,19 @@ export const validateDeleteMaintenanceItem: Validator = (input, _snap, ctx) => {
 /** خمس أرقام ورا بعض في اسم صاحب المستند أو اسمه = غالباً رقم المستند نفسه، واحنا مابنخزنهوش (الشريحة ٣٢). */
 const DOCUMENT_NUMBER_RE = /[0-9٠-٩]{5,}/;
 
+export const validateGathering = (name: "plan_gathering" | "add_gathering_to_list"): Validator => (input, _snap, ctx) => {
+  if ((ctx.counts[name] ?? 0) >= 1) return { ok: false, reason: "الخطة اتعملت خلاص في اللفة دي" };
+  const people = input.people;
+  if (typeof people !== "number" || !Number.isFinite(people) || people < 2 || people > 60) {
+    return { ok: false, reason: "عدد اللي هياكلوا من ٢ لـ٦٠ — اسأل العميل كام واحد" };
+  }
+  if (input.meal !== undefined && input.meal !== "meal" && input.meal !== "sweets") return { ok: false, reason: "meal لازم meal أو sweets" };
+  if (input.budget !== undefined && input.budget !== null && (typeof input.budget !== "number" || input.budget <= 0)) {
+    return { ok: false, reason: "الميزانية لازم رقم موجب" };
+  }
+  return { ok: true };
+};
+
 export const validateHandoverCard: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["handover_card"] ?? 0) >= 1) return { ok: false, reason: "الكارت اتعمل خلاص في اللفة دي" };
   const days = input.days;
@@ -976,6 +989,8 @@ export const VALIDATORS: Record<string, Validator> = {
   delete_maintenance_item: validateDeleteMaintenanceItem,
   save_document: validateSaveDocument,
   handover_card: validateHandoverCard,
+  plan_gathering: validateGathering("plan_gathering"),
+  add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
   update_emergency_fund_balance: validateUpdateEmergencyFundBalance,
   app_command: validateAppCommand,
@@ -1013,6 +1028,8 @@ export const MUTATING_TOOLS = [
   "update_emergency_fund_balance",
   // حارس المستندات (الشريحة ٣٢) — تواريخ بس، نفس مستوى الصيانة.
   "save_document", "delete_document",
+  // نمط العزومة (الشريحة ٣٥): الإضافة للقايمة بس — الخطة قراية.
+  "add_gathering_to_list",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",
