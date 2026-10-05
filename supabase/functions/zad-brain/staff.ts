@@ -13,7 +13,8 @@
 //   finance  المحاسب: البنك ساكت بعد ما كان شغال، مفيش سقف للشهر، واشتراكات متكررة أو تقيلة (درع الاشتراكات)،
 //            ومراجعة القرارات الكبيرة بعد ٣٠ و٩٠ يوم (decisionReview.ts، الشريحة ٢٦)، والتحول السلوكي مرة في
 //            الأسبوع (lifeShift.ts، الشريحة ٣٠).
-//   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة.
+//   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة، وميزان الرفاهية (wellbeing.ts،
+//            الشريحة ٣١): الروتين غالب والترفيه شبه صفر، وفيه توفير ⇒ نشاط بسيط في حدود جزء منه.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
 //            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
 //            و«زي النهارده من سنة» (longMemory.ts، الشريحة ٢٧).
@@ -29,6 +30,8 @@ import { upcomingSeason } from "../_shared/season.ts";
 import { DECISION_REVIEW_DAYS, type LoggedDecision, type ReviewTxn, reviewDecision, reviewNote } from "./decisionReview.ts";
 import { type CapsuleGoal, type CapsuleMemory, capsuleNote } from "./longMemory.ts";
 import { alreadyKnown, detectShifts, SHIFT_ACTIVE_DAYS, type ShiftRow, shiftNote, type ShiftTxn, type Span } from "./lifeShift.ts";
+import { activityBudget, balanceFrom, type BudgetPace, isOutOfBalance, savedSoFar, wellbeingNote, type WellbeingTxn } from "./wellbeing.ts";
+import { loadCircumstance } from "./circumstances.ts";
 
 export interface StaffNote {
   sender: AgentSender;
@@ -484,10 +487,12 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       kidsWeek,
       seasonAhead: await staffSeasonAhead(sb, userId, now),
     }, now);
-    const [decisions, capsule, shifts] = await Promise.all([
+    const [decisions, capsule, shifts, wellbeing] = await Promise.all([
       staffDecisionReviews(sb, userId, now), staffCapsule(sb, userId, now), staffLifeShifts(sb, userId, now),
+      staffWellbeing(sb, userId, now, member !== null && (familyMembers ?? 0) > 1),
     ]);
-    const fresh = freshNotes([...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
+    const fresh = freshNotes(
+      [...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts, ...(wellbeing ? [wellbeing] : [])], ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     let delivered = true;
     if (fresh.length > 0) {
       const { error } = await sb.from("zad_agent_messages").insert(
@@ -503,6 +508,42 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   } catch (e) {
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
     return [];
+  }
+}
+
+/**
+ * ميزان الرفاهية (الشريحة ٣١). الأرخص الأول: حالة البيت، اتفاق التوفير، اتقال الشهر ده؟ وبعدين الميزانية والحركات.
+ */
+async function staffWellbeing(sb: SupabaseClient, userId: string, now: Date, family: boolean): Promise<StaffNote | null> {
+  try {
+    if ((await loadCircumstance(sb, userId, now.getTime())).mode !== "normal") return null;
+    const month = now.toISOString().slice(0, 7);
+    const subject = `ميزان الرفاهية — ${month}`;
+    const [{ data: challenge }, { data: broke }, { data: said }] = await Promise.all([
+      sb.from("zad_savings_challenges").select("id").eq("user_id", userId).eq("status", "active").limit(1),
+      sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle(),
+      sb.from("zad_agent_messages").select("id").eq("user_id", userId).eq("subject", subject).limit(1),
+    ]);
+    // متفق يوفّر ⇒ اقتراح صرف بيناقض اتفاقه.
+    if ((challenge ?? []).length) return null;
+    const b = broke as { ends_at?: string | null; ended_at?: string | null } | null;
+    if (b && !b.ended_at && b.ends_at && Date.parse(b.ends_at) > now.getTime()) return null;
+    if ((said ?? []).length) return null;
+    const { data: state } = await sb.rpc("zad_budget_state", { p_user: userId });
+    const pace = (state ?? {}) as BudgetPace & { currency?: string | null };
+    const saved = savedSoFar(pace);
+    if (saved === null) return null;
+    const budget = activityBudget(saved, Number(pace.available));
+    if (budget === null) return null;
+    const { data: txns, error } = await sb.from("zad_transactions")
+      .select("amount,is_expense,txn_kind,category,created_at").eq("user_id", userId)
+      .gte("created_at", new Date(now.getTime() - 60 * DAY).toISOString()).limit(3000);
+    if (error) return null;
+    const balance = balanceFrom((txns ?? []) as WellbeingTxn[], now.getTime());
+    if (!balance || !isOutOfBalance(balance)) return null;
+    return wellbeingNote({ balance, saved, budget, currency: pace.currency ?? null, family, month });
+  } catch {
+    return null;
   }
 }
 
