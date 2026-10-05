@@ -96,6 +96,7 @@ import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
 import { handoverCard, HANDOVER_DEFAULT_DAYS } from "./handover.ts";
+import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gathering.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
@@ -742,7 +743,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at")
         .eq("user_id", userId),
-      sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active")
+      sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
       sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
         .eq("user_id", userId),
@@ -1237,7 +1238,9 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
   for (const sub of subRes.data ?? []) {
-    if (sub.renewal_date) upcoming.push({ type: "subscription", name: sub.title, when: sub.renewal_date });
+    // التجديد الجاي (المراجعة الشاملة ٢٠٢٦-١٠-٠٥): التاريخ المتخزن ممكن يكون فات — «نتفليكس هيتجدد ٣ أكتوبر» يوم ٥.
+    const when = nextRenewal(sub.renewal_date, sub.due_day, sub.billing_cycle, localNowContext(budgetState.timezone ?? "UTC").date);
+    if (when) upcoming.push({ type: "subscription", name: sub.title, when });
   }
   for (const p of pharmRes.data ?? []) {
     if (p.remaining_quantity <= (p.daily_dose_count ?? 1) * 3) {
@@ -4187,7 +4190,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         amount: { type: "number", description: "المبلغ بالأرقام الإنجليزية" },
         txn_kind: { type: "string", enum: ["expense", "income"] },
         title: { type: "string", description: "وصف قصير من كلام العميل نفسه" },
-        category: { type: "string", description: "فئة زي: بقالة، مواصلات، فواتير، صحة، ترفيه، مطاعم، ملابس، أخرى" },
+        category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
         allow_duplicate: {
           type: "boolean",
@@ -5597,6 +5600,7 @@ function afterResponse(label: string, work: Promise<unknown>): void {
  */
 function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: string): void {
   const work = processVoiceMoments(sb, {
+    hasChannel: (uid, o) => momentChannels(sb, uid, o),
     compose: async (system, user) =>
       (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
     pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),
@@ -5606,6 +5610,23 @@ function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: 
     .catch((e) => console.error(`${label} processing failed:`, (e as Error)?.message));
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
   if (runtime?.waitUntil) runtime.waitUntil(work);
+}
+
+/**
+ * فيه قناة توصل اللحظة؟ توكن موبايل للجهاز، وربط تليجرام للفويس (المراجعة الشاملة ٢٠٢٦-١٠-٠٥). فشل القراية = آه — الأحسن نصيغ
+ * زيادة من إننا نسكت عن جرعة.
+ */
+async function momentChannels(sb: SupabaseClient, userId: string, o: { device: boolean; telegram: boolean }): Promise<boolean> {
+  const none = Promise.resolve({ count: 0, error: null });
+  const [t, b] = await Promise.all([
+    o.device ? sb.from("zad_fcm_tokens").select("id", { count: "exact", head: true }).eq("user_id", userId) : none,
+    o.telegram
+      ? sb.from("telegram_bindings").select("id", { count: "exact", head: true }).eq("user_id", userId)
+        .not("bound_at", "is", null).not("chat_id", "is", null)
+      : none,
+  ]);
+  if (t.error || b.error) return true;
+  return (t.count ?? 0) > 0 || (b.count ?? 0) > 0;
 }
 
 /** توقيت سوق العميل (zad_market_timezone على بلده). فشل = UTC، زي باقي الفانكشن. */
@@ -7554,6 +7575,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const sbMoments = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const summary = await processVoiceMoments(sbMoments, {
+        hasChannel: (uid, o) => momentChannels(sbMoments, uid, o),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbMoments, userId, title, text, data, dataOnly),
@@ -7919,6 +7941,7 @@ async function handleRequest(req: Request): Promise<Response> {
         dedupe_key: `back_home:${leftAt.toISOString()}`,
       }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
       const summary = await processVoiceMoments(sbPlace, {
+        hasChannel: (uid, o) => momentChannels(sbPlace, uid, o),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbPlace, userId, title, text, data, dataOnly),
@@ -7995,6 +8018,7 @@ async function handleRequest(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ ok: false, error: "record_failed" }), { status: 500, headers: CORS_HEADERS });
       }
       const summary = await processVoiceMoments(sbEvent, {
+        hasChannel: (uid, o) => momentChannels(sbEvent, uid, o),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbEvent, userId, title, text, data, dataOnly),

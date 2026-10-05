@@ -365,3 +365,32 @@ Deno.test("a moment is written by the same Zad as the chat (one identity)", () =
   assert(system.includes("=== SOUL — هويتك ==="));
   assert(system.startsWith("=== SOUL"), "the identity comes first, before the moment's task");
 });
+
+// المراجعة الشاملة (٢٠٢٦-١٠-٠٥): ٣٠ لحظة اتصاغت بالموديل وبعدين «no channel delivered».
+Deno.test("no channel to reach the customer: the moment is not composed at all", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  let composed = 0, pushed = 0;
+  const asked: Array<{ device: boolean; telegram: boolean }> = [];
+  const res = await processVoiceMoments(sb, {
+    compose: () => { composed++; return Promise.resolve("{}"); },
+    pushDevice: () => { pushed++; return Promise.resolve("sent"); },
+    pushTelegram: () => { pushed++; return Promise.resolve("delivered"); },
+    hasChannel: (_u, o) => { asked.push(o); return Promise.resolve(false); },
+  });
+  assertEquals(res, { sent: 0, skipped: 0, failed: 1 });
+  assertEquals([composed, pushed], [0, 0]);
+  assertEquals(asked, [{ device: true, telegram: true }]);
+  assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
+});
+
+Deno.test("a reachable customer gets the moment as before", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  const res = await processVoiceMoments(sb, {
+    compose: () => Promise.resolve('{"title":"💊 كونكور","text":"خده دلوقتي","speech":"خد الكونكور"}'),
+    pushDevice: () => Promise.resolve("sent"),
+    pushTelegram: () => Promise.resolve("delivered"),
+    hasChannel: () => Promise.resolve(true),
+  });
+  assertEquals(res, { sent: 1, skipped: 0, failed: 0 });
+  assertEquals(updates.at(-1)?.values.status, "sent");
+});

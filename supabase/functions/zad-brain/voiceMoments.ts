@@ -769,6 +769,11 @@ export interface VoiceMomentDeps {
   now?: () => number;
   /** توقيت سوق العميل. الافتراضي: facts.time_zone، وإلا zad_market_timezone(بلده). */
   timeZoneOf?: (row: VoiceMomentRow) => Promise<string>;
+  /**
+   * فيه قناة توصل للعميل؟ (المراجعة الشاملة ٢٠٢٦-١٠-٠٥): ٣٠ لحظة اتصاغت بالموديل وبعدين «no channel delivered» — مفيش توكن
+   * موبايل ولا تليجرام. لو رجعت false الصياغة مابتحصلش خالص. من غيرها (الاختبارات) السلوك زي ما هو.
+   */
+  hasChannel?: (userId: string, opts: { device: boolean; telegram: boolean }) => Promise<boolean>;
 }
 
 export async function processVoiceMoments(
@@ -870,6 +875,20 @@ export async function processVoiceMoments(
         }
       }
       const voice = !TEXT_ONLY_MOMENTS.has(deliveryMoment);
+      // قبل نداء الموديل: لو مفيش ولا قناة تقدر توصل اللحظة دي، مانصيغهاش ونرميها.
+      if (deps.hasChannel) {
+        const reachable = await deps.hasChannel(row.user_id, {
+          device: !TELEGRAM_ONLY_MOMENTS.has(deliveryMoment),
+          telegram: voice && !DEVICE_ONLY_MOMENTS.has(deliveryMoment),
+        }).catch(() => true);
+        if (!reachable) {
+          await sb.from("zad_voice_moments").update({
+            status: "failed", attempts: row.attempts + 1, error: "no channel (not composed)",
+          }).eq("id", row.id);
+          result.failed++;
+          continue;
+        }
+      }
       const [{ data: userRow }, { data: profileRow }] = await Promise.all([
         sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle(),
         sb.from("zad_customer_profile").select("preferred_name,gender,dialect,zad_voice").eq("user_id", row.user_id).maybeSingle(),
