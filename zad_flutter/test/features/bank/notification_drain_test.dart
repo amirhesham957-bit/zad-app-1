@@ -39,6 +39,13 @@ class _FakeListener implements ZadBankListener {
   Future<int> pendingCount() async => rows.length;
 
   @override
+  Future<List<({bool on, DateTime at})>> screenEvents() async =>
+      const <({bool on, DateTime at})>[];
+
+  @override
+  Future<void> setScreenEventsEnabled({required bool enabled}) async {}
+
+  @override
   Future<ListenerStatus> listenerStatus() async => const ListenerStatus();
 
   @override

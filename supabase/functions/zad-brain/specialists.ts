@@ -162,6 +162,8 @@ const DOCUMENT_INTENT = new RegExp(
 const HANDOVER_INTENT = /كارت تسليم|تسليم الشفت|تسليم البيت|(مسافر|هسافر|حسافر|مسافره|هغيب|مش هبقي موجود|مش هكون موجود).{0,40}(مراتي|جوزي|زوجي|زوجتي|البيت|الاولاد|العيال|ماما|بابا|اللي في البيت)/;
 // نمط العزومة (الشريحة ٣٥).
 const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|هنعزم|عزمت|ضيوف|جايين يتغدوا|جايين يتعشوا|جايلنا ناس|عندنا ناس جايين/;
+// إيقاع النوم (الشريحة ٣٧): العميل بيقول مواعيد نومه، أو مايتبعتلوش حاجة في وقت.
+const SLEEP_INTENT = /(بنام|بنامي|بانام|بصحي|بصحى|بقوم من النوم|مواعيد نومي).{0,30}(الساعه|[0-9٠-٩])|ماتبعتليش.{0,25}(قبل|بعد|بالليل|الصبح)|ماتصحينيش/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
@@ -184,6 +186,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (DOCUMENT_INTENT.test(norm)) tools.push("save_document", "delete_document", "read_house");
   if (HANDOVER_INTENT.test(norm)) tools.push("handover_card");
   if (GATHERING_INTENT.test(norm)) tools.push("plan_gathering", "add_gathering_to_list", "add_appointment");
+  if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   return [...new Set(tools)];
 }
 

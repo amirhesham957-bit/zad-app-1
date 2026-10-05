@@ -73,6 +73,12 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                     result.success(null)
                 }
                 "pendingCount" -> result.success(store.pending())
+                // إيقاع النوم (الشريحة ٣٧): اللحظات بتتقري هنا وبتتحسب في Dart؛ ومسحها لما العميل يقفل التعلّم.
+                "screenEvents" -> result.success(ScreenEvents.read(context))
+                "setScreenEventsEnabled" -> {
+                    ScreenEvents.setEnabled(context, call.argument<Boolean>("enabled") ?: true)
+                    result.success(null)
+                }
                 // كوتلن BankReadingStatus.sendTestNotification: إشعار حقيقي بيمشي على نفس
                 // مسار المستمع، بعلامة person مستقلة عن اللغة.
                 "sendTestNotification" -> {

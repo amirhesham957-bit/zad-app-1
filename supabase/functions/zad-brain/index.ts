@@ -66,7 +66,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -727,7 +727,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const cashKey = isoWeekKey(new Date());
   const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
     await Promise.all([
-      sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
       // `id` مضاف عشان set_transaction_category و update_transaction يقدروا يشاوروا على
       // معاملة حقيقية. من غيره الموديل مكانش قدامه غير إنه يخترع معرّف — وأداة
       // set_transaction_category كانت موجودة من غير أي مصدر شرعي للـ transaction_id.
@@ -1412,6 +1412,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     }),
     // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
+    // إيقاع النوم (الشريحة ٣٧): الموبايل اتعلّمه من قفل الشاشة أو العميل حدده. ساعات الهدوء منه.
+    sleep: userRes.data?.sleep_bed && userRes.data?.sleep_wake
+      ? {
+        bed: String(userRes.data.sleep_bed).slice(0, 5), wake: String(userRes.data.sleep_wake).slice(0, 5),
+        source: userRes.data.sleep_source ?? null, nights: userRes.data.sleep_nights ?? null,
+      }
+      : null,
     // الموسم بتقويم أم القرى (رمضان/العيدين) بتوقيت العميل — null برّه المواسم.
     season: (() => {
       const se = seasonFor(new Date(), budgetState.timezone ?? "UTC");
@@ -3494,6 +3501,29 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: w.rows });
       return `اتضاف لقايمة التسوق: ${rows.map((r) => r.item_name).join("، ")}`;
     }
+    case "set_sleep_window": {
+      // إيقاع النوم يدوي (الشريحة ٣٧): نفس قواعد zad_set_sleep_window — اليدوي بيكسب المتعلّم، و«امسح» يرجّع ١١–٧.
+      if (input?.clear === true) {
+        const w = await writeRows(
+          sb.from("zad_users").update({ sleep_bed: null, sleep_wake: null, sleep_nights: null, sleep_source: null, sleep_updated_at: new Date().toISOString() })
+            .eq("id", userId).select("id"),
+          "مسح مواعيد النوم",
+        );
+        if (!w.ok) return `مرفوض: ${w.reason}`;
+        ctx.mutationCount++;
+        return "اتمسحت مواعيد النوم — زاد هيسكت من ١١ بالليل لـ٧ الصبح، ولو التعلّم من قفل الشاشة شغال هيتعلّمها تاني.";
+      }
+      const bed = String(input.bed), wake = String(input.wake);
+      const w = await writeRows(
+        sb.from("zad_users").update({ sleep_bed: bed, sleep_wake: wake, sleep_nights: null, sleep_source: "manual", sleep_updated_at: new Date().toISOString() })
+          .eq("id", userId).select("id"),
+        "حفظ مواعيد النوم",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: snap?.sleep ?? null, new: { bed, wake } });
+      return `تمام — زاد مش هيبعت تنبيهات مش ضرورية من ${bed} لـ${wake} (الجرعات والطوارئ زي ما هي).`;
+    }
     case "handover_card": {
       // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
       const timeZone = snap?.cycle?.timezone ?? "UTC";
@@ -4906,6 +4936,20 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "set_sleep_window",
+    description:
+      "مواعيد نوم العميل وصحيانه، عشان زاد مايبعتش تنبيهات مش ضرورية وهو نايم (الجرعات والطوارئ مستثناة). لما يقول «بنام ١٢ " +
+      "وبصحى ٦» أو «ماتبعتليش حاجة قبل ٨». اليدوي بيكسب اللي الموبايل اتعلّمه من قفل الشاشة. clear=true يرجّع للافتراضي (١١–٧).",
+    input_schema: {
+      type: "object",
+      properties: {
+        bed: { type: "string", description: "HH:MM بتوقيته — من ٢٠:٠٠ لـ٠٣:٠٠" },
+        wake: { type: "string", description: "HH:MM — من ٠٤:٠٠ لـ١٢:٠٠" },
+        clear: { type: "boolean" },
+      },
+    },
+  },
+  {
     name: "handover_card",
     description:
       "كارت تسليم للي فاضل في البيت لما العميل يسافر أو يغيب كام يوم: جرعات الأدوية ومواعيدها (ولمين) واللي هيخلص، المواعيد، " +
@@ -5599,7 +5643,12 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         continue;
       }
       // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
-      const quietUntil = postponeForQuietHours(task.kind, await accountTimeZone(sb, task.user_id), Date.now());
+      // نافذة نومه هو لو معروفة (الشريحة ٣٧)، وإلا ١١–٧.
+      const { data: sleep } = await sb.from("zad_users").select("sleep_bed,sleep_wake").eq("id", task.user_id).maybeSingle();
+      const quietUntil = postponeForQuietHours(
+        task.kind, await accountTimeZone(sb, task.user_id), Date.now(),
+        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
+      );
       if (quietUntil) {
         await sb.from("agent_tasks").update({ scheduled_for: quietUntil, updated_at: new Date().toISOString() }).eq("id", task.id);
         console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${quietUntil} (quiet hours)`);

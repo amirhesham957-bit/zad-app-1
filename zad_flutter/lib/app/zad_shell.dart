@@ -48,6 +48,7 @@ import 'package:zad/shared/notifications/application/notifications_controller.da
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/sleep/application/sleep_sync.dart';
 
 /// Holds the tabs.
 class ZadShell extends ConsumerStatefulWidget {
@@ -103,6 +104,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       if (mounted) await alerts.askOnce();
       // Kotlin's on-phone reminders: doses, tasbih at 17:00, seasons.
       if (mounted) await ref.read(localRemindersProvider).resyncAll();
+      // إيقاع النوم (الشريحة ٣٧): نافذة النوم من قفل الشاشة، مرة في اليوم.
+      if (mounted) unawaited(ref.read(sleepSyncProvider).sync());
       if (mounted) await alerts.greetMorning();
     });
     // Back to the app in the morning is a first open too.

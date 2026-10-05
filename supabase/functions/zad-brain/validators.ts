@@ -598,6 +598,19 @@ export const validateGathering = (name: "plan_gathering" | "add_gathering_to_lis
   return { ok: true };
 };
 
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const validateSetSleepWindow: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["set_sleep_window"] ?? 0) >= 1) return { ok: false, reason: "اتحفظت خلاص في اللفة دي" };
+  if (input.clear === true) return { ok: true };
+  const bed = String(input.bed ?? ""), wake = String(input.wake ?? "");
+  if (!HHMM.test(bed) || !HHMM.test(wake)) return { ok: false, reason: "المواعيد بصيغة HH:MM (٢٤ ساعة)" };
+  const bh = Number(bed.slice(0, 2)), wh = Number(wake.slice(0, 2));
+  if (!(bh >= 20 || bh <= 3) || (bh === 3 && bed !== "03:00")) return { ok: false, reason: "النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش" };
+  if (wh < 4 || wh > 12 || (wh === 12 && wake !== "12:00")) return { ok: false, reason: "الصحيان من ٠٤:٠٠ لـ١٢:٠٠" };
+  return { ok: true };
+};
+
 export const validateHandoverCard: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["handover_card"] ?? 0) >= 1) return { ok: false, reason: "الكارت اتعمل خلاص في اللفة دي" };
   const days = input.days;
@@ -989,6 +1002,7 @@ export const VALIDATORS: Record<string, Validator> = {
   delete_maintenance_item: validateDeleteMaintenanceItem,
   save_document: validateSaveDocument,
   handover_card: validateHandoverCard,
+  set_sleep_window: validateSetSleepWindow,
   plan_gathering: validateGathering("plan_gathering"),
   add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
@@ -1030,6 +1044,8 @@ export const MUTATING_TOOLS = [
   "save_document", "delete_document",
   // نمط العزومة (الشريحة ٣٥): الإضافة للقايمة بس — الخطة قراية.
   "add_gathering_to_list",
+  // إيقاع النوم يدوي (الشريحة ٣٧).
+  "set_sleep_window",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",

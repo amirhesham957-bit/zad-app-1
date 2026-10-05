@@ -142,13 +142,15 @@ void main() {
     // Every one of these has a real cause: an older build of the plugin, a
     // method that returned before setting a result, a host that registered no
     // plugin at all. None of them should throw on a null in a screen.
-    test('reads as not granted, not rebound, nothing pending, no rows',
-        () async {
-      expect(await listener.isPermissionGranted(), isFalse);
-      expect(await listener.requestRebind(), isFalse);
-      expect(await listener.pendingCount(), 0);
-      expect(await listener.peek(), isEmpty);
-    });
+    test(
+      'reads as not granted, not rebound, nothing pending, no rows',
+      () async {
+        expect(await listener.isPermissionGranted(), isFalse);
+        expect(await listener.requestRebind(), isFalse);
+        expect(await listener.pendingCount(), 0);
+        expect(await listener.peek(), isEmpty);
+      },
+    );
   });
 
   group('decoding a captured row', () {
@@ -183,6 +185,8 @@ void main() {
         'peek',
         'acknowledge',
         'pendingCount',
+        'screenEvents',
+        'setScreenEventsEnabled',
       ]) {
         expect(
           source,
@@ -206,6 +210,48 @@ void main() {
 
       expect(source, contains('call.argument<Int>("limit")'));
       expect(source, contains('call.argument<List<Number>>("ids")'));
+      expect(source, contains('call.argument<Boolean>("enabled")'));
+    });
+
+    test(
+      'screen events: the keys the Kotlin emits, read as UTC instants',
+      () async {
+        expect(
+          _kotlin('ScreenEvents.kt'),
+          contains('mapOf("on" to (parts[0] == "1"), "at" to at)'),
+        );
+        answer = <Object>[
+          <String, Object>{'on': false, 'at': _postedAtMillis},
+          <String, Object>{'on': true, 'at': _postedAtMillis + 1000},
+          <String, Object>{'on': true},
+        ];
+        final events = await listener.screenEvents();
+        expect(calls.single.method, 'screenEvents');
+        expect(events.map((e) => e.on), <bool>[false, true]);
+        expect(events.first.at.isUtc, isTrue);
+        expect(events.first.at.millisecondsSinceEpoch, _postedAtMillis);
+      },
+    );
+
+    test(
+      'switching screen events off sends the flag the Kotlin reads',
+      () async {
+        await listener.setScreenEventsEnabled(enabled: false);
+        expect(calls.single.method, 'setScreenEventsEnabled');
+        expect(calls.single.arguments, <String, Object>{'enabled': false});
+      },
+    );
+
+    test('the receiver records only while on, registered with the service', () {
+      final events = _kotlin('ScreenEvents.kt');
+      expect(events, contains('if (!prefs.getBoolean(ENABLED, true)) return'));
+      expect(
+        events,
+        contains('Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU'),
+      );
+      final service = _kotlin('ZadNotificationListenerService.kt');
+      expect(service, contains('ScreenEvents.register(applicationContext)'));
+      expect(service, contains('ScreenEvents.unregister(applicationContext)'));
     });
 
     test('the store emits the column names fromMap reads', () {

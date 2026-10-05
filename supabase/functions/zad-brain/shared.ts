@@ -710,9 +710,40 @@ export function localNowContext(timeZone: string, now: Date = new Date()): {
 export const QUIET_START_HOUR = 23;
 export const QUIET_END_HOUR = 7;
 
-/** الساعة المحلية (٠-٢٣) جوه الهدوء؟ */
+/**
+ * ساعات هدوء عميل معيّن (الشريحة ٣٧): من نافذة نومه اللي الموبايل اتعلّمها من قفل الشاشة أو اللي حددها بنفسه
+ * (`zad_users.sleep_bed`/`sleep_wake`)، وإلا ١١–٧. ساعات كاملة: البداية ساعة النوم نفسها (٢٣:٤٠ ⇐ ٢٣)، والنهاية الساعة اللي
+ * بعد الصحيان (٧:١٠ ⇐ ٨) — مايصحاش على إشعار.
+ */
+export interface QuietWindow {
+  start: number;
+  end: number;
+}
+
+export const DEFAULT_QUIET: QuietWindow = { start: QUIET_START_HOUR, end: QUIET_END_HOUR };
+
+/** "23:40" أو "23:40:00" ⇐ نافذة. برّه الحدود (نوم ٢٠–٣، صحيان ٤–١٢) أو فاضي ⇐ الافتراضي. */
+export function quietWindowOf(bed: string | null | undefined, wake: string | null | undefined): QuietWindow {
+  const parse = (t: string | null | undefined) => {
+    const m = /^(\d{2}):(\d{2})/.exec(String(t ?? ""));
+    return m ? { h: Number(m[1]), min: Number(m[2]) } : null;
+  };
+  const b = parse(bed);
+  const w = parse(wake);
+  if (!b || !w || b.h > 23 || w.h > 23) return DEFAULT_QUIET;
+  if (!(b.h >= 20 || b.h <= 3) || w.h < 4 || w.h > 12) return DEFAULT_QUIET;
+  const end = w.min > 0 ? w.h + 1 : w.h;
+  return { start: b.h, end };
+}
+
+/** الساعة المحلية (٠-٢٣) جوه [w]؟ نافذة بتعدّي نص الليل (٢٣ ⇐ ٧) أو بعده كلها (١ ⇐ ٨). */
+export function isQuietHourIn(localHour: number, w: QuietWindow): boolean {
+  return w.start > w.end ? localHour >= w.start || localHour < w.end : localHour >= w.start && localHour < w.end;
+}
+
+/** الساعة المحلية (٠-٢٣) جوه الهدوء الافتراضي؟ */
 export function isQuietHour(localHour: number): boolean {
-  return localHour >= QUIET_START_HOUR || localHour < QUIET_END_HOUR;
+  return isQuietHourIn(localHour, DEFAULT_QUIET);
 }
 
 /** الساعة المحلية دلوقتي في [timeZone]. */
@@ -724,16 +755,16 @@ export function localHourIn(timeZone: string, nowMs: number): number {
  * إمتى الهدوء يخلص: ٧ الصبح الجاية بتوقيت العميل، كلحظة UTC. `null` لو الوقت مش هدوء.
  * بعد ١١ بالليل = ٧ بكرة؛ بعد نص الليل = ٧ النهارده.
  */
-export function quietEndsAt(timeZone: string, nowMs: number): string | null {
+export function quietEndsAt(timeZone: string, nowMs: number, w: QuietWindow = DEFAULT_QUIET): string | null {
   const local = localNowContext(timeZone, new Date(nowMs));
   const hour = Number(local.time.slice(0, 2));
-  if (!isQuietHour(hour)) return null;
+  if (!isQuietHourIn(hour, w)) return null;
   let date = local.date;
-  if (hour >= QUIET_START_HOUR) {
+  if (w.start > w.end && hour >= w.start) {
     const next = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000);
     date = next.toISOString().slice(0, 10);
   }
-  return resolveLocalIso(`${date}T${String(QUIET_END_HOUR).padStart(2, "0")}:00`, local.utc_offset);
+  return resolveLocalIso(`${date}T${String(w.end).padStart(2, "0")}:00`, local.utc_offset);
 }
 
 /**
@@ -741,9 +772,11 @@ export function quietEndsAt(timeZone: string, nowMs: number): string | null {
  * متابعة الدوا مستثناة زي الجرعات (قرار المالك)، وطلبات العميل (`reminder`) عمرها ما
  * بتتأجل — هو اللي اختار الوقت.
  */
-export function postponeForQuietHours(kind: string | null | undefined, timeZone: string, nowMs: number): string | null {
+export function postponeForQuietHours(
+  kind: string | null | undefined, timeZone: string, nowMs: number, w: QuietWindow = DEFAULT_QUIET,
+): string | null {
   if (!agentTaskNotice(kind).proactive || (kind ?? "").trim() === "med_followup") return null;
-  return quietEndsAt(timeZone, nowMs);
+  return quietEndsAt(timeZone, nowMs, w);
 }
 
 /**

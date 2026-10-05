@@ -150,6 +150,27 @@ class ZadBankListener {
     'body': body,
   });
 
+  /// Screen on/off moments the service recorded while bound, oldest first
+  /// (the sleep rhythm, slice 37). They stay on the phone; only the window
+  /// computed from them reaches the server.
+  Future<List<({bool on, DateTime at})>> screenEvents() async {
+    final rows = await channel.invokeListMethod<Object?>('screenEvents');
+    return <({bool on, DateTime at})>[
+      for (final r in (rows ?? const <Object?>[]).cast<Map<Object?, Object?>>())
+        if (r['at'] case final num at)
+          (
+            on: r['on'] == true,
+            at: DateTime.fromMillisecondsSinceEpoch(at.toInt(), isUtc: true),
+          ),
+    ];
+  }
+
+  /// Turns the recording on or off; off also deletes what was recorded.
+  Future<void> setScreenEventsEnabled({required bool enabled}) =>
+      channel.invokeMethod<void>('setScreenEventsEnabled', <String, Object>{
+        'enabled': enabled,
+      });
+
   /// How many are waiting. Cheap enough for a status row.
   Future<int> pendingCount() async =>
       await channel.invokeMethod<int>('pendingCount') ?? 0;

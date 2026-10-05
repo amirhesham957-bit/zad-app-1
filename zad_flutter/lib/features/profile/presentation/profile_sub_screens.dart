@@ -24,6 +24,7 @@ import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/sleep/application/sleep_sync.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 Future<void> _push(BuildContext context, Widget screen) =>
@@ -705,6 +706,19 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                 onChanged: (v) {
                   set(AlertPrefs.tasbihReminder, v: v);
                   unawaited(ref.read(localRemindersProvider).syncTasbih());
+                },
+              ),
+              // إيقاع النوم (الشريحة ٣٧): النتيجة بس بتروح للسيرفر.
+              AlertSwitchItem(
+                title: 'زاد يتعلّم مواعيد نومي',
+                desc:
+                    'من أوقات قفل وفتح الشاشة بالليل، عشان مايبعتش '
+                    'تنبيهات وإنت نايم. ساعة النوم وساعة الصحيان بس اللي '
+                    'بتتحفظ — مش اللحظات نفسها. الجرعات والطوارئ زي ما هي.',
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.learnSleep),
+                onChanged: (v) {
+                  set(AlertPrefs.learnSleep, v: v);
+                  unawaited(ref.read(sleepSyncProvider).setEnabled(enabled: v));
                 },
               ),
               Divider(color: scheme.outlineVariant, height: 32),
