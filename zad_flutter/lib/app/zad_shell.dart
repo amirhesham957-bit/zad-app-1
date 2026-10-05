@@ -24,7 +24,9 @@ import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
+import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
@@ -362,6 +364,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
             onOpenCamera: () => unawaited(_openCamera()),
             onOpenVoice: () => unawaited(_openVoice()),
             onOpenMore: () => _scaffold.currentState?.openDrawer(),
+            // The occasion's colours on the bar every screen shares.
+            accent: campaignGradient(ref.watch(homeCampaignProvider)),
           ),
         ),
       ),
