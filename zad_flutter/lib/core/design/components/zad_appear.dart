@@ -1,7 +1,13 @@
 /// Kotlin's `AppearOnEntry` (ZadAnimations.kt): after `delayMs`, the child
 /// slides up from 60 *pixels* below and fades in over 500ms on
-/// `cubic-bezier(.22, 1, .36, 1)`. Like Compose's `AnimatedVisibility`, it
-/// takes no room at all until then.
+/// `cubic-bezier(.22, 1, .36, 1)`.
+///
+/// It takes its full room from the first frame and is only invisible until
+/// then. It used to take no room (Compose's `AnimatedVisibility`), and inside a
+/// lazy list that threw the scroll to the top: a block scrolled off is
+/// disposed, comes back at zero height, and the list re-estimates every offset
+/// above the viewport — a 200px drag up from 2176 landed at 250 (home,
+/// 2026-10-05; `zad_appear_test.dart`).
 library;
 
 import 'dart:async';
@@ -36,7 +42,6 @@ class _ZadAppearOnEntryState extends State<ZadAppearOnEntry>
     curve: _easePremium,
   );
 
-  bool _visible = false;
   Timer? _delay;
 
   @override
@@ -44,7 +49,6 @@ class _ZadAppearOnEntryState extends State<ZadAppearOnEntry>
     super.initState();
     _delay = Timer(Duration(milliseconds: widget.delayMs), () {
       if (!mounted) return;
-      setState(() => _visible = true);
       _c.forward();
     });
   }
@@ -58,7 +62,6 @@ class _ZadAppearOnEntryState extends State<ZadAppearOnEntry>
 
   @override
   Widget build(BuildContext context) {
-    if (!_visible) return const SizedBox.shrink();
     final offset = 60 / MediaQuery.devicePixelRatioOf(context);
     return FadeTransition(
       opacity: _t,

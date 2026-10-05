@@ -307,7 +307,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 SliverList.list(children: header),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 76,
+                    // Two lines at 1.3× text: 76 left the chip 3px short.
+                    height: 84,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
