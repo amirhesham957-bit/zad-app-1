@@ -4,7 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
+import 'package:zad/shared/brain/domain/life_circumstance.dart';
 import 'package:zad/shared/brain/domain/occasion.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -57,7 +59,11 @@ void main() {
   group('the card', () {
     late _Chat chat;
 
-    Future<void> pump(WidgetTester tester, Occasion? today) async {
+    Future<void> pump(
+      WidgetTester tester,
+      Occasion? today, {
+      LifeCircumstance? quiet,
+    }) async {
       chat = _Chat();
       ZadSlots.chatScreen = () => const Scaffold(body: Text('الشات'));
       await tester.pumpWidget(
@@ -65,6 +71,7 @@ void main() {
           overrides: [
             occasionTodayProvider.overrideWithValue(today),
             chatControllerProvider.overrideWith(() => chat),
+            quietModeProvider.overrideWith((ref) async => quiet),
           ],
           child: const MaterialApp(
             home: Directionality(
@@ -87,6 +94,20 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       expect(chat.sent.single, contains('خطة أهداف مالية لسنة 2027'));
       expect(find.text('الشات'), findsOneWidget);
+    });
+
+    testWidgets('a home in a quiet period gets no celebration', (tester) async {
+      await pump(
+        tester,
+        occasionOn(DateTime(2027)),
+        quiet: LifeCircumstance(
+          id: 'c1',
+          kind: 'exceptional',
+          endsAt: DateTime.utc(2027, 1, 3),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('سنة جديدة سعيدة! 🎉'), findsNothing);
     });
 
     testWidgets('«مش دلوقتي» puts it away, and nothing is sent', (

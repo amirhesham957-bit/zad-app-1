@@ -706,6 +706,18 @@
     "source",
     "user_id"
   ],
+  "zad_life_circumstances": [
+    "confirmed",
+    "created_at",
+    "detail",
+    "ended_at",
+    "ends_at",
+    "id",
+    "kind",
+    "source",
+    "started_at",
+    "user_id"
+  ],
   "zad_locale_config": [
     "amount_tolerance_pct",
     "country",

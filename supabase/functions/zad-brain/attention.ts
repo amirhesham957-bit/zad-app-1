@@ -99,11 +99,18 @@ export function noteScore(
  */
 export function chooseNotes<T extends AttentionNote>(
   notes: readonly T[],
-  ctx: { now: number; budget: number; cardTitles?: readonly string[]; engagement?: Engagement | null },
+  ctx: {
+    now: number;
+    budget: number;
+    cardTitles?: readonly string[];
+    engagement?: Engagement | null;
+    /** حالة البيت (circumstances.ts): مين يتكلم دلوقتي. الباقي بيستنى في الصندوق — مش بيتمسح. */
+    senders?: ReadonlySet<string> | null;
+  },
 ): { deliver: T[]; drop: T[] } {
   const scored = notes.map((n) => ({ n, s: noteScore(n, ctx) }));
   const drop = scored.filter((x) => x.s <= 0).map((x) => x.n);
-  const deliver = scored.filter((x) => x.s > 0)
+  const deliver = scored.filter((x) => x.s > 0 && (!ctx.senders || ctx.senders.has(x.n.sender)))
     .sort((a, b) => b.s - a.s || Date.parse(String(b.n.created_at ?? "")) - Date.parse(String(a.n.created_at ?? "")))
     .slice(0, Math.max(0, ctx.budget))
     .map((x) => x.n);
@@ -140,11 +147,12 @@ export function recentCardTitles(rows: readonly CardRow[], now = Date.now()): st
 /** null = مسموح؛ وإلا سبب الرفض. الحرج دايماً بيعدّي. */
 export function cardBudgetRejection(
   input: { priority?: string | null },
-  attention: { open_cards?: number } | null | undefined,
+  attention: { open_cards?: number; max_open_cards?: number } | null | undefined,
 ): string | null {
   if (input.priority === "critical" || !attention) return null;
   const open = attention.open_cards ?? 0;
-  if (open < OPEN_CARDS_MAX) return null;
+  // حالة البيت (circumstances.ts) بتقلل السقف في الظرف الطارئ والتعافي.
+  if (open < (attention.max_open_cards ?? OPEN_CARDS_MAX)) return null;
   return `فيه ${open} كروت مفتوحة قدام العميل لسه ماتعاملش معاها — الجديد يستنى لحد ما يخلّص منهم (هدوء التجربة). ` +
     "لو حاجة حرجة فعلاً استخدم critical.";
 }

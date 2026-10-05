@@ -321,13 +321,18 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
     "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card",
+    "set_life_circumstance", "end_life_circumstance",
   ],
-  family: ["schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll"],
+  family: [
+    "schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll",
+    "set_life_circumstance", "end_life_circumstance",
+  ],
   home: [
     "app_command",
     "add_maintenance_item", "update_maintenance_item", "delete_maintenance_item",
     "add_obligation", "update_obligation", "delete_obligation",
     "forward_ledger", "web_search", "home_health_score", "decision_impact", "log_decision",
+    "set_life_circumstance", "end_life_circumstance",
   ],
 };
 

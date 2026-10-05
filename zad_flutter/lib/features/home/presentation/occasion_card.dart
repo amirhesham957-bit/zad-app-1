@@ -18,6 +18,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/shared/brain/domain/occasion.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -83,6 +84,10 @@ class _OccasionCardSlotState extends ConsumerState<OccasionCardSlot> {
   Widget build(BuildContext context) {
     final o = ref.watch(occasionTodayProvider);
     if (o == null || _isDone(o)) return const SizedBox.shrink();
+    // A celebration is not for a home in a hard few days (slice 29).
+    if (ref.watch(quietModeProvider).value != null) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
       child: Container(

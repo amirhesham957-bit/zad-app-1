@@ -17,6 +17,7 @@ import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalI
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 
 export interface VoiceMomentRow {
@@ -116,7 +117,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
   morning_greeting:
     "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
     "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية. لو daily_question_kind = curiosity فده حاجة لاحظتيها في حساباته: " +
-    "اسأليها بفضول صاحب مش بمحاسبة، ومن غير أرقام غير اللي في السؤال.",
+    "اسأليها بفضول صاحب مش بمحاسبة، ومن غير أرقام غير اللي في السؤال. " +
+    "لو quiet = true البيت في ظرف (حالة البيت): تحية قصيرة دافية والأدوية والمواعيد بس — من غير فلوس ولا تحدي ولا أسئلة، " +
+    "ومن غير ما تقولي إيه الظرف.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -997,7 +1000,7 @@ export async function morningFacts(
 ): Promise<Record<string, unknown>> {
   const dayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
   const dayEnd = new Date(new Date(dayStart).getTime() + 86_400_000).toISOString();
-  const [meds, appts, budget, challenge, profile] = await Promise.all([
+  const [meds, appts, budget, challenge, profile, circumstance] = await Promise.all([
     // الأدوية اللي لسه فيها بس (زي goodNightFacts ومولّد تذكيرات الجرعات): دوا رصيده صفر
     // كان بيتقال في تحية الصبح «خد المضاد» بعد ما الكورس خلص — بيانات وهمية (٢٠٢٦-٠٩-٢٥).
     // for_person (20260929130000): «دوا ماما» مش «دواك» — null = العميل نفسه.
@@ -1013,13 +1016,19 @@ export async function morningFacts(
       .then((r) => r.data as { started_on: string; length_days: number; daily_cap: number; streak: number } | null, () => null),
     sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation").eq("user_id", userId).maybeSingle()
       .then((r) => r.data as Record<string, unknown> | null, () => undefined),
+    loadCircumstance(sb, userId),
   ]);
+  // حالة البيت (الشريحة ٢٩): في ظرف أو تعافي، مفيش سؤال ولا فلوس ولا تحدي الصبح.
+  const quiet = circumstance.mode !== "normal";
   // undefined = the read failed: ask nothing rather than ask what may be known.
-  const ask = profile === undefined ? null : dailyQuestion(profile, local.date);
+  const ask = profile === undefined || quiet ? null : dailyQuestion(profile, local.date);
   // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
-  const curious = profile === undefined || ask ? null : await curiosityQuestion(sb, userId, Date.parse(dayStart));
+  const curious = profile === undefined || ask || !attentionBudget(circumstance.mode).curiosity
+    ? null
+    : await curiosityQuestion(sb, userId, Date.parse(dayStart));
   return {
     local_date: local.date,
+    ...(quiet ? { quiet: true } : {}),
     ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
     ...(curious
       ? {
@@ -1031,12 +1040,12 @@ export async function morningFacts(
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
-    ...(budget && budget.limit_confirmed ? { available: budget.available, days_left: budget.days_left, currency: budget.currency } : {}),
+    ...(budget && budget.limit_confirmed && !quiet ? { available: budget.available, days_left: budget.days_left, currency: budget.currency } : {}),
     ...(() => {
       const se = seasonFor(new Date(`${local.date}T12:00:00${local.utc_offset}`), local.time_zone);
       return se?.kind ? { season: se.kind, hijri_day: se.hijri_day } : {};
     })(),
-    ...(challenge ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
+    ...(challenge && !quiet ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
   };
 }
 
@@ -1172,7 +1181,7 @@ const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_
  */
 const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS]);
 
-export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day";
+export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstance";
 
 /**
  * «يوم مزحوم» (ZAD_LIVING_BRAIN.md الشريحة ١٨): لحظات تقدر تستنى يوم تاني — تذكير، عتاب على الغياب، حكاية
@@ -1185,12 +1194,23 @@ export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
 ]);
 export const BUSY_DAY_APPOINTMENTS = 3;
 
+/**
+ * حالة البيت (circumstances.ts، الشريحة ٢٩): في الظرف الطارئ والتعافي، اللي يقدر يستنى بيستنى — نفس لحظات اليوم المزحوم،
+ * ومعاهم الاحتفالات والتحذيرات اللي مش أمان. الصحة والأمان والمواعيد وصباح الخير زي ما هم.
+ */
+export const CIRCUMSTANCE_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
+  ...BUSY_DAY_OPTIONAL_MOMENTS, "challenge_milestone", "challenge_completed", "shopping_zone_warning", "receipt_reaction",
+]);
+
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
-export function momentGate(moment: string, localHour: number, sentToday: number, appointmentsToday = 0): MomentHold | null {
+export function momentGate(
+  moment: string, localHour: number, sentToday: number, appointmentsToday = 0, circumstance: CircumstanceMode = "normal",
+): MomentHold | null {
   if (NEVER_HELD_MOMENTS.has(moment)) return null;
   if (isQuietHour(localHour) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
+  if (circumstance !== "normal" && CIRCUMSTANCE_OPTIONAL_MOMENTS.has(moment)) return "circumstance";
   if (BUSY_DAY_OPTIONAL_MOMENTS.has(moment) && appointmentsToday >= BUSY_DAY_APPOINTMENTS) return "busy_day";
-  if (sentToday >= DAILY_VOICE_ALERT_CAP) return "daily_cap";
+  if (sentToday >= attentionBudget(circumstance).voiceCap) return "daily_cap";
   return null;
 }
 
@@ -1245,5 +1265,7 @@ async function holdMoment(
       console.warn("[voice_moments] appointments count failed:", (e as Error)?.message);
     }
   }
-  return momentGate(row.moment, hour, sentToday, appointmentsToday);
+  // حالة البيت: فشل القراية = عادي (loadCircumstance مابيرميش).
+  const circumstance = await loadCircumstance(sb, row.user_id, nowMs);
+  return momentGate(row.moment, hour, sentToday, appointmentsToday, circumstance.mode);
 }
