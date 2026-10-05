@@ -103,6 +103,7 @@ import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
+import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
@@ -2959,7 +2960,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const tz = snap?.now_local?.time_zone ?? "UTC";
       const when = new Date(row.starts_at).toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
       const repeat = String(input.recurrence) === "hourly" ? " وبعدها كل ساعة" : "";
-      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.`;
+      const clash = await appointmentClashNote(sb, userId, {
+        startsAt: row.starts_at, forPerson: normalizeForPerson(input.for_person), recurrence: String(input.recurrence ?? "once"),
+        excludeId: row.id, timeZone: tz,
+      });
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${clash}`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -2983,7 +2988,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
       });
-      return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
+      const b = before as { title: string; for_person?: string | null; recurrence?: string | null };
+      const clash = typeof patch.starts_at === "string"
+        ? await appointmentClashNote(sb, userId, {
+          startsAt: patch.starts_at, forPerson: b.for_person ?? null, recurrence: b.recurrence ?? "once", excludeId: id,
+          timeZone: snap?.now_local?.time_zone ?? "UTC",
+        })
+        : "";
+      return `تم تعديل الميعاد «${b.title}».${clash}`;
     }
     case "start_savings_challenge": {
       const { data: existing } = await sb.from("zad_savings_challenges").select("id,started_on,daily_cap")
@@ -4197,6 +4209,30 @@ const RECURRING_HINT =
 // محادثة — المستخدم قدامك، رد عليه. والعكس صحيح: الأدوات دي بتتنفذ بطلب صريح من
 // المستخدم، فمالهاش لازمة في تشغيلة كرون.
 // ═══════════════════════════════════════════════════════════
+
+/**
+ * حارس التوقيت (الشريحة ٣٩): بعد تسجيل ميعاد أو تأجيله، المواعيد اللي في نفس الساعة لنفس الشخص ⇒ سطر في نتيجة الأداة
+ * العقل يقوله ويسأل. بيقرا المرة الواحدة القريبة والمتكرر كله (المتكرر بيتقارن بالساعة المحلية). فشل القراية = مفيش سطر —
+ * الحارس عمره ما يوقف الحفظ.
+ */
+async function appointmentClashNote(
+  sb: SupabaseClient, userId: string,
+  q: { startsAt: string; forPerson: string | null; recurrence: string; excludeId: string; timeZone: string },
+): Promise<string> {
+  const at = Date.parse(q.startsAt);
+  if (!Number.isFinite(at)) return "";
+  const lo = new Date(at - CLASH_WINDOW_MINUTES * 60_000).toISOString();
+  const hi = new Date(at + CLASH_WINDOW_MINUTES * 60_000).toISOString();
+  const { data, error } = await sb.from("zad_appointments").select("id,title,starts_at,recurrence,for_person,status")
+    .eq("user_id", userId).eq("status", "upcoming")
+    .or(`recurrence.in.(daily,weekly,monthly),and(starts_at.gte."${lo}",starts_at.lte."${hi}")`)
+    .limit(200);
+  if (error) {
+    console.error("[schedule guard] read failed:", error.message);
+    return "";
+  }
+  return clashNote(scheduleClashes({ ...q, existing: data ?? [] }), q.timeZone);
+}
 
 export const CHAT_TOOLS: ToolDef[] = [
   {

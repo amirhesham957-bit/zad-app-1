@@ -125,3 +125,90 @@ String recurrenceLabel(String r) => switch (r) {
   'monthly' => 'كل شهر',
   _ => 'مرة واحدة',
 };
+
+// ── حارس التوقيت (ZAD_LIVING_BRAIN.md الشريحة ٣٩) ─────────────────────────
+// نفس قاعدة السيرفر (`zad-brain/scheduleGuard.ts`): ميعاد تاني لنفس الشخص
+// في أقل من ساعة ⇒ تنبيه قبل الحفظ، مش منع. المتكرر بالساعة المحلية: يومي كل
+// يوم، أسبوعي نفس يوم الأسبوع، شهري نفس اليوم في الشهر، من أول ما يبدأ.
+// «كل ساعة» مابيتحسبش تعارض.
+
+/// The window either side: appointments have no length.
+const Duration kClashWindow = Duration(hours: 1);
+
+String _person(String? s) => (s ?? '')
+    .trim()
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .replaceAll(RegExp('[أإآ]'), 'ا')
+    .replaceAll('ة', 'ه')
+    .replaceAll('ى', 'ي')
+    .toLowerCase();
+
+int _clockGap(DateTime a, DateTime b) {
+  final d = ((a.hour * 60 + a.minute) - (b.hour * 60 + b.minute)).abs();
+  return d < 1440 - d ? d : 1440 - d;
+}
+
+/// The upcoming appointments a new one at [startsAt] (an instant) would
+/// sit on top of, for the same person. [toLocal] gives the account's civil
+/// time.
+List<Appointment> appointmentClashes({
+  required DateTime startsAt,
+  required String? forPerson,
+  required String recurrence,
+  required List<Appointment> existing,
+  required DateTime Function(DateTime utc) toLocal,
+}) {
+  if (recurrence == 'hourly') return const <Appointment>[];
+  final window = kClashWindow.inMinutes;
+  final mine = toLocal(startsAt);
+  return <Appointment>[
+    for (final e in existing)
+      if (e.status == 'upcoming' &&
+          e.recurrence != 'hourly' &&
+          e.startsAt != null &&
+          _person(e.forPerson) == _person(forPerson) &&
+          _clashes(e, startsAt, mine, window, toLocal))
+        e,
+  ];
+}
+
+bool _clashes(
+  Appointment e,
+  DateTime at,
+  DateTime mine,
+  int window,
+  DateTime Function(DateTime utc) toLocal,
+) {
+  final theirs = e.startsAt!;
+  if (e.recurrence == 'once') {
+    return theirs.difference(at).inMinutes.abs() < window;
+  }
+  if (at.isBefore(theirs.subtract(kClashWindow))) return false;
+  final local = toLocal(theirs);
+  if (_clockGap(local, mine) >= window) return false;
+  return switch (e.recurrence) {
+    'daily' => true,
+    'weekly' => local.weekday == mine.weekday,
+    'monthly' => local.day == mine.day,
+    _ => false,
+  };
+}
+
+/// The line under the time in the add dialog.
+String clashWarning(
+  List<Appointment> clashes,
+  DateTime Function(DateTime utc) toLocal,
+) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  String one(Appointment c) {
+    final t = toLocal(c.startsAt!);
+    final repeat = c.recurrence == 'once'
+        ? ''
+        : ' (${recurrenceLabel(c.recurrence)})';
+    return '«${c.title}» ${two(t.hour)}:${two(t.minute)}$repeat';
+  }
+
+  final names = clashes.take(2).map(one).join(' و');
+  return '⚠️ في نفس الوقت تقريباً عندك $names — '
+      'تقدر تحفظ عادي أو تغيّر الوقت.';
+}
