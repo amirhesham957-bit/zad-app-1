@@ -24,6 +24,7 @@ import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
+import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
@@ -41,9 +42,10 @@ import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Home.
 ///
-/// زاد's home: the companion row, the brain's daily brief, the bank's
-/// waiting proposals, the modes, the wallet card and its two metrics, the
-/// bank channel, what the brain noticed, and the latest transactions. Each
+/// زاد's home: the companion row and the occasion's banner, the wallet card
+/// and its two metrics, the brain's daily brief, the sections, the bank's
+/// waiting proposals, the modes, the bank channel, the latest transactions,
+/// and what the brain noticed. Each
 /// block enters the way Kotlin's `AppearOnEntry` does, with Kotlin's
 /// per-block delays.
 class HomeScreen extends ConsumerWidget {
@@ -67,6 +69,9 @@ class HomeScreen extends ConsumerWidget {
       onRefresh: () =>
           ref.read(budgetControllerProvider.notifier).refresh(force: true),
       child: ListView(
+        // Keeps the offset if the shell rebuilds this subtree (the budget
+        // gate, kids mode) instead of starting over at the top.
+        key: const PageStorageKey<String>('home'),
         // Always scrollable, so the pull gesture exists even when the content
         // is one card and does not fill the screen.
         physics: const AlwaysScrollableScrollPhysics(),
@@ -91,7 +96,14 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           // The occasion's banner (app_campaigns), under the greeting.
           const ZadAppearOnEntry(child: CampaignBannerSlot()),
-          // «موجز زاد النهارده» first: the brain says what matters today.
+          // The money right under the greeting and the occasion's banner
+          // (owner, 2026-10-05): it had slid under the brief and the grid.
+          _Budget(view: view),
+          const FxExcludedNotice(),
+          // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
+          // products (owner, 2026-10-05; the product row stays off home).
+          const HomeAmazonStrip(),
+          // «موجز زاد النهارده»: the brain says what matters today.
           // It replaced the grid of seventeen sections and the pantry,
           // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
           // in بيتي, the obligations in فلوسي, every section in the drawer.
@@ -108,23 +120,24 @@ class HomeScreen extends ConsumerWidget {
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
-          _Budget(view: view),
-          const FxExcludedNotice(),
-          const BankListeningPill(),
-          const SizedBox(height: 18),
           ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
           ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
+          // The bank channel's state, then what it brought and what the brain
+          // made of it.
+          const BankListeningPill(),
+          const SizedBox(height: 18),
           ZadSlots.stuckNotificationsSlot(),
+          const HomeRecentTransactions(),
+          const SizedBox(height: 18),
           ZadTrailingGap(
             gap: 18,
             child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
-          const HomeRecentTransactions(),
-          const SizedBox(height: 18),
-          // The Amazon row is hidden until there is a product API key: its five
-          // seeded products had stock photos and Saudi prices (2026-10-01).
+          // The Amazon product row is hidden until there is a product API
+          // key: its five seeded products had stock photos and Saudi prices
+          // (2026-10-01). Its empty strip sits under the budget.
           // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),

@@ -38,6 +38,14 @@ export const validateEmitInsight: Validator = (input, snap, ctx) => {
   if (!DEDUPE_KEY_RE.test(input.dedupe_key ?? "")) return { ok: false, reason: "dedupe_key لازم حروف صغيرة وأرقام و_ فقط" };
   if (ACCUSATORY_RE.test(input.body)) return { ok: false, reason: 'صيغة اتهام — قول "معندناش تسجيل إن..."' };
   if (snap.dismissed_keys?.includes(input.dedupe_key)) return { ok: false, reason: "العميل رفض ده قبل كده" };
+  if (input.valid_until !== undefined && input.valid_until !== null && String(input.valid_until).trim() !== ""
+      && !resolveValidUntil(input.valid_until, snap?.now_local?.time_zone ?? "UTC", Date.now())) {
+    return {
+      ok: false,
+      reason: "valid_until لازم يبقى اليوم اللي الكارت عنه بصيغة YYYY-MM-DD (النهارده " + (snap?.now_local?.date ?? "؟") +
+        ") — النهارده أو بعده.",
+    };
+  }
   // التجاهل الصامت (engagement.ts): ٣ مرات ورا بعض في نفس الموضوع ⇒ الحرج بس.
   const quietEmit = quietTopicRejection(input, snap.engagement);
   if (quietEmit) return { ok: false, reason: quietEmit };

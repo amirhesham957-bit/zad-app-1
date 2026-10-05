@@ -45,6 +45,7 @@ import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 
@@ -120,9 +121,13 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         }
       },
       onResume: () {
-        if (mounted) {
-          unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
-        }
+        if (!mounted) return;
+        unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
+        // The medicines change from outside the app too: «امسح سيبرو» to the
+        // Telegram bot deleted the row on the server (2026-10-05), and the
+        // open app kept the medicine, its doses today and its local reminders
+        // until a restart. One read of the table, no model call.
+        unawaited(ref.read(pharmacyControllerProvider.notifier).refresh());
       },
     );
   }

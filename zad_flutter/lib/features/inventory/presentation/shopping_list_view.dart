@@ -195,10 +195,31 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => unawaited(_add()),
+                  // A rounded box like the cards under it, as tall as the
+                  // buttons beside it: the bare underline sat flush at the
+                  // top and read as broken (owner, 2026-10-05).
                   decoration: InputDecoration(
                     hintText: 'محتاج تشتري إيه؟',
                     filled: true,
                     fillColor: ZadColors.surface,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: ZadSpacing.lg,
+                      vertical: ZadSpacing.md,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                      borderSide: BorderSide(
+                        color: ZadColors.outline.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                      borderSide: BorderSide(
+                        color: ZadColors.forestEmerald,
+                        width: 1.5,
+                      ),
+                    ),
                   ),
                 ),
               ),

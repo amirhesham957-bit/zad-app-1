@@ -1965,6 +1965,8 @@ bot.on("callback_query:data", async (ctx) => {
       .select("id,title,body")
       .eq("user_id", userId)
       .eq("status", "pending")
+      // كارت عن يوم فات («تجديد بكرة ٣ أكتوبر» يوم ٥) مايتعرضش.
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
       .limit(5);
     const rows = (insights ?? []) as Array<{ id: string; title: string; body: string }>;
     if (rows.length === 0) {

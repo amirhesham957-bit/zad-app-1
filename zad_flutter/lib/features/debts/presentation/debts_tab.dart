@@ -622,6 +622,57 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
   _Fetch _state = _Fetch.notYet;
   List<_Deal> _deals = const <_Deal>[];
 
+  /// When the deals on screen were found; set when they came from the cache.
+  DateTime? _foundAt;
+
+  static const String _cacheKey = 'live_deals';
+
+  /// The last deals found, kept for when the next search fails: on
+  /// 2026-10-05 the grounded search was out of quota and the card had nothing
+  /// to show but «تعذّر البحث».
+  Future<void> _keep(List<_Deal> deals) async {
+    final client = ref.read(supabaseClientProvider);
+    final at = ref.read(nowProvider)().toUtc().toIso8601String();
+    await ref.read(screenCacheProvider).write(
+      _cacheKey,
+      client.auth.currentUser?.id,
+      <Map<String, dynamic>>[
+        for (final d in deals)
+          <String, dynamic>{
+            'item': d.item,
+            'store': d.store,
+            'price': d.price,
+            'discount_percent': d.discount,
+            'note': d.note,
+            'found_at': at,
+          },
+      ],
+    );
+  }
+
+  /// The kept deals, or nothing.
+  (List<_Deal>, DateTime?) _kept() {
+    final client = ref.read(supabaseClientProvider);
+    final rows = ref
+        .read(screenCacheProvider)
+        .read(_cacheKey, client.auth.currentUser?.id);
+    if (rows == null || rows.isEmpty) return (const <_Deal>[], null);
+    return (
+      <_Deal>[
+        for (final m in rows)
+          if (m['item'] is String && m['store'] is String && m['price'] is num)
+            (
+              item: m['item'] as String,
+              store: m['store'] as String,
+              price: (m['price'] as num).toDouble(),
+              discount: (m['discount_percent'] as num?)?.toDouble() ?? 0,
+              note: m['note'] as String?,
+            ),
+      ],
+      DateTime.tryParse('${rows.first['found_at']}'),
+    );
+  }
+
   Future<void> _refresh(List<String> shortages) async {
     if (_state == _Fetch.loading) return;
     setState(() => _state = _Fetch.loading);
@@ -637,6 +688,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
               'payload': <String, dynamic>{
                 'items': shortages,
                 'location': marketFor(country)?.nameAr ?? '',
+                'country': ?country,
               },
             },
           )
@@ -665,12 +717,84 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
       if (!mounted) return;
       setState(() {
         _deals = deals;
+        _foundAt = null;
         _state = _Fetch.fetched;
       });
+      if (deals.isNotEmpty) unawaited(_keep(deals));
     } on Object catch (e) {
       debugPrint('fetch_live_deals failed: $e');
-      if (mounted) setState(() => _state = _Fetch.error);
+      if (!mounted) return;
+      final (kept, at) = _kept();
+      setState(() {
+        // A search that found deals this session keeps them on screen.
+        if (_deals.isEmpty || _foundAt != null) {
+          _deals = kept;
+          _foundAt = at;
+        }
+        _state = _Fetch.error;
+      });
     }
+  }
+
+  Widget _dealList() => Column(
+    children: <Widget>[
+      for (final d in _deals.take(6))
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      d.item,
+                      style: ZadType.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (d.discount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ZadSpacing.sm,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: ZadColors.green600.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'خصم ${d.discount.toStringAsFixed(0)}%',
+                        style: ZadType.labelSmall.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: ZadColors.green600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              Text(
+                '${_money(ref, d.price)} عند ${d.store}',
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+              if ((d.note ?? '').trim().isNotEmpty)
+                Text(
+                  d.note!,
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+            ],
+          ),
+        ),
+    ],
+  );
+
+  String _cachedLabel() {
+    final at = _foundAt;
+    final when = at == null
+        ? ''
+        : ' (${at.toLocal().day}/${at.toLocal().month})';
+    return 'البحث مشغول دلوقتي — دي آخر عروض لقيناها$when';
   }
 
   @override
@@ -736,75 +860,31 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                 Text('يبحث في الإنترنت...'),
               ],
             ),
+            // The search failed, and the last deals it found are still worth
+            // a look — with their date, so nobody takes them for today's.
+            _Fetch.error when _deals.isNotEmpty => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  _cachedLabel(),
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+                const SizedBox(height: ZadSpacing.xs),
+                _dealList(),
+              ],
+            ),
             _Fetch.error => const ZadEmptyState(
               icon: Icons.cloud_off,
               title: 'تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية',
               message:
-                  'البحث الحي ما ردّش في الوقت. دوس تحديث تاني — وشوف النت '
-                  'لو الحالة اتكررت.',
+                  'خدمة البحث مشغولة دلوقتي. دوس تحديث تاني بعد شوية — '
+                  'ولو اتكررت شوف النت.',
             ),
             _Fetch.fetched when _deals.isEmpty => Text(
               'لا توجد نتائج بحث محددة متوفرة حالياً',
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
-            _Fetch.fetched => Column(
-              children: <Widget>[
-                for (final d in _deals.take(6))
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                d.item,
-                                style: ZadType.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            if (d.discount > 0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: ZadSpacing.sm,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: ZadColors.green600.withValues(
-                                    alpha: 0.12,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  'خصم ${d.discount.toStringAsFixed(0)}%',
-                                  style: ZadType.labelSmall.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: ZadColors.green600,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        Text(
-                          '${_money(ref, d.price)} عند ${d.store}',
-                          style: ZadType.bodySmall.copyWith(
-                            color: ZadColors.inkMuted,
-                          ),
-                        ),
-                        if ((d.note ?? '').trim().isNotEmpty)
-                          Text(
-                            d.note!,
-                            style: ZadType.labelSmall.copyWith(
-                              color: ZadColors.inkMuted,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+            _Fetch.fetched => _dealList(),
           },
           const SizedBox(height: ZadSpacing.md),
           SizedBox(
