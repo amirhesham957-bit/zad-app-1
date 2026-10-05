@@ -5,38 +5,56 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 1. إلغاء أي بناء قديم/معلق تلقائياً عند الدفع الجديد لمنع زحمة الطوابير
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25 # 2. تحديد وقت أقصى للبناء حتى لا يتعطل السيرفر
+
     steps:
       - uses: actions/checkout@v4
+
+      # 3. تثبيت جافا وتفعيل الكاش لـ Gradle لتسريع بناء الأندرويد
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      # 4. تفعيل كاش الفلاتر لعدم إعادة تنزيل الحزم في كل مرة
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
+
       - name: Install dependencies
         run: flutter pub get
         working-directory: zad_flutter
+
       - name: Build APK
         run: |
           flutter build apk --debug \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
         working-directory: zad_flutter
+
       - uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: zad_flutter/build/app/outputs/flutter-apk/app-debug.apk
-      # The full release build — what goes on a phone (owner's request
-      # 2026-09-27: build it in Actions). Signed with the debug key, the
-      # template's setting in android/app/build.gradle.kts, so it installs
-      # without a keystore; split per ABI, so a phone takes one ~30 MB file.
-      # app-arm64-v8a-release.apk is the one for almost every modern phone.
+
+      # The full release build — what goes on a phone
       - name: Build release APK
         run: |
           flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
         working-directory: zad_flutter
+
       - uses: actions/upload-artifact@v4
         with:
           name: app-release
