@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
+import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -68,6 +69,12 @@ class _CampaignBannerSlotState extends ConsumerState<CampaignBannerSlot> {
   Widget build(BuildContext context) {
     final active = ref.watch(homeCampaignProvider);
     if (active == null || active.key == _dismissed) {
+      return const SizedBox.shrink();
+    }
+    // On an occasion's day the occasion card has the home to itself, all
+    // day, put away or not: two cards offering the same thing is clutter
+    // (owner, 2026-10-05). The rim, the badge and the colours stay.
+    if (ref.watch(occasionTodayProvider) != null) {
       return const SizedBox.shrink();
     }
     return Padding(

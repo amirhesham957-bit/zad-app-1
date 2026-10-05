@@ -19,11 +19,13 @@ import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
+import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/data/memory_repository.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/brain/domain/life_circumstance.dart';
+import 'package:zad/shared/brain/domain/occasion.dart';
 import 'package:zad/shared/campaigns/application/campaigns_controller.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -221,6 +223,7 @@ void main() {
       WidgetTester tester, {
       bool still = true,
       ActiveCampaign? campaign,
+      Occasion? occasion,
     }) async {
       final chat = _Chat();
       final c = ProviderContainer(
@@ -228,6 +231,7 @@ void main() {
           ...quietHouseholdOverrides,
           localStoreProvider.overrideWithValue(store()),
           homeCampaignProvider.overrideWithValue(campaign ?? active),
+          occasionTodayProvider.overrideWithValue(occasion),
           chatControllerProvider.overrideWith(() => chat),
         ],
       );
@@ -249,6 +253,20 @@ void main() {
       );
       return (c, chat);
     }
+
+    testWidgets('gives way to the occasion card on its day', (tester) async {
+      // New Year's Day: the occasion card has the home to itself.
+      await pumpSlot(tester, occasion: occasionOn(DateTime(2027)));
+      await tester.pumpAndSettle();
+      expect(find.text('هالوين'), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
+    });
+
+    testWidgets('and is back the day after', (tester) async {
+      await pumpSlot(tester, occasion: occasionOn(DateTime(2027, 1, 2)));
+      await tester.pumpAndSettle();
+      expect(find.text('هالوين'), findsOneWidget);
+    });
 
     testWidgets('shows the occasion, and asks nothing on open', (tester) async {
       final (_, chat) = await pumpSlot(tester);
@@ -321,6 +339,7 @@ void main() {
           ...quietHouseholdOverrides,
           localStoreProvider.overrideWithValue(store()),
           homeCampaignProvider.overrideWithValue(active),
+          occasionTodayProvider.overrideWithValue(null),
         ],
       );
       addTearDown(c.dispose);
@@ -343,6 +362,7 @@ void main() {
           ...quietHouseholdOverrides,
           localStoreProvider.overrideWithValue(store()),
           homeCampaignProvider.overrideWithValue(nextYear),
+          occasionTodayProvider.overrideWithValue(null),
         ],
       );
       addTearDown(c.dispose);
