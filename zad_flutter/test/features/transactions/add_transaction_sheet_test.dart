@@ -197,7 +197,9 @@ void main() {
   // Kotlin's order: description, amount, category (expense only).
   Finder titleField() => find.byType(TextField).at(0);
   Finder amountField() => find.byType(TextField).at(1);
-  Finder categoryField() => find.byType(TextField).at(2);
+  bool chipOn(WidgetTester tester, String label) => tester
+      .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label))
+      .selected;
   Finder saveButton([String text = 'خصم المبلغ']) =>
       find.widgetWithText(FilledButton, text);
 
@@ -211,14 +213,49 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets("Kotlin's sheet: title, the two chips, «عام» by default", (
+  testWidgets("Kotlin's sheet: title, the two chips, no category guessed yet", (
     tester,
   ) async {
     await pumpSheet(tester);
     expect(find.text('إضافة مصروف'), findsOneWidget);
     expect(find.text('خصم (مصروف)'), findsOneWidget);
     expect(find.text('إيداع (راتب)'), findsOneWidget);
-    expect(tester.widget<TextField>(categoryField()).controller!.text, 'عام');
+    // The category is a chip now, not free text (ZAD_LIVING_BRAIN.md §11).
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(
+      tester
+          .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+          .where((c) => c.selected),
+      isEmpty,
+    );
+  });
+
+  testWidgets('the description suggests the category; a tapped chip wins', (
+    tester,
+  ) async {
+    await pumpSheet(tester);
+    await tester.enterText(titleField(), 'بنزين العربية');
+    await tester.pump();
+    expect(chipOn(tester, 'الوقود'), isTrue);
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'المواصلات'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'المواصلات'));
+    await tester.pump();
+    await tester.enterText(titleField(), 'بنزين وزيت');
+    await tester.pump();
+    expect(chipOn(tester, 'المواصلات'), isTrue, reason: 'the pick held');
+    await tester.enterText(amountField(), '300');
+    await tapSave(tester);
+    expect(outbox.entries().single.payload['category'], 'المواصلات');
+  });
+
+  testWidgets('a description that says nothing saves «أخرى», never «عام»', (
+    tester,
+  ) async {
+    await pumpSheet(tester);
+    await tester.enterText(titleField(), 'حلاقة');
+    await tester.enterText(amountField(), '80');
+    await tapSave(tester);
+    expect(outbox.entries().single.payload['category'], 'أخرى');
   });
 
   testWidgets('saving writes to Hive and queues, with no network', (
@@ -234,7 +271,7 @@ void main() {
     expect(queued.kind, OutboxKind.insertTransaction);
     expect(queued.payload['amount'], 125.5);
     expect(queued.payload['title'], 'قهوة');
-    expect(queued.payload['category'], 'عام');
+    expect(queued.payload['category'], 'المطاعم', reason: 'قهوة is a café');
     expect(queued.payload['wallet'], 'card');
     expect(remote.upserts, 0, reason: 'the save pushed to the server inline');
   });

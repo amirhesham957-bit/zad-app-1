@@ -454,8 +454,15 @@ export const validateAddSubscription: Validator = (input, _snap, ctx) => {
   if (input.billing_cycle !== undefined && !["MONTHLY", "YEARLY"].includes(input.billing_cycle)) {
     return { ok: false, reason: "billing_cycle لازم MONTHLY أو YEARLY" };
   }
+  // الفواتير في بيت واحد (20261005235107): التزام utility، مش اشتراك — وإلا بتتحسب مرتين في الميزانية.
+  if (BILL_WORDS.test(`${input.title ?? ""} ${input.category ?? ""}`)) {
+    return { ok: false, reason: "دي فاتورة مش اشتراك — سجّلها بـadd_obligation بـkind=utility (ويوم الاستحقاق لو العميل قاله)" };
+  }
   return { ok: true };
 };
+
+/** فاتورة مرافق (كهربا، مية، غاز، نت البيت، تليفون أرضي) — مش اشتراك اختياري. */
+const BILL_WORDS = /فاتور|فواتير|كهرب|مياه|غاز|انترنت|إنترنت|نت البيت|تليفون ارضي|تليفون أرضي|electric|water bill|utility/i;
 
 export const validateUpdateSubscription: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["update_subscription"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ تعديلات اشتراك في المرة" };

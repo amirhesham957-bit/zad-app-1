@@ -20,7 +20,9 @@ import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/expense_categories.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/presentation/expense_category_picker.dart';
 
 /// Opens the sheet.
 Future<void> showAddTransactionSheet(BuildContext context) =>
@@ -47,7 +49,10 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
 class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final TextEditingController _amount = TextEditingController();
   final TextEditingController _title = TextEditingController();
-  final TextEditingController _category = TextEditingController(text: 'عام');
+  // A chip from kExpenseCategories, suggested from the description until the
+  // customer picks one. It was free text defaulting to «عام» (§11).
+  String? _category;
+  bool _picked = false;
 
   bool _isExpense = true;
   bool _saving = false;
@@ -56,7 +61,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   void dispose() {
     _amount.dispose();
     _title.dispose();
-    _category.dispose();
     super.dispose();
   }
 
@@ -66,7 +70,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     setState(() => _saving = true);
     final amount = parseMoneyInput(_amount.text) ?? 0;
     final title = _title.text.isEmpty ? 'بدون وصف' : _title.text;
-    final category = _isExpense ? _category.text : 'دخل';
+    final category = _isExpense ? (_category ?? 'أخرى') : 'دخل';
     final now = ref.read(nowProvider)();
     try {
       await ref
@@ -191,6 +195,11 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             TextField(
               controller: _title,
               decoration: field('الوصف (مثال: راتب، إيجار)'),
+              onChanged: (t) {
+                if (!_picked) {
+                  setState(() => _category = suggestExpenseCategory(t));
+                }
+              },
             ),
             const SizedBox(height: 14),
             TextField(
@@ -200,9 +209,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             ),
             if (_isExpense) ...<Widget>[
               const SizedBox(height: 14),
-              TextField(
-                controller: _category,
-                decoration: field('التصنيف (سوبرماركت، فواتير...)'),
+              ExpenseCategoryPicker(
+                value: _category,
+                onChanged: (c) => setState(() {
+                  _category = c;
+                  _picked = true;
+                }),
               ),
             ],
             const SizedBox(height: 14),

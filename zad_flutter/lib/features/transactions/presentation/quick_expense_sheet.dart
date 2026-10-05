@@ -1,5 +1,8 @@
 /// "مصروف سريع" — Kotlin's `ZadQuickExpenseSheet`: name, category, amount,
-/// send. Opened from the green card's "خصم سريع" button and its long press.
+/// send. The category is a chip from [kExpenseCategories], suggested from
+/// the name until the customer picks one — it was free text, and most quick
+/// expenses ended up «أخرى» (ZAD_LIVING_BRAIN.md §11). Opened from the green
+/// card's "خصم سريع" button and its long press.
 ///
 /// The full form (income, transfers, wallets) is `add_transaction_sheet.dart`;
 /// this one is the three-field shortcut for the commonest case, an expense.
@@ -22,7 +25,9 @@ import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/transactions/domain/expense_categories.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/presentation/expense_category_picker.dart';
 
 /// Opens the sheet.
 Future<void> showQuickExpenseSheet(BuildContext context) =>
@@ -46,14 +51,16 @@ class QuickExpenseSheet extends ConsumerStatefulWidget {
 
 class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
   final TextEditingController _name = TextEditingController();
-  final TextEditingController _category = TextEditingController();
+  String? _category;
+
+  /// The customer tapped a chip: stop following the name.
+  bool _picked = false;
   final TextEditingController _amount = TextEditingController();
   bool _sending = false;
 
   @override
   void dispose() {
     _name.dispose();
-    _category.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -70,7 +77,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
     final userId = ref.read(signedInUserIdProvider)();
     if (!_isValid || amount == null || userId == null) return;
     setState(() => _sending = true);
-    final category = _category.text.trim();
+    final category = _category ?? 'أخرى';
     try {
       await ref
           .read(transactionsRepositoryProvider)
@@ -84,7 +91,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
               // Kotlin's quick expense leaves the wallet at its default, the
               // card.
               wallet: Wallet.card,
-              category: category.isEmpty ? null : category,
+              category: category,
             ),
           );
       ref.read(transactionsControllerProvider.notifier).reloadFromCache();
@@ -153,14 +160,22 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
               hint: 'مثال: حلاقة، بقالة',
               controller: _name,
               autofocus: true,
-              onChanged: () => setState(() {}),
+              onChanged: () => setState(() {
+                if (!_picked) _category = suggestExpenseCategory(_name.text);
+              }),
             ),
             const SizedBox(height: ZadSpacing.md),
-            _Field(
-              label: 'التصنيف',
-              hint: 'مثال: مصاريفي، أكلة',
-              controller: _category,
-              onChanged: () => setState(() {}),
+            Text(
+              'التصنيف',
+              style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+            ),
+            const SizedBox(height: ZadSpacing.xs),
+            ExpenseCategoryPicker(
+              value: _category,
+              onChanged: (c) => setState(() {
+                _category = c;
+                _picked = true;
+              }),
             ),
             const SizedBox(height: ZadSpacing.md),
             _Field(

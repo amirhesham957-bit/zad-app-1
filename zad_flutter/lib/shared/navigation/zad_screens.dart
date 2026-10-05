@@ -114,6 +114,19 @@ abstract final class ZadScreens {
   /// The kids-mode PIN; true when it was entered.
   static late Future<bool> Function(BuildContext context) showPinPrompt;
 
+  // ── obligations
+  /// Saves a utility bill as an obligation — the one home for bills
+  /// (20261005235107); a bill in the subscriptions table was counted twice
+  /// by the budget once it was also an obligation.
+  static late Future<void> Function(
+    WidgetRef ref, {
+    required String title,
+    required double amount,
+    int? dueDay,
+    bool yearly,
+  })
+  addUtilityBill;
+
   // ── maintenance
   /// الصيانة.
   static late OpenScreen showMaintenanceScreen;
