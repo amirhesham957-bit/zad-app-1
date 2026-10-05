@@ -136,11 +136,19 @@ export async function deliverAgentMail(
   sb: SupabaseClient,
   userId: string,
   rows: readonly AgentMailRow[] | null,
-  ctx: { now?: number; cardTitles?: readonly string[]; engagement?: Engagement | null } = {},
+  ctx: {
+    now?: number;
+    cardTitles?: readonly string[];
+    engagement?: Engagement | null;
+    /** حالة البيت (circumstances.ts): ملاحظات أقل، ومين يتكلم. */
+    budget?: number;
+    senders?: ReadonlySet<string> | null;
+  } = {},
 ): Promise<AgentMailRow[]> {
   if (!rows?.length) return [];
   const { deliver, drop } = chooseNotes(rows, {
-    now: ctx.now ?? Date.now(), budget: CHAT_NOTES_PER_TURN, cardTitles: ctx.cardTitles, engagement: ctx.engagement,
+    now: ctx.now ?? Date.now(), budget: ctx.budget ?? CHAT_NOTES_PER_TURN, cardTitles: ctx.cardTitles,
+    engagement: ctx.engagement, senders: ctx.senders,
   });
   const done = [...deliver, ...drop].map((r) => r.id).filter(Boolean);
   if (done.length) {

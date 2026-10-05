@@ -57,3 +57,13 @@ Deno.test("Groq-only keyword hints put trends and the forward ledger first", () 
   assertEquals(groqToolOrder(tools, [], "الناس بتشتري إيه اليومين دول؟")[0].name, "area_trends");
   assertEquals(groqToolOrder(tools, [], "عندي فلوس كفاية لآخر الشهر؟")[0].name, "forward_ledger");
 });
+
+Deno.test("Groq hints: a decision taken logs it, a worried month asks the history (slices 26–27)", () => {
+  const tools = ["web_search", "decision_impact", "log_decision", "household_resilience"].map((name) => ({ name }));
+  // «العربية» بتشاور على decision_impact كمان — الاتنين فوق، والموديل يختار.
+  assertEquals(groqToolOrder(tools, [], "خلاص اشتريت العربية بـ٥٠٠ ألف").slice(0, 2).map((t) => t.name).sort(),
+    ["decision_impact", "log_decision"]);
+  assertEquals(groqToolOrder(tools, [], "قررنا ننقل الولاد")[0].name, "log_decision");
+  assertEquals(groqToolOrder(tools, [], "الشهر ده تقيل أوي، مش هنعدّي")[0].name, "household_resilience");
+  assertEquals(groqToolOrder(tools, [], "لو اشتريت عربية؟")[0].name, "decision_impact");
+});

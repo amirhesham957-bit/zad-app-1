@@ -796,17 +796,31 @@ Future<void> showSpendLimitDialog(
 
 // ── Poll ───────────────────────────────────────────────────────────────────
 
-/// Kotlin's poll dialog: a question and at least two options.
+/// A question, two to six options (the server's limits), and when it
+/// closes — Zad announces the result in the chat then.
 Future<void> showPollDialog(BuildContext context, WidgetRef ref) async {
-  final result = await showDialog<(String, List<String>)>(
+  final result = await showDialog<(String, List<String>, Duration?)>(
     context: context,
     builder: (_) => const _PollDialog(),
   );
   if (result == null) return;
   await ref
       .read(familyLifeControllerProvider.notifier)
-      .sendPoll(result.$1, result.$2);
+      .sendPoll(result.$1, result.$2, closesIn: result.$3);
 }
+
+/// The server's poll limits (20261004130000).
+const int pollMaxOptions = 6;
+const int _pollQuestionMax = 200;
+const int _pollOptionMax = 60;
+
+/// When a poll closes on its own: a label and the duration (null = by hand).
+const List<(String, Duration?)> pollClosings = <(String, Duration?)>[
+  ('بكرة', Duration(days: 1)),
+  ('بعد يومين', Duration(days: 2)),
+  ('بعد أسبوع', Duration(days: 7)),
+  ('أنا أقفله', null),
+];
 
 class _PollDialog extends StatefulWidget {
   const new();
@@ -821,6 +835,7 @@ class _PollDialogState extends State<_PollDialog> {
     TextEditingController(),
     TextEditingController(),
   ];
+  int _closing = 1;
 
   @override
   void dispose() {
@@ -842,23 +857,47 @@ class _PollDialogState extends State<_PollDialog> {
           TextField(
             controller: _question,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'السؤال'),
+            maxLength: _pollQuestionMax,
+            decoration: const InputDecoration(
+              labelText: 'السؤال',
+              counterText: '',
+            ),
           ),
           for (final (i, o) in _options.indexed)
             Padding(
               padding: const EdgeInsets.only(top: ZadSpacing.xs),
               child: TextField(
                 controller: o,
-                decoration: InputDecoration(labelText: 'خيار ${i + 1}'),
+                maxLength: _pollOptionMax,
+                decoration: InputDecoration(
+                  labelText: 'خيار ${i + 1}',
+                  counterText: '',
+                ),
               ),
             ),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton(
-              onPressed: () =>
-                  setState(() => _options.add(TextEditingController())),
-              child: const Text('+ إضافة خيار'),
+          if (_options.length < pollMaxOptions)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: () =>
+                    setState(() => _options.add(TextEditingController())),
+                child: const Text('+ إضافة خيار'),
+              ),
             ),
+          const SizedBox(height: ZadSpacing.sm),
+          const Text('يتقفل إمتى؟', style: ZadType.labelMedium),
+          const SizedBox(height: ZadSpacing.xs),
+          Wrap(
+            spacing: ZadSpacing.xs,
+            runSpacing: ZadSpacing.xs,
+            children: <Widget>[
+              for (final (i, c) in pollClosings.indexed)
+                ChoiceChip(
+                  label: Text(c.$1),
+                  selected: _closing == i,
+                  onSelected: (_) => setState(() => _closing = i),
+                ),
+            ],
           ),
         ],
       ),
@@ -870,12 +909,13 @@ class _PollDialogState extends State<_PollDialog> {
       ),
       FilledButton(
         onPressed: () {
-          final valid = <String>[
+          final valid = <String>{
             for (final o in _options)
               if (o.text.trim().isNotEmpty) o.text.trim(),
-          ];
+          }.toList();
           if (_question.text.trim().isNotEmpty && valid.length >= 2) {
-            Navigator.of(context).pop((_question.text.trim(), valid));
+            Navigator.of(context)
+                .pop((_question.text.trim(), valid, pollClosings[_closing].$2));
           }
         },
         child: const Text('إرسال التصويت'),

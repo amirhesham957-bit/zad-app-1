@@ -17,11 +17,13 @@ import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
+import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/data/memory_repository.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/life_circumstance.dart';
 import 'package:zad/shared/campaigns/application/campaigns_controller.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -138,10 +140,12 @@ void main() {
     String zone = 'Asia/Riyadh',
     String? network,
     String? dialect,
+    LifeCircumstance? quiet,
   }) {
     final c = ProviderContainer(
       overrides: [
         ...quietHouseholdOverrides,
+        quietModeProvider.overrideWith((ref) async => quiet),
         localStoreProvider.overrideWithValue(store()),
         campaignsControllerProvider.overrideWith(_Catalog.new),
         memoryControllerProvider.overrideWith(() => _Memory(dialect)),
@@ -156,6 +160,7 @@ void main() {
 
   Future<String?> pick(ProviderContainer c) async {
     await c.read(networkCountryProvider.future);
+    await c.read(quietModeProvider.future);
     return c.read(homeCampaignProvider)?.campaign.id;
   }
 
@@ -165,6 +170,22 @@ void main() {
       expect(await pick(container(now: '2026-10-24T21:30:00Z')), 'halloween');
       expect(
         await pick(container(now: '2026-10-24T21:30:00Z', zone: 'UTC')),
+        isNull,
+      );
+    });
+
+    test('a home in a quiet period gets no campaign (slice 29)', () async {
+      expect(
+        await pick(
+          container(
+            now: '2026-10-24T21:30:00Z',
+            quiet: LifeCircumstance(
+              id: 'c1',
+              kind: 'exceptional',
+              endsAt: DateTime.utc(2026, 10, 27),
+            ),
+          ),
+        ),
         isNull,
       );
     });

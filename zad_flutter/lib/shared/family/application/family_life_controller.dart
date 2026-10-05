@@ -433,14 +433,25 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     }
   }
 
-  /// A poll.
-  Future<bool> sendPoll(String question, List<String> options) => send(
+  /// A poll: up to six options, closing on its own after [closesIn] (the
+  /// server announces the result), or open until closed by hand.
+  Future<bool> sendPoll(
+    String question,
+    List<String> options, {
+    Duration? closesIn,
+  }) => send(
     '📊 $question',
     type: FamilyMessageType.poll,
     metadata: jsonEncode(<String, dynamic>{
       'question': question,
-      'options': options,
+      'options': options.take(6).toList(),
       'votes': <String, int>{},
+      if (closesIn != null)
+        'closes_at': ref
+            .read(nowProvider)()
+            .toUtc()
+            .add(closesIn)
+            .toIso8601String(),
     }),
   );
 
@@ -491,17 +502,54 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     );
   }
 
-  /// Votes on a poll — the member's vote replaces their earlier one.
-  Future<void> vote(FamilyMessage poll, int option) {
+  /// Votes on a poll — the member's vote replaces their earlier one. Through
+  /// the server only: nobody writes another member's vote.
+  Future<void> vote(FamilyMessage poll, int option) async {
     final me = _me;
-    if (me == null) return Future<void>.value();
-    final meta = <String, dynamic>{...poll.meta};
-    meta['votes'] = <String, int>{...poll.pollVotes, me.id: option};
-    final encoded = jsonEncode(meta);
-    return _patch(
-      poll.copyWith(metadata: encoded),
-      () => _remote.setMetadata(poll.id, encoded),
+    if (me == null || poll.pollClosed) return;
+    final before = state.messages;
+    final meta = <String, dynamic>{
+      ...poll.meta,
+      'votes': <String, int>{...poll.pollVotes, me.id: option},
+    };
+    final next = poll.copyWith(metadata: jsonEncode(meta));
+    state = state.copyWith(
+      messages: <FamilyMessage>[
+        for (final m in before)
+          if (m.id == poll.id) next else m,
+      ],
     );
+    String? reason;
+    try {
+      final result = await _remote.votePoll(poll.id, option);
+      if (result['ok'] == true) return;
+      reason = '${result['reason']}';
+    } on Object {
+      reason = null;
+    }
+    if (!ref.mounted) return;
+    state = state.copyWith(
+      messages: before,
+      notice: reason == 'closed'
+          ? 'التصويت اتقفل خلاص.'
+          : 'صوتك ماتسجلش. جرّب تاني.',
+    );
+  }
+
+  /// Closes a poll (its creator or an admin); Zad posts the result.
+  Future<void> closePoll(FamilyMessage poll) async {
+    try {
+      final result = await _remote.closePoll(poll.id);
+      if (result['ok'] != true) {
+        _say(
+          result['reason'] == 'not_allowed'
+              ? 'اللي فتح التصويت أو المسؤول بس يقدر يقفله.'
+              : 'مقدرتش أقفل التصويت. جرّب تاني.',
+        );
+      }
+    } on Object {
+      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+    }
   }
 
   Future<void> _patch(FamilyMessage next, Future<void> Function() write) async {

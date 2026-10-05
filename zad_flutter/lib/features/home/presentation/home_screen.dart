@@ -27,6 +27,7 @@ import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
+import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
@@ -70,6 +71,8 @@ class HomeScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         children: <Widget>[
+          // A quiet period the customer asked for, with the way out of it.
+          const QuietModeBanner(),
           // The day's occasion first: it is there one day a year.
           const OccasionCardSlot(),
           // Kotlin's order: the travel suggestion, then the offline banner.

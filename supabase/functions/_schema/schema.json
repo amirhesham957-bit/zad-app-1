@@ -594,6 +594,22 @@
     "remaining_balance",
     "user_id"
   ],
+  "zad_decision_log": [
+    "baseline_days",
+    "baseline_income",
+    "baseline_spend",
+    "created_at",
+    "decided_at",
+    "id",
+    "label",
+    "monthly_cost",
+    "monthly_income_change",
+    "one_time_cost",
+    "outcome",
+    "reviewed_at",
+    "reviews",
+    "user_id"
+  ],
   "zad_dose_log": [
     "created_at",
     "id",
@@ -709,6 +725,18 @@
     "observed_at",
     "qty",
     "source",
+    "user_id"
+  ],
+  "zad_life_circumstances": [
+    "confirmed",
+    "created_at",
+    "detail",
+    "ended_at",
+    "ends_at",
+    "id",
+    "kind",
+    "source",
+    "started_at",
     "user_id"
   ],
   "zad_locale_config": [

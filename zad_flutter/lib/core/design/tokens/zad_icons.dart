@@ -147,6 +147,9 @@ abstract final class ZadIcons {
   /// The chosen one of several options.
   static const IconData selected = Icons.check_circle;
 
+  /// زاد is quieter for a while (slice 29).
+  static const IconData quiet = Icons.notifications_paused;
+
   /// A country, a market.
   static const IconData market = Icons.public;
 

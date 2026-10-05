@@ -54,12 +54,24 @@ class FamilyLifeRemote {
       })
       .eq('id', messageId);
 
-  /// Replaces a poll's metadata (a vote). Refused by the server for a
-  /// purchase request, whose metadata only its function writes.
+  /// Replaces a message's metadata. Refused by the server for a purchase
+  /// request and a poll, whose metadata only their functions write.
   Future<void> setMetadata(String messageId, String metadata) => _client
       .from('chat_messages')
       .update(<String, dynamic>{'metadata': metadata})
       .eq('id', messageId);
+
+  /// `zad_family_poll_vote`: the member's own vote, replacing their earlier
+  /// one, while the poll is open (20261004130000).
+  Future<Map<String, dynamic>> votePoll(String messageId, int option) => _rpc(
+    'zad_family_poll_vote',
+    <String, dynamic>{'p_message': messageId, 'p_option': option},
+  );
+
+  /// `zad_family_poll_close`: the creator or an admin closes it; Zad posts the
+  /// result in the chat.
+  Future<Map<String, dynamic>> closePoll(String messageId) =>
+      _rpc('zad_family_poll_close', <String, dynamic>{'p_message': messageId});
 
   /// `zad_decide_purchase_request`.
   Future<Map<String, dynamic>> decideRequest(

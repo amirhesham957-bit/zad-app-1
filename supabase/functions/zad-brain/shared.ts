@@ -345,6 +345,7 @@ export function buildStoreArrivalMessage(input: {
   lowStock: string[];
   clientHints: string[];
   seenHere?: SeenHere[];
+  cheaperHere?: CheaperHere[];
 }): { title: string; body: string; itemCount: number } | null {
   const seen = new Set<string>();
   const items: string[] = [];
@@ -367,9 +368,12 @@ export function buildStoreArrivalMessage(input: {
   const listed = items.slice(0, STORE_ARRIVAL_MAX_LISTED).map((i) => `• ${i}`);
   const more = items.length - listed.length;
   const seenLines = (input.seenHere ?? []).slice(0, 5).map((s) => `${cleanText(s.item, 40)} (${agoText(s.hours)})`);
+  const cheaperLines = (input.cheaperHere ?? []).slice(0, 3)
+    .map((c) => `${cleanText(c.item, 40)} ${c.price} (في محلات تانية حوالي ${c.typical})`);
   const body = [
     intro, ...listed, ...(more > 0 ? [`… و${more} كمان`] : []),
     ...(seenLines.length > 0 ? [`👀 اتشاف في محل بنفس الاسم من فواتير عملاء زاد: ${seenLines.join("، ")}`] : []),
+    ...(cheaperLines.length > 0 ? [`💰 أرخص هنا من فواتير عملاء زاد: ${cheaperLines.join("، ")}`] : []),
   ].join("\n");
   return { title, body, itemCount: items.length };
 }
@@ -436,6 +440,58 @@ export function seenHereItems(
     if (best !== null) out.push({ item: want, hours: best });
   }
   return out.sort((a, b) => a.hours - b.hours);
+}
+
+/** صنف ناقص سعره في المحل ده أرخص من باقي المحلات (فواتير عملاء زاد). */
+export interface CheaperHere {
+  item: string;
+  /** آخر سعر اتبلّغ هنا (١٤ يوم). */
+  price: number;
+  /** وسيط سعره في محلات تانية (٣٠ يوم، ٣ بلاغات على الأقل). */
+  typical: number;
+}
+
+/**
+ * «احتياج + طريقك + عرض» (ZAD_LIVING_BRAIN.md الشريحة ٢٨): صنف ناقص عند العميل، وآخر سعر اتبلّغ في محل بنفس الاسم
+ * أرخص بـ٥٪ أو أكتر من وسيط باقي المحلات. البلاغات لازم تكون بعملة العميل (اللي بينادي بيفلتر). وسيط من أقل من ٣ بلاغات
+ * مش «سعر السوق» — مابيتقالش. ٣ أصناف بالكتير، الأكبر توفير الأول.
+ */
+export function cheaperHereItems(
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null }>,
+  storeName: string,
+  missing: string[],
+  nowMs: number,
+): CheaperHere[] {
+  const out: Array<CheaperHere & { saving: number }> = [];
+  const seen = new Set<string>();
+  for (const want of missing) {
+    const key = itemKey(want);
+    if (key.length < 2 || seen.has(key)) continue;
+    seen.add(key);
+    let here: { price: number; at: number } | null = null;
+    const elsewhere: number[] = [];
+    for (const r of reports) {
+      const price = Number(r.price);
+      const at = Date.parse(String(r.timestamp ?? ""));
+      if (!r.item_name || !r.store_name || !(price > 0) || !Number.isFinite(at)) continue;
+      const reported = itemKey(r.item_name);
+      if (!reported.includes(key) && !key.includes(reported)) continue;
+      const days = (nowMs - at) / 86_400_000;
+      if (days < 0 || days > 30) continue;
+      if (sameStore(r.store_name, storeName)) {
+        if (days <= 14 && (here === null || at > here.at)) here = { price, at };
+      } else {
+        elsewhere.push(price);
+      }
+    }
+    if (!here || elsewhere.length < 3) continue;
+    const sorted = elsewhere.sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const typical = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    if (here.price > typical * 0.95) continue;
+    out.push({ item: want, price: Math.round(here.price * 100) / 100, typical: Math.round(typical * 100) / 100, saving: typical - here.price });
+  }
+  return out.sort((a, b) => b.saving - a.saving).slice(0, 3).map(({ saving: _s, ...c }) => c);
 }
 
 /**

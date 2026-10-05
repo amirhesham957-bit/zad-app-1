@@ -5,6 +5,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/campaigns/application/campaigns_controller.dart';
@@ -17,6 +18,9 @@ import 'package:zad/shared/settings/data/settings_repository.dart';
 /// market on Wi-Fi without a SIM; the dialect is the one chosen in «ملفي»,
 /// else the country's.
 final homeCampaignProvider = Provider<ActiveCampaign?>((ref) {
+  // A quiet period (slice 29): no banner, colours or badge — a celebration
+  // is not for a home in a hard few days.
+  if (ref.watch(quietModeProvider).value != null) return null;
   final catalog = ref.watch(campaignsControllerProvider);
   if (catalog.campaigns.isEmpty) return null;
   final local = tz.TZDateTime.from(
