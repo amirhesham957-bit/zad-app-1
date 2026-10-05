@@ -62,6 +62,8 @@ void openAgentScreen(
       unawaited(ZadScreens.showFamilyScreen(context, initialTab: 1));
     case AgentScreen.maintenance:
       unawaited(ZadScreens.showMaintenanceScreen(context));
+    case AgentScreen.documents:
+      unawaited(ZadScreens.showDocumentsScreen(context));
     case AgentScreen.insights:
       unawaited(ZadScreens.showIntelligenceScreen(context));
     case AgentScreen.camera:

@@ -126,6 +126,12 @@ abstract final class ZadIcons {
   /// A school timetable photographed (slice 21).
   static const IconData timetable = Icons.calendar_view_week;
 
+  /// An official document — passport, ID, licence (slice 32).
+  static const IconData document = Icons.badge_outlined;
+
+  /// Stored without its number or picture.
+  static const IconData privacy = Icons.lock_outline;
+
   /// Speak.
   static const IconData voice = Icons.mic;
 
