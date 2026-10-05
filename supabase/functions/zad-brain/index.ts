@@ -117,6 +117,7 @@ import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
+import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -1792,6 +1793,23 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
+    }
+    case "remember_occasion": {
+      // المناسبة ملاحظة عادية في الذاكرة ومعاها يومها (20261006000000). الجملة بتتكتب هنا مش من
+      // الموديل، والتاريخ اتحقق في validateRememberOccasion. «أنا»/فاضي = العميل نفسه (null).
+      const md = occasionMd(input.month, input.day);
+      if (!md) return "مرفوض: اليوم ده مش موجود في الشهر ده.";
+      const kind: OccasionKind = input.occasion === "anniversary" ? "anniversary" : "birthday";
+      const person = normalizeForPerson(input.person);
+      const { data: noteId, error } = await sb.rpc("zad_memory_set_occasion", {
+        p_user: userId, p_occasion: kind, p_for: person, p_md: md, p_note: occasionNote(kind, person, md),
+      });
+      if (error) return `فشل الحفظ: ${error.message}`;
+      if (person && typeof noteId === "string") {
+        await attachEntities(sb, userId, noteId, normalizeMemoryEntities([{ kind: "person", name: person }]));
+      }
+      const what = kind === "birthday" ? "عيد ميلاد" : "ذكرى جواز";
+      return `اتحفظ ${what} ${person ?? "العميل"} يوم ${occasionDateLabel(md)} — هفكّره قبلها بـ٣ أيام الصبح وأهنّي يومها.`;
     }
     case "link_memory": {
       // الدالة نفسها بتتحقق إن الملاحظتين بتوع نفس العميل قبل أي كتابة — العقل شغال
@@ -5129,6 +5147,23 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "remember_occasion",
+    description:
+      "سجّل عيد ميلاد أو ذكرى جواز — للعميل نفسه أو لحد من عيلته وصحابه — عشان زاد يفكّره الصبح قبلها بـ٣ أيام " +
+      "(ويقترح يحجز مبلغ للهدية) ويهنّي يومها. لما العميل يقول تاريخ: «عيد ميلاد مراتي ١٢ مارس»، «أنا مواليد ٤ يوليو». " +
+      "نفس الشخص بتاريخ تاني = تصحيح، مش مناسبة جديدة. ماتخمّنش اليوم: لو قال الشهر بس اسأله عن اليوم.",
+    input_schema: {
+      type: "object",
+      properties: {
+        occasion: { type: "string", enum: ["birthday", "anniversary"] },
+        person: { type: "string", description: "صاحب المناسبة («ماما»، «يوسف»، «مراتي»). سيبه فاضي لو المناسبة بتاعة العميل نفسه." },
+        month: { type: "number", description: "الشهر 1-12" },
+        day: { type: "number", description: "اليوم 1-31" },
+      },
+      required: ["occasion", "month", "day"],
+    },
+  },
+  {
     name: "remember",
     description: "سجّل ملاحظة دائمة عن العميل تفتكرها في المحادثات الجاية (تفضيل، ظرف، قاعدة قالها).",
     input_schema: {
@@ -6107,6 +6142,10 @@ async function handleAgentTurn(
       ...intentToolHints(message, priorAssistantText(history)),
       // صفحة الدعم: الشكوى هي سبب الصفحة.
       ...(body.surface === "support" ? ["open_support_ticket"] : []),
+      // عرض هدية الصبح (occasions.ts): الموافقة بتتسجّل هدف بمبلغ وميعاد.
+      ...(snap?.asked_this_morning?.kind === "gift" ? ["set_life_goal"] : []),
+      // سؤال الصبح عن عيد ميلاد: «١٢ مارس» لوحدها مافيهاش نية تجيب الأداة.
+      ...(snap?.asked_this_morning?.kind === "occasion" ? ["remember_occasion"] : []),
     ],
   );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
@@ -7066,8 +7105,8 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
-   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
-   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
+   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ. ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
+${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
    - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.
    - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
    - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.

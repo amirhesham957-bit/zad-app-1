@@ -284,11 +284,16 @@ export const ASKED_RELEVANT_MS = 20 * 3_600_000;
 
 export interface AskedThisMorning {
   question: string;
-  kind: "profile" | "curiosity";
+  kind: "profile" | "curiosity" | "gift" | "occasion";
   /** خانة zad_customer_profile لو السؤال من أسئلة الملف. */
   field?: string;
   record?: string;
   transaction_id?: string;
+  /** عرض الهدية (occasions.ts): لمين، المبلغ، العملة، ويوم المناسبة YYYY-MM-DD. */
+  for?: string;
+  amount?: number;
+  currency?: string;
+  deadline?: string;
   sent_at: string;
 }
 
@@ -306,6 +311,23 @@ export function askedThisMorning(
   const facts = (row.facts ?? {}) as Record<string, unknown>;
   const question = typeof facts.daily_question === "string" ? facts.daily_question.trim() : "";
   if (!question) return null;
+  const gift = facts.gift_offer as { for?: unknown; amount?: unknown; currency?: unknown; deadline?: unknown } | undefined;
+  if (facts.daily_question_kind === "gift" && gift && typeof gift === "object") {
+    return {
+      question,
+      kind: "gift",
+      ...(typeof gift.for === "string" ? { for: gift.for } : {}),
+      ...(typeof gift.amount === "number" ? { amount: gift.amount } : {}),
+      ...(typeof gift.currency === "string" ? { currency: gift.currency } : {}),
+      ...(typeof gift.deadline === "string" ? { deadline: gift.deadline } : {}),
+      sent_at: row.sent_at,
+    };
+  }
+  const occasionAsk = facts.occasion_ask as { for?: unknown } | undefined;
+  if (facts.daily_question_kind === "occasion" && occasionAsk && typeof occasionAsk === "object") {
+    // for غايب = العميل نفسه.
+    return { question, kind: "occasion", ...(typeof occasionAsk.for === "string" ? { for: occasionAsk.for } : {}), sent_at: row.sent_at };
+  }
   const curiosity = facts.curiosity as { record?: unknown; transaction_id?: unknown } | undefined;
   if (curiosity && typeof curiosity === "object") {
     return {

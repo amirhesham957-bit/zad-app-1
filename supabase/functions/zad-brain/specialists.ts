@@ -143,6 +143,8 @@ const GOLD_INTENT = /دهب|ذهب|عيار\s*(24|21|18|٢٤|٢١|١٨)/;
 const RECENT_FACT_INTENT = /(مين|من)\s*(اللي)?\s*(كسب|فاز|اخد|بطل)|(اخر|آخر)\s*(مره|نسخه|بطوله|ماتش|مباراه)|(اخبار|أخبار)|نتيجه\s*(ماتش|مباراه)|مين\s*(رئيس|وزير|مدرب)/;
 const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)\s*(بكام|بكم|كام|كم|النهارده|اليوم|دلوقتي)|(بكام|بكم|كام|كم|سعر)\s*(ال)?(دولار|يورو|استرليني|ريال|درهم|دينار|ليره|ليرة)|سعر\s*(ال)?صرف/;
 
+// «عيد ميلاد مراتي ١٢ مارس» — تاريخ لازم يروح remember_occasion (يومه في الذاكرة)، مش remember (جملة بس).
+const OCCASION_INTENT = /عيد ميلاد|عيد ميلادي|ذكري (ال)?جواز|ذكري جوازنا|عيد جوازنا/;
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 // نوايا الأدوات اللي خرجت من الأساسي (٢٠٢٦-١٠-٠٢). النص متطبّع (normalize): ة→ه، أ/إ/آ→ا، ى→ي.
 const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
@@ -174,6 +176,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
+  if (OCCASION_INTENT.test(norm)) tools.push("remember_occasion");
   if (GOLD_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("gold_price");
   else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
@@ -394,7 +397,7 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
     // الأدوات العابرة للنطاقات — متاحة دايمًا
-    "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
+    "remember", "remember_occasion", "link_memory", "web_search", "set_market", "set_transaction_category",
     // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
     "gold_price", "fetch_current_exchange_rate",
     // الشكوى بتتقال في أي موضوع.

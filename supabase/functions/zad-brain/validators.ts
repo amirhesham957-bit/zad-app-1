@@ -2,6 +2,7 @@
 // failure returns a reason string that becomes the tool_result the model reads back.
 // Kept in their own module (no Deno.serve here) so they're importable by tests directly.
 
+import { occasionMd } from "./occasions.ts";
 import { quietTopicRejection } from "./engagement.ts";
 import { cardBudgetRejection } from "./attention.ts";
 import { resolveValidUntil } from "./shared.ts";
@@ -199,6 +200,24 @@ export const validateAddShoppingItem: Validator = (input, snap, ctx) => {
   }
   if ((snap.shopping_list_pending ?? []).includes(input.item_name)) {
     return { ok: false, reason: "الحاجة دي على القايمة أصلاً" };
+  }
+  return { ok: true };
+};
+
+/**
+ * مناسبة سنوية (occasions.ts): نوع معروف ويوم حقيقي (٢٩ فبراير مقبول). الاسم بيتوحّد في التنفيذ
+ * (normalizeForPerson) — «أنا» أو فاضي = العميل نفسه.
+ */
+export const validateRememberOccasion: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["remember_occasion"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد ٥ مناسبات في المرة" };
+  if (input.occasion !== "birthday" && input.occasion !== "anniversary") {
+    return { ok: false, reason: "occasion لازم يبقى birthday أو anniversary" };
+  }
+  if (!occasionMd(input.month, input.day)) {
+    return { ok: false, reason: "month (1-12) وday لازم يكونوا يوم موجود فعلاً — لو العميل ماقالش اليوم بالظبط اسأله" };
+  }
+  if (input.person !== undefined && input.person !== null && String(input.person).length > 40) {
+    return { ok: false, reason: "الاسم طويل أوي — اكتب اسم الشخص أو صلته بالعميل بس" };
   }
   return { ok: true };
 };
@@ -955,6 +974,7 @@ export const VALIDATORS: Record<string, Validator> = {
   schedule_task: validateScheduleTask,
   query_family: validateQueryFamily,
   set_life_goal: validateSetLifeGoal,
+  remember_occasion: validateRememberOccasion,
   emit_insight: validateEmitInsight,
   ask_user: validateAskUser,
   update_inventory_qty: validateUpdateInventoryQty,
@@ -1033,6 +1053,7 @@ export const VALIDATORS: Record<string, Validator> = {
  */
 export const MUTATING_TOOLS = [
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
+  "remember_occasion",
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
