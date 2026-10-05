@@ -13,7 +13,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
-import { countryNameAr, isQuietHour, localHourIn, localNowContext, resolveLocalIso } from "./shared.ts";
+import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowContext, type QuietWindow, quietWindowOf, resolveLocalIso } from "./shared.ts";
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
@@ -1205,9 +1205,10 @@ export const CIRCUMSTANCE_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
 export function momentGate(
   moment: string, localHour: number, sentToday: number, appointmentsToday = 0, circumstance: CircumstanceMode = "normal",
+  quiet: QuietWindow = DEFAULT_QUIET,
 ): MomentHold | null {
   if (NEVER_HELD_MOMENTS.has(moment)) return null;
-  if (isQuietHour(localHour) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
+  if (isQuietHourIn(localHour, quiet) && !SPOKEN_IN_QUIET_HOURS.has(moment)) return "quiet_hours";
   if (circumstance !== "normal" && CIRCUMSTANCE_OPTIONAL_MOMENTS.has(moment)) return "circumstance";
   if (BUSY_DAY_OPTIONAL_MOMENTS.has(moment) && appointmentsToday >= BUSY_DAY_APPOINTMENTS) return "busy_day";
   if (sentToday >= attentionBudget(circumstance).voiceCap) return "daily_cap";
@@ -1232,7 +1233,14 @@ async function holdMoment(
   if (NEVER_HELD_MOMENTS.has(row.moment)) return null;
   const tz = await timeZoneOf(row);
   const hour = localHourIn(tz, nowMs);
-  if (isQuietHour(hour) && !SPOKEN_IN_QUIET_HOURS.has(row.moment)) return "quiet_hours";
+  // نافذة نومه هو (الشريحة ٣٧). فشل القراية = الافتراضي ١١–٧، مش «مفيش هدوء».
+  let quiet = DEFAULT_QUIET;
+  try {
+    const { data: u } = await sb.from("zad_users").select("sleep_bed,sleep_wake").eq("id", row.user_id).maybeSingle();
+    const sleep = u as { sleep_bed?: string | null; sleep_wake?: string | null } | null;
+    quiet = quietWindowOf(sleep?.sleep_bed, sleep?.sleep_wake);
+  } catch { /* الافتراضي */ }
+  if (isQuietHourIn(hour, quiet) && !SPOKEN_IN_QUIET_HOURS.has(row.moment)) return "quiet_hours";
   // اتقال كام النهارده بتوقيته، من غير الجرعات والمواعيد. فشل العدّ = مايمنعش.
   let sentToday = 0;
   try {
@@ -1267,5 +1275,5 @@ async function holdMoment(
   }
   // حالة البيت: فشل القراية = عادي (loadCircumstance مابيرميش).
   const circumstance = await loadCircumstance(sb, row.user_id, nowMs);
-  return momentGate(row.moment, hour, sentToday, appointmentsToday, circumstance.mode);
+  return momentGate(row.moment, hour, sentToday, appointmentsToday, circumstance.mode, quiet);
 }

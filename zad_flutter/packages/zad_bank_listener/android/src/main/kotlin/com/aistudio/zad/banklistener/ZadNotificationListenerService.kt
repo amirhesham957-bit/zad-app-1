@@ -36,6 +36,8 @@ class ZadNotificationListenerService : NotificationListenerService() {
         Log.i(TAG, "listener connected; pending=${store.pending()}")
         // كوتلن BankReadingStatus.recordListenerConnected: الصلاحية مش معناها الخدمة مربوطة.
         markNow(applicationContext, LAST_CONNECTED_AT)
+        // إيقاع النوم (الشريحة ٣٧): لحظات قفل/فتح الشاشة طول ما الخدمة مربوطة.
+        ScreenEvents.register(applicationContext)
         // أول ما الصلاحية تتفعّل (أو أندرويد يربط الخدمة من جديد) الإشعارات اللي لسه
         // ظاهرة في الشريط ماعدّتش على onNotificationPosted. كوتلن كان بيلمّها هنا؛ المفاتيح
         // اللي اتشافت قبل كده بتتحفظ عشان إعادة الربط ماتبعتش نفس الرسالة تاني.
@@ -104,6 +106,16 @@ class ZadNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = Unit
+
+    override fun onListenerDisconnected() {
+        ScreenEvents.unregister(applicationContext)
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        ScreenEvents.unregister(applicationContext)
+        super.onDestroy()
+    }
 
     internal companion object {
         const val TAG = "ZadBankListener"

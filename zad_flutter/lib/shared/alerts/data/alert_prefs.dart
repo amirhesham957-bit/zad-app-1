@@ -31,6 +31,10 @@ class AlertPrefs {
   /// «النطق الصوتي للإشعارات والجرعات».
   static const String voiceSpokenAlerts = 'alert_voice_spoken_alerts';
 
+  /// «زاد يتعلّم مواعيد نومي من قفل الشاشة» (slice 37) — on unless turned
+  /// off: the owner chose screen-lock times as the main, unobtrusive source.
+  static const String learnSleep = 'alert_learn_sleep';
+
   /// «"يا زاد" — الاستماع المستمر».
   static const String wakeWord = 'wake_word_enabled';
 

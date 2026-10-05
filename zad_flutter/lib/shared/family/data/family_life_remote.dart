@@ -82,6 +82,25 @@ class FamilyLifeRemote {
     'p_approve': approve,
   });
 
+  /// The family's purchase pause in hours (0 = off), 20261005231147. A
+  /// server without the column yet reads as off.
+  Future<int> fetchPurchasePause(String familyId) async {
+    try {
+      final row = await _client
+          .from('family_groups')
+          .select('purchase_pause_hours')
+          .eq('id', familyId)
+          .maybeSingle();
+      return (row?['purchase_pause_hours'] as num?)?.toInt() ?? 0;
+    } on Object {
+      return 0;
+    }
+  }
+
+  /// `zad_set_purchase_pause` — an admin turns the 24-hour pause on or off.
+  Future<Map<String, dynamic>> setPurchasePause({required bool on}) =>
+      _rpc('zad_set_purchase_pause', <String, dynamic>{'p_on': on});
+
   /// `zad_send_allowance` — an admin adds pocket money to a member's balance.
   Future<Map<String, dynamic>> sendAllowance(String memberId, double amount) =>
       _rpc('zad_send_allowance', <String, dynamic>{

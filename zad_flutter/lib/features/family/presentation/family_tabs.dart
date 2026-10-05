@@ -1137,6 +1137,7 @@ class FamilyKidsTab extends ConsumerWidget {
         children: <Widget>[
           _heading(ZadIcons.wallet, 'مصاريف الأبناء'),
           _subtitle('نظرة عامة على أرصدة وطلبات الأبناء'),
+          if (children.isNotEmpty) _PurchasePauseSwitch(familyId: family.id),
           if (children.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
@@ -1174,6 +1175,56 @@ class FamilyKidsTab extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// «وقفة تفكير ٢٤ ساعة» (20261005231147): a purchase request may be
+/// approved only a day after it was sent. The server enforces it; this is
+/// the parent's switch and the current state.
+class _PurchasePauseSwitch extends ConsumerStatefulWidget {
+  const new({required this.familyId});
+
+  final String familyId;
+
+  @override
+  ConsumerState<_PurchasePauseSwitch> createState() => _PurchasePauseState();
+}
+
+class _PurchasePauseState extends ConsumerState<_PurchasePauseSwitch> {
+  bool? _on;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ref
+          .read(familyLifeControllerProvider.notifier)
+          .purchasePause(widget.familyId)
+          .then((h) {
+            if (mounted) setState(() => _on = h > 0);
+          }),
+    );
+  }
+
+  Future<void> _toggle(bool on) async {
+    final previous = _on;
+    setState(() => _on = on);
+    final now = await ref
+        .read(familyLifeControllerProvider.notifier)
+        .setPurchasePause(on: on);
+    if (mounted) setState(() => _on = now ?? previous);
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+    contentPadding: EdgeInsets.zero,
+    value: _on ?? false,
+    onChanged: _on == null ? null : (v) => unawaited(_toggle(v)),
+    title: const Text('وقفة تفكير ٢٤ ساعة'),
+    subtitle: const Text(
+      'طلب الشرا مايتوافقش عليه قبل يوم من ما اتبعت. الرفض في أي وقت، '
+      'وطلب المصروف مش متأثر.',
+    ),
+  );
 }
 
 class _KidCard extends ConsumerWidget {

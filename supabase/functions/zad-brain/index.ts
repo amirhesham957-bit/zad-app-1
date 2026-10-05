@@ -66,7 +66,7 @@ import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../z
 import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -95,6 +95,8 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
+import { handoverCard, HANDOVER_DEFAULT_DAYS } from "./handover.ts";
+import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gathering.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
@@ -725,7 +727,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const cashKey = isoWeekKey(new Date());
   const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
     await Promise.all([
-      sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
       // `id` مضاف عشان set_transaction_category و update_transaction يقدروا يشاوروا على
       // معاملة حقيقية. من غيره الموديل مكانش قدامه غير إنه يخترع معرّف — وأداة
       // set_transaction_category كانت موجودة من غير أي مصدر شرعي للـ transaction_id.
@@ -1410,6 +1412,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     }),
     // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
     now_local: localNowContext(budgetState.timezone ?? "UTC"),
+    // إيقاع النوم (الشريحة ٣٧): الموبايل اتعلّمه من قفل الشاشة أو العميل حدده. ساعات الهدوء منه.
+    sleep: userRes.data?.sleep_bed && userRes.data?.sleep_wake
+      ? {
+        bed: String(userRes.data.sleep_bed).slice(0, 5), wake: String(userRes.data.sleep_wake).slice(0, 5),
+        source: userRes.data.sleep_source ?? null, nights: userRes.data.sleep_nights ?? null,
+      }
+      : null,
     // الموسم بتقويم أم القرى (رمضان/العيدين) بتوقيت العميل — null برّه المواسم.
     season: (() => {
       const se = seasonFor(new Date(), budgetState.timezone ?? "UTC");
@@ -3454,6 +3463,96 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         notes, family, now,
       }));
     }
+    case "plan_gathering":
+    case "add_gathering_to_list": {
+      // نمط العزومة (gathering.ts، الشريحة ٣٥): كميات بالفرد، اللي في البيت، ووضع الفلوس — من غير إجمالي مخترع.
+      const meal: GatheringMeal = input?.meal === "sweets" ? "sweets" : "meal";
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const [pantry, shopping, user, state, challenge, broke] = await Promise.all([
+        sb.from("zad_inventory").select("item_name,quantity,unit").eq("user_id", userId).limit(300),
+        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(100),
+        sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_savings_challenges").select("id").eq("user_id", userId).eq("status", "active").limit(1),
+        sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle(),
+      ]);
+      const u = user.data as { country?: string | null; currency?: string | null } | null;
+      const b = broke.data as { ends_at?: string | null; ended_at?: string | null } | null;
+      const plan = gatheringPlan({
+        people: Number(input.people), meal, country: u?.country ?? null,
+        pantry: (pantry.data ?? []) as Array<{ item_name: string; quantity: number | null; unit: string | null }>,
+        shopping: ((shopping.data ?? []) as Array<{ item_name: string }>).map((s) => s.item_name),
+        available: (state.data as { available?: number | null } | null)?.available ?? null,
+        currency: u?.currency ?? null,
+        budget: input.budget === undefined || input.budget === null ? null : Number(input.budget),
+        savingAgreement: (challenge.data ?? []).length > 0 ||
+          Boolean(b && !b.ended_at && b.ends_at && Date.parse(b.ends_at) > Date.now()),
+      });
+      if (name === "plan_gathering") return JSON.stringify(plan);
+      const rows = gatheringListRows(plan, Array.isArray(input.skip) ? input.skip.map(String) : []);
+      if (rows.length === 0) return "مفيش حاجة تتضاف — كل سطور العزومة في القايمة أو العميل قال عنده منها.";
+      const w = await writeRows(
+        sb.from("zad_shopping_list").insert(rows.map((r) => ({ ...r, user_id: userId, is_purchased: false }))).select("id,item_name,quantity"),
+        "إضافة سطور العزومة",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { rows: rows.length } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: w.rows });
+      return `اتضاف لقايمة التسوق: ${rows.map((r) => r.item_name).join("، ")}`;
+    }
+    case "set_sleep_window": {
+      // إيقاع النوم يدوي (الشريحة ٣٧): نفس قواعد zad_set_sleep_window — اليدوي بيكسب المتعلّم، و«امسح» يرجّع ١١–٧.
+      if (input?.clear === true) {
+        const w = await writeRows(
+          sb.from("zad_users").update({ sleep_bed: null, sleep_wake: null, sleep_nights: null, sleep_source: null, sleep_updated_at: new Date().toISOString() })
+            .eq("id", userId).select("id"),
+          "مسح مواعيد النوم",
+        );
+        if (!w.ok) return `مرفوض: ${w.reason}`;
+        ctx.mutationCount++;
+        return "اتمسحت مواعيد النوم — زاد هيسكت من ١١ بالليل لـ٧ الصبح، ولو التعلّم من قفل الشاشة شغال هيتعلّمها تاني.";
+      }
+      const bed = String(input.bed), wake = String(input.wake);
+      const w = await writeRows(
+        sb.from("zad_users").update({ sleep_bed: bed, sleep_wake: wake, sleep_nights: null, sleep_source: "manual", sleep_updated_at: new Date().toISOString() })
+          .eq("id", userId).select("id"),
+        "حفظ مواعيد النوم",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: snap?.sleep ?? null, new: { bed, wake } });
+      return `تمام — زاد مش هيبعت تنبيهات مش ضرورية من ${bed} لـ${wake} (الجرعات والطوارئ زي ما هي).`;
+    }
+    case "handover_card": {
+      // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const today = localNowContext(timeZone).date;
+      const days = Number(input?.days) || HANDOVER_DEFAULT_DAYS;
+      const until = new Date(Date.now() + (days + 1) * 86_400_000).toISOString();
+      const [meds, appts, timetable, state, obligations, shopping, user] = await Promise.all([
+        sb.from("zad_pharmacy_items").select("name,dosage,dose_times,remaining_quantity,daily_dose_count,units_per_dose,for_person,is_recurring").eq("user_id", userId),
+        sb.from("zad_appointments").select("title,starts_at,kind,for_person").eq("user_id", userId)
+          .gte("starts_at", new Date(Date.now() - 86_400_000).toISOString()).lte("starts_at", until).order("starts_at", { ascending: true }).limit(50),
+        sb.from("zad_school_timetable").select("person,weekday,period,subject,starts").eq("user_id", userId),
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_obligations").select("title,amount,due_day").eq("user_id", userId).eq("active", true),
+        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20),
+        sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
+      ]);
+      if (meds.error || appts.error) return `مقدرتش أجمع الكارت دلوقتي: ${(meds.error ?? appts.error)?.message}`;
+      const u = user.data as { country?: string | null; currency?: string | null } | null;
+      const b = (state.data ?? null) as { daily_allowance_left?: number | null; available?: number | null } | null;
+      return JSON.stringify(handoverCard({
+        today, timeZone, days, country: u?.country ?? null, currency: u?.currency ?? null,
+        medicines: (meds.data ?? []) as Parameters<typeof handoverCard>[0]["medicines"],
+        appointments: (appts.data ?? []) as Parameters<typeof handoverCard>[0]["appointments"],
+        timetable: (timetable.data ?? []) as Parameters<typeof handoverCard>[0]["timetable"],
+        budget: b ? { daily_allowance_left: b.daily_allowance_left ?? null, available: b.available ?? null } : null,
+        obligations: (obligations.data ?? []) as Parameters<typeof handoverCard>[0]["obligations"],
+        shopping: ((shopping.data ?? []) as Array<{ item_name: string }>).map((s) => s.item_name),
+      }));
+    }
     case "decision_impact": {
       // قرار كبير على الشهور الجاية (decisionImpact.ts): من متوسط الدخل والصرف الفعلي آخر ٩٠ يوم،
       // ونفس الرصيد اللي forward_ledger بيبدأ منه. حساب حتمي، صفر كوتة.
@@ -4807,6 +4906,63 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "plan_gathering",
+    description:
+      "خطة عزومة أو ضيوف: كميات تقديرية بالفرد (غدا/عشا أو قعدة حلو)، اللي في البيت منها، وهل في القايمة، ووضع الفلوس (المتاح، ولو " +
+      "حدد ميزانية: تكفي ولا لأ). نادِها لما العميل يقول «عازم ناس» أو «جايين ضيوف الخميس». اعرض السطور باختصار، واسأل «أضيفهم " +
+      "للقايمة؟» (add_gathering_to_list)، واعرض تحط ميعاد العزومة (add_appointment). **ماتخترعش إجمالي فلوس** — مفيش أسعار بوحدات. " +
+      "ولو saving_agreement = true، العميل متفق يوفّر: اقترح عزومة أبسط من غير لوم.",
+    input_schema: {
+      type: "object",
+      properties: {
+        people: { type: "number", description: "كام واحد هياكل — الضيوف + أهل البيت (٢–٦٠)" },
+        meal: { type: "string", enum: ["meal", "sweets"], description: "meal غدا/عشا، sweets حلو وشاي" },
+        budget: { type: "number", description: "ميزانية العزومة لو العميل قالها" },
+      },
+      required: ["people"],
+    },
+  },
+  {
+    name: "add_gathering_to_list",
+    description: "ضيف سطور خطة العزومة لقايمة التسوق مرة واحدة — **بعد ما العميل يوافق بس**. نفس people وmeal اللي اتعرضوا.",
+    input_schema: {
+      type: "object",
+      properties: {
+        people: { type: "number" },
+        meal: { type: "string", enum: ["meal", "sweets"] },
+        skip: { type: "array", items: { type: "string" }, description: "سطور العميل قال عنده منها (زي «رز»)" },
+      },
+      required: ["people"],
+    },
+  },
+  {
+    name: "set_sleep_window",
+    description:
+      "مواعيد نوم العميل وصحيانه، عشان زاد مايبعتش تنبيهات مش ضرورية وهو نايم (الجرعات والطوارئ مستثناة). لما يقول «بنام ١٢ " +
+      "وبصحى ٦» أو «ماتبعتليش حاجة قبل ٨». اليدوي بيكسب اللي الموبايل اتعلّمه من قفل الشاشة. clear=true يرجّع للافتراضي (١١–٧).",
+    input_schema: {
+      type: "object",
+      properties: {
+        bed: { type: "string", description: "HH:MM بتوقيته — من ٢٠:٠٠ لـ٠٣:٠٠" },
+        wake: { type: "string", description: "HH:MM — من ٠٤:٠٠ لـ١٢:٠٠" },
+        clear: { type: "boolean" },
+      },
+    },
+  },
+  {
+    name: "handover_card",
+    description:
+      "كارت تسليم للي فاضل في البيت لما العميل يسافر أو يغيب كام يوم: جرعات الأدوية ومواعيدها (ولمين) واللي هيخلص، المواعيد، " +
+      "جدول حصص الأولاد، المصروف المسموح في اليوم والمستحقات، وقايمة التسوق — للأيام الجاية. نادِها لما يقول «مسافر بكرة» أو " +
+      "«جهّز لمراتي/لجوزي اللي محتاجه وأنا مش موجود». اعرضه مرتب ومختصر يتبعت زي ما هو. من بياناته هو بس — مفيش موقع حد ولا متابعة.",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "عدد أيام الغياب (١–١٤، ٣ افتراضي)" },
+      },
+    },
+  },
+  {
     name: "decision_impact",
     description:
       "أثر قرار كبير على الشهور الجاية (٦ افتراضي، ١٢ أقصى): مدرسة جديدة، عربية، رحلة، قسط جديد، شغل جديد. " +
@@ -5487,7 +5643,12 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         continue;
       }
       // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
-      const quietUntil = postponeForQuietHours(task.kind, await accountTimeZone(sb, task.user_id), Date.now());
+      // نافذة نومه هو لو معروفة (الشريحة ٣٧)، وإلا ١١–٧.
+      const { data: sleep } = await sb.from("zad_users").select("sleep_bed,sleep_wake").eq("id", task.user_id).maybeSingle();
+      const quietUntil = postponeForQuietHours(
+        task.kind, await accountTimeZone(sb, task.user_id), Date.now(),
+        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
+      );
       if (quietUntil) {
         await sb.from("agent_tasks").update({ scheduled_for: quietUntil, updated_at: new Date().toISOString() }).eq("id", task.id);
         console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${quietUntil} (quiet hours)`);

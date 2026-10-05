@@ -412,6 +412,30 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     );
   }
 
+  /// The family's purchase pause, in hours (0 = off).
+  Future<int> purchasePause(String familyId) =>
+      _remote.fetchPurchasePause(familyId);
+
+  /// An admin turns the 24-hour pause on or off; the new state, or null
+  /// when the server refused.
+  Future<bool?> setPurchasePause({required bool on}) async {
+    try {
+      final result = await _remote.setPurchasePause(on: on);
+      if (result['ok'] != true) {
+        _say(
+          result['reason'] == 'not_an_admin'
+              ? 'وقفة التفكير للمسؤول بس.'
+              : 'مقدرتش أغيّر وقفة التفكير. جرّب تاني.',
+        );
+        return null;
+      }
+      return (result['hours'] as num?)?.toInt() == 24;
+    } on Object {
+      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      return null;
+    }
+  }
+
   /// An admin adds pocket money to [member]'s balance, unasked.
   Future<bool> sendAllowance(FamilyMember member, double amount) async {
     try {
@@ -471,6 +495,10 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
           'insufficient_balance' =>
             'رصيده مايكفيش الطلب ده — حوّله مصروف الأول '
                 'من «حوّل مصروف»، وبعدين وافق.',
+          'cooling_off' => coolingOffMessage(
+            DateTime.tryParse('${result['ready_at']}'),
+            ref.read(nowProvider)(),
+          ),
           _ => 'مقدرتش أسجّل القرار. جرّب تاني.',
         });
         return;

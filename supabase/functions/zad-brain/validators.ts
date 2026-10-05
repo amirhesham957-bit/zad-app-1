@@ -585,6 +585,41 @@ export const validateDeleteMaintenanceItem: Validator = (input, _snap, ctx) => {
 /** خمس أرقام ورا بعض في اسم صاحب المستند أو اسمه = غالباً رقم المستند نفسه، واحنا مابنخزنهوش (الشريحة ٣٢). */
 const DOCUMENT_NUMBER_RE = /[0-9٠-٩]{5,}/;
 
+export const validateGathering = (name: "plan_gathering" | "add_gathering_to_list"): Validator => (input, _snap, ctx) => {
+  if ((ctx.counts[name] ?? 0) >= 1) return { ok: false, reason: "الخطة اتعملت خلاص في اللفة دي" };
+  const people = input.people;
+  if (typeof people !== "number" || !Number.isFinite(people) || people < 2 || people > 60) {
+    return { ok: false, reason: "عدد اللي هياكلوا من ٢ لـ٦٠ — اسأل العميل كام واحد" };
+  }
+  if (input.meal !== undefined && input.meal !== "meal" && input.meal !== "sweets") return { ok: false, reason: "meal لازم meal أو sweets" };
+  if (input.budget !== undefined && input.budget !== null && (typeof input.budget !== "number" || input.budget <= 0)) {
+    return { ok: false, reason: "الميزانية لازم رقم موجب" };
+  }
+  return { ok: true };
+};
+
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const validateSetSleepWindow: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["set_sleep_window"] ?? 0) >= 1) return { ok: false, reason: "اتحفظت خلاص في اللفة دي" };
+  if (input.clear === true) return { ok: true };
+  const bed = String(input.bed ?? ""), wake = String(input.wake ?? "");
+  if (!HHMM.test(bed) || !HHMM.test(wake)) return { ok: false, reason: "المواعيد بصيغة HH:MM (٢٤ ساعة)" };
+  const bh = Number(bed.slice(0, 2)), wh = Number(wake.slice(0, 2));
+  if (!(bh >= 20 || bh <= 3) || (bh === 3 && bed !== "03:00")) return { ok: false, reason: "النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش" };
+  if (wh < 4 || wh > 12 || (wh === 12 && wake !== "12:00")) return { ok: false, reason: "الصحيان من ٠٤:٠٠ لـ١٢:٠٠" };
+  return { ok: true };
+};
+
+export const validateHandoverCard: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["handover_card"] ?? 0) >= 1) return { ok: false, reason: "الكارت اتعمل خلاص في اللفة دي" };
+  const days = input.days;
+  if (days !== undefined && days !== null && (typeof days !== "number" || !Number.isFinite(days) || days < 1 || days > 14)) {
+    return { ok: false, reason: "عدد الأيام من ١ لـ١٤" };
+  }
+  return { ok: true };
+};
+
 export const validateSaveDocument: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["save_document"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ مستندات في المرة" };
   if (!(DOCUMENT_KINDS as readonly string[]).includes(String(input.kind))) {
@@ -966,6 +1001,10 @@ export const VALIDATORS: Record<string, Validator> = {
   update_maintenance_item: validateUpdateMaintenanceItem,
   delete_maintenance_item: validateDeleteMaintenanceItem,
   save_document: validateSaveDocument,
+  handover_card: validateHandoverCard,
+  set_sleep_window: validateSetSleepWindow,
+  plan_gathering: validateGathering("plan_gathering"),
+  add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
   update_emergency_fund_balance: validateUpdateEmergencyFundBalance,
   app_command: validateAppCommand,
@@ -1003,6 +1042,10 @@ export const MUTATING_TOOLS = [
   "update_emergency_fund_balance",
   // حارس المستندات (الشريحة ٣٢) — تواريخ بس، نفس مستوى الصيانة.
   "save_document", "delete_document",
+  // نمط العزومة (الشريحة ٣٥): الإضافة للقايمة بس — الخطة قراية.
+  "add_gathering_to_list",
+  // إيقاع النوم يدوي (الشريحة ٣٧).
+  "set_sleep_window",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment",
   "add_place_reminder", "cancel_place_reminder",
@@ -1040,6 +1083,8 @@ export const CHILD_BLOCKED_TOOLS = [
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",
   "update_emergency_fund_balance", "set_broke_mode",
+  // كارت التسليم فيه المصروف والمستحقات — حاجة ولي الأمر.
+  "handover_card",
 ];
 
 /** Whether the snapshot is a child's (family_members.role = 'child'). */
