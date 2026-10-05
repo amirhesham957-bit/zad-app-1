@@ -158,6 +158,8 @@ const DOCUMENT_INTENT = new RegExp(
     `(جواز|البطاقه|بطاقتي|الرقم القومي|اقامه|اقامتي|الاقامه|رخصه|رخصتي|الرخصه).{0,30}${DOCUMENT_TIME}|` +
     `${DOCUMENT_TIME}.{0,20}(جواز|البطاقه|بطاقتي|اقامه|اقامتي|الاقامه|رخصه|رخصتي|الرخصه)`,
 );
+// كارت التسليم (الشريحة ٣٤): غياب عن البيت + حد هيمسك مكانه، أو طلب الكارت نفسه.
+const HANDOVER_INTENT = /كارت تسليم|تسليم الشفت|تسليم البيت|(مسافر|هسافر|حسافر|مسافره|هغيب|مش هبقي موجود|مش هكون موجود).{0,40}(مراتي|جوزي|زوجي|زوجتي|البيت|الاولاد|العيال|ماما|بابا|اللي في البيت)/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
@@ -178,6 +180,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
   if (MEDICINE_EDIT_INTENT.test(norm)) tools.push("delete_pharmacy_item", "update_pharmacy_item");
   if (DOCUMENT_INTENT.test(norm)) tools.push("save_document", "delete_document", "read_house");
+  if (HANDOVER_INTENT.test(norm)) tools.push("handover_card");
   return [...new Set(tools)];
 }
 
@@ -333,7 +336,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "set_life_circumstance", "end_life_circumstance",
   ],
   family: [
-    "schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll",
+    "schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll", "handover_card",
     "set_life_circumstance", "end_life_circumstance",
   ],
   home: [

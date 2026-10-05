@@ -585,6 +585,15 @@ export const validateDeleteMaintenanceItem: Validator = (input, _snap, ctx) => {
 /** خمس أرقام ورا بعض في اسم صاحب المستند أو اسمه = غالباً رقم المستند نفسه، واحنا مابنخزنهوش (الشريحة ٣٢). */
 const DOCUMENT_NUMBER_RE = /[0-9٠-٩]{5,}/;
 
+export const validateHandoverCard: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["handover_card"] ?? 0) >= 1) return { ok: false, reason: "الكارت اتعمل خلاص في اللفة دي" };
+  const days = input.days;
+  if (days !== undefined && days !== null && (typeof days !== "number" || !Number.isFinite(days) || days < 1 || days > 14)) {
+    return { ok: false, reason: "عدد الأيام من ١ لـ١٤" };
+  }
+  return { ok: true };
+};
+
 export const validateSaveDocument: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["save_document"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ مستندات في المرة" };
   if (!(DOCUMENT_KINDS as readonly string[]).includes(String(input.kind))) {
@@ -966,6 +975,7 @@ export const VALIDATORS: Record<string, Validator> = {
   update_maintenance_item: validateUpdateMaintenanceItem,
   delete_maintenance_item: validateDeleteMaintenanceItem,
   save_document: validateSaveDocument,
+  handover_card: validateHandoverCard,
   delete_document: validateDeleteDocument,
   update_emergency_fund_balance: validateUpdateEmergencyFundBalance,
   app_command: validateAppCommand,
@@ -1040,6 +1050,8 @@ export const CHILD_BLOCKED_TOOLS = [
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",
   "update_emergency_fund_balance", "set_broke_mode",
+  // كارت التسليم فيه المصروف والمستحقات — حاجة ولي الأمر.
+  "handover_card",
 ];
 
 /** Whether the snapshot is a child's (family_members.role = 'child'). */

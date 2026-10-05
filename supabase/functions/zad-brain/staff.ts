@@ -15,7 +15,8 @@
 //            الأسبوع (lifeShift.ts، الشريحة ٣٠)، ورادار الفواتير (billAnomaly.ts، الشريحة ٣٣): فاتورة مرفق الشهر ده أعلى
 //            بكتير من تاريخ البيت نفسه، مرة لكل مرفق وشهر.
 //   family   سكرتير العيلة: طلب متابعة مستني رد، عيلة فيها فرد واحد، مهام متأخرة، وميزان الرفاهية (wellbeing.ts،
-//            الشريحة ٣١): الروتين غالب والترفيه شبه صفر، وفيه توفير ⇒ نشاط بسيط في حدود جزء منه؛ وحارس المستندات
+//            الشريحة ٣١): الروتين غالب والترفيه شبه صفر، وفيه توفير ⇒ نشاط بسيط في حدود جزء منه؛ وكارت التسليم لما رحلة
+//            تبدأ وفي البيت حد تاني (handover.ts، الشريحة ٣٤)؛ وحارس المستندات
 //            (documents.ts، الشريحة ٣٢): جواز أو بطاقة أو رخصة دخلت مرحلة تنبيه، كل مرحلة مرة واحدة.
 //   brain    مدرّب الإعداد: حاجات عمرها ما اتفعلت — الإشعارات، تليجرام، المخزن، الصيدلية؛
 //            ومدرّب الأهداف: هدف حطه العميل ومتأخر عن جدوله (goalPace.ts) ⇒ خطوة واحدة لبكرة؛
@@ -36,6 +37,7 @@ import { activityBudget, balanceFrom, type BudgetPace, isOutOfBalance, savedSoFa
 import { loadCircumstance } from "./circumstances.ts";
 import { type DocumentRow, documentNotes } from "./documents.ts";
 import { billAnomalies, billNote, billSubject, type BillTxn } from "./billAnomaly.ts";
+import { handoverNoteFor } from "./handover.ts";
 import { localNowContext } from "./shared.ts";
 
 export interface StaffNote {
@@ -451,7 +453,7 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").eq("user_id", userId),
       sb.from("zad_pharmacy_items").select("name,remaining_quantity,is_recurring,dose_times,daily_dose_count,units_per_dose,expiry_date").eq("user_id", userId),
-      sb.from("zad_users").select("monthly_limit").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("monthly_limit,travel_since").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("created_at").eq("user_id", userId).gte("created_at", since30).order("created_at", { ascending: false }).limit(50),
       sb.from("zad_fcm_tokens").select("id").eq("user_id", userId).limit(1),
       sb.from("telegram_bindings").select("chat_id").eq("user_id", userId).limit(1),
@@ -498,7 +500,8 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
       staffBills(sb, userId, now),
     ]);
     const fresh = freshNotes(
-      [...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts, ...(wellbeing ? [wellbeing] : []), ...documents, ...bills],
+      [...notes, ...decisions.notes, ...(capsule ? [capsule] : []), ...shifts, ...(wellbeing ? [wellbeing] : []), ...documents, ...bills,
+        ...staffHandover((user.data as { travel_since?: string | null } | null)?.travel_since ?? null, familyMembers, now)],
       ((mail.data ?? []) as Array<{ subject: string }>).map((m) => m.subject));
     let delivered = true;
     if (fresh.length > 0) {
@@ -516,6 +519,12 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
     console.error("[staff] round failed:", (e as Error)?.message ?? e);
     return [];
   }
+}
+
+/** كارت التسليم (الشريحة ٣٤): رحلة بدأت آخر ٤٨ ساعة وفي العيلة حد تاني ⇒ ملاحظة مرة للرحلة (منع التكرار العادي أسبوع يكفي). */
+function staffHandover(travelSince: string | null, familyMembers: number | null, now: Date): StaffNote[] {
+  const n = handoverNoteFor(travelSince, familyMembers, now.getTime());
+  return n ? [{ sender: "family", ...n }] : [];
 }
 
 /**

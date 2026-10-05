@@ -95,6 +95,7 @@ import { soulBlock } from "./soul.ts";
 import { loadSkills, skillsBlock } from "./skills.ts";
 import { canSeeFamilySpending, visibleSpenders } from "./familyAccess.ts";
 import { runResearch, runStaffRound, type SearchHit, staffBlock } from "./staff.ts";
+import { handoverCard, HANDOVER_DEFAULT_DAYS } from "./handover.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
@@ -3454,6 +3455,35 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         notes, family, now,
       }));
     }
+    case "handover_card": {
+      // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const today = localNowContext(timeZone).date;
+      const days = Number(input?.days) || HANDOVER_DEFAULT_DAYS;
+      const until = new Date(Date.now() + (days + 1) * 86_400_000).toISOString();
+      const [meds, appts, timetable, state, obligations, shopping, user] = await Promise.all([
+        sb.from("zad_pharmacy_items").select("name,dosage,dose_times,remaining_quantity,daily_dose_count,units_per_dose,for_person,is_recurring").eq("user_id", userId),
+        sb.from("zad_appointments").select("title,starts_at,kind,for_person").eq("user_id", userId)
+          .gte("starts_at", new Date(Date.now() - 86_400_000).toISOString()).lte("starts_at", until).order("starts_at", { ascending: true }).limit(50),
+        sb.from("zad_school_timetable").select("person,weekday,period,subject,starts").eq("user_id", userId),
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_obligations").select("title,amount,due_day").eq("user_id", userId).eq("active", true),
+        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20),
+        sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
+      ]);
+      if (meds.error || appts.error) return `مقدرتش أجمع الكارت دلوقتي: ${(meds.error ?? appts.error)?.message}`;
+      const u = user.data as { country?: string | null; currency?: string | null } | null;
+      const b = (state.data ?? null) as { daily_allowance_left?: number | null; available?: number | null } | null;
+      return JSON.stringify(handoverCard({
+        today, timeZone, days, country: u?.country ?? null, currency: u?.currency ?? null,
+        medicines: (meds.data ?? []) as Parameters<typeof handoverCard>[0]["medicines"],
+        appointments: (appts.data ?? []) as Parameters<typeof handoverCard>[0]["appointments"],
+        timetable: (timetable.data ?? []) as Parameters<typeof handoverCard>[0]["timetable"],
+        budget: b ? { daily_allowance_left: b.daily_allowance_left ?? null, available: b.available ?? null } : null,
+        obligations: (obligations.data ?? []) as Parameters<typeof handoverCard>[0]["obligations"],
+        shopping: ((shopping.data ?? []) as Array<{ item_name: string }>).map((s) => s.item_name),
+      }));
+    }
     case "decision_impact": {
       // قرار كبير على الشهور الجاية (decisionImpact.ts): من متوسط الدخل والصرف الفعلي آخر ٩٠ يوم،
       // ونفس الرصيد اللي forward_ledger بيبدأ منه. حساب حتمي، صفر كوتة.
@@ -4803,6 +4833,19 @@ export const CHAT_TOOLS: ToolDef[] = [
       type: "object",
       properties: {
         for_person: { type: "string", description: "مين (ماما، عمر…) — فاضي لو العميل نفسه" },
+      },
+    },
+  },
+  {
+    name: "handover_card",
+    description:
+      "كارت تسليم للي فاضل في البيت لما العميل يسافر أو يغيب كام يوم: جرعات الأدوية ومواعيدها (ولمين) واللي هيخلص، المواعيد، " +
+      "جدول حصص الأولاد، المصروف المسموح في اليوم والمستحقات، وقايمة التسوق — للأيام الجاية. نادِها لما يقول «مسافر بكرة» أو " +
+      "«جهّز لمراتي/لجوزي اللي محتاجه وأنا مش موجود». اعرضه مرتب ومختصر يتبعت زي ما هو. من بياناته هو بس — مفيش موقع حد ولا متابعة.",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "عدد أيام الغياب (١–١٤، ٣ افتراضي)" },
       },
     },
   },
