@@ -3,6 +3,7 @@ package com.aistudio.zad.wrtqvx
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -10,6 +11,8 @@ import es.antonborri.home_widget.HomeWidgetProvider
 
 /**
  * ويدجت الشاشة الرئيسية: «متاح» وآخر ٣ معاملات — زي TransactionWidget بتاع كوتلن.
+ * فوقهم سطر المناسبة (البادج والاسم على لونها، أو عدّاد «باقي ٣ أيام على …»)، وتحت الرقم
+ * أول سطر في موجز النهارده.
  *
  * مابيعملش شبكة ولا حساب: التطبيق (home_widget_sync.dart) بيكتب القيم المنسّقة جاهزة
  * كل ما الميزانية أو المعاملات تتغير، والويدجت بيعرضها بس. الضغط عليه بيفتح التطبيق.
@@ -25,6 +28,26 @@ class ZadBalanceWidget : HomeWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.zad_balance_widget).apply {
                 setTextViewText(R.id.widget_balance, widgetData.getString("zad_available", "—"))
                 setTextViewText(R.id.widget_updated, widgetData.getString("zad_updated", ""))
+                val seasonLine = widgetData.getString("zad_season_line", null)
+                if (seasonLine.isNullOrBlank()) {
+                    setViewVisibility(R.id.widget_season, View.GONE)
+                } else {
+                    setViewVisibility(R.id.widget_season, View.VISIBLE)
+                    setTextViewText(R.id.widget_season_badge, widgetData.getString("zad_season_badge", ""))
+                    setTextViewText(R.id.widget_season_line, seasonLine)
+                    // A colour the app wrote; a malformed one keeps the layout's green.
+                    val color = runCatching {
+                        Color.parseColor(widgetData.getString("zad_season_color", null))
+                    }.getOrNull()
+                    if (color != null) setInt(R.id.widget_season, "setBackgroundColor", color)
+                }
+                val brief = widgetData.getString("zad_brief", null)
+                if (brief.isNullOrBlank()) {
+                    setViewVisibility(R.id.widget_brief, View.GONE)
+                } else {
+                    setViewVisibility(R.id.widget_brief, View.VISIBLE)
+                    setTextViewText(R.id.widget_brief, "📌 $brief")
+                }
                 var shown = 0
                 for (i in 0 until 3) {
                     val title = widgetData.getString("zad_tx_${i}_title", null)

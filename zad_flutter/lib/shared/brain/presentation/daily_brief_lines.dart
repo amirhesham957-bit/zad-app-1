@@ -24,7 +24,14 @@ import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 
 /// The brief as it stands, from what is on the device — no model call.
-List<BriefItem> watchDailyBrief(WidgetRef ref, {int max = 5}) {
+List<BriefItem> watchDailyBrief(WidgetRef ref, {int max = 5}) =>
+    ref.watch(dailyBriefProvider).take(max).toList();
+
+/// Every line of the brief, most urgent first, for a screen or the
+/// home-screen widget to take what it shows.
+final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
+  ref,
+) {
   final pantry = ref.watch(pantryControllerProvider).items;
   final doses = ref.watch(pharmacyControllerProvider).today;
   final subs = ref.watch(subscriptionsControllerProvider);
@@ -39,9 +46,9 @@ List<BriefItem> watchDailyBrief(WidgetRef ref, {int max = 5}) {
     spendable: budget.snapshot == null ? null : budget.spendable,
     currency: budget.snapshot?.currency ?? '',
     familyNeeds: needs,
-    max: max,
+    max: 1 << 20,
   );
-}
+});
 
 /// The family-chat needs the nightly review left as suggestions. Empty when
 /// the insights cannot be read: the brief is read on every open of Home and
