@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/shared/brain/domain/life_circumstance.dart';
+import 'package:zad/shared/brain/domain/memory_occasion.dart';
 import 'package:zad/shared/brain/domain/occasion.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -63,6 +64,7 @@ void main() {
       WidgetTester tester,
       Occasion? today, {
       LifeCircumstance? quiet,
+      Occasion? personal,
     }) async {
       chat = _Chat();
       ZadSlots.chatScreen = () => const Scaffold(body: Text('الشات'));
@@ -70,6 +72,7 @@ void main() {
         ProviderScope(
           overrides: [
             occasionTodayProvider.overrideWithValue(today),
+            personalOccasionProvider.overrideWithValue(personal),
             chatControllerProvider.overrideWith(() => chat),
             quietModeProvider.overrideWith((ref) async => quiet),
           ],
@@ -125,5 +128,86 @@ void main() {
       await pump(tester, null);
       expect(find.byType(FilledButton), findsNothing);
     });
+
+    testWidgets('a remembered birthday asks for a gift in one tap', (
+      tester,
+    ) async {
+      final mama = personalOccasionOn(DateTime(2026, 10, 5), _mama);
+      await pump(tester, null, personal: mama);
+      expect(find.text('عيد ميلاد ماما بعد ٣ أيام 🎁'), findsOneWidget);
+      await tester.tap(find.text('اقترح هدية'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(chat.sent.single, contains('عيد ميلاد ماما يوم 8 أكتوبر'));
+    });
+
+    testWidgets("the day's occasion first; put away, the birthday shows", (
+      tester,
+    ) async {
+      final mama = personalOccasionOn(DateTime(2027, 3, 18), <MemoryOccasion>[
+        const MemoryOccasion(
+          kind: MemoryOccasionKind.birthday,
+          md: '03-21',
+          forName: 'ماما',
+        ),
+      ]);
+      await pump(tester, occasionOn(DateTime(2027, 3, 21)), personal: mama);
+      expect(find.text('كل سنة وكل أم بخير 💐'), findsOneWidget);
+      expect(find.textContaining('عيد ميلاد ماما'), findsNothing);
+      await tester.tap(find.text('مش دلوقتي'));
+      await tester.pump();
+      expect(find.textContaining('عيد ميلاد ماما'), findsOneWidget);
+    });
+  });
+
+  group('remembered occasions', () {
+    test('three days before, and on the day', () {
+      final before = personalOccasionOn(DateTime(2026, 10, 5), _mama)!;
+      expect(before.kind, OccasionKind.birthday);
+      expect(before.id, 'birthday:ماما:2026-10-08:before');
+      final day = personalOccasionOn(DateTime(2026, 10, 8), _mama)!;
+      expect(day.title, 'النهارده عيد ميلاد ماما 🎂');
+      expect(day.id, isNot(before.id));
+      expect(personalOccasionOn(DateTime(2026, 10, 6), _mama), isNull);
+    });
+
+    test("the customer's own birthday is the cake, not a card", () {
+      const own = <MemoryOccasion>[
+        MemoryOccasion(kind: MemoryOccasionKind.birthday, md: '10-05'),
+      ];
+      expect(personalOccasionOn(DateTime(2026, 10, 5), own), isNull);
+    });
+
+    test('their own anniversary, today, in the Gulf words', () {
+      const ours = <MemoryOccasion>[
+        MemoryOccasion(kind: MemoryOccasionKind.anniversary, md: '10-05'),
+      ];
+      final o = personalOccasionOn(DateTime(2026, 10, 5), ours, country: 'SA')!;
+      expect(o.title, 'كل سنة وإنتو طيبين 💍');
+      expect(o.question, contains('طلعة'));
+    });
+
+    test('29 February is remembered on the 28th of a common year', () {
+      const leap = <MemoryOccasion>[
+        MemoryOccasion(
+          kind: MemoryOccasionKind.birthday,
+          md: '02-29',
+          forName: 'يوسف',
+        ),
+      ];
+      expect(
+        personalOccasionOn(DateTime(2027, 2, 28), leap)?.title,
+        'النهارده عيد ميلاد يوسف 🎂',
+      );
+      expect(personalOccasionOn(DateTime(2028, 2, 28), leap), isNull);
+    });
   });
 }
+
+const List<MemoryOccasion> _mama = <MemoryOccasion>[
+  MemoryOccasion(
+    kind: MemoryOccasionKind.birthday,
+    md: '10-08',
+    forName: 'ماما',
+  ),
+];

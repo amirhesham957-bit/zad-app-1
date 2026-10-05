@@ -1,4 +1,6 @@
-"""Builds the six achievement badges in zad_flutter/assets/lottie/badges/.
+"""Builds the six achievement badges in zad_flutter/assets/lottie/badges/, and
+the birthday cake (assets/lottie/lottie_birthday_cake.json) the customer's own
+birthday opens with.
 
 Run: python3 tool/make_badge_lottie.py  (standard library only)
 
@@ -345,6 +347,50 @@ def consistency():
     ])
 
 
+def birthday_cake():
+    """🎂 عيد ميلاد العميل — a two-tier cake, three candles flickering."""
+    PINK = '#F9A8D4'
+    PINK_DEEP = '#DB2777'
+    CREAM = '#FFF7ED'
+    candles = []
+    for n, x in enumerate((46, 60, 74)):
+        flame = _flame([x, 22], [x + 5, 31], [x - 5, 31], [x, 37], 10, 15)
+        candles.append(group(f'Candle {n + 1}', [
+            group('Flame', [shape(flame),
+                            gradient(FLAME_YELLOW, FLAME_ORANGE, [x, 22], [x, 37])],
+                  transform(anchor=(x, 37), pos=(x, 37),
+                            scale=loop([100, 100], [80, 115], start=n * 8, half=18))),
+            group('Wax', [rect((x, 44), (5, 14), 2), fill(MINT)]),
+        ]))
+    drips = path(
+        [[30, 64], [90, 64], [90, 70], [80, 74], [70, 69], [60, 75], [50, 69], [40, 74], [30, 70]],
+        [[0, 0]] * 3 + [[3, 0], [0, 0], [3, 0], [0, 0], [3, 0], [0, 0]],
+        [[0, 0]] * 3 + [[-3, 0], [0, 0], [-3, 0], [0, 0], [-3, 0], [0, 0]],
+    )
+    return composition('lottie_birthday_cake', [
+        layer('Sparkles', 0, [
+            sparkle('Sparkle 1', (20, 30), 7, 0, GOLD_DEEP),
+            sparkle('Sparkle 2', (100, 40), 8, 40, GOLD_DEEP),
+            sparkle('Sparkle 3', (16, 84), 5, 70, GOLD_DEEP),
+        ]),
+        layer('Candles', 0, candles),
+        layer('Cake', 0, [
+            group('Sprinkles', [ellipse((44, 86), (3, 3)), ellipse((60, 92), (3, 3)),
+                                ellipse((76, 86), (3, 3)), ellipse((52, 98), (3, 3)),
+                                ellipse((70, 98), (3, 3)), fill(GOLD)]),
+            group('Frosting', [shape(drips), fill(CREAM)]),
+            group('Top tier', [rect((C, 64), (60, 14), 6),
+                               gradient(PINK, PINK_DEEP, [C, 57], [C, 71])]),
+            group('Bottom tier', [rect((C, 88), (84, 32), 8),
+                                  gradient(PINK, PINK_DEEP, [C, 72], [C, 104])]),
+            group('Plate', [ellipse((C, 106), (100, 10)), fill(EMERALD_DEEP)]),
+        ], anchor=(C, 106), pos=(C, 106),
+            scale=anim((0, [100, 100]), (15, [104, 96]), (35, [98, 103]),
+                       (55, [100, 100]), (END, [100, 100]))),
+        halo(PINK, 50, 25),
+    ])
+
+
 BADGES = {
     'first_step': first_step,
     'rising_star': rising_star,
@@ -363,6 +409,10 @@ def main():
         with open(target, 'w') as f:
             json.dump(doc, f, separators=(',', ':'))
         print(f'{target}: {os.path.getsize(target)} bytes')
+    cake = os.path.join(OUT, '..', 'lottie_birthday_cake.json')
+    with open(cake, 'w') as f:
+        json.dump(birthday_cake(), f, separators=(',', ':'))
+    print(f'{cake}: {os.path.getsize(cake)} bytes')
 
 
 if __name__ == '__main__':

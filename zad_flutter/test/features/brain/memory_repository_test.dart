@@ -9,6 +9,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/shared/brain/data/memory_remote.dart';
 import 'package:zad/shared/brain/data/memory_repository.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/brain/domain/memory_occasion.dart';
 
 class _Remote implements MemoryRemote {
   final List<Map<String, dynamic>> notes = <Map<String, dynamic>>[
@@ -117,6 +118,22 @@ class _Remote implements MemoryRemote {
 
   @override
   Future<bool> anyVisits(String userId) async => visits.isNotEmpty;
+
+  final List<Map<String, dynamic>> occasions = <Map<String, dynamic>>[
+    <String, dynamic>{
+      'id': 'o1',
+      'occasion': 'birthday',
+      'occasion_for': 'ماما',
+      'occasion_md': '03-12',
+      'note': 'عيد ميلاد ماما: 12 مارس',
+    },
+  ];
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchOccasions(String userId) async {
+    _net();
+    return occasions.map((o) => <String, dynamic>{...o}).toList();
+  }
 }
 
 void main() {
@@ -145,7 +162,7 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  test('a refresh caches all four, so the screen opens on them', () async {
+  test('a refresh caches all five, so the screen opens on them', () async {
     await repo.refresh();
     remote.offline = true;
 
@@ -154,6 +171,27 @@ void main() {
     expect(s.profile?.preferredName, 'أمير');
     expect(s.habits.avgWeeklySpending, 700);
     expect(s.habits.outingsCount, 1);
+    // The home card shows a birthday on its day without the network.
+    expect(s.occasions, const <MemoryOccasion>[
+      MemoryOccasion(
+        kind: MemoryOccasionKind.birthday,
+        md: '03-12',
+        forName: 'ماما',
+      ),
+    ]);
+  });
+
+  test('a row it cannot read is left out, not the whole list', () async {
+    remote.occasions.add(<String, dynamic>{
+      'occasion': 'graduation',
+      'occasion_md': '05-01',
+    });
+    remote.occasions.add(<String, dynamic>{
+      'occasion': 'birthday',
+      'occasion_md': '5-1',
+    });
+    await repo.refresh();
+    expect(repo.cached().occasions, hasLength(1));
   });
 
   test('one part failing fails the refresh and keeps the last whole', () async {

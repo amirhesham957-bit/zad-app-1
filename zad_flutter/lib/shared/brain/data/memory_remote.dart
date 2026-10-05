@@ -43,6 +43,9 @@ abstract interface class MemoryRemote {
 
   /// Whether any outing is left.
   Future<bool> anyVisits(String userId);
+
+  /// The birthdays and anniversaries زاد remembers.
+  Future<List<Map<String, dynamic>>> fetchOccasions(String userId);
 }
 
 /// The real tables.
@@ -51,6 +54,26 @@ class SupabaseMemoryRemote implements MemoryRemote {
   const new(this._client);
 
   final SupabaseClient _client;
+
+  /// `zad_memory_occasions` (20261006000000). Before that migration reaches
+  /// the project the function is missing, and there are no occasions yet —
+  /// not a failed refresh.
+  @override
+  Future<List<Map<String, dynamic>>> fetchOccasions(String userId) async {
+    try {
+      final rows = await _client.rpc<dynamic>(
+        'zad_memory_occasions',
+        params: <String, dynamic>{'p_user': userId},
+      );
+      return <Map<String, dynamic>>[
+        for (final r in (rows as List<dynamic>? ?? const <dynamic>[]))
+          Map<String, dynamic>.from(r as Map),
+      ];
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow;
+      return const <Map<String, dynamic>>[];
+    }
+  }
 
   /// `zad_memory_live_notes` (20261003100000): only what still holds — not
   /// a temporary note past its day, nor a belief the customer replaced — each

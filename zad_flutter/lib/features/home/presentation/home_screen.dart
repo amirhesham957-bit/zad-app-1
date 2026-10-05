@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
+import 'package:zad/features/home/presentation/birthday_celebration.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
@@ -81,6 +82,8 @@ class HomeScreen extends ConsumerWidget {
           const QuietModeBanner(),
           // The day's occasion first: it is there one day a year.
           const OccasionCardSlot(),
+          // The customer's own birthday opens with the cake, once a year.
+          const BirthdayCelebration(),
           // Kotlin's order: the travel suggestion, then the offline banner.
           const TravelBannerSlot(),
           const GroceryPurchasePromptHost(),

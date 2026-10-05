@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/shared/brain/domain/memory_occasion.dart';
 
 /// Which occasion.
 enum OccasionKind {
@@ -30,6 +31,12 @@ enum OccasionKind {
 
   /// March 21st, Mother's Day across the Arab markets.
   mothersDay,
+
+  /// Someone's birthday زاد remembers (`personalOccasionOn`).
+  birthday,
+
+  /// A wedding anniversary زاد remembers.
+  anniversary,
 }
 
 /// The occasion, as the card says it.
@@ -180,5 +187,89 @@ Occasion? occasionOn(DateTime day, {String? country}) {
       actionLabel: 'اقترح',
       prompt: 'اقترح عليا هدية لعيد الأم جوه الميزانية.',
     ),
+    OccasionKind.birthday || OccasionKind.anniversary => null,
   };
+}
+
+/// A remembered birthday or anniversary on [day] or three days before it —
+/// the same days the morning greeting speaks of (`zad-brain/occasions.ts`).
+/// The customer's own birthday is not a card: it opens with the cake
+/// (`BirthdayCelebration`). Today before three days ahead; null when none.
+Occasion? personalOccasionOn(
+  DateTime day,
+  List<MemoryOccasion> remembered, {
+  String? country,
+}) {
+  final gulf = _gulf.contains(country?.toUpperCase());
+  MemoryOccasion? pick(int inDays) => remembered
+      .where(
+        (o) =>
+            !(o.isOwn && o.kind == MemoryOccasionKind.birthday) &&
+            o.daysFrom(day) == inDays,
+      )
+      .firstOrNull;
+  final today = pick(0);
+  final soon = today == null ? pick(3) : null;
+  final o = today ?? soon;
+  if (o == null) return null;
+  final on = o.nextFrom(day);
+  final label = occasionDateLabel(on);
+  final when = today != null ? 'day' : 'before';
+  final id = '${o.kind.name}:${o.forName ?? 'self'}:${_iso(on)}:$when';
+  final ownAnniversary = o.isOwn && o.kind == MemoryOccasionKind.anniversary;
+  if (ownAnniversary) {
+    return today != null
+        ? Occasion(
+            kind: OccasionKind.anniversary,
+            id: id,
+            title: 'كل سنة وإنتو طيبين 💍',
+            question: gulf
+                ? 'تبي أقترح لكم طلعة الليلة في حدود الميزانية؟'
+                : 'أقترحلكم خروجة الليلة في حدود الميزانية؟',
+            actionLabel: 'اقترح',
+            prompt:
+                'النهارده ذكرى جوازنا — اقترحلي خروجة الليلة في حدود ميزانيتي.',
+          )
+        : Occasion(
+            kind: OccasionKind.anniversary,
+            id: id,
+            title: 'ذكرى جوازكم بعد ٣ أيام 💍',
+            question: gulf
+                ? 'تبي أقترح لك هدية أو طلعة في حدود الميزانية؟'
+                : 'أقترحلك هدية أو خروجة في حدود الميزانية؟',
+            actionLabel: 'اقترح',
+            prompt:
+                'ذكرى جوازنا يوم $label. اقترحلي هدية أو خروجة في حدود '
+                'ميزانيتي.',
+          );
+  }
+  final kind = o.kind == MemoryOccasionKind.birthday
+      ? OccasionKind.birthday
+      : OccasionKind.anniversary;
+  final what = o.kind == MemoryOccasionKind.birthday
+      ? 'عيد ميلاد ${o.forName}'
+      : 'ذكرى جواز ${o.forName}';
+  return today != null
+      ? Occasion(
+          kind: kind,
+          id: id,
+          title: 'النهارده $what 🎂',
+          question: gulf
+              ? 'أكتب لك رسالة تهنئة ترسلها؟'
+              : 'أكتبلك رسالة تهنئة حلوة تبعتها؟',
+          actionLabel: 'اكتبها',
+          prompt: 'النهارده $what — اكتبلي رسالة تهنئة قصيرة ودافية أبعتها.',
+        )
+      : Occasion(
+          kind: kind,
+          id: id,
+          title: '$what بعد ٣ أيام 🎁',
+          question: gulf
+              ? 'تبي أقترح لك هدية في حدود الميزانية وأحجز مبلغها؟'
+              : 'أقترحلك هدية في حدود الميزانية وأحجز مبلغها؟',
+          actionLabel: 'اقترح هدية',
+          prompt:
+              '$what يوم $label. اقترحلي فكرتين هدية في حدود ميزانيتي، ولو '
+              'وافقت احجز مبلغها كهدف لحد يومها.',
+        );
 }

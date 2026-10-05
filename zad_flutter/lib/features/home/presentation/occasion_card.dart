@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
+import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/occasion.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -33,6 +34,22 @@ final occasionTodayProvider = Provider<Occasion?>((ref) {
   return occasionOn(
     DateTime(local.year, local.month, local.day),
     country: country,
+  );
+});
+
+/// A birthday or anniversary زاد remembers, today or in three days, or null
+/// (`personalOccasionOn`). From the cached memory, so it shows offline.
+final personalOccasionProvider = Provider<Occasion?>((ref) {
+  final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+  final local = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
+  final remembered = ref.watch(
+    memoryControllerProvider.select((v) => v.snapshot.occasions),
+  );
+  if (remembered.isEmpty) return null;
+  return personalOccasionOn(
+    DateTime(local.year, local.month, local.day),
+    remembered,
+    country: ref.watch(settingsRepositoryProvider).cached()?.country,
   );
 });
 
@@ -82,8 +99,13 @@ class _OccasionCardSlotState extends ConsumerState<OccasionCardSlot> {
 
   @override
   Widget build(BuildContext context) {
-    final o = ref.watch(occasionTodayProvider);
-    if (o == null || _isDone(o)) return const SizedBox.shrink();
+    // One card: the day's occasion, else a remembered one — which also shows
+    // once the day's is put away.
+    final o = <Occasion?>[
+      ref.watch(occasionTodayProvider),
+      ref.watch(personalOccasionProvider),
+    ].whereType<Occasion>().where((o) => !_isDone(o)).firstOrNull;
+    if (o == null) return const SizedBox.shrink();
     // A celebration is not for a home in a hard few days (slice 29).
     if (ref.watch(quietModeProvider).value != null) {
       return const SizedBox.shrink();
@@ -104,7 +126,9 @@ class _OccasionCardSlotState extends ConsumerState<OccasionCardSlot> {
                 SizedBox.square(
                   dimension: 56,
                   child: Lottie.asset(
-                    'assets/lottie/lottie_confetti_burst.json',
+                    o.kind == OccasionKind.birthday
+                        ? 'assets/lottie/lottie_birthday_cake.json'
+                        : 'assets/lottie/lottie_confetti_burst.json',
                     repeat: false,
                     errorBuilder: (_, _, _) => const SizedBox.shrink(),
                   ),
