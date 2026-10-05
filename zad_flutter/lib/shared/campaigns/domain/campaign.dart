@@ -44,6 +44,7 @@ class Campaign {
     required this.ctaPrompt,
     this.targetCountry,
     this.dialect,
+    this.eventName,
     this.fromMd,
     this.toMd,
     this.seasonSlug,
@@ -84,6 +85,7 @@ class Campaign {
     return Campaign(
       id: id,
       eventKey: eventKey,
+      eventName: _text(json['event_name']),
       targetCountry: _text(json['target_country'])?.toUpperCase(),
       dialect: _text(json['dialect'])?.toUpperCase(),
       fromMd: fromMd,
@@ -109,6 +111,9 @@ class Campaign {
 
   /// The occasion, e.g. `white_friday`.
   final String eventKey;
+
+  /// The occasion's name for a countdown («الوايت فرايداي»); null = none.
+  final String? eventName;
 
   /// ISO country it is for; null = every country.
   final String? targetCountry;
@@ -164,6 +169,7 @@ class Campaign {
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'event_key': eventKey,
+    'event_name': eventName,
     'target_country': targetCountry,
     'dialect': dialect,
     'from_md': fromMd == null ? null : _mdWire(fromMd!),
@@ -340,6 +346,42 @@ ActiveCampaign? pickCampaign(
     }
   }
   return best;
+}
+
+/// The next campaign to start within [horizonDays] days after [today] —
+/// the one this customer would see that day — and how many days away it is.
+/// Only one with an [Campaign.eventName], since a countdown names it; null
+/// when none, or when it is already running today.
+({Campaign campaign, int inDays})? nextCampaign(
+  CampaignCatalog catalog, {
+  required DateTime today,
+  String? country,
+  String? dialect,
+  int horizonDays = 7,
+}) {
+  final day = DateTime.utc(today.year, today.month, today.day);
+  final now = pickCampaign(
+    catalog,
+    today: day,
+    country: country,
+    dialect: dialect,
+  );
+  for (var d = 1; d <= horizonDays; d++) {
+    final on = day.add(Duration(days: d));
+    final then = pickCampaign(
+      catalog,
+      today: on,
+      country: country,
+      dialect: dialect,
+    );
+    if (then == null || then.start != on) continue;
+    if (now != null && now.campaign.eventKey == then.campaign.eventKey) {
+      return null;
+    }
+    if (then.campaign.eventName == null) continue;
+    return (campaign: then.campaign, inDays: d);
+  }
+  return null;
 }
 
 bool _beats((int, int, int, String) a, (int, int, int, String) b) {

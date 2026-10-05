@@ -276,4 +276,69 @@ void main() {
       expect(contrastWithWhite(0xFFFFFFFF), closeTo(1, 0.01));
     });
   });
+
+  group('the countdown', () {
+    Map<String, dynamic> named(
+      String id,
+      String from,
+      String to, {
+      String? name = 'الهالوين',
+      String? country,
+    }) => <String, dynamic>{
+      ..._row(id, from: from, to: to, country: country),
+      'event_name': name,
+    };
+
+    ({String id, int days})? next(
+      CampaignCatalog c,
+      String day, {
+      String? country,
+    }) {
+      final n = nextCampaign(c, today: DateTime.parse(day), country: country);
+      return n == null ? null : (id: n.campaign.id, days: n.inDays);
+    }
+
+    test('counts down the week before, and not earlier', () {
+      final c = _catalog(<Map<String, dynamic>>[named('h', '10-25', '10-31')]);
+      expect(next(c, '2026-10-17'), isNull);
+      expect(next(c, '2026-10-18'), (id: 'h', days: 7));
+      expect(next(c, '2026-10-24'), (id: 'h', days: 1));
+    });
+
+    test('stops once it is running', () {
+      final c = _catalog(<Map<String, dynamic>>[named('h', '10-25', '10-31')]);
+      expect(next(c, '2026-10-25'), isNull);
+      expect(next(c, '2026-10-30'), isNull);
+    });
+
+    test('a campaign without a name has no countdown', () {
+      final c = _catalog(<Map<String, dynamic>>[
+        named('h', '10-25', '10-31', name: null),
+      ]);
+      expect(next(c, '2026-10-24'), isNull);
+    });
+
+    test("only the customer's own: another country's is not counted", () {
+      final c = _catalog(<Map<String, dynamic>>[
+        named('uae', '11-30', '12-03', name: 'عيد الاتحاد', country: 'AE'),
+      ]);
+      expect(next(c, '2026-11-28', country: 'AE'), (id: 'uae', days: 2));
+      expect(next(c, '2026-11-28', country: 'EG'), isNull);
+    });
+
+    test('across the new year', () {
+      final c = _catalog(<Map<String, dynamic>>[
+        named('ny', '12-28', '01-03', name: 'راس السنة'),
+      ]);
+      expect(next(c, '2026-12-25'), (id: 'ny', days: 3));
+    });
+
+    test('the name survives the cache', () {
+      final c = _catalog(<Map<String, dynamic>>[named('h', '10-25', '10-31')]);
+      expect(
+        CampaignCatalog.fromJson(c.toJson()).campaigns.single.eventName,
+        'الهالوين',
+      );
+    });
+  });
 }

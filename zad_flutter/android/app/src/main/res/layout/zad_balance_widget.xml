@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ZadBalanceWidget: «متاح» and the last three transactions. -->
+<!-- ZadBalanceWidget: the season row, «متاح», the day's one line, and the last three transactions. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -8,6 +8,38 @@
     android:layoutDirection="rtl"
     android:orientation="vertical"
     android:padding="14dp">
+    <!-- The occasion: its badge and name on its colour, or a countdown to it.
+         Hidden when the app writes no season. -->
+    <LinearLayout
+        android:id="@+id/widget_season"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:background="#FF1B4332"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="4dp"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/widget_season_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/widget_season_line"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FFFFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -42,6 +74,17 @@
         android:textColor="#FF1B4332"
         android:textSize="24sp"
         android:textStyle="bold" />
+    <!-- The daily brief's first line: the one thing that needs the customer today. -->
+    <TextView
+        android:id="@+id/widget_brief"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#FF56635B"
+        android:textSize="12sp"
+        android:visibility="gone" />
     <LinearLayout
         android:id="@+id/widget_tx_0"
         android:layout_width="match_parent"
