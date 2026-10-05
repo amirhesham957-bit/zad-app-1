@@ -37,6 +37,10 @@ abstract final class ZadDuration {
   /// behind the text, confined to the banner, and still when the phone asks
   /// for reduced motion.
   static const Duration ambient = Duration(seconds: 8);
+
+  /// 5s — how long a «حكايات زاد» slide stays before the next: one short
+  /// line, read twice.
+  static const Duration storySlide = Duration(seconds: 5);
 }
 
 /// What shape.

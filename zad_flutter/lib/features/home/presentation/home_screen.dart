@@ -20,6 +20,7 @@ import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
+import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
@@ -79,6 +80,8 @@ class HomeScreen extends ConsumerWidget {
           const TravelBannerSlot(),
           const GroceryPurchasePromptHost(),
           const HomeOfflineBanner(),
+          // «حكايات زاد»: the occasion's story, when it has one.
+          const CampaignStoriesStrip(),
           ZadAppearOnEntry(
             child: HomeCompanionHeader(
               onOpenVoice: onOpenVoice ?? () {},
