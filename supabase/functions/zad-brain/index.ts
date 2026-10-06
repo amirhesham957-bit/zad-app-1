@@ -103,6 +103,10 @@ import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
+import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
+import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { homeEmergencyRule, techniciansForSnapshot } from "./homeEmergency.ts";
+import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
@@ -1158,6 +1162,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
     .order("starts_at", { ascending: true }).limit(30);
+  // الفنيين اللي بيثق فيهم (الشريحة ٤٣): الاسم والصنعة بس بيوصلوا للموديل (techniciansForSnapshot).
+  const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
+    .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
+  if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
     dataErrors.push({ source: "مواعيدك" });
@@ -1248,6 +1256,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: "قريب" });
     }
   }
+
+  const houseAppointmentsToday = appointmentsOnLocalDay(
+    (apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC",
+  );
+  const houseLoad = householdLoad({
+    threat, available, budget, brokeMode: brokeActive,
+    localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
+    appointmentsToday: houseAppointmentsToday,
+  });
 
   return {
     // العملة والبلد دلوقتي من zad_users (بييجي من اختيار السوق في الكلاينت عبر
@@ -1452,10 +1469,19 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
     broke_mode: brokeActive ? brokeRow : null,
     // «ضغط البيت» (householdLoad.ts) من أرقام البيت والساعة — مش حالة العميل النفسية.
-    household_load: householdLoad({
-      threat, available, budget, brokeMode: brokeActive,
-      localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
-      appointmentsToday: appointmentsOnLocalDay((apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC"),
+    household_load: houseLoad,
+    // طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٤): ميعاد دلوقتي أو يوم مزحوم ⇒ قصير، مسا فاضي ⇒ أوسع.
+    reply_cadence: replyCadence({
+      appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
+      nowMs: Date.now(), timeZone: budgetState.timezone ?? "UTC",
+      appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
+    }),
+    trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
+    // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
+    event_day_budget: eventDayBudget({
+      available, daysLeft: daysLeftInCycle,
+      appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
+      timeZone: budgetState.timezone ?? "UTC",
     }),
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
     savings_challenge: challengeRow
@@ -2959,7 +2985,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const tz = snap?.now_local?.time_zone ?? "UTC";
       const when = new Date(row.starts_at).toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
       const repeat = String(input.recurrence) === "hourly" ? " وبعدها كل ساعة" : "";
-      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.`;
+      const clash = await appointmentClashNote(sb, userId, {
+        startsAt: row.starts_at, forPerson: normalizeForPerson(input.for_person), recurrence: String(input.recurrence ?? "once"),
+        excludeId: row.id, timeZone: tz,
+      });
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${clash}`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -2983,7 +3013,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
       });
-      return `تم تعديل الميعاد «${(before as { title: string }).title}».`;
+      const b = before as { title: string; for_person?: string | null; recurrence?: string | null };
+      const clash = typeof patch.starts_at === "string"
+        ? await appointmentClashNote(sb, userId, {
+          startsAt: patch.starts_at, forPerson: b.for_person ?? null, recurrence: b.recurrence ?? "once", excludeId: id,
+          timeZone: snap?.now_local?.time_zone ?? "UTC",
+        })
+        : "";
+      return `تم تعديل الميعاد «${b.title}».${clash}`;
     }
     case "start_savings_challenge": {
       const { data: existing } = await sb.from("zad_savings_challenges").select("id,started_on,daily_cap")
@@ -4197,6 +4234,30 @@ const RECURRING_HINT =
 // محادثة — المستخدم قدامك، رد عليه. والعكس صحيح: الأدوات دي بتتنفذ بطلب صريح من
 // المستخدم، فمالهاش لازمة في تشغيلة كرون.
 // ═══════════════════════════════════════════════════════════
+
+/**
+ * حارس التوقيت (الشريحة ٤١): بعد تسجيل ميعاد أو تأجيله، المواعيد اللي في نفس الساعة لنفس الشخص ⇒ سطر في نتيجة الأداة
+ * العقل يقوله ويسأل. بيقرا المرة الواحدة القريبة والمتكرر كله (المتكرر بيتقارن بالساعة المحلية). فشل القراية = مفيش سطر —
+ * الحارس عمره ما يوقف الحفظ.
+ */
+async function appointmentClashNote(
+  sb: SupabaseClient, userId: string,
+  q: { startsAt: string; forPerson: string | null; recurrence: string; excludeId: string; timeZone: string },
+): Promise<string> {
+  const at = Date.parse(q.startsAt);
+  if (!Number.isFinite(at)) return "";
+  const lo = new Date(at - CLASH_WINDOW_MINUTES * 60_000).toISOString();
+  const hi = new Date(at + CLASH_WINDOW_MINUTES * 60_000).toISOString();
+  const { data, error } = await sb.from("zad_appointments").select("id,title,starts_at,recurrence,for_person,status")
+    .eq("user_id", userId).eq("status", "upcoming")
+    .or(`recurrence.in.(daily,weekly,monthly),and(starts_at.gte."${lo}",starts_at.lte."${hi}")`)
+    .limit(200);
+  if (error) {
+    console.error("[schedule guard] read failed:", error.message);
+    return "";
+  }
+  return clashNote(scheduleClashes({ ...q, existing: data ?? [] }), q.timeZone);
+}
 
 export const CHAT_TOOLS: ToolDef[] = [
   {
@@ -7121,6 +7182,9 @@ ${offers("remember_occasion") ? "   - **المناسبات**: لما العمي�
    - استنتج الحالة المحتملة من الكلمات والسياق فقط، ولا تزعم أنك سمعت نبرة لم تصلك. لو العميل مستعجل اختصر، ولو مضغوط تكلم بهدوء وتعاطف.
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.
    - ${householdLoadRule(snap)}
+   - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
+   - ${homeEmergencyRule(snap)}
+   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).

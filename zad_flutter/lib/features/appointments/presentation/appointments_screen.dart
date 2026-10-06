@@ -244,7 +244,10 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
   Future<void> _add() async {
     final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => _AddAppointmentDialog(zone: _zone),
+      builder: (_) => _AddAppointmentDialog(
+        zone: _zone,
+        existing: _items ?? const <Appointment>[],
+      ),
     );
     if (saved ?? false) await _load();
   }
@@ -670,9 +673,12 @@ class _Row extends StatelessWidget {
 // ── Dialogs ─────────────────────────────────────────────────────────────────
 
 class _AddAppointmentDialog extends ConsumerStatefulWidget {
-  const new({required this.zone});
+  const new({required this.zone, required this.existing});
 
   final tz.Location zone;
+
+  /// What is already on the list — the scheduling guard reads it.
+  final List<Appointment> existing;
 
   @override
   ConsumerState<_AddAppointmentDialog> createState() => _AddState();
@@ -756,6 +762,18 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   @override
   Widget build(BuildContext context) {
     final blocked = _inPast && _recurrence == 'once';
+    // حارس التوقيت (الشريحة ٤١): تنبيه، مش منع — اتنين في نفس الساعة ممكن
+    // يكونوا مقصودين. السيرفر بيعمل نفس الفحص على كل المواعيد لو اتسجل من
+    // الشات.
+    final clashes = blocked
+        ? const <Appointment>[]
+        : appointmentClashes(
+            startsAt: _startsAt.toUtc(),
+            forPerson: _forPerson.text,
+            recurrence: _recurrence,
+            existing: widget.existing,
+            toLocal: (utc) => tz.TZDateTime.from(utc.toUtc(), widget.zone),
+          );
     return AlertDialog(
       title: Text(
         'ميعاد جديد',
@@ -847,6 +865,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
             TextField(
               controller: _forPerson,
               maxLength: 40,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'لمين؟ (سيبها فاضية لو ليك)',
                 hintText: 'ماما، بابا، يوسف…',
@@ -885,6 +904,18 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
                   ),
               ],
             ),
+            if (clashes.isNotEmpty) ...<Widget>[
+              const SizedBox(height: ZadSpacing.sm),
+              Text(
+                clashWarning(
+                  clashes,
+                  (utc) => tz.TZDateTime.from(utc.toUtc(), widget.zone),
+                ),
+                style: ZadType.bodySmall.copyWith(
+                  color: ZadColors.mustardOchre,
+                ),
+              ),
+            ],
             if (_error != null || blocked) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
               Text(

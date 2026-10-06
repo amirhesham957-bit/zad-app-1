@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/maintenance/presentation/trusted_technicians_sheet.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
@@ -230,7 +231,16 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('صيانة المنزل')),
+        appBar: AppBar(
+          title: const Text('صيانة المنزل'),
+          actions: <Widget>[
+            IconButton(
+              tooltip: 'فنيين بثق فيهم',
+              onPressed: () => unawaited(showTrustedTechnicians(context)),
+              icon: const Icon(Icons.handyman_outlined),
+            ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
           tooltip: 'إضافة',
           onPressed: () => unawaited(_add()),

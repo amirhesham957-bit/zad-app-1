@@ -131,6 +131,11 @@ abstract final class ZadScreens {
   /// الصيانة.
   static late OpenScreen showMaintenanceScreen;
 
+  /// «فنيين بثق فيهم» — حارس الطوارئ المنزلية; `trade` (a stored value)
+  /// puts that trade first.
+  static late Future<void> Function(BuildContext context, {String? trade})
+  showTrustedTechnicians;
+
   // ── documents
   /// مستنداتي — حارس المستندات.
   static late OpenScreen showDocumentsScreen;

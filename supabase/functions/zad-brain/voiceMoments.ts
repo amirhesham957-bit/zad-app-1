@@ -20,6 +20,7 @@ import { curiosityQuestion } from "./curiosity.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
+import { type CadenceAppointment, type ReplyCadence, replyCadence, replyCadenceMomentLine } from "./replyCadence.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -629,6 +630,8 @@ export interface MomentCustomer {
   zad_voice?: string | null;
   /** What was said the last times in this same moment — not to be repeated. */
   recent?: string[];
+  /** طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٤). من غيره = عادي. */
+  cadence?: ReplyCadence;
 }
 
 export function buildMomentPrompt(
@@ -675,6 +678,7 @@ export function buildMomentPrompt(
     "كل رسالة لازم تبقى مختلفة عن اللي قبلها وتذكر حاجة محددة من يوم العميل في البيانات (رقم، صنف، ميعاد، اسم) — " +
       "مش كلام عام ينفع لأي حد. زي صاحبة بتكلمه، مش قالب.",
     MOMENT_GUIDANCE[row.moment] ?? "",
+    replyCadenceMomentLine(customer.cadence ?? "normal"),
   ].filter(Boolean).join("\n\n");
   const user = [
     `اللحظة: ${row.moment}`,
@@ -937,9 +941,10 @@ export async function processVoiceMoments(
         } catch {
           recent = []; // nothing to avoid is still a message
         }
+        const cadence = await momentCadence(sb, row, now(), deps.timeZoneOf ?? ((r) => momentTimeZone(sb, r)));
         const prompt = buildMomentPrompt(
           { moment: deliveryMoment, facts: row.facts }, u?.country ?? null, cp?.preferred_name || u?.name || null,
-          { gender: cp?.gender, dialect: cp?.dialect, zad_voice: cp?.zad_voice, recent },
+          { gender: cp?.gender, dialect: cp?.dialect, zad_voice: cp?.zad_voice, recent, cadence },
         );
         composed = parseComposedMoment(await deps.compose(prompt.system, prompt.user), voice, momentLimits(deliveryMoment), emotionRangeForMoment(deliveryMoment));
       } catch (e) {
@@ -1298,6 +1303,31 @@ export function momentGate(
   if (BUSY_DAY_OPTIONAL_MOMENTS.has(moment) && appointmentsToday >= BUSY_DAY_APPOINTMENTS) return "busy_day";
   if (sentToday >= attentionBudget(circumstance).voiceCap) return "daily_cap";
   return null;
+}
+
+/**
+ * طول اللحظة حسب وقت العميل (الشريحة ٤٤): مواعيده من ساعة فاتت لآخر يومه. فشل القراية = عادي — الطول مش سبب يمنع رسالة.
+ */
+async function momentCadence(
+  sb: SupabaseClient, row: VoiceMomentRow, nowMs: number, timeZoneOf: (row: VoiceMomentRow) => Promise<string>,
+): Promise<ReplyCadence> {
+  try {
+    const tz = await timeZoneOf(row);
+    const { data } = await sb.from("zad_appointments").select("title,starts_at,status,recurrence")
+      .eq("user_id", row.user_id).eq("status", "upcoming")
+      .gte("starts_at", new Date(nowMs - 60 * 60_000).toISOString())
+      .lte("starts_at", new Date(nowMs + 24 * 3_600_000).toISOString())
+      .limit(30);
+    const rows = (data ?? []) as CadenceAppointment[];
+    const today = localNowContext(tz, new Date(nowMs)).date;
+    const appointmentsToday = rows.filter((a) =>
+      a.starts_at && localNowContext(tz, new Date(a.starts_at)).date === today
+    ).length;
+    return replyCadence({ appointments: rows, nowMs, timeZone: tz, appointmentsToday }).mode;
+  } catch (e) {
+    console.warn("[voice_moments] cadence read failed:", (e as Error)?.message);
+    return "normal";
+  }
 }
 
 async function momentTimeZone(sb: SupabaseClient, row: VoiceMomentRow): Promise<string> {
