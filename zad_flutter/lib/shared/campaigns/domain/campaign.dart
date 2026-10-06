@@ -29,6 +29,20 @@ enum CampaignParticles {
       .firstWhere((p) => p.name == raw, orElse: () => none);
 }
 
+/// How strongly the occasion is felt today (`campaignIntensity`): the peak
+/// day, the days around it, or the quiet stretch of a long season. The banner
+/// draws more particles the stronger it is.
+enum CampaignIntensity {
+  /// A long season's ordinary day, or a gap bridged to the next occasion.
+  low,
+
+  /// Close to the peak, or a mid-length window with no peak named.
+  medium,
+
+  /// The day itself.
+  peak,
+}
+
 /// One row of `app_campaigns`.
 @immutable
 class Campaign {
@@ -47,6 +61,7 @@ class Campaign {
     this.eventName,
     this.fromMd,
     this.toMd,
+    this.peakMd,
     this.seasonSlug,
     this.badge = '',
     this.lottieUrl,
@@ -91,6 +106,7 @@ class Campaign {
       dialect: _text(json['dialect'])?.toUpperCase(),
       fromMd: fromMd,
       toMd: toMd,
+      peakMd: _monthDay(json['peak_md']),
       seasonSlug: slug,
       primary: primary,
       secondary: secondary,
@@ -128,6 +144,10 @@ class Campaign {
 
   /// The window's last day, inclusive.
   final (int, int)? toMd;
+
+  /// The day the occasion peaks, inside the window; null = judged by the
+  /// window's length (`campaignIntensity`).
+  final (int, int)? peakMd;
 
   /// A hijri season instead, dated by `seasonal_event_windows`.
   final String? seasonSlug;
@@ -179,6 +199,7 @@ class Campaign {
     'dialect': dialect,
     'from_md': fromMd == null ? null : _mdWire(fromMd!),
     'to_md': toMd == null ? null : _mdWire(toMd!),
+    'peak_md': peakMd == null ? null : _mdWire(peakMd!),
     'season_slug': seasonSlug,
     'theme_primary': _hexWire(primary),
     'theme_secondary': _hexWire(secondary),
@@ -284,10 +305,23 @@ class CampaignCatalog {
 @immutable
 class ActiveCampaign {
   /// Creates one.
-  const new({required this.campaign, required this.start, required this.end});
+  const new({
+    required this.campaign,
+    required this.start,
+    required this.end,
+    this.intensity = CampaignIntensity.medium,
+    this.bridged = false,
+  });
 
   /// The campaign.
   final Campaign campaign;
+
+  /// How strongly it is felt today.
+  final CampaignIntensity intensity;
+
+  /// Shown ahead of its window, across a short gap since the last occasion
+  /// (`bridgeCampaign`).
+  final bool bridged;
 
   /// The window's first day.
   final DateTime start;
@@ -362,7 +396,12 @@ ActiveCampaign? pickCampaign(
     );
     if (bestRank == null || _beats(rank, bestRank)) {
       bestRank = rank;
-      best = ActiveCampaign(campaign: c, start: window.$1, end: window.$2);
+      best = ActiveCampaign(
+        campaign: c,
+        start: window.$1,
+        end: window.$2,
+        intensity: campaignIntensity(c, window.$1, window.$2, day),
+      );
     }
   }
   return best;
@@ -402,6 +441,73 @@ ActiveCampaign? pickCampaign(
     return (campaign: then.campaign, inDays: d);
   }
   return null;
+}
+
+/// The longest gap between two occasions that is bridged: the next one shows
+/// (low) from the day after the last one ends, instead of the home going
+/// plain for a few days in between.
+const int kBridgeGapDays = 10;
+
+/// How strongly [c], running [start]–[end], is felt on [day]. With a peak:
+/// the day itself is the peak, two days either side medium, the rest low.
+/// Without one: three days or fewer is all peak; a season of two weeks or
+/// more (autumn, all October) is low; anything between, medium.
+CampaignIntensity campaignIntensity(
+  Campaign c,
+  DateTime start,
+  DateTime end,
+  DateTime day,
+) {
+  final length = end.difference(start).inDays + 1;
+  final peakMd = c.peakMd;
+  if (peakMd == null) {
+    if (length <= 3) return CampaignIntensity.peak;
+    return length >= 14 ? CampaignIntensity.low : CampaignIntensity.medium;
+  }
+  // The window may wrap the year (12-28 → 01-03): the peak is the one inside.
+  var peak = DateTime.utc(start.year, peakMd.$1, peakMd.$2);
+  if (peak.isBefore(start)) {
+    peak = DateTime.utc(start.year + 1, peakMd.$1, peakMd.$2);
+  }
+  if (peak.isAfter(end)) return CampaignIntensity.medium;
+  final away = day.difference(peak).inDays.abs();
+  if (away == 0) return CampaignIntensity.peak;
+  return away <= 2 ? CampaignIntensity.medium : CampaignIntensity.low;
+}
+
+/// On a day with no campaign: the next one, shown early and low, when the
+/// last one ended fewer than [kBridgeGapDays] days before it starts — so two
+/// close occasions read as one season. Null when there is no such pair, or
+/// when a campaign runs today (that one is [pickCampaign]'s).
+ActiveCampaign? bridgeCampaign(
+  CampaignCatalog catalog, {
+  required DateTime today,
+  String? country,
+  String? dialect,
+}) {
+  final day = DateTime.utc(today.year, today.month, today.day);
+  ActiveCampaign? on(DateTime d) =>
+      pickCampaign(catalog, today: d, country: country, dialect: dialect);
+  if (on(day) != null) return null;
+  ActiveCampaign? last;
+  for (var d = 1; d < kBridgeGapDays && last == null; d++) {
+    last = on(day.subtract(Duration(days: d)));
+  }
+  ActiveCampaign? next;
+  for (var d = 1; d < kBridgeGapDays && next == null; d++) {
+    final then = on(day.add(Duration(days: d)));
+    if (then != null && then.start == day.add(Duration(days: d))) next = then;
+  }
+  if (last == null || next == null) return null;
+  final gap = next.start.difference(last.end).inDays - 1;
+  if (gap >= kBridgeGapDays) return null;
+  return ActiveCampaign(
+    campaign: next.campaign,
+    start: next.start,
+    end: next.end,
+    intensity: CampaignIntensity.low,
+    bridged: true,
+  );
 }
 
 bool _beats((int, int, int, String) a, (int, int, int, String) b) {

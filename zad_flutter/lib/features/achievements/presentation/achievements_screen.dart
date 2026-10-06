@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
@@ -380,9 +381,9 @@ class _AchievementCard extends StatelessWidget {
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
-                    child: Text(
-                      item.def.icon,
-                      style: const TextStyle(fontSize: 32),
+                    child: AchievementBadge(
+                      def: item.def,
+                      unlocked: item.unlocked,
                     ),
                   ),
                   Text(
@@ -417,4 +418,43 @@ class _AchievementCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Greyscale by luminance, for a badge not yet earned.
+const ColorFilter _greyscale = ColorFilter.matrix(<double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0, 0, 0, 1, 0, //
+]);
+
+/// A badge's picture: its Lottie looping once earned, held on its first frame
+/// and greyed while locked, and the catalogue's emoji if the file cannot load.
+/// Still whenever the system asks for reduced motion.
+class AchievementBadge extends StatelessWidget {
+  /// Creates the badge.
+  const new({required this.def, required this.unlocked, super.key});
+
+  /// The catalogue entry drawn.
+  final AchievementDef def;
+
+  /// Whether the customer has earned it.
+  final bool unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    final picture = Lottie.asset(
+      def.lottieAsset,
+      width: 44,
+      height: 44,
+      animate: unlocked && !MediaQuery.disableAnimationsOf(context),
+      errorBuilder: (_, _, _) =>
+          Text(def.icon, style: const TextStyle(fontSize: 32)),
+    );
+    if (unlocked) return picture;
+    return Opacity(
+      opacity: 0.45,
+      child: ColorFiltered(colorFilter: _greyscale, child: picture),
+    );
+  }
 }

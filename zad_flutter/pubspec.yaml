@@ -159,6 +159,8 @@ flutter:
     - assets/brand/
     # Kotlin's res/raw Lottie files, byte for byte.
     - assets/lottie/
+    # The achievement badges — drawn by tool/make_badge_lottie.py.
+    - assets/lottie/badges/
     # Cairo for the monthly report PDF only — built by tool/make_pdf_font.py;
     # see features/intelligence/data/monthly_report_pdf.dart for why.
     - assets/fonts/cairo_pdf.ttf

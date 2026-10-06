@@ -23,6 +23,7 @@ import 'package:zad/shared/brain/data/memory_remote.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/brain/domain/habits.dart';
 import 'package:zad/shared/brain/domain/memory_note.dart';
+import 'package:zad/shared/brain/domain/memory_occasion.dart';
 
 /// Everything the screen shows.
 @immutable
@@ -33,6 +34,7 @@ class MemorySnapshot {
     this.profile,
     this.behavior,
     this.visits = const <PlaceVisit>[],
+    this.occasions = const <MemoryOccasion>[],
   });
 
   /// The notes, most certain first.
@@ -47,6 +49,9 @@ class MemorySnapshot {
   /// Outings in the last [MemoryRepository.visitWindow].
   final List<PlaceVisit> visits;
 
+  /// Birthdays and anniversaries, for the home card and the cake.
+  final List<MemoryOccasion> occasions;
+
   /// The habits card's figures.
   HabitsSummary get habits => HabitsSummary.from(behavior, visits);
 
@@ -60,6 +65,7 @@ class MemorySnapshot {
     profile: profile ?? this.profile,
     behavior: behavior,
     visits: visits ?? this.visits,
+    occasions: occasions,
   );
 }
 
@@ -129,13 +135,15 @@ class MemoryRepository {
           for (final v in json['visits'] as List<dynamic>)
             PlaceVisit.fromJson(Map<String, dynamic>.from(v as Map)),
         ],
+        // Absent in a cache written before occasions existed.
+        occasions: _occasions(json['occasions']),
       );
     } on Object {
       return const MemorySnapshot();
     }
   }
 
-  /// Reads all four and caches them. Any one failing fails the refresh, so the
+  /// Reads all five and caches them. Any one failing fails the refresh, so the
   /// screen keeps the last whole picture instead of half a new one.
   Future<MemorySnapshot> refresh() async {
     final userId = _requireUserId();
@@ -144,6 +152,7 @@ class MemoryRepository {
       _remote.fetchProfile(userId),
       _remote.fetchBehavior(userId),
       _remote.fetchVisits(userId: userId, since: _now().subtract(visitWindow)),
+      _remote.fetchOccasions(userId),
     ]);
     final snapshot = MemorySnapshot(
       notes: <MemoryNote>[
@@ -159,6 +168,7 @@ class MemoryRepository {
         for (final row in results[3]! as List<Map<String, dynamic>>)
           PlaceVisit.fromJson(row),
       ],
+      occasions: _occasions(results[4]),
     );
     await _store(snapshot);
     return snapshot;
@@ -225,8 +235,17 @@ class MemoryRepository {
       'profile': s.profile?.toJson(),
       'behavior': s.behavior,
       'visits': <Map<String, dynamic>>[for (final v in s.visits) v.toJson()],
+      'occasions': <Map<String, dynamic>>[
+        for (final o in s.occasions) o.toJson(),
+      ],
     }),
   );
+
+  static List<MemoryOccasion> _occasions(Object? raw) => <MemoryOccasion>[
+    if (raw is List)
+      for (final r in raw)
+        if (r is Map) ?MemoryOccasion.fromJson(Map<String, dynamic>.from(r)),
+  ];
 
   String _requireUserId() {
     final id = _signedInUserId();

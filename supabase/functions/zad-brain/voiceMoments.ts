@@ -19,6 +19,7 @@ import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
+import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
 
 export interface VoiceMomentRow {
   id: string;
@@ -119,7 +120,11 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية. لو daily_question_kind = curiosity فده حاجة لاحظتيها في حساباته: " +
     "اسأليها بفضول صاحب مش بمحاسبة، ومن غير أرقام غير اللي في السؤال. " +
     "لو quiet = true البيت في ظرف (حالة البيت): تحية قصيرة دافية والأدوية والمواعيد بس — من غير فلوس ولا تحدي ولا أسئلة، " +
-    "ومن غير ما تقولي إيه الظرف.",
+    "ومن غير ما تقولي إيه الظرف. " +
+    "لو فيه occasions: in_days = 0 وfor = null ⇒ ابدئي بتهنئة فرحانة بعيد ميلاده (أو ذكرى جوازه لو anniversary)؛ " +
+    "in_days = 0 وfor اسم ⇒ فكّريه إن النهارده عيد ميلاد الشخص ده يكلّمه ويهنّيه؛ in_days = 3 ⇒ فكّريه إنه بعد ٣ أيام. " +
+    "لو daily_question_kind = gift فالسؤال عرض: تحجزي gift_offer.amount من المتاح لهدية gift_offer.for — قوليه بالرقم والعملة. " +
+    "ماتخترعيش مناسبة مش في occasions.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -327,6 +332,27 @@ export function spokenTime(iso: unknown, timeZone = "Africa/Cairo"): string {
  * القالب الاحتياطي لو الموديل مش متاح — لازم التنبيه يوصل برضه. عامية مصرية بسيطة
  * (أغلب المستخدمين)، والمشاعر بتيجي من الصوت نفسه (`moment` بيتبعت مع الفويس).
  */
+/**
+ * سطر المناسبة في «صباح الخير» الثابتة (لو الموديل وقع). own = عيد ميلاد العميل نفسه النهارده —
+ * بيغيّر العنوان. الأسماء بتتقص زي باقي الحقايق (str).
+ */
+export function occasionLine(raw: unknown): { line: string; own: boolean } {
+  const list = Array.isArray(raw) ? raw as Array<{ occasion?: string; for?: string | null; in_days?: number; md?: string }> : [];
+  const o = list.find((x) => x?.in_days === 0) ?? list.find((x) => x?.in_days === 3);
+  if (!o) return { line: "", own: false };
+  const name = o.for ? str(o.for, 40) : "";
+  const birthday = o.occasion !== "anniversary";
+  if (o.in_days === 0 && !name) {
+    return birthday
+      ? { line: "كل سنة وإنت طيب! 🎂 النهارده عيد ميلادك، يارب سنة حلوة عليك.", own: true }
+      : { line: "كل سنة وإنتو طيبين! 💍 النهارده ذكرى جوازكم.", own: false };
+  }
+  const what = birthday ? `عيد ميلاد ${name || "حد عزيز"}` : `ذكرى جواز ${name}`;
+  return o.in_days === 0
+    ? { line: `النهارده ${what} 🎂 — ماتنساش تتصل تهنّي.`, own: false }
+    : { line: `فاضل ٣ أيام على ${what}${o.md ? ` (${occasionDateLabel(o.md)})` : ""}.`, own: false };
+}
+
 export function momentFallback(moment: string, facts: Record<string, unknown>): ComposedMoment {
   const item = str(facts.item_name) || "الدوا";
   const at = spokenTime(facts.scheduled_at ?? facts.starts_at, str(facts.time_zone, 40) || undefined);
@@ -546,11 +572,13 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         appts.length ? `وعندك النهارده ${appts.slice(0, 2).join(" و")}` : "",
       ].filter(Boolean);
       const ask = str(facts.daily_question, 120);
+      const occasion = occasionLine(facts.occasions);
       return {
-        title: "☀️ صباح الخير",
-        text: (lines.length ? `صباح الخير! ${lines.join("، ")}.` : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
+        title: occasion.own ? "🎂 كل سنة وإنت طيب" : "☀️ صباح الخير",
+        text: (occasion.line ? `${occasion.line} ` : "") +
+          (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
-        speech: `صباح الفل عليك! طمّني نمت كويس؟ ${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
+        speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
     }
     case "good_night": {
@@ -1019,7 +1047,7 @@ export async function morningFacts(
 ): Promise<Record<string, unknown>> {
   const dayStart = new Date(`${local.date}T00:00:00${local.utc_offset}`).toISOString();
   const dayEnd = new Date(new Date(dayStart).getTime() + 86_400_000).toISOString();
-  const [meds, appts, budget, challenge, profile, circumstance] = await Promise.all([
+  const [meds, appts, budget, challenge, profile, circumstance, occasionRows, people] = await Promise.all([
     // الأدوية اللي لسه فيها بس (زي goodNightFacts ومولّد تذكيرات الجرعات): دوا رصيده صفر
     // كان بيتقال في تحية الصبح «خد المضاد» بعد ما الكورس خلص — بيانات وهمية (٢٠٢٦-٠٩-٢٥).
     // for_person (20260929130000): «دوا ماما» مش «دواك» — null = العميل نفسه.
@@ -1036,18 +1064,56 @@ export async function morningFacts(
     sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation").eq("user_id", userId).maybeSingle()
       .then((r) => r.data as Record<string, unknown> | null, () => undefined),
     loadCircumstance(sb, userId),
+    // المناسبات (20261006000000): ملاحظات الذاكرة اللي ليها يوم كل سنة.
+    sb.rpc("zad_memory_occasions", { p_user: userId })
+      .then((r) => (r.data ?? []) as OccasionRow[], () => [] as OccasionRow[]),
+    // الناس اللي الذاكرة عارفاهم — اللي مالوش عيد ميلاد متسجّل بيتسأل عنه (occasionQuestion).
+    sb.from("zad_memory_entities").select("name").eq("user_id", userId).eq("kind", "person")
+      .order("last_seen", { ascending: false }).limit(10)
+      .then((r) => ((r.data ?? []) as Array<{ name: string }>).map((p) => p.name), () => [] as string[]),
   ]);
   // حالة البيت (الشريحة ٢٩): في ظرف أو تعافي، مفيش سؤال ولا فلوس ولا تحدي الصبح.
   const quiet = circumstance.mode !== "normal";
+  const occasions = upcomingOccasions(occasionRows, local.date);
+  // مساعد الهدايا: عيد ميلاد حد تاني بعد ٣ أيام ⇒ عرض يحجز مبلغ من المتاح. ميزانية مؤكدة بس،
+  // ومش في ظرف — ونفس خانة سؤال اليوم (سؤال واحد في الصبح، الهدية أولى لأن ميعادها قريب).
+  const giftFor = quiet || !budget?.limit_confirmed
+    ? undefined
+    : occasions.find((o) => o.in_days === 3 && o.occasion === "birthday" && o.for !== null);
+  const giftAmount = giftFor ? giftSuggestion(budget?.available) : null;
+  const gift = giftFor && giftAmount
+    ? {
+      for: giftFor.for as string,
+      amount: giftAmount,
+      currency: typeof budget?.currency === "string" ? budget.currency : undefined,
+      deadline: new Date(Date.parse(`${local.date}T00:00:00Z`) + 3 * 86_400_000).toISOString().slice(0, 10),
+      on: occasionDateLabel(giftFor.md),
+    }
+    : null;
   // undefined = the read failed: ask nothing rather than ask what may be known.
-  const ask = profile === undefined || quiet ? null : dailyQuestion(profile, local.date);
+  const ask = profile === undefined || quiet || gift ? null : dailyQuestion(profile, local.date);
   // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
-  const curious = profile === undefined || ask || !attentionBudget(circumstance.mode).curiosity
+  // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
+  const occasionAsk = profile === undefined || ask || gift || quiet ? null : occasionQuestion(occasionRows, people, local.date);
+  const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
+  const curious = profile === undefined || ask || gift || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
     ? null
     : await curiosityQuestion(sb, userId, Date.parse(dayStart));
+  const askOccasion = !curious && occasionAsk ? occasionAsk : null;
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
+    ...(occasions.length ? { occasions } : {}),
+    ...(askOccasion
+      ? { daily_question: askOccasion.question, daily_question_kind: "occasion", occasion_ask: { for: askOccasion.for } }
+      : {}),
+    ...(gift
+      ? {
+        gift_offer: gift,
+        daily_question: `أحجزلك ${gift.amount}${gift.currency ? ` ${gift.currency}` : ""} من المتاح لهدية ${gift.for}؟`,
+        daily_question_kind: "gift",
+      }
+      : {}),
     ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
     ...(curious
       ? {
