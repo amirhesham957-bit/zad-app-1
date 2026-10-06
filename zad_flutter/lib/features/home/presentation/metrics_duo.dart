@@ -11,6 +11,7 @@ import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/budget/domain/event_day_budget.dart';
 import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
 
 /// The pair.
@@ -21,8 +22,13 @@ class HomeMetricsDuo extends StatelessWidget {
     required this.daysLeft,
     required this.currency,
     this.payday,
+    this.event,
     super.key,
   });
+
+  /// Today's share when an outing in the coming week reweighs the days
+  /// (الشريحة ٤٠), with the line saying why. Null = the plain division.
+  final ({EventDayBudget budget, String caption})? event;
 
   /// What can be spent, as the green card shows it.
   final double spendable;
@@ -38,13 +44,16 @@ class HomeMetricsDuo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final daily = safeDailySpend(spendable: spendable, daysLeft: daysLeft);
+    final daily =
+        event?.budget.today ??
+        safeDailySpend(spendable: spendable, daysLeft: daysLeft);
     return Row(
       children: <Widget>[
         Expanded(
           child: _Metric(
             label: 'معدل الصرف اليومي الآمن',
             value: '${_money(daily < 0 ? 0 : daily)} $currency',
+            caption: event?.caption,
           ),
         ),
         const SizedBox(width: ZadSpacing.md),

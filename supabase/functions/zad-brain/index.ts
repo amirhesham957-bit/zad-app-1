@@ -104,6 +104,7 @@ import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
+import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
@@ -1457,6 +1458,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       threat, available, budget, brokeMode: brokeActive,
       localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
       appointmentsToday: appointmentsOnLocalDay((apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC"),
+    }),
+    // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
+    event_day_budget: eventDayBudget({
+      available, daysLeft: daysLeftInCycle,
+      appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
+      timeZone: budgetState.timezone ?? "UTC",
     }),
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
     savings_challenge: challengeRow
@@ -7157,6 +7164,7 @@ ${offers("remember_occasion") ? "   - **المناسبات**: لما العمي�
    - استنتج الحالة المحتملة من الكلمات والسياق فقط، ولا تزعم أنك سمعت نبرة لم تصلك. لو العميل مستعجل اختصر، ولو مضغوط تكلم بهدوء وتعاطف.
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.
    - ${householdLoadRule(snap)}
+   - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).

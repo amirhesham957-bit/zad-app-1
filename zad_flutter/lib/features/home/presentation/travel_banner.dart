@@ -42,17 +42,17 @@ final networkCountryProvider = FutureProvider<String?>((ref) async {
 /// Tells zad-brain the country the phone is in (`zad_travel_report`,
 /// migration 20261003140000): abroad starts a trip — the brain then suggests
 /// places there — and home ends it. The account's market is not changed.
-final travelReporterProvider = Provider<Future<void> Function(String country)>(
-  (ref) {
-    final client = ref.watch(supabaseClientProvider);
-    return (country) async {
-      await client.rpc<Object?>(
-        'zad_travel_report',
-        params: <String, dynamic>{'p_country': country},
-      );
-    };
-  },
-);
+final travelReporterProvider = Provider<Future<void> Function(String country)>((
+  ref,
+) {
+  final client = ref.watch(supabaseClientProvider);
+  return (country) async {
+    await client.rpc<Object?>(
+      'zad_travel_report',
+      params: <String, dynamic>{'p_country': country},
+    );
+  };
+});
 
 /// Once a session: the network's country to the server. Nothing without a
 /// mobile network (the last trip stands), and a failure is only logged.

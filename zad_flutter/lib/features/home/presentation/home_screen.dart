@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
@@ -37,7 +38,10 @@ import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/data/upcoming_outings.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
+import 'package:zad/shared/budget/domain/event_day_budget.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 
@@ -218,6 +222,7 @@ class _Budget extends ConsumerWidget {
             child: HomeMetricsDuo(
               spendable: spendable,
               daysLeft: math.max(1, period.daysToLiveOn(now)),
+              event: _eventDay(ref, spendable, period.daysToLiveOn(now), now),
               currency: snapshot.currency,
               payday: period.isCalendarMonth ? null : period.periodEnd,
             ),
@@ -236,6 +241,36 @@ class _Budget extends ConsumerWidget {
         const SizedBox(height: 14),
       ],
     );
+  }
+
+  /// The day's share once outings in the coming week are weighed in
+  /// (الشريحة ٤٠). Null while the week's appointments load, or when none is
+  /// an outing — the plain division then stands.
+  ({EventDayBudget budget, String caption})? _eventDay(
+    WidgetRef ref,
+    double spendable,
+    int daysLeft,
+    DateTime now,
+  ) {
+    final outings = ref.watch(upcomingOutingsProvider).value;
+    if (outings == null || outings.isEmpty) return null;
+    final tz.Location zone;
+    try {
+      zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    } on Object {
+      return null;
+    }
+    DateTime local(DateTime utc) => tz.TZDateTime.from(utc.toUtc(), zone);
+    final e = eventDayBudget(
+      spendable: spendable,
+      daysLeft: daysLeft,
+      appointments: outings,
+      now: now,
+      toLocal: local,
+    );
+    if (e == null) return null;
+    final day = local(now).add(Duration(days: e.eventInDays));
+    return (budget: e, caption: eventDayCaption(e, weekday: day.weekday));
   }
 
   /// The card's period, taken from the snapshot the money came from.
