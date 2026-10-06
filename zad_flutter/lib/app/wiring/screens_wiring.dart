@@ -33,6 +33,7 @@ import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
+import 'package:zad/features/maintenance/presentation/trusted_technicians_sheet.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
@@ -95,6 +96,7 @@ void wireScreens() {
   ZadScreens.showAddShoppingSheet = showAddShoppingSheet;
   ZadScreens.showPinPrompt = showPinPrompt;
   ZadScreens.showMaintenanceScreen = showMaintenanceScreen;
+  ZadScreens.showTrustedTechnicians = showTrustedTechnicians;
   ZadScreens.showDocumentsScreen = showDocumentsScreen;
   ZadScreens.addUtilityBill =
       (ref, {required title, required amount, dueDay, yearly = false}) => ref

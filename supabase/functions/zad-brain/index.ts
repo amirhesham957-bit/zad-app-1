@@ -105,6 +105,7 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { homeEmergencyRule, techniciansForSnapshot } from "./homeEmergency.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
@@ -1160,6 +1161,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
     .order("starts_at", { ascending: true }).limit(30);
+  // الفنيين اللي بيثق فيهم (الشريحة ٤١): الاسم والصنعة بس بيوصلوا للموديل (techniciansForSnapshot).
+  const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
+    .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
+  if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
     dataErrors.push({ source: "مواعيدك" });
@@ -1459,6 +1464,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
       appointmentsToday: appointmentsOnLocalDay((apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC"),
     }),
+    trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
     // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
     event_day_budget: eventDayBudget({
       available, daysLeft: daysLeftInCycle,
@@ -7165,6 +7171,7 @@ ${offers("remember_occasion") ? "   - **المناسبات**: لما العمي�
    - عبّر عن الدفء والاهتمام كشخصية مساعدة، لكن لا تدّعي امتلاك مشاعر أو جسد أو حياة بشرية حقيقية.
    - ${householdLoadRule(snap)}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
+   - ${homeEmergencyRule(snap)}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).

@@ -19,6 +19,7 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/agent_turn.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
+import 'package:zad/shared/household/domain/home_emergency.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 
@@ -38,6 +39,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// The composer holds words the customer spoke. Cleared when the field is
   /// emptied by hand, so typing afresh is a typed message again.
   bool _spoken = false;
+
+  /// A home emergency the last message described (الشريحة ٤١): the card over
+  /// the composer opens the trusted technicians with that trade first.
+  TechnicianTrade? _emergency;
 
   @override
   void initState() {
@@ -70,7 +75,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // customer the chance to send it twice.
     final spoken = _spoken;
     _composer.clear();
-    setState(() => _spoken = false);
+    final emergency = homeEmergencyTrade(text);
+    setState(() {
+      _spoken = false;
+      if (emergency != null) _emergency = emergency;
+    });
     await ref
         .read(chatControllerProvider.notifier)
         .send(text, viaVoice: spoken);
@@ -158,6 +167,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
             ),
+            if (_emergency case final trade?)
+              EmergencyTechniciansCard(
+                trade: trade,
+                onOpen: () => unawaited(
+                  ZadScreens.showTrustedTechnicians(context, trade: trade.wire),
+                ),
+                onDismiss: () => setState(() => _emergency = null),
+              ),
             _Composer(
               controller: _composer,
               busy: view.isAwaitingReply,
@@ -789,4 +806,66 @@ class _Waveform extends StatelessWidget {
     final weight = 1 - (distance * 0.7);
     return 4 + (amplitude * 20 * weight);
   }
+}
+
+/// «طوارئ في البيت؟» over the composer: one tap to the technicians the
+/// customer trusts, the matching trade first. For gas, the safety line comes
+/// before anything else.
+class EmergencyTechniciansCard extends StatelessWidget {
+  /// Creates the card.
+  const new({
+    required this.trade,
+    required this.onOpen,
+    required this.onDismiss,
+    super.key,
+  });
+
+  /// The trade the message called for.
+  final TechnicianTrade trade;
+
+  /// Opens the list.
+  final VoidCallback onOpen;
+
+  /// Hides the card.
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      ZadSpacing.gutter,
+      0,
+      ZadSpacing.gutter,
+      ZadSpacing.sm,
+    ),
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: ZadColors.surface,
+        borderRadius: BorderRadius.circular(ZadRadii.card),
+        border: Border.all(color: ZadColors.terracottaRust),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(ZadSpacing.md),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.handyman_outlined, color: ZadColors.terracottaRust),
+            const SizedBox(width: ZadSpacing.sm),
+            Expanded(
+              child: Text(
+                trade == TechnicianTrade.gas
+                    ? kGasSafetyLine
+                    : 'طوارئ في البيت؟ الـ${trade.label} بتاعك قدامك بنقرة.',
+                style: ZadType.bodySmall.copyWith(color: ZadColors.ink),
+              ),
+            ),
+            TextButton(onPressed: onOpen, child: const Text('فنييني')),
+            IconButton(
+              tooltip: 'إخفاء',
+              onPressed: onDismiss,
+              icon: const Icon(ZadIcons.dismiss, size: 18),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
