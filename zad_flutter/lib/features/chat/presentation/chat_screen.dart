@@ -40,7 +40,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// emptied by hand, so typing afresh is a typed message again.
   bool _spoken = false;
 
-  /// A home emergency the last message described (الشريحة ٤١): the card over
+  /// A home emergency the last message described (الشريحة ٤٣): the card over
   /// the composer opens the trusted technicians with that trade first.
   TechnicianTrade? _emergency;
 

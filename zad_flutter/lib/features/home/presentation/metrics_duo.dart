@@ -27,7 +27,7 @@ class HomeMetricsDuo extends StatelessWidget {
   });
 
   /// Today's share when an outing in the coming week reweighs the days
-  /// (الشريحة ٤٠), with the line saying why. Null = the plain division.
+  /// (الشريحة ٤٢), with the line saying why. Null = the plain division.
   final ({EventDayBudget budget, String caption})? event;
 
   /// What can be spent, as the green card shows it.

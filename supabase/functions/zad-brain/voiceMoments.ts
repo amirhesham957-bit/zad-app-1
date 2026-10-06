@@ -630,7 +630,7 @@ export interface MomentCustomer {
   zad_voice?: string | null;
   /** What was said the last times in this same moment — not to be repeated. */
   recent?: string[];
-  /** طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٢). من غيره = عادي. */
+  /** طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٤). من غيره = عادي. */
   cadence?: ReplyCadence;
 }
 
@@ -1306,7 +1306,7 @@ export function momentGate(
 }
 
 /**
- * طول اللحظة حسب وقت العميل (الشريحة ٤٢): مواعيده من ساعة فاتت لآخر يومه. فشل القراية = عادي — الطول مش سبب يمنع رسالة.
+ * طول اللحظة حسب وقت العميل (الشريحة ٤٤): مواعيده من ساعة فاتت لآخر يومه. فشل القراية = عادي — الطول مش سبب يمنع رسالة.
  */
 async function momentCadence(
   sb: SupabaseClient, row: VoiceMomentRow, nowMs: number, timeZoneOf: (row: VoiceMomentRow) => Promise<string>,

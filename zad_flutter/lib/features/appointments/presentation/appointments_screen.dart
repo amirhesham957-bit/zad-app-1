@@ -762,7 +762,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   @override
   Widget build(BuildContext context) {
     final blocked = _inPast && _recurrence == 'once';
-    // حارس التوقيت (الشريحة ٣٩): تنبيه، مش منع — اتنين في نفس الساعة ممكن
+    // حارس التوقيت (الشريحة ٤١): تنبيه، مش منع — اتنين في نفس الساعة ممكن
     // يكونوا مقصودين. السيرفر بيعمل نفس الفحص على كل المواعيد لو اتسجل من
     // الشات.
     final clashes = blocked

@@ -1,4 +1,4 @@
--- Trusted technicians (migration 20261006014219, docs/agent/ZAD_LIVING_BRAIN.md slice 41), on a scratch database:
+-- Trusted technicians (migration 20261006014219, docs/agent/ZAD_LIVING_BRAIN.md slice 43), on a scratch database:
 --
 --   docker run -d --name zadpg -e POSTGRES_PASSWORD=pg postgres:17-alpine
 --   psql() { docker exec -i zadpg psql -U postgres -v ON_ERROR_STOP=1 -q; }

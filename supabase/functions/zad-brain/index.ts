@@ -1162,7 +1162,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
     .order("starts_at", { ascending: true }).limit(30);
-  // الفنيين اللي بيثق فيهم (الشريحة ٤١): الاسم والصنعة بس بيوصلوا للموديل (techniciansForSnapshot).
+  // الفنيين اللي بيثق فيهم (الشريحة ٤٣): الاسم والصنعة بس بيوصلوا للموديل (techniciansForSnapshot).
   const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
     .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
   if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
@@ -1470,7 +1470,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     broke_mode: brokeActive ? brokeRow : null,
     // «ضغط البيت» (householdLoad.ts) من أرقام البيت والساعة — مش حالة العميل النفسية.
     household_load: houseLoad,
-    // طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٢): ميعاد دلوقتي أو يوم مزحوم ⇒ قصير، مسا فاضي ⇒ أوسع.
+    // طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٤): ميعاد دلوقتي أو يوم مزحوم ⇒ قصير، مسا فاضي ⇒ أوسع.
     reply_cadence: replyCadence({
       appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
       nowMs: Date.now(), timeZone: budgetState.timezone ?? "UTC",
@@ -4236,7 +4236,7 @@ const RECURRING_HINT =
 // ═══════════════════════════════════════════════════════════
 
 /**
- * حارس التوقيت (الشريحة ٣٩): بعد تسجيل ميعاد أو تأجيله، المواعيد اللي في نفس الساعة لنفس الشخص ⇒ سطر في نتيجة الأداة
+ * حارس التوقيت (الشريحة ٤١): بعد تسجيل ميعاد أو تأجيله، المواعيد اللي في نفس الساعة لنفس الشخص ⇒ سطر في نتيجة الأداة
  * العقل يقوله ويسأل. بيقرا المرة الواحدة القريبة والمتكرر كله (المتكرر بيتقارن بالساعة المحلية). فشل القراية = مفيش سطر —
  * الحارس عمره ما يوقف الحفظ.
  */

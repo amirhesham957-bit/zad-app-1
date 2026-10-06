@@ -156,7 +156,7 @@
         <intent>
             <action android:name="android.support.customtabs.action.CustomTabsService"/>
         </intent>
-        <!-- url_launcher: «اتصل» on a trusted technician opens the dialer (الشريحة ٤١). -->
+        <!-- url_launcher: «اتصل» on a trusted technician opens the dialer (الشريحة ٤٣). -->
         <intent>
             <action android:name="android.intent.action.DIAL"/>
             <data android:scheme="tel"/>

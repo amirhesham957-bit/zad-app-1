@@ -1,5 +1,5 @@
 /// «فنيين بثق فيهم» — حارس الطوارئ المنزلية (ZAD_LIVING_BRAIN.md الشريحة
-/// ٤١). Opened from «الصيانة» any time, and from the chat with one tap when
+/// ٤٣). Opened from «الصيانة» any time, and from the chat with one tap when
 /// a message reads like a home emergency, with that trade first.
 library;
 

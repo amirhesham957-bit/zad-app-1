@@ -244,7 +244,7 @@ class _Budget extends ConsumerWidget {
   }
 
   /// The day's share once outings in the coming week are weighed in
-  /// (الشريحة ٤٠). Null while the week's appointments load, or when none is
+  /// (الشريحة ٤٢). Null while the week's appointments load, or when none is
   /// an outing — the plain division then stands.
   ({EventDayBudget budget, String caption})? _eventDay(
     WidgetRef ref,
