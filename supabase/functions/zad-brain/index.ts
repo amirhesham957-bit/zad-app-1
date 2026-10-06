@@ -106,6 +106,7 @@ import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./hous
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { homeEmergencyRule, techniciansForSnapshot } from "./homeEmergency.ts";
+import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
@@ -1256,6 +1257,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     }
   }
 
+  const houseAppointmentsToday = appointmentsOnLocalDay(
+    (apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC",
+  );
+  const houseLoad = householdLoad({
+    threat, available, budget, brokeMode: brokeActive,
+    localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
+    appointmentsToday: houseAppointmentsToday,
+  });
+
   return {
     // العملة والبلد دلوقتي من zad_users (بييجي من اختيار السوق في الكلاينت عبر
     // syncMarketProfile). "غير معروف" بدل افتراض ر.س — الموديل ممنوع يخترع عملة.
@@ -1459,10 +1469,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // وضع الطوارئ: null = مش شغال. شغال ⇒ مفيش اقتراحات شراء، والوصفات من المخزون بس.
     broke_mode: brokeActive ? brokeRow : null,
     // «ضغط البيت» (householdLoad.ts) من أرقام البيت والساعة — مش حالة العميل النفسية.
-    household_load: householdLoad({
-      threat, available, budget, brokeMode: brokeActive,
-      localHour: Number(localNowContext(budgetState.timezone ?? "UTC").time.slice(0, 2)),
-      appointmentsToday: appointmentsOnLocalDay((apptRows ?? []) as Array<{ starts_at?: string | null }>, budgetState.timezone ?? "UTC"),
+    household_load: houseLoad,
+    // طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٢): ميعاد دلوقتي أو يوم مزحوم ⇒ قصير، مسا فاضي ⇒ أوسع.
+    reply_cadence: replyCadence({
+      appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
+      nowMs: Date.now(), timeZone: budgetState.timezone ?? "UTC",
+      appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
     }),
     trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
     // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
@@ -7172,6 +7184,7 @@ ${offers("remember_occasion") ? "   - **المناسبات**: لما العمي�
    - ${householdLoadRule(snap)}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
    - ${homeEmergencyRule(snap)}
+   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).
