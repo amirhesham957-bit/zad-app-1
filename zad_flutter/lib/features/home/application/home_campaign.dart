@@ -46,16 +46,23 @@ final _inputsProvider = Provider<_Inputs?>((ref) {
   );
 });
 
-/// Today's campaign, or null.
+/// Today's campaign — or, in a short gap between two occasions, the next one
+/// shown early and low (`bridgeCampaign`) — or null.
 final homeCampaignProvider = Provider<ActiveCampaign?>((ref) {
   final i = ref.watch(_inputsProvider);
   if (i == null) return null;
   return pickCampaign(
-    i.catalog,
-    today: i.today,
-    country: i.country,
-    dialect: i.dialect,
-  );
+        i.catalog,
+        today: i.today,
+        country: i.country,
+        dialect: i.dialect,
+      ) ??
+      bridgeCampaign(
+        i.catalog,
+        today: i.today,
+        country: i.country,
+        dialect: i.dialect,
+      );
 });
 
 /// The campaign starting within a week, for the widget's countdown, or null.

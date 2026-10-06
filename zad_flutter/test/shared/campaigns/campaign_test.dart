@@ -14,6 +14,7 @@ Map<String, dynamic> _row(
   String? from = '10-25',
   String? to = '10-31',
   String? season,
+  String? peak,
   String primary = '#4C1D95',
   String secondary = '#9A3412',
   int priority = 0,
@@ -25,6 +26,7 @@ Map<String, dynamic> _row(
   'from_md': season == null ? from : null,
   'to_md': season == null ? to : null,
   'season_slug': season,
+  'peak_md': peak,
   'theme_primary': primary,
   'theme_secondary': secondary,
   'badge': '🎃',
@@ -338,6 +340,130 @@ void main() {
       expect(
         CampaignCatalog.fromJson(c.toJson()).campaigns.single.eventName,
         'الهالوين',
+      );
+    });
+  });
+
+  // Owner, 2026-10-05: Egypt's 6 October in its days, Halloween at the end of
+  // the month, and a quiet autumn season around them for everyone.
+  group('intensity', () {
+    final october = _catalog(<Map<String, dynamic>>[
+      _row(
+        'oct6',
+        country: 'EG',
+        from: '10-04',
+        to: '10-07',
+        peak: '10-06',
+        priority: 10,
+      ),
+      _row('halloween', peak: '10-31'), // the helper's 25–31 October
+      _row('autumn', from: '10-01', priority: -10),
+    ]);
+    CampaignIntensity? on(String day, {String? country = 'EG'}) => pickCampaign(
+      october,
+      today: DateTime.parse(day),
+      country: country,
+    )?.intensity;
+
+    test('the national day for Egypt, autumn for everyone else that week', () {
+      expect(_pick(october, '2026-10-05', country: 'EG'), 'oct6');
+      expect(_pick(october, '2026-10-05', country: 'SA'), 'autumn');
+      expect(_pick(october, '2026-10-15', country: 'EG'), 'autumn');
+      expect(_pick(october, '2026-10-28', country: 'EG'), 'halloween');
+    });
+
+    test('the peak day, the days around it, the rest of the window', () {
+      expect(on('2026-10-06'), CampaignIntensity.peak);
+      expect(on('2026-10-04'), CampaignIntensity.medium);
+      expect(on('2026-10-31'), CampaignIntensity.peak);
+      expect(on('2026-10-29'), CampaignIntensity.medium);
+      expect(on('2026-10-26'), CampaignIntensity.low);
+    });
+
+    test('a month-long season with no peak is low all through', () {
+      expect(on('2026-10-15'), CampaignIntensity.low);
+      expect(on('2026-10-02', country: 'SA'), CampaignIntensity.low);
+    });
+
+    test('with no peak, a short window is all peak and a mid one medium', () {
+      final c = _catalog(<Map<String, dynamic>>[
+        _row('short', from: '03-01', to: '03-03'),
+        _row('mid', from: '06-01', to: '06-07'),
+      ]);
+      expect(
+        pickCampaign(c, today: DateTime(2026, 3, 2))?.intensity,
+        CampaignIntensity.peak,
+      );
+      expect(
+        pickCampaign(c, today: DateTime(2026, 6, 4))?.intensity,
+        CampaignIntensity.medium,
+      );
+    });
+
+    test('a peak across the new year is found inside the window', () {
+      final c = _catalog(<Map<String, dynamic>>[
+        _row('ny', from: '12-28', to: '01-03', peak: '01-01'),
+      ]);
+      expect(
+        pickCampaign(c, today: DateTime(2027))?.intensity,
+        CampaignIntensity.peak,
+      );
+      expect(
+        pickCampaign(c, today: DateTime(2026, 12, 30))?.intensity,
+        CampaignIntensity.medium,
+      );
+      expect(
+        pickCampaign(c, today: DateTime(2026, 12, 28))?.intensity,
+        CampaignIntensity.low,
+      );
+    });
+
+    test('the peak survives the cache', () {
+      final c = Campaign.fromJson(_row('x', peak: '10-31'))!;
+      expect(Campaign.fromJson(c.toJson())!.peakMd, (10, 31));
+    });
+  });
+
+  group('bridging', () {
+    final close = _catalog(<Map<String, dynamic>>[
+      _row('a', from: '11-01', to: '11-05'),
+      _row('b', from: '11-12', to: '11-15'),
+      _row('far', from: '12-20', to: '12-22'),
+    ]);
+    ActiveCampaign? bridge(String day) =>
+        bridgeCampaign(close, today: DateTime.parse(day));
+
+    test('a gap under ten days shows the next occasion early, low', () {
+      final b = bridge('2026-11-08')!;
+      expect(b.campaign.id, 'b');
+      expect(b.bridged, isTrue);
+      expect(b.intensity, CampaignIntensity.low);
+      // The same window as when it runs, so a dismissal holds for both.
+      expect(b.key, pickCampaign(close, today: DateTime(2026, 11, 12))!.key);
+    });
+
+    test('a long gap stays plain', () {
+      expect(bridge('2026-11-25'), isNull);
+      expect(bridge('2026-12-10'), isNull);
+    });
+
+    test('nothing to bridge while a campaign runs', () {
+      expect(bridge('2026-11-03'), isNull);
+    });
+
+    test('exactly ten days apart is not bridged', () {
+      final ten = _catalog(<Map<String, dynamic>>[
+        _row('a', from: '11-01', to: '11-05'),
+        _row('b', from: '11-16', to: '11-18'),
+      ]);
+      expect(bridgeCampaign(ten, today: DateTime(2026, 11, 10)), isNull);
+      final nine = _catalog(<Map<String, dynamic>>[
+        _row('a', from: '11-01', to: '11-05'),
+        _row('b', from: '11-15', to: '11-18'),
+      ]);
+      expect(
+        bridgeCampaign(nine, today: DateTime(2026, 11, 10))?.campaign.id,
+        'b',
       );
     });
   });

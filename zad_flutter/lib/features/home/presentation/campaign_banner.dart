@@ -125,6 +125,7 @@ class CampaignBanner extends StatelessWidget {
                   child: CampaignParticlesLayer(
                     kind: c.particles,
                     tint: Color(c.primary),
+                    intensity: active.intensity,
                     still: still,
                   ),
                 ),
@@ -305,13 +306,15 @@ class _CampaignBadgeState extends State<CampaignBadge>
   }
 }
 
-/// Snow, confetti or sparkles drawn behind the banner's text. Eighteen
-/// particles on one repaint boundary; frozen in place under reduced motion.
+/// Snow, confetti or sparkles drawn behind the banner's text, as many as the
+/// day's intensity (`kParticleCounts`) on one repaint boundary; frozen in
+/// place under reduced motion.
 class CampaignParticlesLayer extends StatefulWidget {
   /// Creates the layer.
   const new({
     required this.kind,
     required this.tint,
+    this.intensity = CampaignIntensity.medium,
     this.still = false,
     super.key,
   });
@@ -321,6 +324,9 @@ class CampaignParticlesLayer extends StatefulWidget {
 
   /// The campaign's colour, lightened for confetti.
   final Color tint;
+
+  /// How many: a quiet season day, the days around the peak, the peak.
+  final CampaignIntensity intensity;
 
   /// No motion.
   final bool still;
@@ -362,14 +368,27 @@ class _CampaignParticlesLayerState extends State<CampaignParticlesLayer>
   @override
   Widget build(BuildContext context) => RepaintBoundary(
     child: CustomPaint(
-      painter: _ParticlesPainter(widget.kind, widget.tint, _loop),
+      painter: _ParticlesPainter(
+        widget.kind,
+        widget.tint,
+        kParticleCounts[widget.intensity]!,
+        _loop,
+      ),
     ),
   );
 }
 
 typedef _Seed = ({double x, double y, double size, double phase});
 
-final List<_Seed> _seeds = List<_Seed>.generate(18, (i) {
+/// Particles per intensity — the medium count is the eighteen the banner
+/// always had.
+const Map<CampaignIntensity, int> kParticleCounts = <CampaignIntensity, int>{
+  CampaignIntensity.low: 8,
+  CampaignIntensity.medium: 18,
+  CampaignIntensity.peak: 30,
+};
+
+final List<_Seed> _seeds = List<_Seed>.generate(30, (i) {
   final r = math.Random(i * 7919 + 13);
   return (
     x: r.nextDouble(),
@@ -380,10 +399,12 @@ final List<_Seed> _seeds = List<_Seed>.generate(18, (i) {
 }, growable: false);
 
 class _ParticlesPainter extends CustomPainter {
-  new(this.kind, this.tint, this.progress) : super(repaint: progress);
+  new(this.kind, this.tint, this.count, this.progress)
+    : super(repaint: progress);
 
   final CampaignParticles kind;
   final Color tint;
+  final int count;
   final Animation<double> progress;
 
   @override
@@ -396,7 +417,7 @@ class _ParticlesPainter extends CustomPainter {
       Color.lerp(tint, Colors.white, 0.55)!,
       Color.lerp(tint, Colors.white, 0.8)!,
     ];
-    for (var i = 0; i < _seeds.length; i++) {
+    for (var i = 0; i < count; i++) {
       final s = _seeds[i];
       switch (kind) {
         case CampaignParticles.snow:
@@ -436,5 +457,8 @@ class _ParticlesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ParticlesPainter old) =>
-      old.kind != kind || old.tint != tint || old.progress != progress;
+      old.kind != kind ||
+      old.tint != tint ||
+      old.count != count ||
+      old.progress != progress;
 }

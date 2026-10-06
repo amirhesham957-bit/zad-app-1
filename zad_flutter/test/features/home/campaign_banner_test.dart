@@ -71,8 +71,12 @@ final CampaignCatalog _catalog = CampaignCatalog.fromRows(
 );
 
 class _Catalog extends CampaignsController {
+  new([this.catalog]);
+
+  final CampaignCatalog? catalog;
+
   @override
-  CampaignCatalog build() => _catalog;
+  CampaignCatalog build() => catalog ?? _catalog;
 }
 
 class _Memory extends MemoryController {
@@ -143,13 +147,14 @@ void main() {
     String? network,
     String? dialect,
     LifeCircumstance? quiet,
+    CampaignCatalog? catalog,
   }) {
     final c = ProviderContainer(
       overrides: [
         ...quietHouseholdOverrides,
         quietModeProvider.overrideWith((ref) async => quiet),
         localStoreProvider.overrideWithValue(store()),
-        campaignsControllerProvider.overrideWith(_Catalog.new),
+        campaignsControllerProvider.overrideWith(() => _Catalog(catalog)),
         memoryControllerProvider.overrideWith(() => _Memory(dialect)),
         accountTimeZoneProvider.overrideWithValue(zone),
         networkCountryProvider.overrideWith((ref) async => network),
@@ -213,6 +218,19 @@ void main() {
 
     test('nothing outside every window', () async {
       expect(await pick(container(now: '2026-06-15T12:00:00Z')), isNull);
+    });
+
+    test('a short gap between two occasions shows the next one, low', () async {
+      final close = CampaignCatalog.fromRows(
+        campaigns: <Map<String, dynamic>>[
+          _row('first', from: '11-01', to: '11-05'),
+          _row('second', from: '11-12', to: '11-15'),
+        ],
+        seasons: const <Map<String, dynamic>>[],
+      );
+      final c = container(now: '2026-11-08T12:00:00Z', catalog: close);
+      expect(await pick(c), 'second');
+      expect(c.read(homeCampaignProvider)!.bridged, isTrue);
     });
   });
 
@@ -311,6 +329,33 @@ void main() {
       expect(button.height, greaterThanOrEqualTo(44));
       expect(close.height, greaterThanOrEqualTo(44));
       expect(close.width, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets("the day's intensity sets how many particles fall", (
+      tester,
+    ) async {
+      for (final level in CampaignIntensity.values) {
+        await pumpSlot(
+          tester,
+          campaign: ActiveCampaign(
+            campaign: active.campaign,
+            start: active.start,
+            end: active.end,
+            intensity: level,
+          ),
+        );
+        final layer = tester.widget<CampaignParticlesLayer>(
+          find.byType(CampaignParticlesLayer),
+        );
+        expect(layer.intensity, level);
+      }
+      expect(
+        kParticleCounts[CampaignIntensity.low]! <
+                kParticleCounts[CampaignIntensity.medium]! &&
+            kParticleCounts[CampaignIntensity.medium]! <
+                kParticleCounts[CampaignIntensity.peak]!,
+        isTrue,
+      );
     });
 
     testWidgets('confetti falls without errors when motion is allowed', (
