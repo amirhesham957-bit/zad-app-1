@@ -222,10 +222,20 @@ class ScanController extends Notifier<ScanView> {
   }
 
   /// Applies a correction the customer made before saving.
-  void correct({double? total, String? category, ReceiptType? type}) {
+  void correct({
+    double? total,
+    String? category,
+    ReceiptType? type,
+    Wallet? paidWith,
+  }) {
     final current = state.receipt;
     if (!ref.mounted || current == null) return;
-    final next = current.copyWith(total: total, category: category, type: type);
+    final next = current.copyWith(
+      total: total,
+      category: category,
+      type: type,
+      paidWith: paidWith,
+    );
     state = type == null || type == current.type
         ? state.copyWith(receipt: next)
         : state.copyWith(
@@ -306,10 +316,9 @@ class ScanController extends Notifier<ScanView> {
               title: receipt.title,
               // The printed date's month, not the scan's.
               createdAt: _spentAt(receipt),
-              // A receipt is a card or cash purchase at a shop, and the app has
-              // no way to tell which from the paper. Card is the commoner of
-              // the two and the customer can change it on the row.
-              wallet: Wallet.card,
+              // What the receipt says it was paid with (or what the customer
+              // picked on the sheet); card, the commoner, when it says nothing.
+              wallet: receipt.paidWith ?? Wallet.card,
               category: receipt.hasKnownCategory ? receipt.category : null,
               merchantName: receipt.storeName.isEmpty
                   ? null

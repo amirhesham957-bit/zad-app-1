@@ -11,6 +11,7 @@ import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 class _Scan extends ScanController {
   new(this.initial);
@@ -25,6 +26,22 @@ class _Scan extends ScanController {
   void toggleItem(int index) {
     calls.add('toggle:$index');
     super.toggleItem(index);
+  }
+
+  @override
+  void correct({
+    double? total,
+    String? category,
+    ReceiptType? type,
+    Wallet? paidWith,
+  }) {
+    if (paidWith != null) calls.add('paid:${paidWith.wireName}');
+    super.correct(
+      total: total,
+      category: category,
+      type: type,
+      paidWith: paidWith,
+    );
   }
 }
 
@@ -93,6 +110,8 @@ void main() {
     expect(find.byType(Checkbox), findsNWidgets(2));
     expect(find.text('احفظ وضيف للمخزن'), findsOneWidget);
 
+    // Below the category and the payment chips on a small phone.
+    await tester.ensureVisible(find.byType(Checkbox).first);
     await tester.tap(find.byType(Checkbox).first);
     await tester.pump();
     expect(fake.calls, <String>['toggle:0']);
@@ -104,9 +123,25 @@ void main() {
   ) async {
     await pump(tester, ReceiptType.grocery);
 
+    await tester.ensureVisible(find.byType(Switch));
     await tester.tap(find.byType(Switch));
     await tester.pump();
     expect(find.text('احفظ كمصروف'), findsOneWidget);
+  });
+
+  testWidgets('the sheet asks how it was paid when the receipt does not say', (
+    tester,
+  ) async {
+    await pump(tester, ReceiptType.grocery);
+
+    expect(find.text('اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'), findsOneWidget);
+    for (final (_, label) in kReceiptWallets) {
+      expect(find.text(label), findsOneWidget);
+    }
+    await tester.ensureVisible(find.text('كاش'));
+    await tester.tap(find.text('كاش'));
+    await tester.pump();
+    expect(fake.calls, contains('paid:cash'));
   });
 
   testWidgets('any other receipt shows its lines for checking only', (

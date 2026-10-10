@@ -28,6 +28,7 @@ import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the scanner.
 Future<void> showReceiptScanSheet(BuildContext context, WidgetRef ref) {
@@ -282,6 +283,28 @@ class _ReadingState extends ConsumerState<_Reading> {
                   onSelected: busy
                       ? null
                       : (_) => controller.correct(category: category),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: ZadSpacing.lg),
+          Text(
+            receipt.paidWith == null
+                ? 'اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'
+                : 'اتدفعت',
+            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          Wrap(
+            spacing: ZadSpacing.sm,
+            children: <Widget>[
+              for (final (wallet, label) in kReceiptWallets)
+                ChoiceChip(
+                  label: Text(label),
+                  selected: wallet == receipt.paidWith,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.correct(paidWith: wallet),
                 ),
             ],
           ),
@@ -676,3 +699,11 @@ String _plain(double value) {
       ? rounded.toStringAsFixed(0)
       : NumberFormat('0.##', 'en').format(rounded);
 }
+
+/// The three ways a receipt is paid, as the sheet offers them. A mobile
+/// wallet or InstaPay is a payment from the bank account.
+const List<(Wallet, String)> kReceiptWallets = <(Wallet, String)>[
+  (Wallet.card, 'فيزا / بطاقة'),
+  (Wallet.cash, 'كاش'),
+  (Wallet.bank, 'محفظة / إنستاباي'),
+];

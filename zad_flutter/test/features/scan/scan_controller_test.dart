@@ -145,7 +145,9 @@ Map<String, dynamic> _receipt({
   String storeName = 'بنده',
   String receiptType = 'grocery',
   List<Object?>? items,
+  String? paymentMethod,
 }) => <String, dynamic>{
+  'paymentMethod': ?paymentMethod,
   'total': total,
   'category': category,
   'storeName': storeName,
@@ -466,6 +468,56 @@ void main() {
       final txn = recorded(container).single;
       expect(txn.amount, 300);
       expect(txn.category, 'المطاعم');
+    });
+
+    test('the wallet is what the receipt says it was paid with', () async {
+      // Every receipt used to be saved as a card purchase: «the app has no
+      // way to tell which from the paper» — but the paper says.
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      scanner.answer = _receipt(paymentMethod: 'cash');
+      await controller.scan(ReceiptImageSource.camera);
+      expect(
+        container.read(scanControllerProvider).receipt?.paidWith,
+        Wallet.cash,
+      );
+      await controller.saveAsTransaction();
+      expect(recorded(container).single.wallet, Wallet.cash);
+    });
+
+    test('a mobile wallet is a bank payment; silence is card', () {
+      expect(
+        ScannedReceipt.fromJson(_receipt(paymentMethod: 'wallet')).paidWith,
+        Wallet.bank,
+      );
+      expect(ScannedReceipt.fromJson(_receipt()).paidWith, isNull);
+      expect(
+        ScannedReceipt.fromJson(_receipt(paymentMethod: 'visa')).paidWith,
+        isNull,
+      );
+    });
+
+    test('the customer picks the wallet the receipt did not name', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      controller.correct(paidWith: Wallet.bank);
+      await controller.saveAsTransaction();
+      expect(recorded(container).single.wallet, Wallet.bank);
+    });
+
+    test('nothing said and nothing picked is a card, as before', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      await controller.saveAsTransaction();
+      expect(recorded(container).single.wallet, Wallet.card);
     });
 
     test('a category outside the eleven is dropped, not written', () async {

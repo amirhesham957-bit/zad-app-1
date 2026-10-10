@@ -20,3 +20,17 @@ export function receiptPurchaseDate(raw: unknown, now: Date = new Date()): strin
   if (at.getTime() < now.getTime() - 366 * day) return null;
   return m[0];
 }
+
+/**
+ * How the receipt was paid, as the bottom of the paper says (2026-10-10). The app saved every
+ * receipt as a card purchase because «the app has no way to tell which from the paper» — but
+ * the paper usually does say: VISA/MADA/ماستر, كاش/نقدي, فودافون كاش/إنستاباي. The model reads
+ * it; this keeps only the three answers the app maps to a wallet, and "" for anything else,
+ * which the app shows as a choice instead of guessing.
+ */
+export type ReceiptPaymentMethod = "cash" | "card" | "wallet" | "";
+
+export function receiptPaymentMethod(raw: unknown): ReceiptPaymentMethod {
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return v === "cash" || v === "card" || v === "wallet" ? v : "";
+}

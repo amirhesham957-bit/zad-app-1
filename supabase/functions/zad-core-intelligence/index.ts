@@ -18,7 +18,7 @@ import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETABLE_PROMPT } from "./documentScan.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
-import { receiptPurchaseDate } from "./receiptDate.ts";
+import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
 
@@ -2111,9 +2111,14 @@ Deno.serve(async (req: Request) => {
           "`purchaseDate` is the date printed on the receipt as YYYY-MM-DD (convert Hijri or " +
           "day-first dates to Gregorian YYYY-MM-DD); if no date is printed or it is unreadable, " +
           "return an empty string — never today's date as a guess. " +
+          "`paymentMethod` is how it was paid, read from the receipt itself (usually near the total): " +
+          "\"card\" for VISA/Mastercard/MADA/Meeza/بطاقة/فيزا/ماستر or a card's last digits; " +
+          "\"cash\" for كاش/نقدي/نقدا/CASH or change given back; \"wallet\" for Vodafone Cash/" +
+          "فودافون كاش/InstaPay/إنستاباي/Fawry/a mobile wallet; \"\" when the receipt does not say — " +
+          "never guess. " +
           "Return ONLY a JSON object, no markdown and no commentary: " +
-          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
-        const userPrompt = "Extract the store name, the total paid, the printed purchase date, a spending category, the receipt type, and every line item from this receipt.";
+          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
+        const userPrompt = "Extract the store name, the total paid, the printed purchase date, how it was paid, a spending category, the receipt type, and every line item from this receipt.";
         // callVisionModel rotates the whole Gemini key pool internally; images never hit Groq.
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
         if (visionResult) {
@@ -2132,6 +2137,7 @@ Deno.serve(async (req: Request) => {
                 // null unless it is a real date in the last year: a misread date
                 // must not move the expense into some other month.
                 purchaseDate: receiptPurchaseDate(parsed.purchaseDate),
+                paymentMethod: receiptPaymentMethod(parsed.paymentMethod),
                 receiptType: parsed.receiptType || "grocery",
                 items: parsed.items || [],
               });

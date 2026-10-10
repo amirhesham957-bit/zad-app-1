@@ -17,3 +17,13 @@ Deno.test("anything a misread could produce is refused", () => {
     assertEquals(receiptPurchaseDate(bad, now), null, String(bad));
   }
 });
+
+Deno.test("the payment method is one of three or nothing", async () => {
+  const { receiptPaymentMethod } = await import("./receiptDate.ts");
+  assertEquals(receiptPaymentMethod("card"), "card");
+  assertEquals(receiptPaymentMethod(" Cash "), "cash");
+  assertEquals(receiptPaymentMethod("wallet"), "wallet");
+  for (const bad of ["visa", "فيزا", "", null, 3, undefined, "unknown"]) {
+    assertEquals(receiptPaymentMethod(bad), "", String(bad));
+  }
+});
