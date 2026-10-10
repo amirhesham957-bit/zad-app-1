@@ -67,7 +67,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunCon
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
-import { itemsForStore } from "./storeFit.ts";
+import { itemsForStore, storeMapUrl } from "./storeFit.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -5580,7 +5580,11 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   }
 
   const taskId = (taskRow as { id: string }).id;
-  const telegram = await pushToTelegram(userId, message.title, message.body, fetch, taskId);
+  const mapUrl = storeMapUrl(body?.store_lat, body?.store_lon) ?? undefined;
+  const telegram = await pushToTelegram(
+    userId, message.title, message.body, fetch, taskId,
+    undefined, undefined, undefined, undefined, undefined, mapUrl,
+  );
   console.log(`[store_arrival] ${category} «${storeName}» items=${message.itemCount} → telegram: ${telegram}`);
   // title/body: the phone shows the same message as a notification (Flutter's street alerts).
   return json({

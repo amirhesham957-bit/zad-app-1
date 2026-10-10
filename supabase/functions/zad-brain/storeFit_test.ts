@@ -50,3 +50,11 @@ Deno.test("black pepper is a spice even though pepper is produce", () => {
 Deno.test("nothing that fits = nothing listed, so no message for that shop", () => {
   assertEquals(itemsForStore("عطارة الرحمة", ["شامبو", "بيض", "Cream Cheese"]), []);
 });
+
+Deno.test("the map button points at the shop, and only at a real point", async () => {
+  const { storeMapUrl } = await import("./storeFit.ts");
+  assertEquals(storeMapUrl(30.0512345, 31.2400001), "https://www.google.com/maps/search/?api=1&query=30.05123,31.24000");
+  for (const [lat, lon] of [[null, 31], [30, "31"], [91, 31], [30, 181], [0, 0], [NaN, 31], [undefined, undefined]]) {
+    assertEquals(storeMapUrl(lat, lon), null, `${lat},${lon}`);
+  }
+});

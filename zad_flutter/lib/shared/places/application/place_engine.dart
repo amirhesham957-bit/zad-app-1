@@ -93,9 +93,13 @@ abstract interface class PlaceServer {
   /// `store_arrival`: the alert to show, or null when the server has nothing
   /// to say (nothing missing, muted, already told today). Throws when it
   /// cannot be reached.
+  ///
+  /// [at] is the shop's own point (its fence's centre — a public place, not
+  /// the phone's), so the alert can carry a map button to it.
   Future<PushAlert?> storeArrival({
     required String name,
     required StoreKind kind,
+    GeoPoint? at,
   });
 
   /// `place_event` back_home. Throws when it cannot be reached.
@@ -293,7 +297,7 @@ class PlaceEngine {
     final zone = tz.getLocation(state.zone);
     final now = _now();
     final done = <int>[];
-    final entered = <FencedShop>[];
+    final entered = <({String fence, FencedShop shop})>[];
     GeoPoint? lookFrom;
     GeoPoint? lastSeen;
 
@@ -340,21 +344,26 @@ class PlaceEngine {
             now.difference(e.at) <= kStaleArrival &&
             !isStillHome(state) &&
             !isRegistrationEcho(state, e.at)) {
-          entered.add(shop);
+          entered.add((fence: e.fence, shop: shop));
         }
       }
       done.add(e.key);
     }
 
     // One alert per run: two shops side by side are one stop, not two.
-    final shop = entered
-        .where((s) => !_alertedRecently(state, s.name, now))
+    final arrival = entered
+        .where((s) => !_alertedRecently(state, s.shop.name, now))
         .firstOrNull;
-    if (shop != null) {
+    if (arrival != null) {
+      final shop = arrival.shop;
+      final fence = state.shopFences
+          .where((f) => f.id == arrival.fence)
+          .firstOrNull;
       try {
         final alert = await _server.storeArrival(
           name: shop.name,
           kind: shop.kind,
+          at: fence == null ? null : GeoPoint(fence.lat, fence.lon),
         );
         state = state.copyWith(
           alerted: <String, DateTime>{

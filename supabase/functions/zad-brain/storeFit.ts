@@ -94,3 +94,15 @@ export function itemsForStore(
   if (specialty === "general") return items;
   return items.filter((item) => itemSection(item, categoryOf(item)) === specialty);
 }
+
+/**
+ * زرار «افتح على الخريطة» تحت رسالة المحل (٢٠٢٦-١٠-١٠): المالك طلب اللوكيشن والبوت رد بكلام
+ * وسأله «انت في أنهي منطقة؟». النقطة دي نقطة المحل نفسه (مركز نطاقه على الموبايل) — مكان عام، مش
+ * مكان العميل. أي رقم مش إحداثي صالح = مفيش زرار.
+ */
+export function storeMapUrl(lat: unknown, lon: unknown): string | null {
+  if (typeof lat !== "number" || typeof lon !== "number") return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lon.toFixed(5)}`;
+}

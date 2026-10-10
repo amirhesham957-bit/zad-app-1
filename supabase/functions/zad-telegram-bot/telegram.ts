@@ -150,6 +150,14 @@ export function adminChatId(raw: string | undefined | null): number | null {
   return Number.isSafeInteger(id) && id !== 0 ? id : null;
 }
 
+/** «📍 افتح على الخريطة» تحت رسالة المحل. بيقبل بس الشكل اللي zad-brain بيبنيه
+ * (storeMapUrl) — أي رابط تاني مايتحطش زرار، حتى لو جاي من مسار محمي بسر. */
+export function mapButtonRow(url: unknown): InlineKeyboardButton[] | null {
+  if (typeof url !== "string") return null;
+  if (!/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=-?\d{1,3}\.\d{1,7},-?\d{1,3}\.\d{1,7}$/.test(url)) return null;
+  return [{ text: "📍 افتح على الخريطة", url }];
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent

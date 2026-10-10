@@ -32,7 +32,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, adminChatId, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, adminChatId, mapButtonRow, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -2559,12 +2559,14 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, map_url } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
         // اختياري: تنبيه جرعة — معرّف صف zad_voice_moments، بيتحوّل لزرار «أخدت الجرعة».
         dose_moment_id?: string;
+        // اختياري: رسالة محل — رابط خرايط المحل، بيبقى زرار فوق أزرار الرفض.
+        map_url?: string;
       };
       if (!user_id || !title || !body) {
         return new Response(JSON.stringify({ ok: false, reason: "missing user_id/title/body" }), { status: 400 });
@@ -2578,10 +2580,14 @@ Deno.serve(async (req: Request) => {
       // الداتابيز مابتبعتش الحقل ده، فرسايلهم بتفضل زي ما هي من غير أزرار.
       // تنبيه جرعة بيكسب على زرار الرفض: الأهم إن العميل يقدر يسجّل إنه خدها بضغطة
       // واحدة من غير ما يعدّي على فهم الموديل للكلام (سبب «بيشكرني ومابيسجلش»).
+      const mapRow = mapButtonRow(map_url);
+      const dismissRows = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
+        ? proactiveDismissKeyboard(dismiss_task_id)
+        : [];
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
-        : dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
-        ? proactiveDismissKeyboard(dismiss_task_id)
+        : mapRow || dismissRows.length
+        ? [...(mapRow ? [mapRow] : []), ...dismissRows]
         : undefined;
       await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.

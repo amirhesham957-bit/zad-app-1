@@ -388,3 +388,15 @@ Deno.test("the admin chat is a whole number or nothing — a group's id is negat
     assertEquals(adminChatId(bad), null, String(bad));
   }
 });
+
+Deno.test("the map button takes only the link zad-brain builds", () => {
+  const { mapButtonRow } = telegramModule;
+  const url = "https://www.google.com/maps/search/?api=1&query=30.05123,31.24000";
+  assertEquals(mapButtonRow(url), [{ text: "📍 افتح على الخريطة", url }]);
+  for (const bad of [
+    undefined, 42, "", "https://evil.example/maps", "http://www.google.com/maps/search/?api=1&query=30.1,31.2",
+    "https://www.google.com/maps/search/?api=1&query=30.1,31.2&x=1", "javascript:alert(1)",
+  ]) {
+    assertEquals(mapButtonRow(bad), null, String(bad));
+  }
+});

@@ -58,13 +58,17 @@ class _Server implements PlaceServer {
   PushAlert? reply = const PushAlert(title: 'أنت جنب', body: '• لبن');
   bool offline = false;
 
+  final List<GeoPoint?> arrivalPoints = <GeoPoint?>[];
+
   @override
   Future<PushAlert?> storeArrival({
     required String name,
     required StoreKind kind,
+    GeoPoint? at,
   }) async {
     if (offline) throw StateError('offline');
     arrivals.add(name);
+    arrivalPoints.add(at);
     return reply;
   }
 
@@ -237,6 +241,29 @@ void main() {
     expect(server.arrivals, <String>[
       'كارفور',
     ], reason: 'a later enter is real');
+  });
+
+  test('the shop point goes with the arrival, for the map button', () async {
+    const shopAt = GeoPoint(30.05, 31.24);
+    seed(
+      fresh.copyWith(
+        shopFences: const <Fence>[
+          Fence(id: 'supermarket_0', lat: 30.05, lon: 31.24, radius: 120),
+        ],
+      ),
+    );
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivalPoints.single?.lat, shopAt.lat);
+    expect(server.arrivalPoints.single?.lon, shopAt.lon);
+  });
+
+  test('a shop with no stored fence still arrives, without a point', () async {
+    seed(fresh);
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivals, <String>['كارفور']);
+    expect(server.arrivalPoints.single, isNull);
   });
 
   test('nothing to say from the server shows nothing', () async {
