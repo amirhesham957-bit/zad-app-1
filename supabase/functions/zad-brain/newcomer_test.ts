@@ -5,6 +5,10 @@ import { askedThisMorning } from "./curiosity.ts";
 import { askedNewcomerKeys, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion } from "./newcomer.ts";
 import { BUSY_DAY_OPTIONAL_MOMENTS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, TEMPLATE_MOMENTS } from "./voiceMoments.ts";
 import { buildChatSystemPrompt } from "./index.ts";
+import { weatherSource } from "./weather.ts";
+
+// تحية الصبح بتجيب الجو (weather.ts): التستات دي مابتكلمش Open-Meteo الحقيقي.
+weatherSource.fetch = () => Promise.reject(new Error("no network in unit tests"));
 
 const HOUR = 3_600_000;
 // ٣ العصر بتوقيت القاهرة: برّه الهدوء.

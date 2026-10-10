@@ -17,6 +17,7 @@ import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowConte
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -128,7 +129,10 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه occasions: in_days = 0 وfor = null ⇒ ابدئي بتهنئة فرحانة بعيد ميلاده (أو ذكرى جوازه لو anniversary)؛ " +
     "in_days = 0 وfor اسم ⇒ فكّريه إن النهارده عيد ميلاد الشخص ده يكلّمه ويهنّيه؛ in_days = 3 ⇒ فكّريه إنه بعد ٣ أيام. " +
     "لو daily_question_kind = gift فالسؤال عرض: تحجزي gift_offer.amount من المتاح لهدية gift_offer.for — قوليه بالرقم والعملة. " +
-    "ماتخترعيش مناسبة مش في occasions.",
+    "ماتخترعيش مناسبة مش في occasions. " +
+    "لو فيه weather_alert: قوليه بوضوح بعد التحية على طول ومعاه نصيحته (ده أمان، حتى لو quiet). " +
+    "لو فيه weather: نص جملة عن جو النهارده بالأرقام اللي فيه بس (المدينة والعظمى). " +
+    "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -185,6 +189,7 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "speech: جملتين زعلانة شوية بس حنينة — مش لوم — وإن النهارده يوم جديد يبدأ فيه سلسلة تانية.",
   good_night:
     "تصبح على خير — آخر كلمة من زاد قبل ما العميل ينام. text: سطر دافي، ولو فيه tomorrow_appointments أو school_tomorrow (شنطة كل طفل بمواده) أو meds_tomorrow_morning فكّريه بأهم حاجة واحدة بكرة. " +
+    "لو فيه weather_alert (جو بكرة): هو أهم حاجة لبكرة — قوليه بهدوء ومعاه نصيحته. " +
     "speech: من ٢ لـ٣ جمل ناعمة وحنينة جداً بصوت هادي كأنك بتطمني عليه قبل النوم: ناديه باسمه لو معروف، اتمنّي له نوم هادي وأحلام حلوة، " +
     "وقولي إنك مستنياه الصبح، وفكّريه بحاجة واحدة بس لبكرة لو موجودة. دفا زي حد قريب من العيلة — من غير دلع ولا أي كلام غرامي ولا ادعاء علاقة (قرار المالك ٢٠٢٦-١٠-٠٣)، " +
     "ومن غير أي كلام عن فلوس أو لوم.",
@@ -577,12 +582,16 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       ].filter(Boolean);
       const ask = str(facts.daily_question, 120);
       const occasion = occasionLine(facts.occasions);
+      const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
+      const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
       return {
-        title: occasion.own ? "🎂 كل سنة وإنت طيب" : "☀️ صباح الخير",
+        title: occasion.own ? "🎂 كل سنة وإنت طيب" : alert ? "⛈️ صباح الخير — خلي بالك من الجو" : "☀️ صباح الخير",
         text: (occasion.line ? `${occasion.line} ` : "") +
-          (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
+          (alert ? `${alert} ` : "") +
+          (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line || alert ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
+          (clothes ? ` ${clothes}` : "") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
-        speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
+        speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${alert ? `${alert} ` : ""}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${clothes ? `${clothes} ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
     }
     case "newcomer_question": {
@@ -603,7 +612,9 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const bag = school?.person && Array.isArray(school.subjects) && school.subjects.length
         ? `وجهّز شنطة ${str(school.person, 30)} لبكرة: ${school.subjects.slice(0, 4).map((x) => str(x, 30)).join("، ")}`
         : "";
-      const reminder = appts.length ? `وماتنساش إن بكرة عندك ${appts[0]}`
+      const weatherTomorrow = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
+      const reminder = weatherTomorrow ? `و${weatherTomorrow.replace(/[.。]$/, "")}`
+        : appts.length ? `وماتنساش إن بكرة عندك ${appts[0]}`
         : bag ? bag
         : med ? (medFor ? `وأول ما تصحى فكّر ${medFor} بـ${med}` : `وأول ما تصحى خد ${med}`) : "";
       return {
@@ -1093,7 +1104,7 @@ export async function morningFacts(
       .then((r) => r.data as Record<string, unknown> | null, () => null),
     sb.from("zad_savings_challenges").select("started_on,length_days,daily_cap,streak").eq("user_id", userId).eq("status", "active").maybeSingle()
       .then((r) => r.data as { started_on: string; length_days: number; daily_cap: number; streak: number } | null, () => null),
-    sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation").eq("user_id", userId).maybeSingle()
+    sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation,city").eq("user_id", userId).maybeSingle()
       .then((r) => r.data as Record<string, unknown> | null, () => undefined),
     loadCircumstance(sb, userId),
     // المناسبات (20261006000000): ملاحظات الذاكرة اللي ليها يوم كل سنة.
@@ -1134,6 +1145,10 @@ export async function morningFacts(
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
   // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
   const newcomer = quiet || gift ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
+  // الجو (weather.ts): أزمة جو بتتقال حتى في الظرف (أمان)، وتبديل هدوم الموسم مرة في الموسم ومش في الظرف.
+  const weather = await morningWeather(sb, userId, local, (profile as { city?: string | null } | null | undefined)?.city ?? null);
+  const alert = weatherAlert(weather, local.date);
+  const clothes = quiet ? null : await clothesNudgeOnce(sb, userId, weather, local.date);
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   const medAsk = quiet || gift || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
@@ -1158,6 +1173,9 @@ export async function morningFacts(
         curiosity: { key: curious.key, kind: curious.kind, record: curious.record, ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}) },
       }
       : {}),
+    ...(weather && !quiet ? { weather: { place: weather.place, today: todayOf(weather, local.date) } } : {}),
+    ...(alert ? { weather_alert: { kind: alert.kind, day: alert.day, line: alert.line } } : {}),
+    ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
     ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
     time_zone: local.time_zone,
@@ -1255,6 +1273,41 @@ export async function doseTimesAsk(sb: SupabaseClient, userId: string, now = Dat
   }
 }
 
+/** طقس العميل للحظات (بلده ومدينته من «ملفي»). أي فشل = null — التحية بتتقال برضه. */
+async function morningWeather(
+  sb: SupabaseClient, userId: string, local: { time_zone: string }, city: string | null,
+): Promise<WeatherFacts | null> {
+  try {
+    const [{ data: u }, { data: p }] = await Promise.all([
+      sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+      city === null ? sb.from("zad_customer_profile").select("city").eq("user_id", userId).maybeSingle() : Promise.resolve({ data: { city } }),
+    ]);
+    return await loadWeather(sb, {
+      country: (u as { country?: string | null } | null)?.country,
+      city: (p as { city?: string | null } | null)?.city ?? null,
+      timeZone: local.time_zone,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function todayOf(w: WeatherFacts, date: string): Record<string, unknown> | null {
+  const d = w.days.find((x) => x.date === date);
+  return d ? { sky: d.label, max: d.max, min: d.min } : null;
+}
+
+/** تبديل هدوم الموسم لو مااتقالش الموسم ده (آخر ٢٠٠ يوم من تحيات الصبح). فشل القراية = مفيش. */
+async function clothesNudgeOnce(sb: SupabaseClient, userId: string, weather: WeatherFacts | null, date: string) {
+  const nudge = clothingNudge(weather, date);
+  if (!nudge) return null;
+  const { data, error } = await sb.from("zad_voice_moments").select("facts").eq("user_id", userId)
+    .eq("moment", "morning_greeting").eq("status", "sent")
+    .gte("created_at", new Date(Date.now() - 200 * 86_400_000).toISOString()).limit(250);
+  if (error) return null;
+  return askedClothesKeys(data as Array<{ facts?: unknown }>).has(nudge.key) ? null : nudge;
+}
+
 /** بيانات «تصبح على خير»: مواعيد بكرة وأول دوا الصبح. كل مصدر بيفشل لوحده بيتساب فاضي. */
 export async function goodNightFacts(
   sb: SupabaseClient,
@@ -1292,10 +1345,12 @@ export async function goodNightFacts(
     .flatMap((m) => (m.dose_times ?? "").split(",").map((t) => ({ name: m.name, t: t.trim(), who: m.for_person })))
     .filter((x) => /^([01]?\d|2[0-3]):[0-5]\d$/.test(x.t) && Number(x.t.split(":")[0]) < 12)
     .sort((a, b) => a.t.localeCompare(b.t))[0];
+  const tomorrowAlert = weatherAlert(await morningWeather(sb, userId, local, null), local.date, true);
   return {
     local_date: local.date,
     time_zone: local.time_zone,
     tomorrow_appointments: appts,
+    ...(tomorrowAlert ? { weather_alert: { kind: tomorrowAlert.kind, day: tomorrowAlert.day, line: tomorrowAlert.line } } : {}),
     ...(spentToday > 0 ? { spent_today: spentToday, spent_where: whereToday } : {}),
     ...(runningLow.length ? { running_low: runningLow } : {}),
     ...(morning ? { meds_tomorrow_morning: morning.name, meds_tomorrow_time: morning.t, meds_tomorrow_for: morning.who } : {}),

@@ -99,8 +99,11 @@ export function placeKey(lat: number, lon: number): string {
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
+/** الشبكة اللي loadWeather بيستعملها لو ماتبعتلوش fetcher. التستات بتقفلها عشان مايكلموش Open-Meteo الحقيقي. */
+export const weatherSource: { fetch: Fetch } = { fetch: (input, init) => fetch(input, init) };
+
 /** مدينة الملف جوه بلده بس (اسم «المنصورة» موجود في ٥ بلاد). الأكبر سكاناً الأول. null = مالقيناهاش. */
-export async function geocodeCity(city: string, country: string, fetcher: Fetch = fetch): Promise<{ name: string; lat: number; lon: number } | null> {
+export async function geocodeCity(city: string, country: string, fetcher: Fetch = weatherSource.fetch): Promise<{ name: string; lat: number; lon: number } | null> {
   const name = city.replace(/\s+/g, " ").trim().slice(0, 60);
   if (name.length < 2 || !/^[A-Z]{2}$/.test(country)) return null;
   const url = "https://geocoding-api.open-meteo.com/v1/search?" +
@@ -134,7 +137,7 @@ export async function loadWeather(
   const capital = CAPITALS[country];
   if (!capital) return null;
   const now = input.now ?? Date.now();
-  const fetcher = input.fetcher ?? fetch;
+  const fetcher = input.fetcher ?? weatherSource.fetch;
   try {
     let place = { name: capital.name, lat: capital.lat, lon: capital.lon };
     let from: WeatherFacts["from"] = "capital";
@@ -206,4 +209,104 @@ export function weatherRule(snap: { weather?: { place?: string } | null } | null
   if (!w) return "   - **الجو (weather)**: مش معروف دلوقتي — لو اتسألت عنه قول كده، وماتخمّنش درجات حرارة.\n";
   return `   - **الجو (weather)**: من Open-Meteo لـ${w.place} (تقريبي: مدينته أو عاصمة بلده). استخدمه لو الكلام عن خروج أو لبس ` +
     "أو غسيل أو سفر، وقول المدينة؛ الأرقام من days بس. مدينة تانية ⇒ weather_forecast.\n";
+}
+
+// ── حراس الطقس (الموجة ٤، الشريحة ٢) — قواعد على التوقعات، صفر توكنز ───────────────────────────────
+
+export type WeatherAlertKind = "storm" | "heavy_rain" | "heat" | "cold" | "wind";
+
+export interface WeatherAlert {
+  kind: WeatherAlertKind;
+  day: "today" | "tomorrow";
+  date: string;
+  /** الجملة نفسها بالأرقام، والنصيحة. */
+  line: string;
+}
+
+/** حدود «أزمة جو»: عواصف رعدية، مطر ≥ ١٠ مم (أو مطر تقيل/سيول)، عظمى ≥ ٤٠، صغرى ≤ ٥، ريح ≥ ٥٠ كم/س. */
+export const HEAVY_RAIN_MM = 10;
+export const HEAT_C = 40;
+export const COLD_C = 5;
+export const WIND_KMH = 50;
+
+function alertFor(d: DayWeather, place: string, when: string): Omit<WeatherAlert, "day" | "date"> | null {
+  if (d.code >= 95) {
+    return { kind: "storm", line: `${when} فيه عواصف رعدية في ${place} — خليك جوه لو تقدر، وابعد عن أعمدة الكهربا والشجر.` };
+  }
+  if (d.rain_mm >= HEAVY_RAIN_MM || d.code === 65 || d.code === 67 || d.code === 82) {
+    return { kind: "heavy_rain", line: `${when} مطر تقيل في ${place}${d.rain_mm > 0 ? ` (حوالي ${d.rain_mm} مم)` : ""} — قفّل الشبابيك، وخلي بالك من الطريق.` };
+  }
+  if (d.max >= HEAT_C) {
+    return { kind: "heat", line: `${when} حر شديد في ${place} (العظمى ${d.max}°) — مية كتير، وبلاش شمس الضهر خصوصاً للعيال والكبار.` };
+  }
+  if (d.min <= COLD_C) {
+    return { kind: "cold", line: `${when} برد شديد في ${place} (الصغرى ${d.min}°) — دفّي العيال كويس بالليل.` };
+  }
+  if (d.wind_kmh >= WIND_KMH) {
+    return { kind: "wind", line: `${when} ريح شديدة في ${place} (${d.wind_kmh} كم/س) — قفّل الشبابيك وشيل الحاجات الخفيفة من البلكونة.` };
+  }
+  return null;
+}
+
+/** أزمة جو النهارده، وإلا بكرة؛ null لو الجو عادي. [onlyTomorrow] لتصبح على خير. */
+export function weatherAlert(w: Pick<WeatherFacts, "place" | "days"> | null, today: string, onlyTomorrow = false): WeatherAlert | null {
+  if (!w) return null;
+  const i = w.days.findIndex((d) => d.date === today);
+  if (i < 0) return null;
+  const candidates: Array<[DayWeather | undefined, "today" | "tomorrow", string]> = onlyTomorrow
+    ? [[w.days[i + 1], "tomorrow", "بكرة"]]
+    : [[w.days[i], "today", "النهارده"], [w.days[i + 1], "tomorrow", "بكرة"]];
+  for (const [d, day, when] of candidates) {
+    if (!d) continue;
+    const a = alertFor(d, w.place, when);
+    if (a) return { ...a, day, date: d.date };
+  }
+  return null;
+}
+
+export interface ClothingNudge {
+  season: "winter" | "summer";
+  /** مرة في الموسم: الشتا من يوليو لـيونيو اللي بعده، والصيف السنة نفسها. */
+  key: string;
+  line: string;
+}
+
+/** الصغرى ≤ ١٥ أو العظمى ≥ ٣٣ في يومين على الأقل من التلاتة الجايين ⇒ وقت تبديل هدوم الموسم. */
+export const CLOTHES_COLD_MIN = 15;
+export const CLOTHES_HOT_MAX = 33;
+
+export function clothingNudge(w: Pick<WeatherFacts, "days"> | null, today: string): ClothingNudge | null {
+  if (!w) return null;
+  const i = w.days.findIndex((d) => d.date === today);
+  if (i < 0) return null;
+  const next = w.days.slice(i, i + 3);
+  if (next.length < 2) return null;
+  const [y, m] = today.split("-").map(Number);
+  const cold = next.filter((d) => d.min <= CLOTHES_COLD_MIN);
+  if (cold.length >= 2) {
+    const low = Math.min(...cold.map((d) => d.min));
+    return {
+      season: "winter", key: `clothes:winter:${m >= 7 ? y : y - 1}`,
+      line: `الليالي بدأت تبرد (الصغرى ${low}°) — وقت تطلّعوا البطاطين وهدوم الشتا؟`,
+    };
+  }
+  const hot = next.filter((d) => d.max >= CLOTHES_HOT_MAX);
+  if (hot.length >= 2) {
+    const high = Math.max(...hot.map((d) => d.max));
+    return {
+      season: "summer", key: `clothes:summer:${y}`,
+      line: `الحر بدأ (العظمى ${high}°) — وقت تطلّعوا هدوم الصيف وتشيلوا الشتوي؟`,
+    };
+  }
+  return null;
+}
+
+/** مفاتيح تبديل الهدوم اللي اتقالت (facts.weather_clothes.key في تحيات الصبح). */
+export function askedClothesKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | undefined): Set<string> {
+  const keys = new Set<string>();
+  for (const r of rows ?? []) {
+    const key = (r?.facts as { weather_clothes?: { key?: unknown } } | null)?.weather_clothes?.key;
+    if (typeof key === "string" && key) keys.add(key);
+  }
+  return keys;
 }
