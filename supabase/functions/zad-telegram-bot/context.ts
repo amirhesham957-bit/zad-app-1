@@ -299,14 +299,27 @@ export function parseSpendIntent(raw: string | null): SpendIntent | null {
 
 /** Confirmation text shown before anything is written. States every field that will be
  * saved, so a misparse is visible to the customer rather than silent. */
-export function confirmSpendMessage(intent: SpendIntent, currency: string): string {
+/**
+ * طريقة الدفع اللي البون قالها (analyze_receipt: cash/card/wallet) ⇒ محفظة المصروف. محفظة موبايل = حساب بنك، زي
+ * التطبيق (الموجة ٢، 2b257ef5). البون ماقالش ⇒ null (والتأكيد بيكتب card زي الأول).
+ */
+export function receiptWallet(paymentMethod: unknown): "cash" | "card" | "bank" | null {
+  const v = typeof paymentMethod === "string" ? paymentMethod.trim().toLowerCase() : "";
+  return v === "cash" ? "cash" : v === "card" ? "card" : v === "wallet" ? "bank" : null;
+}
+
+const WALLET_LABEL: Record<string, string> = { cash: "كاش", card: "بطاقة", bank: "محفظة/تحويل بنكي" };
+
+export function confirmSpendMessage(intent: SpendIntent, currency: string, wallet?: string | null): string {
   const verb = intent.kind === "income" ? "دخل" : "مصروف";
+  const paid = wallet ? WALLET_LABEL[wallet] : undefined;
   return [
     `تمام، أسجل ${verb}؟`,
     "",
     `المبلغ: ${isolate(money(intent.amount, currency))}`,
     `الوصف: ${isolate(sanitizeName(intent.title))}`,
     `الفئة: ${isolate(sanitizeName(intent.category))}`,
+    ...(paid ? [`اتدفعت: ${paid} (من البون)`] : []),
     "",
     "اضغط تأكيد عشان أكتبها.",
   ].join("\n");

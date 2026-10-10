@@ -434,7 +434,8 @@
     "status",
     "title",
     "txn_kind",
-    "user_id"
+    "user_id",
+    "wallet"
   ],
   "telegram_processed_updates": [
     "processed_at",

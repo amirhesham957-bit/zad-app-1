@@ -50,7 +50,7 @@ import {
 } from "./telegram.ts";
 import {
   clampForTelegram,
-  confirmSpendMessage, deriveWebhookSecret, money,
+  confirmSpendMessage, deriveWebhookSecret, money, receiptWallet,
   confirmMedicationMessage,
   isolate, sanitizeName,
 } from "./context.ts";
@@ -794,6 +794,8 @@ interface AnalyzeReceiptResult {
   storeName: string;
   // "pharmacy" | "grocery" | "general" — see zad-core-intelligence's analyze_receipt.
   receiptType: string;
+  /** cash | card | wallet | "" (البون ماقالش) — الموجة ٢، 2b257ef5. */
+  paymentMethod?: string;
   items: Array<{ name: string; price: number; quantity: number; unit: string; category: string }>;
 }
 
@@ -1491,12 +1493,13 @@ bot.on("message:photo", async (ctx) => {
     if (result.total > 0) {
       const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
       const title = (result.storeName || "فاتورة صيدلية").slice(0, 80);
+      const wallet = receiptWallet(result.paymentMethod);
       const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
         user_id: userId, chat_id: ctx.chat.id, txn_kind: "expense", amount: Math.round(result.total * 100) / 100,
-        title, category: "الرعاية الصحية", confidence: 0.75,
+        title, category: "الرعاية الصحية", confidence: 0.75, wallet,
       }).select("id").single();
       if (!error && pending) {
-        await ctx.reply(`${summary}${summary ? "\n\n" : ""}` + confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category: "الرعاية الصحية", confidence: 0.75 }, currency), {
+        await ctx.reply(`${summary}${summary ? "\n\n" : ""}` + confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category: "الرعاية الصحية", confidence: 0.75 }, currency, wallet), {
           reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)),
         });
         return;
@@ -1532,6 +1535,7 @@ bot.on("message:photo", async (ctx) => {
       .data?.currency ?? "غير معروف";
     const title = (result.storeName || "فاتورة").slice(0, 80);
     const category = (result.category || "أخرى").slice(0, 40);
+    const wallet = receiptWallet(result.paymentMethod);
     const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
       user_id: userId,
       chat_id: ctx.chat.id,
@@ -1540,11 +1544,12 @@ bot.on("message:photo", async (ctx) => {
       title,
       category,
       confidence: 0.75,
+      wallet,
     }).select("id").single();
     if (!error && pending) {
       await ctx.reply(
         (itemsSummary ? itemsSummary + "\n\n" : "") +
-          confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category, confidence: 0.75 }, currency),
+          confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category, confidence: 0.75 }, currency, wallet),
         { reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)) },
       );
       return;
@@ -1985,7 +1990,7 @@ bot.on("callback_query:data", async (ctx) => {
   const spend = parseSpendCallback(data);
   if (spend) {
     const { data: pendingRow } = await sb.from("telegram_pending_writes")
-      .select("id,user_id,txn_kind,amount,title,category,status,expires_at")
+      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet")
       .eq("id", spend.pendingId)
       // إعادة التحقق: الـ chat اللي بيأكد لازم يكون لسه مربوط بنفس اليوزر صاحب الطلب.
       .eq("user_id", userId)
@@ -1993,7 +1998,7 @@ bot.on("callback_query:data", async (ctx) => {
 
     const row = pendingRow as {
       id: string; txn_kind: string; amount: number; title: string;
-      category: string | null; status: string; expires_at: string;
+      category: string | null; status: string; expires_at: string; wallet: string | null;
     } | null;
 
     if (!row) {
@@ -2032,7 +2037,8 @@ bot.on("callback_query:data", async (ctx) => {
       title: row.title,
       category: row.category ?? undefined,
       txn_kind: row.txn_kind,
-      wallet: "card",
+      // اللي البون قاله (receiptWallet)؛ نص أو صوت أو بون ماقالش = card زي الأول.
+      wallet: row.wallet ?? "card",
     });
     if (!confirmed.ok) {
       console.error("telegram expense confirmation via zad-brain failed");
