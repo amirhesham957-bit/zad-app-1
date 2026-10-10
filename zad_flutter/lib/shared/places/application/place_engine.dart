@@ -337,7 +337,9 @@ class PlaceEngine {
         final shop = state.shops[e.fence];
         if (shop != null &&
             e.transition == PlaceTransition.enter &&
-            now.difference(e.at) <= kStaleArrival) {
+            now.difference(e.at) <= kStaleArrival &&
+            !isStillHome(state) &&
+            !isRegistrationEcho(state, e.at)) {
           entered.add(shop);
         }
       }
@@ -413,3 +415,20 @@ final Provider<PlaceEngine?> placeEngineProvider = Provider<PlaceEngine?>((
     now: ref.watch(nowProvider),
   );
 });
+
+/// Home is known and the phone has not left its circle since: a shop "enter"
+/// now is the shop down the street seen through the walls (a 120 m circle,
+/// indoor GPS), not a trip to it. Unknown home = cannot tell, so not home.
+@visibleForTesting
+bool isStillHome(PlaceState state) =>
+    state.home != null && state.leftAt == null;
+
+/// An enter reported within [kRegistrationEcho] of the shops being
+/// registered — Android's initial trigger for a circle the phone was already
+/// in.
+@visibleForTesting
+bool isRegistrationEcho(PlaceState state, DateTime at) {
+  final registered = state.refreshedAt;
+  if (registered == null || at.isBefore(registered)) return false;
+  return at.difference(registered) < kRegistrationEcho;
+}
