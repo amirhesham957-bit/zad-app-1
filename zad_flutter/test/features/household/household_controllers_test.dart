@@ -442,6 +442,48 @@ void main() {
       ]);
     });
 
+    test(
+      'buying an item again tops up its row instead of adding one',
+      () async {
+        // «بلح» twice on the owner's pantry (2026-10-10).
+        await withCountry('EG');
+        pantryRemote.rows = <Map<String, dynamic>>[
+          <String, dynamic>{...pantryRow('a', 'البلح', 1), 'unit': 'كيلو'},
+        ];
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(pantryControllerProvider.notifier);
+        await controller.refresh(force: true);
+
+        await controller.add(itemName: 'بلح', quantity: 2, unit: 'كيلو');
+
+        final items = container.read(pantryControllerProvider).items;
+        expect(items, hasLength(1));
+        expect(items.single.id, 'a');
+        expect(items.single.quantity, 3);
+        expect(readings(container), <(String, num, String)>[
+          ('البلح', 3, 'manual'),
+        ]);
+      },
+    );
+
+    test('another unit, or a longer name, is its own row', () async {
+      await withCountry('EG');
+      pantryRemote.rows = <Map<String, dynamic>>[
+        <String, dynamic>{...pantryRow('a', 'سكر', 1), 'unit': 'كيلو'},
+        pantryRow('b', 'لبن', 1),
+      ];
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(pantryControllerProvider.notifier);
+      await controller.refresh(force: true);
+
+      await controller.add(itemName: 'سكر', quantity: 5, unit: 'كيس');
+      await controller.add(itemName: 'لبن زبادي', quantity: 2);
+
+      expect(container.read(pantryControllerProvider).items, hasLength(4));
+    });
+
     test('a row that is not there says nothing', () async {
       await withCountry('EG');
       final container = containerWith();

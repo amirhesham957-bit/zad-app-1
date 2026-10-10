@@ -68,6 +68,7 @@ import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGemi
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeMapUrl } from "./storeFit.ts";
+import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -2241,12 +2242,44 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_inventory_item": {
       const itemName = String(input.item_name).trim();
+      const unit = input.unit ? String(input.unit).trim() : null;
+      // نفس الصنف موجود عند العميل؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
+      // صفوف العميل نفسه بس: «تراجع» بيرجّع الصف بـuser_id العميل.
+      const { data: own, error: ownErr } = await sb.from("zad_inventory")
+        .select("id,item_name,quantity,unit,category,expiry_date,created_at")
+        .eq("user_id", userId).limit(500);
+      if (ownErr) console.error("[add_inventory_item] pantry lookup failed:", ownErr.message);
+      const existing = pickPantryMatch((own ?? []) as Array<PantryRow & { category: string | null; expiry_date: string | null }>, itemName, unit);
+      if (existing) {
+        const total = Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
+        const previous = { quantity: existing.quantity, category: existing.category, expiry_date: existing.expiry_date };
+        const w = await writeRows(
+          sb.from("zad_inventory").update({
+            quantity: total,
+            category: existing.category ?? (input.category ? String(input.category).trim() : null),
+            expiry_date: input.expiry_date ?? existing.expiry_date,
+          }).eq("id", existing.id).select("id,item_name,quantity,category,expiry_date"),
+          "تزويد الصنف",
+        );
+        if (!w.ok) return `مرفوض: ${w.reason}`;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: existing.quantity, new: { item: existing.item_name, qty: total } });
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_inventory", targetId: existing.id,
+          previous, next: w.rows[0],
+        });
+        const { error: obsErr } = await sb.rpc("zad_record_observation", {
+          p_user: userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
+        });
+        if (obsErr) console.error("zad_record_observation failed:", obsErr.message);
+        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}`;
+      }
       const w = await writeRows(
         sb.from("zad_inventory").insert({
           user_id: userId,
           item_name: itemName,
           quantity: input.quantity,
-          unit: input.unit ? String(input.unit).trim() : "حبة",
+          unit: unit ?? "حبة",
           category: input.category ? String(input.category).trim() : null,
           expiry_date: input.expiry_date ?? null,
         }).select("id,item_name,quantity"),
@@ -4353,7 +4386,7 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "add_inventory_item",
-    description: "ضيف صنف **جديد** للمخزون. لو الصنف موجود بالفعل استخدم update_inventory_qty بدلها. لو العميل ذكر أكتر من صنف في رسالة واحدة، نادِ الأداة دي مرة لكل صنف.",
+    description: "ضيف كمية اشتراها العميل للمخزون. لو نفس الصنف موجود عنده (حتى بإملاء أو ترتيب كلام مختلف)، الكمية بتتزوّد على صفه تلقائياً بدل صف جديد. لو العميل قال الكمية اللي فاضلة فعلاً (مش اشترى)، استخدم update_inventory_qty. لو ذكر أكتر من صنف في رسالة واحدة، نادِ الأداة دي مرة لكل صنف.",
     input_schema: {
       type: "object",
       properties: {

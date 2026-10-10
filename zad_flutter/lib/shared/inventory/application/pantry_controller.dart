@@ -19,6 +19,7 @@ import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
@@ -108,7 +109,9 @@ class PantryController extends Notifier<PantryView> {
     }
   }
 
-  /// Adds a row.
+  /// Adds a row — or, when the same item is already in the pantry, adds the
+  /// count to it. Buying «بلح» again made a second «بلح» beside the first
+  /// (2026-10-10); a different unit stated on both sides is a different item.
   Future<void> add({
     required String itemName,
     int quantity = 1,
@@ -117,6 +120,16 @@ class PantryController extends Notifier<PantryView> {
     int? lowStockThreshold,
     DateTime? expiryDate,
   }) async {
+    final wantedUnit = unit?.trim() ?? '';
+    final existing = state.items.where((i) {
+      final rowUnit = i.unit?.trim() ?? '';
+      return sameItemName(i.itemName, itemName) &&
+          (wantedUnit.isEmpty || rowUnit.isEmpty || rowUnit == wantedUnit);
+    }).firstOrNull;
+    if (existing != null && quantity > 0) {
+      await adjust(existing.id, quantity);
+      return;
+    }
     final added = await ref
         .read(inventoryRepositoryProvider)
         .add(
