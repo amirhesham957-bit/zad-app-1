@@ -390,13 +390,13 @@ class _ProductCard extends ConsumerWidget {
 }
 
 /// Kotlin's `AffiliateEmptyState`: no curated match, a tagged search.
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const new({required this.term});
 
   final String term;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -423,7 +423,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           TextButton.icon(
-            onPressed: () => unawaited(openAmazonSearch(term)),
+            onPressed: () => unawaited(openAmazonSearch(ref, term)),
             icon: const Icon(Icons.search, size: 18),
             label: const Text('ابحث في أمازون'),
           ),

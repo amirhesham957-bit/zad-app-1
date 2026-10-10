@@ -320,7 +320,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
                       itemBuilder: (_, i) => _AmazonSearchChip(
                         itemName: shortages[i].itemName,
                         onTap: () =>
-                            unawaited(openAmazonSearch(shortages[i].itemName)),
+                            unawaited(
+                              openAmazonSearch(ref, shortages[i].itemName),
+                            ),
                       ),
                     ),
                   ),

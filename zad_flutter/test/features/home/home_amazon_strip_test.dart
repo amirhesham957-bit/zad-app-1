@@ -20,9 +20,15 @@ void main() {
       amazonSuggestUrl('بيض', 'EG'),
       startsWith('https://www.amazon.eg/s?k='),
     );
+    // Every country but Egypt shops amazon.sa until the other stores are
+    // set up (owner, 2026-10-10).
     expect(
       amazonSuggestUrl('بيض', 'ae'),
-      startsWith('https://www.amazon.ae/s?k='),
+      startsWith('https://www.amazon.sa/s?k='),
+    );
+    expect(
+      amazonSuggestUrl('بيض', 'TR'),
+      startsWith('https://www.amazon.sa/s?k='),
     );
     expect(
       amazonSuggestUrl('بيض', 'SA'),
@@ -37,6 +43,10 @@ void main() {
       startsWith('https://www.amazon.eg/deals?tag='),
     );
     expect(amazonSuggestUrl('بيض', 'EG'), contains('&tag='));
+    // Each store with its own tag: one store's tag earns nothing on another.
+    expect(amazonSuggestUrl('بيض', 'EG'), endsWith('&tag=zad04-21'));
+    expect(amazonSuggestUrl('بيض', 'SA'), endsWith('&tag=zad0b-21'));
+    expect(amazonSuggestUrl('بيض', 'AE'), endsWith('&tag=zad0b-21'));
   });
 
   Future<void> pump(

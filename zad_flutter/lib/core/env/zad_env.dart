@@ -28,12 +28,20 @@ abstract final class ZadEnv {
     'SUPABASE_ANON_KEY',
   );
 
-  /// The Amazon Associates store id every affiliate link carries. Public by
+  /// The Amazon Associates store id every amazon.sa link carries. Public by
   /// nature (it is in every link); `.env.example`'s value is the default so a
   /// build without it still earns the commission.
   static const String amazonAssociateTag = String.fromEnvironment(
     'AMAZON_ASSOCIATE_TAG',
     defaultValue: 'zad0b-21',
+  );
+
+  /// The store id for amazon.eg. Associates is a separate programme per
+  /// store: the Saudi id earns nothing on amazon.eg, so Egypt has its own
+  /// (owner, 2026-10-10).
+  static const String amazonAssociateTagEg = String.fromEnvironment(
+    'AMAZON_ASSOCIATE_TAG_EG',
+    defaultValue: 'zad04-21',
   );
 
   /// Where crash reports go (Sentry, org `zad-9u`, project `flutter`). A DSN

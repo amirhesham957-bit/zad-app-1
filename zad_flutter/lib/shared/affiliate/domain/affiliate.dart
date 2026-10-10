@@ -69,34 +69,40 @@ int? priceAgeDays(AffiliateProduct p, DateTime now) =>
     p.priceCheckedAt == null ? null : now.difference(p.priceCheckedAt!).inDays;
 
 /// Kotlin's `productUrl`: a `/dp/` link only for a human-verified ASIN; any
-/// other product gets a tagged search, which cannot 404.
-String affiliateUrl(AffiliateProduct p) {
-  const tag = ZadEnv.amazonAssociateTag;
+/// other product gets a tagged search, which cannot 404. In the account's own
+/// store ([amazonStoreFor]).
+String affiliateUrl(AffiliateProduct p, String? country) {
+  final host = amazonStoreFor(country);
+  final tag = amazonTagFor(country);
   final asin = (p.asin ?? '').trim();
   final wellFormed =
       asin.length == 10 && RegExp(r'^[A-Za-z0-9]+$').hasMatch(asin);
   if (p.asinVerified && wellFormed) {
-    return 'https://www.amazon.sa/dp/$asin/?tag=$tag';
+    return 'https://$host/dp/$asin?tag=$tag';
   }
-  return 'https://www.amazon.sa/s?k=${Uri.encodeQueryComponent(p.nameAr)}'
-      '&tag=$tag';
+  return 'https://$host/s?k=${Uri.encodeQueryComponent(p.nameAr)}&tag=$tag';
 }
 
-/// The Amazon store of the account's market. Every link here was
-/// `amazon.sa`, which showed an Egyptian customer Saudi prices (owner,
-/// 2026-10-01); a market with no store of its own keeps the Saudi one.
+bool _isEgypt(String? country) =>
+    (country ?? '').trim().toUpperCase() == 'EG';
+
+/// The Amazon store of the account's market: Egypt shops amazon.eg, every
+/// other country amazon.sa until the other stores are set up (owner,
+/// 2026-10-10). The server picks the same way
+/// (`supabase/functions/_shared/amazonMarket.ts`).
 String amazonStoreFor(String? country) =>
-    switch ((country ?? '').trim().toUpperCase()) {
-      'EG' => 'www.amazon.eg',
-      'AE' => 'www.amazon.ae',
-      'TR' => 'www.amazon.com.tr',
-      _ => 'www.amazon.sa',
-    };
+    _isEgypt(country) ? 'www.amazon.eg' : 'www.amazon.sa';
+
+/// The associate tag of [amazonStoreFor]'s store — each store has its own,
+/// and one store's tag earns nothing on another.
+String amazonTagFor(String? country) => _isEgypt(country)
+    ? ZadEnv.amazonAssociateTagEg
+    : ZadEnv.amazonAssociateTag;
 
 /// A tagged search for [term] in the account's store; with no term, the
 /// store's deals page.
 String amazonSuggestUrl(String? term, String? country) {
-  const tag = ZadEnv.amazonAssociateTag;
+  final tag = amazonTagFor(country);
   final host = amazonStoreFor(country);
   final t = (term ?? '').trim();
   return t.isEmpty
