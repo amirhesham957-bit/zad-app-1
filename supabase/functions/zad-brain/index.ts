@@ -109,6 +109,7 @@ import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuar
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
+import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -1169,6 +1170,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
     .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
   if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
+  // الحملة اللي على الرئيسية وذوقه في الوصفات (campaigns.ts، §١١ح). فشل = من غيرهم، مش عطل.
+  const [{ data: campaignRows, error: campaignErr }, { data: seasonRows }, { data: tasteRows }] = await Promise.all([
+    sb.from("app_campaigns").select("id,event_key,event_name,target_country,dialect,from_md,to_md,season_slug,banner_title,banner_body,cta_text,priority,is_active")
+      .eq("is_active", true).limit(200),
+    sb.from("seasonal_event_windows").select("start_date,end_date,seasonal_events(slug,family_id)").limit(200),
+    sb.from("zad_recipe_feedback").select("recipe_name,liked").eq("user_id", userId)
+      .order("created_at", { ascending: false }).limit(40),
+  ]);
+  if (campaignErr) console.error("[snapshot] app_campaigns failed:", campaignErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
     dataErrors.push({ source: "مواعيدك" });
@@ -1481,6 +1491,17 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
     }),
     trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
+    // null = مفيش حملة النهارده (أو القراية فشلت).
+    home_campaign: pickHomeCampaign(
+      (campaignRows ?? []) as CampaignRow[],
+      ((seasonRows ?? []) as Array<{ start_date: string; end_date: string; seasonal_events: { slug?: string; family_id?: string | null } | null }>)
+        .filter((w) => w.seasonal_events?.slug && !w.seasonal_events.family_id)
+        .map((w) => ({ slug: w.seasonal_events!.slug as string, start_date: w.start_date, end_date: w.end_date })),
+      localNowContext(budgetState.timezone ?? "UTC").date,
+      userRes.data?.country ?? null,
+      (profileRow as { dialect?: string | null } | null)?.dialect ?? null,
+    ),
+    recipe_taste: recipeTaste((tasteRows ?? []) as Array<{ recipe_name: string | null; liked: boolean | null }>),
     // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
     event_day_budget: eventDayBudget({
       available, daysLeft: daysLeftInCycle,
@@ -7317,7 +7338,7 @@ ${offers("store_location") ? "   - **لوكيشن المحل**: «هات الل�
    - ${householdLoadRule(snap)}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
    - ${homeEmergencyRule(snap)}
-   - ${replyCadenceRule(snap) || "طول الرد عادي."}
+${campaignAndTasteRules(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).
