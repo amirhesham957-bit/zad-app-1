@@ -108,6 +108,7 @@ import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./hous
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
+import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -6330,10 +6331,13 @@ async function handleAgentTurn(
     cardTitles: snap?.attention?.recent_card_titles, engagement: snap?.engagement,
     budget: budget.chatNotes, senders: budget.senders,
   });
+  // «فاتك إيه» (whileAway.ts): آخر لفة قبل الرسالة دي — البوت والتطبيق بيسجّلوا اللفة بعد الرد.
+  const awayLine = await loadWhileAway(sb, userId, (await sharedHistoryEarly)?.at(-1)?.at, snap?.currency ?? null);
   const systemPrompt =
     soulBlock(snap?.customer?.zad_voice)
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
     + agentMailBlock(agentMail)
+    + whileAwayBlock(awayLine)
     // «صلحت الحنفية» ⇒ «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts، الموجة ٣).
     + technicianFollowUp(message, snap?.trusted_technicians, history.filter((t) => t.role === "assistant").map((t) => String((t as { text?: string }).text ?? "")))
     + skillsBlock(learnedSkills)
