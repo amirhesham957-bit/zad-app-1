@@ -57,6 +57,22 @@ Future<void> openAffiliateProduct(
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
+/// Opens a link Zad already built (a «حاجة خلصت» message's button) the same
+/// way: a browser tab, never the Amazon app.
+Future<void> openAmazonLink(String url) async {
+  final uri = Uri.parse(url);
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
+  } on Object catch (e) {
+    debugPrint('amazon tab failed: $e');
+  }
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } on Object catch (e) {
+    debugPrint('amazon browser failed: $e');
+  }
+}
+
 /// Kotlin's `AffiliateHelper.open` over `productUrl(asin = null, …)`:
 /// a tagged search for [term] in the account's own store, in a browser tab
 /// rather than the Amazon app.

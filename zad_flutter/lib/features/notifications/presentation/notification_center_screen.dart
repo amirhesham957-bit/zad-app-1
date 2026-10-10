@@ -15,7 +15,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/insights/domain/insight.dart';
@@ -76,7 +79,8 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final spoken = <String>[
       for (final a in bell) '${a.title}. ${a.body}',
-      for (final n in unread) '${n.title}. ${n.message}',
+      // Never a link read out letter by letter.
+      for (final n in unread) '${n.title}. ${splitAmazonLinks(n.message).text}',
     ];
     final voice = ref.read(zadVoiceProvider);
     _voice = voice;
@@ -331,6 +335,8 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // «حاجة خلصت»: a button per item rather than its encoded Amazon link.
+    final body = splitAmazonLinks(message);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Material(
@@ -373,13 +379,33 @@ class NotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        message,
+                        body.text,
                         style: TextStyle(
                           fontSize: 12.5,
                           height: 18 / 12.5,
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
+                      if (body.links.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: ZadSpacing.sm),
+                          child: Wrap(
+                            spacing: ZadSpacing.sm,
+                            runSpacing: ZadSpacing.xs,
+                            children: <Widget>[
+                              for (final l in body.links)
+                                OutlinedButton(
+                                  onPressed: () =>
+                                      unawaited(openAmazonLink(l.url)),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(0, 44),
+                                    shape: const StadiumBorder(),
+                                  ),
+                                  child: Text('🛒 ${l.name} على أمازون'),
+                                ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),

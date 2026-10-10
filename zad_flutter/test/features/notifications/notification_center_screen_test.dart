@@ -158,4 +158,32 @@ void main() {
     ], child: const NotificationBell());
     expect(find.text('99+'), findsOneWidget);
   });
+
+  testWidgets('«حاجة خلصت» shows a button per item, never the raw link', (
+    tester,
+  ) async {
+    const url =
+        'https://www.amazon.eg/s?k=%D8%AD%D9%84%D9%8A%D8%A8&tag=zad04-21';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ZadTheme.light(),
+        home: Scaffold(
+          body: NotificationCard(
+            title: '🛒 حليب خلص',
+            message: 'حليب خلص عندك. جهزتلك لينك أمازون.\n• حليب: $url',
+            color: Colors.red,
+            isRead: false,
+            onTap: () {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('حليب خلص عندك. جهزتلك لينك أمازون.'), findsOneWidget);
+    expect(find.text('🛒 حليب على أمازون'), findsOneWidget);
+    expect(find.textContaining('https://'), findsNothing);
+    expect(
+      tester.getSize(find.byType(OutlinedButton)).height,
+      greaterThanOrEqualTo(44),
+    );
+  });
 }

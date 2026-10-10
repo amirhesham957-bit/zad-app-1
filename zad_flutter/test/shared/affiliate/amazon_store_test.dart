@@ -49,4 +49,23 @@ void main() {
       endsWith('&tag=zad04-21'),
     );
   });
+
+  test('a «حاجة خلصت» message splits into its text and its Amazon links', () {
+    const eg = 'https://www.amazon.eg/s?k=x&tag=zad04-21';
+    const sa = 'https://www.amazon.sa/s?k=y&tag=zad0b-21';
+    final split = splitAmazonLinks(
+      'خلصوا عندك: حليب، قهوة. جهزتلك لينكات.\n• حليب: $eg\n• قهوة: $sa',
+    );
+    expect(split.text, 'خلصوا عندك: حليب، قهوة. جهزتلك لينكات.');
+    expect(split.links, <AmazonLink>[
+      (name: 'حليب', url: eg),
+      (name: 'قهوة', url: sa),
+    ]);
+    // Anything that is not an Amazon store stays text, untouched.
+    const other =
+        '• خريطة: https://evil.example/x\n• حليب: http://www.amazon.eg/s';
+    expect(splitAmazonLinks(other).links, isEmpty);
+    expect(splitAmazonLinks(other).text, other);
+    expect(splitAmazonLinks('رسالة عادية').links, isEmpty);
+  });
 }

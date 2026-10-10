@@ -400,3 +400,20 @@ Deno.test("the map button takes only the link zad-brain builds", () => {
     assertEquals(mapButtonRow(bad), null, String(bad));
   }
 });
+
+Deno.test("an Amazon button per item that ran out, and only Amazon links", () => {
+  const { amazonButtonRows } = telegramModule;
+  const eg = "https://www.amazon.eg/s?k=%D8%AD%D9%84%D9%8A%D8%A8&tag=zad04-21";
+  const sa = "https://www.amazon.sa/s?k=x&tag=zad0b-21";
+  assertEquals(amazonButtonRows([{ name: "حليب", url: eg }, { name: "قهوة", url: sa }]), [
+    [{ text: "🛒 حليب على أمازون", url: eg }],
+    [{ text: "🛒 قهوة على أمازون", url: sa }],
+  ]);
+  assertEquals(amazonButtonRows([
+    { name: "x", url: "https://evil.example/s?k=x" }, { name: "x", url: "http://www.amazon.eg/s?k=x" },
+    { name: "x", url: "https://www.amazon.eg.evil.com/s" }, { name: "", url: eg }, { name: "x", url: "javascript:alert(1)" },
+  ]), []);
+  assertEquals(amazonButtonRows(undefined), []);
+  assertEquals(amazonButtonRows("x"), []);
+  assertEquals(amazonButtonRows([1, 2, 3, 4].map((i) => ({ name: `${i}`, url: eg }))).length, 3);
+});

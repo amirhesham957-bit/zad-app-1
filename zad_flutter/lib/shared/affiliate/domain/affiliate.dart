@@ -83,8 +83,7 @@ String affiliateUrl(AffiliateProduct p, String? country) {
   return 'https://$host/s?k=${Uri.encodeQueryComponent(p.nameAr)}&tag=$tag';
 }
 
-bool _isEgypt(String? country) =>
-    (country ?? '').trim().toUpperCase() == 'EG';
+bool _isEgypt(String? country) => (country ?? '').trim().toUpperCase() == 'EG';
 
 /// The Amazon store of the account's market: Egypt shops amazon.eg, every
 /// other country amazon.sa until the other stores are set up (owner,
@@ -95,9 +94,8 @@ String amazonStoreFor(String? country) =>
 
 /// The associate tag of [amazonStoreFor]'s store — each store has its own,
 /// and one store's tag earns nothing on another.
-String amazonTagFor(String? country) => _isEgypt(country)
-    ? ZadEnv.amazonAssociateTagEg
-    : ZadEnv.amazonAssociateTag;
+String amazonTagFor(String? country) =>
+    _isEgypt(country) ? ZadEnv.amazonAssociateTagEg : ZadEnv.amazonAssociateTag;
 
 /// A tagged search for [term] in the account's store; with no term, the
 /// store's deals page.
@@ -109,6 +107,40 @@ String amazonSuggestUrl(String? term, String? country) {
       ? 'https://$host/deals?tag=$tag'
       : 'https://$host/s?k=${Uri.encodeQueryComponent(t)}&tag=$tag';
 }
+
+/// One «🛒 … على أمازون» button: the item and its tagged link.
+typedef AmazonLink = ({String name, String url});
+
+final RegExp _amazonLinkLine = RegExp(r'^\s*•\s*(.+?):\s*(https://\S+)\s*$');
+
+/// Zad's «حاجة خلصت» message (zad-brain/restockLink.ts) carries one
+/// `• name: link` line per item. The text without those lines, and the links
+/// that point at an Amazon store — a long percent-encoded link is no text to
+/// read, so the notification shows a button per item instead.
+({String text, List<AmazonLink> links}) splitAmazonLinks(String message) {
+  final kept = <String>[];
+  final links = <AmazonLink>[];
+  for (final line in message.split('\n')) {
+    final m = _amazonLinkLine.firstMatch(line);
+    final uri = m == null ? null : Uri.tryParse(m.group(2)!);
+    if (m != null && uri != null && _isAmazonStore(uri)) {
+      links.add((name: m.group(1)!.trim(), url: uri.toString()));
+    } else {
+      kept.add(line);
+    }
+  }
+  return (text: kept.join('\n').trim(), links: links);
+}
+
+bool _isAmazonStore(Uri uri) =>
+    uri.scheme == 'https' &&
+    const <String>{
+      'www.amazon.eg',
+      'www.amazon.sa',
+      'www.amazon.ae',
+      'www.amazon.com.tr',
+      'www.amazon.com',
+    }.contains(uri.host);
 
 /// Kotlin's fallback when the table is empty or unreachable. ASINs are left
 /// out on purpose: these open as searches. No pictures: the Kotlin list used
