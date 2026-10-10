@@ -224,6 +224,11 @@ class _BankChannelSection extends ConsumerWidget {
         ZadColors.terracottaRust,
         'مسموح، بس لسه مفيش حاجة وصلت',
       ),
+      BankAccessHealth.stalled => (
+        ZadIcons.failed,
+        ZadColors.terracottaRust,
+        'واقف — مفيش ولا إشعار وصل من يومين',
+      ),
       BankAccessHealth.flowing => (
         ZadIcons.synced,
         ZadColors.green600,

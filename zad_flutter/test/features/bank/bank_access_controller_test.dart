@@ -25,6 +25,7 @@ class _FakeListener implements ZadBankListener {
   Exception? failWith;
   int rebinds = 0;
   int settingsOpened = 0;
+  DateTime? lastSeenAnyAt;
 
   @override
   Future<bool> isPermissionGranted() async {
@@ -49,7 +50,8 @@ class _FakeListener implements ZadBankListener {
   Future<void> setScreenEventsEnabled({required bool enabled}) async {}
 
   @override
-  Future<ListenerStatus> listenerStatus() async => const ListenerStatus();
+  Future<ListenerStatus> listenerStatus() async =>
+      ListenerStatus(lastSeenAnyAt: lastSeenAnyAt);
 
   @override
   Future<void> sendTestNotification({
@@ -90,10 +92,18 @@ void main() {
   late _FakeListener listener;
   late ProviderContainer container;
 
-  Future<void> build({bool granted = true, int pending = 0}) async {
-    listener = _FakeListener(granted: granted, pending: pending);
+  final now = DateTime.utc(2026, 10, 10, 12);
+
+  Future<void> build({
+    bool granted = true,
+    int pending = 0,
+    DateTime? lastSeenAnyAt,
+  }) async {
+    listener = _FakeListener(granted: granted, pending: pending)
+      ..lastSeenAnyAt = lastSeenAnyAt;
     container = ProviderContainer(
       overrides: [
+        nowProvider.overrideWithValue(() => now),
         localStoreProvider.overrideWithValue(
           ZadLocalStore(
             outbox: documents,
@@ -166,6 +176,37 @@ void main() {
 
     // Nothing pending because the drain already emptied it — that is health,
     // not silence.
+    expect(
+      container.read(bankAccessControllerProvider).health,
+      BankAccessHealth.flowing,
+    );
+  });
+
+  test(
+    'a listener that saw nothing for two days is reported stopped',
+    () async {
+      // The owner's phone, 2026-10-05: it had captured before, so this read as
+      // flowing and nothing said the channel had died.
+      await build(lastSeenAnyAt: now.subtract(const Duration(days: 5)));
+      await container
+          .read(bankCaptureMarkerProvider)
+          .sawCapture(DateTime.utc(2026, 10, 5));
+      await container.read(bankAccessControllerProvider.notifier).refresh();
+
+      expect(
+        container.read(bankAccessControllerProvider).health,
+        BankAccessHealth.stalled,
+      );
+    },
+  );
+
+  test('a quiet day is not a stopped listener', () async {
+    await build(lastSeenAnyAt: now.subtract(const Duration(hours: 30)));
+    await container
+        .read(bankCaptureMarkerProvider)
+        .sawCapture(DateTime.utc(2026, 10, 5));
+    await container.read(bankAccessControllerProvider.notifier).refresh();
+
     expect(
       container.read(bankAccessControllerProvider).health,
       BankAccessHealth.flowing,
