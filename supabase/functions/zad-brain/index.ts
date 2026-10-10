@@ -112,6 +112,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply } from "./medicinePrice.ts";
+import { dealSource } from "./tasteDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -411,6 +412,9 @@ function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | 
  * ومكانش للعقل أي طريقة يوصلها — كانت بتتنادى من التطبيق مباشرة بس، فالعقل عمره ما
  * قدر يرشّح محل ولا يقارن سعر. النداء بمفتاح service_role لأن الدالة دي `verify_jwt`.
  */
+// العروض حسب الذوق (tasteDeals.ts) بتدوّر بنفس البحث الحي بتاع core-intelligence.
+dealSource.search = (payload, userId) => callCoreIntel("fetch_live_deals", payload, userId);
+
 async function callCoreIntel(action: string, payload: unknown, userId: string): Promise<any | null> {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-core-intelligence`, {

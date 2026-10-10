@@ -18,6 +18,7 @@ import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
+import { loadTasteDeal } from "./tasteDeals.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -132,7 +133,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ماتخترعيش مناسبة مش في occasions. " +
     "لو فيه weather_alert: قوليه بوضوح بعد التحية على طول ومعاه نصيحته (ده أمان، حتى لو quiet). " +
     "لو فيه weather: نص جملة عن جو النهارده بالأرقام اللي فيه بس (المدينة والعظمى). " +
-    "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح.",
+    "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح. " +
+    "لو فيه taste_deal: جملة واحدة في الآخر: العرض على taste_deal.item في taste_deal.store بالسعر أو الخصم زي ما هو بالظبط " +
+    "(ولو favorite = true قولي إنه في المحل اللي بيروحه) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -584,12 +587,18 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
+      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; favorite?: boolean } | undefined;
+      const deal = dealFact?.item && dealFact?.store
+        ? `ولو محتاج ${str(dealFact.item, 60)}: فيه عرض عليه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : ""}` +
+          (dealFact.discount_percent ? ` بخصم ${dealFact.discount_percent}٪` : dealFact.price ? ` بـ${dealFact.price}` : "") + "."
+        : "";
       return {
         title: occasion.own ? "🎂 كل سنة وإنت طيب" : alert ? "⛈️ صباح الخير — خلي بالك من الجو" : "☀️ صباح الخير",
         text: (occasion.line ? `${occasion.line} ` : "") +
           (alert ? `${alert} ` : "") +
           (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line || alert ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
           (clothes ? ` ${clothes}` : "") +
+          (deal ? ` ${deal}` : "") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
         speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${alert ? `${alert} ` : ""}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${clothes ? `${clothes} ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
@@ -1149,6 +1158,9 @@ export async function morningFacts(
   const weather = await morningWeather(sb, userId, local, (profile as { city?: string | null } | null | undefined)?.city ?? null);
   const alert = weatherAlert(weather, local.date);
   const clothes = quiet ? null : await clothesNudgeOnce(sb, userId, weather, local.date);
+  // عرض حسب ذوقه (tasteDeals.ts): مرة في اليوم بالكتير — مش في ظرف، ومش والميزانية في خطر.
+  const threat = String((budget as { threat?: unknown } | null)?.threat ?? "");
+  const deal = quiet || threat === "OVER" || threat === "DANGER" ? null : await loadTasteDeal(sb, userId);
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   const medAsk = quiet || gift || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
@@ -1176,6 +1188,7 @@ export async function morningFacts(
     ...(weather && !quiet ? { weather: { place: weather.place, today: todayOf(weather, local.date) } } : {}),
     ...(alert ? { weather_alert: { kind: alert.kind, day: alert.day, line: alert.line } } : {}),
     ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
+    ...(deal ? { taste_deal: deal } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
     ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
     time_zone: local.time_zone,
