@@ -17,6 +17,7 @@ import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowConte
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { askedNewcomerKeys, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
@@ -41,6 +42,8 @@ export interface ComposedMoment {
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
 export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge"]);
+/** بتتقال بالقالب بس، من غير صياغة موديل. */
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question"]);
 
 /** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
 export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
@@ -582,6 +585,15 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
     }
+    case "newcomer_question": {
+      const ask = str(facts.daily_question, 120);
+      const name = str(facts.customer_name, 40);
+      return {
+        title: "💬 سؤال صغير",
+        text: ask,
+        speech: `${name ? `${name}، ` : ""}سؤال صغير عشان أظبطلك حاجتك: ${ask}`,
+      };
+    }
     case "good_night": {
       const name = str(facts.customer_name, 40);
       const appts = Array.isArray(facts.tomorrow_appointments) ? (facts.tomorrow_appointments as Array<{ title?: string }>).map((a) => a?.title).filter(Boolean) : [];
@@ -906,6 +918,20 @@ export async function processVoiceMoments(
           console.warn("[voice_moments] good night facts failed:", (e as Error)?.message);
         }
       }
+      // السؤال التاني في أول ٧٢ ساعة: بيتحسب وقت الإرسال (ممكن يكون اتجاوب الصبح)، ومن غير ناقصة مفيش لحظة.
+      if (row.moment === NEWCOMER_MOMENT && !("daily_question" in (row.facts ?? {}))) {
+        const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC");
+        const circumstance = await loadCircumstance(sb, row.user_id, now());
+        const ask = circumstance.mode !== "normal" ? null : await newcomerAsk(sb, row.user_id, local.date, undefined, now());
+        if (!ask) {
+          await sb.from("zad_voice_moments").update({ status: "skipped", error: "nothing to ask" }).eq("id", row.id);
+          result.skipped++;
+          continue;
+        }
+        row.facts = { ...(row.facts ?? {}), ...newcomerFacts(ask) };
+        // تتحفظ: asked_this_morning في الشات ومنع التكرار في السؤال الجاي بيقروا منها.
+        await sb.from("zad_voice_moments").update({ facts: row.facts }).eq("id", row.id);
+      }
       const voice = !TEXT_ONLY_MOMENTS.has(deliveryMoment);
       // قبل نداء الموديل: لو مفيش ولا قناة تقدر توصل اللحظة دي، مانصيغهاش ونرميها.
       if (deps.hasChannel) {
@@ -930,7 +956,8 @@ export async function processVoiceMoments(
 
       let composed: ComposedMoment | null = null;
       let composedBy = "model";
-      try {
+      // السؤال قواعد مش موديل (newcomer.ts): القالب هو الرسالة، من غير نداء يصرف من كوتة الـ٢٠ طلب.
+      if (!TEMPLATE_MOMENTS.has(deliveryMoment)) try {
         let recent: string[] = [];
         try {
           const { data: past } = await sb.from("zad_voice_moments").select("delivery")
@@ -957,7 +984,7 @@ export async function processVoiceMoments(
       }
       if (!composed) {
         composed = momentFallback(deliveryMoment, { ...(row.facts ?? {}), customer_name: cp?.preferred_name || u?.name || "" });
-        composedBy = "fallback";
+        composedBy = TEMPLATE_MOMENTS.has(deliveryMoment) ? "template" : "fallback";
       }
 
       const emotion = composed.emotion ?? situationalEmotion(deliveryMoment, row.facts ?? {}, now());
@@ -1105,6 +1132,8 @@ export async function morningFacts(
     ? null
     : await curiosityQuestion(sb, userId, Date.parse(dayStart));
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
+  // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
+  const newcomer = quiet || gift ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
@@ -1127,6 +1156,8 @@ export async function morningFacts(
         curiosity: { key: curious.key, kind: curious.kind, record: curious.record, ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}) },
       }
       : {}),
+    // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
+    ...(newcomer ? withoutQuestion(newcomer) : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
@@ -1137,6 +1168,62 @@ export async function morningFacts(
     })(),
     ...(challenge && !quiet ? { savings_challenge: { day: challengeDayIndex(challenge.started_on, local.date), length_days: challenge.length_days, daily_cap: challenge.daily_cap, streak: challenge.streak } } : {}),
   };
+}
+
+/** لحظة السؤال التاني في أول ٧٢ ساعة (newcomer.ts) — ٤ العصر بتوقيت العميل (20261010170000). */
+export const NEWCOMER_MOMENT = "newcomer_question";
+
+/** facts السؤال من غير حقول سؤال تاني ممكن تكون اتحطت قبله في نفس التحية. */
+function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
+  return {
+    daily_question_field: undefined, curiosity: undefined, occasion_ask: undefined, gift_offer: undefined,
+    ...newcomerFacts(q),
+  };
+}
+
+/**
+ * السؤال اللي الحساب الجديد ياخده دلوقتي، أو null (مش جديد، مفيش ناقصة، أو قراية فشلت — سؤال اتسأل قبل
+ * كده أوحش من مفيش سؤال). `known` = قرايات عملتها التحية بالفعل، عشان ماتتعادش.
+ */
+export async function newcomerAsk(
+  sb: SupabaseClient,
+  userId: string,
+  localDate: string,
+  known?: { occasionRows: readonly OccasionRow[]; people: readonly string[] },
+  now = Date.now(),
+): Promise<NewcomerQuestion | null> {
+  try {
+    const { data: u, error } = await sb.from("zad_users").select("created_at,country").eq("id", userId).maybeSingle();
+    const user = u as { created_at?: string | null; country?: string | null } | null;
+    if (error || !isNewcomer(user?.created_at, now)) return null;
+    const since = new Date(now - NEWCOMER_HOURS * 3_600_000).toISOString();
+    const [profile, meds, asked, occasionRows, people] = await Promise.all([
+      sb.from("zad_customer_profile").select("pay_day").eq("user_id", userId).maybeSingle()
+        .then((r) => r.error ? undefined : r.data as Record<string, unknown> | null),
+      sb.from("zad_pharmacy_items").select("name,for_person,dose_times,remaining_quantity").eq("user_id", userId).limit(20)
+        .then((r) => r.error ? undefined : ((r.data ?? []) as Array<NewcomerMed & { dose_times: string | null; remaining_quantity: number | null }>)
+          .filter((m) => !(m.dose_times ?? "").trim() && (m.remaining_quantity === null || m.remaining_quantity > 0))),
+      sb.from("zad_voice_moments").select("facts").eq("user_id", userId)
+        .in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent").gte("created_at", since).limit(20)
+        .then((r) => r.error ? undefined : askedNewcomerKeys(r.data as Array<{ facts?: unknown }>)),
+      known ? Promise.resolve(known.occasionRows) : sb.rpc("zad_memory_occasions", { p_user: userId })
+        .then((r) => (r.data ?? []) as OccasionRow[], () => [] as OccasionRow[]),
+      known ? Promise.resolve(known.people) : sb.from("zad_memory_entities").select("name").eq("user_id", userId).eq("kind", "person")
+        .order("last_seen", { ascending: false }).limit(10)
+        .then((r) => ((r.data ?? []) as Array<{ name: string }>).map((p) => p.name), () => [] as string[]),
+    ]);
+    if (profile === undefined || meds === undefined || asked === undefined) return null;
+    return newcomerQuestion({
+      profile,
+      country: user?.country ?? null,
+      medsWithoutTimes: meds,
+      birthday: occasionQuestion(occasionRows, people, localDate),
+      askedKeys: asked,
+    });
+  } catch (e) {
+    console.warn("[newcomer] read failed:", (e as Error)?.message);
+    return null;
+  }
 }
 
 /** بيانات «تصبح على خير»: مواعيد بكرة وأول دوا الصبح. كل مصدر بيفشل لوحده بيتساب فاضي. */
@@ -1279,7 +1366,7 @@ export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstanc
  * صباح الخير) زي ما هو.
  */
 export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
-  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken",
+  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken", NEWCOMER_MOMENT,
   WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach",
 ]);
 export const BUSY_DAY_APPOINTMENTS = 3;

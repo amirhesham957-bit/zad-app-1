@@ -289,6 +289,8 @@ export interface AskedThisMorning {
   field?: string;
   record?: string;
   transaction_id?: string;
+  /** أداة لازم تبقى معروضة عشان الجواب يتسجل (سؤال مواعيد الدوا في أول ٧٢ ساعة — newcomer.ts). */
+  tool?: string;
   /** عرض الهدية (occasions.ts): لمين، المبلغ، العملة، ويوم المناسبة YYYY-MM-DD. */
   for?: string;
   amount?: number;
@@ -328,13 +330,14 @@ export function askedThisMorning(
     // for غايب = العميل نفسه.
     return { question, kind: "occasion", ...(typeof occasionAsk.for === "string" ? { for: occasionAsk.for } : {}), sent_at: row.sent_at };
   }
-  const curiosity = facts.curiosity as { record?: unknown; transaction_id?: unknown } | undefined;
+  const curiosity = facts.curiosity as { record?: unknown; transaction_id?: unknown; tool?: unknown } | undefined;
   if (curiosity && typeof curiosity === "object") {
     return {
       question,
       kind: "curiosity",
       ...(typeof curiosity.record === "string" ? { record: curiosity.record } : {}),
       ...(typeof curiosity.transaction_id === "string" ? { transaction_id: curiosity.transaction_id } : {}),
+      ...(typeof curiosity.tool === "string" ? { tool: curiosity.tool } : {}),
       sent_at: row.sent_at,
     };
   }
