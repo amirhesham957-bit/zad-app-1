@@ -1,4 +1,4 @@
--- A pantry item that runs out writes one restock_link task (migration 20261010180000).
+-- A pantry item that runs out writes one restock_link task (migration 20261011120000).
 -- Scratch database only:
 --
 --   docker run -d --name zadpg -e POSTGRES_PASSWORD=pg postgres:17-alpine
@@ -38,7 +38,7 @@ create table public.zad_inventory (
   quantity numeric
 );
 
-\i /m/20261010180000_restock_link.sql
+\i /m/20261011120000_restock_link.sql
 
 create or replace function pg_temp.check(ok boolean, what text) returns void language plpgsql as $$
 begin

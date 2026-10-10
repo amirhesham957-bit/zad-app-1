@@ -50,7 +50,7 @@ the list — no network call on home open.
 
 ## «حاجة خلصت» — the link Zad sends
 
-1. `trigger_restock_link_on_run_out` (migration `20261010180000_restock_link.sql`)
+1. `trigger_restock_link_on_run_out` (migration `20261011120000_restock_link.sql`)
    on `zad_inventory`: a quantity going from above zero to zero or below writes
    an `agent_tasks` row, `kind = 'restock_link'`, due 15 minutes later. Items
    that run out in that window join the same row (one name per line). At most
