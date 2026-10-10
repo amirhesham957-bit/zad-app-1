@@ -1,4 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
+import * as telegramModule from "./telegram.ts";
 import {
   normalizeBindingCode, parseDismissCallback, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
@@ -362,4 +363,19 @@ import { doseAlreadyReply } from "./telegram.ts";
 Deno.test("a dose answered twice says it is already recorded, not «اتسجلت» again (2026-10-01)", () => {
   assertEquals(doseAlreadyReply(["كريم بشرة"]), "جرعة كريم بشرة دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.");
   assertEquals(doseAlreadyReply(["كريم بشرة", "كريم بشرة"]).includes("كريم بشرة وكريم"), false);
+});
+
+Deno.test("a code that moved the chat says so, and only a refused code asks for a new one", () => {
+  const { bindingReply, unlinkReply } = telegramModule;
+  assert(bindingReply("moved").includes("حسابك الجديد"));
+  assert(bindingReply("bound").includes("تم الربط"));
+  assert(bindingReply("already_bound").includes("بالفعل"));
+  assert(bindingReply("invalid").includes("كود ربط جديد"));
+  // The old refusal must never come back: a moved chat is not a failure.
+  for (const s of ["bound", "moved", "already_bound", "invalid", null] as const) {
+    assert(!bindingReply(s).includes("فشل الربط"));
+  }
+  assert(!bindingReply(null).includes("كود ربط جديد"));
+  assert(unlinkReply("unlinked").includes("فك الربط"));
+  assert(unlinkReply("not_bound").includes("مش مربوط"));
 });

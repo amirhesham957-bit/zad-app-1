@@ -116,6 +116,29 @@ export function normalizeBindingCode(arg: string | undefined): string | null {
   return trimmed.toUpperCase();
 }
 
+/** What `zad_redeem_telegram_code` answered (20261010120000). A fresh code moves the chat to
+ * the account that made it — the code is the proof — so "already bound to another user" is no
+ * longer a refusal. `null` = the call itself failed. */
+export type BindingStatus = "bound" | "moved" | "already_bound" | "invalid";
+
+export function bindingReply(status: BindingStatus | null): string {
+  switch (status) {
+    case "bound": return "تم الربط بنجاح ✅ اختار من تحت:";
+    case "moved": return "تم ✅ الشات ده بقى على حسابك الجديد، والحساب القديم مابقاش مربوط بيه. اختار من تحت:";
+    case "already_bound": return "الشات ده مربوط بالحساب ده بالفعل ✅ اختار من تحت:";
+    case "invalid": return "الكود ده غلط أو منتهي — افتح تطبيق زاد واعمل كود ربط جديد.";
+    default: return "الربط ماكملش من عندنا — جرّب تاني بعد دقيقة.";
+  }
+}
+
+export function unlinkReply(status: "unlinked" | "not_bound" | null): string {
+  switch (status) {
+    case "unlinked": return "تم فك الربط ✅ مش هبعتلك حاجة من الحساب ده تاني. لو عايز تربط حساب، اعمل كود من تطبيق زاد وابعته: /start الكود";
+    case "not_bound": return "الشات ده مش مربوط بأي حساب أصلاً.";
+    default: return "فك الربط ماكملش من عندنا — جرّب تاني بعد دقيقة.";
+  }
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent

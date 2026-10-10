@@ -32,7 +32,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -875,28 +875,26 @@ bot.command("start", async (ctx) => {
     return;
   }
 
-  const { data: link } = await sb.from("telegram_bindings")
-    .select("id,code_expires_at")
-    .eq("binding_code", code)
-    .is("bound_at", null)
-    .maybeSingle();
-  const expired = !link || new Date((link as any).code_expires_at) < new Date();
-  if (expired) {
-    await ctx.reply("الكود ده غلط أو منتهي — افتح تطبيق زاد واعمل كود ربط جديد.");
-    return;
-  }
-
-  const { error } = await sb.from("telegram_bindings")
-    .update({ chat_id: chatId, bound_at: new Date().toISOString() })
-    .eq("id", (link as any).id);
-  if (error) {
-    // الأرجح unique violation على chat_id (الحساب ده مربوط بيوزر تاني بالفعل)
-    await ctx.reply("فشل الربط — الحساب ده ممكن يكون مربوط بيوزر تاني بالفعل.");
-  } else {
-    await ctx.reply("تم الربط بنجاح ✅ اختار من تحت:", { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
-    const userId = await resolveUserId(sb, chatId);
+  // كود جديد = إثبات ملكية الحساب اللي عمله، فالشات بيتنقل له حتى لو كان مربوط بحساب
+  // تاني — في transaction واحدة جوه الداتابيز (20261010120000).
+  const { data, error } = await sb.rpc("zad_redeem_telegram_code", { p_code: code, p_chat_id: chatId });
+  if (error) console.error("[start] redeem failed:", error.message);
+  const status = error ? null : ((data as { status?: BindingStatus } | null)?.status ?? null);
+  if (status === "bound" || status === "moved" || status === "already_bound") {
+    await ctx.reply(bindingReply(status), { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
+    const userId = (data as { user_id?: string }).user_id;
     if (userId) await maybeAskCountry(sb, chatId, userId);
+  } else {
+    await ctx.reply(bindingReply(status));
   }
+});
+
+bot.command("unlink", async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const { data, error } = await sb.rpc("zad_unlink_telegram_chat", { p_chat_id: ctx.chat.id });
+  if (error) console.error("[unlink] failed:", error.message);
+  const status = error ? null : ((data as { status?: "unlinked" | "not_bound" } | null)?.status ?? null);
+  await ctx.reply(unlinkReply(status));
 });
 
 bot.command("menu", async (ctx) => {
