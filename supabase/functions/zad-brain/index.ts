@@ -67,7 +67,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
-import { itemsForStore, storeMapUrl } from "./storeFit.ts";
+import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -3831,6 +3831,22 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       return `اتسجّل «${label}». هراجع معاه بعد شهر وبعد ٣ شهور: الفايض الفعلي قصاد المحسوب.`;
     }
+    case "store_location": {
+      // «هات اللوكيشن» (الموجة ٣): رابط المحل اللي زاد نبّه عنه، من مهمة store_arrival نفسها. نقطة المحل (مكان
+      // عام)، مش مكان العميل. آخر ٧ أيام.
+      const { data, error } = await sb.from("agent_tasks").select("task_description,map_url,created_at")
+        .eq("user_id", userId).eq("kind", "store_arrival").not("map_url", "is", null)
+        .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+        .order("created_at", { ascending: false }).limit(20);
+      if (error) return `فشل القراية: ${error.message}`;
+      const found = storeLocationFrom((data ?? []) as Array<{ task_description: string | null; map_url: string | null; created_at: string }>, input?.store);
+      if (!found) {
+        return input?.store
+          ? `مفيش لوكيشن متسجل لـ«${String(input.store).slice(0, 40)}» آخر ٧ أيام — قوله كده بصراحة، وماتألّفش عنوان.`
+          : "مفيش لوكيشن محل متسجل آخر ٧ أيام — قوله كده بصراحة، وماتألّفش عنوان.";
+      }
+      return JSON.stringify({ store: found.store, map_url: found.map_url, noticed_at: found.at });
+    }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
       // الهدف: العميل يشوف "بيته صح قد إيه" كرقم واحد، والعقل يشرح أكبر نقطة ضعف.
@@ -4955,6 +4971,16 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "store_location",
+    description:
+      "رابط خرايط المحل اللي زاد نبّه العميل إنه جنبه (آخر ٧ أيام). نادِها لما يطلب «هات اللوكيشن» أو «فين المحل ده؟» " +
+      "وابعتله map_url زي ما رجع بالظبط. ماتسألوش هو في أنهي منطقة.",
+    input_schema: {
+      type: "object",
+      properties: { store: { type: "string", description: "اسم المحل لو سمّاه («كارفور»). فاضي = آخر محل." } },
+    },
+  },
+  {
     name: "home_health_score",
     description:
       "درجة صحة البيت من ١٠٠ — تجمع المالية والمخزون والصيدلية والالتزامات في رقم واحد مع أهم نقطة ضعف. "
@@ -5638,14 +5664,9 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
-  const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert({
-    user_id: userId,
-    kind: "store_arrival",
-    status: "done",
-    scheduled_for: nowIso,
-    task_description: storeArrivalDescription(storeName, category),
-    result: message.body,
-  }).select("id").single();
+  const task = storeArrivalTask(userId, storeArrivalDescription(storeName, category), message.body, body?.store_lat, body?.store_lon, nowIso);
+  const mapUrl = task.map_url ?? undefined;
+  const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert(task).select("id").single();
   if (taskErr) {
     // من غير الصف ده الحارس (محل/يوم) مابيشوفش الرسالة — فمابنبعتش بدل ما نسبّم.
     console.error("[store_arrival] task insert failed — not sending:", taskErr.message);
@@ -5653,7 +5674,6 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   }
 
   const taskId = (taskRow as { id: string }).id;
-  const mapUrl = storeMapUrl(body?.store_lat, body?.store_lon) ?? undefined;
   const telegram = await pushToTelegram(
     userId, message.title, message.body, fetch, taskId,
     undefined, undefined, undefined, undefined, undefined, mapUrl,
@@ -7261,7 +7281,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
    - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح (أو بعد الضهر في أول أيامه). لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد، وقول في جملة واحدة إيه اللي اتسجل وهيتعمل بيه إيه («تمام، يوم ٢٥ — هبدأ شهرك منه») عشان يعرف إنك فهمت: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ. ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
-${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
+${offers("store_location") ? "   - **لوكيشن المحل**: «هات اللوكيشن» أو «فين المحل ده؟» بعد تنبيه محل ⇒ store_location وابعت map_url زي ما رجع. ماتسألوش هو في أنهي منطقة، وماتألّفش عنوان.\n" : ""}${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
    - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.
    - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
    - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.

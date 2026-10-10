@@ -87,6 +87,7 @@
     "id",
     "kind",
     "last_run_result",
+    "map_url",
     "recurrence",
     "result",
     "scheduled_for",

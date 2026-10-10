@@ -106,3 +106,34 @@ export function storeMapUrl(lat: unknown, lon: unknown): string | null {
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) return null;
   return `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lon.toFixed(5)}`;
 }
+
+/**
+ * «هات اللوكيشن» في الشات (الموجة ٣، ٢٠٢٦-١٠-١٠): الزرار كان في رسالة البوت بس، والعقل لما يتسأل
+ * كان بيسأل «انت في أنهي منطقة؟». مهمة store_arrival بقت شايلة رابطها (agent_tasks.map_url،
+ * 20261010180000). الأحدث الأول؛ `wanted` = اسم محل لو العميل سمّاه.
+ */
+export function storeLocationFrom(
+  rows: ReadonlyArray<{ task_description: string | null; map_url: string | null; created_at: string }>,
+  wanted?: string | null,
+): { store: string; map_url: string; at: string } | null {
+  const key = itemKey(String(wanted ?? "").trim());
+  const found = [...rows]
+    .filter((r) => typeof r.map_url === "string" && r.map_url.startsWith("https://www.google.com/maps/search/"))
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+    .map((r) => ({ store: /«([^»]*)»/.exec(r.task_description ?? "")?.[1]?.trim() ?? "", map_url: r.map_url as string, at: r.created_at }))
+    .filter((r) => r.store.length > 0)
+    .find((r) => !key || itemKey(r.store).includes(key) || key.includes(itemKey(r.store)));
+  return found ?? null;
+}
+
+/** صف agent_tasks لرسالة المحل — ومعاه رابط المحل لو النقطة صالحة («هات اللوكيشن» بعدها بيقراه). */
+export function storeArrivalTask(
+  userId: string, description: string, result: string, lat: unknown, lon: unknown, nowIso: string,
+): Record<string, unknown> & { map_url?: string } {
+  const mapUrl = storeMapUrl(lat, lon);
+  return {
+    user_id: userId, kind: "store_arrival", status: "done", scheduled_for: nowIso,
+    task_description: description, result,
+    ...(mapUrl ? { map_url: mapUrl } : {}),
+  };
+}
