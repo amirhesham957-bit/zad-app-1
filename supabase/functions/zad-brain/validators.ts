@@ -887,6 +887,21 @@ export const APPOINTMENT_RECURRENCES = ["once", "hourly", "daily", "weekly", "mo
 const ISO_WITH_ZONE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 const MAX_APPOINTMENT_DAYS_AHEAD = 366;
 
+/**
+ * تكلفة الميعاد (20261010190000): بتتحجز من المتاح، فلازم تكون الرقم اللي العميل قاله — مش تقدير. null = امسحها.
+ * رقم مكتوب بالحروف («أربعمية») مايعدّيش: الموديل يسأله بالرقم بدل ما يحجز حاجة ماتقالتش.
+ */
+function expectedCostRejection(input: any, ctx: RunContext): string | null {
+  if (input.expected_cost === undefined || input.expected_cost === null) return null;
+  const cost = Number(input.expected_cost);
+  if (!Number.isFinite(cost) || cost <= 0 || cost > 1_000_000) return "expected_cost لازم رقم موجب (لحد مليون)";
+  const digits = String(Math.round(cost));
+  if (!ctx.heard || !latinDigits(ctx.heard).replace(/[,٬.\s]/g, "").includes(digits)) {
+    return "التكلفة دي العميل ماقالهاش بالرقم — اسأله «الكشف بكام؟» وماتقدّرش";
+  }
+  return null;
+}
+
 export const validateAddAppointment: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["add_appointment"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ مواعيد في المرة" };
   const title = String(input.title ?? "").trim();
@@ -910,6 +925,8 @@ export const validateAddAppointment: Validator = (input, _snap, ctx) => {
     if (!Number.isInteger(m) || m < 0 || m > 10080) return { ok: false, reason: "التذكير قبلها لازم دقايق من ٠ لـ ١٠٠٨٠" };
   }
   if (input.place_label != null && String(input.place_label).length > 120) return { ok: false, reason: "اسم المكان طويل أوي" };
+  const cost = expectedCostRejection(input, ctx);
+  if (cost) return { ok: false, reason: cost };
   return { ok: true };
 };
 
@@ -925,9 +942,11 @@ export const validateUpdateAppointment: Validator = (input, _snap, ctx) => {
       return { ok: false, reason: "starts_at لازم ISO 8601 فيه المنطقة الزمنية" };
     }
   }
-  if (input.status === undefined && input.starts_at === undefined && input.title === undefined) {
-    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم" };
+  if (input.status === undefined && input.starts_at === undefined && input.title === undefined && input.expected_cost === undefined) {
+    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم أو التكلفة" };
   }
+  const cost = expectedCostRejection(input, ctx);
+  if (cost) return { ok: false, reason: cost };
   return { ok: true };
 };
 

@@ -1160,7 +1160,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
   const { data: apptRows, error: apptErr } = await sb.from("zad_appointments")
-    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person")
+    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
     .eq("user_id", userId).eq("status", "upcoming")
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
@@ -3031,11 +3031,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           recurrence: APPOINTMENT_RECURRENCES.includes(String(input.recurrence)) ? String(input.recurrence) : "once",
           source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
           for_person: normalizeForPerson(input.for_person),
-        }).select("id,title,starts_at"),
+          // اللي العميل قاله بس (validateAddAppointment) — zad_budget_state بتحجزه لحد الميعاد.
+          expected_cost: input.expected_cost == null ? null : Math.round(Number(input.expected_cost) * 100) / 100,
+        }).select("id,title,starts_at,expected_cost"),
         "تسجيل الميعاد",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
-      const row = w.rows[0] as { id: string; title: string; starts_at: string };
+      const row = w.rows[0] as { id: string; title: string; starts_at: string; expected_cost: number | null };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: startsAt } });
       await recordAction(sb, userId, scope, {
@@ -3048,7 +3050,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         startsAt: row.starts_at, forPerson: normalizeForPerson(input.for_person), recurrence: String(input.recurrence ?? "once"),
         excludeId: row.id, timeZone: tz,
       });
-      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${clash}`;
+      const reserved = row.expected_cost ? ` وحجزت ${row.expected_cost} من المتاح لحد الميعاد.` : "";
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${reserved}${clash}`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -3062,8 +3065,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         patch.starts_at = moved;
       }
       if (input.title !== undefined) patch.title = String(input.title).trim().slice(0, 160);
+      if (input.expected_cost !== undefined) {
+        patch.expected_cost = input.expected_cost === null ? null : Math.round(Number(input.expected_cost) * 100) / 100;
+      }
       const w = await writeRows(
-        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status"),
+        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status,expected_cost"),
         "تعديل الميعاد",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
@@ -3079,7 +3085,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           timeZone: snap?.now_local?.time_zone ?? "UTC",
         })
         : "";
-      return `تم تعديل الميعاد «${b.title}».${clash}`;
+      const cost = (w.rows[0] as { expected_cost?: number | null }).expected_cost;
+      const reserved = input.expected_cost === undefined ? "" : cost ? ` وحجزت ${cost} من المتاح لحد الميعاد.` : " وشلت الحجز.";
+      return `تم تعديل الميعاد «${b.title}».${reserved}${clash}`;
     }
     case "start_savings_challenge": {
       const { data: existing } = await sb.from("zad_savings_challenges").select("id,started_on,daily_cap")
@@ -4334,6 +4342,10 @@ async function appointmentClashNote(
   return clashNote(scheduleClashes({ ...q, existing: data ?? [] }), q.timeZone);
 }
 
+/** تكلفة الميعاد (20261010190000) — الوصف في الأداتين. */
+const EXPECTED_COST_HINT =
+  "تكلفة الميعاد اللي العميل قالها بالرقم («الكشف بـ٤٠٠») — بتتحجز من المتاح لحد الميعاد وبعده بتقع. ماتقدّرهاش أبداً.";
+
 export const CHAT_TOOLS: ToolDef[] = [
   {
     name: "log_transaction",
@@ -4798,7 +4810,8 @@ export const CHAT_TOOLS: ToolDef[] = [
     description:
       "سجّل ميعاد أو مشوار أو التزام غير مالي للعميل وزاد هتفكّره بيه بصوتها قبل ميعاده: «فكّريني بكرة الساعة ٥ أروح البنك»، «عندي دكتور الخميس ١١»، «اجتماع شغل كل حد الساعة ١٠». " +
       "احسب starts_at من now_local في الـsnapshot (النهارده/بكرة/يوم الأسبوع) واكتبه ISO بنفس utc_offset. " +
-      "مش للفلوس (إيجار/قسط → add_obligation) ومش لتحليل مؤجل («راجعلي مصاريف الأسبوع بكرة» → schedule_task).",
+      "مش للفلوس (إيجار/قسط → add_obligation) ومش لتحليل مؤجل («راجعلي مصاريف الأسبوع بكرة» → schedule_task). " +
+      "ميعاد دكتور (kind = medical) من غير تكلفة: بعد التسجيل اسأله سؤال واحد «الكشف بكام؟ أحجزه من المتاح» — جوابه ⇒ update_appointment بـexpected_cost.",
     input_schema: {
       type: "object",
       properties: {
@@ -4817,6 +4830,7 @@ export const CHAT_TOOLS: ToolDef[] = [
           enum: ["once", "hourly", "daily", "weekly", "monthly"],
           description: "افتراضي once. «كل ساعة» = hourly (ومعاه starts_at أول مرة). مفيش تكرار بالدقايق — لو طلب «كل ١٠ دقايق» قوله إن أقل تكرار كل ساعة واسأله يوافق.",
         },
+        expected_cost: { type: "number", description: EXPECTED_COST_HINT },
       },
       required: ["title", "starts_at"],
     },
@@ -4831,6 +4845,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         status: { type: "string", enum: ["upcoming", "done", "cancelled"] },
         starts_at: { type: "string", description: "الوقت الجديد ISO بالمنطقة الزمنية لو اتأجل" },
         title: { type: "string" },
+        expected_cost: { type: "number", nullable: true, description: EXPECTED_COST_HINT + " null = شيل الحجز." },
       },
       required: ["appointment_id"],
     },

@@ -1043,6 +1043,7 @@
   ],
   "zad_appointments": [
     "created_at",
+    "expected_cost",
     "for_person",
     "id",
     "kind",
