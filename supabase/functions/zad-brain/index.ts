@@ -67,6 +67,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunCon
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { itemsForStore } from "./storeFit.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -5503,6 +5504,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
 
   let shopping: string[] = [];
   let lowStock: string[] = [];
+  let clientHints = sanitizeItemHints(body?.client_items);
   if (category === "pharmacy") {
     const { data: meds, error } = await sb.from("zad_pharmacy_items")
       .select("name,remaining_quantity,daily_dose_count").eq("user_id", userId);
@@ -5521,15 +5523,22 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     const { data: memberships } = await sb.from("family_members").select("family_id").eq("user_id", userId);
     const familyIds = ((memberships ?? []) as Array<{ family_id: string | null }>)
       .map((m) => m.family_id).filter((id): id is string => !!id);
-    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").limit(200);
+    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category").limit(200);
     invQuery = familyIds.length > 0
       ? invQuery.or(`user_id.eq.${userId},family_id.in.(${familyIds.join(",")})`)
       : invQuery.eq("user_id", userId);
     const { data: inv, error: invErr } = await invQuery;
     if (invErr) console.error("[store_arrival] inventory lookup failed:", invErr.message);
-    lowStock = ((inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null }>)
+    const invRows = (inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null; category: string | null }>;
+    lowStock = invRows
       .filter((i) => (i.quantity ?? 0) <= (i.low_stock_threshold ?? 1))
       .map((i) => i.item_name);
+    // عطارة/جزارة/خضري/فرن بياخدوا أصناف قسمهم بس؛ السوبرماركت العادي القايمة كلها (storeFit.ts).
+    const categoryByKey = new Map(invRows.map((i) => [itemKey(i.item_name), i.category]));
+    const categoryOf = (item: string) => categoryByKey.get(itemKey(item));
+    shopping = itemsForStore(storeName, shopping, categoryOf);
+    lowStock = itemsForStore(storeName, lowStock, categoryOf);
+    clientHints = itemsForStore(storeName, clientHints, categoryOf);
   }
 
   // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة. و«أرخص هنا» (الشريحة ٢٨): آخر سعر
@@ -5552,7 +5561,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   }
 
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere, cheaperHere,
+    storeName, category, shopping, lowStock, clientHints, seenHere, cheaperHere,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
