@@ -12,6 +12,7 @@
 // outside the eleven becomes an orphan bucket that no screen adds up. The
 // server clamps, and the client does not trust it to.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -518,6 +519,64 @@ void main() {
       await controller.scan(ReceiptImageSource.camera);
       await controller.saveAsTransaction();
       expect(recorded(container).single.wallet, Wallet.card);
+    });
+
+    test(
+      'a receipt for a payment the bank recorded completes that row',
+      () async {
+        // The bank's notification came first; the receipt is the same payment.
+        final bank = ZadTransaction.fromJson(<String, dynamic>{
+          'id': 'bank-1',
+          'user_id': 'user-1',
+          'amount': 248.75,
+          'title': 'BDC شراء',
+          'created_at': now
+              .subtract(const Duration(hours: 2))
+              .toIso8601String(),
+          'txn_kind': 'expense',
+          'is_expense': true,
+          'source_type': 'notification_listener',
+          'bank_name': 'BDC',
+        });
+        await transactions.put(bank.id, jsonEncode(bank.toCacheJson()));
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        expect(container.read(scanControllerProvider).bankTwin?.id, 'bank-1');
+        await controller.saveAsTransaction();
+
+        final rows = recorded(container);
+        expect(rows, hasLength(1), reason: 'one payment, one expense');
+        expect(rows.single.id, 'bank-1');
+        expect(rows.single.title, 'بنده');
+        expect(rows.single.category, 'البقالة');
+        expect(rows.single.amount, 248.75);
+      },
+    );
+
+    test('«عملية تانية» saves the receipt as its own expense', () async {
+      final bank = ZadTransaction.fromJson(<String, dynamic>{
+        'id': 'bank-1',
+        'user_id': 'user-1',
+        'amount': 248.75,
+        'title': 'BDC شراء',
+        'created_at': now.toIso8601String(),
+        'txn_kind': 'expense',
+        'is_expense': true,
+        'source_type': 'notification_listener',
+      });
+      await transactions.put(bank.id, jsonEncode(bank.toCacheJson()));
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      controller.setMergeWithBank(value: false);
+      await controller.saveAsTransaction();
+
+      expect(recorded(container), hasLength(2));
     });
 
     test('a category outside the eleven is dropped, not written', () async {

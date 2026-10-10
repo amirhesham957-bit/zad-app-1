@@ -24,6 +24,7 @@ import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/prices/data/prices_repository.dart';
 import 'package:zad/shared/prices/domain/prices.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/bank_twin.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
@@ -92,6 +93,8 @@ class ScanView {
     this.pharmacyCounts = const <int, int>{},
     this.addToPharmacy = true,
     this.lastPharmacyIntake,
+    this.bankTwin,
+    this.mergeWithBank = true,
   });
 
   /// Where things stand.
@@ -130,6 +133,14 @@ class ScanView {
   /// What the last save did to the pharmacy.
   final PharmacyIntakeResult? lastPharmacyIntake;
 
+  /// The bank's expense for this same payment, when one was found
+  /// ([bankTwinOf]) — saving would otherwise count it twice.
+  final ZadTransaction? bankTwin;
+
+  /// Whether saving completes [bankTwin] with the receipt instead of adding a
+  /// second expense. Yes unless the customer says it is another payment.
+  final bool mergeWithBank;
+
   /// Whether this reading can go into the pharmacy.
   bool get offersPharmacy =>
       receipt?.type == ReceiptType.pharmacy && pharmacy.isNotEmpty;
@@ -162,6 +173,9 @@ class ScanView {
     List<RestockProposal>? pharmacy,
     Map<int, int>? pharmacyCounts,
     bool? addToPharmacy,
+    ZadTransaction? bankTwin,
+    bool clearBankTwin = false,
+    bool? mergeWithBank,
   }) => ScanView(
     stage: stage ?? this.stage,
     receipt: clearReceipt ? null : (receipt ?? this.receipt),
@@ -172,6 +186,8 @@ class ScanView {
     pharmacy: pharmacy ?? this.pharmacy,
     pharmacyCounts: pharmacyCounts ?? this.pharmacyCounts,
     addToPharmacy: addToPharmacy ?? this.addToPharmacy,
+    bankTwin: clearBankTwin ? null : (bankTwin ?? this.bankTwin),
+    mergeWithBank: mergeWithBank ?? this.mergeWithBank,
   );
 }
 
@@ -214,6 +230,7 @@ class ScanController extends Notifier<ScanView> {
         stage: receipt.isUsable ? ScanStage.ready : ScanStage.unreadable,
         receipt: receipt.isUsable ? receipt : null,
         pharmacy: receipt.isUsable ? _proposalsFor(receipt) : const [],
+        bankTwin: receipt.isUsable ? _bankTwinFor(receipt) : null,
       );
     } on Object catch (error) {
       if (!ref.mounted) return;
@@ -236,13 +253,41 @@ class ScanController extends Notifier<ScanView> {
       type: type,
       paidWith: paidWith,
     );
+    final twin = _bankTwinFor(next);
     state = type == null || type == current.type
-        ? state.copyWith(receipt: next)
+        ? state.copyWith(
+            receipt: next,
+            bankTwin: twin,
+            clearBankTwin: twin == null,
+          )
         : state.copyWith(
             receipt: next,
             pharmacy: _proposalsFor(next),
             pharmacyCounts: const <int, int>{},
+            bankTwin: twin,
+            clearBankTwin: twin == null,
           );
+  }
+
+  /// "دي نفس العملية؟" — whether saving completes the bank's expense.
+  void setMergeWithBank({required bool value}) {
+    if (!ref.mounted) return;
+    state = state.copyWith(mergeWithBank: value);
+  }
+
+  ZadTransaction? _bankTwinFor(ScannedReceipt receipt) {
+    if (!receipt.type.isPurchase) return null;
+    try {
+      return bankTwinOf(
+        total: receipt.total,
+        spentAt: _spentAt(receipt),
+        rows: ref.read(transactionsRepositoryProvider).allCached(),
+        paidWith: receipt.paidWith,
+      );
+    } on Object {
+      // No transactions to compare with: nothing to merge, save as usual.
+      return null;
+    }
   }
 
   /// Ticks or unticks one receipt line for the pantry.
@@ -306,25 +351,41 @@ class ScanController extends Notifier<ScanView> {
     state = state.copyWith(isSaving: true);
 
     try {
-      await ref
-          .read(transactionsRepositoryProvider)
-          .record(
-            (id) => ZadTransaction.expense(
-              id: id,
-              userId: userId,
-              amount: receipt.total,
+      final twin = state.bankTwin;
+      if (twin != null && state.mergeWithBank) {
+        // One payment, one expense: the bank's row keeps its amount and time
+        // (they are the bank's) and takes the shop and the category.
+        await ref
+            .read(transactionsRepositoryProvider)
+            .edit(
+              twin,
               title: receipt.title,
-              // The printed date's month, not the scan's.
-              createdAt: _spentAt(receipt),
-              // What the receipt says it was paid with (or what the customer
-              // picked on the sheet); card, the commoner, when it says nothing.
-              wallet: receipt.paidWith ?? Wallet.card,
-              category: receipt.hasKnownCategory ? receipt.category : null,
-              merchantName: receipt.storeName.isEmpty
-                  ? null
-                  : receipt.storeName,
-            ),
-          );
+              amount: twin.amount,
+              category: receipt.hasKnownCategory
+                  ? receipt.category
+                  : twin.category,
+            );
+      } else {
+        await ref
+            .read(transactionsRepositoryProvider)
+            .record(
+              (id) => ZadTransaction.expense(
+                id: id,
+                userId: userId,
+                amount: receipt.total,
+                title: receipt.title,
+                // The printed date's month, not the scan's.
+                createdAt: _spentAt(receipt),
+                // What the receipt says it was paid with (or what the
+                // customer picked); card, the commoner, when it says nothing.
+                wallet: receipt.paidWith ?? Wallet.card,
+                category: receipt.hasKnownCategory ? receipt.category : null,
+                merchantName: receipt.storeName.isEmpty
+                    ? null
+                    : receipt.storeName,
+              ),
+            );
+      }
 
       // The two screens already showing figures. Without these the row is in
       // Hive and neither the list nor the balance knows it.

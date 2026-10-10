@@ -309,6 +309,53 @@ class _ReadingState extends ConsumerState<_Reading> {
             ],
           ),
 
+          if (view.bankTwin case final twin?) ...<Widget>[
+            const SizedBox(height: ZadSpacing.lg),
+            // One card payment, two messages: the bank's and this paper.
+            // Saved twice, it would be counted twice.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: ZadColors.mustardOchre.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(ZadRadii.card),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(ZadSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'المبلغ ده اتسجل من البنك'
+                      '${twin.bankName == null ? '' : ' (${twin.bankName})'}: '
+                      '${_plain(twin.amount)} — «${twin.title}»',
+                      style: ZadType.bodyMedium,
+                    ),
+                    const SizedBox(height: ZadSpacing.sm),
+                    Wrap(
+                      spacing: ZadSpacing.sm,
+                      children: <Widget>[
+                        ChoiceChip(
+                          label: const Text('نفس العملية'),
+                          selected: view.mergeWithBank,
+                          onSelected: busy
+                              ? null
+                              : (_) => controller.setMergeWithBank(value: true),
+                        ),
+                        ChoiceChip(
+                          label: const Text('عملية تانية'),
+                          selected: !view.mergeWithBank,
+                          onSelected: busy
+                              ? null
+                              : (_) =>
+                                    controller.setMergeWithBank(value: false),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           if (view.offersPantry) ...<Widget>[
             const SizedBox(height: ZadSpacing.md),
             SwitchListTile(
