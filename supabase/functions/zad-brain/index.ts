@@ -63,7 +63,7 @@ import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
@@ -107,7 +107,7 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
-import { homeEmergencyRule, techniciansForSnapshot } from "./homeEmergency.ts";
+import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -1822,6 +1822,29 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
+    }
+    case "save_trusted_technician": {
+      // «فنيين بثق فيهم» (20261006014219). نفس الرقم مرة تانية = تحديث الاسم/الصنعة، مش صف جديد.
+      // الرقم اتحقق في validateSaveTrustedTechnician إن العميل قاله.
+      const row = {
+        user_id: userId,
+        name: String(input.name).trim(),
+        trade: String(input.trade),
+        phone: latinDigits(String(input.phone)).trim(),
+        notes: String(input.notes ?? "").trim().slice(0, 120),
+      };
+      const w = await writeRows(
+        sb.from("zad_trusted_technicians").upsert(row, { onConflict: "user_id,phone" }).select("id,name,trade,phone"),
+        "حفظ الفني",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { name: row.name, trade: row.trade } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_trusted_technicians", targetId: (w.rows[0] as { id?: string } | undefined)?.id ?? null,
+        previous: null, next: w.rows[0],
+      });
+      return `اتسجل: ${row.name} في «الصيانة» ← «فنيين بثق فيهم» — رقمه هناك بنقرة وقت الطوارئ.`;
     }
     case "remember_occasion": {
       // المناسبة ملاحظة عادية في الذاكرة ومعاها يومها (20261006000000). الجملة بتتكتب هنا مش من
@@ -5243,6 +5266,22 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "save_trusted_technician",
+    description:
+      "احفظ فني العميل بيثق فيه (سباك، كهربائي…) في «فنيين بثق فيهم» عشان رقمه يبان بنقرة وقت الطوارئ. " +
+      "بس لما العميل يقول الاسم والرقم بنفسه — الرقم زي ما قاله بالظبط، وماتألّفش رقم أبداً.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "اسم الفني زي ما العميل قاله («عم محمد»، «أحمد السباك»)" },
+        trade: { type: "string", enum: ["plumber", "electrician", "gas", "ac", "carpenter", "locksmith", "appliances", "other"] },
+        phone: { type: "string", description: "الرقم زي ما العميل قاله بالظبط" },
+        notes: { type: "string", description: "ملاحظة قصيرة لو قالها («شاطر في السخانات»)" },
+      },
+      required: ["name", "trade", "phone"],
+    },
+  },
+  {
     name: "remember_occasion",
     description:
       "سجّل عيد ميلاد أو ذكرى جواز — للعميل نفسه أو لحد من عيلته وصحابه — عشان زاد يفكّره الصبح قبلها بـ٣ أيام " +
@@ -6241,6 +6280,8 @@ async function handleAgentTurn(
     ...pickHistory(await sharedHistoryEarly, clientHistory),
     { role: "user", text: message },
   ]);
+  // كلام العميل نفسه في المحادثة (كل القنوات) — الأدوات اللي بتاخد قيمة منه بالحرف (رقم فني) بتتحقق عليه.
+  ctx.heard = history.filter((t) => t.role === "user").map((t) => String((t as { text?: string }).text ?? "")).join("\n").slice(-3000);
 
   // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
   // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا. قبل البرومبت:
@@ -6256,6 +6297,8 @@ async function handleAgentTurn(
       ...(snap?.asked_this_morning?.kind === "occasion" ? ["remember_occasion"] : []),
       // سؤال أول ٧٢ ساعة عن مواعيد دوا: «٨ الصبح» لوحدها مافيهاش اسم الدوا يجيب الأداة.
       ...(snap?.asked_this_morning?.tool ? [snap.asked_this_morning.tool] : []),
+      // «صلحت الحنفية» — الأداة جاهزة لو قال الاسم والرقم في نفس الرسالة.
+      ...(technicianFollowUp(message, snap?.trusted_technicians, []) ? ["save_trusted_technician"] : []),
     ],
   );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
@@ -6271,6 +6314,8 @@ async function handleAgentTurn(
     soulBlock(snap?.customer?.zad_voice)
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
     + agentMailBlock(agentMail)
+    // «صلحت الحنفية» ⇒ «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts، الموجة ٣).
+    + technicianFollowUp(message, snap?.trusted_technicians, history.filter((t) => t.role === "assistant").map((t) => String((t as { text?: string }).text ?? "")))
     + skillsBlock(learnedSkills)
     // صفحة «المساعدة والدعم» بقت بتكلم العقل نفسه (كانت موديل لوحده من غير حساب العميل).
     + (body.surface === "support"

@@ -166,6 +166,8 @@ const HANDOVER_INTENT = /كارت تسليم|تسليم الشفت|تسليم ا
 const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|هنعزم|عزمت|ضيوف|جايين يتغدوا|جايين يتعشوا|جايلنا ناس|عندنا ناس جايين/;
 // إيقاع النوم (الشريحة ٣٧): العميل بيقول مواعيد نومه، أو مايتبعتلوش حاجة في وقت.
 const SLEEP_INTENT = /(بنام|بنامي|بانام|بصحي|بصحى|بقوم من النوم|مواعيد نومي).{0,30}(الساعه|[0-9٠-٩])|ماتبعتليش.{0,25}(قبل|بعد|بالليل|الصبح)|ماتصحينيش/;
+// «سجّل رقم السباك محمد ٠١٠٠…» من غير سؤال قبلها.
+const TECHNICIAN_SAVE_INTENT = /(سباك|كهربائي|كهربجي|نجار|فني|الفنيين).{0,60}[0-9٠-٩]{7}|[0-9٠-٩]{7}.{0,60}(سباك|كهربائي|كهربجي|نجار|فني|الفنيين)/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
@@ -190,6 +192,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (HANDOVER_INTENT.test(norm)) tools.push("handover_card");
   if (GATHERING_INTENT.test(norm)) tools.push("plan_gathering", "add_gathering_to_list", "add_appointment");
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
+  // جواب «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts): «محمد ٠١٠٠…» لوحدها مافيهاش نية تجيب الأداة.
+  if (normalize(priorReply).includes("احفظه في الفنيين") || TECHNICIAN_SAVE_INTENT.test(norm)) tools.push("save_trusted_technician");
   return [...new Set(tools)];
 }
 

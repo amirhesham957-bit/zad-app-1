@@ -12,6 +12,11 @@ export type Validation = { ok: true } | { ok: false; reason: string };
 
 export interface RunContext {
   userId: string;
+  /**
+   * كلام العميل نفسه في المحادثة دي (الرسالة + رسايله اللي قبلها). موجود في لفة الشات بس؛ الأدوات اللي
+   * لازم تاخد قيمة من كلامه بالحرف (رقم فني) بتترفض من غيره.
+   */
+  heard?: string;
   counts: Record<string, number>;
   mutationCount: number;
   insightCount: number;
@@ -441,6 +446,33 @@ export const validateAddPharmacyItem: Validator = (input, _snap, ctx) => {
   if (input.quantity !== undefined && (typeof input.quantity !== "number" || input.quantity < 0 || input.quantity > 9999)) {
     return { ok: false, reason: "الكمية لازم تكون بين ٠ و٩٩٩٩" };
   }
+  return { ok: true };
+};
+
+// فني بيثق فيه (الموجة ٣): نفس قيود zad_trusted_technicians (20261006014219)، والرقم لازم العميل
+// يكون قاله — «ماتألّفش رقم تليفون أبداً» (homeEmergency.ts) بقت حد مش طلب.
+const TECHNICIAN_PHONE_RE = /^\+?[0-9][0-9 -]{5,19}$/;
+const TECHNICIAN_TRADE_SET = new Set(["plumber", "electrician", "gas", "ac", "carpenter", "locksmith", "appliances", "other"]);
+
+/** أرقام لاتيني بس — «٠١٠٠» و«0100» واحد. */
+export function latinDigits(text: string): string {
+  return text.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+}
+
+export const validateSaveTrustedTechnician: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["save_trusted_technician"] ?? 0) >= 3) return { ok: false, reason: "٣ فنيين بالكتير في المرة" };
+  const name = String(input.name ?? "").trim();
+  if (name.length < 2 || name.length > 60) return { ok: false, reason: "اسم الفني لازم من ٢ لـ٦٠ حرف" };
+  if (!TECHNICIAN_TRADE_SET.has(String(input.trade ?? ""))) {
+    return { ok: false, reason: "trade لازم واحدة من: plumber, electrician, gas, ac, carpenter, locksmith, appliances, other" };
+  }
+  const phone = latinDigits(String(input.phone ?? "")).trim();
+  if (!TECHNICIAN_PHONE_RE.test(phone)) return { ok: false, reason: "الرقم مش رقم تليفون — أرقام بس (و+ في الأول لو دولي)" };
+  const digits = phone.replace(/\D/g, "");
+  if (!ctx.heard || !latinDigits(ctx.heard).replace(/\D/g, "").includes(digits)) {
+    return { ok: false, reason: "الرقم ده العميل ماقالوش — اسأله عليه وماتألّفش رقم" };
+  }
+  if (input.notes !== undefined && String(input.notes).trim().length > 120) return { ok: false, reason: "الملاحظة أطول من ١٢٠ حرف" };
   return { ok: true };
 };
 
@@ -969,6 +1001,7 @@ export const VALIDATORS: Record<string, Validator> = {
   add_pharmacy_item: validateAddPharmacyItem,
   update_pharmacy_item: validateUpdatePharmacyItem,
   set_market: validateSetMarket,
+  save_trusted_technician: validateSaveTrustedTechnician,
   log_pharmacy_dose: validateLogPharmacyDose,
   delete_pharmacy_item: validateDeletePharmacyItem,
   schedule_task: validateScheduleTask,
@@ -1053,7 +1086,7 @@ export const VALIDATORS: Record<string, Validator> = {
  */
 export const MUTATING_TOOLS = [
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
-  "remember_occasion",
+  "remember_occasion", "save_trusted_technician",
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
@@ -1106,7 +1139,7 @@ export const CONFIRM_REQUIRED_TOOLS = ["log_transaction", "update_transaction", 
 export const CHILD_BLOCKED_TOOLS = [
   ...CONFIRM_REQUIRED_TOOLS,
   "set_transaction_category", "merge_duplicate_expense", "reconcile_cash_balance",
-  "confirm_cycle_start", "confirm_obligation", "set_market",
+  "confirm_cycle_start", "confirm_obligation", "set_market", "save_trusted_technician",
   "add_subscription", "update_subscription", "delete_subscription",
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",
