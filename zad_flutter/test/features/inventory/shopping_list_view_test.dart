@@ -90,6 +90,15 @@ void main() {
     expect(text, contains('الإجمالي: 40 ج.م'));
   });
 
+  test('a total over some of the lines says it is one', () {
+    final text = shoppingShareText(<ShoppingItem>[
+      _s('1', 'لبن', price: 20, qty: 2),
+      _s('2', 'عيش'),
+      _s('3', 'بيض'),
+    ], 'ج.م');
+    expect(text, contains('الإجمالي: 40 ج.م (تقدير لـ 1 من 3 صنف)'));
+  });
+
   test('the share text gives a staple one bullet, with its brands', () {
     final text = shoppingShareText(<ShoppingItem>[
       _s('1', 'ماء إيلان'),

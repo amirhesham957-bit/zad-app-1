@@ -170,6 +170,29 @@ void main() {
     expect(cost, 200);
   });
 
+  test('the cost says whether it is spending or the boxes', () {
+    final clinic = ZadTransaction.fromJson(<String, dynamic>{
+      'id': 't',
+      'user_id': 'u',
+      'amount': 1356.5,
+      'title': 'كشف',
+      'created_at': '2026-09-20T10:00:00Z',
+      'txn_kind': 'expense',
+      'is_expense': true,
+      'category': 'الرعاية الصحية',
+    });
+    expect(
+      pharmacyCostLabel(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
+      'صرف الصحة الشهر ده',
+    );
+    expect(
+      pharmacyCostLabel(<Medicine>[
+        _m('a', price: 80),
+      ], const <ZadTransaction>[]),
+      'أسعار علب الأدوية',
+    );
+  });
+
   test('a finished course is done, not short', () {
     final course = _m('c', remaining: 0, recurring: false);
     final chronic = _m('r', remaining: 0);

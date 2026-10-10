@@ -65,10 +65,15 @@ String shoppingShareText(Iterable<ShoppingItem> outstanding, String currency) {
     for (final g in groupShoppingLines(outstanding)) bullet(g),
   ];
   final total = basketTotal(outstanding);
+  final priced = outstanding.where((i) => i.estimatedPrice > 0).length;
+  final all = outstanding.length;
   return <String>[
     'قائمة تسوق زاد:',
     ...lines,
-    if (total != null) '\nالإجمالي: ${_money(total)} $currency'.trimRight(),
+    if (total != null)
+      '\nالإجمالي: ${_money(total)} $currency'.trimRight() +
+          // A total over some of the lines is not the basket's.
+          (priced < all ? ' (تقدير لـ $priced من $all صنف)' : ''),
   ].join('\n');
 }
 

@@ -82,7 +82,26 @@ double pharmacyMonthlyCost(
   Iterable<Medicine> medicines,
   Iterable<ZadTransaction> periodRows,
 ) {
-  final boxes = medicines.fold<double>(0, (s, m) => s + m.price);
+  final boxes = _boxes(medicines);
+  final spent = _healthSpending(periodRows);
+  return spent > boxes ? spent : boxes;
+}
+
+/// What [pharmacyMonthlyCost] is showing. «التكلفة الشهرية» read as the
+/// medicines' cost, while the figure was the period's health spending —
+/// clinic visits included — or the boxes' prices (2026-10-10: 1,356.5 over
+/// three medicines priced at zero).
+String pharmacyCostLabel(
+  Iterable<Medicine> medicines,
+  Iterable<ZadTransaction> periodRows,
+) => _healthSpending(periodRows) > _boxes(medicines)
+    ? 'صرف الصحة الشهر ده'
+    : 'أسعار علب الأدوية';
+
+double _boxes(Iterable<Medicine> medicines) =>
+    medicines.fold<double>(0, (s, m) => s + m.price);
+
+double _healthSpending(Iterable<ZadTransaction> periodRows) {
   var spent = 0.0;
   for (final t in periodRows) {
     if (t.kind != TxnKind.expense) continue;
@@ -94,7 +113,7 @@ double pharmacyMonthlyCost(
       spent += t.amount;
     }
   }
-  return spent > boxes ? spent : boxes;
+  return spent;
 }
 
 /// The pharmacy.
@@ -140,10 +159,9 @@ class PharmacyView extends ConsumerWidget {
     final currency = ref.watch(
       budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
     );
-    final cost = pharmacyMonthlyCost(
-      medicines,
-      ref.watch(transactionsControllerProvider).rows,
-    );
+    final periodRows = ref.watch(transactionsControllerProvider).rows;
+    final cost = pharmacyMonthlyCost(medicines, periodRows);
+    final costLabel = pharmacyCostLabel(medicines, periodRows);
 
     final familyView = ref.watch(pharmacyFamilyViewProvider);
 
@@ -192,7 +210,7 @@ class PharmacyView extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _Stat(
-                      label: 'التكلفة الشهرية',
+                      label: costLabel,
                       value: '${_money(cost)} $currency'.trim(),
                       color: ZadColors.ink,
                     ),
