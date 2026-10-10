@@ -261,6 +261,11 @@ already knowing where things stand instead of re-deriving it from commit history
 `SESSION_2026_07_26_epic19.md` is archived (Epic 1+4, tasks 19-24, closed); Epic 2
 (`EPIC_2_ai_screen.md`) closed 2026-07-30.
 
+- **`docs/agent/ZAD_LIVING_BRAIN.md` §١٥ — start here for the owner's gap plan (2026-10-10).**
+  Waves 1–2 are done on local branches `fix/wave1-urgent` → `fix/wave2-trust-in-numbers`
+  (not merged; merging deploys), waves 3–4 are what is left, with the owner's decisions,
+  what waits on him, and the working routine. The plan itself is the owner's doc
+  «خطة سد فجوات زاد» (link in §١٥).
 - `docs/agent/ZAD_SUPER_AGENT.md` — the "Zad as a whole-life agent" round (2026-09-28/29):
   street alerts (geofences), Google Places, habit vs budget, «اتشاف هنا», «لمين؟», the wake
   greeting — what shipped per commit, the **measured** weak points (0 FCM tokens, thin data,
