@@ -111,6 +111,7 @@ import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from ".
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
+import { medicinePrice, medicinePriceReply } from "./medicinePrice.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -3374,6 +3375,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       return JSON.stringify(rows.slice(0, 3));
     }
+    case "medicine_price": {
+      // سعر دوا في بلده (medicinePrice.ts): كاش ٣٠ يوم، وإلا بحث موجّه ببلده وعملته ويتحفظ لو ليه مصدر.
+      const name = String(input?.name ?? "").trim().slice(0, 80);
+      const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
+      const me = u as { country?: string | null; currency?: string | null } | null;
+      const found = await medicinePrice(sb, {
+        name, country: me?.country ?? null, currency: me?.currency ?? null,
+        search: (payload) => callCoreIntel("estimate_price", payload, userId),
+      }).catch(() => null);
+      return medicinePriceReply(found, name);
+    }
     case "check_price_online": {
       const res = await callCoreIntel("estimate_price", {
         item_name: input.item_name, store: input.store ?? "",
@@ -5297,6 +5309,17 @@ export const CHAT_TOOLS: ToolDef[] = [
       "مخزون قرب يخلص). نادِها بس لما تكون بتتكلم عن حاجة هو محتاجها — مش عشان تعرض " +
       "منتجات. لو رجّعت فاضي، ماتقترحش أي منتج من عندك.",
     input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "medicine_price",
+    description:
+      "سعر دوا في بلد العميل من بحث نت حقيقي (بالمصدر والتاريخ)، ومحفوظ ٣٠ يوم. نادِها لما يسأل «الدوا ده بكام؟» أو " +
+      "قبل ما تقول إن دوا غالي أو رخيص. سعر بس: من غير بديل ولا جرعة ولا نصيحة طبية.",
+    input_schema: {
+      type: "object",
+      properties: { name: { type: "string", description: "اسم الدوا زي ما العميل قاله أو زي ما هو في صيدليته («بنادول إكسترا»)" } },
+      required: ["name"],
+    },
   },
   {
     name: "check_price_online",

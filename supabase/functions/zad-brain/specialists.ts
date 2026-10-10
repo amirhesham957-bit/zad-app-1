@@ -168,6 +168,8 @@ const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|�
 const SLEEP_INTENT = /(بنام|بنامي|بانام|بصحي|بصحى|بقوم من النوم|مواعيد نومي).{0,30}(الساعه|[0-9٠-٩])|ماتبعتليش.{0,25}(قبل|بعد|بالليل|الصبح)|ماتصحينيش/;
 // «سجّل رقم السباك محمد ٠١٠٠…» من غير سؤال قبلها.
 const TECHNICIAN_SAVE_INTENT = /(سباك|كهربائي|كهربجي|نجار|فني|الفنيين).{0,60}[0-9٠-٩]{7}|[0-9٠-٩]{7}.{0,60}(سباك|كهربائي|كهربجي|نجار|فني|الفنيين)/;
+// سعر دوا (الموجة ٤): «البنادول بكام؟»، «سعر دوا الضغط».
+const MEDICINE_PRICE_INTENT = /(بكام|بكم|سعر|تمن|ثمن|اسعار).{0,30}(دوا|دواء|علاج|حبوب|اقراص|شريط|علبه|بنادول|مضاد|فيتامين|شراب|كريم|مرهم|حقن)|(دوا|دواء|علاج|حبوب|اقراص|شريط|بنادول|مضاد|فيتامين|شراب|كريم|مرهم|حقن).{0,30}(بكام|بكم|سعره|سعرها|تمنه|تمنها)/;
 // الجو (الموجة ٤): «الجو في إسكندرية بكرة؟»، «هتمطر؟».
 const WEATHER_INTENT = /الجو|الطقس|درجه الحراره|هتمطر|بتمطر|حتمطر|مطر|الحر |الحر$|البرد |البرد$|عاصفه|شبوره|الرطوبه/;
 // «هات اللوكيشن» بعد رسالة محل (الموجة ٣): الموديل كان بيسأل «انت في أنهي منطقة؟».
@@ -198,6 +200,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (STORE_LOCATION_INTENT.test(norm)) tools.push("store_location");
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");
+  if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
   // جواب «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts): «محمد ٠١٠٠…» لوحدها مافيهاش نية تجيب الأداة.
   if (normalize(priorReply).includes("احفظه في الفنيين") || TECHNICIAN_SAVE_INTENT.test(norm)) tools.push("save_trusted_technician");
   return [...new Set(tools)];
@@ -351,7 +354,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
   ],
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
-    "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card",
+    "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card", "medicine_price",
     "set_life_circumstance", "end_life_circumstance",
   ],
   family: [

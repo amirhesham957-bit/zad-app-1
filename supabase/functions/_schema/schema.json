@@ -1147,5 +1147,15 @@
     "lat",
     "lon",
     "place_key"
+  ],
+  "zad_medicine_prices": [
+    "country",
+    "currency",
+    "found_at",
+    "name",
+    "name_key",
+    "price_high",
+    "price_low",
+    "sources"
   ]
 }

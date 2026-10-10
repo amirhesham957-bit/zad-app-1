@@ -1043,6 +1043,12 @@ export const VALIDATORS: Record<string, Validator> = {
   suggest_recipes: (_i, _s, ctx) =>
     (ctx.counts["suggest_recipes"] ?? 0) >= 1
       ? { ok: false, reason: "سألت شيف زاد خلاص في اللفة دي" } : { ok: true },
+  // سعر دوا (الموجة ٤): بحث نت موجّه — مرتين في اللفة، واسم معقول.
+  medicine_price: (input, _s, ctx) => {
+    const name = String(input?.name ?? "").trim();
+    if (name.length < 2 || name.length > 80) return { ok: false, reason: "اسم الدوا لازم من ٢ لـ٨٠ حرف" };
+    return (ctx.counts["medicine_price"] ?? 0) >= 2 ? { ok: false, reason: "دورت على سعرين خلاص في اللفة دي" } : { ok: true };
+  },
   // قراية بس — الجو، مرتين في اللفة كفاية (كاش ٣ ساعات، بس كل مدينة جديدة نداء خارجي).
   weather_forecast: (_i, _s, ctx) =>
     (ctx.counts["weather_forecast"] ?? 0) >= 2 ? { ok: false, reason: "جبت الجو خلاص في اللفة دي" } : { ok: true },
