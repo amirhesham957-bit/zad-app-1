@@ -19,6 +19,8 @@ import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
+import { familyTime, type FamilyTime, isWeekendEve } from "./familyTime.ts";
+import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -135,7 +137,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه weather: نص جملة عن جو النهارده بالأرقام اللي فيه بس (المدينة والعظمى). " +
     "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح. " +
     "لو فيه taste_deal: جملة واحدة في الآخر: العرض على taste_deal.item في taste_deal.store بالسعر أو الخصم زي ما هو بالظبط " +
-    "(ولو favorite = true قولي إنه في المحل اللي بيروحه) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود.",
+    "(ولو favorite = true قولي إنه في المحل اللي بيروحه) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
+    "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
+    "اقتراح مش واجب، ومن غير «إنتوا مش بتقعدوا مع بعض».",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -599,6 +603,7 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line || alert ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
           (clothes ? ` ${clothes}` : "") +
           (deal ? ` ${deal}` : "") +
+          (str((facts.family_time as { line?: string } | undefined)?.line, 200) ? ` ${str((facts.family_time as { line?: string }).line, 200)}` : "") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
         speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${alert ? `${alert} ` : ""}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${clothes ? `${clothes} ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
@@ -1113,7 +1118,7 @@ export async function morningFacts(
       .then((r) => r.data as Record<string, unknown> | null, () => null),
     sb.from("zad_savings_challenges").select("started_on,length_days,daily_cap,streak").eq("user_id", userId).eq("status", "active").maybeSingle()
       .then((r) => r.data as { started_on: string; length_days: number; daily_cap: number; streak: number } | null, () => null),
-    sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation,city").eq("user_id", userId).maybeSingle()
+    sb.from("zad_customer_profile").select("preferred_name,gender,household_role,pay_day,cares_for,occupation,city,kids_count,household_size").eq("user_id", userId).maybeSingle()
       .then((r) => r.data as Record<string, unknown> | null, () => undefined),
     loadCircumstance(sb, userId),
     // المناسبات (20261006000000): ملاحظات الذاكرة اللي ليها يوم كل سنة.
@@ -1161,6 +1166,8 @@ export async function morningFacts(
   // عرض حسب ذوقه (tasteDeals.ts): مرة في اليوم بالكتير — مش في ظرف، ومش والميزانية في خطر.
   const threat = String((budget as { threat?: unknown } | null)?.threat ?? "");
   const deal = quiet || threat === "OVER" || threat === "DANGER" ? null : await loadTasteDeal(sb, userId);
+  // وقت العيلة قبل الويك إند (familyTime.ts): مش في ظرف؛ والميزانية في خطر أو «أنا مفلس» ⇒ أفكار ببلاش.
+  const together = quiet ? null : await familyTimeFor(sb, userId, local.date, weather, budget, profile ?? null, threat);
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   const medAsk = quiet || gift || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
@@ -1189,6 +1196,7 @@ export async function morningFacts(
     ...(alert ? { weather_alert: { kind: alert.kind, day: alert.day, line: alert.line } } : {}),
     ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
     ...(deal ? { taste_deal: deal } : {}),
+    ...(together ? { family_time: together } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
     ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
     time_zone: local.time_zone,
@@ -1308,6 +1316,38 @@ async function morningWeather(
 function todayOf(w: WeatherFacts, date: string): Record<string, unknown> | null {
   const d = w.days.find((x) => x.date === date);
   return d ? { sky: d.label, max: d.max, min: d.min } : null;
+}
+
+/** وقت العيلة: بلده، عدد العيلة في التطبيق، و«أنا مفلس». أي قراية فشلت ⇒ مفيش اقتراح. */
+async function familyTimeFor(
+  sb: SupabaseClient, userId: string, date: string, weather: WeatherFacts | null,
+  budget: Record<string, unknown> | null, profile: Record<string, unknown> | null, threat: string,
+): Promise<FamilyTime | null> {
+  try {
+    const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    const country = (u as { country?: string | null } | null)?.country ?? null;
+    if (!isWeekendEve(date, country)) return null;
+    const [{ data: member }, broke] = await Promise.all([
+      sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle(),
+      sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
+        .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, Date.now()), () => true),
+    ]);
+    const familyId = (member as { family_id?: string | null } | null)?.family_id ?? null;
+    let familyMembers = 1;
+    if (familyId) {
+      const { data: members } = await sb.from("family_members").select("user_id").eq("family_id", familyId).limit(20);
+      familyMembers = ((members ?? []) as unknown[]).length;
+    }
+    return familyTime({
+      date, country,
+      family: { familyMembers, kidsCount: Number(profile?.kids_count) || 0, householdSize: Number(profile?.household_size) || 0 },
+      days: weather?.days ?? null,
+      budget: budget as { threat?: string; velocity?: number; spent?: number; available?: number; currency?: string } | null,
+      tight: broke || threat === "OVER" || threat === "DANGER",
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** تبديل هدوم الموسم لو مااتقالش الموسم ده (آخر ٢٠٠ يوم من تحيات الصبح). فشل القراية = مفيش. */
