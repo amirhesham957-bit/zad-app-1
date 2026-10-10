@@ -54,27 +54,8 @@ export function newcomerQuestion(input: {
   birthday: { for: string | null; question: string } | null;
   askedKeys: ReadonlySet<string>;
 }): NewcomerQuestion | null {
-  const candidates: NewcomerQuestion[] = [];
-  for (const med of input.medsWithoutTimes) {
-    const name = med.name.trim();
-    if (!name) continue;
-    const whose = med.for_person?.trim() ? ` بتاع ${med.for_person.trim()}` : "";
-    candidates.push({
-      key: `newcomer:dose_times:${name.toLowerCase()}`,
-      gap: "dose_times",
-      question: `«${name}»${whose} بيتاخد الساعة كام؟ عشان أفكّرك في ميعاده`,
-      facts: {
-        daily_question_kind: "curiosity",
-        curiosity: {
-          key: `newcomer:dose_times:${name.toLowerCase()}`,
-          kind: "newcomer",
-          tool: "update_pharmacy_item",
-          record: `update_pharmacy_item بالاسم «${name}» وdose_times بالساعات اللي قالها بالظبط (times_explicit = true). ` +
-            "لو قال «مش عارف» أو «لما أفتكر»: سيبها. ماتخمّنش ساعات.",
-        },
-      },
-    });
-  }
+  const candidates: NewcomerQuestion[] = input.medsWithoutTimes
+    .map(doseTimesQuestion).filter((q): q is NewcomerQuestion => q !== null);
   if (blank(input.profile?.pay_day)) {
     candidates.push({
       key: "newcomer:pay_day",
@@ -109,6 +90,32 @@ export function newcomerQuestion(input: {
     });
   }
   return candidates.find((c) => !input.askedKeys.has(c.key)) ?? null;
+}
+
+/**
+ * سؤال مواعيد دوا مالوش مواعيد. نفس السؤال في أول ٧٢ ساعة، وبعدها مرة واحدة لكل دوا لأي حساب (الموجة ٣،
+ * بند ٧: التطبيق بيقول وبيسمح بالتحديد من الموجة ١، والبوت ماكانش بيسأل) — تحية الصبح بتوصل تليجرام.
+ */
+export function doseTimesQuestion(med: NewcomerMed): NewcomerQuestion | null {
+  const name = med.name.trim();
+  if (!name) return null;
+  const whose = med.for_person?.trim() ? ` بتاع ${med.for_person.trim()}` : "";
+  const key = `newcomer:dose_times:${name.toLowerCase()}`;
+  return {
+    key,
+    gap: "dose_times",
+    question: `«${name}»${whose} بيتاخد الساعة كام؟ عشان أفكّرك في ميعاده`,
+    facts: {
+      daily_question_kind: "curiosity",
+      curiosity: {
+        key,
+        kind: "newcomer",
+        tool: "update_pharmacy_item",
+        record: `update_pharmacy_item بالاسم «${name}» وdose_times بالساعات اللي قالها بالظبط (times_explicit = true). ` +
+          "لو قال «مش عارف» أو «لما أفتكر»: سيبها. ماتخمّنش ساعات.",
+      },
+    },
+  };
 }
 
 /** مفاتيح النواقص اللي اتسألت (facts.newcomer.key) في الصبح أو بعد الضهر. */

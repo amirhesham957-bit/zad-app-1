@@ -17,7 +17,7 @@ import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowConte
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
-import { askedNewcomerKeys, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
+import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
@@ -1134,6 +1134,8 @@ export async function morningFacts(
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
   // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
   const newcomer = quiet || gift ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
+  // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
+  const medAsk = quiet || gift || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
@@ -1157,7 +1159,7 @@ export async function morningFacts(
       }
       : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
-    ...(newcomer ? withoutQuestion(newcomer) : {}),
+    ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
@@ -1222,6 +1224,33 @@ export async function newcomerAsk(
     });
   } catch (e) {
     console.warn("[newcomer] read failed:", (e as Error)?.message);
+    return null;
+  }
+}
+
+/** دوا مالوش مواعيد اتسأل عنه قبل كده لو اتسأل في السنة دي — مرة لكل دوا، مش كل يوم. */
+export const DOSE_TIMES_ASKED_DAYS = 365;
+
+/**
+ * سؤال الصبح عن دوا مالوش مواعيد، لأي حساب (الموجة ٣، بند ٧). من غير مواعيد مفيش تذكير ولا «فاتتك الجرعة»
+ * (الموجة ١، 169553d5: التطبيق بيقول وبيسمح بالتحديد؛ البوت ماكانش بيسأل — تحية الصبح بتوصل تليجرام).
+ * أي قراية فشلت ⇒ مفيش سؤال.
+ */
+export async function doseTimesAsk(sb: SupabaseClient, userId: string, now = Date.now()): Promise<NewcomerQuestion | null> {
+  try {
+    const since = new Date(now - DOSE_TIMES_ASKED_DAYS * 86_400_000).toISOString();
+    const [meds, asked] = await Promise.all([
+      sb.from("zad_pharmacy_items").select("name,for_person,dose_times,remaining_quantity").eq("user_id", userId).limit(20)
+        .then((r) => r.error ? undefined : ((r.data ?? []) as Array<NewcomerMed & { dose_times: string | null; remaining_quantity: number | null }>)
+          .filter((m) => !(m.dose_times ?? "").trim() && (m.remaining_quantity === null || m.remaining_quantity > 0))),
+      sb.from("zad_voice_moments").select("facts").eq("user_id", userId)
+        .in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent").gte("created_at", since).limit(400)
+        .then((r) => r.error ? undefined : askedNewcomerKeys(r.data as Array<{ facts?: unknown }>)),
+    ]);
+    if (meds === undefined || asked === undefined) return null;
+    return meds.map(doseTimesQuestion).find((q) => q !== null && !asked.has(q.key)) ?? null;
+  } catch (e) {
+    console.warn("[dose_times_ask] read failed:", (e as Error)?.message);
     return null;
   }
 }

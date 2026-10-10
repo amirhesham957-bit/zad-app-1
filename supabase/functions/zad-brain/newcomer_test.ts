@@ -124,13 +124,30 @@ Deno.test("morning: a new account's one question is the guard gap, not the profi
   assertEquals((facts.newcomer as { gap: string }).gap, "dose_times");
   assertEquals(facts.daily_question_field, undefined);
 
-  // حساب عمره ١٠ أيام: نفس دوران خانات الملف زي ما كان.
-  const old = await morningFacts(fakeSb({
-    zad_users: [{ id: "u", created_at: new Date(Date.now() - 240 * HOUR).toISOString(), country: "EG" }],
-    zad_customer_profile: [PROFILE], zad_pharmacy_items: [MED],
-  }), "u", LOCAL);
+  // حساب عمره ١٠ أيام من غير دوا ناقص: نفس دوران خانات الملف زي ما كان.
+  const OLD_USER = { id: "u", created_at: new Date(Date.now() - 240 * HOUR).toISOString(), country: "EG" };
+  const old = await morningFacts(fakeSb({ zad_users: [OLD_USER], zad_customer_profile: [PROFILE] }), "u", LOCAL);
   assertEquals(old.daily_question_kind, "profile");
   assertEquals(old.newcomer, undefined);
+});
+
+Deno.test("morning: after the 72 hours, a medicine without times is still asked about — once", async () => {
+  const OLD_USER = { id: "u", created_at: new Date(Date.now() - 240 * HOUR).toISOString(), country: "EG" };
+  const facts = await morningFacts(fakeSb({ zad_users: [OLD_USER], zad_customer_profile: [PROFILE], zad_pharmacy_items: [MED] }), "u", LOCAL);
+  assertEquals(facts.daily_question, "«Allzyme» بيتاخد الساعة كام؟ عشان أفكّرك في ميعاده");
+  assertEquals((facts.curiosity as { tool?: string }).tool, "update_pharmacy_item");
+  assertEquals((facts.newcomer as { key: string }).key, "newcomer:dose_times:allzyme");
+  // اتسأل قبل كده (صف صبح اتبعت فيه المفتاح) ⇒ الخانة ترجع لسؤال الملف.
+  const asked = await morningFacts(fakeSb({
+    zad_users: [OLD_USER], zad_customer_profile: [PROFILE], zad_pharmacy_items: [MED],
+    zad_voice_moments: [{ facts: { newcomer: { key: "newcomer:dose_times:allzyme" } } }],
+  }), "u", LOCAL);
+  assertEquals(asked.daily_question_kind, "profile");
+  // دوا خلص (رصيده صفر) مايتسألش عن مواعيده.
+  const finished = await morningFacts(fakeSb({
+    zad_users: [OLD_USER], zad_customer_profile: [PROFILE], zad_pharmacy_items: [{ ...MED, remaining_quantity: 0 }],
+  }), "u", LOCAL);
+  assertEquals(finished.daily_question_kind, "profile");
 });
 
 function momentRow(facts: Record<string, unknown> = { time_zone: "Africa/Cairo", local_date: "2026-10-10" }) {
