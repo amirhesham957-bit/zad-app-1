@@ -18,6 +18,7 @@ import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/sync/live_sync.dart';
 
 /// A pantry that shows [view] and does nothing else.
 class QuietPantry extends PantryController {
@@ -128,4 +129,15 @@ List<Override> get quietHouseholdOverrides => <Override>[
   familyControllerProvider.overrideWith(QuietFamily.new),
   supabaseClientProvider.overrideWithValue(quietSupabase),
   localRemindersProvider.overrideWith(QuietReminders.new),
+  // A realtime channel on [quietSupabase] would leave its heartbeat timers
+  // running past the test.
+  liveSyncProvider.overrideWith(
+    (ref) => LiveSync(changes: QuietLiveChanges(), onChange: (_) async {}),
+  ),
 ];
+
+/// No server, so nothing ever changes on it.
+class QuietLiveChanges implements LiveChanges {
+  @override
+  Stream<String> watch(String userId) => const Stream<String>.empty();
+}

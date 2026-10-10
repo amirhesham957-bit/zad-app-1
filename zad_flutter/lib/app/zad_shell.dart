@@ -39,6 +39,7 @@ import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
 import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
@@ -49,6 +50,7 @@ import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
+import 'package:zad/shared/sync/live_sync.dart';
 
 /// Holds the tabs.
 class ZadShell extends ConsumerStatefulWidget {
@@ -108,6 +110,18 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       if (mounted) unawaited(ref.read(sleepSyncProvider).sync());
       if (mounted) await alerts.greetMorning();
     });
+    // A figure changed from Telegram or a confirmed bank notification shows
+    // without a pull (live_sync.dart).
+    try {
+      final userId = ref.read(sessionControllerProvider);
+      if (userId != null) {
+        final live = ref.read(liveSyncProvider)..start(userId);
+        _live = live;
+      }
+    } on Object catch (e) {
+      // No Supabase client (a test): screens refresh on open as before.
+      debugPrint('[live] not started: $e');
+    }
     // Back to the app in the morning is a first open too.
     _lifecycle = AppLifecycleListener(
       onHide: () {
@@ -136,9 +150,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   }
 
   late final AppLifecycleListener _lifecycle;
+  LiveSync? _live;
 
   @override
   void dispose() {
+    unawaited(_live?.stop());
     _lifecycle.dispose();
     super.dispose();
   }
