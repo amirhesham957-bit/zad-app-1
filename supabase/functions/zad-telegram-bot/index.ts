@@ -32,7 +32,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, adminChatId, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -2514,6 +2514,39 @@ Deno.serve(async (req: Request) => {
     } catch (e) {
       console.error("reset_webhook failed:", e);
       return Response.json({ ok: false, error: String(e) }, { status: 500 });
+    }
+  }
+
+  // تنبيهات صحة النظام (zad_notify_admin، 20261010130000) — لشات الأدمن السري بس، عمرها
+  // ما بتروح لشات عميل. من غير ZAD_ADMIN_CHAT_ID التنبيه بيتسجل في اللوج ومابيتبعتش.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "admin_alert") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    if (!BOT_CONFIGURED) {
+      return new Response(JSON.stringify({ ok: false, reason: "bot not configured" }), { status: 503 });
+    }
+    try {
+      const { title, body } = await req.json() as { title?: string; body?: string };
+      if (!title || !body) {
+        return new Response(JSON.stringify({ ok: false, reason: "missing title/body" }), { status: 400 });
+      }
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn(`[admin_alert] ZAD_ADMIN_CHAT_ID not set — not sent: ${title}`);
+        return new Response(JSON.stringify({ ok: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      // الشات ده مربوط كشات عميل؟ يبقى مش قناة أدمن — نفس الغلطة اللي بنقفلها.
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      if (await resolveUserId(sb, chatId)) {
+        console.error(`[admin_alert] ZAD_ADMIN_CHAT_ID is a customer chat — refused: ${title}`);
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `${title}\n\n${body}`);
+      return new Response(JSON.stringify({ ok: true, delivered: true }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("admin_alert failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
     }
   }
 

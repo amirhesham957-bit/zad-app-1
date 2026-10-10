@@ -379,3 +379,12 @@ Deno.test("a code that moved the chat says so, and only a refused code asks for 
   assert(unlinkReply("unlinked").includes("فك الربط"));
   assert(unlinkReply("not_bound").includes("مش مربوط"));
 });
+
+Deno.test("the admin chat is a whole number or nothing — a group's id is negative", () => {
+  const { adminChatId } = telegramModule;
+  assertEquals(adminChatId("-1001234567890"), -1001234567890);
+  assertEquals(adminChatId(" 123456789 "), 123456789);
+  for (const bad of [undefined, null, "", "  ", "0", "abc", "12.5", "@zad_admins", "1e9"]) {
+    assertEquals(adminChatId(bad), null, String(bad));
+  }
+});

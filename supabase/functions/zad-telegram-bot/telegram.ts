@@ -139,6 +139,17 @@ export function unlinkReply(status: "unlinked" | "not_bound" | null): string {
   }
 }
 
+/** `ZAD_ADMIN_CHAT_ID` — the private chat (a group or channel the bot is in) that system
+ * health alerts go to, never a customer's chat (2026-10-10: «العقل ساكت» reached the owner's
+ * own customer chat because alerts went to each admin's Telegram binding). A group's id is
+ * negative. Anything that is not a whole number = no admin chat. */
+export function adminChatId(raw: string | undefined | null): number | null {
+  const trimmed = (raw ?? "").trim();
+  if (!/^-?\d{1,20}$/.test(trimmed)) return null;
+  const id = Number(trimmed);
+  return Number.isSafeInteger(id) && id !== 0 ? id : null;
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent
