@@ -13,6 +13,7 @@ import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/dose_time.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 
 /// What the pharmacy screen draws.
@@ -200,6 +201,24 @@ class PharmacyController extends Notifier<PharmacyView> {
     await _afterWrite();
   }
 
+  /// "حدد مواعيده": the medicine's dose times, as the server's regex wants
+  /// them, and its daily count with them. A medicine read off a receipt or a
+  /// box came with none, so nothing reminded and «جرعات النهارده» stayed
+  /// empty (the owner's Diosmin, 2026-10-10).
+  Future<void> setDoseTimes(Medicine medicine, Iterable<String> times) async {
+    final wire = doseTimesWire(times);
+    if (wire.isEmpty) return;
+    await ref
+        .read(pharmacyRepositoryProvider)
+        .update(
+          medicine.copyWith(
+            doseTimesRaw: wire.join(','),
+            dailyDoseCount: wire.length,
+          ),
+        );
+    await _afterWrite();
+  }
+
   /// "تناول جرعة" on a medicine with no schedule: one dose, now.
   Future<void> takeNow(Medicine medicine) async {
     final now = ref.read(nowProvider)();
@@ -306,3 +325,10 @@ class PharmacyController extends Notifier<PharmacyView> {
 /// The pharmacy.
 final pharmacyControllerProvider =
     NotifierProvider<PharmacyController, PharmacyView>(PharmacyController.new);
+
+/// Times as `dose_times` stores them: only what the server's regex accepts,
+/// zero-padded, once each, in the day's order.
+List<String> doseTimesWire(Iterable<String> times) => <String>{
+  for (final t in times)
+    if (DoseTime.parse(t) case final time?) time.wireName,
+}.toList()..sort();

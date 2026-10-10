@@ -264,7 +264,7 @@ class PharmacyView extends ConsumerWidget {
                   ),
                 ),
               ],
-              if (view.today.isNotEmpty) ...<Widget>[
+              if (view.today.isNotEmpty || medicines.isNotEmpty) ...<Widget>[
                 const SizedBox(height: ZadSpacing.lg),
                 Text(
                   'جرعات النهارده',
@@ -277,6 +277,18 @@ class PharmacyView extends ConsumerWidget {
                   _DoseRow(slot: slot),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
+                // A heading over nothing read as a broken screen (2026-10-10:
+                // three medicines, a cost, and a blank «جرعات النهارده»).
+                if (view.today.isEmpty)
+                  Text(
+                    medicines.any((m) => m.doseTimes.isNotEmpty)
+                        ? 'مفيش جرعات فاضلة النهارده.'
+                        : 'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت '
+                              'عشان أفكّرك بيه.',
+                    style: ZadType.bodySmall.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
               ],
               const SizedBox(height: ZadSpacing.lg),
               if (medicines.isEmpty)
@@ -606,14 +618,39 @@ class _MedicineCard extends ConsumerWidget {
                         ),
                       ),
                     if (invalid)
-                      Padding(
-                        padding: const EdgeInsets.only(top: ZadSpacing.xs),
-                        child: Text(
-                          'وقت جرعة مش مفهوم — عدّله',
-                          style: ZadType.labelSmall.copyWith(
-                            color: ZadColors.terracottaRust,
+                      InkWell(
+                        onTap: () =>
+                            unawaited(showDoseTimesSheet(context, medicine)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: ZadSpacing.sm,
+                          ),
+                          child: Text(
+                            'وقت جرعة مش مفهوم — عدّله',
+                            style: ZadType.labelSmall.copyWith(
+                              color: ZadColors.terracottaRust,
+                            ),
                           ),
                         ),
+                      )
+                    else if (medicine.doseTimes.isEmpty && !finished)
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              'مالوش مواعيد — مش هفكّرك بيه',
+                              style: ZadType.labelSmall.copyWith(
+                                color: ZadColors.mustardOchre,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => unawaited(
+                              showDoseTimesSheet(context, medicine),
+                            ),
+                            child: const Text('حدد مواعيده'),
+                          ),
+                        ],
                       ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -940,12 +977,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
   String? _member;
   bool _extras = false;
 
-  static const List<(String, String)> _presets = <(String, String)>[
-    ('08:00', '🌅 صباحاً'),
-    ('14:00', '☀️ ظهراً'),
-    ('20:00', '🌙 مساءً'),
-    ('23:00', '🛌 قبل النوم'),
-  ];
+  static const List<(String, String)> _presets = kDoseTimePresets;
 
   bool _scanning = false;
 
@@ -1345,4 +1377,112 @@ List<String> scannedDoseTimes(String? raw) {
     for (final part in (raw ?? '').split(',')) ?DoseTime.parse(part),
   ]..sort();
   return <String>{for (final t in times) t.wireName}.toList();
+}
+
+/// The four quick choices, shared by the add form and the times sheet.
+const List<(String, String)> kDoseTimePresets = <(String, String)>[
+  ('08:00', '🌅 صباحاً'),
+  ('14:00', '☀️ ظهراً'),
+  ('20:00', '🌙 مساءً'),
+  ('23:00', '🛌 قبل النوم'),
+];
+
+/// "حدد مواعيده": the times of one medicine that has none, or one whose
+/// times could not be read.
+Future<void> showDoseTimesSheet(BuildContext context, Medicine medicine) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ZadColors.surface,
+      shape: zadSquircle(ZadRadii.sheet),
+      builder: (_) => _DoseTimesSheet(medicine: medicine),
+    );
+
+class _DoseTimesSheet extends ConsumerStatefulWidget {
+  const new({required this.medicine});
+
+  final Medicine medicine;
+
+  @override
+  ConsumerState<_DoseTimesSheet> createState() => _DoseTimesSheetState();
+}
+
+class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
+  late final List<String> _times = <String>[
+    for (final t in widget.medicine.doseTimes) t.wireName,
+  ];
+
+  Future<void> _addTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+      helpText: 'اختر ميعاد الجرعة',
+    );
+    if (picked == null) return;
+    final t =
+        '${picked.hour.toString().padLeft(2, '0')}:'
+        '${picked.minute.toString().padLeft(2, '0')}';
+    if (!_times.contains(t)) setState(() => _times.add(t));
+  }
+
+  Future<void> _save() async {
+    final navigator = Navigator.of(context);
+    await ref
+        .read(pharmacyControllerProvider.notifier)
+        .setDoseTimes(widget.medicine, _times);
+    if (navigator.mounted) navigator.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      ZadSpacing.lg,
+      ZadSpacing.lg,
+      ZadSpacing.lg,
+      ZadSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text('مواعيد ${widget.medicine.name}', style: ZadType.titleMedium),
+        const SizedBox(height: ZadSpacing.xs),
+        Text(
+          'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.',
+          style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        Wrap(
+          spacing: ZadSpacing.sm,
+          runSpacing: ZadSpacing.xs,
+          children: <Widget>[
+            for (final (t, label) in kDoseTimePresets)
+              FilterChip(
+                label: Text(label),
+                selected: _times.contains(t),
+                onSelected: (on) =>
+                    setState(() => on ? _times.add(t) : _times.remove(t)),
+              ),
+            for (final t in _times.where(
+              (t) => !kDoseTimePresets.any((p) => p.$1 == t),
+            ))
+              InputChip(
+                label: Text(t),
+                onDeleted: () => setState(() => _times.remove(t)),
+              ),
+            ActionChip(
+              avatar: const Icon(ZadIcons.add, size: 16),
+              label: const Text('إضافة ميعاد'),
+              onPressed: () => unawaited(_addTime()),
+            ),
+          ],
+        ),
+        const SizedBox(height: ZadSpacing.lg),
+        FilledButton(
+          onPressed: _times.isEmpty ? null : () => unawaited(_save()),
+          child: const Text('احفظ المواعيد'),
+        ),
+      ],
+    ),
+  );
 }
