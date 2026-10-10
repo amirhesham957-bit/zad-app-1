@@ -1043,6 +1043,9 @@ export const VALIDATORS: Record<string, Validator> = {
   suggest_recipes: (_i, _s, ctx) =>
     (ctx.counts["suggest_recipes"] ?? 0) >= 1
       ? { ok: false, reason: "سألت شيف زاد خلاص في اللفة دي" } : { ok: true },
+  // قراية بس — الجو، مرتين في اللفة كفاية (كاش ٣ ساعات، بس كل مدينة جديدة نداء خارجي).
+  weather_forecast: (_i, _s, ctx) =>
+    (ctx.counts["weather_forecast"] ?? 0) >= 2 ? { ok: false, reason: "جبت الجو خلاص في اللفة دي" } : { ok: true },
   // قراية بس — رابط محل متسجل، مرتين في اللفة كفاية.
   store_location: (_i, _s, ctx) =>
     (ctx.counts["store_location"] ?? 0) >= 2 ? { ok: false, reason: "جبت اللوكيشن خلاص في اللفة دي" } : { ok: true },

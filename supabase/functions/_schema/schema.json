@@ -1139,5 +1139,13 @@
     "subject",
     "user_id",
     "weekday"
+  ],
+  "zad_weather_cache": [
+    "days",
+    "fetched_at",
+    "label",
+    "lat",
+    "lon",
+    "place_key"
   ]
 }

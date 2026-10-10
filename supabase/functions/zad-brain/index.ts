@@ -110,6 +110,7 @@ import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
+import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -1192,6 +1193,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
+  // الجو (weather.ts، الموجة ٤): مدينة الملف وإلا عاصمة البلد — من الكاش ٣ ساعات. null = مش عارفين.
+  const weatherFacts = await loadWeather(sb, {
+    country: userRes.data?.country,
+    city: (profileRow as { city?: string | null } | null)?.city ?? null,
+    timeZone: budgetState.timezone ?? "UTC",
+  });
   if (profileErr) {
     console.error("[snapshot] zad_customer_profile failed:", profileErr.message);
     dataErrors.push({ source: "ملفك الشخصي" });
@@ -1491,6 +1498,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
     }),
     trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
+    weather: weatherForSnapshot(weatherFacts),
     // null = مفيش حملة النهارده (أو القراية فشلت).
     home_campaign: pickHomeCampaign(
       (campaignRows ?? []) as CampaignRow[],
@@ -3861,6 +3869,21 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       return `اتسجّل «${label}». هراجع معاه بعد شهر وبعد ٣ شهور: الفايض الفعلي قصاد المحسوب.`;
     }
+    case "weather_forecast": {
+      // الجو لمدينة سمّاها العميل (جوه بلده)، وإلا مكانه في السناب شوت. Open-Meteo من غير مفتاح، وكاش ٣ ساعات.
+      const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+      const city = String(input?.city ?? "").trim().slice(0, 60);
+      const w = await loadWeather(sb, {
+        country: (u as { country?: string | null } | null)?.country ?? snap?.country,
+        city: city || snap?.customer?.city || null,
+        timeZone: snap?.now_local?.time_zone ?? "UTC",
+      });
+      if (!w) return "مش قادر أجيب الجو دلوقتي — قوله كده بصراحة، وماتخمّنش درجات حرارة.";
+      if (city && w.from === "capital") {
+        return JSON.stringify({ note: `مالقيتش «${city}» — ده جو ${w.place} (العاصمة)، قوله كده.`, ...weatherForSnapshot(w) });
+      }
+      return JSON.stringify(weatherForSnapshot(w));
+    }
     case "store_location": {
       // «هات اللوكيشن» (الموجة ٣): رابط المحل اللي زاد نبّه عنه، من مهمة store_arrival نفسها. نقطة المحل (مكان
       // عام)، مش مكان العميل. آخر ٧ أيام.
@@ -5005,6 +5028,16 @@ export const CHAT_TOOLS: ToolDef[] = [
         action: { type: "string", enum: ["add", "cancel"] },
       },
       required: ["title", "action"],
+    },
+  },
+  {
+    name: "weather_forecast",
+    description:
+      "الجو (Open-Meteo) لـ٣ أيام: السما والعظمى والصغرى والمطر والريح. نادِها لما يسأل عن الجو في مدينة تانية جوه بلده " +
+      "(«الجو في إسكندرية بكرة؟»). جو مدينته هو موجود أصلاً في weather في الـSNAPSHOT.",
+    input_schema: {
+      type: "object",
+      properties: { city: { type: "string", description: "المدينة اللي سأل عنها. فاضي = مدينته." } },
     },
   },
   {
@@ -7338,7 +7371,7 @@ ${offers("store_location") ? "   - **لوكيشن المحل**: «هات الل�
    - ${householdLoadRule(snap)}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
    - ${homeEmergencyRule(snap)}
-${campaignAndTasteRules(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
+${campaignAndTasteRules(snap)}${weatherRule(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).
