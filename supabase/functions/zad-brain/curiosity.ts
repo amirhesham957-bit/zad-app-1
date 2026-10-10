@@ -28,6 +28,11 @@ export const ASK_AGAIN_AFTER_DAYS = 30;
 export const RECENT_DAYS = 14;
 /** خط الأساس للمقارنة: الـ٨ أسابيع اللي قبل الأخيرين. */
 export const BASELINE_DAYS = 56;
+/** مبلغ غريب (الموجة ٣): حركة آخر ٣ أيام قد العادي في فئتها ٣ مرات أو أكتر… */
+export const OUTLIER_RECENT_DAYS = 3;
+export const OUTLIER_RATIO = 3;
+/** …والعادي محسوب من ٥ حركات على الأقل في نفس الفئة قبلها. */
+export const OUTLIER_MIN_SAMPLES = 5;
 
 export interface CuriosityTxn {
   id: string;
@@ -41,7 +46,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "label_gone_quiet" | "category_surge" | "unlabelled_spend";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -173,6 +178,48 @@ function categorySurge(spends: CuriosityTxn[], now: number): Curiosity[] {
   }));
 }
 
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * مبلغ أعلى بكتير من العادي في فئته (الموجة ٣ من «خطة سد الفجوات»): حركة واحدة آخر ٣ أيام قد **الوسيط** في نفس
+ * الفئة ٣ مرات أو أكتر — الوسيط عشان حركة غريبة قديمة ماتشدّش «العادي». فئة من غير تصنيف حقيقي برّه (دي سؤال تاني).
+ * الأكبر نسبةً الأول.
+ */
+function amountOutlier(spends: CuriosityTxn[], now: number, todayStart: number): Curiosity[] {
+  const recentCut = now - OUTLIER_RECENT_DAYS * DAY_MS;
+  const oldest = now - LOOKBACK_DAYS * DAY_MS;
+  const found: Array<{ t: CuriosityTxn; category: string; usual: number; ratio: number }> = [];
+  for (const t of spends) {
+    const at = Date.parse(t.created_at);
+    if (at < recentCut || isUnlabelled(t.category)) continue;
+    const key = itemKey(t.category as string);
+    const before = spends
+      .filter((o) => o.id !== t.id && !isUnlabelled(o.category) && itemKey(o.category as string) === key)
+      .filter((o) => { const oa = Date.parse(o.created_at); return oa >= oldest && oa < recentCut; })
+      .map((o) => Number(o.amount));
+    if (before.length < OUTLIER_MIN_SAMPLES) continue;
+    const usual = median(before);
+    if (usual <= 0) continue;
+    const ratio = Number(t.amount) / usual;
+    if (ratio >= OUTLIER_RATIO) found.push({ t, category: (t.category as string).trim(), usual, ratio });
+  }
+  return found.sort((a, b) => b.ratio - a.ratio).map(({ t, category, usual }) => {
+    const label = spendLabel(t);
+    return {
+      key: `outlier:${t.id}`,
+      kind: "amount_outlier" as const,
+      question: `الـ${Math.round(Number(t.amount))} اللي اتسجلت ${dayLabel(Date.parse(t.created_at), todayStart)} في «${category}»${label && itemKey(label) !== itemKey(category) ? ` («${label}»)` : ""} أعلى بكتير من العادي (حوالي ${Math.round(usual)}) — كانت حاجة مميزة؟`,
+      record: "لو فيه سبب (مناسبة، ضيوف، حاجة بتتشترى مرة): remember بالسبب لو هيتكرر، وإلا كفاية تقول إنك فهمت. " +
+        "لو قال إن المبلغ غلط: اعرض تصلّحه بـupdate_transaction على transaction_id. لو قال عادي: سيبها.",
+      transaction_id: t.id,
+    };
+  });
+}
+
 /** صرف آخر أسبوعين متسجل من غير تصنيف حقيقي («أخرى»، «عام»)، الأكبر الأول. */
 function unlabelledSpend(spends: CuriosityTxn[], now: number, todayStart: number): Curiosity[] {
   const recentCut = now - RECENT_DAYS * DAY_MS;
@@ -193,8 +240,8 @@ function unlabelledSpend(spends: CuriosityTxn[], now: number, todayStart: number
 }
 
 /**
- * الفرضية اللي تستاهل تتسأل النهارده، أو null. الترتيب: تغيير عادة/مكان، بعده فئة زادت، بعده صرف
- * من غير تصنيف — الأولانيين فرضيات عن حياة البيت، والتالت فجوة في الداتا.
+ * الفرضية اللي تستاهل تتسأل النهارده، أو null. الترتيب: مبلغ غريب آخر ٣ أيام، بعده تغيير عادة/مكان، بعده فئة
+ * زادت، بعده صرف من غير تصنيف — الأولاني حركة بعينها لسه طازة، اللي بعده فرضيات عن حياة البيت، والأخير فجوة في الداتا.
  */
 export function curiosityFor(input: {
   txns: readonly CuriosityTxn[];
@@ -219,6 +266,8 @@ export function curiosityFor(input: {
     ? []
     : categorySurge(spends, input.now).filter((c) => !quietCategories.has(c.key.slice("surge:".length)));
   const candidates = [
+    // حركة بعينها لسه طازة — قبل الفرضيات عن العادات.
+    ...amountOutlier(spends, input.now, input.todayStart),
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
     ...surges,
     ...unlabelledSpend(spends, input.now, input.todayStart),
