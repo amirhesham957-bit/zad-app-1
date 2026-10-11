@@ -91,6 +91,20 @@ export async function medicinePrice(
   return found;
 }
 
+/**
+ * طلب estimate_price لأي سعر (check_price_online): بلد العميل باسمه وعملته — من غيرهم البحث كان من غير سوق،
+ * وفلتر العملة في core-intelligence ماكانش بيشتغل (طلب المالك ٢٠٢٦-١٠-١١).
+ */
+export function pricePayload(item: unknown, store: unknown, country: string | null | undefined, currency: string | null | undefined) {
+  const code = String(country ?? "").toUpperCase();
+  return {
+    item_name: String(item ?? "").trim().slice(0, 80),
+    store: String(store ?? "").trim().slice(0, 60),
+    location: /^[A-Z]{2}$/.test(code) ? countryNameAr(code) : "",
+    currency: String(currency ?? "").trim().slice(0, 8),
+  };
+}
+
 /** اللي بيرجع للموديل: الرقم ومصدره وتاريخه، وتذكير إنه سعر مش نصيحة. */
 export function medicinePriceReply(p: MedicinePrice | null, name: string): string {
   if (!p) {

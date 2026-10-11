@@ -111,7 +111,7 @@ import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from ".
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
-import { medicinePrice, medicinePriceReply } from "./medicinePrice.ts";
+import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealSource } from "./tasteDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
@@ -3391,9 +3391,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return medicinePriceReply(found, name);
     }
     case "check_price_online": {
-      const res = await callCoreIntel("estimate_price", {
-        item_name: input.item_name, store: input.store ?? "",
-      }, userId);
+      // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
+      const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
+      const me = u as { country?: string | null; currency?: string | null } | null;
+      const res = await callCoreIntel("estimate_price", pricePayload(input.item_name, input.store, me?.country ?? snap?.country, me?.currency), userId);
       if (!res || res.ok === false) return "مقدرتش أتأكد من السعر — متقولش رقم من عندك.";
       return JSON.stringify(res);
     }

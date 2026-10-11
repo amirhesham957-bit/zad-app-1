@@ -80,3 +80,11 @@ Deno.test("price: «بكام» about a medicine brings the tool, in the pharmacy
   ctx.counts.medicine_price = 2;
   assertEquals((VALIDATORS.medicine_price({ name: "بنادول" }, {}, ctx) as { ok: boolean }).ok, false);
 });
+
+Deno.test("any price: check_price_online now asks in the customer's market and currency", async () => {
+  const { pricePayload } = await import("./medicinePrice.ts");
+  assertEquals(pricePayload(" زيت كريستال ", "كارفور", "eg", "EGP"), { item_name: "زيت كريستال", store: "كارفور", location: "مصر", currency: "EGP" });
+  assertEquals(pricePayload("رز", undefined, "SA", "SAR").location, "السعودية");
+  // من غير بلد معروفة: من غير سوق، زي الأول.
+  assertEquals(pricePayload("رز", null, "غير معروف", null), { item_name: "رز", store: "", location: "", currency: "" });
+});
