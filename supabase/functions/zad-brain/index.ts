@@ -69,7 +69,7 @@ import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGemi
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
-import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
+import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -1576,6 +1576,39 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 // Tool execution — actual DB writes, only reached after validation passes
 // ═══════════════════════════════════════════════════════════
 
+/**
+ * «اشتريت X» بيشطب X من قايمة البيت (الموجة ٥، ٢٠٢٦-١٠-١١). الفاتورة من التطبيق كانت بتعمل كده
+ * (intakeIntoPantry)، لكن الشات وصورة الفاتورة في تليجرام (الاتنين بيعدّوا على add_inventory_item)
+ * كانوا بيزوّدوا المخزن ويسيبوا السطر مفتوح — فالعقل يفضل يفكّر العميل بحاجة اشتراها.
+ * سطر واحد بس، بنفس مطابقة المخزن (samePantryItem)، صف العميل الأول وبعده العيلة. بيتسجل فعل لوحده
+ * عشان «تراجع» يرجّعه. فشل هنا مابيلغيش الإضافة اللي حصلت. بيرجّع اسم السطر اللي اتشطب، أو null.
+ */
+async function tickBoughtLine(
+  sb: SupabaseClient, userId: string, familyId: string | null, itemName: string, scope: AuditScope,
+): Promise<string | null> {
+  const { data, error } = await sb.from("zad_shopping_list")
+    .select("id,user_id,family_id,item_name,created_at")
+    .or(householdFilter(userId, familyId)).eq("is_purchased", false).limit(200);
+  if (error) {
+    console.error("[add_inventory_item] list lookup failed:", error.message);
+    return null;
+  }
+  const lines = ((data ?? []) as Array<{ id: string; user_id: string; family_id: string | null; item_name: string; created_at: string | null }>)
+    .filter((l) => samePantryItem(l.item_name, itemName));
+  const line = pickInventoryRow(lines, userId, familyId);
+  if (!line) return null;
+  const { error: upErr } = await sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", line.id);
+  if (upErr) {
+    console.error("[add_inventory_item] list tick failed:", upErr.message);
+    return null;
+  }
+  await recordAction(sb, userId, scope, {
+    tool: "complete_shopping_item", input: { item_name: line.item_name, via: "add_inventory_item" },
+    table: "zad_shopping_list", targetId: line.id, previous: { is_purchased: false }, next: { is_purchased: true },
+  });
+  return line.item_name;
+}
+
 export async function executeTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   switch (name) {
     case "emit_insight": {
@@ -2313,9 +2346,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // نفس الصنف موجود في مخزن البيت؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
       // صف العميل نفسه الأول، وبعده صف العيلة: «اشتريت لبن» من الأب بيزوّد لبن البيت اللي
       // الأم ضافته، مش صف لبن تاني باسمه. «تراجع» بيعرف البيت (20261011160000).
+      const houseFamily = await householdFamilyId(sb, userId);
       const { data: own, error: ownErr } = await sb.from("zad_inventory")
         .select("id,user_id,item_name,quantity,unit,category,expiry_date,created_at")
-        .or(householdFilter(userId, await householdFamilyId(sb, userId))).limit(500);
+        .or(householdFilter(userId, houseFamily)).limit(500);
       if (ownErr) console.error("[add_inventory_item] pantry lookup failed:", ownErr.message);
       type HouseRow = PantryRow & { user_id: string; category: string | null; expiry_date: string | null };
       const houseRows = (own ?? []) as HouseRow[];
@@ -2345,7 +2379,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           p_user: existing.user_id ?? userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
         });
         if (obsErr) console.error("zad_record_observation failed:", obsErr.message);
-        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}`;
+        const tickedMerge = await tickBoughtLine(sb, userId, houseFamily, existing.item_name, scope);
+        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}` +
+          (tickedMerge ? ` — واتشطب "${tickedMerge}" من قايمة التسوق` : "");
       }
       const w = await writeRows(
         sb.from("zad_inventory").insert({
@@ -2366,6 +2402,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_inventory", targetId: newRow.id,
         previous: null, next: newRow,
       });
+      const tickedNew = await tickBoughtLine(sb, userId, houseFamily, itemName, scope);
+      const tickedNote = tickedNew ? ` — واتشطب "${tickedNew}" من قايمة التسوق` : "";
       // نفس السبب اللي في update_inventory_qty بالظبط: أي كمية معروفة هي بيانات تعلّم
       // مجانية لمعدل الاستهلاك، والتسجيل هنا غير مشروط مش أداة منفصلة الموديل ممكن
       // ينساها.
@@ -2374,13 +2412,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       });
       if (obsErr) {
         console.error("zad_record_observation failed:", obsErr.message);
-        return `اتضاف "${itemName}" (${input.quantity}) للمخزون`;
+        return `اتضاف "${itemName}" (${input.quantity}) للمخزون${tickedNote}`;
       }
       ctx.observations.push({
         item: itemName, qty: input.quantity,
         samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
       });
-      return `اتضاف "${itemName}" (${input.quantity}) للمخزون`;
+      return `اتضاف "${itemName}" (${input.quantity}) للمخزون${tickedNote}`;
     }
     case "delete_inventory_item": {
       const itemName = String(input.item_name).trim();

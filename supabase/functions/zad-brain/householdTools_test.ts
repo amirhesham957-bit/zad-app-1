@@ -138,3 +138,24 @@ Deno.test("someone outside the family never touches its rows", async () => {
   assert(out.startsWith("مرفوض"), out);
   assertEquals(tables.zad_shopping_list[0].is_purchased, false);
 });
+
+Deno.test("a purchase ticks the household's open line for it, once, and says so", async () => {
+  const { sb, tables, writes } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [],
+    zad_shopping_list: [
+      { id: "l-mom", user_id: "mom", family_id: "f1", item_name: "لبن", is_purchased: false, created_at: "2026-10-10" },
+      { id: "l-bread", user_id: "mom", family_id: "f1", item_name: "عيش", is_purchased: false, created_at: "2026-10-10" },
+    ],
+  });
+  const out = await executeTool(sb, "dad", "add_inventory_item", { item_name: "لبن", quantity: 1 }, {}, freshContext("dad"), {} as any);
+  assert(out.includes("واتشطب \"لبن\" من قايمة التسوق"), out);
+  assertEquals(tables.zad_shopping_list.find((l) => l.id === "l-mom")?.is_purchased, true);
+  assertEquals(tables.zad_shopping_list.find((l) => l.id === "l-bread")?.is_purchased, false);
+  // Its own entry in the action log, so «تراجع» can put the line back.
+  assertEquals(writes.some((w) => w.table === "agent_actions" && w.row.target_id === "l-mom"), true);
+
+  // Topping up an item already in the pantry ticks too; with no open line, nothing is said.
+  const again = await executeTool(sb, "dad", "add_inventory_item", { item_name: "لبن", quantity: 1 }, {}, freshContext("dad"), {} as any);
+  assert(!again.includes("اتشطب"), again);
+});
