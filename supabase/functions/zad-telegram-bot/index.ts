@@ -27,6 +27,7 @@ import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallb
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { voiceReplyEmotion } from "./voiceReply.ts";
+import { receiptPriceReports, tidyReportText } from "./receiptPrices.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
@@ -1534,6 +1535,21 @@ bot.on("message:photo", async (ctx) => {
   const itemsSummary = addedCount > 0
     ? `✅ اتضاف ${addedCount} صنف للمخزون${result.storeName ? ` من ${result.storeName}` : ""}.`
     : "";
+
+  // أسعار البون للجمهور («اتشاف هنا» و«أرخص هنا»)، زي فاتورة التطبيق: باسم صاحب البون وعملة
+  // حسابه (zad_report_price_for، 20261011180000). على قد الجهد — المخزن والمصروف هما الأهم.
+  for (const r of receiptPriceReports(result.storeName, route === "grocery" ? result.items : [])) {
+    const { data: rep, error: repErr } = await sb.rpc("zad_report_price_for", {
+      p_user: userId, p_report: crypto.randomUUID(), p_item: r.item, p_price: r.unitPrice,
+      p_store: tidyReportText(result.storeName), p_category: r.category,
+    });
+    if (repErr) {
+      console.error("[photo] price report failed:", repErr.message);
+      break;
+    }
+    // too_many / invalid_currency: الباقي هيترفض بنفس السبب.
+    if ((rep as { ok?: boolean } | null)?.ok === false) break;
+  }
 
   if (result.total > 0) {
     const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle())
