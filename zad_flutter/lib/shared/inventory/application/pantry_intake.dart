@@ -8,6 +8,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 
@@ -50,8 +51,18 @@ Future<PantryIntakeResult> intakeIntoPantry(
     final shopping = ref.read(shoppingListRepositoryProvider);
     final readings = ref.read(consumptionObservationsProvider);
 
+    // Under the names the home chose, as the server will write them.
+    final names = householdProductNames(ref);
     final plan = planIntake(
-      lines: lines,
+      lines: <IntakeLine>[
+        for (final l in lines)
+          IntakeLine(
+            name: names.canonical(l.name),
+            quantity: l.quantity,
+            unit: l.unit,
+            category: l.category,
+          ),
+      ],
       pantry: inventory.cached(),
       shopping: shopping.cached(),
     );

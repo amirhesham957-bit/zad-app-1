@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
@@ -75,7 +76,8 @@ class ShoppingController extends Notifier<ShoppingView> {
     double estimatedPrice = 0,
     String? store,
   }) async {
-    final name = itemName.trim();
+    // The name the home chose, as the server will write it.
+    final name = householdProductNames(ref).canonical(itemName.trim());
     if (name.isEmpty) return;
     await ref
         .read(shoppingListRepositoryProvider)
