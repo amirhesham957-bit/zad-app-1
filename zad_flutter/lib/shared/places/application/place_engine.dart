@@ -93,9 +93,13 @@ abstract interface class PlaceServer {
   /// `store_arrival`: the alert to show, or null when the server has nothing
   /// to say (nothing missing, muted, already told today). Throws when it
   /// cannot be reached.
+  ///
+  /// [at] is the shop's own point (its fence's centre — a public place, not
+  /// the phone's), so the alert can carry a map button to it.
   Future<PushAlert?> storeArrival({
     required String name,
     required StoreKind kind,
+    GeoPoint? at,
   });
 
   /// `place_event` back_home. Throws when it cannot be reached.
@@ -293,7 +297,7 @@ class PlaceEngine {
     final zone = tz.getLocation(state.zone);
     final now = _now();
     final done = <int>[];
-    final entered = <FencedShop>[];
+    final entered = <({String fence, FencedShop shop})>[];
     GeoPoint? lookFrom;
     GeoPoint? lastSeen;
 
@@ -337,22 +341,29 @@ class PlaceEngine {
         final shop = state.shops[e.fence];
         if (shop != null &&
             e.transition == PlaceTransition.enter &&
-            now.difference(e.at) <= kStaleArrival) {
-          entered.add(shop);
+            now.difference(e.at) <= kStaleArrival &&
+            !isStillHome(state) &&
+            !isRegistrationEcho(state, e.at)) {
+          entered.add((fence: e.fence, shop: shop));
         }
       }
       done.add(e.key);
     }
 
     // One alert per run: two shops side by side are one stop, not two.
-    final shop = entered
-        .where((s) => !_alertedRecently(state, s.name, now))
+    final arrival = entered
+        .where((s) => !_alertedRecently(state, s.shop.name, now))
         .firstOrNull;
-    if (shop != null) {
+    if (arrival != null) {
+      final shop = arrival.shop;
+      final fence = state.shopFences
+          .where((f) => f.id == arrival.fence)
+          .firstOrNull;
       try {
         final alert = await _server.storeArrival(
           name: shop.name,
           kind: shop.kind,
+          at: fence == null ? null : GeoPoint(fence.lat, fence.lon),
         );
         state = state.copyWith(
           alerted: <String, DateTime>{
@@ -413,3 +424,20 @@ final Provider<PlaceEngine?> placeEngineProvider = Provider<PlaceEngine?>((
     now: ref.watch(nowProvider),
   );
 });
+
+/// Home is known and the phone has not left its circle since: a shop "enter"
+/// now is the shop down the street seen through the walls (a 120 m circle,
+/// indoor GPS), not a trip to it. Unknown home = cannot tell, so not home.
+@visibleForTesting
+bool isStillHome(PlaceState state) =>
+    state.home != null && state.leftAt == null;
+
+/// An enter reported within [kRegistrationEcho] of the shops being
+/// registered — Android's initial trigger for a circle the phone was already
+/// in.
+@visibleForTesting
+bool isRegistrationEcho(PlaceState state, DateTime at) {
+  final registered = state.refreshedAt;
+  if (registered == null || at.isBefore(registered)) return false;
+  return at.difference(registered) < kRegistrationEcho;
+}

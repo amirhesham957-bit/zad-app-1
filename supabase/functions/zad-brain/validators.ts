@@ -12,6 +12,11 @@ export type Validation = { ok: true } | { ok: false; reason: string };
 
 export interface RunContext {
   userId: string;
+  /**
+   * كلام العميل نفسه في المحادثة دي (الرسالة + رسايله اللي قبلها). موجود في لفة الشات بس؛ الأدوات اللي
+   * لازم تاخد قيمة من كلامه بالحرف (رقم فني) بتترفض من غيره.
+   */
+  heard?: string;
   counts: Record<string, number>;
   mutationCount: number;
   insightCount: number;
@@ -444,6 +449,33 @@ export const validateAddPharmacyItem: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+// فني بيثق فيه (الموجة ٣): نفس قيود zad_trusted_technicians (20261006014219)، والرقم لازم العميل
+// يكون قاله — «ماتألّفش رقم تليفون أبداً» (homeEmergency.ts) بقت حد مش طلب.
+const TECHNICIAN_PHONE_RE = /^\+?[0-9][0-9 -]{5,19}$/;
+const TECHNICIAN_TRADE_SET = new Set(["plumber", "electrician", "gas", "ac", "carpenter", "locksmith", "appliances", "other"]);
+
+/** أرقام لاتيني بس — «٠١٠٠» و«0100» واحد. */
+export function latinDigits(text: string): string {
+  return text.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+}
+
+export const validateSaveTrustedTechnician: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["save_trusted_technician"] ?? 0) >= 3) return { ok: false, reason: "٣ فنيين بالكتير في المرة" };
+  const name = String(input.name ?? "").trim();
+  if (name.length < 2 || name.length > 60) return { ok: false, reason: "اسم الفني لازم من ٢ لـ٦٠ حرف" };
+  if (!TECHNICIAN_TRADE_SET.has(String(input.trade ?? ""))) {
+    return { ok: false, reason: "trade لازم واحدة من: plumber, electrician, gas, ac, carpenter, locksmith, appliances, other" };
+  }
+  const phone = latinDigits(String(input.phone ?? "")).trim();
+  if (!TECHNICIAN_PHONE_RE.test(phone)) return { ok: false, reason: "الرقم مش رقم تليفون — أرقام بس (و+ في الأول لو دولي)" };
+  const digits = phone.replace(/\D/g, "");
+  if (!ctx.heard || !latinDigits(ctx.heard).replace(/\D/g, "").includes(digits)) {
+    return { ok: false, reason: "الرقم ده العميل ماقالوش — اسأله عليه وماتألّفش رقم" };
+  }
+  if (input.notes !== undefined && String(input.notes).trim().length > 120) return { ok: false, reason: "الملاحظة أطول من ١٢٠ حرف" };
+  return { ok: true };
+};
+
 // كود بلد ISO 3166-1 alpha-2 وكود عملة ISO 4217 — الاتنين حرفين/تلاتة كابيتال بالظبط.
 const COUNTRY_RE = /^[A-Z]{2}$/;
 const CURRENCY_RE = /^[A-Z]{3}$/;
@@ -855,6 +887,21 @@ export const APPOINTMENT_RECURRENCES = ["once", "hourly", "daily", "weekly", "mo
 const ISO_WITH_ZONE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 const MAX_APPOINTMENT_DAYS_AHEAD = 366;
 
+/**
+ * تكلفة الميعاد (20261010190000): بتتحجز من المتاح، فلازم تكون الرقم اللي العميل قاله — مش تقدير. null = امسحها.
+ * رقم مكتوب بالحروف («أربعمية») مايعدّيش: الموديل يسأله بالرقم بدل ما يحجز حاجة ماتقالتش.
+ */
+function expectedCostRejection(input: any, ctx: RunContext): string | null {
+  if (input.expected_cost === undefined || input.expected_cost === null) return null;
+  const cost = Number(input.expected_cost);
+  if (!Number.isFinite(cost) || cost <= 0 || cost > 1_000_000) return "expected_cost لازم رقم موجب (لحد مليون)";
+  const digits = String(Math.round(cost));
+  if (!ctx.heard || !latinDigits(ctx.heard).replace(/[,٬.\s]/g, "").includes(digits)) {
+    return "التكلفة دي العميل ماقالهاش بالرقم — اسأله «الكشف بكام؟» وماتقدّرش";
+  }
+  return null;
+}
+
 export const validateAddAppointment: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["add_appointment"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ مواعيد في المرة" };
   const title = String(input.title ?? "").trim();
@@ -878,6 +925,8 @@ export const validateAddAppointment: Validator = (input, _snap, ctx) => {
     if (!Number.isInteger(m) || m < 0 || m > 10080) return { ok: false, reason: "التذكير قبلها لازم دقايق من ٠ لـ ١٠٠٨٠" };
   }
   if (input.place_label != null && String(input.place_label).length > 120) return { ok: false, reason: "اسم المكان طويل أوي" };
+  const cost = expectedCostRejection(input, ctx);
+  if (cost) return { ok: false, reason: cost };
   return { ok: true };
 };
 
@@ -893,9 +942,11 @@ export const validateUpdateAppointment: Validator = (input, _snap, ctx) => {
       return { ok: false, reason: "starts_at لازم ISO 8601 فيه المنطقة الزمنية" };
     }
   }
-  if (input.status === undefined && input.starts_at === undefined && input.title === undefined) {
-    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم" };
+  if (input.status === undefined && input.starts_at === undefined && input.title === undefined && input.expected_cost === undefined) {
+    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم أو التكلفة" };
   }
+  const cost = expectedCostRejection(input, ctx);
+  if (cost) return { ok: false, reason: cost };
   return { ok: true };
 };
 
@@ -969,6 +1020,7 @@ export const VALIDATORS: Record<string, Validator> = {
   add_pharmacy_item: validateAddPharmacyItem,
   update_pharmacy_item: validateUpdatePharmacyItem,
   set_market: validateSetMarket,
+  save_trusted_technician: validateSaveTrustedTechnician,
   log_pharmacy_dose: validateLogPharmacyDose,
   delete_pharmacy_item: validateDeletePharmacyItem,
   schedule_task: validateScheduleTask,
@@ -991,6 +1043,18 @@ export const VALIDATORS: Record<string, Validator> = {
   suggest_recipes: (_i, _s, ctx) =>
     (ctx.counts["suggest_recipes"] ?? 0) >= 1
       ? { ok: false, reason: "سألت شيف زاد خلاص في اللفة دي" } : { ok: true },
+  // سعر دوا (الموجة ٤): بحث نت موجّه — مرتين في اللفة، واسم معقول.
+  medicine_price: (input, _s, ctx) => {
+    const name = String(input?.name ?? "").trim();
+    if (name.length < 2 || name.length > 80) return { ok: false, reason: "اسم الدوا لازم من ٢ لـ٨٠ حرف" };
+    return (ctx.counts["medicine_price"] ?? 0) >= 2 ? { ok: false, reason: "دورت على سعرين خلاص في اللفة دي" } : { ok: true };
+  },
+  // قراية بس — الجو، مرتين في اللفة كفاية (كاش ٣ ساعات، بس كل مدينة جديدة نداء خارجي).
+  weather_forecast: (_i, _s, ctx) =>
+    (ctx.counts["weather_forecast"] ?? 0) >= 2 ? { ok: false, reason: "جبت الجو خلاص في اللفة دي" } : { ok: true },
+  // قراية بس — رابط محل متسجل، مرتين في اللفة كفاية.
+  store_location: (_i, _s, ctx) =>
+    (ctx.counts["store_location"] ?? 0) >= 2 ? { ok: false, reason: "جبت اللوكيشن خلاص في اللفة دي" } : { ok: true },
   home_health_score: (_i, _s, ctx) =>
     (ctx.counts["home_health_score"] ?? 0) >= 2
       ? { ok: false, reason: "حسبت الدرجة خلاص في اللفة دي" } : { ok: true },
@@ -1053,7 +1117,7 @@ export const VALIDATORS: Record<string, Validator> = {
  */
 export const MUTATING_TOOLS = [
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
-  "remember_occasion",
+  "remember_occasion", "save_trusted_technician",
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
@@ -1106,7 +1170,7 @@ export const CONFIRM_REQUIRED_TOOLS = ["log_transaction", "update_transaction", 
 export const CHILD_BLOCKED_TOOLS = [
   ...CONFIRM_REQUIRED_TOOLS,
   "set_transaction_category", "merge_duplicate_expense", "reconcile_cash_balance",
-  "confirm_cycle_start", "confirm_obligation", "set_market",
+  "confirm_cycle_start", "confirm_obligation", "set_market", "save_trusted_technician",
   "add_subscription", "update_subscription", "delete_subscription",
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",

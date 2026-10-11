@@ -157,3 +157,39 @@ Deno.test("asked_this_morning: nothing asked, never sent, or yesterday's questio
   assertEquals(askedThisMorning({ sent_at: new Date(NOW - ASKED_RELEVANT_MS - 1).toISOString(), facts: { daily_question: "أناديك بإيه؟" } }, NOW), null);
   assertEquals(askedThisMorning(null, NOW), null);
 });
+
+// مبلغ غريب (الموجة ٣): ٥ قهاوي عادية بـ٥٠، وواحدة امبارح بـ٤٠٠.
+const usualCoffee = () => [tx(40), tx(33), tx(26), tx(19), tx(12, { amount: 60 })];
+
+Deno.test("curiosity: a spend at three times its category's usual is asked about first, with its id", () => {
+  const c = ask([...usualCoffee(), tx(1, { id: "odd", title: "عزومة", amount: 400 })]);
+  assertEquals(c?.kind, "amount_outlier");
+  assertEquals(c?.key, "outlier:odd");
+  assertEquals(c?.transaction_id, "odd");
+  assertEquals(c?.question, "الـ400 اللي اتسجلت امبارح في «مطاعم وكافيهات» («عزومة») أعلى بكتير من العادي (حوالي 50) — كانت حاجة مميزة؟");
+  assert(c!.record.includes("update_transaction"));
+  // قبل العادة اللي سكتت: الحركة لسه طازة.
+  const both = ask([...quietCoffee(), ...usualCoffee().map((t) => ({ ...t, category: "البقالة", title: "عيش" })),
+    tx(1, { id: "odd2", title: "عيش", category: "البقالة", amount: 300 })]);
+  assertEquals(both?.kind, "amount_outlier");
+});
+
+Deno.test("curiosity: no outlier under three times, on a thin history, after three days, or once asked", () => {
+  assertEquals(ask([...usualCoffee(), tx(1, { amount: 140 })])?.kind, undefined);
+  // ٤ حركات بس قبلها = مفيش «عادي».
+  assertEquals(ask([...usualCoffee().slice(1), tx(1, { amount: 400 })])?.kind, undefined);
+  // من ٤ أيام = مش طازة.
+  assertEquals(ask([...usualCoffee(), tx(4, { amount: 400 })])?.kind, undefined);
+  assertEquals(ask([...usualCoffee(), tx(1, { id: "odd", amount: 400 })], ["outlier:odd"])?.kind, undefined);
+  // «أخرى» مالهاش «عادي» — دي فجوة تصنيف، سؤالها التاني.
+  const other = usualCoffee().map((t) => ({ ...t, category: "أخرى" }));
+  assertEquals(ask([...other, tx(1, { id: "x", category: "أخرى", amount: 400 })])?.kind, "unlabelled_spend");
+  // من غير فئة خالص (null) = نفس الحكاية، ومن غير ما يقع.
+  assertEquals(ask([...usualCoffee(), tx(1, { id: "n", category: null, amount: 400 })])?.transaction_id, "n");
+});
+
+Deno.test("curiosity: one old odd spend doesn't move «usual» — it is the median", () => {
+  const c = ask([...usualCoffee(), tx(20, { amount: 5000 }), tx(1, { id: "odd", amount: 400 })]);
+  assertEquals(c?.kind, "amount_outlier");
+  assert(c!.question.includes("حوالي 50"));
+});

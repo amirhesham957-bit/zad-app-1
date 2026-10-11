@@ -87,6 +87,7 @@
     "id",
     "kind",
     "last_run_result",
+    "map_url",
     "recurrence",
     "result",
     "scheduled_for",
@@ -433,7 +434,8 @@
     "status",
     "title",
     "txn_kind",
-    "user_id"
+    "user_id",
+    "wallet"
   ],
   "telegram_processed_updates": [
     "processed_at",
@@ -1042,6 +1044,7 @@
   ],
   "zad_appointments": [
     "created_at",
+    "expected_cost",
     "for_person",
     "id",
     "kind",
@@ -1136,5 +1139,23 @@
     "subject",
     "user_id",
     "weekday"
+  ],
+  "zad_weather_cache": [
+    "days",
+    "fetched_at",
+    "label",
+    "lat",
+    "lon",
+    "place_key"
+  ],
+  "zad_medicine_prices": [
+    "country",
+    "currency",
+    "found_at",
+    "name",
+    "name_key",
+    "price_high",
+    "price_low",
+    "sources"
   ]
 }

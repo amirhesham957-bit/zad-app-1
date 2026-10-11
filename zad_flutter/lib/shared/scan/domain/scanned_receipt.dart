@@ -10,6 +10,7 @@
 library;
 
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// The eleven categories a transaction may carry.
 ///
@@ -132,6 +133,7 @@ class ScannedReceipt {
     required this.type,
     this.items = const <ScannedReceiptItem>[],
     this.purchasedOn,
+    this.paidWith,
   });
 
   /// Reads the `analyze_receipt` response.
@@ -145,6 +147,7 @@ class ScannedReceipt {
         .whereType<ScannedReceiptItem>()
         .toList(),
     purchasedOn: _printedDate(json['purchaseDate']),
+    paidWith: _paidWith(json['paymentMethod']),
   );
 
   /// The amount paid, after VAT and discounts — or, for a [ReceiptType
@@ -167,6 +170,11 @@ class ScannedReceipt {
   /// meaningless), or null when none was printed or the server could not
   /// vouch for it. It decides the expense's month — see [receiptSpentAt].
   final DateTime? purchasedOn;
+
+  /// How it was paid, as the receipt says (`paymentMethod`: a card, cash, or a
+  /// mobile wallet — the last is a bank-account payment here), or null when
+  /// the paper does not say. The sheet shows it for the customer to confirm.
+  final Wallet? paidWith;
 
   /// Whether this reading is worth showing the customer at all.
   ///
@@ -193,6 +201,7 @@ class ScannedReceipt {
     String? storeName,
     ReceiptType? type,
     List<ScannedReceiptItem>? items,
+    Wallet? paidWith,
   }) => ScannedReceipt(
     total: total ?? this.total,
     category: category ?? this.category,
@@ -200,6 +209,7 @@ class ScannedReceipt {
     type: type ?? this.type,
     items: items ?? this.items,
     purchasedOn: purchasedOn,
+    paidWith: paidWith ?? this.paidWith,
   );
 }
 
@@ -236,3 +246,11 @@ DateTime receiptSpentAt(DateTime? printedOn, DateTime now, tz.Location zone) {
     12,
   ).toUtc();
 }
+
+/// `paymentMethod` → the wallet the expense is recorded against.
+Wallet? _paidWith(Object? raw) => switch (raw) {
+  'card' => Wallet.card,
+  'cash' => Wallet.cash,
+  'wallet' => Wallet.bank,
+  _ => null,
+};

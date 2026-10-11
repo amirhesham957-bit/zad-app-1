@@ -84,6 +84,24 @@ String normalizeItemName(String name) => name
     .map((w) => w.startsWith('ال') ? w.substring(2) : w)
     .join(' ');
 
+/// The pantry's own "same item", for a row added by hand: the same name once
+/// normalised, or the same words in another order («برانش توست» / «توست
+/// برانش»). Narrower than [itemNamesMatch] on purpose — a name typed in full is
+/// meant, so «لبن زبادي» is not «لبن». The server's `pantryMatch.ts` and the
+/// one-off merge (`zad_inventory_name_key`) use the same rule.
+bool sameItemName(String a, String b) {
+  final na = normalizeItemName(a);
+  final nb = normalizeItemName(b);
+  if (na.isEmpty || nb.isEmpty) return false;
+  if (na == nb) return true;
+  List<String> words(String n) =>
+      (n.split(' ').where((w) => w.isNotEmpty).toSet().toList()..sort());
+  final wa = words(na);
+  final wb = words(nb);
+  return wa.length == wb.length &&
+      Iterable<int>.generate(wa.length).every((i) => wa[i] == wb[i]);
+}
+
 /// The Kotlin engine's `namesMatch`: the same name once normalised, or enough
 /// shared words of three letters or more — all of the shorter name's, up to
 /// two.

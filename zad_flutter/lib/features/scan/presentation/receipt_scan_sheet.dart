@@ -28,6 +28,7 @@ import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the scanner.
 Future<void> showReceiptScanSheet(BuildContext context, WidgetRef ref) {
@@ -285,6 +286,75 @@ class _ReadingState extends ConsumerState<_Reading> {
                 ),
             ],
           ),
+
+          const SizedBox(height: ZadSpacing.lg),
+          Text(
+            receipt.paidWith == null
+                ? 'اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'
+                : 'اتدفعت',
+            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          Wrap(
+            spacing: ZadSpacing.sm,
+            children: <Widget>[
+              for (final (wallet, label) in kReceiptWallets)
+                ChoiceChip(
+                  label: Text(label),
+                  selected: wallet == receipt.paidWith,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.correct(paidWith: wallet),
+                ),
+            ],
+          ),
+
+          if (view.bankTwin case final twin?) ...<Widget>[
+            const SizedBox(height: ZadSpacing.lg),
+            // One card payment, two messages: the bank's and this paper.
+            // Saved twice, it would be counted twice.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: ZadColors.mustardOchre.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(ZadRadii.card),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(ZadSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'المبلغ ده اتسجل من البنك'
+                      '${twin.bankName == null ? '' : ' (${twin.bankName})'}: '
+                      '${_plain(twin.amount)} — «${twin.title}»',
+                      style: ZadType.bodyMedium,
+                    ),
+                    const SizedBox(height: ZadSpacing.sm),
+                    Wrap(
+                      spacing: ZadSpacing.sm,
+                      children: <Widget>[
+                        ChoiceChip(
+                          label: const Text('نفس العملية'),
+                          selected: view.mergeWithBank,
+                          onSelected: busy
+                              ? null
+                              : (_) => controller.setMergeWithBank(value: true),
+                        ),
+                        ChoiceChip(
+                          label: const Text('عملية تانية'),
+                          selected: !view.mergeWithBank,
+                          onSelected: busy
+                              ? null
+                              : (_) =>
+                                    controller.setMergeWithBank(value: false),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
 
           if (view.offersPantry) ...<Widget>[
             const SizedBox(height: ZadSpacing.md),
@@ -676,3 +746,11 @@ String _plain(double value) {
       ? rounded.toStringAsFixed(0)
       : NumberFormat('0.##', 'en').format(rounded);
 }
+
+/// The three ways a receipt is paid, as the sheet offers them. A mobile
+/// wallet or InstaPay is a payment from the bank account.
+const List<(Wallet, String)> kReceiptWallets = <(Wallet, String)>[
+  (Wallet.card, 'فيزا / بطاقة'),
+  (Wallet.cash, 'كاش'),
+  (Wallet.bank, 'محفظة / إنستاباي'),
+];

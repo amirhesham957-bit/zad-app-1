@@ -1,4 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
+import * as telegramModule from "./telegram.ts";
 import {
   normalizeBindingCode, parseDismissCallback, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
@@ -362,4 +363,40 @@ import { doseAlreadyReply } from "./telegram.ts";
 Deno.test("a dose answered twice says it is already recorded, not «اتسجلت» again (2026-10-01)", () => {
   assertEquals(doseAlreadyReply(["كريم بشرة"]), "جرعة كريم بشرة دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.");
   assertEquals(doseAlreadyReply(["كريم بشرة", "كريم بشرة"]).includes("كريم بشرة وكريم"), false);
+});
+
+Deno.test("a code that moved the chat says so, and only a refused code asks for a new one", () => {
+  const { bindingReply, unlinkReply } = telegramModule;
+  assert(bindingReply("moved").includes("حسابك الجديد"));
+  assert(bindingReply("bound").includes("تم الربط"));
+  assert(bindingReply("already_bound").includes("بالفعل"));
+  assert(bindingReply("invalid").includes("كود ربط جديد"));
+  // The old refusal must never come back: a moved chat is not a failure.
+  for (const s of ["bound", "moved", "already_bound", "invalid", null] as const) {
+    assert(!bindingReply(s).includes("فشل الربط"));
+  }
+  assert(!bindingReply(null).includes("كود ربط جديد"));
+  assert(unlinkReply("unlinked").includes("فك الربط"));
+  assert(unlinkReply("not_bound").includes("مش مربوط"));
+});
+
+Deno.test("the admin chat is a whole number or nothing — a group's id is negative", () => {
+  const { adminChatId } = telegramModule;
+  assertEquals(adminChatId("-1001234567890"), -1001234567890);
+  assertEquals(adminChatId(" 123456789 "), 123456789);
+  for (const bad of [undefined, null, "", "  ", "0", "abc", "12.5", "@zad_admins", "1e9"]) {
+    assertEquals(adminChatId(bad), null, String(bad));
+  }
+});
+
+Deno.test("the map button takes only the link zad-brain builds", () => {
+  const { mapButtonRow } = telegramModule;
+  const url = "https://www.google.com/maps/search/?api=1&query=30.05123,31.24000";
+  assertEquals(mapButtonRow(url), [{ text: "📍 افتح على الخريطة", url }]);
+  for (const bad of [
+    undefined, 42, "", "https://evil.example/maps", "http://www.google.com/maps/search/?api=1&query=30.1,31.2",
+    "https://www.google.com/maps/search/?api=1&query=30.1,31.2&x=1", "javascript:alert(1)",
+  ]) {
+    assertEquals(mapButtonRow(bad), null, String(bad));
+  }
 });

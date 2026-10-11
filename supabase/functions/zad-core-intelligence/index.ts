@@ -18,7 +18,25 @@ import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETABLE_PROMPT } from "./documentScan.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
-import { receiptPurchaseDate } from "./receiptDate.ts";
+import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
+import { RECEIPT_SYSTEM_PROMPT } from "./receiptPrompt.ts";
+import { inventoryPrompt, medicinePrompt } from "./visionPrompts.ts";
+
+/**
+ * بلد العميل لبرومبتات الرؤية (visionPrompts.ts): بس لو user_id هو صاحب التوكن (نفس حراسة PERSONAL_ACTIONS)، أو النداء
+ * من السيرفر بمفتاح الخدمة (البوت والعقل). أي حاجة تانية أو فشل = null، والبرومبت بيقول «بلد عربي».
+ */
+async function callerCountry(req: Request, userId: unknown): Promise<string | null> {
+  if (typeof userId !== "string" || !userId) return null;
+  const token = bearerToken(req);
+  if (tokenSubject(token) !== userId && !isServiceRoleToken(token, supabaseKey)) return null;
+  try {
+    const { data } = await supabase.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    return (data as { country?: string | null } | null)?.country ?? null;
+  } catch {
+    return null;
+  }
+}
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
 
@@ -1950,22 +1968,7 @@ Deno.serve(async (req: Request) => {
         // item visible") made the small vision models return two or three generic nouns
         // for a full fridge, and invent a plausible item rather than return [] when the
         // photo wasn't groceries at all.
-        const systemPrompt = "You are an inventory-tracking vision AI for a Saudi household app called ZAD. " +
-          "Look at the image carefully and identify EVERY visible product, food item, or branded package — " +
-          "read the label text where it is legible and prefer the real product name over a generic noun. " +
-          "Even if the image shows a single bottle, can, box or bag, list it. " +
-          "If the image contains no grocery/household products at all (a document, a person, a landscape), " +
-          "return an empty items array — never invent a product just to avoid an empty list. " +
-          // كان المثال في الـ schema نفسه بيقول "عام" — قيمة الموديل بيرجعها فعلاً
-          // غالباً، ومش من فئات تابات المخزون في التطبيق (InventoryScreen.kt's
-          // categoryDefs)، فالصنف كان بيظهر تحت "أخرى" دايماً حتى لو واضح إنه لبن/جبنة.
-          "`category` MUST be exactly one of these Arabic values — never anything else, never \"عام\": " +
-          "البقالة، الخضار، الفواكه، اللحوم، الألبان، المشروبات، العناية، أخرى. " +
-          "Milk, cheese, yogurt, laban → الألبان. Fresh vegetables → الخضار. Fresh fruit → الفواكه. " +
-          "Raw/frozen meat, chicken, fish → اللحوم. Juice, soda, water → المشروبات. " +
-          "Soap, shampoo, cleaning supplies → العناية. Packaged/canned/dry goods → البقالة. " +
-          "Return ONLY a JSON object, no markdown and no commentary: " +
-          "{\"items\":[{\"name\":\"\",\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"الألبان\"}]}";
+        const systemPrompt = inventoryPrompt(await callerCountry(req, user_id));
         const userPrompt = "List every product visible in this image with its estimated quantity, unit and category.";
         // callVisionModel rotates the whole Gemini key pool internally; images never hit Groq.
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
@@ -2008,19 +2011,7 @@ Deno.serve(async (req: Request) => {
       case "analyze_medicine_image": {
         const { image_base64, mime_type } = payload || {};
         if (!image_base64) return jsonResponse({ medicine: null });
-        const systemPrompt = "You are a specialized medical package / prescription scanner AI for a Saudi family health app called ZAD. " +
-          "Carefully examine the medicine packaging, box, blister pack, or bottle in the image and extract: " +
-          "1. `name`: Trade / brand name (e.g. 'Panadol Extra', 'Augmentin 1g', 'Concor 5mg', 'بنادول'). " +
-          "2. `active_ingredient`: Scientific / active substance if legible (e.g. 'Paracetamol + Caffeine', 'Bisoprolol'). " +
-          "3. `dosage`: Dosage strength or directions printed (e.g. '500 mg', 'قرص بعد الأكل'). " +
-          "4. `category`: One of: 'عام'، 'مسكن'، 'مضاد حيوي'، 'فيتامين'، 'مزمن'. " +
-          "5. `quantity`: Number of pills/units in the pack (integer, default 1). " +
-          "6. `unit`: Unit in Arabic (e.g. 'قرص', 'حبة', 'كبسولة', 'مل', 'بخاخ', 'نقطة', 'كريم', 'كيس', 'أمبول', 'علبة'). " +
-          "7. `expiry_date`: Expiry date in YYYY-MM-DD or YYYY-MM format if visible on pack, or null. " +
-          "8. `daily_dose_count`: Recommended daily dose frequency if stated (e.g. 1, 2, 3), default 1. " +
-          "9. `suggested_times`: Array of 24-hour time strings (e.g. ['08:00', '20:00']). " +
-          "Return ONLY a JSON object: " +
-          "{\"name\":\"\",\"active_ingredient\":\"\",\"dosage\":\"\",\"category\":\"مسكن\",\"quantity\":20,\"unit\":\"قرص\",\"expiry_date\":null,\"daily_dose_count\":1,\"suggested_times\":[\"08:00\"]}";
+        const systemPrompt = medicinePrompt(await callerCountry(req, user_id));
         const userPrompt = "Extract the medicine information from this box or package.";
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
         if (!visionResult) {
@@ -2083,37 +2074,8 @@ Deno.serve(async (req: Request) => {
       case "analyze_receipt": {
         const { image_base64, mime_type } = payload || {};
         if (!image_base64) return jsonResponse({ total: 0, category: "", storeName: "", items: [] });
-        const systemPrompt = "You are a receipt-scanning AI for a Saudi household app called ZAD. " +
-          "Receipts are usually in Arabic, sometimes bilingual, and amounts are in SAR. " +
-          "Read every line item with its own price; keep the item names exactly as printed. " +
-          "`total` is the final amount actually paid (after VAT and any discount), as a number with no currency symbol. " +
-          "If a field is genuinely unreadable, leave it empty or 0 rather than guessing. " +
-          // `category` used to be an open string, and an open string is an invitation to
-          // invent one: a plain supermarket receipt came back classified "مواليد" on
-          // 2026-08-15. Every consumer of this field (BudgetTracker's category cards,
-          // zad_budget_state's by_category, the donut on ZadIntelligenceScreen) buckets by
-          // exact match against BudgetTracker.STANDARD_CATEGORIES, so anything outside that
-          // list silently becomes its own orphan bucket. The list is repeated here verbatim.
-          "`category` MUST be exactly one of these eleven strings, copied character for character — " +
-          "never invent a new one, never translate them, never return an empty string: " +
-          "\"البقالة\", \"المطاعم\", \"الفواتير\", \"المواصلات\", \"الوقود\", \"الاشتراكات\", " +
-          "\"الأقساط\", \"الرعاية الصحية\", \"التعليم\", \"تحويلات\", \"أخرى\". " +
-          "Pick \"البقالة\" for supermarkets and food shopping, \"المطاعم\" for restaurants and cafés, " +
-          "\"الوقود\" for petrol stations, \"الرعاية الصحية\" for pharmacies and clinics. " +
-          "If none of them genuinely fits, return \"أخرى\" — that is what it is for. " +
-          "Also classify `receiptType`: \"pharmacy\" if this is a pharmacy/drugstore receipt " +
-          "(medicine names, dosages like 500mg, tablet/syrup/capsule units); \"budget_card\" if " +
-          "this is NOT an itemized purchase receipt at all but a bank/salary/wallet balance " +
-          "screenshot or summary card (account balance, salary deposit notice, monthly spending " +
-          "summary) — for this type `items` should be empty and `total` should be the single " +
-          "balance/salary figure shown, if any; \"general\" for non-grocery non-pharmacy " +
-          "itemized receipts (restaurants, fuel, services); otherwise \"grocery\". " +
-          "`purchaseDate` is the date printed on the receipt as YYYY-MM-DD (convert Hijri or " +
-          "day-first dates to Gregorian YYYY-MM-DD); if no date is printed or it is unreadable, " +
-          "return an empty string — never today's date as a guess. " +
-          "Return ONLY a JSON object, no markdown and no commentary: " +
-          "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
-        const userPrompt = "Extract the store name, the total paid, the printed purchase date, a spending category, the receipt type, and every line item from this receipt.";
+        const systemPrompt = RECEIPT_SYSTEM_PROMPT;
+        const userPrompt = "Extract the store name, the total paid, the printed purchase date, how it was paid, a spending category, the receipt type, and every line item from this receipt.";
         // callVisionModel rotates the whole Gemini key pool internally; images never hit Groq.
         const visionResult = await logged(user_id, action, "callVisionModel", { args: [systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"] }, () => callVisionModel(systemPrompt, userPrompt, image_base64, mime_type || "image/jpeg"));
         if (visionResult) {
@@ -2132,6 +2094,7 @@ Deno.serve(async (req: Request) => {
                 // null unless it is a real date in the last year: a misread date
                 // must not move the expense into some other month.
                 purchaseDate: receiptPurchaseDate(parsed.purchaseDate),
+                paymentMethod: receiptPaymentMethod(parsed.paymentMethod),
                 receiptType: parsed.receiptType || "grocery",
                 items: parsed.items || [],
               });

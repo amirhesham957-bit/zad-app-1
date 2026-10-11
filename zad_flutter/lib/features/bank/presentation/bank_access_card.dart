@@ -49,6 +49,15 @@ class BankAccessCard extends ConsumerWidget {
             'بيفضل شكله شغال. جرّب تعيد التفعيل من الإعدادات.',
         'افتح الإعدادات',
       ),
+      BankAccessHealth.stalled => (
+        ZadIcons.failed,
+        ZadColors.terracottaRust,
+        'زاد بطّل يشوف رسايل البنك',
+        'من يومين أو أكتر ماوصلش ولا إشعار، يعني أندرويد وقّف الخدمة. '
+            'اقفل السماح لزاد وافتحه تاني من الإعدادات، والمصاريف هترجع '
+            'تتسجّل لوحدها.',
+        'افتح الإعدادات',
+      ),
       BankAccessHealth.flowing => (
         ZadIcons.synced,
         ZadColors.green600,

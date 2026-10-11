@@ -105,6 +105,17 @@ class _Adding extends QuietPharmacy {
   });
 }
 
+/// Records the times the sheet saved.
+class _Timing extends QuietPharmacy {
+  new(super.view);
+
+  final List<(String, List<String>)> timed = <(String, List<String>)>[];
+
+  @override
+  Future<void> setDoseTimes(Medicine medicine, Iterable<String> times) async =>
+      timed.add((medicine.id, times.toList()));
+}
+
 Medicine _m(
   String id, {
   int remaining = 20,
@@ -157,6 +168,29 @@ void main() {
       ],
     );
     expect(cost, 200);
+  });
+
+  test('the cost says whether it is spending or the boxes', () {
+    final clinic = ZadTransaction.fromJson(<String, dynamic>{
+      'id': 't',
+      'user_id': 'u',
+      'amount': 1356.5,
+      'title': 'كشف',
+      'created_at': '2026-09-20T10:00:00Z',
+      'txn_kind': 'expense',
+      'is_expense': true,
+      'category': 'الرعاية الصحية',
+    });
+    expect(
+      pharmacyCostLabel(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
+      'صرف الصحة الشهر ده',
+    );
+    expect(
+      pharmacyCostLabel(<Medicine>[
+        _m('a', price: 80),
+      ], const <ZadTransaction>[]),
+      'أسعار علب الأدوية',
+    );
   });
 
   test('a finished course is done, not short', () {
@@ -323,5 +357,85 @@ void main() {
         'for': 'ماما',
       },
     ]);
+  });
+
+  test('saved times are the server shape: valid, padded, once, in order', () {
+    expect(
+      pc.doseTimesWire(<String>['20:00', '8:00', '24:00', '08:00', 'x']),
+      <String>['08:00', '20:00'],
+    );
+    expect(pc.doseTimesWire(<String>['25:00']), isEmpty);
+  });
+
+  Future<_Timing> pumpPharmacy(
+    WidgetTester tester,
+    List<Medicine> medicines,
+  ) async {
+    final pharmacy = _Timing(pc.PharmacyView(medicines: medicines));
+    await tester.binding.setSurfaceSize(const Size(420, 2400));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pc.pharmacyControllerProvider.overrideWith(() => pharmacy),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          transactionsControllerProvider.overrideWith(_Txns.new),
+          familyControllerProvider.overrideWith(_NoFamily.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PharmacyView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    return pharmacy;
+  }
+
+  testWidgets('a medicine with no times says so, and the sheet sets them', (
+    tester,
+  ) async {
+    // The owner's Diosmin (2026-10-10): read off a receipt, no times, and a
+    // blank «جرعات النهارده» over it.
+    final pharmacy = await pumpPharmacy(tester, <Medicine>[_m('1')]);
+
+    expect(find.text('جرعات النهارده'), findsOneWidget);
+    expect(find.textContaining('ولا دوا ليه مواعيد لسه'), findsOneWidget);
+    expect(find.text('مالوش مواعيد — مش هفكّرك بيه'), findsOneWidget);
+
+    await tester.tap(find.text('حدد مواعيده'));
+    await tester.pumpAndSettle();
+    expect(find.text('مواعيد دواء 1'), findsOneWidget);
+    final save = find.widgetWithText(FilledButton, 'احفظ المواعيد');
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+
+    await tester.tap(find.text('🌅 صباحاً'));
+    await tester.tap(find.text('🌙 مساءً'));
+    await tester.pump();
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(pharmacy.timed.single.$1, '1');
+    expect(pharmacy.timed.single.$2, containsAll(<String>['08:00', '20:00']));
+    expect(find.text('مواعيد دواء 1'), findsNothing, reason: 'sheet closed');
+  });
+
+  testWidgets('a medicine with times has no prompt', (tester) async {
+    final timed = Medicine.fromJson(<String, dynamic>{
+      'id': '2',
+      'user_id': 'u',
+      'name': 'سوبراكس',
+      'daily_dose_count': 1,
+      'dose_times': '21:00',
+      'remaining_quantity': 4,
+      'unit': 'كبسولة',
+    });
+    await pumpPharmacy(tester, <Medicine>[timed]);
+
+    expect(find.text('مالوش مواعيد — مش هفكّرك بيه'), findsNothing);
+    expect(find.text('مفيش جرعات فاضلة النهارده.'), findsOneWidget);
   });
 }

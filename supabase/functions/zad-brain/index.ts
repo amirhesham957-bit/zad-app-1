@@ -63,10 +63,12 @@ import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
+import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -105,7 +107,12 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
-import { homeEmergencyRule, techniciansForSnapshot } from "./homeEmergency.ts";
+import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
+import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
+import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
+import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
+import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
+import { dealSource } from "./tasteDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -120,7 +127,7 @@ import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
-import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
+import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -405,6 +412,9 @@ function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | 
  * ومكانش للعقل أي طريقة يوصلها — كانت بتتنادى من التطبيق مباشرة بس، فالعقل عمره ما
  * قدر يرشّح محل ولا يقارن سعر. النداء بمفتاح service_role لأن الدالة دي `verify_jwt`.
  */
+// العروض حسب الذوق (tasteDeals.ts) بتدوّر بنفس البحث الحي بتاع core-intelligence.
+dealSource.search = (payload, userId) => callCoreIntel("fetch_live_deals", payload, userId);
+
 async function callCoreIntel(action: string, payload: unknown, userId: string): Promise<any | null> {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-core-intelligence`, {
@@ -1157,7 +1167,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
   const { data: apptRows, error: apptErr } = await sb.from("zad_appointments")
-    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person")
+    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
     .eq("user_id", userId).eq("status", "upcoming")
     .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
     .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
@@ -1166,6 +1176,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
     .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
   if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
+  // الحملة اللي على الرئيسية وذوقه في الوصفات (campaigns.ts، §١١ح). فشل = من غيرهم، مش عطل.
+  const [{ data: campaignRows, error: campaignErr }, { data: seasonRows }, { data: tasteRows }] = await Promise.all([
+    sb.from("app_campaigns").select("id,event_key,event_name,target_country,dialect,from_md,to_md,season_slug,banner_title,banner_body,cta_text,priority,is_active")
+      .eq("is_active", true).limit(200),
+    sb.from("seasonal_event_windows").select("start_date,end_date,seasonal_events(slug,family_id)").limit(200),
+    sb.from("zad_recipe_feedback").select("recipe_name,liked").eq("user_id", userId)
+      .order("created_at", { ascending: false }).limit(40),
+  ]);
+  if (campaignErr) console.error("[snapshot] app_campaigns failed:", campaignErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
     dataErrors.push({ source: "مواعيدك" });
@@ -1179,6 +1198,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
+  // الجو (weather.ts، الموجة ٤): مدينة الملف وإلا عاصمة البلد — من الكاش ٣ ساعات. null = مش عارفين.
+  const weatherFacts = await loadWeather(sb, {
+    country: userRes.data?.country,
+    city: (profileRow as { city?: string | null } | null)?.city ?? null,
+    timeZone: budgetState.timezone ?? "UTC",
+  });
   if (profileErr) {
     console.error("[snapshot] zad_customer_profile failed:", profileErr.message);
     dataErrors.push({ source: "ملفك الشخصي" });
@@ -1212,10 +1237,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .eq("user_id", userId).gte("returned_at", new Date(Date.now() - 7 * 86400000).toISOString())
     .order("returned_at", { ascending: false }).limit(10);
 
-  // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية.
+  // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية. ومعاها سؤال
+  // بعد الضهر في أول ٧٢ ساعة (newcomer.ts) — الأحدث هو اللي العميل بيجاوب عليه.
   const { data: morningRow } = await sb.from("zad_voice_moments")
     .select("facts,sent_at")
-    .eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
+    .eq("user_id", userId).in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent")
     .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
     .order("sent_at", { ascending: false }).limit(1).maybeSingle();
 
@@ -1477,6 +1503,18 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
     }),
     trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
+    weather: weatherForSnapshot(weatherFacts),
+    // null = مفيش حملة النهارده (أو القراية فشلت).
+    home_campaign: pickHomeCampaign(
+      (campaignRows ?? []) as CampaignRow[],
+      ((seasonRows ?? []) as Array<{ start_date: string; end_date: string; seasonal_events: { slug?: string; family_id?: string | null } | null }>)
+        .filter((w) => w.seasonal_events?.slug && !w.seasonal_events.family_id)
+        .map((w) => ({ slug: w.seasonal_events!.slug as string, start_date: w.start_date, end_date: w.end_date })),
+      localNowContext(budgetState.timezone ?? "UTC").date,
+      userRes.data?.country ?? null,
+      (profileRow as { dialect?: string | null } | null)?.dialect ?? null,
+    ),
+    recipe_taste: recipeTaste((tasteRows ?? []) as Array<{ recipe_name: string | null; liked: boolean | null }>),
     // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
     event_day_budget: eventDayBudget({
       available, daysLeft: daysLeftInCycle,
@@ -1819,6 +1857,29 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
+    }
+    case "save_trusted_technician": {
+      // «فنيين بثق فيهم» (20261006014219). نفس الرقم مرة تانية = تحديث الاسم/الصنعة، مش صف جديد.
+      // الرقم اتحقق في validateSaveTrustedTechnician إن العميل قاله.
+      const row = {
+        user_id: userId,
+        name: String(input.name).trim(),
+        trade: String(input.trade),
+        phone: latinDigits(String(input.phone)).trim(),
+        notes: String(input.notes ?? "").trim().slice(0, 120),
+      };
+      const w = await writeRows(
+        sb.from("zad_trusted_technicians").upsert(row, { onConflict: "user_id,phone" }).select("id,name,trade,phone"),
+        "حفظ الفني",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { name: row.name, trade: row.trade } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_trusted_technicians", targetId: (w.rows[0] as { id?: string } | undefined)?.id ?? null,
+        previous: null, next: w.rows[0],
+      });
+      return `اتسجل: ${row.name} في «الصيانة» ← «فنيين بثق فيهم» — رقمه هناك بنقرة وقت الطوارئ.`;
     }
     case "remember_occasion": {
       // المناسبة ملاحظة عادية في الذاكرة ومعاها يومها (20261006000000). الجملة بتتكتب هنا مش من
@@ -2240,12 +2301,44 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_inventory_item": {
       const itemName = String(input.item_name).trim();
+      const unit = input.unit ? String(input.unit).trim() : null;
+      // نفس الصنف موجود عند العميل؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
+      // صفوف العميل نفسه بس: «تراجع» بيرجّع الصف بـuser_id العميل.
+      const { data: own, error: ownErr } = await sb.from("zad_inventory")
+        .select("id,item_name,quantity,unit,category,expiry_date,created_at")
+        .eq("user_id", userId).limit(500);
+      if (ownErr) console.error("[add_inventory_item] pantry lookup failed:", ownErr.message);
+      const existing = pickPantryMatch((own ?? []) as Array<PantryRow & { category: string | null; expiry_date: string | null }>, itemName, unit);
+      if (existing) {
+        const total = Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
+        const previous = { quantity: existing.quantity, category: existing.category, expiry_date: existing.expiry_date };
+        const w = await writeRows(
+          sb.from("zad_inventory").update({
+            quantity: total,
+            category: existing.category ?? (input.category ? String(input.category).trim() : null),
+            expiry_date: input.expiry_date ?? existing.expiry_date,
+          }).eq("id", existing.id).select("id,item_name,quantity,category,expiry_date"),
+          "تزويد الصنف",
+        );
+        if (!w.ok) return `مرفوض: ${w.reason}`;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: existing.quantity, new: { item: existing.item_name, qty: total } });
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_inventory", targetId: existing.id,
+          previous, next: w.rows[0],
+        });
+        const { error: obsErr } = await sb.rpc("zad_record_observation", {
+          p_user: userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
+        });
+        if (obsErr) console.error("zad_record_observation failed:", obsErr.message);
+        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}`;
+      }
       const w = await writeRows(
         sb.from("zad_inventory").insert({
           user_id: userId,
           item_name: itemName,
           quantity: input.quantity,
-          unit: input.unit ? String(input.unit).trim() : "حبة",
+          unit: unit ?? "حبة",
           category: input.category ? String(input.category).trim() : null,
           expiry_date: input.expiry_date ?? null,
         }).select("id,item_name,quantity"),
@@ -2972,11 +3065,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           recurrence: APPOINTMENT_RECURRENCES.includes(String(input.recurrence)) ? String(input.recurrence) : "once",
           source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
           for_person: normalizeForPerson(input.for_person),
-        }).select("id,title,starts_at"),
+          // اللي العميل قاله بس (validateAddAppointment) — zad_budget_state بتحجزه لحد الميعاد.
+          expected_cost: input.expected_cost == null ? null : Math.round(Number(input.expected_cost) * 100) / 100,
+        }).select("id,title,starts_at,expected_cost"),
         "تسجيل الميعاد",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
-      const row = w.rows[0] as { id: string; title: string; starts_at: string };
+      const row = w.rows[0] as { id: string; title: string; starts_at: string; expected_cost: number | null };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: startsAt } });
       await recordAction(sb, userId, scope, {
@@ -2989,7 +3084,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         startsAt: row.starts_at, forPerson: normalizeForPerson(input.for_person), recurrence: String(input.recurrence ?? "once"),
         excludeId: row.id, timeZone: tz,
       });
-      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${clash}`;
+      const reserved = row.expected_cost ? ` وحجزت ${row.expected_cost} من المتاح لحد الميعاد.` : "";
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${reserved}${clash}`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -3003,8 +3099,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         patch.starts_at = moved;
       }
       if (input.title !== undefined) patch.title = String(input.title).trim().slice(0, 160);
+      if (input.expected_cost !== undefined) {
+        patch.expected_cost = input.expected_cost === null ? null : Math.round(Number(input.expected_cost) * 100) / 100;
+      }
       const w = await writeRows(
-        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status"),
+        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status,expected_cost"),
         "تعديل الميعاد",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
@@ -3020,7 +3119,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           timeZone: snap?.now_local?.time_zone ?? "UTC",
         })
         : "";
-      return `تم تعديل الميعاد «${b.title}».${clash}`;
+      const cost = (w.rows[0] as { expected_cost?: number | null }).expected_cost;
+      const reserved = input.expected_cost === undefined ? "" : cost ? ` وحجزت ${cost} من المتاح لحد الميعاد.` : " وشلت الحجز.";
+      return `تم تعديل الميعاد «${b.title}».${reserved}${clash}`;
     }
     case "start_savings_challenge": {
       const { data: existing } = await sb.from("zad_savings_challenges").select("id,started_on,daily_cap")
@@ -3278,10 +3379,22 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       return JSON.stringify(rows.slice(0, 3));
     }
+    case "medicine_price": {
+      // سعر دوا في بلده (medicinePrice.ts): كاش ٣٠ يوم، وإلا بحث موجّه ببلده وعملته ويتحفظ لو ليه مصدر.
+      const name = String(input?.name ?? "").trim().slice(0, 80);
+      const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
+      const me = u as { country?: string | null; currency?: string | null } | null;
+      const found = await medicinePrice(sb, {
+        name, country: me?.country ?? null, currency: me?.currency ?? null,
+        search: (payload) => callCoreIntel("estimate_price", payload, userId),
+      }).catch(() => null);
+      return medicinePriceReply(found, name);
+    }
     case "check_price_online": {
-      const res = await callCoreIntel("estimate_price", {
-        item_name: input.item_name, store: input.store ?? "",
-      }, userId);
+      // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
+      const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
+      const me = u as { country?: string | null; currency?: string | null } | null;
+      const res = await callCoreIntel("estimate_price", pricePayload(input.item_name, input.store, me?.country ?? snap?.country, me?.currency), userId);
       if (!res || res.ok === false) return "مقدرتش أتأكد من السعر — متقولش رقم من عندك.";
       return JSON.stringify(res);
     }
@@ -3773,6 +3886,37 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutationCount++;
       return `اتسجّل «${label}». هراجع معاه بعد شهر وبعد ٣ شهور: الفايض الفعلي قصاد المحسوب.`;
     }
+    case "weather_forecast": {
+      // الجو لمدينة سمّاها العميل (جوه بلده)، وإلا مكانه في السناب شوت. Open-Meteo من غير مفتاح، وكاش ٣ ساعات.
+      const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+      const city = String(input?.city ?? "").trim().slice(0, 60);
+      const w = await loadWeather(sb, {
+        country: (u as { country?: string | null } | null)?.country ?? snap?.country,
+        city: city || snap?.customer?.city || null,
+        timeZone: snap?.now_local?.time_zone ?? "UTC",
+      });
+      if (!w) return "مش قادر أجيب الجو دلوقتي — قوله كده بصراحة، وماتخمّنش درجات حرارة.";
+      if (city && w.from === "capital") {
+        return JSON.stringify({ note: `مالقيتش «${city}» — ده جو ${w.place} (العاصمة)، قوله كده.`, ...weatherForSnapshot(w) });
+      }
+      return JSON.stringify(weatherForSnapshot(w));
+    }
+    case "store_location": {
+      // «هات اللوكيشن» (الموجة ٣): رابط المحل اللي زاد نبّه عنه، من مهمة store_arrival نفسها. نقطة المحل (مكان
+      // عام)، مش مكان العميل. آخر ٧ أيام.
+      const { data, error } = await sb.from("agent_tasks").select("task_description,map_url,created_at")
+        .eq("user_id", userId).eq("kind", "store_arrival").not("map_url", "is", null)
+        .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
+        .order("created_at", { ascending: false }).limit(20);
+      if (error) return `فشل القراية: ${error.message}`;
+      const found = storeLocationFrom((data ?? []) as Array<{ task_description: string | null; map_url: string | null; created_at: string }>, input?.store);
+      if (!found) {
+        return input?.store
+          ? `مفيش لوكيشن متسجل لـ«${String(input.store).slice(0, 40)}» آخر ٧ أيام — قوله كده بصراحة، وماتألّفش عنوان.`
+          : "مفيش لوكيشن محل متسجل آخر ٧ أيام — قوله كده بصراحة، وماتألّفش عنوان.";
+      }
+      return JSON.stringify({ store: found.store, map_url: found.map_url, noticed_at: found.at });
+    }
     case "home_health_score": {
       // درجة صحة البيت 0-100 — deterministic من 4 محاور: مالية/مخزون/صيدلية/التزامات.
       // الهدف: العميل يشوف "بيته صح قد إيه" كرقم واحد، والعقل يشرح أكبر نقطة ضعف.
@@ -4259,6 +4403,10 @@ async function appointmentClashNote(
   return clashNote(scheduleClashes({ ...q, existing: data ?? [] }), q.timeZone);
 }
 
+/** تكلفة الميعاد (20261010190000) — الوصف في الأداتين. */
+const EXPECTED_COST_HINT =
+  "تكلفة الميعاد اللي العميل قالها بالرقم («الكشف بـ٤٠٠») — بتتحجز من المتاح لحد الميعاد وبعده بتقع. ماتقدّرهاش أبداً.";
+
 export const CHAT_TOOLS: ToolDef[] = [
   {
     name: "log_transaction",
@@ -4352,7 +4500,7 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "add_inventory_item",
-    description: "ضيف صنف **جديد** للمخزون. لو الصنف موجود بالفعل استخدم update_inventory_qty بدلها. لو العميل ذكر أكتر من صنف في رسالة واحدة، نادِ الأداة دي مرة لكل صنف.",
+    description: "ضيف كمية اشتراها العميل للمخزون. لو نفس الصنف موجود عنده (حتى بإملاء أو ترتيب كلام مختلف)، الكمية بتتزوّد على صفه تلقائياً بدل صف جديد. لو العميل قال الكمية اللي فاضلة فعلاً (مش اشترى)، استخدم update_inventory_qty. لو ذكر أكتر من صنف في رسالة واحدة، نادِ الأداة دي مرة لكل صنف.",
     input_schema: {
       type: "object",
       properties: {
@@ -4723,7 +4871,8 @@ export const CHAT_TOOLS: ToolDef[] = [
     description:
       "سجّل ميعاد أو مشوار أو التزام غير مالي للعميل وزاد هتفكّره بيه بصوتها قبل ميعاده: «فكّريني بكرة الساعة ٥ أروح البنك»، «عندي دكتور الخميس ١١»، «اجتماع شغل كل حد الساعة ١٠». " +
       "احسب starts_at من now_local في الـsnapshot (النهارده/بكرة/يوم الأسبوع) واكتبه ISO بنفس utc_offset. " +
-      "مش للفلوس (إيجار/قسط → add_obligation) ومش لتحليل مؤجل («راجعلي مصاريف الأسبوع بكرة» → schedule_task).",
+      "مش للفلوس (إيجار/قسط → add_obligation) ومش لتحليل مؤجل («راجعلي مصاريف الأسبوع بكرة» → schedule_task). " +
+      "ميعاد دكتور (kind = medical) من غير تكلفة: بعد التسجيل اسأله سؤال واحد «الكشف بكام؟ أحجزه من المتاح» — جوابه ⇒ update_appointment بـexpected_cost.",
     input_schema: {
       type: "object",
       properties: {
@@ -4742,6 +4891,7 @@ export const CHAT_TOOLS: ToolDef[] = [
           enum: ["once", "hourly", "daily", "weekly", "monthly"],
           description: "افتراضي once. «كل ساعة» = hourly (ومعاه starts_at أول مرة). مفيش تكرار بالدقايق — لو طلب «كل ١٠ دقايق» قوله إن أقل تكرار كل ساعة واسأله يوافق.",
         },
+        expected_cost: { type: "number", description: EXPECTED_COST_HINT },
       },
       required: ["title", "starts_at"],
     },
@@ -4756,6 +4906,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         status: { type: "string", enum: ["upcoming", "done", "cancelled"] },
         starts_at: { type: "string", description: "الوقت الجديد ISO بالمنطقة الزمنية لو اتأجل" },
         title: { type: "string" },
+        expected_cost: { type: "number", nullable: true, description: EXPECTED_COST_HINT + " null = شيل الحجز." },
       },
       required: ["appointment_id"],
     },
@@ -4894,6 +5045,26 @@ export const CHAT_TOOLS: ToolDef[] = [
         action: { type: "string", enum: ["add", "cancel"] },
       },
       required: ["title", "action"],
+    },
+  },
+  {
+    name: "weather_forecast",
+    description:
+      "الجو (Open-Meteo) لـ٣ أيام: السما والعظمى والصغرى والمطر والريح. نادِها لما يسأل عن الجو في مدينة تانية جوه بلده " +
+      "(«الجو في إسكندرية بكرة؟»). جو مدينته هو موجود أصلاً في weather في الـSNAPSHOT.",
+    input_schema: {
+      type: "object",
+      properties: { city: { type: "string", description: "المدينة اللي سأل عنها. فاضي = مدينته." } },
+    },
+  },
+  {
+    name: "store_location",
+    description:
+      "رابط خرايط المحل اللي زاد نبّه العميل إنه جنبه (آخر ٧ أيام). نادِها لما يطلب «هات اللوكيشن» أو «فين المحل ده؟» " +
+      "وابعتله map_url زي ما رجع بالظبط. ماتسألوش هو في أنهي منطقة.",
+    input_schema: {
+      type: "object",
+      properties: { store: { type: "string", description: "اسم المحل لو سمّاه («كارفور»). فاضي = آخر محل." } },
     },
   },
   {
@@ -5145,6 +5316,17 @@ export const CHAT_TOOLS: ToolDef[] = [
     input_schema: { type: "object", properties: {} },
   },
   {
+    name: "medicine_price",
+    description:
+      "سعر دوا في بلد العميل من بحث نت حقيقي (بالمصدر والتاريخ)، ومحفوظ ٣٠ يوم. نادِها لما يسأل «الدوا ده بكام؟» أو " +
+      "قبل ما تقول إن دوا غالي أو رخيص. سعر بس: من غير بديل ولا جرعة ولا نصيحة طبية.",
+    input_schema: {
+      type: "object",
+      properties: { name: { type: "string", description: "اسم الدوا زي ما العميل قاله أو زي ما هو في صيدليته («بنادول إكسترا»)" } },
+      required: ["name"],
+    },
+  },
+  {
     name: "check_price_online",
     description:
       "سعر حقيقي من بحث ويب فعلي (مش تخمين). نادِها قبل ما تقول للعميل إن حاجة غالية أو رخيصة. " +
@@ -5205,6 +5387,22 @@ export const CHAT_TOOLS: ToolDef[] = [
       properties: {
         follow_up: { type: "boolean", description: "true = بتابع خطة الأسبوع اللي فات (مش بعمل خطة جديدة)" },
       },
+    },
+  },
+  {
+    name: "save_trusted_technician",
+    description:
+      "احفظ فني العميل بيثق فيه (سباك، كهربائي…) في «فنيين بثق فيهم» عشان رقمه يبان بنقرة وقت الطوارئ. " +
+      "بس لما العميل يقول الاسم والرقم بنفسه — الرقم زي ما قاله بالظبط، وماتألّفش رقم أبداً.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "اسم الفني زي ما العميل قاله («عم محمد»، «أحمد السباك»)" },
+        trade: { type: "string", enum: ["plumber", "electrician", "gas", "ac", "carpenter", "locksmith", "appliances", "other"] },
+        phone: { type: "string", description: "الرقم زي ما العميل قاله بالظبط" },
+        notes: { type: "string", description: "ملاحظة قصيرة لو قالها («شاطر في السخانات»)" },
+      },
+      required: ["name", "trade", "phone"],
     },
   },
   {
@@ -5503,6 +5701,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
 
   let shopping: string[] = [];
   let lowStock: string[] = [];
+  let clientHints = sanitizeItemHints(body?.client_items);
   if (category === "pharmacy") {
     const { data: meds, error } = await sb.from("zad_pharmacy_items")
       .select("name,remaining_quantity,daily_dose_count").eq("user_id", userId);
@@ -5521,15 +5720,22 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     const { data: memberships } = await sb.from("family_members").select("family_id").eq("user_id", userId);
     const familyIds = ((memberships ?? []) as Array<{ family_id: string | null }>)
       .map((m) => m.family_id).filter((id): id is string => !!id);
-    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").limit(200);
+    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category").limit(200);
     invQuery = familyIds.length > 0
       ? invQuery.or(`user_id.eq.${userId},family_id.in.(${familyIds.join(",")})`)
       : invQuery.eq("user_id", userId);
     const { data: inv, error: invErr } = await invQuery;
     if (invErr) console.error("[store_arrival] inventory lookup failed:", invErr.message);
-    lowStock = ((inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null }>)
+    const invRows = (inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null; category: string | null }>;
+    lowStock = invRows
       .filter((i) => (i.quantity ?? 0) <= (i.low_stock_threshold ?? 1))
       .map((i) => i.item_name);
+    // عطارة/جزارة/خضري/فرن بياخدوا أصناف قسمهم بس؛ السوبرماركت العادي القايمة كلها (storeFit.ts).
+    const categoryByKey = new Map(invRows.map((i) => [itemKey(i.item_name), i.category]));
+    const categoryOf = (item: string) => categoryByKey.get(itemKey(item));
+    shopping = itemsForStore(storeName, shopping, categoryOf);
+    lowStock = itemsForStore(storeName, lowStock, categoryOf);
+    clientHints = itemsForStore(storeName, clientHints, categoryOf);
   }
 
   // «اتشاف هنا»: بلاغات الأسعار (فواتير عملاء زاد) في محل بنفس الاسم آخر ٧٢ ساعة. و«أرخص هنا» (الشريحة ٢٨): آخر سعر
@@ -5552,18 +5758,13 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   }
 
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints: sanitizeItemHints(body?.client_items), seenHere, cheaperHere,
+    storeName, category, shopping, lowStock, clientHints, seenHere, cheaperHere,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 
-  const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert({
-    user_id: userId,
-    kind: "store_arrival",
-    status: "done",
-    scheduled_for: nowIso,
-    task_description: storeArrivalDescription(storeName, category),
-    result: message.body,
-  }).select("id").single();
+  const task = storeArrivalTask(userId, storeArrivalDescription(storeName, category), message.body, body?.store_lat, body?.store_lon, nowIso);
+  const mapUrl = task.map_url ?? undefined;
+  const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert(task).select("id").single();
   if (taskErr) {
     // من غير الصف ده الحارس (محل/يوم) مابيشوفش الرسالة — فمابنبعتش بدل ما نسبّم.
     console.error("[store_arrival] task insert failed — not sending:", taskErr.message);
@@ -5571,7 +5772,10 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   }
 
   const taskId = (taskRow as { id: string }).id;
-  const telegram = await pushToTelegram(userId, message.title, message.body, fetch, taskId);
+  const telegram = await pushToTelegram(
+    userId, message.title, message.body, fetch, taskId,
+    undefined, undefined, undefined, undefined, undefined, mapUrl,
+  );
   console.log(`[store_arrival] ${category} «${storeName}» items=${message.itemCount} → telegram: ${telegram}`);
   // title/body: the phone shows the same message as a notification (Flutter's street alerts).
   return json({
@@ -6194,6 +6398,8 @@ async function handleAgentTurn(
     ...pickHistory(await sharedHistoryEarly, clientHistory),
     { role: "user", text: message },
   ]);
+  // كلام العميل نفسه في المحادثة (كل القنوات) — الأدوات اللي بتاخد قيمة منه بالحرف (رقم فني) بتتحقق عليه.
+  ctx.heard = history.filter((t) => t.role === "user").map((t) => String((t as { text?: string }).text ?? "")).join("\n").slice(-3000);
 
   // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
   // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا. قبل البرومبت:
@@ -6207,6 +6413,10 @@ async function handleAgentTurn(
       ...(snap?.asked_this_morning?.kind === "gift" ? ["set_life_goal"] : []),
       // سؤال الصبح عن عيد ميلاد: «١٢ مارس» لوحدها مافيهاش نية تجيب الأداة.
       ...(snap?.asked_this_morning?.kind === "occasion" ? ["remember_occasion"] : []),
+      // سؤال أول ٧٢ ساعة عن مواعيد دوا: «٨ الصبح» لوحدها مافيهاش اسم الدوا يجيب الأداة.
+      ...(snap?.asked_this_morning?.tool ? [snap.asked_this_morning.tool] : []),
+      // «صلحت الحنفية» — الأداة جاهزة لو قال الاسم والرقم في نفس الرسالة.
+      ...(technicianFollowUp(message, snap?.trusted_technicians, []) ? ["save_trusted_technician"] : []),
     ],
   );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
@@ -6218,10 +6428,15 @@ async function handleAgentTurn(
     cardTitles: snap?.attention?.recent_card_titles, engagement: snap?.engagement,
     budget: budget.chatNotes, senders: budget.senders,
   });
+  // «فاتك إيه» (whileAway.ts): آخر لفة قبل الرسالة دي — البوت والتطبيق بيسجّلوا اللفة بعد الرد.
+  const awayLine = await loadWhileAway(sb, userId, (await sharedHistoryEarly)?.at(-1)?.at, snap?.currency ?? null);
   const systemPrompt =
     soulBlock(snap?.customer?.zad_voice)
     + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
     + agentMailBlock(agentMail)
+    + whileAwayBlock(awayLine)
+    // «صلحت الحنفية» ⇒ «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts، الموجة ٣).
+    + technicianFollowUp(message, snap?.trusted_technicians, history.filter((t) => t.role === "assistant").map((t) => String((t as { text?: string }).text ?? "")))
     + skillsBlock(learnedSkills)
     // صفحة «المساعدة والدعم» بقت بتكلم العقل نفسه (كانت موديل لوحده من غير حساب العميل).
     + (body.surface === "support"
@@ -7166,8 +7381,8 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
    - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.
    - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.
    - **صوتك (customer.zad_voice)** العميل بيختاره بنفسه من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»): بنت أو ولد. لو طلب يغيّره، قوله المكان ده بجملة — ماتقولش إنك غيّرته، ومتقترحش صوت حسب نوعه.
-   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح. لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد ومن غير ما تعلن: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ. ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
-${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
+   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح (أو بعد الضهر في أول أيامه). لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد، وقول في جملة واحدة إيه اللي اتسجل وهيتعمل بيه إيه («تمام، يوم ٢٥ — هبدأ شهرك منه») عشان يعرف إنك فهمت: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ. ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.
+${offers("store_location") ? "   - **لوكيشن المحل**: «هات اللوكيشن» أو «فين المحل ده؟» بعد تنبيه محل ⇒ store_location وابعت map_url زي ما رجع. ماتسألوش هو في أنهي منطقة، وماتألّفش عنوان.\n" : ""}${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.
    - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.
    - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.
    - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.
@@ -7184,7 +7399,7 @@ ${offers("remember_occasion") ? "   - **المناسبات**: لما العمي�
    - ${householdLoadRule(snap)}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
    - ${homeEmergencyRule(snap)}
-   - ${replyCadenceRule(snap) || "طول الرد عادي."}
+${campaignAndTasteRules(snap)}${weatherRule(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
    - عند طلب إدارة مهام أو مواعيد أو مصروفات أو صيدلية أو مخزون، **نفّذ الأمر فوراً** باستخدام الأدوات (Tools) المتاحة.
    - أكّد التنفيذ باقتضاب وبمرح وبلهجة العميل نفسها (زي أمثلة بلوك اللهجة فوق).

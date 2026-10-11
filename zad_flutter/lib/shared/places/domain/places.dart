@@ -50,6 +50,14 @@ const Duration kShopCooldown = Duration(hours: 24);
 /// near it" — dropped rather than announced.
 const Duration kStaleArrival = Duration(minutes: 30);
 
+/// Registering the fences makes Android report an "enter" at once for every
+/// circle the phone is already inside (`INITIAL_TRIGGER_ENTER`, wanted for
+/// home). For a shop that is the phone sitting where it was, not an arrival —
+/// the owner was told «انت جنب مجمدات الأسمر» without leaving the house
+/// (2026-10-10). An enter this soon after the shops were registered is that
+/// echo.
+const Duration kRegistrationEcho = Duration(minutes: 3);
+
 /// Look for shops again at least this often, even without leaving the area.
 const Duration kRefreshEvery = Duration(hours: 12);
 

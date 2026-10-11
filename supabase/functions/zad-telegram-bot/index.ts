@@ -32,7 +32,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, adminChatId, mapButtonRow, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -50,7 +50,7 @@ import {
 } from "./telegram.ts";
 import {
   clampForTelegram,
-  confirmSpendMessage, deriveWebhookSecret, money,
+  confirmSpendMessage, deriveWebhookSecret, money, receiptWallet,
   confirmMedicationMessage,
   isolate, sanitizeName,
 } from "./context.ts";
@@ -794,6 +794,8 @@ interface AnalyzeReceiptResult {
   storeName: string;
   // "pharmacy" | "grocery" | "general" — see zad-core-intelligence's analyze_receipt.
   receiptType: string;
+  /** cash | card | wallet | "" (البون ماقالش) — الموجة ٢، 2b257ef5. */
+  paymentMethod?: string;
   items: Array<{ name: string; price: number; quantity: number; unit: string; category: string }>;
 }
 
@@ -875,28 +877,26 @@ bot.command("start", async (ctx) => {
     return;
   }
 
-  const { data: link } = await sb.from("telegram_bindings")
-    .select("id,code_expires_at")
-    .eq("binding_code", code)
-    .is("bound_at", null)
-    .maybeSingle();
-  const expired = !link || new Date((link as any).code_expires_at) < new Date();
-  if (expired) {
-    await ctx.reply("الكود ده غلط أو منتهي — افتح تطبيق زاد واعمل كود ربط جديد.");
-    return;
-  }
-
-  const { error } = await sb.from("telegram_bindings")
-    .update({ chat_id: chatId, bound_at: new Date().toISOString() })
-    .eq("id", (link as any).id);
-  if (error) {
-    // الأرجح unique violation على chat_id (الحساب ده مربوط بيوزر تاني بالفعل)
-    await ctx.reply("فشل الربط — الحساب ده ممكن يكون مربوط بيوزر تاني بالفعل.");
-  } else {
-    await ctx.reply("تم الربط بنجاح ✅ اختار من تحت:", { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
-    const userId = await resolveUserId(sb, chatId);
+  // كود جديد = إثبات ملكية الحساب اللي عمله، فالشات بيتنقل له حتى لو كان مربوط بحساب
+  // تاني — في transaction واحدة جوه الداتابيز (20261010120000).
+  const { data, error } = await sb.rpc("zad_redeem_telegram_code", { p_code: code, p_chat_id: chatId });
+  if (error) console.error("[start] redeem failed:", error.message);
+  const status = error ? null : ((data as { status?: BindingStatus } | null)?.status ?? null);
+  if (status === "bound" || status === "moved" || status === "already_bound") {
+    await ctx.reply(bindingReply(status), { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
+    const userId = (data as { user_id?: string }).user_id;
     if (userId) await maybeAskCountry(sb, chatId, userId);
+  } else {
+    await ctx.reply(bindingReply(status));
   }
+});
+
+bot.command("unlink", async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const { data, error } = await sb.rpc("zad_unlink_telegram_chat", { p_chat_id: ctx.chat.id });
+  if (error) console.error("[unlink] failed:", error.message);
+  const status = error ? null : ((data as { status?: "unlinked" | "not_bound" } | null)?.status ?? null);
+  await ctx.reply(unlinkReply(status));
 });
 
 bot.command("menu", async (ctx) => {
@@ -1493,12 +1493,13 @@ bot.on("message:photo", async (ctx) => {
     if (result.total > 0) {
       const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
       const title = (result.storeName || "فاتورة صيدلية").slice(0, 80);
+      const wallet = receiptWallet(result.paymentMethod);
       const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
         user_id: userId, chat_id: ctx.chat.id, txn_kind: "expense", amount: Math.round(result.total * 100) / 100,
-        title, category: "الرعاية الصحية", confidence: 0.75,
+        title, category: "الرعاية الصحية", confidence: 0.75, wallet,
       }).select("id").single();
       if (!error && pending) {
-        await ctx.reply(`${summary}${summary ? "\n\n" : ""}` + confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category: "الرعاية الصحية", confidence: 0.75 }, currency), {
+        await ctx.reply(`${summary}${summary ? "\n\n" : ""}` + confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category: "الرعاية الصحية", confidence: 0.75 }, currency, wallet), {
           reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)),
         });
         return;
@@ -1534,6 +1535,7 @@ bot.on("message:photo", async (ctx) => {
       .data?.currency ?? "غير معروف";
     const title = (result.storeName || "فاتورة").slice(0, 80);
     const category = (result.category || "أخرى").slice(0, 40);
+    const wallet = receiptWallet(result.paymentMethod);
     const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
       user_id: userId,
       chat_id: ctx.chat.id,
@@ -1542,11 +1544,12 @@ bot.on("message:photo", async (ctx) => {
       title,
       category,
       confidence: 0.75,
+      wallet,
     }).select("id").single();
     if (!error && pending) {
       await ctx.reply(
         (itemsSummary ? itemsSummary + "\n\n" : "") +
-          confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category, confidence: 0.75 }, currency),
+          confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category, confidence: 0.75 }, currency, wallet),
         { reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)) },
       );
       return;
@@ -1987,7 +1990,7 @@ bot.on("callback_query:data", async (ctx) => {
   const spend = parseSpendCallback(data);
   if (spend) {
     const { data: pendingRow } = await sb.from("telegram_pending_writes")
-      .select("id,user_id,txn_kind,amount,title,category,status,expires_at")
+      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet")
       .eq("id", spend.pendingId)
       // إعادة التحقق: الـ chat اللي بيأكد لازم يكون لسه مربوط بنفس اليوزر صاحب الطلب.
       .eq("user_id", userId)
@@ -1995,7 +1998,7 @@ bot.on("callback_query:data", async (ctx) => {
 
     const row = pendingRow as {
       id: string; txn_kind: string; amount: number; title: string;
-      category: string | null; status: string; expires_at: string;
+      category: string | null; status: string; expires_at: string; wallet: string | null;
     } | null;
 
     if (!row) {
@@ -2034,7 +2037,8 @@ bot.on("callback_query:data", async (ctx) => {
       title: row.title,
       category: row.category ?? undefined,
       txn_kind: row.txn_kind,
-      wallet: "card",
+      // اللي البون قاله (receiptWallet)؛ نص أو صوت أو بون ماقالش = card زي الأول.
+      wallet: row.wallet ?? "card",
     });
     if (!confirmed.ok) {
       console.error("telegram expense confirmation via zad-brain failed");
@@ -2519,6 +2523,39 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // تنبيهات صحة النظام (zad_notify_admin، 20261010130000) — لشات الأدمن السري بس، عمرها
+  // ما بتروح لشات عميل. من غير ZAD_ADMIN_CHAT_ID التنبيه بيتسجل في اللوج ومابيتبعتش.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "admin_alert") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    if (!BOT_CONFIGURED) {
+      return new Response(JSON.stringify({ ok: false, reason: "bot not configured" }), { status: 503 });
+    }
+    try {
+      const { title, body } = await req.json() as { title?: string; body?: string };
+      if (!title || !body) {
+        return new Response(JSON.stringify({ ok: false, reason: "missing title/body" }), { status: 400 });
+      }
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn(`[admin_alert] ZAD_ADMIN_CHAT_ID not set — not sent: ${title}`);
+        return new Response(JSON.stringify({ ok: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      // الشات ده مربوط كشات عميل؟ يبقى مش قناة أدمن — نفس الغلطة اللي بنقفلها.
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      if (await resolveUserId(sb, chatId)) {
+        console.error(`[admin_alert] ZAD_ADMIN_CHAT_ID is a customer chat — refused: ${title}`);
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `${title}\n\n${body}`);
+      return new Response(JSON.stringify({ ok: true, delivered: true }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("admin_alert failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "realtime_push") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });
@@ -2528,12 +2565,14 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, map_url } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
         // اختياري: تنبيه جرعة — معرّف صف zad_voice_moments، بيتحوّل لزرار «أخدت الجرعة».
         dose_moment_id?: string;
+        // اختياري: رسالة محل — رابط خرايط المحل، بيبقى زرار فوق أزرار الرفض.
+        map_url?: string;
       };
       if (!user_id || !title || !body) {
         return new Response(JSON.stringify({ ok: false, reason: "missing user_id/title/body" }), { status: 400 });
@@ -2547,10 +2586,14 @@ Deno.serve(async (req: Request) => {
       // الداتابيز مابتبعتش الحقل ده، فرسايلهم بتفضل زي ما هي من غير أزرار.
       // تنبيه جرعة بيكسب على زرار الرفض: الأهم إن العميل يقدر يسجّل إنه خدها بضغطة
       // واحدة من غير ما يعدّي على فهم الموديل للكلام (سبب «بيشكرني ومابيسجلش»).
+      const mapRow = mapButtonRow(map_url);
+      const dismissRows = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
+        ? proactiveDismissKeyboard(dismiss_task_id)
+        : [];
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
-        : dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
-        ? proactiveDismissKeyboard(dismiss_task_id)
+        : mapRow || dismissRows.length
+        ? [...(mapRow ? [mapRow] : []), ...dismissRows]
         : undefined;
       await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.

@@ -58,13 +58,17 @@ class _Server implements PlaceServer {
   PushAlert? reply = const PushAlert(title: 'أنت جنب', body: '• لبن');
   bool offline = false;
 
+  final List<GeoPoint?> arrivalPoints = <GeoPoint?>[];
+
   @override
   Future<PushAlert?> storeArrival({
     required String name,
     required StoreKind kind,
+    GeoPoint? at,
   }) async {
     if (offline) throw StateError('offline');
     arrivals.add(name);
+    arrivalPoints.add(at);
     return reply;
   }
 
@@ -148,7 +152,9 @@ void main() {
       'supermarket_0': (name: 'كارفور', kind: StoreKind.supermarket),
       'pharmacy_0': (name: 'العزبي', kind: StoreKind.pharmacy),
     },
-    refreshedAt: now,
+    // Registered an hour ago: an enter right after registering is Android's
+    // initial trigger, not an arrival (see the tests below).
+    refreshedAt: now.subtract(const Duration(hours: 1)),
     center: home,
   );
 
@@ -191,6 +197,74 @@ void main() {
       expect(server.arrivals, <String>['كارفور'], reason: 'cooldown');
     },
   );
+
+  test('a shop entered while still at home is not announced', () async {
+    // The owner, 2026-10-10: «انت جنب مجمدات الأسمر» without leaving the
+    // house. Home is known and its circle was never left.
+    seed(fresh.copyWith(home: home));
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivals, isEmpty);
+    expect(shown, isEmpty);
+    expect(host.acked, hasLength(1), reason: 'dropped, not kept for later');
+  });
+
+  test('after leaving home, the same shop is announced', () async {
+    seed(fresh.copyWith(home: home));
+    host.events
+      ..add(
+        event(
+          kHomeFence,
+          PlaceTransition.exit,
+          now.subtract(const Duration(minutes: 10)),
+        ),
+      )
+      ..add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivals, <String>['كارفور']);
+  });
+
+  test('the enter Android reports on registering is not an arrival', () async {
+    seed(fresh.copyWith(refreshedAt: now.subtract(const Duration(minutes: 1))));
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivals, isEmpty);
+
+    host.events.add(
+      event(
+        'supermarket_0',
+        PlaceTransition.enter,
+        now.add(const Duration(minutes: 5)),
+      ),
+    );
+    await engine.handlePending();
+    expect(server.arrivals, <String>[
+      'كارفور',
+    ], reason: 'a later enter is real');
+  });
+
+  test('the shop point goes with the arrival, for the map button', () async {
+    const shopAt = GeoPoint(30.05, 31.24);
+    seed(
+      fresh.copyWith(
+        shopFences: const <Fence>[
+          Fence(id: 'supermarket_0', lat: 30.05, lon: 31.24, radius: 120),
+        ],
+      ),
+    );
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivalPoints.single?.lat, shopAt.lat);
+    expect(server.arrivalPoints.single?.lon, shopAt.lon);
+  });
+
+  test('a shop with no stored fence still arrives, without a point', () async {
+    seed(fresh);
+    host.events.add(event('supermarket_0', PlaceTransition.enter, now));
+    await engine.handlePending();
+    expect(server.arrivals, <String>['كارفور']);
+    expect(server.arrivalPoints.single, isNull);
+  });
 
   test('nothing to say from the server shows nothing', () async {
     seed(fresh);

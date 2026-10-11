@@ -362,4 +362,13 @@ void main() {
       expect(c.read(scanControllerProvider).lastIntake?.failed, isTrue);
     });
   });
+
+  test("the pantry's own same-item rule is narrower than the receipt's", () {
+    expect(sameItemName('بلح', 'البلح'), isTrue);
+    expect(sameItemName('برانش توست', 'توست برانش'), isTrue);
+    expect(sameItemName('إندومي', 'اندومي'), isTrue);
+    expect(sameItemName('لبن', 'لبن زبادي'), isFalse);
+    expect(itemNamesMatch('لبن', 'لبن زبادي'), isTrue, reason: 'receipts');
+    expect(sameItemName('', 'بلح'), isFalse);
+  });
 }

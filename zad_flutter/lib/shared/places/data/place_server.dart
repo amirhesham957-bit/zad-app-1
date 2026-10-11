@@ -23,6 +23,7 @@ class SupabasePlaceServer implements PlaceServer {
   Future<PushAlert?> storeArrival({
     required String name,
     required StoreKind kind,
+    GeoPoint? at,
   }) async {
     final data = (await _client.functions.invoke(
       'zad-brain',
@@ -30,6 +31,9 @@ class SupabasePlaceServer implements PlaceServer {
         'action': 'store_arrival',
         'store_name': name,
         'category': kind.tag,
+        // The shop's point, for the map button under the alert.
+        'store_lat': ?at?.lat,
+        'store_lon': ?at?.lon,
       },
     )).data;
     return storeArrivalAlert(data, kind);

@@ -14,6 +14,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
 
@@ -31,7 +32,20 @@ enum BankAccessHealth {
   /// the service is not bound. The app cannot tell those apart, so it says so
   /// and offers the one action that helps.
   grantedButSilent,
+
+  /// Granted, worked, and has seen nothing at all for [kListenerStallAfter].
+  ///
+  /// The listener sees every notification on the phone (WhatsApp included),
+  /// not only bank ones, so two days of nothing is a dead service, not a
+  /// quiet phone. The owner's phone stopped sending on 2026-10-05 and nothing
+  /// said so: this state used to read as [flowing] once anything had ever
+  /// been captured.
+  stalled,
 }
+
+/// How long without any notification seen before the listener counts as
+/// stopped.
+const Duration kListenerStallAfter = Duration(days: 2);
 
 /// What the screen draws.
 class BankAccessState {
@@ -44,6 +58,7 @@ class BankAccessState {
     this.lastSeenAnyAt,
     this.testResult,
     this.checking = false,
+    this.checkedAt,
   });
 
   /// Whether notification access is granted.
@@ -68,6 +83,9 @@ class BankAccessState {
   /// Whether a check is in flight.
   final bool checking;
 
+  /// When the platform was last asked — the "now" [health] is judged at.
+  final DateTime? checkedAt;
+
   /// Kotlin's `BankReadingStatus.isListenerAlive`: granted, bound at least
   /// once, and a notification seen in the last ten minutes — a phone can be
   /// genuinely quiet, and that much grace keeps the pill from flapping.
@@ -80,6 +98,13 @@ class BankAccessState {
   /// The reading to show.
   BankAccessHealth get health {
     if (!granted) return BankAccessHealth.notGranted;
+    final seen = lastSeenAnyAt;
+    final at = checkedAt;
+    if (seen != null &&
+        at != null &&
+        at.difference(seen) >= kListenerStallAfter) {
+      return BankAccessHealth.stalled;
+    }
     if (lastCapturedAt == null && pending == 0) {
       return BankAccessHealth.grantedButSilent;
     }
@@ -100,6 +125,7 @@ class BankAccessState {
     lastSeenAnyAt: lastSeenAnyAt,
     testResult: testResult,
     checking: checking ?? this.checking,
+    checkedAt: checkedAt,
   );
 }
 
@@ -154,6 +180,7 @@ class BankAccessController extends Notifier<BankAccessState> {
         lastConnectedAt: connectedAt,
         lastSeenAnyAt: status.lastSeenAnyAt,
         testResult: status.testResult,
+        checkedAt: ref.read(nowProvider)(),
       );
       await marker.rememberAccess(granted: granted, connectedAt: connectedAt);
     } on Object {

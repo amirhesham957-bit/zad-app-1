@@ -81,6 +81,11 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
   if (confirmed != true || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
+  // The gate swaps the app's root for the login screen, but a screen pushed
+  // over it (settings is one) stays on top and covers it: the dialog closed
+  // and the customer saw nothing happen (2026-10-10). Every route above the
+  // root belongs to the account that just left.
+  final navigator = Navigator.of(context);
   try {
     await session.signOut();
   } on AuthFailure catch (failure) {
@@ -88,5 +93,7 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
     // before it calls the server — so this is a note, not a failure the
     // customer has to do anything about.
     messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+  } finally {
+    if (navigator.mounted) navigator.popUntil((route) => route.isFirst);
   }
 }
