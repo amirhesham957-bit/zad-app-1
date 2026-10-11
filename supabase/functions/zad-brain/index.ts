@@ -73,6 +73,7 @@ import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.t
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
+import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -3497,9 +3498,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
       const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
       const me = u as { country?: string | null; currency?: string | null } | null;
-      const res = await callCoreIntel("estimate_price", pricePayload(input.item_name, input.store, me?.country ?? snap?.country, me?.currency), userId);
-      if (!res || res.ok === false) return "مقدرتش أتأكد من السعر — متقولش رقم من عندك.";
-      return JSON.stringify(res);
+      // بحث موجّه بمصدره، محفوظ ٧ أيام بالبلد والصنف (webPrice.ts، zad_web_prices) — بداية الأسعار قبل الجمهور.
+      const found = await webPrice(sb, {
+        item: String(input.item_name ?? ""), store: input.store ? String(input.store) : null,
+        country: me?.country ?? snap?.country ?? null, currency: me?.currency ?? null,
+        search: (payload) => callCoreIntel("estimate_price", payload, userId),
+      });
+      return webPriceReply(found, String(input.item_name ?? ""));
     }
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
