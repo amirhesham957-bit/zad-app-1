@@ -24,6 +24,7 @@ class ZadInsight {
     this.actionType,
     this.createdAt,
     this.expiresAt,
+    this.seenAt,
   });
 
   /// Reads a row.
@@ -41,6 +42,10 @@ class ZadInsight {
       _ => null,
     },
     expiresAt: switch (json['expires_at']) {
+      final String s => DateTime.parse(s).toUtc(),
+      _ => null,
+    },
+    seenAt: switch (json['seen_at']) {
       final String s => DateTime.parse(s).toUtc(),
       _ => null,
     },
@@ -78,6 +83,10 @@ class ZadInsight {
   /// about («تجديد نتفليكس بكرة»). Null: open-ended.
   final DateTime? expiresAt;
 
+  /// When the app first showed it, as the server recorded it. Null: never
+  /// shown, or the report is still queued.
+  final DateTime? seenAt;
+
   /// Past [expiresAt] at [now]: the card is about a day that is over.
   bool isExpiredAt(DateTime now) {
     final end = expiresAt;
@@ -112,6 +121,7 @@ class ZadInsight {
     'action_type': actionType,
     'created_at': createdAt?.toIso8601String(),
     'expires_at': expiresAt?.toIso8601String(),
+    'seen_at': seenAt?.toIso8601String(),
   };
 }
 

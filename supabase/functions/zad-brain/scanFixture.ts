@@ -36,6 +36,9 @@ const BASE = `
   create role anon; create role authenticated; create role service_role;
   create schema auth;
   create table auth.users (id uuid primary key);
+  -- زي Supabase: المستخدم من الـJWT. الاختبار بيحطه بـ set request.jwt.claim.sub.
+  create function auth.uid() returns uuid language sql stable as $$
+    select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 
   create table public.zad_users (
     id uuid primary key default gen_random_uuid(),

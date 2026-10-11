@@ -71,6 +71,20 @@ class _Remote implements InsightsRemote {
   @override
   Future<String?> statusOf(String id) async => rows[id]?['status'] as String?;
 
+  final List<({String id, DateTime at})> seenCalls =
+      <({String id, DateTime at})>[];
+
+  @override
+  Future<DateTime?> markSeen(String id, DateTime at) async {
+    if (offline) throw const SocketException('offline');
+    seenCalls.add((id: id, at: at));
+    final row = rows[id];
+    if (row == null) return null;
+    // The server keeps the first report.
+    row['seen_at'] ??= at.toUtc().toIso8601String();
+    return DateTime.parse(row['seen_at'] as String);
+  }
+
   @override
   Future<void> remember({
     required String userId,
@@ -79,6 +93,9 @@ class _Remote implements InsightsRemote {
     required double confidence,
   }) async => notes.add((scope: scope, note: note, confidence: confidence));
 }
+
+const Duration _hour = Duration(hours: 1);
+final DateTime _noon = DateTime.utc(2026, 10, 11, 12);
 
 void main() {
   group('homeInsights', () {
@@ -133,6 +150,8 @@ void main() {
     late Outbox outbox;
     late InsightsRepository repo;
     var run = 0;
+    // How far the outbox's clock is ahead — past a failed send's backoff.
+    var later = Duration.zero;
 
     setUp(() async {
       run++;
@@ -141,10 +160,13 @@ void main() {
       documents = await Hive.openBox<String>('documents$run');
       outboxBox = await Hive.openBox<String>('outbox$run');
       remote = _Remote();
+      later = Duration.zero;
       outbox = Outbox(
         box: outboxBox,
+        clock: () => DateTime.now().add(later),
         send: (entry) => switch (entry.kind) {
           OutboxKind.resolveInsight => repo.sendQueued(entry),
+          OutboxKind.markInsightSeen => repo.sendQueuedSeen(entry),
           _ => throw StateError('no sender'),
         },
       );
@@ -201,6 +223,51 @@ void main() {
       expect(remote.rows['q']!['dismiss_reason'], isNull);
       expect(remote.notes, isEmpty);
     });
+
+    test('a card shown is reported once, at the first showing', () async {
+      await repo.refresh();
+      final first = DateTime.utc(2026, 10, 11, 14);
+      expect(await repo.markSeen(repo.cached(), first), 2);
+      // Shown again before the queue drains: nothing new is queued.
+      expect(await repo.markSeen(repo.cached(), first.add(_hour)), 0);
+      await outbox.flush();
+
+      expect(remote.seenCalls.map((c) => c.id), unorderedEquals(['a', 'q']));
+      expect(remote.seenCalls.every((c) => c.at == first), isTrue);
+      expect(outbox.entries(), isEmpty);
+      // The cache knows now, so a later showing queues nothing.
+      expect(repo.cached().every((i) => i.seenAt == first), isTrue);
+      expect(await repo.markSeen(repo.cached(), first.add(_hour)), 0);
+    });
+
+    test(
+      'a card shown offline is reported when the signal comes back',
+      () async {
+        await repo.refresh();
+        remote.offline = true;
+        await repo.markSeen(repo.cached().where((i) => i.id == 'a'), _noon);
+        await outbox.flush();
+        expect(outbox.entries().single.kind, OutboxKind.markInsightSeen);
+
+        remote.offline = false;
+        later = const Duration(hours: 1);
+        await outbox.flush();
+        expect(remote.rows['a']!['seen_at'], _noon.toIso8601String());
+        expect(remote.rows['a']!['status'], 'pending', reason: 'still on Home');
+        expect(outbox.entries(), isEmpty);
+      },
+    );
+
+    test(
+      'a card deleted on the server before the report lands is let go',
+      () async {
+        await repo.refresh();
+        await repo.markSeen(repo.cached().where((i) => i.id == 'a'), _noon);
+        remote.rows.remove('a');
+        await outbox.flush();
+        expect(outbox.entries(), isEmpty);
+      },
+    );
 
     test('a status the row does not show is not believed', () async {
       await repo.refresh();

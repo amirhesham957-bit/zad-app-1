@@ -11,6 +11,11 @@
 // (validators.ts). العميل يتصرف في واحدة ⇒ السلسلة بتتكسر. وبعد ٢١ يوم القديم بيخرج من الحساب
 // لوحده. اللي بيتعمل بيه دايماً ⇒ «مرحّب بيه»: العقل يقدر يبادر فيه أكتر — في الاقتراح بس؛ أدوات
 // الفلوس بتفضل بتأكيد العميل زي ما هي.
+//
+// «اتجاهل» لازم يكون «ظهر وماتعملش بيه» (20261011293145). الكارت ظهر لو التطبيق عرضه (seen_at)، أو لو
+// اتبعت تليجرام — التريجر notify_telegram_on_insight بيبعت السؤال والحرج بس، وبس لو الحساب مربوط. اللي
+// ماظهرش لا بيتعد تجاهل ولا بيكسر السلسلة، ومهلة الرد بتبدأ من ظهوره. مقيس على الحي ٢٠٢٦-١٠-١١: ٣ من
+// ٦ حسابات مالهمش لا إشعارات ولا تليجرام، و٠ من ٤٣ كارت آخر ٢١ يوم اتعمل بيها أو اترفضت.
 
 const HOUR_MS = 3_600_000;
 export const ENGAGEMENT_WINDOW_DAYS = 21;
@@ -23,6 +28,18 @@ export interface InsightRow {
   title?: string | null;
   status: string | null;
   created_at: string;
+  /** أول ظهور في التطبيق. */
+  seen_at?: string | null;
+  kind?: string | null;
+  priority?: string | null;
+}
+
+/** الكارت اتعرض للعميل إمتى — null لو ماظهرش. تليجرام بياخد وقت كتابته (التريجر بيبعت ساعتها). */
+function shownAt(r: InsightRow, telegram: boolean): number | null {
+  const seen = r.seen_at ? Date.parse(r.seen_at) : NaN;
+  if (Number.isFinite(seen)) return seen;
+  if (telegram && (r.kind === "question" || r.priority === "critical")) return Date.parse(r.created_at);
+  return null;
 }
 
 export interface Engagement {
@@ -50,7 +67,11 @@ export function insightTopic(dedupeKey: string | null | undefined): string {
   return k || "other";
 }
 
-export function engagementFrom(rows: readonly InsightRow[], now = Date.now()): Engagement {
+export function engagementFrom(
+  rows: readonly InsightRow[],
+  now = Date.now(),
+  opts: { telegram?: boolean } = {},
+): Engagement {
   const since = now - ENGAGEMENT_WINDOW_DAYS * 24 * HOUR_MS;
   const byTopic = new Map<string, InsightRow[]>();
   for (const r of rows) {
@@ -69,8 +90,9 @@ export function engagementFrom(rows: readonly InsightRow[], now = Date.now()): E
     for (const r of newest) {
       const status = r.status ?? "";
       if (status === "acted" || status === "dismissed") break;
-      // لسه في مهلة الرد: مش تجاهل ولا تفاعل.
-      if (now - Date.parse(r.created_at) < REACTION_GRACE_MS) continue;
+      const shown = shownAt(r, opts.telegram ?? false);
+      // ماظهرش، أو لسه في مهلة الرد من ساعة ما ظهر: مش تجاهل ولا تفاعل.
+      if (shown === null || now - shown < REACTION_GRACE_MS) continue;
       if (status === "pending" || status === "seen") ignored++;
     }
     if (ignored >= QUIET_AFTER_IGNORED) {

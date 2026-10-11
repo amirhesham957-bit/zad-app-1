@@ -20,14 +20,17 @@ Deno.test("topic: the model's daily keys for one subject collapse to one topic",
   assertEquals(insightTopic(""), "other");
 });
 
-// The five Betaderm alerts on the live project — every one still pending.
+// The five Betaderm alerts on the live project — every one still pending, each shown on Home a minute
+// after it was written (seen_at, 20261011293145).
+const shown = (iso: string) => ({ created_at: at(iso), seen_at: new Date(Date.parse(iso) + 60_000).toISOString() });
 const betaderm = [
-  { dedupe_key: "betaderm_low_20261003", title: "بيتادرم قرب يخلص", status: "pending", created_at: at("2026-10-03T06:00:00Z") },
-  { dedupe_key: "betaderm_low_stock_2026_10_02", title: "بيتادرم قرب يخلص", status: "pending", created_at: at("2026-10-02T06:00:00Z") },
-  { dedupe_key: "betaderm_low_stock_20261001", title: "بيتادرم قرب يخلص", status: "pending", created_at: at("2026-10-01T06:00:00Z") },
-  { dedupe_key: "betaderm_low_stock_2026_09_30", title: "بيتادرم قرب يخلص", status: "pending", created_at: at("2026-09-30T06:00:00Z") },
-  { dedupe_key: "betaderm_low_2026_09_29", title: "بيتادرم قرب يخلص", status: "pending", created_at: at("2026-09-29T06:00:00Z") },
+  { dedupe_key: "betaderm_low_20261003", title: "بيتادرم قرب يخلص", status: "pending", ...shown("2026-10-03T06:00:00Z") },
+  { dedupe_key: "betaderm_low_stock_2026_10_02", title: "بيتادرم قرب يخلص", status: "pending", ...shown("2026-10-02T06:00:00Z") },
+  { dedupe_key: "betaderm_low_stock_20261001", title: "بيتادرم قرب يخلص", status: "pending", ...shown("2026-10-01T06:00:00Z") },
+  { dedupe_key: "betaderm_low_stock_2026_09_30", title: "بيتادرم قرب يخلص", status: "pending", ...shown("2026-09-30T06:00:00Z") },
+  { dedupe_key: "betaderm_low_2026_09_29", title: "بيتادرم قرب يخلص", status: "pending", ...shown("2026-09-29T06:00:00Z") },
 ];
+const unseen = betaderm.map(({ seen_at: _, ...r }) => r);
 
 Deno.test("engagement: five ignored Betaderm alerts make the topic quiet; the newest is still in its grace", () => {
   const e = engagementFrom(betaderm, NOW);
@@ -38,6 +41,29 @@ Deno.test("engagement: acting on one breaks the run; two ignored is not yet quie
   const acted = betaderm.map((r, i) => (i === 2 ? { ...r, status: "acted" } : r));
   assertEquals(engagementFrom(acted, NOW).quiet_topics, [], "only one ignored after the grace, then acted");
   assertEquals(engagementFrom(betaderm.slice(0, 3), NOW).quiet_topics, [], "two past the grace");
+});
+
+Deno.test("engagement: a card nobody saw is not ignored, and does not break the run", () => {
+  // ٣ من ٦ حسابات على الحي مالهمش إشعارات ولا تليجرام: كارت ماظهرش في التطبيق مااتجاهلش.
+  assertEquals(engagementFrom(unseen, NOW).quiet_topics, [], "five unseen alerts silence nothing");
+  // Shown, unseen, shown, shown: the unseen one in the middle neither counts nor resets.
+  const mixed = betaderm.map((r, i) => (i === 2 ? unseen[2] : r));
+  assertEquals(engagementFrom(mixed, NOW).quiet_topics, [{ topic: "betaderm_low", ignored_in_a_row: 3, last_title: "بيتادرم قرب يخلص" }]);
+});
+
+Deno.test("engagement: the reply window starts when the card was shown, not when it was written", () => {
+  // Written four days ago, opened an hour ago: still inside its 48 hours.
+  const late = betaderm.slice(1, 4).map((r) => ({ ...r, seen_at: at("2026-10-04T11:00:00Z") }));
+  assertEquals(engagementFrom(late, NOW).quiet_topics, []);
+});
+
+Deno.test("engagement: on a Telegram-linked account a question or critical card was shown when written", () => {
+  const sent = (kind: string, priority: string) => unseen.map((r) => ({ ...r, kind, priority }));
+  assertEquals(engagementFrom(sent("question", "normal"), NOW, { telegram: true }).quiet_topics.length, 1);
+  assertEquals(engagementFrom(sent("alert", "critical"), NOW, { telegram: true }).quiet_topics.length, 1);
+  // The trigger sends neither a plain insight nor anything to an unlinked account.
+  assertEquals(engagementFrom(sent("alert", "normal"), NOW, { telegram: true }).quiet_topics, []);
+  assertEquals(engagementFrom(sent("question", "normal"), NOW, { telegram: false }).quiet_topics, []);
 });
 
 Deno.test("engagement: system receipts and old history do not count", () => {

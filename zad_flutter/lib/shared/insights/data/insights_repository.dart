@@ -33,6 +33,11 @@ abstract interface class InsightsRemote {
   /// [id]'s status as the server has it, or null when the row is gone.
   Future<String?> statusOf(String id);
 
+  /// Records that [id] was first shown at [at]. Returns the time the server
+  /// keeps (the first report wins, clamped to the card's life), or null when
+  /// the row is gone.
+  Future<DateTime?> markSeen(String id, DateTime at);
+
   /// Leaves the brain a memory note.
   Future<void> remember({
     required String userId,
@@ -55,7 +60,7 @@ class SupabaseInsightsRemote implements InsightsRemote {
               .from('zad_insights')
               .select(
                 'id, kind, surface, priority, title, body, about_item, '
-                'action_type, created_at, expires_at',
+                'action_type, created_at, expires_at, seen_at',
               )
               .eq('user_id', userId)
               .eq('status', 'pending')
@@ -81,6 +86,18 @@ class SupabaseInsightsRemote implements InsightsRemote {
               .eq('id', id)
               .maybeSingle())?['status']
           as String?;
+
+  @override
+  Future<DateTime?> markSeen(String id, DateTime at) async {
+    final seen = await _client.rpc<dynamic>(
+      'zad_mark_insight_seen',
+      params: <String, dynamic>{
+        'p_id': id,
+        'p_at': at.toUtc().toIso8601String(),
+      },
+    );
+    return seen is String ? DateTime.parse(seen).toUtc() : null;
+  }
 
   @override
   Future<void> remember({
@@ -121,6 +138,9 @@ class InsightsRepository {
 
   /// The outbox id for a decision about [id].
   static String outboxIdFor(String id) => 'insight:$id';
+
+  /// The outbox id for [id] having been shown.
+  static String seenOutboxIdFor(String id) => 'insight_seen:$id';
 
   /// Pending insights, minus any with a decision still queued.
   List<ZadInsight> cached() {
@@ -171,6 +191,58 @@ class InsightsRepository {
         },
       },
     );
+  }
+
+  /// Queues "shown at [at]" for each of [shown] the server does not already
+  /// have as seen and that is not queued yet — the first showing is the one
+  /// that counts. Returns how many were queued.
+  Future<int> markSeen(Iterable<ZadInsight> shown, DateTime at) async {
+    final queued = <String>{
+      for (final e in _outbox().entries(includeDead: false))
+        if (e.kind == OutboxKind.markInsightSeen) e.id,
+    };
+    var added = 0;
+    for (final insight in shown) {
+      final id = seenOutboxIdFor(insight.id);
+      if (insight.seenAt != null || queued.contains(id)) continue;
+      await _outbox().enqueue(
+        id: id,
+        kind: OutboxKind.markInsightSeen,
+        payload: <String, dynamic>{
+          'id': insight.id,
+          'at': at.toUtc().toIso8601String(),
+        },
+      );
+      queued.add(id);
+      added++;
+    }
+    return added;
+  }
+
+  /// Sends a queued "shown", and writes the time the server kept into the
+  /// cache so the card is not queued again before the next refresh.
+  Future<void> sendQueuedSeen(OutboxEntry entry) async {
+    final id = entry.payload['id'] as String;
+    final seen = await _remote.markSeen(
+      id,
+      DateTime.parse(entry.payload['at'] as String),
+    );
+    // A row that is gone has nothing left to record.
+    if (seen == null) return;
+    final raw = _cache.get(_key);
+    if (raw == null) return;
+    try {
+      final rows = [
+        for (final row in jsonDecode(raw) as List<dynamic>)
+          Map<String, dynamic>.from(row as Map),
+      ];
+      for (final row in rows) {
+        if (row['id'] == id) row['seen_at'] = seen.toIso8601String();
+      }
+      await _cache.put(_key, jsonEncode(rows));
+    } on FormatException {
+      // A cache that does not parse is replaced on the next refresh.
+    }
   }
 
   /// Sends a queued decision, checks it took, then leaves the memory note.

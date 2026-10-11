@@ -202,6 +202,10 @@ class _OfflineInsights implements InsightsRemote {
       Future<String?>.error(const SocketException('offline'));
 
   @override
+  Future<DateTime?> markSeen(String id, DateTime at) =>
+      Future<DateTime?>.error(const SocketException('offline'));
+
+  @override
   Future<void> remember({
     required String userId,
     required String scope,

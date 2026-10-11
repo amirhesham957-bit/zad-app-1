@@ -119,7 +119,7 @@ import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealSource } from "./tasteDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
-import { ENGAGEMENT_WINDOW_DAYS, engagementFrom } from "./engagement.ts";
+import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
 import { DECISION_OPEN_MAX } from "./decisionReview.ts";
 import { monthlyTotals, resilience } from "./longMemory.ts";
@@ -1274,10 +1274,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // رد فعل العميل على الرؤى (engagement.ts): اللي اتجاهل ٣ مرات ورا بعض بيسكت.
   const { data: insightHistory, error: insightHistErr } = await sb.from("zad_insights")
-    .select("dedupe_key,title,status,priority,surface,created_at,expires_at").eq("user_id", userId)
+    .select("dedupe_key,title,status,kind,priority,surface,created_at,expires_at,seen_at").eq("user_id", userId)
     .gte("created_at", new Date(Date.now() - ENGAGEMENT_WINDOW_DAYS * 86_400_000).toISOString())
     .order("created_at", { ascending: false }).limit(200);
   if (insightHistErr) console.error("[snapshot] insight history failed:", insightHistErr.message);
+  // السؤال والحرج بيتبعتوا تليجرام لحظة كتابتهم لو الحساب مربوط — ظهروا حتى لو التطبيق مقفول.
+  const { count: telegramBound } = await sb.from("telegram_bindings")
+    .select("user_id", { count: "exact", head: true }).eq("user_id", userId).not("bound_at", "is", null);
 
 
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
@@ -1567,7 +1570,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       recent_card_titles: recentCardTitles((insightHistory ?? []) as Array<{ dedupe_key: string | null; status: string | null; title: string | null; created_at: string }>),
     },
     // null = القراية فشلت (مفيش سكوت من غير دليل).
-    engagement: insightHistErr ? null : engagementFrom((insightHistory ?? []) as Array<{ dedupe_key: string | null; title: string | null; status: string | null; created_at: string }>),
+    engagement: insightHistErr ? null : engagementFrom((insightHistory ?? []) as InsightRow[], Date.now(), { telegram: (telegramBound ?? 0) > 0 }),
     // null = مفيش سؤال صبح اتبعت آخر ٢٠ ساعة.
     asked_this_morning: askedThisMorning(morningRow as { facts?: unknown; sent_at?: string | null } | null),
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين

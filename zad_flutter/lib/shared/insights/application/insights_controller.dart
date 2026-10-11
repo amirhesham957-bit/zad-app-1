@@ -35,6 +35,10 @@ class InsightsController extends Notifier<InsightsView> {
   DateTime? _lastFetch;
   bool _fetching = false;
 
+  /// Cards already reported shown in this run, so a rebuild does not touch
+  /// the queue again.
+  final Set<String> _reportedSeen = <String>{};
+
   @override
   InsightsView build() {
     unawaited(Future<void>.microtask(() => ref.mounted ? refresh() : null));
@@ -102,6 +106,32 @@ class InsightsController extends Notifier<InsightsView> {
       // Kotlin logs and moves on; the answer is already recorded as acted.
     }
     if (ref.mounted) unawaited(refresh(force: true));
+  }
+
+  /// Records that [shown] were on screen — Home's cards, the notification
+  /// center's — so the brain can tell "ignored" from "never saw it". Each
+  /// card once; the first time is the one kept.
+  Future<void> markSeen(List<ZadInsight> shown) async {
+    final fresh = [
+      for (final i in shown)
+        if (i.seenAt == null && !_reportedSeen.contains(i.id)) i,
+    ];
+    if (fresh.isEmpty || !ref.mounted) return;
+    _reportedSeen.addAll(fresh.map((i) => i.id));
+    try {
+      final queued = await ref
+          .read(insightsRepositoryProvider)
+          .markSeen(fresh, ref.read(nowProvider)());
+      if (queued > 0 && ref.mounted) {
+        unawaited(
+          ref.read(outboxProvider).flush().then((_) {}, onError: (Object _) {}),
+        );
+      }
+    } on Object {
+      // Not queued: let a later showing try again. The cards are on screen
+      // either way.
+      _reportedSeen.removeAll(fresh.map((i) => i.id));
+    }
   }
 
   void _afterDecision() {
