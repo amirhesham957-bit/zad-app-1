@@ -44,9 +44,13 @@ export function describeRate(from: string, to: string, r: ReturnType<typeof cros
   return `1 ${f} ≈ ${r.rate.toFixed(digits)} ${t}${when}`;
 }
 
+import { CROWD_MIN_HOMES, homesIn, withoutOutliers } from "./crowdFloor.ts";
+
 /** صف سعر من price_index. */
 export interface PriceRow {
   price: number | string;
+  /** المبلّغ — للأرضية (٣ بيوت مختلفة، crowdFloor.ts). */
+  user_id?: string | null;
   timestamp?: string | null;
   item_name?: string | null;
   location?: string | null;
@@ -65,8 +69,13 @@ export function summarizePriceTrend(
   itemName: string,
   days: number,
   currency: string,
+  homeOf: ReadonlyMap<string, string> = new Map(),
 ): string {
-  const p = positive(rows);
+  const p = withoutOutliers(positive(rows).map((r) => ({ ...r, price: Number(r.price) })));
+  if (p.length > 0 && homesIn(p, homeOf) < CROWD_MIN_HOMES) {
+    return `بلاغات «${itemName}» آخر ${days} يوم من أقل من ${CROWD_MIN_HOMES} بيوت — مش كفاية أقول سعر سوق ولا اتجاه، ` +
+      `ومش هقول سعر بيت بعينه. قول للعميل كده، واعرض عليه يصوّر فاتورته عشان الصورة تكمل.`;
+  }
   if (p.length === 0) {
     return `مفيش بلاغات أسعار لـ«${itemName}» بعملتك آخر ${days} يوم. قول للعميل كده، واعرض عليه يسجّل سعر من صفحة الأسعار (app_command screen=prices).`;
   }
@@ -94,10 +103,12 @@ export function rankDeals(
   category: string,
   savingsThreshold: number,
   currency: string,
+  homeOf: ReadonlyMap<string, string> = new Map(),
 ): string {
   const p = positive(rows);
-  if (p.length < 2) {
-    return `مفيش بلاغات أسعار كفاية في «${category}» بعملتك آخر أسبوع للمقارنة. قول للعميل كده، ماتخترعش محلات.`;
+  if (p.length < 2 || homesIn(p, homeOf) < CROWD_MIN_HOMES) {
+    return `مفيش بلاغات أسعار كفاية في «${category}» بعملتك آخر أسبوع للمقارنة (لازم ${CROWD_MIN_HOMES} بيوت مختلفة على الأقل). ` +
+      `قول للعميل كده، ماتخترعش محلات.`;
   }
   const avg = p.reduce((s, r) => s + Number(r.price), 0) / p.length;
   const deals = p

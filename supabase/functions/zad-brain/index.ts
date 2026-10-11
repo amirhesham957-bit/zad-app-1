@@ -56,6 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
+import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { deliverRestockLink } from "./restockLink.ts";
 import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
@@ -4123,14 +4124,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // بعملة العميل بس — price_index فيه بلاغات من كل الأسواق.
       const { data: prices, error } = await sb
         .from("price_index")
-        .select("price, timestamp")
+        .select("price, timestamp, user_id")
         .ilike("item_name", `%${String(item_name).trim()}%`)
         .eq("currency", snap?.currency ?? "")
         .gte("timestamp", since)
         .order("timestamp", { ascending: false })
         .limit(200);
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
-      return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "");
+      const trendHomes = await homeMap(sb, ((prices ?? []) as Array<{ user_id: string | null }>).map((r) => r.user_id ?? ""));
+      return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "", trendHomes);
     }
     case "area_trends": {
       // ترندات السوق بشرط ٥ بيوت (20260930010000) — الحد جوه SQL، مش هنا ولا في الموديل.
@@ -4146,13 +4148,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const threshold = Math.max(0, Number(input.savings_threshold) || 10);
       const { data: deals, error } = await sb
         .from("price_index")
-        .select("item_name, price, location, store_name")
+        .select("item_name, price, location, store_name, user_id")
         .eq("item_category", item_category)
         .eq("currency", snap?.currency ?? "")
         .gte("timestamp", new Date(Date.now() - 7 * 86400000).toISOString())
         .limit(300);
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
-      return rankDeals(deals, String(item_category), threshold, snap?.currency ?? "");
+      const dealHomes = await homeMap(sb, ((deals ?? []) as Array<{ user_id: string | null }>).map((r) => r.user_id ?? ""));
+      return rankDeals(deals, String(item_category), threshold, snap?.currency ?? "", dealHomes);
     }
 
     default:
@@ -5871,15 +5874,18 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     const { data: me } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
     const currency = (me as { currency?: string | null } | null)?.currency ?? null;
     const { data: reports, error: seenErr } = await sb.from("price_index")
-      .select("item_name,store_name,timestamp,price,currency")
+      .select("item_name,store_name,timestamp,price,currency,user_id")
       .eq("source", "crowdsource").not("store_name", "is", null)
       .gte("timestamp", new Date(Date.now() - 30 * 86_400_000).toISOString())
       .order("timestamp", { ascending: false }).limit(2000);
     if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
-    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null }>;
+    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null; user_id: string | null }>;
     const missing = [...shopping, ...lowStock];
     seenHere = seenHereItems(rows, storeName, missing, Date.now());
-    if (currency) cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now());
+    if (currency) {
+      const homes = await homeMap(sb, rows.map((r) => r.user_id ?? ""));
+      cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now(), homes);
+    }
   }
 
   const message = buildStoreArrivalMessage({
