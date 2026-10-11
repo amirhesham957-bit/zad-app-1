@@ -13,6 +13,8 @@ export interface TurnOutcome {
   reply: string;
   executed: Array<{ tool: string }>;
   proposals: unknown[];
+  /** Read tools the turn called (web_search…) — writes are in [executed]. */
+  consulted?: string[];
 }
 
 const firstSentence = (text: string) => text.trim().split(/[.!؟?\n]/)[0] ?? "";
@@ -96,6 +98,8 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
     message: "مين كسب كاس العالم للأندية آخر مرة؟",
     check: (o) => {
       if (o.reply.trim().length < 15) return "empty answer";
+      // «آخر مرة» is a fact that moves: an answer from memory is the bug, even when memory is right.
+      if (o.consulted && !o.consulted.includes("web_search")) return "answered from memory, no search";
       if (NOT_FOUND.test(firstSentence(o.reply))) return "said it could not find it";
       if (BUDGET_DEFLECTION.test(o.reply)) return "steered to the budget";
       // The 2025 edition (32 clubs) was won by Chelsea; «Manchester City 2023» is the model's memory.

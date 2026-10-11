@@ -93,3 +93,24 @@ export function historyForAnswer(history: Turn[]): Turn[] {
   }
   return out;
 }
+
+/**
+ * Where a tool call is recorded: a write in [executed] (the receipts the customer sees), a read
+ * in [consulted] (web_search, find_nearby_stores…) — what the acceptance probe checks for «did it
+ * search before answering?». Returns whether it wrote.
+ */
+export function recordCall(
+  executed: Array<{ tool: string; ok: boolean; summary: string }>,
+  consulted: string[],
+  tool: string,
+  result: string,
+  mutated: boolean,
+): boolean {
+  if (isWrite(tool, result, mutated)) {
+    executed.push({ tool, ok: true, summary: result });
+    return true;
+  }
+  // A refused write («مرفوض…») is neither: nothing was written, and nothing was read either.
+  if (!isToolFailure(result)) consulted.push(tool);
+  return false;
+}

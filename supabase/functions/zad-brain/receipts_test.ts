@@ -81,3 +81,14 @@ Deno.test("earlier conversation keeps its turns, alternating", () => {
   ]);
   assertEquals(flat.map((t) => t.role), ["user", "assistant", "user", "assistant", "user"]);
 });
+
+Deno.test("recordCall: a write is a receipt, a read is consulted, a refusal is neither", async () => {
+  const { recordCall } = await import("./receipts.ts");
+  const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
+  const consulted: string[] = [];
+  assertEquals(recordCall(executed, consulted, "web_search", "1. FIFA Club World Cup …", false), false);
+  assertEquals(recordCall(executed, consulted, "add_shopping_item", "اتضافت لقائمة التسوق", true), true);
+  assertEquals(recordCall(executed, consulted, "add_inventory_item", "مرفوض: الصنف مش موجود", false), false);
+  assertEquals(executed.map((e) => e.tool), ["add_shopping_item"]);
+  assertEquals(consulted, ["web_search"]);
+});
