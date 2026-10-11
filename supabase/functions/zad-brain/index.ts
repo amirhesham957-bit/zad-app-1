@@ -5871,20 +5871,25 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   let seenHere: SeenHere[] = [];
   let cheaperHere: CheaperHere[] = [];
   if (category !== "pharmacy") {
-    const { data: me } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
+    const [{ data: me }, { data: profile }] = await Promise.all([
+      sb.from("zad_users").select("currency").eq("id", userId).maybeSingle(),
+      sb.from("zad_customer_profile").select("city").eq("user_id", userId).maybeSingle(),
+    ]);
     const currency = (me as { currency?: string | null } | null)?.currency ?? null;
+    // مدينة «ملفي» — البلاغات بقت بتشيل مدينة صاحبها (20261011260000)؛ مدينة تانية مش «هنا».
+    const city = (profile as { city?: string | null } | null)?.city ?? null;
     const { data: reports, error: seenErr } = await sb.from("price_index")
-      .select("item_name,store_name,timestamp,price,currency,user_id")
+      .select("item_name,store_name,timestamp,price,currency,user_id,location")
       .eq("source", "crowdsource").not("store_name", "is", null)
       .gte("timestamp", new Date(Date.now() - 30 * 86_400_000).toISOString())
       .order("timestamp", { ascending: false }).limit(2000);
     if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
-    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null; user_id: string | null }>;
+    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null; user_id: string | null; location: string | null }>;
     const missing = [...shopping, ...lowStock];
-    seenHere = seenHereItems(rows, storeName, missing, Date.now());
+    seenHere = seenHereItems(rows, storeName, missing, Date.now(), 72, city);
     if (currency) {
       const homes = await homeMap(sb, rows.map((r) => r.user_id ?? ""));
-      cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now(), homes);
+      cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now(), homes, city);
     }
   }
 

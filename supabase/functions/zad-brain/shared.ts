@@ -419,12 +419,23 @@ export function sameStore(a: string, b: string): boolean {
  * أسعار اتكتبت) خلال [maxHours]. الأحدث لكل صنف. «بنفس الاسم» مش «نفس الفرع»: price_index
  * مافيهوش إحداثيات، والرسالة بتقول كده بصراحة.
  */
+/**
+ * نفس المدينة؟ (20261011260000: البلاغ بياخد مدينة «ملفي».) مدينة مش معروفة في أي ناحية = مانقدرش
+ * نقول إنها تانية، فبتتحسب. «القاهرة» و«القاهره الجديدة» مش نفس الحاجة؛ «الإسكندرية» و«اسكندريه» نفس الحاجة.
+ */
+export function sameCity(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = itemKey(String(a ?? "")).replace(/^ال/, "");
+  const y = itemKey(String(b ?? "")).replace(/^ال/, "");
+  return !x || !y || x === y;
+}
+
 export function seenHereItems(
-  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; location?: string | null }>,
   storeName: string,
   missing: string[],
   nowMs: number,
   maxHours = 72,
+  city: string | null = null,
 ): SeenHere[] {
   const out: SeenHere[] = [];
   for (const want of missing) {
@@ -433,7 +444,7 @@ export function seenHereItems(
     let best: number | null = null;
     for (const r of reports) {
       if (!r.item_name || !r.store_name || !r.timestamp) continue;
-      if (!sameStore(r.store_name, storeName)) continue;
+      if (!sameStore(r.store_name, storeName) || !sameCity(r.location, city)) continue;
       const reported = itemKey(r.item_name);
       if (!reported.includes(key) && !key.includes(reported)) continue;
       const hours = (nowMs - Date.parse(r.timestamp)) / 3_600_000;
@@ -460,11 +471,12 @@ export interface CheaperHere {
  * مش «سعر السوق» — مابيتقالش. ٣ أصناف بالكتير، الأكبر توفير الأول.
  */
 export function cheaperHereItems(
-  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; user_id?: string | null }>,
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; user_id?: string | null; location?: string | null }>,
   storeName: string,
   missing: string[],
   nowMs: number,
   homeOf: ReadonlyMap<string, string> = new Map(),
+  city: string | null = null,
 ): CheaperHere[] {
   const out: Array<CheaperHere & { saving: number }> = [];
   const seen = new Set<string>();
@@ -478,6 +490,8 @@ export function cheaperHereItems(
       const price = Number(r.price);
       const at = Date.parse(String(r.timestamp ?? ""));
       if (!r.item_name || !r.store_name || !(price > 0) || !Number.isFinite(at)) continue;
+      // سعر مدينة تانية مش «هنا» ولا «في محلات تانية» قريبة منه.
+      if (!sameCity(r.location, city)) continue;
       const reported = itemKey(r.item_name);
       if (!reported.includes(key) && !key.includes(reported)) continue;
       const days = (nowMs - at) / 86_400_000;

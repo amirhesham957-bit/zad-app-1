@@ -1,5 +1,5 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { buildStoreArrivalMessage, cheaperHereItems, normalizeForPerson, sameStore, seenHereItems, storeKey } from "./shared.ts";
+import { buildStoreArrivalMessage, cheaperHereItems, normalizeForPerson, sameCity, sameStore, seenHereItems, storeKey } from "./shared.ts";
 
 Deno.test("storeKey drops the generic words, Arabic and Latin", () => {
   assertEquals(storeKey("كارفور ماركت"), "كارفور");
@@ -118,4 +118,22 @@ Deno.test("normalizeForPerson: the same relative is one person, whatever word is
   assertEquals(normalizeForPerson("لينا"), "لينا");
   assertEquals(normalizeForPerson("سارة"), "سارة");
   assertEquals(normalizeForPerson("ليا"), null);
+});
+
+Deno.test("another city's report is not «here»; an unknown city still counts", () => {
+  assertEquals(sameCity("الإسكندرية", "اسكندرية"), true);
+  assertEquals(sameCity("القاهرة", "جدة"), false);
+  assertEquals(sameCity(null, "جدة"), true);
+  const now = Date.parse("2026-09-29T12:00:00Z");
+  const reports = [
+    { item_name: "لبن", store_name: "كارفور", timestamp: "2026-09-29T09:00:00Z", location: "جدة" },
+    { item_name: "عيش", store_name: "كارفور", timestamp: "2026-09-29T10:00:00Z", location: null },
+  ];
+  assertEquals(seenHereItems(reports, "كارفور", ["لبن", "عيش"], now, 72, "القاهرة"), [{ item: "عيش", hours: 2 }]);
+  const priced = [
+    r("لبن", "كارفور", 30, 1),
+    { ...r("لبن", "خير زمان", 40, 3), location: "جدة" }, r("لبن", "سعودي", 42, 4), r("لبن", "هايبر وان", 41, 5),
+  ];
+  assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW, new Map(), "القاهرة"), [], "two homes left in the city");
+  assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW).length, 1);
 });
