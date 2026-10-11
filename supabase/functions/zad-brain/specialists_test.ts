@@ -125,7 +125,8 @@ Deno.test("reminder and self-introduction intents are recognised in feminine/dia
   assertEquals(intentToolHints("عندي ميعاد دكتور الخميس").includes("add_appointment"), true);
   assertEquals(intentToolHints("على فكرة أنا اسمي كريم وبشتغل محاسب").includes("update_customer_profile"), true);
   assertEquals(intentToolHints("أنا أم لتلات عيال").includes("update_customer_profile"), true);
-  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
+  // من ٢٠٢٦-١٠-١١: مصروف بيلمّح لتسجيله (اقتراح بزرار) — ولسه مش ميعاد ولا بحث نت.
+  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), ["log_transaction"]);
   assertEquals(intentToolHints("افتكر إني مش باكل تونة خالص").includes("remember"), true);
 });
 
@@ -186,7 +187,8 @@ Deno.test("a live price question points at web_search, not at the app's tools (2
   }
   // His own spending is not a web question.
   assertEquals(intentToolHints("صرفت كام على الأكل الشهر ده").includes("web_search"), false);
-  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), []);
+  // من ٢٠٢٦-١٠-١١: مصروف بيلمّح لتسجيله (اقتراح بزرار) — ولسه مش ميعاد ولا بحث نت.
+  assertEquals(intentToolHints("صرفت ٥٠ جنيه قهوة"), ["log_transaction"]);
 });
 
 Deno.test("intentToolHints: gold and currency questions get the price tools, own spending does not", () => {
@@ -197,7 +199,8 @@ Deno.test("intentToolHints: gold and currency questions get the price tools, own
   assertEquals(intentToolHints("الدولار بكام؟"), ["fetch_current_exchange_rate"]);
   assertEquals(intentToolHints("سعر الريال النهارده"), ["fetch_current_exchange_rate"]);
   assertEquals(intentToolHints("كام سعر زجاجة المياه في السعودية"), ["web_search"]);
-  assertEquals(intentToolHints("صرفت 500 على دهب"), []);
+  // صرف على دهب = مصروفه هو، مش سؤال سعر: تسجيل بس (من ٢٠٢٦-١٠-١١)، ومن غير gold_price.
+  assertEquals(intentToolHints("صرفت 500 على دهب"), ["log_transaction"]);
 });
 
 Deno.test("scopeToolsForSpecialist: today's prices are offered to every specialist", () => {
