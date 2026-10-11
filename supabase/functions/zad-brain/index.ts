@@ -128,6 +128,7 @@ import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 
@@ -742,6 +743,9 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const cashKey = isoWeekKey(new Date());
+  // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
+  // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
+  const householdFamily = await householdFamilyId(sb, userId);
   const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
@@ -758,12 +762,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at")
-        .eq("user_id", userId),
+        .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
       sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
         .eq("user_id", userId),
-      sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
+      sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
       // الحية بس، كل واحدة بأسماء كياناتها وانتهائها (20261003100000). نفس الترتيب بالثقة.
       sb.rpc("zad_memory_live_notes", { p_user: userId, p_limit: 20 }),
@@ -1921,9 +1925,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // of duplicate comes from the Telegram fallback — when zad-brain fails *after* a
       // write, the bot retries on the old [[ACTION]] path and writes it again.
       const itemName = String(input.item_name).trim();
+      // قايمة البيت: لو الأم ضافت «لبن» مايتضافش تاني باسم الأب.
       const { data: existing } = await sb.from("zad_shopping_list")
         .select("id,item_name,quantity")
-        .eq("user_id", userId)
+        .or(householdFilter(userId, await householdFamilyId(sb, userId)))
         .eq("is_purchased", false);
       const match = (existing ?? []).find(
         (row: { item_name: string }) => row.item_name.trim().toLowerCase() === itemName.toLowerCase(),
@@ -1932,8 +1937,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (match) {
         // نفس الصنف مطلوب تاني قبل ما يتشترى = كمية أكبر، مش سطر تاني في القايمة.
         const merged = (match.quantity ?? 1) + (Number(input.quantity) || 1);
+        // بـid بس: الصف ممكن يكون باسم فرد تاني في البيت، واتقرا من قايمة البيت فوق. فلتر
+        // user_id هنا كان هيعدّي من غير ما يلاقي حاجة ويقول «الكمية بقت…» كدب.
         const { error: upErr } = await sb.from("zad_shopping_list")
-          .update({ quantity: merged }).eq("id", match.id).eq("user_id", userId);
+          .update({ quantity: merged }).eq("id", match.id);
         if (upErr) return `فشل التعديل: ${upErr.message}`;
         return `"${itemName}" كان في القايمة أصلاً — الكمية بقت ${merged}`;
       }
@@ -2507,9 +2514,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "complete_shopping_item": {
       const itemName = String(input.item_name).trim();
-      const { data: before } = await sb.from("zad_shopping_list").select("*").eq("user_id", userId).eq("item_name", itemName).eq("is_purchased", false).maybeSingle();
+      // قايمة البيت: الصنف ممكن يكون الفرد التاني ضافه. لو الاسم متكرر (كل واحد ضافه)، صف العميل
+      // الأول — نفس اختيار المخزن (inventoryRow.ts). maybeSingle على اسم متكرر كان بيرجّع «مش موجود».
+      const familyId = await householdFamilyId(sb, userId);
+      const { data: open } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName).eq("is_purchased", false);
+      const before = pickInventoryRow(open as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق المفتوحة.`;
-      const w = await writeRows(sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", before.id).eq("user_id", userId).select("id,is_purchased"), "إتمام شراء");
+      const w = await writeRows(sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", before.id).select("id,is_purchased"), "إتمام شراء");
       if (!w.ok) return `مرفوض: ${w.reason}`;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: w.rows[0] });
@@ -2518,9 +2529,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "delete_shopping_item": {
       const itemName = String(input.item_name).trim();
-      const { data: before } = await sb.from("zad_shopping_list").select("*").eq("user_id", userId).eq("item_name", itemName).maybeSingle();
+      const familyId = await householdFamilyId(sb, userId);
+      const { data: rows } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName);
+      const before = pickInventoryRow(rows as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق.`;
-      const w = await writeRows(sb.from("zad_shopping_list").delete().eq("id", before.id).eq("user_id", userId).select("id"), "حذف من التسوق");
+      const w = await writeRows(sb.from("zad_shopping_list").delete().eq("id", before.id).select("id"), "حذف من التسوق");
       if (!w.ok) return `مرفوض: ${w.reason}`;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
@@ -3640,9 +3653,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // نمط العزومة (gathering.ts، الشريحة ٣٥): كميات بالفرد، اللي في البيت، ووضع الفلوس — من غير إجمالي مخترع.
       const meal: GatheringMeal = input?.meal === "sweets" ? "sweets" : "meal";
       const timeZone = snap?.cycle?.timezone ?? "UTC";
+      // اللي في البيت = مخزن البيت وقايمته، مش بتاع الفرد.
+      const householdFamily = await householdFamilyId(sb, userId);
       const [pantry, shopping, user, state, challenge, broke] = await Promise.all([
-        sb.from("zad_inventory").select("item_name,quantity,unit").eq("user_id", userId).limit(300),
-        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(100),
+        sb.from("zad_inventory").select("item_name,quantity,unit").or(householdFilter(userId, householdFamily)).limit(300),
+        sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false).limit(100),
         sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
         sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
         sb.from("zad_savings_challenges").select("id").eq("user_id", userId).eq("status", "active").limit(1),
@@ -3702,6 +3717,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const today = localNowContext(timeZone).date;
       const days = Number(input?.days) || HANDOVER_DEFAULT_DAYS;
       const until = new Date(Date.now() + (days + 1) * 86_400_000).toISOString();
+      // القايمة بس هي اللي للبيت (قرار المالك ٢٠٢٦-١٠-١١)؛ الباقي من حساب العميل زي ما هو.
+      const householdFamily = await householdFamilyId(sb, userId);
       const [meds, appts, timetable, state, obligations, shopping, user] = await Promise.all([
         sb.from("zad_pharmacy_items").select("name,dosage,dose_times,remaining_quantity,daily_dose_count,units_per_dose,for_person,is_recurring").eq("user_id", userId),
         sb.from("zad_appointments").select("title,starts_at,kind,for_person").eq("user_id", userId)
@@ -3709,7 +3726,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         sb.from("zad_school_timetable").select("person,weekday,period,subject,starts").eq("user_id", userId),
         sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
         sb.from("zad_obligations").select("title,amount,due_day").eq("user_id", userId).eq("active", true),
-        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20),
+        sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false).limit(20),
         sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
       ]);
       if (meds.error || appts.error) return `مقدرتش أجمع الكارت دلوقتي: ${(meds.error ?? appts.error)?.message}`;
@@ -5712,8 +5729,10 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       .filter((m) => (m.remaining_quantity ?? 0) <= (m.daily_dose_count ?? 1) * 5)
       .map((m) => m.name);
   } else {
+    // قايمة البيت: اللي الفرد التاني ضافه مطلوب من اللي واقف في المحل كمان.
     const { data: list, error: listErr } = await sb.from("zad_shopping_list")
-      .select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(50);
+      .select("item_name").or(householdFilter(userId, await householdFamilyId(sb, userId)))
+      .eq("is_purchased", false).limit(50);
     if (listErr) console.error("[store_arrival] shopping lookup failed:", listErr.message);
     shopping = ((list ?? []) as Array<{ item_name: string }>).map((r) => r.item_name);
 
@@ -5838,7 +5857,8 @@ async function firePlaceReminders(
   if (agreement) {
     const { data: already } = await sb.from("zad_voice_moments").select("id").eq("user_id", userId).eq("dedupe_key", warnKey).maybeSingle();
     if (!already) {
-      const { data: list } = await sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20);
+      const { data: list } = await sb.from("zad_shopping_list").select("item_name")
+        .or(householdFilter(userId, await householdFamilyId(sb, userId))).eq("is_purchased", false).limit(20);
       const items = ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name);
       savings = { ...agreement, list_count: items.length, list_preview: items.slice(0, 5) };
     }
@@ -8037,9 +8057,12 @@ async function handleRequest(req: Request): Promise<Response> {
           // معندهاش unit — الكويري دي كانت بترمي 42703 على كل نداء (بند 30.1، schema_contract_test.ts).
           // نواقص → قايمة الشراء (شوف lowStock.ts): الحد من low_stock_threshold، ومقارنة بالبنود
           // المفتوحة بس — صف قديم اتشرى مابيمنعش الصنف يرجع للقايمة لما يخلص تاني.
+          // مخزن البيت وقايمة البيت: صنف ناقص عند البيت بيتضاف مرة واحدة، مش مرة لكل فرد،
+          // وصنف الأم ضافته للقايمة مايتضافش تاني في حلم الأب.
+          const dreamFamily = await householdFamilyId(sbDream, u.id);
           const [{ data: pantryItems }, { data: openShop }] = await Promise.all([
-            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").eq("user_id", u.id),
-            sbDream.from("zad_shopping_list").select("item_name").eq("user_id", u.id).eq("is_purchased", false),
+            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").or(householdFilter(u.id, dreamFamily)),
+            sbDream.from("zad_shopping_list").select("item_name").or(householdFilter(u.id, dreamFamily)).eq("is_purchased", false),
           ]);
           const toAdd = lowStockToAdd(pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name));
           if (toAdd.length) {
@@ -8176,7 +8199,7 @@ async function handleRequest(req: Request): Promise<Response> {
               writeNeed: async (need) => {
                 openShopping ??= (async () => {
                   const { data } = await sbDream.from("zad_shopping_list")
-                    .select("item_name").eq("user_id", u.id).eq("is_purchased", false);
+                    .select("item_name").or(householdFilter(u.id, await householdFamilyId(sbDream, u.id))).eq("is_purchased", false);
                   return new Set(((data ?? []) as Array<{ item_name: string | null }>).map((r) => itemKey(r.item_name ?? "")));
                 })();
                 if ((await openShopping).has(itemKey(need.item))) return false;
@@ -8321,7 +8344,8 @@ async function handleRequest(req: Request): Promise<Response> {
           const m = Math.round(Number(parsed.minutes_to_iftar));
           if (Number.isFinite(m)) minutes = Math.min(90, Math.max(1, m));
         } catch { /* الافتراضي */ }
-        const { data: list } = await sbEvent.from("zad_shopping_list").select("item_name").eq("user_id", eventUserId).eq("is_purchased", false).limit(10);
+        const { data: list } = await sbEvent.from("zad_shopping_list").select("item_name")
+          .or(householdFilter(eventUserId, await householdFamilyId(sbEvent, eventUserId))).eq("is_purchased", false).limit(10);
         facts = {
           minutes_to_iftar: minutes, hijri_day: season.hijri_day, local_date: local.date,
           shopping_preview: ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name).slice(0, 4),

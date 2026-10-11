@@ -21,6 +21,7 @@ import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type Weathe
 import { loadTasteDeal } from "./tasteDeals.ts";
 import { familyTime, type FamilyTime, isWeekendEve } from "./familyTime.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
@@ -1380,7 +1381,10 @@ export async function goodNightFacts(
     sb.from("zad_transactions").select("amount,merchant_name,title").eq("user_id", userId).eq("txn_kind", "expense")
       .gte("created_at", todayStart).lt("created_at", tomorrowStart).limit(50)
       .then((r) => (r.data ?? []) as Array<{ amount: number | string | null; merchant_name: string | null; title: string | null }>, () => []),
-    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId).limit(200)
+    // مخزن البيت (قرار المالك ٢٠٢٦-١٠-١١): «خد بالك اللبن بيخلص» عن لبن البيت، مش لبن الفرد.
+    householdFamilyId(sb, userId).then((family) =>
+      sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").or(householdFilter(userId, family)).limit(200)
+    )
       .then((r) => (r.data ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null }>, () => []),
     // جدول الحصص (الشريحة ٢١): مواد بكرة لكل طفل ⇒ «جهّز الشنطة».
     sb.from("zad_school_timetable").select("person,weekday,period,starts,subject").eq("user_id", userId)

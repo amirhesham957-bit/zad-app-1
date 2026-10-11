@@ -28,6 +28,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AgentSender } from "./agentMail.ts";
 import { countryCode } from "../_shared/dialect.ts";
 import { productFamilyOf } from "./lowStock.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { goalPace, type GoalPaceInput } from "./goalPace.ts";
 import { upcomingSeason } from "../_shared/season.ts";
 import { DECISION_REVIEW_DAYS, type LoggedDecision, type ReviewTxn, reviewDecision, reviewNote } from "./decisionReview.ts";
@@ -449,9 +450,11 @@ export async function runStaffRound(sb: SupabaseClient, userId: string, now = ne
   try {
     const since30 = new Date(now.getTime() - 30 * DAY).toISOString();
     const since7 = new Date(now.getTime() - 7 * DAY).toISOString();
+    // المخزن والقايمة للبيت (قرار المالك ٢٠٢٦-١٠-١١).
+    const householdFamily = await householdFamilyId(sb, userId);
     const [pantry, shopping, pharmacy, user, tx, push, tg, shares, membership, mail, goals, subs] = await Promise.all([
-      sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
-      sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").eq("user_id", userId),
+      sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").or(householdFilter(userId, householdFamily)),
+      sb.from("zad_shopping_list").select("item_name,is_purchased,created_at").or(householdFilter(userId, householdFamily)),
       sb.from("zad_pharmacy_items").select("name,remaining_quantity,is_recurring,dose_times,daily_dose_count,units_per_dose,expiry_date").eq("user_id", userId),
       sb.from("zad_users").select("monthly_limit,travel_since").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("created_at").eq("user_id", userId).gte("created_at", since30).order("created_at", { ascending: false }).limit(50),
@@ -810,9 +813,10 @@ export async function runResearch(
     const { data: recent } = await sb.from("zad_agent_messages").select("id")
       .eq("user_id", userId).eq("sender", "research").gte("created_at", since7).limit(1);
     if ((recent ?? []).length > 0) return null;
+    const householdFamily = await householdFamilyId(sb, userId);
     const [{ data: pantry }, { data: shopping }, { data: user }] = await Promise.all([
-      sb.from("zad_inventory").select("item_name").eq("user_id", userId),
-      sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
+      sb.from("zad_inventory").select("item_name").or(householdFilter(userId, householdFamily)),
+      sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false),
       sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
     ]);
     const staples = researchStaples((pantry ?? []) as Array<{ item_name: string }>, (shopping ?? []) as Array<{ item_name: string }>);

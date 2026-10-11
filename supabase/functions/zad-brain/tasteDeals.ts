@@ -12,6 +12,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { countryNameAr, itemKey } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -114,8 +115,9 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | 
 /** عرض الصبح: القرايات، البحث، والاختيار. أي فشل = مفيش عرض. */
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now()): Promise<TasteDeal | null> {
   try {
+    const family = await householdFamilyId(sb, userId);
     const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke] = await Promise.all([
-      sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20),
+      sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("merchant_name").eq("user_id", userId).eq("txn_kind", "expense")
