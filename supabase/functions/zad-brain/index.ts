@@ -2310,13 +2310,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "add_inventory_item": {
       const itemName = String(input.item_name).trim();
       const unit = input.unit ? String(input.unit).trim() : null;
-      // نفس الصنف موجود عند العميل؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
-      // صفوف العميل نفسه بس: «تراجع» بيرجّع الصف بـuser_id العميل.
+      // نفس الصنف موجود في مخزن البيت؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
+      // صف العميل نفسه الأول، وبعده صف العيلة: «اشتريت لبن» من الأب بيزوّد لبن البيت اللي
+      // الأم ضافته، مش صف لبن تاني باسمه. «تراجع» بيعرف البيت (20261011160000).
       const { data: own, error: ownErr } = await sb.from("zad_inventory")
-        .select("id,item_name,quantity,unit,category,expiry_date,created_at")
-        .eq("user_id", userId).limit(500);
+        .select("id,user_id,item_name,quantity,unit,category,expiry_date,created_at")
+        .or(householdFilter(userId, await householdFamilyId(sb, userId))).limit(500);
       if (ownErr) console.error("[add_inventory_item] pantry lookup failed:", ownErr.message);
-      const existing = pickPantryMatch((own ?? []) as Array<PantryRow & { category: string | null; expiry_date: string | null }>, itemName, unit);
+      type HouseRow = PantryRow & { user_id: string; category: string | null; expiry_date: string | null };
+      const houseRows = (own ?? []) as HouseRow[];
+      const existing = pickPantryMatch(houseRows.filter((r) => r.user_id === userId), itemName, unit) ??
+        pickPantryMatch(houseRows, itemName, unit);
       if (existing) {
         const total = Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
         const previous = { quantity: existing.quantity, category: existing.category, expiry_date: existing.expiry_date };
@@ -2335,8 +2339,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           tool: name, input, table: "zad_inventory", targetId: existing.id,
           previous, next: w.rows[0],
         });
+        // معدل الاستهلاك متربط بصاحب الصف (zad_consumption.user_id = zad_inventory.user_id في
+        // «هيخلص إمتى؟»)، فالملاحظة باسم صاحب الصف حتى لو اللي اشترى فرد تاني.
         const { error: obsErr } = await sb.rpc("zad_record_observation", {
-          p_user: userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
+          p_user: existing.user_id ?? userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
         });
         if (obsErr) console.error("zad_record_observation failed:", obsErr.message);
         return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}`;
