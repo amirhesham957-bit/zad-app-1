@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// Kotlin's `loadAffiliateProducts`: the table, else the built-in six.
 final affiliateProductsProvider = FutureProvider<List<AffiliateProduct>>((
@@ -46,7 +46,9 @@ Future<void> openAffiliateProduct(
   } on Object catch (e) {
     debugPrint('affiliate click not recorded: $e');
   }
-  final uri = Uri.parse(affiliateUrl(product));
+  final uri = Uri.parse(
+    affiliateUrl(product, ref.read(accountCountryProvider)),
+  );
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
   } on Object catch (e) {
@@ -55,12 +57,28 @@ Future<void> openAffiliateProduct(
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
+/// Opens a link Zad already built (a «حاجة خلصت» message's button) the same
+/// way: a browser tab, never the Amazon app.
+Future<void> openAmazonLink(String url) async {
+  final uri = Uri.parse(url);
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
+  } on Object catch (e) {
+    debugPrint('amazon tab failed: $e');
+  }
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } on Object catch (e) {
+    debugPrint('amazon browser failed: $e');
+  }
+}
+
 /// Kotlin's `AffiliateHelper.open` over `productUrl(asin = null, …)`:
-/// a tagged search for [term], in a browser tab rather than the Amazon app.
-Future<void> openAmazonSearch(String term) async {
+/// a tagged search for [term] in the account's own store, in a browser tab
+/// rather than the Amazon app.
+Future<void> openAmazonSearch(WidgetRef ref, String term) async {
   final uri = Uri.parse(
-    'https://www.amazon.sa/s?k=${Uri.encodeQueryComponent(term)}'
-    '&tag=${ZadEnv.amazonAssociateTag}',
+    amazonSuggestUrl(term, ref.read(accountCountryProvider)),
   );
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;

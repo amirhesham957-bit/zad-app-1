@@ -18,7 +18,6 @@ export interface CatalogRow {
 
 export interface Need { name: string; reason: string; score: number; days_left: number | null }
 
-export interface AmazonMarket { domain: string; tag: string | null }
 
 export function normalizeAr(raw: string): string {
   return raw.trim().toLowerCase()
@@ -29,28 +28,9 @@ export function normalizeAr(raw: string): string {
     .replace(/\s+/g, " ");
 }
 
-/**
- * تاج ودومين حسب بلد العميل. برنامج Amazon Associates منفصل لكل سوق — تاج متسجل على amazon.sa مابيكسبش
- * على amazon.eg. فالأولوية: AMAZON_ASSOCIATE_TAG_<CC> + AMAZON_DOMAIN_<CC>، وبعدين العام
- * AMAZON_ASSOCIATE_TAG + AMAZON_DOMAIN (افتراضي www.amazon.sa، السوق اللي التطبيق كان مبني عليه).
- */
-export function marketFor(country: string | null | undefined, env: (n: string) => string | undefined): AmazonMarket {
-  const cc = String(country ?? "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
-  const clean = (v: string | undefined) => (v ?? "").trim() || null;
-  const tag = (cc && clean(env(`AMAZON_ASSOCIATE_TAG_${cc}`))) || clean(env("AMAZON_ASSOCIATE_TAG"));
-  const rawDomain = (cc && clean(env(`AMAZON_DOMAIN_${cc}`))) || clean(env("AMAZON_DOMAIN")) || "www.amazon.sa";
-  const domain = /^[a-z0-9.-]*amazon\.[a-z.]{2,10}$/i.test(rawDomain) ? rawDomain.toLowerCase() : "www.amazon.sa";
-  return { domain, tag };
-}
-
-export function searchUrl(market: AmazonMarket, term: string): string {
-  const q = encodeURIComponent(term.trim());
-  return `https://${market.domain}/s?k=${q}${market.tag ? `&tag=${encodeURIComponent(market.tag)}` : ""}`;
-}
-
-export function productUrl(market: AmazonMarket, asin: string): string {
-  return `https://${market.domain}/dp/${encodeURIComponent(asin)}/${market.tag ? `?tag=${encodeURIComponent(market.tag)}` : ""}`;
-}
+// المتجر والتاج حسب بلد العميل — في _shared/amazonMarket.ts، نفس اللي zad-brain بيستعمله.
+export { marketFor, productUrl, searchUrl } from "../_shared/amazonMarket.ts";
+export type { AmazonMarket } from "../_shared/amazonMarket.ts";
 
 /** الاحتياج الحقيقي: خلص (٤) > هيخلص خلال ٣ أيام حسب استهلاكه (٤) > قليل (٣) > في قايمة التسوق (٢) > بيستهلكه باستمرار وقرّب (١). */
 export function computeNeeds(inv: InventoryRow[], cons: ConsumptionRow[], shopping: ShoppingRow[], limit = 10): Need[] {

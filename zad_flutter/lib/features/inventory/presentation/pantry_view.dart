@@ -319,8 +319,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
                       separatorBuilder: (_, _) => const SizedBox(width: 4),
                       itemBuilder: (_, i) => _AmazonSearchChip(
                         itemName: shortages[i].itemName,
-                        onTap: () =>
-                            unawaited(openAmazonSearch(shortages[i].itemName)),
+                        onTap: () => unawaited(
+                          openAmazonSearch(ref, shortages[i].itemName),
+                        ),
                       ),
                     ),
                   ),

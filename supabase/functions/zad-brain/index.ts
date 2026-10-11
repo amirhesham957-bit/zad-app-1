@@ -57,6 +57,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
+import { deliverRestockLink } from "./restockLink.ts";
 import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
@@ -5977,6 +5978,22 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         postponed++;
         continue;
       }
+    }
+    // صنف ضروري خلص (restockLink.ts): رسالة ثابتة بلينك أمازون، من غير موديل.
+    if (task.kind === "restock_link") {
+      try {
+        if (await deliverRestockLink(sb, task, {
+          pushDevice: (uid, title, text, data) => pushToDevice(sb, uid, title, text, data),
+          pushTelegram: (uid, title, text, taskId, links) =>
+            pushToTelegram(uid, title, text, fetch, taskId, false, undefined, undefined, undefined, undefined, undefined, links),
+          env: (n) => Deno.env.get(n),
+        }) === "sent") processed++;
+      } catch (e) {
+        console.error("[restock_link] failed for task", task.id, e);
+        await sb.from("agent_tasks").update({ status: "failed", result: String(e), updated_at: new Date().toISOString() }).eq("id", task.id);
+        failed++;
+      }
+      continue;
     }
     await sb.from("agent_tasks").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", task.id);
     try {

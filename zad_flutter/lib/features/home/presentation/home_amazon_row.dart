@@ -23,7 +23,6 @@ import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -31,6 +30,7 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 
@@ -360,7 +360,11 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
                               .firstOrNull;
                           unawaited(
                             _launch(
-                              match?.url ?? _searchUrl(searchNeeds[i].name),
+                              match?.url ??
+                                  amazonSuggestUrl(
+                                    searchNeeds[i].name,
+                                    ref.read(accountCountryProvider),
+                                  ),
                             ),
                           );
                         },
@@ -648,8 +652,3 @@ class ZadAmazonSearchChip extends StatelessWidget {
 }
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
-
-/// Kotlin's `AffiliateHelper.productUrl(asin = null, fallbackSearchTerm)`.
-String _searchUrl(String term) =>
-    'https://www.amazon.sa/s?k=${Uri.encodeQueryComponent(term)}'
-    '&tag=${ZadEnv.amazonAssociateTag}';

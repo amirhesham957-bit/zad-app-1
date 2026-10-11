@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { amazonImageOrNull, computeNeeds, marketFor, matchCatalog, searchUrl } from "./recommendations.ts";
+import { amazonImageOrNull, computeNeeds, marketFor, matchCatalog, productUrl, searchUrl } from "./recommendations.ts";
 
 Deno.test("needs rank run-outs by consumption above low stock and the shopping list", () => {
   const needs = computeNeeds(
@@ -16,13 +16,31 @@ Deno.test("needs rank run-outs by consumption above low stock and the shopping l
   assertEquals(needs[1].reason.includes("استهلاكك"), true);
 });
 
-Deno.test("tag and domain come from project secrets, per country first", () => {
-  const env: Record<string, string> = { AMAZON_ASSOCIATE_TAG: "mine-21", AMAZON_ASSOCIATE_TAG_EG: "egtag-21", AMAZON_DOMAIN_EG: "www.amazon.eg" };
-  assertEquals(marketFor("EG", (n) => env[n]), { domain: "www.amazon.eg", tag: "egtag-21" });
-  assertEquals(marketFor("SA", (n) => env[n]), { domain: "www.amazon.sa", tag: "mine-21" });
-  assertEquals(marketFor(null, () => undefined), { domain: "www.amazon.sa", tag: null });
-  assertEquals(marketFor("EG", (n) => ({ AMAZON_DOMAIN_EG: "evil.com" } as Record<string, string>)[n]).domain, "www.amazon.sa");
+Deno.test("Egypt shops amazon.eg with its own tag; every other country amazon.sa", () => {
+  const none = () => undefined;
+  assertEquals(marketFor("EG", none), { domain: "www.amazon.eg", tag: "zad04-21" });
+  assertEquals(marketFor("eg", none).domain, "www.amazon.eg");
+  for (const cc of ["SA", "AE", "KW", "QA", "TR", null]) {
+    assertEquals(marketFor(cc, none), { domain: "www.amazon.sa", tag: "zad0b-21" });
+  }
+  assertEquals(productUrl(marketFor("EG", none), "B0ABCDEF12"), "https://www.amazon.eg/dp/B0ABCDEF12?tag=zad04-21");
   assertEquals(searchUrl({ domain: "www.amazon.sa", tag: "mine-21" }, "زيت زيتون"), "https://www.amazon.sa/s?k=%D8%B2%D9%8A%D8%AA%20%D8%B2%D9%8A%D8%AA%D9%88%D9%86&tag=mine-21");
+});
+
+Deno.test("secrets override a store's tag, and a new store needs both its domain and its tag", () => {
+  const env: Record<string, string> = {
+    AMAZON_ASSOCIATE_TAG: "mine-21", AMAZON_ASSOCIATE_TAG_EG: "egtag-21",
+    AMAZON_DOMAIN_AE: "www.amazon.ae", AMAZON_ASSOCIATE_TAG_AE: "aetag-21", AMAZON_DOMAIN_KW: "www.amazon.ae",
+  };
+  const get = (n: string) => env[n];
+  assertEquals(marketFor("EG", get), { domain: "www.amazon.eg", tag: "egtag-21" });
+  assertEquals(marketFor("SA", get), { domain: "www.amazon.sa", tag: "mine-21" });
+  assertEquals(marketFor("AE", get), { domain: "www.amazon.ae", tag: "aetag-21" });
+  // A domain without its own tag would carry the Saudi tag to a store where it earns nothing.
+  assertEquals(marketFor("KW", get), { domain: "www.amazon.sa", tag: "mine-21" });
+  assertEquals(marketFor("KW", (n) => ({ AMAZON_DOMAIN_KW: "evil.com", AMAZON_ASSOCIATE_TAG_KW: "x-21" } as Record<string, string>)[n]).domain, "www.amazon.sa");
+  // A Saudi-store override never moves Egypt off amazon.eg.
+  assertEquals(marketFor("EG", (n) => ({ AMAZON_ASSOCIATE_TAG: "mine-21" } as Record<string, string>)[n]), { domain: "www.amazon.eg", tag: "zad04-21" });
 });
 
 Deno.test("catalog match needs a real name/keyword overlap", () => {

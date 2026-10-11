@@ -69,40 +69,78 @@ int? priceAgeDays(AffiliateProduct p, DateTime now) =>
     p.priceCheckedAt == null ? null : now.difference(p.priceCheckedAt!).inDays;
 
 /// Kotlin's `productUrl`: a `/dp/` link only for a human-verified ASIN; any
-/// other product gets a tagged search, which cannot 404.
-String affiliateUrl(AffiliateProduct p) {
-  const tag = ZadEnv.amazonAssociateTag;
+/// other product gets a tagged search, which cannot 404. In the account's own
+/// store ([amazonStoreFor]).
+String affiliateUrl(AffiliateProduct p, String? country) {
+  final host = amazonStoreFor(country);
+  final tag = amazonTagFor(country);
   final asin = (p.asin ?? '').trim();
   final wellFormed =
       asin.length == 10 && RegExp(r'^[A-Za-z0-9]+$').hasMatch(asin);
   if (p.asinVerified && wellFormed) {
-    return 'https://www.amazon.sa/dp/$asin/?tag=$tag';
+    return 'https://$host/dp/$asin?tag=$tag';
   }
-  return 'https://www.amazon.sa/s?k=${Uri.encodeQueryComponent(p.nameAr)}'
-      '&tag=$tag';
+  return 'https://$host/s?k=${Uri.encodeQueryComponent(p.nameAr)}&tag=$tag';
 }
 
-/// The Amazon store of the account's market. Every link here was
-/// `amazon.sa`, which showed an Egyptian customer Saudi prices (owner,
-/// 2026-10-01); a market with no store of its own keeps the Saudi one.
+bool _isEgypt(String? country) => (country ?? '').trim().toUpperCase() == 'EG';
+
+/// The Amazon store of the account's market: Egypt shops amazon.eg, every
+/// other country amazon.sa until the other stores are set up (owner,
+/// 2026-10-10). The server picks the same way
+/// (`supabase/functions/_shared/amazonMarket.ts`).
 String amazonStoreFor(String? country) =>
-    switch ((country ?? '').trim().toUpperCase()) {
-      'EG' => 'www.amazon.eg',
-      'AE' => 'www.amazon.ae',
-      'TR' => 'www.amazon.com.tr',
-      _ => 'www.amazon.sa',
-    };
+    _isEgypt(country) ? 'www.amazon.eg' : 'www.amazon.sa';
+
+/// The associate tag of [amazonStoreFor]'s store — each store has its own,
+/// and one store's tag earns nothing on another.
+String amazonTagFor(String? country) =>
+    _isEgypt(country) ? ZadEnv.amazonAssociateTagEg : ZadEnv.amazonAssociateTag;
 
 /// A tagged search for [term] in the account's store; with no term, the
 /// store's deals page.
 String amazonSuggestUrl(String? term, String? country) {
-  const tag = ZadEnv.amazonAssociateTag;
+  final tag = amazonTagFor(country);
   final host = amazonStoreFor(country);
   final t = (term ?? '').trim();
   return t.isEmpty
       ? 'https://$host/deals?tag=$tag'
       : 'https://$host/s?k=${Uri.encodeQueryComponent(t)}&tag=$tag';
 }
+
+/// One «🛒 … على أمازون» button: the item and its tagged link.
+typedef AmazonLink = ({String name, String url});
+
+final RegExp _amazonLinkLine = RegExp(r'^\s*•\s*(.+?):\s*(https://\S+)\s*$');
+
+/// Zad's «حاجة خلصت» message (zad-brain/restockLink.ts) carries one
+/// `• name: link` line per item. The text without those lines, and the links
+/// that point at an Amazon store — a long percent-encoded link is no text to
+/// read, so the notification shows a button per item instead.
+({String text, List<AmazonLink> links}) splitAmazonLinks(String message) {
+  final kept = <String>[];
+  final links = <AmazonLink>[];
+  for (final line in message.split('\n')) {
+    final m = _amazonLinkLine.firstMatch(line);
+    final uri = m == null ? null : Uri.tryParse(m.group(2)!);
+    if (m != null && uri != null && _isAmazonStore(uri)) {
+      links.add((name: m.group(1)!.trim(), url: uri.toString()));
+    } else {
+      kept.add(line);
+    }
+  }
+  return (text: kept.join('\n').trim(), links: links);
+}
+
+bool _isAmazonStore(Uri uri) =>
+    uri.scheme == 'https' &&
+    const <String>{
+      'www.amazon.eg',
+      'www.amazon.sa',
+      'www.amazon.ae',
+      'www.amazon.com.tr',
+      'www.amazon.com',
+    }.contains(uri.host);
 
 /// Kotlin's fallback when the table is empty or unreachable. ASINs are left
 /// out on purpose: these open as searches. No pictures: the Kotlin list used

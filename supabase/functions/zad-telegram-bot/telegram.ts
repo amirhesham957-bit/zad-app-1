@@ -158,6 +158,23 @@ export function mapButtonRow(url: unknown): InlineKeyboardButton[] | null {
   return [{ text: "📍 افتح على الخريطة", url }];
 }
 
+/**
+ * «🛒 حليب على أمازون» — زرار لكل صنف خلص (zad-brain/restockLink.ts). اللينك بيوصل من
+ * realtime_push، فبيتقبل بس لو لينك https لمتجر أمازون؛ ٣ بالكتير.
+ */
+export function amazonButtonRows(links: unknown): InlineKeyboardButton[][] {
+  if (!Array.isArray(links)) return [];
+  const rows: InlineKeyboardButton[][] = [];
+  for (const l of links) {
+    const name = typeof l?.name === "string" ? l.name.trim().slice(0, 40) : "";
+    const url = typeof l?.url === "string" ? l.url : "";
+    if (!name || url.length > 1000 || !/^https:\/\/www\.amazon\.(eg|sa|ae|com\.tr|com)\/[^\s]*$/.test(url)) continue;
+    rows.push([{ text: `🛒 ${name} على أمازون`, url }]);
+    if (rows.length >= 3) break;
+  }
+  return rows;
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent

@@ -242,6 +242,8 @@ export async function pushToTelegram(
   doseMomentId?: string,
   // رسالة محل: رابط خرايط المحل (storeMapUrl) — البوت بيحطه زرار «📍 افتح على الخريطة».
   mapUrl?: string,
+  // لينكات أمازون لصنف خلص (restockLink.ts) — البوت بيحط لكل واحد زرار «🛒 … على أمازون».
+  amazonLinks?: Array<{ name: string; url: string }>,
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -263,6 +265,7 @@ export async function pushToTelegram(
         ...(voice && emotion ? { emotion } : {}),
         ...(doseMomentId ? { dose_moment_id: doseMomentId } : {}),
         ...(mapUrl ? { map_url: mapUrl } : {}),
+        ...(amazonLinks?.length ? { amazon_links: amazonLinks } : {}),
       }),
     });
     const text = await res.text();
