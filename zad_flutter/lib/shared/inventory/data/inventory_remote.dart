@@ -22,7 +22,10 @@ abstract interface class InventoryRemote {
 
 /// Reads and writes `zad_shopping_list`.
 abstract interface class ShoppingListRemote {
-  /// The account's lines.
+  /// Every line the account can see: its own and, in a family, the
+  /// household's — the list is shared through `family_id` the way the pantry
+  /// is (owner, 2026-10-11), and RLS decides. [userId] is the signed-in
+  /// account; the server does not need it to filter.
   Future<List<Map<String, dynamic>>> fetchAll({required String userId});
 
   /// Inserts or updates [row], returning what the row holds afterwards.
@@ -78,10 +81,10 @@ class SupabaseShoppingListRemote implements ShoppingListRemote {
 
   @override
   Future<List<Map<String, dynamic>>> fetchAll({required String userId}) async {
+    // No `user_id` filter: that would hide the household's lines.
     final rows = await _client
         .from(_table)
         .select()
-        .eq('user_id', userId)
         .order('created_at', ascending: false);
     return rows.cast<Map<String, dynamic>>();
   }

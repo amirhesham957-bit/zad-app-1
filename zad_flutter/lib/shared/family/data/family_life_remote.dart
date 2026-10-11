@@ -140,39 +140,6 @@ class FamilyLifeRemote {
   Future<Map<String, dynamic>> reopenChore(String choreId) =>
       _rpc('zad_reopen_chore', <String, dynamic>{'p_chore': choreId});
 
-  /// The shared grocery list.
-  Future<List<Map<String, dynamic>>> fetchGroceries(String familyId) => _rows(
-    _client
-        .from('shared_grocery_list')
-        .select()
-        .eq('family_id', familyId)
-        .order('created_at'),
-  );
-
-  /// Adds a grocery line, and returns it as stored.
-  Future<Map<String, dynamic>> addGrocery({
-    required String familyId,
-    required String addedBy,
-    required String itemName,
-  }) => _client
-      .from('shared_grocery_list')
-      .insert(<String, dynamic>{
-        'family_id': familyId,
-        'added_by': addedBy,
-        'item_name': itemName,
-        'category': 'عام',
-        'is_purchased': false,
-      })
-      .select()
-      .single();
-
-  /// Ticks or unticks a grocery line.
-  Future<void> setGroceryPurchased(String id, {required bool purchased}) =>
-      _client
-          .from('shared_grocery_list')
-          .update(<String, dynamic>{'is_purchased': purchased})
-          .eq('id', id);
-
   /// The family's savings goals.
   Future<List<Map<String, dynamic>>> fetchGoals(String familyId) =>
       _rows(_client.from('family_goals').select().eq('family_id', familyId));
