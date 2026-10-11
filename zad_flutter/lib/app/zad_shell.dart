@@ -42,6 +42,7 @@ import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -115,8 +116,18 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     try {
       final userId = ref.read(sessionControllerProvider);
       if (userId != null) {
-        final live = ref.read(liveSyncProvider)..start(userId);
+        // In a family the pantry and the list are the household's: the sync
+        // hears them by family too, and starts again on joining or leaving.
+        final familyId = ref.read(
+          familyControllerProvider.select((v) => v.family?.id),
+        );
+        final live = ref.read(liveSyncProvider)
+          ..start(userId, familyId: familyId);
         _live = live;
+        ref.listenManual(
+          familyControllerProvider.select((v) => v.family?.id),
+          (_, id) => live.start(userId, familyId: id),
+        );
       }
     } on Object catch (e) {
       // No Supabase client (a test): screens refresh on open as before.

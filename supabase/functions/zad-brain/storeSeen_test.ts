@@ -1,5 +1,5 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { buildStoreArrivalMessage, cheaperHereItems, normalizeForPerson, sameStore, seenHereItems, storeKey } from "./shared.ts";
+import { buildStoreArrivalMessage, cheaperHereItems, normalizeForPerson, sameCity, sameStore, seenHereItems, storeKey } from "./shared.ts";
 
 Deno.test("storeKey drops the generic words, Arabic and Latin", () => {
   assertEquals(storeKey("كارفور ماركت"), "كارفور");
@@ -45,8 +45,9 @@ Deno.test("the arrival message says where it was seen, and only when it was", ()
 // ── الشريحة ٢٨: «أرخص هنا» ──────────────────────────────────────────────────────────
 
 const NOW = Date.parse("2026-10-04T12:00:00Z");
-const r = (item: string, store: string, price: number, daysAgo: number) => ({
-  item_name: item, store_name: store, price, timestamp: new Date(NOW - daysAgo * 86_400_000).toISOString(),
+// Each report's reporter is its store's own shopper unless given: different stores, different homes.
+const r = (item: string, store: string, price: number, daysAgo: number, user: string = `u:${store}`) => ({
+  item_name: item, store_name: store, price, timestamp: new Date(NOW - daysAgo * 86_400_000).toISOString(), user_id: user,
 });
 
 Deno.test("cheaperHere: the latest price here against the median elsewhere", () => {
@@ -61,6 +62,24 @@ Deno.test("cheaperHere: the latest price here against the median elsewhere", () 
 Deno.test("cheaperHere: under three reports elsewhere is not a market price", () => {
   const reports = [r("لبن", "كارفور", 30, 1), r("لبن", "خير زمان", 40, 3), r("لبن", "سعودي", 42, 10)];
   assertEquals(cheaperHereItems(reports, "كارفور", ["لبن"], NOW), []);
+});
+
+Deno.test("cheaperHere: three reports from one family are one home, not a market price", () => {
+  const reports = [
+    r("لبن", "كارفور", 30, 1),
+    r("لبن", "خير زمان", 40, 3, "mom"), r("لبن", "سعودي", 42, 4, "dad"), r("لبن", "هايبر وان", 41, 5, "son"),
+  ];
+  const family = new Map([["mom", "f:1"], ["dad", "f:1"], ["son", "f:1"]]);
+  assertEquals(cheaperHereItems(reports, "كارفور", ["لبن"], NOW, family), []);
+  assertEquals(cheaperHereItems(reports, "كارفور", ["لبن"], NOW).length, 1, "three separate homes do count");
+});
+
+Deno.test("cheaperHere: a carton typed as one pack does not move the market price", () => {
+  const reports = [
+    r("لبن", "كارفور", 35, 1),
+    r("لبن", "خير زمان", 40, 3), r("لبن", "سعودي", 42, 4), r("لبن", "هايبر وان", 39, 5), r("لبن", "بنده", 400, 2),
+  ];
+  assertEquals(cheaperHereItems(reports, "كارفور", ["لبن"], NOW), [{ item: "لبن", price: 35, typical: 40 }]);
 });
 
 Deno.test("cheaperHere: an old price here, or within 5%, says nothing", () => {
@@ -99,4 +118,22 @@ Deno.test("normalizeForPerson: the same relative is one person, whatever word is
   assertEquals(normalizeForPerson("لينا"), "لينا");
   assertEquals(normalizeForPerson("سارة"), "سارة");
   assertEquals(normalizeForPerson("ليا"), null);
+});
+
+Deno.test("another city's report is not «here»; an unknown city still counts", () => {
+  assertEquals(sameCity("الإسكندرية", "اسكندرية"), true);
+  assertEquals(sameCity("القاهرة", "جدة"), false);
+  assertEquals(sameCity(null, "جدة"), true);
+  const now = Date.parse("2026-09-29T12:00:00Z");
+  const reports = [
+    { item_name: "لبن", store_name: "كارفور", timestamp: "2026-09-29T09:00:00Z", location: "جدة" },
+    { item_name: "عيش", store_name: "كارفور", timestamp: "2026-09-29T10:00:00Z", location: null },
+  ];
+  assertEquals(seenHereItems(reports, "كارفور", ["لبن", "عيش"], now, 72, "القاهرة"), [{ item: "عيش", hours: 2 }]);
+  const priced = [
+    r("لبن", "كارفور", 30, 1),
+    { ...r("لبن", "خير زمان", 40, 3), location: "جدة" }, r("لبن", "سعودي", 42, 4), r("لبن", "هايبر وان", 41, 5),
+  ];
+  assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW, new Map(), "القاهرة"), [], "two homes left in the city");
+  assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW).length, 1);
 });

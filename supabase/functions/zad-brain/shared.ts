@@ -1,6 +1,8 @@
 // Small pure decision functions extracted out of the Deno.serve handler purely so
 // Task 16.4's tests #11/#12 don't need a live server or a live database to verify.
 
+import { CROWD_MIN_HOMES, homesIn, medianOf, withoutOutliers } from "./crowdFloor.ts";
+
 /** Task 16.3 partial-run idempotency: skip a new daily run if one in the window already mutated data. */
 export function hasRecentMutatingRun(runs: Array<{ mutations: unknown }>): boolean {
   return runs.some((r) => Array.isArray(r.mutations) && r.mutations.length > 0);
@@ -417,12 +419,23 @@ export function sameStore(a: string, b: string): boolean {
  * أسعار اتكتبت) خلال [maxHours]. الأحدث لكل صنف. «بنفس الاسم» مش «نفس الفرع»: price_index
  * مافيهوش إحداثيات، والرسالة بتقول كده بصراحة.
  */
+/**
+ * نفس المدينة؟ (20261011260000: البلاغ بياخد مدينة «ملفي».) مدينة مش معروفة في أي ناحية = مانقدرش
+ * نقول إنها تانية، فبتتحسب. «القاهرة» و«القاهره الجديدة» مش نفس الحاجة؛ «الإسكندرية» و«اسكندريه» نفس الحاجة.
+ */
+export function sameCity(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = itemKey(String(a ?? "")).replace(/^ال/, "");
+  const y = itemKey(String(b ?? "")).replace(/^ال/, "");
+  return !x || !y || x === y;
+}
+
 export function seenHereItems(
-  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null }>,
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; location?: string | null }>,
   storeName: string,
   missing: string[],
   nowMs: number,
   maxHours = 72,
+  city: string | null = null,
 ): SeenHere[] {
   const out: SeenHere[] = [];
   for (const want of missing) {
@@ -431,7 +444,7 @@ export function seenHereItems(
     let best: number | null = null;
     for (const r of reports) {
       if (!r.item_name || !r.store_name || !r.timestamp) continue;
-      if (!sameStore(r.store_name, storeName)) continue;
+      if (!sameStore(r.store_name, storeName) || !sameCity(r.location, city)) continue;
       const reported = itemKey(r.item_name);
       if (!reported.includes(key) && !key.includes(reported)) continue;
       const hours = (nowMs - Date.parse(r.timestamp)) / 3_600_000;
@@ -458,10 +471,12 @@ export interface CheaperHere {
  * مش «سعر السوق» — مابيتقالش. ٣ أصناف بالكتير، الأكبر توفير الأول.
  */
 export function cheaperHereItems(
-  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null }>,
+  reports: Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; user_id?: string | null; location?: string | null }>,
   storeName: string,
   missing: string[],
   nowMs: number,
+  homeOf: ReadonlyMap<string, string> = new Map(),
+  city: string | null = null,
 ): CheaperHere[] {
   const out: Array<CheaperHere & { saving: number }> = [];
   const seen = new Set<string>();
@@ -470,11 +485,13 @@ export function cheaperHereItems(
     if (key.length < 2 || seen.has(key)) continue;
     seen.add(key);
     let here: { price: number; at: number } | null = null;
-    const elsewhere: number[] = [];
+    const elsewhere: Array<{ price: number; user_id?: string | null }> = [];
     for (const r of reports) {
       const price = Number(r.price);
       const at = Date.parse(String(r.timestamp ?? ""));
       if (!r.item_name || !r.store_name || !(price > 0) || !Number.isFinite(at)) continue;
+      // سعر مدينة تانية مش «هنا» ولا «في محلات تانية» قريبة منه.
+      if (!sameCity(r.location, city)) continue;
       const reported = itemKey(r.item_name);
       if (!reported.includes(key) && !key.includes(reported)) continue;
       const days = (nowMs - at) / 86_400_000;
@@ -482,13 +499,13 @@ export function cheaperHereItems(
       if (sameStore(r.store_name, storeName)) {
         if (days <= 14 && (here === null || at > here.at)) here = { price, at };
       } else {
-        elsewhere.push(price);
+        elsewhere.push({ price, user_id: r.user_id });
       }
     }
-    if (!here || elsewhere.length < 3) continue;
-    const sorted = elsewhere.sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const typical = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    // أرضية الجمهور (crowdFloor.ts): «سعر السوق» من ٣ بيوت مختلفة على الأقل، من غير الشاذ.
+    const kept = withoutOutliers(elsewhere);
+    if (!here || kept.length < 3 || homesIn(kept, homeOf) < CROWD_MIN_HOMES) continue;
+    const typical = medianOf(kept.map((e) => e.price))!;
     if (here.price > typical * 0.95) continue;
     out.push({ item: want, price: Math.round(here.price * 100) / 100, typical: Math.round(typical * 100) / 100, saving: typical - here.price });
   }

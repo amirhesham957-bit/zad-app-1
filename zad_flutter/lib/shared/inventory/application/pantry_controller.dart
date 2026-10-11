@@ -17,6 +17,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
@@ -97,6 +98,12 @@ class PantryController extends Notifier<PantryView> {
     state = state.copyWith(isRefreshing: true, clearError: true);
 
     try {
+      // The home's «same product» answers, read with the pantry so a name
+      // typed offline still finds the row the home chose (best effort).
+      unawaited(
+        Future<void>(() => ref.read(productNamesRepositoryProvider).refresh())
+            .catchError((Object _) {}),
+      );
       final items = await ref.read(inventoryRepositoryProvider).refresh();
       if (!ref.mounted) return;
       _lastFetch = now;
@@ -120,10 +127,13 @@ class PantryController extends Notifier<PantryView> {
     int? lowStockThreshold,
     DateTime? expiryDate,
   }) async {
+    // The name the home chose («حليب» ⇒ «لبن» once it said they are the
+    // same), so the match below finds the row the server would write it to.
+    final name = householdProductNames(ref).canonical(itemName);
     final wantedUnit = unit?.trim() ?? '';
     final existing = state.items.where((i) {
       final rowUnit = i.unit?.trim() ?? '';
-      return sameItemName(i.itemName, itemName) &&
+      return sameItemName(i.itemName, name) &&
           (wantedUnit.isEmpty || rowUnit.isEmpty || rowUnit == wantedUnit);
     }).firstOrNull;
     if (existing != null && quantity > 0) {
@@ -133,7 +143,7 @@ class PantryController extends Notifier<PantryView> {
     final added = await ref
         .read(inventoryRepositoryProvider)
         .add(
-          itemName: itemName,
+          itemName: name,
           quantity: quantity,
           unit: unit,
           category: category,

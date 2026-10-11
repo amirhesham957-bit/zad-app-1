@@ -467,6 +467,38 @@ void main() {
       },
     );
 
+    test(
+      'once the home said «حليب» is «لبن», adding «حليب» tops up «لبن»',
+      () async {
+        // The audit's milk under two names (2026-10-11): the home's answer,
+        // as zad_product_pairs holds it, is cached with the pantry.
+        await withCountry('EG');
+        await documents.put(
+          'product_pairs',
+          jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'a_key': 'حليب',
+              'b_key': 'لبن',
+              'verdict': 'same',
+              'canonical_name': 'لبن',
+              'created_at': '2026-10-11T08:00:00Z',
+            },
+          ]),
+        );
+        pantryRemote.rows = <Map<String, dynamic>>[pantryRow('a', 'لبن', 1)];
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(pantryControllerProvider.notifier);
+        await controller.refresh(force: true);
+
+        await controller.add(itemName: 'الحليب', quantity: 2);
+
+        final items = container.read(pantryControllerProvider).items;
+        expect(items, hasLength(1), reason: 'a second row for one product');
+        expect(items.single.quantity, 3);
+      },
+    );
+
     test('another unit, or a longer name, is its own row', () async {
       await withCountry('EG');
       pantryRemote.rows = <Map<String, dynamic>>[

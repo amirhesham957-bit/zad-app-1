@@ -5,7 +5,8 @@
 /// The reads are the same edge actions Kotlin calls (`analyze_inventory_image`,
 /// `analyze_receipt`, `analyze_medicine_image`); the writes go through this
 /// client's intake ([CameraActions]). Kotlin's personal Gemini key dialog is
-/// left out by the owner's decision; its settings button opened nothing.
+/// left out by the owner's decision, and so is its settings button: it opened
+/// nothing here either (a dead gear in the app bar until 2026-10-11).
 library;
 
 import 'dart:async';
@@ -333,13 +334,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               '  الماسح الذكي',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            actions: <Widget>[
-              IconButton(
-                tooltip: 'Settings',
-                onPressed: () {},
-                icon: Icon(Icons.settings, color: scheme.primary),
-              ),
-            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),

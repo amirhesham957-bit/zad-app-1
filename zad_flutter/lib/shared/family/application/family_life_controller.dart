@@ -15,6 +15,7 @@ import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_life_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 
 /// What the tabs draw.
 class FamilyLifeView {
@@ -39,7 +40,7 @@ class FamilyLifeView {
   /// Every chore.
   final List<Chore> chores;
 
-  /// The shared grocery list.
+  /// The household's shopping list — the pantry's list, not a second one.
   final List<SharedGroceryItem> groceries;
 
   /// Savings goals.
@@ -174,9 +175,9 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     final family = _family;
     if (family == null) return;
     try {
+      unawaited(refreshGroceries());
       final results = await Future.wait(<Future<List<Map<String, dynamic>>>>[
         _remote.fetchChores(family.id),
-        _remote.fetchGroceries(family.id),
         _remote
             .fetchGoals(family.id)
             .catchError((_) => <Map<String, dynamic>>[]),
@@ -187,12 +188,9 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       if (!ref.mounted) return;
       state = state.copyWith(
         chores: <Chore>[for (final r in results[0]) Chore.fromJson(r)],
-        groceries: <SharedGroceryItem>[
-          for (final r in results[1]) SharedGroceryItem.fromJson(r),
-        ],
-        goals: <FamilyGoal>[for (final r in results[2]) FamilyGoal.fromJson(r)],
+        goals: <FamilyGoal>[for (final r in results[1]) FamilyGoal.fromJson(r)],
         trees: <TasbihaTree>[
-          for (final r in results[3]) TasbihaTree.fromJson(r),
+          for (final r in results[2]) TasbihaTree.fromJson(r),
         ],
         isLoading: false,
       );
@@ -654,26 +652,45 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
   }
 
   // ── Groceries ─────────────────────────────────────────────────────────────
+  //
+  // The household's shopping list (owner, 2026-10-11): the same rows, cache
+  // and outbox as the pantry's list, shared through `family_id` on the server.
+  // This tab used to keep `shared_grocery_list`, a second list that the brain
+  // never read and a scanned receipt never ticked off.
 
-  /// Adds a line to the family's list.
-  Future<bool> addGrocery(String name, {bool quiet = false}) async {
-    final family = _family;
-    final me = _me;
-    final clean = name.trim();
-    if (family == null || me == null || clean.isEmpty) return false;
+  /// Reads the household's list again; the cached one shows if that fails.
+  /// Also what a live change to the list calls (live_sync.dart).
+  Future<void> refreshGroceries() async {
     try {
-      final row = await _remote.addGrocery(
-        familyId: family.id,
-        addedBy: me.id,
-        itemName: clean,
-      );
-      if (!ref.mounted) return true;
+      await ref.read(shoppingControllerProvider.notifier).refresh();
+    } on Object {
+      // No list on this device yet, or no network: keep what is shown.
+    }
+    _showGroceries();
+  }
+
+  void _showGroceries() {
+    if (!ref.mounted) return;
+    try {
+      final items = ref.read(shoppingControllerProvider).items;
       state = state.copyWith(
         groceries: <SharedGroceryItem>[
-          ...state.groceries,
-          SharedGroceryItem.fromJson(row),
+          for (final i in items) SharedGroceryItem.fromShopping(i),
         ],
       );
+    } on Object {
+      // The list is not reachable here (signed out mid-way): leave it.
+    }
+  }
+
+  /// Adds a line to the household's list. Queued like any other line, so it
+  /// is added offline too.
+  Future<bool> addGrocery(String name, {bool quiet = false}) async {
+    final clean = name.trim();
+    if (_family == null || _me == null || clean.isEmpty) return false;
+    try {
+      await ref.read(shoppingControllerProvider.notifier).add(clean);
+      _showGroceries();
       return true;
     } on Object {
       if (!quiet) _say('الصنف ماتضافش. جرّب تاني.');
@@ -683,19 +700,13 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
 
   /// Ticks or unticks a line.
   Future<void> toggleGrocery(SharedGroceryItem item) async {
-    final before = state.groceries;
-    state = state.copyWith(
-      groceries: <SharedGroceryItem>[
-        for (final g in before)
-          if (g.id == item.id) g.withPurchased(value: !item.isPurchased) else g,
-      ],
-    );
     try {
-      await _remote.setGroceryPurchased(item.id, purchased: !item.isPurchased);
+      await ref
+          .read(shoppingControllerProvider.notifier)
+          .toggle(item.id, purchased: !item.isPurchased);
+      _showGroceries();
     } on Object {
-      if (ref.mounted) {
-        state = state.copyWith(groceries: before, notice: 'التعديل ماتحفظش.');
-      }
+      if (ref.mounted) state = state.copyWith(notice: 'التعديل ماتحفظش.');
     }
   }
 

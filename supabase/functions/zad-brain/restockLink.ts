@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { marketFor, searchUrl } from "../_shared/amazonMarket.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { normalizeItemName, productFamilyOf } from "./lowStock.ts";
 
 /** كلمات الأساسيات اللي بتتطلب أونلاين — كلمة كاملة من اسم الصنف (بعد «ال»). بيانات مطابقة، مش نص واجهة. */
@@ -128,8 +129,10 @@ export async function deliverRestockLink(sb: SupabaseClient, task: RestockTask, 
     sb.from("agent_tasks").update({ status, result, updated_at: new Date().toISOString() }).eq("id", task.id);
   await sb.from("agent_tasks").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", task.id);
 
+  // مخزن البيت: الصنف ممكن يكون باسم الفرد التاني (قرار المالك ٢٠٢٦-١٠-١١).
+  const family = await householdFamilyId(sb, task.user_id);
   const [inv, user, broke] = await Promise.all([
-    sb.from("zad_inventory").select("item_name,quantity,category").eq("user_id", task.user_id).limit(500),
+    sb.from("zad_inventory").select("item_name,quantity,category").or(householdFilter(task.user_id, family)).limit(500),
     sb.from("zad_users").select("country").eq("id", task.user_id).maybeSingle(),
     sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", task.user_id).maybeSingle(),
   ]);

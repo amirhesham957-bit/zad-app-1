@@ -56,6 +56,7 @@
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
+import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { deliverRestockLink } from "./restockLink.ts";
 import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
@@ -69,7 +70,10 @@ import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGemi
 import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
-import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
+import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
+import { txnSourceType } from "./provenance.ts";
+import { productNameKey } from "./productIdentity.ts";
+import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -128,6 +132,7 @@ import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 
@@ -742,6 +747,9 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const cashKey = isoWeekKey(new Date());
+  // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
+  // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
+  const householdFamily = await householdFamilyId(sb, userId);
   const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
@@ -758,12 +766,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at")
-        .eq("user_id", userId),
+        .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
       sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
         .eq("user_id", userId),
-      sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false),
+      sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
       // الحية بس، كل واحدة بأسماء كياناتها وانتهائها (20261003100000). نفس الترتيب بالثقة.
       sb.rpc("zad_memory_live_notes", { p_user: userId, p_limit: 20 }),
@@ -1572,6 +1580,49 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 // Tool execution — actual DB writes, only reached after validation passes
 // ═══════════════════════════════════════════════════════════
 
+/**
+ * الاسم اللي البيت اختاره للصنف (zad_product_canonical، 20261011200000) — قبل أي مطابقة، عشان
+ * «اشتريت حليب» يلاقي «لبن» لو العيلة قالت إنهم نفس الحاجة. التريجر بيكتب الاسم ده على أي حال؛ هنا
+ * عشان المطابقة تشوفه قبل ما تقرر تضيف صف جديد. فشل = الاسم زي ما هو.
+ */
+async function householdName(sb: SupabaseClient, userId: string, name: string): Promise<string> {
+  const { data, error } = await sb.rpc("zad_product_canonical", { p_user: userId, p_name: name });
+  return !error && typeof data === "string" && data.trim() ? data.trim() : name;
+}
+
+/**
+ * «اشتريت X» بيشطب X من قايمة البيت (الموجة ٥، ٢٠٢٦-١٠-١١). الفاتورة من التطبيق كانت بتعمل كده
+ * (intakeIntoPantry)، لكن الشات وصورة الفاتورة في تليجرام (الاتنين بيعدّوا على add_inventory_item)
+ * كانوا بيزوّدوا المخزن ويسيبوا السطر مفتوح — فالعقل يفضل يفكّر العميل بحاجة اشتراها.
+ * سطر واحد بس، بنفس مطابقة المخزن (samePantryItem)، صف العميل الأول وبعده العيلة. بيتسجل فعل لوحده
+ * عشان «تراجع» يرجّعه. فشل هنا مابيلغيش الإضافة اللي حصلت. بيرجّع اسم السطر اللي اتشطب، أو null.
+ */
+async function tickBoughtLine(
+  sb: SupabaseClient, userId: string, familyId: string | null, itemName: string, scope: AuditScope,
+): Promise<string | null> {
+  const { data, error } = await sb.from("zad_shopping_list")
+    .select("id,user_id,family_id,item_name,created_at")
+    .or(householdFilter(userId, familyId)).eq("is_purchased", false).limit(200);
+  if (error) {
+    console.error("[add_inventory_item] list lookup failed:", error.message);
+    return null;
+  }
+  const lines = ((data ?? []) as Array<{ id: string; user_id: string; family_id: string | null; item_name: string; created_at: string | null }>)
+    .filter((l) => samePantryItem(l.item_name, itemName));
+  const line = pickInventoryRow(lines, userId, familyId);
+  if (!line) return null;
+  const { error: upErr } = await sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", line.id);
+  if (upErr) {
+    console.error("[add_inventory_item] list tick failed:", upErr.message);
+    return null;
+  }
+  await recordAction(sb, userId, scope, {
+    tool: "complete_shopping_item", input: { item_name: line.item_name, via: "add_inventory_item" },
+    table: "zad_shopping_list", targetId: line.id, previous: { is_purchased: false }, next: { is_purchased: true },
+  });
+  return line.item_name;
+}
+
 export async function executeTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   switch (name) {
     case "emit_insight": {
@@ -1859,6 +1910,34 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
     }
+    case "answer_same_product": {
+      // «دول نفس الحاجة؟» (productIdentity.ts): الجواب للبيت كله (20261011210000).
+      const a = String(input.a).trim();
+      const b = String(input.b).trim();
+      if (input.same === false) {
+        const { data, error } = await sb.rpc("zad_product_not_same_for", { p_user: userId, p_a: a, p_b: b });
+        if (error || (data as { ok?: boolean } | null)?.ok === false) {
+          return `مرفوض: مقدرتش أسجل الإجابة (${error?.message ?? (data as any)?.reason}).`;
+        }
+        ctx.mutationCount++;
+        return `اتسجّل إن «${a}» و«${b}» حاجتين مختلفين — مش هسأل عنهم تاني.`;
+      }
+      const keep = input.keep ? String(input.keep).trim() : a;
+      const others = [a, b].filter((n) => productNameKey(n) !== productNameKey(keep));
+      let pantry = 0, lines = 0;
+      for (const other of others) {
+        const { data, error } = await sb.rpc("zad_product_merge_for", { p_user: userId, p_keep: keep, p_other: other });
+        const r = data as { ok?: boolean; reason?: string; pantry_rows_merged?: number; list_lines_merged?: number } | null;
+        if (error || r?.ok === false) return `مرفوض: مقدرتش أدمجهم (${error?.message ?? r?.reason}).`;
+        pantry += r?.pantry_rows_merged ?? 0;
+        lines += r?.list_lines_merged ?? 0;
+      }
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: [a, b], new: keep });
+      return `اتسجّل: «${a}» و«${b}» صنف واحد اسمه «${keep}» في البيت كله` +
+        (pantry ? ` — اتجمّع ${pantry + 1} صف في المخزن` : "") + (lines ? ` و${lines + 1} سطر في القايمة` : "") +
+        `. الاستهلاك هيتحسب عليه كصنف واحد.`;
+    }
     case "save_trusted_technician": {
       // «فنيين بثق فيهم» (20261006014219). نفس الرقم مرة تانية = تحديث الاسم/الصنعة، مش صف جديد.
       // الرقم اتحقق في validateSaveTrustedTechnician إن العميل قاله.
@@ -1920,10 +1999,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // restock ran at 09:12 and again at 17:02, and nothing looked first. The same shape
       // of duplicate comes from the Telegram fallback — when zad-brain fails *after* a
       // write, the bot retries on the old [[ACTION]] path and writes it again.
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
+      // قايمة البيت: لو الأم ضافت «لبن» مايتضافش تاني باسم الأب.
       const { data: existing } = await sb.from("zad_shopping_list")
         .select("id,item_name,quantity")
-        .eq("user_id", userId)
+        .or(householdFilter(userId, await householdFamilyId(sb, userId)))
         .eq("is_purchased", false);
       const match = (existing ?? []).find(
         (row: { item_name: string }) => row.item_name.trim().toLowerCase() === itemName.toLowerCase(),
@@ -1932,8 +2012,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (match) {
         // نفس الصنف مطلوب تاني قبل ما يتشترى = كمية أكبر، مش سطر تاني في القايمة.
         const merged = (match.quantity ?? 1) + (Number(input.quantity) || 1);
+        // بـid بس: الصف ممكن يكون باسم فرد تاني في البيت، واتقرا من قايمة البيت فوق. فلتر
+        // user_id هنا كان هيعدّي من غير ما يلاقي حاجة ويقول «الكمية بقت…» كدب.
         const { error: upErr } = await sb.from("zad_shopping_list")
-          .update({ quantity: merged }).eq("id", match.id).eq("user_id", userId);
+          .update({ quantity: merged }).eq("id", match.id);
         if (upErr) return `فشل التعديل: ${upErr.message}`;
         return `"${itemName}" كان في القايمة أصلاً — الكمية بقت ${merged}`;
       }
@@ -2221,6 +2303,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           is_expense: isExpense,
           txn_kind: input.txn_kind,
           wallet: input.wallet === "cash" ? "cash" : "card",
+          // جت منين (provenance.ts): «receipt» لو اللي نادى قال إنها فاتورة، وإلا القناة.
+          source_type: txnSourceType(input.source_type, scope.source),
+          // اسم المحل من الفاتورة (تليجرام)، عشان «أرخص هنا» وعادات المحلات يشوفوه.
+          merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
         }).select("id,amount,title,category,txn_kind"),
         "تسجيل المعاملة",
       );
@@ -2301,15 +2387,20 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتظبط الرصيد على ${input.monthly_limit}`;
     }
     case "add_inventory_item": {
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
       const unit = input.unit ? String(input.unit).trim() : null;
-      // نفس الصنف موجود عند العميل؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
-      // صفوف العميل نفسه بس: «تراجع» بيرجّع الصف بـuser_id العميل.
+      // نفس الصنف موجود في مخزن البيت؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
+      // صف العميل نفسه الأول، وبعده صف العيلة: «اشتريت لبن» من الأب بيزوّد لبن البيت اللي
+      // الأم ضافته، مش صف لبن تاني باسمه. «تراجع» بيعرف البيت (20261011160000).
+      const houseFamily = await householdFamilyId(sb, userId);
       const { data: own, error: ownErr } = await sb.from("zad_inventory")
-        .select("id,item_name,quantity,unit,category,expiry_date,created_at")
-        .eq("user_id", userId).limit(500);
+        .select("id,user_id,item_name,quantity,unit,category,expiry_date,created_at")
+        .or(householdFilter(userId, houseFamily)).limit(500);
       if (ownErr) console.error("[add_inventory_item] pantry lookup failed:", ownErr.message);
-      const existing = pickPantryMatch((own ?? []) as Array<PantryRow & { category: string | null; expiry_date: string | null }>, itemName, unit);
+      type HouseRow = PantryRow & { user_id: string; category: string | null; expiry_date: string | null };
+      const houseRows = (own ?? []) as HouseRow[];
+      const existing = pickPantryMatch(houseRows.filter((r) => r.user_id === userId), itemName, unit) ??
+        pickPantryMatch(houseRows, itemName, unit);
       if (existing) {
         const total = Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
         const previous = { quantity: existing.quantity, category: existing.category, expiry_date: existing.expiry_date };
@@ -2328,11 +2419,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           tool: name, input, table: "zad_inventory", targetId: existing.id,
           previous, next: w.rows[0],
         });
+        // معدل الاستهلاك متربط بصاحب الصف (zad_consumption.user_id = zad_inventory.user_id في
+        // «هيخلص إمتى؟»)، فالملاحظة باسم صاحب الصف حتى لو اللي اشترى فرد تاني.
         const { error: obsErr } = await sb.rpc("zad_record_observation", {
-          p_user: userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
+          p_user: existing.user_id ?? userId, p_item: existing.item_name, p_qty: total, p_source: "chat_add",
         });
         if (obsErr) console.error("zad_record_observation failed:", obsErr.message);
-        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}`;
+        const tickedMerge = await tickBoughtLine(sb, userId, houseFamily, existing.item_name, scope);
+        return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}` +
+          (tickedMerge ? ` — واتشطب "${tickedMerge}" من قايمة التسوق` : "");
       }
       const w = await writeRows(
         sb.from("zad_inventory").insert({
@@ -2353,6 +2448,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_inventory", targetId: newRow.id,
         previous: null, next: newRow,
       });
+      const tickedNew = await tickBoughtLine(sb, userId, houseFamily, itemName, scope);
+      const tickedNote = tickedNew ? ` — واتشطب "${tickedNew}" من قايمة التسوق` : "";
       // نفس السبب اللي في update_inventory_qty بالظبط: أي كمية معروفة هي بيانات تعلّم
       // مجانية لمعدل الاستهلاك، والتسجيل هنا غير مشروط مش أداة منفصلة الموديل ممكن
       // ينساها.
@@ -2361,13 +2458,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       });
       if (obsErr) {
         console.error("zad_record_observation failed:", obsErr.message);
-        return `اتضاف "${itemName}" (${input.quantity}) للمخزون`;
+        return `اتضاف "${itemName}" (${input.quantity}) للمخزون${tickedNote}`;
       }
       ctx.observations.push({
         item: itemName, qty: input.quantity,
         samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
       });
-      return `اتضاف "${itemName}" (${input.quantity}) للمخزون`;
+      return `اتضاف "${itemName}" (${input.quantity}) للمخزون${tickedNote}`;
     }
     case "delete_inventory_item": {
       const itemName = String(input.item_name).trim();
@@ -2506,10 +2603,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتعدلت بيانات "${before.name}" ومواعيد التذكير هتتحدث بعد مزامنة التطبيق`;
     }
     case "complete_shopping_item": {
-      const itemName = String(input.item_name).trim();
-      const { data: before } = await sb.from("zad_shopping_list").select("*").eq("user_id", userId).eq("item_name", itemName).eq("is_purchased", false).maybeSingle();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
+      // قايمة البيت: الصنف ممكن يكون الفرد التاني ضافه. لو الاسم متكرر (كل واحد ضافه)، صف العميل
+      // الأول — نفس اختيار المخزن (inventoryRow.ts). maybeSingle على اسم متكرر كان بيرجّع «مش موجود».
+      const familyId = await householdFamilyId(sb, userId);
+      const { data: open } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName).eq("is_purchased", false);
+      const before = pickInventoryRow(open as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق المفتوحة.`;
-      const w = await writeRows(sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", before.id).eq("user_id", userId).select("id,is_purchased"), "إتمام شراء");
+      const w = await writeRows(sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", before.id).select("id,is_purchased"), "إتمام شراء");
       if (!w.ok) return `مرفوض: ${w.reason}`;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: w.rows[0] });
@@ -2517,10 +2618,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتشطب "${itemName}" من قائمة التسوق`;
     }
     case "delete_shopping_item": {
-      const itemName = String(input.item_name).trim();
-      const { data: before } = await sb.from("zad_shopping_list").select("*").eq("user_id", userId).eq("item_name", itemName).maybeSingle();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
+      const familyId = await householdFamilyId(sb, userId);
+      const { data: rows } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName);
+      const before = pickInventoryRow(rows as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق.`;
-      const w = await writeRows(sb.from("zad_shopping_list").delete().eq("id", before.id).eq("user_id", userId).select("id"), "حذف من التسوق");
+      const w = await writeRows(sb.from("zad_shopping_list").delete().eq("id", before.id).select("id"), "حذف من التسوق");
       if (!w.ok) return `مرفوض: ${w.reason}`;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
@@ -3395,9 +3498,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
       const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
       const me = u as { country?: string | null; currency?: string | null } | null;
-      const res = await callCoreIntel("estimate_price", pricePayload(input.item_name, input.store, me?.country ?? snap?.country, me?.currency), userId);
-      if (!res || res.ok === false) return "مقدرتش أتأكد من السعر — متقولش رقم من عندك.";
-      return JSON.stringify(res);
+      // بحث موجّه بمصدره، محفوظ ٧ أيام بالبلد والصنف (webPrice.ts، zad_web_prices) — بداية الأسعار قبل الجمهور.
+      const found = await webPrice(sb, {
+        item: String(input.item_name ?? ""), store: input.store ? String(input.store) : null,
+        country: me?.country ?? snap?.country ?? null, currency: me?.currency ?? null,
+        search: (payload) => callCoreIntel("estimate_price", payload, userId),
+      });
+      return webPriceReply(found, String(input.item_name ?? ""));
     }
     case "web_search": {
       // بحث حقيقي عبر نفس بروكسي core-intelligence (DDG server-side). النتايج
@@ -3640,9 +3747,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // نمط العزومة (gathering.ts، الشريحة ٣٥): كميات بالفرد، اللي في البيت، ووضع الفلوس — من غير إجمالي مخترع.
       const meal: GatheringMeal = input?.meal === "sweets" ? "sweets" : "meal";
       const timeZone = snap?.cycle?.timezone ?? "UTC";
+      // اللي في البيت = مخزن البيت وقايمته، مش بتاع الفرد.
+      const householdFamily = await householdFamilyId(sb, userId);
       const [pantry, shopping, user, state, challenge, broke] = await Promise.all([
-        sb.from("zad_inventory").select("item_name,quantity,unit").eq("user_id", userId).limit(300),
-        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(100),
+        sb.from("zad_inventory").select("item_name,quantity,unit").or(householdFilter(userId, householdFamily)).limit(300),
+        sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false).limit(100),
         sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
         sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
         sb.from("zad_savings_challenges").select("id").eq("user_id", userId).eq("status", "active").limit(1),
@@ -3702,6 +3811,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const today = localNowContext(timeZone).date;
       const days = Number(input?.days) || HANDOVER_DEFAULT_DAYS;
       const until = new Date(Date.now() + (days + 1) * 86_400_000).toISOString();
+      // القايمة بس هي اللي للبيت (قرار المالك ٢٠٢٦-١٠-١١)؛ الباقي من حساب العميل زي ما هو.
+      const householdFamily = await householdFamilyId(sb, userId);
       const [meds, appts, timetable, state, obligations, shopping, user] = await Promise.all([
         sb.from("zad_pharmacy_items").select("name,dosage,dose_times,remaining_quantity,daily_dose_count,units_per_dose,for_person,is_recurring").eq("user_id", userId),
         sb.from("zad_appointments").select("title,starts_at,kind,for_person").eq("user_id", userId)
@@ -3709,7 +3820,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         sb.from("zad_school_timetable").select("person,weekday,period,subject,starts").eq("user_id", userId),
         sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
         sb.from("zad_obligations").select("title,amount,due_day").eq("user_id", userId).eq("active", true),
-        sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20),
+        sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false).limit(20),
         sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
       ]);
       if (meds.error || appts.error) return `مقدرتش أجمع الكارت دلوقتي: ${(meds.error ?? appts.error)?.message}`;
@@ -4018,14 +4129,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // بعملة العميل بس — price_index فيه بلاغات من كل الأسواق.
       const { data: prices, error } = await sb
         .from("price_index")
-        .select("price, timestamp")
+        .select("price, timestamp, user_id")
         .ilike("item_name", `%${String(item_name).trim()}%`)
         .eq("currency", snap?.currency ?? "")
         .gte("timestamp", since)
         .order("timestamp", { ascending: false })
         .limit(200);
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
-      return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "");
+      const trendHomes = await homeMap(sb, ((prices ?? []) as Array<{ user_id: string | null }>).map((r) => r.user_id ?? ""));
+      return summarizePriceTrend(prices, String(item_name).trim(), days, snap?.currency ?? "", trendHomes);
     }
     case "area_trends": {
       // ترندات السوق بشرط ٥ بيوت (20260930010000) — الحد جوه SQL، مش هنا ولا في الموديل.
@@ -4041,13 +4153,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const threshold = Math.max(0, Number(input.savings_threshold) || 10);
       const { data: deals, error } = await sb
         .from("price_index")
-        .select("item_name, price, location, store_name")
+        .select("item_name, price, location, store_name, user_id")
         .eq("item_category", item_category)
         .eq("currency", snap?.currency ?? "")
         .gte("timestamp", new Date(Date.now() - 7 * 86400000).toISOString())
         .limit(300);
       if (error) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
-      return rankDeals(deals, String(item_category), threshold, snap?.currency ?? "");
+      const dealHomes = await homeMap(sb, ((deals ?? []) as Array<{ user_id: string | null }>).map((r) => r.user_id ?? ""));
+      return rankDeals(deals, String(item_category), threshold, snap?.currency ?? "", dealHomes);
     }
 
     default:
@@ -5391,6 +5504,23 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "answer_same_product",
+    description:
+      "سجّل جواب العميل على «دول نفس الحاجة؟» عن اسمين لصنف (لبن/حليب، مياه/ماء). same = true بس لو هو قال إنهم نفس الحاجة: " +
+      "بيبقوا صنف واحد في البيت كله (المخزن والقايمة ومعدل الاستهلاك) باسم keep. same = false لو قال مختلفين: مابيتسألش تاني. " +
+      "ماتناديهاش من غير ما العميل يجاوب.",
+    input_schema: {
+      type: "object",
+      properties: {
+        a: { type: "string", description: "الاسم الأول زي ما اتسأل عنه" },
+        b: { type: "string", description: "الاسم التاني" },
+        same: { type: "boolean", description: "اللي العميل قاله: نفس الحاجة (true) ولا مختلفين (false)" },
+        keep: { type: "string", description: "الاسم اللي يحب الصنف يتسمّى بيه لو قاله (وإلا a)" },
+      },
+      required: ["a", "b", "same"],
+    },
+  },
+  {
     name: "save_trusted_technician",
     description:
       "احفظ فني العميل بيثق فيه (سباك، كهربائي…) في «فنيين بثق فيهم» عشان رقمه يبان بنقرة وقت الطوارئ. " +
@@ -5712,8 +5842,10 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       .filter((m) => (m.remaining_quantity ?? 0) <= (m.daily_dose_count ?? 1) * 5)
       .map((m) => m.name);
   } else {
+    // قايمة البيت: اللي الفرد التاني ضافه مطلوب من اللي واقف في المحل كمان.
     const { data: list, error: listErr } = await sb.from("zad_shopping_list")
-      .select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(50);
+      .select("item_name").or(householdFilter(userId, await householdFamilyId(sb, userId)))
+      .eq("is_purchased", false).limit(50);
     if (listErr) console.error("[store_arrival] shopping lookup failed:", listErr.message);
     shopping = ((list ?? []) as Array<{ item_name: string }>).map((r) => r.item_name);
 
@@ -5744,18 +5876,26 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   let seenHere: SeenHere[] = [];
   let cheaperHere: CheaperHere[] = [];
   if (category !== "pharmacy") {
-    const { data: me } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
+    const [{ data: me }, { data: profile }] = await Promise.all([
+      sb.from("zad_users").select("currency").eq("id", userId).maybeSingle(),
+      sb.from("zad_customer_profile").select("city").eq("user_id", userId).maybeSingle(),
+    ]);
     const currency = (me as { currency?: string | null } | null)?.currency ?? null;
+    // مدينة «ملفي» — البلاغات بقت بتشيل مدينة صاحبها (20261011260000)؛ مدينة تانية مش «هنا».
+    const city = (profile as { city?: string | null } | null)?.city ?? null;
     const { data: reports, error: seenErr } = await sb.from("price_index")
-      .select("item_name,store_name,timestamp,price,currency")
+      .select("item_name,store_name,timestamp,price,currency,user_id,location")
       .eq("source", "crowdsource").not("store_name", "is", null)
       .gte("timestamp", new Date(Date.now() - 30 * 86_400_000).toISOString())
       .order("timestamp", { ascending: false }).limit(2000);
     if (seenErr) console.error("[store_arrival] seen-here lookup failed:", seenErr.message);
-    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null }>;
+    const rows = (reports ?? []) as Array<{ item_name: string | null; store_name: string | null; timestamp: string | null; price: number | null; currency: string | null; user_id: string | null; location: string | null }>;
     const missing = [...shopping, ...lowStock];
-    seenHere = seenHereItems(rows, storeName, missing, Date.now());
-    if (currency) cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now());
+    seenHere = seenHereItems(rows, storeName, missing, Date.now(), 72, city);
+    if (currency) {
+      const homes = await homeMap(sb, rows.map((r) => r.user_id ?? ""));
+      cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now(), homes, city);
+    }
   }
 
   const message = buildStoreArrivalMessage({
@@ -5838,7 +5978,8 @@ async function firePlaceReminders(
   if (agreement) {
     const { data: already } = await sb.from("zad_voice_moments").select("id").eq("user_id", userId).eq("dedupe_key", warnKey).maybeSingle();
     if (!already) {
-      const { data: list } = await sb.from("zad_shopping_list").select("item_name").eq("user_id", userId).eq("is_purchased", false).limit(20);
+      const { data: list } = await sb.from("zad_shopping_list").select("item_name")
+        .or(householdFilter(userId, await householdFamilyId(sb, userId))).eq("is_purchased", false).limit(20);
       const items = ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name);
       savings = { ...agreement, list_count: items.length, list_preview: items.slice(0, 5) };
     }
@@ -8037,9 +8178,12 @@ async function handleRequest(req: Request): Promise<Response> {
           // معندهاش unit — الكويري دي كانت بترمي 42703 على كل نداء (بند 30.1، schema_contract_test.ts).
           // نواقص → قايمة الشراء (شوف lowStock.ts): الحد من low_stock_threshold، ومقارنة بالبنود
           // المفتوحة بس — صف قديم اتشرى مابيمنعش الصنف يرجع للقايمة لما يخلص تاني.
+          // مخزن البيت وقايمة البيت: صنف ناقص عند البيت بيتضاف مرة واحدة، مش مرة لكل فرد،
+          // وصنف الأم ضافته للقايمة مايتضافش تاني في حلم الأب.
+          const dreamFamily = await householdFamilyId(sbDream, u.id);
           const [{ data: pantryItems }, { data: openShop }] = await Promise.all([
-            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").eq("user_id", u.id),
-            sbDream.from("zad_shopping_list").select("item_name").eq("user_id", u.id).eq("is_purchased", false),
+            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").or(householdFilter(u.id, dreamFamily)),
+            sbDream.from("zad_shopping_list").select("item_name").or(householdFilter(u.id, dreamFamily)).eq("is_purchased", false),
           ]);
           const toAdd = lowStockToAdd(pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name));
           if (toAdd.length) {
@@ -8176,7 +8320,7 @@ async function handleRequest(req: Request): Promise<Response> {
               writeNeed: async (need) => {
                 openShopping ??= (async () => {
                   const { data } = await sbDream.from("zad_shopping_list")
-                    .select("item_name").eq("user_id", u.id).eq("is_purchased", false);
+                    .select("item_name").or(householdFilter(u.id, await householdFamilyId(sbDream, u.id))).eq("is_purchased", false);
                   return new Set(((data ?? []) as Array<{ item_name: string | null }>).map((r) => itemKey(r.item_name ?? "")));
                 })();
                 if ((await openShopping).has(itemKey(need.item))) return false;
@@ -8321,7 +8465,8 @@ async function handleRequest(req: Request): Promise<Response> {
           const m = Math.round(Number(parsed.minutes_to_iftar));
           if (Number.isFinite(m)) minutes = Math.min(90, Math.max(1, m));
         } catch { /* الافتراضي */ }
-        const { data: list } = await sbEvent.from("zad_shopping_list").select("item_name").eq("user_id", eventUserId).eq("is_purchased", false).limit(10);
+        const { data: list } = await sbEvent.from("zad_shopping_list").select("item_name")
+          .or(householdFilter(eventUserId, await householdFamilyId(sbEvent, eventUserId))).eq("is_purchased", false).limit(10);
         facts = {
           minutes_to_iftar: minutes, hijri_day: season.hijri_day, local_date: local.date,
           shopping_preview: ((list ?? []) as Array<{ item_name: string }>).map((i) => i.item_name).slice(0, 4),

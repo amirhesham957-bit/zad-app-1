@@ -15,6 +15,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io' show SocketException;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,12 +55,16 @@ Color _placeAccent(String place) => switch (place) {
   _ => const Color(0xFFB45309),
 };
 
-/// A short, shareable reason for a failed save.
-String _reason(Object e) => switch (e) {
-  PostgrestException(:final code?) => code,
-  AuthException() => 'auth',
-  TimeoutException() => 'timeout',
-  _ => 'network',
+/// Why a place reminder was not saved, in words the customer can act on.
+/// It used to end every failure with a bare code («(42501)», «(network)»).
+/// An unknown server code is still shown, for support, after the sentence.
+String placeSaveError(Object e) => switch (e) {
+  PostgrestException(code: '42501') ||
+  AuthException() => 'الجلسة انتهت — اخرج وادخل تاني وبعدين سجّل التذكير.',
+  PostgrestException(:final code?) => 'السيرفر رفض التذكير ($code). جرّب تاني.',
+  TimeoutException() || SocketException() =>
+    'مفيش نت دلوقتي — التذكير ماتسجلش. اتأكد من النت وجرّب تاني.',
+  _ => 'ماتسجلش التذكير، جرّب تاني.',
 };
 
 /// The screen.
@@ -533,7 +538,7 @@ class _AddPlaceState extends ConsumerState<_AddPlaceDialog> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'ماتسجلش التذكير، جرّب تاني (${_reason(e)})';
+          _error = placeSaveError(e);
         });
       }
     }

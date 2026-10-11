@@ -48,11 +48,15 @@ Deno.test("the message reads like a friend's, with the link as is", () => {
 // writes are recorded.
 function fakeDb(tables: Record<string, unknown[]>, single: Record<string, unknown>) {
   const writes: Array<{ table: string; op: string; row: Record<string, unknown> }> = [];
+  const filters: Array<{ table: string; or: string }> = [];
   const db = {
     from(table: string) {
-      const read = {
-        select: () => read, eq: () => read, limit: () => Promise.resolve({ data: tables[table] ?? [], error: null }),
-        maybeSingle: () => Promise.resolve({ data: single[table] ?? null, error: null }),
+      const maybeSingle = () => Promise.resolve({ data: single[table] ?? null, error: null });
+      // limit() is awaited for rows, or followed by maybeSingle() (the household lookup).
+      const read: Record<string, unknown> = {
+        select: () => read, eq: () => read, or: (f: string) => (filters.push({ table, or: f }), read),
+        limit: () => Object.assign(Promise.resolve({ data: tables[table] ?? [], error: null }), { maybeSingle }),
+        maybeSingle,
       };
       return {
         ...read,
@@ -67,7 +71,7 @@ function fakeDb(tables: Record<string, unknown[]>, single: Record<string, unknow
       };
     },
   };
-  return { db: db as unknown as Parameters<typeof deliverRestockLink>[0], writes };
+  return { db: db as unknown as Parameters<typeof deliverRestockLink>[0], writes, filters };
 }
 
 function fakeDeps() {
@@ -123,4 +127,17 @@ Deno.test("nothing is sent in وضع الطوارئ, or when nothing essential i
     assertEquals(writes.some((w) => w.table === "app_notifications" || w.table === "zad_chat_turns"), false);
     assertEquals(device.length + telegram.length, 0);
   }
+});
+
+Deno.test("the pantry read is the household's: the other parent's milk counts", async () => {
+  const { db, filters } = fakeDb(
+    { zad_inventory: [{ item_name: "حليب", quantity: 0 }] },
+    { zad_users: { country: "EG" }, family_members: { family_id: "f1" } },
+  );
+  await deliverRestockLink(db, task, fakeDeps().deps);
+  assertEquals(filters.find((f) => f.table === "zad_inventory")?.or, "user_id.eq.u1,family_id.eq.f1");
+
+  const alone = fakeDb({ zad_inventory: [{ item_name: "حليب", quantity: 0 }] }, { zad_users: { country: "EG" } });
+  await deliverRestockLink(alone.db, task, fakeDeps().deps);
+  assertEquals(alone.filters.find((f) => f.table === "zad_inventory")?.or, "user_id.eq.u1");
 });

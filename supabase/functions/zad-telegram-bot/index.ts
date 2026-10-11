@@ -27,6 +27,8 @@ import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallb
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { voiceReplyEmotion } from "./voiceReply.ts";
+import { receiptPriceReports, tidyReportText } from "./receiptPrices.ts";
+import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
@@ -1140,7 +1142,7 @@ async function handleSpendCallbackText(
   isAffirm: boolean
 ): Promise<boolean> {
   const { data: rows } = await sb.from("telegram_pending_writes")
-    .select("id,txn_kind,amount,title,category,status,expires_at")
+    .select("id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
     .eq("user_id", userId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -1148,6 +1150,7 @@ async function handleSpendCallbackText(
   const row = (rows as {
     id: string; txn_kind: string; amount: number; title: string;
     category: string | null; status: string; expires_at: string;
+    wallet: string | null; merchant_name: string | null; source_type: string | null;
   }[] | null)?.[0];
   if (!row) return false;
 
@@ -1176,7 +1179,11 @@ async function handleSpendCallbackText(
     title: row.title,
     category: row.category ?? undefined,
     txn_kind: row.txn_kind,
-    wallet: "card",
+    // «أيوه» بالكتابة زي زرار التأكيد: اللي البون قاله. كانت card ثابتة هنا، فبون اتدفع كاش
+    // واتأكد بالكتابة كان بيتسجل فيزا.
+    wallet: row.wallet ?? "card",
+    merchant_name: row.merchant_name ?? undefined,
+    source_type: row.source_type ?? undefined,
   });
   if (!confirmed.ok) {
     console.error("telegram text confirmation via zad-brain failed");
@@ -1471,15 +1478,16 @@ bot.on("message:photo", async (ctx) => {
   // OCR only supplies fields. Both pharmacy and inventory mutations are executed by
   // zad-brain; the receipt total still waits for the normal financial confirmation.
   if (route === "pharmacy" && result.items.length > 0) {
+    // المعروف يتزوّد، والجديد بزرار تأكيد (pharmacyPhoto.ts): دوا جديد بيفتح تذكيرات، فمايتضافش من غير ضغطة.
+    const { data: meds } = await sb.from("zad_pharmacy_items").select("name").eq("user_id", userId);
+    const { known, fresh } = splitPhotoMedicines(
+      result.items,
+      ((meds ?? []) as Array<{ name: string | null }>).map((m) => m.name ?? ""),
+    );
     let addedCount = 0;
-    for (const item of result.items) {
-      if (!item.name?.trim()) continue;
-      const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? Math.round(item.quantity) : 1;
+    for (const med of known) {
       const added = await agentExecute(userId, "add_pharmacy_item", {
-        name: item.name.trim(),
-        quantity: qty,
-        unit: item.unit || "قرص",
-        category: "عام",
+        name: med.name, quantity: med.quantity, unit: med.unit, category: "عام",
       });
       if (!added.ok) {
         console.error("photo pharmacy through zad-brain failed");
@@ -1487,8 +1495,26 @@ bot.on("message:photo", async (ctx) => {
       }
       addedCount++;
     }
+    for (const med of fresh) {
+      const { data: pendingMed, error: medErr } = await sb.from("telegram_pending_pharmacy").insert({
+        user_id: userId, chat_id: ctx.chat.id, name: med.name, unit: med.unit, quantity: med.quantity,
+        category: "عام", daily_dose_count: 1, dose_times: null,
+      }).select("id").single();
+      if (medErr || !pendingMed) {
+        console.error("photo pharmacy pending insert failed:", medErr?.message);
+        continue;
+      }
+      await ctx.reply(
+        confirmMedicationMessage({
+          is_medication: true, name: med.name, dosage: "", daily_dose_count: 1,
+          dose_times: "لسه — قولي بتاخده الساعة كام بعد ما تأكد", unit: med.unit, quantity: med.quantity,
+          category: "عام", confidence: 0.75,
+        }),
+        { reply_markup: toGrammyKeyboard(confirmMedicationKeyboard((pendingMed as { id: string }).id)) },
+      );
+    }
     const summary = addedCount > 0
-      ? `✅ اتضاف ${addedCount} صنف للصيدلية${result.storeName ? ` من ${result.storeName}` : ""}.`
+      ? `✅ اتزوّد ${addedCount} دوا في صيدليتك${result.storeName ? ` من ${result.storeName}` : ""}.`
       : "";
     if (result.total > 0) {
       const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
@@ -1530,6 +1556,21 @@ bot.on("message:photo", async (ctx) => {
     ? `✅ اتضاف ${addedCount} صنف للمخزون${result.storeName ? ` من ${result.storeName}` : ""}.`
     : "";
 
+  // أسعار البون للجمهور («اتشاف هنا» و«أرخص هنا»)، زي فاتورة التطبيق: باسم صاحب البون وعملة
+  // حسابه (zad_report_price_for، 20261011180000). على قد الجهد — المخزن والمصروف هما الأهم.
+  for (const r of receiptPriceReports(result.storeName, route === "grocery" ? result.items : [])) {
+    const { data: rep, error: repErr } = await sb.rpc("zad_report_price_for", {
+      p_user: userId, p_report: crypto.randomUUID(), p_item: r.item, p_price: r.unitPrice,
+      p_store: tidyReportText(result.storeName), p_category: r.category,
+    });
+    if (repErr) {
+      console.error("[photo] price report failed:", repErr.message);
+      break;
+    }
+    // too_many / invalid_currency: الباقي هيترفض بنفس السبب.
+    if ((rep as { ok?: boolean } | null)?.ok === false) break;
+  }
+
   if (result.total > 0) {
     const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle())
       .data?.currency ?? "غير معروف";
@@ -1545,6 +1586,9 @@ bot.on("message:photo", async (ctx) => {
       category,
       confidence: 0.75,
       wallet,
+      // المصروف بيتسجل إنه من فاتورة وباسم المحل (20261011170000) — زي فاتورة التطبيق.
+      merchant_name: result.storeName?.trim() ? result.storeName.trim().slice(0, 80) : null,
+      source_type: "receipt",
     }).select("id").single();
     if (!error && pending) {
       await ctx.reply(
@@ -1990,7 +2034,7 @@ bot.on("callback_query:data", async (ctx) => {
   const spend = parseSpendCallback(data);
   if (spend) {
     const { data: pendingRow } = await sb.from("telegram_pending_writes")
-      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet")
+      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
       .eq("id", spend.pendingId)
       // إعادة التحقق: الـ chat اللي بيأكد لازم يكون لسه مربوط بنفس اليوزر صاحب الطلب.
       .eq("user_id", userId)
@@ -1999,6 +2043,7 @@ bot.on("callback_query:data", async (ctx) => {
     const row = pendingRow as {
       id: string; txn_kind: string; amount: number; title: string;
       category: string | null; status: string; expires_at: string; wallet: string | null;
+      merchant_name: string | null; source_type: string | null;
     } | null;
 
     if (!row) {
@@ -2039,6 +2084,8 @@ bot.on("callback_query:data", async (ctx) => {
       txn_kind: row.txn_kind,
       // اللي البون قاله (receiptWallet)؛ نص أو صوت أو بون ماقالش = card زي الأول.
       wallet: row.wallet ?? "card",
+      merchant_name: row.merchant_name ?? undefined,
+      source_type: row.source_type ?? undefined,
     });
     if (!confirmed.ok) {
       console.error("telegram expense confirmation via zad-brain failed");
@@ -2118,7 +2165,10 @@ bot.on("callback_query:data", async (ctx) => {
     // مفيش AlarmManager على السيرفر — التذكيرات الفعلية بتتفعل لما تطبيق زاد يعمل sync
     // ويلاقي الدواء الجديد في zad_pharmacy_items (نفس آلية PharmacyReminderScheduler
     // اللي بتشتغل تلقائي عند أي تغيير في قائمة الأدوية).
-    await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.name))} — المواعيد: ${isolate(row.dose_times ?? "")}\nهتلاقي التذكير شغال في التطبيق بعد أول فتح.`);
+    // من صورة: مفيش مواعيد لسه — السؤال هنا، وتحية الصبح بتسأل تاني مرة لو ماتردش (الموجة ٣، ٧أ).
+    await ctx.reply(row.dose_times
+      ? `اتسجل ✅ ${isolate(sanitizeName(row.name))} — المواعيد: ${isolate(row.dose_times)}\nهتلاقي التذكير شغال في التطبيق بعد أول فتح.`
+      : `اتسجل ✅ ${isolate(sanitizeName(row.name))}. بتاخده الساعة كام؟ قولي («٨ الصبح و٨ بالليل») وأفعّل التذكير.`);
     return;
   }
 

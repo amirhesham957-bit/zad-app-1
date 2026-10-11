@@ -10,6 +10,7 @@ library;
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 /// A chat message's kind, as `chat_messages.message_type` stores it.
 enum FamilyMessageType {
@@ -295,7 +296,7 @@ class Chore {
   final DateTime? createdAt;
 }
 
-/// One line of the family's shared grocery list.
+/// One line of the household's shopping list, as the family tab shows it.
 @immutable
 class SharedGroceryItem {
   /// Creates an item.
@@ -306,12 +307,11 @@ class SharedGroceryItem {
     this.category,
   });
 
-  /// Reads a `shared_grocery_list` row.
-  factory fromJson(Map<String, dynamic> json) => SharedGroceryItem(
-    id: json['id'] as String,
-    itemName: (json['item_name'] as String?) ?? '',
-    isPurchased: (json['is_purchased'] as bool?) ?? false,
-    category: json['category'] as String?,
+  /// A line of the household's shopping list, as the family tab shows it.
+  factory fromShopping(ShoppingItem item) => SharedGroceryItem(
+    id: item.id,
+    itemName: item.itemName,
+    isPurchased: item.isPurchased,
   );
 
   /// The row id.

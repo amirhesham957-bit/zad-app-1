@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/scan/application/receipt_prices.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
@@ -65,6 +66,7 @@ class CameraActions extends Notifier<void> {
     required double amount,
     String? category,
     String? sourceType,
+    String? merchantName,
   }) async {
     final userId = ref.read(signedInUserIdProvider)();
     if (userId == null || userId.isEmpty || amount <= 0) return;
@@ -80,6 +82,9 @@ class CameraActions extends Notifier<void> {
             wallet: Wallet.card,
             category: category,
             sourceType: sourceType,
+            merchantName: (merchantName?.trim().isEmpty ?? true)
+                ? null
+                : merchantName!.trim(),
           ),
         );
     ref.read(transactionsControllerProvider.notifier).reloadFromCache();
@@ -118,8 +123,12 @@ class CameraActions extends Notifier<void> {
       title: r.storeName,
       amount: r.total,
       category: 'أدوات منزلية',
+      sourceType: 'receipt',
+      merchantName: r.storeName,
     );
-    return await injectPantry(_lines(r));
+    final summary = await injectPantry(_lines(r));
+    await reportReceiptPrices(ref, r);
+    return summary;
   }
 
   /// Any other receipt: the expense in its category, and the lines into the
@@ -129,8 +138,12 @@ class CameraActions extends Notifier<void> {
       title: r.storeName,
       amount: r.total,
       category: r.category.isEmpty ? null : r.category,
+      sourceType: 'receipt',
+      merchantName: r.storeName,
     );
-    return await injectPantry(_lines(r));
+    final summary = await injectPantry(_lines(r));
+    await reportReceiptPrices(ref, r);
+    return summary;
   }
 }
 
