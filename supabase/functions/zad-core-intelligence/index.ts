@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 import { buildTicker, countryForLocation } from "./liveTicker.ts";
-import { asksLatest, bingNewsUrl, cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf } from "./searchQuality.ts";
+import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
@@ -1344,9 +1344,19 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       // معلومة ثابتة أو حدث عدّى: الموسوعة قبل الأخبار (٢٠٢٦-١٠-٠٢). بتتفلتر هنا لكل لغة على سؤالها.
       ["wikipedia", async () => {
-        const local = keepAnswering(query, await wikipediaSnippets(query, arabic ? "ar" : "en", 3));
-        const en = queryEn && arabic ? keepAnswering(queryEn, await wikipediaSnippets(queryEn, "en", 3)) : [];
-        return [...en, ...local];
+        const latest = asksLatest(query) || asksLatest(queryEn);
+        if (!latest) {
+          const local = keepAnswering(query, await wikipediaSnippets(query, arabic ? "ar" : "en", 3));
+          const en = queryEn && arabic ? keepAnswering(queryEn, await wikipediaSnippets(queryEn, "en", 3)) : [];
+          return [...en, ...local];
+        }
+        // «آخر مرة» (٢٠٢٦-١٠-١١): البحث بالموضوع بس (topicOf)، صفحة السلسلة الأول والنسخ الأحدث بعدها
+        // (latestFirst)، والصفحة الإنجليزية لأول صفحة عربية — المقدمة العربية مابتقولش مين كسب.
+        const local = keepAnswering(query, await wikipediaSnippets(topicOf(query), arabic ? "ar" : "en", 3));
+        const en = queryEn && arabic ? keepAnswering(queryEn, await wikipediaSnippets(topicOf(queryEn), "en", 3)) : [];
+        const ranked = latestFirst([query, queryEn], [...en, ...local]);
+        const topArabic = arabic ? ranked.find((h) => h.url.startsWith("https://ar.")) : undefined;
+        return withTwin(ranked, topArabic ? await englishTwin(topArabic.title) : null);
       }],
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
@@ -1356,10 +1366,8 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     const raw = await run();
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
     // ويكيبيديا اتفلترت جوه، كل لغة على سؤالها.
-    // «آخر مرة»: من الموسوعة، الحاجة نفسها والأحدث الأول (latestFirst) — مش ترتيب ويكيبيديا.
-    const kept = name === "wikipedia"
-      ? (asksLatest(query) || asksLatest(queryEn) ? latestFirst([query, queryEn], raw) : raw)
-      : keepAnswering(query, raw);
+    // ويكيبيديا اتفلترت ورتّبت جوه (والأحدث الأول لسؤال «آخر مرة»).
+    const kept = name === "wikipedia" ? raw : keepAnswering(query, raw);
     lastWebSearchAttempts.push(`${name}:kept ${kept.length}/${raw.length}`);
     if (kept.length > 0) {
       lastWebSearchSource = name;
@@ -2193,7 +2201,8 @@ Deno.serve(async (req: Request) => {
         if (!q) return jsonResponse({ results: [], error: "empty_query" });
         const country = typeof payload?.country === "string" ? payload.country.toUpperCase().slice(0, 2) : "";
         const qEn = typeof payload?.query_en === "string" ? payload.query_en.trim().slice(0, 200) : "";
-        const cacheKey = `web_search:v3:${country}:${q}|${qEn}`;
+        // v4 (٢٠٢٦-١٠-١١): ترتيب «آخر مرة» اتغير — نتايج v3 المحفوظة (٦ ساعات) كانت هتغطي عليه.
+        const cacheKey = `web_search:v4:${country}:${q}|${qEn}`;
         const cached = await getCachedAiResponse(cacheKey, cacheTtlMs(q));
         if (cached) return jsonResponse({ ...cached, cached: true });
         const hits = await webSearchSnippets(q, 8, country || null, qEn || undefined);
