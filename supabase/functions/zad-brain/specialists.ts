@@ -181,6 +181,8 @@ const EXPENSE_INTENT = new RegExp(
 // الجو (الموجة ٤): «الجو في إسكندرية بكرة؟»، «هتمطر؟».
 const WEATHER_INTENT = /الجو|الطقس|درجه الحراره|هتمطر|بتمطر|حتمطر|مطر|الحر |الحر$|البرد |البرد$|عاصفه|شبوره|الرطوبه/;
 // «هات اللوكيشن» بعد رسالة محل (الموجة ٣): الموديل كان بيسأل «انت في أنهي منطقة؟».
+// «دول نفس الحاجة؟» (productIdentity.ts): «أيوه نفس الحاجة»، «ادمجهم»، «لأ حاجتين مختلفين».
+const SAME_PRODUCT_INTENT = /نفس (ال)?(حاجه|صنف|منتج|شي)|ادمج|حاجتين مختلفين|(صنفين|منتجين) مختلفين|مش نفس (ال)?(حاجه|صنف)/;
 const STORE_LOCATION_INTENT = /لوكيشن|لوكيشين|location|(هات|ابعت|ابعتلي|ابعتيلي|ابعتهولي|فين|عايز|عاوز)\s*(لي)?\s*(ال)?(موقع|مكان|عنوان)\s*(ال)?(محل|سوبر ?ماركت|صيدليه|ده|دا|بتاعه|بتاعها)?|(علي|على) الخريطه|فين (ال)?(محل|السوبر ?ماركت|الصيدليه) ده/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
@@ -207,6 +209,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (GATHERING_INTENT.test(norm)) tools.push("plan_gathering", "add_gathering_to_list", "add_appointment");
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (STORE_LOCATION_INTENT.test(norm)) tools.push("store_location");
+  if (SAME_PRODUCT_INTENT.test(norm)) tools.push("answer_same_product");
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");
   if (EXPENSE_INTENT.test(norm)) tools.push("log_transaction");
   if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
@@ -360,6 +363,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
     "suggest_product", "check_price_online", "find_nearby_stores", "web_search",
     "suggest_recipes", "area_trends", "plan_gathering", "add_gathering_to_list",
+    "answer_same_product",
   ],
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",

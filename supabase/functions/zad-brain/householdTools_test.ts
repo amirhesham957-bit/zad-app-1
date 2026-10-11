@@ -10,7 +10,7 @@ import { freshContext } from "./validators.ts";
 type Row = Record<string, unknown>;
 
 /** A tiny PostgREST: eq / or (user_id, family_id) filters, select, update, insert. */
-function fakeDb(tables: Record<string, Row[]>) {
+function fakeDb(tables: Record<string, Row[]>, names: Record<string, string> = {}) {
   const rpcs: Array<{ fn: string; args: Row }> = [];
   const writes: Array<{ table: string; op: string; id?: unknown; row: Row }> = [];
   let next = 1;
@@ -68,6 +68,10 @@ function fakeDb(tables: Record<string, Row[]>) {
   };
   const rpc = (fn: string, args: Row) => {
     rpcs.push({ fn, args });
+    // zad_product_canonical: the household's chosen name, or the name as given.
+    if (fn === "zad_product_canonical") {
+      return Promise.resolve({ data: names[String(args.p_name)] ?? args.p_name, error: null });
+    }
     return Promise.resolve({ data: { samples: 1, rate_known: false }, error: null });
   };
   return { sb: { from, rpc } as any, writes, rpcs, tables };
@@ -158,4 +162,17 @@ Deno.test("a purchase ticks the household's open line for it, once, and says so"
   // Topping up an item already in the pantry ticks too; with no open line, nothing is said.
   const again = await executeTool(sb, "dad", "add_inventory_item", { item_name: "لبن", quantity: 1 }, {}, freshContext("dad"), {} as any);
   assert(!again.includes("اتشطب"), again);
+});
+
+Deno.test("once the family said «حليب» is «لبن», «اشتريت حليب» tops up the milk", async () => {
+  const { sb, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [{ id: "milk", user_id: "mom", family_id: "f1", item_name: "لبن", quantity: 1, unit: null, created_at: "2026-10-10" }],
+    zad_shopping_list: [{ id: "l1", user_id: "mom", family_id: "f1", item_name: "لبن", is_purchased: false }],
+  }, { "حليب": "لبن" });
+  const out = await executeTool(sb, "dad", "add_inventory_item", { item_name: "حليب", quantity: 1 }, {}, freshContext("dad"), {} as any);
+  assert(!out.startsWith("مرفوض"), out);
+  assertEquals(tables.zad_inventory.length, 1, "a second row for the same product");
+  assertEquals(tables.zad_inventory[0].quantity, 2);
+  assertEquals(tables.zad_shopping_list[0].is_purchased, true, "the list line under the chosen name was not ticked");
 });

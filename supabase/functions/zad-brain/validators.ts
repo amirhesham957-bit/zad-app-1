@@ -459,6 +459,22 @@ export function latinDigits(text: string): string {
   return text.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
 }
 
+/** «دول نفس الحاجة؟» — الجواب (productIdentity.ts، 20261011210000). */
+export const validateAnswerSameProduct: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["answer_same_product"] ?? 0) >= 3) return { ok: false, reason: "٣ إجابات بالكتير في المرة" };
+  const a = String(input.a ?? "").trim();
+  const b = String(input.b ?? "").trim();
+  if (a.length < 2 || a.length > 80 || b.length < 2 || b.length > 80) {
+    return { ok: false, reason: "a وb لازم اسمين من ٢ لـ٨٠ حرف" };
+  }
+  if (typeof input.same !== "boolean") return { ok: false, reason: "same لازم true أو false — اللي العميل قاله" };
+  if (input.keep !== undefined && input.keep !== null) {
+    const keep = String(input.keep).trim();
+    if (keep.length < 2 || keep.length > 80) return { ok: false, reason: "keep لازم من ٢ لـ٨٠ حرف" };
+  }
+  return { ok: true };
+};
+
 export const validateSaveTrustedTechnician: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["save_trusted_technician"] ?? 0) >= 3) return { ok: false, reason: "٣ فنيين بالكتير في المرة" };
   const name = String(input.name ?? "").trim();
@@ -1021,6 +1037,7 @@ export const VALIDATORS: Record<string, Validator> = {
   update_pharmacy_item: validateUpdatePharmacyItem,
   set_market: validateSetMarket,
   save_trusted_technician: validateSaveTrustedTechnician,
+  answer_same_product: validateAnswerSameProduct,
   log_pharmacy_dose: validateLogPharmacyDose,
   delete_pharmacy_item: validateDeletePharmacyItem,
   schedule_task: validateScheduleTask,
@@ -1117,7 +1134,7 @@ export const VALIDATORS: Record<string, Validator> = {
  */
 export const MUTATING_TOOLS = [
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
-  "remember_occasion", "save_trusted_technician",
+  "remember_occasion", "save_trusted_technician", "answer_same_product",
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
@@ -1171,6 +1188,8 @@ export const CHILD_BLOCKED_TOOLS = [
   ...CONFIRM_REQUIRED_TOOLS,
   "set_transaction_category", "merge_duplicate_expense", "reconcile_cash_balance",
   "confirm_cycle_start", "confirm_obligation", "set_market", "save_trusted_technician",
+  // دمج أصناف البيت — قرار ولي الأمر.
+  "answer_same_product",
   "add_subscription", "update_subscription", "delete_subscription",
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",

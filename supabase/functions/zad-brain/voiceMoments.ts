@@ -17,6 +17,7 @@ import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowConte
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
 import { familyTime, type FamilyTime, isWeekendEve } from "./familyTime.ts";
@@ -1154,9 +1155,11 @@ export async function morningFacts(
   // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
   const occasionAsk = profile === undefined || ask || gift || quiet ? null : occasionQuestion(occasionRows, people, local.date);
   const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
+  // «دول نفس الحاجة؟» (productIdentity.ts) قبل الفضول العادي: من غير اسم واحد للصنف مفيش معدل
+  // استهلاك ولا «هيخلص إمتى؟». نفس الخانة ونفس الشروط — سؤال واحد في اليوم.
   const curious = profile === undefined || ask || gift || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
     ? null
-    : await curiosityQuestion(sb, userId, Date.parse(dayStart));
+    : (await sameProductAsk(sb, userId)) ?? await curiosityQuestion(sb, userId, Date.parse(dayStart));
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
   // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
   const newcomer = quiet || gift ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
@@ -1190,7 +1193,11 @@ export async function morningFacts(
       ? {
         daily_question: curious.question,
         daily_question_kind: "curiosity",
-        curiosity: { key: curious.key, kind: curious.kind, record: curious.record, ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}) },
+        curiosity: {
+          key: curious.key, kind: curious.kind, record: curious.record,
+          ...(curious.transaction_id ? { transaction_id: curious.transaction_id } : {}),
+          ...(curious.tool ? { tool: curious.tool } : {}),
+        },
       }
       : {}),
     ...(weather && !quiet ? { weather: { place: weather.place, today: todayOf(weather, local.date) } } : {}),

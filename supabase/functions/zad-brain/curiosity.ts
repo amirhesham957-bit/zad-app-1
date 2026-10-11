@@ -46,7 +46,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -57,6 +57,8 @@ export interface Curiosity {
   /** إزاي العقل يسجّل الجواب لما ييجي في الشات. */
   record: string;
   transaction_id?: string;
+  /** أداة لازم تبقى معروضة في الشات عشان الجواب يتسجل («دول نفس الحاجة؟» — productIdentity.ts). */
+  tool?: string;
 }
 
 // تصنيفات وعناوين مابتقولش حاجة عن الصرف نفسه. مقاسة من الحي (٢٠٢٦-١٠-٠٣): ١٧ من ٣٨ حركة «أخرى»،

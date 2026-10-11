@@ -71,6 +71,7 @@ import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postpo
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
+import { productNameKey } from "./productIdentity.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -1578,6 +1579,16 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 // ═══════════════════════════════════════════════════════════
 
 /**
+ * الاسم اللي البيت اختاره للصنف (zad_product_canonical، 20261011200000) — قبل أي مطابقة، عشان
+ * «اشتريت حليب» يلاقي «لبن» لو العيلة قالت إنهم نفس الحاجة. التريجر بيكتب الاسم ده على أي حال؛ هنا
+ * عشان المطابقة تشوفه قبل ما تقرر تضيف صف جديد. فشل = الاسم زي ما هو.
+ */
+async function householdName(sb: SupabaseClient, userId: string, name: string): Promise<string> {
+  const { data, error } = await sb.rpc("zad_product_canonical", { p_user: userId, p_name: name });
+  return !error && typeof data === "string" && data.trim() ? data.trim() : name;
+}
+
+/**
  * «اشتريت X» بيشطب X من قايمة البيت (الموجة ٥، ٢٠٢٦-١٠-١١). الفاتورة من التطبيق كانت بتعمل كده
  * (intakeIntoPantry)، لكن الشات وصورة الفاتورة في تليجرام (الاتنين بيعدّوا على add_inventory_item)
  * كانوا بيزوّدوا المخزن ويسيبوا السطر مفتوح — فالعقل يفضل يفكّر العميل بحاجة اشتراها.
@@ -1897,6 +1908,34 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
     }
+    case "answer_same_product": {
+      // «دول نفس الحاجة؟» (productIdentity.ts): الجواب للبيت كله (20261011210000).
+      const a = String(input.a).trim();
+      const b = String(input.b).trim();
+      if (input.same === false) {
+        const { data, error } = await sb.rpc("zad_product_not_same_for", { p_user: userId, p_a: a, p_b: b });
+        if (error || (data as { ok?: boolean } | null)?.ok === false) {
+          return `مرفوض: مقدرتش أسجل الإجابة (${error?.message ?? (data as any)?.reason}).`;
+        }
+        ctx.mutationCount++;
+        return `اتسجّل إن «${a}» و«${b}» حاجتين مختلفين — مش هسأل عنهم تاني.`;
+      }
+      const keep = input.keep ? String(input.keep).trim() : a;
+      const others = [a, b].filter((n) => productNameKey(n) !== productNameKey(keep));
+      let pantry = 0, lines = 0;
+      for (const other of others) {
+        const { data, error } = await sb.rpc("zad_product_merge_for", { p_user: userId, p_keep: keep, p_other: other });
+        const r = data as { ok?: boolean; reason?: string; pantry_rows_merged?: number; list_lines_merged?: number } | null;
+        if (error || r?.ok === false) return `مرفوض: مقدرتش أدمجهم (${error?.message ?? r?.reason}).`;
+        pantry += r?.pantry_rows_merged ?? 0;
+        lines += r?.list_lines_merged ?? 0;
+      }
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: [a, b], new: keep });
+      return `اتسجّل: «${a}» و«${b}» صنف واحد اسمه «${keep}» في البيت كله` +
+        (pantry ? ` — اتجمّع ${pantry + 1} صف في المخزن` : "") + (lines ? ` و${lines + 1} سطر في القايمة` : "") +
+        `. الاستهلاك هيتحسب عليه كصنف واحد.`;
+    }
     case "save_trusted_technician": {
       // «فنيين بثق فيهم» (20261006014219). نفس الرقم مرة تانية = تحديث الاسم/الصنعة، مش صف جديد.
       // الرقم اتحقق في validateSaveTrustedTechnician إن العميل قاله.
@@ -1958,7 +1997,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // restock ran at 09:12 and again at 17:02, and nothing looked first. The same shape
       // of duplicate comes from the Telegram fallback — when zad-brain fails *after* a
       // write, the bot retries on the old [[ACTION]] path and writes it again.
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
       // قايمة البيت: لو الأم ضافت «لبن» مايتضافش تاني باسم الأب.
       const { data: existing } = await sb.from("zad_shopping_list")
         .select("id,item_name,quantity")
@@ -2346,7 +2385,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتظبط الرصيد على ${input.monthly_limit}`;
     }
     case "add_inventory_item": {
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
       const unit = input.unit ? String(input.unit).trim() : null;
       // نفس الصنف موجود في مخزن البيت؟ يتزوّد بدل صف تاني جنبه («بلح» مرتين، pantryMatch.ts).
       // صف العميل نفسه الأول، وبعده صف العيلة: «اشتريت لبن» من الأب بيزوّد لبن البيت اللي
@@ -2562,7 +2601,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتعدلت بيانات "${before.name}" ومواعيد التذكير هتتحدث بعد مزامنة التطبيق`;
     }
     case "complete_shopping_item": {
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
       // قايمة البيت: الصنف ممكن يكون الفرد التاني ضافه. لو الاسم متكرر (كل واحد ضافه)، صف العميل
       // الأول — نفس اختيار المخزن (inventoryRow.ts). maybeSingle على اسم متكرر كان بيرجّع «مش موجود».
       const familyId = await householdFamilyId(sb, userId);
@@ -2577,7 +2616,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتشطب "${itemName}" من قائمة التسوق`;
     }
     case "delete_shopping_item": {
-      const itemName = String(input.item_name).trim();
+      const itemName = await householdName(sb, userId, String(input.item_name).trim());
       const familyId = await householdFamilyId(sb, userId);
       const { data: rows } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName);
       const before = pickInventoryRow(rows as any[], userId, familyId);
@@ -5454,6 +5493,23 @@ export const CHAT_TOOLS: ToolDef[] = [
       properties: {
         follow_up: { type: "boolean", description: "true = بتابع خطة الأسبوع اللي فات (مش بعمل خطة جديدة)" },
       },
+    },
+  },
+  {
+    name: "answer_same_product",
+    description:
+      "سجّل جواب العميل على «دول نفس الحاجة؟» عن اسمين لصنف (لبن/حليب، مياه/ماء). same = true بس لو هو قال إنهم نفس الحاجة: " +
+      "بيبقوا صنف واحد في البيت كله (المخزن والقايمة ومعدل الاستهلاك) باسم keep. same = false لو قال مختلفين: مابيتسألش تاني. " +
+      "ماتناديهاش من غير ما العميل يجاوب.",
+    input_schema: {
+      type: "object",
+      properties: {
+        a: { type: "string", description: "الاسم الأول زي ما اتسأل عنه" },
+        b: { type: "string", description: "الاسم التاني" },
+        same: { type: "boolean", description: "اللي العميل قاله: نفس الحاجة (true) ولا مختلفين (false)" },
+        keep: { type: "string", description: "الاسم اللي يحب الصنف يتسمّى بيه لو قاله (وإلا a)" },
+      },
+      required: ["a", "b", "same"],
     },
   },
   {
