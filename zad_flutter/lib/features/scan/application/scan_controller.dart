@@ -11,23 +11,20 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/features/scan/application/receipt_prices.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
-import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
-import 'package:zad/shared/prices/data/prices_repository.dart';
-import 'package:zad/shared/prices/domain/prices.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/bank_twin.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
-import 'package:zad/shared/settings/data/settings_repository.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -383,6 +380,9 @@ class ScanController extends Notifier<ScanView> {
                 merchantName: receipt.storeName.isEmpty
                     ? null
                     : receipt.storeName,
+                // So the brain can tell a photographed receipt from a typed
+                // figure (provenance, 2026-10-11).
+                sourceType: 'receipt',
               ),
             );
       }
@@ -399,7 +399,7 @@ class ScanController extends Notifier<ScanView> {
         intake = await _intoPantry(receipt, state.excludedItems);
       }
       if (state.offersPantry) {
-        await _reportPrices(receipt, state.excludedItems);
+        await reportReceiptPrices(ref, receipt, excluded: state.excludedItems);
       }
       PharmacyIntakeResult? pharmacy;
       if (state.offersPharmacy && state.addToPharmacy) {
@@ -417,51 +417,6 @@ class ScanController extends Notifier<ScanView> {
       if (!ref.mounted) return false;
       state = state.copyWith(isSaving: false, error: error);
       return false;
-    }
-  }
-
-  /// A grocery receipt's ticked lines as crowd price reports: what was on
-  /// the shelf at this store, at what price, now. They are what lets the
-  /// next customer near that store hear «اتشاف هنا» (zad-brain
-  /// store_arrival). Queued through the outbox like a typed report; best
-  /// effort, since the expense is already saved.
-  Future<void> _reportPrices(ScannedReceipt receipt, Set<int> excluded) async {
-    final reports = receiptPriceReports(
-      store: receipt.storeName,
-      lines: [
-        for (final (i, item) in receipt.items.indexed)
-          if (!excluded.contains(i))
-            (
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              category: item.category,
-            ),
-      ],
-    );
-    if (reports.isEmpty) return;
-    try {
-      final prices = ref.read(pricesRepositoryProvider);
-      // The account's currency, as a typed report sends it. The server uses
-      // the account's own first and this only when the row has none yet —
-      // a market chosen offline, still queued ahead of this in the outbox.
-      // Without it such a report was refused `invalid_currency` and
-      // dead-lettered, and «اتشاف هنا» never heard of the shop (gap 11).
-      final account = ref.read(settingsRepositoryProvider).cached();
-      final currency =
-          account?.currency ?? marketFor(account?.country)?.currency;
-      for (final r in reports) {
-        await prices.report(
-          item: r.item,
-          price: r.unitPrice,
-          currency: currency,
-          store: receipt.storeName,
-          category: r.category,
-        );
-      }
-    } on Object {
-      // Signed out between the save and here, or no queue: the expense and
-      // the pantry are what matter, and they are already written.
     }
   }
 

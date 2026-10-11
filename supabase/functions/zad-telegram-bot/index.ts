@@ -1140,7 +1140,7 @@ async function handleSpendCallbackText(
   isAffirm: boolean
 ): Promise<boolean> {
   const { data: rows } = await sb.from("telegram_pending_writes")
-    .select("id,txn_kind,amount,title,category,status,expires_at")
+    .select("id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
     .eq("user_id", userId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -1148,6 +1148,7 @@ async function handleSpendCallbackText(
   const row = (rows as {
     id: string; txn_kind: string; amount: number; title: string;
     category: string | null; status: string; expires_at: string;
+    wallet: string | null; merchant_name: string | null; source_type: string | null;
   }[] | null)?.[0];
   if (!row) return false;
 
@@ -1176,7 +1177,11 @@ async function handleSpendCallbackText(
     title: row.title,
     category: row.category ?? undefined,
     txn_kind: row.txn_kind,
-    wallet: "card",
+    // «أيوه» بالكتابة زي زرار التأكيد: اللي البون قاله. كانت card ثابتة هنا، فبون اتدفع كاش
+    // واتأكد بالكتابة كان بيتسجل فيزا.
+    wallet: row.wallet ?? "card",
+    merchant_name: row.merchant_name ?? undefined,
+    source_type: row.source_type ?? undefined,
   });
   if (!confirmed.ok) {
     console.error("telegram text confirmation via zad-brain failed");
@@ -1545,6 +1550,9 @@ bot.on("message:photo", async (ctx) => {
       category,
       confidence: 0.75,
       wallet,
+      // المصروف بيتسجل إنه من فاتورة وباسم المحل (20261011170000) — زي فاتورة التطبيق.
+      merchant_name: result.storeName?.trim() ? result.storeName.trim().slice(0, 80) : null,
+      source_type: "receipt",
     }).select("id").single();
     if (!error && pending) {
       await ctx.reply(
@@ -1990,7 +1998,7 @@ bot.on("callback_query:data", async (ctx) => {
   const spend = parseSpendCallback(data);
   if (spend) {
     const { data: pendingRow } = await sb.from("telegram_pending_writes")
-      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet")
+      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
       .eq("id", spend.pendingId)
       // إعادة التحقق: الـ chat اللي بيأكد لازم يكون لسه مربوط بنفس اليوزر صاحب الطلب.
       .eq("user_id", userId)
@@ -1999,6 +2007,7 @@ bot.on("callback_query:data", async (ctx) => {
     const row = pendingRow as {
       id: string; txn_kind: string; amount: number; title: string;
       category: string | null; status: string; expires_at: string; wallet: string | null;
+      merchant_name: string | null; source_type: string | null;
     } | null;
 
     if (!row) {
@@ -2039,6 +2048,8 @@ bot.on("callback_query:data", async (ctx) => {
       txn_kind: row.txn_kind,
       // اللي البون قاله (receiptWallet)؛ نص أو صوت أو بون ماقالش = card زي الأول.
       wallet: row.wallet ?? "card",
+      merchant_name: row.merchant_name ?? undefined,
+      source_type: row.source_type ?? undefined,
     });
     if (!confirmed.ok) {
       console.error("telegram expense confirmation via zad-brain failed");

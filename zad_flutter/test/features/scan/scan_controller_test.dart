@@ -396,6 +396,8 @@ void main() {
       expect(txn.isExpense, isTrue);
       expect(txn.title, 'بنده');
       expect(txn.category, 'البقالة');
+      expect(txn.merchantName, 'بنده');
+      expect(txn.sourceType, 'receipt', reason: 'the brain can tell it apart');
       expect(txn.isPending, isTrue, reason: 'it goes out through the queue');
       expect(container.read(scanControllerProvider).stage, ScanStage.idle);
     });

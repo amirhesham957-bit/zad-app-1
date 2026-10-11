@@ -70,6 +70,7 @@ import { laneFor } from "./keyLanes.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
+import { txnSourceType } from "./provenance.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
@@ -2261,6 +2262,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           is_expense: isExpense,
           txn_kind: input.txn_kind,
           wallet: input.wallet === "cash" ? "cash" : "card",
+          // جت منين (provenance.ts): «receipt» لو اللي نادى قال إنها فاتورة، وإلا القناة.
+          source_type: txnSourceType(input.source_type, scope.source),
+          // اسم المحل من الفاتورة (تليجرام)، عشان «أرخص هنا» وعادات المحلات يشوفوه.
+          merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
         }).select("id,amount,title,category,txn_kind"),
         "تسجيل المعاملة",
       );
