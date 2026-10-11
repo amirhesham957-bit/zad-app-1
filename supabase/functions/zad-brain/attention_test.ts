@@ -26,6 +26,7 @@ Deno.test("attention: a note about what a card said today, or about an ignored t
   assert(noteScore(note("2", "pharmacy", "دوا متجدد فاضله ٣ أيام أو أقل: كونكور"), { now: NOW, cardTitles: cards }) > 0);
   const engagement = engagementFrom([1, 2, 3].map((d) => ({
     dedupe_key: `oil_consumption_${d}`, title: "الزيت هيخلص", status: "pending", created_at: ago(24 * (d + 2)),
+    seen_at: ago(24 * (d + 2)), // shown on Home and left — «ignored» needs «shown» (20261011293145)
   })), NOW);
   assertEquals(noteScore(note("3", "pantry", "الزيت قرب يخلص"), { now: NOW, engagement }), 0);
 });

@@ -30,6 +30,11 @@ class HomeInsightsSection extends ConsumerWidget {
     if (cards.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     final controller = ref.read(insightsControllerProvider.notifier);
+    // Drawn on Home ⇒ shown: the brain learns «ignored» only from cards the
+    // customer had in front of them. After the frame, never during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) unawaited(controller.markSeen(cards));
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

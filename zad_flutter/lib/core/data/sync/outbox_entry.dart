@@ -127,6 +127,13 @@ abstract final class OutboxKind {
   /// card replaces an unsent earlier one.
   static const String resolveInsight = 'resolve_insight';
 
+  /// Record that a brain insight was shown, through `zad_mark_insight_seen`.
+  ///
+  /// One entry per insight (`insight_seen:<id>`), queued only once: the first
+  /// time it was shown is the one kept, here and on the server. Without it
+  /// the brain counted a card nobody had opened as ignored (2026-10-11).
+  static const String markInsightSeen = 'mark_insight_seen';
+
   /// Hand a bank notification to `zad-brain` for it to decide on.
   ///
   /// Queued rather than called directly so a notification arriving with no

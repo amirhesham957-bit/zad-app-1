@@ -14,6 +14,7 @@ class _Insights extends InsightsController {
 
   final List<ZadInsight> pending;
   final List<String> calls = <String>[];
+  final List<String> seen = <String>[];
 
   @override
   InsightsView build() => InsightsView(pending: pending);
@@ -28,6 +29,10 @@ class _Insights extends InsightsController {
   @override
   Future<void> answer(ZadInsight question, String text) async =>
       calls.add('answer:${question.id}:$text');
+
+  @override
+  Future<void> markSeen(List<ZadInsight> shown) async =>
+      seen.add(shown.map((i) => i.id).join(','));
 }
 
 void main() {
@@ -49,9 +54,27 @@ void main() {
     );
   }
 
-  testWidgets('nothing pending: nothing drawn', (tester) async {
+  testWidgets('nothing pending: nothing drawn, nothing reported', (
+    tester,
+  ) async {
     await pump(tester, const <ZadInsight>[]);
+    await tester.pump();
     expect(find.text('رؤية زاد الذكي ✨'), findsNothing);
+    expect(fake.seen, isEmpty);
+  });
+
+  testWidgets('the cards drawn on Home are reported shown, after the frame', (
+    tester,
+  ) async {
+    await pump(tester, const <ZadInsight>[
+      ZadInsight(id: 'a', title: 'اشتراكك بيتجدد', body: 'بكرة'),
+      ZadInsight(id: 'b', title: 'بيتادرم قرب يخلص', body: 'فاضل ٢'),
+      ZadInsight(id: 'bell', title: 'في الإشعارات', body: '', surface: 'bell'),
+    ]);
+    await tester.pump();
+    // Home's two, not the bell's: that one is reported where it is drawn.
+    expect(fake.seen, contains('a,b'));
+    expect(fake.seen.where((c) => c.contains('bell')), isEmpty);
   });
 
   testWidgets('an insight is dismissed with the reason chosen', (tester) async {

@@ -66,6 +66,8 @@ Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>
         await ref.read(pushRegistrarProvider).sendQueued(entry),
       OutboxKind.resolveInsight =>
         await ref.read(insightsRepositoryProvider).sendQueued(entry),
+      OutboxKind.markInsightSeen =>
+        await ref.read(insightsRepositoryProvider).sendQueuedSeen(entry),
       OutboxKind.markNotificationRead =>
         await ref.read(notificationsRepositoryProvider).sendQueuedRead(entry),
       OutboxKind.markAllNotificationsRead =>

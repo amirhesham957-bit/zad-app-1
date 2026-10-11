@@ -124,6 +124,12 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
     final controller = ref.read(notificationsControllerProvider.notifier);
     final bell = ref.watch(insightsControllerProvider.select((v) => v.onBell));
     final insights = ref.read(insightsControllerProvider.notifier);
+    // The bell's cards are shown when this screen draws them, as Home's are.
+    if (bell.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(insights.markSeen(bell));
+      });
+    }
     final proposals = ref.watch(proposalsControllerProvider);
     final unread =
         notifications.where((n) => !n.isRead).length +
