@@ -19,6 +19,8 @@ export interface EntitlementDecision {
   reason: string;
   tier?: string;
   left?: number;
+  /** What the request costs in «محاولات» (chat 1, scan 2, brain 3). */
+  cost?: number;
   ad_watch_count?: number;
   ads_per_session?: number;
   next_weekly_free_at?: string;
@@ -99,33 +101,56 @@ export async function consume(
  * The message a locked-out customer reads. Written to sell rather than to scold, and to
  * name the two ways out in the order the customer is most likely to take them.
  *
- * `next_weekly_free_at` is included so the free tier always has a date to wait for — a
- * paywall with no expiry reads as "never", and this one genuinely does reopen.
+ * Since 20261012020000 every request is priced in one balance, «محاولات», so the
+ * message says what this one costs, what is left, and when the free 5 come back —
+ * a paywall with no time on it reads as "never", and this one reopens in 5 hours.
+ * `tz` is the account's market zone, so the time is the one on the customer's wall.
  */
-export function lockedReply(d: EntitlementDecision): string {
+export function lockedReply(d: EntitlementDecision, tz = "UTC"): string {
   if (d.reason === "premium_only") {
-    return "🔒 الميزة دي متاحة لمشتركي زاد بلس. افتح التطبيق واشترك عشان تفعّلها.";
+    return "🔒 الميزة دي متاحة للمشتركين. افتح التطبيق واشترك عشان تفعّلها.";
   }
   if (d.reason === "quota_exhausted") {
-    const when = d.cycle_reset_at ? ` رصيدك بيتجدد ${arabicDate(d.cycle_reset_at)}.` : "";
-    return `🔒 خلص رصيدك من التحليلات العميقة في باقتك الحالية.${when} تقدر ترقّي باقتك من التطبيق.`;
+    const when = d.cycle_reset_at ? ` رصيدك بيتجدد ${arabicDate(d.cycle_reset_at, tz)}.` : "";
+    return `🔒 خلصت محاولات باقتك الشهر ده.${when} تقدر ترقّي باقتك من التطبيق.`;
   }
-  // Free deep consultation already spent.
-  const watched = d.ad_watch_count ?? 0;
-  const total = d.ads_per_session ?? 3;
-  const when = d.next_weekly_free_at ? ` استشارتك المجانية الجاية ${arabicDate(d.next_weekly_free_at)}.` : "";
-  return [
-    `🔒 استهلكت استشارتك الأسبوعية المجانية لعقل زاد.${when}`,
+  const need = typeof d.cost === "number" && typeof d.left === "number"
+    ? `🔒 الطلب ده محتاج ${attempts(d.cost)} وفاضل معاك ${attempts(d.left)}.`
+    : "🔒 خلص رصيد محاولاتك دلوقتي.";
+  const refill = d.cycle_reset_at ? ` رصيدك المجاني بيرجع ٥ محاولات الساعة ${arabicTime(d.cycle_reset_at, tz)}.` : "";
+  const weekly = d.next_weekly_free_at
+    ? `واستشارتك الأسبوعية المجانية الجاية ${arabicDate(d.next_weekly_free_at, tz)}.`
+    : "";
+  const lines = [
+    need + refill,
     "",
-    `تقدر تفتح جلسة كاملة ١٢ ساعة ومعاها ٥ رسائل فوراً: شاهد ${total} فيديوهات قصيرة من التطبيق` +
-      (watched > 0 ? ` — إنت خلصت ${watched} من ${total} بالفعل.` : "."),
-    "أو اشترك في زاد بلس وتحليل من غير إعلانات ولا حدود.",
-  ].join("\n");
+    "تقدر تشوف إعلان قصير من التطبيق وتاخد محاولات على طول، أو تشترك وتستخدم زاد من غير إعلانات.",
+  ];
+  if (weekly) lines.push(weekly);
+  return lines.join("\n");
 }
 
-function arabicDate(iso: string): string {
+/** «محاولة واحدة»، «محاولتين»، «٣ محاولات»، «١١ محاولة» — the noun agrees with the count. */
+export function attempts(n: number): string {
+  const k = Math.max(0, Math.floor(n));
+  if (k === 0) return "ولا محاولة";
+  if (k === 1) return "محاولة واحدة";
+  if (k === 2) return "محاولتين";
+  const num = k.toLocaleString("ar-EG");
+  return k <= 10 ? `${num} محاولات` : `${num} محاولة`;
+}
+
+function arabicDate(iso: string, tz = "UTC"): string {
   try {
-    return new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long" });
+    return new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long", timeZone: tz });
+  } catch {
+    return "قريب";
+  }
+}
+
+function arabicTime(iso: string, tz = "UTC"): string {
+  try {
+    return new Date(iso).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit", timeZone: tz });
   } catch {
     return "قريب";
   }
