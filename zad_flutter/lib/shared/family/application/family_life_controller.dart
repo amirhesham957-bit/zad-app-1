@@ -175,7 +175,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     final family = _family;
     if (family == null) return;
     try {
-      unawaited(_refreshGroceries());
+      unawaited(refreshGroceries());
       final results = await Future.wait(<Future<List<Map<String, dynamic>>>>[
         _remote.fetchChores(family.id),
         _remote
@@ -659,7 +659,8 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
   // never read and a scanned receipt never ticked off.
 
   /// Reads the household's list again; the cached one shows if that fails.
-  Future<void> _refreshGroceries() async {
+  /// Also what a live change to the list calls (live_sync.dart).
+  Future<void> refreshGroceries() async {
     try {
       await ref.read(shoppingControllerProvider.notifier).refresh();
     } on Object {

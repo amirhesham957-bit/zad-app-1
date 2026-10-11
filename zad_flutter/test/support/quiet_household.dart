@@ -139,5 +139,6 @@ List<Override> get quietHouseholdOverrides => <Override>[
 /// No server, so nothing ever changes on it.
 class QuietLiveChanges implements LiveChanges {
   @override
-  Stream<String> watch(String userId) => const Stream<String>.empty();
+  Stream<String> watch(String userId, {String? familyId}) =>
+      const Stream<String>.empty();
 }

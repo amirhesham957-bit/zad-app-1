@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/sync/live_sync.dart';
 
@@ -18,13 +19,26 @@ class _Changes implements LiveChanges {
 
   StreamController<String> get last => streams.last;
 
+  final List<String?> families = <String?>[];
+
   @override
-  Stream<String> watch(String userId) {
+  Stream<String> watch(String userId, {String? familyId}) {
     watched.add(userId);
+    families.add(familyId);
     final c = StreamController<String>(onCancel: () => cancelled++);
     streams.add(c);
     return c.stream;
   }
+}
+
+class _CountingNotifications extends NotificationsController {
+  int refreshes = 0;
+
+  @override
+  NotificationsView build() => const NotificationsView(items: []);
+
+  @override
+  Future<void> refresh({bool force = false}) async => refreshes++;
 }
 
 class _CountingPharmacy extends QuietPharmacy {
@@ -94,6 +108,24 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('in a family the household is heard too; joining restarts it', (
+    tester,
+  ) async {
+    final changes = _Changes();
+    final sync = LiveSync(changes: changes, onChange: (_) async {})
+      ..start('a')
+      ..start('a', familyId: 'f')
+      ..start('a', familyId: 'f');
+    expect(changes.families, <String?>[null, 'f']);
+    expect(changes.cancelled, 1, reason: 'the family-less channel left');
+
+    sync.start('a');
+    await tester.pump();
+    expect(changes.families, <String?>[null, 'f', null], reason: 'left it');
+    unawaited(sync.stop());
+    await tester.pump();
+  });
+
   testWidgets('a failing refresh does not stop the next one', (tester) async {
     final changes = _Changes();
     var calls = 0;
@@ -115,6 +147,7 @@ void main() {
 
   group('refreshAfterLiveChange', () {
     late _CountingPharmacy pharmacy;
+    late _CountingNotifications notifications;
     late ProviderContainer container;
     final refresher = Provider<Future<void> Function(String)>(
       (ref) =>
@@ -123,8 +156,12 @@ void main() {
 
     setUp(() {
       pharmacy = _CountingPharmacy();
+      notifications = _CountingNotifications();
       container = ProviderContainer(
-        overrides: [pharmacyControllerProvider.overrideWith(() => pharmacy)],
+        overrides: [
+          pharmacyControllerProvider.overrideWith(() => pharmacy),
+          notificationsControllerProvider.overrideWith(() => notifications),
+        ],
       );
     });
     tearDown(() => container.dispose());
@@ -134,6 +171,19 @@ void main() {
       await container.read(refresher)('zad_pharmacy_items');
       expect(pharmacy.refreshes, 1);
     });
+
+    test(
+      'what the brain writes in the background reaches the open screens',
+      () async {
+        container
+          ..read(pharmacyControllerProvider)
+          ..read(notificationsControllerProvider);
+        await container.read(refresher)('zad_pharmacy_doses');
+        await container.read(refresher)('app_notifications');
+        expect(pharmacy.refreshes, 1, reason: 'a dose marked by the brain');
+        expect(notifications.refreshes, 1, reason: 'the notification centre');
+      },
+    );
 
     test('builds nothing that was not open', () async {
       await container.read(refresher)('zad_pharmacy_items');
