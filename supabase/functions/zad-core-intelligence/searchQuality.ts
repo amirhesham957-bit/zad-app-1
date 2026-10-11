@@ -196,10 +196,15 @@ function yearOf(title: string): number | null {
 
 /**
  * For a «latest» question: the results whose title names the thing best (best title match
- * over [queries], ties kept), newest year first, and a title with no year (the series' own
- * page — «the current champions are…») right after the newest edition.
+ * over [queries], ties kept) — the series' own page first (a title with no year: «the current
+ * champions are…»), then the editions newest year first. An edition dated after [nowYear] has
+ * not been played and is dropped.
  */
-export function latestFirst(queries: Array<string | null | undefined>, hits: SearchHit[]): SearchHit[] {
+export function latestFirst(
+  queries: Array<string | null | undefined>,
+  hits: SearchHit[],
+  nowYear: number = new Date().getUTCFullYear(),
+): SearchHit[] {
   const termSets = queries.filter((q): q is string => !!q && q.trim() !== "")
     .map((q) => keyTerms(q).filter((t) => !LATEST_WORDS.has(t)))
     .filter((t) => t.length > 0);
@@ -210,8 +215,66 @@ export function latestFirst(queries: Array<string | null | undefined>, hits: Sea
   };
   const best = Math.max(...hits.map(score));
   if (best === 0) return hits;
-  const named = hits.filter((h) => score(h) === best);
+  // A year still ahead is an edition not played yet («كأس العالم للأندية 2029»: «من المقرر أن تقام…») — it
+  // went first on 2026-10-11 and the answer fell back to memory. Not a result; left out.
+  const named = hits.filter((h) => score(h) === best && (yearOf(h.title) ?? 0) <= nowYear);
   const dated = named.filter((h) => yearOf(h.title) !== null).sort((a, b) => yearOf(b.title)! - yearOf(a.title)!);
   const undated = named.filter((h) => yearOf(h.title) === null);
-  return dated.length ? [dated[0], ...undated, ...dated.slice(1)] : undated;
+  // The series' own page first: it states the current holder whatever editions the search returned
+  // (one phrasing brought back only the 2019 edition — «newest» among what came back is not the latest).
+  return [...undated, ...dated];
+}
+
+/**
+ * The English page of an Arabic Wikipedia page (its interlanguage link), as a hit. Arabic intros
+ * of a series or an edition rarely name the winner; the English ones do («the current world
+ * champions are Chelsea»). Used for a «latest» question when the model wrote no English query.
+ * null when there is no English page or the read failed.
+ */
+export async function englishTwin(arTitle: string, get: (url: string) => Promise<unknown> = defaultGet): Promise<SearchHit | null> {
+  try {
+    const links = await get(
+      `https://ar.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(arTitle)}&prop=langlinks&lllang=en&format=json&utf8=1`,
+    ) as { query?: { pages?: Record<string, { langlinks?: Array<{ "*"?: string }> }> } };
+    const en = Object.values(links?.query?.pages ?? {})[0]?.langlinks?.[0]?.["*"];
+    if (!en) return null;
+    const page = await get(
+      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(en)}&prop=extracts&exintro=1&explaintext=1&exchars=700&format=json&utf8=1`,
+    ) as { query?: { pages?: Record<string, { title?: string; extract?: string }> } };
+    const p = Object.values(page?.query?.pages ?? {})[0];
+    const snippet = (p?.extract ?? "").replace(/\s+/g, " ").trim();
+    if (!p?.title || !snippet) return null;
+    return { title: p.title, url: `https://en.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}`, snippet };
+  } catch {
+    return null;
+  }
+}
+
+async function defaultGet(url: string): Promise<unknown> {
+  const res = await fetch(url, {
+    headers: { "User-Agent": "ZadAssistant/1.0 (household app; contact via app store listing)" },
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!res.ok) throw new Error(`wikipedia ${res.status}`);
+  return await res.json();
+}
+
+/**
+ * The question's topic for an encyclopedia search: the words left once question and time words go
+ * («مين كسب كاس العالم للأندية آخر مرة؟» ⇒ «كاس العالم للأندية»). Arabic Wikipedia answered the whole
+ * colloquial question with unrelated pages; the topic alone finds the series. The question itself
+ * when nothing is left.
+ */
+export function topicOf(query: string): string {
+  const words = query.replace(/[؟?!.,،]/g, " ").split(/\s+/).filter((w) => {
+    const k = normalizeForMatch(w).replace(/^(وال|بال|فال|كال|لل|ال)(?=[\p{L}\p{N}]{2,})/u, "");
+    return k !== "" && !STOP.has(k) && !LATEST_WORDS.has(k);
+  });
+  return words.length ? words.join(" ") : query.trim();
+}
+
+/** A «latest» answer from Wikipedia: [ranked] with [twin] right after the first hit. */
+export function withTwin(ranked: SearchHit[], twin: SearchHit | null): SearchHit[] {
+  if (!twin || ranked.some((h) => h.url === twin.url)) return ranked;
+  return [...ranked.slice(0, 1), twin, ...ranked.slice(1)];
 }

@@ -3519,6 +3519,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }, userId);
       if (!res || res.ok === false) return "مقدرتش أبحث دلوقتي — قول للعميل إن البحث مش متاح مؤقتاً، متختلقش إجابة.";
       const hits = (res as { results?: Array<{ title: string; url: string; snippet: string }> }).results ?? [];
+      // اللي اتسأل واللي رجع، لتقرير فحص القبول (مش للموديل): من غير ده «دوّر وغلط» و«ماعرفش يدوّر» شكلهم واحد.
+      (ctx.searches ??= []).push({
+        query: String(input.query ?? "").slice(0, 120), query_en: input.query_en ? String(input.query_en).slice(0, 120) : null,
+        source: String((res as { source?: unknown }).source ?? ""), titles: hits.slice(0, 4).map((h) => String(h.title).slice(0, 80)),
+      });
       if (hits.length === 0) {
         // سؤال حي (سعر، خبر النهارده): مفيش رقم من غير مصدر. سؤال ثابت (مين كسب، عاصمة، معلومة):
         // الموديل يعرف كتير — يجاوب ويقول إنها من معلوماته، بدل «مش لاقي» لأسئلة بسيطة.
@@ -6869,6 +6874,7 @@ async function handleAgentTurn(
     app_commands: appCommands,
     tool_attempted: anyToolAttempted,
     consulted,
+    searches: ctx.searches ?? [],
     rejections: ctx.rejections,
     observations: ctx.observations,
     // الوكيل اللي عالج الرسالة — الكلاينت بيعرضه ككارت تنفيذ حي.
@@ -7804,13 +7810,15 @@ async function handleRequest(req: Request): Promise<Response> {
             executed: Array.isArray(payload?.executed) ? payload.executed : [],
             proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
             consulted: Array.isArray(payload?.consulted) ? (payload.consulted as string[]) : [],
+            searches: Array.isArray(payload?.searches) ? payload.searches : [],
           };
           const failure = payload?.ok === true
             ? internalLeak(outcome.reply) ?? c.check(outcome, { appointmentsCreated: count ?? 0 })
             : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
           results.push({
             id: c.id, pass: failure === null, failure, reply: outcome.reply.slice(0, 500),
-            executed: outcome.executed.map((e: { tool?: string }) => e.tool), consulted: outcome.consulted, ms: Date.now() - t0,
+            executed: outcome.executed.map((e: { tool?: string }) => e.tool), consulted: outcome.consulted,
+            searches: outcome.searches, ms: Date.now() - t0,
           });
         } catch (e) {
           results.push({ id: c.id, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 });

@@ -25,6 +25,8 @@ export interface RunContext {
   abortedTools: Set<string>;
   /** Task 18: rate-learning artifacts produced this run (observation + recomputed rate). */
   observations: Array<{ item: string; qty: number; samples: number; rateKnown: boolean }>;
+  /** What web_search asked and got this run — for the acceptance probe's report (2026-10-11). */
+  searches?: Array<{ query: string; query_en: string | null; source: string; titles: string[] }>;
 }
 
 export type Validator = (input: any, snap: any, ctx: RunContext) => Promise<Validation> | Validation;
