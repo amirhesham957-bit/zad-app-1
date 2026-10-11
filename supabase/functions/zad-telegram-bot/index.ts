@@ -28,6 +28,7 @@ import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "
 import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { voiceReplyEmotion } from "./voiceReply.ts";
 import { receiptPriceReports, tidyReportText } from "./receiptPrices.ts";
+import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
   adCreditKeyboard,
@@ -1477,15 +1478,16 @@ bot.on("message:photo", async (ctx) => {
   // OCR only supplies fields. Both pharmacy and inventory mutations are executed by
   // zad-brain; the receipt total still waits for the normal financial confirmation.
   if (route === "pharmacy" && result.items.length > 0) {
+    // المعروف يتزوّد، والجديد بزرار تأكيد (pharmacyPhoto.ts): دوا جديد بيفتح تذكيرات، فمايتضافش من غير ضغطة.
+    const { data: meds } = await sb.from("zad_pharmacy_items").select("name").eq("user_id", userId);
+    const { known, fresh } = splitPhotoMedicines(
+      result.items,
+      ((meds ?? []) as Array<{ name: string | null }>).map((m) => m.name ?? ""),
+    );
     let addedCount = 0;
-    for (const item of result.items) {
-      if (!item.name?.trim()) continue;
-      const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? Math.round(item.quantity) : 1;
+    for (const med of known) {
       const added = await agentExecute(userId, "add_pharmacy_item", {
-        name: item.name.trim(),
-        quantity: qty,
-        unit: item.unit || "قرص",
-        category: "عام",
+        name: med.name, quantity: med.quantity, unit: med.unit, category: "عام",
       });
       if (!added.ok) {
         console.error("photo pharmacy through zad-brain failed");
@@ -1493,8 +1495,26 @@ bot.on("message:photo", async (ctx) => {
       }
       addedCount++;
     }
+    for (const med of fresh) {
+      const { data: pendingMed, error: medErr } = await sb.from("telegram_pending_pharmacy").insert({
+        user_id: userId, chat_id: ctx.chat.id, name: med.name, unit: med.unit, quantity: med.quantity,
+        category: "عام", daily_dose_count: 1, dose_times: null,
+      }).select("id").single();
+      if (medErr || !pendingMed) {
+        console.error("photo pharmacy pending insert failed:", medErr?.message);
+        continue;
+      }
+      await ctx.reply(
+        confirmMedicationMessage({
+          is_medication: true, name: med.name, dosage: "", daily_dose_count: 1,
+          dose_times: "لسه — قولي بتاخده الساعة كام بعد ما تأكد", unit: med.unit, quantity: med.quantity,
+          category: "عام", confidence: 0.75,
+        }),
+        { reply_markup: toGrammyKeyboard(confirmMedicationKeyboard((pendingMed as { id: string }).id)) },
+      );
+    }
     const summary = addedCount > 0
-      ? `✅ اتضاف ${addedCount} صنف للصيدلية${result.storeName ? ` من ${result.storeName}` : ""}.`
+      ? `✅ اتزوّد ${addedCount} دوا في صيدليتك${result.storeName ? ` من ${result.storeName}` : ""}.`
       : "";
     if (result.total > 0) {
       const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
@@ -2145,7 +2165,10 @@ bot.on("callback_query:data", async (ctx) => {
     // مفيش AlarmManager على السيرفر — التذكيرات الفعلية بتتفعل لما تطبيق زاد يعمل sync
     // ويلاقي الدواء الجديد في zad_pharmacy_items (نفس آلية PharmacyReminderScheduler
     // اللي بتشتغل تلقائي عند أي تغيير في قائمة الأدوية).
-    await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.name))} — المواعيد: ${isolate(row.dose_times ?? "")}\nهتلاقي التذكير شغال في التطبيق بعد أول فتح.`);
+    // من صورة: مفيش مواعيد لسه — السؤال هنا، وتحية الصبح بتسأل تاني مرة لو ماتردش (الموجة ٣، ٧أ).
+    await ctx.reply(row.dose_times
+      ? `اتسجل ✅ ${isolate(sanitizeName(row.name))} — المواعيد: ${isolate(row.dose_times)}\nهتلاقي التذكير شغال في التطبيق بعد أول فتح.`
+      : `اتسجل ✅ ${isolate(sanitizeName(row.name))}. بتاخده الساعة كام؟ قولي («٨ الصبح و٨ بالليل») وأفعّل التذكير.`);
     return;
   }
 

@@ -19,7 +19,6 @@ const KNOWN: Record<string, string> = {
   chores: "قديم جنب family_chores (ZAD_LIVING_BRAIN.md §١١و). مسحه قرار.",
   family_messages: "قديم جنب chat_messages (§١١و). مسحه قرار.",
   family_typing_status: "كان بيكتبه تطبيق Kotlin؛ Flutter مابيعرضش «بيكتب…». صفّين على الحي من قبل 2026-09-29.",
-  telegram_pending_pharmacy: "البوت بيقرا ويحجز منه (zad-telegram-bot/index.ts، زرار تأكيد الدوا) ومحدش بيكتب فيه — صورة علبة الدوا بقت بتعدّي على zad-brain. الحاجز ده كود ميت؛ صفر صف على الحي (اتلاقى بالحارس ده، 2026-10-11).",
   user_achievements: "الشاشة بتقراه، والإنجاز بيتفتح من الداتا نفسها (achievements.dart)؛ مفيش كاتب من ساعة Kotlin.",
 };
 
