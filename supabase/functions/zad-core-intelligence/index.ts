@@ -1,6 +1,6 @@
 // deno-lint-ignore-file
 import { buildTicker, countryForLocation } from "./liveTicker.ts";
-import { bingNewsUrl, cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, marketOf } from "./searchQuality.ts";
+import { asksLatest, bingNewsUrl, cacheTtlMs, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
@@ -1356,7 +1356,10 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     const raw = await run();
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
     // ويكيبيديا اتفلترت جوه، كل لغة على سؤالها.
-    const kept = name === "wikipedia" ? raw : keepAnswering(query, raw);
+    // «آخر مرة»: من الموسوعة، الحاجة نفسها والأحدث الأول (latestFirst) — مش ترتيب ويكيبيديا.
+    const kept = name === "wikipedia"
+      ? (asksLatest(query) || asksLatest(queryEn) ? latestFirst([query, queryEn], raw) : raw)
+      : keepAnswering(query, raw);
     lastWebSearchAttempts.push(`${name}:kept ${kept.length}/${raw.length}`);
     if (kept.length > 0) {
       lastWebSearchSource = name;

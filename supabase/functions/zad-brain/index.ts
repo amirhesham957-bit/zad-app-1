@@ -90,7 +90,7 @@ import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
-import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, silentWriteFallback, visibleReceipts } from "./receipts.ts";
+import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -5459,7 +5459,10 @@ export const CHAT_TOOLS: ToolDef[] = [
     name: "web_search",
     description:
       "بحث في الإنترنت عن أي معلومة برّه بيانات البيت (مقارنة منتجات، معلومة عامة، خبر). " +
-      "بترد نتايج حقيقية بعناوينها وروابطها — استشهد بالمصدر في ردك ومتقولش معلومة مش موجودة في النتايج.",
+      "بترد نتايج حقيقية بعناوينها وروابطها — استشهد بالمصدر في ردك ومتقولش معلومة مش موجودة في النتايج. " +
+      "سؤال عن «آخر مرة / أحدث / الحالي» (مين كسب آخر بطولة، مين المدرب دلوقتي): ابحث دايماً — ذاكرتك قديمة — " +
+      "وحط في query_en اسم الحاجة نفسها بالإنجليزي (مثلاً «FIFA Club World Cup»)؛ النتايج بترجع الأحدث الأول، " +
+      "فجاوب من أحدث نتيجة وقول سنتها. ومتقولش «المصدر: …» عن حاجة ماجاتش في نتايج البحث ده.",
     input_schema: {
       type: "object",
       properties: {
@@ -6630,6 +6633,9 @@ async function handleAgentTurn(
   // يظلّل العنصر محلياً. منفصلة عن executed لأنها مش كتابة بيانات.
   const appCommands: Array<{ screen: string; action: string; highlight_name: string | null }> = [];
   const proposals: Proposal[] = [];
+  // أدوات القراية اللي اتنادت (web_search، find_nearby_stores…) — مش في executed (كتابات بس). فحص
+  // القبول بيقرا منها «دوّر قبل ما يرد؟» بدل ما يخمّن من الرد (٢٠٢٦-١٠-١١).
+  const consulted: string[] = [];
   let modelText = "";
   let anyToolAttempted = false;
 
@@ -6735,8 +6741,7 @@ async function handleAgentTurn(
       const result = await runTool(sb, userId, call.name, call.input, snap, ctx, scope);
       // `executed` = كتابات حقيقية بس — القراءة (web_search، find_nearby_stores…) نتيجتها
       // للموديل ومكانها toolResults تحت. شوف receipts.ts.
-      if (isWrite(call.name, result, ctx.mutationCount > mutationsBefore)) {
-        executed.push({ tool: call.name, ok: true, summary: result });
+      if (recordCall(executed, consulted, call.name, result, ctx.mutationCount > mutationsBefore)) {
         // تقرير عمل للصندوق: العقل في الرد الجاي (أو من cron) هيعرف إن الأيدجنت اشتغل.
         // fire-and-forget — فشل التسجيل مش بيكسر الرد. كانت `specialist as AgentSender`
         // (كاست بيسكت الخطأ بدل ما يحله — "general" مالوش قيمة مقابلة، فـsender_check
@@ -6863,6 +6868,7 @@ async function handleAgentTurn(
     // أوامر واجهة التطبيق — ZadViewModel بينفذها محلياً (فتح شاشة/تظليل عنصر).
     app_commands: appCommands,
     tool_attempted: anyToolAttempted,
+    consulted,
     rejections: ctx.rejections,
     observations: ctx.observations,
     // الوكيل اللي عالج الرسالة — الكلاينت بيعرضه ككارت تنفيذ حي.
@@ -7797,13 +7803,14 @@ async function handleRequest(req: Request): Promise<Response> {
             reply: String(payload?.reply ?? ""),
             executed: Array.isArray(payload?.executed) ? payload.executed : [],
             proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
+            consulted: Array.isArray(payload?.consulted) ? (payload.consulted as string[]) : [],
           };
           const failure = payload?.ok === true
             ? internalLeak(outcome.reply) ?? c.check(outcome, { appointmentsCreated: count ?? 0 })
             : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
           results.push({
             id: c.id, pass: failure === null, failure, reply: outcome.reply.slice(0, 500),
-            executed: outcome.executed.map((e: { tool?: string }) => e.tool), ms: Date.now() - t0,
+            executed: outcome.executed.map((e: { tool?: string }) => e.tool), consulted: outcome.consulted, ms: Date.now() - t0,
           });
         } catch (e) {
           results.push({ id: c.id, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 });

@@ -25,6 +25,19 @@ Deno.test("the replies the owner asked for pass", () => {
   assertEquals(run("8_general_question", "معرفش، تعالى نبص على ميزانيتك"), "said it could not find it");
 });
 
+Deno.test("«آخر مرة» must be searched — a right answer from memory still fails", () => {
+  const check = (reply: string, consulted: string[]) =>
+    byId("8_general_question").check({ reply, executed: [], proposals: [], consulted }, { appointmentsCreated: 0 });
+  const right = "تشيلسي كسب آخر نسخة من كأس العالم للأندية سنة 2025 بعد ما غلب باريس سان جيرمان 3-0 (ويكيبيديا).";
+  assertEquals(check(right, []), "answered from memory, no search");
+  assertEquals(check(right, ["web_search"]), null);
+  // The live probe's answer on 2026-10-11 — Manchester City 2023, «المصدر: ويكيبيديا».
+  assertEquals(
+    check("مانشستر سيتي هو اللي كسب كأس العالم للأندية في نسختها الأخيرة بالصيغة القديمة (سنة 2023)، المصدر: ويكيبيديا.", ["web_search"]),
+    "out of date: not the 2025 winner",
+  );
+});
+
 Deno.test("internal text in a reply fails every case", async () => {
   const { internalLeak } = await import("./acceptance.ts");
   assertEquals(internalLeak("المساعد وعد بحاجة متنفذتش (تذكير شرب المية مش موجود في الأدوات المنفذة).\n\nولا يهمك، سجلتهالك 👌"), "internal reviewer text in the reply");

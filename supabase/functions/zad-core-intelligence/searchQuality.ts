@@ -166,3 +166,52 @@ export function goldQuotes(hits: SearchHit[], currency: string, now = Date.now()
   }
   return quotes;
 }
+
+// ── «آخر مرة» — the newest edition first (2026-10-11) ───────────────────────────────────
+//
+// «مين كسب كاس العالم للأندية آخر مرة؟» counted as a settled fact, so the chain went to
+// Wikipedia, and the results came back in the encyclopedia's order: the 2025 edition, the
+// 2019 one, the 2026 *World Cup* (another competition) — with nothing saying which is
+// newest. The acceptance probe failed it 2 runs in 6 (Manchester City 2023, «المصدر:
+// ويكيبيديا»). A question that asks for the latest keeps only the results whose *title*
+// names the thing best, and orders them newest year first.
+
+const LATEST_Q = /(^|[^\p{L}])(اخر|احدث|الاخير|الاخيره|الحالي|الحاليه|حاليا|السنه دي|last|latest|newest|most recent|current|reigning)([^\p{L}]|$)/u;
+
+/** Words that ask about time or a result, not about the thing itself. */
+const LATEST_WORDS = new Set([
+  "اخر", "احدث", "اخير", "اخيره", "حالي", "حاليه", "حاليا", "كسب", "فاز", "بطل", "مره", "نسخه", "سنه",
+  "last", "latest", "newest", "recent", "most", "current", "reigning", "won", "win", "wins", "winner", "winners",
+  "champion", "champions", "edition",
+]);
+
+export function asksLatest(query: string | null | undefined): boolean {
+  return LATEST_Q.test(normalizeForMatch(String(query ?? "")));
+}
+
+function yearOf(title: string): number | null {
+  const years = [...normalizeForMatch(title).matchAll(/(?<!\d)(19|20)\d{2}(?!\d)/g)].map((m) => Number(m[0]));
+  return years.length ? Math.max(...years) : null;
+}
+
+/**
+ * For a «latest» question: the results whose title names the thing best (best title match
+ * over [queries], ties kept), newest year first, and a title with no year (the series' own
+ * page — «the current champions are…») right after the newest edition.
+ */
+export function latestFirst(queries: Array<string | null | undefined>, hits: SearchHit[]): SearchHit[] {
+  const termSets = queries.filter((q): q is string => !!q && q.trim() !== "")
+    .map((q) => keyTerms(q).filter((t) => !LATEST_WORDS.has(t)))
+    .filter((t) => t.length > 0);
+  if (termSets.length === 0 || hits.length === 0) return hits;
+  const score = (h: SearchHit) => {
+    const title = normalizeForMatch(h.title);
+    return Math.max(...termSets.map((ts) => ts.filter((t) => title.includes(t)).length / ts.length));
+  };
+  const best = Math.max(...hits.map(score));
+  if (best === 0) return hits;
+  const named = hits.filter((h) => score(h) === best);
+  const dated = named.filter((h) => yearOf(h.title) !== null).sort((a, b) => yearOf(b.title)! - yearOf(a.title)!);
+  const undated = named.filter((h) => yearOf(h.title) === null);
+  return dated.length ? [dated[0], ...undated, ...dated.slice(1)] : undated;
+}
