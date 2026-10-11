@@ -10,7 +10,6 @@ import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
@@ -272,21 +271,18 @@ class _PaymentState extends ConsumerState<PaymentAndBudgetScreen> {
                       const SizedBox(height: 12),
                       Row(
                         children: <Widget>[
-                          ZadPressable(
-                            onPressed: () {},
-                            child: FilledButton(
-                              onPressed: () {
-                                final parsed =
-                                    double.tryParse(_value.text) ?? budget;
-                                unawaited(
-                                  ref
-                                      .read(settingsControllerProvider.notifier)
-                                      .setMonthlyLimit(parsed),
-                                );
-                                setState(() => _edit = false);
-                              },
-                              child: const Text('حفظ'),
-                            ),
+                          FilledButton(
+                            onPressed: () {
+                              final parsed =
+                                  double.tryParse(_value.text) ?? budget;
+                              unawaited(
+                                ref
+                                    .read(settingsControllerProvider.notifier)
+                                    .setMonthlyLimit(parsed),
+                              );
+                              setState(() => _edit = false);
+                            },
+                            child: const Text('حفظ'),
                           ),
                           const SizedBox(width: 8),
                           TextButton(
