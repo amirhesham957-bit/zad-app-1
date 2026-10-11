@@ -3,7 +3,8 @@
 /// random blinks, the tap glow and squeeze, the alert shake, the squash while
 /// speaking, the celebration sparkles, the seven moods' colours cross-fading
 /// over 500ms, the moods' eyes (capsules, ^ ^, frowning lids), and the
-/// accessory — same layers, same numbers.
+/// accessory — same layers, same numbers. On an occasion it also wears the
+/// season's look (`orb_occasion.dart`): a lantern, balloons or a scarf.
 ///
 /// One ticker drives every loop and only the painter listens to it, so a
 /// running orb repaints its own layer each frame and rebuilds nothing.
@@ -22,8 +23,10 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
+import 'package:zad/shared/orb/application/orb_occasion_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/domain/orb_accessory.dart';
+import 'package:zad/shared/orb/domain/orb_occasion.dart';
 
 const Color _bowPink = Color(0xFFFF6FA5);
 const Color _bowPinkDeep = Color(0xFFD9467E);
@@ -34,6 +37,9 @@ const Color _crownGem = Color(0xFFE5484D);
 const Color _flowerPetal = Color(0xFFFFFFFF);
 const Color _flowerCenter = Color(0xFFFFC53D);
 const Color _heartYellow = Color(0xFFFFF176);
+const Color _lanternGlass = Color(0xFFFFE08A);
+const Color _lanternGlow = Color(0x80FFB300);
+const Color _string = Color(0x99485A6B);
 
 /// The orb.
 class CompanionOrb extends ConsumerStatefulWidget {
@@ -41,6 +47,7 @@ class CompanionOrb extends ConsumerStatefulWidget {
   const new({
     this.state = CompanionState.happy,
     this.accessory,
+    this.occasion,
     this.size = 96,
     this.animated = true,
     this.blinkTrigger = 0,
@@ -55,6 +62,9 @@ class CompanionOrb extends ConsumerStatefulWidget {
 
   /// What it wears; null reads the customer's saved choice.
   final OrbAccessory? accessory;
+
+  /// The season's look; null reads today's occasion.
+  final OrbOccasion? occasion;
 
   /// The box it is drawn in.
   final double size;
@@ -290,10 +300,13 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
   Widget build(BuildContext context) {
     final saved = ref.watch(orbAccessoryProvider);
     final accessory = widget.accessory ?? saved;
+    final occasion =
+        widget.occasion ?? ref.watch<OrbOccasion>(orbOccasionProvider);
     final painter = _OrbPainter(
       frame: this,
       state: widget.state,
       accessory: accessory,
+      occasion: occasion,
       animated: widget.animated,
       repaint: Listenable.merge(<Listenable?>[
         _elapsed,
@@ -367,6 +380,7 @@ class _OrbPainter extends CustomPainter {
     required this.frame,
     required this.state,
     required this.accessory,
+    required this.occasion,
     required this.animated,
     required Listenable repaint,
   }) : super(repaint: repaint);
@@ -374,6 +388,7 @@ class _OrbPainter extends CustomPainter {
   final _CompanionOrbState frame;
   final CompanionState state;
   final OrbAccessory accessory;
+  final OrbOccasion occasion;
   final bool animated;
 
   static Shader _radial(List<Color> colors, Offset center, double radius) =>
@@ -546,6 +561,9 @@ class _OrbPainter extends CustomPainter {
 
     // 8b. Accessory, inside the squash so it bounces with the body.
     _accessory(canvas, center, radius);
+
+    // 8c. The season's look, also inside the squash.
+    _occasionLook(canvas, center, radius, phase);
     canvas.restore();
 
     // 9. Celebration: four gold sparkles circling.
@@ -778,9 +796,209 @@ class _OrbPainter extends CustomPainter {
     }
   }
 
+  void _occasionLook(Canvas canvas, Offset c, double r, double phase) {
+    switch (occasion.look) {
+      case OrbOccasionLook.none:
+        return;
+      case OrbOccasionLook.lantern:
+        // Held out at the right on a short stick, swaying ±8° with the
+        // liquid phase, its glass lit from inside.
+        final hand = c + Offset(r * 0.92, r * 0.02);
+        final hook = c + Offset(r * 1.26, -r * 0.18);
+        canvas
+          ..drawLine(
+            hand,
+            hook,
+            Paint()
+              ..color = _crownGoldDeep
+              ..strokeWidth = r * 0.06
+              ..strokeCap = StrokeCap.round,
+          )
+          ..save()
+          ..translate(hook.dx, hook.dy)
+          ..rotate(8 * math.pi / 180 * math.sin(phase));
+        final w = r * 0.44;
+        final h = r * 0.50;
+        final top = r * 0.14;
+        final frameGold = Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[_crownGold, _crownGoldDeep],
+          ).createShader(Rect.fromLTWH(-w / 2, 0, w, top + h + r * 0.14));
+        final cap = Path()
+          ..moveTo(0, 0)
+          ..lineTo(w * 0.40, top)
+          ..lineTo(-w * 0.40, top)
+          ..close();
+        final glass = Path()
+          ..moveTo(-w * 0.40, top)
+          ..lineTo(w * 0.40, top)
+          ..lineTo(w / 2, top + h * 0.5)
+          ..lineTo(w * 0.30, top + h)
+          ..lineTo(-w * 0.30, top + h)
+          ..lineTo(-w / 2, top + h * 0.5)
+          ..close();
+        final tip = Path()
+          ..moveTo(-w * 0.30, top + h)
+          ..lineTo(w * 0.30, top + h)
+          ..lineTo(0, top + h + r * 0.14)
+          ..close();
+        final rib = Paint()
+          ..color = _crownGoldDeep
+          ..strokeWidth = r * 0.03;
+        canvas
+          ..drawCircle(
+            Offset(0, top + h * 0.5),
+            r * 0.42,
+            Paint()..color = _lanternGlow,
+          )
+          ..drawPath(
+            glass,
+            Paint()
+              ..shader =
+                  const RadialGradient(
+                    colors: <Color>[_lanternGlass, _crownGold],
+                  ).createShader(
+                    Rect.fromCircle(
+                      center: Offset(0, top + h * 0.5),
+                      radius: w * 0.6,
+                    ),
+                  ),
+          )
+          ..drawPath(
+            glass,
+            Paint()
+              ..color = _crownGoldDeep
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = r * 0.04,
+          )
+          ..drawLine(Offset(-w * 0.17, top), Offset(-w * 0.12, top + h), rib)
+          ..drawLine(Offset(w * 0.17, top), Offset(w * 0.12, top + h), rib)
+          ..drawPath(cap, frameGold)
+          ..drawPath(tip, frameGold)
+          ..drawCircle(Offset.zero, r * 0.035, Paint()..color = _crownGoldDeep)
+          ..restore();
+      case OrbOccasionLook.balloons:
+        // Three balloons above the left hand, each bobbing on its own beat.
+        final hand = c + Offset(-r * 0.90, r * 0.30);
+        final colors = <Color>[
+          occasion.primary ?? _bowPink,
+          occasion.secondary ?? _flowerCenter,
+          _crownGold,
+        ];
+        const spots = <Offset>[
+          Offset(-1.18, -0.62),
+          Offset(-0.86, -0.92),
+          Offset(-1.36, -0.98),
+        ];
+        for (var i = 0; i < 3; i++) {
+          final bob = r * 0.05 * math.sin(phase + i * 2.1);
+          final b = c + Offset(spots[i].dx * r, spots[i].dy * r + bob);
+          final bottom = b + Offset(0, r * 0.22);
+          canvas
+            ..drawLine(
+              hand,
+              bottom,
+              Paint()
+                ..color = _string
+                ..strokeWidth = r * 0.02,
+            )
+            ..drawOval(
+              Rect.fromCenter(center: b, width: r * 0.36, height: r * 0.44),
+              Paint()..color = colors[i],
+            )
+            ..drawPath(
+              Path()
+                ..moveTo(bottom.dx, bottom.dy - r * 0.01)
+                ..lineTo(bottom.dx - r * 0.04, bottom.dy + r * 0.05)
+                ..lineTo(bottom.dx + r * 0.04, bottom.dy + r * 0.05)
+                ..close(),
+              Paint()..color = colors[i],
+            )
+            ..drawOval(
+              Rect.fromCenter(
+                center: b + Offset(-r * 0.06, -r * 0.09),
+                width: r * 0.08,
+                height: r * 0.12,
+              ),
+              Paint()..color = Colors.white.withValues(alpha: 0.45),
+            );
+        }
+      case OrbOccasionLook.scarf:
+        // A band wrapped round the lower body in the occasion's colours —
+        // clipped to the body so it reads as cloth, not as a mouth — and
+        // its end hanging off the right, swinging a little.
+        final primary = occasion.primary ?? _crownGem;
+        final secondary = occasion.secondary ?? Colors.white;
+        final upper = c.dy + r * 0.42;
+        final lower = c.dy + r * 0.74;
+        final band = Path()
+          ..moveTo(c.dx - r * 1.1, upper - r * 0.06)
+          ..quadraticBezierTo(
+            c.dx,
+            upper + r * 0.14,
+            c.dx + r * 1.1,
+            upper - r * 0.06,
+          )
+          ..lineTo(c.dx + r * 1.1, lower - r * 0.06)
+          ..quadraticBezierTo(
+            c.dx,
+            lower + r * 0.14,
+            c.dx - r * 1.1,
+            lower - r * 0.06,
+          )
+          ..close();
+        final stripe = Path()
+          ..moveTo(c.dx - r * 1.1, upper + r * 0.07)
+          ..quadraticBezierTo(
+            c.dx,
+            upper + r * 0.27,
+            c.dx + r * 1.1,
+            upper + r * 0.07,
+          )
+          ..lineTo(c.dx + r * 1.1, upper + r * 0.13)
+          ..quadraticBezierTo(
+            c.dx,
+            upper + r * 0.33,
+            c.dx - r * 1.1,
+            upper + r * 0.13,
+          )
+          ..close();
+        canvas
+          ..save()
+          ..clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r)))
+          ..drawPath(band, Paint()..color = primary)
+          ..drawPath(stripe, Paint()..color = secondary)
+          ..restore();
+        final knot = c + Offset(r * 0.62, r * 0.60);
+        canvas
+          ..save()
+          ..translate(knot.dx, knot.dy)
+          ..rotate((-18 + 6 * math.sin(phase)) * math.pi / 180)
+          ..drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(-r * 0.12, 0, r * 0.24, r * 0.56),
+              Radius.circular(r * 0.06),
+            ),
+            Paint()..color = primary,
+          )
+          ..drawRect(
+            Rect.fromLTWH(-r * 0.12, r * 0.18, r * 0.24, r * 0.06),
+            Paint()..color = secondary,
+          )
+          ..drawRect(
+            Rect.fromLTWH(-r * 0.12, r * 0.40, r * 0.24, r * 0.06),
+            Paint()..color = secondary,
+          )
+          ..restore();
+    }
+  }
+
   @override
   bool shouldRepaint(_OrbPainter old) =>
       old.state != state ||
       old.accessory != accessory ||
+      old.occasion != occasion ||
       old.animated != animated;
 }
