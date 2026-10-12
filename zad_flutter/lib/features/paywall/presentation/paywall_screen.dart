@@ -35,25 +35,24 @@ Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
 const Color _lilac = Color(0xFF9C27B0);
 
 enum _Plan {
-  basic('الأساسية (Basic)', 50, 'الأكثر اقتصاداً', <String>[
-    'تجربة خالية من الإعلانات 100%',
-    '50 استشارة وطلب ذكي شهرياً',
-    'مسح وتفكيك الفواتير الأساسي',
-    'رصد الإشعارات البنكية اللحظي',
+  basic('الأساسية (Basic)', 300, 'الأكثر اقتصاداً', <String>[
+    'من غير إعلانات خالص',
+    '300 محاولة في الشهر (حوالي 10 في اليوم)',
+    'مسح الفواتير ورسايل البنك',
+    'تسجيل المصاريف مجاني دايماً ومش بيتحسب',
   ]),
-  plus('المتقدمة (Plus)', 250, 'الأكثر شعبية ⭐', <String>[
-    'كل مزايا الباقة الأساسية',
-    '250 استشارة وطلب ذكي شهرياً',
-    'تحليلات عقل زاد الاستراتيجية والتنبؤات',
-    'مقارنة الأسعار وتنبيهات العروض اللحظية',
-    'شجرة المعرفة العصبية التفاعلية 3D',
+  plus('المتقدمة (Plus)', 1000, 'الأكثر شعبية ⭐', <String>[
+    'كل مزايا الأساسية',
+    '1000 محاولة في الشهر (حوالي 33 في اليوم)',
+    'تحليلات عقل زاد والتوقعات',
+    'مقارنة الأسعار وتنبيهات العروض',
+    'شجرة المعرفة التفاعلية 3D',
   ]),
-  ultra('الفائقة (Ultra)', -1, 'VIP العائلة 👑', <String>[
-    'طلبات ذكاء اصطناعي غير محدودة بالكامل (Unlimited AI)',
-    'مشاركة عائلية متزامنة لـ 5 حسابات',
-    'تقرير عقل زاد الاستراتيجي المطبوع بختم زاد',
-    'المساعد الصوتي البشري المفتوح بلا سقف',
-    'دعم فني مباشر VIP ذو أولوية قصوى',
+  ultra('العيلة (Family)', 2500, 'للبيت كله 👑', <String>[
+    'كل مزايا بلس',
+    '2500 محاولة في الشهر',
+    'أولوية على السيرفر وقت الزحمة',
+    'دعم فني بأولوية',
   ]);
 
   new(this.title, this.quota, this.badge, this.perks);
@@ -326,8 +325,12 @@ class _PaywallState extends ConsumerState<PaywallScreen>
         ),
       ),
       const SizedBox(height: 14),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      // A Wrap, not a Row: the column around it is as wide as its widest
+      // child, so shorter plan copy (2026-10-12) left this row 153dp too wide
+      // at 320dp and 1.3× text. Wrapping fits any width.
+      Wrap(
+        alignment: WrapAlignment.center,
+        runSpacing: ZadSpacing.xs,
         children: <Widget>[
           for (final (method, icon) in const <(String, String)>[
             ('Google Play', '💳'),
@@ -574,9 +577,7 @@ class _PlanCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          plan.quota == -1
-                              ? 'ذكاء اصطناعي غير محدود'
-                              : '${plan.quota} طلب ذكي شهرياً',
+                          '${plan.quota} محاولة في الشهر',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: ZadColors.inkMuted,

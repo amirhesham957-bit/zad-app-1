@@ -21,6 +21,8 @@ import 'package:zad/shared/chat/domain/agent_turn.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
 import 'package:zad/shared/household/domain/home_emergency.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
+import 'package:zad/shared/quota/presentation/attempts_chip.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 
 /// The chat screen.
@@ -128,6 +130,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // The agent's app_command is opened by ZadShell, for every surface.
 
+    // «طاقة زاد»: a reply may have spent attempts, so the chip re-reads the
+    // server's balance once the reply is in — never a local guess.
+    ref.listen(chatControllerProvider.select((v) => v.isAwaitingReply), (
+      was,
+      now,
+    ) {
+      if (was == true && !now) ref.invalidate(attemptsBalanceProvider);
+    });
+
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
@@ -135,6 +146,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         appBar: AppBar(
           title: const Text('زاد'),
           actions: <Widget>[
+            const AttemptsChip(),
             IconButton(
               onPressed: () => ZadScreens.showBrainHub(context),
               icon: const Icon(ZadIcons.brain),
