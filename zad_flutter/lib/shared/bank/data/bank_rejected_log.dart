@@ -59,14 +59,20 @@ class BankRejectedLog {
     }
   }
 
-  /// Adds one, keeping the newest 200.
-  Future<void> add(String source, BankRejectReason reason, String rawText) {
+  /// Adds one, keeping the newest 200. [at] is when it was set aside, for one
+  /// parked by the background engine; now otherwise.
+  Future<void> add(
+    String source,
+    BankRejectReason reason,
+    String rawText, {
+    DateTime? at,
+  }) {
     final list = <Map<String, String>>[
       <String, String>{
         'reason': reasonName(reason),
         'source': source,
         'raw_text': rawText.length > 300 ? rawText.substring(0, 300) : rawText,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'created_at': (at ?? DateTime.now()).toUtc().toIso8601String(),
       },
       for (final m in read().take(_max - 1))
         <String, String>{

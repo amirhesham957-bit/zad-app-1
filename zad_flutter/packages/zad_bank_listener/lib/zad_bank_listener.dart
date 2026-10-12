@@ -55,6 +55,40 @@ class CapturedNotification {
   final DateTime postedAt;
 }
 
+/// A message the filter set aside while the app was closed.
+class ParkedRejection {
+  /// Creates a parked rejection.
+  const new({
+    required this.source,
+    required this.reason,
+    required this.rawText,
+    required this.at,
+  });
+
+  /// Reads a row from the platform channel.
+  factory fromMap(Map<Object?, Object?> map) => ParkedRejection(
+    source: map['source']! as String,
+    reason: map['reason']! as String,
+    rawText: map['raw_text']! as String,
+    at: DateTime.fromMillisecondsSinceEpoch(
+      (map['at']! as num).toInt(),
+      isUtc: true,
+    ),
+  );
+
+  /// Who sent it, as the app's log shows it.
+  final String source;
+
+  /// The app's name for why it was set aside.
+  final String reason;
+
+  /// The message.
+  final String rawText;
+
+  /// When it was set aside.
+  final DateTime at;
+}
+
 /// The plugin.
 class ZadBankListener {
   /// Creates a listener over the default channel.
@@ -170,6 +204,33 @@ class ZadBankListener {
       channel.invokeMethod<void>('setScreenEventsEnabled', <String, Object>{
         'enabled': enabled,
       });
+
+  /// Parks a message the app's filter set aside while the app was closed.
+  ///
+  /// The app's rejected log lives in Hive, which the background engine must
+  /// not open (the app's engine may hold the same box). [reason] is the app's
+  /// own name for it; this package does not interpret it.
+  Future<void> recordRejected({
+    required String source,
+    required String reason,
+    required String rawText,
+    required DateTime at,
+  }) => channel.invokeMethod<void>('recordRejected', <String, Object>{
+    'source': source,
+    'reason': reason,
+    'rawText': rawText,
+    'at': at.millisecondsSinceEpoch,
+  });
+
+  /// Everything parked by [recordRejected], oldest first, removed as it is
+  /// read.
+  Future<List<ParkedRejection>> takeRejected() async {
+    final rows = await channel.invokeListMethod<Object?>('takeRejected');
+    return (rows ?? const <Object?>[])
+        .cast<Map<Object?, Object?>>()
+        .map(ParkedRejection.fromMap)
+        .toList();
+  }
 
   /// How many are waiting. Cheap enough for a status row.
   Future<int> pendingCount() async =>

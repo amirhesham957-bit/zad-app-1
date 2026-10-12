@@ -43,7 +43,12 @@ class NotificationDrain {
     required String? Function() signedInUserId,
     required bool Function(String packageName) isTrackedFinancialApp,
     String? Function()? marketCurrency,
-    void Function(String source, BankRejectReason reason, String rawText)?
+    void Function(
+      String source,
+      BankRejectReason reason,
+      String rawText,
+      DateTime? at,
+    )?
     onRejected,
   }) : _onRejected = onRejected,
        _listener = listener,
@@ -59,7 +64,7 @@ class NotificationDrain {
   final String? Function() _signedInUserId;
   final bool Function(String) _isTracked;
   final String? Function()? _marketCurrency;
-  final void Function(String, BankRejectReason, String)? _onRejected;
+  final void Function(String, BankRejectReason, String, DateTime?)? _onRejected;
 
   /// Takes what the service captured, queues what matters, drops the rest.
   ///
@@ -76,6 +81,8 @@ class NotificationDrain {
     if (userId == null || userId.isEmpty) {
       return const DrainReport(seen: 0, queued: 0);
     }
+
+    await _takeParkedRejections();
 
     final captured = await _listener.peek(limit: limit);
     if (captured.isEmpty) return const DrainReport(seen: 0, queued: 0);
@@ -95,6 +102,7 @@ class NotificationDrain {
           n.title.trim().isEmpty ? n.packageName : n.title,
           reason,
           n.text,
+          null,
         ),
       );
       if (entry != null) queued++;
@@ -102,6 +110,23 @@ class NotificationDrain {
 
     await _listener.acknowledge(captured.map((n) => n.id));
     return DrainReport(seen: captured.length, queued: queued);
+  }
+
+  /// Moves what the background engine set aside into the log, with the time
+  /// it was set aside. Taken only when there is a log to put it in.
+  Future<void> _takeParkedRejections() async {
+    final onRejected = _onRejected;
+    if (onRejected == null) return;
+    try {
+      final reasons = BankRejectReason.values.asNameMap();
+      for (final p in await _listener.takeRejected()) {
+        if (reasons[p.reason] case final reason?) {
+          onRejected(p.source, reason, p.rawText, p.at);
+        }
+      }
+    } on Object catch (_) {
+      // A diagnostic log; never worth holding the drain for.
+    }
   }
 }
 
@@ -122,8 +147,8 @@ final Provider<NotificationDrain> notificationDrainProvider =
         newId: const Uuid().v4,
         signedInUserId: ref.watch(signedInUserIdProvider),
         isTrackedFinancialApp: isTrackedFinancialApp,
-        onRejected: (source, reason, raw) => unawaited(
-          ref.read(bankRejectedLogProvider).add(source, reason, raw),
+        onRejected: (source, reason, raw, at) => unawaited(
+          ref.read(bankRejectedLogProvider).add(source, reason, raw, at: at),
         ),
       );
     });

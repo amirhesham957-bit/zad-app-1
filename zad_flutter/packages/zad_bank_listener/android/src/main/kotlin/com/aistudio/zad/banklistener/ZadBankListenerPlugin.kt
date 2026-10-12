@@ -73,6 +73,17 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
                     result.success(null)
                 }
                 "pendingCount" -> result.success(store.pending())
+                // اللي الفلتر رفضه والتطبيق مقفول: محرك الخلفية بيركنه، والتطبيق بيسحبه لسجله.
+                "recordRejected" -> {
+                    store.insertRejected(
+                        source = call.argument<String>("source") ?: "",
+                        reason = call.argument<String>("reason") ?: "",
+                        rawText = call.argument<String>("rawText") ?: "",
+                        at = call.argument<Number>("at")?.toLong() ?: System.currentTimeMillis(),
+                    )
+                    result.success(null)
+                }
+                "takeRejected" -> result.success(store.takeRejected())
                 // إيقاع النوم (الشريحة ٣٧): اللحظات بتتقري هنا وبتتحسب في Dart؛ ومسحها لما العميل يقفل التعلّم.
                 "screenEvents" -> result.success(ScreenEvents.read(context))
                 "setScreenEventsEnabled" -> {

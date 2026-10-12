@@ -187,6 +187,8 @@ void main() {
         'pendingCount',
         'screenEvents',
         'setScreenEventsEnabled',
+        'recordRejected',
+        'takeRejected',
       ]) {
         expect(
           source,
@@ -211,6 +213,10 @@ void main() {
       expect(source, contains('call.argument<Int>("limit")'));
       expect(source, contains('call.argument<List<Number>>("ids")'));
       expect(source, contains('call.argument<Boolean>("enabled")'));
+      expect(source, contains('call.argument<String>("source")'));
+      expect(source, contains('call.argument<String>("reason")'));
+      expect(source, contains('call.argument<String>("rawText")'));
+      expect(source, contains('call.argument<Number>("at")'));
     });
 
     test(
@@ -295,6 +301,69 @@ void main() {
           reason: '$caller must not construct its own store.',
         );
       }
+    });
+
+    test('a parked rejection: the keys the store emits, read as UTC', () async {
+      final store = _kotlin('CapturedNotificationStore.kt');
+      for (final column in <String>['source', 'reason', 'raw_text', 'at']) {
+        expect(store, contains('"$column" to'));
+      }
+
+      await listener.recordRejected(
+        source: 'CIB',
+        reason: 'otp',
+        rawText: 'كود',
+        at: DateTime.fromMillisecondsSinceEpoch(_postedAtMillis, isUtc: true),
+      );
+      expect(calls.last.method, 'recordRejected');
+      expect(calls.last.arguments, <String, Object>{
+        'source': 'CIB',
+        'reason': 'otp',
+        'rawText': 'كود',
+        'at': _postedAtMillis,
+      });
+
+      answer = <Object>[
+        <String, Object>{
+          'source': 'CIB',
+          'reason': 'otp',
+          'raw_text': 'كود',
+          'at': _postedAtMillis,
+        },
+      ];
+      final parked = await listener.takeRejected();
+      expect(calls.last.method, 'takeRejected');
+      expect(parked.single.reason, 'otp');
+      expect(parked.single.rawText, 'كود');
+      expect(parked.single.at.isUtc, isTrue);
+      expect(parked.single.at.millisecondsSinceEpoch, _postedAtMillis);
+    });
+
+    test('upgrading the store keeps the inbox', () {
+      // Version 1 held only the inbox, which may hold a bank message not yet
+      // sent; the upgrade to 2 adds the rejected table and drops nothing.
+      final store = _kotlin('CapturedNotificationStore.kt');
+      expect(store, contains('DB_VERSION = 2'));
+      expect(
+        RegExp(r'if \(oldVersion == 1\) \{\s*createRejected\(db\)\s*return')
+            .hasMatch(store),
+        isTrue,
+      );
+    });
+
+    test('both capture paths remember what they captured', () {
+      // SeenNotificationsTest (JVM) pins the decision; this pins that the
+      // service still asks it, on reconnect and on every capture.
+      final service = _kotlin('ZadNotificationListenerService.kt');
+      expect(service, contains('SeenNotifications.scan('));
+      expect(service, contains('SeenNotifications.remember('));
+      expect(
+        service,
+        isNot(contains('sbn.key in seen')),
+        reason:
+            'the key alone loses a conversation update missed while '
+            'the service was unbound',
+      );
     });
   });
 }
