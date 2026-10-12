@@ -66,8 +66,9 @@ import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
-import { laneFor } from "./keyLanes.ts";
+import { callModel, embedText, embedSelfTest, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
+import { type Lane, laneFor } from "./keyLanes.ts";
+import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
@@ -6346,6 +6347,47 @@ async function callAgentModel(
 async function handleAgentTurn(
   sb: SupabaseClient, userId: string, body: any, onText?: (delta: string) => void,
 ): Promise<Response> {
+  // الباقة من zad_entitlements، مش من الطلب: هي اللي بتحدد الحارة والحارس (freeLane.ts).
+  const { data: entRow } = await sb.from("zad_entitlements")
+    .select("tier,tier_expires_at")
+    .eq("user_id", userId).maybeSingle();
+  const paid = !!(entRow && entRow.tier && entRow.tier !== "free" &&
+    (!entRow.tier_expires_at || new Date(entRow.tier_expires_at).getTime() > Date.now()));
+
+  // حارس العميل: لفة واحدة في نفس الوقت، وحد في الدقيقة. فشل الحارس نفسه = مفتوح.
+  const { data: gate, error: gateErr } = await sb.rpc("zad_turn_begin", { p_user: userId, p_per_minute: turnsPerMinute(paid) });
+  if (gateErr) console.error("zad_turn_begin failed, letting the turn through:", gateErr.message);
+  const gateResult = gate as { ok?: boolean; reason?: string } | null;
+  if (!gateErr && gateResult?.ok === false) {
+    return new Response(JSON.stringify({
+      ok: true, reply: gateReply(gateResult.reason), executed: [], proposals: [], tool_attempted: false,
+      rate_limited: true, gate: gateResult.reason,
+    }), { headers: CORS_HEADERS });
+  }
+  try {
+    let lane: Lane = "paid";
+    if (!paid) {
+      const { data: turnsToday, error: loadErr } = await sb.rpc("zad_free_load_take");
+      if (loadErr) console.error("zad_free_load_take failed:", loadErr.message);
+      lane = chatLane(false, loadErr ? null : Number(turnsToday), freeDailyBudget(Deno.env.get("ZAD_FREE_DAILY_BUDGET")));
+      if (lane === "free_busy" && !hasGroq()) {
+        return new Response(JSON.stringify({
+          ok: true, reply: FREE_BUSY_REPLY, executed: [], proposals: [], tool_attempted: false, busy: true,
+        }), { headers: CORS_HEADERS });
+      }
+    }
+    return await inLane(lane, () => handleAgentTurnInLane(sb, userId, body, paid, onText));
+  } finally {
+    if (!gateErr) {
+      const { error } = await sb.rpc("zad_turn_end", { p_user: userId });
+      if (error) console.error("zad_turn_end failed:", error.message);
+    }
+  }
+}
+
+async function handleAgentTurnInLane(
+  sb: SupabaseClient, userId: string, body: any, isPaidSubscriber: boolean, onText?: (delta: string) => void,
+): Promise<Response> {
   const message: string = String(body.message ?? "").trim();
   if (!message) {
     return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: CORS_HEADERS });
@@ -6355,14 +6397,8 @@ async function handleAgentTurn(
   // الطلب، فأي قيمة غير معروفة بترجع للافتراضي بدل ما تتقبل عمياني وتكسر الـ CHECK.
   const declaredSource = body.source === "telegram" ? "telegram" as const : "app_chat" as const;
 
-  // فحص اشتراك المستخدم: المشتركون في باقات مدفوعة (starter, plus, pro) أو لديهم جلسة إعلانات نشطة يتم إعفاؤهم من السقف اليومي المجاني
-  const { data: entRow } = await sb.from("zad_entitlements")
-    .select("tier,tier_expires_at")
-    .eq("user_id", userId).maybeSingle();
-
-  const isPaidSubscriber = entRow && entRow.tier && entRow.tier !== "free" &&
-    (!entRow.tier_expires_at || new Date(entRow.tier_expires_at).getTime() > Date.now());
-
+  // المشتركون في باقات مدفوعة (starter, plus, pro) معفيين من السقف اليومي المجاني —
+  // الباقة اتقرت مرة واحدة في handleAgentTurn.
   // W4 — بوابة السقف اليومي لمستخدمي الباقة المجانية فقط.
   //
   // brain_session_expires_at اتشال من هنا. كان إعلان واحد بيفتح **١٢ ساعة استخدام
@@ -6554,7 +6590,9 @@ async function handleAgentTurn(
   // آخر ٨ رسائل زي ما شات التطبيق بيبعتها. أي عنصر مش user/assistant بيتجاهل بدل ما
   // يكسر النداء — الكلاينت مش مصدر موثوق لشكل الـ history.
   const clientHistory: SharedTurn[] = [];
-  for (const h of (Array.isArray(body.history) ? body.history : []).slice(-8)) {
+  // المجاني بياخد سياق أقصر (freeLane.ts): أرخص لفة، والمشترك ياخد الكامل كميزة.
+  const historyTurns = historyWindow(isPaidSubscriber);
+  for (const h of (Array.isArray(body.history) ? body.history : []).slice(-historyTurns)) {
     const text = String(h?.text ?? "").trim();
     if (!text) continue;
     if (h?.role === "user") clientHistory.push({ role: "user", text });
@@ -6564,7 +6602,8 @@ async function handleAgentTurn(
   // in the turns said by voice or on Telegram too. Telegram already sends that
   // same table as its history.
   const history: Turn[] = markUnanswered<Turn & { text?: string }>([
-    ...pickHistory(await sharedHistoryEarly, clientHistory),
+    // المشترك: كل اللي pickHistory بيرجعه زي الأول. المجاني: آخر [historyTurns] بس.
+    ...pickHistory(await sharedHistoryEarly, clientHistory).slice(isPaidSubscriber ? 0 : -historyTurns),
     { role: "user", text: message },
   ]);
   // كلام العميل نفسه في المحادثة (كل القنوات) — الأدوات اللي بتاخد قيمة منه بالحرف (رقم فني) بتتحقق عليه.

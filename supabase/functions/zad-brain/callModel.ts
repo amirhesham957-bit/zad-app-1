@@ -23,7 +23,7 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
-import { keyOrder, type Lane, reservedCount } from "./keyLanes.ts";
+import { keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
 import { DeadKeys, RATE_LIMIT_DEFAULT_MS } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
@@ -81,6 +81,18 @@ try {
   laneStore = null;
 }
 const RESERVED_KEYS = reservedCount(GEMINI_KEY_POOL.length, Deno.env.get("ZAD_BACKGROUND_KEYS"));
+// A key held for paying customers (keyLanes.ts): the free lane never draws on it.
+const PAID_KEYS = paidReservedCount(GEMINI_KEY_POOL.length, RESERVED_KEYS, Deno.env.get("ZAD_PAID_KEYS"));
+
+/** The lane the current call runs in. */
+export function currentLane(): Lane {
+  return laneStore?.getStore() ?? "customer";
+}
+
+/** Whether a Groq leg exists to take a turn Gemini will not. */
+export function hasGroq(): boolean {
+  return GROQ_KEY_POOL.length > 0;
+}
 
 /** Runs [fn] with every model call inside it drawing keys from [lane]. */
 export function inLane<T>(lane: Lane, fn: () => T): T {
@@ -89,7 +101,7 @@ export function inLane<T>(lane: Lane, fn: () => T): T {
 
 /** The keys this call may try, in order, for the lane it runs in. */
 function keysToTry(): number[] {
-  return keyOrder(laneStore?.getStore() ?? "customer", GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex());
+  return keyOrder(currentLane(), GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex(), PAID_KEYS);
 }
 
 // ── Model failover chain ───────────────────────────────────────────────────────
@@ -246,8 +258,12 @@ export async function callModel(opts: {
   // كله في الانتظار: لو فيه جروك يبقى جيميناي كله واقع من أقل من دقيقة — على جروك على
   // طول بدل ١٠ ث تانيين على نفس الحيطة (اللفة الواحدة بتنادي الموديل ٢-٣ مرات). من غير
   // جروك، جرّب السلسلة كاملة بدل ما تفشل من غير محاولة.
-  const candidates = fresh.length > 0 ? fresh : GROQ_KEY_POOL.length > 0 ? [] : chain;
-  if (candidates.length === 0) trail.push("every gemini model cooling down");
+  // The free lane after the day's budget (freeLane.ts) does not touch Gemini at all: its
+  // keys and models stay for the customers who pay, and Groq's separate quota takes it.
+  const freeBusy = currentLane() === "free_busy" && GROQ_KEY_POOL.length > 0;
+  const candidates = freeBusy ? [] : fresh.length > 0 ? fresh : GROQ_KEY_POOL.length > 0 ? [] : chain;
+  if (freeBusy) trail.push("free lane over its daily budget");
+  else if (candidates.length === 0) trail.push("every gemini model cooling down");
   for (const model of candidates) {
     const left = deadline - Date.now();
     // الميزانية خلصت وفيه جروك يلحق ⇒ ماتبدأش موديل جيميناي تاني.
@@ -918,6 +934,7 @@ export async function streamGeminiTurn(opts: {
   const { provider } = cfg();
   if (provider !== "gemini") throw new ProviderUnavailableError("streaming is gemini-only", "provider");
   if (GEMINI_KEY_POOL.length === 0) throw new ConfigError("gemini: no key configured");
+  if (currentLane() === "free_busy") throw new ProviderUnavailableError("free lane over its daily budget", "free_busy");
   const now = Date.now();
   // أول موديل مش في الانتظار بس: البث محاولة سريعة، والسلسلة كاملة شغلة callModel.
   const model = modelChain(opts.model).find((m) => (modelCooldownUntil.get(m) ?? 0) <= now);
