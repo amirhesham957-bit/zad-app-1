@@ -26,6 +26,7 @@ import 'package:zad/core/money/money.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -53,6 +54,8 @@ class ReceiptScanSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(scanControllerProvider);
 
+    // The balance or the pace, said as the server said it (meter.ts).
+    final refusal = serverRefusal(view.error);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -67,10 +70,11 @@ class ReceiptScanSheet extends ConsumerWidget {
                 'الأخير ظاهر في الصورة.',
             tone: ZadEmptyTone.waiting,
           ),
-          ScanStage.failed => const _Retry(
-            title: 'مقدرتش أوصل للسيرفر',
-            message: 'الصورة لسه معاك. جرب تاني لما النت يرجع.',
-            tone: ZadEmptyTone.problem,
+          ScanStage.failed => _Retry(
+            title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
+            message:
+                refusal?.message ?? 'الصورة لسه معاك. جرب تاني لما النت يرجع.',
+            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
           ),
           ScanStage.ready => _Reading(receipt: view.receipt!),
         },

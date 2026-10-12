@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/photo_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
 
@@ -68,6 +69,8 @@ class PhotoScanSheet extends ConsumerWidget {
     });
 
     final isPantry = kind == PhotoKind.pantry;
+    // The balance or the pace, said as the server said it (meter.ts).
+    final refusal = serverRefusal(view.error);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -88,9 +91,9 @@ class PhotoScanSheet extends ConsumerWidget {
           ),
           ScanStage.failed => _Retry(
             kind: kind,
-            title: 'مقدرتش أوصل للسيرفر',
-            message: 'جرب تاني لما النت يرجع.',
-            tone: ZadEmptyTone.problem,
+            title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
+            message: refusal?.message ?? 'جرب تاني لما النت يرجع.',
+            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
           ),
           ScanStage.ready => _PantryReading(view: view),
         },
