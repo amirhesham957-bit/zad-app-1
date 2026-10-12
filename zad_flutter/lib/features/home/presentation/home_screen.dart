@@ -44,6 +44,7 @@ import 'package:zad/shared/budget/domain/event_day_budget.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/quota/presentation/ad_week_card.dart';
 
 /// Home.
 ///
@@ -107,6 +108,8 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
+          const AdWeekCard(),
           // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
           // products (owner, 2026-10-05; the product row stays off home).
           const HomeAmazonStrip(),
