@@ -263,6 +263,10 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
                   _LevelCard(status: s),
                   const SizedBox(height: ZadSpacing.md),
                   _Missions(status: s),
+                  if (s.week case final week?) ...<Widget>[
+                    const SizedBox(height: ZadSpacing.md),
+                    _WeekChallenge(week: week),
+                  ],
                   const SizedBox(height: ZadSpacing.md),
                   _Evolution(status: s),
                   const SizedBox(height: ZadSpacing.xl),
@@ -1124,6 +1128,75 @@ class _SeedShop extends StatelessWidget {
               onPressed: () => onPay(ZadPlayProducts.allCharacters),
               child: const Text(r'كل الشخصيات مرة واحدة · $6.99'),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «تحدي الأسبوع»: something logged on five days of seven, +100 XP.
+class _WeekChallenge extends StatelessWidget {
+  const new({required this.week});
+
+  final CompanionWeek week;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = week;
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(
+                'تحدي الأسبوع',
+                style: ZadType.titleMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '+١٠٠ ⭐',
+                style: ZadType.labelLarge.copyWith(
+                  color: ZadColors.mustardOchre,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            w.done
+                ? 'خلّصته! سجّلت ${w.days} أيام الأسبوع ده 🎉'
+                : 'سجّل مصروف في ${w.goal} أيام من ٧ — '
+                      'فاضلك ${w.goal - w.days}.',
+            style: ZadType.bodyMedium.copyWith(
+              color: w.done ? ZadColors.green700 : ZadColors.slate,
+            ),
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          Row(
+            children: <Widget>[
+              for (var i = 0; i < w.goal; i++)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      end: ZadSpacing.xs,
+                    ),
+                    child: AnimatedContainer(
+                      duration: ZadDuration.quick,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: i < w.days
+                            ? ZadColors.mustardOchre
+                            : ZadColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(ZadRadii.pill),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
