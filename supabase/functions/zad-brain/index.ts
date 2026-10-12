@@ -6388,7 +6388,7 @@ async function handleAgentTurn(
       if (!allowed) {
         return new Response(JSON.stringify({
           ok: true,
-          reply: "خلص رصيدي المجاني لليوم 🙏 تقدر تشوف إعلان قصير من التطبيق وتاخد رسايل زيادة على طول، أو تشترك في زاد بلس للاستخدام غير المحدود.",
+          reply: "خلص رصيدي المجاني لليوم 🙏 تقدر تشوف إعلان قصير من التطبيق وتاخد محاولات زيادة على طول، أو تشترك وتستخدم زاد من غير إعلانات.",
           executed: [], proposals: [], tool_attempted: false, rate_limited: true,
           // الكلاينت بيقرا ده عشان يفتح شاشة الإعلانات بدل ما يعرض نص وبس.
           needs_ad_credit: true,
@@ -6444,7 +6444,7 @@ async function handleAgentTurn(
     // entitlement جنبه هي اللي الواجهة بتقرا منها عشان تفتح شاشة الباقات/الإعلانات.
     return new Response(JSON.stringify({
       ok: true,
-      reply: lockedReply(entitlement),
+      reply: lockedReply(entitlement, String(body.tz ?? "UTC")),
       executed: [], proposals: [], tool_attempted: false,
       entitlement,
     }), { headers: CORS_HEADERS });

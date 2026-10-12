@@ -68,11 +68,11 @@ void main() {
   ) async {
     await _pump(tester);
     expect(_confetti(), findsNothing);
-    await tester.tap(find.text('الفائقة (Ultra)'));
+    await tester.tap(find.text('العيلة (Family)'));
     await tester.pump();
     expect(_confetti(), findsOneWidget);
     expect(
-      find.text('اشترك في الفائقة (Ultra) عبر Google Play'),
+      find.text('اشترك في العيلة (Family) عبر Google Play'),
       findsOneWidget,
     );
     await tester.pump(const Duration(seconds: 2));
