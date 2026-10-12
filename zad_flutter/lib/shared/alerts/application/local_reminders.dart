@@ -247,6 +247,16 @@ class LocalReminders {
   /// «زادو نام مستنيك»: rescheduled on every open, so it rings only after two
   /// days (and four) away. Off with «رفيق زاد يناديني لو غبت» in settings.
   Future<void> syncCompanionNap() async {
+    // Called on every return to the app, outside resyncAll's guard: a
+    // missing plugin (tests, a device without notifications) must not throw.
+    try {
+      await _scheduleCompanionNap();
+    } on Object catch (e) {
+      debugPrint('companion nap reminder skipped: $e');
+    }
+  }
+
+  Future<void> _scheduleCompanionNap() async {
     await _plugin.cancel(id: _napFirstId);
     await _plugin.cancel(id: _napSecondId);
     if (!_ref
