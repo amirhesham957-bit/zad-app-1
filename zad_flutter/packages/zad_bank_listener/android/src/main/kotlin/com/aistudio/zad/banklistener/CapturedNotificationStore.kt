@@ -33,13 +33,41 @@ internal class CapturedNotificationStore private constructor(context: Context) :
         )
         // الترتيب الزمني هو ترتيب السحب، فالفهرس عليه مش رفاهية.
         db.execSQL("CREATE INDEX ${TABLE}_posted_at ON $TABLE (posted_at)")
+        createRejected(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // ١ → ٢ بيضيف جدول المرفوض بس: الصندوق ممكن يكون فيه رسالة بنك لسه مابعدتش.
+        if (oldVersion == 1) {
+            createRejected(db)
+            return
+        }
         // صندوق وارد، مش أرشيف: إشعار ضاع في ترقية أقل ضرراً من ترقية بتفشل
         // وتمنع الالتقاط خالص.
         db.execSQL("DROP TABLE IF EXISTS $TABLE")
+        db.execSQL("DROP TABLE IF EXISTS $REJECTED")
         onCreate(db)
+    }
+
+    /**
+     * الرسايل اللي فلتر Dart رفضها **والتطبيق مقفول**.
+     *
+     * سجل المرفوض الحقيقي في Hive جوه التطبيق، ومحرك الخلفية مابيلمسش Hive عن قصد
+     * (محرك التطبيق ممكن يفتح نفس الصندوق في نفس اللحظة — `background_delivery.dart`).
+     * فالرفض بيتركن هنا، والتطبيق بيسحبه لسجله أول ما يفضّي الصندوق.
+     */
+    private fun createRejected(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE $REJECTED (
+              id       INTEGER PRIMARY KEY AUTOINCREMENT,
+              source   TEXT    NOT NULL,
+              reason   TEXT    NOT NULL,
+              raw_text TEXT    NOT NULL,
+              at       INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     fun insert(packageName: String, title: String, text: String, postedAt: Long) {
@@ -96,6 +124,62 @@ internal class CapturedNotificationStore private constructor(context: Context) :
         )
     }
 
+    /** يركن رفض واحد. سجل تشخيص مش أرشيف، فالأقدم بيتشال فوق [MAX_REJECTED]. */
+    fun insertRejected(source: String, reason: String, rawText: String, at: Long) {
+        val db = writableDatabase
+        db.insert(
+            REJECTED,
+            null,
+            ContentValues().apply {
+                put("source", source)
+                put("reason", reason)
+                put("raw_text", rawText)
+                put("at", at)
+            },
+        )
+        db.execSQL(
+            """
+            DELETE FROM $REJECTED WHERE id NOT IN (
+              SELECT id FROM $REJECTED ORDER BY at DESC, id DESC LIMIT $MAX_REJECTED
+            )
+            """.trimIndent()
+        )
+    }
+
+    /**
+     * يسلّم المركون كله، الأقدم الأول، ويمسحه — في معاملة واحدة.
+     *
+     * قراءة ومسح مع بعض، عكس [peek]/[deleteUpTo]: ده سجل تشخيص، وسطر ضاع لو التطبيق
+     * وقع في النص أهون من سطر بيتكرر في السجل مع كل فتحة.
+     */
+    fun takeRejected(): List<Map<String, Any?>> {
+        val db = writableDatabase
+        val rows = mutableListOf<Map<String, Any?>>()
+        db.beginTransaction()
+        try {
+            db.query(
+                REJECTED,
+                arrayOf("source", "reason", "raw_text", "at"),
+                null, null, null, null,
+                "at ASC, id ASC",
+            ).use { c ->
+                while (c.moveToNext()) {
+                    rows += mapOf(
+                        "source" to c.getString(0),
+                        "reason" to c.getString(1),
+                        "raw_text" to c.getString(2),
+                        "at" to c.getLong(3),
+                    )
+                }
+            }
+            db.delete(REJECTED, null, null)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        return rows
+    }
+
     fun pending(): Int =
         readableDatabase.rawQuery("SELECT COUNT(*) FROM $TABLE", null).use {
             if (it.moveToFirst()) it.getInt(0) else 0
@@ -147,8 +231,10 @@ internal class CapturedNotificationStore private constructor(context: Context) :
             }
 
         private const val DB_NAME = "zad_captured_notifications.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
         private const val TABLE = "captured_notifications"
         private const val MAX_ROWS = 500
+        private const val REJECTED = "rejected_notifications"
+        private const val MAX_REJECTED = 200
     }
 }

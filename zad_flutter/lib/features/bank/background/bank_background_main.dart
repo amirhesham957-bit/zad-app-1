@@ -46,6 +46,13 @@ Future<void> bankBackgroundMain() async {
       send: remote.ingestNotification,
       userId: userId,
       isTrackedFinancialApp: isTrackedFinancialApp,
+      // Parked natively, not written to the Hive log: see recordRejected.
+      onRejected: (source, reason, rawText) => listener.recordRejected(
+        source: source,
+        reason: reason.name,
+        rawText: rawText,
+        at: DateTime.now().toUtc(),
+      ),
     ).run();
     debugPrint('[bank_background] $report');
   } on Object catch (e) {

@@ -39,19 +39,19 @@ class ZadNotificationListenerService : NotificationListenerService() {
         // إيقاع النوم (الشريحة ٣٧): لحظات قفل/فتح الشاشة طول ما الخدمة مربوطة.
         ScreenEvents.register(applicationContext)
         // أول ما الصلاحية تتفعّل (أو أندرويد يربط الخدمة من جديد) الإشعارات اللي لسه
-        // ظاهرة في الشريط ماعدّتش على onNotificationPosted. كوتلن كان بيلمّها هنا؛ المفاتيح
-        // اللي اتشافت قبل كده بتتحفظ عشان إعادة الربط ماتبعتش نفس الرسالة تاني.
+        // ظاهرة في الشريط ماعدّتش على onNotificationPosted. كوتلن كان بيلمّها هنا؛ اللي
+        // اتشاف قبل كده بيتفتكر عشان إعادة الربط ماتبعتش نفس الرسالة تاني ([SeenNotifications]).
         try {
             val prefs = applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val seen = prefs.getStringSet(SEEN_KEYS, emptySet()).orEmpty().toMutableSet()
+            val seen = prefs.getStringSet(SEEN_KEYS, emptySet()).orEmpty()
+            val active = activeNotifications.orEmpty()
+            val scan = SeenNotifications.scan(seen, active.map { SeenNotifications.id(it.key, it.postTime) })
+            val wanted = scan.toCapture.toSet()
             var added = 0
-            activeNotifications?.forEach { sbn ->
-                if (sbn.key in seen) return@forEach
-                seen += sbn.key
-                if (capture(sbn)) added++
+            active.forEach { sbn ->
+                if (SeenNotifications.id(sbn.key, sbn.postTime) in wanted && capture(sbn)) added++
             }
-            val trimmed = if (seen.size > MAX_SEEN_KEYS) seen.toList().takeLast(MAX_SEEN_KEYS).toSet() else seen
-            prefs.edit().putStringSet(SEEN_KEYS, trimmed).apply()
+            prefs.edit().putStringSet(SEEN_KEYS, scan.remember).apply()
             if (added > 0) main.post { BackgroundDelivery.schedule(applicationContext) }
         } catch (e: Exception) {
             Log.e(TAG, "active notification scan failed: ${e.message}")
@@ -76,16 +76,26 @@ class ZadNotificationListenerService : NotificationListenerService() {
             Log.e(TAG, "mark seen failed: ${e.message}")
         }
         try {
-            if (capture(notification)) {
-                // Handler مش استدعاء مباشر: محرك Flutter لازم يتعمل على الـ main thread،
-                // وأندرويد مابيضمنش إن onNotificationPosted عليه.
-                main.post { BackgroundDelivery.schedule(applicationContext) }
-            }
+            if (!capture(notification)) return
+            // Handler مش استدعاء مباشر: محرك Flutter لازم يتعمل على الـ main thread،
+            // وأندرويد مابيضمنش إن onNotificationPosted عليه.
+            main.post { BackgroundDelivery.schedule(applicationContext) }
         } catch (e: Exception) {
             // الخدمة دي بتشتغل على كل إشعار على الجهاز. استثناء واحد بيوقّعها،
             // وأندرويد ساعات مابيرجعش يربطها — فالقناة البنكية كلها تقف بسبب
             // إشعار واحد غريب الشكل.
             Log.e(TAG, "capture failed: ${e.message}")
+            return
+        }
+        // قبل كده المسح عند الربط ماكانش يعرف باللي اتلقط هنا، فأي رسالة لسه في الشريط
+        // كانت بتتلقط تاني مع كل ربط. في try لوحدها: فشلها مايخليش اللقطة تبان فاشلة.
+        try {
+            val prefs = applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val seen = prefs.getStringSet(SEEN_KEYS, emptySet()).orEmpty()
+            val id = SeenNotifications.id(notification.key, notification.postTime)
+            prefs.edit().putStringSet(SEEN_KEYS, SeenNotifications.remember(seen, id)).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "remember seen failed: ${e.message}")
         }
     }
 
@@ -136,6 +146,5 @@ class ZadNotificationListenerService : NotificationListenerService() {
             return if (v > 0) v else null
         }
         private const val SEEN_KEYS = "seen_active_keys"
-        private const val MAX_SEEN_KEYS = 300
     }
 }

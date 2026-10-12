@@ -43,6 +43,18 @@ class _FakeListener implements ZadBankListener {
   Future<int> pendingCount() async => pending;
 
   @override
+  Future<void> recordRejected({
+    required String source,
+    required String reason,
+    required String rawText,
+    required DateTime at,
+  }) async {}
+
+  @override
+  Future<List<ParkedRejection>> takeRejected() async =>
+      const <ParkedRejection>[];
+
+  @override
   Future<List<({bool on, DateTime at})>> screenEvents() async =>
       const <({bool on, DateTime at})>[];
 

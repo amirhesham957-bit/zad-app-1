@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/features/bank/data/background_delivery.dart';
+import 'package:zad/shared/bank/domain/bank_notification.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 CapturedNotification _n(int id, String pkg, String title, String text) =>
@@ -150,5 +151,44 @@ void main() {
     expect(calls, 10);
     expect(report.sent, 10);
     expect(inbox.acked, hasLength(10));
+  });
+
+  test('what the gate set aside is handed to onRejected, with why', () async {
+    final inbox = _Inbox([_bdc, _otp, _chat]);
+    final rejected = <(String, BankRejectReason, String)>[];
+
+    await BackgroundBankDelivery(
+      peek: inbox.peek,
+      acknowledge: inbox.acknowledge,
+      send: (_) async => null,
+      userId: 'u1',
+      isTrackedFinancialApp: (_) => false,
+      onRejected: (source, reason, raw) async =>
+          rejected.add((source, reason, raw)),
+    ).run();
+
+    // The OTP has a reason; the chat line has none (no amount, untracked) —
+    // the same split the drain's onRejected makes.
+    expect(rejected, <(String, BankRejectReason, String)>[
+      ('CIB', BankRejectReason.otp, _otp.text),
+    ]);
+  });
+
+  test('a failing onRejected does not hold the inbox', () async {
+    final inbox = _Inbox([_otp, _bdc]);
+    final sent = <Map<String, dynamic>>[];
+
+    final report = await BackgroundBankDelivery(
+      peek: inbox.peek,
+      acknowledge: inbox.acknowledge,
+      send: (p) async => sent.add(p),
+      userId: 'u1',
+      isTrackedFinancialApp: (_) => false,
+      onRejected: (_, _, _) async => throw StateError('store gone'),
+    ).run();
+
+    expect(sent, hasLength(1));
+    expect(report.stoppedEarly, isFalse);
+    expect(inbox.acked, containsAll(<int>[2, 1]));
   });
 }

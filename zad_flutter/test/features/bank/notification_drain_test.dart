@@ -11,7 +11,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/features/bank/data/background_delivery.dart';
+import 'package:zad/shared/bank/data/bank_rejected_log.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
+import 'package:zad/shared/bank/domain/bank_notification.dart';
 import 'package:zad/shared/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
@@ -37,6 +40,26 @@ class _FakeListener implements ZadBankListener {
 
   @override
   Future<int> pendingCount() async => rows.length;
+
+  /// What the background engine parked while the app was closed.
+  List<ParkedRejection> parked = <ParkedRejection>[];
+
+  @override
+  Future<void> recordRejected({
+    required String source,
+    required String reason,
+    required String rawText,
+    required DateTime at,
+  }) async => parked.add(
+    ParkedRejection(source: source, reason: reason, rawText: rawText, at: at),
+  );
+
+  @override
+  Future<List<ParkedRejection>> takeRejected() async {
+    final out = parked;
+    parked = <ParkedRejection>[];
+    return out;
+  }
 
   @override
   Future<List<({bool on, DateTime at})>> screenEvents() async =>
@@ -216,5 +239,124 @@ void main() {
 
     expect(second.seen, 0);
     expect(outbox.entries(), hasLength(1));
+  });
+
+  group('rejected while the app was closed', () {
+    // The background engine must not open Hive, so it parks rejections in the
+    // native store and the next drain moves them into the log.
+
+    test(
+      'the drain moves them into the log, with when they happened',
+      () async {
+        final log = BankRejectedLog(await Hive.openBox<String>('documents'));
+        final listener = _FakeListener(<CapturedNotification>[]);
+        final whileClosed = DateTime.utc(2026, 9, 20, 3, 15);
+
+        // The background run, with the wiring bankBackgroundMain gives it.
+        await BackgroundBankDelivery(
+          peek: (limit) => listener.peek(limit: limit),
+          acknowledge: listener.acknowledge,
+          send: (_) async => null,
+          userId: 'user-1',
+          isTrackedFinancialApp: isTrackedFinancialApp,
+          onRejected: (source, reason, rawText) => listener.recordRejected(
+            source: source,
+            reason: reason.name,
+            rawText: rawText,
+            at: whileClosed,
+          ),
+        ).run();
+        expect(
+          listener.parked,
+          isEmpty,
+          reason: 'nothing was in the inbox yet',
+        );
+
+        listener.rows = <CapturedNotification>[
+          _n(1, 'رمز التحقق الخاص بك هو 4521 لا تشاركه مع أحد', title: 'CIB'),
+        ];
+        await BackgroundBankDelivery(
+          peek: (limit) => listener.peek(limit: limit),
+          acknowledge: listener.acknowledge,
+          send: (_) async => null,
+          userId: 'user-1',
+          isTrackedFinancialApp: isTrackedFinancialApp,
+          onRejected: (source, reason, rawText) => listener.recordRejected(
+            source: source,
+            reason: reason.name,
+            rawText: rawText,
+            at: whileClosed,
+          ),
+        ).run();
+        expect(listener.parked, hasLength(1));
+        expect(log.read(), isEmpty, reason: 'the background wrote to Hive');
+
+        // The app opens and drains.
+        await NotificationDrain(
+          listener: listener,
+          outbox: outbox,
+          newId: () => 'ingest-${++nextId}',
+          signedInUserId: () => signedIn,
+          isTrackedFinancialApp: isTrackedFinancialApp,
+          onRejected: (source, reason, raw, at) =>
+              log.add(source, reason, raw, at: at),
+        ).drain();
+        await Future<void>.delayed(Duration.zero);
+
+        final entry = log.read().single;
+        expect(entry.reason, 'OTP');
+        expect(entry.source, 'CIB');
+        expect(entry.createdAt, whileClosed);
+        expect(listener.parked, isEmpty, reason: 'taken, so not logged twice');
+      },
+    );
+
+    test('a reason this build does not know is skipped, not a crash', () async {
+      final listener = _FakeListener(<CapturedNotification>[])
+        ..parked = <ParkedRejection>[
+          ParkedRejection(
+            source: 'x',
+            reason: 'renamed_in_a_later_build',
+            rawText: 'x',
+            at: DateTime.utc(2026),
+          ),
+          ParkedRejection(
+            source: 'بنك',
+            reason: BankRejectReason.promo.name,
+            rawText: 'عرض خاص',
+            at: DateTime.utc(2026),
+          ),
+        ];
+      final got = <BankRejectReason>[];
+
+      await NotificationDrain(
+        listener: listener,
+        outbox: outbox,
+        newId: () => 'ingest-${++nextId}',
+        signedInUserId: () => signedIn,
+        isTrackedFinancialApp: isTrackedFinancialApp,
+        onRejected: (_, reason, _, _) => got.add(reason),
+      ).drain();
+
+      expect(got, <BankRejectReason>[BankRejectReason.promo]);
+    });
+  });
+
+  test('a rejection while the app is open is logged at now', () async {
+    final listener = _FakeListener(<CapturedNotification>[
+      _n(1, 'رمز التحقق 4521'),
+    ]);
+    final times = <DateTime?>[];
+
+    await NotificationDrain(
+      listener: listener,
+      outbox: outbox,
+      newId: () => 'ingest-${++nextId}',
+      signedInUserId: () => signedIn,
+      isTrackedFinancialApp: isTrackedFinancialApp,
+      onRejected: (_, _, _, at) => times.add(at),
+    ).drain();
+
+    expect(times, <DateTime?>[null]);
   });
 }

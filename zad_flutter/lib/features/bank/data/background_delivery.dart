@@ -68,7 +68,14 @@ class BackgroundBankDelivery {
     required String userId,
     required bool Function(String packageName) isTrackedFinancialApp,
     String? marketCurrency,
-  }) : _peek = peek,
+    Future<void> Function(
+      String source,
+      BankRejectReason reason,
+      String rawText,
+    )?
+    onRejected,
+  }) : _onRejected = onRejected,
+       _peek = peek,
        _acknowledge = acknowledge,
        _send = send,
        _userId = userId,
@@ -81,6 +88,7 @@ class BackgroundBankDelivery {
   final String _userId;
   final bool Function(String) _isTracked;
   final String? _marketCurrency;
+  final Future<void> Function(String, BankRejectReason, String)? _onRejected;
 
   /// Sends until the inbox is empty or a send fails.
   ///
@@ -109,6 +117,19 @@ class BackgroundBankDelivery {
           reason: verdict.reason,
           isTrackedFinancialApp: _isTracked(n.packageName),
         )) {
+          // The drain's onRejected, for the same verdicts: without it a message
+          // set aside while the app was closed left no trace in the log.
+          if (verdict.reason case final reason?) {
+            try {
+              await _onRejected?.call(
+                n.title.trim().isEmpty ? n.packageName : n.title,
+                reason,
+                n.text,
+              );
+            } on Object catch (_) {
+              // A diagnostic log; never worth holding the inbox for.
+            }
+          }
           settled.add(n.id);
           dropped++;
           continue;

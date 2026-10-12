@@ -31,3 +31,8 @@ android {
         minSdk 24
     }
 }
+
+dependencies {
+    // SeenNotificationsTest: إعادة الربط ماتبعتش نفس الرسالة تاني — بيشتغل على JVM من غير جهاز.
+    testImplementation 'junit:junit:4.13.2'
+}
