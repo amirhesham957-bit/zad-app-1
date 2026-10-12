@@ -70,6 +70,13 @@ enum _Plan {
 
   /// The plans that glow (`_PlanCard.pulse`).
   bool get glows => this != _Plan.basic;
+
+  /// Its Play product.
+  String get productId => switch (this) {
+    _Plan.basic => ZadPlayProducts.basic,
+    _Plan.plus => ZadPlayProducts.plus,
+    _Plan.ultra => ZadPlayProducts.ultra,
+  };
 }
 
 /// The plans.
@@ -87,6 +94,24 @@ class _PaywallState extends ConsumerState<PaywallScreen>
   PlayBilling? _billing;
   StreamSubscription<BillingResult>? _results;
   bool _buying = false;
+
+  /// Play's price per product, once Play answers.
+  Map<String, String> _prices = const <String, String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadPrices());
+  }
+
+  Future<void> _loadPrices() async {
+    final prices = await PlayBilling.prices(<String>{
+      ZadPlayProducts.basic,
+      ZadPlayProducts.plus,
+      ZadPlayProducts.ultra,
+    });
+    if (mounted && prices.isNotEmpty) setState(() => _prices = prices);
+  }
 
   /// The glow, the shimmer and the button's beat.
   late final AnimationController _pulse = AnimationController(
@@ -135,11 +160,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     });
   }
 
-  String get _productId => switch (_selected) {
-    _Plan.basic => ZadPlayProducts.basic,
-    _Plan.plus => ZadPlayProducts.plus,
-    _Plan.ultra => ZadPlayProducts.ultra,
-  };
+  String get _productId => _selected.productId;
 
   Future<void> _subscribe() async {
     if (_buying) return;
@@ -272,6 +293,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
           padding: const EdgeInsets.symmetric(vertical: ZadSpacing.sm),
           child: _PlanCard(
             plan: plan,
+            price: _prices[plan.productId],
             selected: plan == _selected,
             pulse: _pulse,
             onTap: () => _pick(plan),
@@ -453,9 +475,14 @@ class _PlanCard extends StatelessWidget {
     required this.selected,
     required this.pulse,
     required this.onTap,
+    this.price,
   });
 
   final _Plan plan;
+
+  /// What Play will charge a month, in the store's currency; null until Play
+  /// answers (or off Play), and then no price is shown at all.
+  final String? price;
   final bool selected;
   final Animation<double> pulse;
   final VoidCallback onTap;
@@ -582,6 +609,15 @@ class _PlanCard extends StatelessWidget {
                             color: ZadColors.inkMuted,
                           ),
                         ),
+                        if (price != null)
+                          Text(
+                            '$price في الشهر',
+                            key: ValueKey<String>('price-${plan.name}'),
+                            style: ZadType.labelLarge.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: plan.accent,
+                            ),
+                          ),
                       ],
                     ),
                   ),

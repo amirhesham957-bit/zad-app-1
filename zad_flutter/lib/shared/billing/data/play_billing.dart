@@ -145,6 +145,23 @@ class PlayBilling {
     }
   }
 
+  /// Play's own price for each of [ids], formatted in the phone's store
+  /// currency («US$13.99», «EGP 699.99»); empty when Play cannot say. The
+  /// screen shows only what Play will charge — never a price of its own.
+  static Future<Map<String, String>> prices(Set<String> ids) async {
+    try {
+      final store = InAppPurchase.instance;
+      if (!await store.isAvailable()) return const <String, String>{};
+      final found = await store.queryProductDetails(ids);
+      return <String, String>{
+        for (final d in found.productDetails) d.id: d.price,
+      };
+    } on Object catch (e) {
+      debugPrint('[billing] prices failed: $e');
+      return const <String, String>{};
+    }
+  }
+
   /// Starts buying [productId].
   Future<BillingOutcome> buy(
     String productId, {
