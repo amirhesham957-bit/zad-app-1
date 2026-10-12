@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rive/rive.dart' as rive;
+import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/mascot/domain/mascot_contract.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/application/orb_occasion_controller.dart';
@@ -133,6 +134,7 @@ class _RiveMascotState extends ConsumerState<_RiveMascot> {
     state: widget.state,
     occasion: ref.watch<OrbOccasion>(orbOccasionProvider),
     accessory: ref.watch(orbAccessoryProvider),
+    look: ref.watch(companionLookProvider),
   );
 
   void _onLoaded(rive.RiveLoaded loaded) {
@@ -198,6 +200,8 @@ class _ViewModelSink implements MascotSink {
       <String, rive.ViewModelInstanceNumber?>{};
   final Map<String, rive.ViewModelInstanceColor?> _colors =
       <String, rive.ViewModelInstanceColor?>{};
+  final Map<String, rive.ViewModelInstanceBoolean?> _bools =
+      <String, rive.ViewModelInstanceBoolean?>{};
   final Map<String, rive.ViewModelInstanceTrigger?> _triggers =
       <String, rive.ViewModelInstanceTrigger?>{};
 
@@ -220,6 +224,14 @@ class _ViewModelSink implements MascotSink {
   @override
   bool setColor(String name, Color value) {
     final p = _colors.putIfAbsent(name, () => _vmi?.color(name));
+    if (p == null) return false;
+    p.value = value;
+    return true;
+  }
+
+  @override
+  bool setBool(String name, {required bool value}) {
+    final p = _bools.putIfAbsent(name, () => _vmi?.boolean(name));
     if (p == null) return false;
     p.value = value;
     return true;

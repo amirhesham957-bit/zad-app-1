@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/domain/orb_accessory.dart';
 import 'package:zad/shared/orb/domain/orb_occasion.dart';
@@ -56,6 +57,40 @@ abstract final class MascotContract {
 
   /// Trigger: blink twice now.
   static const String blink = 'blink';
+
+  /// Enum property: which رفيق زاد character ([personas]).
+  static const String persona = 'persona';
+
+  /// Number property: its stage, 0 (بذرة) to 4 (حكيم).
+  static const String stage = 'stage';
+
+  /// Enum property: what it wears ([outfits]).
+  static const String outfit = 'outfit';
+
+  /// Boolean property: asleep (away two days or more, until greeted).
+  static const String asleep = 'asleep';
+
+  /// The `persona` enum's values — `zad_companion_items` ids.
+  static const List<String> personas = <String>[
+    'zado',
+    'basbous',
+    'fella',
+    'felfool',
+    'mishmish',
+    'toota',
+    'fanoos',
+    'maamoul',
+  ];
+
+  /// The `outfit` enum's values.
+  static const List<String> outfits = <String>[
+    'none',
+    'sunglasses',
+    'winter_hat',
+    'chef_hat',
+    'shemagh',
+    'grad_cap',
+  ];
 
   /// The `mood` enum's values, in the order the spec lists them.
   static const List<String> moods = <String>[
@@ -114,6 +149,10 @@ class MascotInputs {
     required this.accessory,
     this.primary,
     this.secondary,
+    this.persona = 'zado',
+    this.stage = 3,
+    this.outfit = 'none',
+    this.asleep = false,
   });
 
   /// From the orb's own inputs, so the mascot and the orb never disagree.
@@ -121,12 +160,17 @@ class MascotInputs {
     required CompanionState state,
     required OrbOccasion occasion,
     required OrbAccessory accessory,
+    CompanionLook? look,
   }) => MascotInputs(
     mood: moodValue(state),
     occasion: occasionValue(occasion.look),
     accessory: accessoryValue(accessory),
     primary: occasion.primary,
     secondary: occasion.secondary,
+    persona: look?.persona.id ?? 'zado',
+    stage: (look?.stage ?? CompanionStage.companion).index.toDouble(),
+    outfit: look?.outfit.id ?? 'none',
+    asleep: look?.asleep ?? false,
   );
 
   /// `mood`.
@@ -144,6 +188,18 @@ class MascotInputs {
   /// `secondary`; left as the file has it when null.
   final Color? secondary;
 
+  /// `persona`.
+  final String persona;
+
+  /// `stage`, 0..4.
+  final double stage;
+
+  /// `outfit`.
+  final String outfit;
+
+  /// `asleep`.
+  final bool asleep;
+
   @override
   bool operator ==(Object other) =>
       other is MascotInputs &&
@@ -151,11 +207,24 @@ class MascotInputs {
       other.occasion == occasion &&
       other.accessory == accessory &&
       other.primary == primary &&
-      other.secondary == secondary;
+      other.secondary == secondary &&
+      other.persona == persona &&
+      other.stage == stage &&
+      other.outfit == outfit &&
+      other.asleep == asleep;
 
   @override
-  int get hashCode =>
-      Object.hash(mood, occasion, accessory, primary, secondary);
+  int get hashCode => Object.hash(
+    mood,
+    occasion,
+    accessory,
+    primary,
+    secondary,
+    persona,
+    stage,
+    outfit,
+    asleep,
+  );
 }
 
 /// Where the inputs go: the bound View Model in the app, a recorder in
@@ -171,6 +240,9 @@ abstract interface class MascotSink {
 
   /// Sets colour property [name]; false when missing.
   bool setColor(String name, Color value);
+
+  /// Sets boolean property [name]; false when missing.
+  bool setBool(String name, {required bool value});
 
   /// Fires trigger [name]; false when missing.
   bool fire(String name);
@@ -214,6 +286,30 @@ class MascotBinder {
       _check(
         MascotContract.accessory,
         _sink.setEnum(MascotContract.accessory, inputs.accessory),
+      );
+    }
+    if (last?.persona != inputs.persona) {
+      _check(
+        MascotContract.persona,
+        _sink.setEnum(MascotContract.persona, inputs.persona),
+      );
+    }
+    if (last?.stage != inputs.stage) {
+      _check(
+        MascotContract.stage,
+        _sink.setNumber(MascotContract.stage, inputs.stage),
+      );
+    }
+    if (last?.outfit != inputs.outfit) {
+      _check(
+        MascotContract.outfit,
+        _sink.setEnum(MascotContract.outfit, inputs.outfit),
+      );
+    }
+    if (last?.asleep != inputs.asleep) {
+      _check(
+        MascotContract.asleep,
+        _sink.setBool(MascotContract.asleep, value: inputs.asleep),
       );
     }
     if (inputs.primary case final c? when last?.primary != c) {

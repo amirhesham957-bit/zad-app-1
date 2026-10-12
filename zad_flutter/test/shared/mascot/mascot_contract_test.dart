@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/mascot/domain/mascot_contract.dart';
 import 'package:zad/shared/mascot/presentation/zad_mascot.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
@@ -50,6 +51,10 @@ class _Recorder implements MascotSink {
       _record('$name=${value.toARGB32().toRadixString(16)}', name);
 
   @override
+  bool setBool(String name, {required bool value}) =>
+      _record('$name=$value', name);
+
+  @override
   bool fire(String name) => _record('$name!', name);
 }
 
@@ -86,7 +91,17 @@ void main() {
     );
     expect(spec['tap'], '${MascotContract.tap} : trigger');
     expect(spec['blink'], '${MascotContract.blink} : trigger');
-    expect(spec.length, 12, reason: 'a name in the spec the code lacks');
+    expect(
+      spec['persona'],
+      '${MascotContract.persona} : enum = ${enumOf(MascotContract.personas)}',
+    );
+    expect(spec['stage'], '${MascotContract.stage} : number');
+    expect(
+      spec['outfit'],
+      '${MascotContract.outfit} : enum = ${enumOf(MascotContract.outfits)}',
+    );
+    expect(spec['asleep'], '${MascotContract.asleep} : boolean');
+    expect(spec.length, 16, reason: 'a name in the spec the code lacks');
   });
 
   test('every mood, look and accessory the app has is a value in the file', () {
@@ -104,6 +119,40 @@ void main() {
     expect(
       OrbAccessory.values.map(accessoryValue).toList(),
       MascotContract.accessories,
+    );
+    expect(
+      CompanionPersona.values.map((p) => p.id).toList(),
+      MascotContract.personas,
+    );
+    expect(
+      CompanionOutfit.values.map((o) => o.id).toList(),
+      MascotContract.outfits,
+    );
+  });
+
+  test('the companion reaches the file: who, how grown, what worn, asleep', () {
+    final sink = _Recorder();
+    MascotBinder(sink).apply(
+      MascotInputs.from(
+        state: CompanionState.idle,
+        occasion: OrbOccasion.none,
+        accessory: OrbAccessory.none,
+        look: const CompanionLook(
+          persona: CompanionPersona.toota,
+          stage: CompanionStage.sage,
+          outfit: CompanionOutfit.gradCap,
+          asleep: true,
+        ),
+      ),
+    );
+    expect(
+      sink.calls,
+      containsAll(<String>[
+        'persona=toota',
+        'stage=4.0',
+        'outfit=grad_cap',
+        'asleep=true',
+      ]),
     );
   });
 
@@ -133,6 +182,10 @@ void main() {
         'mood=thinking',
         'occasion=scarf',
         'accessory=crown',
+        'persona=zado',
+        'stage=3.0',
+        'outfit=none',
+        'asleep=false',
         'primary=ff006c35',
         'secondary=ffffffff',
       ]);
