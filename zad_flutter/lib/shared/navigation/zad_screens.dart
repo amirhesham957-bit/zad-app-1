@@ -152,6 +152,10 @@ abstract final class ZadScreens {
   /// The notification center.
   static late OpenScreen showNotificationCenter;
 
+  // ── companion
+  /// «استوديو الرفيق».
+  static late OpenScreen showCompanionStudio;
+
   // ── orb
   /// «زيّن زاد».
   static late OpenScreen showOrbPicker;

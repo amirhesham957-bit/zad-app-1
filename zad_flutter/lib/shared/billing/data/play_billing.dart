@@ -1,4 +1,6 @@
-/// Google Play Billing for زاد's plans.
+/// Google Play Billing for زاد's plans, and for رفيق زاد's wardrobe
+/// (one-time products `zad_pet_*`: a character, an outfit, a background, or
+/// a pack of seeds — the packs are consumables, bought again and again).
 ///
 /// The purchase happens in Play; the plan is granted by the server
 /// (`verify-purchase`), which asks Google whether the token is a real, paid,
@@ -24,6 +26,22 @@ abstract final class ZadPlayProducts {
 
   /// Ultra → pro.
   static const String ultra = 'zad_sub_ultra_monthly';
+
+  /// رفيق زاد's seed packs, consumable.
+  static const List<String> seedPacks = <String>[
+    'zad_pet_seeds_500',
+    'zad_pet_seeds_2000',
+    'zad_pet_seeds_6000',
+  ];
+
+  /// Every character at once.
+  static const String allCharacters = 'zad_pet_all';
+
+  /// The Play product for wardrobe item [id] (`zad_companion_items`).
+  static String companionItem(String id) => switch (id) {
+    'night' || 'garden' || 'kitchen' || 'stars' || 'shilla' => 'zad_pet_bg_$id',
+    _ => 'zad_pet_$id',
+  };
 }
 
 /// How a purchase attempt ended, in words the paywall shows.
@@ -104,10 +122,11 @@ class PlayBilling {
         if (p.pendingCompletePurchase) {
           await InAppPurchase.instance.completePurchase(p);
         }
+        final pet = data['kind'] == 'companion';
         _results.add((
           granted: true,
           tier: data['tier'] as String?,
-          message: 'اتفعّلت باقتك 🎉',
+          message: pet ? 'اتضاف لدولاب الرفيق 🎉' : 'اتفعّلت باقتك 🎉',
         ));
       } else {
         _results.add((
@@ -126,19 +145,39 @@ class PlayBilling {
     }
   }
 
+  /// Play's own price for each of [ids], formatted in the phone's store
+  /// currency («US$13.99», «EGP 699.99»); empty when Play cannot say. The
+  /// screen shows only what Play will charge — never a price of its own.
+  static Future<Map<String, String>> prices(Set<String> ids) async {
+    try {
+      final store = InAppPurchase.instance;
+      if (!await store.isAvailable()) return const <String, String>{};
+      final found = await store.queryProductDetails(ids);
+      return <String, String>{
+        for (final d in found.productDetails) d.id: d.price,
+      };
+    } on Object catch (e) {
+      debugPrint('[billing] prices failed: $e');
+      return const <String, String>{};
+    }
+  }
+
   /// Starts buying [productId].
-  Future<BillingOutcome> buy(String productId) async {
+  Future<BillingOutcome> buy(
+    String productId, {
+    bool consumable = false,
+  }) async {
     try {
       final store = InAppPurchase.instance;
       if (!await store.isAvailable()) return BillingOutcome.unavailable;
       _listen();
       final found = await store.queryProductDetails(<String>{productId});
       if (found.productDetails.isEmpty) return BillingOutcome.notOnPlay;
-      final started = await store.buyNonConsumable(
-        purchaseParam: PurchaseParam(
-          productDetails: found.productDetails.first,
-        ),
-      );
+      final param = PurchaseParam(productDetails: found.productDetails.first);
+      // A seed pack is consumed once granted, so it can be bought again.
+      final started = consumable
+          ? await store.buyConsumable(purchaseParam: param)
+          : await store.buyNonConsumable(purchaseParam: param);
       return started ? BillingOutcome.started : BillingOutcome.failed;
     } on Object catch (e) {
       debugPrint('[billing] buy failed: $e');

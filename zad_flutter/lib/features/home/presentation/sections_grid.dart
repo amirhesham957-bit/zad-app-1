@@ -192,6 +192,13 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.slate,
     open: ZadScreens.showDocumentsScreen,
   ),
+  ZadSection(
+    id: 'companion',
+    icon: Icons.pets_rounded,
+    label: 'رفيق زاد',
+    accent: ZadSectionAccent.amber,
+    open: ZadScreens.showCompanionStudio,
+  ),
   const ZadSection(
     id: 'assistant',
     icon: Icons.psychology,

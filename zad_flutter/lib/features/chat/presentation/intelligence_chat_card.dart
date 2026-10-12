@@ -23,6 +23,7 @@ import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
+import 'package:zad/shared/mascot/presentation/zad_mascot.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
@@ -245,7 +246,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(top: 12),
-          child: CompanionOrb(state: mood, size: 64),
+          child: ZadMascot(state: mood, size: 64),
         ),
         if (messages.isNotEmpty)
           Padding(

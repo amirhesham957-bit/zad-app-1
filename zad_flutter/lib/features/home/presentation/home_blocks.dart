@@ -19,7 +19,11 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/domain/companion_status.dart';
+import 'package:zad/shared/companion/presentation/companion_moments.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
@@ -134,14 +138,25 @@ class HomeCompanionHeader extends ConsumerWidget {
     // the orb; without one the row is exactly as it was.
     final campaign = ref.watch(homeCampaignProvider)?.campaign;
     const radius = BorderRadius.all(Radius.circular(20));
-    final orb = CompanionOrb(
-      state: ref.watch(companionMoodProvider),
-      size: 56,
-      onTap: () {
-        playPetSound(PetSound.happyChirp);
-        onOpenVoice();
-      },
+    // رفيق زاد: a long press opens its studio; its moments (a level, an
+    // evolution, waking up after days away, «+10 ⭐») play over the orb.
+    final orb = CompanionMoments(
+      child: GestureDetector(
+        onLongPress: () {
+          playPetSound(PetSound.meowChirp);
+          unawaited(ZadScreens.showCompanionStudio(context));
+        },
+        child: CompanionOrb(
+          state: ref.watch(companionMoodProvider),
+          size: 56,
+          onTap: () {
+            playPetSound(PetSound.happyChirp);
+            onOpenVoice();
+          },
+        ),
+      ),
     );
+    final companion = ref.watch(companionProvider).value;
     return Material(
       color: ZadColors.surface,
       shape: RoundedRectangleBorder(
@@ -219,6 +234,25 @@ class HomeCompanionHeader extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    if (companion != null)
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () =>
+                            unawaited(ZadScreens.showCompanionStudio(context)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            _companionLine(companion),
+                            key: const ValueKey<String>('home-companion-line'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.labelMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: ZadColors.mustardOchre,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -245,6 +279,11 @@ class HomeCompanionHeader extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _companionLine(CompanionStatus c) {
+  final streak = c.streak > 0 ? ' · 🔥 ${c.streak}' : '';
+  return '${c.persona.name} · لفل ${c.level}$streak · 🌱 ${c.seeds}';
 }
 
 // ── recent transactions ──────────────────────────────────────────────────────

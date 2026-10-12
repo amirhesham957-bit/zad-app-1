@@ -21,6 +21,7 @@ import 'package:zad/features/brain_family/presentation/brain_family_screen.dart'
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
+import 'package:zad/features/companion/presentation/companion_studio_screen.dart';
 import 'package:zad/features/debts/presentation/debts_tab.dart';
 import 'package:zad/features/documents/presentation/documents_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
@@ -110,6 +111,7 @@ void wireScreens() {
           );
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
+  ZadScreens.showCompanionStudio = showCompanionStudio;
   ZadScreens.showOrbPicker = showOrbPicker;
   ZadScreens.showPaywallScreen = showPaywallScreen;
   ZadScreens.showAddMedicineSheet = showAddMedicineSheet;

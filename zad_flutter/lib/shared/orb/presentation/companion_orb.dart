@@ -6,6 +6,11 @@
 /// accessory — same layers, same numbers. On an occasion it also wears the
 /// season's look (`orb_occasion.dart`): a lantern, balloons or a scarf.
 ///
+/// With a companion (رفيق زاد, `companion_catalog.dart`) it is that
+/// character: its colours under the mood's, its build, its crest, its stage
+/// (a shell, then hands, feet, an aura, a gold halo), its outfit, and its
+/// sleep. Without one — signed out, offline, tests — it is the classic orb.
+///
 /// One ticker drives every loop and only the painter listens to it, so a
 /// running orb repaints its own layer each frame and rebuilds nothing.
 library;
@@ -22,6 +27,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/application/orb_occasion_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -40,6 +47,12 @@ const Color _heartYellow = Color(0xFFFFF176);
 const Color _lanternGlass = Color(0xFFFFE08A);
 const Color _lanternGlow = Color(0x80FFB300);
 const Color _string = Color(0x99485A6B);
+const Color _shell = Color(0xFFFFF4E2);
+const Color _shellEdge = Color(0xFFE8D6B8);
+const Color _leaf = Color(0xFF45BF68);
+const Color _leafDeep = Color(0xFF2E8B4A);
+const Color _ink = Color(0xFF14181F);
+const Color _sleepBlue = Color(0xFF8FA2FF);
 
 /// The orb.
 class CompanionOrb extends ConsumerStatefulWidget {
@@ -48,6 +61,7 @@ class CompanionOrb extends ConsumerStatefulWidget {
     this.state = CompanionState.happy,
     this.accessory,
     this.occasion,
+    this.look,
     this.size = 96,
     this.animated = true,
     this.blinkTrigger = 0,
@@ -65,6 +79,10 @@ class CompanionOrb extends ConsumerStatefulWidget {
 
   /// The season's look; null reads today's occasion.
   final OrbOccasion? occasion;
+
+  /// The companion to draw; null reads the customer's own, and with none at
+  /// all the orb is the classic one.
+  final CompanionLook? look;
 
   /// The box it is drawn in.
   final double size;
@@ -302,11 +320,14 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
     final accessory = widget.accessory ?? saved;
     final occasion =
         widget.occasion ?? ref.watch<OrbOccasion>(orbOccasionProvider);
+    final look = widget.look ?? ref.watch(companionLookProvider);
+    _asleep = look?.asleep ?? false;
     final painter = _OrbPainter(
       frame: this,
       state: widget.state,
       accessory: accessory,
       occasion: occasion,
+      look: look,
       animated: widget.animated,
       repaint: Listenable.merge(<Listenable?>[
         _elapsed,
@@ -321,7 +342,14 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
       child: CustomPaint(size: Size.square(widget.size), painter: painter),
     );
     if (widget.animated) {
-      orb = Semantics(label: widget.state.description, child: orb);
+      orb = Semantics(
+        label: look == null
+            ? widget.state.description
+            : look.asleep
+            ? '${look.persona.name} نايم'
+            : '${look.persona.name}: ${widget.state.description}',
+        child: orb,
+      );
     }
     if (widget.onTap == null) return orb;
     return GestureDetector(
@@ -333,12 +361,20 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
 
   // ── what the painter reads each frame ──
 
+  bool _asleep = false;
+
   double get _ms => _elapsed.value.inMicroseconds / 1000;
 
-  /// 0.98 → 1.05, 2600ms each way, FastOutSlowIn.
-  double get breath => widget.animated
-      ? 0.98 + 0.07 * _pingPong(_ms, 2600, Curves.fastOutSlowIn)
-      : 1;
+  /// 0.98 → 1.05, 2600ms each way, FastOutSlowIn — 4400ms and shallower
+  /// asleep.
+  double get breath => !widget.animated
+      ? 1
+      : _asleep
+      ? 0.985 + 0.045 * _pingPong(_ms, 4400, Curves.easeInOut)
+      : 0.98 + 0.07 * _pingPong(_ms, 2600, Curves.fastOutSlowIn);
+
+  /// Seconds since the orb started, for loops of their own (the Zs).
+  double get seconds => _ms / 1000;
 
   /// 0 → 2π every 6000ms, linear.
   double get blobPhase =>
@@ -381,6 +417,7 @@ class _OrbPainter extends CustomPainter {
     required this.state,
     required this.accessory,
     required this.occasion,
+    required this.look,
     required this.animated,
     required Listenable repaint,
   }) : super(repaint: repaint);
@@ -389,6 +426,7 @@ class _OrbPainter extends CustomPainter {
   final CompanionState state;
   final OrbAccessory accessory;
   final OrbOccasion occasion;
+  final CompanionLook? look;
   final bool animated;
 
   static Shader _radial(List<Color> colors, Offset center, double radius) =>
@@ -397,14 +435,28 @@ class _OrbPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sky = frame.sky;
-    final deep = frame.deep;
+    final look = this.look;
+    final persona = look?.persona;
+    final asleep = look?.asleep ?? false;
+    // A character keeps its own colour; the mood tints it, so a mood still
+    // reads at a glance. Asleep, everything dims toward the night.
+    var sky = persona == null
+        ? frame.sky
+        : Color.lerp(persona.body, frame.sky, 0.12)!;
+    var deep = persona == null
+        ? frame.deep
+        : Color.lerp(persona.deep, frame.deep, 0.12)!;
+    if (asleep) {
+      sky = Color.lerp(sky, const Color(0xFF7C86B8), 0.25)!;
+      deep = Color.lerp(deep, const Color(0xFF2B2F55), 0.25)!;
+    }
     final level = frame.level;
     final phase = frame.blobPhase;
     final glow = frame.glow;
+    final stage = look?.stage;
 
     final canvasCenter = size.center(Offset.zero);
-    final baseRadius = size.shortestSide / 2 * 0.62;
+    final baseRadius = size.shortestSide / 2 * 0.62 * (stage?.scale ?? 1);
     final radius = baseRadius * frame.breath * (1 + 0.08 * level);
 
     final lift = switch (state) {
@@ -415,8 +467,12 @@ class _OrbPainter extends CustomPainter {
       _ => 0.0,
     };
     final center = canvasCenter + Offset(frame.shake * radius * 0.07, lift);
-    final squashX = 1 + (state == CompanionState.speaking ? 0.05 * level : 0.0);
-    final squashY = 1 - (state == CompanionState.speaking ? 0.04 * level : 0.0);
+    final squashX =
+        (1 + (state == CompanionState.speaking ? 0.05 * level : 0.0)) *
+        (persona?.width ?? 1);
+    final squashY =
+        (1 - (state == CompanionState.speaking ? 0.04 * level : 0.0)) *
+        (persona?.height ?? 1);
 
     // 1. Ground shadow — thinner as the body lifts.
     final shadowW = radius * 1.35 * (1 + lift / (radius * 2));
@@ -454,10 +510,31 @@ class _OrbPainter extends CustomPainter {
         ),
     );
 
+    // 2b. رفيق and حكيم: a second, slower light in the character's colour.
+    if (stage != null && stage.index >= CompanionStage.companion.index) {
+      final aura = radius * (1.7 + 0.08 * math.sin(phase));
+      canvas.drawCircle(
+        center,
+        aura,
+        Paint()
+          ..shader = _radial(
+            <Color>[
+              (persona?.body ?? sky).withValues(alpha: 0.22),
+              (persona?.body ?? sky).withValues(alpha: 0),
+            ],
+            center,
+            aura,
+          ),
+      );
+    }
+
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.scale(squashX, squashY);
     canvas.translate(-center.dx, -center.dy);
+
+    // 2c. Hands from بُرعم, feet from صغيّر — behind the body.
+    if (stage != null) _limbs(canvas, center, radius, phase, stage, deep);
 
     // 3. Body, lit from the top-left.
     canvas.drawCircle(
@@ -512,7 +589,29 @@ class _OrbPainter extends CustomPainter {
           ),
       );
     }
+    // 5b. فانوس glows from inside.
+    if (persona?.glows ?? false) {
+      canvas.drawCircle(
+        center + Offset(0, radius * 0.2),
+        radius * 0.8,
+        Paint()
+          ..shader = _radial(
+            <Color>[
+              const Color(0xFFFFD27A).withValues(alpha: 0.45),
+              Colors.transparent,
+            ],
+            center + Offset(0, radius * 0.2),
+            radius * 0.8,
+          ),
+      );
+    }
     canvas.restore();
+
+    // 5c. مشمش is fluffy: a soft rim of fuzz.
+    if (persona?.crest == PersonaCrest.leaf) _fuzz(canvas, center, radius, sky);
+
+    // 5d. بذرة: still half in its shell.
+    if (stage == CompanionStage.seed) _eggShell(canvas, center, radius);
 
     // 6. Glass sheen, an oval tilted -32°.
     final spec = center - Offset(radius * 0.40, radius * 0.46);
@@ -556,15 +655,40 @@ class _OrbPainter extends CustomPainter {
         ).createShader(Rect.fromCircle(center: center, radius: radius)),
     );
 
-    // 8. Eyes.
-    _eyes(canvas, center, radius, frame.eyeOpen, level, phase);
+    // 8. Eyes — shut and smiling asleep, bigger in the shell.
+    if (asleep) {
+      _sleepingEyes(canvas, center, radius);
+    } else {
+      _eyes(
+        canvas,
+        center,
+        radius * (stage == CompanionStage.seed ? 1.15 : 1),
+        frame.eyeOpen,
+        level,
+        phase,
+      );
+    }
+
+    // 8a. The character's crest, unless a hat covers the head.
+    if (persona != null && !look!.outfit.coversHead) {
+      _crest(canvas, center, radius, phase, persona.crest);
+    }
 
     // 8b. Accessory, inside the squash so it bounces with the body.
     _accessory(canvas, center, radius);
 
+    // 8b2. What the companion wears.
+    if (look != null) _outfit(canvas, center, radius, phase, look.outfit);
+
     // 8c. The season's look, also inside the squash.
     _occasionLook(canvas, center, radius, phase);
     canvas.restore();
+
+    // 8d. حكيم: a gold halo above, three stars circling slowly.
+    if (stage == CompanionStage.sage) _sageHalo(canvas, center, radius, phase);
+
+    // 8e. Asleep: Zs drifting up and away.
+    if (asleep && animated) _zs(canvas, center, radius, frame.seconds);
 
     // 9. Celebration: four gold sparkles circling.
     if (state == CompanionState.celebrating) {
@@ -995,10 +1119,544 @@ class _OrbPainter extends CustomPainter {
     }
   }
 
+  // ── the companion's layers ──
+
+  void _limbs(
+    Canvas canvas,
+    Offset c,
+    double r,
+    double phase,
+    CompanionStage stage,
+    Color deep,
+  ) {
+    if (stage == CompanionStage.seed) return;
+    final paint = Paint()..color = Color.lerp(deep, Colors.white, 0.18)!;
+    final cheer =
+        state == CompanionState.happy || state == CompanionState.celebrating;
+    // Hands: a slow sway, a wave when happy.
+    for (final side in <double>[-1, 1]) {
+      final swing = cheer
+          ? 0.5 + 0.35 * math.sin(phase * 4 + (side > 0 ? 0 : math.pi))
+          : 0.15 * math.sin(phase + side);
+      canvas
+        ..save()
+        ..translate(c.dx + side * r * 0.86, c.dy + r * 0.08)
+        ..rotate(-side * (0.9 + swing))
+        ..drawOval(
+          Rect.fromCenter(
+            center: Offset(0, r * 0.24),
+            width: r * 0.28,
+            height: r * 0.46,
+          ),
+          paint,
+        )
+        ..restore();
+    }
+    if (stage.index < CompanionStage.little.index) return;
+    // Feet.
+    for (final side in <double>[-1, 1]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: c + Offset(side * r * 0.4, r * 0.93),
+          width: r * 0.42,
+          height: r * 0.24,
+        ),
+        paint,
+      );
+    }
+  }
+
+  void _eggShell(Canvas canvas, Offset c, double r) {
+    // The lower shell, its rim broken into a zigzag.
+    final top = c.dy + r * 0.18;
+    final rect = Rect.fromCircle(center: c, radius: r * 1.06);
+    const teeth = 9;
+    final rim = Path()..moveTo(c.dx - r * 1.05, top);
+    for (var i = 1; i <= teeth * 2; i++) {
+      final x = c.dx - r * 1.05 + i * (r * 2.1) / (teeth * 2);
+      rim.lineTo(x, i.isOdd ? top - r * 0.14 : top);
+    }
+    final shell = Path()
+      ..addPath(rim, Offset.zero)
+      ..lineTo(c.dx + r * 1.06, c.dy + r * 1.1)
+      ..lineTo(c.dx - r * 1.06, c.dy + r * 1.1)
+      ..close();
+    canvas
+      ..save()
+      ..clipPath(Path()..addOval(rect))
+      ..drawPath(
+        shell,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[_shell, _shellEdge],
+          ).createShader(rect),
+      )
+      ..drawPath(
+        rim,
+        Paint()
+          ..color = _shellEdge
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.03,
+      )
+      ..restore();
+  }
+
+  void _fuzz(Canvas canvas, Offset c, double r, Color sky) {
+    final paint = Paint()..color = Color.lerp(sky, Colors.white, 0.3)!;
+    for (var i = 0; i < 28; i++) {
+      final a = i / 28 * 2 * math.pi;
+      canvas.drawCircle(
+        c + Offset(math.cos(a) * r * 0.98, math.sin(a) * r * 0.98),
+        r * (i.isEven ? 0.07 : 0.05),
+        paint,
+      );
+    }
+  }
+
+  void _sleepingEyes(Canvas canvas, Offset c, double r) {
+    final y = c.dy - r * 0.02;
+    for (final side in <double>[-1, 1]) {
+      final x = c.dx + side * r * 0.36;
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - r * 0.15, y)
+          ..quadraticBezierTo(x, y + r * 0.12, x + r * 0.15, y),
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.07
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  void _zs(Canvas canvas, Offset c, double r, double seconds) {
+    for (var i = 0; i < 3; i++) {
+      final t = (seconds / 2.4 + i / 3) % 1;
+      final at = c + Offset(r * (0.7 + 0.35 * t), -r * (0.6 + 0.9 * t));
+      final s = r * (0.16 + 0.12 * t);
+      final p = Paint()
+        ..color = _sleepBlue.withValues(alpha: (1 - t) * 0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * 0.05
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      canvas.drawPath(
+        Path()
+          ..moveTo(at.dx - s / 2, at.dy - s / 2)
+          ..lineTo(at.dx + s / 2, at.dy - s / 2)
+          ..lineTo(at.dx - s / 2, at.dy + s / 2)
+          ..lineTo(at.dx + s / 2, at.dy + s / 2),
+        p,
+      );
+    }
+  }
+
+  void _sageHalo(Canvas canvas, Offset c, double r, double phase) {
+    final haloCenter = c - Offset(0, r * 1.22 + r * 0.04 * math.sin(phase));
+    canvas.drawOval(
+      Rect.fromCenter(center: haloCenter, width: r * 0.95, height: r * 0.26),
+      Paint()
+        ..color = _crownGold
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * 0.07,
+    );
+    for (var i = 0; i < 3; i++) {
+      final a = phase * 0.7 + i * 2 * math.pi / 3;
+      _sparkle(
+        canvas,
+        c + Offset(math.cos(a) * r * 1.45, math.sin(a) * r * 0.55 - r * 0.2),
+        r * 0.1,
+        _crownGold,
+      );
+    }
+  }
+
+  void _crest(
+    Canvas canvas,
+    Offset c,
+    double r,
+    double phase,
+    PersonaCrest crest,
+  ) {
+    final top = Offset(c.dx, c.dy - r * 0.97);
+    final sway = 0.12 * math.sin(phase);
+    switch (crest) {
+      case PersonaCrest.sprout:
+      case PersonaCrest.leaf:
+        canvas
+          ..save()
+          ..translate(top.dx, top.dy)
+          ..rotate(sway)
+          ..drawLine(
+            Offset.zero,
+            Offset(0, -r * 0.22),
+            Paint()
+              ..color = _leafDeep
+              ..strokeWidth = r * 0.06
+              ..strokeCap = StrokeCap.round,
+          );
+        final sides = crest == PersonaCrest.sprout
+            ? const <double>[-1, 1]
+            : const <double>[1];
+        for (final side in sides) {
+          canvas
+            ..save()
+            ..translate(side * r * 0.15, -r * 0.24)
+            ..rotate(side * 0.45)
+            ..drawOval(
+              Rect.fromCenter(
+                center: Offset.zero,
+                width: r * 0.34,
+                height: r * 0.14,
+              ),
+              Paint()..color = _leaf,
+            )
+            ..restore();
+        }
+        canvas.restore();
+      case PersonaCrest.syrup:
+        // A glossy syrup top with pistachio crumbs.
+        final cap = Path()
+          ..addArc(
+            Rect.fromCircle(center: c, radius: r * 1.01),
+            math.pi * 1.12,
+            math.pi * 0.76,
+          );
+        canvas.drawPath(
+          cap,
+          Paint()
+            ..color = const Color(0xFFC77D1A).withValues(alpha: 0.9)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = r * 0.12
+            ..strokeCap = StrokeCap.round,
+        );
+        for (var i = 0; i < 5; i++) {
+          final a = math.pi * (1.22 + i * 0.14);
+          canvas.drawCircle(
+            c + Offset(math.cos(a) * r * 0.9, math.sin(a) * r * 0.9),
+            r * 0.045,
+            Paint()..color = const Color(0xFF7CB342),
+          );
+        }
+      case PersonaCrest.jasmine:
+        final f = c + Offset(-r * 0.58, -r * 0.74);
+        for (var i = 0; i < 5; i++) {
+          final a = (i * 72 - 90) * math.pi / 180 + sway;
+          canvas.drawOval(
+            Rect.fromCenter(
+              center:
+                  f + Offset(math.cos(a) * r * 0.12, math.sin(a) * r * 0.12),
+              width: r * 0.17,
+              height: r * 0.17,
+            ),
+            Paint()..color = Colors.white,
+          );
+        }
+        canvas.drawCircle(f, r * 0.07, Paint()..color = _flowerCenter);
+      case PersonaCrest.pepper:
+        canvas
+          ..save()
+          ..translate(top.dx, top.dy + r * 0.04)
+          ..rotate(sway)
+          ..drawOval(
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: r * 0.42,
+              height: r * 0.13,
+            ),
+            Paint()..color = _leafDeep,
+          )
+          ..drawPath(
+            Path()
+              ..moveTo(0, 0)
+              ..quadraticBezierTo(r * 0.02, -r * 0.24, r * 0.18, -r * 0.26),
+            Paint()
+              ..color = _leaf
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = r * 0.07
+              ..strokeCap = StrokeCap.round,
+          )
+          ..restore();
+      case PersonaCrest.beret:
+        canvas
+          ..save()
+          ..translate(top.dx + r * 0.12, top.dy + r * 0.02)
+          ..rotate(-0.22)
+          ..drawOval(
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: r * 1.0,
+              height: r * 0.3,
+            ),
+            Paint()..color = const Color(0xFF2A1C4D),
+          )
+          ..drawCircle(
+            Offset(-r * 0.02, -r * 0.16),
+            r * 0.05,
+            Paint()..color = const Color(0xFF2A1C4D),
+          )
+          ..restore();
+      case PersonaCrest.crescent:
+        final at = top - Offset(0, r * 0.32 + r * 0.04 * math.sin(phase));
+        final moon = Path()
+          ..addOval(Rect.fromCircle(center: at, radius: r * 0.17));
+        final bite = Path()
+          ..addOval(
+            Rect.fromCircle(
+              center: at + Offset(r * 0.08, -r * 0.04),
+              radius: r * 0.15,
+            ),
+          );
+        canvas.drawPath(
+          Path.combine(PathOperation.difference, moon, bite),
+          Paint()..color = _crownGold,
+        );
+      case PersonaCrest.sugar:
+        canvas
+          ..save()
+          ..clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r)))
+          ..drawRect(
+            Rect.fromLTRB(c.dx - r, c.dy - r, c.dx + r, c.dy - r * 0.55),
+            Paint()..color = Colors.white.withValues(alpha: 0.85),
+          );
+        for (var i = 0; i < 9; i++) {
+          canvas.drawCircle(
+            Offset(
+              c.dx - r * 0.7 + i * r * 0.18,
+              c.dy - r * 0.55 + (i.isEven ? r * 0.04 : r * 0.08),
+            ),
+            r * 0.05,
+            Paint()..color = Colors.white.withValues(alpha: 0.85),
+          );
+        }
+        canvas.restore();
+    }
+  }
+
+  void _outfit(
+    Canvas canvas,
+    Offset c,
+    double r,
+    double phase,
+    CompanionOutfit outfit,
+  ) {
+    switch (outfit) {
+      case CompanionOutfit.none:
+        return;
+      case CompanionOutfit.sunglasses:
+        final y = c.dy - r * 0.06;
+        final lens = Paint()..color = _ink;
+        for (final side in <double>[-1, 1]) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                center: Offset(c.dx + side * r * 0.36, y),
+                width: r * 0.42,
+                height: r * 0.3,
+              ),
+              Radius.circular(r * 0.12),
+            ),
+            lens,
+          );
+        }
+        canvas
+          ..drawLine(
+            Offset(c.dx - r * 0.15, y - r * 0.05),
+            Offset(c.dx + r * 0.15, y - r * 0.05),
+            Paint()
+              ..color = _ink
+              ..strokeWidth = r * 0.05,
+          )
+          ..drawLine(
+            Offset(c.dx - r * 0.46, y - r * 0.08),
+            Offset(c.dx - r * 0.34, y - r * 0.02),
+            Paint()
+              ..color = Colors.white.withValues(alpha: 0.5)
+              ..strokeWidth = r * 0.035,
+          );
+      case CompanionOutfit.winterHat:
+        final rect = Rect.fromCircle(center: c, radius: r * 1.03);
+        canvas
+          ..drawArc(
+            rect,
+            math.pi * 1.08,
+            math.pi * 0.84,
+            false,
+            Paint()..color = const Color(0xFFE86B6B),
+          )
+          ..drawPath(
+            Path()
+              ..addArc(rect, math.pi * 1.08, math.pi * 0.84)
+              ..close(),
+            Paint()..color = const Color(0xFFE86B6B),
+          )
+          ..drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                center: Offset(c.dx, c.dy - r * 0.62),
+                width: r * 1.62,
+                height: r * 0.22,
+              ),
+              Radius.circular(r * 0.11),
+            ),
+            Paint()..color = const Color(0xFFC94F4F),
+          )
+          ..drawCircle(
+            Offset(c.dx, c.dy - r * 1.08 + r * 0.03 * math.sin(phase * 2)),
+            r * 0.16,
+            Paint()..color = Colors.white,
+          );
+      case CompanionOutfit.chefHat:
+        final white = Paint()..color = Colors.white;
+        final base = c.dy - r * 0.78;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset(c.dx, base),
+              width: r * 0.92,
+              height: r * 0.24,
+            ),
+            Radius.circular(r * 0.05),
+          ),
+          white,
+        );
+        for (final dx in <double>[-0.28, 0, 0.28]) {
+          canvas.drawCircle(
+            Offset(c.dx + dx * r, base - r * (dx == 0 ? 0.36 : 0.26)),
+            r * 0.26,
+            white,
+          );
+        }
+        canvas.drawLine(
+          Offset(c.dx - r * 0.42, base + r * 0.04),
+          Offset(c.dx + r * 0.42, base + r * 0.04),
+          Paint()
+            ..color = const Color(0xFFE0E0E0)
+            ..strokeWidth = r * 0.03,
+        );
+      case CompanionOutfit.shemagh:
+        final cloth = Path()
+          ..moveTo(c.dx - r * 1.08, c.dy + r * 0.1)
+          ..quadraticBezierTo(
+            c.dx - r * 1.1,
+            c.dy - r * 1.25,
+            c.dx,
+            c.dy - r * 1.12,
+          )
+          ..quadraticBezierTo(
+            c.dx + r * 1.1,
+            c.dy - r * 1.25,
+            c.dx + r * 1.08,
+            c.dy + r * 0.1,
+          )
+          ..lineTo(c.dx + r * 0.86, c.dy - r * 0.5)
+          ..quadraticBezierTo(
+            c.dx,
+            c.dy - r * 0.78,
+            c.dx - r * 0.86,
+            c.dy - r * 0.5,
+          )
+          ..close();
+        canvas.drawPath(cloth, Paint()..color = const Color(0xFFFBF8F2));
+        canvas
+          ..save()
+          ..clipPath(cloth);
+        final red = Paint()
+          ..color = const Color(0xFFC8102E).withValues(alpha: 0.55)
+          ..strokeWidth = r * 0.025;
+        for (var i = -6; i <= 6; i += 2) {
+          canvas
+            ..drawLine(
+              Offset(c.dx + i * r * 0.18, c.dy - r * 1.3),
+              Offset(c.dx + i * r * 0.18 + r * 0.6, c.dy + r * 0.2),
+              red,
+            )
+            ..drawLine(
+              Offset(c.dx + i * r * 0.18, c.dy - r * 1.3),
+              Offset(c.dx + i * r * 0.18 - r * 0.6, c.dy + r * 0.2),
+              red,
+            );
+        }
+        canvas.restore();
+        final agal = Paint()
+          ..color = _ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = r * 0.07;
+        canvas.drawArc(
+          Rect.fromCenter(
+            center: Offset(c.dx, c.dy - r * 0.84),
+            width: r * 1.5,
+            height: r * 0.36,
+          ),
+          math.pi,
+          math.pi,
+          false,
+          agal,
+        );
+      case CompanionOutfit.gradCap:
+        final cap = Paint()..color = const Color(0xFF15171C);
+        final y = c.dy - r * 0.92;
+        canvas
+          ..drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                center: Offset(c.dx, y + r * 0.1),
+                width: r * 0.86,
+                height: r * 0.26,
+              ),
+              Radius.circular(r * 0.06),
+            ),
+            cap,
+          )
+          ..drawPath(
+            Path()
+              ..moveTo(c.dx - r * 0.8, y - r * 0.04)
+              ..lineTo(c.dx, y - r * 0.3)
+              ..lineTo(c.dx + r * 0.8, y - r * 0.04)
+              ..lineTo(c.dx, y + r * 0.2)
+              ..close(),
+            cap,
+          );
+        final swing = 0.15 * math.sin(phase * 2);
+        canvas
+          ..save()
+          ..translate(c.dx + r * 0.62, y - r * 0.02)
+          ..rotate(swing)
+          ..drawLine(
+            Offset.zero,
+            Offset(0, r * 0.4),
+            Paint()
+              ..color = _crownGold
+              ..strokeWidth = r * 0.03,
+          )
+          ..drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromCenter(
+                center: Offset(0, r * 0.44),
+                width: r * 0.08,
+                height: r * 0.14,
+              ),
+              Radius.circular(r * 0.03),
+            ),
+            Paint()..color = _crownGold,
+          )
+          ..restore()
+          ..drawCircle(
+            Offset(c.dx, y - r * 0.05),
+            r * 0.04,
+            Paint()..color = _crownGold,
+          );
+    }
+  }
+
   @override
   bool shouldRepaint(_OrbPainter old) =>
       old.state != state ||
       old.accessory != accessory ||
       old.occasion != occasion ||
+      old.look != look ||
       old.animated != animated;
 }

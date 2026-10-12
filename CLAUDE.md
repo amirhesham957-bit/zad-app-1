@@ -266,6 +266,10 @@ already knowing where things stand instead of re-deriving it from commit history
   (not merged; merging deploys), waves 3–4 are what is left, with the owner's decisions,
   what waits on him, and the working routine. The plan itself is the owner's doc
   «خطة سد فجوات زاد» (link in §١٥).
+- `docs/agent/ZAD_COMPANION.md` — **رفيق زاد and the prices (2026-10-12)**: the XP / seeds /
+  attempts split, the server rules (ledger, caps, mercy, one Google order → one account),
+  the Play Console product list at $8.99 / $13.99 / $18.99, and what is left. Read it before
+  touching the companion, the wardrobe, or any price.
 - `docs/agent/ZAD_SUPER_AGENT.md` — the "Zad as a whole-life agent" round (2026-09-28/29):
   street alerts (geofences), Google Places, habit vs budget, «اتشاف هنا», «لمين؟», the wake
   greeting — what shipped per commit, the **measured** weak points (0 FCM tokens, thin data,
