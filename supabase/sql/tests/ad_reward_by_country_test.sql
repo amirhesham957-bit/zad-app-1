@@ -65,6 +65,14 @@ select pg_temp.check(10, (select (v->>'reward')::int from g where who = 'SA' and
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000f1","role":"authenticated"}', false);
 select pg_temp.check(11, zad_ad_reward_grant('00000000-0000-0000-0000-0000000000e1')->>'reason' = 'forbidden');
 
+-- 12. A child in a family is never granted an ad reward.
+insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000c1') on conflict do nothing;
+insert into family_groups (id) values ('00000000-0000-0000-0000-0000000000ff');
+insert into family_members (family_id, user_id, role) values ('00000000-0000-0000-0000-0000000000ff', '00000000-0000-0000-0000-0000000000c1', 'child');
+select set_config('request.jwt.claims', '{"role":"service_role"}', false);
+select pg_temp.check(12, zad_ad_reward_grant('00000000-0000-0000-0000-0000000000c1')->>'reason' = 'kids_no_ads'
+  and not exists (select 1 from zad_ad_grants where user_id = '00000000-0000-0000-0000-0000000000c1'));
+
 \set QUIET 0
 select n, ok, note from results order by n;
 do $$ declare bad int; total int; begin

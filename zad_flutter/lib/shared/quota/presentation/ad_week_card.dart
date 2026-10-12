@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/quota/data/ad_week_remote.dart';
 
@@ -39,7 +40,11 @@ class _AdWeekCardState extends ConsumerState<AdWeekCard> {
 
   @override
   Widget build(BuildContext context) {
-    final week = ref.watch(adWeekProvider).value;
+    // The message is about ads: it goes wherever ads go (never in kids
+    // mode).
+    final week = ref.watch(adsAllowedProvider)
+        ? ref.watch(adWeekProvider).value
+        : null;
     return AnimatedSize(
       duration: ZadDuration.enter,
       curve: ZadCurves.standard,

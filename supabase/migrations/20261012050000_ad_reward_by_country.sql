@@ -9,6 +9,8 @@
 -- اليوم بيفتح «الصندوق» بزيادة. ٣ إعلانات = ٣×المكافأة + الصندوق، من غير ما سقف اليوم (١٠)
 -- ولا الفاصل (٦٠ ث) يتغيروا — دول حماية من AdMob نفسه.
 --
+-- وحساب الطفل في العيلة مايتمنحش مكافأة إعلان خالص (وضع الأطفال = صفر إعلانات).
+--
 -- الأرقام في جدول عشان تتظبط بعد أسبوعين بأرقام AdMob الحقيقية من غير نشر: update سطر.
 -- 'default' لأي بلد مش مكتوب.
 
@@ -65,6 +67,12 @@ begin
   uid := coalesce(auth.uid(), p_user);
   if uid is null then
     return jsonb_build_object('granted', false, 'reason', 'no user');
+  end if;
+
+  -- وضع الأطفال: صفر إعلانات (سياسة العائلات في جوجل بلاي). حساب طفل في عيلة مايتمنحش
+  -- مكافأة إعلان أبداً، حتى لو تطبيق قديم أو معدّل عرض إعلان.
+  if exists (select 1 from public.family_members where user_id = uid and role = 'child') then
+    return jsonb_build_object('granted', false, 'reason', 'kids_no_ads');
   end if;
 
   if exists (

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/quota/data/ad_week_remote.dart';
 import 'package:zad/shared/quota/presentation/ad_week_card.dart';
@@ -18,11 +19,18 @@ class _Remote implements AdWeekRemote {
   Future<void> seen() async => seenCalls++;
 }
 
-Future<_Remote> _pump(WidgetTester tester, AdWeek? week) async {
+Future<_Remote> _pump(
+  WidgetTester tester,
+  AdWeek? week, {
+  bool adsAllowed = true,
+}) async {
   final remote = _Remote(week);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [adWeekRemoteProvider.overrideWithValue(remote)],
+      overrides: [
+        adWeekRemoteProvider.overrideWithValue(remote),
+        adsAllowedProvider.overrideWithValue(adsAllowed),
+      ],
       child: const MaterialApp(home: Scaffold(body: AdWeekCard())),
     ),
   );
@@ -76,5 +84,14 @@ void main() {
     expect(find.byType(FilledButton), findsNothing);
     await _pump(tester, null);
     expect(find.byType(FilledButton), findsNothing);
+  });
+
+  testWidgets('kids mode (no ads): the message never shows', (tester) async {
+    await _pump(
+      tester,
+      const AdWeek(show: true, ads: 15, minutes: 8),
+      adsAllowed: false,
+    );
+    expect(find.text('شفت 15 إعلان الأسبوع ده'), findsNothing);
   });
 }
