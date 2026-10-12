@@ -21,6 +21,7 @@ import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCa
 import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
 import { RECEIPT_SYSTEM_PROMPT } from "./receiptPrompt.ts";
 import { inventoryPrompt, medicinePrompt } from "./visionPrompts.ts";
+import { meterFor, openGate, scanCameBackEmpty } from "./meter.ts";
 
 /**
  * بلد العميل لبرومبتات الرؤية (visionPrompts.ts): بس لو user_id هو صاحب التوكن (نفس حراسة PERSONAL_ACTIONS)، أو النداء
@@ -1435,7 +1436,49 @@ async function logged<T>(
   }
 }
 
+// العدّاد قدام كل أكشن (meter.ts): حد العميل، وخصم المسح، وإرجاعه لو المسح رجع فاضي.
 Deno.serve(async (req: Request) => {
+  if (req.method !== "POST") return handle(req);
+  let action: unknown;
+  try {
+    action = (await req.clone().json())?.action;
+  } catch {
+    return handle(req);
+  }
+  const meter = meterFor(action);
+  if (!meter) return handle(req);
+  const token = bearerToken(req);
+  // العقل وبوت تليجرام بمفتاح الخدمة — ليهم بواباتهم، ومايتعدّوش هنا.
+  if (isServiceRoleToken(token, supabaseKey)) return handle(req);
+  const userId = tokenSubject(token);
+  if (!userId) {
+    // مفتاح anon (اللي جوه الـAPK) من غير حساب: مفيش رصيد يتخصم منه، فالمسح والصوت مقفولين.
+    return meter.kind ? jsonResponse({ error: "unauthorized" }, 401) : handle(req);
+  }
+  const gate = await openGate(async (fn, args) => {
+    const { data, error } = await supabase.rpc(fn, args);
+    return { data, error };
+  }, userId, meter);
+  if (gate.refusal) return jsonResponse(gate.refusal.body, gate.refusal.status);
+  const res = await handle(req);
+  if (gate.charged) {
+    let empty = res.status >= 400;
+    if (!empty && gate.charged === "scan") {
+      try {
+        empty = scanCameBackEmpty(action as string, await res.clone().json());
+      } catch {
+        empty = true;
+      }
+    }
+    if (empty) {
+      const { error } = await supabase.rpc("zad_entitlement_refund", { p_user: userId, p_kind: gate.charged });
+      if (error) console.error("[meter] refund failed:", error.message);
+    }
+  }
+  return res;
+});
+
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
@@ -2800,4 +2843,4 @@ Deno.serve(async (req: Request) => {
     console.error("[CoreIntel] Error: " + (e as Error).message);
     return jsonResponse({ error: (e as Error).message }, 500);
   }
-});
+}

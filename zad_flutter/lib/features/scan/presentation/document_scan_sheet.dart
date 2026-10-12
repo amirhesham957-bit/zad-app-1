@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/document_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_document.dart';
 
@@ -62,6 +63,8 @@ class DocumentScanSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(documentScanControllerProvider);
     final isPrescription = kind == DocumentKind.prescription;
+    // The balance or the pace, said as the server said it (meter.ts).
+    final refusal = serverRefusal(view.error);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -79,9 +82,10 @@ class DocumentScanSheet extends ConsumerWidget {
           ),
           ScanStage.failed => _Retry(
             kind: kind,
-            title: 'مقدرتش أكمّل',
-            message: 'النت أو السيرفر — جرب تاني كمان شوية.',
-            tone: ZadEmptyTone.problem,
+            title: refusal?.title ?? 'مقدرتش أكمّل',
+            message:
+                refusal?.message ?? 'النت أو السيرفر — جرب تاني كمان شوية.',
+            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
           ),
           ScanStage.ready when isPrescription => _PrescriptionReview(
             view: view,
