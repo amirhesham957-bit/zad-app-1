@@ -161,6 +161,11 @@ flutter:
     - assets/lottie/
     # The achievement badges — drawn by tool/make_badge_lottie.py.
     - assets/lottie/badges/
+    # Zad's mascot: the designer's Rive file goes here as zad_mascot.riv —
+    # nothing else to change. Until then it holds only an empty .gitkeep
+    # (bundled as a 0-byte asset), and ZadMascot draws the orb.
+    # Contract: lib/shared/mascot/domain/mascot_contract.dart.
+    - assets/rive/
     # Cairo for the monthly report PDF only — built by tool/make_pdf_font.py;
     # see features/intelligence/data/monthly_report_pdf.dart for why.
     - assets/fonts/cairo_pdf.ttf

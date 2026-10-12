@@ -24,9 +24,9 @@ import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
+import 'package:zad/shared/mascot/presentation/zad_mascot.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
-import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 import 'package:zad/shared/voice/application/zad_voice.dart';
 
@@ -264,7 +264,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  CompanionOrb(
+                  ZadMascot(
                     state: ref.watch(companionMoodProvider),
                     size: 144,
                     audioLevel: levels,
