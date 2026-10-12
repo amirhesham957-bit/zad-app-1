@@ -40,8 +40,10 @@ import 'package:zad/features/transactions/presentation/transactions_screen.dart'
 import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
+import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
+import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -49,6 +51,7 @@ import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
+import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
 import 'package:zad/shared/sync/live_sync.dart';
@@ -102,6 +105,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     // over a drawn screen, not a blank one.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      _startBilling();
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
       if (mounted) await alerts.askOnce();
@@ -156,9 +160,39 @@ class _ZadShellState extends ConsumerState<ZadShell> {
         // open app kept the medicine, its doses today and its local reminders
         // until a restart. One read of the table, no model call.
         unawaited(ref.read(pharmacyControllerProvider.notifier).refresh());
+        // A cash payment can clear while the app is in the background.
+        try {
+          unawaited(ref.read(playBillingProvider).restore());
+        } on Object {
+          // No Supabase client (a test): no billing.
+        }
       },
     );
   }
+
+  /// Google Play: finishes the purchases an earlier session left unfinished
+  /// (play_billing.dart), says so, and refreshes the balance after any grant
+  /// — the paywall's own purchases included.
+  void _startBilling() {
+    try {
+      final billing = ref.read(playBillingProvider);
+      _billed = billing.results.listen((r) {
+        if (!r.granted || !mounted) return;
+        ref.invalidate(attemptsBalanceProvider);
+        unawaited(ref.read(companionProvider.notifier).refresh());
+        if (r.earlier) {
+          ScaffoldMessenger.maybeOf(context)
+              ?.showSnackBar(SnackBar(content: Text(r.message)));
+        }
+      });
+      unawaited(billing.start());
+    } on Object catch (e) {
+      // No Supabase client (a test): no billing.
+      debugPrint('[billing] not started: $e');
+    }
+  }
+
+  StreamSubscription<BillingResult>? _billed;
 
   late final AppLifecycleListener _lifecycle;
   LiveSync? _live;
@@ -166,6 +200,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   @override
   void dispose() {
     unawaited(_live?.stop());
+    unawaited(_billed?.cancel());
     _lifecycle.dispose();
     super.dispose();
   }

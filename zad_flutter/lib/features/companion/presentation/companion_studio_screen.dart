@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -59,7 +58,6 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   int _glow = 0;
   String? _busy;
   Timer? _moodReset;
-  PlayBilling? _billing;
   StreamSubscription<BillingResult>? _billed;
 
   @override
@@ -72,15 +70,15 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   void dispose() {
     _moodReset?.cancel();
     unawaited(_billed?.cancel());
-    unawaited(_billing?.dispose());
     super.dispose();
   }
 
   /// Google Play: a character, an outfit, a background, a seed pack, or every
   /// character at once. The server grants it once Google confirms.
-  Future<void> _pay(String product, {bool consumable = false}) async {
-    final billing = _billing ??= PlayBilling(ref.read(supabaseClientProvider));
-    _billed ??= billing.results.listen((r) {
+  Future<void> _pay(String product) async {
+    final billing = ref.read(playBillingProvider);
+    // Purchases finished from an earlier session are the shell's to announce.
+    _billed ??= billing.results.where((r) => !r.earlier).listen((r) {
       if (!mounted) return;
       _say(r.message);
       if (r.granted) {
@@ -88,7 +86,7 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
         unawaited(ref.read(companionProvider.notifier).refresh());
       }
     });
-    final outcome = await billing.buy(product, consumable: consumable);
+    final outcome = await billing.buy(product);
     if (!mounted) return;
     switch (outcome) {
       case BillingOutcome.started:
@@ -1062,7 +1060,7 @@ const String _seedsLine =
 class _SeedShop extends StatelessWidget {
   const new({required this.onPay});
 
-  final Future<void> Function(String product, {bool consumable}) onPay;
+  final Future<void> Function(String product) onPay;
 
   @override
   Widget build(BuildContext context) {
@@ -1098,7 +1096,7 @@ class _SeedShop extends StatelessWidget {
                         minimumSize: const Size.fromHeight(56),
                         padding: EdgeInsets.zero,
                       ),
-                      onPressed: () => onPay(id, consumable: true),
+                      onPressed: () => onPay(id),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[

@@ -20,7 +20,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
-import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -90,7 +89,6 @@ class PaywallScreen extends ConsumerStatefulWidget {
 class _PaywallState extends ConsumerState<PaywallScreen>
     with TickerProviderStateMixin {
   _Plan _selected = _Plan.plus;
-  PlayBilling? _billing;
   StreamSubscription<BillingResult>? _results;
   bool _buying = false;
 
@@ -104,7 +102,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
   }
 
   Future<void> _loadPrices() async {
-    final prices = await PlayBilling.prices(<String>{
+    final prices = await ref.read(playBillingProvider).prices(<String>{
       ZadPlayProducts.basic,
       ZadPlayProducts.plus,
       ZadPlayProducts.ultra,
@@ -147,7 +145,6 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     _pulse.dispose();
     _drift.dispose();
     unawaited(_results?.cancel());
-    unawaited(_billing?.dispose());
     super.dispose();
   }
 
@@ -164,8 +161,9 @@ class _PaywallState extends ConsumerState<PaywallScreen>
   Future<void> _subscribe() async {
     if (_buying) return;
     setState(() => _buying = true);
-    final billing = _billing ??= PlayBilling(ref.read(supabaseClientProvider));
-    _results ??= billing.results.listen((r) {
+    final billing = ref.read(playBillingProvider);
+    // Purchases finished from an earlier session are the shell's to announce.
+    _results ??= billing.results.where((r) => !r.earlier).listen((r) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(r.message)));
