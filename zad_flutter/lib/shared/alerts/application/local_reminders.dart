@@ -27,6 +27,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -42,6 +43,27 @@ const String _doseIdsKey = 'reminder_dose_ids';
 const String _seasonKeyPrefix = 'reminder_season_';
 const String _documentIdsKey = 'reminder_document_ids';
 const int _tasbihId = 0x7A000001;
+const String _companionChannel = 'zad_companion_nap';
+const int _napFirstId = 0x7A000002;
+const int _napSecondId = 0x7A000003;
+
+/// When رفيق زاد calls a customer who has been away: two days after the last
+/// open, and again two days after that — once a day at most, and never at
+/// night (a time before 09:00 or after 21:00 moves to 19:00). Every open
+/// reschedules both, so they only ring for someone really away.
+List<tz.TZDateTime> companionNapTimes(tz.TZDateTime lastOpen) {
+  tz.TZDateTime daytime(tz.TZDateTime t) {
+    if (t.hour >= 9 && t.hour < 21) return t;
+    final evening = tz.TZDateTime(t.location, t.year, t.month, t.day, 19);
+    // After 21:00 that day's 19:00 has passed: the next day's.
+    return t.hour >= 21 ? evening.add(const Duration(days: 1)) : evening;
+  }
+
+  return <tz.TZDateTime>[
+    daytime(lastOpen.add(const Duration(hours: 48))),
+    daytime(lastOpen.add(const Duration(hours: 96))),
+  ];
+}
 
 int _stableId(String key) {
   // Stable across launches (String.hashCode is not): a 31-bit FNV-1a.
@@ -107,6 +129,9 @@ class LocalReminders {
       const AndroidNotificationChannel(_tasbihChannel, 'زاد — تذكير التسبيح'),
     );
     await android.createNotificationChannel(
+      const AndroidNotificationChannel(_companionChannel, 'رفيق زاد'),
+    );
+    await android.createNotificationChannel(
       const AndroidNotificationChannel(
         _seasonChannel,
         'زاد — المناسبات القادمة',
@@ -161,6 +186,7 @@ class LocalReminders {
       await syncTasbih();
       await syncSeasons();
       await syncDocuments();
+      await syncCompanionNap();
     } on Object catch (e) {
       debugPrint('local reminders resync failed: $e');
     }
@@ -216,6 +242,41 @@ class LocalReminders {
       await _plugin.cancel(id: stale);
     }
     await device.put(_doseIdsKey, jsonEncode(scheduled.toList()));
+  }
+
+  /// «زادو نام مستنيك»: rescheduled on every open, so it rings only after two
+  /// days (and four) away. Off with «رفيق زاد يناديني لو غبت» in settings.
+  Future<void> syncCompanionNap() async {
+    await _plugin.cancel(id: _napFirstId);
+    await _plugin.cancel(id: _napSecondId);
+    if (!_ref
+        .read(alertPrefsProvider)
+        .isEnabledUnlessOff(AlertPrefs.companionNap)) {
+      return;
+    }
+    final name = _ref.read(companionProvider).value?.persona.name ?? 'زادو';
+    final times = companionNapTimes(tz.TZDateTime.now(_zone));
+    final texts = <(String, String)>[
+      (
+        '😴 $name نام مستنيك',
+        'بقالك يومين مش هنا — ارجع صحّيه، ومعاه بذور هدية رجوعك 🌱',
+      ),
+      (
+        '$name لسه نايم…',
+        'سجّل مصروف واحد بس وهيصحى فرحان، والسلسلة تبدأ من جديد 🔥',
+      ),
+    ];
+    for (var i = 0; i < times.length; i++) {
+      await _plugin.zonedSchedule(
+        id: i == 0 ? _napFirstId : _napSecondId,
+        title: texts[i].$1,
+        body: texts[i].$2,
+        scheduledDate: times[i],
+        notificationDetails: _details(_companionChannel, 'رفيق زاد'),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payloadFor(AlertDestination.home),
+      );
+    }
   }
 
   /// The next 17:00 — today's only if the member has not said tasbih today.

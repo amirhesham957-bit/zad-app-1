@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/companion/domain/companion_status.dart';
@@ -53,7 +54,11 @@ class _CompanionMomentsState extends ConsumerState<CompanionMoments> {
   void initState() {
     super.initState();
     _life = AppLifecycleListener(
-      onResume: () => unawaited(ref.read(companionProvider.notifier).refresh()),
+      onResume: () {
+        unawaited(ref.read(companionProvider.notifier).refresh());
+        // Back in the app: «نام مستنيك» moves two days on again.
+        unawaited(ref.read(localRemindersProvider).syncCompanionNap());
+      },
     );
     ref.listenManual<AsyncValue<CompanionStatus?>>(
       companionProvider,

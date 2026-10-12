@@ -28,6 +28,9 @@ class AlertPrefs {
   /// «تذكير التسبيح».
   static const String tasbihReminder = 'alert_tasbih_reminder';
 
+  /// «رفيق زاد يناديني لو غبت» — on unless turned off.
+  static const String companionNap = 'alert_companion_nap';
+
   /// «النطق الصوتي للإشعارات والجرعات».
   static const String voiceSpokenAlerts = 'alert_voice_spoken_alerts';
 
