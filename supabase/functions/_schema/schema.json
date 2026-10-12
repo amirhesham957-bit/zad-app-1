@@ -2,7 +2,7 @@
   "_meta": {
     "generated_at": "2026-09-01",
     "generated_from": "mcp__supabase__generate_typescript_types على المشروع الحي auuftqncrjsnyylolhbu",
-    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم. | 2026-09-29: zad_pharmacy_items.for_person و zad_appointments.for_person (20260929130000). | 2026-09-29: zad_customer_profile.cares_for (20260928190000). | 2026-09-30: zad_support_tickets أضيف يدويًا مع ميجريشن 20260930120000 (نفس الكوميت). | 2026-10-01: zad_family_shares أضيف يدويًا مع ميجريشن 20261001130000 (نفس الكوميت). | 2026-10-03: zad_memory.valid_from/valid_until/superseded_by و zad_memory_entities و zad_memory_mentions أضيفوا يدويًا مع ميجريشن 20261003100000 (نفس الكوميت). | 2026-10-03: zad_family_zones و zad_family_zone_events أضيفوا يدويًا مع ميجريشن 20261003110000 (نفس الكوميت). | 2026-10-03: zad_family_chat_consent أضيف يدويًا مع ميجريشن 20261003120000 (نفس الكوميت). | 2026-10-03: zad_users.memory_consolidated_at أضيف يدويًا مع ميجريشن 20261003130000 (نفس الكوميت). | 2026-10-03: zad_users.travel_country/travel_since أضيفوا يدويًا مع ميجريشن 20261003140000 (نفس الكوميت). | 2026-10-04: zad_customer_profile.zad_voice أضيف يدويًا مع ميجريشن 20261004090000 (نفس كومِت اختيار الصوت، اتنقل لرقم جديد عشان 20261003130000 بقى بتاع التأمل الليلي). | 2026-10-04: family_chores.completed_at/completed_by/reward_paid/reward_paid_to أضيفوا من information_schema الحي (كانوا موجودين واللقطة ناقصاهم؛ أسبوع الأولاد بيقرا completed_at). | 2026-10-04: zad_school_timetable أضيف يدويًا مع ميجريشن 20261004110000 (نفس الكوميت). | 2026-10-04: app_campaigns أضيف يدويًا مع ميجريشن 20261004120000 (نفس الكوميت). | 2026-10-05: app_campaigns.event_name أضيف يدويًا مع ميجريشن 20261005100000 (نفس الكوميت). | 2026-10-05: family_financial_challenges.season_key/badge أضيفوا يدويًا مع ميجريشن 20261005110000 (نفس الكوميت). | 2026-10-05: zad_documents أضيف يدويًا مع ميجريشن 20261005153017 (نفس الكوميت). | 2026-10-05: app_campaigns.story_slides أضيف يدويًا مع ميجريشن 20261005160000 (نفس الكوميت). | 2026-10-05: zad_insights.expires_at أضيف يدويًا مع ميجريشن 20261005190000 (نفس الكوميت). | 2026-10-05: family_groups.purchase_pause_hours أضيف يدويًا مع ميجريشن 20261005231147 (نفس الكوميت). | 2026-10-05: zad_users.sleep_bed/sleep_wake/sleep_nights/sleep_source/sleep_updated_at أضيفوا يدويًا مع ميجريشن 20261005231523 (نفس الكوميت). | 2026-10-05 (المراجعة الشاملة): اتشالت ٩ جداول مش موجودة على الحي (brain_notes, edges, nodes, note_links, price_alerts, shared_grocery_items, user_alert_snooze, workflows, zad_orphaned_rows) — العقد كان بيعدّي كود بيقرا جداول مالهاش وجود؛ واتضاف zad_family_join_attempts وzad_pharmacy_restocks وfamily_groups.created_by وprice_index.client_report_id من information_schema الحي. | 2026-10-06: zad_trusted_technicians أضيف يدويًا مع ميجريشن 20261006014219 (نفس الكوميت). | 2026-10-11: zad_shopping_list.family_id أضيف يدويًا مع ميجريشن 20261011140000 (نفس الكوميت). | 2026-10-11: telegram_pending_writes.merchant_name/source_type أضيفوا يدويًا مع ميجريشن 20261011170000 (نفس الكوميت). | 2026-10-11: zad_product_pairs أضيف يدويًا مع ميجريشن 20261011200000 (نفس الكوميت). | 2026-10-11: zad_brain_health_alerts.kind أضيف (موجود على الحي من 20260913000000 واللقطة كانت ناقصاه). | 2026-10-11: zad_guardian_outcomes أضيف يدويًا مع ميجريشن 20261011230000 (نفس الكوميت). | 2026-10-11: zad_guardian_proposals أضيف يدويًا مع ميجريشن 20261011240000 (نفس الكوميت). | 2026-10-11: zad_web_prices أضيف يدويًا مع ميجريشن 20261011270000 (نفس الكوميت). | 2026-10-11: zad_insights.seen_at أضيف يدويًا مع ميجريشن 20261011293145 (نفس الكوميت). | 2026-10-12: zad_companion و zad_companion_items و zad_companion_ledger و zad_companion_owned و zad_companion_referrals أضيفوا يدويًا مع ميجريشن 20261012030000 (نفس الكوميت).",
+    "note": "استبدل لقطة 2026-08-31 (76 جدول، manual information_schema query) — دي مولّدة من generate_typescript_types الرسمي، 84 جدول، وفيها أعمدة zad_obligations.provider/total_installments/remaining_installments و zad_transactions.linked_obligation_id (ميجريشن 20260901090000) اللي كانت ناقصة من اللقطة القديمة. | 2026-09-14: zad_voice_moments أضيف يدويًا مع ميجريشن 20260914003000 (نفس الكوميت). | 2026-09-27: market_snapshot و currency_rates اتشالوا يدويًا — ميجريشن 20260905120000 مسحتهم، واللقطة كانت لسه شايلاهم فاختبار العقد ماكانش بيمسك إن zad-brain لسه بيقرا منهم. | 2026-09-29: zad_pharmacy_items.for_person و zad_appointments.for_person (20260929130000). | 2026-09-29: zad_customer_profile.cares_for (20260928190000). | 2026-09-30: zad_support_tickets أضيف يدويًا مع ميجريشن 20260930120000 (نفس الكوميت). | 2026-10-01: zad_family_shares أضيف يدويًا مع ميجريشن 20261001130000 (نفس الكوميت). | 2026-10-03: zad_memory.valid_from/valid_until/superseded_by و zad_memory_entities و zad_memory_mentions أضيفوا يدويًا مع ميجريشن 20261003100000 (نفس الكوميت). | 2026-10-03: zad_family_zones و zad_family_zone_events أضيفوا يدويًا مع ميجريشن 20261003110000 (نفس الكوميت). | 2026-10-03: zad_family_chat_consent أضيف يدويًا مع ميجريشن 20261003120000 (نفس الكوميت). | 2026-10-03: zad_users.memory_consolidated_at أضيف يدويًا مع ميجريشن 20261003130000 (نفس الكوميت). | 2026-10-03: zad_users.travel_country/travel_since أضيفوا يدويًا مع ميجريشن 20261003140000 (نفس الكوميت). | 2026-10-04: zad_customer_profile.zad_voice أضيف يدويًا مع ميجريشن 20261004090000 (نفس كومِت اختيار الصوت، اتنقل لرقم جديد عشان 20261003130000 بقى بتاع التأمل الليلي). | 2026-10-04: family_chores.completed_at/completed_by/reward_paid/reward_paid_to أضيفوا من information_schema الحي (كانوا موجودين واللقطة ناقصاهم؛ أسبوع الأولاد بيقرا completed_at). | 2026-10-04: zad_school_timetable أضيف يدويًا مع ميجريشن 20261004110000 (نفس الكوميت). | 2026-10-04: app_campaigns أضيف يدويًا مع ميجريشن 20261004120000 (نفس الكوميت). | 2026-10-05: app_campaigns.event_name أضيف يدويًا مع ميجريشن 20261005100000 (نفس الكوميت). | 2026-10-05: family_financial_challenges.season_key/badge أضيفوا يدويًا مع ميجريشن 20261005110000 (نفس الكوميت). | 2026-10-05: zad_documents أضيف يدويًا مع ميجريشن 20261005153017 (نفس الكوميت). | 2026-10-05: app_campaigns.story_slides أضيف يدويًا مع ميجريشن 20261005160000 (نفس الكوميت). | 2026-10-05: zad_insights.expires_at أضيف يدويًا مع ميجريشن 20261005190000 (نفس الكوميت). | 2026-10-05: family_groups.purchase_pause_hours أضيف يدويًا مع ميجريشن 20261005231147 (نفس الكوميت). | 2026-10-05: zad_users.sleep_bed/sleep_wake/sleep_nights/sleep_source/sleep_updated_at أضيفوا يدويًا مع ميجريشن 20261005231523 (نفس الكوميت). | 2026-10-05 (المراجعة الشاملة): اتشالت ٩ جداول مش موجودة على الحي (brain_notes, edges, nodes, note_links, price_alerts, shared_grocery_items, user_alert_snooze, workflows, zad_orphaned_rows) — العقد كان بيعدّي كود بيقرا جداول مالهاش وجود؛ واتضاف zad_family_join_attempts وzad_pharmacy_restocks وfamily_groups.created_by وprice_index.client_report_id من information_schema الحي. | 2026-10-06: zad_trusted_technicians أضيف يدويًا مع ميجريشن 20261006014219 (نفس الكوميت). | 2026-10-11: zad_shopping_list.family_id أضيف يدويًا مع ميجريشن 20261011140000 (نفس الكوميت). | 2026-10-11: telegram_pending_writes.merchant_name/source_type أضيفوا يدويًا مع ميجريشن 20261011170000 (نفس الكوميت). | 2026-10-11: zad_product_pairs أضيف يدويًا مع ميجريشن 20261011200000 (نفس الكوميت). | 2026-10-11: zad_brain_health_alerts.kind أضيف (موجود على الحي من 20260913000000 واللقطة كانت ناقصاه). | 2026-10-11: zad_guardian_outcomes أضيف يدويًا مع ميجريشن 20261011230000 (نفس الكوميت). | 2026-10-11: zad_guardian_proposals أضيف يدويًا مع ميجريشن 20261011240000 (نفس الكوميت). | 2026-10-11: zad_web_prices أضيف يدويًا مع ميجريشن 20261011270000 (نفس الكوميت). | 2026-10-11: zad_insights.seen_at أضيف يدويًا مع ميجريشن 20261011293145 (نفس الكوميت). | 2026-10-12: zad_companion و zad_companion_items و zad_companion_ledger و zad_companion_owned و zad_companion_referrals أضيفوا يدويًا مع ميجريشن 20261012030000 (نفس الكوميت). | 2026-10-12: zad_free_load و zad_turn_gate أضيفوا يدويًا مع ميجريشن 20261012040000 (نفس الكوميت). | 2026-10-12: zad_ad_reward_rates أضيف يدويًا مع ميجريشن 20261012050000 (نفس الكوميت). | 2026-10-12: zad_ad_week_nudge أضيف يدويًا مع ميجريشن 20261012060000 (نفس الكوميت).",
     "regenerate": "شوف supabase/functions/_schema/README.md"
   },
   "affiliate_catalog_requests": [
@@ -464,11 +464,20 @@
     "id",
     "user_id"
   ],
+  "zad_ad_reward_rates": [
+    "box_bonus",
+    "country",
+    "per_ad"
+  ],
   "zad_ad_ssv_receipts": [
     "ad_unit",
     "created_at",
     "reward_amount",
     "transaction_id",
+    "user_id"
+  ],
+  "zad_ad_week_nudge": [
+    "shown_at",
     "user_id"
   ],
   "zad_agent_messages": [
@@ -699,6 +708,10 @@
     "token",
     "updated_at",
     "user_id"
+  ],
+  "zad_free_load": [
+    "day",
+    "turns"
   ],
   "zad_fx_rates": [
     "code",
@@ -1080,6 +1093,12 @@
     "phone",
     "trade",
     "user_id"
+  ],
+  "zad_turn_gate": [
+    "busy_until",
+    "user_id",
+    "window_count",
+    "window_start"
   ],
   "zad_users": [
     "avatar_uri",

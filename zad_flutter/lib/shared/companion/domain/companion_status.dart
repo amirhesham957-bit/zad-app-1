@@ -73,6 +73,32 @@ class CompanionMissions {
   int get done => (logged ? 1 : 0) + (home ? 1 : 0) + (scanned ? 1 : 0);
 }
 
+/// This week's challenge: something logged on five days of seven.
+@immutable
+class CompanionWeek {
+  /// Creates it.
+  const new({required this.days, required this.goal, required this.done});
+
+  /// Reads the server's `week` object; null without one (an older server).
+  static CompanionWeek? fromJson(Object? j) {
+    if (j is! Map) return null;
+    return CompanionWeek(
+      days: _int(j['days'], 0),
+      goal: _int(j['goal'], 5),
+      done: j['done'] == true,
+    );
+  }
+
+  /// Days with something logged so far this week.
+  final int days;
+
+  /// Days it takes.
+  final int goal;
+
+  /// Paid this week.
+  final bool done;
+}
+
 /// The companion as the server holds it.
 @immutable
 class CompanionStatus {
@@ -101,6 +127,7 @@ class CompanionStatus {
     this.celebrate,
     this.welcomeBack = 0,
     this.awayHours = 0,
+    this.week,
   });
 
   /// Reads `zad_companion_status()`.
@@ -143,6 +170,7 @@ class CompanionStatus {
           : CompanionCelebration.fromJson(celebrate),
       welcomeBack: _int(j['welcome_back'], 0),
       awayHours: _int(j['away_hours'], 0),
+      week: CompanionWeek.fromJson(j['week']),
     );
   }
 
@@ -214,6 +242,9 @@ class CompanionStatus {
 
   /// Hours since it was last seen, before this read.
   final int awayHours;
+
+  /// This week's challenge; null from an older server.
+  final CompanionWeek? week;
 
   /// What the orb draws.
   CompanionLook get look =>

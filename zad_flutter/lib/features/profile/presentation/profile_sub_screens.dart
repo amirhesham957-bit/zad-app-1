@@ -704,6 +704,19 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                   unawaited(ref.read(localRemindersProvider).syncTasbih());
                 },
               ),
+              AlertSwitchItem(
+                title: 'رفيق زاد يناديني لو غبت',
+                desc:
+                    'إشعار واحد لو غبت يومين، وواحد كمان بعد يومين — '
+                    'مش أكتر من مرة في اليوم، ومش بالليل',
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.companionNap),
+                onChanged: (v) {
+                  set(AlertPrefs.companionNap, v: v);
+                  unawaited(
+                    ref.read(localRemindersProvider).syncCompanionNap(),
+                  );
+                },
+              ),
               // إيقاع النوم (الشريحة ٣٧): النتيجة بس بتروح للسيرفر.
               AlertSwitchItem(
                 title: 'زاد يتعلّم مواعيد نومي',

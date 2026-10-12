@@ -83,6 +83,7 @@ class CompanionController extends AsyncNotifier<CompanionStatus?> {
           canClaimInvite: s.canClaimInvite,
           nextStageLevel: s.nextStageLevel,
           nextStageDays: s.nextStageDays,
+          week: s.week,
         ),
       );
     }

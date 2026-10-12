@@ -13,9 +13,16 @@
  *
  * الحارة بتتحدد من الأكشن ([laneFor])، مش من هيدر ممكن يتزوّر لصالح حد: أسوأ حاجة ممكن
  * يعملها طلب بأكشن خلفية إنه ينزّل نفسه لحارة أضيق.
+ *
+ * ٢٠٢٦-١٠-١٢ (خطة الدخل، سيطرة الحشد): لفة الشات بتتقسم كمان حسب الباقة، والباقة
+ * بتتقري من zad_entitlements على السيرفر — مش من الطلب:
+ *   * "paid": مفتاح محجوز للمشتركين ([paidReservedCount]) الأول، وبعدين المشترك، وبعدين الخلفية.
+ *   * "free": المشترك والخلفية بس — عمره ما يلمس مفتاح المشتركين.
+ *   * "free_busy": المجاني بعد ما الميزانية اليومية تخلص (freeLane.ts) — جيميناي مقفول
+ *     عليه خالص وبيروح لجروك على طول (callModel)، فالمشتركين مابيتأثروش.
  */
 
-export type Lane = "customer" | "background";
+export type Lane = "customer" | "background" | "paid" | "free" | "free_busy";
 
 /** اللي بيشتغل من غير ما حد مستني الرد. التذكيرات (process_voice_moments) مش منهم: العميل مستنيها. */
 export const BACKGROUND_ACTIONS: ReadonlySet<string> = new Set([
@@ -42,17 +49,43 @@ export function reservedCount(poolSize: number, configured?: string | null): num
 }
 
 /**
- * ترتيب المفاتيح اللي تتجرّب. المفاتيح المحجوزة هي الأخيرة في المسبح. [cursor] بيدوّر
- * البداية جوه كل مجموعة عشان الطلبات المتتالية ماتضربش نفس المفتاح.
+ * كام مفتاح محجوز للمشتركين، من المفاتيح اللي مش محجوزة للخلفية. `ZAD_PAID_KEYS` (رقم)
+ * بيغيّر الافتراضي. الافتراضي: مفتاح واحد لما المسبح ٥ أو أكتر، وصفر غير كده — والمجاني
+ * دايماً بيفضل له مفتاح واحد على الأقل.
  */
-export function keyOrder(lane: Lane, poolSize: number, reserved: number, cursor: number): number[] {
+export function paidReservedCount(poolSize: number, backgroundReserved: number, configured?: string | null): number {
+  const shared = poolSize - backgroundReserved;
+  if (shared < 2) return 0;
+  const asked = configured != null && configured.trim() !== "" ? Number(configured) : NaN;
+  const wanted = Number.isInteger(asked) && asked >= 0 ? asked : poolSize >= 5 ? 1 : 0;
+  return Math.min(wanted, shared - 1);
+}
+
+/**
+ * ترتيب المفاتيح اللي تتجرّب. المسبح متقسم: المشترك [0, shared)، ثم مفاتيح المشتركين
+ * ([paid] مفتاح)، ثم الخلفية ([reserved] مفتاح) في الآخر. [cursor] بيدوّر البداية جوه كل
+ * مجموعة عشان الطلبات المتتالية ماتضربش نفس المفتاح.
+ */
+export function keyOrder(lane: Lane, poolSize: number, reserved: number, cursor: number, paid = 0): number[] {
   const rotate = (from: number, count: number): number[] => {
     if (count <= 0) return [];
     const shift = ((cursor % count) + count) % count;
     return Array.from({ length: count }, (_, i) => from + ((shift + i) % count));
   };
-  const customerKeys = rotate(0, poolSize - reserved);
-  const backgroundKeys = rotate(poolSize - reserved, reserved);
-  if (reserved === 0) return rotate(0, poolSize);
-  return lane === "background" ? backgroundKeys : [...customerKeys, ...backgroundKeys];
+  if (reserved === 0 && paid === 0) return rotate(0, poolSize);
+  const shared = poolSize - reserved - paid;
+  const sharedKeys = rotate(0, shared);
+  const paidKeys = rotate(shared, paid);
+  const backgroundKeys = rotate(shared + paid, reserved);
+  switch (lane) {
+    case "background":
+      return backgroundKeys;
+    case "paid":
+      return [...paidKeys, ...sharedKeys, ...backgroundKeys];
+    case "free":
+    case "free_busy":
+      return [...sharedKeys, ...backgroundKeys];
+    default:
+      return [...sharedKeys, ...paidKeys, ...backgroundKeys];
+  }
 }

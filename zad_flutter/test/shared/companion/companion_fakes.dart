@@ -50,6 +50,7 @@ Map<String, dynamic> statusJson({
   'invites_pending': 2,
   'can_claim_invite': true,
   'celebrate': celebrate,
+  'week': <String, dynamic>{'days': 3, 'goal': 5, 'done': false},
   'welcome_back': welcomeBack,
   'away_hours': awayHours,
 };

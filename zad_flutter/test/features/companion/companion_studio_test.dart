@@ -65,6 +65,8 @@ void main() {
     expect(find.text('🌱 80'), findsOneWidget);
     expect(find.text('1/3'), findsOneWidget);
     expect(find.text('ZAD-7KQ4-M9TX'), findsOneWidget);
+    expect(find.text('تحدي الأسبوع'), findsOneWidget);
+    expect(find.text('سجّل مصروف في 5 أيام من ٧ — فاضلك 2.'), findsOneWidget);
     expect(find.text('مستعجل؟ اشحن بذور'), findsOneWidget);
     expect(find.text(r'أو $1.99'), findsWidgets);
   });
