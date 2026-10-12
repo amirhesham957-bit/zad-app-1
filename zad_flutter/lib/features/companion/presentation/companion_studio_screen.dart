@@ -14,12 +14,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/companion/domain/companion_offers.dart';
@@ -57,6 +59,8 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   int _glow = 0;
   String? _busy;
   Timer? _moodReset;
+  PlayBilling? _billing;
+  StreamSubscription<BillingResult>? _billed;
 
   @override
   void initState() {
@@ -67,7 +71,35 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   @override
   void dispose() {
     _moodReset?.cancel();
+    unawaited(_billed?.cancel());
+    unawaited(_billing?.dispose());
     super.dispose();
+  }
+
+  /// Google Play: a character, an outfit, a background, a seed pack, or every
+  /// character at once. The server grants it once Google confirms.
+  Future<void> _pay(String product, {bool consumable = false}) async {
+    final billing = _billing ??= PlayBilling(ref.read(supabaseClientProvider));
+    _billed ??= billing.results.listen((r) {
+      if (!mounted) return;
+      _say(r.message);
+      if (r.granted) {
+        playPetSound(PetSound.celebrationTrill);
+        unawaited(ref.read(companionProvider.notifier).refresh());
+      }
+    });
+    final outcome = await billing.buy(product, consumable: consumable);
+    if (!mounted) return;
+    switch (outcome) {
+      case BillingOutcome.started:
+        return;
+      case BillingOutcome.unavailable:
+        _say('Google Play مش متاح على الموبايل ده.');
+      case BillingOutcome.notOnPlay:
+        _say('ده لسه مش متاح على Google Play — جرّب بالبذور.');
+      case BillingOutcome.failed:
+        _say('الشراء ماتمّش — جرّب تاني.');
+    }
   }
 
   void _pet(CompanionStatus s) {
@@ -279,9 +311,12 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
                     season: ref.watch(companionSeasonProvider),
                     onWear: _wear,
                     onBuy: _buy,
+                    onPay: (o) => _pay(ZadPlayProducts.companionItem(o.id)),
                   ),
                   if (!kids) ...<Widget>[
                     const SizedBox(height: ZadSpacing.xl),
+                    _SeedShop(onPay: _pay),
+                    const SizedBox(height: ZadSpacing.md),
                     _Invite(status: s, onEnterCode: _enterCode),
                   ],
                   const SizedBox(height: ZadSpacing.xl),
@@ -668,6 +703,7 @@ class _Wardrobe extends StatelessWidget {
     required this.season,
     required this.onWear,
     required this.onBuy,
+    required this.onPay,
   });
 
   final CompanionStatus status;
@@ -677,6 +713,7 @@ class _Wardrobe extends StatelessWidget {
   final String? season;
   final ValueChanged<CompanionOffer> onWear;
   final ValueChanged<CompanionOffer> onBuy;
+  final ValueChanged<CompanionOffer> onPay;
 
   bool _worn(CompanionOffer o) => switch (o.kind) {
     OfferKind.persona => status.persona.id == o.id,
@@ -694,7 +731,7 @@ class _Wardrobe extends StatelessWidget {
         maxCrossAxisExtent: 180,
         mainAxisSpacing: ZadSpacing.md,
         crossAxisSpacing: ZadSpacing.md,
-        mainAxisExtent: 220,
+        mainAxisExtent: 252,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) {
@@ -708,6 +745,7 @@ class _Wardrobe extends StatelessWidget {
           canBuy: canBuy && (o.season == null || o.season == season),
           onWear: () => onWear(o),
           onBuy: () => onBuy(o),
+          onPay: () => onPay(o),
         );
       },
     );
@@ -724,6 +762,7 @@ class _ItemCard extends StatelessWidget {
     required this.canBuy,
     required this.onWear,
     required this.onBuy,
+    required this.onPay,
   });
 
   final CompanionOffer offer;
@@ -734,6 +773,7 @@ class _ItemCard extends StatelessWidget {
   final bool canBuy;
   final VoidCallback onWear;
   final VoidCallback onBuy;
+  final VoidCallback onPay;
 
   @override
   Widget build(BuildContext context) {
@@ -838,6 +878,18 @@ class _ItemCard extends StatelessWidget {
           ),
           const SizedBox(height: ZadSpacing.xs),
           action,
+          if (!owned && !busy && canBuy && o.usdPrice != null)
+            SizedBox(
+              height: 32,
+              child: TextButton(
+                onPressed: onPay,
+                child: Text(
+                  'أو \$${o.usdPrice!.toStringAsFixed(2)}',
+                  textDirection: TextDirection.ltr,
+                  style: ZadType.labelMedium,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1001,3 +1053,80 @@ const String _xpLine =
 const String _seedsLine =
     '🌱 كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، '
     '٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.';
+
+/// Seeds for money, and every character at once — Google Play.
+class _SeedShop extends StatelessWidget {
+  const new({required this.onPay});
+
+  final Future<void> Function(String product, {bool consumable}) onPay;
+
+  @override
+  Widget build(BuildContext context) {
+    const packs = <(String, int, String)>[
+      ('zad_pet_seeds_500', 500, r'$0.99'),
+      ('zad_pet_seeds_2000', 2000, r'$2.99'),
+      ('zad_pet_seeds_6000', 6000, r'$6.99'),
+    ];
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'مستعجل؟ اشحن بذور',
+            style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
+          ),
+          const SizedBox(height: ZadSpacing.md),
+          Row(
+            children: <Widget>[
+              for (final (id, seeds, price) in packs)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      end: ZadSpacing.sm,
+                    ),
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () => onPay(id, consumable: true),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            '$seeds 🌱',
+                            style: ZadType.labelLarge.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            price,
+                            textDirection: TextDirection.ltr,
+                            style: ZadType.labelSmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton.tonal(
+              onPressed: () => onPay(ZadPlayProducts.allCharacters),
+              child: const Text(r'كل الشخصيات مرة واحدة · $6.99'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

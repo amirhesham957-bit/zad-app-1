@@ -26,6 +26,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { JWT } from "npm:google-auth-library@9";
+import { verifyCompanionProduct } from "./companion.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -100,6 +101,14 @@ Deno.serve(async (req: Request) => {
     if (!accessToken.token) {
       return new Response(JSON.stringify({ error: "google_auth_failed" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // رفيق زاد's wardrobe: one-time products, not subscriptions (2026-10-12).
+    if (body.productId.toLowerCase().startsWith("zad_pet_")) {
+      return await verifyCompanionProduct({
+        packageName, token: accessToken.token, productId: body.productId.toLowerCase(),
+        purchaseToken: body.purchaseToken, userId, supabaseUrl,
       });
     }
 
@@ -212,3 +221,4 @@ Deno.serve(async (req: Request) => {
     });
   }
 });
+

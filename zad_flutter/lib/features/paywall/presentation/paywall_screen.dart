@@ -26,7 +26,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
-import 'package:zad/features/paywall/data/play_billing.dart';
+import 'package:zad/shared/billing/data/play_billing.dart';
 
 /// Opens the plans.
 Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)

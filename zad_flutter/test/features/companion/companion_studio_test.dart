@@ -65,6 +65,8 @@ void main() {
     expect(find.text('🌱 80'), findsOneWidget);
     expect(find.text('1/3'), findsOneWidget);
     expect(find.text('ZAD-7KQ4-M9TX'), findsOneWidget);
+    expect(find.text('مستعجل؟ اشحن بذور'), findsOneWidget);
+    expect(find.text(r'أو $1.99'), findsWidgets);
   });
 
   testWidgets('a character bought with seeds is worn at once', (tester) async {
@@ -97,6 +99,8 @@ void main() {
     await _open(tester, kids: true);
     expect(find.text('2000 🌱'), findsNothing);
     expect(find.text('ادعي صحابك'), findsNothing);
+    expect(find.text('مستعجل؟ اشحن بذور'), findsNothing);
+    expect(find.textContaining(r'$1.99'), findsNothing);
     expect(find.text('🔒'), findsWidgets);
   });
 

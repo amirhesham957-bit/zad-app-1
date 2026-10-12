@@ -193,6 +193,11 @@ select zad_companion_grant_purchase(pg_temp.uid('B'), 'zad_pet_mishmish', 'GPA.2
 select pg_temp.check(29, seeds = 2100, format('seeds=%s', seeds)) from zad_companion where user_id = pg_temp.uid('B');
 select pg_temp.check(30, exists (select 1 from zad_companion_owned where user_id = pg_temp.uid('B') and item_id = 'mishmish' and source = 'purchase')
   and (zad_companion_grant_purchase(pg_temp.uid('B'), 'zad_pet_seeds_999', 'x')->>'reason') = 'unknown_pack');
+-- The same Google order on another account: refused, and nothing granted.
+select pg_temp.check(34, (zad_companion_grant_purchase(pg_temp.uid('C'), 'zad_pet_seeds_2000', 'GPA.1')->>'reason') = 'token_already_claimed'
+  and (zad_companion_grant_purchase(pg_temp.uid('C'), 'zad_pet_mishmish', 'GPA.2')->>'reason') = 'token_already_claimed'
+  and not exists (select 1 from zad_companion_owned where user_id = pg_temp.uid('C') and item_id = 'mishmish')
+  and (select seeds from zad_companion where user_id = pg_temp.uid('C')) = 100);
 
 -- ── 31. A family member joining: everyone already in the family earns 200 XP ──
 insert into family_groups (id) values ('00000000-0000-0000-0000-0000000000ff');

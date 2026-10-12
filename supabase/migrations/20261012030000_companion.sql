@@ -110,6 +110,10 @@ create table if not exists public.zad_companion_ledger (
   unique (user_id, source, ref)
 );
 create index if not exists zad_companion_ledger_day on public.zad_companion_ledger (user_id, day);
+-- A Google order grants once, to one account: the same token replayed on a
+-- second account is refused, not granted twice.
+create unique index if not exists zad_companion_ledger_one_order
+  on public.zad_companion_ledger (ref) where source = 'purchase';
 
 create table if not exists public.zad_companion_owned (
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -515,32 +519,46 @@ end;
 $$;
 
 -- A Play one-time purchase, after verify-purchase checked it with Google.
--- service_role only. 'zad_pet_seeds_<n>' adds n seeds (once per order).
+-- service_role only. p_order is Google's orderId from the verified purchase:
+-- the same order again for the same account is a no-op success (a retry), for
+-- another account it is refused. 'zad_pet_seeds_<n>' adds n seeds.
 create or replace function public.zad_companion_grant_purchase(p_user uuid, p_product text, p_order text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_item text;
-  v_seeds int;
+  v_seeds int := 0;
+  v_holder uuid;
 begin
   if auth.uid() is not null then raise exception 'service only' using errcode = '42501'; end if;
-  perform public.zad_companion_ensure(p_user);
+  if coalesce(p_order, '') = '' then return jsonb_build_object('ok', false, 'reason', 'no_order'); end if;
   if p_product ~ '^zad_pet_seeds_[0-9]+$' then
     v_seeds := substring(p_product from '([0-9]+)$')::int;
     if v_seeds not in (500, 2000, 6000) then return jsonb_build_object('ok', false, 'reason', 'unknown_pack'); end if;
-    perform public.zad_companion_seed(p_user, 'purchase', p_order, v_seeds);
-    return jsonb_build_object('ok', true, 'seeds', v_seeds);
+  elsif p_product <> 'zad_pet_all' then
+    select id into v_item from public.zad_companion_items where play_product = p_product;
+    if v_item is null then return jsonb_build_object('ok', false, 'reason', 'unknown_product'); end if;
   end if;
+
+  select user_id into v_holder from public.zad_companion_ledger where source = 'purchase' and ref = p_order;
+  if v_holder is not null and v_holder <> p_user then
+    return jsonb_build_object('ok', false, 'reason', 'token_already_claimed');
+  end if;
+  if v_holder is null then
+    perform public.zad_companion_seed(p_user, 'purchase', p_order, v_seeds);
+  end if;
+
   if p_product = 'zad_pet_all' then
     insert into public.zad_companion_owned (user_id, item_id, source)
     select p_user, id, 'purchase' from public.zad_companion_items where kind = 'persona'
     on conflict do nothing;
     return jsonb_build_object('ok', true, 'items', 'all_personas');
   end if;
-  select id into v_item from public.zad_companion_items where play_product = p_product;
-  if v_item is null then return jsonb_build_object('ok', false, 'reason', 'unknown_product'); end if;
-  insert into public.zad_companion_owned (user_id, item_id, source) values (p_user, v_item, 'purchase')
-  on conflict do nothing;
-  return jsonb_build_object('ok', true, 'item', v_item);
+  if v_item is not null then
+    insert into public.zad_companion_owned (user_id, item_id, source) values (p_user, v_item, 'purchase')
+    on conflict do nothing;
+    return jsonb_build_object('ok', true, 'item', v_item);
+  end if;
+  return jsonb_build_object('ok', true, 'seeds', v_seeds);
 end;
 $$;
 
