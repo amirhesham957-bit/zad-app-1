@@ -544,8 +544,10 @@ class _BadgeRow extends StatelessWidget {
       Color(0xFFFDE68A),
       Color(0xFFBFDBFE),
     ];
+    // Room for a label on two lines: «أسبوع كامل» wraps at 72dp, and the
+    // old 92dp overflowed by 4.
     return SizedBox(
-      height: 92,
+      height: 100,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: <Widget>[
@@ -565,8 +567,10 @@ class _BadgeRow extends StatelessWidget {
                     Text(
                       label,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
                       style: TextStyle(
                         fontSize: 10,
+                        height: 1.25,
                         fontWeight: achieved
                             ? FontWeight.w700
                             : FontWeight.w400,
