@@ -86,14 +86,18 @@ class BankAccessState {
   /// When the platform was last asked — the "now" [health] is judged at.
   final DateTime? checkedAt;
 
-  /// Kotlin's `BankReadingStatus.isListenerAlive`: granted, bound at least
-  /// once, and a notification seen in the last ten minutes — a phone can be
-  /// genuinely quiet, and that much grace keeps the pill from flapping.
-  bool isAlive(DateTime now) =>
-      granted &&
-      lastConnectedAt != null &&
-      lastSeenAnyAt != null &&
-      now.difference(lastSeenAnyAt!) < const Duration(minutes: 10);
+  /// Whether home's pill reads green: granted, bound at least once, and not
+  /// [BankAccessHealth.stalled] — the same two days the bank screen uses.
+  ///
+  /// Kotlin's `isListenerAlive` also wanted a notification in the last ten
+  /// minutes. That read every quiet phone, and every phone that had just
+  /// been given the permission and seen nothing yet, as «وقف» while the
+  /// listener was bound and working (owner, 2026-10-13).
+  bool isAlive(DateTime now) {
+    if (!granted || lastConnectedAt == null) return false;
+    final seen = lastSeenAnyAt;
+    return seen == null || now.difference(seen) < kListenerStallAfter;
+  }
 
   /// The reading to show.
   BankAccessHealth get health {

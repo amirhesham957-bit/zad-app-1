@@ -34,6 +34,7 @@ import 'package:zad/shared/orb/application/orb_occasion_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/domain/orb_accessory.dart';
 import 'package:zad/shared/orb/domain/orb_occasion.dart';
+import 'package:zad/shared/orb/presentation/plush_painting.dart';
 
 const Color _bowPink = Color(0xFFFF6FA5);
 const Color _bowPinkDeep = Color(0xFFD9467E);
@@ -475,24 +476,40 @@ class _OrbPainter extends CustomPainter {
         (persona?.height ?? 1);
 
     // 1. Ground shadow — thinner as the body lifts.
+    if (persona != null) {
+      PlushPainting.contactShadow(
+        canvas,
+        Offset(canvasCenter.dx, canvasCenter.dy + radius * 1.0),
+        radius,
+        lift,
+        deep,
+      );
+    }
     final shadowW = radius * 1.35 * (1 + lift / (radius * 2));
-    canvas.drawOval(
-      Rect.fromLTWH(
-        canvasCenter.dx - shadowW / 2,
-        canvasCenter.dy + radius * 1.02,
-        shadowW,
-        radius * 0.22,
-      ),
-      Paint()
-        ..shader = _radial(
-          <Color>[deep.withValues(alpha: 0.22), deep.withValues(alpha: 0)],
-          Offset(canvasCenter.dx, canvasCenter.dy + radius * 1.12),
-          shadowW / 2,
+    if (persona == null) {
+      canvas.drawOval(
+        Rect.fromLTWH(
+          canvasCenter.dx - shadowW / 2,
+          canvasCenter.dy + radius * 1.02,
+          shadowW,
+          radius * 0.22,
         ),
-    );
+        Paint()
+          ..shader = _radial(
+            <Color>[deep.withValues(alpha: 0.22), deep.withValues(alpha: 0)],
+            Offset(canvasCenter.dx, canvasCenter.dy + radius * 1.12),
+            shadowW / 2,
+          ),
+      );
+    }
 
     // 2. Halo, breathing with the voice and flashing on a tap.
     final halo = radius * (1.42 + 0.28 * level + 0.2 * glow);
+    // A character is a toy, not a lamp: its halo only answers the voice and
+    // a tap.
+    final haloAlpha = persona == null
+        ? 1.0
+        : 0.25 + 0.75 * math.max(level, glow);
     canvas.drawCircle(
       center,
       halo,
@@ -500,9 +517,10 @@ class _OrbPainter extends CustomPainter {
         ..shader = _radial(
           <Color>[
             sky.withValues(
-              alpha: math.min(0.85, 0.30 + 0.30 * level + 0.25 * glow),
+              alpha:
+                  math.min(0.85, 0.30 + 0.30 * level + 0.25 * glow) * haloAlpha,
             ),
-            sky.withValues(alpha: 0.10),
+            sky.withValues(alpha: 0.10 * haloAlpha),
             sky.withValues(alpha: 0),
           ],
           center,
@@ -533,8 +551,12 @@ class _OrbPainter extends CustomPainter {
     canvas.scale(squashX, squashY);
     canvas.translate(-center.dx, -center.dy);
 
-    // 2c. Hands from بُرعم, feet from صغيّر — behind the body.
-    if (stage != null) _limbs(canvas, center, radius, phase, stage, deep);
+    if (persona != null) {
+      _plush(canvas, center, radius, sky, deep, persona, stage, asleep, level);
+      canvas.restore();
+      _companionExtras(canvas, center, radius, phase, stage, asleep);
+      return;
+    }
 
     // 3. Body, lit from the top-left.
     canvas.drawCircle(
@@ -606,9 +628,6 @@ class _OrbPainter extends CustomPainter {
       );
     }
     canvas.restore();
-
-    // 5c. مشمش is fluffy: a soft rim of fuzz.
-    if (persona?.crest == PersonaCrest.leaf) _fuzz(canvas, center, radius, sky);
 
     // 5d. بذرة: still half in its shell.
     if (stage == CompanionStage.seed) _eggShell(canvas, center, radius);
@@ -691,6 +710,10 @@ class _OrbPainter extends CustomPainter {
     if (asleep && animated) _zs(canvas, center, radius, frame.seconds);
 
     // 9. Celebration: four gold sparkles circling.
+    _celebration(canvas, center, radius, phase);
+  }
+
+  void _celebration(Canvas canvas, Offset center, double radius, double phase) {
     if (state == CompanionState.celebrating) {
       for (var i = 0; i < 4; i++) {
         final a = (frame.rotation + i * 90) * math.pi / 180;
@@ -1121,50 +1144,160 @@ class _OrbPainter extends CustomPainter {
 
   // ── the companion's layers ──
 
-  void _limbs(
+  /// The painted character (`plush_painting.dart`), inside the squash: feet
+  /// behind, the body, hands in front, then its face and everything it
+  /// wears — the crest, the outfit and the season sit where the orb's did.
+  void _plush(
     Canvas canvas,
-    Offset c,
-    double r,
-    double phase,
-    CompanionStage stage,
+    Offset center,
+    double radius,
+    Color sky,
     Color deep,
+    CompanionPersona persona,
+    CompanionStage? stage,
+    bool asleep,
+    double level,
   ) {
-    if (stage == CompanionStage.seed) return;
-    final paint = Paint()..color = Color.lerp(deep, Colors.white, 0.18)!;
-    final cheer =
-        state == CompanionState.happy || state == CompanionState.celebrating;
-    // Hands: a slow sway, a wave when happy.
-    for (final side in <double>[-1, 1]) {
-      final swing = cheer
-          ? 0.5 + 0.35 * math.sin(phase * 4 + (side > 0 ? 0 : math.pi))
-          : 0.15 * math.sin(phase + side);
-      canvas
-        ..save()
-        ..translate(c.dx + side * r * 0.86, c.dy + r * 0.08)
-        ..rotate(-side * (0.9 + swing))
-        ..drawOval(
+    final phase = frame.blobPhase;
+    final stageIndex = stage?.index ?? CompanionStage.companion.index;
+    final limbBody = Color.lerp(sky, deep, 0.08)!;
+
+    // Feet from صغيّر, peeking out under the body.
+    if (stageIndex >= CompanionStage.little.index) {
+      for (final side in <double>[-1, 1]) {
+        PlushPainting.limb(
+          canvas,
           Rect.fromCenter(
-            center: Offset(0, r * 0.24),
-            width: r * 0.28,
-            height: r * 0.46,
+            center: center + Offset(side * radius * 0.42, radius * 0.94),
+            width: radius * 0.46,
+            height: radius * 0.26,
           ),
-          paint,
-        )
-        ..restore();
+          body: limbBody,
+          deep: deep,
+        );
+      }
     }
-    if (stage.index < CompanionStage.little.index) return;
-    // Feet.
-    for (final side in <double>[-1, 1]) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: c + Offset(side * r * 0.4, r * 0.93),
-          width: r * 0.42,
-          height: r * 0.24,
-        ),
-        paint,
+
+    PlushPainting.paintBody(
+      canvas,
+      center,
+      radius,
+      body: sky,
+      deep: deep,
+      sheen: frame.sheen,
+      seed: persona.index + 7,
+      glows: persona.glows,
+    );
+
+    // Thinking: a soft light turning slowly inside.
+    if (state == CompanionState.focused) {
+      final a = frame.rotation * math.pi / 180;
+      canvas.save();
+      canvas.clipPath(PlushPainting.silhouette(center, radius));
+      canvas.drawCircle(
+        center +
+            Offset(math.cos(a) * radius * 0.45, math.sin(a) * radius * 0.45),
+        radius * 0.5,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.22)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.2),
+      );
+      canvas.restore();
+    }
+
+    // Hands from بُرعم: a slow sway, a wave when happy.
+    if (stageIndex >= CompanionStage.sprout.index) {
+      final cheer =
+          state == CompanionState.happy || state == CompanionState.celebrating;
+      for (final side in <double>[-1, 1]) {
+        final swing = cheer
+            ? 0.5 + 0.35 * math.sin(phase * 4 + (side > 0 ? 0 : math.pi))
+            : 0.12 * math.sin(phase + side);
+        canvas.save();
+        canvas.translate(
+          center.dx + side * radius * 0.94,
+          center.dy + radius * 0.22,
+        );
+        canvas.rotate(-side * (0.35 + swing));
+        PlushPainting.limb(
+          canvas,
+          Rect.fromCenter(
+            center: Offset(0, radius * 0.12),
+            width: radius * 0.26,
+            height: radius * 0.4,
+          ),
+          body: limbBody,
+          deep: deep,
+        );
+        canvas.restore();
+      }
+    }
+
+    // مشمش is fluffy: a soft rim of fuzz.
+    if (persona.crest == PersonaCrest.leaf) {
+      PlushPainting.fluff(canvas, center, radius, sky, persona.index);
+    }
+
+    // بذرة: still half in its shell — the face sits a little higher.
+    final seed = stage == CompanionStage.seed;
+    if (seed) _eggShell(canvas, center, radius);
+    final face = seed ? center - Offset(0, radius * 0.12) : center;
+    final faceR = radius * (seed ? 1.1 : 1);
+
+    if (!asleep) PlushPainting.cheeks(canvas, face, faceR);
+    PlushPainting.eyes(
+      canvas,
+      face,
+      faceR,
+      state: state,
+      open: frame.eyeOpen,
+      look: _glance(radius, phase),
+      level: level,
+      asleep: asleep,
+    );
+    if (!seed || asleep) {
+      PlushPainting.mouth(
+        canvas,
+        face,
+        faceR,
+        state: state,
+        level: level,
+        asleep: asleep,
       );
     }
+
+    if (!look!.outfit.coversHead) {
+      _crest(canvas, center, radius, phase, persona.crest);
+    }
+    _accessory(canvas, center, radius);
+    _outfit(canvas, center, radius, phase, look!.outfit);
+    _occasionLook(canvas, center, radius, phase);
   }
+
+  /// What floats outside the squash: the sage's halo, the Zs, the sparkles.
+  void _companionExtras(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double phase,
+    CompanionStage? stage,
+    bool asleep,
+  ) {
+    if (stage == CompanionStage.sage) _sageHalo(canvas, center, radius, phase);
+    if (asleep && animated) _zs(canvas, center, radius, frame.seconds);
+    _celebration(canvas, center, radius, phase);
+  }
+
+  /// Where the eyes look for the mood — the same glances as the orb's.
+  Offset _glance(double radius, double phase) => switch (state) {
+    CompanionState.idle => Offset(radius * 0.05 * math.sin(phase * 0.5), 0),
+    CompanionState.listening => Offset(0, -radius * 0.04),
+    CompanionState.focused => Offset(
+      radius * 0.08 * math.cos(phase),
+      -radius * 0.10,
+    ),
+    _ => Offset.zero,
+  };
 
   void _eggShell(Canvas canvas, Offset c, double r) {
     // The lower shell, its rim broken into a zigzag.
@@ -1201,18 +1334,6 @@ class _OrbPainter extends CustomPainter {
           ..strokeWidth = r * 0.03,
       )
       ..restore();
-  }
-
-  void _fuzz(Canvas canvas, Offset c, double r, Color sky) {
-    final paint = Paint()..color = Color.lerp(sky, Colors.white, 0.3)!;
-    for (var i = 0; i < 28; i++) {
-      final a = i / 28 * 2 * math.pi;
-      canvas.drawCircle(
-        c + Offset(math.cos(a) * r * 0.98, math.sin(a) * r * 0.98),
-        r * (i.isEven ? 0.07 : 0.05),
-        paint,
-      );
-    }
   }
 
   void _sleepingEyes(Canvas canvas, Offset c, double r) {

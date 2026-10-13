@@ -33,7 +33,6 @@ import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/kids/presentation/kids_shell.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
-import 'package:zad/features/orb/presentation/floating_companion.dart';
 import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/transactions/presentation/transactions_screen.dart';
@@ -389,40 +388,25 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 // controller reads its cache in build, and swapping the
                 // subtree would throw away a scrolled list and re-read Hive
                 // on every switch back.
-                child: Stack(
+                child: IndexedStack(
+                  index: _tabs.indexOf(_tab),
                   children: <Widget>[
-                    Positioned.fill(
-                      child: IndexedStack(
-                        index: _tabs.indexOf(_tab),
-                        children: <Widget>[
-                          HomeScreen(
-                            onOpenVoice: () => unawaited(_openVoice()),
-                            onOpenCamera: () => unawaited(_openCamera()),
-                          ),
-                          if (_opened.contains(ZadNavDestination.money))
-                            const FinancesScreen(embedded: true)
-                          else
-                            const SizedBox.shrink(),
-                          if (_opened.contains(ZadNavDestination.inventory))
-                            const HouseholdScreen(embedded: true)
-                          else
-                            const SizedBox.shrink(),
-                          if (_opened.contains(ZadNavDestination.family))
-                            ZadSlots.familyScreen()
-                          else
-                            const SizedBox.shrink(),
-                        ],
-                      ),
+                    HomeScreen(
+                      onOpenVoice: () => unawaited(_openVoice()),
+                      onOpenCamera: () => unawaited(_openCamera()),
                     ),
-                    // Kotlin shows the floating companion on الرئيسية only —
-                    // elsewhere it covered the last icons of a row.
-                    if (_tab == ZadNavDestination.home)
-                      Positioned.fill(
-                        child: FloatingCompanion(
-                          onOpenVoice: () => unawaited(_openVoice()),
-                          onOpenChat: () => unawaited(_openChat()),
-                        ),
-                      ),
+                    if (_opened.contains(ZadNavDestination.money))
+                      const FinancesScreen(embedded: true)
+                    else
+                      const SizedBox.shrink(),
+                    if (_opened.contains(ZadNavDestination.inventory))
+                      const HouseholdScreen(embedded: true)
+                    else
+                      const SizedBox.shrink(),
+                    if (_opened.contains(ZadNavDestination.family))
+                      ZadSlots.familyScreen()
+                    else
+                      const SizedBox.shrink(),
                   ],
                 ),
               ),
