@@ -49,6 +49,16 @@ const int _napFirstId = 0x7A000002;
 const int _napSecondId = 0x7A000003;
 const int _careId = 0x7A000004;
 
+/// The follow-ups after the first care call (`companionCareCalls`).
+const List<int> _careFollowUpIds = <int>[
+  0x7A000010,
+  0x7A000011,
+  0x7A000012,
+  0x7A000013,
+  0x7A000014,
+  0x7A000015,
+];
+
 /// When رفيق زاد calls a customer who has been away: two days after the last
 /// open, and again two days after that — once a day at most, and never at
 /// night (a time before 09:00 or after 21:00 moves to 19:00). Every open
@@ -83,6 +93,56 @@ tz.TZDateTime _daytime(tz.TZDateTime t) {
   if (at.isBefore(soonest)) at = soonest;
   at = _daytime(at);
   return (at: at, thirsty: care.hydration(at) <= care.fullness(at));
+}
+
+/// One call from the pet: when, and what it says.
+typedef CompanionCareCall = ({tz.TZDateTime at, String title, String body});
+
+/// The pet's calls while it is left alone (owner, 2026-10-13: «عاوز البوت
+/// يديني تنبيهات أأكّلو علشان العملا يدخلوا كل يوم»): the first at its next
+/// need ([companionCareTime]), then every morning (10:00) and evening
+/// (19:00) for three days, sadder each time — one call left unanswered no
+/// longer means silence. Each feed, drink and return reschedules them all,
+/// so they only ring for a pet really left waiting. It is sad, never sick or
+/// gone (the companion's mercy rule).
+List<CompanionCareCall> companionCareCalls(
+  PetCare care,
+  tz.TZDateTime now, {
+  required String name,
+}) {
+  final first = companionCareTime(care, now);
+  final calls = <CompanionCareCall>[
+    (
+      at: first.at,
+      title: first.thirsty ? '💧 $name عطشان' : '🍎 $name جعان',
+      body: first.thirsty
+          ? 'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه'
+          : 'مستنيك تأكّله… وحشته 🥺',
+    ),
+  ];
+  const lines = <(String, String)>[
+    ('🥺 {n} لسه مستنيك', 'بطنه بتصوصو من الصبح… لقمة واحدة بس؟'),
+    ('🍎 {n} بيسأل عليك', 'قاعد جنب الطبق فاضي — تعالى أكّله وأسقيه'),
+    ('😢 {n} زعلان', 'بقاله يوم من غير أكل… شكله اتبهدل ومستنيك'),
+    ('💔 {n} وحشته أوي', 'مش راضي يلعب من غيرك — دقيقة واحدة ترجّعه مبسوط'),
+    ('😭 {n} تعبان من الجوع', 'يومين من غير أكل ولا مية… هو لسه مستنيك'),
+    ('🌧️ {n} قاعد لوحده', 'كل يوم بيبص على الباب — تعالى طمّنه'),
+  ];
+  final zone = now.location;
+  var day = tz.TZDateTime(zone, first.at.year, first.at.month, first.at.day);
+  var i = 0;
+  while (i < lines.length) {
+    for (final hour in const <int>[10, 19]) {
+      if (i >= lines.length) break;
+      final at = tz.TZDateTime(zone, day.year, day.month, day.day, hour);
+      // At least six hours after the call before it.
+      if (at.isBefore(calls.last.at.add(const Duration(hours: 6)))) continue;
+      final (title, body) = lines[i++];
+      calls.add((at: at, title: title.replaceAll('{n}', name), body: body));
+    }
+    day = tz.TZDateTime(zone, day.year, day.month, day.day + 1);
+  }
+  return calls;
 }
 
 int _stableId(String key) {
@@ -309,12 +369,13 @@ class LocalReminders {
     }
   }
 
-  /// «🍎 زادو جعان»: the pet's next meal or drink (`companionCareTime`).
-  /// Off with «رفيق زاد يفكّرني بأكله ومَيّته» in settings.
+  /// «🍎 زادو جعان» and the follow-ups after it (`companionCareCalls`).
   Future<void> syncCompanionCare(PetCare? care) async {
     // Called on every feed and every return, outside resyncAll's guard.
     try {
-      await _plugin.cancel(id: _careId);
+      for (final id in <int>[_careId, ..._careFollowUpIds]) {
+        await _plugin.cancel(id: id);
+      }
       if (care == null ||
           !_ref
               .read(alertPrefsProvider)
@@ -322,18 +383,23 @@ class LocalReminders {
         return;
       }
       final name = _ref.read(companionProvider).value?.persona.name ?? 'زادو';
-      final when = companionCareTime(care, tz.TZDateTime.now(_zone));
-      await _plugin.zonedSchedule(
-        id: _careId,
-        title: when.thirsty ? '💧 $name عطشان' : '🍎 $name جعان',
-        body: when.thirsty
-            ? 'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه'
-            : 'مستنيك تأكّله… وحشته 🥺',
-        scheduledDate: when.at,
-        notificationDetails: _details(_companionChannel, 'رفيق زاد'),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: payloadFor(AlertDestination.home),
+      final calls = companionCareCalls(
+        care,
+        tz.TZDateTime.now(_zone),
+        name: name,
       );
+      final ids = <int>[_careId, ..._careFollowUpIds];
+      for (var i = 0; i < calls.length && i < ids.length; i++) {
+        await _plugin.zonedSchedule(
+          id: ids[i],
+          title: calls[i].title,
+          body: calls[i].body,
+          scheduledDate: calls[i].at,
+          notificationDetails: _details(_companionChannel, 'رفيق زاد'),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: payloadFor(AlertDestination.home),
+        );
+      }
     } on Object catch (e) {
       debugPrint('companion care reminder skipped: $e');
     }
