@@ -22,13 +22,15 @@ class _FakeRemote implements AttemptsRemote {
   }
 }
 
-AttemptsBalance _free({int left = 2, DateTime? next}) => AttemptsBalance(
-  tier: 'free',
-  left: left,
-  perCycle: 5,
-  nextRefillAt: next ?? DateTime.utc(2026, 10, 12, 15, 30),
-  adsEnabled: true,
-);
+AttemptsBalance _free({int left = 2, DateTime? next, int adLeft = 0}) =>
+    AttemptsBalance(
+      tier: 'free',
+      left: left,
+      perCycle: 5,
+      nextRefillAt: next ?? DateTime.utc(2026, 10, 12, 15, 30),
+      adsEnabled: true,
+      adLeft: adLeft,
+    );
 
 Widget _host(_FakeRemote remote) => ProviderScope(
   overrides: [
@@ -61,6 +63,23 @@ void main() {
       expect(b.nextRefillAt, DateTime.utc(2026, 11, 12, 10));
       expect(b.isFree, isFalse);
       expect(b.planName, 'بلس');
+    });
+
+    test('reads the share earned from ads; a server without it says 0', () {
+      final b = AttemptsBalance.fromStatus(<String, dynamic>{
+        'tier': 'free',
+        'attempts_left': 11,
+        'attempts_per_cycle': 5,
+        'ad_attempts_left': 8,
+      })!;
+      expect(b.adLeft, 8);
+      expect(b.cycleLeft, 3);
+      final old = AttemptsBalance.fromStatus(<String, dynamic>{
+        'tier': 'free',
+        'attempts_left': 4,
+      })!;
+      expect(old.adLeft, 0);
+      expect(old.cycleLeft, 4);
     });
 
     test('an error, or a server without the one balance, is no balance', () {
@@ -99,6 +118,17 @@ void main() {
     });
     test('a full balance waits for nothing', () {
       expect(refillLine(_free(left: 5), now, 'Africa/Cairo'), 'رصيدك كامل');
+      expect(
+        refillLine(_free(left: 13, adLeft: 8), now, 'Africa/Cairo'),
+        'رصيدك كامل',
+      );
+    });
+    test('attempts from ads do not hide a refill still to come', () {
+      // 11 left, 8 of them from ads: 3 of the free 5, so the refill adds 2.
+      expect(
+        refillLine(_free(left: 11, adLeft: 8), now, 'Africa/Cairo'),
+        'بيرجع ٥ الساعة ٦:٣٠ م',
+      );
     });
     test('a plan renews on a date', () {
       const plan = AttemptsBalance(
