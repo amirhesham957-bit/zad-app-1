@@ -3,16 +3,17 @@
 /// says so in a small bubble now and then, and a tap opens its care sheet —
 /// it talks, and the customer feeds it, gives it water and pets it.
 ///
-/// It floats over Home's bottom bar (owner, 2026-10-13: «عاوزو فلوتنج فوق
-/// البار») in the corner beside the mic — Home leaves room under its last
-/// card, so it no longer covers the transactions as the old orb did.
+/// It floats over Home (owner, 2026-10-13: «عاوزو فلوتنج فوق البار»), above
+/// the bottom bar by default, and the customer drags it wherever they like.
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -22,6 +23,7 @@ import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
@@ -219,40 +221,199 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
   }
 }
 
-/// The pet floating over the bottom bar: a slow bob, its bubble above it.
-class CompanionFloatingPet extends StatefulWidget {
+/// The colour of the glow under the pet: its need, or its joy.
+Color _moodGlow(CompanionState mood) => switch (mood) {
+  CompanionState.hungry => const Color(0xFFFF9F43),
+  CompanionState.thirsty => const Color(0xFF4FC3F7),
+  CompanionState.sad => const Color(0xFF9E9E9E),
+  CompanionState.sleepy => const Color(0xFF9575CD),
+  CompanionState.happy || CompanionState.celebrating => const Color(0xFFFFD54F),
+  _ => ZadColors.forestEmerald,
+};
+
+/// The pet over Home, floating above the bottom bar (owner, 2026-10-13:
+/// «اكبر شوية واقدر احركو… يبقى اكتف»). It fills the box it is given and
+/// lives anywhere in it: dragged with a finger, it leans into the move and
+/// lands with a hop, and stays where it was left — next launch too. A glow
+/// in its mood's colour breathes under it, and it bobs while it waits.
+class CompanionFloatingPet extends ConsumerStatefulWidget {
   /// Creates it.
-  const new({this.size = 72, super.key});
+  const new({this.size = 92, super.key});
 
   /// Its box.
   final double size;
 
+  /// Where it was left, as fractions of the box (device box key).
+  static const String positionKey = 'pet_float_position';
+
   @override
-  State<CompanionFloatingPet> createState() => _CompanionFloatingPetState();
+  ConsumerState<CompanionFloatingPet> createState() =>
+      _CompanionFloatingPetState();
 }
 
-class _CompanionFloatingPetState extends State<CompanionFloatingPet>
-    with SingleTickerProviderStateMixin {
+class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
+    with TickerProviderStateMixin {
   late final AnimationController _bob = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2200),
   )..repeat(reverse: true);
+  late final AnimationController _hop = AnimationController(
+    vsync: this,
+    duration: ZadDuration.settle,
+  );
+
+  /// Fractions of the free room: (1, 1) is the bottom-right corner.
+  Offset _at = const Offset(0.04, 1);
+  double _lean = 0;
+  bool _dragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      final raw = ref
+          .read(localStoreProvider)
+          .device
+          .get(CompanionFloatingPet.positionKey);
+      final parts = raw?.split(',');
+      if (parts != null && parts.length == 2) {
+        final x = double.tryParse(parts[0]);
+        final y = double.tryParse(parts[1]);
+        if (x != null && y != null) {
+          _at = Offset(x.clamp(0.0, 1.0), y.clamp(0.0, 1.0));
+        }
+      }
+    } on Object catch (e) {
+      debugPrint('[pet] no stored spot: $e');
+    }
+  }
 
   @override
   void dispose() {
     _bob.dispose();
+    _hop.dispose();
     super.dispose();
   }
 
+  void _move(DragUpdateDetails d, Size room) {
+    if (room.width <= 0 || room.height <= 0) return;
+    setState(() {
+      _dragging = true;
+      _at = Offset(
+        (_at.dx + d.delta.dx / room.width).clamp(0.0, 1.0),
+        (_at.dy + d.delta.dy / room.height).clamp(0.0, 1.0),
+      );
+      _lean = (d.delta.dx / 40).clamp(-0.25, 0.25);
+    });
+  }
+
+  void _drop() {
+    setState(() {
+      _dragging = false;
+      _lean = 0;
+    });
+    unawaited(HapticFeedback.lightImpact());
+    _hop.forward(from: 0);
+    try {
+      unawaited(
+        ref
+            .read(localStoreProvider)
+            .device
+            .put(
+              CompanionFloatingPet.positionKey,
+              '${_at.dx.toStringAsFixed(3)},${_at.dy.toStringAsFixed(3)}',
+            ),
+      );
+    } on Object catch (e) {
+      debugPrint('[pet] spot not saved: $e');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _bob,
-    builder: (_, child) => Transform.translate(
-      offset: Offset(0, -3 + 6 * Curves.easeInOut.transform(_bob.value)),
-      child: child,
-    ),
-    child: CompanionHeaderPet(size: widget.size, bubbleAbove: true),
-  );
+  Widget build(BuildContext context) {
+    final care = ref.watch(petCareProvider);
+    if (care == null) return const SizedBox.shrink();
+    final glow = _moodGlow(petMood(ref, care, ref.watch(petClockProvider)()));
+    final box = widget.size + ZadSpacing.lg;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final room = Size(
+          (c.maxWidth - box).clamp(0.0, double.infinity),
+          (c.maxHeight - box).clamp(0.0, double.infinity),
+        );
+        return Stack(
+          children: <Widget>[
+            Positioned(
+              left: _at.dx * room.width,
+              top: _at.dy * room.height,
+              width: box,
+              height: box,
+              child: GestureDetector(
+                key: const ValueKey<String>('pet-floating-drag'),
+                behavior: HitTestBehavior.translucent,
+                onPanUpdate: (d) => _move(d, room),
+                onPanEnd: (_) => _drop(),
+                onPanCancel: _drop,
+                child: AnimatedBuilder(
+                  animation: Listenable.merge(<Listenable>[_bob, _hop]),
+                  builder: (_, child) {
+                    final bob = _dragging
+                        ? 0.0
+                        : -4 + 8 * Curves.easeInOut.transform(_bob.value);
+                    // A hop on landing: up and back, a small squash at the end.
+                    final hop = math.sin(_hop.value * math.pi);
+                    final breathe = 0.85 + 0.15 * _bob.value;
+                    return Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        // The glow on the floor, in the mood's colour.
+                        Positioned(
+                          bottom: 0,
+                          child: IgnorePointer(
+                            child: Container(
+                              width: widget.size * 0.8 * breathe,
+                              height: ZadSpacing.md,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                  ZadRadii.card,
+                                ),
+                                boxShadow: <BoxShadow>[
+                                  BoxShadow(
+                                    color: glow.withValues(alpha: 0.55),
+                                    blurRadius: 18,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Transform.translate(
+                          offset: Offset(0, bob - 18 * hop),
+                          child: Transform.rotate(
+                            angle: _lean,
+                            child: Transform.scale(
+                              scale: _dragging ? 1.12 : 1 + 0.06 * hop,
+                              child: child,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  child: CompanionHeaderPet(
+                    size: widget.size,
+                    bubbleAbove: true,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// The small bubble beside the pet; a tap opens the care sheet.
@@ -434,7 +595,8 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
     );
     return SafeArea(
       top: false,
-      child: Padding(
+      // Scrolls on a short screen: the sheet grew a play button.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           ZadSpacing.xl,
           ZadSpacing.md,
@@ -582,6 +744,23 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
               ],
             ),
             const SizedBox(height: ZadSpacing.sm),
+            OutlinedButton(
+              key: const ValueKey<String>('pet-play'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: () async {
+                final score = await showPetBallGame(context, name: name);
+                if (!mounted || score == null) return;
+                _react(
+                  CompanionState.celebrating,
+                  'لعبنا وجبت $score! 🏆',
+                  '⚽',
+                  PetSound.purr,
+                );
+              },
+              child: const Text('⚽ العب معاه'),
+            ),
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () {
