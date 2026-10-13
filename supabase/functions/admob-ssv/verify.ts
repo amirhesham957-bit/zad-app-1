@@ -81,3 +81,14 @@ export function isFreshTimestamp(tsMs: string | null, nowMs: number, maxAgeMs = 
   // مستقبل بعيد مرفوض كمان — ساعة سماح للفروق بين السيرفرات.
   return t <= nowMs + 5 * 60 * 1000 && nowMs - t <= maxAgeMs;
 }
+
+/**
+ * الحساب اللي هيتشحن من custom_data، أو null لو مفيش. الكلاينت بيحط فيه user_id
+ * (UUID). نداء «التحقق من عنوان URL» في كونسول AdMob بيتبعت موقَّع **من غير**
+ * custom_data — ده لازم ياخد 200 من غير منحة، مش 400، وإلا الكونسول مايحفظش الرابط.
+ */
+export function grantTarget(customData: string | null): string | null {
+  if (!customData) return null;
+  const v = customData.trim().toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v) ? v : null;
+}

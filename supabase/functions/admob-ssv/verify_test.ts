@@ -3,6 +3,7 @@ import {
   b64urlToBytes,
   derToRawSignature,
   isFreshTimestamp,
+  grantTarget,
   pickKey,
   signedContent,
 } from "./verify.ts";
@@ -96,4 +97,15 @@ Deno.test("isFreshTimestamp بيرفض القديم والمستقبل البع�
   assertEquals(isFreshTimestamp(String(now + 10 * 60_000), now), false);
   assertEquals(isFreshTimestamp(null, now), false);
   assertEquals(isFreshTimestamp("not-a-number", now), false);
+});
+
+/** نداء التحقق من الكونسول مالوش custom_data: 200 من غير منحة، مش 400. */
+Deno.test("grantTarget: UUID بس، والفاضي أو الغريب null", () => {
+  const id = "3f2b7c1e-8a4d-4e6f-9b0c-1d2e3f4a5b6c";
+  assertEquals(grantTarget(id), id);
+  assertEquals(grantTarget(id.toUpperCase()), id);
+  assertEquals(grantTarget(null), null);
+  assertEquals(grantTarget(""), null);
+  assertEquals(grantTarget("user-1"), null);
+  assertEquals(grantTarget(`${id}' or 1=1`), null);
 });

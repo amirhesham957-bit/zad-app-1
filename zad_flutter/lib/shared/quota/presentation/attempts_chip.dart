@@ -2,9 +2,8 @@
 ///
 /// The chip is the one number the customer needs: how many attempts are left.
 /// Tapping it says what each request costs, when the free 5 come back, and
-/// offers the way out — a plan with no ads. The «شاهد وخد» button joins it
-/// once the ads SDK is in the app; until then nothing is shown that would do
-/// nothing.
+/// offers both ways on: «شاهد وخد» (one rewarded ad, when ads may show and
+/// the server would grant it) and a plan with no ads.
 library;
 
 import 'dart:async';
@@ -16,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
@@ -111,17 +111,30 @@ Future<void> showAttemptsSheet(
               style: ZadType.titleMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xs),
-            Text(
-              'معاك ${attemptsLabel(balance.left)}',
-              style: ZadType.headlineMedium.copyWith(
-                color: ZadColors.ink,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: ZadSpacing.xs),
-            Text(
-              refillLine(balance, DateTime.now(), zone),
-              style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
+            // Live: an ad's reward lands here a few seconds after the ad.
+            Consumer(
+              builder: (context, ref, _) {
+                final now = ref.watch(attemptsBalanceProvider).value ?? balance;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      'معاك ${attemptsLabel(now.left)}',
+                      style: ZadType.headlineMedium.copyWith(
+                        color: ZadColors.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: ZadSpacing.xs),
+                    Text(
+                      refillLine(now, DateTime.now(), zone),
+                      style: ZadType.bodyMedium.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: ZadSpacing.lg),
             const _CostRow(label: 'تسجيل مصروف أو دخل', cost: 'مجاني'),
@@ -138,6 +151,8 @@ Future<void> showAttemptsSheet(
               cost: attemptsLabel(AttemptCosts.brain),
             ),
             const SizedBox(height: ZadSpacing.xl),
+            const WatchAdButton(),
+            const SizedBox(height: ZadSpacing.md),
             FilledButton(
               key: const ValueKey<String>('attempts-subscribe'),
               style: FilledButton.styleFrom(
