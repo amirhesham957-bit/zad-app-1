@@ -3,17 +3,22 @@
 /// sheet and the camera sheet. Same measures, same colours, same strings.
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_shell_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
-
-/// Kotlin's `onSurfaceVariant` / `textSecondary`.
-Color get _textSecondary => ZadColors.inkMuted;
+import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// Kotlin's `textTertiary`.
 Color get _textTertiary => ZadColors.textTertiary;
@@ -360,7 +365,13 @@ class _BellPill extends StatelessWidget {
 @immutable
 class ZadDrawerEntry {
   /// Creates a row.
-  const new({required this.id, required this.icon, required this.label});
+  const new({
+    required this.id,
+    required this.icon,
+    required this.label,
+    this.accent = ZadSectionAccent.slate,
+    this.group = '',
+  });
 
   /// The route it opens.
   final String id;
@@ -370,62 +381,156 @@ class ZadDrawerEntry {
 
   /// Its name.
   final String label;
+
+  /// The colour of its tile — the section's own, as on the home grid.
+  final Color accent;
+
+  /// The heading it sits under; a change of group starts a new heading.
+  final String group;
 }
 
 /// The drawer: everything, grouped by the bar's four places (2026-09-30) —
-/// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest.
+/// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest. رفيق
+/// زاد sits second, under الرئيسية (owner, 2026-10-13: it was missing).
 const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
-  ZadDrawerEntry(id: 'home', icon: Icons.home, label: 'الرئيسية'),
-  ZadDrawerEntry(id: 'assistant', icon: Icons.psychology, label: 'عقل زاد'),
-  ZadDrawerEntry(id: 'appointments', icon: Icons.event, label: 'مواعيدي'),
-  ZadDrawerEntry(id: 'places', icon: Icons.place, label: 'أماكني'),
+  ZadDrawerEntry(
+    id: 'home',
+    icon: Icons.home_rounded,
+    label: 'الرئيسية',
+    accent: ZadSectionAccent.emerald,
+    group: 'زاد',
+  ),
+  ZadDrawerEntry(
+    id: 'companion',
+    icon: Icons.pets_rounded,
+    label: 'رفيق زاد',
+    accent: ZadSectionAccent.amber,
+    group: 'زاد',
+  ),
+  ZadDrawerEntry(
+    id: 'assistant',
+    icon: Icons.psychology,
+    label: 'عقل زاد',
+    accent: ZadSectionAccent.teal,
+    group: 'زاد',
+  ),
+  ZadDrawerEntry(
+    id: 'appointments',
+    icon: Icons.event,
+    label: 'مواعيدي',
+    accent: ZadSectionAccent.indigo,
+    group: 'زاد',
+  ),
+  ZadDrawerEntry(
+    id: 'places',
+    icon: Icons.place,
+    label: 'أماكني',
+    accent: ZadSectionAccent.rose,
+    group: 'زاد',
+  ),
   ZadDrawerEntry(
     id: 'budget',
     icon: Icons.account_balance_wallet,
     label: 'فلوسي',
+    accent: ZadSectionAccent.green,
+    group: 'الفلوس',
   ),
   ZadDrawerEntry(
     id: 'subscriptions',
     icon: Icons.credit_card,
     label: 'التزاماتي',
+    accent: ZadSectionAccent.blue,
+    group: 'الفلوس',
   ),
-  ZadDrawerEntry(id: 'inventory', icon: Icons.home, label: 'بيتي'),
+  ZadDrawerEntry(
+    id: 'premium',
+    icon: Icons.star_rounded,
+    label: 'باقات زاد الشهرية',
+    accent: ZadSectionAccent.amber,
+    group: 'الفلوس',
+  ),
+  ZadDrawerEntry(
+    id: 'inventory',
+    icon: Icons.kitchen,
+    label: 'بيتي',
+    accent: ZadSectionAccent.emerald,
+    group: 'البيت والعيلة',
+  ),
   ZadDrawerEntry(
     id: 'shopping',
     icon: Icons.shopping_cart,
     label: 'قائمة التسوق',
+    accent: ZadSectionAccent.brown,
+    group: 'البيت والعيلة',
   ),
   ZadDrawerEntry(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
     label: 'صيدلية العائلة',
+    accent: ZadSectionAccent.rose,
+    group: 'البيت والعيلة',
   ),
-  ZadDrawerEntry(id: 'maintenance', icon: Icons.build, label: 'صيانة المنزل'),
+  ZadDrawerEntry(
+    id: 'maintenance',
+    icon: Icons.build,
+    label: 'صيانة المنزل',
+    group: 'البيت والعيلة',
+  ),
   ZadDrawerEntry(
     id: 'documents',
     icon: Icons.badge_outlined,
     label: 'مستنداتي',
+    accent: ZadSectionAccent.indigo,
+    group: 'البيت والعيلة',
   ),
-  ZadDrawerEntry(id: 'family', icon: Icons.family_restroom, label: 'عيلتي'),
   ZadDrawerEntry(
     id: 'deals',
-    icon: Icons.location_on,
+    icon: Icons.storefront,
     label: 'المتاجر والأسواق القريبة',
+    accent: ZadSectionAccent.teal,
+    group: 'البيت والعيلة',
   ),
-  ZadDrawerEntry(id: 'tips', icon: Icons.lightbulb, label: 'نصايح زاد'),
-  ZadDrawerEntry(id: 'premium', icon: Icons.star, label: 'باقات زاد الشهرية'),
-  ZadDrawerEntry(id: 'tasbiha', icon: Icons.park, label: 'تسبيحة'),
+  ZadDrawerEntry(
+    id: 'family',
+    icon: Icons.family_restroom,
+    label: 'عيلتي',
+    accent: ZadSectionAccent.violet,
+    group: 'البيت والعيلة',
+  ),
+  ZadDrawerEntry(
+    id: 'tips',
+    icon: Icons.lightbulb,
+    label: 'نصايح زاد',
+    accent: ZadSectionAccent.amber,
+    group: 'أكتر',
+  ),
+  ZadDrawerEntry(
+    id: 'tasbiha',
+    icon: Icons.park,
+    label: 'تسبيحة',
+    accent: ZadSectionAccent.green,
+    group: 'أكتر',
+  ),
   ZadDrawerEntry(
     id: 'notifications',
     icon: Icons.notifications,
     label: 'الإشعارات',
+    accent: ZadSectionAccent.blue,
+    group: 'أكتر',
   ),
-  ZadDrawerEntry(id: 'profile', icon: Icons.person, label: 'حسابي'),
+  ZadDrawerEntry(
+    id: 'profile',
+    icon: Icons.person,
+    label: 'حسابي',
+    group: 'أكتر',
+  ),
 ];
 
-/// `ZadDrawerContent`: 78% wide, square-edged, the carrot and «زاد», the
-/// rows, and the profile row at the foot.
-class ZadDrawer extends StatelessWidget {
+/// `ZadDrawerContent`, redrawn 2026-10-13 (owner: «كئيبة»): the companion
+/// greeting on a green card at the top, the rows under coloured headings
+/// with each section's own tile colour, and the rows sliding in one after
+/// another as the drawer opens. The profile row stays at the foot.
+class ZadDrawer extends StatefulWidget {
   /// Creates the drawer.
   const new({
     required this.current,
@@ -455,101 +560,308 @@ class ZadDrawer extends StatelessWidget {
   /// The picture at the foot.
   final String? avatarUrl;
 
+  @override
+  State<ZadDrawer> createState() => _ZadDrawerState();
+}
+
+class _ZadDrawerState extends State<ZadDrawer>
+    with SingleTickerProviderStateMixin {
   static const Color _rule = Color(0x0F000000);
 
+  // The drawer is built when it opens, so the cascade plays on every open.
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: ZadDuration.settle + ZadDuration.enter,
+  );
+
   @override
-  Widget build(BuildContext context) => Drawer(
-    width: MediaQuery.sizeOf(context).width * 0.78,
-    backgroundColor: ZadColors.surface,
-    shape: const RoundedRectangleBorder(),
-    child: Column(
-      children: <Widget>[
-        const SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(20, 20, 20, 18),
-            child: Row(
-              children: <Widget>[
-                _CarrotTile(size: 34, radius: 10, glyph: 20),
-                SizedBox(width: 10),
-                Text(
-                  'زاد',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: kShellPrimary,
-                  ),
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _enter.value = 1;
+    } else if (!_enter.isAnimating && _enter.value == 0) {
+      _enter.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _enter.dispose();
+    super.dispose();
+  }
+
+  /// Row [i] of [n] slides in from the start edge, a beat after the one
+  /// above it.
+  Widget _staggered(int i, int n, Widget child) {
+    final start = (i / math.max(1, n)) * 0.45;
+    final curve = CurvedAnimation(
+      parent: _enter,
+      curve: Interval(
+        start,
+        math.min(1, start + 0.55),
+        curve: ZadCurves.standard,
+      ),
+    );
+    return AnimatedBuilder(
+      animation: curve,
+      child: child,
+      builder: (context, child) {
+        final t = curve.value;
+        final dir = Directionality.of(context) == TextDirection.rtl ? 1 : -1;
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(dir * 24 * (1 - t), 0),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    var index = 0;
+    final n = widget.entries.length;
+    String? group;
+    for (final e in widget.entries) {
+      if (e.group.isNotEmpty && e.group != group) {
+        group = e.group;
+        rows.add(
+          _staggered(
+            index,
+            n,
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(
+                ZadSpacing.md,
+                rows.isEmpty ? ZadSpacing.xs : ZadSpacing.lg,
+                ZadSpacing.md,
+                ZadSpacing.xs,
+              ),
+              child: Text(
+                e.group,
+                style: ZadType.labelMedium.copyWith(
+                  color: _textTertiary,
+                  fontWeight: FontWeight.w700,
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        const Divider(height: 1, thickness: 1, color: _rule),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(10),
-            children: <Widget>[
-              for (final e in entries) ...<Widget>[
-                _DrawerRow(
-                  entry: e,
-                  active: current == e.id,
-                  onTap: () => onNavigate(e.id),
-                ),
-                const SizedBox(height: 2),
-              ],
-            ],
+        );
+      }
+      rows.add(
+        _staggered(
+          index,
+          n,
+          _DrawerRow(
+            entry: e,
+            active: widget.current == e.id,
+            onTap: () => widget.onNavigate(e.id),
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: _rule),
-        InkWell(
-          onTap: onProfile,
+      );
+      index++;
+    }
+
+    return Drawer(
+      width: MediaQuery.sizeOf(context).width * 0.8,
+      backgroundColor: ZadColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadiusDirectional.horizontal(
+          end: Radius.circular(ZadRadii.sheet),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: <Widget>[
+          _CompanionHeader(
+            userName: widget.userName,
+            enter: _enter,
+            onOpen: () => widget.onNavigate('companion'),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.sm,
+                ZadSpacing.sm,
+                ZadSpacing.sm,
+                ZadSpacing.lg,
+              ),
+              children: rows,
+            ),
+          ),
+          const Divider(height: 1, thickness: 1, color: _rule),
+          InkWell(
+            onTap: widget.onProfile,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(ZadSpacing.lg),
+                child: Row(
+                  children: <Widget>[
+                    IgnorePointer(
+                      child: _Avatar(
+                        url: widget.avatarUrl,
+                        onTap: widget.onProfile,
+                        initial:
+                            (widget.userName == null ||
+                                widget.userName!.isEmpty)
+                            ? 'Z'
+                            : widget.userName!.characters.first.toUpperCase(),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            widget.userName ?? 'مستخدم زاد',
+                            style: ZadType.titleSmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: kShellTextPrimary,
+                            ),
+                          ),
+                          Text(
+                            'اضغط لعرض الملف الشخصي',
+                            style: ZadType.labelSmall.copyWith(
+                              color: _textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_left, size: 20, color: _textTertiary),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The top of the drawer: the customer's own companion, alive, on the green
+/// card, with a hello and where it stands. A tap opens its studio.
+class _CompanionHeader extends ConsumerWidget {
+  const new({
+    required this.userName,
+    required this.enter,
+    required this.onOpen,
+  });
+
+  final String? userName;
+  final Animation<double> enter;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(companionProvider).value;
+    final look = ref.watch(companionLookProvider);
+    final name = (userName == null || userName!.trim().isEmpty)
+        ? null
+        : userName!.trim().split(' ').first;
+    final pop = CurvedAnimation(parent: enter, curve: ZadCurves.springy);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onOpen,
+        child: Ink(
+          decoration: const BoxDecoration(gradient: ZadColors.hero),
           child: SafeArea(
-            top: false,
+            bottom: false,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                ZadSpacing.lg,
+                ZadSpacing.lg,
+                ZadSpacing.lg,
+                ZadSpacing.lg,
+              ),
               child: Row(
                 children: <Widget>[
-                  IgnorePointer(
-                    child: _Avatar(
-                      url: avatarUrl,
-                      onTap: onProfile,
-                      initial: (userName == null || userName!.isEmpty)
-                          ? 'Z'
-                          : userName!.characters.first.toUpperCase(),
+                  ScaleTransition(
+                    scale: pop,
+                    child: Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                      child: Center(child: CompanionOrb(size: 72, look: look)),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: ZadSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          userName ?? 'مستخدم زاد',
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: kShellTextPrimary,
+                          name == null ? 'أهلاً بيك' : 'أهلاً يا $name',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ZadType.titleMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        Text(
-                          'اضغط لعرض الملف الشخصي',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: _textTertiary,
+                        const SizedBox(height: ZadSpacing.xs),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: ZadSpacing.sm,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(ZadRadii.pill),
+                          ),
+                          child: Text(
+                            status == null
+                                ? 'رفيق زاد'
+                                : '${status.persona.name} · '
+                                      'لفل ${status.level}',
+                            style: ZadType.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
+                        if (status != null) ...<Widget>[
+                          const SizedBox(height: ZadSpacing.sm),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(ZadRadii.pill),
+                            child: LinearProgressIndicator(
+                              minHeight: 5,
+                              value: status.levelNeed <= 0
+                                  ? 0
+                                  : (status.levelXp / status.levelNeed).clamp(
+                                      0.0,
+                                      1.0,
+                                    ),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.18,
+                              ),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                ZadColors.mintGlow,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_left, size: 20, color: _textTertiary),
+                  const Icon(Icons.chevron_left, color: Colors.white70),
                 ],
               ),
             ),
           ),
         ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 class _DrawerRow extends StatelessWidget {
@@ -560,33 +872,62 @@ class _DrawerRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: active ? kShellPrimary.withValues(alpha: 0.08) : Colors.transparent,
-    borderRadius: BorderRadius.circular(12),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        child: Row(
-          children: <Widget>[
-            Icon(
-              entry.icon,
-              size: 19,
-              color: active ? kShellPrimary : _textSecondary,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 1),
+    child: Material(
+      color: active ? entry.accent.withValues(alpha: 0.10) : Colors.transparent,
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ZadSpacing.sm,
+              vertical: 6,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                entry.label,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  color: active ? kShellPrimary : _textSecondary,
+            child: Row(
+              children: <Widget>[
+                AnimatedContainer(
+                  duration: ZadDuration.quick,
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? entry.accent
+                        : entry.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(ZadRadii.chip - 2),
+                  ),
+                  child: Icon(
+                    entry.icon,
+                    size: 19,
+                    color: active ? Colors.white : entry.accent,
+                  ),
                 ),
-              ),
+                const SizedBox(width: ZadSpacing.md),
+                Expanded(
+                  child: Text(
+                    entry.label,
+                    style: ZadType.titleSmall.copyWith(
+                      fontSize: 14.5,
+                      fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                      color: active ? entry.accent : kShellTextPrimary,
+                    ),
+                  ),
+                ),
+                if (active)
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: entry.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     ),
