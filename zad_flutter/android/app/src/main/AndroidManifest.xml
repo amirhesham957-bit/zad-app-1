@@ -63,6 +63,11 @@
         <meta-data
             android:name="${monitoringToolKey}"
             android:value="child_monitoring"/>
+        <!-- AdMob's app id (account opened 2026-10-13). The SDK refuses to start
+             without it. The rewarded unit is in shared/ads/data/rewarded_ads.dart. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4433736715872551~7866252380"/>
         <!--
           geolocator declares a location foreground service for position
           streams. This app takes single fixes only, so the service is removed:

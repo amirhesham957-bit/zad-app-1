@@ -5,11 +5,10 @@
 // أصلاً**. مستخدم مسجّل دخول يقدر ينادي الـRPC مباشرة وياخد رصيد. SSV هو الإثبات:
 // جوجل هي اللي بتنادي، والتوقيع بمفتاحها هو اللي بيميّز نداءها عن أي نداء تاني.
 //
-// ⚠️ **مش مفعّل لحد ما رابط الـcallback يتسجّل في كونسول AdMob** — وده محتاج حساب
-// حقيقي، وهو مؤجّل بقرار المالك. الكود هنا مبني ومختبَر ومستني التسجيل بس.
-// لحد ساعتها مسار الكلاينت شغال بحراساته، والـfallback المحلي اتشال (شوف الكوميت).
+// الحساب اتفتح ٢٠٢٦-١٠-١٣، والتطبيق بيعرض الإعلان من «شاهد وخد» (WatchAdButton) وبيحط
+// user_id في custom_data. المنحة من هنا بس: zad_ad_reward_grant مقفولة على service_role.
 //
-// التسجيل لما الحساب يتفتح:
+// التسجيل:
 //   AdMob → Ad unit → Server-side verification → Callback URL:
 //   https://<project>.supabase.co/functions/v1/admob-ssv
 //   ولازم verify_jwt = false في config.toml — جوجل مش بتبعت Authorization.
@@ -18,6 +17,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
   b64urlToBytes,
   derToRawSignature,
+  grantTarget,
   isFreshTimestamp,
   pickKey,
   signedContent,
@@ -76,11 +76,9 @@ Deno.serve(async (req: Request) => {
   const content = signedContent(q);
   const sig = p.get("signature");
   const keyId = p.get("key_id");
-  // custom_data هو اللي بنحط فيه user_id وقت عرض الإعلان — من غيره مفيش حساب نشحنه.
-  const userId = p.get("custom_data");
   const txId = p.get("transaction_id");
 
-  if (!content || !sig || !keyId || !userId || !txId) {
+  if (!content || !sig || !keyId || !txId) {
     return new Response("bad request", { status: 400 });
   }
   if (!isFreshTimestamp(p.get("timestamp"), Date.now())) {
@@ -98,6 +96,15 @@ Deno.serve(async (req: Request) => {
     console.error("admob-ssv verification error:", e);
     // فشل جلب المفاتيح مش سبب نمنح: الرفض هنا أأمن من المنح على الشك.
     return new Response("verification unavailable", { status: 503 });
+  }
+
+  // custom_data هو اللي التطبيق بيحط فيه user_id وقت عرض الإعلان. نداء «التحقق من
+  // عنوان URL» في كونسول AdMob بيوصل موقَّع من غيره: 200 من غير منحة، وإلا الكونسول
+  // مابيحفظش الرابط. ونفس الرد لأي قيمة مش UUID — مفيش حساب نشحنه.
+  const userId = grantTarget(p.get("custom_data"));
+  if (!userId) {
+    console.log("admob-ssv: signed callback without a customer (console check?)", txId);
+    return new Response("ok, nothing to grant", { status: 200 });
   }
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);

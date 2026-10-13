@@ -134,6 +134,9 @@ dependencies:
   # because play_billing.dart reads Android's purchase state and account and
   # consumes a seed pack itself, after the server grants it.
   in_app_purchase_android: ^0.5.3
+  # «شاهد وخد»: rewarded ads, granted on the server through SSV (admob-ssv).
+  # Brings UMP (the consent form) and webview_flutter with it.
+  google_mobile_ads: ^9.1.0
   # No envied. It exists to obfuscate compile-time secrets, and the only secret
   # the client holds is the Supabase anon key, which is designed to be public
   # and is guarded by RLS — obfuscating it buys nothing and costs a codegen

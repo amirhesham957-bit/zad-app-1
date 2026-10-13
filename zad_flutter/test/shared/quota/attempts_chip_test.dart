@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/quota/data/attempts_remote.dart';
@@ -32,10 +34,18 @@ AttemptsBalance _free({int left = 2, DateTime? next, int adLeft = 0}) =>
       adLeft: adLeft,
     );
 
-Widget _host(_FakeRemote remote) => ProviderScope(
+class _Preview implements AdRewardPreviewRemote {
+  @override
+  Future<AdRewardPreview?> preview() async =>
+      const AdRewardPreview(available: true, reward: 2);
+}
+
+Widget _host(_FakeRemote remote, {bool ads = false}) => ProviderScope(
   overrides: [
     attemptsRemoteProvider.overrideWithValue(remote),
     accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+    adsAllowedProvider.overrideWithValue(ads),
+    adRewardPreviewRemoteProvider.overrideWithValue(_Preview()),
   ],
   child: const MaterialApp(
     home: Directionality(
@@ -193,4 +203,20 @@ void main() {
       expect(paywallOpened, 1);
     },
   );
+
+  testWidgets('the sheet offers «شاهد وخد» only where ads may show', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host(_FakeRemote(_free()), ads: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('attempts-chip')));
+    await tester.pumpAndSettle();
+    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
+
+    await tester.pumpWidget(_host(_FakeRemote(_free())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('attempts-chip')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsNothing);
+  });
 }

@@ -8,8 +8,8 @@
 ///   * on a plan without ads (`ads_enabled` false, every paid tier);
 ///   * signed out.
 ///
-/// AdMob is not in the app yet (no `google_mobile_ads`). When it lands, a
-/// placement that does not read [adsAllowedProvider] first is a bug.
+/// Every placement reads [adsAllowedProvider] first («شاهد وخد»,
+/// `WatchAdButton`); one that does not is a bug.
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
