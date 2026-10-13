@@ -266,7 +266,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                   const SizedBox(height: 16),
                   ZadMascot(
                     state: ref.watch(companionMoodProvider),
-                    size: 144,
+                    size: 172,
                     audioLevel: levels,
                     onTap: () => playPetSound(PetSound.happyChirp, volume: 0.5),
                   ),
