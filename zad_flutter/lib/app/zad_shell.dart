@@ -18,6 +18,7 @@ import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
@@ -384,36 +385,19 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onNotifications: () =>
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
-                // رفيق زاد lives on Home's header; its moments (a level,
-                // waking up, «+10 ⭐») play over it.
-                pet: _tab == ZadNavDestination.home
-                    ? const CompanionMoments(child: CompanionHeaderPet())
-                    : null,
               ),
               Expanded(
-                // IndexedStack, not a rebuild per tab: each screen's
-                // controller reads its cache in build, and swapping the
-                // subtree would throw away a scrolled list and re-read Hive
-                // on every switch back.
-                child: IndexedStack(
-                  index: _tabs.indexOf(_tab),
+                child: Stack(
                   children: <Widget>[
-                    HomeScreen(
-                      onOpenVoice: () => unawaited(_openVoice()),
-                      onOpenCamera: () => unawaited(_openCamera()),
-                    ),
-                    if (_opened.contains(ZadNavDestination.money))
-                      const FinancesScreen(embedded: true)
-                    else
-                      const SizedBox.shrink(),
-                    if (_opened.contains(ZadNavDestination.inventory))
-                      const HouseholdScreen(embedded: true)
-                    else
-                      const SizedBox.shrink(),
-                    if (_opened.contains(ZadNavDestination.family))
-                      ZadSlots.familyScreen()
-                    else
-                      const SizedBox.shrink(),
+                    Positioned.fill(child: _tabStack()),
+                    // رفيق زاد floats over the bar on Home, by the corner;
+                    // its moments (a level, waking up, «+10 ⭐») play over it.
+                    if (_tab == ZadNavDestination.home)
+                      const PositionedDirectional(
+                        end: ZadSpacing.lg,
+                        bottom: ZadSpacing.sm,
+                        child: CompanionMoments(child: CompanionFloatingPet()),
+                      ),
                   ],
                 ),
               ),
@@ -432,4 +416,29 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       ),
     );
   }
+
+  // IndexedStack, not a rebuild per tab: each screen's controller reads its
+  // cache in build, and swapping the subtree would throw away a scrolled list
+  // and re-read Hive on every switch back.
+  Widget _tabStack() => IndexedStack(
+    index: _tabs.indexOf(_tab),
+    children: <Widget>[
+      HomeScreen(
+        onOpenVoice: () => unawaited(_openVoice()),
+        onOpenCamera: () => unawaited(_openCamera()),
+      ),
+      if (_opened.contains(ZadNavDestination.money))
+        const FinancesScreen(embedded: true)
+      else
+        const SizedBox.shrink(),
+      if (_opened.contains(ZadNavDestination.inventory))
+        const HouseholdScreen(embedded: true)
+      else
+        const SizedBox.shrink(),
+      if (_opened.contains(ZadNavDestination.family))
+        ZadSlots.familyScreen()
+      else
+        const SizedBox.shrink(),
+    ],
+  );
 }
