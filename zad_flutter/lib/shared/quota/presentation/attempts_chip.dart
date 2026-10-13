@@ -198,7 +198,7 @@ String refillLine(AttemptsBalance b, DateTime now, String zone) {
     final day = '${arabicDigits(at.day)} ${_months[at.month - 1]}';
     return 'باقتك ${b.planName} — بتتجدد يوم $day';
   }
-  if (b.left >= b.perCycle) return 'رصيدك كامل';
+  if (b.cycleLeft >= b.perCycle) return 'رصيدك كامل';
   if (next == null || !next.isAfter(now)) return 'رصيدك بيرجع دلوقتي';
   final at = _inZone(next, zone);
   final today = _inZone(now, zone);

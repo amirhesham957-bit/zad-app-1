@@ -36,7 +36,12 @@ insert into public.zad_tiers values
   ('free', 0, 0, 5, -1, false, true, 0), ('plus', 0, 0, 1000, -1, true, false, 2)
 on conflict do nothing;
 
+-- zad_entitlement_status reads the week start; its own migration is older than this file's shapes.
+create or replace function public.zad_week_start(p_at timestamptz, p_tz text) returns timestamptz
+language sql immutable as $$ select date_trunc('week', p_at at time zone p_tz) at time zone p_tz $$;
+
 \i supabase/migrations/20261012010000_free_refill_five_hours.sql
+\i supabase/migrations/20261012020000_one_attempts_balance.sql
 \i supabase/migrations/20261012050000_ad_reward_by_country.sql
 \i supabase/migrations/20261012100000_ad_attempts_survive_refill.sql
 
@@ -83,6 +88,15 @@ begin
   perform pg_temp.spend(eg, 10);
   e := pg_temp.cycle_ends(eg);
   assert e.chat_left = 8 and e.ad_attempts_left = 3, format('3 ad left: %s / %s', e.chat_left, e.ad_attempts_left);
+
+  -- The status says how much of the balance is from ads, so the chip knows the free 5 are whole.
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', false);
+  assert (zad_entitlement_status(eg)->>'ad_attempts_left')::int = 3, 'status: ad share not 3';
+  assert (zad_entitlement_status(eg)->>'attempts_left')::int = 8, 'status: balance not 8';
+  -- Spent into the ads: the share the status reports never exceeds the balance.
+  perform pg_temp.spend(eg, 6);
+  assert (zad_entitlement_status(eg)->>'ad_attempts_left')::int = 2, 'status: ad share above the balance';
+  perform pg_temp.spend(eg, -6);
 
   -- All spent: back to the free 5 and nothing more.
   perform pg_temp.spend(eg, 8);

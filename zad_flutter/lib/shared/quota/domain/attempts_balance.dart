@@ -3,7 +3,8 @@
 ///
 /// Logging is free and never counts. A chat message costs 1, a scan 2, a deep
 /// analysis 3. The free tier gets 5 back every 5 hours, never stacking above
-/// 5; the paid plans get 300, 1000 or 2500 a month.
+/// 5 — attempts earned from ads come on top and survive the refill
+/// (20261012100000); the paid plans get 300, 1000 or 2500 a month.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -30,6 +31,7 @@ class AttemptsBalance {
     required this.perCycle,
     required this.nextRefillAt,
     required this.adsEnabled,
+    this.adLeft = 0,
   });
 
   /// Reads `zad_entitlement_status`'s answer, or null when it is not one (an
@@ -40,12 +42,14 @@ class AttemptsBalance {
     if (left is! num) return null;
     final perCycle = json['attempts_per_cycle'];
     final next = json['next_refill_at'];
+    final adLeft = json['ad_attempts_left'];
     return AttemptsBalance(
       tier: (json['tier'] as String?) ?? 'free',
       left: left.toInt(),
       perCycle: perCycle is num ? perCycle.toInt() : 5,
       nextRefillAt: next is String ? DateTime.tryParse(next) : null,
       adsEnabled: json['ads_enabled'] == true,
+      adLeft: adLeft is num ? adLeft.toInt() : 0,
     );
   }
 
@@ -64,6 +68,13 @@ class AttemptsBalance {
 
   /// Whether this tier sees ads.
   final bool adsEnabled;
+
+  /// How much of [left] was earned from ads. It stays through the refill, so
+  /// the cycle's own attempts are [left] less this.
+  final int adLeft;
+
+  /// What is left of the cycle's own attempts — what the refill tops up.
+  int get cycleLeft => left - adLeft.clamp(0, left);
 
   /// On the free tier.
   bool get isFree => tier == 'free';
@@ -86,11 +97,12 @@ class AttemptsBalance {
       other.left == left &&
       other.perCycle == perCycle &&
       other.nextRefillAt == nextRefillAt &&
-      other.adsEnabled == adsEnabled;
+      other.adsEnabled == adsEnabled &&
+      other.adLeft == adLeft;
 
   @override
   int get hashCode =>
-      Object.hash(tier, left, perCycle, nextRefillAt, adsEnabled);
+      Object.hash(tier, left, perCycle, nextRefillAt, adsEnabled, adLeft);
 }
 
 /// «محاولة واحدة»، «محاولتين»، «٣ محاولات»، «١١ محاولة» — the noun agrees with

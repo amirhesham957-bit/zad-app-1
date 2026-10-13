@@ -176,3 +176,75 @@ $function$;
 -- المنحة من admob-ssv بس (service_role)، زي ما 20261012090000 قفلها.
 revoke execute on function public.zad_ad_reward_grant(uuid) from public, anon, authenticated;
 grant execute on function public.zad_ad_reward_grant(uuid) to service_role;
+
+-- ── zad_entitlement_status بيقول كام من الرصيد جاي من إعلانات ─────────────────────────────────
+-- نفس الدالة الشغالة على المشروع (pg_get_functiondef، ٢٠٢٦-١٠-١٣) بالحرف، والفرق الوحيد
+-- مفتاح ad_attempts_left. من غيره الشريحة كانت بتقول «رصيدك كامل» لأي رصيد ≥ ٥، حتى لو
+-- المجاني مصروف والتجديد هيزوّد.
+create or replace function public.zad_entitlement_status(p_user uuid default null::uuid, p_tz text default 'UTC'::text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  uid uuid;
+  e public.zad_entitlements;
+  t public.zad_tiers;
+  free_ready boolean;
+begin
+  if auth.uid() is null and coalesce(auth.role(), '') <> 'service_role' then
+    return jsonb_build_object('error', 'forbidden');
+  end if;
+  if auth.uid() is not null and p_user is not null and p_user <> auth.uid() then
+    return jsonb_build_object('error', 'forbidden');
+  end if;
+
+  uid := coalesce(p_user, auth.uid());
+  if uid is null then return jsonb_build_object('error', 'no user'); end if;
+
+  e := public.zad_entitlement_refresh(uid);
+  select * into t from public.zad_tiers where tier = e.tier;
+
+  free_ready := e.tier = 'free'
+    and (e.last_free_brain_at is null
+         or e.last_free_brain_at < public.zad_week_start(now(), coalesce(p_tz, 'UTC')));
+
+  return jsonb_build_object(
+    'tier', e.tier,
+    'tier_expires_at', e.tier_expires_at,
+    'ads_enabled', t.ads_enabled,
+    'telegram_media', t.telegram_media = true
+                      or (e.tier = 'free' and e.media_pass_expires_at is not null
+                          and e.media_pass_expires_at > now()),
+    'media_pass_expires_at', e.media_pass_expires_at,
+    -- الرصيد الواحد، وكام بيتجدد، وإمتى.
+    'attempts_left', e.chat_left,
+    'attempts_per_cycle', t.chat_monthly,
+    'next_refill_at', e.cycle_reset_at,
+    -- كام من attempts_left جاي من إعلانات (بيفضل بعد التجديد): الشريحة بتحسب منه
+    -- هل الـ٥ المجانية كاملة ولا التجديد هيزوّد.
+    'ad_attempts_left', greatest(least(e.ad_attempts_left, e.chat_left), 0),
+    'costs', jsonb_build_object('chat', 1, 'scan', 2, 'brain', 3, 'voice', 0),
+    -- المفاتيح القديمة لسه بترجع عشان أي كود بيقراها مايقعش.
+    'brain_left', e.brain_left,
+    'scan_left', e.scan_left,
+    'chat_left', e.chat_left,
+    'voice_left', case when t.voice_monthly < 0 then -1 else e.voice_left end,
+    'cycle_reset_at', e.cycle_reset_at,
+    'weekly_free_ready', free_ready,
+    'next_weekly_free_at', case when free_ready then null
+      else public.zad_week_start(now(), coalesce(p_tz, 'UTC')) + interval '7 days' end,
+    'ad_watch_count', e.ad_watch_count,
+    'brain_session_expires_at', e.brain_session_expires_at,
+    'brain_session_active', e.tier = 'free' and e.brain_session_expires_at is not null
+                            and e.brain_session_expires_at > now(),
+    'brain_available', e.chat_left >= public.zad_attempt_cost('brain') or free_ready
+                       or (e.tier = 'free' and e.brain_session_expires_at is not null
+                           and e.brain_session_expires_at > now())
+  );
+end;
+$function$;
+
+revoke all on function public.zad_entitlement_status(uuid, text) from public, anon;
+grant execute on function public.zad_entitlement_status(uuid, text) to authenticated, service_role;
