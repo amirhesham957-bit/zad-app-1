@@ -50,8 +50,16 @@ jobs:
             exit 0
           fi
           mkdir -p "$HOME/.android"
-          echo "$KEYSTORE_B64" | base64 -d > "$HOME/.android/debug.keystore"
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android | grep -i fingerprint
+          # A pasted secret can carry spaces, quotes or CRs; keep only base64 characters.
+          # A secret that still does not decode to a keystore must not block the APK:
+          # warn and fall back to the runner's one-off key (run #125 failed here).
+          if printf '%s' "$KEYSTORE_B64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > "$HOME/.android/debug.keystore" 2>/dev/null \
+             && keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android | grep -i fingerprint; then
+            exit 0
+          fi
+          rm -f "$HOME/.android/debug.keystore"
+          echo "::warning title=APK signing::ZAD_DEBUG_KEYSTORE_B64 is not a valid base64 debug keystore — this APK gets a one-off key."
+          echo "⚠️ ZAD_DEBUG_KEYSTORE_B64 is invalid; APK signed with a one-off key: uninstall the old app before installing it." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build APK
         run: |
