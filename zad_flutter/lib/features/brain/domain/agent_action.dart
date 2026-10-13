@@ -154,6 +154,11 @@ String agentToolLabel(String tool) => switch (tool) {
   'stop_savings_challenge' => 'إيقاف تحدي توفير',
   'update_emergency_fund_balance' => 'تحديث صندوق الطوارئ',
   'allocate_income' => 'توزيع الدخل',
+  'set_sleep_window' => 'مواعيد نومك',
+  'learn_skill' => 'تعلّم مهارة',
+  'save_trusted_technician' => 'حفظ صنايعي',
+  'open_support_ticket' => 'فتح طلب دعم',
+  'answer_same_product' => 'مطابقة منتج',
   _ => 'تعديل من زاد',
 };
 
