@@ -3,6 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/features/home/data/home_widget_sync.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
+import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 void main() {
@@ -138,6 +139,44 @@ void main() {
         brief: '  جرعة الضغط الساعة ٩  ',
       );
       expect(v['zad_brief'], 'جرعة الضغط الساعة ٩');
+    });
+  });
+
+  group('the pet row', () {
+    test('the moments it was full, as epoch ms, for the widget to age', () {
+      final care = PetCare(
+        fedAt: now.subtract(const Duration(hours: 4)),
+        wateredAt: now.subtract(const Duration(hours: 1)),
+        lastCareAt: now,
+      );
+      final v = petWidgetValues(care: care, name: 'فلة', zone: 'Africa/Cairo');
+      expect(v['zad_pet_name'], 'فلة');
+      expect(
+        int.parse(v['zad_pet_fed_at']!),
+        care.fedAt.millisecondsSinceEpoch,
+      );
+      expect(
+        int.parse(v['zad_pet_watered_at']!),
+        care.wateredAt.millisecondsSinceEpoch,
+      );
+      expect(v['zad_pet_cared_at'], '${now.millisecondsSinceEpoch}');
+      expect(v['zad_pet_petted_at'], '');
+      expect(
+        int.parse(v['zad_pet_hunger_ms']!),
+        PetCare.hungerSpan.inMilliseconds,
+      );
+      expect(
+        int.parse(v['zad_pet_thirst_ms']!),
+        PetCare.thirstSpan.inMilliseconds,
+      );
+      expect(v['zad_pet_zone'], 'Africa/Cairo');
+    });
+
+    test('signed out: blank keys hide the row', () {
+      final v = petWidgetValues(care: null, name: 'زادو', zone: 'Asia/Riyadh');
+      expect(v['zad_pet_name'], '');
+      expect(v['zad_pet_fed_at'], '');
+      expect(v['zad_pet_watered_at'], '');
     });
   });
 }

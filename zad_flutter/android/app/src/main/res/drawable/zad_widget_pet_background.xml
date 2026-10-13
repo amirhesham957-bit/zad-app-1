@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The pet row in ZadBalanceWidget: زاد's mint, rounded like a chip. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFE6F4EC" />
+    <corners android:radius="12dp" />
+</shape>

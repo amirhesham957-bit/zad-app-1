@@ -9,11 +9,15 @@ import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/data/home_widget_sync.dart';
 import 'package:zad/shared/brain/presentation/daily_brief_lines.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/application/pet_care_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// Kept alive by the shell. Rebuilds — and pushes — when the spendable
 /// figure, the currency, the newest transactions, the season or the day's
-/// first brief line change; nothing else.
+/// first brief line change, or the pet is fed, given water or petted;
+/// nothing else.
 final homeWidgetSyncProvider = Provider<void>((ref) {
   final available = ref.watch(
     budgetControllerProvider.select((v) => v.spendable),
@@ -38,9 +42,15 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
   final brief = ref.watch(
     dailyBriefProvider.select((b) => b.isEmpty ? null : b.first.title),
   );
+  // The pet's row: its full-at moments, which change only on care.
+  final care = ref.watch(petCareProvider);
+  final petName = ref.watch(
+    companionProvider.select((v) => v.value?.persona.name ?? 'زادو'),
+  );
+  final zone = ref.watch(accountTimeZoneProvider);
   unawaited(
-    ref.read(homeWidgetPushProvider)(
-      widgetValues(
+    ref.read(homeWidgetPushProvider)(<String, String>{
+      ...widgetValues(
         available: available,
         currency: currency,
         recent: recent,
@@ -49,7 +59,8 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
         upcoming: upcoming,
         brief: brief,
       ),
-    ),
+      ...petWidgetValues(care: care, name: petName, zone: zone),
+    }),
   );
 });
 

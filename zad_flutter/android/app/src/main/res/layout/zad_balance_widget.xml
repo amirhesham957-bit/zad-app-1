@@ -74,6 +74,45 @@
         android:textColor="#FF1B4332"
         android:textSize="24sp"
         android:textStyle="bold" />
+    <!-- رفيق زاد: its face for its hunger and thirst right now, worked out by the
+         widget from the moments it was last full. Hidden when signed out. -->
+    <LinearLayout
+        android:id="@+id/widget_pet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/zad_widget_pet_background"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="4dp"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/widget_pet_face"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp" />
+        <TextView
+            android:id="@+id/widget_pet_line"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FF1B4332"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/widget_pet_levels"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textColor="#FF56635B"
+            android:textSize="11sp" />
+    </LinearLayout>
     <!-- The daily brief's first line: the one thing that needs the customer today. -->
     <TextView
         android:id="@+id/widget_brief"

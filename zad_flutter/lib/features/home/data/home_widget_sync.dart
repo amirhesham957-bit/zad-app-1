@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/shared/campaigns/domain/campaign.dart';
+import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// The Android class, fully named: the package is not the application id.
@@ -92,6 +93,31 @@ Map<String, String> seasonValues({
     'zad_season_color': c.readableOnWhite
         ? '#${(c.primary & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}'
         : '#1b4332',
+  };
+}
+
+/// The pet row's keys: the moments its levels were full, not the levels
+/// themselves. Hunger and thirst keep falling while the app is closed, so
+/// the widget works the face out at every redraw (ZadBalanceWidget.kt
+/// mirrors `PetCare.mood`) — on the app's writes and every 30 minutes.
+/// Signed out ([care] null): blank keys hide the row.
+Map<String, String> petWidgetValues({
+  required PetCare? care,
+  required String name,
+  required String zone,
+}) {
+  String ms(DateTime? t) =>
+      t == null ? '' : '${t.toUtc().millisecondsSinceEpoch}';
+  return <String, String>{
+    'zad_pet_name': care == null ? '' : name,
+    'zad_pet_fed_at': ms(care?.fedAt),
+    'zad_pet_watered_at': ms(care?.wateredAt),
+    'zad_pet_petted_at': ms(care?.pettedAt),
+    'zad_pet_cared_at': ms(care?.lastCareAt),
+    'zad_pet_hunger_ms': '${PetCare.hungerSpan.inMilliseconds}',
+    'zad_pet_thirst_ms': '${PetCare.thirstSpan.inMilliseconds}',
+    'zad_pet_joy_ms': '${PetCare.joySpan.inMilliseconds}',
+    'zad_pet_zone': zone,
   };
 }
 

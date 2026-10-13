@@ -34,6 +34,24 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
         working-directory: zad_flutter
+      # One signing key for every build. Without it each runner makes a fresh
+      # debug key, so every APK is signed differently and Android refuses to
+      # install it over the last one ("التطبيق غير مثبت" / package conflicts) —
+      # the phone keeps the old app. Measured 2026-10-13: runs #123 and #124
+      # carried different certificates. The secret is the codespace's
+      # ~/.android/debug.keystore, base64, so local builds match CI's too.
+      - name: Use the shared debug key
+        env:
+          KEYSTORE_B64: ${{ secrets.ZAD_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning title=APK signing::ZAD_DEBUG_KEYSTORE_B64 is not set — this APK gets a one-off key and will not install over the previous one."
+            echo "⚠️ APK signed with a one-off key: uninstall the old app before installing it." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          mkdir -p "$HOME/.android"
+          echo "$KEYSTORE_B64" | base64 -d > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android | grep -i fingerprint
 
       - name: Build APK
         run: |
