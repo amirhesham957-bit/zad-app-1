@@ -54,11 +54,24 @@ android {
             if (kidsGeofencing) "isMonitoringTool" else "zad.kids_geofencing_off"
     }
 
+    // Play upload key, env-var only (never in the repo). Set KEYSTORE_PATH,
+    // STORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD for the Play bundle; without them
+    // release builds stay debug-signed so the phone APK installs over itself.
+    val uploadKeystore = System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+    signingConfigs {
+        if (uploadKeystore != null) {
+            create("upload") {
+                storeFile = file(uploadKeystore)
+                storePassword = System.getenv("STORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (uploadKeystore != null) "upload" else "debug")
         }
     }
 }
