@@ -155,6 +155,14 @@ Scoped to this app's actual attack surface (Android client + Supabase backend + 
   step passed (unit tests, lint, the Ktor/supabase dependency-alignment guard, the debug
   build itself) and only the artifact *upload* failed with "Artifact storage quota has
   been hit." The run shows red; the code is fine.
+- **CI APKs must share one signing key (2026-10-13).** `build-debug-apk.yml` signs with
+  the runner's debug key, and a fresh runner makes a fresh one: runs #123 and #124 carried
+  different certificates, so Android refused the new APK over the installed one and the
+  owner reported it as "تالف" while the old app (no pet) stayed. The workflow now restores
+  `secrets.ZAD_DEBUG_KEYSTORE_B64` (the codespace's `~/.android/debug.keystore`, base64)
+  before building and warns in the run summary when it is missing. Setting that secret
+  needs a human — the session token gets 403 on Actions secrets. Switching keys once
+  still means uninstalling the old app once; let its outbox drain online first.
 - **`supabase/config.toml` declares `verify_jwt` per function and that is load-bearing.**
   `supabase functions deploy` applies these on every deploy and defaults to `true` for
   anything undeclared. `zad-brain` and `zad-telegram-bot` both run with it **off** on

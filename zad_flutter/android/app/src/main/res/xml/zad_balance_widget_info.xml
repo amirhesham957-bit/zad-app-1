@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- No periodic update: the app writes the figures whenever they change.
+<!-- Every 30 minutes (Android's floor): the pet's hunger and thirst keep falling
+     while the app is closed, so the widget redraws its face from the stored
+     moments. Nothing else needs it — the app writes the figures when they change.
      Three cells tall: the season row and the day's line sit above the three rows. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/zad_balance_widget"
@@ -8,5 +10,5 @@
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="3"
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />
