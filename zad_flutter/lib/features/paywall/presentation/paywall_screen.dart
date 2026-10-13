@@ -1,6 +1,6 @@
 /// Kotlin's `ZadSubscriptionPaywallScreen` («اشتراكات زاد بريميوم»): the
 /// banner, the three plans (quota, badge, perks) to pick from, the subscribe
-/// button, the trust row, and the free-ads alternative.
+/// button, the trust row, and what the free plan gives.
 ///
 /// Payment is Google Play Billing (play_billing.dart): Play takes the money,
 /// `verify-purchase` checks the token with Google and grants the plan. A
@@ -34,24 +34,24 @@ Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
 const Color _lilac = Color(0xFF9C27B0);
 
 enum _Plan {
+  // Every perk here is one the server actually gives (zad_tiers, zad-brain's
+  // paid lane, 2026-10-12): the plans differ only in attempts; every feature
+  // is open on the free plan too, at its cost in attempts.
   basic('الأساسية (Basic)', 300, 'الأكثر اقتصاداً', <String>[
     'من غير إعلانات خالص',
     '300 محاولة في الشهر (حوالي 10 في اليوم)',
-    'مسح الفواتير ورسايل البنك',
-    'تسجيل المصاريف مجاني دايماً ومش بيتحسب',
+    'مكانك محجوز وقت الزحمة، وزاد بيفتكر كلامكم أطول',
+    'صور وفويس في بوت تليجرام',
   ]),
   plus('المتقدمة (Plus)', 1000, 'الأكثر شعبية ⭐', <String>[
     'كل مزايا الأساسية',
     '1000 محاولة في الشهر (حوالي 33 في اليوم)',
-    'تحليلات عقل زاد والتوقعات',
-    'مقارنة الأسعار وتنبيهات العروض',
-    'شجرة المعرفة التفاعلية 3D',
+    'تكفي مسح فواتير وتحليل عميق كل يوم',
   ]),
-  ultra('العيلة (Family)', 2500, 'للبيت كله 👑', <String>[
-    'كل مزايا بلس',
-    '2500 محاولة في الشهر',
-    'أولوية على السيرفر وقت الزحمة',
-    'دعم فني بأولوية',
+  ultra('العيلة (Family)', 2500, 'أكبر رصيد 👑', <String>[
+    'كل مزايا الأساسية',
+    '2500 محاولة في الشهر (حوالي 83 في اليوم)',
+    'لأكتر حد بيعتمد على زاد في البيت',
   ]);
 
   new(this.title, this.quota, this.badge, this.perks);
@@ -272,8 +272,8 @@ class _PaywallState extends ConsumerState<PaywallScreen>
               ),
               const SizedBox(height: 6),
               Text(
-                'تجربة فورية بلا إعلانات، ذكاء اصطناعي فوري، ومزامنة عائلية '
-                'ذكية عبر متجر Google Play الرسمي.',
+                'من غير إعلانات، برصيد محاولات أكبر، ومكان محجوز وقت الزحمة '
+                '— والدفع عبر متجر Google Play الرسمي.',
                 textAlign: TextAlign.center,
                 style: ZadType.bodySmall.copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
@@ -396,37 +396,21 @@ class _PaywallState extends ConsumerState<PaywallScreen>
           child: Column(
             children: <Widget>[
               Text(
-                'أو اشحن بطارية الذكاء الاصطناعي مجاناً ⚡',
+                'أو كمّل على المجاني',
                 style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: ZadSpacing.xs),
+              // The free plan as zad_entitlement_refresh gives it. No ad
+              // button until the ads SDK is in the app: nothing shown here
+              // may do nothing.
               Text(
-                'شاهد 3 إعلانات للحصول على 5 رسائل ذكاء اصطناعي وجلسة '
-                'نشطة لمدة 12 ساعة.',
+                '5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. '
+                'رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل '
+                'العميق بـ3.',
                 textAlign: TextAlign.center,
                 style: ZadType.bodySmall.copyWith(
                   color: ZadColors.inkMuted,
-                  fontSize: 11,
-                ),
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => unawaited(
-                  _explain(
-                    'الإعلانات المجانية',
-                    'الإعلانات بتيجي من Google AdMob، ومش متوصّلة في النسخة '
-                        'اللي متثبتة مباشرة. زاد شغال عندك من غير إعلانات.',
-                  ),
-                ),
-                icon: const Icon(ZadIcons.play, size: 18),
-                label: const Text(
-                  'مشاهدة إعلان مجاني (0/3)',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                  height: 1.5,
                 ),
               ),
             ],

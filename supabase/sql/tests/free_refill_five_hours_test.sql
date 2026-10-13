@@ -37,7 +37,8 @@ declare
   free_u uuid := gen_random_uuid(); paid_u uuid := gen_random_uuid(); lapsed_u uuid := gen_random_uuid();
   e public.zad_entitlements;
 begin
-  -- A free customer whose cycle ended, holding more than 5 from ads: back to exactly 5.
+  -- A free customer whose cycle ended, holding more than 5, none of it from ads: back to exactly 5
+  -- (ad-earned attempts carry over since 20261012100000 — ad_attempts_survive_refill_test.sql).
   insert into zad_entitlements (user_id, chat_left, cycle_reset_at) values (free_u, 9, now() - interval '1 minute');
   e := zad_entitlement_refresh(free_u);
   assert e.chat_left = 5, format('free refill gave %s, not 5', e.chat_left);

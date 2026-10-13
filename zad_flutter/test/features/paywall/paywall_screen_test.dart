@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lottie/lottie.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 
 Future<void> _pump(
@@ -108,6 +109,14 @@ void main() {
     for (final word in <String>['خصم', 'متبقي', 'عرض لفترة', 'ينتهي']) {
       expect(find.textContaining(word), findsNothing, reason: word);
     }
+  });
+
+  testWidgets('no ad button until the ads SDK is in the app', (tester) async {
+    await _pump(tester, still: true);
+    expect(find.textContaining('مشاهدة إعلان'), findsNothing);
+    expect(find.textContaining('شاهد'), findsNothing);
+    expect(find.byIcon(ZadIcons.play), findsNothing);
+    expect(find.textContaining('5 محاولات بترجع كل 5 ساعات'), findsOneWidget);
   });
 
   testWidgets('fits a small phone at large text', (tester) async {
