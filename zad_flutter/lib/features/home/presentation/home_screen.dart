@@ -108,6 +108,10 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // The bot's link right under the money while it is missing (owner,
+          // 2026-10-13): the reminders come from Telegram.
+          ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
+          const SizedBox(height: 16),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
           const AdWeekCard(),
           // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
@@ -130,8 +134,6 @@ class HomeScreen extends ConsumerWidget {
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
-          ZadAppearOnEntry(delayMs: 80, child: ZadSlots.homeTelegramBlocks()),
-          const SizedBox(height: 16),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
           ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
           // The bank channel's state, then what it brought and what the brain

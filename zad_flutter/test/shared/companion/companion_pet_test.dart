@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
+import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -161,6 +163,43 @@ void main() {
       find.byKey(const ValueKey<String>('pet-line')).last,
     );
     expect(PetLinesSamples.full, contains(line.data));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('the floating pet is dragged and stays where it was left', (
+    tester,
+  ) async {
+    await pump(tester, const CompanionFloatingPet());
+    final drag = find.byKey(const ValueKey<String>('pet-floating-drag'));
+    final before = tester.getCenter(drag);
+    // It starts by the bottom-left corner (the end side in Arabic).
+    await tester.drag(drag, const Offset(300, -250));
+    await tester.pump(const Duration(seconds: 1));
+    final after = tester.getCenter(drag);
+    expect(after.dx, greaterThan(before.dx + 250));
+    expect(after.dy, lessThan(before.dy - 200));
+    // Kept for the next launch.
+    expect(device.get(CompanionFloatingPet.positionKey), isNotNull);
+  });
+
+  testWidgets('the ball game counts catches and cheers the pet up', (
+    tester,
+  ) async {
+    final container = await pump(
+      tester,
+      PetBallGame(name: 'زادو', rng: math.Random(1)),
+    );
+    expect(container.read(petCareProvider)!.joy(now), 0);
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(const ValueKey<String>('pet-game-ball')));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    expect(find.text('النقط: 3'), findsOneWidget);
+    await tester.pump(const Duration(seconds: PetBallGame.seconds + 1));
+    expect(find.byKey(const ValueKey<String>('pet-game-ball')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('pet-game-again')), findsOne);
+    // The round ends with a pat.
+    expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
     await tester.pump(const Duration(seconds: 2));
   });
 

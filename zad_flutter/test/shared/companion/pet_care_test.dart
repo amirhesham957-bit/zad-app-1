@@ -177,6 +177,30 @@ void main() {
       );
       expect(companionCareTime(c, wall).at, wall.add(const Duration(hours: 3)));
     });
+
+    test('a pet left alone keeps calling, mornings and evenings', () {
+      final wall = tz.TZDateTime(cairo, 2026, 10, 13, 11);
+      final c = PetCare(
+        fedAt: wall.subtract(const Duration(days: 2)),
+        wateredAt: wall.subtract(const Duration(days: 2)),
+      );
+      final calls = companionCareCalls(c, wall, name: 'زادو');
+      // The first call, then six more over the next three days.
+      expect(calls, hasLength(7));
+      expect(calls.first.at, wall.add(const Duration(hours: 3)));
+      for (final call in calls.skip(1)) {
+        expect(call.at.hour, anyOf(10, 19));
+        expect(call.title, contains('زادو'));
+      }
+      for (var i = 1; i < calls.length; i++) {
+        expect(
+          calls[i].at.difference(calls[i - 1].at),
+          greaterThanOrEqualTo(const Duration(hours: 6)),
+        );
+      }
+      // The last one within three days.
+      expect(calls.last.at.difference(wall), lessThan(const Duration(days: 4)));
+    });
   });
 
   test('every mood has something to say', () {

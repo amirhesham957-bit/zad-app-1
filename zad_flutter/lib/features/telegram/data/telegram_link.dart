@@ -102,11 +102,11 @@ class TelegramLinkPrompt {
   final Box<String> _box;
   final DateTime Function() _now;
 
-  /// Kotlin's `MAX_SHOWS`.
-  static const int maxShows = 2;
-  static const Duration _reshowAfter = Duration(days: 3);
+  /// What [recordLinked] writes as the times shown: never ask again.
+  static const int linkedMark = 1000;
+  static const Duration _reshowAfter = Duration(days: 1);
   static const Duration _statusRecheck = Duration(hours: 6);
-  static const Duration _bannerSnooze = Duration(days: 3);
+  static const Duration _bannerSnooze = Duration(days: 1);
 
   static const String _timesShown = 'telegram_link_prompt_times_shown';
   static const String _lastShownAt = 'telegram_link_prompt_last_shown_at';
@@ -117,12 +117,13 @@ class TelegramLinkPrompt {
   int _int(String key) => int.tryParse(_box.get(key) ?? '') ?? 0;
   int get _nowMs => _now().millisecondsSinceEpoch;
 
-  /// Whether the sheet is due.
+  /// Whether the sheet is due: once a day until the account is linked
+  /// (owner, 2026-10-13: «لازم العميل يعمل كونكت» — the reminders and the
+  /// follow-up come from the bot). It used to give up after two showings.
   bool isDue() {
-    final times = _int(_timesShown);
-    if (times >= maxShows) return false;
+    if (knownStatus() == true || _int(_timesShown) >= linkedMark) return false;
     final last = int.tryParse(_box.get(_lastShownAt) ?? '');
-    if (times == 0 || last == null) return true;
+    if (last == null) return true;
     return _nowMs - last >= _reshowAfter.inMilliseconds;
   }
 
@@ -134,7 +135,7 @@ class TelegramLinkPrompt {
 
   /// Linked: never ask again.
   void recordLinked() {
-    unawaited(_box.put(_timesShown, '$maxShows'));
+    unawaited(_box.put(_timesShown, '$linkedMark'));
     recordStatus(linked: true);
   }
 
@@ -163,7 +164,7 @@ class TelegramLinkPrompt {
     return knownStatus() == false && _nowMs >= hidden;
   }
 
-  /// «مش دلوقتي» on the banner: three days.
+  /// «مش دلوقتي» on the banner: until tomorrow.
   void snoozeBanner() => unawaited(
     _box.put(_bannerHiddenUntil, '${_nowMs + _bannerSnooze.inMilliseconds}'),
   );

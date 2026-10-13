@@ -18,7 +18,6 @@ import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
-import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
@@ -392,10 +391,9 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                     Positioned.fill(child: _tabStack()),
                     // رفيق زاد floats over the bar on Home, by the corner;
                     // its moments (a level, waking up, «+10 ⭐») play over it.
+                    // It roams the whole body; empty room lets taps through.
                     if (_tab == ZadNavDestination.home)
-                      const PositionedDirectional(
-                        end: ZadSpacing.lg,
-                        bottom: ZadSpacing.sm,
+                      const Positioned.fill(
                         child: CompanionMoments(child: CompanionFloatingPet()),
                       ),
                   ],
