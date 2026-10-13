@@ -26,7 +26,19 @@ enum CompanionState {
   alert(Color(0xFFFF8A80), Color(0xFFD32F2F), 'زاد: تنبيه'),
 
   /// Gold: celebrating.
-  celebrating(Color(0xFFFFE066), Color(0xFFF59E0B), 'زاد: بيحتفل');
+  celebrating(Color(0xFFFFE066), Color(0xFFF59E0B), 'زاد: بيحتفل'),
+
+  /// Dusty blue: sad — left hungry and thirsty for too long.
+  sad(Color(0xFFA9BCD8), Color(0xFF41587A), 'زاد: زعلان'),
+
+  /// Warm orange: hungry.
+  hungry(Color(0xFFFFB27A), Color(0xFFD9622B), 'زاد: جعان'),
+
+  /// Teal: thirsty.
+  thirsty(Color(0xFF8EE3DA), Color(0xFF13827A), 'زاد: عطشان'),
+
+  /// Lavender: sleepy.
+  sleepy(Color(0xFFC9BCF2), Color(0xFF55469A), 'زاد: نعسان');
 
   new(this.sky, this.deep, this.description);
 
@@ -38,6 +50,12 @@ enum CompanionState {
 
   /// What TalkBack says.
   final String description;
+
+  /// A need of the virtual pet (`pet_care.dart`) rather than something the
+  /// agent is doing: the character takes more of the mood's colour, so a
+  /// hungry or sleepy pet reads at a glance.
+  bool get isNeed =>
+      this == sad || this == hungry || this == thirsty || this == sleepy;
 }
 
 const List<String> _alertToneWords = <String>[

@@ -18,6 +18,7 @@ import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/bank/data/bank_rejected_log.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad/shared/bank/domain/bank_notification.dart';
+import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/market/domain/market.dart';
@@ -714,6 +715,21 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                   set(AlertPrefs.companionNap, v: v);
                   unawaited(
                     ref.read(localRemindersProvider).syncCompanionNap(),
+                  );
+                },
+              ),
+              AlertSwitchItem(
+                title: 'رفيق زاد يفكّرني بأكله ومَيّته',
+                desc:
+                    'إشعار واحد لما يجوع أو يعطش، بيتأجّل كل ما تأكّله '
+                    'أو تسقيه — ومش بالليل',
+                checked: prefs.isEnabledUnlessOff(AlertPrefs.companionCare),
+                onChanged: (v) {
+                  set(AlertPrefs.companionCare, v: v);
+                  unawaited(
+                    ref
+                        .read(localRemindersProvider)
+                        .syncCompanionCare(ref.read(petCareProvider)),
                   );
                 },
               ),

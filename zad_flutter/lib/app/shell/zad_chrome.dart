@@ -50,11 +50,16 @@ class ZadTopHeader extends StatelessWidget {
     this.avatarUrl,
     this.kidsMode = false,
     this.onExitKidsMode,
+    this.pet,
     super.key,
   });
 
   /// The screen's title.
   final String title;
+
+  /// رفيق زاد, perched at the end of the title line on the header's rule
+  /// (Home only).
+  final Widget? pet;
 
   /// The menu square.
   final VoidCallback onOpenDrawer;
@@ -143,17 +148,30 @@ class ZadTopHeader extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    height: 32 / 26,
-                    letterSpacing: 0.2,
-                    fontWeight: FontWeight.w700,
-                    color: kShellTextPrimary,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          height: 32 / 26,
+                          letterSpacing: 0.2,
+                          fontWeight: FontWeight.w700,
+                          color: kShellTextPrimary,
+                        ),
+                      ),
+                    ),
+                    // Down by the bottom padding, so it sits on the rule.
+                    if (pet case final pet?)
+                      Transform.translate(
+                        offset: const Offset(0, 14),
+                        child: pet,
+                      ),
+                  ],
                 ),
               ],
             ),

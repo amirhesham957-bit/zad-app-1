@@ -101,6 +101,10 @@ abstract final class MascotContract {
     'happy',
     'alert',
     'celebrating',
+    'sad',
+    'hungry',
+    'thirsty',
+    'sleepy',
   ];
 
   /// The `occasion` enum's values.
@@ -131,6 +135,10 @@ String moodValue(CompanionState state) => switch (state) {
   CompanionState.happy => 'happy',
   CompanionState.alert => 'alert',
   CompanionState.celebrating => 'celebrating',
+  CompanionState.sad => 'sad',
+  CompanionState.hungry => 'hungry',
+  CompanionState.thirsty => 'thirsty',
+  CompanionState.sleepy => 'sleepy',
 };
 
 /// The `occasion` value for [look].

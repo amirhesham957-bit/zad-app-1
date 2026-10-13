@@ -28,6 +28,7 @@ const Color _mouth = Color(0xFF5B1D2B);
 const Color _tongue = Color(0xFFFF7C93);
 const Color _blush = Color(0xFFFF8FA8);
 const Color _warm = Color(0xFFFFE2C2);
+const Color _drop = Color(0xFF7CC8FF);
 
 /// The painted companion's layers.
 abstract final class PlushPainting {
@@ -336,8 +337,103 @@ abstract final class PlushPainting {
                 ..strokeCap = StrokeCap.round,
             );
           }
+        case CompanionState.sad:
+          // Smaller, lower eyes under brows raised at the inner end.
+          final low = at + Offset(0, r * 0.03);
+          _eye(canvas, low, r * 0.12, r * 0.15, open);
+          final inner = Offset(at.dx - side * r * 0.08, at.dy - r * 0.27);
+          final outer = Offset(at.dx + side * r * 0.14, at.dy - r * 0.19);
+          canvas.drawLine(
+            inner,
+            outer,
+            Paint()
+              ..color = _ink
+              ..strokeWidth = r * 0.045
+              ..strokeCap = StrokeCap.round,
+          );
+        case CompanionState.hungry:
+          // Big pleading eyes, looking up.
+          _eye(canvas, at - Offset(0, r * 0.02), r * 0.155, r * 0.2, open);
+        case CompanionState.thirsty:
+        case CompanionState.sleepy:
+          // Heavy lids: a squat eye under a drooping lid line.
+          final lid = state == CompanionState.sleepy ? 0.42 : 0.6;
+          final h = r * 0.175 * lid * open.clamp(0.0, 1.0);
+          _eye(canvas, at + Offset(0, r * 0.03), r * 0.135, h, 1);
+          _arc(
+            canvas,
+            at + Offset(0, r * 0.03 - h),
+            r * 0.3,
+            r * 0.03,
+            r * 0.045,
+            down: true,
+          );
       }
     }
+  }
+
+  /// What a need adds round the face: a tear when sad, a drop of drool when
+  /// hungry, a bead of sweat when thirsty. [t] (seconds) slides the drop.
+  static void needMarks(
+    Canvas canvas,
+    Offset c,
+    double r, {
+    required CompanionState state,
+    required double t,
+  }) {
+    switch (state) {
+      case CompanionState.sad:
+        final slide = (t / 2.2) % 1;
+        _teardrop(
+          canvas,
+          c + Offset(r * 0.36, r * (0.2 + 0.18 * slide)),
+          r * 0.075,
+          alpha: 1 - slide * 0.6,
+        );
+      case CompanionState.hungry:
+        final grow = 0.6 + 0.4 * ((t / 1.8) % 1);
+        _teardrop(
+          canvas,
+          c + Offset(r * 0.13, r * 0.36 + r * 0.04 * grow),
+          r * 0.05 * grow,
+        );
+      case CompanionState.thirsty:
+        _teardrop(canvas, c + Offset(-r * 0.68, -r * 0.3), r * 0.085);
+      case CompanionState.idle:
+      case CompanionState.listening:
+      case CompanionState.focused:
+      case CompanionState.speaking:
+      case CompanionState.happy:
+      case CompanionState.alert:
+      case CompanionState.celebrating:
+      case CompanionState.sleepy:
+        break;
+    }
+  }
+
+  static void _teardrop(
+    Canvas canvas,
+    Offset at,
+    double s, {
+    double alpha = 1,
+  }) {
+    final path = Path()
+      ..moveTo(at.dx, at.dy - s * 1.7)
+      ..quadraticBezierTo(at.dx + s * 1.1, at.dy - s * 0.2, at.dx + s, at.dy)
+      ..arcToPoint(Offset(at.dx - s, at.dy), radius: Radius.circular(s))
+      ..quadraticBezierTo(
+        at.dx - s * 1.1,
+        at.dy - s * 0.2,
+        at.dx,
+        at.dy - s * 1.7,
+      )
+      ..close();
+    canvas.drawPath(path, Paint()..color = _drop.withValues(alpha: alpha));
+    canvas.drawCircle(
+      at + Offset(-s * 0.35, -s * 0.2),
+      s * 0.28,
+      Paint()..color = Colors.white.withValues(alpha: 0.8 * alpha),
+    );
   }
 
   static void _eye(
@@ -439,6 +535,35 @@ abstract final class PlushPainting {
           at + Offset(r * 0.07, r * 0.01),
           line,
         );
+      case CompanionState.sad:
+        // A small upside-down smile.
+        canvas.drawPath(
+          Path()
+            ..moveTo(at.dx - r * 0.09, at.dy + r * 0.04)
+            ..quadraticBezierTo(
+              at.dx,
+              at.dy - r * 0.05,
+              at.dx + r * 0.09,
+              at.dy + r * 0.04,
+            ),
+          line,
+        );
+      case CompanionState.hungry:
+        _openMouth(canvas, at, r * 0.12, r * 0.11);
+      case CompanionState.thirsty:
+        _openMouth(canvas, at, r * 0.14, r * 0.08);
+        // The tongue out, hanging over the lip.
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: at + Offset(0, r * 0.07),
+            width: r * 0.1,
+            height: r * 0.11,
+          ),
+          Paint()..color = _tongue,
+        );
+      case CompanionState.sleepy:
+        // A little yawn.
+        _openMouth(canvas, at + Offset(0, r * 0.01), r * 0.08, r * 0.1);
       case CompanionState.idle:
         canvas.drawPath(
           Path()

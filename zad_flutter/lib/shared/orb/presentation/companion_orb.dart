@@ -170,8 +170,12 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
       _ticker.start();
       _scheduleBlink();
     }
-    if (widget.state == CompanionState.alert) unawaited(_runShake());
+    if (_shakes(widget.state)) unawaited(_runShake());
   }
+
+  /// An alert shakes once; so does a hungry tummy's rumble.
+  static bool _shakes(CompanionState s) =>
+      s == CompanionState.alert || s == CompanionState.hungry;
 
   @override
   void didUpdateWidget(CompanionOrb old) {
@@ -182,7 +186,7 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
       _fromDeep = Color.lerp(_fromDeep, old.state.deep, t)!;
       _colorT.value = 0;
       _colorT.forward();
-      if (widget.state == CompanionState.alert) {
+      if (_shakes(widget.state)) {
         unawaited(_runShake());
       } else {
         _shakeRun++;
@@ -367,10 +371,10 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
   double get _ms => _elapsed.value.inMicroseconds / 1000;
 
   /// 0.98 → 1.05, 2600ms each way, FastOutSlowIn — 4400ms and shallower
-  /// asleep.
+  /// asleep or sleepy.
   double get breath => !widget.animated
       ? 1
-      : _asleep
+      : _asleep || widget.state == CompanionState.sleepy
       ? 0.985 + 0.045 * _pingPong(_ms, 4400, Curves.easeInOut)
       : 0.98 + 0.07 * _pingPong(_ms, 2600, Curves.fastOutSlowIn);
 
@@ -441,12 +445,15 @@ class _OrbPainter extends CustomPainter {
     final asleep = look?.asleep ?? false;
     // A character keeps its own colour; the mood tints it, so a mood still
     // reads at a glance. Asleep, everything dims toward the night.
+    // A pet's need takes more of its colour: hunger warms it, thirst
+    // cools it, sadness greys it.
+    final tint = state.isNeed ? 0.34 : 0.12;
     var sky = persona == null
         ? frame.sky
-        : Color.lerp(persona.body, frame.sky, 0.12)!;
+        : Color.lerp(persona.body, frame.sky, tint)!;
     var deep = persona == null
         ? frame.deep
-        : Color.lerp(persona.deep, frame.deep, 0.12)!;
+        : Color.lerp(persona.deep, frame.deep, tint)!;
     if (asleep) {
       sky = Color.lerp(sky, const Color(0xFF7C86B8), 0.25)!;
       deep = Color.lerp(deep, const Color(0xFF2B2F55), 0.25)!;
@@ -465,6 +472,9 @@ class _OrbPainter extends CustomPainter {
       CompanionState.listening => -radius * 0.03,
       CompanionState.celebrating ||
       CompanionState.happy => -radius * 0.04 * math.sin(phase * 2),
+      // Sad sinks a little; sleepy nods.
+      CompanionState.sad => radius * 0.04,
+      CompanionState.sleepy => radius * 0.03 * (1 + math.sin(phase)),
       _ => 0.0,
     };
     final center = canvasCenter + Offset(frame.shake * radius * 0.07, lift);
@@ -706,8 +716,21 @@ class _OrbPainter extends CustomPainter {
     // 8d. حكيم: a gold halo above, three stars circling slowly.
     if (stage == CompanionStage.sage) _sageHalo(canvas, center, radius, phase);
 
-    // 8e. Asleep: Zs drifting up and away.
-    if (asleep && animated) _zs(canvas, center, radius, frame.seconds);
+    // 8e. Asleep or sleepy: Zs drifting up and away.
+    if ((asleep || state == CompanionState.sleepy) && animated) {
+      _zs(canvas, center, radius, frame.seconds);
+    }
+
+    // 8f. A need's tear, drool or sweat.
+    if (!asleep) {
+      PlushPainting.needMarks(
+        canvas,
+        center,
+        radius,
+        state: state,
+        t: frame.seconds,
+      );
+    }
 
     // 9. Celebration: four gold sparkles circling.
     _celebration(canvas, center, radius, phase);
@@ -766,11 +789,19 @@ class _OrbPainter extends CustomPainter {
       case CompanionState.listening:
       case CompanionState.focused:
       case CompanionState.speaking:
+      case CompanionState.sad:
+      case CompanionState.hungry:
+      case CompanionState.thirsty:
+      case CompanionState.sleepy:
         final h =
             switch (state) {
               CompanionState.listening => radius * (0.46 + 0.10 * level),
               CompanionState.speaking => radius * (0.42 - 0.12 * level),
               CompanionState.focused => radius * 0.34,
+              CompanionState.sad => radius * 0.30,
+              CompanionState.hungry => radius * 0.50,
+              CompanionState.thirsty => radius * 0.24,
+              CompanionState.sleepy => radius * 0.12,
               _ => radius * 0.42,
             } *
             open;
@@ -1266,6 +1297,16 @@ class _OrbPainter extends CustomPainter {
       );
     }
 
+    if (!asleep) {
+      PlushPainting.needMarks(
+        canvas,
+        face,
+        faceR,
+        state: state,
+        t: frame.seconds,
+      );
+    }
+
     if (!look!.outfit.coversHead) {
       _crest(canvas, center, radius, phase, persona.crest);
     }
@@ -1284,7 +1325,9 @@ class _OrbPainter extends CustomPainter {
     bool asleep,
   ) {
     if (stage == CompanionStage.sage) _sageHalo(canvas, center, radius, phase);
-    if (asleep && animated) _zs(canvas, center, radius, frame.seconds);
+    if ((asleep || state == CompanionState.sleepy) && animated) {
+      _zs(canvas, center, radius, frame.seconds);
+    }
     _celebration(canvas, center, radius, phase);
   }
 

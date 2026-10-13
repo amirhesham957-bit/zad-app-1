@@ -21,12 +21,9 @@ import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_status.dart';
-import 'package:zad/shared/companion/presentation/companion_moments.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
-import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
-import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -118,7 +115,8 @@ class HomeOfflineBanner extends ConsumerWidget {
 
 // ── 0b. the companion header ─────────────────────────────────────────────────
 
-/// Kotlin's 0b row: a white 20dp card with the 56dp companion orb, «أهلاً يا
+/// Kotlin's 0b row: a white 20dp card with the mic (the companion itself sits
+/// on the header since 2026-10-13), «أهلاً يا
 /// …! 👋» over the pulsing «عقل زاد نشط», and the 40dp camera circle.
 /// Tapping the card talks to زاد; the circle opens the camera.
 class HomeCompanionHeader extends ConsumerWidget {
@@ -138,21 +136,26 @@ class HomeCompanionHeader extends ConsumerWidget {
     // the orb; without one the row is exactly as it was.
     final campaign = ref.watch(homeCampaignProvider)?.campaign;
     const radius = BorderRadius.all(Radius.circular(20));
-    // رفيق زاد: a long press opens its studio; its moments (a level, an
-    // evolution, waking up after days away, «+10 ⭐») play over the orb.
-    final orb = CompanionMoments(
-      child: GestureDetector(
-        onLongPress: () {
-          playPetSound(PetSound.meowChirp);
-          unawaited(ZadScreens.showCompanionStudio(context));
+    // رفيق زاد moved up onto the header (`companion_pet.dart`), so the row
+    // keeps a mic where the orb was: the card still opens the voice.
+    final orb = Material(
+      color: _emerald.withValues(alpha: 0.10),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const ValueKey<String>('home-companion-mic'),
+        onTap: () {
+          playPetSound(PetSound.happyChirp);
+          onOpenVoice();
         },
-        child: CompanionOrb(
-          state: ref.watch(companionMoodProvider),
-          size: 56,
-          onTap: () {
-            playPetSound(PetSound.happyChirp);
-            onOpenVoice();
-          },
+        child: SizedBox.square(
+          dimension: 48,
+          child: Icon(
+            Icons.mic_rounded,
+            size: 24,
+            color: _emerald,
+            semanticLabel: 'كلّم زاد',
+          ),
         ),
       ),
     );

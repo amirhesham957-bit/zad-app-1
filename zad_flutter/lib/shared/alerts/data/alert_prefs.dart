@@ -31,6 +31,9 @@ class AlertPrefs {
   /// «رفيق زاد يناديني لو غبت» — on unless turned off.
   static const String companionNap = 'alert_companion_nap';
 
+  /// «رفيق زاد يفكّرني بأكله ومَيّته» — on unless turned off.
+  static const String companionCare = 'alert_companion_care';
+
   /// «النطق الصوتي للإشعارات والجرعات».
   static const String voiceSpokenAlerts = 'alert_voice_spoken_alerts';
 
