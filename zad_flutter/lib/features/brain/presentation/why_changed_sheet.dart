@@ -7,52 +7,31 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/brain/domain/agent_action.dart';
+import 'package:zad/features/brain/domain/mutation_summary.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
-/// Kotlin's `BrainMutationEntry`.
+/// Kotlin's `BrainMutationEntry`, with the change already put into words.
 typedef BrainMutation = ({
   String toolLabel,
-  String? old,
-  String? next,
+  String? subject,
+  String? change,
   String trigger,
   DateTime? at,
 });
-
-/// Kotlin's `toolLabel`.
-String brainToolLabel(String tool) => switch (tool) {
-  'update_inventory_qty' => 'تعديل كمية مخزون',
-  'set_transaction_category' => 'تصنيف معاملة',
-  'merge_duplicate_expense' => 'دمج معاملة مكررة',
-  'reconcile_cash_balance' => 'تسوية الكاش',
-  'confirm_cycle_start' => 'تأكيد دورة الراتب',
-  'confirm_obligation' => 'تسجيل التزام',
-  'log_transaction' => 'تسجيل معاملة',
-  'update_transaction' => 'تعديل معاملة',
-  'set_monthly_limit' => 'تعديل سقف الميزانية',
-  'add_inventory_item' => 'إضافة صنف للمخزون',
-  'add_pharmacy_item' => 'إضافة دواء',
-  'set_market' => 'تعديل البلد والعملة',
-  'log_pharmacy_dose' => 'تسجيل جرعة دواء',
-  _ => tool,
-};
-
-String? _display(Object? v) => switch (v) {
-  null => null,
-  final String s => s,
-  final num n => '$n',
-  final bool b => '$b',
-  _ => jsonEncode(v),
-};
 
 /// The last 20 runs' mutations, at most 15.
 final FutureProvider<List<BrainMutation>> recentBrainMutationsProvider =
     FutureProvider.autoDispose<List<BrainMutation>>((ref) async {
       final client = ref.watch(supabaseClientProvider);
+      final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+      DateTime toLocal(DateTime utc) => tz.TZDateTime.from(utc, zone);
       final userId = client.auth.currentUser?.id;
       if (userId == null) return const <BrainMutation>[];
       try {
@@ -68,10 +47,15 @@ final FutureProvider<List<BrainMutation>> recentBrainMutationsProvider =
           if (mutations is! List) continue;
           for (final m in mutations) {
             if (m is! Map) continue;
+            final summary = summarizeMutation(
+              m['old'],
+              m['new'],
+              toLocal: toLocal,
+            );
             out.add((
-              toolLabel: brainToolLabel((m['tool'] as String?) ?? '?'),
-              old: _display(m['old']),
-              next: _display(m['new']),
+              toolLabel: agentToolLabel((m['tool'] as String?) ?? '?'),
+              subject: summary.subject,
+              change: summary.change,
               trigger: (row['trigger'] as String?) ?? '',
               at: DateTime.tryParse('${row['started_at']}'),
             ));
@@ -210,9 +194,18 @@ class _MutationRow extends StatelessWidget {
                     color: scheme.onSurface,
                   ),
                 ),
-                if (m.old != null || m.next != null)
+                if (m.subject != null)
                   Text(
-                    '${m.old ?? '—'} ← ${m.next ?? '—'}',
+                    m.subject!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ZadType.bodySmall.copyWith(color: scheme.onSurface),
+                  ),
+                if (m.change != null)
+                  Text(
+                    m.change!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: ZadType.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
