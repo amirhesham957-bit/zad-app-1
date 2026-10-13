@@ -28,6 +28,7 @@ import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -46,23 +47,42 @@ const int _tasbihId = 0x7A000001;
 const String _companionChannel = 'zad_companion_nap';
 const int _napFirstId = 0x7A000002;
 const int _napSecondId = 0x7A000003;
+const int _careId = 0x7A000004;
 
 /// When رفيق زاد calls a customer who has been away: two days after the last
 /// open, and again two days after that — once a day at most, and never at
 /// night (a time before 09:00 or after 21:00 moves to 19:00). Every open
 /// reschedules both, so they only ring for someone really away.
-List<tz.TZDateTime> companionNapTimes(tz.TZDateTime lastOpen) {
-  tz.TZDateTime daytime(tz.TZDateTime t) {
-    if (t.hour >= 9 && t.hour < 21) return t;
-    final evening = tz.TZDateTime(t.location, t.year, t.month, t.day, 19);
-    // After 21:00 that day's 19:00 has passed: the next day's.
-    return t.hour >= 21 ? evening.add(const Duration(days: 1)) : evening;
-  }
+List<tz.TZDateTime> companionNapTimes(tz.TZDateTime lastOpen) =>
+    <tz.TZDateTime>[
+      _daytime(lastOpen.add(const Duration(hours: 48))),
+      _daytime(lastOpen.add(const Duration(hours: 96))),
+    ];
 
-  return <tz.TZDateTime>[
-    daytime(lastOpen.add(const Duration(hours: 48))),
-    daytime(lastOpen.add(const Duration(hours: 96))),
-  ];
+/// [t], or 19:00 when [t] falls at night (before 09:00 or after 21:00).
+tz.TZDateTime _daytime(tz.TZDateTime t) {
+  if (t.hour >= 9 && t.hour < 21) return t;
+  final evening = tz.TZDateTime(t.location, t.year, t.month, t.day, 19);
+  // After 21:00 that day's 19:00 has passed: the next day's.
+  return t.hour >= 21 ? evening.add(const Duration(days: 1)) : evening;
+}
+
+/// When the pet calls for its next meal or drink: the moment a need will
+/// show (`PetCare.nextNeedAt`), three hours on when one already shows, never
+/// sooner than 30 minutes and never at night. Each feed, drink and return to
+/// the app moves it, so it rings only for a pet really left waiting.
+({tz.TZDateTime at, bool thirsty}) companionCareTime(
+  PetCare care,
+  tz.TZDateTime now,
+) {
+  final need = care.nextNeedAt(now);
+  var at = need == null
+      ? now.add(const Duration(hours: 3))
+      : tz.TZDateTime.from(need, now.location);
+  final soonest = now.add(const Duration(minutes: 30));
+  if (at.isBefore(soonest)) at = soonest;
+  at = _daytime(at);
+  return (at: at, thirsty: care.hydration(at) <= care.fullness(at));
 }
 
 int _stableId(String key) {
@@ -286,6 +306,36 @@ class LocalReminders {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: payloadFor(AlertDestination.home),
       );
+    }
+  }
+
+  /// «🍎 زادو جعان»: the pet's next meal or drink (`companionCareTime`).
+  /// Off with «رفيق زاد يفكّرني بأكله ومَيّته» in settings.
+  Future<void> syncCompanionCare(PetCare? care) async {
+    // Called on every feed and every return, outside resyncAll's guard.
+    try {
+      await _plugin.cancel(id: _careId);
+      if (care == null ||
+          !_ref
+              .read(alertPrefsProvider)
+              .isEnabledUnlessOff(AlertPrefs.companionCare)) {
+        return;
+      }
+      final name = _ref.read(companionProvider).value?.persona.name ?? 'زادو';
+      final when = companionCareTime(care, tz.TZDateTime.now(_zone));
+      await _plugin.zonedSchedule(
+        id: _careId,
+        title: when.thirsty ? '💧 $name عطشان' : '🍎 $name جعان',
+        body: when.thirsty
+            ? 'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه'
+            : 'مستنيك تأكّله… وحشته 🥺',
+        scheduledDate: when.at,
+        notificationDetails: _details(_companionChannel, 'رفيق زاد'),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payloadFor(AlertDestination.home),
+      );
+    } on Object catch (e) {
+      debugPrint('companion care reminder skipped: $e');
     }
   }
 

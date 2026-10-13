@@ -43,6 +43,8 @@ import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/presentation/companion_moments.dart';
+import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -382,6 +384,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onNotifications: () =>
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
+                // رفيق زاد lives on Home's header; its moments (a level,
+                // waking up, «+10 ⭐») play over it.
+                pet: _tab == ZadNavDestination.home
+                    ? const CompanionMoments(child: CompanionHeaderPet())
+                    : null,
               ),
               Expanded(
                 // IndexedStack, not a rebuild per tab: each screen's

@@ -29,7 +29,7 @@ asset = assets/rive/zad_mascot.riv
 artboard = Zad
 stateMachine = Zad
 viewModel = Zad
-mood = mood : enum = idle, listening, thinking, speaking, happy, alert, celebrating
+mood = mood : enum = idle, listening, thinking, speaking, happy, alert, celebrating, sad, hungry, thirsty, sleepy
 level = level : number
 occasion = occasion : enum = none, lantern, balloons, scarf
 primary = primary : color
@@ -58,6 +58,10 @@ asleep = asleep : boolean
 | `happy` | آخر رد فيه خبر حلو (وفّرت، مبروك…) | عينين ^ ^ وابتسامة، نطّة خفيفة. |
 | `alert` | آخر رد فيه تحذير (هيخلص، تجاوزت…) | حواجب مقطبة/عينين حادة، هزّة صغيرة مرة واحدة. **مش مخيف** — تنبيه لطيف. |
 | `celebrating` | إنجاز (هدف اتحقق، تحدي خلص) | فرحة كبيرة، نجوم/لمعة بتلف حواليه. |
+| `sad` | الحيوان الأليف جعان وعطشان من زمان (`pet_care.dart`) | عينين حزينة وحواجب مرفوعة من جوه، بُق مقلوب، دمعة صغيرة. الجسم واطي شوية. **مش بيعيّط بصوت** — زعل لطيف. |
+| `hungry` | الشبع تحت ٣٠٪ | عينين واسعة بتترجّى، بُق مفتوح صغير ونقطة ريالة، كركرة بطن (هزّة صغيرة مرة). |
+| `thirsty` | الريّ تحت ٣٠٪ | عينين نص مقفولة، لسان طالع، نقطة عرق على الجنب. |
+| `sleepy` | بالليل (١١ مساءً لـ ٦ الصبح بتوقيت السوق) | عينين تقيلة نص مقفولة، تثاؤب صغير، تنفّس أبطأ، Z واحدة بتطلع. |
 
 - كل انتقال بين حالتين **ناعم، ٣٠٠ مللي ثانية أو أقل**. التطبيق ممكن يغيّر الحالة كذا مرة ورا بعض بسرعة، فماينفعش انتقال يستنى ما قبله يخلص.
 - كل حالة **loop** من غير قفزة في آخرها (ما عدا الهزّة في `alert` اللي بتحصل مرة).
