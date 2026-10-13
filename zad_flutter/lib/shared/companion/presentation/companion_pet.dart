@@ -3,8 +3,9 @@
 /// says so in a small bubble now and then, and a tap opens its care sheet —
 /// it talks, and the customer feeds it, gives it water and pets it.
 ///
-/// It sits in the header, not over the list: the floating orb was taken off
-/// Home on 2026-10-13 because it covered the transactions.
+/// It floats over Home's bottom bar (owner, 2026-10-13: «عاوزو فلوتنج فوق
+/// البار») in the corner beside the mic — Home leaves room under its last
+/// card, so it no longer covers the transactions as the old orb did.
 library;
 
 import 'dart:async';
@@ -55,10 +56,13 @@ String? _needBadge(CompanionState mood) => switch (mood) {
 /// The pet on the header. Nothing when signed out.
 class CompanionHeaderPet extends ConsumerStatefulWidget {
   /// Creates it.
-  const new({this.size = 56, super.key});
+  const new({this.size = 56, this.bubbleAbove = false, super.key});
 
   /// Its box.
   final double size;
+
+  /// The bubble opens above it (floating over the bar) instead of below.
+  final bool bubbleAbove;
 
   @override
   ConsumerState<CompanionHeaderPet> createState() => _CompanionHeaderPetState();
@@ -154,9 +158,16 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
           child: CompositedTransformFollower(
             link: _link,
             showWhenUnlinked: false,
-            targetAnchor: rtl ? Alignment.bottomLeft : Alignment.bottomRight,
-            followerAnchor: rtl ? Alignment.topLeft : Alignment.topRight,
-            offset: const Offset(0, ZadSpacing.xs),
+            targetAnchor: widget.bubbleAbove
+                ? (rtl ? Alignment.topLeft : Alignment.topRight)
+                : (rtl ? Alignment.bottomLeft : Alignment.bottomRight),
+            followerAnchor: widget.bubbleAbove
+                ? (rtl ? Alignment.bottomLeft : Alignment.bottomRight)
+                : (rtl ? Alignment.topLeft : Alignment.topRight),
+            offset: Offset(
+              0,
+              widget.bubbleAbove ? -ZadSpacing.xs : ZadSpacing.xs,
+            ),
             child: _HeaderBubble(
               text: _line,
               rtl: rtl,
@@ -208,7 +219,43 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
   }
 }
 
-/// The small bubble under the header pet; a tap opens the care sheet.
+/// The pet floating over the bottom bar: a slow bob, its bubble above it.
+class CompanionFloatingPet extends StatefulWidget {
+  /// Creates it.
+  const new({this.size = 72, super.key});
+
+  /// Its box.
+  final double size;
+
+  @override
+  State<CompanionFloatingPet> createState() => _CompanionFloatingPetState();
+}
+
+class _CompanionFloatingPetState extends State<CompanionFloatingPet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bob = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _bob.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _bob,
+    builder: (_, child) => Transform.translate(
+      offset: Offset(0, -3 + 6 * Curves.easeInOut.transform(_bob.value)),
+      child: child,
+    ),
+    child: CompanionHeaderPet(size: widget.size, bubbleAbove: true),
+  );
+}
+
+/// The small bubble beside the pet; a tap opens the care sheet.
 class _HeaderBubble extends StatelessWidget {
   const new({required this.text, required this.rtl, required this.onTap});
 
