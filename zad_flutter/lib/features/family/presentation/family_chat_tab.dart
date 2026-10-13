@@ -268,9 +268,9 @@ class _MessageRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMe = message.senderId == me.id;
     final isAi = message.isFromZad;
-    final alias =
-        members.where((m) => m.id == message.senderId).firstOrNull?.alias ??
-        'Zad AI';
+    final sender = members.where((m) => m.id == message.senderId).firstOrNull;
+    final alias = sender?.alias ?? 'Zad AI';
+    final picture = sender?.avatarEmoji;
     final bubble = switch (message.type) {
       FamilyMessageType.sos => _SosBubble(message: message, alias: alias),
       FamilyMessageType.purchaseRequest => _RequestBubble(
@@ -312,12 +312,16 @@ class _MessageRow extends ConsumerWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: ZadColors.green700.withValues(alpha: 0.2),
-                  child: Text(
-                    alias.characters.firstOrNull ?? '?',
-                    style: ZadType.labelLarge.copyWith(
-                      color: ZadColors.green700,
-                    ),
-                  ),
+                  // The member's own emoji when they picked one (a child does,
+                  // from the kids' home); otherwise the first letter.
+                  child: picture != null
+                      ? Text(picture, style: const TextStyle(fontSize: 18))
+                      : Text(
+                          alias.characters.firstOrNull ?? '?',
+                          style: ZadType.labelLarge.copyWith(
+                            color: ZadColors.green700,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: ZadSpacing.sm),
               ],

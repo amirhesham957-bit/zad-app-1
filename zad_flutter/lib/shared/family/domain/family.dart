@@ -50,6 +50,7 @@ class FamilyMember {
     this.dailyLimit,
     this.weeklyLimit,
     this.lastSeenAt,
+    this.avatarEmoji,
   });
 
   /// Reads a `family_members` row.
@@ -63,6 +64,10 @@ class FamilyMember {
     dailyLimit: (json['daily_limit'] as num?)?.toDouble(),
     weeklyLimit: (json['weekly_limit'] as num?)?.toDouble(),
     lastSeenAt: DateTime.tryParse((json['last_seen_at'] as String?) ?? ''),
+    avatarEmoji: switch ((json['avatar_emoji'] as String?)?.trim()) {
+      final String e when e.isNotEmpty => e,
+      _ => null,
+    },
   );
 
   /// The row id.
@@ -93,6 +98,9 @@ class FamilyMember {
   /// When the member's app last said it was open.
   final DateTime? lastSeenAt;
 
+  /// The emoji the member picked for their picture, or null for none yet.
+  final String? avatarEmoji;
+
   /// Kotlin's `isOnline`: seen within the last five minutes.
   bool isOnlineAt(DateTime now) =>
       lastSeenAt != null && now.difference(lastSeenAt!).inMinutes < 5;
@@ -108,6 +116,7 @@ class FamilyMember {
     'daily_limit': dailyLimit,
     'weekly_limit': weeklyLimit,
     'last_seen_at': lastSeenAt?.toIso8601String(),
+    'avatar_emoji': avatarEmoji,
   };
 }
 

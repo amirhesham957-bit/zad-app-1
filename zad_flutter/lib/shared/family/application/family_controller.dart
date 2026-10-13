@@ -99,6 +99,17 @@ class FamilyController extends Notifier<FamilyView> {
   Future<bool> setRole(FamilyMember member, FamilyRole role) =>
       _change(() => ref.read(familyRepositoryProvider).setRole(member, role));
 
+  /// Gives a member (usually oneself) a new name and picture.
+  Future<bool> updateIdentity(
+    FamilyMember member, {
+    required String alias,
+    required String? avatarEmoji,
+  }) => _change(
+    () => ref
+        .read(familyRepositoryProvider)
+        .updateIdentity(member, alias: alias, avatarEmoji: avatarEmoji),
+  );
+
   /// Removes a member.
   Future<bool> remove(FamilyMember member) =>
       _change(() => ref.read(familyRepositoryProvider).remove(member));

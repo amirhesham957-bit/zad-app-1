@@ -36,6 +36,15 @@ abstract interface class FamilyRemote {
 
   /// Deletes a membership row — leaving, or an admin removing someone.
   Future<void> removeMember(String memberId);
+
+  /// Writes a member's own name and picture. The server lets a member write
+  /// only their own row (or an admin anyone's); a refused write changes no
+  /// row and raises nothing, so the caller reads it back.
+  Future<void> updateIdentity({
+    required String memberId,
+    required String alias,
+    required String? avatarEmoji,
+  });
 }
 
 /// The real tables and functions.
@@ -49,7 +58,7 @@ class SupabaseFamilyRemote implements FamilyRemote {
   static const String _groups = 'family_groups';
   static const String _memberColumns =
       'id, user_id, role, alias, family_id, balance, savings_goal, '
-      'daily_limit, weekly_limit, last_seen_at';
+      'daily_limit, weekly_limit, last_seen_at, avatar_emoji';
 
   @override
   Future<Map<String, dynamic>?> fetchMyMembership({required String userId}) =>
@@ -103,6 +112,16 @@ class SupabaseFamilyRemote implements FamilyRemote {
   @override
   Future<void> removeMember(String memberId) =>
       _client.from(_members).delete().eq('id', memberId);
+
+  @override
+  Future<void> updateIdentity({
+    required String memberId,
+    required String alias,
+    required String? avatarEmoji,
+  }) => _client
+      .from(_members)
+      .update(<String, dynamic>{'alias': alias, 'avatar_emoji': avatarEmoji})
+      .eq('id', memberId);
 
   Future<Map<String, dynamic>> _rpc(
     String name,

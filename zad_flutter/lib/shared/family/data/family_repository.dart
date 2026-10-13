@@ -149,6 +149,35 @@ class FamilyRepository {
     return (after as InFamily).family;
   }
 
+  /// Gives [member] a new name and picture — the member's own, or an
+  /// admin's for anyone. Read back, because a refused update says nothing.
+  Future<Family> updateIdentity(
+    FamilyMember member, {
+    required String alias,
+    required String? avatarEmoji,
+  }) async {
+    final name = alias.trim();
+    final emoji = switch (avatarEmoji?.trim()) {
+      final String e when e.isNotEmpty => e,
+      _ => null,
+    };
+    await _guard(
+      () => _remote.updateIdentity(
+        memberId: member.id,
+        alias: name,
+        avatarEmoji: emoji,
+      ),
+    );
+    final after = await _guard(refresh);
+    final row = after is InFamily
+        ? after.family.members.where((m) => m.id == member.id).firstOrNull
+        : null;
+    if (row == null || row.alias != name || row.avatarEmoji != emoji) {
+      throw const FamilyException(FamilyFailure.notAllowed);
+    }
+    return (after as InFamily).family;
+  }
+
   /// Removes [member] from the family. Admins only.
   Future<Family> remove(FamilyMember member) async {
     await _guard(() => _remote.removeMember(member.id));
