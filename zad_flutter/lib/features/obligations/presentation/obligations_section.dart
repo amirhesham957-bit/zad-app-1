@@ -463,12 +463,7 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
 /// either, so a tab's empty state never says «nothing» over a real row.
 class ObligationRows extends ConsumerWidget {
   /// Creates the rows.
-  const new({
-    required this.kinds,
-    this.title,
-    this.whenEmpty,
-    super.key,
-  });
+  const new({required this.kinds, this.title, this.whenEmpty, super.key});
 
   /// The stored `kind` values to show; empty means all of them.
   final Set<String> kinds;

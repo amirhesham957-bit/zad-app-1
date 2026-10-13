@@ -50,7 +50,7 @@ void main() {
       find.text('ربط بوت تليجرام (مهم لاكتمال التجربة) ⚠️'),
       findsOneWidget,
     );
-    expect(find.textContaining('لتفعيل التنبيهات اللحظية'), findsOneWidget);
+    expect(find.textContaining('بوت على تليجرام'), findsOneWidget);
     await tester.tap(find.text('تشغيل البوت الآن 🚀'));
     await tester.tap(find.text('مش دلوقتي'));
     expect((linked, snoozed), (1, 1));

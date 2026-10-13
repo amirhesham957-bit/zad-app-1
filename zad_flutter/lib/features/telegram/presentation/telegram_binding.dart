@@ -388,114 +388,115 @@ Future<void> showTelegramBotSheet(BuildContext context) =>
 
 /// Kotlin's `TelegramLinkPromptSheet`: what linking brings, the loss without
 /// it, then the same binding section — there is no second binding path.
-Future<void> showTelegramLinkPromptSheet(
-  BuildContext context,
-) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: context.zadExt.surfaceContainerLow,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-  ),
-  builder: (sheetContext) {
-    final scheme = Theme.of(sheetContext).colorScheme;
-    const voice =
-        'ينبهك بفويس بصوت زاد للحاجات المهمة: دوا اتفوّت، ميعاد قرّب، '
-        'ميزانية في خطر';
-    const benefits = <String>[
-      'يأكد معاك أي حركة بنكية قبل ما تتحسب من رصيدك',
-      'ينبهك بالنواقص والفواتير اللي قربت',
-      'يبعتلك ملخص البيت وتوقع الصرف',
-      'تسجل مصروفك برسالة واحدة',
-      voice,
-    ];
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'خلّي زاد يكلمك على تيليجرام',
-              style: ZadType.titleLarge.copyWith(
-                fontWeight: FontWeight.bold,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'اربط حسابك مرة واحدة، وزاد يوصلك بالمهم حتى لو التطبيق مقفول.',
-              style: ZadType.bodyMedium.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            for (var i = 0; i < benefits.length; i++) ...<Widget>[
-              if (i > 0) const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: _brand,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+Future<void> showTelegramLinkPromptSheet(BuildContext context) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.zadExt.surfaceContainerLow,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final scheme = Theme.of(sheetContext).colorScheme;
+        const voice =
+            'ينبهك بفويس بصوت زاد للحاجات المهمة: دوا اتفوّت، ميعاد قرّب، '
+            'ميزانية في خطر';
+        const benefits = <String>[
+          'يأكد معاك أي حركة بنكية قبل ما تتحسب من رصيدك',
+          'ينبهك بالنواقص والفواتير اللي قربت',
+          'يبعتلك ملخص البيت وتوقع الصرف',
+          'تسجل مصروفك برسالة واحدة',
+          voice,
+        ];
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'خلّي زاد يكلمك على تيليجرام',
+                  style: ZadType.titleLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onSurface,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      benefits[i],
-                      style: ZadType.bodyMedium.copyWith(
-                        color: scheme.onSurface,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'زاد ليه بوت على تيليجرام، ومنه بتوصلك التنبيهات والمتابعة. '
+                  'حمّل تطبيق تيليجرام لو مش عندك، واضغط «ربط» مرة واحدة — '
+                  'وزاد يوصلك بالمهم حتى لو التطبيق مقفول.',
+                  style: ZadType.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                for (var i = 0; i < benefits.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: _brand,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          benefits[i],
+                          style: ZadType.bodyMedium.copyWith(
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: scheme.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '⚠️ من غير الربط مش هتوصلك التقارير ولا التنبيهات الصوتية '
-                'برّه التطبيق — تجربة زاد بتبقى ناقصة.',
-                style: ZadType.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.error,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: scheme.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '⚠️ من غير الربط مش هتوصلك التقارير ولا التنبيهات الصوتية '
+                    'برّه التطبيق — تجربة زاد بتبقى ناقصة.',
+                    style: ZadType.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.error,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const TelegramBindingSection(),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 48,
-              child: TextButton(
-                onPressed: () => Navigator.of(sheetContext).pop(),
-                child: Text(
-                  'مش دلوقتي',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
+                const SizedBox(height: 16),
+                const TelegramBindingSection(),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 48,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: Text(
+                      'مش دلوقتي',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
-  },
-);
 
-/// Kotlin's `TelegramLinkBanner`: the loss, a link button, and a three-day
-/// snooze.
+/// Kotlin's `TelegramLinkBanner`: the loss, a link button, and a snooze
+/// until tomorrow.
 class TelegramLinkBanner extends StatelessWidget {
   /// Creates the banner.
   const new({required this.onLink, required this.onSnooze, super.key});
@@ -544,8 +545,8 @@ class TelegramLinkBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'لتفعيل التنبيهات اللحظية وإرسال المعاملات والفواتير '
-                      'بالصوت والصورة، يجب تفعيل وتوصيل بوت تليجرام الخاص بك.',
+                      'زاد بيبعتلك التنبيهات والمتابعة من بوت على تليجرام. '
+                      'حمّل تليجرام واربط حسابك علشان توصلك.',
                       style: ZadType.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
