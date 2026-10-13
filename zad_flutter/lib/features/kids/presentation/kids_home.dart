@@ -44,39 +44,52 @@ const List<Color> _avatarColors = <Color>[
   Color(0xFFDDD6FE), Color(0xFFFED7AA), Color(0xFFA7F3D0), Color(0xFFC7D2FE),
 ];
 
-/// Kotlin's `KidAvatar`: a steady emoji and colour picked from [seed].
+/// Kotlin's `KidAvatar`: the emoji the member picked, or a steady emoji
+/// picked from [seed] until they pick one; the colour always from [seed].
 class KidAvatar extends StatelessWidget {
   /// Creates the avatar.
-  const new({required this.seed, this.size = 40, super.key});
+  const new({required this.seed, this.emoji, this.size = 40, super.key});
 
   /// Usually the member id.
   final String seed;
 
+  /// The member's own pick (`family_members.avatar_emoji`), when there is one.
+  final String? emoji;
+
   /// Diameter.
   final double size;
 
-  @override
-  Widget build(BuildContext context) {
-    // A stable hash of the text, so the same child keeps the same animal
-    // across launches (Dart's String.hashCode is not stable across runs).
+  /// A stable hash of the text, so the same child keeps the same animal
+  /// across launches (Dart's String.hashCode is not stable across runs).
+  static int _hash(String seed) {
     var h = 0;
     for (final c in seed.codeUnits) {
       h = (h * 31 + c) & 0x7fffffff;
     }
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _avatarColors[h % _avatarColors.length],
-      ),
-      child: Text(
-        _avatarEmojis[h % _avatarEmojis.length],
-        style: TextStyle(fontSize: size * 0.5),
-      ),
-    );
+    return h;
   }
+
+  /// The animal [seed] gets before its owner picks one.
+  static String autoEmoji(String seed) =>
+      _avatarEmojis[_hash(seed) % _avatarEmojis.length];
+
+  /// What a child can pick from.
+  static List<String> get choices => _avatarEmojis;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: _avatarColors[_hash(seed) % _avatarColors.length],
+    ),
+    child: Text(
+      emoji ?? autoEmoji(seed),
+      style: TextStyle(fontSize: size * 0.5),
+    ),
+  );
 }
 
 /// The kids home.
@@ -86,6 +99,32 @@ class KidsHome extends ConsumerWidget {
 
   /// «فتح الشات».
   final VoidCallback onOpenFamily;
+
+  /// A tap on the picture: pick an animal and a name, saved on the server
+  /// and shown next to the child's messages in the family chat.
+  Future<void> _editMe(
+    BuildContext context,
+    WidgetRef ref,
+    FamilyMember me,
+  ) async {
+    final picked = await showFieldDialog<({String alias, String emoji})>(
+      context: context,
+      // The emoji rides in a second field so the pick survives the keyboard
+      // rebuilding the dialog.
+      initial: <String>[me.alias, me.avatarEmoji ?? KidAvatar.autoEmoji(me.id)],
+      builder: (_, fields) =>
+          _IdentityDialog(name: fields[0], emoji: fields[1], seed: me.id),
+    );
+    if (picked == null) return;
+    final ok = await ref
+        .read(familyControllerProvider.notifier)
+        .updateIdentity(me, alias: picked.alias, avatarEmoji: picked.emoji);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ماقدرناش نحفظ دلوقتي — جرّب تاني')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,7 +157,41 @@ class KidsHome extends ConsumerWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              KidAvatar(seed: me.id.isEmpty ? alias : me.id, size: 52),
+              Semantics(
+                button: true,
+                label: 'غيّر صورتك واسمك',
+                child: GestureDetector(
+                  onTap: () => unawaited(_editMe(context, ref, me)),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: <Widget>[
+                      KidAvatar(
+                        seed: me.id.isEmpty ? alias : me.id,
+                        emoji: me.avatarEmoji,
+                        size: 52,
+                      ),
+                      PositionedDirectional(
+                        end: -4,
+                        bottom: -4,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: _kidsPrimary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(width: ZadSpacing.md),
               Expanded(
                 child: Column(
@@ -544,8 +617,10 @@ class _BadgeRow extends StatelessWidget {
       Color(0xFFFDE68A),
       Color(0xFFBFDBFE),
     ];
+    // Room for a label on two lines: «أسبوع كامل» wraps at 72dp, and the
+    // old 92dp overflowed by 4.
     return SizedBox(
-      height: 92,
+      height: 100,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: <Widget>[
@@ -565,8 +640,10 @@ class _BadgeRow extends StatelessWidget {
                     Text(
                       label,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
                       style: TextStyle(
                         fontSize: 10,
+                        height: 1.25,
                         fontWeight: achieved
                             ? FontWeight.w700
                             : FontWeight.w400,
@@ -637,6 +714,7 @@ class _MessageRow extends StatelessWidget {
             children: <Widget>[
               KidAvatar(
                 seed: message.senderId.isEmpty ? alias : message.senderId,
+                emoji: sender?.avatarEmoji,
                 size: 28,
               ),
               const SizedBox(width: ZadSpacing.sm),
@@ -873,6 +951,111 @@ class _MoneyRequestDialogState extends State<_MoneyRequestDialog> {
         style: FilledButton.styleFrom(shape: const StadiumBorder()),
         onPressed: _send,
         child: const Text('إرسال الطلب'),
+      ),
+    ],
+  );
+}
+
+/// «غيّر صورتك واسمك»: the animals as big buttons, the picture as it will
+/// look, and the name.
+class _IdentityDialog extends StatefulWidget {
+  const new({required this.name, required this.emoji, required this.seed});
+
+  final TextEditingController name;
+  final TextEditingController emoji;
+  final String seed;
+
+  @override
+  State<_IdentityDialog> createState() => _IdentityDialogState();
+}
+
+class _IdentityDialogState extends State<_IdentityDialog> {
+  static const int _maxName = 20;
+  String? _error;
+
+  void _save() {
+    final name = widget.name.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'اكتب اسمك');
+      return;
+    }
+    Navigator.of(context).pop((alias: name, emoji: widget.emoji.text));
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('غيّر صورتك واسمك'),
+    content: SingleChildScrollView(
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: widget.emoji,
+        builder: (context, value, _) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            KidAvatar(seed: widget.seed, emoji: value.text, size: 72),
+            const SizedBox(height: ZadSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: ZadSpacing.xs,
+              runSpacing: ZadSpacing.xs,
+              children: <Widget>[
+                for (final e in KidAvatar.choices)
+                  Semantics(
+                    button: true,
+                    selected: e == value.text,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => widget.emoji.text = e,
+                      child: AnimatedContainer(
+                        duration: ZadDuration.quick,
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: e == value.text
+                              ? _kidsPrimaryLight.withValues(alpha: 0.35)
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: e == value.text
+                                ? _kidsPrimary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(e, style: const TextStyle(fontSize: 26)),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: ZadSpacing.md),
+            TextField(
+              controller: widget.name,
+              maxLength: _maxName,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+              decoration: InputDecoration(
+                labelText: 'اسمك',
+                border: const OutlineInputBorder(),
+                errorText: _error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('إلغاء'),
+      ),
+      FilledButton(
+        style: FilledButton.styleFrom(
+          shape: const StadiumBorder(),
+          backgroundColor: _kidsPrimary,
+        ),
+        onPressed: _save,
+        child: const Text('حفظ'),
       ),
     ],
   );

@@ -109,6 +109,18 @@ class _Server implements FamilyRemote {
   }
 
   @override
+  Future<void> updateIdentity({
+    required String memberId,
+    required String alias,
+    required String? avatarEmoji,
+  }) async {
+    _maybeFail();
+    if (writesIgnored) return;
+    members[memberId]?['alias'] = alias;
+    members[memberId]?['avatar_emoji'] = avatarEmoji;
+  }
+
+  @override
   Future<void> removeMember(String memberId) async {
     _maybeFail();
     if (triggerRaises case final message?) {
@@ -247,6 +259,61 @@ void main() {
 
     final after = await repo.remove(kid);
     expect(after.members.map((m) => m.userId), <String>['me']);
+  });
+
+  test(
+    'a child renames themself and picks a picture; the cache keeps it',
+    () async {
+      server.seedFamily('f1', <(String, String)>[
+        ('dad', 'admin'),
+        ('me', 'child'),
+      ]);
+      final family = (await repo.refresh() as InFamily).family;
+      final me = family.members.firstWhere((m) => m.userId == 'me');
+      expect(me.avatarEmoji, isNull);
+
+      final after = await repo.updateIdentity(
+        me,
+        alias: '  يوسف  ',
+        avatarEmoji: '🦁',
+      );
+      final mine = after.members.firstWhere((m) => m.userId == 'me');
+      expect(mine.alias, 'يوسف');
+      expect(mine.avatarEmoji, '🦁');
+
+      final cached = (repo.cached() as InFamily).family.members.firstWhere(
+        (m) => m.userId == 'me',
+      );
+      expect(cached.avatarEmoji, '🦁');
+    },
+  );
+
+  test('a blank picture is no picture, not an empty string', () async {
+    server.seedFamily('f1', <(String, String)>[('me', 'child')]);
+    final me = (await repo.refresh() as InFamily).family.members.single;
+    final after = await repo.updateIdentity(
+      me,
+      alias: 'يوسف',
+      avatarEmoji: ' ',
+    );
+    expect(after.members.single.avatarEmoji, isNull);
+    expect(server.members.values.single['avatar_emoji'], isNull);
+  });
+
+  test('a rename RLS silently refused is reported as refused', () async {
+    server.seedFamily('f1', <(String, String)>[
+      ('me', 'child'),
+      ('sister', 'child'),
+    ]);
+    final family = (await repo.refresh() as InFamily).family;
+    final sister = family.members.firstWhere((m) => m.userId == 'sister');
+    server.writesIgnored = true;
+    expect(
+      await failureOf(
+        () => repo.updateIdentity(sister, alias: 'x', avatarEmoji: '🐸'),
+      ),
+      FamilyFailure.notAllowed,
+    );
   });
 
   test('an unknown stored role is never read as admin', () {

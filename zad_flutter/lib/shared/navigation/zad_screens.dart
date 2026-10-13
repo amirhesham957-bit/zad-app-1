@@ -156,10 +156,6 @@ abstract final class ZadScreens {
   /// «استوديو الرفيق».
   static late OpenScreen showCompanionStudio;
 
-  // ── orb
-  /// «زيّن زاد».
-  static late OpenScreen showOrbPicker;
-
   // ── paywall
   /// The subscription paywall.
   static late OpenScreen showPaywallScreen;
