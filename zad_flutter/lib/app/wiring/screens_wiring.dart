@@ -41,7 +41,6 @@ import 'package:zad/features/notifications/presentation/notification_center_scre
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
-import 'package:zad/features/orb/presentation/orb_picker_dialog.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
@@ -112,7 +111,6 @@ void wireScreens() {
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
   ZadScreens.showCompanionStudio = showCompanionStudio;
-  ZadScreens.showOrbPicker = showOrbPicker;
   ZadScreens.showPaywallScreen = showPaywallScreen;
   ZadScreens.showAddMedicineSheet = showAddMedicineSheet;
   ZadScreens.showPricesScreen = showPricesScreen;

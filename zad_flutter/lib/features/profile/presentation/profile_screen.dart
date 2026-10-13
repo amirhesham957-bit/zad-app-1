@@ -174,12 +174,6 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () =>
                         unawaited(ZadScreens.showAchievementsScreen(context)),
                   ),
-                  _MenuRow(
-                    icon: Icons.auto_awesome,
-                    title: 'زيّن زاد',
-                    subtitle: 'كل ما عيلتك تنضم لزاد، زاد بتتزيّن',
-                    onTap: () => unawaited(ZadScreens.showOrbPicker(context)),
-                  ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
