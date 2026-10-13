@@ -2,6 +2,8 @@
 /// avatar greeting, the candy-gradient allowance card with the savings goal
 /// and today's limit, «محتاج مصروف زيادة؟» (pocket money or a purchase, a
 /// parent approves), my chores, three badges, and the last family messages.
+/// No shopping suggestions: the household's groceries are not a child's shop
+/// window (owner, 2026-10-13).
 ///
 /// Kids mode's gradients and emoji are deliberate (CLAUDE.md) — this screen
 /// keeps its own colours and does not share them.
@@ -20,7 +22,6 @@ import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
-import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
@@ -28,7 +29,6 @@ import 'package:zad/shared/family/data/seasonal_badges.dart';
 import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/family/domain/family_life.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
-import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
 
 const Color _kidsPrimary = Color(0xFF6B46C1);
@@ -290,8 +290,6 @@ class KidsHome extends ConsumerWidget {
             for (final m in recent) _MessageRow(message: m, family: family),
           const SizedBox(height: 22),
           const _TasbihaCard(),
-          const SizedBox(height: 22),
-          const _AffiliateRow(),
         ],
       ),
     );
@@ -817,48 +815,6 @@ class _TasbihaCardState extends ConsumerState<_TasbihaCard> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Kotlin's «اقتراحات التسوق» row on the kids home: up to five active
-/// catalogue products, each click recorded as `kids_home`. Nothing shows
-/// when the catalogue has no active product.
-class _AffiliateRow extends ConsumerWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final products = (ref.watch(affiliateProductsProvider).value ?? const [])
-        .where((p) => p.isActive)
-        .take(5)
-        .toList();
-    if (products.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const _SectionTitle(emoji: '🛍️', title: 'اقتراحات التسوق'),
-        const SizedBox(height: ZadSpacing.sm),
-        SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: products.length,
-            separatorBuilder: (_, _) => const SizedBox(width: ZadSpacing.md),
-            itemBuilder: (context, i) => ZadSlots.affiliateProductCard(
-              width: 320,
-              product: products[i],
-              onBuy: () => unawaited(
-                openAffiliateProduct(
-                  ref,
-                  products[i],
-                  sourceScreen: 'kids_home',
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
