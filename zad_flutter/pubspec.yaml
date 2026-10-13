@@ -1,7 +1,7 @@
 name: zad
 description: "زاد — مساعد مالي ذكي للعائلة العربية."
 publish_to: none
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   # The floor is set by riverpod_lint, freezed and very_good_analysis, all of

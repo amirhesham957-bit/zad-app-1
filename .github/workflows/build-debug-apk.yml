@@ -85,3 +85,31 @@ jobs:
         with:
           name: app-release
           path: zad_flutter/build/app/outputs/flutter-apk/app-*-release.apk
+
+      # The Play Console bundle, signed with the upload key. Only this step sees
+      # the key, so the APKs above keep the debug key the phone already has.
+      - name: Build Play bundle (AAB)
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.ZAD_UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_PASSWORD: ${{ secrets.ZAD_UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_B64" ] || [ -z "$UPLOAD_PASSWORD" ]; then
+            echo "::warning title=Play bundle::ZAD_UPLOAD_KEYSTORE_B64 / ZAD_UPLOAD_KEY_PASSWORD not set — no AAB built."
+            echo "⚠️ No Play bundle: set ZAD_UPLOAD_KEYSTORE_B64 and ZAD_UPLOAD_KEY_PASSWORD." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          printf '%s' "$UPLOAD_KEYSTORE_B64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" KEY_ALIAS=releasekey \
+                 STORE_PASSWORD="$UPLOAD_PASSWORD" KEY_PASSWORD="$UPLOAD_PASSWORD"
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" | grep -i fingerprint
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          rm -f "$KEYSTORE_PATH"
+        working-directory: zad_flutter
+
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('zad_flutter/build/app/outputs/bundle/release/app-release.aab') != ''
+        with:
+          name: app-release-aab
+          path: zad_flutter/build/app/outputs/bundle/release/app-release.aab
