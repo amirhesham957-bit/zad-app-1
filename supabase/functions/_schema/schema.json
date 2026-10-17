@@ -1297,5 +1297,32 @@
     "remaining_requests",
     "remaining_tokens",
     "status"
+  ],
+  "zad_health_daily": [
+    "agent_writes",
+    "bank_events",
+    "bank_ignored",
+    "bank_logged",
+    "brain_avg_secs",
+    "brain_input_tokens",
+    "brain_max_secs",
+    "brain_output_tokens",
+    "brain_runs",
+    "brain_runs_failed",
+    "computed_at",
+    "day",
+    "fcm_tokens",
+    "guardian_delivered",
+    "guardian_replied",
+    "last_bank_event_at",
+    "moments_failed",
+    "moments_no_channel",
+    "moments_sent",
+    "telegram_bound",
+    "txn_bank",
+    "txn_other",
+    "txn_receipt",
+    "txn_total",
+    "user_id"
   ]
 }
