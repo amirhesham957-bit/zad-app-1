@@ -152,10 +152,12 @@ export function accentDirection(country: unknown): string {
  * رجّعوا «200 audio» في provider_health بنفس الصوت. الأول هو المجرّب.
  */
 export const GEMINI_TTS_CHAIN: readonly string[] = [
-  "gemini-2.5-flash-preview-tts",
-  "gemini-3.1-flash-tts-preview",
+  // ٢٠٢٦-١٠-١٧: صفحة موديلات جوجل بقت بتقول على 2.5-preview «limited access» وعلى 3.1-preview
+  // «legacy»، والاتنين 3.8 «stable» ومجانيين. نفس السعة (كل موديل عداده)، بس الثابت الأول.
   "gemini-3.8-flash-tts",
   "gemini-3.8-flash-lite-tts",
+  "gemini-3.1-flash-tts-preview",
+  "gemini-2.5-flash-preview-tts",
 ];
 
 /**

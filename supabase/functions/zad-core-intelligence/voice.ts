@@ -36,7 +36,8 @@ export function chatReplyEmotion(feelingFrom: unknown): VoiceEmotion {
     : "warm";
 }
 
-export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? "gemini-2.5-flash-preview-tts";
+// الافتراضي = أول السلسلة (الثابت، ٢٠٢٦-١٠-١٧)؛ السر GEMINI_TTS_MODEL لو متحط بيغلب.
+export const GEMINI_TTS_MODEL = Deno.env.get("GEMINI_TTS_MODEL") ?? GEMINI_TTS_CHAIN[0];
 /** جملة قصيرة بتتقرا في ثواني؛ أكتر من كده يبقى معلّق، والأحسن ننقل للموديل/المفتاح اللي بعده. */
 const TTS_TIMEOUT_MS = 10_000;
 
