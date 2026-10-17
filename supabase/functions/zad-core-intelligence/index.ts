@@ -1493,6 +1493,16 @@ async function handle(req: Request): Promise<Response> {
     // بيصرف طلب واحد لكل (مفتاح، موديل). النتيجة بتتسجل في zad_model_probes (أرقام بس، ولا مفتاح).
     if (action === "model_probe") {
       if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+      // CI بينادي بعد كل نشر، والنشر ممكن يحصل كذا مرة في اليوم: فحص كل ٢٠ ساعة بالكتير إلا لو force.
+      const force = (payload as { force?: unknown } | null)?.force === true;
+      if (!force) {
+        const { data: last } = await supabase.from("zad_model_probes").select("probed_at")
+          .order("probed_at", { ascending: false }).limit(1).maybeSingle();
+        const lastAt = last?.probed_at ? Date.parse(String(last.probed_at)) : 0;
+        if (Date.now() - lastAt < 20 * 3600_000) {
+          return jsonResponse({ ok: true, skipped: "probed in the last 20 hours — pass payload.force=true", last_probed_at: last?.probed_at ?? null });
+        }
+      }
       const report = await modelQuotaProbe(GEMINI_KEYS, GROQ_KEYS);
       const { error: probeInsertError } = await supabase.from("zad_model_probes").insert(report.rows);
       if (probeInsertError) console.error("[CoreIntel] model_probe: insert failed", probeInsertError.message);

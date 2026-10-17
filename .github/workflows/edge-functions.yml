@@ -277,6 +277,26 @@ jobs:
           echo "### Provider health" >> "$GITHUB_STEP_SUMMARY"
           { echo '```json'; jq . provider_health.json 2>/dev/null || cat provider_health.json; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # الكوتة الحقيقية لكل موديل على كل مفتاح (zad-core-intelligence model_probe، ZAD_DREAM_PLAN.md).
+      # الفانكشن نفسها بتتخطى لو اتفحصت آخر ٢٠ ساعة، فالنشر المتكرر مابيصرفش كوتة. أرقام بس،
+      # ولا مفتاح. مابيفشّلش النشر.
+      - name: Model quota probe (per key, per model)
+        if: steps.preflight.outputs.ready == 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          SERVICE_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" -o json \
+            | jq -r '[.[] | select(.name == "service_role")][0].api_key // empty')
+          if [ -z "$SERVICE_KEY" ]; then echo "no service_role key from CLI"; exit 0; fi
+          echo "::add-mask::$SERVICE_KEY"
+          curl -sS --max-time 240 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-core-intelligence" \
+            -H "Authorization: Bearer $SERVICE_KEY" -H "Content-Type: application/json" \
+            -d '{"action":"model_probe"}' > model_probe.json || true
+          echo "### Model quota probe" >> "$GITHUB_STEP_SUMMARY"
+          { echo '```json'; jq '{skipped, last_probed_at, stored, gemma_models, groq_shared_slots, summary}' model_probe.json 2>/dev/null || head -c 2000 model_probe.json; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
       # اختبار القبول الحي بعد كل نشر (تشخيص زاد: «خلص» = جمل المالك عدّت على العقل الحقيقي،
       # مش التستات). بينادي acceptance_probe على حساب الاختبار المخصص، وبيكتب كل حالة ونتيجتها
       # في ملخص الرن، وبيحط تحذير لو حالة فشلت. محتاج سر GitHub اسمه ZAD_PROACTIVE_CRON_SECRET
