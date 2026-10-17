@@ -54,3 +54,29 @@ export function promptSizes(input: {
     total_chars,
   };
 }
+
+/**
+ * تعريف أداة خفيف للنداء التاني في اللفة وما بعده (رجيم السياق ٢): الاسم وأول جملة من الوصف
+ * والـschema بأنواعها وenumها وrequired — من غير شرح الحقول. الموديل كان قرر خطته في النداء الأول
+ * بالتعريف الكامل؛ هنا غالباً بيكتب الرد. الأداة اللي اتنادت أو اللي نية الرسالة بتشاور عليها
+ * بتفضل كاملة ([keepFull]) — دي اللي ممكن تتنادى تاني بجد.
+ */
+export function leanTools<T extends { name: string; description?: string; input_schema?: unknown }>(
+  tools: T[],
+  keepFull: ReadonlySet<string>,
+): T[] {
+  const strip = (s: unknown): unknown => {
+    if (Array.isArray(s)) return s.map(strip);
+    if (s && typeof s === "object") {
+      const o: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(s)) if (k !== "description") o[k] = strip(v);
+      return o;
+    }
+    return s;
+  };
+  return tools.map((t) => keepFull.has(t.name) ? t : {
+    ...t,
+    description: String(t.description ?? "").split(/[.؛:\n]/)[0].slice(0, 120),
+    input_schema: strip(t.input_schema),
+  });
+}
