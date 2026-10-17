@@ -48,7 +48,9 @@ Deno.test("a date for someone routes to remember_occasion, in every specialist",
   assert(intentToolHints("ذكرى جوازنا يوم ٥ يونيو").includes("remember_occasion"));
   assert(!intentToolHints("صرفت ٥٠ قهوة").includes("remember_occasion"));
   const tools = [{ name: "remember_occasion" }, { name: "add_inventory_item" }];
-  assert(scopeToolsForSpecialist(tools, "pantry").some((t) => t.name === "remember_occasion"));
+  // رجيم السياق: مع أي وكيل لما الرسالة فيها مناسبة، مش مع كل رسالة.
+  assert(scopeToolsForSpecialist(tools, "pantry", null, intentToolHints("عيد ميلاد مراتي ١٢ مارس")).some((t) => t.name === "remember_occasion"));
+  assert(!scopeToolsForSpecialist(tools, "pantry", null, intentToolHints("خلص الرز")).some((t) => t.name === "remember_occasion"));
   assert(
     scopeToolsForSpecialist(tools, "general", null, intentToolHints("عيد ميلاد ماما امتى؟")).some((t) => t.name === "remember_occasion"),
   );
