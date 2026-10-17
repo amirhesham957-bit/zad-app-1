@@ -48,3 +48,20 @@ Deno.test("what a greeting sends, measured", () => {
   console.log(`greeting: ${now} chars (was ${was}); tools ${tools.length} (was ${beforeTools.length})`);
   assert(now < was - 3000, `saved only ${was - now} chars`);
 });
+
+Deno.test("context diet 2: five rules go only where they apply", () => {
+  const offered = new Set(general("مرحبا").map((t) => t.name));
+  const lean = buildChatSystemPrompt(snap, false, offered);
+  for (const rule of ["**asked_this_morning**", "**التحول السلوكي (life_shift)**", "**شهر صعب**", "**القرارات الكبيرة**", 'scope "trait" في memory']) {
+    assert(!lean.includes(rule), rule);
+  }
+  const full = buildChatSystemPrompt({
+    ...snap,
+    asked_this_morning: { kind: "occasion" },
+    life_shift: [{ kind: "spend_up", confirmed: null }],
+    memory: [{ id: "m", scope: "trait", note: "مهتم بالأكل الصحي" }],
+  });
+  for (const rule of ["**asked_this_morning**", "**التحول السلوكي (life_shift)**", "**شهر صعب**", "**القرارات الكبيرة**", 'scope "trait" في memory']) {
+    assert(full.includes(rule), rule);
+  }
+});

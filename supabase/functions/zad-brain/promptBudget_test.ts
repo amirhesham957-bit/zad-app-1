@@ -23,3 +23,21 @@ Deno.test("every part is measured, and the total is what was sent", () => {
   assertEquals(s.history_turns, 2);
   assertEquals(s.total_chars, 3 + 2 + s.tools_chars + 7);
 });
+
+Deno.test("a lean tool keeps its name, types, enums and required — not the explanations", async () => {
+  const { leanTools } = await import("./promptBudget.ts");
+  const tool = {
+    name: "add_appointment",
+    description: "سجّل ميعاد. احسب starts_at من now_local",
+    input_schema: {
+      type: "object",
+      properties: { kind: { type: "string", enum: ["work", "other"], description: "نوعه" } },
+      required: ["kind"],
+    },
+  };
+  const [lean] = leanTools([tool], new Set());
+  assertEquals(lean.description, "سجّل ميعاد");
+  assertEquals(lean.input_schema as unknown, { type: "object", properties: { kind: { type: "string", enum: ["work", "other"] } }, required: ["kind"] });
+  // اللي اتنادت أو عليها نية بتفضل كاملة.
+  assertEquals(leanTools([tool], new Set(["add_appointment"]))[0], tool);
+});
