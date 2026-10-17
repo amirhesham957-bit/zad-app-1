@@ -11,6 +11,7 @@ import { redactForLog } from "./redact.ts";
 import { isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
 import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
+import { modelQuotaProbe } from "./modelProbe.ts";
 import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
 import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
@@ -755,8 +756,10 @@ async function callVisionModel(systemPrompt: string, userPrompt: string, imageBa
   //
   // Every model below was checked on 2026-08-15 against a real receipt image, not assumed:
   // each returned valid JSON with the right merchant, the right total (295.25) and all four
-  // line items. gemini-3.5-flash leads only if it is what the operator configured.
-  const chain = [...new Set([GEMINI_MODEL_ROUTINE, ...VISION_FALLBACK_MODELS])];
+  // line items. The lite models lead (owner, 2026-10-17, ZAD_DREAM_PLAN.md): ZAD_MODEL_ROUTINE
+  // is gemini-3.5-flash on this project, the scarcest free bucket (20 a day per project),
+  // and it led every receipt and prescription scan. It is now the last resort, not the first.
+  const chain = [...new Set([...VISION_FALLBACK_MODELS, GEMINI_MODEL_ROUTINE])];
   let gemini = await attempt(chain[0]);
   for (let i = 1; i < chain.length && !gemini.ok; i++) {
     console.warn(`[CoreIntel] vision model ${chain[i - 1]} failed on every key; trying ${chain[i]}`);
@@ -1485,6 +1488,16 @@ async function handle(req: Request): Promise<Response> {
   try {
     const { action, user_id, payload, dialect } = await req.json();
     console.log(`[CoreIntel] action=${action}, user=${user_id}`);
+
+    // الكوتة الحقيقية لكل موديل على كل مفتاح (modelProbe.ts) — service role بس، بإيد مش من كرون:
+    // بيصرف طلب واحد لكل (مفتاح، موديل). النتيجة بتتسجل في zad_model_probes (أرقام بس، ولا مفتاح).
+    if (action === "model_probe") {
+      if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+      const report = await modelQuotaProbe(GEMINI_KEYS, GROQ_KEYS);
+      const { error: probeInsertError } = await supabase.from("zad_model_probes").insert(report.rows);
+      if (probeInsertError) console.error("[CoreIntel] model_probe: insert failed", probeInsertError.message);
+      return jsonResponse({ ok: true, stored: !probeInsertError, ...report });
+    }
 
     // فحص مفاتيح المزوّدين — مفتاح service role بس (CI بعد النشر). أسماء وحالات، ولا مفتاح.
     if (action === "provider_health") {

@@ -1283,5 +1283,19 @@
     "price_high",
     "price_low",
     "sources"
+  ],
+  "zad_model_probes": [
+    "id",
+    "key_slot",
+    "limit_requests",
+    "limit_tokens",
+    "model",
+    "ok",
+    "probed_at",
+    "provider",
+    "quota_note",
+    "remaining_requests",
+    "remaining_tokens",
+    "status"
   ]
 }

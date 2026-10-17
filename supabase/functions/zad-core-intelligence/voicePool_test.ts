@@ -1,3 +1,4 @@
+import { GEMINI_TTS_CHAIN } from "../_shared/zadVoice.ts";
 // اختبارات مسبح مفاتيح TTS: 429 على مفتاح → ينط للمفتاح التالي،
 // و404 على موديل → ينط للموديل الاحتياطي بنفس المفتاح. كل النداءات mock fetcher.
 import { assertEquals } from "jsr:@std/assert@1";
@@ -172,12 +173,12 @@ Deno.test("TTS pool: a model's daily quota gone on a key — the next model on t
     const key = String(((init as RequestInit)?.headers as Record<string, string> | undefined)?.["x-goog-api-key"] ?? "");
     const model = url.split("/models/")[1]?.split(":")[0] ?? "";
     calls.push({ key, model });
-    if (model === "gemini-2.5-flash-preview-tts") return Promise.resolve(new Response("quota", { status: 429 }));
+    if (model === GEMINI_TTS_CHAIN[0]) return Promise.resolve(new Response("quota", { status: 429 }));
     return Promise.resolve(audioResponse());
   };
   const res = await requestGeminiVoiceWithPool({ text: "مرحبا", voiceId: "Aoede" } as any, ["KEY1", "KEY2"], mockFetcher, "", undefined, freshTtsPool());
   assertEquals(res.status, 200);
-  assertEquals(calls.map((c) => `${c.key}/${c.model}`), ["KEY1/gemini-2.5-flash-preview-tts", "KEY1/gemini-3.1-flash-tts-preview"]);
+  assertEquals(calls.map((c) => `${c.key}/${c.model}`), [`KEY1/${GEMINI_TTS_CHAIN[0]}`, `KEY1/${GEMINI_TTS_CHAIN[1]}`]);
 });
 
 Deno.test("TTS pool: a key/model pair that answered 429 is skipped, not asked again", async () => {
