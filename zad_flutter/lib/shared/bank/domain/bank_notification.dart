@@ -184,8 +184,11 @@ double? normalizeNumber(String raw) {
   return parsed?.asMoney;
 }
 
+// The trailing (?!\d) is load-bearing: without it the first alternative stops
+// after three digits, and where the currency is optional ("مبلغ 2000 جنيه")
+// the match ended there — 2000 was read as 200.
 const String _num =
-    r'(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)';
+    r'(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?!\d)';
 
 const String _curLatin =
     'SAR|SR|TRY|TL|EGP|AED|KWD|QAR|BHD|OMR|JOD|LBP|IQD|SYP|YER|ILS|NIS|'
