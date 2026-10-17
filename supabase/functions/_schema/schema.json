@@ -514,6 +514,7 @@
     "input_tokens",
     "mutations",
     "output_tokens",
+    "prompt_sizes",
     "rejections",
     "specialist",
     "specialist_secondary",

@@ -136,6 +136,7 @@ import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
+import { promptSizes } from "./promptBudget.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -6638,35 +6639,52 @@ async function handleAgentTurnInLane(
   });
   // «فاتك إيه» (whileAway.ts): آخر لفة قبل الرسالة دي — البوت والتطبيق بيسجّلوا اللفة بعد الرد.
   const awayLine = await loadWhileAway(sb, userId, (await sharedHistoryEarly)?.at(-1)?.at, snap?.currency ?? null);
-  const systemPrompt =
-    soulBlock(snap?.customer?.zad_voice)
-    + (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n" + lessonsBlock
-    + agentMailBlock(agentMail)
-    + whileAwayBlock(awayLine)
+  // كل بلوك باسمه عشان ميزان اللفة (promptBudget.ts) يقيسه — الترتيب هو ترتيب البرومبت.
+  const chatSnap = {
+    ...snap,
+    // الملاحظات اللي بتوصف العميل نفسه (العيلة، الراتب، السكن...) بتدخل دايماً — كانت بتقع
+    // برّه أقرب ١٢ ملاحظة للرسالة فالعقل «ينسى» العميل أول ما الموضوع يتغير.
+    memory: [
+      ...((snap.memory ?? []) as Array<{ id: string; scope: string }>).filter((m) => IDENTITY_MEMORY_SCOPES.has(m.scope)),
+      ...relevantMemory.filter((m: { scope: string }) => !IDENTITY_MEMORY_SCOPES.has(m.scope)),
+    ].slice(0, 20),
+    // لهجة العميل من كلامه هو (الرسالة + رسايله اللي فاتت) — مش من ردود زاد.
+    dialect_hint_text: [
+      ...(Array.isArray(body.history) ? body.history : [])
+        .filter((h: { role?: string }) => h?.role === "user")
+        .map((h: { text?: string }) => String(h?.text ?? "")),
+      message,
+    ].join(" ").slice(-1500),
+  };
+  const promptParts: Record<string, string> = {
+    soul: soulBlock(snap?.customer?.zad_voice),
+    specialist: (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n",
+    lessons: lessonsBlock,
+    agent_mail: agentMailBlock(agentMail),
+    while_away: whileAwayBlock(awayLine),
     // «صلحت الحنفية» ⇒ «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts، الموجة ٣).
-    + technicianFollowUp(message, snap?.trusted_technicians, history.filter((t) => t.role === "assistant").map((t) => String((t as { text?: string }).text ?? "")))
-    + skillsBlock(learnedSkills)
+    technician: technicianFollowUp(message, snap?.trusted_technicians, history.filter((t) => t.role === "assistant").map((t) => String((t as { text?: string }).text ?? ""))),
+    skills: skillsBlock(learnedSkills),
     // صفحة «المساعدة والدعم» بقت بتكلم العقل نفسه (كانت موديل لوحده من غير حساب العميل).
-    + (body.surface === "support"
+    support: body.surface === "support"
       ? "\n=== صفحة المساعدة والدعم ===\nالعميل بيكلمك من صفحة المساعدة والدعم. ساعده يحل مشكلته خطوة بخطوة بأسامي الشاشات اللي في التطبيق، " +
         "ومن بياناته هو لو المشكلة فيها. لو المشكلة عطل، أو هو عايز يشتكي أو يكلم حد، نادِ open_support_ticket.\n"
-      : "")
-    + buildChatSystemPrompt({
-      ...snap,
-      // الملاحظات اللي بتوصف العميل نفسه (العيلة، الراتب، السكن...) بتدخل دايماً — كانت بتقع
-      // برّه أقرب ١٢ ملاحظة للرسالة فالعقل «ينسى» العميل أول ما الموضوع يتغير.
-      memory: [
-        ...((snap.memory ?? []) as Array<{ id: string; scope: string }>).filter((m) => IDENTITY_MEMORY_SCOPES.has(m.scope)),
-        ...relevantMemory.filter((m: { scope: string }) => !IDENTITY_MEMORY_SCOPES.has(m.scope)),
-      ].slice(0, 20),
-      // لهجة العميل من كلامه هو (الرسالة + رسايله اللي فاتت) — مش من ردود زاد.
-      dialect_hint_text: [
-        ...(Array.isArray(body.history) ? body.history : [])
-          .filter((h: { role?: string }) => h?.role === "user")
-          .map((h: { text?: string }) => String(h?.text ?? "")),
-        message,
-      ].join(" ").slice(-1500),
-    }, body.voice_mode === true, new Set(scopedTools.map((t) => t.name)));
+      : "",
+    chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, new Set(scopedTools.map((t) => t.name))),
+  };
+  const systemPrompt = Object.values(promptParts).join("");
+  const promptSnap = promptSnapshot(chatSnap);
+  const promptSnapChars = JSON.stringify(promptSnap).length;
+  const turnSizes = promptSizes({
+    parts: { ...promptParts, chat: undefined },
+    snapshot: promptSnap,
+    tools: scopedTools,
+    history,
+  });
+  // بلوك الشات = القواعد + الـSNAPSHOT؛ بيتسجلوا منفصلين.
+  turnSizes.parts.rules = promptParts.chat.length - promptSnapChars;
+  turnSizes.parts.snapshot = promptSnapChars;
+  turnSizes.total_chars += promptParts.chat.length;
   // لو جيميناي كله وقع ووصلنا لـ Groq: برومبت مختصر بنفس اللهجة (الفجوة ١٣).
   const groqSystem = groqSystemFor(snap, [
     ...(Array.isArray(body.history) ? body.history : [])
@@ -6691,7 +6709,7 @@ async function handleAgentTurnInLane(
   // trigger='chat' لأن الـ CHECK constraint على العمود بيسمح بـ daily/event/chat بس —
   // قيمة جديدة كانت هتحتاج migration، والقيمة دي بتوصف اللفة دي بالظبط أصلاً.
   const { data: runRow } = await sb.from("zad_brain_runs")
-    .insert({ user_id: userId, trigger: "chat", status: "running" }).select("id").single();
+    .insert({ user_id: userId, trigger: "chat", status: "running", prompt_sizes: turnSizes }).select("id").single();
   const runId = (runRow as { id: string } | null)?.id;
   const scope: AuditScope = { source: declaredSource, runId };
   // trace: مين عالج الرسالة دي — مثبت في الداتابيز مش ادعاء في اللوج.
