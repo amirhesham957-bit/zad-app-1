@@ -42,6 +42,18 @@ export function internalLeak(reply: string): string | null {
   return null;
 }
 
+/**
+ * كل الجمل: الرد مايخلصش بسؤال خدمة عام («تحب أساعدك في حاجة تانية؟») — طلب المالك ١٨/١٠: «ميحسش
+ * إنه بيكلم آلة». dropServiceCloser بيشيله؛ ده بيتأكد إنه اتشال على العقل الحي.
+ */
+export function machineCloser(reply: string): string | null {
+  const last = reply.trim().split(/[\n.!]+/).filter((s) => s.trim()).at(-1) ?? "";
+  if (/[؟?]/.test(last) && /(حاج[ةه]|شي|شيء)\s+(تاني[ةه]?|ثاني[ةه]?|غيره?)|تامرني|في حاجة تانية/.test(last)) {
+    return `ends with a service question: «${last.trim().slice(0, 60)}»`;
+  }
+  return null;
+}
+
 /** null = passed; otherwise what the customer would have seen go wrong. */
 export const ACCEPTANCE_CASES: AcceptanceCase[] = [
   {
