@@ -304,7 +304,6 @@ jobs:
       # الخطوة بتتخطى بتحذير ظاهر. مابيفشّلش النشر — النشر خلص؛ ده قياس اللي اتنشر.
       - name: Acceptance probe (owner's lines on the live brain)
         if: steps.preflight.outputs.ready == 'true'
-        continue-on-error: true
         env:
           PROBE_SECRET: ${{ secrets.ZAD_PROACTIVE_CRON_SECRET }}
         run: |

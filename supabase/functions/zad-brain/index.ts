@@ -6303,7 +6303,31 @@ async function answerFastPath(
   sb: SupabaseClient,
   userId: string,
   intent: FastIntent,
-): Promise<{ reply: string; proposals: Proposal[] } | null> {
+  source: AgentSource = "app_chat",
+): Promise<{ reply: string; proposals: Proposal[]; executed?: Array<{ tool: string; ok: boolean; summary: string }> } | null> {
+  if (intent.kind === "relative_reminder") {
+    // نفس أداة add_appointment اللي الموديل بينادي عليها — نفس التحقق والكتابة والإيصال والسجل —
+    // بس الوقت حساب مش لغة (fastPath.ts). رفض = الموديل ياخد الرسالة زي ما هي.
+    const tz = await accountTimeZone(sb, userId);
+    const ctx = freshContext(userId);
+    const result = await runTool(sb, userId, "add_appointment", {
+      title: intent.title,
+      starts_at: new Date(Date.now() + intent.minutes * 60_000).toISOString(),
+      kind: "personal",
+      remind_minutes_before: 0,
+    }, { now_local: localNowContext(tz) }, ctx, { source, runId: null });
+    if (result.startsWith("مرفوض")) {
+      console.warn("fast path reminder refused, the model takes it:", result.slice(0, 160));
+      return null;
+    }
+    const at = new Date(Date.now() + intent.minutes * 60_000)
+      .toLocaleTimeString("ar-EG", { timeZone: tz, hour: "numeric", minute: "2-digit" });
+    return {
+      reply: `تمام ⏰ هفكّرك «${intent.title}» الساعة ${at}.`,
+      proposals: [],
+      executed: [{ tool: "add_appointment", ok: true, summary: result }],
+    };
+  }
   if (intent.kind === "balance") {
     // Same call buildSnapshot makes — p_tz defaults inside the function, which derives the
     // zone from the account's country. Passing one from here would be a second source of
@@ -6515,7 +6539,7 @@ async function handleAgentTurnInLane(
   // falls straight through to the model path below, unchanged.
   const fast = parseFastPath(message);
   if (fast) {
-    const fastReply = await answerFastPath(sb, userId, fast);
+    const fastReply = await answerFastPath(sb, userId, fast, declaredSource);
     if (fastReply) {
       // Usage is still recorded: this was a real request against the daily cap, it just
       // did not spend any tokens. Not recording it would make the cap undercount.
@@ -6527,9 +6551,9 @@ async function handleAgentTurnInLane(
       return new Response(JSON.stringify({
         ok: true,
         reply: fastReply.reply,
-        executed: [],
+        executed: visibleReceipts(fastReply.executed ?? []),
         proposals: fastReply.proposals,
-        tool_attempted: fastReply.proposals.length > 0,
+        tool_attempted: fastReply.proposals.length > 0 || (fastReply.executed ?? []).length > 0,
         rejections: [],
         observations: [],
         fast_path: fast.kind,
@@ -6818,13 +6842,15 @@ async function handleAgentTurnInLane(
 
   let inputTokens = 0, outputTokens = 0;
   // ميزان اللفة: كام نداء موديل في اللفة دي ومنين — عشان فرق التوكنز بين لفتين يتفسّر بالحجم ولا بعدد النداءات.
-  const calls = { model: 0, loops: 0, retries: 0, answer: 0 };
+  const calls = { model: 0, loops: 0, retries: 0, answer: 0, models: [] as string[] };
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
       reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText);
       calls.loops++;
       calls.model += reply.calls;
+      // اسم الموديل اللي رد فعلاً (تراجع التذكير ١٨/١٠ ماكانش ينفع يتشخّص من غيره).
+      if (reply.model && !calls.models.includes(reply.model)) calls.models.push(reply.model);
       if (reply.calls > 1) calls.retries++;
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
