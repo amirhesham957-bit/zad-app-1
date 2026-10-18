@@ -26,7 +26,8 @@
 /** What the message turned out to be, or null when the model should handle it. */
 export type FastIntent =
   | { kind: "balance" }
-  | { kind: "log_expense"; amount: number; title: string; wallet: "cash" | "card" | null };
+  | { kind: "log_expense"; amount: number; title: string; wallet: "cash" | "card" | null }
+  | { kind: "relative_reminder"; minutes: number; title: string };
 
 const ARABIC_INDIC = "٠١٢٣٤٥٦٧٨٩";
 const EASTERN_ARABIC_INDIC = "۰۱۲۳۴۵۶۷۸۹";
@@ -107,6 +108,10 @@ export function parseFastPath(raw: string): FastIntent | null {
     if (p.test(lowered)) return { kind: "balance" };
   }
 
+  // Before the multi-clause guard: «كمان» is part of «فكّرني كمان دقيقتين…», not a second clause.
+  const reminder = parseRelativeReminder(message);
+  if (reminder) return reminder;
+
   // Everything below writes money, so the multi-clause guard applies from here down only.
   // A balance question with a question mark is still just a balance question, but
   // "سجل ٥٠ قهوة و٣٠ شاي" must never be read as one transaction.
@@ -171,4 +176,48 @@ export function formatBalanceReply(state: Record<string, unknown> | null): strin
     `المتاح بعد خصم المحجوز (${fmt(num("committed"))}): ${fmt(num("available"))}` +
       (daysLeft === null ? "" : ` — فاضل ${daysLeft} يوم في الدورة.`),
   ].join("\n");
+}
+
+// ── «فكّرني كمان دقيقتين أشرب مية» (2026-10-18) ──────────────────────────────────────────────
+// On the live brain this line wrote its reminder 19 of 20 times until 17/10, then 5 of 9: twice
+// the model answered in words and the retry did too, and the customer read «لسه ماسجلتش». A
+// relative time is arithmetic, not language — so it is parsed here and written without a model.
+// The bar stays high: one duration, then what to remember, and nothing that could be a second
+// time, a repetition or a second request — those go to the model untouched.
+
+const REMIND_VERB = "(?:فكرني|فكريني|ذكرني|ذكريني|نبهني|نبهيني|صحيني)";
+const DURATION_WORDS: Array<[RegExp, number]> = [
+  [/^دقيقتين$/, 2],
+  [/^ساعتين$/, 120],
+  [/^(?:نص|نصف) ساعة$/, 30],
+  [/^ربع ساعة$/, 15],
+  [/^(?:ساعة|ساعه)$/, 60],
+  [/^(?:دقيقة|دقيقه)$/, 1],
+];
+const REMINDER_RE = new RegExp(
+  `^${REMIND_VERB}\\s+(?:كمان|بعد)\\s+(\\d{1,3}\\s*(?:دقيقة|دقيقه|دقايق|دقائق|ساعة|ساعه|ساعات)|دقيقتين|ساعتين|(?:نص|نصف|ربع) ساعة|ساعة|ساعه|دقيقة|دقيقه)\\s+(.{2,60})$`,
+);
+/** What to remember must not hold a second time, a repetition, or a second request. */
+// Whole words only: a bare «كل» matched inside «أكلم» (the \\b note above, again).
+const REMINDER_TAIL_REFUSE = new RegExp(
+  "\\d|(\\sو|^و)|،|,|؛|;|\\?|؟|" +
+  AR_START + "(?:الساعة|الساعه|كل|بكرة|بكره|النهارده|يوم|ولا|بس|لكن|بعدين|كمان)" + AR_END,
+);
+
+function stripTashkeel(s: string): string {
+  return s.replace(/[\u064B-\u0652\u0670]/g, "");
+}
+
+export function parseRelativeReminder(message: string): FastIntent | null {
+  const m = REMINDER_RE.exec(stripTashkeel(message));
+  if (!m) return null;
+  const dur = m[1].trim();
+  let minutes: number | null = null;
+  const num = /^(\d{1,3})\s*(دقيقة|دقيقه|دقايق|دقائق|ساعة|ساعه|ساعات)$/.exec(dur);
+  if (num) minutes = Number(num[1]) * (/ساع/.test(num[2]) ? 60 : 1);
+  else for (const [re, v] of DURATION_WORDS) if (re.test(dur)) minutes = v;
+  if (minutes === null || minutes < 1 || minutes > 12 * 60) return null;
+  const title = m[2].trim().replace(/^(?:إني|اني|أني|ب)\s*/, "").trim();
+  if (title.length < 2 || REMINDER_TAIL_REFUSE.test(title)) return null;
+  return { kind: "relative_reminder", minutes, title };
 }

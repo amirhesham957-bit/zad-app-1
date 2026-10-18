@@ -43,6 +43,8 @@ export type ModelReply = {
   text: string;
   toolCalls: ToolCall[];
   usage: { inTok: number; outTok: number };
+  /** The model that answered, after the chain's fall-overs (ميزان اللفة بيسجّله). */
+  model?: string;
 };
 
 export type Provider = "anthropic" | "gemini" | "openai_compatible";
@@ -275,7 +277,7 @@ export async function callModel(opts: {
     try {
       const reply = await withRetry(() => sendGemini({ ...opts, model, timeoutMs }));
       modelCooldownUntil.delete(model);
-      return reply;
+      return { ...reply, model };
     } catch (e) {
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
@@ -288,7 +290,7 @@ export async function callModel(opts: {
   if (GROQ_KEY_POOL.length > 0) {
     console.warn(`[zad-brain] whole Gemini chain unavailable [${trail.join(" | ")}]; falling back to Groq ${GROQ_MODEL}`);
     try {
-      return await withRetry(() => sendGroq({ ...opts, model: GROQ_MODEL }));
+      return { ...(await withRetry(() => sendGroq({ ...opts, model: GROQ_MODEL }))), model: GROQ_MODEL };
     } catch (e) {
       throw new RetryableError(
         `every gemini model unavailable [${trail.join(" | ")}] and groq failed too: ${e instanceof Error ? e.message : String(e)}`,
