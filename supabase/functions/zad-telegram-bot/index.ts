@@ -45,7 +45,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound,
+  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
@@ -386,6 +386,7 @@ async function sendCheckInPrompt(sb: SupabaseClient, userId: string, chatId: num
 /** أكتر من صنف = رسالة واحدة (checkInBundleMessage). بيرجع عدد الأسئلة اللي اتسجلت واتبعتت. */
 async function sendCheckInBundle(
   sb: SupabaseClient, userId: string, chatId: number, items: Array<{ item_name: string; quantity: number }>,
+  ignoredNote = false,
 ): Promise<number> {
   const prompts: Array<{ id: string; label: string }> = [];
   for (const item of items) {
@@ -402,8 +403,8 @@ async function sendCheckInBundle(
   if (prompts.length === 0) return 0;
   await sendTelegramMessage(
     chatId,
-    checkInBundleMessage(prompts.map((p) => isolate(p.label))),
-    checkInBundleKeyboard(prompts),
+    checkInBundleMessage(prompts.map((p) => isolate(p.label)), ignoredNote),
+    checkInBundleKeyboard(prompts, ignoredNote),
   );
   return prompts.length;
 }
@@ -438,12 +439,27 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     }
     const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
     if (budget <= 0) continue;
+    // زاد بيلاحظ اللي اتساب (checkinPlan في telegram.ts): قال «بطّل» ⇒ ساكت لحد آخر الكتم؛ سابه
+    // مرتين ⇒ بيقول إنه واخد باله ويعرض يبطّل؛ ٤ ⇒ ساكت أسبوعين من نفسه.
+    const { data: mute } = await sb.from("zad_memory").select("id")
+      .eq("user_id", b.user_id).eq("subject_kind", "checkin").gt("suppress_until", new Date().toISOString())
+      .limit(1).maybeSingle();
+    if (mute) continue;
+    const { data: recentPrompts } = await sb.from("telegram_checkin_prompts").select("status,sent_at")
+      .eq("user_id", b.user_id).order("sent_at", { ascending: false }).limit(8);
+    const history = (recentPrompts ?? []) as Array<{ status: string; sent_at: string | null }>;
+    const plan = checkinPlan(
+      ignoredCheckinStreak(history.map((r) => r.status)),
+      history[0]?.sent_at ? Date.parse(history[0].sent_at) : null,
+      Date.now(),
+    );
+    if (plan === "rest") continue;
     const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
     let asked = 0;
-    if (candidates.length === 1) {
+    if (candidates.length === 1 && plan === "ask") {
       if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity)) asked = 1;
-    } else if (candidates.length > 1) {
-      asked = await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates);
+    } else if (candidates.length > 0) {
+      asked = await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates, plan === "ask_with_note");
     }
     if (asked > 0) {
       promptsSent += asked;
@@ -2268,6 +2284,23 @@ bot.on("callback_query:data", async (ctx) => {
     await ctx.reply(row.dose_times
       ? `اتسجل ✅ ${isolate(sanitizeName(row.name))} — المواعيد: ${isolate(row.dose_times)}\nهتلاقي التذكير شغال في التطبيق بعد أول فتح.`
       : `اتسجل ✅ ${isolate(sanitizeName(row.name))}. بتاخده الساعة كام؟ قولي («٨ الصبح و٨ بالليل») وأفعّل التذكير.`);
+    return;
+  }
+
+  // «🔕 بطّل تسألني» على سؤال المخزون: كتم شهر، ومتسجل كذاكرة العقل بيشوفها (مايعرضش يسأل تاني).
+  if (data === CHECKIN_OFF_CALLBACK) {
+    const until = new Date(Date.now() + 30 * 86_400_000).toISOString();
+    const { error } = await sb.from("zad_memory").insert({
+      user_id: userId, scope: "dismissal", subject_kind: "checkin", suppress_until: until, confidence: 0.9,
+      note: "العميل طلب يبطّل سؤال المخزون بالليل على تليجرام — مايتسألش لحد ما هو يطلب",
+    });
+    if (error) {
+      console.error("[checkin_off] insert failed:", error.message);
+      await ctx.reply("معلش، مقدرتش أحفظ ده دلوقتي — جرّب تاني.");
+      return;
+    }
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await ctx.reply("خلاص، مش هسألك عن المخزون بالليل تاني 👌 لو حبيت أرجع أسأل، قولّي.");
     return;
   }
 

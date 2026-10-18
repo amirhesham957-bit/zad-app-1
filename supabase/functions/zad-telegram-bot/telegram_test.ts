@@ -436,3 +436,19 @@ Deno.test("the 21:20 pass defers a customer who just heard from Zad; the 21:50 p
   assertEquals(deferForRecentOutbound(new Date("2026-10-18T18:20:00Z")), true);
   assertEquals(deferForRecentOutbound(new Date("2026-10-18T18:50:00Z")), false);
 });
+
+Deno.test("Zad notices a question left unanswered: twice ⇒ says so, four times ⇒ rests two weeks", async () => {
+  const { checkinPlan, ignoredCheckinStreak, checkInBundleKeyboard, checkInBundleMessage, CHECKIN_OFF_CALLBACK } = await import("./telegram.ts");
+  assertEquals(ignoredCheckinStreak(["pending", "expired", "expired", "answered_no", "expired"]), 2);
+  assertEquals(ignoredCheckinStreak(["answered_yes", "expired"]), 0);
+  const now = Date.parse("2026-10-18T18:20:00Z");
+  assertEquals(checkinPlan(1, now - 86_400_000, now), "ask");
+  assertEquals(checkinPlan(2, now - 86_400_000, now), "ask_with_note");
+  assertEquals(checkinPlan(4, now - 86_400_000, now), "rest");
+  assertEquals(checkinPlan(4, now - 15 * 86_400_000, now), "ask_with_note");
+  // الجملة البشرية + زرار «بطّل» تحت الأصناف.
+  assert(checkInBundleMessage(["رز"], true).includes("ومش بترد"));
+  const kb = checkInBundleKeyboard([{ id: "11111111-1111-1111-1111-111111111111", label: "رز" }], true);
+  assertEquals(kb.at(-1)?.[0].callback_data, CHECKIN_OFF_CALLBACK);
+  assertEquals(checkInBundleKeyboard([{ id: "11111111-1111-1111-1111-111111111111", label: "رز" }]).length, 1);
+});
