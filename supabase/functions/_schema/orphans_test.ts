@@ -16,8 +16,6 @@ const ROOT = new URL("../../../", import.meta.url);
 const KNOWN: Record<string, string> = {
   shopping_recommendations: "كاتبه zad-market-intelligence اتشال 2026-09-05؛ الشاشة بتخبيه لما يفضى. مسحه قرار المالك.",
   shared_grocery_list: "اتقاعد 2026-10-11 (20261011140000): صفوفه المفتوحة اتنقلت لقايمة البيت والتطبيق بطّل يكتب. مسحه قرار.",
-  chores: "قديم جنب family_chores (ZAD_LIVING_BRAIN.md §١١و). مسحه قرار.",
-  family_messages: "قديم جنب chat_messages (§١١و). مسحه قرار.",
   family_typing_status: "كان بيكتبه تطبيق Kotlin؛ Flutter مابيعرضش «بيكتب…». صفّين على الحي من قبل 2026-09-29.",
   user_achievements: "الشاشة بتقراه، والإنجاز بيتفتح من الداتا نفسها (achievements.dart)؛ مفيش كاتب من ساعة Kotlin.",
 };

@@ -154,15 +154,6 @@
     "sender_id",
     "voice_url"
   ],
-  "chores": [
-    "assigned_to",
-    "created_at",
-    "due_date",
-    "family_id",
-    "id",
-    "is_completed",
-    "title"
-  ],
   "dashboard_admins": [
     "created_at",
     "user_id"
@@ -225,15 +216,6 @@
     "user_id",
     "weekly_limit",
     "zad_id"
-  ],
-  "family_messages": [
-    "created_at",
-    "family_id",
-    "id",
-    "message",
-    "message_type",
-    "metadata",
-    "sender_id"
   ],
   "family_tasbiha": [
     "created_at",
