@@ -67,6 +67,26 @@ final Provider<Outbox> outboxProvider = Provider<Outbox>((ref) {
   );
 });
 
+/// The last flush's report, null before the first (the offline strip,
+/// `app/shell/zad_pulse_bar.dart`). [outboxRunnerProvider] writes it, so
+/// watching it never builds the runner and its triggers — a shell pumped
+/// without `ZadApp` stays without them.
+final NotifierProvider<OutboxLastReport, OutboxFlushReport?>
+outboxLastReportProvider =
+    NotifierProvider<OutboxLastReport, OutboxFlushReport?>(
+      OutboxLastReport.new,
+    );
+
+/// Holds [outboxLastReportProvider]'s value.
+class OutboxLastReport extends Notifier<OutboxFlushReport?> {
+  @override
+  OutboxFlushReport? build() => null;
+
+  /// The flush that just ended.
+  // ignore: avoid_setters_without_getters
+  set report(OutboxFlushReport value) => state = value;
+}
+
 /// Drains the outbox on startup, on resume, when the network comes back,
 /// and on a slow tick that exists to wake entries out of their backoff.
 ///
@@ -85,8 +105,12 @@ final Provider<OutboxRunner> outboxRunnerProvider = Provider<OutboxRunner>((
     // up on this cycle rather than the next one.
     beforeFlush: () => OutboxWiring.beforeFlush(ref),
   );
+  final reports = runner.reports.listen(
+    (report) => ref.read(outboxLastReportProvider.notifier).report = report,
+  );
 
   ref.onDispose(() async {
+    await reports.cancel();
     await runner.dispose();
     await triggers.dispose();
   });

@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
+import 'package:zad/app/shell/zad_pulse_bar.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
@@ -385,6 +386,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
               ),
+              const ZadPulseBar(),
               Expanded(
                 child: Stack(
                   children: <Widget>[
