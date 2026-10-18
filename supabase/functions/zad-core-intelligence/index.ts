@@ -41,7 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { budgetUsage, dailyCap, groundingPlan, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, groundingPlan, KEY_REST_MS, keyRefused, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -988,6 +988,16 @@ export let lastWebSearchAttempts: string[] = [];
  */
 /** بعد ما بحث جوجل من Gemini يرجّع 429 على كل الموديلات، بيتساب ٣٠ دقيقة بدل ٨ محاولات فاشلة في كل سؤال. */
 let groundedQuotaUntil = 0;
+// A key its project refuses (keyRefused) rests here, in memory: one refused call per instance
+// per half hour instead of four per search, each one a unit of the paid daily cap.
+let groundingKeyRestUntil = 0;
+
+function restRefusedKey(status: number, body: string): boolean {
+  if (!keyRefused(status, body)) return false;
+  groundingKeyRestUntil = Date.now() + KEY_REST_MS;
+  console.error(`[CoreIntel] grounding key refused (HTTP ${status}) — resting 30 min. Enable the Generative Language API and billing on the project of the grounding key.`);
+  return true;
+}
 
 /** The keys grounding may use now, or null; a paid call first takes one from today's budget. */
 function currentGroundingPlan() {
@@ -1013,6 +1023,10 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   }
   if (Date.now() < groundedQuotaUntil) {
     lastWebSearchAttempts.push("gemini_google_search:resting (quota)");
+    return [];
+  }
+  if (Date.now() < groundingKeyRestUntil) {
+    lastWebSearchAttempts.push("gemini_google_search:resting (key refused)");
     return [];
   }
   let sawOnly429 = true;
@@ -1041,6 +1055,7 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           const msg = (errText.match(/"message":\s*"([^"]{0,90})/)?.[1] ?? "").replace(/[^\x20-\x7E]/g, "");
           lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
           console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
+          if (restRefusedKey(res.status, errText)) return [];
           if (res.status !== 429) sawOnly429 = false;
           // الكوتة لكل موديل لوحده (CLAUDE.md) — 429 على موديل مش معناه إن التاني مقفول.
           continue;
@@ -1087,6 +1102,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
   // 429 from 2026-10-05, so walking all ten only delayed the fallback.
   const grounding = currentGroundingPlan();
   if (!grounding) return { parsed: null, ok: false };
+  if (Date.now() < groundingKeyRestUntil) return { parsed: null, ok: false };
   const keys = grounding.keys;
   // The card waits on this, and compound still needs its turn: 40s in all.
   const deadline = Date.now() + 40_000;
@@ -1111,6 +1127,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
         });
         if (!res.ok) {
           console.warn(`[CoreIntel] grounded json k${ki}/${model} HTTP ${res.status}`);
+          if (restRefusedKey(res.status, await res.text())) return { parsed: null, ok: false };
           continue;
         }
         const data = await res.json();
