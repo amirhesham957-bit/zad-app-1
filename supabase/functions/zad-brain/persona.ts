@@ -92,3 +92,12 @@ export function dropServiceCloser(reply: string): string {
   }
   return text;
 }
+
+/** زاد سأل عن اسم العميل أو صيغة كلامه في رد من ردود المحادثة اللي قدامه. */
+export function nameAskedIn(history: ReadonlyArray<object>): boolean {
+  return history.some((t) => {
+    const turn = t as { role?: string; text?: unknown };
+    return turn.role === "assistant" && typeof turn.text === "string" &&
+      /أناديك ب|اناديك ب|أنادي عليك|اسمك (إيه|ايه)|أكلمك بصيغة|اكلمك بصيغة|راجل ولا ست/.test(turn.text);
+  });
+}

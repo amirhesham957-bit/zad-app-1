@@ -32,3 +32,15 @@ Deno.test("the acceptance probe fails a reply that still ends like a call centre
   assertEquals(machineCloser("تمام. تحب أساعدك بحاجة تانية؟") !== null, true);
   assertEquals(machineCloser("تمام. شطّبت تمرين الجيم؟"), null);
 });
+
+Deno.test("the name question is asked once in a conversation", async () => {
+  const { nameAskedIn } = await import("./persona.ts");
+  const { buildChatSystemPrompt } = await import("./index.ts");
+  const rule = "**الاسم والنوع ليهم علاقة بكل رد**";
+  const asked = [{ role: "user", text: "الدهب بكام" }, { role: "assistant", text: "6,260 جنيه. أناديك بإيه، وأكلمك بصيغة راجل ولا ست؟" }];
+  assertEquals(nameAskedIn(asked), true);
+  assertEquals(nameAskedIn([{ role: "assistant", text: "الدولار ٥٣" }]), false);
+  const snap = { country: "EG", currency: "EGP", customer: { missing_important: ["preferred_name"] } };
+  assertEquals(buildChatSystemPrompt(snap).includes(rule), true);
+  assertEquals(buildChatSystemPrompt({ ...snap, name_asked_in_conversation: true }).includes(rule), false);
+});
