@@ -92,3 +92,41 @@ export function dropServiceCloser(reply: string): string {
   }
   return text;
 }
+
+// ── «هشتري موبايل بـ٢٠ ألف» (طلب المالك ١٨/١٠: «يعترض برقم ومايوافقش على كل حاجة») ─────────────────
+// فحص القبول على العقل الحي: مرة «ناقص ١٤ ألف… الميزانية ٦ آلاف بس»، ومرة «هينزل بالمتاح جامد» من
+// غير ولا رقم. القاعدة في SOUL («بتعاتب برقم من SNAPSHOT») بس الحساب كان على الموديل وهو بيرد. هنا
+// الكود بيحسبه، واللفة بتاخده سطر جاهز.
+
+const PLAN_VERB = /(?:^|\s)(?:هشتري|هاشتري|حشتري|سأشتري|ناوي (?:أ|ا)شتري|عايز (?:أ|ا)شتري|عاوز (?:أ|ا)شتري|بفكر (?:أ|ا)شتري|هجيب|ناوي (?:أ|ا)جيب|هدفع|هحجز|أبي (?:أ|ا)شتري|بشتري بكرة)(?:\s|$)/;
+
+/** المبلغ اللي العميل ناوي يصرفه (مش اللي صرفه)، أو null. «٢٠ ألف» = ٢٠٬٠٠٠. */
+export function plannedPurchase(message: string): number | null {
+  const m = message.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[,٬]/g, "");
+  if (!PLAN_VERB.test(m)) return null;
+  const n = /(\d+(?:\.\d+)?)\s*(ألف|الف|آلاف|الاف|k)?(?!\d)/i.exec(m);
+  if (!n) return null;
+  const value = Number(n[1]) * (n[2] ? 1000 : 1);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+const money = (n: number) => Math.round(n).toLocaleString("en-US");
+
+/** سطر الحساب للفة دي، أو "" لو الشرا صغير أو المتاح مش معروف. */
+export function purchaseCheckBlock(message: string, available: unknown, currency: unknown): string {
+  const amount = plannedPurchase(message);
+  if (amount === null || typeof available !== "number" || !Number.isFinite(available)) return "";
+  const cur = typeof currency === "string" && currency ? ` ${currency}` : "";
+  const head = `\n=== حساب جاهز للرسالة دي (من الكود، مش تخمين) ===\nالعميل ناوي يصرف ${money(amount)}${cur}، والمتاح دلوقتي ${money(available)}${cur}.`;
+  const say = " قول الرقم ده صراحة في ردك — عتاب واضح برقم زي ما في SOUL — وبعدين القرار ليه.\n";
+  if (available <= 0) return `${head} المتاح خلصان أصلاً، فالمبلغ كله هيبقى على الحساب.${say}`;
+  if (amount > available) {
+    const times = amount / available;
+    const timesText = times >= 2 ? `، يعني حوالي ${times.toFixed(1)} أضعاف المتاح` : "";
+    return `${head} يعني أكتر من المتاح بـ${money(amount - available)}${cur}${timesText}.${say}`;
+  }
+  if (amount >= available * 0.5) {
+    return `${head} يعني هياخد ${Math.round((amount / available) * 100)}٪ من المتاح، ويفضل ${money(available - amount)}${cur}.${say}`;
+  }
+  return "";
+}
