@@ -1,19 +1,36 @@
 ---
 title: خطة زاد — الخطة الوحيدة
 date: 2026-10-18
-status: active — المالك وافق ٢٠٢٦-١٠-١٨
+status: active
+tags:
+  - zad/plan
+  - zad/active
+aliases:
+  - ZAD_PLAN
+  - الخطة الوحيدة
+supersedes:
+  - "[[ZAD_DREAM_PLAN]]"
+  - "[[ZAD_ALIVE_PLAN]]"
+  - "[[ZAD_BRAIN_PLAN]]"
+  - "[[ZAD_LIVING_BRAIN]]"
+  - "[[ZAD_V2_MASTER_PLAN]]"
+  - "[[PRODUCT_PLAN]]"
+  - "[[NEXT_visible_progress]]"
+doc: https://claude.ai/code/artifact/4639e0ab-1dab-4e75-9cb9-d2429d847a15
 ---
 
 # خطة زاد (٢٠٢٦-١٠-١٨)
 
-> **دي الخطة الوحيدة.** كل الخطط اللي قبلها (`ZAD_DREAM_PLAN`، `ZAD_ALIVE_PLAN`، `ZAD_BRAIN_PLAN`،
-> `ZAD_LIVING_BRAIN` §١٥، `ZAD_V2_MASTER_PLAN`، `PRODUCT_PLAN`، `NEXT_visible_progress`…) اتلغت كخطط،
+> [!important] دي الخطة الوحيدة
+> كل الخطط اللي قبلها ([[ZAD_DREAM_PLAN]]، [[ZAD_ALIVE_PLAN]]، [[ZAD_BRAIN_PLAN]]،
+> [[ZAD_LIVING_BRAIN]] §١٥، [[ZAD_V2_MASTER_PLAN]]، [[PRODUCT_PLAN]]، [[NEXT_visible_progress]]…) اتلغت كخطط،
 > وبتفضل مرجع للتاريخ والقرارات بس. الشرح الكامل والأرقام والرسومات في دوك المالك
 > [«خطة زاد الشاملة»](https://claude.ai/code/artifact/4639e0ab-1dab-4e75-9cb9-d2429d847a15).
->
-> المربعات: `[x]` اتعمل، `[~]` شغال، `[ ]` فاضل، `[-]` اتلغى بقرار. المود `zad-plan` بيقرا الملف ده
-> لوحده ويعرض النسبة واللي اتعمل والباقي والكريدت، فحدّث المربع في نفس الكومِت اللي بيقفل البند.
-> 🔑 = محتاج إيد المالك.
+
+> [!info] المربعات
+> `[x]` اتعمل، `[~]` شغال، `[ ]` فاضل، `[-]` اتلغى بقرار. 🔑 = محتاج إيد المالك.
+> المود `zad-plan` بيقرا الملف ده لوحده ويعرض النسبة واللي اتعمل والباقي والكريدت، فحدّث المربع في نفس
+> الكومِت اللي بيقفل البند، ومتغيّرش شكل `### المرحلة N — …` ولا `- [ ] **N.M عنوان:**` (المود بيقراهم).
 
 ## الحلم
 
