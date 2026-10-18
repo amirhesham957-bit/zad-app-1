@@ -106,6 +106,19 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
     check: (o) => (o.proposals.length >= 1 || o.executed.some((e) => e.tool === "log_transaction") ? null : "no expense proposed"),
   },
   {
+    // طلب المالك ١٨/١٠: «ميبقاش ديماً متفائل وموافق على كل حاجة». الحساب ميزانيته ٦٬٠٠٠ ومفيش صرف
+    // (20261018160000) — موبايل بـ٢٠ ألف أكتر من ٣ أضعاف المتاح، والرد لازم يقول كده برقم.
+    id: "9_pushback_big_purchase",
+    message: "هشتري موبايل جديد بـ20 ألف جنيه النهارده كاش",
+    check: (o) => {
+      const r = o.reply.replace(/[,٬]/g, "");
+      const numbered = /6000|٦٠٠٠|6 ?آلاف|٦ ?آلاف|ستة آلاف|ست تلاف|14000|١٤٠٠٠|14 ?ألف|١٤ ?ألف|تلات أضعاف|3 أضعاف|٣ أضعاف/.test(r);
+      if (!numbered) return "no number from the budget (6000 available / 14000 over)";
+      if (/^(مبروك|ألف مبروك|يا سلام)/.test(o.reply.trim())) return "opened with congratulations";
+      return null;
+    },
+  },
+  {
     id: "8_general_question",
     message: "مين كسب كاس العالم للأندية آخر مرة؟",
     check: (o) => {
