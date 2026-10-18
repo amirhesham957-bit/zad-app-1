@@ -6462,6 +6462,12 @@ async function handleAgentTurn(
     }), { headers: CORS_HEADERS });
   }
   try {
+    // حساب فحص القبول (ZAD_DREAM_PLAN.md ذ٤): مفاتيح الخلفية، ومابيتعدّش في ميزانية المجاني اليومية.
+    // ١٨/١٠ عمل ٨٩ لفة و١٫٨ مليون توكن من حارة العملاء، وكل لفة منهم كانت بتخصم من zad_free_load_take
+    // اللي بيقرر إمتى العملاء المجانيين يتحوّلوا لجروك.
+    if (userId === ACCEPTANCE_USER_ID) {
+      return await inLane("background", () => handleAgentTurnInLane(sb, userId, body, paid, onText));
+    }
     let lane: Lane = "paid";
     if (!paid) {
       const { data: turnsToday, error: loadErr } = await sb.rpc("zad_free_load_take");

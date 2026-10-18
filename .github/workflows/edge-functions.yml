@@ -306,6 +306,7 @@ jobs:
         if: steps.preflight.outputs.ready == 'true'
         env:
           PROBE_SECRET: ${{ secrets.ZAD_PROACTIVE_CRON_SECRET }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           if [ -z "$PROBE_SECRET" ]; then
             echo "::warning::ZAD_PROACTIVE_CRON_SECRET is not a GitHub secret — acceptance probe skipped"
@@ -313,6 +314,16 @@ jobs:
             exit 0
           fi
           echo "::add-mask::$PROBE_SECRET"
+          # ذ٤: الفحص بيصرف ~٧ لفات (١٨/١٠: ١٦ نشر = ٨٩ لفة و١٫٨ مليون توكن). push مالمسش الدوال
+          # (وثيقة، فلاتر، وركفلو تاني) مايستاهلوش. التشغيل اليدوي بيشغّله دايماً.
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            if git fetch -q --depth=1 origin "$BEFORE_SHA" 2>/dev/null; then
+              if ! git diff --name-only "$BEFORE_SHA" HEAD | grep -qE '^supabase/(functions|migrations)/'; then
+                echo "Acceptance probe skipped: this push did not touch supabase/functions or migrations." >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+            fi
+          fi
           curl -sS --max-time 170 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
             -H "ZAD-PROACTIVE-CRON-SECRET: $PROBE_SECRET" -H "Content-Type: application/json" \
             -d '{"action":"acceptance_probe"}' > acceptance.json || true
