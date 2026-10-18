@@ -33,6 +33,7 @@ class ChatMessage {
     this.proposals = const <AgentProposal>[],
     this.memoryAvailable = const <AgentMemory>[],
     this.specialist,
+    this.lock,
   });
 
   /// Reads a message back out of the cache.
@@ -53,6 +54,7 @@ class ChatMessage {
     proposals: _list(json['proposals'], AgentProposal.fromJson),
     memoryAvailable: _list(json['memory_available'], AgentMemory.fromJson),
     specialist: json['specialist'] as String?,
+    lock: AgentLock.fromJson(json['lock']),
   );
 
   /// The message's own id, decided on the device.
@@ -82,6 +84,9 @@ class ChatMessage {
   /// Which specialist answered.
   final String? specialist;
 
+  /// The way out when this reply says the attempts ran out.
+  final AgentLock? lock;
+
   /// Whether this is an assistant message still filling in.
   bool get isStreaming => !isUser && status == ChatStatus.sending;
 
@@ -93,6 +98,7 @@ class ChatMessage {
     List<AgentProposal>? proposals,
     List<AgentMemory>? memoryAvailable,
     String? specialist,
+    AgentLock? lock,
     bool clearProposals = false,
   }) => ChatMessage(
     id: id,
@@ -106,6 +112,7 @@ class ChatMessage {
         : (proposals ?? this.proposals),
     memoryAvailable: memoryAvailable ?? this.memoryAvailable,
     specialist: specialist ?? this.specialist,
+    lock: lock ?? this.lock,
   );
 
   /// Writes the message into the cache.
@@ -123,6 +130,7 @@ class ChatMessage {
     'proposals': proposals.map((p) => p.toJson()).toList(),
     'memory_available': memoryAvailable.map((m) => m.toJson()).toList(),
     'specialist': specialist,
+    if (lock != null) 'lock': lock!.toJson(),
   };
 
   static List<T> _list<T>(Object? raw, T? Function(Object?) read) =>

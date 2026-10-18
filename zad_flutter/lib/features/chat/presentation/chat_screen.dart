@@ -10,11 +10,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/agent_turn.dart';
@@ -341,6 +343,8 @@ class _Bubble extends ConsumerWidget {
           for (final proposal in message.proposals)
             ChatProposal(messageId: message.id, proposal: proposal),
 
+          if (message.lock case final lock?) ChatLockCard(lock: lock),
+
           if (failed && mine) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
             _Bubble(
@@ -475,6 +479,88 @@ class ChatReceipt extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// When the attempts come back, said as a span of time — never a clock time,
+/// which would need the account's zone to be right.
+String refillPhrase(DateTime refillAt, DateTime now) {
+  final minutes = (refillAt.difference(now).inSeconds / 60).ceil();
+  if (minutes <= 0) return 'رصيدك رجع — ابعت رسالتك تاني';
+  if (minutes >= 48 * 60) {
+    return 'رصيدك بيتجدد بعد ${(minutes / 1440).ceil()} أيام';
+  }
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  final hours = switch (h) {
+    0 => '',
+    1 => 'ساعة',
+    2 => 'ساعتين',
+    <= 10 => '$h ساعات',
+    _ => '$h ساعة',
+  };
+  final mins = m == 0 ? '' : '$m دقيقة';
+  final span = [hours, mins].where((p) => p.isNotEmpty).join(' و');
+  return 'رصيدك بيتجدد بعد $span';
+}
+
+/// The way out under a reply that says the attempts ran out (ZAD_PLAN ٢.٨):
+/// an ad that buys them back, when they return on their own, and the plans —
+/// in that order, the cheapest for the customer first. The written reply
+/// already said «تقدر تشوف إعلان»; this is the button it promised.
+class ChatLockCard extends ConsumerWidget {
+  /// Creates the card.
+  const new({required this.lock, super.key});
+
+  /// Why the turn was refused.
+  final AgentLock lock;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(nowProvider)();
+    final refill = lock.refillAt;
+    // Once the attempts are back the card has nothing left to offer.
+    if (refill != null && !refill.isAfter(now) && lock.adCanHelp) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      key: const ValueKey<String>('chat-lock'),
+      padding: const EdgeInsets.only(top: ZadSpacing.sm),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: ZadColors.mustardOchre.withValues(alpha: 0.10),
+          shape: zadSquircle(ZadRadii.card),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(ZadSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (lock.adCanHelp) const WatchAdButton(),
+              if (refill != null) ...<Widget>[
+                const SizedBox(height: ZadSpacing.sm),
+                Text(
+                  refillPhrase(refill, now),
+                  textAlign: TextAlign.center,
+                  style: ZadType.labelMedium.copyWith(color: ZadColors.slate),
+                ),
+              ],
+              const SizedBox(height: ZadSpacing.sm),
+              FilledButton(
+                key: const ValueKey<String>('chat-lock-subscribe'),
+                onPressed: () => ZadScreens.showPaywallScreen(context),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                child: Text(
+                  lock.reason == 'premium_only'
+                      ? 'اشترك وفعّل الميزة دي'
+                      : 'اشترك وخد محاولات أكتر',
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
