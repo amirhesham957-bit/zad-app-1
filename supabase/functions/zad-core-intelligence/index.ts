@@ -41,6 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
+import { dailyCap, groundingPlan, takeSearchBudget } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -988,12 +989,26 @@ export let lastWebSearchAttempts: string[] = [];
 /** بعد ما بحث جوجل من Gemini يرجّع 429 على كل الموديلات، بيتساب ٣٠ دقيقة بدل ٨ محاولات فاشلة في كل سؤال. */
 let groundedQuotaUntil = 0;
 
+/** The keys grounding may use now, or null; a paid call first takes one from today's budget. */
+function currentGroundingPlan() {
+  return groundingPlan((n) => Deno.env.get(n), GEMINI_KEYS);
+}
+
+async function mayGround(paid: boolean): Promise<boolean> {
+  if (!paid) return true;
+  return await takeSearchBudget(async (fn, args) => {
+    const { data, error } = await supabase.rpc(fn, args);
+    return { data, error };
+  }, dailyCap((n) => Deno.env.get(n)));
+}
+
 async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
   // مقفول افتراضياً (٢٠٢٦-١٠-١٨): من ٥/١٠ كل بحث بيرد 429 على كل موديل ومفتاح — البحث في جوجل من
   // Gemini 3 مش متاح على الباقة المجانية. والراحة اللي تحت في الذاكرة بس، فكل نسخة جديدة من الفانكشن
   // كانت بتصرف ٨ نداءات فاشلة قبل المصادر التانية. ZAD_GROUNDED_SEARCH=on بيرجّعه لو اتدفع.
-  if (Deno.env.get("ZAD_GROUNDED_SEARCH") !== "on") {
-    lastWebSearchAttempts.push("gemini_google_search:off (not on the free tier; ZAD_GROUNDED_SEARCH=on enables it)");
+  const grounding = currentGroundingPlan();
+  if (!grounding) {
+    lastWebSearchAttempts.push("gemini_google_search:off (no ZAD_SEARCH_KEY; ZAD_GROUNDED_SEARCH=on uses the free pool)");
     return [];
   }
   if (Date.now() < groundedQuotaUntil) {
@@ -1003,9 +1018,13 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   let sawOnly429 = true;
   const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"];
   // موديل × مفتاح، بس بحد أقصى ٨ محاولات — الأداة جوه لفة شات والعميل مستني.
-  const plan = models.flatMap((model) => GEMINI_KEYS.slice(0, 2).map((key, ki) => ({ model, key, ki })));
+  const plan = models.flatMap((model) => grounding.keys.slice(0, 2).map((key, ki) => ({ model, key, ki })));
   for (const { model, key, ki } of plan) {
     {
+      if (!(await mayGround(grounding.paid))) {
+        lastWebSearchAttempts.push("gemini_google_search:daily cap reached");
+        return [];
+      }
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
@@ -1064,14 +1083,20 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
  */
 async function callGroundedJson(systemPrompt: string, userPrompt: string): Promise<{ parsed: unknown; ok: boolean }> {
   const models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
-  // Every key: each is its own Google project and its own grounding quota. Three of five were
-  // tried, and on 2026-10-05 all nine answered 429 while two projects were never asked.
-  const keys = GEMINI_KEYS;
+  // The paid key alone (paidSearch.ts). Without it grounding is off: every free key answered
+  // 429 from 2026-10-05, so walking all ten only delayed the fallback.
+  const grounding = currentGroundingPlan();
+  if (!grounding) return { parsed: null, ok: false };
+  const keys = grounding.keys;
   // The card waits on this, and compound still needs its turn: 40s in all.
   const deadline = Date.now() + 40_000;
   for (const model of models) {
     for (const [ki, key] of keys.entries()) {
       if (Date.now() > deadline) return { parsed: null, ok: false };
+      if (!(await mayGround(grounding.paid))) {
+        console.warn("[CoreIntel] grounded json: daily search cap reached");
+        return { parsed: null, ok: false };
+      }
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
@@ -1588,7 +1613,18 @@ async function handle(req: Request): Promise<Response> {
       } catch (e) {
         webSearch = { error: String((e as Error)?.message ?? e).slice(0, 120) };
       }
-      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch });
+      // The paid grounding key on its own (paidSearch.ts): one search from today's budget, so a
+      // wrong key or a project without billing shows here after a deploy, not on a customer.
+      let groundedSearch: unknown;
+      const grounding = currentGroundingPlan();
+      if (!grounding) {
+        groundedSearch = { configured: false };
+      } else {
+        lastWebSearchAttempts = [];
+        const hits = await groundedSearchSnippets("سعر الذهب اليوم في مصر", 3);
+        groundedSearch = { configured: true, paid: grounding.paid, results: hits.length, attempts: lastWebSearchAttempts.slice(0, 8) };
+      }
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
