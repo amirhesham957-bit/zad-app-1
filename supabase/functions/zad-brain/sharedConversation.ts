@@ -9,6 +9,7 @@
 // table, sees the app's turns too.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { trimProactive } from "../_shared/conversationLog.ts";
 
 export type SharedTurn = { role: "user" | "assistant"; text: string; at?: string };
 
@@ -59,16 +60,17 @@ export function pickHistory(shared: SharedTurn[] | null, client: SharedTurn[], n
 /** The last turns on any channel, or null when they could not be read. */
 export async function loadSharedHistory(sb: SupabaseClient, userId: string): Promise<SharedTurn[] | null> {
   try {
+    // ضعف الشباك: المبادرات بتتقص لآخر ٣ (trimProactive) فالكلام الحقيقي مايتزقّش برّه.
     const { data, error } = await sb.from("zad_chat_turns")
       .select("role,text,created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(SHARED_HISTORY_TURNS);
+      .limit(SHARED_HISTORY_TURNS * 2);
     if (error) {
       console.error("loadSharedHistory failed:", error.message);
       return null;
     }
-    return toSharedHistory(data ?? []);
+    return trimProactive(toSharedHistory(data ?? [])).slice(-SHARED_HISTORY_TURNS);
   } catch (e) {
     console.error("loadSharedHistory threw:", e);
     return null;
