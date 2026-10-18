@@ -6323,11 +6323,11 @@ async function callAgentModel(
         return plain();
       })
     : await plain();
-  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null };
+  if (turn > 0 || first.toolCalls.length > 0) return { ...first, intentRetry: null as string[] | null, calls: 1 };
   // رد بيتهرب («ادخل على صفحة الصيدلية») أو بيدّعي تنفيذ من غير أداة ⇒ الأداة ماكانتش معروضة؛ مرة
   // واحدة بكل الأدوات. بيتكلف نداء زيادة بس في اللفات دي (shouldWidenTools في specialists.ts).
   const widen = shouldWidenTools(first.text);
-  if (narrowed.length === 0 && !widen) return { ...first, intentRetry: null };
+  if (narrowed.length === 0 && !widen) return { ...first, intentRetry: null, calls: 1 };
   const retryTools = widen ? CHAT_TOOLS : narrowed;
   const note = widen ? WIDEN_NOTE : INTENT_RETRY_NOTE;
   try {
@@ -6336,11 +6336,11 @@ async function callAgentModel(
       groqSystem: groqSystem ? groqSystem + note : undefined,
     });
     const usage = { inTok: first.usage.inTok + retry.usage.inTok, outTok: first.usage.outTok + retry.usage.outTok };
-    if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted };
-    return { ...first, usage, intentRetry: hinted };
+    if (retry.toolCalls.length > 0 || retry.text.trim()) return { ...retry, usage, intentRetry: hinted, calls: 2 };
+    return { ...first, usage, intentRetry: hinted, calls: 2 };
   } catch (e) {
     console.warn("[agent_turn] intent retry failed:", (e as Error)?.message ?? e);
-    return { ...first, intentRetry: null };
+    return { ...first, intentRetry: null, calls: 2 };
   }
 }
 
@@ -6741,14 +6741,21 @@ async function handleAgentTurnInLane(
       // بيتكلم منها فعلاً. inputTokens/outputTokens متعرّفين قبل استدعاء finishRun
       // بيحصل فعلياً (let معرّف قبل الحلقة)، فمفيش TDZ هنا.
       input_tokens: inputTokens, output_tokens: outputTokens,
+      // ونفس الكلام لـ calls: finishRun بتتنادى بعد الحلقة أو جوه catch بتاعها بس.
+      prompt_sizes: { ...turnSizes, calls },
     }).eq("id", runId);
   };
 
   let inputTokens = 0, outputTokens = 0;
+  // ميزان اللفة: كام نداء موديل في اللفة دي ومنين — عشان فرق التوكنز بين لفتين يتفسّر بالحجم ولا بعدد النداءات.
+  const calls = { model: 0, loops: 0, retries: 0, answer: 0 };
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
       reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText);
+      calls.loops++;
+      calls.model += reply.calls;
+      if (reply.calls > 1) calls.retries++;
     } catch (e) {
       console.error("agent_turn callModel failed:", e);
       await finishRun("failed", String(e));
@@ -6856,6 +6863,8 @@ async function handleAgentTurnInLane(
       });
       inputTokens += answer.usage.inTok;
       outputTokens += answer.usage.outTok;
+      calls.model++;
+      calls.answer++;
       if (answer.text?.trim()) modelText = answer.text;
     } catch (e) {
       console.warn("[agent_turn] answer after tools failed:", (e as Error)?.message ?? e);
