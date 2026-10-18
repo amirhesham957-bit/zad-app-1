@@ -15,6 +15,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_celebration.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -171,6 +172,10 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
 
   @override
   Widget build(BuildContext context) {
+    // The last line ticked off: confetti, once, for that list.
+    ref.listen(shoppingControllerProvider, (previous, next) {
+      if (shoppingJustFinished(previous, next)) celebrate(context);
+    });
     final view = ref.watch(shoppingControllerProvider);
     final controller = ref.read(shoppingControllerProvider.notifier);
     final budget = ref.watch(budgetControllerProvider);
