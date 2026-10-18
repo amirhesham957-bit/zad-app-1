@@ -1190,6 +1190,33 @@ const decodeEntities = (v: string) => v
  * آخر مرة؟» مالوش إجابة فيها. الاتنين ليهم باقة مجانية؛ أول ما مفتاح يتحط في Supabase يبقى أول مصدر.
  */
 async function keyedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  // جوجل Programmable Search (٢٠٢٦-١٠-١٨، مفتاح المالك): بحث حقيقي في الويب كله، باقة مجانية يومية.
+  // محتاج المفتاح ورقم المحرك (cx) الاتنين — واحد من غير التاني مايشتغلش، فبيتخطّى بهدوء.
+  const googleKey = Deno.env.get("GOOGLE_SEARCH_API_KEY") ?? Deno.env.get("GOOGLE_CSE_KEY");
+  const googleCx = Deno.env.get("GOOGLE_SEARCH_CX") ?? Deno.env.get("GOOGLE_CSE_ID");
+  if (googleKey && googleCx) {
+    try {
+      const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(googleKey)}&cx=${encodeURIComponent(googleCx)}` +
+        `&q=${encodeURIComponent(query)}&num=${Math.min(10, Math.max(1, maxResults))}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = await res.json();
+        const hits: WebHit[] = ((data?.items ?? []) as Array<{ title?: string; link?: string; snippet?: string }>)
+          .filter((r) => r.link)
+          .map((r) => ({ title: String(r.title ?? r.link), url: String(r.link), snippet: String(r.snippet ?? "").slice(0, 400) }));
+        lastWebSearchAttempts.push(`google_cse:200 hits=${hits.length}`);
+        if (hits.length > 0) return hits.slice(0, maxResults);
+      } else {
+        // الحالة بس — الرد ممكن يحمل المفتاح في رسالة الخطأ.
+        lastWebSearchAttempts.push(`google_cse:${res.status}`);
+        await res.body?.cancel();
+      }
+    } catch (e) {
+      lastWebSearchAttempts.push(`google_cse:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    }
+  } else if (googleKey || googleCx) {
+    lastWebSearchAttempts.push(googleKey ? "google_cse:no GOOGLE_SEARCH_CX" : "google_cse:no GOOGLE_SEARCH_API_KEY");
+  }
   const tavily = Deno.env.get("TAVILY_API_KEY");
   if (tavily) {
     try {
