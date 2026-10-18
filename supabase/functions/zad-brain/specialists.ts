@@ -356,8 +356,6 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_subscription", "update_subscription", "delete_subscription",
     "forward_ledger", "check_price_online", "query_family", "weekly_savings_plan",
     "home_health_score", "propose_next_month_budget", "decision_impact", "log_decision", "household_resilience",
-    // كانوا معروضين على كل وكيل (رجيم السياق ٢٠٢٦-١٠-١٨) — مكانهم المال.
-    "set_transaction_category", "update_emergency_fund_balance", "start_savings_challenge", "stop_savings_challenge",
     "confirm_life_shift",
   ],
   pantry: [
@@ -411,16 +409,6 @@ export const GENERAL_CORE_TOOLS: readonly string[] = [
 // الشيف، المحلات القريبة — ٧ أدوات (~٣ آلاف حرف) كانت بتتبعت مع كل «مرحبا». بتيجي بنية الرسالة
 // (intentToolHints) أو بالوكيل المتخصص، وقواعدها في البرومبت معاها (buildChatSystemPrompt).
 
-export const SPECIALIST_CROSS_TOOLS: readonly string[] = [
-  "remember", "link_memory", "web_search", "set_market", "app_command", "learn_skill",
-  // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك» للمال.
-  "add_appointment", "update_appointment", "cancel_place_reminder",
-  // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
-  "update_customer_profile",
-  // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
-  "read_house",
-];
-
 export function scopeToolsForSpecialist<T extends { name: string }>(
   tools: T[],
   specialist: SpecialistId,
@@ -434,12 +422,25 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
   const allowed = new Set([
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
-    // الأدوات العابرة للنطاقات — متاحة دايمًا. رجيم السياق (٢٠٢٦-١٠-١٨، ميزان اللفة): كانوا ٢٧ أداة مع
-    // كل وكيل، ولفة بوكيلين وصلت ٦٠ أداة = ٣٥ ألف حرف تعريفات. فضل هنا اللي مالوش نية ولا وكيل.
-    // الدهب والعملات والشكوى والطوارئ وتذكير المكان والمناسبات بييجوا بنية الرسالة (intentToolHints
-    // في [extra]) زي الوكيل العام؛ الصيانة وصحة البيت مع وكيل البيت؛ لو أداة ناقصة، اللفة بتتعاد بكل
-    // الأدوات (callAgentModel).
-    ...SPECIALIST_CROSS_TOOLS,
+    // الأدوات العابرة للنطاقات — متاحة دايمًا
+    "remember", "remember_occasion", "link_memory", "web_search", "set_market", "set_transaction_category",
+    // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
+    "gold_price", "fetch_current_exchange_rate",
+    // الشكوى بتتقال في أي موضوع.
+    "open_support_ticket",
+    "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
+    "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
+    // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
+    // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
+    "add_appointment", "update_appointment",
+    "add_place_reminder", "cancel_place_reminder",
+    // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
+    "set_broke_mode",
+    "start_savings_challenge", "stop_savings_challenge",
+    // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
+    "update_customer_profile",
+    // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
+    "read_house",
     ...extra,
   ]);
   return tools.filter((t) => allowed.has(t.name));

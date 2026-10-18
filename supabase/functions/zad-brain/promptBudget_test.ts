@@ -53,7 +53,14 @@ Deno.test("context diet 3b: Groq gets every specialist tool, lean, instead of dr
     history: [{ role: "user", text: "مرحبا" }],
     maxTokens: 1200,
   });
-  assertEquals(fitted.tools.length, tools.length);
+  // Full definitions: finance reaches Groq with 22 of its 47 tools; lean, 42 of them
+  // (measured after the specialists' cross tools came back, 2026-10-18).
+  const full = fitForGroq({
+    system: groqSystemFor({ country: "EG", currency: "EGP" }, "مرحبا"),
+    tools, history: [{ role: "user", text: "مرحبا" }], maxTokens: 1200,
+  });
+  assertEquals(fitted.tools.length >= Math.floor(tools.length * 0.85), true, `${fitted.tools.length} of ${tools.length}`);
+  assertEquals(fitted.tools.length >= full.tools.length + 15, true, `lean ${fitted.tools.length} vs full ${full.tools.length}`);
   const byName = new Map(groqToolsFor(tools, [], "مرحبا").map((t) => [t.name, t]));
   // أقسام read_house وفئات log_transaction جوه الوصف — كاملين دايماً.
   for (const n of ["read_house", "log_transaction"]) {
