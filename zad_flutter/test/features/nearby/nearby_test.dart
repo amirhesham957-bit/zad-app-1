@@ -335,10 +335,9 @@ void main() {
 
       Future<ProviderContainer> opened() async {
         final c = container()..read(nearbyControllerProvider);
-        // Let the open-time check run to the end.
-        for (var i = 0; i < 5; i++) {
-          await Future<void>.delayed(Duration.zero);
-        }
+        // Let the open-time check run to the end. Five event-loop turns were
+        // enough locally and not on CI's slower runner (PR #161's verify).
+        await pumpEventQueue(times: 100);
         return c;
       }
 
