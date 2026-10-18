@@ -41,3 +41,29 @@ Deno.test("a lean tool keeps its name, types, enums and required — not the exp
   // اللي اتنادت أو عليها نية بتفضل كاملة.
   assertEquals(leanTools([tool], new Set(["add_appointment"]))[0], tool);
 });
+
+Deno.test("context diet 3b: Groq gets every specialist tool, lean, instead of dropping half", async () => {
+  const { CHAT_TOOLS, groqSystemFor, groqToolsFor, toolsForCall } = await import("./index.ts");
+  const { fitForGroq } = await import("./callModel.ts");
+  const { intentToolHints, scopeToolsForSpecialist } = await import("./specialists.ts");
+  const tools = scopeToolsForSpecialist(CHAT_TOOLS, "finance", null, intentToolHints("مرحبا"));
+  const fitted = fitForGroq({
+    system: groqSystemFor({ country: "EG", currency: "EGP" }, "مرحبا"),
+    tools: groqToolsFor(tools, [], "مرحبا"),
+    history: [{ role: "user", text: "مرحبا" }],
+    maxTokens: 1200,
+  });
+  assertEquals(fitted.tools.length, tools.length);
+  const byName = new Map(groqToolsFor(tools, [], "مرحبا").map((t) => [t.name, t]));
+  // أقسام read_house وفئات log_transaction جوه الوصف — كاملين دايماً.
+  for (const n of ["read_house", "log_transaction"]) {
+    assertEquals(byName.get(n), tools.find((t) => t.name === n));
+  }
+
+  // النداء الأول على Gemini: التلاتة بس خفاف، والباقي كامل.
+  const first = toolsForCall(tools, [], [], 0);
+  const changed = first.filter((t, i) => t !== tools[i]).map((t) => t.name).sort();
+  assertEquals(changed, ["app_command", "remember", "update_appointment"].filter((n) => tools.some((t) => t.name === n)).sort());
+  // عليهم نية ⇒ كاملين.
+  assertEquals(toolsForCall(tools, ["remember"], [], 0).find((t) => t.name === "remember"), tools.find((t) => t.name === "remember"));
+});

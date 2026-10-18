@@ -6299,20 +6299,43 @@ const INTENT_RETRY_NOTE =
  * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
+/** خفاف في النداء الأول لو مفيش نية عليهم (رجيم ٣ب) — إرشادهم موجود برّه وصفهم. */
+const FIRST_CALL_LEAN_TOOLS = ["remember", "app_command", "update_appointment"];
+/** كاملين دايماً على Groq: أقسام read_house وفئات log_transaction جوه الوصف. */
+const GROQ_ALWAYS_FULL = ["read_house", "log_transaction"];
+
+/**
+ * التعريفات اللي بتتبعت في نداء من نداءات اللفة (رجيم السياق ٢ و٣ب). من النداء التاني: كله خفيف إلا
+ * اللي اتنادت أو عليها نية — لفة فيها أداة كانت بتبعت البرومبت كله مرتين (١٢ ألف توكن × ٢). في
+ * الأول: [FIRST_CALL_LEAN_TOOLS] بس خفاف لو مفيش نية عليهم — إرشاد remember في قاعدة 5b، وapp_command
+ * وupdate_appointment بيفضل فيهم الـenum. الباقي إرشاده في وصفه بس (أقسام read_house، فئات
+ * log_transaction، «مرة لكل صنف» في المخزون، الدوا والمواعيد والملف) فبيفضل كامل.
+ */
+export function toolsForCall<T extends ToolDef>(tools: T[], hinted: string[], called: string[], turn: number): T[] {
+  if (turn > 0) return leanTools(tools, new Set([...hinted, ...called]));
+  const leanFirst = new Set(FIRST_CALL_LEAN_TOOLS);
+  return leanTools(tools, new Set(tools.map((t) => t.name).filter((n) => !leanFirst.has(n) || hinted.includes(n))));
+}
+
+/**
+ * أدوات Groq: اللي الرسالة بتشير لها الأول (groqToolOrder، Groq بيشيل ٩-١٤ أداة كاملة بس تحت
+ * ٨٠٠٠/دقيقة)، واللي مالوش نية بيتبعت خفيف بدل ما يقع من الآخر (رجيم ٣ب) — وكيل المال كان بيوصل
+ * Groq بـ١٩ أداة من ٣٨. [GROQ_ALWAYS_FULL] كاملين دايماً.
+ */
+export function groqToolsFor<T extends ToolDef>(tools: T[], hinted: string[], message: string): T[] {
+  return leanTools(groqToolOrder(tools, hinted, message), new Set([...hinted, ...GROQ_ALWAYS_FULL]));
+}
+
 async function callAgentModel(
   system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string,
   onText?: (delta: string) => void,
 ) {
   const hinted = intentToolHints(message, priorAssistantText(history));
   const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
-  // رجيم السياق ٢ (٢٠٢٦-١٠-١٨): من النداء التاني، التعريفات خفيفة إلا اللي اتنادت أو عليها نية —
-  // لفة فيها أداة كانت بتبعت البرومبت كله مرتين (١٢ ألف توكن × ٢، ميزان اللفة).
-  if (turn > 0) {
-    const called = history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []);
-    tools = leanTools(tools, new Set([...hinted, ...called]));
-  }
-  // Groq بيشيل ٩-١٤ أداة بس تحت ٨٠٠٠/دقيقة (مقاس ٢٠٢٦-٠٩-٣٠) — اللي الرسالة بتشير لها الأول.
-  const groqTools = groqToolOrder(tools, hinted, message);
+  const called = history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []);
+  // Groq من التعريفات الأصلية: بيقرر الخفيف بنفسه، وread_house وlog_transaction يفضلوا كاملين.
+  const groqTools = groqToolsFor(tools, hinted, message);
+  tools = toolsForCall(tools, hinted, called, turn);
   const plain = () => callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
   // بث حقيقي (تشخيص زاد ٢.٢): أول لفة بس، ولما الرسالة مش بتشير لأداة — رسالة فيها تلميح
   // أداة ممكن تتعاد بأدوات أضيق تحت، والنص اللي اتبث كان هيتشال. أي فشل في البث ⇒ النداء العادي.
