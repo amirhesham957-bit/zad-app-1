@@ -65,3 +65,18 @@ Deno.test("context diet 2: five rules go only where they apply", () => {
     assert(full.includes(rule), rule);
   }
 });
+
+Deno.test("context diet 3a: profile and circumstance rules only when there is something to ask or a mode to follow", () => {
+  const known = { ...snap, customer: { cares_for: null, missing_important: [] }, circumstance: { mode: "normal" } };
+  const lean = buildChatSystemPrompt(known, false, new Set(general("مرحبا").map((t) => t.name)));
+  const rules = ["**customer.cares_for = مين في رعايته.**", "**الاسم والنوع ليهم علاقة بكل رد**", "لو فيه حاجة تانية في customer.missing_important", "**حالة البيت (circumstance)**"];
+  for (const r of rules) assert(!lean.includes(r), r);
+  const full = buildChatSystemPrompt({
+    ...snap,
+    customer: { cares_for: ["parents"], missing_important: ["gender", "pay_day"] },
+    circumstance: { mode: "exceptional" },
+  }, false, new Set(general("مرحبا").map((t) => t.name)));
+  for (const r of rules) assert(full.includes(r), r);
+  // No customer card at all: ask, as before.
+  assert(buildChatSystemPrompt(snap).includes("**الاسم والنوع ليهم علاقة بكل رد**"));
+});
