@@ -10,7 +10,7 @@ Deno.test("a generic service question at the end is dropped, and only it", () =>
   assertEquals(dropServiceCloser("ابشر، جهزتها لك. تامرني بشي ثاني يا بعد حيّي؟"), "ابشر، جهزتها لك.");
   assertEquals(
     dropServiceCloser("دي أحلى تلات حاجات عندي. حبّيت أنهي فيهم أكتر؟ ولا أضبطلك حاجة تانية؟ 😊"),
-    "دي أحلى تلات حاجات عندي. حبّيت أنهي فيهم أكتر؟",
+    "دي أحلى تلات حاجات عندي. حبّيت أنهي فيهم أكتر؟ 😊",
   );
   assertEquals(dropServiceCloser("ضفتهم. تحب أضيف لك حاجة تانية للمخزون أو قائمة الشراء؟"), "ضفتهم.");
 });
@@ -43,4 +43,11 @@ Deno.test("the name question is asked once in a conversation", async () => {
   const snap = { country: "EG", currency: "EGP", customer: { missing_important: ["preferred_name"] } };
   assertEquals(buildChatSystemPrompt(snap).includes(rule), true);
   assertEquals(buildChatSystemPrompt({ ...snap, name_asked_in_conversation: true }).includes(rule), false);
+});
+
+Deno.test("a service question in the middle of the last sentence goes too (probe, 18/10)", () => {
+  assertEquals(
+    dropServiceCloser("سعر جرام الذهب عيار 21 النهاردة 6,260 جنيه. تحب أساعدك في حاجة تانية؟ وعمتاً أناديك بإيه؟"),
+    "سعر جرام الذهب عيار 21 النهاردة 6,260 جنيه. وعمتاً أناديك بإيه؟",
+  );
 });

@@ -86,7 +86,7 @@ import { redactNotificationText } from "./redact.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
-import { childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, voiceModeInstruction } from "./persona.ts";
+import { childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
@@ -6779,6 +6779,8 @@ async function handleAgentTurnInLane(
       ? "\n=== صفحة المساعدة والدعم ===\nالعميل بيكلمك من صفحة المساعدة والدعم. ساعده يحل مشكلته خطوة بخطوة بأسامي الشاشات اللي في التطبيق، " +
         "ومن بياناته هو لو المشكلة فيها. لو المشكلة عطل، أو هو عايز يشتكي أو يكلم حد، نادِ open_support_ticket.\n"
       : "",
+    // «هشتري موبايل بـ٢٠ ألف»: الحساب بالكود (persona.ts) — الاعتراض برقم مايتسابش لحساب الموديل.
+    purchase: purchaseCheckBlock(message, snap?.available, snap?.currency),
     chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, new Set(scopedTools.map((t) => t.name))),
   };
   const systemPrompt = Object.values(promptParts).join("");
@@ -6800,7 +6802,7 @@ async function handleAgentTurnInLane(
       .filter((h: { role?: string }) => h?.role === "user")
       .map((h: { text?: string }) => String(h?.text ?? "")),
     message,
-  ].join(" ").slice(-1500));
+  ].join(" ").slice(-1500)) + promptParts.purchase;
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
   // أوامر واجهة التطبيق (app_command) — بتترجع للكلاينت عشان ZadViewModel يفتح الشاشة/

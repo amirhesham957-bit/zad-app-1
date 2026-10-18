@@ -989,6 +989,13 @@ export let lastWebSearchAttempts: string[] = [];
 let groundedQuotaUntil = 0;
 
 async function groundedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  // مقفول افتراضياً (٢٠٢٦-١٠-١٨): من ٥/١٠ كل بحث بيرد 429 على كل موديل ومفتاح — البحث في جوجل من
+  // Gemini 3 مش متاح على الباقة المجانية. والراحة اللي تحت في الذاكرة بس، فكل نسخة جديدة من الفانكشن
+  // كانت بتصرف ٨ نداءات فاشلة قبل المصادر التانية. ZAD_GROUNDED_SEARCH=on بيرجّعه لو اتدفع.
+  if (Deno.env.get("ZAD_GROUNDED_SEARCH") !== "on") {
+    lastWebSearchAttempts.push("gemini_google_search:off (not on the free tier; ZAD_GROUNDED_SEARCH=on enables it)");
+    return [];
+  }
   if (Date.now() < groundedQuotaUntil) {
     lastWebSearchAttempts.push("gemini_google_search:resting (quota)");
     return [];
