@@ -82,15 +82,30 @@ const SERVICE_CLOSER = /(حاج[ةه]|شي|شيء)\s+(تاني[ةه]?|ثاني[�
  * تانية؟») بيتشال منه الجزء العام بس. رد كله سؤال خدمة بيفضل زي ما هو — رد فاضي أوحش.
  */
 export function dropServiceCloser(reply: string): string {
-  let text = reply.trimEnd();
-  for (let i = 0; i < 2; i++) {
-    const m = /(?:^|[\n.!؟?])([^\n.!؟?]*[؟?])\s*(?:\p{Extended_Pictographic}|️|\s)*$/u.exec(text);
-    if (!m || !SERVICE_CLOSER.test(m[1])) break;
-    const cut = text.slice(0, m.index + (m[0].startsWith(m[1]) ? 0 : 1)).trimEnd();
-    if (!cut || !/[\p{L}\p{N}]/u.test(cut)) break;
-    text = cut.replace(/\s*(ولا|أو|او)$/u, "").trimEnd();
-  }
-  return text;
+  // آخر جملة بعد آخر سطر جديد أو نقطة: ممكن تكون كذا سؤال ورا بعض («تحب أساعدك في حاجة تانية؟
+  // وعموماً أناديك بإيه؟» — فحص القبول ١٨/١٠). سؤال الخدمة بيتشال من وسطهم، والباقي بيفضل.
+  const text = reply.trimEnd();
+  const cut = Math.max(text.lastIndexOf("\n"), text.lastIndexOf("."), text.lastIndexOf("!"));
+  const head = text.slice(0, cut + 1);
+  const tail = text.slice(cut + 1);
+  const parts = tail.match(/[^؟?]*[؟?]+|[^؟?]+$/g) ?? [];
+  if (!parts.some((p) => /[؟?]/.test(p) && SERVICE_CLOSER.test(p))) return reply;
+  const kept = parts.filter((p) => !(/[؟?]/.test(p) && SERVICE_CLOSER.test(p)));
+  // «ولا/أو» لوحدهم بس — «وعموماً» كلمة، شيل الواو منها بيبوّظها.
+  const rest = kept.join("").replace(/^\s*(?:ولا|أو|او)\s+/u, "").trim();
+  const result = (head.trimEnd() + (rest ? (head.trim() ? " " : "") + rest : "")).trim();
+  // رد كله سؤال خدمة بيفضل زي ما هو — رد فاضي أوحش.
+  if (!/[\p{L}\p{N}]/u.test(result)) return reply;
+  return result.replace(/\s*(ولا|أو|او)$/u, "").trimEnd();
+}
+
+/** زاد سأل عن اسم العميل أو صيغة كلامه في رد من ردود المحادثة اللي قدامه. */
+export function nameAskedIn(history: ReadonlyArray<object>): boolean {
+  return history.some((t) => {
+    const turn = t as { role?: string; text?: unknown };
+    return turn.role === "assistant" && typeof turn.text === "string" &&
+      /أناديك ب|اناديك ب|أنادي عليك|اسمك (إيه|ايه)|أكلمك بصيغة|اكلمك بصيغة|راجل ولا ست/.test(turn.text);
+  });
 }
 
 // ── «هشتري موبايل بـ٢٠ ألف» (طلب المالك ١٨/١٠: «يعترض برقم ومايوافقش على كل حاجة») ─────────────────
