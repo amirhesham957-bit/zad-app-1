@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  budgetUsage,
   dailyCap,
   DEFAULT_DAILY_CAP,
   groundingPlan,
@@ -74,4 +75,21 @@ Deno.test("the budget: granted only on a true from the database, closed on any e
     await takeSearchBudget(() => Promise.reject(new Error("net")), 150),
     false,
   );
+});
+
+Deno.test("usage: today, the last seven days and the month, from the daily rows", () => {
+  const rows = [
+    { day: "2026-10-18", used: 4 },
+    { day: "2026-10-12", used: 10 },
+    { day: "2026-10-11", used: 100 },
+    { day: "2026-09-30", used: 1000 },
+  ];
+  assertEquals(budgetUsage(rows, "2026-10-18", 150), {
+    daily_cap: 150,
+    today: 4,
+    last_7_days: 14,
+    month: 114,
+    monthly_free: 5000,
+  });
+  assertEquals(budgetUsage([], "2026-10-01", 150).month, 0);
 });

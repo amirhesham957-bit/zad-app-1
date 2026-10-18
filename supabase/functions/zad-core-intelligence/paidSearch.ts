@@ -80,3 +80,34 @@ export async function takeSearchBudget(
     return false;
   }
 }
+
+/** What the paid searches have spent: today, the last seven days, and this month (UTC). */
+export interface BudgetUsage {
+  daily_cap: number;
+  today: number;
+  last_7_days: number;
+  month: number;
+  monthly_free: number;
+}
+
+/** The free grounded prompts the paid project gets each month, before billing. */
+export const MONTHLY_FREE = 5000;
+
+/** Sums `zad_search_budget` rows; `today` is the UTC date as YYYY-MM-DD. */
+export function budgetUsage(
+  rows: { day: string; used: number }[],
+  today: string,
+  cap: number,
+): BudgetUsage {
+  const weekStart = new Date(Date.parse(`${today}T00:00:00Z`) - 6 * 86400_000)
+    .toISOString().slice(0, 10);
+  const monthStart = `${today.slice(0, 7)}-01`;
+  let t = 0, w = 0, m = 0;
+  for (const r of rows) {
+    const used = Number(r.used) || 0;
+    if (r.day === today) t += used;
+    if (r.day >= weekStart && r.day <= today) w += used;
+    if (r.day >= monthStart && r.day <= today) m += used;
+  }
+  return { daily_cap: cap, today: t, last_7_days: w, month: m, monthly_free: MONTHLY_FREE };
+}

@@ -41,7 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { dailyCap, groundingPlan, takeSearchBudget } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, groundingPlan, takeSearchBudget } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1624,7 +1624,17 @@ async function handle(req: Request): Promise<Response> {
         const hits = await groundedSearchSnippets("سعر الذهب اليوم في مصر", 3);
         groundedSearch = { configured: true, paid: grounding.paid, results: hits.length, attempts: lastWebSearchAttempts.slice(0, 8) };
       }
-      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch });
+      // What the paid key has spent (today / 7 days / month), read after the probe so it counts it.
+      let searchBudget: unknown;
+      {
+        const today = new Date().toISOString().slice(0, 10);
+        const since = new Date(Date.now() - 40 * 86400_000).toISOString().slice(0, 10);
+        const { data, error } = await supabase.from("zad_search_budget").select("day, used").gte("day", since);
+        searchBudget = error
+          ? { error: error.message.slice(0, 120) }
+          : budgetUsage((data ?? []) as { day: string; used: number }[], today, dailyCap((n) => Deno.env.get(n)));
+      }
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
