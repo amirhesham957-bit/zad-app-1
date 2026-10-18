@@ -402,6 +402,10 @@ void main() {
 
         phone.fresh = (at: _home, takenAt: now);
         await c.read(nearbyControllerProvider.notifier).locate();
+        // The coarse point is sent unawaited (the shops must not wait
+        // on it); let it land before looking. Without this the test
+        // failed on CI's slower runner (PR #146).
+        await pumpEventQueue();
 
         expect(saved, hasLength(1));
         expect(saved.single.lat, 30.044, reason: 'three decimals, not the fix');
