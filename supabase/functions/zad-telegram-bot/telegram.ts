@@ -409,8 +409,11 @@ export function checkInPromptMessage(itemName: string): string {
  * كانت رسالتين ورا بعض كل يوم الساعة ٩ — المقاس على ١٤ يوم. كل زرار لسه شايل id السؤال بتاعه،
  * فالرد بيتعامل زي الأول بالظبط. [items] أساميهم متنضفة ومعزولة من المنادي.
  */
-export function checkInBundleMessage(items: string[]): string {
-  return `تذكير سريع: الحاجات دي لسه موجودة عندك ولا خلصت؟\n${items.map((i) => `• ${i}`).join("\n")}`;
+export function checkInBundleMessage(items: string[], ignoredNote = false): string {
+  const list = items.map((i) => `• ${i}`).join("\n");
+  return ignoredNote
+    ? `${CHECKIN_IGNORED_NOTE}\n${list}`
+    : `تذكير سريع: الحاجات دي لسه موجودة عندك ولا خلصت؟\n${list}`;
 }
 
 /**
@@ -421,14 +424,52 @@ export function deferForRecentOutbound(now: Date): boolean {
   return now.getUTCMinutes() < 45;
 }
 
-export function checkInBundleKeyboard(prompts: Array<{ id: string; label: string }>): InlineKeyboardButton[][] {
-  return prompts.map((p) => {
+// ── زاد بيلاحظ اللي اتساب (طلب المالك ٢٠٢٦-١٠-١٨: «لو تجاهلوه يرد يقولهم مبتردش ليه») ──────────
+// المقاس آخر ٣٠ يوم: المالك ساب ٢٥ من ٥٦ سؤال مخزون (٤٤٪) لحد ما انتهوا، وعميل تاني ماردّش ولا مرة
+// على ٦ — وزاد فضل يسأل كل ليلة بنفس الكلام.
+
+/** كام سؤال ورا بعض اتساب لحد ما انتهى، من الأحدث. اللي لسه مستني مابيتعدّش ولا بيقطع. */
+export function ignoredCheckinStreak(statusesNewestFirst: readonly string[]): number {
+  let n = 0;
+  for (const s of statusesNewestFirst) {
+    if (s === "pending") continue;
+    if (s !== "expired") break;
+    n++;
+  }
+  return n;
+}
+
+export type CheckinPlan = "ask" | "ask_with_note" | "rest";
+
+/** أيام الراحة بعد ما السؤال اتساب ٤ مرات ورا بعض حتى بعد ما زاد قال إنه واخد باله. */
+export const CHECKIN_REST_DAYS = 14;
+
+/**
+ * مرتين ورا بعض من غير رد ⇒ زاد بيقول إنه واخد باله ويعرض يبطّل. ٤ ⇒ بيسكت أسبوعين من نفسه
+ * (السكوت عن «بطّل» برضه رد)، وبعدها يرجع يسأل بنفس الجملة.
+ */
+export function checkinPlan(streak: number, lastSentAtMs: number | null, nowMs: number): CheckinPlan {
+  if (streak < 2) return "ask";
+  if (streak < 4) return "ask_with_note";
+  const rested = lastSentAtMs === null || nowMs - lastSentAtMs >= CHECKIN_REST_DAYS * 86_400_000;
+  return rested ? "ask_with_note" : "rest";
+}
+
+export const CHECKIN_IGNORED_NOTE =
+  "بقالي كام ليلة بسألك عن المخزون ومش بترد 😅 لو السؤال ده مش فارق معاك دوس «بطّل» وهسكت عنه. ولو لسه عايزه:";
+
+/** "ckoff" — العميل قال بطّل سؤال المخزون. */
+export const CHECKIN_OFF_CALLBACK = "ckoff";
+
+export function checkInBundleKeyboard(prompts: Array<{ id: string; label: string }>, offerStop = false): InlineKeyboardButton[][] {
+  const rows = prompts.map((p) => {
     const label = [...p.label].length > 18 ? [...p.label].slice(0, 17).join("") + "…" : p.label;
     return [
       { text: `✅ ${label} موجود`, callback_data: `ck:${p.id}:y` },
       { text: `❌ ${label} خلص`, callback_data: `ck:${p.id}:n` },
     ];
   });
+  return offerStop ? [...rows, [{ text: "🔕 بطّل تسألني", callback_data: CHECKIN_OFF_CALLBACK }]] : rows;
 }
 
 /** The zad_budget_state() row this button renders. Only the fields the message uses. */
