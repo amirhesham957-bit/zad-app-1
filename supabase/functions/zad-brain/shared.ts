@@ -1023,3 +1023,38 @@ export function pacingDecision(
   if (nowMs - last < gapMs) return { action: "postpone", until: new Date(last + gapMs).toISOString() };
   return { action: "deliver" };
 }
+
+// ── المنسّق ٣: سقف يومي للبيت (ZAD_DREAM_PLAN.md ٣.٢، ق٤ وع٨) ──
+// المسافة (ساعتين) لوحدها بتسيب لحد ٨ مبادرات في يوم صاحي ١٦ ساعة. ق٤: موجز الصبح + اتنين
+// سياقيين بالكتير + قفلة اليوم. الموجز وقفلة اليوم لحظات صوتية وتشيك-إن مش مهام، فالسقف هنا على
+// المهام بس، والزيادة بتستنى صباح بكرة وتطلع بالأهمية.
+
+/** أقصى مبادرات (مهام) لبيت في يومه المحلي، من غير المستثنيين. */
+export const PACING_DAILY_CAP = 2;
+
+/**
+ * المبادرة دي تعدّي سقف النهارده؟ [recent] = اللي اتبعت (recentOutbound)؛ اللحظات (`moment:`)
+ * والتشيك-إن مابيتعدّوش هنا. سكوت إشعارات البنك (أولوية ٠) بيعدّي ويتعدّ: من غيره الصرف مش بيتسجّل.
+ * فوق السقف ⇐ تتأجل لنهاية هدوء بكرة الصبح بتوقيته.
+ */
+export function dailyCapDecision(
+  kind: string | null | undefined,
+  recent: ReadonlyArray<{ kind: string | null; at: string }>,
+  timeZone: string,
+  nowMs: number,
+  w: QuietWindow = DEFAULT_QUIET,
+): { action: "deliver" } | { action: "postpone"; until: string } {
+  const k = (kind ?? "").trim();
+  if (!agentTaskNotice(k).proactive || PACING_EXEMPT.has(k) || pacingPriority(k) === 0) return { action: "deliver" };
+  const local = localNowContext(timeZone, new Date(nowMs));
+  const today = recent.filter((r) => {
+    const rk = (r.kind ?? "").trim();
+    if (rk.startsWith("moment:") || rk === "checkin" || PACING_EXEMPT.has(rk) || !agentTaskNotice(rk).proactive) return false;
+    const at = Date.parse(r.at);
+    return Number.isFinite(at) && at <= nowMs && localNowContext(timeZone, new Date(at)).date === local.date;
+  });
+  if (today.length < PACING_DAILY_CAP) return { action: "deliver" };
+  const tomorrow = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const until = resolveLocalIso(`${tomorrow}T${String(w.end).padStart(2, "0")}:00`, local.utc_offset);
+  return { action: "postpone", until: until ?? new Date(nowMs + 12 * 3_600_000).toISOString() };
+}

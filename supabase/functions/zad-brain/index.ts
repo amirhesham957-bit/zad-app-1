@@ -69,7 +69,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
@@ -6115,7 +6115,8 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     let list = delivered.get(userId) as Array<{ kind: string | null; at: string }> | undefined;
     if (!list) {
       list = await recentOutbound(
-        sb, userId, new Date(Date.now() - PACING_DUPLICATE_HOURS * 3_600_000).toISOString(), UNCOUNTED_MOMENTS,
+        // ٢٤ ساعة مش ٢٠: السقف اليومي (المنسّق ٣) بيعدّ من نص الليل بتوقيته.
+        sb, userId, new Date(Date.now() - Math.max(PACING_DUPLICATE_HOURS, 24) * 3_600_000).toISOString(), UNCOUNTED_MOMENTS,
       );
       delivered.set(userId, list);
     }
@@ -6163,6 +6164,15 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       if (pace.action === "postpone") {
         await sb.from("agent_tasks").update({ scheduled_for: pace.until, updated_at: new Date().toISOString() }).eq("id", task.id);
         console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${pace.until} (pacing)`);
+        postponed++;
+        continue;
+      }
+      // المنسّق ٣: سقف اليوم (اتنين) — الزيادة تستنى بكرة الصبح، وبالأهمية لأن الطابور متربّب.
+      const cap = dailyCapDecision(task.kind, await deliveredFor(task.user_id), await accountTimeZone(sb, task.user_id), Date.now(),
+        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake));
+      if (cap.action === "postpone") {
+        await sb.from("agent_tasks").update({ scheduled_for: cap.until, updated_at: new Date().toISOString() }).eq("id", task.id);
+        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${cap.until} (daily cap)`);
         postponed++;
         continue;
       }
