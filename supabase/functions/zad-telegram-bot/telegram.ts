@@ -404,6 +404,25 @@ export function checkInPromptMessage(itemName: string): string {
   return `تذكير سريع: ${itemName} لسه موجود عندك ولا خلص؟`;
 }
 
+/**
+ * أكتر من صنف في نفس الليلة = رسالة واحدة بصف زراير لكل صنف (منسّق المبادرات، ٢٠٢٦-١٠-١٨).
+ * كانت رسالتين ورا بعض كل يوم الساعة ٩ — المقاس على ١٤ يوم. كل زرار لسه شايل id السؤال بتاعه،
+ * فالرد بيتعامل زي الأول بالظبط. [items] أساميهم متنضفة ومعزولة من المنادي.
+ */
+export function checkInBundleMessage(items: string[]): string {
+  return `تذكير سريع: الحاجات دي لسه موجودة عندك ولا خلصت؟\n${items.map((i) => `• ${i}`).join("\n")}`;
+}
+
+export function checkInBundleKeyboard(prompts: Array<{ id: string; label: string }>): InlineKeyboardButton[][] {
+  return prompts.map((p) => {
+    const label = [...p.label].length > 18 ? [...p.label].slice(0, 17).join("") + "…" : p.label;
+    return [
+      { text: `✅ ${label} موجود`, callback_data: `ck:${p.id}:y` },
+      { text: `❌ ${label} خلص`, callback_data: `ck:${p.id}:n` },
+    ];
+  });
+}
+
 /** The zad_budget_state() row this button renders. Only the fields the message uses. */
 export interface BudgetStateRow {
   /** The cycle's opening balance. Named for the column, which predates the ledger. */

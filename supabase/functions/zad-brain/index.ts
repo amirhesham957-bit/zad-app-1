@@ -69,7 +69,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
@@ -6102,7 +6102,23 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     .limit(20);
 
   let processed = 0, failed = 0, postponed = 0;
-  for (const task of (due ?? []) as Array<{ id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string }>) {
+  // منسّق المبادرات (pacingDecision في shared.ts): الأهم الأول، وواحدة كل ساعتين للعميل، والتكرار بيتلغي.
+  // [delivered] = اللي اتبعت لكل عميل في آخر ٢٠ ساعة، من الداتابيز ومن اللفة دي.
+  type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string };
+  const dueTasks = [...((due ?? []) as DueTask[])].sort((a, b) => pacingPriority(a.kind) - pacingPriority(b.kind));
+  const delivered = new Map<string, Array<{ kind: string | null; at: string }>>();
+  const deliveredFor = async (userId: string) => {
+    let list = delivered.get(userId);
+    if (!list) {
+      const { data } = await sb.from("agent_tasks").select("kind,updated_at")
+        .eq("user_id", userId).in("status", ["done", "done_with_issue"])
+        .gt("updated_at", new Date(Date.now() - PACING_DUPLICATE_HOURS * 3_600_000).toISOString());
+      list = ((data ?? []) as Array<{ kind: string | null; updated_at: string }>).map((r) => ({ kind: r.kind, at: r.updated_at }));
+      delivered.set(userId, list);
+    }
+    return list;
+  };
+  for (const task of dueTasks) {
     // الكتم (رفض من تليجرام) كان بيتقرا في الماسح بس — المهام المتكررة زي متابعة الهدف
     // كانت بتعدّيه. التأجيل لنهاية الكتم بيحترم الرفض من غير ما يقتل السلسلة.
     if (agentTaskNotice(task.kind).proactive) {
@@ -6132,6 +6148,21 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         postponed++;
         continue;
       }
+      const pace = pacingDecision(task.kind, (task.recurrence ?? "once") !== "once", await deliveredFor(task.user_id), Date.now());
+      if (pace.action === "duplicate") {
+        await sb.from("agent_tasks").update({
+          status: "cancelled", result: `duplicate: ${task.kind} already sent in the last ${PACING_DUPLICATE_HOURS}h`,
+          updated_at: new Date().toISOString(),
+        }).eq("id", task.id);
+        console.log(`[agent_tasks] ${task.kind} task ${task.id} cancelled (duplicate)`);
+        continue;
+      }
+      if (pace.action === "postpone") {
+        await sb.from("agent_tasks").update({ scheduled_for: pace.until, updated_at: new Date().toISOString() }).eq("id", task.id);
+        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${pace.until} (pacing)`);
+        postponed++;
+        continue;
+      }
     }
     // صنف ضروري خلص (restockLink.ts): رسالة ثابتة بلينك أمازون، من غير موديل.
     if (task.kind === "restock_link") {
@@ -6141,7 +6172,10 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
           pushTelegram: (uid, title, text, taskId, links) =>
             pushToTelegram(uid, title, text, fetch, taskId, false, undefined, undefined, undefined, undefined, undefined, links),
           env: (n) => Deno.env.get(n),
-        }) === "sent") processed++;
+        }) === "sent") {
+          processed++;
+          (await deliveredFor(task.user_id)).push({ kind: task.kind, at: new Date().toISOString() });
+        }
       } catch (e) {
         console.error("[restock_link] failed for task", task.id, e);
         await sb.from("agent_tasks").update({ status: "failed", result: String(e), updated_at: new Date().toISOString() }).eq("id", task.id);
@@ -6234,6 +6268,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         const tg = await pushToTelegram(task.user_id, notice.title, finalText, fetch, task.id, notice.voice, task.kind ?? undefined);
         console.log(`[agent_tasks] proactive ${task.kind} for task ${task.id} → telegram: ${tg}`);
       }
+      (await deliveredFor(task.user_id)).push({ kind: task.kind, at: new Date().toISOString() });
       processed++;
     } catch (e) {
       console.error("processDueAgentTasks failed for task", task.id, e);

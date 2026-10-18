@@ -43,7 +43,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
+  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard,
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
@@ -381,6 +381,31 @@ async function sendCheckInPrompt(sb: SupabaseClient, userId: string, chatId: num
   return true;
 }
 
+/** أكتر من صنف = رسالة واحدة (checkInBundleMessage). بيرجع عدد الأسئلة اللي اتسجلت واتبعتت. */
+async function sendCheckInBundle(
+  sb: SupabaseClient, userId: string, chatId: number, items: Array<{ item_name: string; quantity: number }>,
+): Promise<number> {
+  const prompts: Array<{ id: string; label: string }> = [];
+  for (const item of items) {
+    const { data: prompt, error } = await sb.from("telegram_checkin_prompts")
+      .insert({ user_id: userId, item_name: item.item_name, quantity_at_prompt: item.quantity })
+      .select("id")
+      .single();
+    if (error || !prompt) {
+      console.error("checkin prompt insert failed:", error?.message);
+      continue;
+    }
+    prompts.push({ id: (prompt as { id: string }).id, label: sanitizeName(item.item_name) });
+  }
+  if (prompts.length === 0) return 0;
+  await sendTelegramMessage(
+    chatId,
+    checkInBundleMessage(prompts.map((p) => isolate(p.label))),
+    checkInBundleKeyboard(prompts),
+  );
+  return prompts.length;
+}
+
 async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: number; promptsSent: number }> {
   // Pending prompts nobody ever answered would otherwise block that item forever.
   await sb.from("telegram_checkin_prompts")
@@ -400,9 +425,11 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     const alreadySentToday = await checkinsSentToday(sb, b.user_id);
     const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
     if (budget <= 0) continue;
-    const candidates = await findCheckInCandidates(sb, b.user_id);
-    for (const item of candidates.slice(0, budget)) {
-      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, item.item_name, item.quantity)) promptsSent++;
+    const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
+    if (candidates.length === 1) {
+      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity)) promptsSent++;
+    } else if (candidates.length > 1) {
+      promptsSent += await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates);
     }
   }
 

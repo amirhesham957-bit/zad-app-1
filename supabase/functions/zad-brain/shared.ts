@@ -970,3 +970,56 @@ export function pharmacyIsRecurring(input: { is_recurring?: unknown; category?: 
   if (input.category === "مضاد حيوي") return false;
   return null;
 }
+
+// ── منسّق المبادرات (ZAD_DREAM_PLAN.md، طلب المالك ٢٠٢٦-١٠-١٧: «بيبعت كل حاجة مرة واحدة زي الآلة») ──
+// المقاس على ١٤ يوم: ١٧/١٠ الساعة ٧ الصبح وصل المالك ٥ إشعارات ورا بعض، اتنين منهم نفس «إشعارات
+// البنك وقفت». السبب: الماسح بيعمل المهام بالليل والتأجيل لنهاية النوم بيجمّعهم كلهم على ٧، ومنع
+// التكرار في الماسح بيوم UTC — مهمة ١:٠٧ و٣:٠٧ بتوقيت القاهرة بتقع في يومين UTC مختلفين.
+
+/** أقل مسافة بين مبادرتين لنفس العميل. */
+export const PACING_GAP_MINUTES = 120;
+/** نفس النوع مايتبعتش تاني لنفس العميل جوه المدة دي. */
+export const PACING_DUPLICATE_HOURS = 20;
+/** وقتها جزء من معناها: متابعة الدوا ووصول المحل مابيستنوش. */
+const PACING_EXEMPT: ReadonlySet<string> = new Set(["med_followup", "store_arrival"]);
+/** الأهم الأول لما كذا مبادرة تستحق مع بعض — الأقل رقم يتبعت الأول. */
+const PACING_PRIORITY: Record<string, number> = {
+  listener_gap_alert: 0,
+  spending_ahead: 1, bill_reminder: 1,
+  predicted_shortage: 2, restock_link: 2, habit_budget: 2,
+  warranty_reminder: 3, spend_forecast: 3, home_weekly_digest: 3, goal_review: 3,
+};
+
+export function pacingPriority(kind: string | null | undefined): number {
+  return PACING_PRIORITY[(kind ?? "").trim()] ?? 2;
+}
+
+export type PacingDecision =
+  | { action: "deliver" }
+  | { action: "duplicate" }
+  | { action: "postpone"; until: string };
+
+/**
+ * المبادرة دي تتبعت دلوقتي؟ [recent] = المبادرات اللي اتبعتت للعميل ده (من الداتابيز ومن نفس
+ * اللفة)، بنوعها ووقتها. طلبات العميل والمستثنيين بيتبعتوا على طول. مهمة متكررة مابتتلغيش كتكرار
+ * (الإلغاء بيقتل السلسلة) — بتتأجل.
+ */
+export function pacingDecision(
+  kind: string | null | undefined,
+  recurring: boolean,
+  recent: ReadonlyArray<{ kind: string | null; at: string }>,
+  nowMs: number,
+): PacingDecision {
+  const k = (kind ?? "").trim();
+  if (!agentTaskNotice(k).proactive || PACING_EXEMPT.has(k)) return { action: "deliver" };
+  const paced = recent
+    .filter((r) => agentTaskNotice(r.kind).proactive && !PACING_EXEMPT.has((r.kind ?? "").trim()))
+    .map((r) => ({ kind: (r.kind ?? "").trim(), at: Date.parse(r.at) }))
+    .filter((r) => Number.isFinite(r.at) && r.at <= nowMs);
+  const sameKind = paced.filter((r) => r.kind === k && nowMs - r.at < PACING_DUPLICATE_HOURS * 3_600_000);
+  if (sameKind.length > 0 && !recurring) return { action: "duplicate" };
+  const last = Math.max(-Infinity, ...paced.map((r) => r.at));
+  const gapMs = PACING_GAP_MINUTES * 60_000;
+  if (nowMs - last < gapMs) return { action: "postpone", until: new Date(last + gapMs).toISOString() };
+  return { action: "deliver" };
+}
