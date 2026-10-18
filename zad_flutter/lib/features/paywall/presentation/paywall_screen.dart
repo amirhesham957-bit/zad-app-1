@@ -25,6 +25,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 
 /// Opens the plans.
@@ -400,9 +401,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
                 style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: ZadSpacing.xs),
-              // The free plan as zad_entitlement_refresh gives it. No ad
-              // button until the ads SDK is in the app: nothing shown here
-              // may do nothing.
+              // The free plan as zad_entitlement_refresh gives it.
               Text(
                 '5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. '
                 'رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل '
@@ -413,6 +412,11 @@ class _PaywallState extends ConsumerState<PaywallScreen>
                   height: 1.5,
                 ),
               ),
+              // The real rewarded ad (AdMob + server SSV) is in the app since
+              // c924d8ae; it hides itself on paid plans, in kids mode and
+              // when the server has no ad to offer.
+              const SizedBox(height: ZadSpacing.md),
+              const WatchAdButton(),
             ],
           ),
         ),

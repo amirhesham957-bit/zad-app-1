@@ -16,6 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/telegram/data/telegram_link.dart';
@@ -560,17 +561,19 @@ class TelegramLinkBanner extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                child: FilledButton(
-                  onPressed: onLink,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _brand,
-                    foregroundColor: scheme.onPrimary,
-                    minimumSize: const Size(0, 44),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: const Text(
-                    'تشغيل البوت الآن 🚀',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                child: _Breathing(
+                  child: FilledButton(
+                    onPressed: onLink,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brand,
+                      foregroundColor: scheme.onPrimary,
+                      minimumSize: const Size(0, 44),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text(
+                      'تشغيل البوت الآن 🚀',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),
@@ -591,10 +594,52 @@ class TelegramLinkBanner extends StatelessWidget {
   }
 }
 
-/// Kotlin's `ZadTelegramCommunityCard`: opens the bot.
+/// The link button breathes (scale 1 → 1.04) while the account is unlinked:
+/// without the bot, reminders and alerts never reach the customer, so the
+/// one action that matters on the banner should not sit still.
+class _Breathing extends StatefulWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_Breathing> createState() => _BreathingState();
+}
+
+class _BreathingState extends State<_Breathing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: ZadDuration.shimmer,
+  )..repeat(reverse: true);
+
+  late final Animation<double> _scale = Tween<double>(
+    begin: 1,
+    end: 1.04,
+  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: ScaleTransition(scale: _scale, child: widget.child),
+  );
+}
+
+/// Kotlin's `ZadTelegramCommunityCard`. It read «مجتمع زاد — انضم لقناتنا»
+/// and opened the bot with no start code, so customers took it for a group
+/// and a tap never bound the account (owner, 2026-10-18). It now says it is
+/// the bot and opens the one binding path, [showTelegramBotSheet].
 class ZadTelegramCommunityCard extends StatelessWidget {
   /// Creates the card.
-  const new({super.key});
+  const new({this.onOpened, super.key});
+
+  /// Called after the bot sheet closes, so home can re-read the link status.
+  final Future<void> Function()? onOpened;
 
   @override
   Widget build(BuildContext context) {
@@ -610,10 +655,10 @@ class ZadTelegramCommunityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => _openUrl(
-            context,
-            Uri.parse('https://t.me/$kTelegramBotUsername'),
-          ),
+          onTap: () async {
+            await showTelegramBotSheet(context);
+            await onOpened?.call();
+          },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -625,14 +670,14 @@ class ZadTelegramCommunityCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'مجتمع زاد على تليجرام',
+                        'بوت زاد على تليجرام',
                         style: ZadType.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
                           color: scheme.onSurface,
                         ),
                       ),
                       Text(
-                        'انضم لقناتنا لتحديثات الأسعار والذكاء الاصطناعي',
+                        'تسجّل مصروف وتسأل زاد ويوصلك التنبيهات — اربط حسابك',
                         style: ZadType.bodySmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -693,7 +738,7 @@ class HomeTelegramBlocks extends ConsumerWidget {
                 )
               : const SizedBox(width: double.infinity),
         ),
-        const ZadTelegramCommunityCard(),
+        ZadTelegramCommunityCard(onOpened: controller.recheckAfterSheet),
       ],
     );
   }
