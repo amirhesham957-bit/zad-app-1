@@ -41,7 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { budgetUsage, dailyCap, groundingPlan, takeSearchBudget } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, groundingPlan, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1425,7 +1425,8 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
     ];
-  for (const [name, run] of sources) {
+  const ordered = withPaidGroundingFirst(sources, currentGroundingPlan()?.paid === true, live || asksLatest(query) || asksLatest(queryEn));
+  for (const [name, run] of ordered) {
     const raw = await run();
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
     // ويكيبيديا اتفلترت جوه، كل لغة على سؤالها.
