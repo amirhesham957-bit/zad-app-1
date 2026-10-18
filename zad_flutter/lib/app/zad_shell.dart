@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
+import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
@@ -47,6 +48,7 @@ import 'package:zad/shared/companion/presentation/companion_moments.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
@@ -384,6 +386,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onNotifications: () =>
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
+                sky: skyPhaseAt(
+                  ref.watch(accountTimeZoneProvider),
+                  ref.read(nowProvider)(),
+                ),
               ),
               Expanded(
                 child: Stack(
