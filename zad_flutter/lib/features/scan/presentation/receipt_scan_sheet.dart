@@ -29,6 +29,7 @@ import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the scanner.
@@ -506,6 +507,7 @@ class _ReadingState extends ConsumerState<_Reading> {
       if (said != null) {
         messenger?.showSnackBar(SnackBar(content: Text(said)));
       }
+      ref.read(uiSoundsProvider.notifier).play(UiSound.scan);
       await HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     }

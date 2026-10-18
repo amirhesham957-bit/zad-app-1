@@ -23,6 +23,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/expense_categories.dart';
@@ -96,6 +97,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
           );
       ref.read(transactionsControllerProvider.notifier).reloadFromCache();
       ref.read(budgetControllerProvider.notifier).recomputePending();
+      ref.read(uiSoundsProvider.notifier).play(UiSound.saved);
       unawaited(HapticFeedback.mediumImpact());
       if (mounted) Navigator.of(context).pop();
     } on Object {
