@@ -15,6 +15,7 @@
 // code via /start <code>. Every subsequent request is authorized by chat_id → user_id
 // through that table, never by anything the client claims about itself.
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { recentOutbound } from "../_shared/outbound.ts";
 import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -43,7 +44,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard,
+  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound,
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
@@ -406,6 +407,9 @@ async function sendCheckInBundle(
   return prompts.length;
 }
 
+/** أقل مسافة بين آخر رسالة وصلت للعميل وسؤال المخزون. */
+const CHECKIN_GAP_MS = 20 * 60 * 1000;
+
 async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: number; promptsSent: number }> {
   // Pending prompts nobody ever answered would otherwise block that item forever.
   await sb.from("telegram_checkin_prompts")
@@ -423,6 +427,14 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
 
   for (const b of rows) {
     const alreadySentToday = await checkinsSentToday(sb, b.user_id);
+    // المنسّق ٢: الكرون بيلف مرتين (٩:٢٠ و٩:٥٠، 20261018120000). اللي اتسأل في الأولى مايتسألش في
+    // التانية — سؤال واحد في الليلة، حتى لو فاضل له من السقف.
+    if (alreadySentToday > 0) continue;
+    // وصله حاجة في آخر ٢٠ دقيقة (جرعة، تحية، مهمة من العقل): يستنى اللفة التانية بدل ما تيجي
+    // الرسالتين ورا بعض. في اللفة التانية بيتسأل عادي — التأجيل مرة واحدة بس.
+    if (deferForRecentOutbound(new Date()) && (await recentOutbound(sb, b.user_id, new Date(Date.now() - CHECKIN_GAP_MS).toISOString(), ["chat_voice_reply"])).length > 0) {
+      continue;
+    }
     const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
     if (budget <= 0) continue;
     const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
