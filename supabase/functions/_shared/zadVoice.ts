@@ -227,6 +227,7 @@ export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; co
     accentDirection(input.country),
     `Delivery: ${(male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS)[emotion]}`,
     "Say exactly the words in the text, in its own language; express the emotion through the voice (sighs, laughs, trembles) without adding words.",
+    "Stop the moment the text ends: no closing words, credits, announcements or sounds after its last word.",
     "",
     input.text,
     "",
