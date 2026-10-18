@@ -62,7 +62,7 @@ import { deliverRestockLink } from "./restockLink.ts";
 import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
-import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak } from "./acceptance.ts";
+import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak, machineCloser } from "./acceptance.ts";
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
@@ -86,7 +86,7 @@ import { redactNotificationText } from "./redact.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
-import { childToneBlock, conversationProfile, voiceModeInstruction } from "./persona.ts";
+import { childToneBlock, conversationProfile, dropServiceCloser, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
@@ -6971,6 +6971,8 @@ async function handleAgentTurnInLane(
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
   reply = silentWriteFallback(reply, executed, proposals.length);
+  // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
+  reply = dropServiceCloser(reply);
   // لفة خلصت من غير ولا كلمة ولا تنفيذ: العميل كان هيشوف رد فاضي (اختبار القبول ٢٠٢٦-١٠-٠١، سؤال
   // عام بعد بحث فاضي). جملة صريحة أحسن من صمت، ومن غير ما نخترع إجابة.
   if (!reply.trim() && executed.length === 0 && proposals.length === 0) {
@@ -7982,7 +7984,7 @@ async function handleRequest(req: Request): Promise<Response> {
             searches: Array.isArray(payload?.searches) ? payload.searches : [],
           };
           const failure = payload?.ok === true
-            ? internalLeak(outcome.reply) ?? c.check(outcome, { appointmentsCreated: count ?? 0 })
+            ? internalLeak(outcome.reply) ?? machineCloser(outcome.reply) ?? c.check(outcome, { appointmentsCreated: count ?? 0 })
             : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
           results.push({
             id: c.id, pass: failure === null, failure, reply: outcome.reply.slice(0, 500),
