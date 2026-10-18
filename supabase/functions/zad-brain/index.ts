@@ -134,9 +134,10 @@ import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
-import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts } from "./voiceMoments.ts";
+import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts, UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 import { leanTools, promptSizes } from "./promptBudget.ts";
+import { recentOutbound } from "../_shared/outbound.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -6107,13 +6108,14 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
   type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string };
   const dueTasks = [...((due ?? []) as DueTask[])].sort((a, b) => pacingPriority(a.kind) - pacingPriority(b.kind));
   const delivered = new Map<string, Array<{ kind: string | null; at: string }>>();
+  // المنسّق ٢: الذاكرة مشتركة (_shared/outbound.ts) — اللحظات الصوتية وسؤال المخزون بيتعدّوا كمان،
+  // فمهمة مابتطلعش ورا تحية الصبح أو سؤال المخزون على طول. ردود الشات والجرعات مابتتعدّش.
   const deliveredFor = async (userId: string) => {
-    let list = delivered.get(userId);
+    let list = delivered.get(userId) as Array<{ kind: string | null; at: string }> | undefined;
     if (!list) {
-      const { data } = await sb.from("agent_tasks").select("kind,updated_at")
-        .eq("user_id", userId).in("status", ["done", "done_with_issue"])
-        .gt("updated_at", new Date(Date.now() - PACING_DUPLICATE_HOURS * 3_600_000).toISOString());
-      list = ((data ?? []) as Array<{ kind: string | null; updated_at: string }>).map((r) => ({ kind: r.kind, at: r.updated_at }));
+      list = await recentOutbound(
+        sb, userId, new Date(Date.now() - PACING_DUPLICATE_HOURS * 3_600_000).toISOString(), UNCOUNTED_MOMENTS,
+      );
       delivered.set(userId, list);
     }
     return list;

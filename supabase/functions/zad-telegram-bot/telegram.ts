@@ -413,6 +413,14 @@ export function checkInBundleMessage(items: string[]): string {
   return `تذكير سريع: الحاجات دي لسه موجودة عندك ولا خلصت؟\n${items.map((i) => `• ${i}`).join("\n")}`;
 }
 
+/**
+ * سؤال المخزون بيلف مرتين بالليل (٩:٢٠ و٩:٥٠، 20261018120000). الأولى بس (قبل الدقيقة ٤٥ UTC)
+ * بتأجّل العميل اللي وصله حاجة لسه — التانية آخر فرصة النهارده، فبتسأل.
+ */
+export function deferForRecentOutbound(now: Date): boolean {
+  return now.getUTCMinutes() < 45;
+}
+
 export function checkInBundleKeyboard(prompts: Array<{ id: string; label: string }>): InlineKeyboardButton[][] {
   return prompts.map((p) => {
     const label = [...p.label].length > 18 ? [...p.label].slice(0, 17).join("") + "…" : p.label;

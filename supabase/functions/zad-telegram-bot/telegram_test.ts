@@ -430,3 +430,9 @@ Deno.test("two items one night = one message with a row of buttons each, answers
   // اسم طويل بيتقص في الزرار بس، مش في الرسالة.
   assertEquals(kb[1][0].text.includes("…"), true);
 });
+
+Deno.test("the 21:20 pass defers a customer who just heard from Zad; the 21:50 pass asks anyway", async () => {
+  const { deferForRecentOutbound } = await import("./telegram.ts");
+  assertEquals(deferForRecentOutbound(new Date("2026-10-18T18:20:00Z")), true);
+  assertEquals(deferForRecentOutbound(new Date("2026-10-18T18:50:00Z")), false);
+});

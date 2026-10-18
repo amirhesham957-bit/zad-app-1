@@ -9,6 +9,7 @@
 //
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
+import { latestOutboundMs, recentOutbound } from "../_shared/outbound.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
@@ -886,16 +887,15 @@ export async function processVoiceMoments(
       }
       // لحظة جت ورا لحظة تانية على طول: تستنى اللفة الجاية بدل ما تتقال ورا بعض.
       if (!NEVER_HELD_MOMENTS.has(row.moment)) {
+        // المنسّق ٢ (_shared/outbound.ts): آخر حاجة طلعت للعميل من أي مصدر — مهمة من العقل أو
+        // سؤال مخزون كمان، مش لحظة بس. قراية فاشلة عمرها ما توقف لحظة.
         let lastSentMs: number | null = null;
         try {
-          const { data: last } = await sb.from("zad_voice_moments").select("sent_at")
-            .eq("user_id", row.user_id).eq("status", "sent")
-            .not("moment", "in", `(${UNCOUNTED_MOMENTS.join(",")})`)
-            .order("sent_at", { ascending: false }).limit(1).maybeSingle();
-          const at = (last as { sent_at?: string | null } | null)?.sent_at;
-          lastSentMs = at ? Date.parse(at) : null;
+          lastSentMs = latestOutboundMs(await recentOutbound(
+            sb, row.user_id, new Date(now() - MOMENT_SPACING_MS).toISOString(), UNCOUNTED_MOMENTS,
+          ));
         } catch {
-          lastSentMs = null; // a failed read never holds a moment back
+          lastSentMs = null;
         }
         if (tooSoonAfterLast(row.moment, lastSentMs, now())) {
           await sb.from("zad_voice_moments").update({ status: "pending", claimed_at: null }).eq("id", row.id);
@@ -1497,7 +1497,7 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
 ]);
 
 /** مابتتعدّش في السقف ولا في المسافة: اللي مابيتمسكش، وردود شات تليجرام بالصوت (رد مش تنبيه). */
-const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT];
+export const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT];
 
 /**
  * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي
