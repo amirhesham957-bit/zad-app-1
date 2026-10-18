@@ -138,6 +138,7 @@ import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MO
 import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
 import { leanTools, promptSizes } from "./promptBudget.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
+import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -6259,6 +6260,11 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       }
       // العنوان بيفرّق بين طلب العميل (reminder) ومبادرة زاد — كان «مهمة كنت طلبتها» للكل.
       const notice = agentTaskNotice(task.kind);
+      // المحادثة الواحدة: المبادرة بعلامتها (زاد عارف إنه هو اللي بدأ)، وطلب العميل كرد عادي.
+      await recordConversation(sb, task.user_id, [{
+        role: "assistant",
+        text: notice.proactive ? proactiveTurn(notice.title, finalText) : `${notice.title}\n${finalText}`,
+      }]);
       await sb.from("app_notifications").insert({
         user_id: task.user_id, title: notice.title, message: finalText,
       });
@@ -6704,7 +6710,11 @@ async function handleAgentTurnInLane(
     budget: budget.chatNotes, senders: budget.senders,
   });
   // «فاتك إيه» (whileAway.ts): آخر لفة قبل الرسالة دي — البوت والتطبيق بيسجّلوا اللفة بعد الرد.
-  const awayLine = await loadWhileAway(sb, userId, (await sharedHistoryEarly)?.at(-1)?.at, snap?.currency ?? null);
+  // «آخر مرة» = آخر رسالة من العميل نفسه، مش آخر سطر في المحادثة: رسايل زاد من نفسه بقت بتتكتب
+  // هناك (_shared/conversationLog.ts)، وكانت هتخلّي اللي غايب أسبوع يبان إنه كان هنا امبارح.
+  const { data: lastCustomerTurn } = await sb.from("zad_chat_turns").select("created_at")
+    .eq("user_id", userId).eq("role", "user").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const awayLine = await loadWhileAway(sb, userId, (lastCustomerTurn as { created_at?: string } | null)?.created_at, snap?.currency ?? null);
   // كل بلوك باسمه عشان ميزان اللفة (promptBudget.ts) يقيسه — الترتيب هو ترتيب البرومبت.
   const chatSnap = {
     ...snap,

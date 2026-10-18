@@ -10,6 +10,7 @@
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
 import { latestOutboundMs, recentOutbound } from "../_shared/outbound.ts";
+import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
@@ -1045,7 +1046,14 @@ export async function processVoiceMoments(
         delivery: { device, telegram, composed_by: composedBy, title: composed.title, text: composed.text.slice(0, 300), ...(voice ? { emotion } : {}) },
         error: delivered ? null : "no channel delivered",
       }).eq("id", row.id);
-      if (delivered) result.sent++;
+      if (delivered) {
+        result.sent++;
+        // المحادثة الواحدة (_shared/conversationLog.ts): اللي زاد قاله من نفسه بيدخل المحادثة، فلو
+        // العميل رد «يعني إيه؟» أو «أخدته» العقل عارف هو قال إيه. رد الشات الصوتي متسجّل أصلاً كرد.
+        if (row.moment !== CHAT_VOICE_REPLY_MOMENT) {
+          await recordConversation(sb, row.user_id, [{ role: "assistant", text: proactiveTurn(composed.title, composed.text) }]);
+        }
+      }
       else result.failed++;
     } catch (e) {
       const attempts = row.attempts + 1;

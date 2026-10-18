@@ -12,6 +12,7 @@
 // وكمان: رسالة واحدة في اليوم بالكتير (التريجر)، ومفيش رسالة لو العميل رجّع الصنف قبل ما
 // تتبعت، ولا في وضع الطوارئ (مفيش اقتراح شراء خالص)، والكتم والساعات الهادية زي أي مبادرة.
 
+import { proactiveTurn } from "../_shared/conversationLog.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { marketFor, searchUrl } from "../_shared/amazonMarket.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
@@ -152,7 +153,7 @@ export async function deliverRestockLink(sb: SupabaseClient, task: RestockTask, 
   await finish("done", msg.body);
   const [note, turn] = await Promise.all([
     sb.from("app_notifications").insert({ user_id: task.user_id, title: msg.title, message: msg.body }),
-    sb.from("zad_chat_turns").insert({ user_id: task.user_id, role: "assistant", text: msg.body }),
+    sb.from("zad_chat_turns").insert({ user_id: task.user_id, role: "assistant", text: proactiveTurn(msg.title, msg.body) }),
   ]);
   if (note.error) console.error(`[restock_link] app_notifications failed for task ${task.id}:`, note.error.message);
   if (turn.error) console.error(`[restock_link] zad_chat_turns failed for task ${task.id}:`, turn.error.message);

@@ -16,6 +16,7 @@
 // through that table, never by anything the client claims about itself.
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
+import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
 import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -438,10 +439,18 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
     if (budget <= 0) continue;
     const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
+    let asked = 0;
     if (candidates.length === 1) {
-      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity)) promptsSent++;
+      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity)) asked = 1;
     } else if (candidates.length > 1) {
-      promptsSent += await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates);
+      asked = await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates);
+    }
+    if (asked > 0) {
+      promptsSent += asked;
+      await recordConversation(sb, b.user_id, [{
+        role: "assistant",
+        text: proactiveTurn("سؤال المخزون", `سألتك ${candidates.slice(0, asked).map((c) => c.item_name).join(" و")} لسه موجودين ولا خلصوا`),
+      }]);
     }
   }
 
@@ -504,7 +513,9 @@ async function runDailySubscriptionAlerts(sb: SupabaseClient): Promise<{ usersCh
       if (daysLeft < 0 || daysLeft > 3) continue;
       const amountText = `${sub.amount}${currency ? " " + currency : ""}`;
       const when = daysLeft === 0 ? "اليوم" : `خلال ${daysLeft} يوم`;
-      await sendTelegramMessage(b.chat_id, `🔔 ${isolate(sanitizeName(sub.title))} يتجدد ${when} (${isolate(amountText)})`);
+      const alertText = `🔔 ${isolate(sanitizeName(sub.title))} يتجدد ${when} (${isolate(amountText)})`;
+      await sendTelegramMessage(b.chat_id, alertText);
+      await recordConversation(sb, b.user_id, [{ role: "assistant", text: proactiveTurn("", alertText) }]);
       alertsSent++;
     }
 
@@ -519,7 +530,9 @@ async function runDailySubscriptionAlerts(sb: SupabaseClient): Promise<{ usersCh
       if (daysLeft < 0 || daysLeft > 3) continue;
       const amountText = `${ob.amount}${currency ? " " + currency : ""}`;
       const when = daysLeft === 0 ? "اليوم" : `خلال ${daysLeft} يوم`;
-      await sendTelegramMessage(b.chat_id, `🔔 ${isolate(sanitizeName(ob.title))} مستحق ${when} (${isolate(amountText)})`);
+      const alertText = `🔔 ${isolate(sanitizeName(ob.title))} مستحق ${when} (${isolate(amountText)})`;
+      await sendTelegramMessage(b.chat_id, alertText);
+      await recordConversation(sb, b.user_id, [{ role: "assistant", text: proactiveTurn("", alertText) }]);
       alertsSent++;
     }
   }
@@ -647,12 +660,13 @@ async function loadChatHistory(
       .select("role,text")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(CHAT_HISTORY_TURNS);
+      .limit(CHAT_HISTORY_TURNS * 2);
     if (error) {
       console.error("loadChatHistory failed:", error);
       return [];
     }
-    return toBrainHistory(data ?? []);
+    // نفس قص العقل: آخر ٣ مبادرات بس (_shared/conversationLog.ts).
+    return trimProactive(toBrainHistory(data ?? [])).slice(-CHAT_HISTORY_TURNS);
   } catch (e) {
     // فشل قراءة السياق يخلي اللفة بلا ذاكرة — مش يكسرها. ده السلوك اللي كان
     // موجود قبل الجدول ده أصلاً، فالرجوع ليه آمن.
@@ -1462,6 +1476,52 @@ bot.on("message:voice", async (ctx) => {
 // صورة (فاتورة أو صنف) — نفس مبدأ التسجيل الصوتي: الأصناف بتتضاف للمخزون مباشرة (زي
 // مسح الكاميرا في التطبيق)، أي مبلغ إجمالي مقروء من الفاتورة بيعدي على نفس تأكيد
 // الكتابة العادية قبل ما يتسجل في zad_transactions.
+// محادثة واحدة لكل اللي حصل (_shared/conversationLog.ts): الصورة والزرار وردود زاد عليهم بيتكتبوا في
+// zad_chat_turns، عشان «الدوا بعتهولك» بعد صورة دوا مايتردش عليها بـ«ورّيني بعت إيه؟» (١٥/١٠).
+// طبقة قبل الهاندلر الأصلي: بتلقط ctx.reply وبتكتب بعد ما يخلص، من غير ما تلمس منطقه.
+// deno-lint-ignore no-explicit-any
+function captureReplies(ctx: any): string[] {
+  const said: string[] = [];
+  const original = ctx.reply.bind(ctx);
+  // deno-lint-ignore no-explicit-any
+  ctx.reply = (text: string, ...rest: any[]) => {
+    if (typeof text === "string") said.push(text);
+    return original(text, ...rest);
+  };
+  return said;
+}
+
+bot.on("message:photo", async (ctx, next) => {
+  const said = captureReplies(ctx);
+  await next();
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const userId = await resolveUserId(sb, ctx.chat.id).catch(() => null);
+  if (!userId) return;
+  const caption = ctx.message.caption?.trim();
+  await recordConversation(sb, userId, [
+    { role: "user", text: `[بعت صورة على تليجرام${caption ? `: «${caption.slice(0, 200)}»` : ""}]` },
+    { role: "assistant", text: said.join("\n\n") },
+  ]);
+});
+
+bot.on("callback_query:data", async (ctx, next) => {
+  const said = captureReplies(ctx);
+  await next();
+  if (said.length === 0) return;
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const chatId = ctx.chat?.id;
+  const userId = chatId ? await resolveUserId(sb, chatId).catch(() => null) : null;
+  if (!userId) return;
+  const data = ctx.callbackQuery.data;
+  const label = (ctx.callbackQuery.message?.reply_markup?.inline_keyboard ?? []).flat()
+    // deno-lint-ignore no-explicit-any
+    .find((b: any) => b.callback_data === data)?.text;
+  await recordConversation(sb, userId, [
+    { role: "user", text: `[داس على زرار${label ? ` «${label}»` : ""}]` },
+    { role: "assistant", text: said.join("\n\n") },
+  ]);
+});
+
 bot.on("message:photo", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const userId = await resolveUserId(sb, ctx.chat.id);
