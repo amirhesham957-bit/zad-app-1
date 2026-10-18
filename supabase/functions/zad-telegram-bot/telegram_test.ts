@@ -417,3 +417,16 @@ Deno.test("an Amazon button per item that ran out, and only Amazon links", () =>
   assertEquals(amazonButtonRows("x"), []);
   assertEquals(amazonButtonRows([1, 2, 3, 4].map((i) => ({ name: `${i}`, url: eg }))).length, 3);
 });
+
+Deno.test("two items one night = one message with a row of buttons each, answers unchanged", async () => {
+  const { checkInBundleKeyboard, checkInBundleMessage, parseCheckInCallback } = await import("./telegram.ts");
+  const a = "11111111-1111-1111-1111-111111111111", b = "22222222-2222-2222-2222-222222222222";
+  const msg = checkInBundleMessage(["رز", "زيت"]);
+  assertEquals(msg.split("\n").length, 3);
+  const kb = checkInBundleKeyboard([{ id: a, label: "رز" }, { id: b, label: "زيت عباد الشمس كريستال ١ لتر" }]);
+  assertEquals(kb.length, 2);
+  assertEquals(parseCheckInCallback(kb[0][1].callback_data!), { promptId: a, stillInStock: false });
+  assertEquals(parseCheckInCallback(kb[1][0].callback_data!), { promptId: b, stillInStock: true });
+  // اسم طويل بيتقص في الزرار بس، مش في الرسالة.
+  assertEquals(kb[1][0].text.includes("…"), true);
+});

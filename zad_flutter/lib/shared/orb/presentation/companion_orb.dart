@@ -134,6 +134,7 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
     value: 1,
   );
   Timer? _blinkLoop;
+  final Set<Timer> _waits = <Timer>{};
   int _blinkRun = 0;
 
   // ── the tap's halo: tween(450, FastOutSlowIn) ──
@@ -214,6 +215,10 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
   @override
   void dispose() {
     _blinkLoop?.cancel();
+    for (final t in _waits) {
+      t.cancel();
+    }
+    _waits.clear();
     _ticker.dispose();
     _elapsed.dispose();
     _colorT.dispose();
@@ -236,8 +241,20 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
     curve: Curves.fastOutSlowIn,
   );
 
-  Future<void> _wait(int ms) =>
-      Future<void>.delayed(Duration(milliseconds: ms));
+  /// A pause the blink waits on, cancelled in [dispose]. A bare
+  /// `Future.delayed` outlived the orb: a screen closed mid-blink left a
+  /// 100ms timer behind, and a widget test that ended there failed at random
+  /// ("A Timer is still pending even after the widget tree was disposed").
+  Future<void> _wait(int ms) {
+    final done = Completer<void>();
+    late final Timer t;
+    t = Timer(Duration(milliseconds: ms), () {
+      _waits.remove(t);
+      done.complete();
+    });
+    _waits.add(t);
+    return done.future;
+  }
 
   /// Kotlin: `delay(Random.nextLong(2400, 5200))`, shut to 8%, 100ms, open.
   void _scheduleBlink() {
