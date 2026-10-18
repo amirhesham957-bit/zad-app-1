@@ -111,3 +111,16 @@ export function budgetUsage(
   }
   return { daily_cap: cap, today: t, last_7_days: w, month: m, monthly_free: MONTHLY_FREE };
 }
+
+/**
+ * Where the paid grounded search sits in the source chain (2026-10-18). Behind the free sources,
+ * a question about today or «the last time» was answered by whatever they had: the acceptance
+ * probe's «مين كسب كاس العالم للأندية آخر مرة؟» got Wikipedia's 2023 winner. With the paid key
+ * set, a live or «latest» question asks it first; the daily cap still guards the bill. Anything
+ * else keeps the free sources first, so the budget goes where freshness is the answer.
+ */
+export function withPaidGroundingFirst<T extends [string, unknown]>(sources: T[], paid: boolean, fresh: boolean): T[] {
+  if (!paid || !fresh) return sources;
+  const grounded = sources.filter(([name]) => name === "gemini_google_search");
+  return [...grounded, ...sources.filter(([name]) => name !== "gemini_google_search")];
+}

@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
   budgetUsage,
+  withPaidGroundingFirst,
   dailyCap,
   DEFAULT_DAILY_CAP,
   groundingPlan,
@@ -92,4 +93,15 @@ Deno.test("usage: today, the last seven days and the month, from the daily rows"
     monthly_free: 5000,
   });
   assertEquals(budgetUsage([], "2026-10-01", 150).month, 0);
+});
+
+Deno.test("with the paid key, a fresh question asks the grounded search first", () => {
+  const chain: Array<[string, number]> = [["search_api", 1], ["gemini_google_search", 2], ["wikipedia", 3]];
+  assertEquals(withPaidGroundingFirst(chain, true, true).map(([n]) => n), ["gemini_google_search", "search_api", "wikipedia"]);
+});
+
+Deno.test("a settled question, or no paid key, keeps the free sources first", () => {
+  const chain: Array<[string, number]> = [["search_api", 1], ["gemini_google_search", 2], ["wikipedia", 3]];
+  assertEquals(withPaidGroundingFirst(chain, true, false), chain);
+  assertEquals(withPaidGroundingFirst(chain, false, true), chain);
 });
