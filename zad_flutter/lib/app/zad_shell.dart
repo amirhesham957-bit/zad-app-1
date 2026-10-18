@@ -53,6 +53,7 @@ import 'package:zad/shared/notifications/application/notifications_controller.da
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
+import 'package:zad/shared/session/product_events.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
 import 'package:zad/shared/sync/live_sync.dart';
@@ -89,6 +90,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   @override
   void initState() {
     super.initState();
+    logAppOpen(ref.read(productEventsProvider));
     // Where the customer was before Android killed the backgrounded app
     // (last_tab.dart) — not الرئيسية every time.
     try {
@@ -155,6 +157,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       },
       onResume: () {
         if (!mounted) return;
+        logAppOpen(ref.read(productEventsProvider));
         unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
         // The medicines change from outside the app too: «امسح سيبرو» to the
         // Telegram bot deleted the row on the server (2026-10-05), and the
@@ -206,10 +209,15 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     super.dispose();
   }
 
-  void _show(ZadNavDestination tab) => setState(() {
-    _tab = tab;
-    _opened.add(tab);
-  });
+  void _show(ZadNavDestination tab) {
+    if (tab != _tab) {
+      unawaited(ref.read(productEventsProvider).log('tab.${tab.name}'));
+    }
+    setState(() {
+      _tab = tab;
+      _opened.add(tab);
+    });
+  }
 
   String get _title => switch (_tab) {
     ZadNavDestination.money => 'فلوسي',
@@ -222,6 +230,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   /// A route id from the drawer or a section tile.
   Future<void> _go(String id) async {
+    unawaited(ref.read(productEventsProvider).log('section.$id'));
     switch (id) {
       case 'home':
         _show(ZadNavDestination.home);
