@@ -1,3 +1,5 @@
+> ⛔ **اتلغت كخطة يوم ٢٠٢٦-١٠-١٨.** الخطة الوحيدة دلوقتي [`ZAD_PLAN.md`](./ZAD_PLAN.md). الملف ده مرجع للتاريخ والقرارات بس — ماتاخدش منه ترتيب ولا بنود.
+
 # ZAD — Product Plan (synthesis)
 
 > Place at `docs/agent/PRODUCT_PLAN.md`. This is the *why* and the *order*. The *how* lives in
