@@ -8291,11 +8291,22 @@ async function handleRequest(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
       }
       const sbDaily = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      const { data: accounts, error } = await sbDaily.from("zad_users").select("id").limit(500);
-      if (error) {
-        return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: CORS_HEADERS });
+      // الحسابات النشطة بس (zad_active_user_ids، ZAD_DREAM_PLAN.md ع٦): ٣ من ٦ عمرهم ما كلّموا زاد وكانوا
+      // بياخدوا تحليل كل يوم. لو الدالة وقعت، الكل زي الأول — العقل مايسكتش بسببها.
+      const { data: active, error: activeErr } = await sbDaily.rpc("zad_active_user_ids", { p_days: 7 });
+      let ids: string[];
+      if (!activeErr && Array.isArray(active)) {
+        ids = (active as Array<string | { zad_active_user_ids?: string }>)
+          .map((r) => typeof r === "string" ? r : String(r?.zad_active_user_ids ?? ""))
+          .filter(Boolean);
+      } else {
+        console.error("zad_active_user_ids failed, analysing every account:", activeErr?.message);
+        const { data: accounts, error } = await sbDaily.from("zad_users").select("id").limit(500);
+        if (error) {
+          return new Response(JSON.stringify({ ok: false, error: error.message }), { status: 500, headers: CORS_HEADERS });
+        }
+        ids = (accounts ?? []).map((a: { id: string }) => a.id);
       }
-      const ids = (accounts ?? []).map((a: { id: string }) => a.id);
       const work = runDailyForUsers(ids, async (userId) => {
         try {
           const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-brain`, {
