@@ -153,6 +153,12 @@ abstract final class ZadIcons {
   /// The chosen one of several options.
   static const IconData selected = Icons.check_circle;
 
+  /// The commitment ring, spending behind the calendar.
+  static const IconData onPace = Icons.eco;
+
+  /// The commitment ring, spending ahead of the calendar.
+  static const IconData aheadOfPace = Icons.speed;
+
   /// زاد is quieter for a while (slice 29).
   static const IconData quiet = Icons.notifications_paused;
 
