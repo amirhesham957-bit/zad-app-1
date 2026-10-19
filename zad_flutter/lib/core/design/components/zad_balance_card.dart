@@ -17,6 +17,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/elevation.dart';
+import 'package:zad/core/design/foundation/glass_surface.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -174,16 +175,30 @@ class ZadBalanceCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: ZadSpacing.lg),
-                      _Chips(
-                        spent: spent,
-                        committed: committed,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: ZadSpacing.lg),
-                      _PaceBar(
-                        spent: _spentFraction,
-                        elapsed: _periodFraction,
-                        aheadOfPace: _aheadOfPace,
+                      // The month's detail sits on one pane of frosted glass
+                      // over the glows (ZAD_PLAN ٢.٥): one blur pass, never
+                      // one per chip.
+                      ZadGlass.onDark(
+                        key: const ValueKey<String>('balance-glass'),
+                        radius: ZadRadii.cardLarge,
+                        padding: const EdgeInsets.all(ZadSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            _Chips(
+                              spent: spent,
+                              committed: committed,
+                              currency: currency,
+                            ),
+                            const SizedBox(height: ZadSpacing.md),
+                            _PaceBar(
+                              spent: _spentFraction,
+                              elapsed: _periodFraction,
+                              aheadOfPace: _aheadOfPace,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     if (onQuickExpense != null ||

@@ -64,6 +64,16 @@ void main() {
     await _leave(tester);
   });
 
+  testWidgets('each plan is a pane of frosted glass over the backdrop', (
+    tester,
+  ) async {
+    await _pump(tester);
+    for (final plan in <String>['basic', 'plus', 'ultra']) {
+      expect(find.byKey(ValueKey<String>('plan-glass-$plan')), findsOneWidget);
+    }
+    await _leave(tester);
+  });
+
   testWidgets('picking a plan throws confetti and names it on the button', (
     tester,
   ) async {

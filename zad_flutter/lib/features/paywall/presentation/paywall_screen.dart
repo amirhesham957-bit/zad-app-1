@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:zad/core/design/foundation/glass_surface.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -539,27 +540,21 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  Widget _card(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 200),
-    decoration: BoxDecoration(
-      color: selected
-          ? ZadColors.surfaceVariant.withValues(alpha: 0.6)
-          : ZadColors.surface,
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(
-        width: selected ? 2 : 1,
-        color: selected
-            ? ZadColors.forestEmerald
-            : ZadColors.outline.withValues(alpha: 0.5),
-      ),
-      boxShadow: <BoxShadow>[
-        BoxShadow(
-          color: ZadColors.shadowSpot,
-          blurRadius: selected ? 16 : 4,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
+  // Frosted glass over the drifting backdrop (ZAD_PLAN ٢.٥). No drop
+  // shadow: under a translucent pane it shows through as a smudge, and the
+  // edge is what makes the pane read.
+  Widget _card(BuildContext context) => ZadGlass(
+    key: ValueKey<String>('plan-glass-${plan.name}'),
+    radius: 22,
+    blur: 16,
+    padding: EdgeInsets.zero,
+    tint: selected
+        ? ZadColors.surfaceVariant.withValues(alpha: 0.6)
+        : ZadColors.surface.withValues(alpha: 0.55),
+    edge: selected
+        ? ZadColors.forestEmerald
+        : ZadColors.outline.withValues(alpha: 0.5),
+    edgeWidth: selected ? 2 : 1,
     child: Material(
       color: Colors.transparent,
       child: InkWell(
