@@ -377,6 +377,18 @@ void main() {
     );
   });
 
+  testWidgets('home says how much of the spending it sees (٣.٤)', (
+    tester,
+  ) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    // Day 27 of 31, 3179.5 recorded against a confirmed 8000.
+    expect(find.text('أنا شايف حوالي 50–60٪ من مصروفك'), findsOneWidget);
+  });
+
   testWidgets(
     '"خصم سريع" opens the quick expense sheet, send held till valid',
     (tester) async {
