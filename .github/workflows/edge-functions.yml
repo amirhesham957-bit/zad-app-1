@@ -145,17 +145,20 @@ jobs:
       - name: Run scratch SQL tests
         run: |
           set -euo pipefail
-          while read -r scaffold migration test; do
-            [ -z "$scaffold" ] && continue
+          # Each line: the files to run, in order, on a fresh database; the last is the test.
+          while read -r -a files; do
+            [ "${#files[@]}" -eq 0 ] && continue
+            test="${files[-1]}"
             db="t_$(basename "$test" .sql)"
             echo "::group::$test"
             createdb "$db"
-            for f in "$scaffold" "$migration" "$test"; do
+            for f in "${files[@]}"; do
               psql -d "$db" -v ON_ERROR_STOP=1 -q -f "$f"
             done
             echo "::endgroup::"
           done <<'LIST'
-          supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/sql/tests/purchase_door_test.sql
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/sql/tests/purchase_door_test.sql
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/sql/tests/purchase_door_wallet_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
