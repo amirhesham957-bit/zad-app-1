@@ -13,8 +13,10 @@ import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/domain/price_games.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
+import 'package:zad/shared/companion/presentation/pet_price_games.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -218,6 +220,83 @@ void main() {
     expect(find.byKey(const ValueKey<String>('pet-game-ball')), findsNothing);
     expect(find.byKey(const ValueKey<String>('pet-game-again')), findsOne);
     // The round ends with a pat.
+    expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  const facts = <PriceFact>[
+    PriceFact(label: 'رز', price: 35, source: PriceSource.crowd),
+    PriceFact(label: 'لبن', price: 48, source: PriceSource.crowd),
+    PriceFact(label: 'عيش', price: 5, source: PriceSource.yours),
+    PriceFact(label: 'زيت', price: 95, source: PriceSource.yours),
+  ];
+
+  testWidgets(
+    'guess the price: right answers count, the source shows, a pat ends it',
+    (tester) async {
+      final rounds = guessRounds(facts, math.Random(3));
+      final container = await pump(
+        tester,
+        PetGuessGame(name: 'زادو', facts: facts, rng: math.Random(3)),
+      );
+      expect(find.text('سؤال 1 من 4 · صح 0'), findsOneWidget);
+      for (final r in rounds) {
+        await tester.tap(
+          find.byKey(ValueKey<String>('guess-option-${r.answer}')),
+        );
+        await tester.pump();
+        final source = find.byKey(const ValueKey<String>('guess-source'));
+        expect(tester.widget<Text>(source).data, contains(r.fact.source.label));
+        await tester.tap(find.byKey(const ValueKey<String>('guess-next')));
+        await tester.pump();
+      }
+      expect(find.text('4 من 4'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('guess-verdict')), findsOne);
+      expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
+      await tester.pump(const Duration(seconds: 2));
+    },
+  );
+
+  testWidgets('guess the price with too few prices says so, invents none', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      PetGuessGame(name: 'زادو', facts: facts.take(1).toList()),
+    );
+    expect(find.byKey(const ValueKey<String>('price-game-empty')), findsOne);
+    expect(find.byKey(const ValueKey<String>('guess-option-0')), findsNothing);
+  });
+
+  testWidgets('price memory: a wrong pair turns back; every pair ends it', (
+    tester,
+  ) async {
+    final deck = memoryDeck(facts, math.Random(5));
+    final container = await pump(
+      tester,
+      PetMemoryGame(name: 'زادو', facts: facts, rng: math.Random(5)),
+    );
+    Future<void> tap(int i) async {
+      await tester.tap(find.byKey(ValueKey<String>('memory-card-$i')));
+      await tester.pump();
+    }
+
+    final wrong = deck.indexWhere((c) => c.pair != deck[0].pair);
+    await tap(0);
+    await tap(wrong);
+    expect(find.text(deck[0].text), findsOneWidget);
+    await tester.pump(PetMemoryGame.peek);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(deck[0].text), findsNothing);
+
+    for (var p = 0; p < 4; p++) {
+      await tap(deck.indexWhere((c) => c.pair == p));
+      await tap(deck.lastIndexWhere((c) => c.pair == p));
+    }
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey<String>('price-game-done')), findsOne);
+    final status = find.byKey(const ValueKey<String>('memory-status'));
+    expect(tester.widget<Text>(status).data, contains('ذاكرة حديد'));
     expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
     await tester.pump(const Duration(seconds: 2));
   });
