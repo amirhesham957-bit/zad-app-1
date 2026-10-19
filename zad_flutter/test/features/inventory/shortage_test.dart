@@ -228,4 +228,88 @@ void main() {
       expect(lines, isEmpty);
     });
   });
+
+  group('an occasional item (ZAD_PLAN ٣.١٠)', () {
+    InventoryItem herring({
+      int quantity = 0,
+      String? mode,
+      bool history = false,
+      DateTime? expiry,
+    }) => InventoryItem(
+      id: 'i-رنجة',
+      userId: 'user-1',
+      itemName: 'رنجة',
+      quantity: quantity,
+      lowStockThreshold: 1,
+      expiryDate: expiry,
+      restockMode: mode,
+      occasionalByHistory: history,
+    );
+
+    test('at zero is not a shortage, by history or by the word', () {
+      expect(
+        shortagesIn(<InventoryItem>[herring(history: true)], today: today),
+        isEmpty,
+      );
+      expect(
+        shortagesIn(<InventoryItem>[
+          herring(mode: restockOccasional),
+        ], today: today),
+        isEmpty,
+      );
+      expect(
+        shortagesIn(<InventoryItem>[
+          herring(quantity: 1, history: true),
+        ], today: today),
+        isEmpty,
+        reason: 'at the threshold is not low either',
+      );
+    });
+
+    test('«دي أساسية» beats the history', () {
+      final s = shortagesIn(<InventoryItem>[
+        herring(history: true, mode: restockStaple),
+      ], today: today);
+      expect(s.single.reason, ShortageReason.outOfStock);
+    });
+
+    test('still counts as expired — that is the jar in the house', () {
+      final s = shortagesIn(<InventoryItem>[
+        herring(quantity: 2, history: true, expiry: DateTime.utc(2026, 9, 2)),
+      ], today: today);
+      expect(s.single.reason, ShortageReason.expired);
+    });
+
+    test('a staple next to it is still short', () {
+      final s = shortagesIn(<InventoryItem>[
+        herring(history: true),
+        item('لبن', quantity: 0),
+      ], today: today);
+      expect(s.map((x) => x.item.itemName), <String>['لبن']);
+    });
+
+    test(
+      'the word and the verdict survive the cache; only the word is sent',
+      () {
+        final h = herring(history: true, mode: restockOccasional);
+        final back = InventoryItem.fromJson(h.toCacheJson());
+        expect(back.restockMode, restockOccasional);
+        expect(back.occasionalByHistory, isTrue);
+        expect(h.toUpsertJson()['restock_mode'], restockOccasional);
+        expect(h.toUpsertJson().containsKey('restock_occasional'), isFalse);
+        expect(
+          herring().toUpsertJson().containsKey('restock_mode'),
+          isFalse,
+          reason: 'no word, nothing sent — the history keeps deciding',
+        );
+        expect(
+          InventoryItem.fromJson(<String, dynamic>{
+            'id': 'x',
+            'restock_mode': 'sometimes',
+          }).restockMode,
+          isNull,
+        );
+      },
+    );
+  });
 }

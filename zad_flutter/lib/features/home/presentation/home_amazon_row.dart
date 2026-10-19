@@ -186,9 +186,9 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
     final stock = groupPantry(inventory);
     final needs = <(String, int, String)>[
       for (final g in stock)
-        if (g.isOut) (g.name, 3, 'خلص من مخزونك'),
+        if (g.isShortOut) (g.name, 3, 'خلص من مخزونك'),
       for (final g in stock)
-        if (!g.isOut && g.isLow) (g.name, 2, 'قارب على النفاد'),
+        if (!g.isOut && g.isShortLow) (g.name, 2, 'قارب على النفاد'),
       for (final s in shopping)
         if (!s.isPurchased) (s.itemName, 2, 'في قايمة التسوق'),
     ];

@@ -188,4 +188,99 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'حفظ'), findsOneWidget);
     });
   });
+
+  group('an occasional item (ZAD_PLAN ٣.١٠)', () {
+    final milk = _i('1', 'لبن', qty: 0, category: 'الألبان');
+    const herring = InventoryItem(
+      id: '2',
+      userId: 'u',
+      itemName: 'رنجة',
+      quantity: 0,
+      category: 'اللحوم',
+      occasionalByHistory: true,
+    );
+
+    Future<_EditingPantry> pump(WidgetTester tester) async {
+      final pantryCtl = _EditingPantry(
+        pantry.PantryView(items: <InventoryItem>[milk, herring]),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            nowProvider.overrideWithValue(() => _now),
+            pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
+            shoppingControllerProvider.overrideWith(QuietShopping.new),
+          ],
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: const Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(body: PantryView()),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return pantryCtl;
+    }
+
+    testWidgets('at zero it is not one of the shortages', (tester) async {
+      await pump(tester);
+      expect(
+        find.textContaining('نواقص المخزون (1)', findRichText: true),
+        findsOneWidget,
+        reason: 'the milk only',
+      );
+      expect(find.text('منخفض'), findsOneWidget, reason: 'on the milk only');
+    });
+
+    testWidgets('the edit dialog says so, and only a change is written', (
+      tester,
+    ) async {
+      final pantryCtl = await pump(tester);
+
+      // The milk: a staple until the customer flips it.
+      await tester.tap(find.byTooltip('تعديل الصنف').first);
+      await tester.pump(const Duration(milliseconds: 500));
+      final toggle = find.widgetWithText(SwitchListTile, 'بشتريها على فترات');
+      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+      await tester.tap(toggle);
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(pantryCtl.modes, <String?>[restockOccasional]);
+
+      // The herring: already occasional by its history; saving untouched
+      // writes no word, so the history keeps deciding.
+      await tester.tap(find.byTooltip('تعديل الصنف').last);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        tester
+            .widget<SwitchListTile>(
+              find.widgetWithText(SwitchListTile, 'بشتريها على فترات'),
+            )
+            .value,
+        isTrue,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(pantryCtl.modes, <String?>[restockOccasional, null]);
+    });
+  });
+}
+
+/// A pantry that records the word each [edit] carried.
+class _EditingPantry extends QuietPantry {
+  new(super.view);
+
+  final List<String?> modes = <String?>[];
+
+  @override
+  Future<void> edit(
+    InventoryItem item, {
+    required String itemName,
+    required int quantity,
+    String? unit,
+    String? restockMode,
+  }) async => modes.add(restockMode);
 }

@@ -25,6 +25,8 @@ class InventoryItem {
     this.expiryDate,
     this.familyId,
     this.createdAt,
+    this.restockMode,
+    this.occasionalByHistory = false,
     this.isPending = false,
   });
 
@@ -43,6 +45,11 @@ class InventoryItem {
       final String s => DateTime.parse(s).toUtc(),
       _ => null,
     },
+    restockMode: switch (json['restock_mode']) {
+      final String m when m == restockStaple || m == restockOccasional => m,
+      _ => null,
+    },
+    occasionalByHistory: json['restock_occasional'] as bool? ?? false,
     isPending: json['_pending'] as bool? ?? false,
   );
 
@@ -83,8 +90,25 @@ class InventoryItem {
   /// When the row was created.
   final DateTime? createdAt;
 
+  /// The customer's word: [restockStaple], [restockOccasional], or null when
+  /// they never said and the purchase history decides (ZAD_PLAN ٣.١٠).
+  final String? restockMode;
+
+  /// The server's verdict from the purchase history (`restock_occasional`, a
+  /// computed column): bought every month or more, or once long ago. Read
+  /// only — the device never sees the history itself.
+  final bool occasionalByHistory;
+
   /// Whether this row is still queued and has not reached the server.
   final bool isPending;
+
+  /// Bought every couple of months (herring), not a staple: at zero it is not
+  /// «ناقص» and nothing reminds about it. The customer's word wins either way.
+  bool get isOccasional => switch (restockMode) {
+    restockOccasional => true,
+    restockStaple => false,
+    _ => occasionalByHistory,
+  };
 
   /// The threshold actually applied.
   ///
@@ -132,6 +156,7 @@ class InventoryItem {
     String? category,
     int? lowStockThreshold,
     DateTime? expiryDate,
+    String? restockMode,
     bool? isPending,
     bool clearExpiry = false,
   }) => InventoryItem(
@@ -145,6 +170,8 @@ class InventoryItem {
     expiryDate: clearExpiry ? null : (expiryDate ?? this.expiryDate),
     familyId: familyId,
     createdAt: createdAt,
+    restockMode: restockMode ?? this.restockMode,
+    occasionalByHistory: occasionalByHistory,
     isPending: isPending ?? this.isPending,
   );
 
@@ -165,6 +192,7 @@ class InventoryItem {
     if (category != null) 'category': category,
     if (lowStockThreshold != null) 'low_stock_threshold': lowStockThreshold,
     'expiry_date': expiryDate == null ? null : _iso(expiryDate!),
+    if (restockMode != null) 'restock_mode': restockMode,
   };
 
   /// The row as the cache keeps it, pending flag and all.
@@ -172,9 +200,16 @@ class InventoryItem {
     ...toUpsertJson(),
     if (familyId != null) 'family_id': familyId,
     if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+    if (occasionalByHistory) 'restock_occasional': true,
     '_pending': isPending,
   };
 }
+
+/// `restock_mode`: a staple, reminded about when it runs low.
+const String restockStaple = 'staple';
+
+/// `restock_mode`: bought every couple of months, never «ناقص».
+const String restockOccasional = 'occasional';
 
 /// Reads a `date` column as a civil date carried at UTC midnight.
 DateTime? _date(Object? value) => switch (value) {
