@@ -2,6 +2,10 @@
 /// by hand, then tick the rows to import. Nothing is written before the
 /// review, and a row already recorded (same amount, direction, day and a
 /// fitting description) is skipped and counted.
+///
+/// A PDF or a photo of the statement skips the mapping: the server reads it
+/// (`analyze_statement`) and the rows land in the same review, with a row the
+/// statement's own balance disagrees with left unticked (ZAD_PLAN ٣.٣).
 library;
 
 import 'dart:async';
@@ -18,8 +22,10 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/merchant_categories.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
@@ -31,12 +37,21 @@ Future<void> showStatementImportScreen(BuildContext context) =>
       MaterialPageRoute<void>(builder: (_) => const StatementImportScreen()),
     );
 
+/// A statement file the screen opens on, instead of asking for one.
+typedef StatementFile = ({String name, Uint8List bytes});
+
+/// Larger than this is not a statement a phone should upload in one go.
+const int _maxScanBytes = 10 * 1024 * 1024;
+
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// The import.
 class StatementImportScreen extends ConsumerStatefulWidget {
-  /// Creates the screen.
-  const new({super.key});
+  /// Creates the screen; with [initialFile], it reads that file at once.
+  const new({super.key, this.initialFile});
+
+  /// A file shared to Zad from another app.
+  final StatementFile? initialFile;
 
   @override
   ConsumerState<StatementImportScreen> createState() =>
@@ -54,37 +69,129 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
   List<PreviewRow> _rows = const <PreviewRow>[];
   Set<int> _checked = <int>{};
   bool _importing = false;
-  bool _readFailed = false;
+  bool _reading = false;
+  String? _error;
+  ScannedStatement? _scanned;
+
+  @override
+  void initState() {
+    super.initState();
+    final file = widget.initialFile;
+    if (file == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_open(file.name, file.bytes));
+    });
+  }
 
   Future<void> _pick() async {
-    setState(() => _readFailed = false);
+    setState(() => _error = null);
     // The picker throws on a second tap while it is open (Android's
     // `already_active`) or when the system refuses; that was uncaught.
     final PlatformFile? file;
     try {
       file = await FilePicker.pickFile();
     } on Object {
-      if (mounted) setState(() => _readFailed = true);
+      if (mounted) setState(() => _error = _unreadableFile);
       return;
     }
     if (file == null || !mounted) return;
+    final Uint8List bytes;
+    try {
+      bytes = await file.xFile.readAsBytes();
+    } on Object {
+      if (mounted) setState(() => _error = _unreadableFile);
+      return;
+    }
+    if (mounted) await _open(file.name, bytes);
+  }
+
+  static const String _unreadableFile =
+      'تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف';
+
+  Future<void> _open(String name, Uint8List bytes) async {
+    switch (statementFileKind(name)) {
+      case StatementFileKind.csv:
+        _openCsv(bytes);
+      case StatementFileKind.pdf || StatementFileKind.image:
+        await _scan(name, bytes);
+      case null:
+        setState(() => _error = _unreadableFile);
+    }
+  }
+
+  void _openCsv(Uint8List bytes) {
     CsvTable? table;
     try {
-      final bytes = await file.xFile.readAsBytes();
       table = readCsv(utf8.decode(bytes, allowMalformed: true));
     } on Object {
       table = null;
     }
-    if (!mounted) return;
     if (table != null && table.headers.isNotEmpty) {
       setState(() {
+        _scanned = null;
         _table = table;
         _date = _title = _amount = _category = null;
         _step = 1;
       });
     } else {
-      setState(() => _readFailed = true);
+      setState(() => _error = _unreadableFile);
     }
+  }
+
+  Future<void> _scan(String name, Uint8List bytes) async {
+    if (bytes.length > _maxScanBytes) {
+      setState(
+        () => _error =
+            'الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات',
+      );
+      return;
+    }
+    final userId = ref.read(signedInUserIdProvider)() ?? '';
+    setState(() {
+      _error = null;
+      _reading = true;
+    });
+    String? error;
+    ScannedStatement? scanned;
+    try {
+      final json = await ref
+          .read(statementReaderProvider)
+          .read(
+            userId: userId,
+            bytes: bytes,
+            mimeType: statementMimeType(name),
+          );
+      scanned = json == null
+          ? null
+          : readScannedStatement(
+              json,
+              customCategory: ref.read(merchantCategoriesProvider).categoryFor,
+            );
+      if (scanned == null) {
+        error =
+            'ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو '
+            'ملف PDF من تطبيق البنك';
+      }
+    } on Object catch (e) {
+      error =
+          serverRefusal(e)?.message ??
+          'مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني';
+    }
+    if (!mounted) return;
+    setState(() {
+      _reading = false;
+      _error = error;
+      if (scanned != null) {
+        _scanned = scanned;
+        _rows = scanned.rows;
+        // A row the statement's balance disagrees with waits for a tick.
+        _checked = <int>{
+          for (final r in scanned.rows)
+            if (r.balanceOk != false) r.rowIndex,
+        };
+        _step = 2;
+      }
+    });
   }
 
   void _preview() {
@@ -111,6 +218,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
     final repo = ref.read(transactionsRepositoryProvider);
     final userId = ref.read(signedInUserIdProvider)() ?? '';
     final existing = repo.allCached();
+    final source = _scanned == null ? 'csv_import' : 'statement_scan';
     var imported = 0;
     var skipped = 0;
     for (final row in _rows.where((r) => _checked.contains(r.rowIndex))) {
@@ -132,7 +240,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
                 createdAt: at,
                 wallet: Wallet.card,
                 category: row.category,
-                sourceType: 'csv_import',
+                sourceType: source,
               )
             : ZadTransaction.income(
                 id: id,
@@ -142,7 +250,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
                 createdAt: at,
                 wallet: Wallet.card,
                 category: row.category,
-                sourceType: 'csv_import',
+                sourceType: source,
               ),
       );
       imported++;
@@ -160,6 +268,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
       _importing = false;
       _step = 0;
       _table = null;
+      _scanned = null;
       _rows = const <PreviewRow>[];
     });
   }
@@ -171,7 +280,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('استيراد كشف حساب')),
       body: switch (_step) {
-        0 => _PickStep(readFailed: _readFailed, onPick: _pick),
+        0 => _PickStep(error: _error, reading: _reading, onPick: _pick),
         1 => _MappingStep(
           headers: _table!.headers,
           date: _date,
@@ -187,6 +296,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
           onConfirm: _preview,
         ),
         _ => _PreviewStep(
+          scanned: _scanned,
           rows: _rows,
           checked: _checked,
           importing: _importing,
@@ -201,9 +311,10 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
 }
 
 class _PickStep extends StatelessWidget {
-  const new({required this.readFailed, required this.onPick});
+  const new({required this.error, required this.reading, required this.onPick});
 
-  final bool readFailed;
+  final String? error;
+  final bool reading;
   final Future<void> Function() onPick;
 
   @override
@@ -216,29 +327,39 @@ class _PickStep extends StatelessWidget {
           const Icon(Icons.upload_file, size: 56, color: ZadColors.green700),
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            'اختر ملف CSV من كشف حسابك — هتحدد بنفسك أي عمود هو التاريخ '
-            'والمبلغ قبل الاستيراد، ومفيش حاجة بتتسجل غير بعد ما تراجعها.',
+            'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. '
+            'زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل '
+            'غير بعد ما تراجعها.',
             textAlign: TextAlign.center,
             style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: 20),
-          if (readFailed) ...<Widget>[
+          if (error case final message?) ...<Widget>[
             Text(
-              'تعذّرت قراءة الملف — تأكد إنه ملف CSV صحيح',
+              message,
+              textAlign: TextAlign.center,
               style: ZadType.bodySmall.copyWith(
                 color: ZadColors.terracottaRust,
               ),
             ),
             const SizedBox(height: ZadSpacing.md),
           ],
-          FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 48),
-              shape: const StadiumBorder(),
+          if (reading) ...<Widget>[
+            const CircularProgressIndicator(),
+            const SizedBox(height: ZadSpacing.md),
+            Text(
+              'بقرا الكشف… الكشف الطويل بياخد دقيقة',
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
-            onPressed: () => unawaited(onPick()),
-            child: const Text('اختيار ملف CSV'),
-          ),
+          ] else
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                shape: const StadiumBorder(),
+              ),
+              onPressed: () => unawaited(onPick()),
+              child: const Text('اختيار الكشف'),
+            ),
         ],
       ),
     ),
@@ -360,6 +481,7 @@ class _ColumnPicker extends StatelessWidget {
 
 class _PreviewStep extends StatelessWidget {
   const new({
+    required this.scanned,
     required this.rows,
     required this.checked,
     required this.importing,
@@ -367,6 +489,7 @@ class _PreviewStep extends StatelessWidget {
     required this.onImport,
   });
 
+  final ScannedStatement? scanned;
   final List<PreviewRow> rows;
   final Set<int> checked;
   final bool importing;
@@ -387,6 +510,7 @@ class _PreviewStep extends StatelessWidget {
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
       ),
+      if (scanned case final s?) _CheckBanner(scanned: s),
       Expanded(
         child: rows.isEmpty
             ? const Padding(
@@ -480,6 +604,13 @@ class _RowCard extends StatelessWidget {
                         : ZadColors.inkMuted,
                   ),
                 ),
+                if (row.balanceOk == false)
+                  Text(
+                    'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ',
+                    style: ZadType.labelSmall.copyWith(
+                      color: ZadColors.terracottaRust,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -492,6 +623,59 @@ class _RowCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// What the statement's own balance said, in one line above the rows.
+class _CheckBanner extends StatelessWidget {
+  const new({required this.scanned});
+
+  final ScannedStatement scanned;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, tone, text) = switch (scanned.check) {
+      StatementCheck.balanced => (
+        Icons.verified_outlined,
+        ZadColors.green600,
+        'الأرقام متطابقة مع رصيد الكشف',
+      ),
+      StatementCheck.mismatch => (
+        Icons.error_outline,
+        ZadColors.terracottaRust,
+        'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها',
+      ),
+      StatementCheck.unknown => (
+        Icons.info_outline,
+        ZadColors.inkMuted,
+        'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد',
+      ),
+    };
+    final dropped = scanned.dropped;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        ZadSpacing.lg,
+        0,
+        ZadSpacing.lg,
+        ZadSpacing.sm,
+      ),
+      child: ZadCard(
+        color: tone.withValues(alpha: 0.08),
+        padding: const EdgeInsets.all(ZadSpacing.md),
+        child: Row(
+          children: <Widget>[
+            Icon(icon, color: tone),
+            const SizedBox(width: ZadSpacing.sm),
+            Expanded(
+              child: Text(
+                dropped > 0 ? '$text. وفي $dropped صف ماقدرتش أقراه.' : text,
+                style: ZadType.bodySmall.copyWith(color: tone),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
