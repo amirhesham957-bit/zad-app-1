@@ -3,8 +3,11 @@
 /// because the customer has not said hello yet after being away.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/campaigns/application/market_season.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
@@ -22,17 +25,51 @@ class CompanionController extends AsyncNotifier<CompanionStatus?> {
   /// Asleep until greeted.
   bool get asleep => _asleep;
 
+  /// The cache's key for the last status the server gave.
+  static const String cacheKey = 'companion_status';
+
   @override
   Future<CompanionStatus?> build() async {
-    if (ref.watch(sessionControllerProvider) == null) return null;
-    final s = await _read();
+    final userId = ref.watch(sessionControllerProvider);
+    if (userId == null) return null;
+    // The companion as it was last time, drawn at once; the server's read
+    // follows. Without it every open drew the classic orb until the server
+    // answered — and for good when it did not — then jumped to the
+    // character: «بيهنج ويظهر شكل تاني» (owner, 2026-10-19).
+    final cached = ref.read(screenCacheProvider).read(cacheKey, userId);
+    if (cached != null && cached.isNotEmpty) {
+      unawaited(Future<void>.microtask(() => _firstRead(userId)));
+      return CompanionStatus.fromJson(cached.first);
+    }
+    final s = await _read(userId);
     _asleep = s != null && s.awayHours >= sleepAfterHours;
     return s;
   }
 
-  Future<CompanionStatus?> _read() async {
+  /// The server's first answer after a cached draw: its celebration and the
+  /// time away (which puts it to sleep) are only in this one.
+  Future<void> _firstRead(String userId) async {
+    final s = await _read(userId);
+    if (s == null || !ref.mounted) return;
+    _asleep = s.awayHours >= sleepAfterHours;
+    state = AsyncData<CompanionStatus?>(s);
+  }
+
+  Future<CompanionStatus?> _read([String? userId]) async {
     try {
-      return await ref.read(companionRemoteProvider).status();
+      final s = await ref.read(companionRemoteProvider).status();
+      if (!ref.mounted) return s;
+      final id = userId ?? ref.read(sessionControllerProvider);
+      if (s != null) {
+        unawaited(
+          ref.read(screenCacheProvider).write(
+            cacheKey,
+            id,
+            <Map<String, dynamic>>[s.toCacheJson()],
+          ),
+        );
+      }
+      return s;
     } on Object catch (e) {
       debugPrint('[companion] status failed: $e');
       return null;
