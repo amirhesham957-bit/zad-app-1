@@ -631,6 +631,57 @@ export function parseDoseCallback(data: string): { momentId: string; action: Dos
   return { momentId: parts[1], action };
 }
 
+// ── «اقفل يومك» (20261019140000) ───────────────────────────────────────────
+//
+// رسالة الليل من zad-brain (لحظة close_day) بأزرارها. أي زرار = اليوم اتقفل
+// (`zad_close_day_service`، اليوم من اللحظة نفسها) ونقط للرفيق مرة في اليوم. الزرارين
+// التانيين مابيكتبوش فلوس: بيطلبوا المصروف بالكلام، وده بيعدّي على لفة الوكيل وتأكيدها.
+//
+// الطول: "cd:" + uuid(36) + ":" + حرف = ٤١ بايت، تحت سقف تليجرام (٦٤).
+
+/** نفس الاسم في zad-brain/voiceMoments.ts — الفانكشنين منفصلتين في النشر. */
+export const CLOSE_DAY_MOMENT = "close_day";
+
+export type CloseDayOutcome = "all_good" | "cash" | "missing";
+
+export function closeDayKeyboard(momentId: string): InlineKeyboardButton[][] {
+  return [
+    [{ text: "✅ تمام كده", callback_data: `cd:${momentId}:o` }],
+    [
+      { text: "💵 صرفت كاش", callback_data: `cd:${momentId}:c` },
+      { text: "➕ في حاجة ناقصة", callback_data: `cd:${momentId}:m` },
+    ],
+  ];
+}
+
+/** "cd:<uuid>:o" (تمام) / "cd:<uuid>:c" (كاش) / "cd:<uuid>:m" (ناقص) */
+export function parseCloseDayCallback(data: string): { momentId: string; outcome: CloseDayOutcome } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "cd") return null;
+  const outcomes: Record<string, CloseDayOutcome> = { o: "all_good", c: "cash", m: "missing" };
+  const outcome = outcomes[parts[2]];
+  if (!outcome) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { momentId: parts[1], outcome };
+}
+
+/** الرد بعد الـRPC. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function closeDayReply(
+  outcome: CloseDayOutcome,
+  result: { ok?: boolean; already?: boolean; xp?: number; reason?: string } | null,
+): string {
+  if (!result) return "معلش، ماقدرتش أقفل يومك دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) {
+    return result.reason === "stale"
+      ? "الرسالة دي بتاعة يوم فات — هسألك تاني النهارده بالليل."
+      : "ماقدرتش ألاقي اليوم ده — هسألك تاني النهارده بالليل.";
+  }
+  const xp = !result.already && (result.xp ?? 0) > 0 ? ` (+${result.xp} نقطة لرفيقك)` : "";
+  if (outcome === "cash") return `تمام، يومك اتقفل${xp}. اكتبلي صرفت كام وفين، مثلاً: «صرفت ٥٠ كاش قهوة».`;
+  if (outcome === "missing") return `تمام، يومك اتقفل${xp}. قولّي إيه اللي ناقص وبكام، وأنا أسجله بعد ما تأكد.`;
+  return result.already ? "يومك متقفل خلاص ✅ تصبح على خير." : `يومك اتقفل ✅${xp} شكراً إنك خلّيتني أشوف كل حاجة.`;
+}
+
 // ── الرد بالكلام بدل الزرار (٢٠٢٦-٠٩-٢٥) ────────────────────────────────────
 //
 // البلاغ: «لما أقول لا مش بيقراها، بيقرا الموافقة بس». السبب الجذري كان في الـregex

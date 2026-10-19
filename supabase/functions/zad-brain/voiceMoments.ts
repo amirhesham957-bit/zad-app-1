@@ -49,9 +49,17 @@ export interface ComposedMoment {
 }
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
-export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge"]);
+export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day"]);
 /** بتتقال بالقالب بس، من غير صياغة موديل. */
-export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question"]);
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day"]);
+
+/** «اقفل يومك» (20261019140000): رسالة الليل بالأزرار. */
+export const CLOSE_DAY_MOMENT = "close_day";
+/**
+ * مكتوبة بس، بس بتروح تليجرام برضه — بأزرارها. باقي المكتوب بيفضل على الموبايل بس.
+ * نفس القايمة في zad-telegram-bot (CLOSE_DAY_MOMENT) للأزرار.
+ */
+export const TELEGRAM_TEXT_MOMENTS: ReadonlySet<string> = new Set([CLOSE_DAY_MOMENT]);
 
 /** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
 export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
@@ -641,6 +649,19 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `تصبح على خير${name ? ` يا ${name}` : ""}… نام كويس وارتاح، وأحلام سعيدة. ${reminder ? `${reminder}. ` : ""}أنا مستنياك الصبح.`,
       };
     }
+    case CLOSE_DAY_MOMENT: {
+      const cur = str(facts.currency, 10);
+      const seen = Array.isArray(facts.seen) ? (facts.seen as Array<{ name?: unknown; amount?: unknown }>) : [];
+      const count = Math.max(Number(facts.seen_count) || 0, seen.length);
+      const listed = seen.slice(0, 3)
+        .map((x) => `${str(x?.name, 30) || "مصروف"} ${Math.round(Number(x?.amount) || 0)}${cur ? ` ${cur}` : ""}`);
+      const more = count - listed.length;
+      const things = count === 1 ? "حاجة واحدة" : count === 2 ? "حاجتين" : count <= 10 ? `${count} حاجات` : `${count} حاجة`;
+      const text = count === 0
+        ? "النهارده ماشفتش ولا مصروف. صرفت حاجة كاش؟"
+        : `النهارده شفت ${things}: ${listed.join("، ")}${more > 0 ? ` وكمان ${more}` : ""}. فيه حاجة كاش؟`;
+      return { title: "🌙 اقفل يومك", text, speech: "" };
+    }
     case "tasbiha_reminder": {
       const streak = typeof facts.streak_days === "number" ? facts.streak_days : 0;
       return {
@@ -809,6 +830,14 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     });
     return granted === true;
   }
+  // قفل يومه من التطبيق بعد ما اللحظة اتسجلت = مفيش سؤال.
+  if (row.moment === CLOSE_DAY_MOMENT) {
+    const date = str(row.facts?.local_date, 10);
+    if (!date) return false;
+    const { data: closed } = await sb.from("zad_day_closes").select("local_date")
+      .eq("user_id", row.user_id).eq("local_date", date).limit(1);
+    return !closed || (closed as unknown[]).length === 0;
+  }
   if (!row.moment.startsWith("dose_")) return true;
   // لحظات الجرعة من السيرفر (20260915001000): item_ids + scheduled_at. لو اتسجل إنه خد أي دوا منهم
   // بعد ما اللحظة اتسجلت، مفيش زعل.
@@ -965,7 +994,7 @@ export async function processVoiceMoments(
       if (deps.hasChannel) {
         const reachable = await deps.hasChannel(row.user_id, {
           device: !TELEGRAM_ONLY_MOMENTS.has(deliveryMoment),
-          telegram: voice && !DEVICE_ONLY_MOMENTS.has(deliveryMoment),
+          telegram: (voice || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment)) && !DEVICE_ONLY_MOMENTS.has(deliveryMoment),
         }).catch(() => true);
         if (!reachable) {
           await sb.from("zad_voice_moments").update({
@@ -1025,16 +1054,16 @@ export async function processVoiceMoments(
       const device = TELEGRAM_ONLY_MOMENTS.has(deliveryMoment)
         ? "telegram_only"
         : await deps.pushDevice(row.user_id, composed.title, composed.text, data, voice);
-      const telegram = !voice
+      const telegram = !voice && !TELEGRAM_TEXT_MOMENTS.has(deliveryMoment)
         ? "not_for_text_moments"
         : DEVICE_ONLY_MOMENTS.has(deliveryMoment)
           ? "device_only"
           // تنبيه جرعة بياخد معرّف الصف معاه: البوت بيحوّله لزرار «✅ أخدت الجرعة»
-          // بيكتب في الداتابيز مباشرة (٢٠٢٦-٠٩-١٩).
+          // بيكتب في الداتابيز مباشرة (٢٠٢٦-٠٩-١٩). وقفلة اليوم كمان: أزرارها الـ٣.
           : await deps.pushTelegram(
-            row.user_id, composed.title, composed.text, true, deliveryMoment,
+            row.user_id, composed.title, composed.text, voice, deliveryMoment,
             composed.speech || composed.text, emotion,
-            DOSE_MOMENTS.has(deliveryMoment) ? row.id : undefined,
+            DOSE_MOMENTS.has(deliveryMoment) || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) ? row.id : undefined,
           );
 
       const delivered = device === "sent" || telegram === "delivered";
@@ -1533,6 +1562,8 @@ export const BUSY_DAY_APPOINTMENTS = 3;
  */
 export const CIRCUMSTANCE_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
   ...BUSY_DAY_OPTIONAL_MOMENTS, "challenge_milestone", "challenge_completed", "shopping_zone_warning", "receipt_reaction",
+  // «اقفل يومك» بتسكت في الظروف (ZAD_DREAM_PLAN §٧ فكرة ١).
+  CLOSE_DAY_MOMENT,
 ]);
 
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
