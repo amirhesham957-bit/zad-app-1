@@ -3,6 +3,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
+import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/dose_time.dart';
@@ -133,5 +134,65 @@ void main() {
       BriefKind.familyNeed,
     ]);
     expect(brief.last.detail, 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟');
+  });
+
+  group('«هيخلص إمتى؟» (ZAD_PLAN ٣.٥)', () {
+    List<BriefItem> brief(
+      List<InventoryItem> pantry,
+      Map<String, ConsumptionRate> rates,
+    ) => dailyBrief(
+      pantry: pantry,
+      doses: const <DoseSlot>[],
+      subscriptions: const <Subscription>[],
+      today: _today,
+      now: _now,
+      rates: rates,
+    );
+
+    test('a rate turns «ناقصك» into the day it runs out, soonest first', () {
+      // The owner's pantry on 2026-10-19: cheese 1 at 0.70/day, toast 1 at
+      // 0.27, and water out with no rate.
+      final lines = brief(
+        <InventoryItem>[
+          _item('توست', 1),
+          _item('جبنة', 1),
+          _item('مياه نوفا', 0),
+        ],
+        <String, ConsumptionRate>{
+          'توست': (perDay: 0.27, known: false),
+          ' جبنة ': (perDay: 0.70, known: true),
+          'مياه نوفا': (perDay: 1.1, known: false),
+        }.map((k, v) => MapEntry(rateKey(k), v)),
+      );
+      expect(lines.map((l) => l.kind), <BriefKind>[
+        BriefKind.shortage,
+        BriefKind.runningOut,
+      ]);
+      // Out of stock is «ناقصك», not a forecast.
+      expect(lines[0].title, 'ناقصك مياه نوفا');
+      expect(lines[1].title, 'هيخلص قريب: جبنة بكرة، توست حوالي بعد 3 أيام');
+      expect(lines[1].detail, startsWith('تقدير'));
+    });
+
+    test('far off is not news, and no rate keeps the plain line', () {
+      final lines = brief(
+        <InventoryItem>[_item('رز', 5), _item('زيت', 1)],
+        <String, ConsumptionRate>{'رز': (perDay: 0.5, known: true)},
+      );
+      expect(lines.single.kind, BriefKind.shortage);
+      expect(lines.single.title, 'ناقصك زيت');
+    });
+
+    test('brands of one staple run out together, at their summed rate', () {
+      final lines = brief(
+        <InventoryItem>[_item('مياه نوفا', 3), _item('مياه العين', 3)],
+        <String, ConsumptionRate>{
+          rateKey('مياه نوفا'): (perDay: 1, known: true),
+          rateKey('مياه العين'): (perDay: 1, known: true),
+        },
+      );
+      expect(lines.single.title, 'هيخلص قريب: مياه بعد 3 أيام');
+      expect(lines.single.detail, startsWith('من معدل'));
+    });
   });
 }

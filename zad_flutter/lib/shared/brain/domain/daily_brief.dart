@@ -10,6 +10,7 @@
 library;
 
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
@@ -35,6 +36,29 @@ enum BriefKind {
 
   /// Things someone in the family chat said the house needs («محتاجين عيش»).
   familyNeed,
+
+  /// Things still in the house that the usage rate says run out within days
+  /// («هيخلص إمتى؟», ZAD_PLAN ٣.٥).
+  runningOut,
+}
+
+/// Whole days [group] lasts at its members' rates, and whether any rate is
+/// only an estimate. Null when it is out, or no member has a rate.
+({int days, bool approximate})? _daysLeft(
+  PantryGroup group,
+  Map<String, ConsumptionRate> rates,
+) {
+  if (group.isOut) return null;
+  var perDay = 0.0;
+  var approximate = false;
+  for (final m in group.members) {
+    final rate = rates[rateKey(m.itemName)];
+    if (rate == null || rate.perDay <= 0) continue;
+    perDay += rate.perDay;
+    approximate = approximate || !rate.known;
+  }
+  if (perDay <= 0) return null;
+  return (days: (group.total / perDay).floor(), approximate: approximate);
 }
 
 /// A family-chat need: the insight it came as, the item, and who said it.
@@ -90,7 +114,9 @@ List<BriefItem> dailyBrief({
   double? spendable,
   String currency = '',
   List<FamilyNeed> familyNeeds = const <FamilyNeed>[],
+  Map<String, ConsumptionRate> rates = const <String, ConsumptionRate>{},
   int renewalWithinDays = 3,
+  int runOutWithinDays = 3,
   int max = 5,
 }) {
   final items = <BriefItem>[];
@@ -159,10 +185,18 @@ List<BriefItem> dailyBrief({
     );
   }
 
-  final short = <String>[
-    for (final g in groupPantry(pantry))
-      if (g.isLow) g.name,
-  ];
+  // An item with a forecast is said once, with its day, not again as «ناقصك».
+  final short = <String>[];
+  final runningOut = <(String, int, bool)>[];
+  for (final g in groupPantry(pantry)) {
+    final left = _daysLeft(g, rates);
+    if (left != null && left.days <= runOutWithinDays) {
+      runningOut.add((g.name, left.days, left.approximate));
+    } else if (g.isLow) {
+      short.add(g.name);
+    }
+  }
+  runningOut.sort((a, b) => a.$2.compareTo(b.$2));
   if (short.isNotEmpty) {
     final named = short.take(3).join('، ');
     final more = short.length > 3 ? ' و${short.length - 3} كمان' : '';
@@ -171,6 +205,23 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.shortage,
         title: 'ناقصك $named$more',
         detail: 'افتح بيتي وضيفهم لقايمة التسوق',
+      ),
+    );
+  }
+
+  if (runningOut.isNotEmpty) {
+    final named = runningOut
+        .take(3)
+        .map((r) => '${r.$1} ${r.$3 ? 'حوالي ' : ''}${_whenIn(r.$2)}')
+        .join('، ');
+    final more = runningOut.length > 3 ? ' و${runningOut.length - 3} كمان' : '';
+    items.add(
+      BriefItem(
+        kind: BriefKind.runningOut,
+        title: 'هيخلص قريب: $named$more',
+        detail: runningOut.any((r) => r.$3)
+            ? 'تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟'
+            : 'من معدل استهلاكك — ضيفهم لقايمة التسوق؟',
       ),
     );
   }

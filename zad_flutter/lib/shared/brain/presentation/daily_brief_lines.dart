@@ -17,6 +17,7 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/consumption_rates.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -37,6 +38,7 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
   final subs = ref.watch(subscriptionsControllerProvider);
   final budget = ref.watch(budgetControllerProvider);
   final needs = ref.watch(familyNeedsProvider);
+  final rates = ref.watch(consumptionRatesProvider).value;
   return dailyBrief(
     pantry: pantry,
     doses: doses,
@@ -46,6 +48,7 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
     spendable: budget.snapshot == null ? null : budget.spendable,
     currency: budget.snapshot?.currency ?? '',
     familyNeeds: needs,
+    rates: rates ?? const {},
     max: 1 << 20,
   );
 });
@@ -112,7 +115,9 @@ class DailyBriefLines extends ConsumerWidget {
         ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
       ),
       BriefKind.overspent || BriefKind.renewal => open(ShellTab.money),
-      BriefKind.shortage || BriefKind.familyNeed => open(ShellTab.household),
+      BriefKind.shortage ||
+      BriefKind.familyNeed ||
+      BriefKind.runningOut => open(ShellTab.household),
     };
 
     return Column(
@@ -153,6 +158,7 @@ class _Line extends StatelessWidget {
     BriefKind.renewal => (ZadIcons.card, ZadColors.info),
     BriefKind.shortage => (ZadIcons.shopping, ZadColors.forestEmerald),
     BriefKind.familyNeed => (ZadIcons.family, ZadColors.forestEmerald),
+    BriefKind.runningOut => (ZadIcons.shopping, ZadColors.mustardOchre),
   };
 
   @override
