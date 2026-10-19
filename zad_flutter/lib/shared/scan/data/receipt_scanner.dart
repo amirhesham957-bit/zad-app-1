@@ -77,6 +77,7 @@ abstract interface class ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   });
 }
 
@@ -99,6 +100,7 @@ class SupabaseReceiptScanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async {
     final response = await _client.functions.invoke(
       function,
@@ -107,7 +109,7 @@ class SupabaseReceiptScanner implements ReceiptScanner {
         'user_id': userId,
         'payload': <String, dynamic>{
           'image_base64': base64Encode(image),
-          'mime_type': 'image/jpeg',
+          'mime_type': mimeType,
         },
       },
     );

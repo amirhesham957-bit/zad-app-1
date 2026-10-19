@@ -8,6 +8,8 @@
 /// moment where anybody could have caught them.
 library;
 
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
@@ -196,7 +198,18 @@ class ScanController extends Notifier<ScanView> {
   ScanView build() => const ScanView();
 
   /// Takes a photograph and has it read.
-  Future<void> scan(ReceiptImageSource source) async {
+  Future<void> scan(ReceiptImageSource source) =>
+      _read(() => ref.read(receiptCameraProvider).capture(source));
+
+  /// Has a picture that is already here read — one shared to Zad from
+  /// another app (ZAD_PLAN ٣.٣).
+  Future<void> scanImage(Uint8List image, {String mimeType = 'image/jpeg'}) =>
+      _read(() async => image, mimeType: mimeType);
+
+  Future<void> _read(
+    Future<Uint8List?> Function() take, {
+    String mimeType = 'image/jpeg',
+  }) async {
     if (!ref.mounted || state.isWorking) return;
 
     final userId = ref.read(signedInUserIdProvider)();
@@ -211,7 +224,7 @@ class ScanController extends Notifier<ScanView> {
     state = const ScanView(stage: ScanStage.working);
 
     try {
-      final image = await ref.read(receiptCameraProvider).capture(source);
+      final image = await take();
       if (!ref.mounted) return;
       // Backed out of the picker. Not a failure and not worth a message —
       // the screen goes back to where it was.
@@ -222,7 +235,7 @@ class ScanController extends Notifier<ScanView> {
 
       final receipt = await ref
           .read(receiptScannerProvider)
-          .scan(userId: userId, image: image);
+          .scan(userId: userId, image: image, mimeType: mimeType);
       if (!ref.mounted) return;
 
       state = ScanView(

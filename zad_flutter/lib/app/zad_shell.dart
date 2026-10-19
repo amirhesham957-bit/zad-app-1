@@ -13,6 +13,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/share/share_intake.dart';
+import 'package:zad/app/share/share_router.dart';
 import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
@@ -111,6 +113,16 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       _startBilling();
+      // «شارك لزاد» (share_router.dart): the share that opened the app, and
+      // every one after. First, before any permission prompt — the customer
+      // came for what they shared.
+      final share = ref.read(shareIntakeProvider);
+      _share = share;
+      unawaited(
+        share.listen((item) {
+          if (mounted) unawaited(openShared(context, ref, item));
+        }),
+      );
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
       if (mounted) await alerts.askOnce();
@@ -202,9 +214,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   late final AppLifecycleListener _lifecycle;
   LiveSync? _live;
+  ShareIntake? _share;
 
   @override
   void dispose() {
+    _share?.close();
     unawaited(_live?.stop());
     unawaited(_billed?.cancel());
     _lifecycle.dispose();

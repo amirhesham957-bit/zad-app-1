@@ -10,6 +10,8 @@
 /// customer correct in place.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,9 +35,20 @@ import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the scanner.
-Future<void> showReceiptScanSheet(BuildContext context, WidgetRef ref) {
+///
+/// With [image] (a picture shared to Zad from another app) the sheet opens
+/// already reading it, instead of asking for the camera.
+Future<void> showReceiptScanSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  Uint8List? image,
+  String mimeType = 'image/jpeg',
+}) {
   // A sheet left open from a previous scan would show that receipt again.
-  ref.read(scanControllerProvider.notifier).reset();
+  final controller = ref.read(scanControllerProvider.notifier)..reset();
+  if (image != null) {
+    unawaited(controller.scanImage(image, mimeType: mimeType));
+  }
 
   return showModalBottomSheet<void>(
     context: context,
