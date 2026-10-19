@@ -140,7 +140,16 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  // Waits for the household list to load, not a fixed number of turns: the
+  // reads go through Hive on real disk, and five turns were not always
+  // enough under a full run's load (2026-10-20).
   Future<void> settle() async {
+    for (var i = 0; i < 100; i++) {
+      if (container.read(familyLifeControllerProvider).groceries.isNotEmpty) {
+        break;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
     for (var i = 0; i < 5; i++) {
       await Future<void>.delayed(Duration.zero);
     }

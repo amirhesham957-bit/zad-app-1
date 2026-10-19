@@ -29,6 +29,7 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market.dart';
@@ -554,11 +555,11 @@ class _Suggestions extends StatelessWidget {
 
 /// «في البيت 6», and whether that is still short — the list line read
 /// against the pantry.
-String? _stockNote(({int total, bool isLow})? stock) => stock == null
+String? _stockNote(({double total, bool isLow})? stock) => stock == null
     ? null
     : stock.isLow
-    ? 'في البيت ${stock.total} بس'
-    : 'في البيت ${stock.total} — مش ناقص';
+    ? 'في البيت ${formatQuantity(stock.total)} بس'
+    : 'في البيت ${formatQuantity(stock.total)} — مش ناقص';
 
 class _Line extends ConsumerWidget {
   const new({required this.item, required this.currency, this.stock});
@@ -567,7 +568,7 @@ class _Line extends ConsumerWidget {
   final String currency;
 
   /// The pantry's stock of it, when the pantry has any.
-  final ({int total, bool isLow})? stock;
+  final ({double total, bool isLow})? stock;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -688,7 +689,7 @@ class _FamilyLine extends ConsumerStatefulWidget {
 
   final ShoppingGroup group;
   final String currency;
-  final ({int total, bool isLow})? stock;
+  final ({double total, bool isLow})? stock;
 
   @override
   ConsumerState<_FamilyLine> createState() => _FamilyLineState();

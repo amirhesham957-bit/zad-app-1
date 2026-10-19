@@ -31,8 +31,12 @@ import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
 import '../../support/fake_purchases.dart';
 
-InventoryItem _pantry(String id, String name, int qty) =>
-    InventoryItem(id: id, userId: 'u', itemName: name, quantity: qty);
+InventoryItem _pantry(String id, String name, int qty) => InventoryItem(
+  id: id,
+  userId: 'u',
+  itemName: name,
+  quantity: qty.toDouble(),
+);
 
 ShoppingItem _list(String id, String name, {bool bought = false}) =>
     ShoppingItem(id: id, userId: 'u', itemName: name, isPurchased: bought);

@@ -33,6 +33,7 @@ import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
@@ -134,7 +135,7 @@ Color _bgOf(_CategoryDef d, ColorScheme s) =>
 Color _fgOf(_CategoryDef d, ColorScheme s) =>
     d.key == 'الكل' ? s.onPrimary : d.fg;
 
-int _threshold(InventoryItem i) => math.max(i.lowStockThreshold ?? 2, 1);
+double _threshold(InventoryItem i) => math.max(i.lowStockThreshold ?? 2, 1);
 
 /// Kotlin's `stockRatio`: full at three times the alert level.
 double _stockRatio(InventoryItem i) =>
@@ -1137,7 +1138,8 @@ class _InventoryItemCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
-                      '${item.quantity} ${item.unit ?? ''}'.trim(),
+                      '${formatQuantity(item.quantity)} ${item.unit ?? ''}'
+                          .trim(),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -1280,7 +1282,7 @@ class _FamilyCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${group.total} $unit'.trim(),
+                '${formatQuantity(group.total)} $unit'.trim(),
                 style: ZadType.titleSmall.copyWith(color: scheme.primary),
               ),
               IconButton(
@@ -1367,7 +1369,7 @@ class _ShortageItemCardState extends State<_ShortageItemCard> {
                             ? 'منتهي'
                             : days != null
                             ? '$days يوم'
-                            : 'الكمية: ${item.quantity}',
+                            : 'الكمية: ${formatQuantity(item.quantity)}',
                         style: ZadType.labelSmall.copyWith(
                           fontSize: 9.5,
                           color: days != null
@@ -1479,7 +1481,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
         .read(pantryControllerProvider.notifier)
         .add(
           itemName: name,
-          quantity: int.tryParse(_qty.text) ?? 1,
+          quantity: parseQuantity(_qty.text) ?? 1,
           unit: kPantryUnits[_unit],
           category: _categoryDefs[_category + 1].key,
           expiryDate: parsed == null
@@ -1567,7 +1569,9 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                         const SizedBox(height: 6),
                         TextField(
                           controller: _qty,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: field(),
                           onChanged: (v) {
                             final digits = v.replaceAll(RegExp(r'\D'), '');
@@ -1698,7 +1702,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
     text: widget.item.itemName,
   );
   late final TextEditingController _qty = TextEditingController(
-    text: '${widget.item.quantity}',
+    text: formatQuantity(widget.item.quantity),
   );
   late final TextEditingController _unit = TextEditingController(
     text: widget.item.unit ?? '',
@@ -1721,7 +1725,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = int.tryParse(_qty.text);
+    final quantity = parseQuantity(_qty.text);
     final canSave =
         _name.text.trim().isNotEmpty && quantity != null && quantity >= 0;
     return AlertDialog(
@@ -1746,7 +1750,9 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                 Expanded(
                   child: TextField(
                     controller: _qty,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     onChanged: (v) {
                       final digits = v.replaceAll(RegExp(r'\D'), '');
                       if (digits != v) _qty.text = digits;

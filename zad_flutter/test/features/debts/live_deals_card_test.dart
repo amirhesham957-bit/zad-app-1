@@ -22,7 +22,7 @@ InventoryItem _item(String name, int qty) => InventoryItem(
   id: name,
   userId: 'u',
   itemName: name,
-  quantity: qty,
+  quantity: qty.toDouble(),
   lowStockThreshold: 2,
 );
 

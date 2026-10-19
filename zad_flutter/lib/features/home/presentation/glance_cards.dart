@@ -22,6 +22,7 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -378,7 +379,8 @@ class _FoodTile extends StatelessWidget {
     final left = switch (days) {
       final int d when d < 0 => 'انتهت صلاحيته',
       final int d => 'متبقي $d ${d <= 10 ? 'أيام' : 'يوم'}',
-      null => 'متبقي ${item.quantity} ${item.unit ?? ''}'.trim(),
+      null =>
+        'متبقي ${formatQuantity(item.quantity)} ${item.unit ?? ''}'.trim(),
     };
 
     return ZadPressable(

@@ -29,7 +29,7 @@ InventoryItem _i(
   id: id,
   userId: 'u',
   itemName: name,
-  quantity: qty,
+  quantity: qty.toDouble(),
   category: category,
   expiryDate: expiry,
 );

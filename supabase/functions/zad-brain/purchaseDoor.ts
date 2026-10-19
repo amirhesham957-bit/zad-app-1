@@ -5,6 +5,7 @@
 // فيه أصناف بيروح كله لـzad_record_purchase_service: الفلوس والمخزن والصيدلية والأسعار في ترانزاكشن
 // واحدة. الدوال هنا نقية.
 
+import { purchaseQuantity } from "../_shared/purchaseQuantity.ts";
 export const TOOL_PURCHASE_LINES_MAX = 30;
 
 export interface ToolPurchaseLine {
@@ -25,12 +26,8 @@ export function toolPurchaseLines(raw: unknown): ToolPurchaseLine[] {
     const r = item as Record<string, unknown>;
     const name = String(r.name ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (!name) continue;
-    const q = Number(r.quantity);
-    const line: ToolPurchaseLine = {
-      name,
-      quantity: Number.isFinite(q) && q > 0 ? Math.max(1, Math.round(q)) : 1,
-      to: r.to === "pharmacy" ? "pharmacy" : "pantry",
-    };
+    const to = r.to === "pharmacy" ? "pharmacy" : "pantry";
+    const line: ToolPurchaseLine = { name, quantity: purchaseQuantity(r.quantity, to), to };
     const unit = String(r.unit ?? "").trim().slice(0, 20);
     if (unit) line.unit = unit;
     const category = String(r.category ?? "").trim().slice(0, 40);

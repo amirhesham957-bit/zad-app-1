@@ -153,11 +153,11 @@ class PantryGroup {
   bool get isFamily => family != null && members.length > 1;
 
   /// The stock across every row.
-  int get total => members.fold(0, (sum, m) => sum + m.quantity);
+  double get total => members.fold(0, (sum, m) => sum + m.quantity);
 
   /// The highest threshold any row set — a family runs low when the whole
   /// house is down to what one row would call low.
-  int get threshold =>
+  double get threshold =>
       members.map((m) => m.effectiveThreshold).reduce((a, b) => a > b ? a : b);
 
   /// Out of every brand at once.
@@ -263,7 +263,7 @@ List<ShoppingGroup> groupShoppingLines(Iterable<ShoppingItem> lines) {
 
 /// How much of [name] the house holds, or null when the pantry has none of
 /// it: the staple across every brand, or the rows with the same name.
-({int total, bool isLow})? pantryStockFor(
+({double total, bool isLow})? pantryStockFor(
   String name,
   List<InventoryItem> pantry,
 ) {

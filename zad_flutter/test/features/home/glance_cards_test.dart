@@ -49,9 +49,9 @@ InventoryItem _item(String id, String name, int qty, {int? threshold}) =>
       id: id,
       userId: 'u',
       itemName: name,
-      quantity: qty,
+      quantity: qty.toDouble(),
       unit: 'علبة',
-      lowStockThreshold: threshold,
+      lowStockThreshold: threshold?.toDouble(),
     );
 
 Medicine _med(String name, {String times = '08:00'}) => Medicine(

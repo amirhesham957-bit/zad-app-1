@@ -80,7 +80,7 @@ Future<PantryIntakeResult> intakeIntoPantry(
     for (final line in plan.additions) {
       final added = await inventory.add(
         itemName: line.name,
-        quantity: line.quantity,
+        quantity: line.quantity.toDouble(),
         unit: line.unit,
         category: line.category,
       );

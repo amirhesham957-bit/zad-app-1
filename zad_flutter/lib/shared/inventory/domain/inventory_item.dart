@@ -33,10 +33,10 @@ class InventoryItem {
     id: json['id'] as String,
     userId: json['user_id'] as String? ?? '',
     itemName: (json['item_name'] as String?)?.trim() ?? '',
-    quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+    quantity: (json['quantity'] as num?)?.toDouble() ?? 1,
     unit: json['unit'] as String?,
     category: json['category'] as String?,
-    lowStockThreshold: (json['low_stock_threshold'] as num?)?.toInt(),
+    lowStockThreshold: (json['low_stock_threshold'] as num?)?.toDouble(),
     expiryDate: _date(json['expiry_date']),
     familyId: json['family_id'] as String?,
     createdAt: switch (json['created_at']) {
@@ -55,8 +55,9 @@ class InventoryItem {
   /// What it is, as the customer or the scanner named it.
   final String itemName;
 
-  /// How many are left.
-  final int quantity;
+  /// How much is left, in [unit]: half a kilo is 0.5 (ZAD_PLAN ٣.٨ — the
+  /// server's column is numeric(12,3) since 20261020110000).
+  final double quantity;
 
   /// `كجم`, `علبة`, `قطعة` — stored, so Arabic.
   final String? unit;
@@ -68,7 +69,7 @@ class InventoryItem {
   ///
   /// Null means nobody set one, which is not the same as zero — see
   /// [effectiveThreshold].
-  final int? lowStockThreshold;
+  final double? lowStockThreshold;
 
   /// When it goes off, as a civil date.
   ///
@@ -92,7 +93,7 @@ class InventoryItem {
   /// `(lowStockThreshold ?: 2).coerceAtLeast(1)`. A zero threshold would mean
   /// "warn me when I have less than nothing", which is a warning that never
   /// fires.
-  int get effectiveThreshold {
+  double get effectiveThreshold {
     final set = lowStockThreshold ?? 2;
     return set < 1 ? 1 : set;
   }
@@ -127,10 +128,10 @@ class InventoryItem {
   /// A copy with the given fields replaced.
   InventoryItem copyWith({
     String? itemName,
-    int? quantity,
+    double? quantity,
     String? unit,
     String? category,
-    int? lowStockThreshold,
+    double? lowStockThreshold,
     DateTime? expiryDate,
     bool? isPending,
     bool clearExpiry = false,
