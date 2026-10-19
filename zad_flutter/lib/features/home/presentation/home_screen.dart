@@ -15,6 +15,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -199,25 +200,28 @@ class _Budget extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         ZadAppearOnEntry(
-          child: ZadBalanceCard(
-            spendable: spendable,
-            spent: snapshot.spent,
-            openingBalance: snapshot.openingBalance,
-            committed: snapshot.committed,
-            currency: snapshot.currency,
-            period: period,
-            now: now,
-            // Either the server has not confirmed this session's figures, or a
-            // local write is still queued and the number on screen is this
-            // device's arithmetic rather than the server's.
-            isStale: view.isStale || view.pendingSpend > 0,
-            // The occasion's colours, when a campaign runs and they read.
-            gradient: campaignGradient(ref.watch(homeCampaignProvider)),
-            // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
-            onTap: () => ZadScreens.openWhyChanged(context),
-            onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
-            onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
-            onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
+          // The money steps back as the list moves on (ZAD_PLAN ٢.٣).
+          child: ZadScrollShrink(
+            child: ZadBalanceCard(
+              spendable: spendable,
+              spent: snapshot.spent,
+              openingBalance: snapshot.openingBalance,
+              committed: snapshot.committed,
+              currency: snapshot.currency,
+              period: period,
+              now: now,
+              // Either the server has not confirmed this session's figures, or
+              // a local write is still queued and the number on screen is this
+              // device's arithmetic rather than the server's.
+              isStale: view.isStale || view.pendingSpend > 0,
+              // The occasion's colours, when a campaign runs and they read.
+              gradient: campaignGradient(ref.watch(homeCampaignProvider)),
+              // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
+              onTap: () => ZadScreens.openWhyChanged(context),
+              onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
+              onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
+              onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
+            ),
           ),
         ),
         const SizedBox(height: 14),
