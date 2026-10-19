@@ -242,6 +242,14 @@ Rules that apply to every Flutter change, in short:
 
 ## Project plan and task numbering
 
+**The one plan since 2026-10-18 is [`docs/agent/ZAD_PLAN.md`](./docs/agent/ZAD_PLAN.md)** (owner's
+decision: every older plan below is cancelled as a plan and kept as history; each carries a banner
+saying so). Work its phases one after another, not in parallel — only items waiting on the owner's
+hands run alongside. Item numbers in conversation («١.٣», «phase 4») refer to it. Tick its boxes in
+the commit that closes the item: the owner's `zad-plan` mod reads them live. How to work cheaply and with the right tools (skills, MCP, quota rules): [`docs/agent/ZAD_TOOLKIT.md`](./docs/agent/ZAD_TOOLKIT.md). Everything below this
+paragraph describes how the project got here; where it disagrees with `ZAD_PLAN.md` on order or
+scope, `ZAD_PLAN.md` wins.
+
 The full plan lives in `docs/agent/`. Read `ZAD_MASTER.md` first — it is the single
 source of truth for architecture, settled decisions, and task numbering. Task numbers
 used in conversation (Task 9, Task 17.2, etc.) refer to that file.

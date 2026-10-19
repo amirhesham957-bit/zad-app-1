@@ -1,3 +1,5 @@
+> ⛔ **اتلغت كخطة يوم ٢٠٢٦-١٠-١٨.** الخطة الوحيدة دلوقتي [`ZAD_PLAN.md`](./ZAD_PLAN.md). الملف ده مرجع للتاريخ والقرارات بس — ماتاخدش منه ترتيب ولا بنود.
+
 <!--
 INCOMPLETE — the source message hit a 50,000-char limit mid TASK 17.3 "Acceptance"
 list (cuts off after item 5, "No pharmacy notification..."). Whatever came after
