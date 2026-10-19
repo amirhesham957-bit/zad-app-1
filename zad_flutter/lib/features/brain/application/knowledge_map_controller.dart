@@ -51,7 +51,7 @@ MapInputs mapInputsFrom({
     ],
     lowPantry: <MapStock>[
       for (final i in pantry)
-        if (i.isLowStock)
+        if (i.isLowStock && !i.isOccasional)
           MapStock(
             i.itemName,
             '${formatQuantity(i.quantity)} ${i.unit ?? ''}'.trim(),

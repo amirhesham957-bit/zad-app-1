@@ -186,9 +186,11 @@ List<BriefItem> dailyBrief({
   }
 
   // An item with a forecast is said once, with its day, not again as «ناقصك».
+  // One bought every couple of months is neither (ZAD_PLAN ٣.١٠).
   final short = <String>[];
   final runningOut = <(String, int, bool)>[];
   for (final g in groupPantry(pantry)) {
+    if (g.isOccasional) continue;
     final left = _daysLeft(g, rates);
     if (left != null && left.days <= runOutWithinDays) {
       runningOut.add((g.name, left.days, left.approximate));
