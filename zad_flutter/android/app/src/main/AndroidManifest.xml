@@ -98,6 +98,18 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- «شارك لزاد» (ZAD_PLAN ٣.٣): a bank message, a receipt photo or a
+                 statement PDF/CSV from any app. MainActivity.readShare copies it;
+                 nothing is recorded before the customer reviews it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/*"/>
+                <data android:mimeType="image/*"/>
+                <data android:mimeType="application/pdf"/>
+                <data android:mimeType="application/csv"/>
+                <data android:mimeType="application/vnd.ms-excel"/>
+            </intent-filter>
         </activity>
         <!--
           FCM shows a push with a notification block by itself while the app is

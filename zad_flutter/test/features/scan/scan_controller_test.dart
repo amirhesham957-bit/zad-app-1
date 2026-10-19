@@ -57,6 +57,7 @@ class _FakeScanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async {
     calls++;
     if (failWith case final e?) throw e;
