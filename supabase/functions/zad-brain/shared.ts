@@ -52,6 +52,7 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     habit_budget: "☕ زاد لاحظ عادة بتتكرر",
     predicted_shortage: "🥛 زاد شايف حاجات هتخلص قريب",
     restock_link: "🛒 حاجة ضرورية خلصت عندك",
+    pet_call: "🥺 رفيقك مستنيك",
   };
   return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }
@@ -988,6 +989,8 @@ const PACING_PRIORITY: Record<string, number> = {
   spending_ahead: 1, bill_reminder: 1,
   predicted_shortage: 2, restock_link: 2, habit_budget: 2,
   warranty_reminder: 3, spend_forecast: 3, home_weekly_digest: 3, goal_review: 3,
+  // الرفيق آخر حاجة: لو المبادرتين اتاخدوا بحاجة تهم البيت، النداء يستنى بكرة (ZAD_PLAN ٥.٥).
+  pet_call: 4,
 };
 
 export function pacingPriority(kind: string | null | undefined): number {

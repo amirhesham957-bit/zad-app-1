@@ -76,6 +76,7 @@ import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
+import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
@@ -6236,6 +6237,23 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         postponed++;
         continue;
       }
+    }
+    // الرفيق بينادي باسمه (petCall.ts): رسالة ثابتة، من غير موديل، وبتتلغي لو اتأكل في النص.
+    if (task.kind === "pet_call") {
+      try {
+        if (await deliverPetCall(sb, task, {
+          pushDevice: (uid, title, text, data) => pushToDevice(sb, uid, title, text, data),
+          pushTelegram: (uid, title, text, taskId) => pushToTelegram(uid, title, text, fetch, taskId),
+        }) === "sent") {
+          processed++;
+          (await deliveredFor(task.user_id)).push({ kind: task.kind, at: new Date().toISOString() });
+        }
+      } catch (e) {
+        console.error("[pet_call] failed for task", task.id, e);
+        await sb.from("agent_tasks").update({ status: "failed", result: String(e), updated_at: new Date().toISOString() }).eq("id", task.id);
+        failed++;
+      }
+      continue;
     }
     // صنف ضروري خلص (restockLink.ts): رسالة ثابتة بلينك أمازون، من غير موديل.
     if (task.kind === "restock_link") {
