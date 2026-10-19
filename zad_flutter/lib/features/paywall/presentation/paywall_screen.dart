@@ -20,11 +20,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:zad/core/design/foundation/glass_surface.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 
 /// Opens the plans.
@@ -400,9 +402,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
                 style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: ZadSpacing.xs),
-              // The free plan as zad_entitlement_refresh gives it. No ad
-              // button until the ads SDK is in the app: nothing shown here
-              // may do nothing.
+              // The free plan as zad_entitlement_refresh gives it.
               Text(
                 '5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. '
                 'رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل '
@@ -413,6 +413,11 @@ class _PaywallState extends ConsumerState<PaywallScreen>
                   height: 1.5,
                 ),
               ),
+              // The real rewarded ad (AdMob + server SSV) is in the app since
+              // c924d8ae; it hides itself on paid plans, in kids mode and
+              // when the server has no ad to offer.
+              const SizedBox(height: ZadSpacing.md),
+              const WatchAdButton(),
             ],
           ),
         ),
@@ -539,27 +544,21 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  Widget _card(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 200),
-    decoration: BoxDecoration(
-      color: selected
-          ? ZadColors.surfaceVariant.withValues(alpha: 0.6)
-          : ZadColors.surface,
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(
-        width: selected ? 2 : 1,
-        color: selected
-            ? ZadColors.forestEmerald
-            : ZadColors.outline.withValues(alpha: 0.5),
-      ),
-      boxShadow: <BoxShadow>[
-        BoxShadow(
-          color: ZadColors.shadowSpot,
-          blurRadius: selected ? 16 : 4,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
+  // Frosted glass over the drifting backdrop (ZAD_PLAN ٢.٥). No drop
+  // shadow: under a translucent pane it shows through as a smudge, and the
+  // edge is what makes the pane read.
+  Widget _card(BuildContext context) => ZadGlass(
+    key: ValueKey<String>('plan-glass-${plan.name}'),
+    radius: 22,
+    blur: 16,
+    padding: EdgeInsets.zero,
+    tint: selected
+        ? ZadColors.surfaceVariant.withValues(alpha: 0.6)
+        : ZadColors.surface.withValues(alpha: 0.55),
+    edge: selected
+        ? ZadColors.forestEmerald
+        : ZadColors.outline.withValues(alpha: 0.5),
+    edgeWidth: selected ? 2 : 1,
     child: Material(
       color: Colors.transparent,
       child: InkWell(

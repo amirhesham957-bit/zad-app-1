@@ -23,10 +23,13 @@ import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
+import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/transactions/data/transactions_remote.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+
+import '../../support/fake_purchases.dart';
 
 InventoryItem _pantry(String id, String name, int qty) =>
     InventoryItem(id: id, userId: 'u', itemName: name, quantity: qty);
@@ -50,6 +53,7 @@ class _Scanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async => ScannedReceipt.fromJson(answer);
 }
 
@@ -238,47 +242,50 @@ void main() {
       await dir.delete(recursive: true);
     });
 
-    ProviderContainer container({bool pantryBreaks = false}) =>
-        ProviderContainer(
-          overrides: [
-            nowProvider.overrideWithValue(() => now),
-            signedInUserIdProvider.overrideWithValue(() => 'user-1'),
-            outboxProvider.overrideWithValue(outbox),
-            receiptCameraProvider.overrideWithValue(_Camera()),
-            receiptScannerProvider.overrideWithValue(scanner),
-            transactionsRepositoryProvider.overrideWithValue(
-              TransactionsRepository(
-                cache: transactions,
-                remote: _NoTransactions(),
-                outbox: () => outbox,
-                newId: () => 'txn-${ids++}',
-                signedInUserId: () => 'user-1',
-              ),
+    ProviderContainer container() {
+      final txns = TransactionsRepository(
+        cache: transactions,
+        remote: _NoTransactions(),
+        outbox: () => outbox,
+        newId: () => 'txn-${ids++}',
+        signedInUserId: () => 'user-1',
+      );
+      return ProviderContainer(
+        overrides: [
+          nowProvider.overrideWithValue(() => now),
+          signedInUserIdProvider.overrideWithValue(() => 'user-1'),
+          outboxProvider.overrideWithValue(outbox),
+          receiptCameraProvider.overrideWithValue(_Camera()),
+          receiptScannerProvider.overrideWithValue(scanner),
+          transactionsRepositoryProvider.overrideWithValue(txns),
+          purchasesRepositoryProvider.overrideWithValue(
+            purchasesFor(
+              outbox: outbox,
+              transactions: txns,
+              remote: FakePurchasesRemote(online: false),
+              flush: noFlush,
             ),
-            budgetRepositoryProvider.overrideWithValue(
-              BudgetRepository(
-                cache: documents,
-                remote: _OfflineBudget(),
-                signedInUserId: () => 'user-1',
-              ),
+          ),
+          budgetRepositoryProvider.overrideWithValue(
+            BudgetRepository(
+              cache: documents,
+              remote: _OfflineBudget(),
+              signedInUserId: () => 'user-1',
             ),
-            if (pantryBreaks)
-              inventoryRepositoryProvider.overrideWith(
-                (ref) => throw StateError('the pantry is not there'),
-              )
-            else
-              inventoryRepositoryProvider.overrideWithValue(inventory),
-            shoppingListRepositoryProvider.overrideWithValue(shopping),
-            consumptionObservationsProvider.overrideWithValue(
-              ConsumptionObservations(
-                remote: _Readings(),
-                outbox: () => outbox,
-                newId: () => 'obs-${ids++}',
-                signedInUserId: () => 'user-1',
-              ),
+          ),
+          inventoryRepositoryProvider.overrideWithValue(inventory),
+          shoppingListRepositoryProvider.overrideWithValue(shopping),
+          consumptionObservationsProvider.overrideWithValue(
+            ConsumptionObservations(
+              remote: _Readings(),
+              outbox: () => outbox,
+              newId: () => 'obs-${ids++}',
+              signedInUserId: () => 'user-1',
             ),
-          ],
-        );
+          ),
+        ],
+      );
+    }
 
     Future<ScanController> scanned(ProviderContainer c) async {
       final controller = c.read(scanControllerProvider.notifier);
@@ -287,43 +294,42 @@ void main() {
       return controller;
     }
 
-    List<num> readings(String item) => <num>[
-      for (final e in outbox.entries())
-        if (e.kind == OutboxKind.recordObservation && e.payload['item'] == item)
-          e.payload['qty'] as num,
+    /// The queued purchase's lines bound for the pantry.
+    List<Map<dynamic, dynamic>> pantryLines() => <Map<dynamic, dynamic>>[
+      for (final l
+          in outbox
+                  .entries()
+                  .singleWhere((e) => e.kind == OutboxKind.recordPurchase)
+                  .payload['lines']
+              as List<Object?>)
+        if (l is Map && l['to'] == 'pantry') l,
     ];
 
     test(
-      'ticked lines go in, unticked ones stay out, the list closes',
+      'ticked lines travel with the money, unticked ones stay out',
       () async {
         final c = container();
         addTearDown(c.dispose);
         final controller = await scanned(c);
 
         controller.toggleItem(2); // no crisps in this pantry
+        final before = outbox.entries().length;
         expect(await controller.saveAsTransaction(), isTrue);
 
-        final rows = {
-          for (final i in inventory.cached()) i.itemName: i.quantity,
-        };
-        expect(rows, <String, int>{'اللبن': 3, 'عيش بلدي': 1});
-        expect(shopping.cached().single.isPurchased, isTrue);
-
-        final intake = c.read(scanControllerProvider).lastIntake!;
-        expect((intake.added, intake.toppedUp, intake.ticked), (1, 1, 1));
+        expect(pantryLines().map((l) => (l['name'], l['quantity'])), <Object>[
+          ('لبن', 2),
+          ('عيش بلدي', 1),
+        ]);
+        // The server matches, tops up and ticks off (purchase_door_test.sql);
+        // the phone writes no pantry row of its own that would disagree.
+        expect(inventory.cached().single.quantity, 1);
+        expect(
+          outbox.entries().length,
+          before + 1,
+          reason: 'the purchase, and nothing else',
+        );
       },
     );
-
-    test('the learner hears the level before and after the purchase', () async {
-      final c = container();
-      addTearDown(c.dispose);
-      await (await scanned(c)).saveAsTransaction();
-
-      // 1 on the shelf before, 3 after: the drop since the last reading is
-      // counted, not swallowed by the rise.
-      expect(readings('اللبن'), <num>[1, 3]);
-      expect(readings('عيش بلدي'), <num>[1]);
-    });
 
     test('with the switch off, only the money is recorded', () async {
       final c = container();
@@ -333,8 +339,7 @@ void main() {
       controller.setAddToPantry(value: false);
       await controller.saveAsTransaction();
 
-      expect(inventory.cached().single.quantity, 1);
-      expect(shopping.cached().single.isPurchased, isFalse);
+      expect(pantryLines(), isEmpty);
       expect(c.read(scanControllerProvider).lastIntake, isNull);
     });
 
@@ -350,16 +355,7 @@ void main() {
 
       expect(c.read(scanControllerProvider).offersPantry, isFalse);
       await controller.saveAsTransaction();
-      expect(inventory.cached(), hasLength(1));
-    });
-
-    test('a pantry that fails does not cost the expense', () async {
-      final c = container(pantryBreaks: true);
-      addTearDown(c.dispose);
-
-      expect(await (await scanned(c)).saveAsTransaction(), isTrue);
-      expect(c.read(transactionsRepositoryProvider).allCached(), hasLength(1));
-      expect(c.read(scanControllerProvider).lastIntake?.failed, isTrue);
+      expect(pantryLines(), isEmpty);
     });
   });
 

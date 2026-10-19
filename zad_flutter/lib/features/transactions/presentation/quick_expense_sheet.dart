@@ -23,6 +23,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/expense_categories.dart';
@@ -40,10 +41,24 @@ Future<void> showQuickExpenseSheet(BuildContext context) =>
       builder: (_) => const QuickExpenseSheet(),
     );
 
+/// Opens the sheet for cash («صرفت كاش» in «اقفل يومك»).
+Future<void> showCashExpenseSheet(BuildContext context) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: ZadColors.surface,
+      shape: zadSquircle(ZadRadii.hero),
+      builder: (_) => const QuickExpenseSheet(wallet: Wallet.cash),
+    );
+
 /// The form.
 class QuickExpenseSheet extends ConsumerStatefulWidget {
   /// Creates the sheet.
-  const new({super.key});
+  const new({this.wallet = Wallet.card, super.key});
+
+  /// Where the money came from. Kotlin's quick expense left it at the card.
+  final Wallet wallet;
 
   @override
   ConsumerState<QuickExpenseSheet> createState() => _QuickExpenseSheetState();
@@ -88,14 +103,13 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
               amount: amount,
               title: _name.text.trim(),
               createdAt: ref.read(nowProvider)(),
-              // Kotlin's quick expense leaves the wallet at its default, the
-              // card.
-              wallet: Wallet.card,
+              wallet: widget.wallet,
               category: category,
             ),
           );
       ref.read(transactionsControllerProvider.notifier).reloadFromCache();
       ref.read(budgetControllerProvider.notifier).recomputePending();
+      ref.read(uiSoundsProvider.notifier).play(UiSound.saved);
       unawaited(HapticFeedback.mediumImpact());
       if (mounted) Navigator.of(context).pop();
     } on Object {
@@ -140,7 +154,12 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      const Text('مصروف سريع', style: ZadType.titleMedium),
+                      Text(
+                        widget.wallet == Wallet.cash
+                            ? 'مصروف كاش'
+                            : 'مصروف سريع',
+                        style: ZadType.titleMedium,
+                      ),
                       Text(
                         'سجّل مصروفك في ثوانٍ',
                         style: ZadType.labelMedium.copyWith(

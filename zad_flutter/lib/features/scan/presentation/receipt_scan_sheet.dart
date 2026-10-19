@@ -10,6 +10,8 @@
 /// customer correct in place.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,12 +31,24 @@ import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Opens the scanner.
-Future<void> showReceiptScanSheet(BuildContext context, WidgetRef ref) {
+///
+/// With [image] (a picture shared to Zad from another app) the sheet opens
+/// already reading it, instead of asking for the camera.
+Future<void> showReceiptScanSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  Uint8List? image,
+  String mimeType = 'image/jpeg',
+}) {
   // A sheet left open from a previous scan would show that receipt again.
-  ref.read(scanControllerProvider.notifier).reset();
+  final controller = ref.read(scanControllerProvider.notifier)..reset();
+  if (image != null) {
+    unawaited(controller.scanImage(image, mimeType: mimeType));
+  }
 
   return showModalBottomSheet<void>(
     context: context,
@@ -500,12 +514,14 @@ class _ReadingState extends ConsumerState<_Reading> {
     if (saved) {
       // Said on the screen underneath, which outlives this sheet.
       final after = ref.read(scanControllerProvider);
-      final said =
-          _intakeMessage(after.lastIntake) ??
-          _pharmacyMessage(after.lastPharmacyIntake);
+      final said = after.savedQueued
+          ? 'اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.'
+          : _intakeMessage(after.lastIntake) ??
+                _pharmacyMessage(after.lastPharmacyIntake);
       if (said != null) {
         messenger?.showSnackBar(SnackBar(content: Text(said)));
       }
+      ref.read(uiSoundsProvider.notifier).play(UiSound.scan);
       await HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     }
@@ -514,9 +530,6 @@ class _ReadingState extends ConsumerState<_Reading> {
   /// What the pantry got, in one line — or that it got nothing.
   static String? _intakeMessage(PantryIntakeResult? intake) {
     if (intake == null) return null;
-    if (intake.failed) {
-      return 'المصروف اتسجل، بس الأصناف مادخلتش المخزن. ضيفها من البيت.';
-    }
     final parts = <String>[
       if (intake.added > 0) '${intake.added} جديد',
       if (intake.toppedUp > 0) '${intake.toppedUp} زادت كميته',
@@ -530,7 +543,7 @@ class _ReadingState extends ConsumerState<_Reading> {
   static String? _pharmacyMessage(PharmacyIntakeResult? intake) {
     if (intake == null) return null;
     if (intake.failed) {
-      return 'المصروف اتسجل، بس الأدوية مادخلتش الصيدلية. ضيفها من البيت.';
+      return 'المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.';
     }
     final parts = <String>[
       if (intake.added > 0) '${intake.added} جديد',

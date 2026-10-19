@@ -140,6 +140,59 @@ class AgentMemory {
   };
 }
 
+/// Why the brain did not answer this turn: the customer's attempts ran out
+/// (ZAD_PLAN ٢.٨). The server sends it as `entitlement` beside its written
+/// reply, so the chat can put the way out under that reply — an ad, the hour
+/// the free attempts come back, the plans — instead of words that say «watch
+/// an ad» with no button to press.
+class AgentLock {
+  /// Creates a lock.
+  const new({required this.reason, this.cost, this.left, this.refillAt});
+
+  /// Reads the `entitlement` block; null unless it says the turn was refused.
+  static AgentLock? fromJson(Object? raw) {
+    if (raw is! Map || raw['allowed'] != false) return null;
+    final reason = raw['reason'];
+    if (reason is! String || reason.isEmpty) return null;
+    return AgentLock(
+      reason: reason,
+      cost: (raw['cost'] as num?)?.toInt(),
+      left: (raw['left'] as num?)?.toInt(),
+      refillAt: switch (raw['cycle_reset_at']) {
+        final String s => DateTime.tryParse(s),
+        _ => null,
+      },
+    );
+  }
+
+  /// The server's reason: `quota_exhausted` (a paid plan's month is spent),
+  /// `premium_only`, or the free plan's balance being short.
+  final String reason;
+
+  /// What the request would have cost, in attempts.
+  final int? cost;
+
+  /// What was left.
+  final int? left;
+
+  /// When the attempts come back (the free plan's next refill, a paid plan's
+  /// next month).
+  final DateTime? refillAt;
+
+  /// Whether an ad can buy the attempts back. A paid plan's month and a
+  /// premium-only feature are not for sale by ad.
+  bool get adCanHelp => reason != 'quota_exhausted' && reason != 'premium_only';
+
+  /// Round-trips through the cache.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'allowed': false,
+    'reason': reason,
+    'cost': cost,
+    'left': left,
+    'cycle_reset_at': refillAt?.toIso8601String(),
+  };
+}
+
 /// One finished turn.
 class AgentTurn {
   /// Creates a turn.
@@ -150,6 +203,7 @@ class AgentTurn {
     this.memoryAvailable = const <AgentMemory>[],
     this.specialist,
     this.appCommands = const <AgentAppCommand>[],
+    this.lock,
   });
 
   /// Reads the `agent_turn` response.
@@ -159,6 +213,7 @@ class AgentTurn {
     proposals: _list(json['proposals'], AgentProposal.fromJson),
     memoryAvailable: _list(json['memory_available'], AgentMemory.fromJson),
     appCommands: _list(json['app_commands'], AgentAppCommand.fromJson),
+    lock: AgentLock.fromJson(json['entitlement']),
     specialist: switch (json['specialist']) {
       // "general" is the absence of a specialist, not one of them — showing a
       // badge for it would put a label on every ordinary message.
@@ -169,6 +224,9 @@ class AgentTurn {
 
   /// What the agent said.
   final String reply;
+
+  /// Why it could not answer, when its attempts ran out.
+  final AgentLock? lock;
 
   /// What it already did.
   final List<AgentExecuted> executed;

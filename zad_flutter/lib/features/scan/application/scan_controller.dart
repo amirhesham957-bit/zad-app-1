@@ -8,24 +8,23 @@
 /// moment where anybody could have caught them.
 library;
 
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/features/scan/application/receipt_prices.dart';
-import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/features/scan/application/receipt_purchase.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
-import 'package:zad/shared/inventory/application/shopping_controller.dart';
-import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
-import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/purchases/data/purchases_repository.dart';
+import 'package:zad/shared/purchases/domain/purchase.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/bank_twin.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
-import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -71,7 +70,7 @@ class PharmacyIntakeResult {
   /// Lines left out because nobody said how many they hold.
   final int uncounted;
 
-  /// The expense was saved but the medicines did not reach the pharmacy.
+  /// The purchase was saved but not every medicine reached the pharmacy.
   final bool failed;
 }
 
@@ -92,6 +91,7 @@ class ScanView {
     this.lastPharmacyIntake,
     this.bankTwin,
     this.mergeWithBank = true,
+    this.savedQueued = false,
   });
 
   /// Where things stand.
@@ -137,6 +137,10 @@ class ScanView {
   /// Whether saving completes [bankTwin] with the receipt instead of adding a
   /// second expense. Yes unless the customer says it is another payment.
   final bool mergeWithBank;
+
+  /// The last save is queued with lines the pantry or the pharmacy will get
+  /// once it is sent — no network, or older writes still ahead of it.
+  final bool savedQueued;
 
   /// Whether this reading can go into the pharmacy.
   bool get offersPharmacy =>
@@ -194,7 +198,18 @@ class ScanController extends Notifier<ScanView> {
   ScanView build() => const ScanView();
 
   /// Takes a photograph and has it read.
-  Future<void> scan(ReceiptImageSource source) async {
+  Future<void> scan(ReceiptImageSource source) =>
+      _read(() => ref.read(receiptCameraProvider).capture(source));
+
+  /// Has a picture that is already here read — one shared to Zad from
+  /// another app (ZAD_PLAN ٣.٣).
+  Future<void> scanImage(Uint8List image, {String mimeType = 'image/jpeg'}) =>
+      _read(() async => image, mimeType: mimeType);
+
+  Future<void> _read(
+    Future<Uint8List?> Function() take, {
+    String mimeType = 'image/jpeg',
+  }) async {
     if (!ref.mounted || state.isWorking) return;
 
     final userId = ref.read(signedInUserIdProvider)();
@@ -209,7 +224,7 @@ class ScanController extends Notifier<ScanView> {
     state = const ScanView(stage: ScanStage.working);
 
     try {
-      final image = await ref.read(receiptCameraProvider).capture(source);
+      final image = await take();
       if (!ref.mounted) return;
       // Backed out of the picker. Not a failure and not worth a message —
       // the screen goes back to where it was.
@@ -220,7 +235,7 @@ class ScanController extends Notifier<ScanView> {
 
       final receipt = await ref
           .read(receiptScannerProvider)
-          .scan(userId: userId, image: image);
+          .scan(userId: userId, image: image, mimeType: mimeType);
       if (!ref.mounted) return;
 
       state = ScanView(
@@ -348,69 +363,92 @@ class ScanController extends Notifier<ScanView> {
     state = state.copyWith(isSaving: true);
 
     try {
+      // One purchase through one door (ZAD_PLAN ٣.٦): the money, the pantry,
+      // the pharmacy and the crowd prices are written together on the server
+      // or not at all — never an expense whose pantry failed after it.
+      final purchases = ref.read(purchasesRepositoryProvider);
+      final id = purchases.newId();
       final twin = state.bankTwin;
-      if (twin != null && state.mergeWithBank) {
-        // One payment, one expense: the bank's row keeps its amount and time
-        // (they are the bank's) and takes the shop and the category.
-        await ref
-            .read(transactionsRepositoryProvider)
-            .edit(
-              twin,
-              title: receipt.title,
-              amount: twin.amount,
-              category: receipt.hasKnownCategory
-                  ? receipt.category
-                  : twin.category,
-            );
-      } else {
-        await ref
-            .read(transactionsRepositoryProvider)
-            .record(
-              (id) => ZadTransaction.expense(
+      final merge = twin != null && state.mergeWithBank;
+      final category = receipt.hasKnownCategory ? receipt.category : null;
+      final store = receipt.storeName.isEmpty ? null : receipt.storeName;
+
+      final pantry = state.offersPantry && state.addToPantry
+          ? pantryLinesOf(receipt, excluded: state.excludedItems)
+          : const <PurchaseLine>[];
+      final pharmacy = state.offersPharmacy && state.addToPharmacy
+          ? pharmacyLinesOf(ref, <RestockProposal>[
+              for (final (i, p) in state.pharmacyWithCounts.indexed)
+                if (!state.excludedItems.contains(i)) p,
+            ])
+          : null;
+      final lines = <PurchaseLine>[...pantry, ...?pharmacy?.lines];
+
+      final outcome = await purchases.record(
+        Purchase(
+          id: id,
+          // On a merge the bank's row keeps its own amount and time; these
+          // only have to be valid.
+          amount: merge ? twin.amount : receipt.total,
+          title: receipt.title,
+          // The printed date's month, not the scan's.
+          spentAt: merge ? twin.createdAt : _spentAt(receipt),
+          // So the brain can tell a photographed receipt from a typed
+          // figure (provenance, 2026-10-11).
+          sourceType: 'receipt',
+          category: category,
+          // What the receipt says it was paid with (or what the customer
+          // picked); card, the commoner, when it says nothing.
+          wallet: receipt.paidWith ?? Wallet.card,
+          merchantName: store,
+          mergeWith: merge ? twin.id : null,
+          // «عملية تانية»: the customer already answered the question the
+          // server would ask.
+          allowDuplicate: twin != null && !merge,
+          lines: lines,
+        ),
+        // One payment, one expense: the bank's row takes the shop and the
+        // category, and keeps its amount and time (they are the bank's).
+        shownAs: merge
+            ? twin.edited(
+                title: receipt.title,
+                amount: twin.amount,
+                category: category ?? twin.category,
+              )
+            : ZadTransaction.expense(
                 id: id,
                 userId: userId,
                 amount: receipt.total,
                 title: receipt.title,
-                // The printed date's month, not the scan's.
                 createdAt: _spentAt(receipt),
-                // What the receipt says it was paid with (or what the
-                // customer picked); card, the commoner, when it says nothing.
                 wallet: receipt.paidWith ?? Wallet.card,
-                category: receipt.hasKnownCategory ? receipt.category : null,
-                merchantName: receipt.storeName.isEmpty
-                    ? null
-                    : receipt.storeName,
-                // So the brain can tell a photographed receipt from a typed
-                // figure (provenance, 2026-10-11).
+                category: category,
+                merchantName: store,
                 sourceType: 'receipt',
               ),
-            );
-      }
+      );
 
-      // The two screens already showing figures. Without these the row is in
-      // Hive and neither the list nor the balance knows it.
-      ref.read(transactionsControllerProvider.notifier).reloadFromCache();
-      ref.read(budgetControllerProvider.notifier).recomputePending();
-
-      // After the money, never instead of it: the expense is the part the
-      // budget needs, and it is already saved whatever happens below.
-      PantryIntakeResult? intake;
-      if (state.offersPantry && state.addToPantry) {
-        intake = await _intoPantry(receipt, state.excludedItems);
-      }
-      if (state.offersPantry) {
-        await reportReceiptPrices(ref, receipt, excluded: state.excludedItems);
-      }
-      PharmacyIntakeResult? pharmacy;
-      if (state.offersPharmacy && state.addToPharmacy) {
-        pharmacy = await _intoPharmacy(
-          state.pharmacyWithCounts,
-          state.excludedItems,
-        );
-      }
+      await afterReceiptPurchase(ref, lines: lines, pharmacy: pharmacy?.plan);
 
       if (ref.mounted) {
-        state = ScanView(lastIntake: intake, lastPharmacyIntake: pharmacy);
+        final plan = pharmacy?.plan;
+        state = ScanView(
+          lastIntake: outcome != null && pantry.isNotEmpty
+              ? pantryResultOf(outcome)
+              : null,
+          lastPharmacyIntake: outcome != null && plan != null
+              ? PharmacyIntakeResult(
+                  added: plan.additions.length,
+                  toppedUp: plan.restocks.length,
+                  ticked: plan.bought.length,
+                  uncounted: plan.uncounted,
+                  failed:
+                      outcome.pharmacyRestocked <
+                      plan.additions.length + plan.restocks.length,
+                )
+              : null,
+          savedQueued: outcome == null && lines.isNotEmpty,
+        );
       }
       return true;
     } on Object catch (error) {
@@ -419,31 +457,6 @@ class ScanController extends Notifier<ScanView> {
       return false;
     }
   }
-
-  /// Puts the ticked lines into the pantry and closes the shopping-list loop.
-  Future<PantryIntakeResult> _intoPantry(
-    ScannedReceipt receipt,
-    Set<int> excluded,
-  ) => intakeIntoPantry(ref, <IntakeLine>[
-    for (final (i, item) in receipt.items.indexed)
-      if (!excluded.contains(i))
-        IntakeLine(
-          name: item.name,
-          quantity: wholeCount(item.quantity),
-          unit: item.unit,
-          category: item.category,
-        ),
-  ]);
-
-  /// Puts the ticked lines into the pharmacy and closes the shopping-list
-  /// loop, as [_intoPantry] does for groceries.
-  Future<PharmacyIntakeResult> _intoPharmacy(
-    List<RestockProposal> proposals,
-    Set<int> excluded,
-  ) => intakeIntoPharmacy(ref, <RestockProposal>[
-    for (final (i, p) in proposals.indexed)
-      if (!excluded.contains(i)) p,
-  ]);
 
   List<RestockProposal> _proposalsFor(ScannedReceipt receipt) =>
       pharmacyProposalsFor(ref, receipt);
@@ -472,57 +485,6 @@ class ScanController extends Notifier<ScanView> {
   /// Throws the reading away.
   void reset() {
     if (ref.mounted) state = const ScanView();
-  }
-}
-
-/// A pharmacy receipt's lines into the pharmacy: counts topped up on the
-/// medicines already there, new ones added, shopping lines ticked off.
-Future<PharmacyIntakeResult> intakeIntoPharmacy(
-  Ref ref,
-  List<RestockProposal> proposals,
-) async {
-  try {
-    final pharmacy = ref.read(pharmacyRepositoryProvider);
-    final shopping = ref.read(shoppingListRepositoryProvider);
-
-    final plan = planPharmacyIntake(
-      proposals: proposals,
-      shopping: shopping.cached(),
-    );
-
-    for (final (:medicine, :add) in plan.restocks) {
-      await pharmacy.restock(medicine.id, add);
-    }
-    for (final m in plan.additions) {
-      await pharmacy.restockNew(
-        name: m.name,
-        count: m.count,
-        unit: m.unit,
-        category: m.category,
-      );
-    }
-    for (final line in plan.bought) {
-      await shopping.setPurchased(line.id, purchased: true);
-    }
-
-    if (ref.mounted) {
-      ref
-        ..invalidate(pharmacyControllerProvider)
-        ..invalidate(shoppingControllerProvider);
-    }
-    return PharmacyIntakeResult(
-      added: plan.additions.length,
-      toppedUp: plan.restocks.length,
-      ticked: plan.bought.length,
-      uncounted: plan.uncounted,
-    );
-  } on Object {
-    return const PharmacyIntakeResult(
-      added: 0,
-      toppedUp: 0,
-      ticked: 0,
-      failed: true,
-    );
   }
 }
 

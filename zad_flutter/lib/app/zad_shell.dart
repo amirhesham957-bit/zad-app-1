@@ -13,10 +13,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/share/share_intake.dart';
+import 'package:zad/app/share/share_router.dart';
 import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/app/shell/zad_pulse_bar.dart';
+import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
@@ -48,12 +51,14 @@ import 'package:zad/shared/companion/presentation/companion_moments.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
+import 'package:zad/shared/session/product_events.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
 import 'package:zad/shared/sync/live_sync.dart';
@@ -90,6 +95,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   @override
   void initState() {
     super.initState();
+    logAppOpen(ref.read(productEventsProvider));
     // Where the customer was before Android killed the backgrounded app
     // (last_tab.dart) — not الرئيسية every time.
     try {
@@ -108,6 +114,16 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       _startBilling();
+      // «شارك لزاد» (share_router.dart): the share that opened the app, and
+      // every one after. First, before any permission prompt — the customer
+      // came for what they shared.
+      final share = ref.read(shareIntakeProvider);
+      _share = share;
+      unawaited(
+        share.listen((item) {
+          if (mounted) unawaited(openShared(context, ref, item));
+        }),
+      );
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
       if (mounted) await alerts.askOnce();
@@ -156,6 +172,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       },
       onResume: () {
         if (!mounted) return;
+        logAppOpen(ref.read(productEventsProvider));
         unawaited(ref.read(alertsControllerProvider.notifier).greetMorning());
         // The medicines change from outside the app too: «امسح سيبرو» to the
         // Telegram bot deleted the row on the server (2026-10-05), and the
@@ -198,19 +215,26 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   late final AppLifecycleListener _lifecycle;
   LiveSync? _live;
+  ShareIntake? _share;
 
   @override
   void dispose() {
+    _share?.close();
     unawaited(_live?.stop());
     unawaited(_billed?.cancel());
     _lifecycle.dispose();
     super.dispose();
   }
 
-  void _show(ZadNavDestination tab) => setState(() {
-    _tab = tab;
-    _opened.add(tab);
-  });
+  void _show(ZadNavDestination tab) {
+    if (tab != _tab) {
+      unawaited(ref.read(productEventsProvider).log('tab.${tab.name}'));
+    }
+    setState(() {
+      _tab = tab;
+      _opened.add(tab);
+    });
+  }
 
   String get _title => switch (_tab) {
     ZadNavDestination.money => 'فلوسي',
@@ -223,6 +247,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   /// A route id from the drawer or a section tile.
   Future<void> _go(String id) async {
+    unawaited(ref.read(productEventsProvider).log('section.$id'));
     switch (id) {
       case 'home':
         _show(ZadNavDestination.home);
@@ -385,6 +410,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onNotifications: () =>
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
+                sky: skyPhaseAt(
+                  ref.watch(accountTimeZoneProvider),
+                  ref.read(nowProvider)(),
+                ),
               ),
               const ZadPulseBar(),
               Expanded(

@@ -20,10 +20,13 @@ import 'package:zad/shared/inventory/data/inventory_remote.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_remote.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/transactions/data/transactions_remote.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+
+import '../../support/fake_purchases.dart';
 
 class _Camera implements ReceiptCamera {
   @override
@@ -38,6 +41,7 @@ class _Scanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async => ScannedReceipt.fromJson(answer);
 }
 
@@ -231,46 +235,52 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer container({bool pharmacyBreaks = false}) =>
-      ProviderContainer(
-        overrides: [
-          nowProvider.overrideWithValue(() => now),
-          signedInUserIdProvider.overrideWithValue(() => 'user-1'),
-          outboxProvider.overrideWithValue(outbox),
-          receiptCameraProvider.overrideWithValue(_Camera()),
-          receiptScannerProvider.overrideWithValue(scanner),
-          transactionsRepositoryProvider.overrideWithValue(
-            TransactionsRepository(
-              cache: transactions,
-              remote: _NoTransactions(),
-              outbox: () => outbox,
-              newId: () => 'txn-${ids++}',
-              signedInUserId: () => 'user-1',
-            ),
+  late FakePurchasesRemote server;
+
+  ProviderContainer container() {
+    final txns = TransactionsRepository(
+      cache: transactions,
+      remote: _NoTransactions(),
+      outbox: () => outbox,
+      newId: () => 'txn-${ids++}',
+      signedInUserId: () => 'user-1',
+    );
+    server = FakePurchasesRemote();
+    // The harness's outbox sends nothing, so the purchase is sent by hand.
+    late final PurchasesRepository purchases;
+    purchases = purchasesFor(
+      outbox: outbox,
+      transactions: txns,
+      remote: server,
+      flush: () async {
+        for (final e in outbox.entries()) {
+          if (e.kind == OutboxKind.recordPurchase) {
+            await purchases.sendQueued(e);
+          }
+        }
+      },
+    );
+    return ProviderContainer(
+      overrides: [
+        nowProvider.overrideWithValue(() => now),
+        signedInUserIdProvider.overrideWithValue(() => 'user-1'),
+        outboxProvider.overrideWithValue(outbox),
+        receiptCameraProvider.overrideWithValue(_Camera()),
+        receiptScannerProvider.overrideWithValue(scanner),
+        transactionsRepositoryProvider.overrideWithValue(txns),
+        purchasesRepositoryProvider.overrideWithValue(purchases),
+        budgetRepositoryProvider.overrideWithValue(
+          BudgetRepository(
+            cache: documents,
+            remote: _OfflineBudget(),
+            signedInUserId: () => 'user-1',
           ),
-          budgetRepositoryProvider.overrideWithValue(
-            BudgetRepository(
-              cache: documents,
-              remote: _OfflineBudget(),
-              signedInUserId: () => 'user-1',
-            ),
-          ),
-          pharmacyRepositoryProvider.overrideWithValue(
-            pharmacyBreaks
-                // Reads fine, refuses every write: the cache is there, the
-                // account is not.
-                ? PharmacyRepository(
-                    cache: pharmacyBox,
-                    remote: pharmacyRemote,
-                    outbox: () => outbox,
-                    newId: () => 'ph-${ids++}',
-                    signedInUserId: () => null,
-                  )
-                : pharmacy,
-          ),
-          shoppingListRepositoryProvider.overrideWithValue(shopping),
-        ],
-      );
+        ),
+        pharmacyRepositoryProvider.overrideWithValue(pharmacy),
+        shoppingListRepositoryProvider.overrideWithValue(shopping),
+      ],
+    );
+  }
 
   Future<ScanController> scanned(ProviderContainer c) async {
     final controller = c.read(scanControllerProvider.notifier);
@@ -278,8 +288,10 @@ void main() {
     return controller;
   }
 
-  Map<String, int?> stock() => <String, int?>{
-    for (final m in pharmacy.cached()) m.name: m.remainingQuantity,
+  /// The pharmacy lines of the purchase sent: what each adds, by name.
+  Map<String, int> stock() => <String, int>{
+    for (final l in server.lastLines)
+      if (l['to'] == 'pharmacy') l['name'] as String: l['quantity'] as int,
   };
 
   List<Map<String, dynamic>> restocks() => <Map<String, dynamic>>[
@@ -313,16 +325,17 @@ void main() {
     expect(await (await scanned(c)).saveAsTransaction(), isTrue);
 
     expect(c.read(transactionsRepositoryProvider).allCached(), hasLength(1));
-    expect(stock(), <String, int?>{
-      'كونكور 5': 63,
-      'أوجمنتين 1 جم 14 قرص': 14,
-      // Not 5: a box is not one tablet.
-      'فيتامين د3': 4,
-    });
+    // One purchase carries the medicines with the money; the uncounted box
+    // (a box is not one tablet) stays out.
+    expect(stock(), <String, int>{'كونكور 5': 60, 'أوجمنتين 1 جم 14 قرص': 14});
+    expect(
+      server.lastLines.firstWhere((l) => l['name'] == 'كونكور 5')['item_id'],
+      'concor',
+    );
     expect(shopping.cached().single.isPurchased, isTrue);
 
-    // Through the restock function only; the upsert never carries stock.
-    expect(restocks(), hasLength(2));
+    // Not as separate restocks, and never the upsert that carries no stock.
+    expect(restocks(), isEmpty);
     expect(
       outbox.entries().where((e) => e.kind == OutboxKind.upsertPharmacyItem),
       isEmpty,
@@ -333,6 +346,7 @@ void main() {
       (result.toppedUp, result.added, result.ticked, result.uncounted),
       (1, 1, 1, 1),
     );
+    expect(result.failed, isFalse);
   });
 
   test("the customer's count fills a box the name did not open", () async {
@@ -343,7 +357,7 @@ void main() {
     controller.setPharmacyCount(2, 30);
     await controller.saveAsTransaction();
 
-    expect(stock()['فيتامين د3'], 34);
+    expect(stock()['فيتامين د3'], 30);
     expect(c.read(scanControllerProvider).lastPharmacyIntake!.uncounted, 0);
   });
 
@@ -355,7 +369,7 @@ void main() {
     controller.setPharmacyCount(0, 28);
     await controller.saveAsTransaction();
 
-    expect(stock()['كونكور 5'], 31);
+    expect(stock()['كونكور 5'], 28);
   });
 
   test('an unticked line stays out of the pharmacy', () async {
@@ -394,14 +408,18 @@ void main() {
     expect(c.read(scanControllerProvider).offersPharmacy, isFalse);
   });
 
-  test('a pharmacy that fails does not cost the expense', () async {
-    final c = container(pharmacyBreaks: true);
+  test('a medicine the server did not restock is said', () async {
+    final c = container();
     addTearDown(c.dispose);
     final controller = await scanned(c);
-    expect(c.read(scanControllerProvider).offersPharmacy, isTrue);
+    server.answer = (p) => <String, dynamic>{
+      'ok': true,
+      'status': 'recorded',
+      'transaction_id': p['id'],
+      'pharmacy': <String, dynamic>{'restocked': 1},
+    };
 
     expect(await controller.saveAsTransaction(), isTrue);
-    expect(c.read(transactionsRepositoryProvider).allCached(), hasLength(1));
     expect(c.read(scanControllerProvider).lastPharmacyIntake?.failed, isTrue);
   });
 }

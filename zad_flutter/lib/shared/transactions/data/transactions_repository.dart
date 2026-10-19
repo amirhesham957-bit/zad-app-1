@@ -169,6 +169,24 @@ class TransactionsRepository {
     await _cache.put(confirmed.id, jsonEncode(confirmed.toCacheJson()));
   }
 
+  /// Shows [txn] at once without queueing it: another door writes it (a
+  /// purchase through `zad_record_purchase`), and [confirm] replaces it with
+  /// the server's row when that door is answered.
+  Future<void> holdUnsent(ZadTransaction txn) => _cache.put(
+    txn.id,
+    jsonEncode(txn.markPending(pending: true).toCacheJson()),
+  );
+
+  /// Keeps the server's [row] for a write another door made.
+  Future<void> confirm(Map<String, dynamic> row) async {
+    final confirmed = ZadTransaction.fromJson(row).markPending(pending: false);
+    await _cache.put(confirmed.id, jsonEncode(confirmed.toCacheJson()));
+  }
+
+  /// Drops a row [holdUnsent] showed that the server did not write — the
+  /// purchase went into another expense instead.
+  Future<void> forget(String id) => _cache.delete(id);
+
   /// Outbox id for an edit of [id].
   static String editIdFor(String id) => 'txn_edit:$id';
 

@@ -44,6 +44,27 @@ void main() {
     );
   });
 
+  test('«اقفل يومك» has no route and opens the home, where its card is', () {
+    const push = <String, dynamic>{'moment': 'close_day', 'moment_id': 'm'};
+    expect(destinationForData(push), AlertDestination.home);
+    expect(
+      PushAlert.fromMessage(data: push).destination,
+      AlertDestination.home,
+    );
+    // A route still wins, and another moment still opens nothing new.
+    expect(
+      destinationForData(const <String, dynamic>{
+        'moment': 'close_day',
+        'route': 'pharmacy',
+      }),
+      AlertDestination.pharmacy,
+    );
+    expect(
+      destinationForData(const <String, dynamic>{'moment': 'dose_nudge'}),
+      isNull,
+    );
+  });
+
   test('in front the app shows everything; behind, only data-only', () {
     expect(
       shouldShowLocally(hasNotificationBlock: true, inForeground: true),

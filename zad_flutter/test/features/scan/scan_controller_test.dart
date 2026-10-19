@@ -27,12 +27,15 @@ import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
 import 'package:zad/shared/prices/data/prices_remote.dart';
 import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
 import 'package:zad/shared/transactions/data/transactions_remote.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+
+import '../../support/fake_purchases.dart';
 
 class _FakeCamera implements ReceiptCamera {
   Uint8List? image = Uint8List.fromList(<int>[1, 2, 3]);
@@ -54,6 +57,7 @@ class _FakeScanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async {
     calls++;
     if (failWith case final e?) throw e;
@@ -173,6 +177,7 @@ void main() {
   late Box<String> outboxBox;
   late _FakeCamera camera;
   late _FakeScanner scanner;
+  late FakePurchasesRemote server;
 
   final now = DateTime.parse('2026-09-20T09:00:00Z');
 
@@ -184,6 +189,9 @@ void main() {
     outboxBox = await Hive.openBox<String>('outbox');
     camera = _FakeCamera();
     scanner = _FakeScanner();
+    // No network unless a test says so: the purchase waits in the queue, and
+    // what the phone shows meanwhile is what is checked.
+    server = FakePurchasesRemote(online: false);
   });
 
   tearDown(() async {
@@ -194,6 +202,7 @@ void main() {
   ProviderContainer containerWith() {
     late TransactionsRepository txns;
     late SettingsRepository settings;
+    late PurchasesRepository purchases;
 
     // Dispatched on kind, exactly as `outboxProvider` does. A harness that
     // sent everything to the transactions repository would hand a settings
@@ -204,6 +213,7 @@ void main() {
       send: (entry) async => switch (entry.kind) {
         OutboxKind.insertTransaction => await txns.sendQueued(entry),
         OutboxKind.updateAccountSettings => await settings.sendQueued(entry),
+        OutboxKind.recordPurchase => await purchases.sendQueued(entry),
         _ => throw StateError('no sender for "${entry.kind}"'),
       },
       clock: () => now,
@@ -214,6 +224,11 @@ void main() {
       outbox: () => outbox,
       newId: () => 'txn-1',
       signedInUserId: () => 'user-1',
+    );
+    purchases = purchasesFor(
+      outbox: outbox,
+      transactions: txns,
+      remote: server,
     );
     settings = SettingsRepository(
       cache: documents,
@@ -242,6 +257,7 @@ void main() {
         outboxProvider.overrideWithValue(outbox),
         signedInUserIdProvider.overrideWithValue(() => 'user-1'),
         transactionsRepositoryProvider.overrideWithValue(txns),
+        purchasesRepositoryProvider.overrideWithValue(purchases),
         settingsRepositoryProvider.overrideWithValue(settings),
         receiptCameraProvider.overrideWithValue(camera),
         receiptScannerProvider.overrideWithValue(scanner),
@@ -268,6 +284,13 @@ void main() {
 
   List<ZadTransaction> recorded(ProviderContainer c) =>
       c.read(transactionsRepositoryProvider).allCached();
+
+  /// The purchase waiting in the queue.
+  Map<String, dynamic> queuedPurchase(ProviderContainer c) => c
+      .read(outboxProvider)
+      .entries()
+      .singleWhere((e) => e.kind == OutboxKind.recordPurchase)
+      .payload;
 
   group('reading the response', () {
     test('parses the shape the action answers with', () {
@@ -402,7 +425,7 @@ void main() {
       expect(container.read(scanControllerProvider).stage, ScanStage.idle);
     });
 
-    test('a grocery receipt reports its lines at their unit price', () async {
+    test('the lines travel with the money, priced, in one purchase', () async {
       final container = containerWith();
       addTearDown(container.dispose);
       final controller = container.read(scanControllerProvider.notifier);
@@ -410,38 +433,23 @@ void main() {
       await controller.scan(ReceiptImageSource.camera);
       await controller.saveAsTransaction();
 
-      final report = container
-          .read(outboxProvider)
-          .entries()
-          .singleWhere((e) => e.kind == OutboxKind.reportPrice);
-      expect(report.payload['item'], 'لبن');
-      expect(report.payload['price'], 6.25, reason: '12.5 for 2');
-      expect(report.payload['store'], 'بنده');
+      final entries = container.read(outboxProvider).entries();
+      expect(entries.map((e) => e.kind), <String>[
+        OutboxKind.recordPurchase,
+      ], reason: 'one write, not an expense then a pantry then prices');
+      final purchase = queuedPurchase(container);
+      expect(purchase['id'], recorded(container).single.id);
+      expect(purchase['amount'], 248.75);
+      expect(purchase['merchant_name'], 'بنده');
+      expect(purchase['source_type'], 'receipt');
+      final line = (purchase['lines'] as List<Object?>).single! as Map;
+      expect(line['name'], 'لبن');
+      expect(line['to'], 'pantry');
+      expect(line['quantity'], 2);
+      expect(line['price'], 12.5, reason: 'the server divides by quantity');
     });
 
-    test('the report carries the account currency', () async {
-      final container = containerWith();
-      addTearDown(container.dispose);
-      await container
-          .read(settingsRepositoryProvider)
-          .setMarket(country: 'SA', currency: 'SAR');
-      final controller = container.read(scanControllerProvider.notifier);
-
-      await controller.scan(ReceiptImageSource.camera);
-      await controller.saveAsTransaction();
-
-      final report = container
-          .read(outboxProvider)
-          .entries()
-          .singleWhere((e) => e.kind == OutboxKind.reportPrice);
-      expect(
-        report.payload['currency'],
-        'SAR',
-        reason: 'without it an account with no row currency is refused',
-      );
-    });
-
-    test('a receipt with no store name reports nothing', () async {
+    test('a receipt with no store name names no shop', () async {
       scanner.answer = _receipt(storeName: '');
       final container = containerWith();
       addTearDown(container.dispose);
@@ -450,13 +458,119 @@ void main() {
       await controller.scan(ReceiptImageSource.camera);
       expect(await controller.saveAsTransaction(), isTrue);
 
-      expect(
-        container
-            .read(outboxProvider)
-            .entries()
-            .where((e) => e.kind == OutboxKind.reportPrice),
-        isEmpty,
-      );
+      expect(queuedPurchase(container).containsKey('merchant_name'), isFalse);
+    });
+
+    test(
+      'online, the server answers and its row replaces the pending one',
+      () async {
+        server.online = true;
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        expect(await controller.saveAsTransaction(), isTrue);
+
+        expect(container.read(outboxProvider).entries(), isEmpty);
+        final txn = recorded(container).single;
+        expect(txn.isPending, isFalse);
+        final view = container.read(scanControllerProvider);
+        expect(view.lastIntake?.added, 1);
+        expect(view.savedQueued, isFalse);
+      },
+    );
+
+    test('offline, the sheet is told the lines are queued', () async {
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      expect(await controller.saveAsTransaction(), isTrue);
+
+      final view = container.read(scanControllerProvider);
+      expect(view.savedQueued, isTrue);
+      expect(view.lastIntake, isNull, reason: 'nothing is known yet');
+    });
+
+    test(
+      'a twin only the server knew is merged, never a second expense',
+      () async {
+        // The bank's row reached the server after the phone last refreshed.
+        server
+          ..online = true
+          ..answer = (p) => p['merge_with'] == null
+              ? <String, dynamic>{
+                  'ok': false,
+                  'status': 'duplicate_suspected',
+                  'twin': <String, dynamic>{'id': 'bank-9'},
+                }
+              : null;
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        expect(await controller.saveAsTransaction(), isTrue);
+
+        expect(server.sent.last['merge_with'], 'bank-9');
+        expect(server.sent.first['id'], server.sent.last['id']);
+        final rows = recorded(container);
+        expect(rows.map((t) => t.id), <String>['bank-9']);
+      },
+    );
+
+    test(
+      'a bank row deleted meanwhile leaves the receipt its own expense',
+      () async {
+        server
+          ..online = true
+          ..answer = (p) => p['merge_with'] != null
+              ? <String, dynamic>{
+                  'ok': false,
+                  'reason': 'merge_target_not_found',
+                }
+              : null;
+        final bank = ZadTransaction.fromJson(<String, dynamic>{
+          'id': 'bank-1',
+          'user_id': 'user-1',
+          'amount': 248.75,
+          'title': 'BDC شراء',
+          'created_at': now.toIso8601String(),
+          'txn_kind': 'expense',
+          'is_expense': true,
+          'source_type': 'notification_listener',
+        });
+        await transactions.put(bank.id, jsonEncode(bank.toCacheJson()));
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        await controller.saveAsTransaction();
+
+        expect(server.sent.last.containsKey('merge_with'), isFalse);
+        expect(server.sent.last['allow_duplicate'], isTrue);
+        expect(container.read(outboxProvider).entries(), isEmpty);
+      },
+    );
+
+    test('a refusal is a dead letter, not a silent loss', () async {
+      server
+        ..online = true
+        ..answer = (_) => <String, dynamic>{
+          'ok': false,
+          'reason': 'invalid_input',
+        };
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(scanControllerProvider.notifier);
+
+      await controller.scan(ReceiptImageSource.camera);
+      await controller.saveAsTransaction();
+
+      expect(container.read(outboxProvider).deadLetters(), hasLength(1));
     });
 
     test('a correction is what gets saved, not what was read', () async {
@@ -555,6 +669,7 @@ void main() {
         expect(rows.single.title, 'بنده');
         expect(rows.single.category, 'البقالة');
         expect(rows.single.amount, 248.75);
+        expect(queuedPurchase(container)['merge_with'], 'bank-1');
       },
     );
 
@@ -579,6 +694,11 @@ void main() {
       await controller.saveAsTransaction();
 
       expect(recorded(container), hasLength(2));
+      expect(
+        queuedPurchase(container)['allow_duplicate'],
+        isTrue,
+        reason: "the customer answered the server's question already",
+      );
     });
 
     test('a category outside the eleven is dropped, not written', () async {

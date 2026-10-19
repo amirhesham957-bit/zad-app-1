@@ -18,6 +18,7 @@ import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, 
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETABLE_PROMPT } from "./documentScan.ts";
+import { normalizeStatement, STATEMENT_PROMPT, statementMimeOk } from "./statementScan.ts";
 import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
 import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
 import { RECEIPT_SYSTEM_PROMPT } from "./receiptPrompt.ts";
@@ -41,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { budgetUsage, dailyCap, groundingPlan, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, groundingPlan, KEY_REST_MS, keyRefused, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -513,6 +514,8 @@ async function callGeminiNative(opts: {
    * brain tier, where the reasoning is the point (and gemini-2.5-pro cannot disable it).
    */
   thinkingBudget?: number;
+  /** Per-call ceiling; defaults to UPSTREAM_TIMEOUT_MS. A long statement PDF needs more. */
+  timeoutMs?: number;
 }): Promise<{ content: string | null; status: number; ok: boolean; raw: unknown }> {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:generateContent?key=${encodeURIComponent(opts.apiKey)}`;
@@ -541,7 +544,7 @@ async function callGeminiNative(opts: {
         contents: [{ role: "user", parts: toGeminiParts(opts.content) }],
         generationConfig,
       }),
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? UPSTREAM_TIMEOUT_MS),
     });
     // Learn the rejection once and retry immediately without the field, so a model swap
     // degrades to one wasted call rather than a dead scan path.
@@ -581,6 +584,13 @@ async function callGeminiPool(opts: {
   maxTokens?: number;
   jsonMode?: boolean;
   thinkingBudget?: number;
+  timeoutMs?: number;
+  /**
+   * Epoch ms after which no further key is tried. Without it a slow request that times out
+   * on every key costs keys × timeout, which for a statement PDF passes the function's own
+   * wall clock before the chain ever reaches a second model.
+   */
+  deadline?: number;
 }): Promise<{ content: string | null; ok: boolean }> {
   if (GEMINI_KEYS.length === 0) {
     console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..20 / GEMINI_API_KEY all unset)");
@@ -588,6 +598,11 @@ async function callGeminiPool(opts: {
   }
   const start = nextGeminiKeyIndex();
   for (let i = 0; i < GEMINI_KEYS.length; i++) {
+    const left = opts.deadline == null ? null : opts.deadline - Date.now();
+    if (left != null && left < 5000) {
+      console.warn(`[CoreIntel] ${opts.model}: out of time after ${i} key(s)`);
+      return { content: null, ok: false };
+    }
     const keyIndex = (start + i) % GEMINI_KEYS.length;
     const result = await callGeminiNative({
       apiKey: GEMINI_KEYS[keyIndex],
@@ -598,6 +613,7 @@ async function callGeminiPool(opts: {
       maxTokens: opts.maxTokens,
       jsonMode: opts.jsonMode,
       thinkingBudget: opts.thinkingBudget,
+      timeoutMs: left == null ? opts.timeoutMs : Math.min(opts.timeoutMs ?? UPSTREAM_TIMEOUT_MS, left),
     });
     if (result.ok && result.content) return { content: result.content, ok: true };
     if (result.status === 503 || result.status === 404) {
@@ -737,7 +753,16 @@ async function callJsonModel(
 // image fallback can only ever produce a 400 dressed up as an empty result. Failing
 // honestly (null → the action logs and returns an empty payload) beats a fallback that
 // pretends to be one.
-async function callVisionModel(systemPrompt: string, userPrompt: string, imageBase64: string, mimeType: string) {
+async function callVisionModel(
+  systemPrompt: string,
+  userPrompt: string,
+  imageBase64: string,
+  mimeType: string,
+  // A statement is tens of rows where a receipt is a handful, and a PDF of several pages
+  // takes longer than one photo — so it asks for more of both, inside one overall budget.
+  long?: { maxTokens: number; timeoutMs: number; budgetMs: number },
+) {
+  const deadline = long ? Date.now() + long.budgetMs : undefined;
   const content = [
     { type: "text", text: userPrompt },
     { type: "image_url", image_url: { url: "data:" + mimeType + ";base64," + imageBase64 } },
@@ -746,7 +771,8 @@ async function callVisionModel(systemPrompt: string, userPrompt: string, imageBa
     model, systemPrompt, content, temperature: 0.2,
     // 4000, not 2000: a long receipt's line items are the output here, and thinking is off
     // so the whole budget is available for the JSON itself.
-    maxTokens: 4000, jsonMode: true, thinkingBudget: 0,
+    maxTokens: long?.maxTokens ?? 4000, jsonMode: true, thinkingBudget: 0,
+    timeoutMs: long?.timeoutMs, deadline,
   });
 
   // Vision has no Groq fallback and never will — Groq rejects JSON mode on any request
@@ -762,14 +788,14 @@ async function callVisionModel(systemPrompt: string, userPrompt: string, imageBa
   // and it led every receipt and prescription scan. It is now the last resort, not the first.
   const chain = [...new Set([...VISION_FALLBACK_MODELS, GEMINI_MODEL_ROUTINE])];
   let gemini = await attempt(chain[0]);
-  for (let i = 1; i < chain.length && !gemini.ok; i++) {
+  for (let i = 1; i < chain.length && !gemini.ok && (deadline == null || Date.now() < deadline); i++) {
     console.warn(`[CoreIntel] vision model ${chain[i - 1]} failed on every key; trying ${chain[i]}`);
     gemini = await attempt(chain[i]);
   }
   // Still nothing: a 429 here is often the per-minute bucket rather than the daily one, and
   // that clears on its own, so one delayed re-sweep of the whole chain is worth more than
   // failing on the first pass.
-  if (!gemini.ok) {
+  if (!gemini.ok && deadline == null) {
     await new Promise((r) => setTimeout(r, 1500));
     gemini = await attempt(chain[0]);
   }
@@ -988,6 +1014,16 @@ export let lastWebSearchAttempts: string[] = [];
  */
 /** بعد ما بحث جوجل من Gemini يرجّع 429 على كل الموديلات، بيتساب ٣٠ دقيقة بدل ٨ محاولات فاشلة في كل سؤال. */
 let groundedQuotaUntil = 0;
+// A key its project refuses (keyRefused) rests here, in memory: one refused call per instance
+// per half hour instead of four per search, each one a unit of the paid daily cap.
+let groundingKeyRestUntil = 0;
+
+function restRefusedKey(status: number, body: string): boolean {
+  if (!keyRefused(status, body)) return false;
+  groundingKeyRestUntil = Date.now() + KEY_REST_MS;
+  console.error(`[CoreIntel] grounding key refused (HTTP ${status}) — resting 30 min. Enable the Generative Language API and billing on the project of the grounding key.`);
+  return true;
+}
 
 /** The keys grounding may use now, or null; a paid call first takes one from today's budget. */
 function currentGroundingPlan() {
@@ -1013,6 +1049,10 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   }
   if (Date.now() < groundedQuotaUntil) {
     lastWebSearchAttempts.push("gemini_google_search:resting (quota)");
+    return [];
+  }
+  if (Date.now() < groundingKeyRestUntil) {
+    lastWebSearchAttempts.push("gemini_google_search:resting (key refused)");
     return [];
   }
   let sawOnly429 = true;
@@ -1041,6 +1081,7 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           const msg = (errText.match(/"message":\s*"([^"]{0,90})/)?.[1] ?? "").replace(/[^\x20-\x7E]/g, "");
           lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
           console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
+          if (restRefusedKey(res.status, errText)) return [];
           if (res.status !== 429) sawOnly429 = false;
           // الكوتة لكل موديل لوحده (CLAUDE.md) — 429 على موديل مش معناه إن التاني مقفول.
           continue;
@@ -1087,6 +1128,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
   // 429 from 2026-10-05, so walking all ten only delayed the fallback.
   const grounding = currentGroundingPlan();
   if (!grounding) return { parsed: null, ok: false };
+  if (Date.now() < groundingKeyRestUntil) return { parsed: null, ok: false };
   const keys = grounding.keys;
   // The card waits on this, and compound still needs its turn: 40s in all.
   const deadline = Date.now() + 40_000;
@@ -1111,6 +1153,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
         });
         if (!res.ok) {
           console.warn(`[CoreIntel] grounded json k${ki}/${model} HTTP ${res.status}`);
+          if (restRefusedKey(res.status, await res.text())) return { parsed: null, ok: false };
           continue;
         }
         const data = await res.json();
@@ -2223,6 +2266,30 @@ async function handle(req: Request): Promise<Response> {
         } catch (e) {
           console.error("[CoreIntel] analyze_document_image JSON parse error:", (e as Error).message);
           return jsonResponse({ document: null, reason: "unreadable" });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANALYZE_STATEMENT — كشف حساب بالصورة أو PDF (statementScan.ts، ZAD_PLAN ٣.٣)
+      // ──────────────────────────────────────────────────────────
+      case "analyze_statement": {
+        const { file_base64, mime_type } = payload || {};
+        if (!file_base64 || !statementMimeOk(mime_type)) {
+          return jsonResponse({ statement: null, reason: "bad_request" });
+        }
+        const userPrompt = "Transcribe every transaction row of this account statement.";
+        // ١٦ ألف توكن ≈ ٣٠٠ صف. ٩٠ ثانية للنداء، و١٢٠ للسلسلة كلها — تحت حد الفانكشن (١٥٠).
+        const long = { maxTokens: 16000, timeoutMs: 90000, budgetMs: 120000 };
+        const visionResult = await logged(user_id, action, "callVisionModel", { args: [STATEMENT_PROMPT, userPrompt, "<file>", mime_type] }, () => callVisionModel(STATEMENT_PROMPT, userPrompt, file_base64, mime_type, long));
+        const objectMatch = visionResult ? visionResult.match(/\{[\s\S]*\}/) : null;
+        if (!objectMatch) return jsonResponse({ statement: null, reason: "unreadable" });
+        try {
+          const statement = normalizeStatement(JSON.parse(objectMatch[0]));
+          return jsonResponse(statement.rows.length === 0 ? { statement: null, reason: "nothing_found" } : { statement });
+        } catch (e) {
+          // غالباً الرد اتقطع عند حد التوكنز (كشف طويل جداً).
+          console.error("[CoreIntel] analyze_statement JSON parse error:", (e as Error).message);
+          return jsonResponse({ statement: null, reason: "unreadable" });
         }
       }
 

@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
@@ -51,8 +52,12 @@ class ZadTopHeader extends StatelessWidget {
     this.kidsMode = false,
     this.onExitKidsMode,
     this.pet,
+    this.sky = SkyPhase.day,
     super.key,
   });
+
+  /// The time of day the header's sky shows (zad_sky.dart).
+  final SkyPhase sky;
 
   /// The screen's title.
   final String title;
@@ -88,92 +93,95 @@ class ZadTopHeader extends StatelessWidget {
     children: <Widget>[
       ColoredBox(
         color: _surfaceContainerLow.withValues(alpha: 0.92),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    _Square(
-                      size: 32,
-                      radius: 10,
-                      color: kShellPrimary.withValues(alpha: 0.08),
-                      onTap: onOpenDrawer,
-                      semantic: 'المزيد',
-                      child: const Icon(
-                        Icons.menu,
-                        size: 18,
-                        color: kShellPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const _CarrotTile(size: 32, radius: 9, glyph: 18),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'زاد',
-                      style: TextStyle(
-                        fontSize: 19,
-                        height: 22 / 19,
-                        letterSpacing: 0.2,
-                        fontWeight: FontWeight.w700,
-                        color: kShellPrimary,
-                      ),
-                    ),
-                    if (kidsMode) ...<Widget>[
-                      const SizedBox(width: 8),
-                      const _KidsPill('وضع الأطفال', fontSize: 11),
-                    ],
-                    const Spacer(),
-                    if (kidsMode && onExitKidsMode != null) ...<Widget>[
-                      _KidsPill(
-                        'الوضع الكامل',
-                        fontSize: 11.5,
-                        onTap: onExitKidsMode,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+        child: ZadSky(
+          phase: sky,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      _Square(
+                        size: 32,
+                        radius: 10,
+                        color: kShellPrimary.withValues(alpha: 0.08),
+                        onTap: onOpenDrawer,
+                        semantic: 'المزيد',
+                        child: const Icon(
+                          Icons.menu,
+                          size: 18,
+                          color: kShellPrimary,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                    ],
-                    _Avatar(url: avatarUrl, onTap: onAvatar),
-                    const SizedBox(width: 8),
-                    _BellPill(
-                      unread: hasUnreadNotifications,
-                      onTap: onNotifications,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          height: 32 / 26,
+                      const SizedBox(width: 10),
+                      const _CarrotTile(size: 32, radius: 9, glyph: 18),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'زاد',
+                        style: TextStyle(
+                          fontSize: 19,
+                          height: 22 / 19,
                           letterSpacing: 0.2,
                           fontWeight: FontWeight.w700,
-                          color: kShellTextPrimary,
+                          color: kShellPrimary,
                         ),
                       ),
-                    ),
-                    // Down by the bottom padding, so it sits on the rule.
-                    if (pet case final pet?)
-                      Transform.translate(
-                        offset: const Offset(0, 14),
-                        child: pet,
+                      if (kidsMode) ...<Widget>[
+                        const SizedBox(width: 8),
+                        const _KidsPill('وضع الأطفال', fontSize: 11),
+                      ],
+                      const Spacer(),
+                      if (kidsMode && onExitKidsMode != null) ...<Widget>[
+                        _KidsPill(
+                          'الوضع الكامل',
+                          fontSize: 11.5,
+                          onTap: onExitKidsMode,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      _Avatar(url: avatarUrl, onTap: onAvatar),
+                      const SizedBox(width: 8),
+                      _BellPill(
+                        unread: hasUnreadNotifications,
+                        onTap: onNotifications,
                       ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            height: 32 / 26,
+                            letterSpacing: 0.2,
+                            fontWeight: FontWeight.w700,
+                            color: kShellTextPrimary,
+                          ),
+                        ),
+                      ),
+                      // Down by the bottom padding, so it sits on the rule.
+                      if (pet case final pet?)
+                        Transform.translate(
+                          offset: const Offset(0, 14),
+                          child: pet,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -53,6 +53,7 @@
 // Validators (Task 16.1/16.2) live in validators.ts — untouched, still the sole gate
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
+import { purchaseToolReply, toolPurchaseLines } from "./purchaseDoor.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
@@ -63,10 +64,14 @@ import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type Family
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak, machineCloser } from "./acceptance.ts";
+import { EVAL_CASES } from "./evals/cases.ts";
+import { judgeEval } from "./evals/judge.ts";
+import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize } from "./evals/bankEval.ts";
+import bankCorpus from "./testdata/bank_corpus.json" with { type: "json" };
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
+import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
@@ -2297,6 +2302,39 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
             `العملية اتبعتت تاني. اسأل العميل: دي عملية تانية فعلاً ولا نفس اللي فاتت؟ ` +
             `لو أكّد إنها تانية، نادِ الأداة تاني بـ allow_duplicate=true.`;
         }
+      }
+
+      // مصروف فيه أصناف = شرا واحد (ZAD_PLAN ٣.٦ د، purchaseDoor.ts): الفلوس والمخزن والصيدلية والأسعار
+      // في ترانزاكشن واحدة، فمفيش «الفلوس اتسجلت والأصناف لأ» لو add_inventory_item اتنسى أو وقع.
+      const purchaseLines = isExpense ? toolPurchaseLines(input.lines) : [];
+      if (purchaseLines.length > 0) {
+        const amount = Math.round(input.amount * 100) / 100;
+        const title = String(input.title).trim().slice(0, 80);
+        const { data: bought, error: buyErr } = await sb.rpc("zad_record_purchase_service", {
+          p_user: userId,
+          p_purchase: {
+            id: crypto.randomUUID(), amount, title,
+            category: input.category ? String(input.category).trim().slice(0, 40) : null,
+            wallet: input.wallet === "cash" ? "cash" : "card",
+            source_type: txnSourceType(input.source_type, scope.source),
+            merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
+            allow_duplicate: input.allow_duplicate === true,
+            lines: purchaseLines,
+          },
+        });
+        if (buyErr) {
+          console.error("[log_transaction] purchase door failed:", buyErr.message);
+          return "مرفوض: الشرا ماتسجلش دلوقتي — ولا حاجة اتكتبت. جرب تاني.";
+        }
+        const reply = purchaseToolReply(bought as Record<string, unknown> | null, { title, amount });
+        if (!reply.ok) return reply.text;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: null, new: { amount: input.amount, title: input.title, lines: purchaseLines.length } });
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_transactions", targetId: reply.transactionId!,
+          previous: null, next: { id: reply.transactionId, amount, title, purchase: bought },
+        });
+        return reply.text;
       }
 
       const w = await writeRows(
@@ -4545,6 +4583,25 @@ export const CHAT_TOOLS: ToolDef[] = [
         title: { type: "string", description: "وصف قصير من كلام العميل نفسه" },
         category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
+        lines: {
+          type: "array",
+          description:
+            "الأصناف اللي اتشرت بالمبلغ ده، لو العميل سمّاها («اشتريت لبن وعيش بـ٤٠»). بتدخل المخزن " +
+            "(أو الصيدلية للدوا) مع المصروف في نفس الكتابة — ماتندهش add_inventory_item لنفس الأصناف. " +
+            "مصروف بس، مش دخل.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              quantity: { type: "number" },
+              unit: { type: "string", description: "حبة، كيلو، لتر، علبة، كيس..." },
+              category: { type: "string" },
+              price: { type: "number", description: "سعر السطر كله لو العميل قاله" },
+              to: { type: "string", enum: ["pantry", "pharmacy"], description: "pharmacy للدوا، غير كده pantry" },
+            },
+            required: ["name"],
+          },
+        },
         allow_duplicate: {
           type: "boolean",
           description:
@@ -5773,9 +5830,12 @@ interface Proposal {
 function describeProposal(tool: string, input: any, currency: string): string {
   const money = (n: number) => currency === "غير معروف" ? `${n}` : `${n} ${currency}`;
   switch (tool) {
-    case "log_transaction":
+    case "log_transaction": {
+      const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
-        (input.category ? ` (${input.category})` : "");
+        (input.category ? ` (${input.category})` : "") +
+        (lines.length ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
+    }
     case "update_transaction": {
       const parts: string[] = [];
       if (input.amount !== undefined) parts.push(`المبلغ ${money(input.amount)}`);
@@ -8069,6 +8129,131 @@ async function handleRequest(req: Request): Promise<Response> {
         payload: { passed, total: results.length, results, search, context },
       });
       return new Response(JSON.stringify({ passed, total: results.length, results, search, context }), { headers: CORS_HEADERS });
+    }
+
+    // التقييم الليلي (ZAD_DREAM_PLAN.md ٢.١، ع٣): حالات evals/cases.ts على العقل الحي، على مفتاح التقييم
+    // لوحده (حارة eval، ZAD_EVAL_KEY) — عمره ما يلمس مفاتيح العملاء ولا الكرونات. بيتنادى دفعات
+    // (offset/limit) عشان كل نداء يخلص جوه وقت الفانكشن، وكل حالة بتتكتب في zad_eval_results.
+    // كل حالة بمحادثة نضيفة، واللي اتكتب في الحساب بيتمسح بعدها.
+    if (body.action === "eval_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      if (!hasEvalKey()) {
+        return new Response(JSON.stringify({ error: "no_eval_key", note: "set ZAD_EVAL_KEY (a billed key, not one of the pool)" }), { status: 409, headers: CORS_HEADERS });
+      }
+      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const runId = typeof body.run_id === "string" && /^[0-9a-f-]{36}$/.test(body.run_id) ? body.run_id : crypto.randomUUID();
+      const offset = Math.max(0, Number(body.offset) || 0);
+      const limit = Math.min(20, Math.max(1, Number(body.limit) || 8));
+      const childId = (Deno.env.get("ZAD_EVAL_CHILD_USER_ID") ?? "").trim();
+      const batch = EVAL_CASES.slice(offset, offset + limit);
+      const started = Date.now();
+      const results: Array<Record<string, unknown>> = [];
+      const wipe = async (uid: string, since: string) => {
+        await sbEval.from("zad_chat_turns").delete().eq("user_id", uid);
+        for (const t of ["zad_appointments", "zad_shopping_list", "zad_pharmacy_items"]) {
+          await sbEval.from(t).delete().eq("user_id", uid).gte("created_at", since);
+        }
+      };
+      for (const c of batch) {
+        const uid = c.account === "child" ? childId : ACCEPTANCE_USER_ID;
+        if (!uid) {
+          results.push({ id: c.id, category: c.category, pass: null, failure: "skipped: no ZAD_EVAL_CHILD_USER_ID" });
+          continue;
+        }
+        if (Date.now() - started > 110_000) {
+          results.push({ id: c.id, category: c.category, pass: null, failure: "skipped: batch time" });
+          continue;
+        }
+        const since = new Date().toISOString();
+        await sbEval.from("zad_chat_turns").delete().eq("user_id", uid);
+        const t0 = Date.now();
+        let row: Record<string, unknown>;
+        try {
+          const res = await inLane("eval", () => handleAgentTurnInLane(sbEval, uid, { message: c.message, history: [] }, false));
+          const payload = await res.json().catch(() => null);
+          const outcome = {
+            reply: String(payload?.reply ?? ""),
+            executed: Array.isArray(payload?.executed) ? payload.executed : [],
+            proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
+            consulted: Array.isArray(payload?.consulted) ? (payload.consulted as string[]) : [],
+          };
+          const failure = payload?.ok === true
+            ? internalLeak(outcome.reply) ?? machineCloser(outcome.reply) ?? judgeEval(c, outcome)
+            : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
+          row = {
+            id: c.id, category: c.category, pass: failure === null, failure, reply: outcome.reply.slice(0, 600),
+            executed: outcome.executed.map((e: { tool?: string }) => e.tool),
+            proposed: outcome.proposals.map((p: { tool?: string }) => p?.tool), consulted: outcome.consulted,
+            model: payload?.model ?? null, ms: Date.now() - t0,
+          };
+        } catch (e) {
+          row = { id: c.id, category: c.category, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 };
+        }
+        results.push(row);
+        await wipe(uid, since);
+        const { error: saveErr } = await sbEval.from("zad_eval_results").insert({
+          run_id: runId, case_id: c.id, category: c.category, pass: row.pass === true, failure: row.failure ?? null,
+          reply: row.reply ?? null, detail: { executed: row.executed, proposed: row.proposed, consulted: row.consulted, model: row.model },
+          ms: row.ms ?? null,
+        });
+        if (saveErr) console.error("[eval_run] save failed:", saveErr.message);
+      }
+      const next = offset + batch.length < EVAL_CASES.length ? offset + batch.length : null;
+      return new Response(JSON.stringify({ run_id: runId, offset, next, total: EVAL_CASES.length, results }), { headers: CORS_HEADERS });
+    }
+
+    // مجموعة اختبار البنك على الموديل (evals/bankEval.ts، ZAD_PLAN ٣.٧): كل رسالة في
+    // testdata/bank_corpus.json على نفس برومبت البوابة اللي الإشعار الحقيقي بيعدّي عليه، على مفتاح
+    // التقييم. مابيكتبش أي حاجة في حساب حد — بيصنّف بس. كل رسالة صف في zad_eval_results
+    // (category bank)، والرد فيه النسب والهدف (المبلغ والاتجاه ٩٥٪، التاجر ٩٠٪).
+    if (body.action === "bank_eval_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      if (!hasEvalKey()) {
+        return new Response(JSON.stringify({ error: "no_eval_key", note: "set ZAD_EVAL_KEY (a billed key, not one of the pool)" }), { status: 409, headers: CORS_HEADERS });
+      }
+      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const runId = crypto.randomUUID();
+      const cases = (bankCorpus as { cases: BankCase[] }).cases;
+      const started = Date.now();
+      const results: BankCaseResult[] = [];
+      const rows: Array<Record<string, unknown>> = [];
+      // ست في المرة: ١٥٠ رسالة تخلص في أقل من دقيقة، جوه وقت الفانكشن.
+      for (let i = 0; i < cases.length; i += 6) {
+        if (Date.now() - started > 110_000) break;
+        await Promise.all(cases.slice(i, i + 6).map(async (c) => {
+          const known = knownFinancialSender(c.package, c.title);
+          const g = gatePrompt({ packageName: c.package, title: c.title, text: c.text, knownSender: known });
+          const t0 = Date.now();
+          let verdict: GateVerdict | null = null;
+          let error: string | null = null;
+          try {
+            const reply = await inLane("eval", () =>
+              callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 })
+            );
+            verdict = parseGateVerdict(reply.text ?? "");
+          } catch (e) {
+            error = String((e as Error)?.message ?? e).slice(0, 160);
+          }
+          const r = judgeBankCase(c, verdict, known);
+          results.push(r);
+          rows.push({
+            run_id: runId, case_id: c.id, category: "bank",
+            pass: failureOf(r, c) === null, failure: error ? `model failed: ${error}` : failureOf(r, c),
+            reply: null, ms: Date.now() - t0,
+            detail: { market: c.market, origin: c.origin, decision: r.decision, kind: r.kind, counterparty: r.counterparty,
+              amountOk: r.amountOk, directionOk: r.directionOk, merchantOk: r.merchantOk },
+          });
+        }));
+      }
+      const { error: saveErr } = await sbEval.from("zad_eval_results").insert(rows);
+      if (saveErr) console.error("[bank_eval_run] save failed:", saveErr.message);
+      const summary = summarize(cases, results);
+      console.log(`[bank_eval_run] ${results.length}/${cases.length} meetsBar=${summary.meetsBar}`, JSON.stringify(summary));
+      return new Response(JSON.stringify({ run_id: runId, measured: results.length, total: cases.length, summary }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {

@@ -452,3 +452,27 @@ Deno.test("Zad notices a question left unanswered: twice ⇒ says so, four times
   assertEquals(kb.at(-1)?.[0].callback_data, CHECKIN_OFF_CALLBACK);
   assertEquals(checkInBundleKeyboard([{ id: "11111111-1111-1111-1111-111111111111", label: "رز" }]).length, 1);
 });
+
+import { closeDayKeyboard, closeDayReply, parseCloseDayCallback } from "./telegram.ts";
+
+Deno.test("close day buttons round-trip and stay under Telegram's 64-byte callback limit", () => {
+  const id = "00000000-0000-4000-8000-0000000000cd";
+  const buttons = closeDayKeyboard(id).flat();
+  assertEquals(buttons.length, 3);
+  const outcomes = buttons.map((b) => {
+    assert(new TextEncoder().encode(b.callback_data!).length <= 64);
+    return parseCloseDayCallback(b.callback_data!)?.outcome;
+  });
+  assertEquals(outcomes, ["all_good", "cash", "missing"]);
+  assertEquals(parseCloseDayCallback(`cd:${id}:x`), null);
+  assertEquals(parseCloseDayCallback("cd:not-a-uuid:o"), null);
+  assertEquals(parseCloseDayCallback(`dz:${id}:t`), null);
+});
+
+Deno.test("close day reply: says the points once, asks for the cash, and admits a failed write", () => {
+  assert(closeDayReply("all_good", { ok: true, already: false, xp: 20 }).includes("+20"));
+  assert(!closeDayReply("all_good", { ok: true, already: true, xp: 0 }).includes("+"));
+  assert(closeDayReply("cash", { ok: true, already: false, xp: 20 }).includes("صرفت كام"));
+  assert(closeDayReply("all_good", null).includes("ماقدرتش"));
+  assert(closeDayReply("all_good", { ok: false, reason: "stale" }).includes("يوم فات"));
+});

@@ -15,6 +15,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -23,6 +24,8 @@ import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/birthday_celebration.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/campaign_stories.dart';
+import 'package:zad/features/home/presentation/close_day_card.dart';
+import 'package:zad/features/home/presentation/coverage_note.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
@@ -41,6 +44,8 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/upcoming_outings.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/budget/domain/event_day_budget.dart';
+import 'package:zad/shared/budget/domain/spend_coverage.dart';
+import 'package:zad/shared/day_close/presentation/close_day_sheet.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -108,6 +113,11 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // ZAD_PLAN ٣.٢: in the evening, close the day.
+          const ZadTrailingGap(
+            gap: 16,
+            child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
+          ),
           // The bot's link right under the money while it is missing (owner,
           // 2026-10-13): the reminders come from Telegram.
           ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
@@ -199,25 +209,28 @@ class _Budget extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         ZadAppearOnEntry(
-          child: ZadBalanceCard(
-            spendable: spendable,
-            spent: snapshot.spent,
-            openingBalance: snapshot.openingBalance,
-            committed: snapshot.committed,
-            currency: snapshot.currency,
-            period: period,
-            now: now,
-            // Either the server has not confirmed this session's figures, or a
-            // local write is still queued and the number on screen is this
-            // device's arithmetic rather than the server's.
-            isStale: view.isStale || view.pendingSpend > 0,
-            // The occasion's colours, when a campaign runs and they read.
-            gradient: campaignGradient(ref.watch(homeCampaignProvider)),
-            // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
-            onTap: () => ZadScreens.openWhyChanged(context),
-            onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
-            onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
-            onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
+          // The money steps back as the list moves on (ZAD_PLAN ٢.٣).
+          child: ZadScrollShrink(
+            child: ZadBalanceCard(
+              spendable: spendable,
+              spent: snapshot.spent,
+              openingBalance: snapshot.openingBalance,
+              committed: snapshot.committed,
+              currency: snapshot.currency,
+              period: period,
+              now: now,
+              // Either the server has not confirmed this session's figures, or
+              // a local write is still queued and the number on screen is this
+              // device's arithmetic rather than the server's.
+              isStale: view.isStale || view.pendingSpend > 0,
+              // The occasion's colours, when a campaign runs and they read.
+              gradient: campaignGradient(ref.watch(homeCampaignProvider)),
+              // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
+              onTap: () => ZadScreens.openWhyChanged(context),
+              onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
+              onQuickExpense: () => ZadScreens.showQuickExpenseSheet(context),
+              onEditBalance: () => ZadScreens.showMonthlyLimitSheet(context),
+            ),
           ),
         ),
         const SizedBox(height: 14),
@@ -230,6 +243,26 @@ class _Budget extends ConsumerWidget {
               event: _eventDay(ref, spendable, period.daysToLiveOn(now), now),
               currency: snapshot.currency,
               payday: period.isCalendarMonth ? null : period.periodEnd,
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        // ZAD_PLAN ٣.٤: how much of the spending Zad is seeing.
+        if (spendCoverage(
+              spent: snapshot.spent,
+              cap: snapshot.openingBalance,
+              capConfirmed: snapshot.limitConfirmed,
+              cycleLengthDays: snapshot.cycleLengthDays,
+              daysLeft: snapshot.daysLeft,
+            )
+            case final coverage?) ...<Widget>[
+          ZadAppearOnEntry(
+            delayMs: 50,
+            child: CoverageNote(
+              coverage: coverage,
+              // Closing the day is what lets Zad see more tonight; the
+              // sheet also links the bank.
+              onTap: () => showCloseDaySheet(context, ref),
             ),
           ),
           const SizedBox(height: 14),

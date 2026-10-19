@@ -17,6 +17,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/elevation.dart';
+import 'package:zad/core/design/foundation/glass_surface.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -157,22 +158,47 @@ class ZadBalanceCard extends StatelessWidget {
                         onEdit: onEditBalance,
                       ),
                       const SizedBox(height: ZadSpacing.md),
-                      _Figure(
-                        amount: amount,
-                        currency: currency,
-                        isConfirmed: !isStale,
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: _Figure(
+                              amount: amount,
+                              currency: currency,
+                              isConfirmed: !isStale,
+                            ),
+                          ),
+                          const SizedBox(width: ZadSpacing.md),
+                          _CommitmentRing(
+                            elapsed: _periodFraction,
+                            onPace: !_aheadOfPace,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: ZadSpacing.lg),
-                      _Chips(
-                        spent: spent,
-                        committed: committed,
-                        currency: currency,
-                      ),
-                      const SizedBox(height: ZadSpacing.lg),
-                      _PaceBar(
-                        spent: _spentFraction,
-                        elapsed: _periodFraction,
-                        aheadOfPace: _aheadOfPace,
+                      // The month's detail sits on one pane of frosted glass
+                      // over the glows (ZAD_PLAN ٢.٥): one blur pass, never
+                      // one per chip.
+                      ZadGlass.onDark(
+                        key: const ValueKey<String>('balance-glass'),
+                        radius: ZadRadii.cardLarge,
+                        padding: const EdgeInsets.all(ZadSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            _Chips(
+                              spent: spent,
+                              committed: committed,
+                              currency: currency,
+                            ),
+                            const SizedBox(height: ZadSpacing.md),
+                            _PaceBar(
+                              spent: _spentFraction,
+                              elapsed: _periodFraction,
+                              aheadOfPace: _aheadOfPace,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     if (onQuickExpense != null ||
@@ -539,6 +565,96 @@ class _FigureState extends State<_Figure> {
       },
     );
   }
+}
+
+/// The commitment ring (ZAD_PLAN ٢.٣): how much of the period has gone by,
+/// and whether the money kept up with it — mint with a soft glow while the
+/// spending is behind the calendar, mustard without one once it has outrun
+/// it. The same two figures as the bar, read at a glance beside the number.
+///
+/// It fills from empty when the card first draws, once; under reduced motion
+/// it is drawn full at once.
+class _CommitmentRing extends StatelessWidget {
+  const new({required this.elapsed, required this.onPace});
+
+  /// How much of the period has gone by, 0..1.
+  final double elapsed;
+
+  /// Spending is not ahead of the calendar.
+  final bool onPace;
+
+  static const double _size = 48;
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final color = onPace ? ZadColors.mintGlow : ZadColors.mustardOchre;
+    return Semantics(
+      key: ValueKey<String>(onPace ? 'ring-on-pace' : 'ring-ahead'),
+      label: onPace
+          ? 'ماشي صح مع الميزانية، عدّى ${(elapsed * 100).round()}٪ من الفترة'
+          : 'الصرف أسرع من الأيام',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: onPace
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: ZadColors.mintGlow.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                  ),
+                ]
+              : const <BoxShadow>[],
+        ),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: still ? elapsed : 0, end: elapsed),
+          duration: still ? Duration.zero : ZadDuration.count,
+          curve: ZadCurves.standard,
+          builder: (context, value, child) => CustomPaint(
+            painter: _RingPainter(value: value, color: color),
+            child: child,
+          ),
+          child: SizedBox.square(
+            dimension: _size,
+            child: Icon(
+              onPace ? ZadIcons.onPace : ZadIcons.aheadOfPace,
+              size: 18,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  const new({required this.value, required this.color});
+
+  final double value;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 4.0;
+    final rect = (Offset.zero & size).deflate(stroke / 2);
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = Colors.white.withValues(alpha: 0.16);
+    canvas.drawOval(rect, track);
+    if (value <= 0) return;
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * value, false, arc);
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.value != value || old.color != color;
 }
 
 /// The bar, and the mark showing where the period has got to.

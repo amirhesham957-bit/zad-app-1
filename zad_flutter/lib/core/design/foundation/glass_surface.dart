@@ -34,6 +34,7 @@ class ZadGlass extends StatelessWidget {
     this.blur = 24,
     this.tint = const Color(0x99FFFFFF),
     this.edge = ZadColors.hairline,
+    this.edgeWidth = 0.5,
     this.padding = const EdgeInsets.all(ZadSpacing.lg),
     this.solid = false,
     super.key,
@@ -49,6 +50,7 @@ class ZadGlass extends StatelessWidget {
     this.blur = 18,
     this.tint = const Color(0x1FFFFFFF),
     this.edge = ZadColors.glassEdge,
+    this.edgeWidth = 0.5,
     this.padding = const EdgeInsets.all(ZadSpacing.lg),
     this.solid = false,
     super.key,
@@ -70,6 +72,9 @@ class ZadGlass extends StatelessWidget {
   /// The hairline that makes the pane read as an edge.
   final Color edge;
 
+  /// The edge's width; a picked option draws it heavier.
+  final double edgeWidth;
+
   /// Inner padding.
   final EdgeInsets padding;
 
@@ -86,7 +91,10 @@ class ZadGlass extends StatelessWidget {
         // A blurred backdrop plus a translucent tint; or, when solid, the tint
         // composited onto white so the same colour lands without the blur.
         color: solid ? Color.alphaBlend(tint, ZadColors.surface) : tint,
-        shape: zadSquircle(radius, side: BorderSide(color: edge, width: 0.5)),
+        shape: zadSquircle(
+          radius,
+          side: BorderSide(color: edge, width: edgeWidth),
+        ),
       ),
       child: Padding(padding: padding, child: child),
     );

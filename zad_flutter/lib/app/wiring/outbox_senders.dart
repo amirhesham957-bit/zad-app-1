@@ -17,6 +17,7 @@ import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/notifications/data/notifications_repository.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/prices/data/prices_repository.dart';
+import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
 import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
@@ -62,6 +63,8 @@ Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>
         await ref.read(recipesRepositoryProvider).sendQueuedRating(entry),
       OutboxKind.reportPrice =>
         await ref.read(pricesRepositoryProvider).sendQueuedReport(entry),
+      OutboxKind.recordPurchase =>
+        await ref.read(purchasesRepositoryProvider).sendQueued(entry),
       OutboxKind.registerPushToken =>
         await ref.read(pushRegistrarProvider).sendQueued(entry),
       OutboxKind.resolveInsight =>

@@ -124,3 +124,17 @@ export function withPaidGroundingFirst<T extends [string, unknown]>(sources: T[]
   const grounded = sources.filter(([name]) => name === "gemini_google_search");
   return [...grounded, ...sources.filter(([name]) => name !== "gemini_google_search")];
 }
+
+/**
+ * A refusal about the key or its Google Cloud project, not about the model (2026-10-18): from
+ * 17:38 that day every paid call answered 403 «Gemini API has not been used in project … or it
+ * is disabled». Every model on that key answers the same, so walking the four models only spent
+ * four units of the daily cap and four round trips per search. One such answer stops the walk.
+ */
+export function keyRefused(status: number, body: string): boolean {
+  if (status === 401 || status === 403) return true;
+  return status === 400 && /API_KEY_INVALID|API key not valid/i.test(body);
+}
+
+/** How long a refused key rests before it is asked again: the owner fixes it in a console. */
+export const KEY_REST_MS = 30 * 60 * 1000;

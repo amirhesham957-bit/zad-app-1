@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/auth/data/background_session.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/nearby/data/nearby_remote.dart';
 import 'package:zad/shared/places/application/child_zones.dart';
@@ -32,12 +33,12 @@ Future<void> placeBackgroundMain() async {
     await Supabase.initialize(
       url: ZadEnv.supabaseUrl,
       publishableKey: ZadEnv.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+      // Read-only, never refreshed: background_session.dart says why.
+      authOptions: backgroundAuthOptions(ZadEnv.supabaseUrl),
     );
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
-    if (session == null) return;
-    if (session.isExpired) await client.auth.refreshSession();
+    // An expired token leaves the events stored for the app to run.
+    final client = usableBackgroundClient(Supabase.instance.client);
+    if (client == null) return;
 
     final remote = ServerThenOverpassRemote(
       supabaseServerCall(client),

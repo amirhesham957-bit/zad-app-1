@@ -171,6 +171,34 @@ void main() {
       expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
     });
 
+    testWidgets('the commitment ring glows on pace and turns once ahead', (
+      tester,
+    ) async {
+      // 40% spent by day 25 of 31: on pace.
+      await pumpCard(tester, cycleStartDay: 25);
+      expect(
+        find.byKey(const ValueKey<String>('ring-on-pace')),
+        findsOneWidget,
+      );
+
+      // 89% spent by the same day: ahead of the calendar.
+      await pumpCard(tester, cycleStartDay: 25, spendable: 880, spent: 7120);
+      expect(find.byKey(const ValueKey<String>('ring-ahead')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('ring-on-pace')), findsNothing);
+    });
+
+    testWidgets(
+      'the month sits on one pane of glass: one blur, not one per chip',
+      (tester) async {
+        await pumpCard(tester, cycleStartDay: 25);
+        expect(
+          find.byKey(const ValueKey<String>('balance-glass')),
+          findsOneWidget,
+        );
+        expect(find.byType(BackdropFilter), findsOneWidget);
+      },
+    );
+
     testWidgets('says "this month" when no payday is known', (tester) async {
       // Claiming a salary cycle for an account that never told us its payday
       // asserts a fact nobody supplied.

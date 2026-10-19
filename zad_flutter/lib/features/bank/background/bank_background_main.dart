@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/features/bank/data/background_delivery.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
+import 'package:zad/shared/auth/data/background_session.dart';
 import 'package:zad/shared/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
@@ -27,15 +28,13 @@ Future<void> bankBackgroundMain() async {
     await Supabase.initialize(
       url: ZadEnv.supabaseUrl,
       publishableKey: ZadEnv.supabaseAnonKey,
-      // No deep links here: there is no activity, and nothing to sign in to.
-      authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+      // Read-only, never refreshed: background_session.dart says why.
+      authOptions: backgroundAuthOptions(ZadEnv.supabaseUrl),
     );
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
-    if (session == null) return;
-    // A phone that slept for hours holds an expired access token; the
-    // function call would be a 401 that looks like a transport failure.
-    if (session.isExpired) await client.auth.refreshSession();
+    // An expired token means the notification stays in the inbox for the
+    // app, which owns the session, to send on its next open.
+    final client = usableBackgroundClient(Supabase.instance.client);
+    if (client == null) return;
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
 

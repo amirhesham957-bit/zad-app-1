@@ -394,3 +394,54 @@ Deno.test("a reachable customer gets the moment as before", async () => {
   assertEquals(res, { sent: 1, skipped: 0, failed: 0 });
   assertEquals(updates.at(-1)?.values.status, "sent");
 });
+
+// ── «اقفل يومك» (20261019140000) ────────────────────────────────────────────
+const closeDayRow = (closes: Row[] = []) => ({
+  zad_voice_moments: [{ id: "00000000-0000-4000-8000-0000000000cd", user_id: "u1", moment: "close_day", status: "pending", attempts: 0,
+    created_at: "2026-10-19T18:30:00Z",
+    facts: { local_date: "2026-10-19", time_zone: "Africa/Cairo", currency: "ج.م", seen_count: 4,
+      seen: [{ name: "قهوة", amount: 50 }, { name: "كارفور", amount: 320.4 }, { name: "أوبر", amount: 85 }] } }],
+  zad_day_closes: closes,
+  zad_users: [{ id: "u1", country: "EG", name: "أمير" }],
+});
+// ٩:٣٥ بالليل في القاهرة — برا الساعات الهادية.
+const atNight = { now: () => Date.parse("2026-10-19T18:35:00Z"), timeZoneOf: () => Promise.resolve("Africa/Cairo") };
+
+Deno.test("close day: a template (no model), a plain notification, and Telegram text carrying the moment id for its buttons", async () => {
+  const { sb, updates } = fakeSb(closeDayRow());
+  const calls: string[] = [];
+  let composed = 0;
+  const res = await processVoiceMoments(sb, {
+    ...atNight,
+    compose: () => { composed++; return Promise.resolve("{}"); },
+    pushDevice: (_u, _t, body, data, dataOnly) => { calls.push(`device:${dataOnly}:${data.voice ?? "-"}:${data.moment}:${body}`); return Promise.resolve("sent"); },
+    pushTelegram: (_u, _t, _b, voice, moment, _s, _e, momentId) => { calls.push(`tg:${voice}:${moment}:${momentId}`); return Promise.resolve("delivered"); },
+  });
+  assertEquals(res, { sent: 1, skipped: 0, failed: 0 });
+  assertEquals(composed, 0);
+  assertEquals(calls, [
+    "device:false:-:close_day:النهارده شفت 4 حاجات: قهوة 50 ج.م، كارفور 320 ج.م، أوبر 85 ج.م وكمان 1. فيه حاجة كاش؟",
+    "tg:false:close_day:00000000-0000-4000-8000-0000000000cd",
+  ]);
+  assertEquals((updates.at(-1)?.values.delivery as Row).composed_by, "template");
+});
+
+Deno.test("close day: a day already closed from the app is not asked about", async () => {
+  const { sb, updates } = fakeSb(closeDayRow([{ user_id: "u1", local_date: "2026-10-19", outcome: "all_good" }]));
+  let sent = 0;
+  const res = await processVoiceMoments(sb, {
+    ...atNight,
+    compose: () => Promise.resolve("{}"),
+    pushDevice: () => { sent++; return Promise.resolve("sent"); },
+    pushTelegram: () => { sent++; return Promise.resolve("delivered"); },
+  });
+  assertEquals(res.skipped, 1);
+  assertEquals(sent, 0);
+  assertEquals(updates[0].values.error, "no longer relevant");
+});
+
+Deno.test("close day: nothing seen today still asks about cash, and one thing reads as one", () => {
+  assertEquals(momentFallback("close_day", { seen_count: 0, seen: [] }).text, "النهارده ماشفتش ولا مصروف. صرفت حاجة كاش؟");
+  assertEquals(momentFallback("close_day", { seen_count: 1, seen: [{ name: "عيش", amount: 10 }], currency: "ج.م" }).text,
+    "النهارده شفت حاجة واحدة: عيش 10 ج.م. فيه حاجة كاش؟");
+});

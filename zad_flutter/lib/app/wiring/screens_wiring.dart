@@ -134,6 +134,7 @@ void wireScreens() {
   ZadScreens.showEditTransactionSheet = showEditTransactionSheet;
   ZadScreens.confirmDeleteTransaction = confirmDeleteTransaction;
   ZadScreens.showQuickExpenseSheet = showQuickExpenseSheet;
+  ZadScreens.showCashExpenseSheet = showCashExpenseSheet;
 }
 
 /// Binds the slots.

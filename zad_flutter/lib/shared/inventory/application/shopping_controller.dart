@@ -39,6 +39,15 @@ class ShoppingView {
   bool get isEmpty => items.isEmpty;
 }
 
+/// Whether [next] is the moment the list was finished: something was still to
+/// buy, nothing is now, and it got there by a purchase — not by deleting the
+/// last lines or by a refresh that arrived already done.
+bool shoppingJustFinished(ShoppingView? previous, ShoppingView next) =>
+    previous != null &&
+    previous.outstanding.isNotEmpty &&
+    next.outstanding.isEmpty &&
+    next.bought.length > previous.bought.length;
+
 /// Holds the shopping list.
 class ShoppingController extends Notifier<ShoppingView> {
   bool _fetching = false;
