@@ -2049,10 +2049,30 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // المطابقة في inventoryRow.ts: اسم متكرر أو صف العميل من غير family_id كانوا بيرجّعوا
       // «مش موجود» (زرار «خلص» في تليجرام، ٢٠٢٦-٠٩-٢٩).
       const { data: candidates } = await sb.from("zad_inventory")
-        .select("id,quantity,user_id,family_id,created_at")
+        .select("id,quantity,user_id,family_id,created_at,restock_mode")
         .eq("item_name", input.item_name).or(inventoryOwnerFilter(userId, familyId));
       const before = pickInventoryRow(candidates as any[], userId, familyId);
       if (!before) return "مرفوض: الصنف مش موجود في مخزون العميل ده — عدّل وحاول تاني.";
+      // «دي مش أساسية» (ZAD_PLAN ٣.١٠): على كل صفوف البيت بالاسم ده، عشان القايمة والتشيك-إن يسكتوا عنه.
+      if (input.restock_mode === "staple" || input.restock_mode === "occasional") {
+        const ids = ((candidates ?? []) as Array<{ id: string }>).map((r) => r.id);
+        const m = await writeRows(
+          sb.from("zad_inventory").update({ restock_mode: input.restock_mode }).in("id", ids).select("id"),
+          "نوع الصنف",
+        );
+        if (!m.ok) return `مرفوض: ${m.reason}`;
+        ctx.mutationCount++;
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_inventory", targetId: before.id,
+          previous: { restock_mode: (before as { restock_mode?: string | null }).restock_mode ?? null },
+          next: { restock_mode: input.restock_mode },
+        });
+        if (input.new_qty === undefined || input.new_qty === null) {
+          return input.restock_mode === "occasional"
+            ? `تمام، «${input.item_name}» بقى من الحاجات اللي بتجيبها كل فترة — مش هعتبره ناقص ولا هفكّرك بيه.`
+            : `تمام، «${input.item_name}» بقى من الأساسيات — هفكّرك بيه لما يقرب يخلص.`;
+        }
+      }
       const w = await writeRows(
         sb.from("zad_inventory").update({ quantity: input.new_qty })
           .eq("id", before.id).select("id,quantity"),
@@ -4440,15 +4460,19 @@ const TOOLS: ToolDef[] = [
   },
   {
     name: "update_inventory_qty",
-    description: "عدّل كمية صنف في المخزون — لازم سبب واضح.",
+    description: "عدّل كمية صنف في المخزون — لازم سبب واضح. أو علّمه أساسي/على فترات بـrestock_mode.",
     input_schema: {
       type: "object",
       properties: {
         item_name: { type: "string" },
         new_qty: { type: "number" },
+        restock_mode: {
+          type: "string", enum: ["staple", "occasional"],
+          description: "لما العميل يقول إن الصنف مش أساسي/بيجيبه كل فترة («دي مش أساسية»، «الرنجة كل شهرين») = occasional: زاد مابيعتبروش ناقص ولا بيفكّر بيه. «دي أساسية» = staple. من غير new_qty لو مفيش كمية",
+        },
         reason: { type: "string", description: "على الأقل ١٠ حروف" },
       },
-      required: ["item_name", "new_qty", "reason"],
+      required: ["item_name", "reason"],
     },
   },
   {
@@ -4708,15 +4732,19 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "update_inventory_qty",
-    description: "عدّل كمية صنف موجود بالفعل في المخزون (بما فيها التصفير لما يخلص).",
+    description: "عدّل كمية صنف موجود بالفعل في المخزون (بما فيها التصفير لما يخلص)، أو علّمه أساسي/على فترات بـrestock_mode.",
     input_schema: {
       type: "object",
       properties: {
         item_name: { type: "string" },
         new_qty: { type: "number" },
+        restock_mode: {
+          type: "string", enum: ["staple", "occasional"],
+          description: "لما العميل يقول إن الصنف مش أساسي/بيجيبه كل فترة («دي مش أساسية»، «الرنجة كل شهرين») = occasional: زاد مابيعتبروش ناقص ولا بيفكّر بيه. «دي أساسية» = staple. من غير new_qty لو مفيش كمية",
+        },
         reason: { type: "string", description: "سبب واضح للتعديل، ١٠ حروف على الأقل" },
       },
-      required: ["item_name", "new_qty", "reason"],
+      required: ["item_name", "reason"],
     },
   },
   {
@@ -8602,11 +8630,17 @@ async function handleRequest(req: Request): Promise<Response> {
           // مخزن البيت وقايمة البيت: صنف ناقص عند البيت بيتضاف مرة واحدة، مش مرة لكل فرد،
           // وصنف الأم ضافته للقايمة مايتضافش تاني في حلم الأب.
           const dreamFamily = await householdFamilyId(sbDream, u.id);
-          const [{ data: pantryItems }, { data: openShop }] = await Promise.all([
+          const [{ data: pantryItems }, { data: openShop }, { data: occasional, error: occErr }] = await Promise.all([
             sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").or(householdFilter(u.id, dreamFamily)),
             sbDream.from("zad_shopping_list").select("item_name").or(householdFilter(u.id, dreamFamily)).eq("is_purchased", false),
+            // حاجات على فترات (الرنجة كل شهرين) مابتنزلش القايمة لما تخلص (ZAD_PLAN ٣.١٠).
+            sbDream.rpc("zad_occasional_items", { p_user: u.id }),
           ]);
-          const toAdd = lowStockToAdd(pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name));
+          if (occErr) console.error(`[dream] occasional items failed for ${u.id}:`, occErr.message);
+          const toAdd = lowStockToAdd(
+            pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name),
+            Array.isArray(occasional) ? (occasional as string[]) : [],
+          );
           if (toAdd.length) {
             const { error: shopErr } = await sbDream.from("zad_shopping_list")
               .insert(toAdd.map((item_name) => ({ user_id: u.id, item_name, quantity: 1 })));

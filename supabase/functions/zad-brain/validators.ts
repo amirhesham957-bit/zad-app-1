@@ -169,6 +169,17 @@ export const validateConfirmObligation: Validator = (input, snap, ctx) => {
 };
 
 export const validateUpdateInventoryQty: Validator = (input, snap) => {
+  // «دي مش أساسية» / «دي أساسية» من غير كمية (ZAD_PLAN ٣.١٠).
+  const mode = input.restock_mode;
+  if (mode !== undefined && mode !== null && mode !== "staple" && mode !== "occasional") {
+    return { ok: false, reason: "restock_mode يا staple يا occasional" };
+  }
+  if (input.new_qty === undefined || input.new_qty === null) {
+    if (!mode) return { ok: false, reason: "محتاج new_qty أو restock_mode" };
+    const known = (snap.stock ?? []).some((s: any) => s.name === input.item_name);
+    if (!known) return { ok: false, reason: "المنتج مش موجود في المخزون" };
+    return { ok: true };
+  }
   if (typeof input.new_qty !== "number" || input.new_qty < 0) {
     return { ok: false, reason: "الكمية ماينفعش تكون بالسالب" };
   }

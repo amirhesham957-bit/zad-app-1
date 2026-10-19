@@ -74,14 +74,24 @@ export function productFamilyOf(name: string): string | null {
  * مفتوح. كل اسم مرة واحدة حتى لو متكرر في المخزون، وكل سلعة أساسية مرة واحدة باسمها
  * لما مجموع ماركاتها يوصل الحد.
  */
-export function lowStockToAdd(pantry: PantryRow[] | null | undefined, openShoppingNames: Array<string | null>): string[] {
+/**
+ * [occasional] = أصناف البيت اللي على فترات (zad_occasional_items، ZAD_PLAN ٣.١٠): الرنجة اللي
+ * بتتشرى كل شهرين مش «ناقصة» لما تخلص، فمابتنزلش القايمة.
+ */
+export function lowStockToAdd(
+  pantry: PantryRow[] | null | undefined,
+  openShoppingNames: Array<string | null>,
+  occasional: Iterable<string> = [],
+): string[] {
   const open = new Set(openShoppingNames.filter((n): n is string => !!n?.trim()).map(normalizeItemName));
+  const skip = new Set([...occasional].filter((n) => !!n?.trim()).map(normalizeItemName));
   const out: string[] = [];
   const families = new Map<string, { total: number; threshold: number }>();
   const familyOrder: string[] = [];
   for (const row of pantry ?? []) {
     const name = row.item_name?.trim();
     if (!name) continue;
+    if (skip.has(normalizeItemName(name))) continue;
     const qty = Number(row.quantity);
     if (!Number.isFinite(qty) || qty < 0) continue;
     const t = Number(row.low_stock_threshold);
