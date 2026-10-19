@@ -203,7 +203,7 @@ void main() {
         id: 'h',
         userId: 'u',
         itemName: 'رنجة',
-        quantity: qty,
+        quantity: qty.toDouble(),
         lowStockThreshold: 2,
         occasionalByHistory: true,
       );

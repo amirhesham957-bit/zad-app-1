@@ -239,7 +239,7 @@ void main() {
       id: 'i-رنجة',
       userId: 'user-1',
       itemName: 'رنجة',
-      quantity: quantity,
+      quantity: quantity.toDouble(),
       lowStockThreshold: 1,
       expiryDate: expiry,
       restockMode: mode,

@@ -32,6 +32,12 @@ void main() {
     expect(formatQuantity(2.125), '2.125');
   });
 
+  test('reads back what it shows, so an edit field it filled saves', () {
+    for (final q in <double>[0.5, 1.5, 0.25, 2.75, 0.3, 2]) {
+      expect(parseQuantity(formatQuantity(q)), q, reason: formatQuantity(q));
+    }
+  });
+
   test('a server row of half a kilo is half a kilo, not zero', () {
     // The app used to read the column with toInt(): 0.5 became 0, «خلص».
     final item = InventoryItem.fromJson(<String, dynamic>{

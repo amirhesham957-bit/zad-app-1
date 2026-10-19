@@ -267,6 +267,43 @@ void main() {
       expect(pantryCtl.modes, <String?>[restockOccasional, null]);
     });
   });
+
+  testWidgets('an edit saves half a kilo as half (ZAD_PLAN ٣.٨)', (
+    tester,
+  ) async {
+    const rice = InventoryItem(
+      id: 'r',
+      userId: 'u',
+      itemName: 'رز',
+      quantity: 0.5,
+      category: 'البقالة',
+    );
+    final pantryCtl = _EditingPantry(
+      const pantry.PantryView(items: <InventoryItem>[rice]),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
+          shoppingControllerProvider.overrideWith(QuietShopping.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PantryView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('تعديل الصنف').first);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(pantryCtl.quantities, <double>[0.5]);
+  });
 }
 
 /// A pantry that records the word each [edit] carried.
@@ -274,13 +311,17 @@ class _EditingPantry extends QuietPantry {
   new(super.view);
 
   final List<String?> modes = <String?>[];
+  final List<double> quantities = <double>[];
 
   @override
   Future<void> edit(
     InventoryItem item, {
     required String itemName,
-    required int quantity,
+    required double quantity,
     String? unit,
     String? restockMode,
-  }) async => modes.add(restockMode);
+  }) async {
+    modes.add(restockMode);
+    quantities.add(quantity);
+  }
 }

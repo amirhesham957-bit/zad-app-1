@@ -1580,8 +1580,11 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                           ),
                           decoration: field(),
                           onChanged: (v) {
-                            final digits = v.replaceAll(RegExp(r'\D'), '');
-                            if (digits != v) _qty.text = digits;
+                            final kept = v.replaceAll(
+                              RegExp('[^0-9٠-٩.,٫½¼¾]'),
+                              '',
+                            );
+                            if (kept != v) _qty.text = kept;
                           },
                         ),
                       ],
@@ -1736,7 +1739,11 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = parseQuantity(_qty.text);
+    // Zero is a count here — an item that ran out is still renamed or marked
+    // «على فترات» — while parseQuantity, built for purchases, refuses it.
+    final quantity = RegExp(r'^[0٠]+([.,٫][0٠]*)?$').hasMatch(_qty.text.trim())
+        ? 0.0
+        : parseQuantity(_qty.text);
     final canSave =
         _name.text.trim().isNotEmpty && quantity != null && quantity >= 0;
     return AlertDialog(
@@ -1765,8 +1772,10 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                       decimal: true,
                     ),
                     onChanged: (v) {
-                      final digits = v.replaceAll(RegExp(r'\D'), '');
-                      if (digits != v) _qty.text = digits;
+                      // Digits and the fraction marks formatQuantity writes:
+                      // stripping «.» and «½» made a half kilo unsavable.
+                      final kept = v.replaceAll(RegExp('[^0-9٠-٩.,٫½¼¾]'), '');
+                      if (kept != v) _qty.text = kept;
                     },
                     decoration: InputDecoration(
                       labelText: 'الكمية',
