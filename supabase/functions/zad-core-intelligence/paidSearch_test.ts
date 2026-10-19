@@ -5,6 +5,7 @@ import {
   dailyCap,
   DEFAULT_DAILY_CAP,
   groundingPlan,
+  keyRefused,
   paidSearchKey,
   takeSearchBudget,
 } from "./paidSearch.ts";
@@ -104,4 +105,18 @@ Deno.test("a settled question, or no paid key, keeps the free sources first", ()
   const chain: Array<[string, number]> = [["search_api", 1], ["gemini_google_search", 2], ["wikipedia", 3]];
   assertEquals(withPaidGroundingFirst(chain, true, false), chain);
   assertEquals(withPaidGroundingFirst(chain, false, true), chain);
+});
+
+Deno.test("a key the project refuses stops the walk; a model's own refusal does not", () => {
+  // What every paid call answered on 2026-10-18 from 17:38.
+  assertEquals(
+    keyRefused(403, '{"error":{"code":403,"message":"Gemini API has not been used in project 1 before or it is disabled."}}'),
+    true,
+  );
+  assertEquals(keyRefused(401, ""), true);
+  assertEquals(keyRefused(400, '{"error":{"message":"API key not valid. Please pass a valid API key.","status":"INVALID_ARGUMENT"}}'), true);
+  // Quota is per model (CLAUDE.md): the next model may still answer.
+  assertEquals(keyRefused(429, "RESOURCE_EXHAUSTED"), false);
+  assertEquals(keyRefused(400, '{"error":{"message":"thinkingConfig is not supported"}}'), false);
+  assertEquals(keyRefused(503, ""), false);
 });
