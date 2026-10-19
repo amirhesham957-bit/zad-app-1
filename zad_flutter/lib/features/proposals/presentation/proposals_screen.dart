@@ -11,12 +11,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/proposals/application/proposal_snooze.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/proposals/application/proposals_controller.dart';
 import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
@@ -108,7 +110,14 @@ class HomeProposalsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(proposalsControllerProvider);
-    if (view.isEmpty) return const SizedBox.shrink();
+    // Swiped left: off home for a few hours, still on the proposals screen.
+    final snooze = ref.watch(proposalSnoozeProvider);
+    final now = ref.read(nowProvider)();
+    final rows = <TransactionProposal>[
+      for (final p in view.rows)
+        if (!(snooze[p.id]?.isAfter(now) ?? false)) p,
+    ];
+    if (rows.isEmpty) return const SizedBox.shrink();
     final controller = ref.read(proposalsControllerProvider.notifier);
 
     ref.listen(proposalsControllerProvider, (previous, next) {
@@ -135,17 +144,138 @@ class HomeProposalsSection extends ConsumerWidget {
               ),
             ),
           ),
-          for (var i = 0; i < view.rows.length; i++) ...<Widget>[
+          for (var i = 0; i < rows.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: 10),
-            ProposalCard(
-              proposal: view.rows[i],
-              busy: view.deciding.contains(view.rows[i].id),
-              failed: view.failed.contains(view.rows[i].id),
-              onDecide: (d) => controller.decide(view.rows[i].id, d),
+            SwipeableProposal(
+              proposal: rows[i],
+              busy: view.deciding.contains(rows[i].id),
+              onConfirm: () =>
+                  controller.decide(rows[i].id, ProposalDecision.confirm),
+              onPostpone: () =>
+                  ref.read(proposalSnoozeProvider.notifier).snooze(rows[i].id),
+              child: ProposalCard(
+                proposal: rows[i],
+                busy: view.deciding.contains(rows[i].id),
+                failed: view.failed.contains(rows[i].id),
+                onDecide: (d) => controller.decide(rows[i].id, d),
+              ),
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// A home proposal card that swipes (ZAD_PLAN ٢.٤): to the right confirms,
+/// to the left postpones — by the hand's direction, whatever the text's.
+///
+/// Confirming by swipe is offered only where the card's own «تأكيد» is: a
+/// proposal still asking for its direction, or whether it is a duplicate,
+/// keeps its buttons and only postpones. A confirm springs the card back and
+/// lets it show «جارٍ تنفيذ القرار…» until the server answers; a postpone
+/// takes it off home at once.
+class SwipeableProposal extends StatelessWidget {
+  /// Creates the wrapper.
+  const new({
+    required this.proposal,
+    required this.busy,
+    required this.onConfirm,
+    required this.onPostpone,
+    required this.child,
+    super.key,
+  });
+
+  /// The proposal under the card.
+  final TransactionProposal proposal;
+
+  /// A decision is in flight: nothing swipes.
+  final bool busy;
+
+  /// Swiped right.
+  final VoidCallback onConfirm;
+
+  /// Swiped left.
+  final VoidCallback onPostpone;
+
+  /// The card.
+  final Widget child;
+
+  /// Whether a right swipe may confirm this proposal.
+  static bool canConfirm(TransactionProposal p) =>
+      p.status == ProposalStatus.awaitingConfirmation &&
+      !p.asksDuplicateQuestion;
+
+  @override
+  Widget build(BuildContext context) {
+    if (busy) return child;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    // In RTL, start is the right edge: a hand moving right goes end→start.
+    final right = rtl
+        ? DismissDirection.endToStart
+        : DismissDirection.startToEnd;
+    final left = rtl
+        ? DismissDirection.startToEnd
+        : DismissDirection.endToStart;
+    final confirmable = canConfirm(proposal);
+    final direction = confirmable ? DismissDirection.horizontal : left;
+
+    Widget hint(String text, IconData icon, Color color, Alignment at) =>
+        Container(
+          alignment: at,
+          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.lg),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: ZadSpacing.sm),
+              Text(text, style: ZadType.labelLarge.copyWith(color: color)),
+            ],
+          ),
+        );
+
+    final confirmHint = hint(
+      'تأكيد',
+      ZadIcons.selected,
+      ZadColors.green600,
+      Alignment.centerLeft,
+    );
+    final postponeHint = hint(
+      'أجّل ٤ ساعات',
+      Icons.schedule,
+      ZadColors.slate,
+      Alignment.centerRight,
+    );
+
+    return Dismissible(
+      key: ValueKey<String>('swipe-${proposal.id}'),
+      direction: direction,
+      // background shows for startToEnd, secondaryBackground for endToStart.
+      background: right == DismissDirection.startToEnd
+          ? confirmHint
+          : postponeHint,
+      secondaryBackground: right == DismissDirection.endToStart
+          ? confirmHint
+          : postponeHint,
+      confirmDismiss: (d) async {
+        if (d == right && confirmable) {
+          unawaited(HapticFeedback.mediumImpact());
+          onConfirm();
+          // Back into place, where it shows the decision in flight.
+          return false;
+        }
+        if (d == left) {
+          unawaited(HapticFeedback.selectionClick());
+          onPostpone();
+          return true;
+        }
+        return false;
+      },
+      child: child,
     );
   }
 }
