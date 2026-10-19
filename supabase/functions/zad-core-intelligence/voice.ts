@@ -23,6 +23,7 @@
 // رجّع 77504 بايت صوت بصوت Aoede.
 import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion, type ZadVoiceGender } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
+import { trimRunawaySpeech } from "../_shared/ttsTrim.ts";
 
 /**
  * إحساس رد الشات كله: من أول جملة فيه (`feeling_from` من التطبيق)، ونفس الإحساس لكل
@@ -330,7 +331,8 @@ export async function requestGeminiVoice(
       headers: { "Content-Type": "application/json" },
     });
   }
-  const pcmBytes = Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0));
+  // Gemini sometimes keeps speaking after the text (ttsTrim.ts): the tail goes before it is played.
+  const pcmBytes = trimRunawaySpeech(Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0)), input.text);
   return new Response(pcmBytes, {
     status: 200,
     headers: { "Content-Type": "audio/pcm" },
