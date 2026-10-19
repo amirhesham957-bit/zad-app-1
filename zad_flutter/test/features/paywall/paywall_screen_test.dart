@@ -6,19 +6,54 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lottie/lottie.dart';
-import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/data/ad_reward_preview.dart';
+import 'package:zad/shared/ads/data/rewarded_ads.dart';
+import 'package:zad/shared/auth/application/session_controller.dart';
 
+class _SignedIn extends SessionController {
+  @override
+  String? build() => 'user-1';
+}
+
+class _Ads implements RewardedAds {
+  @override
+  Future<RewardedOutcome> watch({required String userId}) async =>
+      RewardedOutcome.earned;
+}
+
+class _Preview implements AdRewardPreviewRemote {
+  @override
+  Future<AdRewardPreview?> preview() async => const AdRewardPreview(
+    available: true,
+    reward: 2,
+    boxBonus: 2,
+    adsToday: 1,
+  );
+}
+
+/// Ads are off unless a test turns them on: paid plans and kids mode see
+/// none, and the free plan's button needs the session and the server preview.
 Future<void> _pump(
   WidgetTester tester, {
   bool still = false,
   double width = 412,
   double textScale = 1,
+  bool ads = false,
 }) async {
   await tester.binding.setSurfaceSize(Size(width, 2400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        adsAllowedProvider.overrideWithValue(ads),
+        if (ads) ...[
+          sessionControllerProvider.overrideWith(_SignedIn.new),
+          rewardedAdsProvider.overrideWithValue(_Ads()),
+          adRewardPreviewRemoteProvider.overrideWithValue(_Preview()),
+        ],
+      ],
       child: MaterialApp(
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -111,12 +146,22 @@ void main() {
     }
   });
 
-  testWidgets('no ad button until the ads SDK is in the app', (tester) async {
+  testWidgets('no ad button where ads may not show (paid plan, kids)', (
+    tester,
+  ) async {
     await _pump(tester, still: true);
-    expect(find.textContaining('مشاهدة إعلان'), findsNothing);
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsNothing);
     expect(find.textContaining('شاهد'), findsNothing);
-    expect(find.byIcon(ZadIcons.play), findsNothing);
     expect(find.textContaining('5 محاولات بترجع كل 5 ساعات'), findsOneWidget);
+  });
+
+  testWidgets('the free plan offers «شاهد وخد» when ads may show', (
+    tester,
+  ) async {
+    await _pump(tester, still: true, ads: true);
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsOneWidget);
+    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
   });
 
   testWidgets('fits a small phone at large text', (tester) async {
