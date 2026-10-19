@@ -237,7 +237,7 @@ export async function pushToTelegram(
   speech?: string,
   // الإحساس المختار للموقف ده (voiceMoments) — بيكسب على إحساس اللحظة الثابت في البوت.
   emotion?: string,
-  // تنبيه جرعة: معرّف صف zad_voice_moments. البوت بيحوّله لزرار «✅ أخدت الجرعة»
+  // تنبيه جرعة (أو قفلة يوم، حسب `moment`): معرّف صف zad_voice_moments. البوت بيحوّله لزرار «✅ أخدت الجرعة»
   // بيكتب في الداتابيز مباشرة من غير ما يعدّي على فهم الموديل للكلام (٢٠٢٦-٠٩-١٩).
   doseMomentId?: string,
   // رسالة محل: رابط خرايط المحل (storeMapUrl) — البوت بيحطه زرار «📍 افتح على الخريطة».
@@ -263,7 +263,8 @@ export async function pushToTelegram(
         ...(voice && moment ? { moment } : {}),
         ...(voice && speech ? { speech: speech.slice(0, 600) } : {}),
         ...(voice && emotion ? { emotion } : {}),
-        ...(doseMomentId ? { dose_moment_id: doseMomentId } : {}),
+        // قفلة اليوم (20261019140000) بتاخد نفس المعرّف بأزرارها هي: [تمام كده] [صرفت كاش] [في حاجة ناقصة].
+        ...(doseMomentId ? (moment === "close_day" ? { close_day_moment_id: doseMomentId } : { dose_moment_id: doseMomentId }) : {}),
         ...(mapUrl ? { map_url: mapUrl } : {}),
         ...(amazonLinks?.length ? { amazon_links: amazonLinks } : {}),
       }),

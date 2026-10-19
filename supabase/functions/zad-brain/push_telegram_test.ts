@@ -105,3 +105,18 @@ Deno.test("a critical alert asks the bot for a voice note; others do not", async
   assertEquals(JSON.parse(String(seen[0].init?.body)).moment, "listener_gap_alert");
   assertEquals(JSON.parse(String(seen[1].init?.body)).voice, undefined);
 });
+
+Deno.test("a close-day moment id rides as close_day_moment_id, a dose's as dose_moment_id", async () => {
+  const seen: { url?: string; init?: RequestInit }[] = [];
+  await withEnv({ ZAD_REALTIME_PUSH_SECRET: SECRET, SUPABASE_URL: BASE }, async () => {
+    const f = fakeFetch(200, '{"ok":true,"delivered":true}', seen);
+    await pushToTelegram("u", "🌙 اقفل يومك", "نص", f, undefined, false, "close_day", "", undefined, "m-close");
+    await pushToTelegram("u", "💊", "نص", f, undefined, true, "dose_missed", "كلام", undefined, "m-dose");
+  });
+  const [close, dose] = seen.map((s) => JSON.parse(String(s.init?.body)));
+  assertEquals(close.close_day_moment_id, "m-close");
+  assertEquals(close.dose_moment_id, undefined);
+  assertEquals(close.voice, undefined);
+  assertEquals(dose.dose_moment_id, "m-dose");
+  assertEquals(dose.close_day_moment_id, undefined);
+});

@@ -49,6 +49,7 @@ import {
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
+  closeDayKeyboard, closeDayReply, parseCloseDayCallback,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
   doseAlreadyReply,
 } from "./telegram.ts";
@@ -1969,6 +1970,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // «اقفل يومك»: اليوم بيتقفل في الداتابيز الأول، والرد بعدين. الملكية واليوم بيتحققوا جوه الـRPC.
+  const closeDay = parseCloseDayCallback(data);
+  if (closeDay) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_close_day_service", {
+      p_user: userId, p_moment: closeDay.momentId, p_outcome: closeDay.outcome,
+    });
+    if (error) console.error("[close_day] rpc failed:", error.message);
+    await ctx.reply(closeDayReply(closeDay.outcome, error ? null : result as Parameters<typeof closeDayReply>[1]));
+    return;
+  }
+
   // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
   // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
   const amountWrongId = parseAmountWrongCallback(data);
@@ -2747,12 +2760,14 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, map_url, amazon_links } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, map_url, amazon_links } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
         // اختياري: تنبيه جرعة — معرّف صف zad_voice_moments، بيتحوّل لزرار «أخدت الجرعة».
         dose_moment_id?: string;
+        // اختياري: «اقفل يومك» — معرّف اللحظة، بيتحوّل لأزرارها الـ٣.
+        close_day_moment_id?: string;
         // اختياري: رسالة محل — رابط خرايط المحل، بيبقى زرار فوق أزرار الرفض.
         map_url?: string;
         // اختياري: صنف ضروري خلص — لينكات أمازون، كل واحد زرار «🛒 … على أمازون».
@@ -2777,6 +2792,8 @@ Deno.serve(async (req: Request) => {
         : [];
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
+        : close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id)
+        ? closeDayKeyboard(close_day_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...dismissRows]
         : undefined;
