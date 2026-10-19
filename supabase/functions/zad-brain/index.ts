@@ -53,6 +53,7 @@
 // Validators (Task 16.1/16.2) live in validators.ts — untouched, still the sole gate
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
+import { purchaseToolReply, toolPurchaseLines } from "./purchaseDoor.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
@@ -2301,6 +2302,39 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         }
       }
 
+      // مصروف فيه أصناف = شرا واحد (ZAD_PLAN ٣.٦ د، purchaseDoor.ts): الفلوس والمخزن والصيدلية والأسعار
+      // في ترانزاكشن واحدة، فمفيش «الفلوس اتسجلت والأصناف لأ» لو add_inventory_item اتنسى أو وقع.
+      const purchaseLines = isExpense ? toolPurchaseLines(input.lines) : [];
+      if (purchaseLines.length > 0) {
+        const amount = Math.round(input.amount * 100) / 100;
+        const title = String(input.title).trim().slice(0, 80);
+        const { data: bought, error: buyErr } = await sb.rpc("zad_record_purchase_service", {
+          p_user: userId,
+          p_purchase: {
+            id: crypto.randomUUID(), amount, title,
+            category: input.category ? String(input.category).trim().slice(0, 40) : null,
+            wallet: input.wallet === "cash" ? "cash" : "card",
+            source_type: txnSourceType(input.source_type, scope.source),
+            merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
+            allow_duplicate: input.allow_duplicate === true,
+            lines: purchaseLines,
+          },
+        });
+        if (buyErr) {
+          console.error("[log_transaction] purchase door failed:", buyErr.message);
+          return "مرفوض: الشرا ماتسجلش دلوقتي — ولا حاجة اتكتبت. جرب تاني.";
+        }
+        const reply = purchaseToolReply(bought as Record<string, unknown> | null, { title, amount });
+        if (!reply.ok) return reply.text;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: null, new: { amount: input.amount, title: input.title, lines: purchaseLines.length } });
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_transactions", targetId: reply.transactionId!,
+          previous: null, next: { id: reply.transactionId, amount, title, purchase: bought },
+        });
+        return reply.text;
+      }
+
       const w = await writeRows(
         sb.from("zad_transactions").insert({
           user_id: userId,
@@ -4547,6 +4581,25 @@ export const CHAT_TOOLS: ToolDef[] = [
         title: { type: "string", description: "وصف قصير من كلام العميل نفسه" },
         category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
+        lines: {
+          type: "array",
+          description:
+            "الأصناف اللي اتشرت بالمبلغ ده، لو العميل سمّاها («اشتريت لبن وعيش بـ٤٠»). بتدخل المخزن " +
+            "(أو الصيدلية للدوا) مع المصروف في نفس الكتابة — ماتندهش add_inventory_item لنفس الأصناف. " +
+            "مصروف بس، مش دخل.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              quantity: { type: "number" },
+              unit: { type: "string", description: "حبة، كيلو، لتر، علبة، كيس..." },
+              category: { type: "string" },
+              price: { type: "number", description: "سعر السطر كله لو العميل قاله" },
+              to: { type: "string", enum: ["pantry", "pharmacy"], description: "pharmacy للدوا، غير كده pantry" },
+            },
+            required: ["name"],
+          },
+        },
         allow_duplicate: {
           type: "boolean",
           description:
@@ -5775,9 +5828,12 @@ interface Proposal {
 function describeProposal(tool: string, input: any, currency: string): string {
   const money = (n: number) => currency === "غير معروف" ? `${n}` : `${n} ${currency}`;
   switch (tool) {
-    case "log_transaction":
+    case "log_transaction": {
+      const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
-        (input.category ? ` (${input.category})` : "");
+        (input.category ? ` (${input.category})` : "") +
+        (lines.length ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
+    }
     case "update_transaction": {
       const parts: string[] = [];
       if (input.amount !== undefined) parts.push(`المبلغ ${money(input.amount)}`);
