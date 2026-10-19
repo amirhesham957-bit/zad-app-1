@@ -30,7 +30,6 @@ const USER_OWNED_TABLES = [
 // Same problem, different column name. Keyed on sender_id, no FK to auth.users.
 const SENDER_OWNED_TABLES = [
   "chat_messages",
-  "family_messages",
 ];
 
 Deno.serve(async (req: Request) => {
