@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
+import 'package:zad/shared/companion/domain/fourth_wall.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
 import 'package:zad/shared/companion/presentation/pet_price_games.dart';
@@ -67,6 +68,13 @@ class CompanionHeaderPet extends ConsumerStatefulWidget {
   /// The bubble opens above it (floating over the bar) instead of below.
   final bool bubbleAbove;
 
+  /// When the pet last saw the customer (ZAD_PLAN ٥.٢), in the device box.
+  static const String lastSeenKey = 'pet_last_seen';
+
+  /// Forgets the last unprompted bubble, so a test starts fresh.
+  @visibleForTesting
+  static void resetNudge() => _CompanionHeaderPetState._lastNudge = null;
+
   @override
   ConsumerState<CompanionHeaderPet> createState() => _CompanionHeaderPetState();
 }
@@ -75,6 +83,15 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     with SingleTickerProviderStateMixin {
   /// One unprompted bubble per half hour, across tab switches and rebuilds.
   static DateTime? _lastNudge;
+
+  /// Taps in the current burst (ZAD_PLAN ٥.٢); a pause of
+  /// [tapBurstWindow] starts over. Timers, not clocks, so tests drive them.
+  int _burst = 0;
+  Timer? _burstEnd;
+
+  /// The bubble has been up long enough for a second tap to mean «open».
+  bool _bubbleRead = false;
+  Timer? _bubbleReadTimer;
 
   final OverlayPortalController _bubble = OverlayPortalController();
   final LayerLink _link = LayerLink();
@@ -96,7 +113,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
-    _life = AppLifecycleListener(onResume: _onShown);
+    _life = AppLifecycleListener(onResume: _onShown, onPause: _markSeen);
     WidgetsBinding.instance.addPostFrameCallback((_) => _onShown());
   }
 
@@ -104,9 +121,31 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   void dispose() {
     _tick?.cancel();
     _hide?.cancel();
+    _burstEnd?.cancel();
+    _bubbleReadTimer?.cancel();
     _life.dispose();
     _hop.dispose();
     super.dispose();
+  }
+
+  /// The last time the pet saw the customer, then now.
+  Duration? _awayAndMark(DateTime now) {
+    try {
+      final box = ref.read(localStoreProvider).device;
+      final last = DateTime.tryParse(
+        box.get(CompanionHeaderPet.lastSeenKey) ?? '',
+      );
+      unawaited(
+        box.put(CompanionHeaderPet.lastSeenKey, now.toUtc().toIso8601String()),
+      );
+      return last == null ? null : now.difference(last);
+    } on Object {
+      return null; // No store (a test host).
+    }
+  }
+
+  void _markSeen() {
+    if (mounted) _awayAndMark(ref.read(petClockProvider)());
   }
 
   void _onShown() {
@@ -115,14 +154,24 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     // Back in the app: the reminder moves to the next real need.
     unawaited(ref.read(localRemindersProvider).syncCompanionCare(care));
     if (care == null) return;
-    final mood = ref.read(petCareProvider.notifier).moodNow();
-    // Quietly: no sound unless tapped, and nothing at night.
-    if (!mood.isNeed || mood == CompanionState.sleepy) return;
-    final now = DateTime.now();
+    final now = ref.read(petClockProvider)();
+    final away = _awayAndMark(now);
     final last = _lastNudge;
     if (last != null && now.difference(last) < const Duration(minutes: 30)) {
       return;
     }
+    // ZAD_PLAN ٥.٢: time away, then the clock — quietly, no sound.
+    final hour = petWallClock(ref.read(accountTimeZoneProvider), now).hour;
+    final aside =
+        (away == null ? null : FourthWall.back(away)) ?? FourthWall.clock(hour);
+    if (aside != null) {
+      _lastNudge = now;
+      _say(aside);
+      return;
+    }
+    final mood = ref.read(petCareProvider.notifier).moodNow();
+    // Quietly: no sound unless tapped, and nothing at night.
+    if (!mood.isNeed || mood == CompanionState.sleepy) return;
     _lastNudge = now;
     _say(
       PetLines.forMood(
@@ -134,6 +183,12 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   }
 
   void _say(String line) {
+    _bubbleRead = false;
+    _bubbleReadTimer?.cancel();
+    _bubbleReadTimer = Timer(
+      const Duration(milliseconds: 600),
+      () => _bubbleRead = true,
+    );
     setState(() => _line = line);
     _bubble.show();
     _hide?.cancel();
@@ -146,8 +201,29 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   /// state. While it is talking, a second tap — or one on the bubble — opens
   /// the care sheet, so feeding stays one tap away.
   void _poke(CompanionState mood) {
+    _burst++;
+    _burstEnd?.cancel();
+    _burstEnd = Timer(tapBurstWindow, () => _burst = 0);
+    final poked = FourthWall.poked(
+      _burst,
+      name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+    );
+    if (poked != null) {
+      // A burst: it says so instead of opening the sheet (ZAD_PLAN ٥.٢).
+      unawaited(HapticFeedback.mediumImpact());
+      playPetSound(PetSound.cuteSqueak);
+      _hop.forward(from: 0);
+      _say(poked);
+      return;
+    }
     if (_bubble.isShowing) {
-      _open(mood);
+      if (_bubbleRead) {
+        _open(mood);
+        return;
+      }
+      // Tapping fast is poking, not asking for the sheet: it just hops.
+      unawaited(HapticFeedback.selectionClick());
+      _hop.forward(from: 0);
       return;
     }
     unawaited(HapticFeedback.selectionClick());
