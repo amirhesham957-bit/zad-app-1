@@ -45,7 +45,7 @@ class PushAlert {
     return PushAlert(
       title: (notificationTitle ?? data['title'] as String? ?? '').trim(),
       body: (notificationBody ?? data['body'] as String? ?? '').trim(),
-      destination: destinationFor(data['route'] as String?),
+      destination: destinationForData(data),
       proposalId: data['kind'] == kConfirmTransactionKind && proposal.isNotEmpty
           ? proposal
           : null,
@@ -107,6 +107,16 @@ AlertDestination? destinationFor(String? route) => switch (route) {
   'family' => AlertDestination.family,
   _ => null,
 };
+
+/// Where a push's `data` sends a tap: its `route`, else the voice moment it
+/// is. «اقفل يومك» (`moment: close_day`) carries no route — its card is on the
+/// home in the evening (ZAD_PLAN ٣.٢).
+AlertDestination? destinationForData(Map<String, dynamic> data) =>
+    destinationFor(data['route'] as String?) ??
+    (data['moment'] == kCloseDayMoment ? AlertDestination.home : null);
+
+/// `data.moment` of the 9:30pm «اقفل يومك» push.
+const String kCloseDayMoment = 'close_day';
 
 /// `data.kind` of the push zad-brain sends with a bank confirmation question.
 const String kConfirmTransactionKind = 'confirm_transaction';

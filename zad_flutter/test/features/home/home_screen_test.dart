@@ -389,6 +389,20 @@ void main() {
     expect(find.text('أنا شايف حوالي 50–60٪ من مصروفك'), findsOneWidget);
   });
 
+  testWidgets('the coverage card opens «اقفل يومك» (٣.٢)', (tester) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+    await tester.tap(find.text('أنا شايف حوالي 50–60٪ من مصروفك'));
+    // Home never settles (the sky moves); the sheet is up in well under 1s.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('🌙 اقفل يومك'), findsOneWidget);
+    expect(find.text('اربط البنك عشان أشوف لوحدي'), findsOneWidget);
+  });
+
   testWidgets(
     '"خصم سريع" opens the quick expense sheet, send held till valid',
     (tester) async {

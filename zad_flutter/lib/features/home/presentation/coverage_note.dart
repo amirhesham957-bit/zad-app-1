@@ -21,7 +21,7 @@ class CoverageNote extends StatelessWidget {
   /// The reading.
   final SpendCoverage coverage;
 
-  /// Opens what lets Zad see more (the bank channel).
+  /// Opens what lets Zad see more («اقفل يومك», which links the bank too).
   final VoidCallback onTap;
 
   @override
@@ -29,13 +29,13 @@ class CoverageNote extends StatelessWidget {
     final (title, hint) = coverage.isBlind
         ? (
             'لسه مش شايف أي مصروف الدورة دي',
-            'اربط البنك أو سجّل اللي صرفته عشان أشوف',
+            'قفّل يومك أو اربط البنك عشان أشوف',
           )
         : coverage.isFull
         ? ('أنا شايف تقريباً كل مصروفك', 'كمّل كده، الأرقام اللي فوق دي حقيقية')
         : (
             'أنا شايف حوالي ${coverage.label} من مصروفك',
-            'اربط البنك أو سجّل اللي صرفته عشان أشوف أكتر',
+            'قفّل يومك أو اربط البنك عشان أشوف أكتر',
           );
     return ZadCard(
       onTap: onTap,
