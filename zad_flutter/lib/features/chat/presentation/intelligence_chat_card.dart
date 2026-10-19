@@ -542,6 +542,7 @@ class _IntChatBubbleState extends ConsumerState<_IntChatBubble> {
               for (final receipt in m.executed) ChatReceipt(receipt: receipt),
               for (final proposal in m.proposals)
                 ChatProposal(messageId: m.id, proposal: proposal),
+              if (m.lock case final lock?) ChatLockCard(lock: lock),
               if (!mine && m.memoryAvailable.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 4),
                 InkWell(

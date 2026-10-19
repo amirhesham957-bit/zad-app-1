@@ -255,6 +255,7 @@ class ChatController extends Notifier<ChatView> {
       proposals: turn.proposals,
       memoryAvailable: turn.memoryAvailable,
       specialist: turn.specialist,
+      lock: turn.lock,
     );
     _replace(settled);
     if (turn.touchedMoney) _refreshMoney();
