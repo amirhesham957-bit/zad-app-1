@@ -66,6 +66,8 @@ import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak, machineCloser } from "./acceptance.ts";
 import { EVAL_CASES } from "./evals/cases.ts";
 import { judgeEval } from "./evals/judge.ts";
+import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize } from "./evals/bankEval.ts";
+import bankCorpus from "./testdata/bank_corpus.json" with { type: "json" };
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
@@ -8200,6 +8202,58 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const next = offset + batch.length < EVAL_CASES.length ? offset + batch.length : null;
       return new Response(JSON.stringify({ run_id: runId, offset, next, total: EVAL_CASES.length, results }), { headers: CORS_HEADERS });
+    }
+
+    // مجموعة اختبار البنك على الموديل (evals/bankEval.ts، ZAD_PLAN ٣.٧): كل رسالة في
+    // testdata/bank_corpus.json على نفس برومبت البوابة اللي الإشعار الحقيقي بيعدّي عليه، على مفتاح
+    // التقييم. مابيكتبش أي حاجة في حساب حد — بيصنّف بس. كل رسالة صف في zad_eval_results
+    // (category bank)، والرد فيه النسب والهدف (المبلغ والاتجاه ٩٥٪، التاجر ٩٠٪).
+    if (body.action === "bank_eval_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      if (!hasEvalKey()) {
+        return new Response(JSON.stringify({ error: "no_eval_key", note: "set ZAD_EVAL_KEY (a billed key, not one of the pool)" }), { status: 409, headers: CORS_HEADERS });
+      }
+      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const runId = crypto.randomUUID();
+      const cases = (bankCorpus as { cases: BankCase[] }).cases;
+      const started = Date.now();
+      const results: BankCaseResult[] = [];
+      const rows: Array<Record<string, unknown>> = [];
+      // ست في المرة: ١٥٠ رسالة تخلص في أقل من دقيقة، جوه وقت الفانكشن.
+      for (let i = 0; i < cases.length; i += 6) {
+        if (Date.now() - started > 110_000) break;
+        await Promise.all(cases.slice(i, i + 6).map(async (c) => {
+          const known = knownFinancialSender(c.package, c.title);
+          const g = gatePrompt({ packageName: c.package, title: c.title, text: c.text, knownSender: known });
+          const t0 = Date.now();
+          let verdict: GateVerdict | null = null;
+          let error: string | null = null;
+          try {
+            const reply = await inLane("eval", () =>
+              callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 })
+            );
+            verdict = parseGateVerdict(reply.text ?? "");
+          } catch (e) {
+            error = String((e as Error)?.message ?? e).slice(0, 160);
+          }
+          const r = judgeBankCase(c, verdict, known);
+          results.push(r);
+          rows.push({
+            run_id: runId, case_id: c.id, category: "bank",
+            pass: failureOf(r, c) === null, failure: error ? `model failed: ${error}` : failureOf(r, c),
+            reply: null, ms: Date.now() - t0,
+            detail: { market: c.market, origin: c.origin, decision: r.decision, kind: r.kind, counterparty: r.counterparty,
+              amountOk: r.amountOk, directionOk: r.directionOk, merchantOk: r.merchantOk },
+          });
+        }));
+      }
+      const { error: saveErr } = await sbEval.from("zad_eval_results").insert(rows);
+      if (saveErr) console.error("[bank_eval_run] save failed:", saveErr.message);
+      const summary = summarize(cases, results);
+      console.log(`[bank_eval_run] ${results.length}/${cases.length} meetsBar=${summary.meetsBar}`, JSON.stringify(summary));
+      return new Response(JSON.stringify({ run_id: runId, measured: results.length, total: cases.length, summary }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {

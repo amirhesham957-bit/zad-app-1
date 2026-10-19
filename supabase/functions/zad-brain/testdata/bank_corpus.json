@@ -1,5 +1,5 @@
 {
-  "_about": "مجموعة اختبار رسايل البنوك (ZAD_DREAM_PLAN.md ح١). نفس الملف بيقراه اختبار الموبايل (zad_flutter/test/features/bank/bank_corpus_test.dart) واختبار البوابة (notificationGate_corpus_test.ts). real = أول الرسالة منقول من رسالة وصلت فعلاً على الإنتاج، والأرقام والذيل متغيرين؛ shape = مكتوبة بشكل رسايل البنك ده المعروف ولسه ماوصلتش لنا — لما توصل رسالة حقيقية تتحط مكانها. expect: money (فلوس اتحركت) / reminder (دفع جاي) / ignore. amount = اللي لازم الموبايل يطلعه، null لو مش لازم.",
+  "_about": "مجموعة اختبار رسايل البنوك (ZAD_DREAM_PLAN.md ح١). نفس الملف بيقراه اختبار الموبايل (zad_flutter/test/features/bank/bank_corpus_test.dart) واختبار البوابة (notificationGate_corpus_test.ts). real = أول الرسالة منقول من رسالة وصلت فعلاً على الإنتاج، والأرقام والذيل متغيرين؛ shape = مكتوبة بشكل رسايل البنك ده المعروف ولسه ماوصلتش لنا — لما توصل رسالة حقيقية تتحط مكانها. expect: money (فلوس اتحركت) / reminder (دفع جاي) / ignore. amount = اللي لازم الموبايل يطلعه، null لو مش لازم. direction = out (فلوس خرجت) / in (دخلت) / null؛ merchant = التاجر أو الطرف التاني زي ما مكتوب، null لو مفيش واحد يتقاس (صراف، رقم موبايل). الاتنين بيتقاسوا على الموديل في التقييم الليلي (evals/bankEval.ts، ZAD_PLAN ٣.٧): المبلغ والاتجاه ٩٥٪ والتاجر ٩٠٪. حالة جديدة: tools/add_bank_case.ts.",
   "cases": [
     {
       "id": "eg-bdc-purchase",
@@ -10,6 +10,8 @@
       "text": "تم قيد معاملة مشتريات ب 245.50 EGP من KAZYON علي بطاقة رقم  4321 في 05/10 الساعة 14:22 الرصيد المتاح 8,120.75",
       "expect": "money",
       "amount": 245.5,
+      "direction": "out",
+      "merchant": "KAZYON",
       "currency": "EGP",
       "knownSender": true
     },
@@ -22,6 +24,8 @@
       "text": "تم قيد معاملة مشتريات ب 612.00 EGP من AMAZON Ca علي بطاقة رقم  4321 في 30/09",
       "expect": "money",
       "amount": 612,
+      "direction": "out",
+      "merchant": "AMAZON",
       "currency": "EGP",
       "knownSender": true
     },
@@ -34,6 +38,8 @@
       "text": "تم تنفيذ تحويل لحظي من حسابكم 7788 بمبلغ 300.00 جم في 18:40 يوم 30/9/2026",
       "expect": "money",
       "amount": 300,
+      "direction": "out",
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -46,6 +52,8 @@
       "text": "تم تحويل 150 جنيه إلى ahmed@instapay بنجاح",
       "expect": "money",
       "amount": 150,
+      "direction": "out",
+      "merchant": "ahmed@instapay",
       "currency": "EGP",
       "knownSender": true
     },
@@ -58,6 +66,8 @@
       "text": "Your CIB card ending 1234 was charged EGP 1,250.00 at CARREFOUR MAADI on 12/10/2026",
       "expect": "money",
       "amount": 1250,
+      "direction": "out",
+      "merchant": "CARREFOUR MAADI",
       "currency": "EGP",
       "knownSender": true
     },
@@ -70,6 +80,8 @@
       "text": "تم سحب مبلغ 2000.00 جنيه من ماكينة الصراف الآلي ببطاقتكم المنتهية ب 5566",
       "expect": "money",
       "amount": 2000,
+      "direction": "out",
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -82,6 +94,8 @@
       "text": "تم تحويل بمبلغ 1500 جنيه من حسابكم إلى حساب رقم ***9012",
       "expect": "money",
       "amount": 1500,
+      "direction": "out",
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -94,6 +108,8 @@
       "text": "تم إيداع مبلغ 12,500.00 ج.م في حسابكم رقم ***4410 مرتب شهر أكتوبر",
       "expect": "money",
       "amount": 12500,
+      "direction": "in",
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -106,6 +122,8 @@
       "text": "تم استلام مبلغ 200 جنيه من رقم 01012345678 رصيدك الحالي 540.25 جنيه",
       "expect": "money",
       "amount": 200,
+      "direction": "in",
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -118,6 +136,8 @@
       "text": "عميلنا العزيز، قسطك بقيمة 850 جنيه مستحق يوم 25/10. سدد في الميعاد لتجنب الغرامة",
       "expect": "reminder",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": "EGP",
       "knownSender": true
     },
@@ -130,6 +150,8 @@
       "text": "رمز التحقق الخاص بك هو 482913 لعملية شراء بمبلغ 499 جنيه. لا تشاركه مع أحد",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": true
     },
@@ -142,6 +164,8 @@
       "text": "تم رفض عملية شراء بمبلغ 780.00 جنيه لعدم كفاية الرصيد",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": true
     },
@@ -154,6 +178,8 @@
       "text": "خصم كبير على باقة النت،\nPlus30 الشهريه بـ90 جنيه بدل 120 لمدة شهرين و هدية 5 جيجا. اطلب *880#",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": false
     },
@@ -166,6 +192,8 @@
       "text": "جالك 500 ميكس هدية من اتصالات لما تكلم 5500* وكول تون وفرصة تكسب 100 الف جنيه",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": false
     },
@@ -178,6 +206,8 @@
       "text": "شراء عبر نقاط البيع\nبطاقة: 1234;مدى-ابل باي\nمبلغ: SAR 45.00\nلدى: STARBUCKS\nفي: 2026-10-12 09:14",
       "expect": "money",
       "amount": 45,
+      "direction": "out",
+      "merchant": "STARBUCKS",
       "currency": "SAR",
       "knownSender": true
     },
@@ -190,6 +220,8 @@
       "text": "شراء انترنت\nبطاقة ائتمانية: **9876\nمن: NOON\nمبلغ: 389.50 SAR\nفي: 12/10/26 21:03",
       "expect": "money",
       "amount": 389.5,
+      "direction": "out",
+      "merchant": "NOON",
       "currency": "SAR",
       "knownSender": true
     },
@@ -202,6 +234,8 @@
       "text": "حوالة صادرة محلية\nمن: 3344\nمبلغ: 1,500.00 ر.س\nإلى: محمد\nالرسوم: 0.50 ر.س",
       "expect": "money",
       "amount": 1500,
+      "direction": "out",
+      "merchant": "محمد",
       "currency": "SAR",
       "knownSender": true
     },
@@ -214,6 +248,8 @@
       "text": "إيداع راتب\nحساب: 5566\nمبلغ: SAR 9,800.00\nالرصيد: SAR 11,240.10",
       "expect": "money",
       "amount": 9800,
+      "direction": "in",
+      "merchant": null,
       "currency": "SAR",
       "knownSender": true
     },
@@ -226,6 +262,8 @@
       "text": "استلمت 75.00 ريال من خالد",
       "expect": "money",
       "amount": 75,
+      "direction": "in",
+      "merchant": "خالد",
       "currency": "SAR",
       "knownSender": true
     },
@@ -238,6 +276,8 @@
       "text": "تذكير: دفعتك القادمة بقيمة 120.00 ر.س مستحقة غداً",
       "expect": "reminder",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": "SAR",
       "knownSender": true
     },
@@ -250,6 +290,8 @@
       "text": "رمز التحقق: 5512 لعملية شراء انترنت بمبلغ 210 SAR من AMAZON.SA. لا تشارك الرمز",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": true
     },
@@ -262,6 +304,8 @@
       "text": "عرض خاص! خصم 20% على الجوالات حتى 500 ريال. العرض ساري حتى نهاية الأسبوع",
       "expect": "ignore",
       "amount": null,
+      "direction": null,
+      "merchant": null,
       "currency": null,
       "knownSender": false
     }
