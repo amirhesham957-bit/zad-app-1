@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/proposals/application/proposal_snooze.dart';
+import 'package:zad/shared/companion/domain/pet_meal.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/proposals/application/proposals_controller.dart';
 import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
@@ -146,23 +147,75 @@ class HomeProposalsSection extends ConsumerWidget {
           ),
           for (var i = 0; i < rows.length; i++) ...<Widget>[
             if (i > 0) const SizedBox(height: 10),
-            SwipeableProposal(
+            _FeedThePet(
               proposal: rows[i],
               busy: view.deciding.contains(rows[i].id),
               onConfirm: () =>
                   controller.decide(rows[i].id, ProposalDecision.confirm),
-              onPostpone: () =>
-                  ref.read(proposalSnoozeProvider.notifier).snooze(rows[i].id),
-              child: ProposalCard(
+              child: SwipeableProposal(
                 proposal: rows[i],
                 busy: view.deciding.contains(rows[i].id),
-                failed: view.failed.contains(rows[i].id),
-                onDecide: (d) => controller.decide(rows[i].id, d),
+                onConfirm: () =>
+                    controller.decide(rows[i].id, ProposalDecision.confirm),
+                onPostpone: () => ref
+                    .read(proposalSnoozeProvider.notifier)
+                    .snooze(rows[i].id),
+                child: ProposalCard(
+                  proposal: rows[i],
+                  busy: view.deciding.contains(rows[i].id),
+                  failed: view.failed.contains(rows[i].id),
+                  onDecide: (d) => controller.decide(rows[i].id, d),
+                ),
               ),
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// A home proposal card that can be dragged onto رفيق زاد (ZAD_PLAN ٥.٣):
+/// held, it lifts as a small chip; dropped on the pet it is confirmed — the
+/// card's own «تأكيد» — and the pet eats. Only where a swipe could confirm.
+class _FeedThePet extends StatelessWidget {
+  const new({
+    required this.proposal,
+    required this.busy,
+    required this.onConfirm,
+    required this.child,
+  });
+
+  final TransactionProposal proposal;
+  final bool busy;
+  final VoidCallback onConfirm;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (busy || !SwipeableProposal.canConfirm(proposal)) return child;
+    final label = proposal.merchantName ?? proposal.bankName ?? 'مصروف';
+    return LongPressDraggable<PetMeal>(
+      data: PetMeal(label: label, log: onConfirm),
+      onDragStarted: () => unawaited(HapticFeedback.mediumImpact()),
+      feedback: Material(
+        key: const ValueKey<String>('pet-meal-chip'),
+        color: ZadColors.forestEmerald,
+        borderRadius: BorderRadius.circular(ZadRadii.pill),
+        elevation: 6,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ZadSpacing.lg,
+            vertical: ZadSpacing.sm,
+          ),
+          child: Text(
+            '🍽️ $label · ${proposal.amount.toStringAsFixed(0)}',
+            style: ZadType.labelLarge.copyWith(color: Colors.white),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.4, child: child),
+      child: child,
     );
   }
 }

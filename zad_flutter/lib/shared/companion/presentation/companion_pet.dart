@@ -22,8 +22,11 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/companion/domain/fourth_wall.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/domain/pet_meal.dart';
+import 'package:zad/shared/companion/domain/pet_stories.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
 import 'package:zad/shared/companion/presentation/pet_price_games.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -32,6 +35,7 @@ import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// The mood a pet shows: the voice's while it runs (the customer started it
 /// just now), else its own need.
@@ -70,6 +74,12 @@ class CompanionHeaderPet extends ConsumerStatefulWidget {
 
   /// When the pet last saw the customer (ZAD_PLAN ٥.٢), in the device box.
   static const String lastSeenKey = 'pet_last_seen';
+
+  /// The account-clock day the morning's dream was told.
+  static const String dreamDayKey = 'pet_dream_day';
+
+  /// When the weekly word was said.
+  static const String weeklyAtKey = 'pet_weekly_at';
 
   /// Forgets the last unprompted bubble, so a test starts fresh.
   @visibleForTesting
@@ -144,6 +154,57 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     }
   }
 
+  /// ZAD_PLAN ٥.٣: the morning's dream, once a day, else the weekly word,
+  /// once in seven days — each from real data, or nothing.
+  String? _story(DateTime now) {
+    try {
+      final box = ref.read(localStoreProvider).device;
+      final zone = ref.read(accountTimeZoneProvider);
+      final wall = petWallClock(zone, now);
+      final stage =
+          ref.read(companionProvider).value?.stage ?? CompanionStage.seed;
+      final today =
+          '${wall.year}-${wall.month.toString().padLeft(2, '0')}-'
+          '${wall.day.toString().padLeft(2, '0')}';
+      if (isDreamHour(wall.hour) &&
+          box.get(CompanionHeaderPet.dreamDayKey) != today) {
+        final y = wall.subtract(const Duration(days: 1));
+        final yesterday = ref.read(transactionsControllerProvider).rows.where((
+          t,
+        ) {
+          final d = petWallClock(zone, t.createdAt);
+          return d.year == y.year && d.month == y.month && d.day == y.day;
+        }).toList();
+        final dream = PetStories.dream(yesterday: yesterday, stage: stage);
+        if (dream != null) {
+          unawaited(box.put(CompanionHeaderPet.dreamDayKey, today));
+          return dream;
+        }
+      }
+      final week = ref.read(companionProvider).value?.week;
+      final last = DateTime.tryParse(
+        box.get(CompanionHeaderPet.weeklyAtKey) ?? '',
+      );
+      if (week != null &&
+          (last == null || now.difference(last) >= const Duration(days: 7))) {
+        unawaited(
+          box.put(
+            CompanionHeaderPet.weeklyAtKey,
+            now.toUtc().toIso8601String(),
+          ),
+        );
+        return PetStories.weekly(
+          days: week.days,
+          goal: week.goal,
+          stage: stage,
+        );
+      }
+    } on Object catch (e) {
+      debugPrint('[pet] no story: $e');
+    }
+    return null;
+  }
+
   void _markSeen() {
     if (mounted) _awayAndMark(ref.read(petClockProvider)());
   }
@@ -164,9 +225,10 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     final hour = petWallClock(ref.read(accountTimeZoneProvider), now).hour;
     final aside =
         (away == null ? null : FourthWall.back(away)) ?? FourthWall.clock(hour);
-    if (aside != null) {
+    final story = aside ?? _story(now);
+    if (story != null) {
       _lastNudge = now;
-      _say(aside);
+      _say(story);
       return;
     }
     final mood = ref.read(petCareProvider.notifier).moodNow();
@@ -284,62 +346,86 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
             ),
           ),
         ),
-        child: Semantics(
-          button: true,
-          label: '$name — ${mood.description}. اضغط علشان تأكّله وتسقيه',
-          excludeSemantics: true,
-          child: SizedBox.square(
-            dimension: widget.size,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                AnimatedBuilder(
-                  animation: _hop,
-                  builder: (_, child) {
-                    final up = math.sin(_hop.value * math.pi);
-                    return Transform.translate(
-                      offset: Offset(0, -widget.size * 0.25 * up),
-                      child: Transform.scale(
-                        scaleX: 1 - 0.05 * up,
-                        scaleY: 1 + 0.07 * up,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: CompanionOrb(
-                    state: mood,
-                    size: widget.size,
-                    onTap: () => _poke(mood),
-                  ),
-                ),
-                if (badge != null)
-                  PositionedDirectional(
-                    top: -2,
-                    end: -4,
-                    child: IgnorePointer(
-                      child: ZadDotPulse(
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: ZadColors.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: ZadColors.outline),
-                          ),
-                          child: Text(
-                            badge,
-                            style: ZadType.labelSmall.copyWith(height: 1),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+        child: DragTarget<PetMeal>(
+          onAcceptWithDetails: (d) => _eat(d.data),
+          builder: (_, waiting, _) => AnimatedScale(
+            scale: waiting.isEmpty ? 1 : 1.18,
+            duration: ZadDuration.quick,
+            curve: ZadCurves.springy,
+            child: _body(mood, badge, name),
           ),
         ),
       ),
     );
   }
+
+  /// An expense dropped on it (ZAD_PLAN ٥.٣): logged, and a meal.
+  void _eat(PetMeal meal) {
+    meal.log();
+    final outcome = ref.read(petCareProvider.notifier).feed();
+    unawaited(HapticFeedback.mediumImpact());
+    playPetSound(PetSound.munch);
+    _hop.forward(from: 0);
+    _say(
+      outcome == PetCareOutcome.full
+          ? 'اتسجّل ✓ بس أنا شبعان خلاص 🤭'
+          : 'اتسجّل ✓ يمّ يمّ! 😋',
+    );
+  }
+
+  Widget _body(CompanionState mood, String? badge, String name) => Semantics(
+    button: true,
+    label: '$name — ${mood.description}. اضغط علشان تأكّله وتسقيه',
+    excludeSemantics: true,
+    child: SizedBox.square(
+      dimension: widget.size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          AnimatedBuilder(
+            animation: _hop,
+            builder: (_, child) {
+              final up = math.sin(_hop.value * math.pi);
+              return Transform.translate(
+                offset: Offset(0, -widget.size * 0.25 * up),
+                child: Transform.scale(
+                  scaleX: 1 - 0.05 * up,
+                  scaleY: 1 + 0.07 * up,
+                  child: child,
+                ),
+              );
+            },
+            child: CompanionOrb(
+              state: mood,
+              size: widget.size,
+              onTap: () => _poke(mood),
+            ),
+          ),
+          if (badge != null)
+            PositionedDirectional(
+              top: -2,
+              end: -4,
+              child: IgnorePointer(
+                child: ZadDotPulse(
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: ZadColors.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: ZadColors.outline),
+                    ),
+                    child: Text(
+                      badge,
+                      style: ZadType.labelSmall.copyWith(height: 1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// The colour of the glow under the pet: its need, or its joy.
