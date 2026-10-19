@@ -85,6 +85,18 @@ class ChatController extends Notifier<ChatView> {
     return ChatView(messages: ref.read(chatRepositoryProvider).all());
   }
 
+  // Mirrors `isAwaitingReply` into [chatAwaitingReplyProvider], so the
+  // shell's strip can show «زاد بيفكر…» without building this controller
+  // and the box behind it.
+  @override
+  set state(ChatView value) {
+    super.state = value;
+    final awaiting = ref.read(chatAwaitingReplyProvider.notifier);
+    if (awaiting.state != value.isAwaitingReply) {
+      awaiting.state = value.isAwaitingReply;
+    }
+  }
+
   /// Sends one message. [viaVoice] marks one the customer spoke: the server
   /// keeps the reply short enough to hear (`voice_mode`), and Zad reads it
   /// aloud when it arrives — Kotlin's voice turn.
@@ -364,6 +376,18 @@ class ChatController extends Notifier<ChatView> {
 final chatControllerProvider = NotifierProvider<ChatController, ChatView>(
   ChatController.new,
 );
+
+/// Whether a chat turn is waiting for its reply. [ChatController] writes it,
+/// so watching it never builds the conversation.
+final chatAwaitingReplyProvider = NotifierProvider<ChatAwaitingReply, bool>(
+  ChatAwaitingReply.new,
+);
+
+/// Holds [chatAwaitingReplyProvider]'s value.
+class ChatAwaitingReply extends Notifier<bool> {
+  @override
+  bool build() => false;
+}
 
 /// A question another screen wants to put in the composer.
 ///

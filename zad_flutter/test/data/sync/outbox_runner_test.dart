@@ -216,6 +216,26 @@ void main() {
     expect(outbox.entries().single.attempts, 0);
   });
 
+  test(
+    'sending is said around a flush with work, never on an empty tick',
+    () async {
+      final outbox = outboxThat((e) async {});
+      final r = runnerFor(outbox);
+      final sending = <bool>[];
+      r.sending.listen(sending.add);
+      r.start();
+      await r.flushNow();
+      await pumpEventQueue();
+      expect(sending, isEmpty);
+
+      await enqueue(outbox, 'a');
+      triggers.add(SyncTrigger.resumed);
+      await settle(r);
+      await pumpEventQueue();
+      expect(sending, <bool>[true, false]);
+    },
+  );
+
   test('reports are published for a UI that shows what is unsent', () async {
     final outbox = outboxThat((e) async {});
     final r = runnerFor(outbox);

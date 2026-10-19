@@ -18,6 +18,7 @@ import 'package:zad/app/share/share_router.dart';
 import 'package:zad/app/shell/last_tab.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
 import 'package:zad/app/shell/zad_chrome.dart';
+import 'package:zad/app/shell/zad_pulse_bar.dart';
 import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -414,6 +415,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                   ref.read(nowProvider)(),
                 ),
               ),
+              const ZadPulseBar(),
               Expanded(
                 child: Stack(
                   children: <Widget>[
