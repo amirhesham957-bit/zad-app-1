@@ -149,7 +149,8 @@ jobs:
           while read -r -a files; do
             [ "${#files[@]}" -eq 0 ] && continue
             test="${files[-1]}"
-            db="t_$(basename "$test" .sql)"
+            n=$(( ${n:-0} + 1 ))
+            db="t_${n}_$(basename "$test" .sql)"
             echo "::group::$test"
             createdb "$db"
             for f in "${files[@]}"; do
@@ -159,6 +160,8 @@ jobs:
           done <<'LIST'
           supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/sql/tests/purchase_door_test.sql
           supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/sql/tests/purchase_door_wallet_test.sql
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/sql/tests/purchase_lines_only_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/migrations/20261019220000_purchase_lines_only.sql supabase/sql/tests/purchase_lines_only_test.sql
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/sql/tests/purchase_lines_only_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/migrations/20261019220000_purchase_lines_only.sql supabase/sql/tests/purchase_door_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.

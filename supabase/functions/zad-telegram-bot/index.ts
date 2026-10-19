@@ -29,7 +29,10 @@ import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallb
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
 import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { voiceReplyEmotion } from "./voiceReply.ts";
-import { receiptPriceReports, tidyReportText } from "./receiptPrices.ts";
+import {
+  parsePurchaseCallback, purchaseDoneLine, purchaseFromPending, purchaseKeyboard, purchaseLinesFromPhoto,
+  purchasePreview, type PendingPurchase, type PurchaseLine, type PurchaseMode,
+} from "./purchasePhoto.ts";
 import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
 import {
@@ -1212,7 +1215,7 @@ async function handleSpendCallbackText(
   isAffirm: boolean
 ): Promise<boolean> {
   const { data: rows } = await sb.from("telegram_pending_writes")
-    .select("id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
+    .select("id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type,purchase_lines")
     .eq("user_id", userId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -1221,6 +1224,7 @@ async function handleSpendCallbackText(
     id: string; txn_kind: string; amount: number; title: string;
     category: string | null; status: string; expires_at: string;
     wallet: string | null; merchant_name: string | null; source_type: string | null;
+    purchase_lines: unknown;
   }[] | null)?.[0];
   if (!row) return false;
 
@@ -1232,6 +1236,12 @@ async function handleSpendCallbackText(
   if (new Date(row.expires_at) < new Date()) {
     await sb.from("telegram_pending_writes").update({ status: "cancelled" }).eq("id", row.id);
     await ctx.reply("الطلب ده انتهت صلاحيته — ابعت المصروف تاني.");
+    return true;
+  }
+  // صورة فاتورة محجوزة كشرا (٣.٦ ج): «أيوه» = «سجّل الكل»، ولو مفيش مبلغ اتقرا = الأصناف.
+  if (row.purchase_lines != null || row.amount == null) {
+    await recordPendingPurchase(ctx, sb, userId, row as unknown as PendingPurchase & { status: string; expires_at: string },
+      row.amount != null ? "all" : "lines");
     return true;
   }
 
@@ -1591,26 +1601,48 @@ bot.on("message:photo", async (ctx) => {
     return;
   }
 
-  // OCR only supplies fields. Both pharmacy and inventory mutations are executed by
-  // zad-brain; the receipt total still waits for the normal financial confirmation.
+  // OCR only supplies fields. Nothing is written before the customer picks a button (owner's
+  // decision 2026-10-19, ZAD_PLAN ٣.٦ ج): the money and the lines are held together in
+  // telegram_pending_writes, and «سجّل الكل» / «المخزن بس» send them as one purchase
+  // (zad_record_purchase_service). Before, the pantry filled at once and a «لأ» left half a
+  // purchase behind.
+  const currencyOf = async () =>
+    (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
+  const wallet = receiptWallet(result.paymentMethod);
+  const total = result.total > 0 ? Math.round(result.total * 100) / 100 : null;
+
+  async function holdPurchase(input: {
+    title: string; category: string; sourceType: string; lines: PurchaseLine[]; merchant: string | null; before?: string;
+  }): Promise<boolean> {
+    const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
+      user_id: userId, chat_id: ctx.chat.id, txn_kind: "expense", amount: total,
+      title: input.title, category: input.category, confidence: 0.75, wallet,
+      merchant_name: input.merchant, source_type: input.sourceType,
+      purchase_lines: input.lines.length > 0 ? input.lines : null,
+    }).select("id").single();
+    if (error || !pending) {
+      console.error("photo purchase pending insert failed:", error?.message);
+      return false;
+    }
+    const preview = purchasePreview(input.lines);
+    const body = total
+      ? confirmSpendMessage({ is_spend: true, kind: "expense", amount: total, title: input.title, category: input.category, confidence: 0.75 }, await currencyOf(), wallet)
+      : "مقريتش مبلغ واضح في الفاتورة — أضيف الأصناف من غير مصروف؟";
+    await ctx.reply(
+      [input.before, preview, body].filter((s) => s).join("\n\n"),
+      { reply_markup: toGrammyKeyboard(purchaseKeyboard((pending as { id: string }).id, { hasAmount: total !== null, hasLines: input.lines.length > 0 })) },
+    );
+    return true;
+  }
+
   if (route === "pharmacy" && result.items.length > 0) {
-    // المعروف يتزوّد، والجديد بزرار تأكيد (pharmacyPhoto.ts): دوا جديد بيفتح تذكيرات، فمايتضافش من غير ضغطة.
+    // المعروف يدخل مع الشرا، والجديد بزرار تأكيد لوحده (pharmacyPhoto.ts): دوا جديد بيفتح تذكيرات،
+    // فمايتضافش من غير ضغطة.
     const { data: meds } = await sb.from("zad_pharmacy_items").select("name").eq("user_id", userId);
     const { known, fresh } = splitPhotoMedicines(
       result.items,
       ((meds ?? []) as Array<{ name: string | null }>).map((m) => m.name ?? ""),
     );
-    let addedCount = 0;
-    for (const med of known) {
-      const added = await agentExecute(userId, "add_pharmacy_item", {
-        name: med.name, quantity: med.quantity, unit: med.unit, category: "عام",
-      });
-      if (!added.ok) {
-        console.error("photo pharmacy through zad-brain failed");
-        continue;
-      }
-      addedCount++;
-    }
     for (const med of fresh) {
       const { data: pendingMed, error: medErr } = await sb.from("telegram_pending_pharmacy").insert({
         user_id: userId, chat_id: ctx.chat.id, name: med.name, unit: med.unit, quantity: med.quantity,
@@ -1629,96 +1661,96 @@ bot.on("message:photo", async (ctx) => {
         { reply_markup: toGrammyKeyboard(confirmMedicationKeyboard((pendingMed as { id: string }).id)) },
       );
     }
-    const summary = addedCount > 0
-      ? `✅ اتزوّد ${addedCount} دوا في صيدليتك${result.storeName ? ` من ${result.storeName}` : ""}.`
-      : "";
-    if (result.total > 0) {
-      const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف";
-      const title = (result.storeName || "فاتورة صيدلية").slice(0, 80);
-      const wallet = receiptWallet(result.paymentMethod);
-      const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
-        user_id: userId, chat_id: ctx.chat.id, txn_kind: "expense", amount: Math.round(result.total * 100) / 100,
-        title, category: "الرعاية الصحية", confidence: 0.75, wallet,
-      }).select("id").single();
-      if (!error && pending) {
-        await ctx.reply(`${summary}${summary ? "\n\n" : ""}` + confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category: "الرعاية الصحية", confidence: 0.75 }, currency, wallet), {
-          reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)),
-        });
-        return;
-      }
+    const lines = purchaseLinesFromPhoto(known.map((m) => ({ ...m, category: "عام" })), "pharmacy");
+    if (total || lines.length > 0) {
+      const held = await holdPurchase({
+        title: (result.storeName || "فاتورة صيدلية").slice(0, 80), category: "الرعاية الصحية",
+        sourceType: "receipt", lines, merchant: result.storeName?.trim() ? result.storeName.trim().slice(0, 80) : null,
+      });
+      if (held) return;
     }
-    await ctx.reply(summary || "معلش، ملقتش أصناف واضحة في الصورة دي.");
+    if (fresh.length === 0) await ctx.reply("معلش، ملقتش أصناف واضحة في الصورة دي.");
     return;
   }
 
-  // أصناف المخزون من فاتورة بقالة بس — أكل مطعم أو بنزين أو خدمة مش حاجة في البيت.
-  let addedCount = 0;
-  for (const item of route === "grocery" ? result.items : []) {
-    if (!item.name?.trim()) continue;
-    const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? Math.round(item.quantity) : 1;
-    const added = await agentExecute(userId, "add_inventory_item", {
-      item_name: item.name.trim(),
-      quantity: qty,
-      unit: item.unit || "قطعة",
-      category: item.category || null,
-    });
-    if (added.ok) {
-      addedCount++;
-    } else {
-      console.error("photo inventory through zad-brain failed");
-    }
-  }
-  const itemsSummary = addedCount > 0
-    ? `✅ اتضاف ${addedCount} صنف للمخزون${result.storeName ? ` من ${result.storeName}` : ""}.`
-    : "";
-
-  // أسعار البون للجمهور («اتشاف هنا» و«أرخص هنا»)، زي فاتورة التطبيق: باسم صاحب البون وعملة
-  // حسابه (zad_report_price_for، 20261011180000). على قد الجهد — المخزن والمصروف هما الأهم.
-  for (const r of receiptPriceReports(result.storeName, route === "grocery" ? result.items : [])) {
-    const { data: rep, error: repErr } = await sb.rpc("zad_report_price_for", {
-      p_user: userId, p_report: crypto.randomUUID(), p_item: r.item, p_price: r.unitPrice,
-      p_store: tidyReportText(result.storeName), p_category: r.category,
-    });
-    if (repErr) {
-      console.error("[photo] price report failed:", repErr.message);
-      break;
-    }
-    // too_many / invalid_currency: الباقي هيترفض بنفس السبب.
-    if ((rep as { ok?: boolean } | null)?.ok === false) break;
-  }
-
-  if (result.total > 0) {
-    const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle())
-      .data?.currency ?? "غير معروف";
-    const title = (result.storeName || "فاتورة").slice(0, 80);
-    const category = (result.category || "أخرى").slice(0, 40);
-    const wallet = receiptWallet(result.paymentMethod);
-    const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
-      user_id: userId,
-      chat_id: ctx.chat.id,
-      txn_kind: "expense",
-      amount: Math.round(result.total * 100) / 100,
-      title,
-      category,
-      confidence: 0.75,
-      wallet,
+  // أصناف المخزون من فاتورة بقالة بس — أكل مطعم أو بنزين أو خدمة مش حاجة في البيت. أسعار البون
+  // للجمهور («اتشاف هنا») بتتبلّغ من الدالة لسطور المخزن، مع الشرا.
+  const lines = purchaseLinesFromPhoto(route === "grocery" ? result.items : [], "pantry");
+  if (total || lines.length > 0) {
+    const held = await holdPurchase({
+      title: (result.storeName || "فاتورة").slice(0, 80), category: (result.category || "أخرى").slice(0, 40),
       // المصروف بيتسجل إنه من فاتورة وباسم المحل (20261011170000) — زي فاتورة التطبيق.
-      merchant_name: result.storeName?.trim() ? result.storeName.trim().slice(0, 80) : null,
-      source_type: "receipt",
-    }).select("id").single();
-    if (!error && pending) {
-      await ctx.reply(
-        (itemsSummary ? itemsSummary + "\n\n" : "") +
-          confirmSpendMessage({ is_spend: true, kind: "expense", amount: result.total, title, category, confidence: 0.75 }, currency, wallet),
-        { reply_markup: toGrammyKeyboard(confirmSpendKeyboard((pending as { id: string }).id)) },
-      );
-      return;
-    }
-    console.error("photo pending write insert failed:", error);
+      sourceType: "receipt", lines, merchant: result.storeName?.trim() ? result.storeName.trim().slice(0, 80) : null,
+    });
+    if (held) return;
   }
 
-  await ctx.reply(itemsSummary || "معلش، ملقتش أصناف ولا مبلغ واضح في الصورة دي.");
+  await ctx.reply("معلش، ملقتش أصناف ولا مبلغ واضح في الصورة دي.");
 });
+
+/**
+ * «سجّل الكل» / «المخزن بس» على صف محجوز: نفس بروتوكول تأكيد المصروف (claim بـstatus، ولو فشل
+ * يرجع pending)، والكتابة كلها في zad_record_purchase_service. مفتاح الشرا = id الصف، فداسة مرتين
+ * أو إعادة بعد فشل ملتبس بترجع نفس الرد. مصروف بنفس المبلغ من دقايق (غالباً صف البنك لنفس الدفعة)
+ * = دمج، زي شيت الفاتورة في التطبيق: مصروف واحد، والأصناف بتدخل.
+ */
+async function recordPendingPurchase(
+  ctx: { reply: (t: string) => Promise<unknown> },
+  sb: SupabaseClient,
+  userId: string,
+  row: PendingPurchase & { status: string; expires_at: string },
+  mode: PurchaseMode,
+): Promise<void> {
+  if (row.status !== "pending") {
+    await ctx.reply("الطلب ده اتعامل معاه قبل كده.");
+    return;
+  }
+  if (new Date(row.expires_at) < new Date()) {
+    await sb.from("telegram_pending_writes").update({ status: "cancelled" }).eq("id", row.id);
+    await ctx.reply("الطلب ده انتهت صلاحيته — ابعت الفاتورة تاني.");
+    return;
+  }
+  const purchase = purchaseFromPending(row, mode);
+  if (!purchase) {
+    await ctx.reply(mode === "all" ? "مفيش مبلغ في الفاتورة دي أسجله." : "مفيش أصناف في الفاتورة دي أضيفها.");
+    return;
+  }
+  const { error: claimError } = await sb.from("telegram_pending_writes")
+    .update({ status: "confirmed" }).eq("id", row.id).eq("status", "pending");
+  if (claimError) {
+    await ctx.reply("حصلت مشكلة، جرب تاني.");
+    return;
+  }
+
+  const send = (p: Record<string, unknown>) =>
+    sb.rpc("zad_record_purchase_service", { p_user: userId, p_purchase: p });
+  let { data, error } = await send(purchase);
+  let result = data as Record<string, unknown> | null;
+  const twin = (result?.twin as { id?: string } | undefined)?.id;
+  if (!error && result?.status === "duplicate_suspected" && twin) {
+    ({ data, error } = await send({ ...purchase, merge_with: twin }));
+    result = data as Record<string, unknown> | null;
+  }
+  if (error || result?.ok !== true) {
+    console.error("telegram purchase failed:", error?.message ?? String(result?.reason ?? result?.status ?? "no result"));
+    await sb.from("telegram_pending_writes").update({ status: "pending" }).eq("id", row.id);
+    await ctx.reply("معلش، التسجيل فشل — جرب تاني.");
+    return;
+  }
+
+  const done = purchaseDoneLine(result);
+  if (mode === "lines") {
+    await ctx.reply(`تمام ✅ ${done || "الأصناف اتضافت"} — من غير مصروف.`);
+    return;
+  }
+  const { data: u } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
+  const cur = (u as { currency?: string } | null)?.currency ?? "غير معروف";
+  const merged = result.status === "merged" ? " (على نفس عملية البنك)" : "";
+  await ctx.reply(
+    `اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(Number(row.amount), cur))}${merged}` +
+      (done ? `\n${done}` : ""),
+  );
+}
 
 // Bank notifications use one durable proposal shared with Android. The RPC locks the
 // row and posts at most one transaction, so two quick taps or an app + Telegram race
@@ -2154,6 +2186,23 @@ bot.on("callback_query:data", async (ctx) => {
         await ctx.reply(formatInsightTitle(insight), { reply_markup: toGrammyKeyboard(dismissKeyboard(insight.id)) });
       }
     }
+    return;
+  }
+
+  // «سجّل الكل» / «المخزن بس» على صورة فاتورة (٣.٦ ج). «لأ» هو زرار الإلغاء العادي (c:) تحت.
+  const purchasePick = parsePurchaseCallback(data);
+  if (purchasePick) {
+    const { data: pendingRow } = await sb.from("telegram_pending_writes")
+      .select("id,amount,title,category,status,expires_at,wallet,merchant_name,source_type,purchase_lines")
+      .eq("id", purchasePick.pendingId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!pendingRow) {
+      await ctx.reply("الطلب ده مش موجود أو مش بتاعك.");
+      return;
+    }
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await recordPendingPurchase(ctx, sb, userId, pendingRow as PendingPurchase & { status: string; expires_at: string }, purchasePick.mode);
     return;
   }
 
