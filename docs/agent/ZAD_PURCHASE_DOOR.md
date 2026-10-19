@@ -111,8 +111,11 @@ zad_record_purchase_service(p_user uuid, p_purchase)  -- zad-brain وبوت تل
   زي التطبيق.
 - [ ] **د — العقل:** `log_transaction` بياخد `lines` اختياري وبينادي الدالة، فـ«اشتريت لبن وعيش
   بـ٤٠» = نداء واحد مش اتنين.
-- [ ] **هـ — حارس:** اختبار Deno/Dart يفشل لو باب جديد عمل insert مباشر في `zad_transactions`
-  بأصناف (القايمة المسموحة: البنك، الإضافة اليدوية، الكشف، التسوية — فلوس بس).
+- [x] **هـ — حارس:** `zad_flutter/test/architecture/purchase_door_test.dart` (كتابة مصروف مباشرة
+  `TransactionsRepository.record` مسموحة لأبواب الفلوس بس: الإضافة اليدوية، المصروف السريع، الكشف،
+  إشعار البنك المعلّق، تجديد الاشتراك — وأبواب الفاتورة لازم تعدّي على `purchasesRepositoryProvider`)،
+  و`supabase/functions/_schema/purchase_door_test.ts` (insert/upsert مباشر في `zad_transactions` على
+  السيرفر: تسوية الكاش وlog_transaction من غير أصناف بس). اتجربوا بكتابة مزروعة والاتنين وقعوا.
 
 الأبواب اللي فلوس بس (البنك، اليدوي، الكشف، التسوية) مش لازم تتنقل: التريجرات بتغطيها، ومفيش
 فيها نص تاني يقع. لو اتنقلت بعدين، يبقى عشان الإيصال الواحد مش عشان الصحة.
