@@ -70,3 +70,14 @@ Deno.test("productFamilyOf: brand-first water joins the water family, other stap
   assertEquals(productFamilyOf("بسكويت شاي"), null);
   assertEquals(productFamilyOf("عصير سكر"), null);
 });
+
+Deno.test("an occasional item that ran out does not go on the list (ZAD_PLAN ٣.١٠)", () => {
+  // The owner, 2026-10-19: «باكل رنجة كل شهرين تلاتة وعمال يفكرني بيها».
+  const pantry = [
+    { item_name: "رنجة", quantity: 0 },
+    { item_name: "لبن", quantity: 0 },
+    { item_name: "رز بسمتي", quantity: 0 },
+  ];
+  assertEquals(lowStockToAdd(pantry, [], ["  رنجه "]), ["لبن", "رز"]);
+  assertEquals(lowStockToAdd(pantry, []), ["رنجة", "لبن", "رز"]);
+});
