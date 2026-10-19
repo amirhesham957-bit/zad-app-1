@@ -79,11 +79,11 @@ List<Shortage> shortagesIn(
     // runs out or runs low once, under the staple's name — eight bottles of
     // water across five brands are not five shortages. A date is still a
     // row's own: an expired bottle is that bottle.
-    if (group.isOut) {
+    if (group.isShortOut) {
       shortages.add(
         Shortage(item: group.representative, reason: ShortageReason.outOfStock),
       );
-    } else if (group.isLow) {
+    } else if (group.isShortLow) {
       shortages.add(
         Shortage(item: group.representative, reason: ShortageReason.runningLow),
       );
@@ -110,12 +110,18 @@ List<Shortage> shortagesIn(
 }
 
 /// Why one row needs buying, or null when it does not.
+///
+/// An occasional item (ZAD_PLAN ٣.١٠ — herring, bought every couple of months)
+/// is never out or low: at zero the house simply has none right now. Only its
+/// date can still make it worth buying.
 ShortageReason? shortageReasonFor(
   InventoryItem item, {
   required DateTime today,
   int expiringWithinDays = 3,
 }) {
-  if (item.quantity <= 0) return ShortageReason.outOfStock;
+  if (item.quantity <= 0) {
+    return item.isOccasional ? null : ShortageReason.outOfStock;
+  }
 
   final days = item.daysUntilExpiry(today);
   // Past its date first: a full jar of something that went off last week is
@@ -123,7 +129,7 @@ ShortageReason? shortageReasonFor(
   // are two of.
   if (days != null && days < 0) return ShortageReason.expired;
 
-  if (item.isLowStock) return ShortageReason.runningLow;
+  if (item.isLowStock && !item.isOccasional) return ShortageReason.runningLow;
   if (days != null && days <= expiringWithinDays) {
     return ShortageReason.expiringSoon;
   }

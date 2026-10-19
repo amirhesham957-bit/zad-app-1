@@ -195,4 +195,43 @@ void main() {
       expect(lines.single.detail, startsWith('من معدل'));
     });
   });
+
+  test(
+    'an occasional item is not «ناقصك» nor «هيخلص قريب» (ZAD_PLAN ٣.١٠)',
+    () {
+      InventoryItem herring(int qty) => InventoryItem(
+        id: 'h',
+        userId: 'u',
+        itemName: 'رنجة',
+        quantity: qty.toDouble(),
+        lowStockThreshold: 2,
+        occasionalByHistory: true,
+      );
+      expect(
+        dailyBrief(
+          pantry: <InventoryItem>[herring(0)],
+          doses: const <DoseSlot>[],
+          subscriptions: const <Subscription>[],
+          today: _today,
+          now: _now,
+          spendable: 900,
+        ),
+        isEmpty,
+      );
+      expect(
+        dailyBrief(
+          pantry: <InventoryItem>[herring(3)],
+          rates: <String, ConsumptionRate>{
+            rateKey('رنجة'): (perDay: 1.0, known: true),
+          },
+          doses: const <DoseSlot>[],
+          subscriptions: const <Subscription>[],
+          today: _today,
+          now: _now,
+          spendable: 900,
+        ),
+        isEmpty,
+      );
+    },
+  );
 }

@@ -24,6 +24,10 @@ double? parseQuantity(String raw) {
     'تلتين': 2 / 3,
     'تلت ارباع': 0.75,
     'ثلاثة ارباع': 0.75,
+    // What formatQuantity writes, so an edit field it filled reads back.
+    '½': 0.5,
+    '¼': 0.25,
+    '¾': 0.75,
   };
   final m = RegExp(r'^(\d+(?:\.\d+)?)?\s*(?:و\s*)?(.*)$').firstMatch(s);
   final whole = double.tryParse(m?.group(1) ?? '') ?? 0;

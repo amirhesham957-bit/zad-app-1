@@ -65,10 +65,10 @@ List<AmazonNeed> amazonNeeds(WidgetRef ref) {
   }
 
   for (final g in stock) {
-    if (g.isOut) add(g.name, 'خلص');
+    if (g.isShortOut) add(g.name, 'خلص');
   }
   for (final g in stock) {
-    if (!g.isOut && g.isLow) add(g.name, 'قرب يخلص');
+    if (!g.isOut && g.isShortLow) add(g.name, 'قرب يخلص');
   }
   for (final s in shopping) {
     if (!s.isPurchased) add(s.itemName, 'في قايمة التسوق');

@@ -44,9 +44,13 @@ class SupabaseInventoryRemote implements InventoryRemote {
 
   static const String _table = 'zad_inventory';
 
+  /// Every column plus `restock_occasional`, the server's verdict from the
+  /// purchase history (migration 20261020130000).
+  static const String _columns = '*,restock_occasional';
+
   @override
   Future<List<Map<String, dynamic>>> fetchAll() async {
-    final rows = await _client.from(_table).select().order('item_name');
+    final rows = await _client.from(_table).select(_columns).order('item_name');
     return rows.cast<Map<String, dynamic>>();
   }
 
@@ -61,7 +65,7 @@ class SupabaseInventoryRemote implements InventoryRemote {
     // holds, not the one this device posted.
     return await _client
         .from(_table)
-        .select()
+        .select(_columns)
         .eq('id', row['id'] as String)
         .maybeSingle();
   }

@@ -187,6 +187,7 @@ class PantryController extends Notifier<PantryView> {
     required String itemName,
     required double quantity,
     String? unit,
+    String? restockMode,
   }) async {
     final updated = await ref
         .read(inventoryRepositoryProvider)
@@ -195,6 +196,7 @@ class PantryController extends Notifier<PantryView> {
             itemName: itemName.trim(),
             quantity: quantity,
             unit: unit,
+            restockMode: restockMode,
           ),
         );
     if (updated.quantity != item.quantity) await _reading(updated);

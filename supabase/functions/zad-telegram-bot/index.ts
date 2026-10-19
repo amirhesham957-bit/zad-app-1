@@ -322,11 +322,15 @@ async function deliverVoiceAlert(
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
 async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number }>> {
-  const [{ data: inv }, { data: cons }, { data: pending }] = await Promise.all([
+  const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }] = await Promise.all([
     sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
+    // حاجات على فترات مابتتسألش «لسه عندك؟» (ZAD_PLAN ٣.١٠).
+    sb.rpc("zad_occasional_items", { p_user: userId }),
   ]);
+  if (occErr) console.error("checkin: occasional items failed:", occErr.message);
+  const occasionalItems = new Set((Array.isArray(occasional) ? occasional as string[] : []).map((n) => n.trim()));
 
   const consByItem = new Map(
     ((cons ?? []) as Array<{ item_name: string; avg_daily_qty: number; rate_known: boolean }>)
@@ -337,6 +341,7 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null }>)
     .filter((item) => {
       if (pendingItems.has(item.item_name)) return false;
+      if (occasionalItems.has(item.item_name.trim())) return false;
       return needsCheckIn(item.quantity, item.low_stock_threshold, consByItem.get(item.item_name)?.avg_daily_qty);
     })
     .map((item) => ({ item_name: item.item_name, quantity: item.quantity }));
@@ -3018,6 +3023,13 @@ Deno.serve(async (req: Request) => {
       const chatId = await resolveChatId(sb, user_id);
       if (chatId === null) {
         return new Response(JSON.stringify({ ok: true, delivered: false, reason: "not linked" }), { headers: { "Content-Type": "application/json" } });
+      }
+      // حاجة على فترات (الرنجة كل شهرين، ZAD_PLAN ٣.١٠): «لسه عندك؟» عليها إزعاج مش مساعدة. لو السؤال
+      // نفسه فشل، السؤال بيتبعت زي الأول.
+      const { data: occasional, error: occErr } = await sb.rpc("zad_item_is_occasional", { p_user: user_id, p_item: item_name });
+      if (occErr) console.error("live_checkin: occasional check failed:", occErr.message);
+      if (occasional === true) {
+        return new Response(JSON.stringify({ ok: true, delivered: false, reason: "occasional item" }), { headers: { "Content-Type": "application/json" } });
       }
       const alreadySentToday = await checkinsSentToday(sb, user_id);
       if (alreadySentToday >= MAX_CHECKINS_PER_USER_PER_DAY) {

@@ -229,9 +229,10 @@ class _PantryViewState extends ConsumerState<PantryView> {
     final low = <InventoryItem>[
       for (final g in groupPantry(all))
         if (g.isFamily
-            ? g.isLow
-            : g.members.single.quantity <=
-                  (g.members.single.lowStockThreshold ?? 2))
+            ? g.isShortLow
+            : !g.members.single.isOccasional &&
+                  g.members.single.quantity <=
+                      (g.members.single.lowStockThreshold ?? 2))
           g.representative,
     ];
     final shortages = <InventoryItem>[
@@ -966,7 +967,12 @@ class _InventoryItemCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final days = item.daysUntilExpiry(today);
     final def = _defFor(item.category, item.itemName);
-    final isLow = !grouped && item.quantity <= (item.lowStockThreshold ?? 2);
+    // Bought every couple of months (ZAD_PLAN ٣.١٠): at zero it is not low,
+    // it is simply not in the house right now.
+    final isLow =
+        !grouped &&
+        !item.isOccasional &&
+        item.quantity <= (item.lowStockThreshold ?? 2);
 
     Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
         SizedBox.square(
@@ -1238,7 +1244,7 @@ class _FamilyCard extends StatelessWidget {
                             style: ZadType.titleMedium,
                           ),
                         ),
-                        if (group.isLow) ...<Widget>[
+                        if (group.isShortLow) ...<Widget>[
                           const SizedBox(width: ZadSpacing.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -1574,8 +1580,11 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                           ),
                           decoration: field(),
                           onChanged: (v) {
-                            final digits = v.replaceAll(RegExp(r'\D'), '');
-                            if (digits != v) _qty.text = digits;
+                            final kept = v.replaceAll(
+                              RegExp('[^0-9٠-٩.,٫½¼¾]'),
+                              '',
+                            );
+                            if (kept != v) _qty.text = kept;
                           },
                         ),
                       ],
@@ -1708,6 +1717,11 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
     text: widget.item.unit ?? '',
   );
 
+  /// «بشتريها على فترات» — starts at what Zad already thinks, and is only
+  /// written when the customer changes it, so the history keeps deciding for
+  /// anyone who never touched it.
+  late bool _occasional = widget.item.isOccasional;
+
   @override
   void initState() {
     super.initState();
@@ -1725,7 +1739,11 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = parseQuantity(_qty.text);
+    // Zero is a count here — an item that ran out is still renamed or marked
+    // «على فترات» — while parseQuantity, built for purchases, refuses it.
+    final quantity = RegExp(r'^[0٠]+([.,٫][0٠]*)?$').hasMatch(_qty.text.trim())
+        ? 0.0
+        : parseQuantity(_qty.text);
     final canSave =
         _name.text.trim().isNotEmpty && quantity != null && quantity >= 0;
     return AlertDialog(
@@ -1754,8 +1772,10 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                       decimal: true,
                     ),
                     onChanged: (v) {
-                      final digits = v.replaceAll(RegExp(r'\D'), '');
-                      if (digits != v) _qty.text = digits;
+                      // Digits and the fraction marks formatQuantity writes:
+                      // stripping «.» and «½» made a half kilo unsavable.
+                      final kept = v.replaceAll(RegExp('[^0-9٠-٩.,٫½¼¾]'), '');
+                      if (kept != v) _qty.text = kept;
                     },
                     decoration: InputDecoration(
                       labelText: 'الكمية',
@@ -1778,6 +1798,17 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: ZadSpacing.sm),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _occasional,
+              onChanged: (v) => setState(() => _occasional = v),
+              title: const Text('بشتريها على فترات', style: ZadType.bodyMedium),
+              subtitle: const Text(
+                'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها',
+                style: ZadType.bodySmall,
+              ),
+            ),
           ],
         ),
       ),
@@ -1791,6 +1822,9 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
               ? () async {
                   final navigator = Navigator.of(context);
                   final unit = _unit.text.trim();
+                  final said = _occasional == widget.item.isOccasional
+                      ? null
+                      : (_occasional ? restockOccasional : restockStaple);
                   await ref
                       .read(pantryControllerProvider.notifier)
                       .edit(
@@ -1798,6 +1832,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                         itemName: _name.text.trim(),
                         quantity: quantity,
                         unit: unit.isEmpty ? null : unit,
+                        restockMode: said,
                       );
                   navigator.pop();
                 }

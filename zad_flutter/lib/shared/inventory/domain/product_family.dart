@@ -166,6 +166,16 @@ class PantryGroup {
   /// At or below [threshold] across every row.
   bool get isLow => total <= threshold;
 
+  /// Every row is bought only now and then (ZAD_PLAN ٣.١٠): at zero it is
+  /// not «ناقص». One staple row among them keeps the group a staple.
+  bool get isOccasional => members.every((m) => m.isOccasional);
+
+  /// Out and worth saying so: [isOut] for anything but an occasional item.
+  bool get isShortOut => isOut && !isOccasional;
+
+  /// Low and worth saying so: [isLow] for anything but an occasional item.
+  bool get isShortLow => isLow && !isOccasional;
+
   /// What the shopping list and the shortage banner call it: the staple
   /// («مياه»), or the row's own name. Always the staple's one spelling, never
   /// the largest row's: a list line named «ماء» one day and «مياه» the next
