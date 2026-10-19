@@ -70,12 +70,19 @@ class CompanionHeaderPet extends ConsumerStatefulWidget {
   ConsumerState<CompanionHeaderPet> createState() => _CompanionHeaderPetState();
 }
 
-class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
+class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
+    with SingleTickerProviderStateMixin {
   /// One unprompted bubble per half hour, across tab switches and rebuilds.
   static DateTime? _lastNudge;
 
   final OverlayPortalController _bubble = OverlayPortalController();
   final LayerLink _link = LayerLink();
+
+  /// A tap's hop: up and back with a small stretch (ZAD_PLAN ٥.١).
+  late final AnimationController _hop = AnimationController(
+    vsync: this,
+    duration: ZadDuration.settle,
+  );
   late final AppLifecycleListener _life;
   Timer? _tick;
   Timer? _hide;
@@ -97,6 +104,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
     _tick?.cancel();
     _hide?.cancel();
     _life.dispose();
+    _hop.dispose();
     super.dispose();
   }
 
@@ -131,6 +139,28 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
     _hide = Timer(const Duration(seconds: 5), () {
       if (mounted) _bubble.hide();
     });
+  }
+
+  /// A tap (ZAD_PLAN ٥.١): the pet hops and says how it is, from its real
+  /// state. While it is talking, a second tap — or one on the bubble — opens
+  /// the care sheet, so feeding stays one tap away.
+  void _poke(CompanionState mood) {
+    if (_bubble.isShowing) {
+      _open(mood);
+      return;
+    }
+    unawaited(HapticFeedback.selectionClick());
+    playPetSound(
+      mood == CompanionState.sad ? PetSound.whimper : PetSound.babble,
+    );
+    _hop.forward(from: 0);
+    _say(
+      PetLines.forMood(
+        mood,
+        name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+        loggedToday: true,
+      ),
+    );
   }
 
   void _open(CompanionState mood) {
@@ -186,10 +216,24 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet> {
             child: Stack(
               clipBehavior: Clip.none,
               children: <Widget>[
-                CompanionOrb(
-                  state: mood,
-                  size: widget.size,
-                  onTap: () => _open(mood),
+                AnimatedBuilder(
+                  animation: _hop,
+                  builder: (_, child) {
+                    final up = math.sin(_hop.value * math.pi);
+                    return Transform.translate(
+                      offset: Offset(0, -widget.size * 0.25 * up),
+                      child: Transform.scale(
+                        scaleX: 1 - 0.05 * up,
+                        scaleY: 1 + 0.07 * up,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: CompanionOrb(
+                    state: mood,
+                    size: widget.size,
+                    onTap: () => _poke(mood),
+                  ),
                 ),
                 if (badge != null)
                   PositionedDirectional(

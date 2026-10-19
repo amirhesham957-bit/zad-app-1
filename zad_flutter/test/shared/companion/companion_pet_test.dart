@@ -111,13 +111,32 @@ void main() {
     );
   });
 
-  testWidgets('tapping it opens the care sheet; food fills and is kept', (
+  testWidgets('a tap: it hops and talks; a second opens the care sheet', (
     tester,
   ) async {
+    // ZAD_PLAN ٥.١: the first tap is the pet answering, from its state.
     final container = await pump(
       tester,
       const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
     );
+    // Let the unprompted bubble go first.
+    await tester.pump(const Duration(seconds: 6));
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(bubble, findsNothing);
+
+    await tester.tap(find.byType(CompanionOrb));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.byType(CompanionCareSheet), findsNothing);
+    expect(bubble, findsOneWidget);
+    // Mid-hop it is off the ground.
+    final lifted = tester.getTopLeft(find.byType(CompanionOrb)).dy;
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(
+      tester.getTopLeft(find.byType(CompanionOrb)).dy,
+      greaterThan(lifted),
+    );
+
     await tester.tap(find.byType(CompanionOrb));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
