@@ -13,6 +13,7 @@ import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/domain/pet_meal.dart';
 import 'package:zad/shared/companion/domain/price_games.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
@@ -302,32 +303,31 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets(
-    "back after ten hours: it says so, from the phone's last sight",
-    (tester) async {
-      // ZAD_PLAN ٥.٢: the fourth wall, from real data.
-      // Real I/O: outside the widget test's fake clock.
-      await tester.runAsync(
-        () => device.put(
-          CompanionHeaderPet.lastSeenKey,
-          now.subtract(const Duration(hours: 10)).toIso8601String(),
-        ),
-      );
-      await pump(
-        tester,
-        const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
-      );
-      final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
-      expect(bubble, findsOne);
-      expect(
-        find.descendant(of: bubble, matching: find.textContaining('10 ساعة')),
-        findsOne,
-      );
-      // And it remembers this sight for next time.
-      expect(device.get(CompanionHeaderPet.lastSeenKey), now.toIso8601String());
-      await tester.pump(const Duration(seconds: 6));
-    },
-  );
+  testWidgets("back after ten hours: it says so, from the phone's last sight", (
+    tester,
+  ) async {
+    // ZAD_PLAN ٥.٢: the fourth wall, from real data.
+    // Real I/O: outside the widget test's fake clock.
+    await tester.runAsync(
+      () => device.put(
+        CompanionHeaderPet.lastSeenKey,
+        now.subtract(const Duration(hours: 10)).toIso8601String(),
+      ),
+    );
+    await pump(
+      tester,
+      const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
+    );
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(bubble, findsOne);
+    expect(
+      find.descendant(of: bubble, matching: find.textContaining('10 ساعة')),
+      findsOne,
+    );
+    // And it remembers this sight for next time.
+    expect(device.get(CompanionHeaderPet.lastSeenKey), now.toIso8601String());
+    await tester.pump(const Duration(seconds: 6));
+  });
 
   testWidgets('five quick taps: it talks back instead of opening the sheet', (
     tester,
@@ -349,6 +349,54 @@ void main() {
     expect(
       tester.widgetList<Text>(said).map((t) => t.data).join(),
       anyOf(contains('دغدغ'), contains('زرار'), contains('اتزغلل')),
+    );
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('an expense dropped on the pet is logged and eaten', (
+    tester,
+  ) async {
+    // ZAD_PLAN ٥.٣: drag a card onto رفيق زاد.
+    var logged = 0;
+    final container = await pump(
+      tester,
+      Column(
+        children: <Widget>[
+          const CompanionHeaderPet(),
+          const SizedBox(height: 200),
+          Draggable<PetMeal>(
+            data: PetMeal(label: 'كارفور', log: () => logged++),
+            feedback: const Text('🍽️'),
+            child: const SizedBox.square(
+              key: ValueKey<String>('meal'),
+              dimension: 60,
+              child: ColoredBox(color: Colors.amber),
+            ),
+          ),
+        ],
+      ),
+    );
+    await tester.pump(const Duration(seconds: 6));
+    final fedBefore = container.read(petCareProvider)!.fedAt;
+    now = now.add(const Duration(hours: 1));
+
+    final from = tester.getCenter(find.byKey(const ValueKey<String>('meal')));
+    final to = tester.getCenter(find.byType(CompanionOrb));
+    final g = await tester.startGesture(from);
+    await tester.pump(const Duration(milliseconds: 50));
+    for (var i = 1; i <= 10; i++) {
+      await g.moveTo(Offset.lerp(from, to, i / 10)!);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(logged, 1);
+    expect(container.read(petCareProvider)!.fedAt.isAfter(fedBefore), isTrue);
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(
+      find.descendant(of: bubble, matching: find.textContaining('اتسجّل')),
+      findsOne,
     );
     await tester.pump(const Duration(seconds: 6));
   });
