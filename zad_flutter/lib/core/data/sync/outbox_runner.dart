@@ -53,6 +53,7 @@ class OutboxRunner {
   final Future<void> Function()? _beforeFlush;
   final StreamController<OutboxFlushReport> _reports =
       StreamController<OutboxFlushReport>.broadcast();
+  final StreamController<bool> _sending = StreamController<bool>.broadcast();
 
   StreamSubscription<SyncTrigger>? _subscription;
   Future<void>? _inFlight;
@@ -61,6 +62,12 @@ class OutboxRunner {
 
   /// The result of each flush, for a UI that wants to show what is unsent.
   Stream<OutboxFlushReport> get reports => _reports.stream;
+
+  /// True as a flush starts sending queued entries, false when it ends.
+  ///
+  /// Only a flush with something to send says anything: the periodic tick
+  /// over an empty queue stays silent, so the strip does not blink.
+  Stream<bool> get sending => _sending.stream;
 
   /// Whether a flush is running right now.
   bool get isFlushing => _inFlight != null;
@@ -99,6 +106,7 @@ class OutboxRunner {
     _subscription = null;
     await _inFlight;
     await _reports.close();
+    await _sending.close();
   }
 
   /// Coalesces concurrent requests into one run.
@@ -162,7 +170,13 @@ class OutboxRunner {
       // periodic tick cheap enough to leave running.
       if (_outbox.entries(includeDead: false).isEmpty) break;
 
-      final report = await _outbox.flush();
+      if (!_sending.isClosed) _sending.add(true);
+      final OutboxFlushReport report;
+      try {
+        report = await _outbox.flush();
+      } finally {
+        if (!_sending.isClosed) _sending.add(false);
+      }
       if (!_reports.isClosed) _reports.add(report);
 
       // Stopped for a reason a retry will not fix in the next millisecond.

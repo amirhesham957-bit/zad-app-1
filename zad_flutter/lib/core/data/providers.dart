@@ -87,6 +87,22 @@ class OutboxLastReport extends Notifier<OutboxFlushReport?> {
   set report(OutboxFlushReport value) => state = value;
 }
 
+/// Whether a flush is sending queued entries right now (the strip's
+/// «بنزامن…»). Written by [outboxRunnerProvider], for the same reason as
+/// [outboxLastReportProvider].
+final NotifierProvider<OutboxSending, bool> outboxSendingProvider =
+    NotifierProvider<OutboxSending, bool>(OutboxSending.new);
+
+/// Holds [outboxSendingProvider]'s value.
+class OutboxSending extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Whether a flush is sending.
+  // ignore: avoid_setters_without_getters
+  set sending(bool value) => state = value;
+}
+
 /// Drains the outbox on startup, on resume, when the network comes back,
 /// and on a slow tick that exists to wake entries out of their backoff.
 ///
@@ -109,8 +125,13 @@ final Provider<OutboxRunner> outboxRunnerProvider = Provider<OutboxRunner>((
     (report) => ref.read(outboxLastReportProvider.notifier).report = report,
   );
 
+  final sending = runner.sending.listen(
+    (value) => ref.read(outboxSendingProvider.notifier).sending = value,
+  );
+
   ref.onDispose(() async {
     await reports.cancel();
+    await sending.cancel();
     await runner.dispose();
     await triggers.dispose();
   });
