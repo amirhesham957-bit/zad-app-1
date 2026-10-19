@@ -24,6 +24,7 @@ import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
+import 'package:zad/shared/companion/presentation/pet_price_games.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
@@ -804,6 +805,54 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 );
               },
               child: const Text('⚽ العب معاه'),
+            ),
+            const SizedBox(height: ZadSpacing.sm),
+            // ZAD_PLAN ٥.٤: two price games on real prices.
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('pet-guess'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: () async {
+                      final right = await showPetGuessGame(context, name: name);
+                      if (!mounted || right == null) return;
+                      _react(
+                        CompanionState.celebrating,
+                        'خمّنت $right صح! 💰',
+                        '💰',
+                        PetSound.purr,
+                      );
+                    },
+                    child: const Text('💰 خمّن السعر'),
+                  ),
+                ),
+                const SizedBox(width: ZadSpacing.sm),
+                Expanded(
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('pet-memory'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: () async {
+                      final moves = await showPetMemoryGame(
+                        context,
+                        name: name,
+                      );
+                      if (!mounted || moves == null) return;
+                      _react(
+                        CompanionState.celebrating,
+                        'خلصنا الذاكرة في $moves محاولات! 🧠',
+                        '🧠',
+                        PetSound.purr,
+                      );
+                    },
+                    child: const Text('🧠 ذاكرة الأسعار'),
+                  ),
+                ),
+              ],
             ),
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
