@@ -253,4 +253,7 @@ abstract final class ZadScreens {
 
   /// A quick expense.
   static late OpenScreen showQuickExpenseSheet;
+
+  /// A quick expense paid in cash.
+  static late OpenScreen showCashExpenseSheet;
 }

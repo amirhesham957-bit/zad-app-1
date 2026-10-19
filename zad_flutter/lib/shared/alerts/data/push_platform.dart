@@ -396,7 +396,7 @@ class FirebasePushPlatform implements PushPlatform {
       )
       ..add(
         FirebaseMessaging.onMessageOpenedApp.listen(
-          (m) => onOpened(destinationFor(m.data['route'] as String?)),
+          (m) => onOpened(destinationForData(m.data)),
         ),
       );
 
@@ -404,7 +404,7 @@ class FirebasePushPlatform implements PushPlatform {
     // was not running at all.
     final initial = await messaging.getInitialMessage();
     if (initial != null) {
-      onOpened(destinationFor(initial.data['route'] as String?));
+      onOpened(destinationForData(initial.data));
     } else {
       final launch = await _local.getNotificationAppLaunchDetails();
       if (launch?.didNotificationLaunchApp ?? false) {

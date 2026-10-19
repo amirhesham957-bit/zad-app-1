@@ -24,6 +24,7 @@ import 'package:zad/features/home/presentation/bank_listening_pill.dart';
 import 'package:zad/features/home/presentation/birthday_celebration.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/campaign_stories.dart';
+import 'package:zad/features/home/presentation/close_day_card.dart';
 import 'package:zad/features/home/presentation/coverage_note.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
@@ -44,6 +45,7 @@ import 'package:zad/shared/budget/data/upcoming_outings.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/budget/domain/event_day_budget.dart';
 import 'package:zad/shared/budget/domain/spend_coverage.dart';
+import 'package:zad/shared/day_close/presentation/close_day_sheet.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -111,6 +113,11 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // ZAD_PLAN ٣.٢: in the evening, close the day.
+          const ZadTrailingGap(
+            gap: 16,
+            child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
+          ),
           // The bot's link right under the money while it is missing (owner,
           // 2026-10-13): the reminders come from Telegram.
           ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
@@ -253,7 +260,9 @@ class _Budget extends ConsumerWidget {
             delayMs: 50,
             child: CoverageNote(
               coverage: coverage,
-              onTap: () => ZadScreens.openBankReading(context, ref),
+              // Closing the day is what lets Zad see more tonight; the
+              // sheet also links the bank.
+              onTap: () => showCloseDaySheet(context, ref),
             ),
           ),
           const SizedBox(height: 14),
