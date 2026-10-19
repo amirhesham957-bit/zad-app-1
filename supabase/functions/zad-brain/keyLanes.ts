@@ -22,7 +22,15 @@
  *     عليه خالص وبيروح لجروك على طول (callModel)، فالمشتركين مابيتأثروش.
  */
 
-export type Lane = "customer" | "background" | "paid" | "free" | "free_busy";
+export type Lane = "customer" | "background" | "paid" | "free" | "free_busy" | "eval";
+
+/**
+ * حارة التقييم الليلي (ZAD_DREAM_PLAN.md ٢.١): مفتاح واحد لوحده، `ZAD_EVAL_KEY`، مش من المسبح.
+ * ٢٠٠ لفة في الليلة على المسبح كانت هتاكل كوتة الكرونات والعملاء. من غير المفتاح التقييم مابيشتغلش.
+ */
+export function evalKeyOrder(evalKeyIndex: number | null): number[] {
+  return evalKeyIndex === null ? [] : [evalKeyIndex];
+}
 
 /** اللي بيشتغل من غير ما حد مستني الرد. التذكيرات (process_voice_moments) مش منهم: العميل مستنيها. */
 export const BACKGROUND_ACTIONS: ReadonlySet<string> = new Set([
