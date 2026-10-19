@@ -1,7 +1,11 @@
 /// Kotlin's `StatementCsvImporter`: banks export CSVs in no shared format, so
 /// nothing is guessed — the user maps date, description and amount to the
-/// file's own headers and reviews every row before anything is written. PDF is
-/// deliberately unsupported (vision OCR misreads multi-page money tables).
+/// file's own headers and reviews every row before anything is written.
+///
+/// A photo or a PDF of the statement (ZAD_PLAN ٣.٣) is read on the server
+/// (`analyze_statement`). PDF used to be left out because vision misreads
+/// money tables; the server now checks every row against the statement's own
+/// running balance, and a row that does not add up starts unticked.
 library;
 
 import 'package:zad/core/money/money.dart';
@@ -28,6 +32,9 @@ typedef PreviewRow = ({
   bool isExpense,
   String category,
   bool hasError,
+  // The statement's printed balance agrees with this row (true), does not
+  // (false), or there was none to check (null; always null for a CSV).
+  bool? balanceOk,
 });
 
 /// The title Kotlin gives a row with a blank description.
@@ -261,6 +268,114 @@ PreviewRow _previewRow(
         ? mapped
         : customCategory?.call(title) ?? classifyStatementTitle(title),
     hasError: amount == null || date == null,
+    balanceOk: null,
+  );
+}
+
+/// How a picked or shared file is imported.
+enum StatementFileKind {
+  /// Mapped by hand on the phone.
+  csv,
+
+  /// Read on the server.
+  pdf,
+
+  /// Read on the server.
+  image,
+}
+
+/// The kind of file [name] is, by its extension; null for anything else.
+StatementFileKind? statementFileKind(String name) {
+  final dot = name.lastIndexOf('.');
+  final ext = dot < 0 ? '' : name.substring(dot + 1).toLowerCase();
+  return switch (ext) {
+    'csv' || 'txt' => StatementFileKind.csv,
+    'pdf' => StatementFileKind.pdf,
+    'jpg' ||
+    'jpeg' ||
+    'png' ||
+    'webp' ||
+    'heic' ||
+    'heif' => StatementFileKind.image,
+    _ => null,
+  };
+}
+
+/// The mime type `analyze_statement` is told, from the file's name.
+String statementMimeType(String name) {
+  final ext = name.substring(name.lastIndexOf('.') + 1).toLowerCase();
+  return switch (ext) {
+    'pdf' => 'application/pdf',
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'heic' => 'image/heic',
+    'heif' => 'image/heif',
+    _ => 'image/jpeg',
+  };
+}
+
+/// What the statement's own balance says about the rows as read.
+enum StatementCheck {
+  /// Opening + credits − debits = closing, or every running balance fits.
+  balanced,
+
+  /// Something does not add up — every row wants a look.
+  mismatch,
+
+  /// The statement prints no balance to check against.
+  unknown,
+}
+
+/// A statement read off a photo or a PDF.
+typedef ScannedStatement = ({
+  List<PreviewRow> rows,
+  StatementCheck check,
+  // Rows the server could not read (no date, no amount) and left out.
+  int dropped,
+  String? currency,
+});
+
+/// Reads `analyze_statement`'s `statement` object; null when it holds no row.
+ScannedStatement? readScannedStatement(
+  Map<String, dynamic> json, {
+  String? Function(String title)? customCategory,
+}) {
+  final raw = json['rows'];
+  final rows = <PreviewRow>[];
+  if (raw is List) {
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final date = parseStatementDate('${item['date'] ?? ''}');
+      final amount = (item['amount'] as num?)?.toDouble().asMoney;
+      if (date == null || amount == null || amount <= 0) continue;
+      final description = item['description'];
+      final title = description is String && description.trim().isNotEmpty
+          ? description.trim()
+          : kImportedTitle;
+      final balanceOk = item['balance_ok'];
+      rows.add((
+        rowIndex: rows.length,
+        date: date,
+        title: title,
+        amount: amount,
+        isExpense: item['direction'] != 'credit',
+        category: customCategory?.call(title) ?? classifyStatementTitle(title),
+        hasError: false,
+        balanceOk: balanceOk is bool ? balanceOk : null,
+      ));
+    }
+  }
+  if (rows.isEmpty) return null;
+  final currency = json['currency'];
+  return (
+    rows: rows,
+    check: switch (json['check']) {
+      'balanced' => StatementCheck.balanced,
+      'mismatch' => StatementCheck.mismatch,
+      _ => StatementCheck.unknown,
+    },
+    dropped: (json['dropped'] as num?)?.toInt() ?? 0,
+    currency: currency is String && currency.isNotEmpty ? currency : null,
   );
 }
 
