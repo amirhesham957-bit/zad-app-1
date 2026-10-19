@@ -114,7 +114,11 @@ void main() {
     final sub = container.listen(campaignsControllerProvider, (_, _) {});
     addTearDown(sub.close);
     expect(sub.read().campaigns.single.id, 'old');
-    await pumpEventQueue();
+    // The refresh writes the box on real disk: a fixed number of event-loop
+    // turns (pumpEventQueue) was not always enough on CI (2026-10-19, #204).
+    for (var i = 0; i < 100 && sub.read().campaigns.single.id != 'new'; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
     expect(sub.read().campaigns.single.id, 'new');
   });
 
