@@ -15,6 +15,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
+import 'package:zad/shared/session/product_events.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
 class _FakeListener implements ZadBankListener {
@@ -103,6 +104,7 @@ void main() {
   late Box<String> chatBox;
   late _FakeListener listener;
   late ProviderContainer container;
+  late List<String> pulses;
 
   final now = DateTime.utc(2026, 10, 10, 12);
 
@@ -130,11 +132,19 @@ void main() {
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),
+        productEventsProvider.overrideWithValue(
+          ProductEvents(
+            send: (name) async => pulses.add(name),
+            signedIn: () => true,
+            now: () => now,
+          ),
+        ),
       ],
     );
   }
 
   setUp(() async {
+    pulses = <String>[];
     dir = await Directory.systemTemp.createTemp('zad_access_test');
     Hive.init(dir.path);
     documents = await Hive.openBox<String>('documents');
@@ -282,5 +292,29 @@ void main() {
       container.read(bankAccessControllerProvider).health,
       BankAccessHealth.notGranted,
     );
+  });
+
+  test('each reading leaves its pulse, once per window', () async {
+    // ZAD_PLAN ٣.١: the 2026-10-05 stall was visible only to whoever opened
+    // the screen. The server reads `bank.stalled` from the events table.
+    await build(lastSeenAnyAt: now.subtract(const Duration(days: 5)));
+    await container
+        .read(bankCaptureMarkerProvider)
+        .sawCapture(DateTime.utc(2026, 10, 5));
+    final controller = container.read(bankAccessControllerProvider.notifier);
+    await controller.refresh();
+    await controller.refresh();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(pulses, <String>['bank.stalled']);
+  });
+
+  test('the pulse names every state', () {
+    expect(BankAccessHealth.values.map(bankPulseEvent).toSet(), <String>{
+      'bank.off',
+      'bank.flowing',
+      'bank.silent',
+      'bank.stalled',
+    });
   });
 }
