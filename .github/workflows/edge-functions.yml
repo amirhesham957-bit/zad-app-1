@@ -384,6 +384,21 @@ jobs:
           jq -r '.results[] | "- \(if .pass then "✅" else "❌" end) \(.id)\(if .pass then "" else ": \(.failure // "")" end)"' acceptance.json \
             | tee -a "$GITHUB_STEP_SUMMARY"
           FAILED=$(jq '[.results[] | select(.pass != true)] | length' acceptance.json)
+          # إعادة مرة للحالات اللي وقعت بس (١٩/١٠): ٤ نشرات في يوم وقعت كل مرة حالة مختلفة ٧ من ٨
+          # (الدولار، المصروف مرتين، السؤال العام) وعدّت في النشر اللي بعده — رعشة موديل حي مش كسر.
+          # التراجع الحقيقي (#136: ٥ من ٩) بيقع تاني في الإعادة، فاللون الأحمر لسه بيمسكه.
+          if [ "$FAILED" != "0" ]; then
+            CASES=$(jq -c '[.results[] | select(.pass != true) | .id]' acceptance.json)
+            echo "Re-running once: $CASES" | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -sS --max-time 170 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
+              -H "ZAD-PROACTIVE-CRON-SECRET: $PROBE_SECRET" -H "Content-Type: application/json" \
+              -d "{\"action\":\"acceptance_probe\",\"cases\":$CASES,\"search\":false,\"context\":false}" > acceptance_retry.json || true
+            if jq -e '.results' acceptance_retry.json >/dev/null 2>&1; then
+              jq -r '.results[] | "- retry \(if .pass then "✅" else "❌" end) \(.id)\(if .pass then "" else ": \(.failure // "")" end)"' acceptance_retry.json \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              FAILED=$(jq '[.results[] | select(.pass != true)] | length' acceptance_retry.json)
+            fi
+          fi
           # بيوقّع الخطوة (٢٠٢٦-١٠-١٨): كان تحذير بس والخطوة خضرا، فتراجع التذكير بعد #136
           # (١٩ من ٢٠ ← ٥ من ٩) فضل ٣ ساعات من غير ما حد يشوفه. النشر حصل خلاص قبل الخطوة دي —
           # اللون الأحمر هنا معناه «فيه جملة من جمل المالك اتكسرت على العقل الحي»، اقرا الملخص.

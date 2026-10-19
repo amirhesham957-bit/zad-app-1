@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
+import 'package:zad/shared/session/product_events.dart';
 
 /// How the bank channel stands.
 enum BankAccessHealth {
@@ -42,6 +43,22 @@ enum BankAccessHealth {
   /// been captured.
   stalled,
 }
+
+/// The product event a reading sends (ZAD_PLAN ٣.١, «نبض المستمع»).
+///
+/// The owner's phone stopped reading the bank on 2026-10-05 and the server
+/// could not tell: the screen said so, but only to whoever opened it. Each
+/// open now leaves `bank.<state>` in `zad_product_events`, so whose listener
+/// stalled is one query — name and time only, nothing from a message.
+String bankPulseEvent(BankAccessHealth health) => switch (health) {
+  BankAccessHealth.notGranted => 'bank.off',
+  BankAccessHealth.flowing => 'bank.flowing',
+  BankAccessHealth.grantedButSilent => 'bank.silent',
+  BankAccessHealth.stalled => 'bank.stalled',
+};
+
+/// At most one pulse per state in this window, however often the app opens.
+const Duration kBankPulseEvery = Duration(hours: 12);
 
 /// How long without any notification seen before the listener counts as
 /// stopped.
@@ -187,11 +204,28 @@ class BankAccessController extends Notifier<BankAccessState> {
         checkedAt: ref.read(nowProvider)(),
       );
       await marker.rememberAccess(granted: granted, connectedAt: connectedAt);
+      _pulse();
     } on Object {
       // The plugin is not there — a test host, or a platform without it. Not
       // an error worth showing anyone; it just means nothing is flowing.
       if (!ref.mounted) return;
       state = state.copyWith(checking: false, granted: false);
+    }
+  }
+
+  /// Sends [bankPulseEvent] for this reading. A statistic, never a feature:
+  /// whatever goes wrong here stays here and never changes the reading.
+  void _pulse() {
+    if (!ref.mounted) return;
+    try {
+      unawaited(
+        ref
+            .read(productEventsProvider)
+            .log(bankPulseEvent(state.health), every: kBankPulseEvery)
+            .catchError((Object _) => false),
+      );
+    } on Object {
+      // No session graph (a test host, a headless engine).
     }
   }
 
