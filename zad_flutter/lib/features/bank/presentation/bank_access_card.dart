@@ -14,6 +14,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Shows the bank channel's health, and the one action that repairs it.
 class BankAccessCard extends ConsumerWidget {
@@ -122,8 +123,34 @@ class BankAccessCard extends ConsumerWidget {
               ),
             ],
           ),
+          // A listener that stops is almost always the phone's battery
+          // manager (Xiaomi, Oppo, Vivo…), and re-granting only helps until
+          // it kills the service again (ZAD_PLAN ٣.١, «خلّي زاد شغال»).
+          if (state.health == BankAccessHealth.stalled ||
+              state.health == BankAccessHealth.grantedButSilent) ...<Widget>[
+            const SizedBox(height: ZadSpacing.sm),
+            TextButton.icon(
+              onPressed: () => showKeepZadRunning(context),
+              icon: const Icon(ZadIcons.battery, size: 18),
+              label: const Text('خلّي زاد شغال على طول'),
+            ),
+          ],
         ],
       ),
     );
   }
 }
+
+/// «خلّي زاد شغال»: the battery and auto-start steps, on their own page.
+Future<void> showKeepZadRunning(BuildContext context) =>
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text('خلّي زاد شغال')),
+          body: ListView(
+            padding: const EdgeInsets.all(ZadSpacing.lg),
+            children: <Widget>[ZadSlots.keepAliveGuide()],
+          ),
+        ),
+      ),
+    );
