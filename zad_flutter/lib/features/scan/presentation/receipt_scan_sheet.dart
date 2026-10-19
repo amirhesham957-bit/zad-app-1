@@ -501,9 +501,10 @@ class _ReadingState extends ConsumerState<_Reading> {
     if (saved) {
       // Said on the screen underneath, which outlives this sheet.
       final after = ref.read(scanControllerProvider);
-      final said =
-          _intakeMessage(after.lastIntake) ??
-          _pharmacyMessage(after.lastPharmacyIntake);
+      final said = after.savedQueued
+          ? 'اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.'
+          : _intakeMessage(after.lastIntake) ??
+                _pharmacyMessage(after.lastPharmacyIntake);
       if (said != null) {
         messenger?.showSnackBar(SnackBar(content: Text(said)));
       }
@@ -516,9 +517,6 @@ class _ReadingState extends ConsumerState<_Reading> {
   /// What the pantry got, in one line — or that it got nothing.
   static String? _intakeMessage(PantryIntakeResult? intake) {
     if (intake == null) return null;
-    if (intake.failed) {
-      return 'المصروف اتسجل، بس الأصناف مادخلتش المخزن. ضيفها من البيت.';
-    }
     final parts = <String>[
       if (intake.added > 0) '${intake.added} جديد',
       if (intake.toppedUp > 0) '${intake.toppedUp} زادت كميته',
@@ -532,7 +530,7 @@ class _ReadingState extends ConsumerState<_Reading> {
   static String? _pharmacyMessage(PharmacyIntakeResult? intake) {
     if (intake == null) return null;
     if (intake.failed) {
-      return 'المصروف اتسجل، بس الأدوية مادخلتش الصيدلية. ضيفها من البيت.';
+      return 'المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.';
     }
     final parts = <String>[
       if (intake.added > 0) '${intake.added} جديد',

@@ -113,6 +113,14 @@ abstract final class OutboxKind {
   /// function so a replay is `duplicate`, never a second vote.
   static const String reportPrice = 'report_price';
 
+  /// A purchase with its lines through `zad_record_purchase`: the expense,
+  /// the pantry, the pharmacy and the crowd prices in one transaction.
+  ///
+  /// One entry per purchase (`purchase:<id>`). The id is the purchase's and
+  /// the expense's, and the function keeps its answer under it, so a replay
+  /// gets the same answer and writes nothing.
+  static const String recordPurchase = 'record_purchase';
+
   /// Tell the server this device's push token belongs to the signed-in
   /// account, through `zad_register_fcm_token`.
   ///
