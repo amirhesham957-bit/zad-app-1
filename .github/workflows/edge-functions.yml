@@ -24,12 +24,14 @@ on:
       - "supabase/functions/**"
       - "supabase/migrations/**"
       - "supabase/config.toml"
+      - "supabase/sql/**"
       - ".github/workflows/edge-functions.yml"
   pull_request:
     paths:
       - "supabase/functions/**"
       - "supabase/migrations/**"
       - "supabase/config.toml"
+      - "supabase/sql/**"
       - ".github/workflows/edge-functions.yml"
   workflow_dispatch: {}
 
@@ -119,6 +121,43 @@ jobs:
         working-directory: supabase/functions/_schema
         run: deno test --allow-all
 
+  # اختبارات SQL على postgres فاضي (٢٠٢٦-١٠-١٩، باب الشرا ٣.٦). الاختبارات تحت
+  # supabase/sql/tests كانت بتتشغل على قاعدة سكراتش محلية بس، فدالة فيها فلوس كانت
+  # ممكن توصل الإنتاج من غير ما حد يشغّلها. كل سطر هنا: سقالة، المايجريشن، الاختبار.
+  # اختبار جديد يتضاف سطر؛ القديمة اللي محتاجة سقالات مشتركة لسه ماتنقلتش.
+  sql-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: pg
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: pg
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Run scratch SQL tests
+        run: |
+          set -euo pipefail
+          while read -r scaffold migration test; do
+            [ -z "$scaffold" ] && continue
+            db="t_$(basename "$test" .sql)"
+            echo "::group::$test"
+            createdb "$db"
+            for f in "$scaffold" "$migration" "$test"; do
+              psql -d "$db" -v ON_ERROR_STOP=1 -q -f "$f"
+            done
+            echo "::endgroup::"
+          done <<'LIST'
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/sql/tests/purchase_door_test.sql
+          LIST
+
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
   #
   # الانحراف بين الريبو والمنشور مش احتمال نظري هنا، هو حصل فعلاً: في 2026-08-01 النسخة
@@ -131,7 +170,7 @@ jobs:
   # للإنتاج. الـ migrations بتتدفع في نفس الخطوة عشان السكيما والكود اللي بيعتمد عليها
   # ما يتفرقوش (زي zad_subscription_next_renewal اللي الفانكشن محتاجاها موجودة).
   deploy:
-    needs: check
+    needs: [check, sql-tests]
     # `workflow_dispatch` مسموح كمان، مش `push` بس. من غيره التشغيل اليدوي من تبويب
     # Actions بيعمل الفحص ويتخطى النشر بصمت — وهو بالظبط الزرار اللي حد هيدوس عليه لما
     # يعوز ينشر من غير ما يستنى تعديل جديد.
