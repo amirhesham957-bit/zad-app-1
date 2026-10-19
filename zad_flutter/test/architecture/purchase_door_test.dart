@@ -62,7 +62,8 @@ void main() {
     expect(
       _moneyOnly.keys.toSet().difference(writers),
       isEmpty,
-      reason: 'A listed door no longer writes directly — drop it from the list.',
+      reason:
+          'A listed door no longer writes directly — drop it from the list.',
     );
   });
 
