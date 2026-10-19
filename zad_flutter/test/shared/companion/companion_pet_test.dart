@@ -42,6 +42,7 @@ void main() {
   setUp(() async {
     run++;
     now = DateTime.utc(2026, 10, 13, 12);
+    CompanionHeaderPet.resetNudge();
     dir = await Directory.systemTemp.createTemp('zad_pet');
     Hive.init(dir.path);
     device = await Hive.openBox<String>('device$run');
@@ -299,6 +300,57 @@ void main() {
     expect(tester.widget<Text>(status).data, contains('ذاكرة حديد'));
     expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets(
+    "back after ten hours: it says so, from the phone's last sight",
+    (tester) async {
+      // ZAD_PLAN ٥.٢: the fourth wall, from real data.
+      // Real I/O: outside the widget test's fake clock.
+      await tester.runAsync(
+        () => device.put(
+          CompanionHeaderPet.lastSeenKey,
+          now.subtract(const Duration(hours: 10)).toIso8601String(),
+        ),
+      );
+      await pump(
+        tester,
+        const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
+      );
+      final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+      expect(bubble, findsOne);
+      expect(
+        find.descendant(of: bubble, matching: find.textContaining('10 ساعة')),
+        findsOne,
+      );
+      // And it remembers this sight for next time.
+      expect(device.get(CompanionHeaderPet.lastSeenKey), now.toIso8601String());
+      await tester.pump(const Duration(seconds: 6));
+    },
+  );
+
+  testWidgets('five quick taps: it talks back instead of opening the sheet', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
+    );
+    await tester.pump(const Duration(seconds: 6));
+    // Five taps, a tenth of a second apart: poking, not asking.
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(find.byType(CompanionOrb));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(CompanionCareSheet), findsNothing);
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(bubble, findsOne);
+    final said = find.descendant(of: bubble, matching: find.byType(Text));
+    expect(
+      tester.widgetList<Text>(said).map((t) => t.data).join(),
+      anyOf(contains('دغدغ'), contains('زرار'), contains('اتزغلل')),
+    );
+    await tester.pump(const Duration(seconds: 6));
   });
 
   testWidgets('signed out: no pet at all', (tester) async {
