@@ -40,4 +40,12 @@ do $$ begin
   assert (select quantity from public.zad_pharmacy_restocks limit 1) = 2, 'pharmacy counts pills';
 end $$;
 
+
+-- The two triggers came back after the type change.
+do $$ begin
+  assert (select count(*) from pg_trigger where tgrelid = 'public.zad_inventory'::regclass
+          and tgname in ('trigger_restock_link_on_run_out', 'zad_companion_xp')) = 2,
+    'a trigger on zad_inventory.quantity was dropped and not recreated';
+end $$;
+
 select 'quantity_fractions_test: ok';

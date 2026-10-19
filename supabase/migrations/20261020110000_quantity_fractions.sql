@@ -5,12 +5,24 @@
 -- (zad_inventory_observations.qty) numeric من الأول، فالمعدّل كان بيتعلم من رقم متقرّب.
 --
 -- هنا: الكمية والحد بقوا numeric(12,3)، وباب الشرا بيحط الكمية زي ما هي (٣ أرقام عشرية) في المخزن. الصيدلية
--- لسه بالحبة (zad_pharmacy_restock بياخد integer). التريجرات اللي على «update of quantity» (restock_link،
--- companion_xp) مابتمنعش تغيير النوع — اتجرّب على postgres:17.
+-- لسه بالحبة (zad_pharmacy_restock بياخد integer).
+--
+-- التريجرين اللي على «update of quantity» (restock_link، companion_xp) بيمنعوا تغيير النوع («cannot alter
+-- type of a column used in a trigger definition» — وقّف نشر #207 على الإنتاج ١٩/١٠). بيتشالوا ويرجعوا زي
+-- ما هم بالظبط في نفس المعاملة.
+
+drop trigger if exists trigger_restock_link_on_run_out on public.zad_inventory;
+drop trigger if exists zad_companion_xp on public.zad_inventory;
 
 alter table public.zad_inventory
   alter column quantity type numeric(12,3) using quantity::numeric,
   alter column low_stock_threshold type numeric(12,3) using low_stock_threshold::numeric;
+
+create trigger trigger_restock_link_on_run_out
+  after update of quantity on public.zad_inventory
+  for each row execute function public._zad_restock_link_on_run_out();
+create trigger zad_companion_xp after insert or update of quantity on public.zad_inventory
+  for each row execute function public.zad_companion_on_home();
 
 create or replace function private.zad_record_purchase_impl(p_user uuid, p_purchase jsonb)
 returns jsonb
