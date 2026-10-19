@@ -30,6 +30,7 @@ const SCAN_ACTIONS = new Set([
   "analyze_inventory_image",
   "analyze_medicine_image",
   "analyze_document_image",
+  "analyze_statement",
 ]);
 const VOICE_ACTIONS = new Set(["voice_synthesize", "voice_agent"]);
 // ليها حراسها الخاصة (مفتاح الخدمة أو أدمن) ومابتصرفش من مفاتيح العملاء.
@@ -57,6 +58,8 @@ export function scanCameBackEmpty(action: string, body: unknown): boolean {
       return b.medicine == null;
     case "analyze_document_image":
       return b.document == null;
+    case "analyze_statement":
+      return b.statement == null;
     default:
       return false;
   }

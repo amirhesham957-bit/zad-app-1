@@ -310,6 +310,13 @@ export const validateLogTransaction: Validator = (input, _snap, ctx) => {
   if (isGuessedTitle(String(input.title))) {
     return { ok: false, reason: "الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه (ask_user) قبل ما تسجلها" };
   }
+  if (input.lines !== undefined) {
+    if (!Array.isArray(input.lines)) return { ok: false, reason: "lines لازم تبقى قايمة أصناف" };
+    if (input.lines.length > 30) return { ok: false, reason: "أصناف كتير قوي في معاملة واحدة — ٣٠ بالكتير" };
+    if (input.txn_kind === "income" && input.lines.length > 0) {
+      return { ok: false, reason: "الأصناف للمصروف بس، مش للدخل" };
+    }
+  }
   return { ok: true };
 };
 

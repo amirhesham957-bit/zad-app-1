@@ -7,18 +7,38 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
+import android.provider.OpenableColumns
 import android.telephony.TelephonyManager
 import android.util.Log
 import java.util.Locale
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private var pendingRingtone: MethodChannel.Result? = null
+    private var shareChannel: MethodChannel? = null
+    private var pendingShare: Map<String, Any?>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // «شارك لزاد» (lib/app/share/share_intake.dart): Dart takes the share
+        // when the shell is up, and is told "shared" when one arrives while it
+        // runs. A share waiting for sign-in stays here until it is taken.
+        shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/share")
+            .also { channel ->
+                channel.setMethodCallHandler { call, result ->
+                    if (call.method != "take") {
+                        result.notImplemented()
+                        return@setMethodCallHandler
+                    }
+                    result.success(pendingShare)
+                    pendingShare = null
+                }
+            }
+        readShare(intent)
         // Kotlin's AssistantAlertsScreen «صوت الإشعارات»: the system's own
         // notification-sound picker, and the picked sound's display title.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/ringtone")
@@ -107,6 +127,91 @@ class MainActivity : FlutterActivity() {
             }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        readShare(intent)
+    }
+
+    /**
+     * An ACTION_SEND from another app: its text as is, or its file copied into
+     * the cache — the content URI's read grant is not meant to outlive the
+     * share, and Dart reads a path. Copied off the main thread; marked so a
+     * recreated activity does not take the same share twice.
+     */
+    private fun readShare(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND || intent.getBooleanExtra(SHARE_TAKEN, false)) return
+        intent.putExtra(SHARE_TAKEN, true)
+        val stream: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Intent.EXTRA_STREAM)
+        }
+        if (stream == null) {
+            val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.trim()
+            if (!text.isNullOrEmpty()) deliverShare(mapOf("text" to text.take(MAX_SHARED_TEXT)))
+            return
+        }
+        val mime = intent.type
+        Thread {
+            val item = copyShared(stream, mime)
+            runOnUiThread { deliverShare(item) }
+        }.apply { isDaemon = true }.start()
+    }
+
+    private fun deliverShare(item: Map<String, Any?>) {
+        pendingShare = item
+        shareChannel?.invokeMethod("shared", null)
+    }
+
+    private fun copyShared(uri: Uri, mime: String?): Map<String, Any?> = try {
+        var name: String? = null
+        var size = -1L
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+            ?.use { c ->
+                if (c.moveToFirst()) {
+                    val n = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val s = c.getColumnIndex(OpenableColumns.SIZE)
+                    if (n >= 0 && !c.isNull(n)) name = c.getString(n)
+                    if (s >= 0 && !c.isNull(s)) size = c.getLong(s)
+                }
+            }
+        val safeName = (name ?: "shared").replace(Regex("[/\\\\:]"), "_").take(100)
+        if (size > MAX_SHARED_BYTES) {
+            mapOf("tooLarge" to true, "name" to safeName, "mime" to mime)
+        } else {
+            val dir = File(cacheDir, "shared").apply {
+                deleteRecursively()
+                mkdirs()
+            }
+            val target = File(dir, safeName)
+            var copied = 0L
+            val input = contentResolver.openInputStream(uri) ?: throw IllegalStateException("no stream")
+            input.use { inp ->
+                target.outputStream().use { out ->
+                    val buf = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = inp.read(buf)
+                        if (n < 0) break
+                        copied += n
+                        if (copied > MAX_SHARED_BYTES) break
+                        out.write(buf, 0, n)
+                    }
+                }
+            }
+            if (copied > MAX_SHARED_BYTES) {
+                target.delete()
+                mapOf("tooLarge" to true, "name" to safeName, "mime" to mime)
+            } else {
+                mapOf("path" to target.absolutePath, "name" to safeName, "mime" to mime)
+            }
+        }
+    } catch (e: Exception) {
+        Log.w("ZadShare", "could not copy the share: ${e.message}")
+        mapOf("failed" to true)
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -168,5 +273,9 @@ class MainActivity : FlutterActivity() {
 
     private companion object {
         const val RINGTONE_REQUEST = 4711
+        const val SHARE_TAKEN = "zad_share_taken"
+        const val MAX_SHARED_TEXT = 4000
+        // The statement import's own cap (statement_import_screen.dart).
+        const val MAX_SHARED_BYTES = 10L * 1024 * 1024
     }
 }

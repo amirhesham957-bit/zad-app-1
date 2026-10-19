@@ -12,8 +12,8 @@ function fakeRpc(answers: Record<string, { data: unknown; error?: { message: str
   return { rpc, calls };
 }
 
-Deno.test("the four scans cost a scan, the two voice actions go through voice, the rest only count", () => {
-  for (const a of ["analyze_receipt", "analyze_inventory_image", "analyze_medicine_image", "analyze_document_image"]) {
+Deno.test("the five scans cost a scan, the two voice actions go through voice, the rest only count", () => {
+  for (const a of ["analyze_receipt", "analyze_inventory_image", "analyze_medicine_image", "analyze_document_image", "analyze_statement"]) {
     assertEquals(meterFor(a)?.kind, "scan", a);
     assertEquals(meterFor(a)?.bucket, "vision", a);
   }
@@ -41,6 +41,8 @@ Deno.test("an empty reading is refunded, a real one is not — each action's own
   assert(!scanCameBackEmpty("analyze_medicine_image", { medicine: { name: "بنادول" } }));
   assert(scanCameBackEmpty("analyze_document_image", { document: null, reason: "unreadable" }));
   assert(!scanCameBackEmpty("analyze_document_image", { document: { kind: "prescription" } }));
+  assert(scanCameBackEmpty("analyze_statement", { statement: null, reason: "nothing_found" }));
+  assert(!scanCameBackEmpty("analyze_statement", { statement: { rows: [{}] } }));
   assert(scanCameBackEmpty("analyze_receipt", { error: "boom" }));
   assert(scanCameBackEmpty("analyze_receipt", null));
 });

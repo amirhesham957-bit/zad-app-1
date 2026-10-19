@@ -1182,6 +1182,10 @@ async function agentTurnReply(
   const category = String(money.input.category ?? "أخرى").slice(0, 40);
   const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle())
     .data?.currency ?? "غير معروف";
+  // «اشتريت لبن وعيش بـ٤٠»: الأصناف بتتحجز مع المصروف (٣.٦ د) وبتتسجل معاه في شرا واحد.
+  const boughtLines = kind === "expense" && Array.isArray(money.input.lines) && money.input.lines.length > 0
+    ? money.input.lines.slice(0, 30)
+    : null;
   const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
     user_id: userId,
     chat_id: chatId,
@@ -1190,6 +1194,7 @@ async function agentTurnReply(
     title,
     category,
     confidence: null,
+    purchase_lines: boughtLines,
   }).select("id").single();
 
   if (error || !pending) {
@@ -1239,7 +1244,8 @@ async function handleSpendCallbackText(
     return true;
   }
   // صورة فاتورة محجوزة كشرا (٣.٦ ج): «أيوه» = «سجّل الكل»، ولو مفيش مبلغ اتقرا = الأصناف.
-  if (row.purchase_lines != null || row.amount == null) {
+  // الأصناف من الشات («اشتريت لبن وعيش بـ٤٠») بتكمّل تحت مع log_transaction زي الزرار x:.
+  if (row.amount == null || (row.purchase_lines != null && row.source_type === "receipt")) {
     await recordPendingPurchase(ctx, sb, userId, row as unknown as PendingPurchase & { status: string; expires_at: string },
       row.amount != null ? "all" : "lines");
     return true;
@@ -1264,6 +1270,7 @@ async function handleSpendCallbackText(
     wallet: row.wallet ?? "card",
     merchant_name: row.merchant_name ?? undefined,
     source_type: row.source_type ?? undefined,
+    lines: Array.isArray(row.purchase_lines) ? row.purchase_lines : undefined,
   });
   if (!confirmed.ok) {
     console.error("telegram text confirmation via zad-brain failed");
@@ -2211,7 +2218,7 @@ bot.on("callback_query:data", async (ctx) => {
   const spend = parseSpendCallback(data);
   if (spend) {
     const { data: pendingRow } = await sb.from("telegram_pending_writes")
-      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type")
+      .select("id,user_id,txn_kind,amount,title,category,status,expires_at,wallet,merchant_name,source_type,purchase_lines")
       .eq("id", spend.pendingId)
       // إعادة التحقق: الـ chat اللي بيأكد لازم يكون لسه مربوط بنفس اليوزر صاحب الطلب.
       .eq("user_id", userId)
@@ -2220,7 +2227,7 @@ bot.on("callback_query:data", async (ctx) => {
     const row = pendingRow as {
       id: string; txn_kind: string; amount: number; title: string;
       category: string | null; status: string; expires_at: string; wallet: string | null;
-      merchant_name: string | null; source_type: string | null;
+      merchant_name: string | null; source_type: string | null; purchase_lines: unknown;
     } | null;
 
     if (!row) {
@@ -2263,6 +2270,8 @@ bot.on("callback_query:data", async (ctx) => {
       wallet: row.wallet ?? "card",
       merchant_name: row.merchant_name ?? undefined,
       source_type: row.source_type ?? undefined,
+      // أصناف «اشتريت لبن وعيش بـ٤٠» (٣.٦ د): log_transaction بيبعتهم مع الفلوس لباب الشرا.
+      lines: Array.isArray(row.purchase_lines) ? row.purchase_lines : undefined,
     });
     if (!confirmed.ok) {
       console.error("telegram expense confirmation via zad-brain failed");

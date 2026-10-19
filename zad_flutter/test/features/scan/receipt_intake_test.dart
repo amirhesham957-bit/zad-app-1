@@ -53,6 +53,7 @@ class _Scanner implements ReceiptScanner {
   Future<ScannedReceipt> scan({
     required String userId,
     required Uint8List image,
+    String mimeType = 'image/jpeg',
   }) async => ScannedReceipt.fromJson(answer);
 }
 
