@@ -181,3 +181,43 @@ Int16List _render(int durationMs, double Function(double t, double p) f) {
   }
   return out;
 }
+
+/// One note of a chime: its pitch, when it starts and how long it rings.
+typedef ChimeNote = ({double hz, int startMs, int ms});
+
+/// Plays a short chime of [notes] on the same engine as the pet's sounds —
+/// synthesised here, no files (the UI sounds, `shared/sound/ui_sounds.dart`).
+/// Each note is a sine with two soft overtones, a 6 ms attack and an
+/// exponential fade, so nothing clicks. Fire and forget.
+void playChime(List<ChimeNote> notes, {double volume = 0.35}) {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+  if (notes.isEmpty) return;
+  final pcm = renderChime(notes, volume.clamp(0, 1));
+  unawaited(
+    _channel
+        .invokeMethod<void>('play', <String, Object>{
+          'pcm': pcm.buffer.asUint8List(),
+          'sampleRate': _sampleRate,
+        })
+        .catchError((Object _) {}),
+  );
+}
+
+/// The samples [playChime] plays, for a test to look at.
+Int16List renderChime(List<ChimeNote> notes, double volume) {
+  final endMs = notes.map((n) => n.startMs + n.ms).reduce(math.max);
+  return _render(endMs, (t, _) {
+    var sum = 0.0;
+    for (final n in notes) {
+      final local = t - n.startMs / 1000;
+      if (local < 0 || local > n.ms / 1000) continue;
+      final env = math.min(1, local / 0.006) * math.exp(-9 * local);
+      final wave =
+          math.sin(_twoPi * n.hz * local) +
+          0.35 * math.sin(_twoPi * 2 * n.hz * local) +
+          0.12 * math.sin(_twoPi * 3 * n.hz * local);
+      sum += wave * env / 1.47;
+    }
+    return (sum * volume * 0.6).clamp(-1.0, 1.0);
+  });
+}

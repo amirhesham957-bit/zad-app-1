@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/tasbiha/presentation/leaderboard_share.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
 import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
 
@@ -554,6 +555,10 @@ class _TreeDisplayState extends State<_TreeDisplay>
   void didUpdateWidget(_TreeDisplay old) {
     super.didUpdateWidget(old);
     if (old.tree.id == widget.tree.id && widget.tree.level > old.tree.level) {
+      ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(uiSoundsProvider.notifier).play(UiSound.achieve);
       unawaited(HapticFeedback.heavyImpact());
       setState(() => _levelUp = true);
       _levelTimer?.cancel();

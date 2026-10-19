@@ -23,6 +23,7 @@ import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/sound/ui_sounds.dart';
 
 /// Opens the settings screen.
 Future<void> showSettingsScreen(BuildContext context) => Navigator.of(
@@ -104,6 +105,23 @@ class SettingsScreen extends ConsumerWidget {
               ZadSlots.streetAlertsSection(),
               const SizedBox(height: ZadSpacing.md),
               ZadSlots.keepAliveGuide(),
+
+              const SizedBox(height: ZadSpacing.lg),
+              _Section(
+                title: 'الأصوات',
+                children: <Widget>[
+                  SwitchListTile(
+                    key: const ValueKey<String>('ui-sounds'),
+                    title: const Text('أصوات الواجهة'),
+                    subtitle: const Text(
+                      'نغمة قصيرة لما تسجل مصروف، أو تمسح فاتورة، أو تحقق هدف',
+                    ),
+                    value: ref.watch(uiSoundsProvider),
+                    onChanged: (on) =>
+                        ref.read(uiSoundsProvider.notifier).setEnabled(on: on),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: ZadSpacing.lg),
               _Section(
