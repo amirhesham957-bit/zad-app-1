@@ -29,7 +29,11 @@ do $$ begin
 end $$;
 
 -- Minimal Supabase shape: roles, auth.uid()/auth.role() from request.jwt.claims.
-create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+-- Roles are the cluster's, not the database's: CI runs every SQL test on one server, so the
+-- second test that loads this file finds them already there.
+do $$ begin
+  create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+exception when duplicate_object then null; end $$;
 create schema auth;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$
