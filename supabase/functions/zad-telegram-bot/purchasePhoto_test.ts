@@ -14,14 +14,14 @@ const row = (over: Partial<PendingPurchase> = {}): PendingPurchase => ({
   ...over,
 });
 
-Deno.test("photo lines: blank names out, whole counts, price and unit when read", () => {
+Deno.test("photo lines: blank names out, real amounts (half a kilo is 0.5), price and unit when read", () => {
   const lines = purchaseLinesFromPhoto([
     { name: "  لبن   جهينة ", quantity: 2.4, unit: "علبة", category: "ألبان", price: 60 },
     { name: "  ", quantity: 3 },
     { name: "عيش", quantity: 0, price: 0 },
   ], "pantry");
   assertEquals(lines, [
-    { name: "لبن جهينة", quantity: 2, unit: "علبة", category: "ألبان", price: 60, to: "pantry" },
+    { name: "لبن جهينة", quantity: 2.4, unit: "علبة", category: "ألبان", price: 60, to: "pantry" },
     { name: "عيش", quantity: 1, to: "pantry" },
   ]);
 });

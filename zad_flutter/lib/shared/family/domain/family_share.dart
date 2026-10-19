@@ -354,9 +354,8 @@ class FollowedMember {
 
   /// The scopes that can be asked of this member: location only for a child,
   /// and only in a build with kids geofencing on.
-  List<FamilyShareScope> get followable => followableIn(
-    kidsGeofencing: ZadEnv.kidsGeofencing,
-  );
+  List<FamilyShareScope> get followable =>
+      followableIn(kidsGeofencing: ZadEnv.kidsGeofencing);
 
   /// [followable] for a build with [kidsGeofencing] on or off.
   List<FamilyShareScope> followableIn({required bool kidsGeofencing}) =>

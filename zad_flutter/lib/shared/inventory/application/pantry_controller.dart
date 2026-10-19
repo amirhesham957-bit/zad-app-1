@@ -121,10 +121,10 @@ class PantryController extends Notifier<PantryView> {
   /// (2026-10-10); a different unit stated on both sides is a different item.
   Future<void> add({
     required String itemName,
-    int quantity = 1,
+    double quantity = 1,
     String? unit,
     String? category,
-    int? lowStockThreshold,
+    double? lowStockThreshold,
     DateTime? expiryDate,
   }) async {
     // The name the home chose («حليب» ⇒ «لبن» once it said they are the
@@ -163,7 +163,7 @@ class PantryController extends Notifier<PantryView> {
   /// After + as well as −. The learner counts drops between consecutive
   /// readings; a + that went unreported leaves the last reading at the lower
   /// level, and the next − then reads as no drop at all.
-  Future<void> adjust(String id, int delta) async {
+  Future<void> adjust(String id, num delta) async {
     final updated = await ref
         .read(inventoryRepositoryProvider)
         .adjustQuantity(id, delta);
@@ -185,7 +185,7 @@ class PantryController extends Notifier<PantryView> {
   Future<void> edit(
     InventoryItem item, {
     required String itemName,
-    required int quantity,
+    required double quantity,
     String? unit,
   }) async {
     final updated = await ref

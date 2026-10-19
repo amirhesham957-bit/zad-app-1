@@ -3,16 +3,18 @@ import { assert, assertEquals } from "jsr:@std/assert@1";
 import { purchaseToolReply, toolPurchaseLines } from "./purchaseDoor.ts";
 import { validateLogTransaction } from "./validators.ts";
 
-Deno.test("tool lines: names kept, counts whole, medicine to the pharmacy, everything else the pantry", () => {
+Deno.test("tool lines: names kept, real amounts (٣.٨), medicine to the pharmacy, everything else the pantry", () => {
   assertEquals(toolPurchaseLines([
     { name: " لبن ", quantity: 2.2, unit: "علبة" },
     { name: "بنادول", to: "pharmacy" },
+    { name: "فيتامين", quantity: 2.4, to: "pharmacy" },
     { name: "", quantity: 3 },
     { name: "عيش", to: "garage", price: 10 },
     "junk",
   ]), [
-    { name: "لبن", quantity: 2, unit: "علبة", to: "pantry" },
+    { name: "لبن", quantity: 2.2, unit: "علبة", to: "pantry" },
     { name: "بنادول", quantity: 1, to: "pharmacy" },
+    { name: "فيتامين", quantity: 2, to: "pharmacy" },
     { name: "عيش", quantity: 1, price: 10, to: "pantry" },
   ]);
   assertEquals(toolPurchaseLines(undefined), []);

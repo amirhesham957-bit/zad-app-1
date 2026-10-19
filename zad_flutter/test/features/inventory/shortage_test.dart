@@ -23,8 +23,8 @@ InventoryItem item(
   id: 'i-$name',
   userId: 'user-1',
   itemName: name,
-  quantity: quantity,
-  lowStockThreshold: threshold,
+  quantity: quantity.toDouble(),
+  lowStockThreshold: threshold?.toDouble(),
   expiryDate: expiry,
 );
 

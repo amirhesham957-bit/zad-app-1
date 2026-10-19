@@ -13,9 +13,9 @@ InventoryItem _row(String id, String name, int qty, {int? threshold}) =>
       id: id,
       userId: 'u',
       itemName: name,
-      quantity: qty,
+      quantity: qty.toDouble(),
       unit: 'قطعة',
-      lowStockThreshold: threshold,
+      lowStockThreshold: threshold?.toDouble(),
     );
 
 final DateTime _today = DateTime.utc(2026, 9, 30);

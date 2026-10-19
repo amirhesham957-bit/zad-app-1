@@ -90,7 +90,7 @@ class ConsumptionObservations {
   final String? Function() _signedInUserId;
 
   /// Queues one reading: [quantity] of [item] on the shelf now.
-  Future<void> record(String item, int quantity, String source) async {
+  Future<void> record(String item, num quantity, String source) async {
     final userId = _signedInUserId();
     if (userId == null || userId.isEmpty) return;
     await _outbox().enqueue(

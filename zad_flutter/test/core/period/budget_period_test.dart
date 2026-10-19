@@ -378,15 +378,12 @@ void main() {
       }
     });
 
-    test(
-      'an unknown or null country falls back to Cairo time like the SQL, '
-      'not the device zone',
-      () {
-        expect(marketTimeZone(null), 'Africa/Cairo');
-        expect(marketTimeZone(''), 'Africa/Cairo');
-        expect(marketTimeZone('ZZ'), 'Africa/Cairo');
-      },
-    );
+    test('an unknown or null country falls back to Cairo time like the SQL, '
+        'not the device zone', () {
+      expect(marketTimeZone(null), 'Africa/Cairo');
+      expect(marketTimeZone(''), 'Africa/Cairo');
+      expect(marketTimeZone('ZZ'), 'Africa/Cairo');
+    });
 
     test('the weekend splits Gulf markets from Maghreb and Turkey', () {
       expect(weekendDows('SA'), <int>{5, 6});

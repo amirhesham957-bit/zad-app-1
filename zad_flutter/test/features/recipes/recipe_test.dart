@@ -8,8 +8,12 @@ import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
-InventoryItem _stock(String name, int qty) =>
-    InventoryItem(id: name, userId: 'u', itemName: name, quantity: qty);
+InventoryItem _stock(String name, int qty) => InventoryItem(
+  id: name,
+  userId: 'u',
+  itemName: name,
+  quantity: qty.toDouble(),
+);
 
 ShoppingItem _line(String name, {bool bought = false}) =>
     ShoppingItem(id: name, userId: 'u', itemName: name, isPurchased: bought);

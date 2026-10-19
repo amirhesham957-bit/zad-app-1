@@ -71,8 +71,12 @@ class _Budget extends BudgetController {
   BudgetView build() => const BudgetView();
 }
 
-InventoryItem _stock(String name, int qty) =>
-    InventoryItem(id: name, userId: 'u', itemName: name, quantity: qty);
+InventoryItem _stock(String name, int qty) => InventoryItem(
+  id: name,
+  userId: 'u',
+  itemName: name,
+  quantity: qty.toDouble(),
+);
 
 final List<InventoryItem> _kitchen = <InventoryItem>[
   _stock('بيض', 6),

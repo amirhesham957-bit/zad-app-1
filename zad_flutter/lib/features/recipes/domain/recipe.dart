@@ -14,6 +14,7 @@
 library;
 
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
@@ -177,15 +178,16 @@ List<InventoryItem> stockedPantry(List<InventoryItem> pantry) =>
 /// the server's cache answers it.
 String pantryForChef(List<InventoryItem> pantry) =>
     stockedPantry(pantry)
-        .map((i) => '${i.itemName} (${i.quantity})')
+        .map((i) => '${i.itemName} (${formatQuantity(i.quantity)})')
         .join(', ');
 
 /// A fingerprint of the pantry, to tell whether suggestions were asked about
 /// the kitchen as it is now.
-String pantrySignature(List<InventoryItem> pantry) =>
-    stockedPantry(pantry)
-        .map((i) => '${normalizeItemName(i.itemName)}:${i.quantity}')
-        .join('|');
+String pantrySignature(List<InventoryItem> pantry) => stockedPantry(pantry)
+    .map(
+      (i) => '${normalizeItemName(i.itemName)}:${formatQuantity(i.quantity)}',
+    )
+    .join('|');
 
 /// The missing ingredients worth adding to the list: not already on it, and
 /// not in the pantry since the chef was asked.

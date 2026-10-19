@@ -85,10 +85,10 @@ class InventoryRepository {
   /// Adds a row: cache first, queue second, network never.
   Future<InventoryItem> add({
     required String itemName,
-    int quantity = 1,
+    double quantity = 1,
     String? unit,
     String? category,
-    int? lowStockThreshold,
+    double? lowStockThreshold,
     DateTime? expiryDate,
   }) async {
     final item = InventoryItem(
@@ -119,7 +119,7 @@ class InventoryRepository {
   /// "I used the last two" on a row that says one is a customer who is right
   /// about their kitchen and wrong about the number in the app, and the count
   /// they meant is zero.
-  Future<InventoryItem?> adjustQuantity(String id, int delta) async {
+  Future<InventoryItem?> adjustQuantity(String id, num delta) async {
     final current = _read(_cache.get(id) ?? '');
     if (current == null) return null;
 

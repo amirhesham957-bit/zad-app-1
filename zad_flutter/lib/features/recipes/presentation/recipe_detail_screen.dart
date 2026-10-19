@@ -24,6 +24,7 @@ import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 
 /// Opens the full recipe.
 Future<void> showRecipeDetail(BuildContext context, Recipe recipe) =>
@@ -143,7 +144,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
         .read(pantryControllerProvider)
         .items
         .where((i) => i.quantity > 0)
-        .map((i) => '${i.itemName} (${i.quantity})')
+        .map((i) => '${i.itemName} (${formatQuantity(i.quantity)})')
         .join(', ');
     String text;
     try {

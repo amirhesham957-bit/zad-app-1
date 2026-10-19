@@ -53,7 +53,7 @@ class IntakePlan {
   });
 
   /// Rows already in the pantry, and how many to add to each.
-  final List<({InventoryItem item, int add})> increments;
+  final List<({InventoryItem item, double add})> increments;
 
   /// New rows.
   final List<IntakeLine> additions;
@@ -144,7 +144,7 @@ IntakePlan planIntake({
   }
 
   // One increment per pantry row, however many lines point at it.
-  final increments = <String, ({InventoryItem item, int add})>{};
+  final increments = <String, ({InventoryItem item, double add})>{};
   final additions = <IntakeLine>[];
   for (final line in merged) {
     final existing = pantry

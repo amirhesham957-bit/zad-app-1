@@ -9,6 +9,7 @@
 // الدوال هنا نقية عشان تتختبر من غير بوت ولا داتابيز.
 
 import type { InlineKeyboardButton } from "./telegram.ts";
+import { purchaseQuantity } from "../_shared/purchaseQuantity.ts";
 
 export const PURCHASE_LINES_MAX = 100;
 
@@ -23,7 +24,7 @@ export interface PurchaseLine {
   to: PurchaseLineTo;
 }
 
-/** سطور الصورة كسطور شرا: اسم فاضي بيتشال، والكمية عدد صحيح من ١ لفوق. */
+/** سطور الصورة كسطور شرا: اسم فاضي بيتشال، والكمية زي ما هي (نص كيلو = ٠٫٥)، والصيدلية بالحبة. */
 export function purchaseLinesFromPhoto(
   items: Array<{ name?: string | null; quantity?: number | null; unit?: string | null; category?: string | null; price?: number | null }>,
   to: PurchaseLineTo,
@@ -32,8 +33,7 @@ export function purchaseLinesFromPhoto(
   for (const item of items) {
     const name = String(item.name ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (!name) continue;
-    const q = Number(item.quantity);
-    const line: PurchaseLine = { name, quantity: Number.isFinite(q) && q > 0 ? Math.max(1, Math.round(q)) : 1, to };
+    const line: PurchaseLine = { name, quantity: purchaseQuantity(item.quantity, to), to };
     const unit = String(item.unit ?? "").trim().slice(0, 20);
     if (unit) line.unit = unit;
     const category = String(item.category ?? "").trim().slice(0, 40);

@@ -13,6 +13,7 @@ import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
@@ -51,7 +52,10 @@ MapInputs mapInputsFrom({
     lowPantry: <MapStock>[
       for (final i in pantry)
         if (i.isLowStock)
-          MapStock(i.itemName, '${i.quantity} ${i.unit ?? ''}'.trim()),
+          MapStock(
+            i.itemName,
+            '${formatQuantity(i.quantity)} ${i.unit ?? ''}'.trim(),
+          ),
     ],
     pendingShopping: <MapStock>[
       for (final s in shopping)

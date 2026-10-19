@@ -164,6 +164,7 @@ jobs:
           supabase/sql/tests/purchase_door_scaffold.sql supabase/sql/tests/purchase_lines_only_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/migrations/20261019220000_purchase_lines_only.sql supabase/sql/tests/purchase_door_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261020090000_companion_care.sql supabase/sql/tests/companion_care_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261020090000_companion_care.sql supabase/sql/tests/pet_call_scaffold.sql supabase/migrations/20261020100000_pet_call.sql supabase/sql/tests/pet_call_test.sql
+          supabase/sql/tests/purchase_door_scaffold.sql supabase/sql/tests/purchase_lines_only_scaffold.sql supabase/migrations/20261019180000_purchase_door.sql supabase/migrations/20261019200000_purchase_door_bank_wallet.sql supabase/migrations/20261019220000_purchase_lines_only.sql supabase/migrations/20261020110000_quantity_fractions.sql supabase/sql/tests/quantity_fractions_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
