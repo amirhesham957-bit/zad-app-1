@@ -13,8 +13,11 @@ import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/domain/pet_meal.dart';
+import 'package:zad/shared/companion/domain/price_games.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
+import 'package:zad/shared/companion/presentation/pet_price_games.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -40,6 +43,7 @@ void main() {
   setUp(() async {
     run++;
     now = DateTime.utc(2026, 10, 13, 12);
+    CompanionHeaderPet.resetNudge();
     dir = await Directory.systemTemp.createTemp('zad_pet');
     Hive.init(dir.path);
     device = await Hive.openBox<String>('device$run');
@@ -220,6 +224,181 @@ void main() {
     // The round ends with a pat.
     expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  const facts = <PriceFact>[
+    PriceFact(label: 'رز', price: 35, source: PriceSource.crowd),
+    PriceFact(label: 'لبن', price: 48, source: PriceSource.crowd),
+    PriceFact(label: 'عيش', price: 5, source: PriceSource.yours),
+    PriceFact(label: 'زيت', price: 95, source: PriceSource.yours),
+  ];
+
+  testWidgets(
+    'guess the price: right answers count, the source shows, a pat ends it',
+    (tester) async {
+      final rounds = guessRounds(facts, math.Random(3));
+      final container = await pump(
+        tester,
+        PetGuessGame(name: 'زادو', facts: facts, rng: math.Random(3)),
+      );
+      expect(find.text('سؤال 1 من 4 · صح 0'), findsOneWidget);
+      for (final r in rounds) {
+        await tester.tap(
+          find.byKey(ValueKey<String>('guess-option-${r.answer}')),
+        );
+        await tester.pump();
+        final source = find.byKey(const ValueKey<String>('guess-source'));
+        expect(tester.widget<Text>(source).data, contains(r.fact.source.label));
+        await tester.tap(find.byKey(const ValueKey<String>('guess-next')));
+        await tester.pump();
+      }
+      expect(find.text('4 من 4'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('guess-verdict')), findsOne);
+      expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
+      await tester.pump(const Duration(seconds: 2));
+    },
+  );
+
+  testWidgets('guess the price with too few prices says so, invents none', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      PetGuessGame(name: 'زادو', facts: facts.take(1).toList()),
+    );
+    expect(find.byKey(const ValueKey<String>('price-game-empty')), findsOne);
+    expect(find.byKey(const ValueKey<String>('guess-option-0')), findsNothing);
+  });
+
+  testWidgets('price memory: a wrong pair turns back; every pair ends it', (
+    tester,
+  ) async {
+    final deck = memoryDeck(facts, math.Random(5));
+    final container = await pump(
+      tester,
+      PetMemoryGame(name: 'زادو', facts: facts, rng: math.Random(5)),
+    );
+    Future<void> tap(int i) async {
+      await tester.tap(find.byKey(ValueKey<String>('memory-card-$i')));
+      await tester.pump();
+    }
+
+    final wrong = deck.indexWhere((c) => c.pair != deck[0].pair);
+    await tap(0);
+    await tap(wrong);
+    expect(find.text(deck[0].text), findsOneWidget);
+    await tester.pump(PetMemoryGame.peek);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(deck[0].text), findsNothing);
+
+    for (var p = 0; p < 4; p++) {
+      await tap(deck.indexWhere((c) => c.pair == p));
+      await tap(deck.lastIndexWhere((c) => c.pair == p));
+    }
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey<String>('price-game-done')), findsOne);
+    final status = find.byKey(const ValueKey<String>('memory-status'));
+    expect(tester.widget<Text>(status).data, contains('ذاكرة حديد'));
+    expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets("back after ten hours: it says so, from the phone's last sight", (
+    tester,
+  ) async {
+    // ZAD_PLAN ٥.٢: the fourth wall, from real data.
+    // Real I/O: outside the widget test's fake clock.
+    await tester.runAsync(
+      () => device.put(
+        CompanionHeaderPet.lastSeenKey,
+        now.subtract(const Duration(hours: 10)).toIso8601String(),
+      ),
+    );
+    await pump(
+      tester,
+      const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
+    );
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(bubble, findsOne);
+    expect(
+      find.descendant(of: bubble, matching: find.textContaining('10 ساعة')),
+      findsOne,
+    );
+    // And it remembers this sight for next time.
+    expect(device.get(CompanionHeaderPet.lastSeenKey), now.toIso8601String());
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('five quick taps: it talks back instead of opening the sheet', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const Align(alignment: Alignment.topLeft, child: CompanionHeaderPet()),
+    );
+    await tester.pump(const Duration(seconds: 6));
+    // Five taps, a tenth of a second apart: poking, not asking.
+    for (var i = 0; i < 5; i++) {
+      await tester.tap(find.byType(CompanionOrb));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(CompanionCareSheet), findsNothing);
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(bubble, findsOne);
+    final said = find.descendant(of: bubble, matching: find.byType(Text));
+    expect(
+      tester.widgetList<Text>(said).map((t) => t.data).join(),
+      anyOf(contains('دغدغ'), contains('زرار'), contains('اتزغلل')),
+    );
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('an expense dropped on the pet is logged and eaten', (
+    tester,
+  ) async {
+    // ZAD_PLAN ٥.٣: drag a card onto رفيق زاد.
+    var logged = 0;
+    final container = await pump(
+      tester,
+      Column(
+        children: <Widget>[
+          const CompanionHeaderPet(),
+          const SizedBox(height: 200),
+          Draggable<PetMeal>(
+            data: PetMeal(label: 'كارفور', log: () => logged++),
+            feedback: const Text('🍽️'),
+            child: const SizedBox.square(
+              key: ValueKey<String>('meal'),
+              dimension: 60,
+              child: ColoredBox(color: Colors.amber),
+            ),
+          ),
+        ],
+      ),
+    );
+    await tester.pump(const Duration(seconds: 6));
+    final fedBefore = container.read(petCareProvider)!.fedAt;
+    now = now.add(const Duration(hours: 1));
+
+    final from = tester.getCenter(find.byKey(const ValueKey<String>('meal')));
+    final to = tester.getCenter(find.byType(CompanionOrb));
+    final g = await tester.startGesture(from);
+    await tester.pump(const Duration(milliseconds: 50));
+    for (var i = 1; i <= 10; i++) {
+      await g.moveTo(Offset.lerp(from, to, i / 10)!);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(logged, 1);
+    expect(container.read(petCareProvider)!.fedAt.isAfter(fedBefore), isTrue);
+    final bubble = find.byKey(const ValueKey<String>('pet-header-bubble'));
+    expect(
+      find.descendant(of: bubble, matching: find.textContaining('اتسجّل')),
+      findsOne,
+    );
+    await tester.pump(const Duration(seconds: 6));
   });
 
   testWidgets('signed out: no pet at all', (tester) async {

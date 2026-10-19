@@ -114,6 +114,15 @@ void main() {
     }
   }
 
+  /// Waits for [done]. The sync awaits real Hive writes, which a slow CI
+  /// runner does not finish within a few event-loop turns — [settle] alone
+  /// made these tests fail there and pass here (2026-10-19).
+  Future<void> until(bool Function() done) async {
+    for (var i = 0; i < 500 && !done(); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  }
+
   test(
     'a new phone takes the pet another phone fed, not its newborn',
     () async {
@@ -125,7 +134,7 @@ void main() {
         careStreak: 9,
       );
       final c = make()..read(petCareProvider);
-      await settle();
+      await until(() => c.read(petCareProvider)!.careStreak == 9);
 
       // It asked before sending, and sent nothing of its own.
       expect(remote.sent, <PetCare?>[null]);
@@ -140,7 +149,7 @@ void main() {
   test('a first pet anywhere is sent up as it is', () async {
     final c = make();
     final born = c.read(petCareProvider)!;
-    await settle();
+    await until(() => remote.sent.length == 2 && remote.row != null);
 
     expect(remote.sent.length, 2);
     expect(remote.sent.first, isNull);
@@ -150,10 +159,10 @@ void main() {
   test('a meal goes to the server at once, and is kept', () async {
     final c = make();
     final before = c.read(petCareProvider)!.fedAt;
-    await settle();
+    await until(() => device.get('pet_care_user-1_synced') == '1');
     expect(c.read(petCareProvider.notifier).feed(), PetCareOutcome.done);
     final fed = c.read(petCareProvider)!.fedAt;
-    await settle();
+    await until(() => remote.row?.fedAt == fed);
 
     expect(fed.isAfter(before), isTrue);
     expect(remote.row!.fedAt, fed);
@@ -177,7 +186,11 @@ void main() {
       careStreak: 2,
     );
     final c = make()..read(petCareProvider);
-    await settle();
+    await until(
+      () =>
+          c.read(petCareProvider)!.wateredAt ==
+          now.subtract(const Duration(hours: 3)),
+    );
 
     final got = c.read(petCareProvider)!;
     expect(remote.sent.single, isNotNull);
@@ -210,7 +223,7 @@ void main() {
     remote.row = mine;
     final gate = remote.hold = Completer<void>();
     final c = make()..read(petCareProvider);
-    await settle();
+    await until(() => remote.sent.isNotEmpty);
     // The open's send is in flight; the customer feeds meanwhile.
     expect(c.read(petCareProvider.notifier).feed(), PetCareOutcome.done);
     final fed = c.read(petCareProvider)!.fedAt;

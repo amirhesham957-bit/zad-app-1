@@ -22,14 +22,20 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
+import 'package:zad/shared/companion/domain/fourth_wall.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
+import 'package:zad/shared/companion/domain/pet_meal.dart';
+import 'package:zad/shared/companion/domain/pet_stories.dart';
 import 'package:zad/shared/companion/presentation/pet_ball_game.dart';
+import 'package:zad/shared/companion/presentation/pet_price_games.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/companion_mood.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 
 /// The mood a pet shows: the voice's while it runs (the customer started it
 /// just now), else its own need.
@@ -66,6 +72,19 @@ class CompanionHeaderPet extends ConsumerStatefulWidget {
   /// The bubble opens above it (floating over the bar) instead of below.
   final bool bubbleAbove;
 
+  /// When the pet last saw the customer (ZAD_PLAN ٥.٢), in the device box.
+  static const String lastSeenKey = 'pet_last_seen';
+
+  /// The account-clock day the morning's dream was told.
+  static const String dreamDayKey = 'pet_dream_day';
+
+  /// When the weekly word was said.
+  static const String weeklyAtKey = 'pet_weekly_at';
+
+  /// Forgets the last unprompted bubble, so a test starts fresh.
+  @visibleForTesting
+  static void resetNudge() => _CompanionHeaderPetState._lastNudge = null;
+
   @override
   ConsumerState<CompanionHeaderPet> createState() => _CompanionHeaderPetState();
 }
@@ -74,6 +93,15 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     with SingleTickerProviderStateMixin {
   /// One unprompted bubble per half hour, across tab switches and rebuilds.
   static DateTime? _lastNudge;
+
+  /// Taps in the current burst (ZAD_PLAN ٥.٢); a pause of
+  /// [tapBurstWindow] starts over. Timers, not clocks, so tests drive them.
+  int _burst = 0;
+  Timer? _burstEnd;
+
+  /// The bubble has been up long enough for a second tap to mean «open».
+  bool _bubbleRead = false;
+  Timer? _bubbleReadTimer;
 
   final OverlayPortalController _bubble = OverlayPortalController();
   final LayerLink _link = LayerLink();
@@ -95,7 +123,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
-    _life = AppLifecycleListener(onResume: _onShown);
+    _life = AppLifecycleListener(onResume: _onShown, onPause: _markSeen);
     WidgetsBinding.instance.addPostFrameCallback((_) => _onShown());
   }
 
@@ -103,9 +131,82 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   void dispose() {
     _tick?.cancel();
     _hide?.cancel();
+    _burstEnd?.cancel();
+    _bubbleReadTimer?.cancel();
     _life.dispose();
     _hop.dispose();
     super.dispose();
+  }
+
+  /// The last time the pet saw the customer, then now.
+  Duration? _awayAndMark(DateTime now) {
+    try {
+      final box = ref.read(localStoreProvider).device;
+      final last = DateTime.tryParse(
+        box.get(CompanionHeaderPet.lastSeenKey) ?? '',
+      );
+      unawaited(
+        box.put(CompanionHeaderPet.lastSeenKey, now.toUtc().toIso8601String()),
+      );
+      return last == null ? null : now.difference(last);
+    } on Object {
+      return null; // No store (a test host).
+    }
+  }
+
+  /// ZAD_PLAN ٥.٣: the morning's dream, once a day, else the weekly word,
+  /// once in seven days — each from real data, or nothing.
+  String? _story(DateTime now) {
+    try {
+      final box = ref.read(localStoreProvider).device;
+      final zone = ref.read(accountTimeZoneProvider);
+      final wall = petWallClock(zone, now);
+      final stage =
+          ref.read(companionProvider).value?.stage ?? CompanionStage.seed;
+      final today =
+          '${wall.year}-${wall.month.toString().padLeft(2, '0')}-'
+          '${wall.day.toString().padLeft(2, '0')}';
+      if (isDreamHour(wall.hour) &&
+          box.get(CompanionHeaderPet.dreamDayKey) != today) {
+        final y = wall.subtract(const Duration(days: 1));
+        final yesterday = ref.read(transactionsControllerProvider).rows.where((
+          t,
+        ) {
+          final d = petWallClock(zone, t.createdAt);
+          return d.year == y.year && d.month == y.month && d.day == y.day;
+        }).toList();
+        final dream = PetStories.dream(yesterday: yesterday, stage: stage);
+        if (dream != null) {
+          unawaited(box.put(CompanionHeaderPet.dreamDayKey, today));
+          return dream;
+        }
+      }
+      final week = ref.read(companionProvider).value?.week;
+      final last = DateTime.tryParse(
+        box.get(CompanionHeaderPet.weeklyAtKey) ?? '',
+      );
+      if (week != null &&
+          (last == null || now.difference(last) >= const Duration(days: 7))) {
+        unawaited(
+          box.put(
+            CompanionHeaderPet.weeklyAtKey,
+            now.toUtc().toIso8601String(),
+          ),
+        );
+        return PetStories.weekly(
+          days: week.days,
+          goal: week.goal,
+          stage: stage,
+        );
+      }
+    } on Object catch (e) {
+      debugPrint('[pet] no story: $e');
+    }
+    return null;
+  }
+
+  void _markSeen() {
+    if (mounted) _awayAndMark(ref.read(petClockProvider)());
   }
 
   void _onShown() {
@@ -114,14 +215,25 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     // Back in the app: the reminder moves to the next real need.
     unawaited(ref.read(localRemindersProvider).syncCompanionCare(care));
     if (care == null) return;
-    final mood = ref.read(petCareProvider.notifier).moodNow();
-    // Quietly: no sound unless tapped, and nothing at night.
-    if (!mood.isNeed || mood == CompanionState.sleepy) return;
-    final now = DateTime.now();
+    final now = ref.read(petClockProvider)();
+    final away = _awayAndMark(now);
     final last = _lastNudge;
     if (last != null && now.difference(last) < const Duration(minutes: 30)) {
       return;
     }
+    // ZAD_PLAN ٥.٢: time away, then the clock — quietly, no sound.
+    final hour = petWallClock(ref.read(accountTimeZoneProvider), now).hour;
+    final aside =
+        (away == null ? null : FourthWall.back(away)) ?? FourthWall.clock(hour);
+    final story = aside ?? _story(now);
+    if (story != null) {
+      _lastNudge = now;
+      _say(story);
+      return;
+    }
+    final mood = ref.read(petCareProvider.notifier).moodNow();
+    // Quietly: no sound unless tapped, and nothing at night.
+    if (!mood.isNeed || mood == CompanionState.sleepy) return;
     _lastNudge = now;
     _say(
       PetLines.forMood(
@@ -133,6 +245,12 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   }
 
   void _say(String line) {
+    _bubbleRead = false;
+    _bubbleReadTimer?.cancel();
+    _bubbleReadTimer = Timer(
+      const Duration(milliseconds: 600),
+      () => _bubbleRead = true,
+    );
     setState(() => _line = line);
     _bubble.show();
     _hide?.cancel();
@@ -145,8 +263,29 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
   /// state. While it is talking, a second tap — or one on the bubble — opens
   /// the care sheet, so feeding stays one tap away.
   void _poke(CompanionState mood) {
+    _burst++;
+    _burstEnd?.cancel();
+    _burstEnd = Timer(tapBurstWindow, () => _burst = 0);
+    final poked = FourthWall.poked(
+      _burst,
+      name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+    );
+    if (poked != null) {
+      // A burst: it says so instead of opening the sheet (ZAD_PLAN ٥.٢).
+      unawaited(HapticFeedback.mediumImpact());
+      playPetSound(PetSound.cuteSqueak);
+      _hop.forward(from: 0);
+      _say(poked);
+      return;
+    }
     if (_bubble.isShowing) {
-      _open(mood);
+      if (_bubbleRead) {
+        _open(mood);
+        return;
+      }
+      // Tapping fast is poking, not asking for the sheet: it just hops.
+      unawaited(HapticFeedback.selectionClick());
+      _hop.forward(from: 0);
       return;
     }
     unawaited(HapticFeedback.selectionClick());
@@ -207,62 +346,86 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
             ),
           ),
         ),
-        child: Semantics(
-          button: true,
-          label: '$name — ${mood.description}. اضغط علشان تأكّله وتسقيه',
-          excludeSemantics: true,
-          child: SizedBox.square(
-            dimension: widget.size,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                AnimatedBuilder(
-                  animation: _hop,
-                  builder: (_, child) {
-                    final up = math.sin(_hop.value * math.pi);
-                    return Transform.translate(
-                      offset: Offset(0, -widget.size * 0.25 * up),
-                      child: Transform.scale(
-                        scaleX: 1 - 0.05 * up,
-                        scaleY: 1 + 0.07 * up,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: CompanionOrb(
-                    state: mood,
-                    size: widget.size,
-                    onTap: () => _poke(mood),
-                  ),
-                ),
-                if (badge != null)
-                  PositionedDirectional(
-                    top: -2,
-                    end: -4,
-                    child: IgnorePointer(
-                      child: ZadDotPulse(
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: ZadColors.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: ZadColors.outline),
-                          ),
-                          child: Text(
-                            badge,
-                            style: ZadType.labelSmall.copyWith(height: 1),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+        child: DragTarget<PetMeal>(
+          onAcceptWithDetails: (d) => _eat(d.data),
+          builder: (_, waiting, _) => AnimatedScale(
+            scale: waiting.isEmpty ? 1 : 1.18,
+            duration: ZadDuration.quick,
+            curve: ZadCurves.springy,
+            child: _body(mood, badge, name),
           ),
         ),
       ),
     );
   }
+
+  /// An expense dropped on it (ZAD_PLAN ٥.٣): logged, and a meal.
+  void _eat(PetMeal meal) {
+    meal.log();
+    final outcome = ref.read(petCareProvider.notifier).feed();
+    unawaited(HapticFeedback.mediumImpact());
+    playPetSound(PetSound.munch);
+    _hop.forward(from: 0);
+    _say(
+      outcome == PetCareOutcome.full
+          ? 'اتسجّل ✓ بس أنا شبعان خلاص 🤭'
+          : 'اتسجّل ✓ يمّ يمّ! 😋',
+    );
+  }
+
+  Widget _body(CompanionState mood, String? badge, String name) => Semantics(
+    button: true,
+    label: '$name — ${mood.description}. اضغط علشان تأكّله وتسقيه',
+    excludeSemantics: true,
+    child: SizedBox.square(
+      dimension: widget.size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          AnimatedBuilder(
+            animation: _hop,
+            builder: (_, child) {
+              final up = math.sin(_hop.value * math.pi);
+              return Transform.translate(
+                offset: Offset(0, -widget.size * 0.25 * up),
+                child: Transform.scale(
+                  scaleX: 1 - 0.05 * up,
+                  scaleY: 1 + 0.07 * up,
+                  child: child,
+                ),
+              );
+            },
+            child: CompanionOrb(
+              state: mood,
+              size: widget.size,
+              onTap: () => _poke(mood),
+            ),
+          ),
+          if (badge != null)
+            PositionedDirectional(
+              top: -2,
+              end: -4,
+              child: IgnorePointer(
+                child: ZadDotPulse(
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: ZadColors.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: ZadColors.outline),
+                    ),
+                    child: Text(
+                      badge,
+                      style: ZadType.labelSmall.copyWith(height: 1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// The colour of the glow under the pet: its need, or its joy.
@@ -804,6 +967,54 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 );
               },
               child: const Text('⚽ العب معاه'),
+            ),
+            const SizedBox(height: ZadSpacing.sm),
+            // ZAD_PLAN ٥.٤: two price games on real prices.
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('pet-guess'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: () async {
+                      final right = await showPetGuessGame(context, name: name);
+                      if (!mounted || right == null) return;
+                      _react(
+                        CompanionState.celebrating,
+                        'خمّنت $right صح! 💰',
+                        '💰',
+                        PetSound.purr,
+                      );
+                    },
+                    child: const Text('💰 خمّن السعر'),
+                  ),
+                ),
+                const SizedBox(width: ZadSpacing.sm),
+                Expanded(
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('pet-memory'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: () async {
+                      final moves = await showPetMemoryGame(
+                        context,
+                        name: name,
+                      );
+                      if (!mounted || moves == null) return;
+                      _react(
+                        CompanionState.celebrating,
+                        'خلصنا الذاكرة في $moves محاولات! 🧠',
+                        '🧠',
+                        PetSound.purr,
+                      );
+                    },
+                    child: const Text('🧠 ذاكرة الأسعار'),
+                  ),
+                ),
+              ],
             ),
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(0, 44)),

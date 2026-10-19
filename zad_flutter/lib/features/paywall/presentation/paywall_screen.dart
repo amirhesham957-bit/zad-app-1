@@ -28,6 +28,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
+import 'package:zad/shared/companion/presentation/companion_paywall_aside.dart';
 
 /// Opens the plans.
 Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
@@ -251,6 +252,8 @@ class _PaywallState extends ConsumerState<PaywallScreen>
       vertical: ZadSpacing.md,
     ),
     children: <Widget>[
+      // ZAD_PLAN ٥.٢: the pet knows which screen this is.
+      const CompanionPaywallAside(),
       DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(ZadRadii.cardLarge),

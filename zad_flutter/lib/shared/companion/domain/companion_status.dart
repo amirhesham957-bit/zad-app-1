@@ -246,6 +246,43 @@ class CompanionStatus {
   /// This week's challenge; null from an older server.
   final CompanionWeek? week;
 
+  /// What the phone keeps to draw it at once next time, in
+  /// [CompanionStatus.fromJson]'s shape. The one-time things — a celebration,
+  /// the welcome-back seeds, the time away — are the server's to say, so they
+  /// are left out and never replay from the cache.
+  Map<String, dynamic> toCacheJson() => <String, dynamic>{
+    'persona': persona.id,
+    'outfit': outfit.id,
+    'background': background.id,
+    'xp': xp,
+    'level': level,
+    'level_xp': levelXp,
+    'level_need': levelNeed,
+    'stage': stage.index,
+    if (nextStageLevel != null)
+      'next_stage': <String, dynamic>{
+        'level': nextStageLevel,
+        'days': nextStageDays ?? 0,
+      },
+    'age_days': ageDays,
+    'seeds': seeds,
+    'streak': streak,
+    'best_streak': bestStreak,
+    'today': <String, dynamic>{
+      'log': missions.logged,
+      'pantry': missions.home,
+      'scan': missions.scanned,
+      'xp': missions.xpToday,
+    },
+    'owned': owned.toList(),
+    'invite_code': inviteCode,
+    'invites': invites,
+    'invites_pending': invitesPending,
+    'can_claim_invite': canClaimInvite,
+    if (week case final w?)
+      'week': <String, dynamic>{'days': w.days, 'goal': w.goal, 'done': w.done},
+  };
+
   /// What the orb draws.
   CompanionLook get look =>
       CompanionLook(persona: persona, stage: stage, outfit: outfit);
