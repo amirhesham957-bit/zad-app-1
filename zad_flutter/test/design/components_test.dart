@@ -187,6 +187,18 @@ void main() {
       expect(find.byKey(const ValueKey<String>('ring-on-pace')), findsNothing);
     });
 
+    testWidgets(
+      'the month sits on one pane of glass: one blur, not one per chip',
+      (tester) async {
+        await pumpCard(tester, cycleStartDay: 25);
+        expect(
+          find.byKey(const ValueKey<String>('balance-glass')),
+          findsOneWidget,
+        );
+        expect(find.byType(BackdropFilter), findsOneWidget);
+      },
+    );
+
     testWidgets('says "this month" when no payday is known', (tester) async {
       // Claiming a salary cycle for an account that never told us its payday
       // asserts a fact nobody supplied.
