@@ -23,7 +23,7 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
-import { keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
+import { evalKeyOrder, keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
 import { DeadKeys, RATE_LIMIT_DEFAULT_MS } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
@@ -58,6 +58,15 @@ export type Provider = "anthropic" | "gemini" | "openai_compatible";
 // a half-migrated project doesn't lose Gemini access outright. Reads ZAD_API_KEY_1..20
 // (_shared/keyPool.ts) — a sixth key used to be ignored.
 const GEMINI_KEY_POOL: string[] = geminiKeys((n) => Deno.env.get(n));
+// The nightly eval's own key (keyLanes.ts evalKeyOrder), kept after the pool so pool indices stay.
+const EVAL_KEY = (Deno.env.get("ZAD_EVAL_KEY") ?? "").trim();
+const CALL_KEYS: string[] = EVAL_KEY ? [...GEMINI_KEY_POOL, EVAL_KEY] : GEMINI_KEY_POOL;
+const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
+
+/** Whether the nightly eval has its own key; without one it does not run. */
+export function hasEvalKey(): boolean {
+  return EVAL_KEY_INDEX !== null;
+}
 
 // Round-robin starting point across warm invocations, so consecutive requests don't all
 // hammer key 1 first. sendGemini() walks the whole pool from here on a 429.
@@ -103,6 +112,7 @@ export function inLane<T>(lane: Lane, fn: () => T): T {
 
 /** The keys this call may try, in order, for the lane it runs in. */
 function keysToTry(): number[] {
+  if (currentLane() === "eval") return evalKeyOrder(EVAL_KEY_INDEX);
   return keyOrder(currentLane(), GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex(), PAID_KEYS);
 }
 
@@ -579,7 +589,7 @@ async function sendGemini(o: {
   const quotaTrail: string[] = [];
   for (const keyIndex of keysToTry()) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${o.model}` +
-      `:generateContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
+      `:generateContent?key=${encodeURIComponent(CALL_KEYS[keyIndex])}`;
     // timeout 20 ثانية لكل نداء موديل — من غيره موديل معلّق بيعلّق اللفة كلها
     // (والعميل يشوف "بيفكر..." للأبد). 20s كافية لأطول رد أدوات، والفشل السريع
     // بيخلي الـ failover chain (موديل تاني/Groq) تلحق تنقذ اللفة قبل ما الكلاينت ييأس.
@@ -958,7 +968,7 @@ export async function streamGeminiTurn(opts: {
   });
   for (const keyIndex of keysToTry()) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}` +
-      `:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`;
+      `:streamGenerateContent?alt=sse&key=${encodeURIComponent(CALL_KEYS[keyIndex])}`;
     let res: Response;
     try {
       res = await fetch(url, {
@@ -1095,7 +1105,7 @@ export async function embedText(text: string): Promise<number[] | null> {
   for (const keyIndex of order) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${encodeURIComponent(GEMINI_KEY_POOL[keyIndex])}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${encodeURIComponent(CALL_KEYS[keyIndex])}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },

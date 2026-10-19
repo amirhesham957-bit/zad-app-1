@@ -63,10 +63,12 @@ import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type Family
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak, machineCloser } from "./acceptance.ts";
+import { EVAL_CASES } from "./evals/cases.ts";
+import { judgeEval } from "./evals/judge.ts";
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
-import { callModel, embedText, embedSelfTest, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
+import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
@@ -8069,6 +8071,79 @@ async function handleRequest(req: Request): Promise<Response> {
         payload: { passed, total: results.length, results, search, context },
       });
       return new Response(JSON.stringify({ passed, total: results.length, results, search, context }), { headers: CORS_HEADERS });
+    }
+
+    // التقييم الليلي (ZAD_DREAM_PLAN.md ٢.١، ع٣): حالات evals/cases.ts على العقل الحي، على مفتاح التقييم
+    // لوحده (حارة eval، ZAD_EVAL_KEY) — عمره ما يلمس مفاتيح العملاء ولا الكرونات. بيتنادى دفعات
+    // (offset/limit) عشان كل نداء يخلص جوه وقت الفانكشن، وكل حالة بتتكتب في zad_eval_results.
+    // كل حالة بمحادثة نضيفة، واللي اتكتب في الحساب بيتمسح بعدها.
+    if (body.action === "eval_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      if (!hasEvalKey()) {
+        return new Response(JSON.stringify({ error: "no_eval_key", note: "set ZAD_EVAL_KEY (a billed key, not one of the pool)" }), { status: 409, headers: CORS_HEADERS });
+      }
+      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const runId = typeof body.run_id === "string" && /^[0-9a-f-]{36}$/.test(body.run_id) ? body.run_id : crypto.randomUUID();
+      const offset = Math.max(0, Number(body.offset) || 0);
+      const limit = Math.min(20, Math.max(1, Number(body.limit) || 8));
+      const childId = (Deno.env.get("ZAD_EVAL_CHILD_USER_ID") ?? "").trim();
+      const batch = EVAL_CASES.slice(offset, offset + limit);
+      const started = Date.now();
+      const results: Array<Record<string, unknown>> = [];
+      const wipe = async (uid: string, since: string) => {
+        await sbEval.from("zad_chat_turns").delete().eq("user_id", uid);
+        for (const t of ["zad_appointments", "zad_shopping_list", "zad_pharmacy_items"]) {
+          await sbEval.from(t).delete().eq("user_id", uid).gte("created_at", since);
+        }
+      };
+      for (const c of batch) {
+        const uid = c.account === "child" ? childId : ACCEPTANCE_USER_ID;
+        if (!uid) {
+          results.push({ id: c.id, category: c.category, pass: null, failure: "skipped: no ZAD_EVAL_CHILD_USER_ID" });
+          continue;
+        }
+        if (Date.now() - started > 110_000) {
+          results.push({ id: c.id, category: c.category, pass: null, failure: "skipped: batch time" });
+          continue;
+        }
+        const since = new Date().toISOString();
+        await sbEval.from("zad_chat_turns").delete().eq("user_id", uid);
+        const t0 = Date.now();
+        let row: Record<string, unknown>;
+        try {
+          const res = await inLane("eval", () => handleAgentTurnInLane(sbEval, uid, { message: c.message, history: [] }, false));
+          const payload = await res.json().catch(() => null);
+          const outcome = {
+            reply: String(payload?.reply ?? ""),
+            executed: Array.isArray(payload?.executed) ? payload.executed : [],
+            proposals: Array.isArray(payload?.proposals) ? payload.proposals : [],
+            consulted: Array.isArray(payload?.consulted) ? (payload.consulted as string[]) : [],
+          };
+          const failure = payload?.ok === true
+            ? internalLeak(outcome.reply) ?? machineCloser(outcome.reply) ?? judgeEval(c, outcome)
+            : `turn failed: ${String(payload?.error ?? res.status).slice(0, 120)}`;
+          row = {
+            id: c.id, category: c.category, pass: failure === null, failure, reply: outcome.reply.slice(0, 600),
+            executed: outcome.executed.map((e: { tool?: string }) => e.tool),
+            proposed: outcome.proposals.map((p: { tool?: string }) => p?.tool), consulted: outcome.consulted,
+            model: payload?.model ?? null, ms: Date.now() - t0,
+          };
+        } catch (e) {
+          row = { id: c.id, category: c.category, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 };
+        }
+        results.push(row);
+        await wipe(uid, since);
+        const { error: saveErr } = await sbEval.from("zad_eval_results").insert({
+          run_id: runId, case_id: c.id, category: c.category, pass: row.pass === true, failure: row.failure ?? null,
+          reply: row.reply ?? null, detail: { executed: row.executed, proposed: row.proposed, consulted: row.consulted, model: row.model },
+          ms: row.ms ?? null,
+        });
+        if (saveErr) console.error("[eval_run] save failed:", saveErr.message);
+      }
+      const next = offset + batch.length < EVAL_CASES.length ? offset + batch.length : null;
+      return new Response(JSON.stringify({ run_id: runId, offset, next, total: EVAL_CASES.length, results }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {
