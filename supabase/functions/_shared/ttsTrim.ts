@@ -7,6 +7,11 @@
 // when a clip runs far longer than its text could take, it is cut at the first pause after the
 // expected length, with a short fade so the cut does not click. A clip of normal length is
 // returned untouched.
+//
+// Short lines (the companion's, one chat sentence at a time) slipped past that limit: five words
+// plus a two-second English tail stays under it (owner, 2026-10-19). So a clip that is merely
+// slower than normal speech is cut too — but only at a real pause after the point where even slow
+// speech has finished the text's last clause, and only when words follow that pause.
 
 /** Gemini TTS and Azure's raw format: 24 kHz, 16-bit little-endian, mono. */
 export const TTS_SAMPLE_RATE = 24_000;
@@ -14,14 +19,36 @@ export const TTS_SAMPLE_RATE = 24_000;
 const FRAME_MS = 20;
 const PAUSE_MS = 350;
 const FADE_MS = 40;
+/** Under the limit, at least this much speech after the pause before it counts as a tail. */
+const MIN_TAIL_MS = 400;
 
 /**
  * How long the text could take at a slow, emotional delivery (sighs and laughs included):
  * two words a second plus a second of breath. Generous on purpose — only a runaway goes past it.
  */
 export function expectedSpeechSeconds(text: string): number {
-  const words = text.trim().split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
-  return words / 2 + 1;
+  return wordCount(text) / 2 + 1;
+}
+
+/** Longer than this, a clip may carry a tail: normal speech, a little over two words a second. */
+export function tailCheckSeconds(text: string): number {
+  return wordCount(text) / 2.2 + 1;
+}
+
+/**
+ * Where a tail may start: after the text at a quick pace, and after its last comma or full stop
+ * at a slow pace plus the words after it at a quick one — so the pause a comma brings is never
+ * taken for the end.
+ */
+export function tailSearchFromSeconds(text: string): number {
+  const clauses = text.trim().split(/[.،,!?؟…:;؛]+/).map((c) => wordCount(c));
+  const after = clauses.length > 1 ? (clauses.at(-1) || clauses.at(-2) || 0) : 0;
+  const before = wordCount(text) - after;
+  return Math.max(wordCount(text) / 2.6, before > 0 && after > 0 ? before / 1.8 + after / 3.5 : 0);
+}
+
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 }
 
 /** The longest a clip of [text] may run before it counts as a runaway. */
@@ -43,7 +70,8 @@ function frameRms(samples: Int16Array, start: number, length: number): number {
 export function trimRunawaySpeech(pcm: Uint8Array<ArrayBuffer>, text: string, sampleRate = TTS_SAMPLE_RATE): Uint8Array<ArrayBuffer> {
   const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.byteLength / 2));
   const seconds = samples.length / sampleRate;
-  if (seconds <= runawayLimitSeconds(text)) return pcm;
+  if (seconds <= tailCheckSeconds(text)) return pcm;
+  const runaway = seconds > runawayLimitSeconds(text);
 
   const frame = Math.max(1, Math.round((sampleRate * FRAME_MS) / 1000));
   const rms: number[] = [];
@@ -54,7 +82,7 @@ export function trimRunawaySpeech(pcm: Uint8Array<ArrayBuffer>, text: string, sa
   const pauseFrames = Math.ceil(PAUSE_MS / FRAME_MS);
   // Real speech is quicker than the generous estimate, so the search starts at half of it; a
   // pause that began just before counts from its own start.
-  const fromFrame = Math.floor((expectedSpeechSeconds(text) * 0.5 * 1000) / FRAME_MS);
+  const fromFrame = Math.floor(((runaway ? expectedSpeechSeconds(text) * 0.5 : tailSearchFromSeconds(text)) * 1000) / FRAME_MS);
   const limitFrame = Math.floor((runawayLimitSeconds(text) * 1000) / FRAME_MS);
 
   let cutFrame = limitFrame;
@@ -66,6 +94,11 @@ export function trimRunawaySpeech(pcm: Uint8Array<ArrayBuffer>, text: string, sa
       cutFrame = f - run + 1;
       break;
     }
+  }
+  if (!runaway) {
+    // Under the limit only a pause followed by words is a tail; trailing silence stays.
+    const tailFrames = rms.slice(cutFrame).filter((r) => r >= quiet).length;
+    if (cutFrame >= limitFrame || tailFrames * FRAME_MS < MIN_TAIL_MS) return pcm;
   }
   cutFrame = Math.min(cutFrame, limitFrame);
   const cutSample = Math.min(samples.length, cutFrame * frame);
