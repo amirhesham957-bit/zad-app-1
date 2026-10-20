@@ -1070,6 +1070,7 @@
   "zad_transaction_proposals": [
     "amount",
     "bank_name",
+    "card_last_digits",
     "category",
     "confidence",
     "created_at",
