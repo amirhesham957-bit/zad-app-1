@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/budget/domain/category_budgets.dart';
 import 'package:zad/features/budget/presentation/budget_screen_parts.dart';
@@ -71,7 +72,7 @@ class _FinancesState extends State<FinancesScreen> {
       backgroundColor: Colors.transparent,
       appBar: widget.embedded
           ? null
-          : AppBar(title: const Text('الميزانية والالتزامات')),
+          : AppBar(title: Text(context.l10n.financesTitle)),
       body: Column(
         children: <Widget>[
           Padding(
@@ -83,14 +84,17 @@ class _FinancesState extends State<FinancesScreen> {
               width: double.infinity,
               child: SegmentedButton<int>(
                 showSelectedIcon: false,
-                segments: const <ButtonSegment<int>>[
+                segments: <ButtonSegment<int>>[
                   ButtonSegment<int>(
                     value: 0,
-                    label: Text('الحركات والميزانية'),
+                    label: Text(context.l10n.financesTabMoves),
                   ),
                   // «التزاماتي»: subscriptions, bills, instalments (BNPL
                   // too) and loans in one place (owner, 2026-09-30).
-                  ButtonSegment<int>(value: 1, label: Text('التزاماتي')),
+                  ButtonSegment<int>(
+                    value: 1,
+                    label: Text(context.l10n.drawerObligations),
+                  ),
                 ],
                 selected: <int>{_tab},
                 onSelectionChanged: (s) => setState(() => _tab = s.first),
@@ -160,9 +164,9 @@ class _DailyTab extends ConsumerWidget {
               heroTag: 'finances-add',
               onPressed: () => ZadScreens.showAddTransactionSheet(context),
               icon: const Icon(Icons.add, size: 20),
-              label: const Text(
-                'معاملة',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              label: Text(
+                context.l10n.financesAddTx,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
@@ -200,24 +204,25 @@ class _DailyTab extends ConsumerWidget {
             const SizedBox(height: ZadSpacing.lg),
             Row(
               children: <Widget>[
-                const Expanded(
-                  child: Text('ميزانيات الفئات', style: ZadType.titleMedium),
+                Expanded(
+                  child: Text(
+                    context.l10n.financesCategoryBudgets,
+                    style: ZadType.titleMedium,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: () => unawaited(_editCategory(context, ref)),
                   icon: const Icon(ZadIcons.add, size: 16),
-                  label: const Text('تحديد فئة'),
+                  label: Text(context.l10n.financesSetCategory),
                 ),
               ],
             ),
             if (lines.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: KtEmptyState(
                   icon: Icons.pie_chart,
-                  title:
-                      'لسه ما حددتش ميزانية لأي فئة. اضغط "تحديد فئة" عشان '
-                      'زاد يتابعلك كل فئة لوحدها.',
+                  title: context.l10n.financesNoCategories,
                 ),
               )
             else
@@ -268,7 +273,7 @@ class _Available extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  'متاح',
+                  context.l10n.financesAvailable,
                   style: ZadType.labelLarge.copyWith(
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -276,7 +281,7 @@ class _Available extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () => ZadScreens.showMonthlyLimitSheet(context),
-                tooltip: 'تعديل الرصيد',
+                tooltip: context.l10n.financesEditBalance,
                 icon: Icon(
                   ZadIcons.edit,
                   size: 17,
@@ -287,7 +292,7 @@ class _Available extends StatelessWidget {
           ),
           Text(
             available == null
-                ? 'لسه محددتش ميزانيتك'
+                ? context.l10n.financesNoBudget
                 : '${unsure ? '≈ ' : ''}${_money(available)} $currency'.trim(),
             style: available == null
                 ? ZadType.titleMedium.copyWith(color: Colors.white)
@@ -302,8 +307,10 @@ class _Available extends StatelessWidget {
               snapshot.remaining != null) ...<Widget>[
             const SizedBox(height: 6),
             Text(
-              'متبقي ${_money(snapshot.remaining!)} · محجوز '
-              '${_money(snapshot.committed)}',
+              context.l10n.financesRemainingCommitted(
+                _money(snapshot.remaining!),
+                _money(snapshot.committed),
+              ),
               style: ZadType.labelSmall.copyWith(
                 color: Colors.white.withValues(alpha: 0.7),
               ),
@@ -340,7 +347,7 @@ class _Summary extends StatelessWidget {
       children: <Widget>[
         Expanded(
           child: _SummaryItem(
-            label: 'الدخل',
+            label: context.l10n.txFilterIncome,
             amount: income,
             icon: ZadIcons.income,
             color: ZadColors.green600,
@@ -349,7 +356,7 @@ class _Summary extends StatelessWidget {
         Container(width: 1, height: 50, color: ZadColors.outlineVariant),
         Expanded(
           child: _SummaryItem(
-            label: 'المصروفات',
+            label: context.l10n.txFilterExpenses,
             amount: spent,
             icon: ZadIcons.expense,
             color: ZadColors.terracottaRust,
@@ -358,7 +365,7 @@ class _Summary extends StatelessWidget {
         Container(width: 1, height: 50, color: ZadColors.outlineVariant),
         Expanded(
           child: _SummaryItem(
-            label: 'الميزانية',
+            label: context.l10n.sectionBudget,
             amount: budget,
             icon: ZadIcons.budget,
             color: ZadColors.mustardOchre,
@@ -417,7 +424,11 @@ class _InsightStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final insight = budgetInsight(spent: spent, budget: budget);
+    final insight = budgetInsight(
+      spent: spent,
+      budget: budget,
+      l10n: context.l10n,
+    );
     final (icon, color) = switch (insight.tier) {
       3 => (ZadIcons.failed, ZadColors.terracottaRust),
       2 => (ZadIcons.failed, ZadColors.mustardOchre),
@@ -521,7 +532,9 @@ class _CategoryCard extends StatelessWidget {
                       Text(
                         budget > 0
                             ? '${_money(spent)} / ${_money(budget)} $currency'
-                            : '${_money(spent)} $currency — بدون حد',
+                            : context.l10n.financesNoLimit(
+                                '${_money(spent)} $currency',
+                              ),
                         style: ZadType.labelSmall.copyWith(
                           color: over
                               ? ZadColors.terracottaRust
@@ -546,7 +559,7 @@ class _CategoryCard extends StatelessWidget {
             ),
             IconButton(
               onPressed: onInsight,
-              tooltip: 'تحليل ذكي',
+              tooltip: context.l10n.financesSmartAnalysis,
               icon: Icon(
                 ZadIcons.assistant,
                 size: 16,
@@ -607,8 +620,8 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: Text(
       widget.category == null
-          ? 'تحديد ميزانية فئة'
-          : 'تعديل ميزانية ${widget.category}',
+          ? context.l10n.financesSetCategoryBudget
+          : context.l10n.financesEditCategoryBudget(widget.category!),
     ),
     content: Column(
       mainAxisSize: MainAxisSize.min,
@@ -616,7 +629,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
         if (widget.category == null) ...<Widget>[
           DropdownButtonFormField<String>(
             initialValue: _category,
-            decoration: const InputDecoration(labelText: 'الفئة'),
+            decoration: InputDecoration(
+              labelText: context.l10n.financesCategory,
+            ),
             items: <DropdownMenuItem<String>>[
               for (final c in kStandardCategories)
                 DropdownMenuItem<String>(value: c, child: Text(c)),
@@ -629,20 +644,22 @@ class _CategoryDialogState extends State<_CategoryDialog> {
           controller: _amount,
           keyboardType: TextInputType.number,
           textDirection: TextDirection.ltr,
-          decoration: const InputDecoration(labelText: 'الميزانية الشهرية'),
+          decoration: InputDecoration(
+            labelText: context.l10n.financesMonthlyBudget,
+          ),
         ),
       ],
     ),
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       TextButton(
         onPressed: () =>
             Navigator.of(context)
                 .pop((_category, parseMoneyInput(_amount.text) ?? 0.0)),
-        child: const Text('حفظ'),
+        child: Text(context.l10n.commonSave),
       ),
     ],
   );
@@ -669,25 +686,25 @@ Future<void> _showInsight(
   await showDialog<void>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text('تحليل ذكي: $category'),
+      title: Text(c.l10n.financesInsightTitle(category)),
       content: FutureBuilder<BehaviorAnalysis>(
         future: future,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return const Row(
+            return Row(
               children: <Widget>[
-                SizedBox.square(
+                const SizedBox.square(
                   dimension: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: 10),
-                Text('جاري التحليل...'),
+                const SizedBox(width: 10),
+                Text(context.l10n.financesAnalysing),
               ],
             );
           }
           final a = snap.data;
           if (a == null || a.insight.isEmpty) {
-            return const Text('مفيش بيانات كافية لتحليل الفئة دي حالياً.');
+            return Text(context.l10n.financesInsightEmpty);
           }
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -696,14 +713,14 @@ Future<void> _showInsight(
               Text(a.insight),
               const SizedBox(height: ZadSpacing.sm),
               Text(
-                a.trendLabel,
+                a.trendLabel(context.l10n),
                 style: ZadType.labelMedium.copyWith(
                   color: ZadColors.forestEmerald,
                 ),
               ),
               if (a.predictedNext > 0)
                 Text(
-                  'المتوقع الشهر القادم: ${_money(a.predictedNext)}',
+                  context.l10n.financesPredictedNext(_money(a.predictedNext)),
                   style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
               if (a.tip.isNotEmpty) ...<Widget>[
@@ -717,7 +734,7 @@ Future<void> _showInsight(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إغلاق'),
+          child: Text(c.l10n.commonClose),
         ),
       ],
     ),

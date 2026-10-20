@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/data/zad_explain.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -215,9 +216,9 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     } on Object catch (e) {
       debugPrint('zad_debts write failed: $e');
       if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          const SnackBar(content: Text('ماتسجلش — اتأكد من النت.')),
-        );
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(SnackBar(content: Text(context.l10n.debtSaveFailed)));
       }
     }
     await _load();
@@ -245,7 +246,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
       initial: const <String>[''],
       builder: (dialogContext, fields) => AlertDialog(
         title: Text(
-          'دفعة على ${d.name}',
+          context.l10n.debtPaymentOn(d.name),
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
         ),
         content: Column(
@@ -253,7 +254,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'المتبقي: ${_money(ref, d.remaining)}',
+              context.l10n.debtRemaining(_money(ref, d.remaining)),
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -263,9 +264,9 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: 'المبلغ المدفوع',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.debtPaidAmount,
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -273,14 +274,14 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () {
               final v = double.tryParse(fields[0].text.trim());
               if (v != null) Navigator.of(dialogContext).pop(v);
             },
-            child: const Text('حفظ'),
+            child: Text(context.l10n.commonSave),
           ),
         ],
       ),
@@ -302,21 +303,21 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          'حذف الدين',
+          dialogContext.l10n.debtDelete,
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
         ),
-        content: Text('حذف «${d.name}» من قائمة الديون؟'),
+        content: Text(dialogContext.l10n.debtDeleteConfirm(d.name)),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: ZadColors.terracottaRust,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('حذف الدين'),
+            child: Text(dialogContext.l10n.debtDelete),
           ),
         ],
       ),
@@ -335,6 +336,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     ({List<PayoffStep> steps, int months, double interest}) plan,
   ) async {
     setState(() => _explaining = true);
+    // l10n: data-begin
     final steps = plan.steps
         .map(
           (s) =>
@@ -348,6 +350,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
       'المدة الكلية: ${plan.months} شهر\n'
       'إجمالي الفوائد المدفوعة: ${plan.interest}\n'
       'الخطوات:\n$steps',
+      // l10n: data-end
     );
     if (!mounted) return;
     setState(() {
@@ -369,7 +372,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
-                  'مخطط سداد الديون',
+                  context.l10n.debtPlanner,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -377,21 +380,21 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               ),
               TextButton(
                 onPressed: () => unawaited(_add()),
-                child: const Text('إضافة دين'),
+                child: Text(context.l10n.debtAdd),
               ),
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'اختر استراتيجية السداد المناسبة لك',
+            context.l10n.debtPickStrategy,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.lg),
           if (_debts.isEmpty)
-            const ZadEmptyState(
+            ZadEmptyState(
               icon: ZadIcons.bank,
-              title: 'لا توجد ديون مسجلة',
-              message: 'أضف ديونك لنساعدك في التخطيط للسداد',
+              title: context.l10n.debtNone,
+              message: context.l10n.debtNoneHint,
             )
           else ...<Widget>[
             Wrap(
@@ -404,7 +407,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                     _strategy = DebtStrategy.snowball;
                     _narrative = null;
                   }),
-                  label: const Text('كرة الثلج (الأصغر أولاً)'),
+                  label: Text(context.l10n.debtSnowball),
                 ),
                 FilterChip(
                   selected: _strategy == DebtStrategy.avalanche,
@@ -412,7 +415,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                     _strategy = DebtStrategy.avalanche;
                     _narrative = null;
                   }),
-                  label: const Text('الانهيار الجليدي (الأعلى فائدة أولاً)'),
+                  label: Text(context.l10n.debtAvalanche),
                 ),
               ],
             ),
@@ -440,7 +443,9 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                         children: <Widget>[
                           Text(s.debt.name, style: ZadType.bodyMedium),
                           Text(
-                            'المتبقي: ${_money(ref, s.debt.remaining)}',
+                            context.l10n.debtRemaining(
+                              _money(ref, s.debt.remaining),
+                            ),
                             style: ZadType.labelSmall.copyWith(
                               color: ZadColors.inkMuted,
                             ),
@@ -449,13 +454,13 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                       ),
                     ),
                     Text(
-                      '${s.months} شهر',
+                      context.l10n.debtMonths(s.months),
                       style: ZadType.labelSmall.copyWith(
                         color: ZadColors.inkMuted,
                       ),
                     ),
                     IconButton(
-                      tooltip: 'سجّل دفعة',
+                      tooltip: context.l10n.debtLogPayment,
                       onPressed: () => unawaited(_pay(s.debt)),
                       icon: const Icon(
                         ZadIcons.cash,
@@ -464,7 +469,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'حذف الدين',
+                      tooltip: context.l10n.debtDelete,
                       onPressed: () => unawaited(_delete(s.debt)),
                       icon: Icon(
                         ZadIcons.delete,
@@ -477,23 +482,23 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               ),
             const SizedBox(height: 10),
             Text(
-              '${plan.months} شهر للسداد الكامل',
+              context.l10n.debtMonthsToPayoff(plan.months),
               style: ZadType.bodySmall.copyWith(fontWeight: FontWeight.w600),
             ),
             Text(
-              'إجمالي الفوائد: ${_money(ref, plan.interest)}',
+              context.l10n.debtTotalInterest(_money(ref, plan.interest)),
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.md),
             if (_explaining)
-              const Row(
+              Row(
                 children: <Widget>[
-                  SizedBox.square(
+                  const SizedBox.square(
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: ZadSpacing.sm),
-                  Text('زاد يقوم بالتحليل...'),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Text(context.l10n.debtAnalysing),
                 ],
               )
             else if (_narrative != null)
@@ -511,7 +516,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
               TextButton.icon(
                 onPressed: () => unawaited(_explain(plan)),
                 icon: const Icon(ZadIcons.assistant, size: 14),
-                label: const Text('اشرح بالذكاء الاصطناعي'),
+                label: Text(context.l10n.debtExplain),
               ),
           ],
         ],
@@ -560,24 +565,24 @@ class _AddDebtState extends State<_AddDebtDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(
-      'إضافة دين',
+      context.l10n.debtAdd,
       style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
     ),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          _field(_name, 'اسم الدين', number: false),
-          _field(_remaining, 'المبلغ المتبقي'),
-          _field(_rate, 'معدل الفائدة السنوي %'),
-          _field(_minimum, 'الحد الأدنى للدفعة الشهرية'),
+          _field(_name, context.l10n.debtName, number: false),
+          _field(_remaining, context.l10n.debtLeft),
+          _field(_rate, context.l10n.debtRate),
+          _field(_minimum, context.l10n.debtMinimum),
         ],
       ),
     ),
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       FilledButton(
         onPressed: () {
@@ -591,7 +596,7 @@ class _AddDebtState extends State<_AddDebtDialog> {
             'minimum_payment': double.tryParse(_minimum.text.trim()) ?? 0,
           });
         },
-        child: const Text('حفظ'),
+        child: Text(context.l10n.commonSave),
       ),
     ],
   );
@@ -765,7 +770,9 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        'خصم ${d.discount.toStringAsFixed(0)}%',
+                        context.l10n.dealDiscount(
+                          d.discount.toStringAsFixed(0),
+                        ),
                         style: ZadType.labelSmall.copyWith(
                           fontWeight: FontWeight.w700,
                           color: ZadColors.green600,
@@ -775,7 +782,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                 ],
               ),
               Text(
-                '${_money(ref, d.price)} عند ${d.store}',
+                context.l10n.dealAt(_money(ref, d.price), d.store),
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
               if ((d.note ?? '').trim().isNotEmpty)
@@ -789,12 +796,12 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
     ],
   );
 
-  String _cachedLabel() {
+  String _cachedLabel(ZadL10n l10n) {
     final at = _foundAt;
     final when = at == null
         ? ''
         : ' (${at.toLocal().day}/${at.toLocal().month})';
-    return 'البحث مشغول دلوقتي — دي آخر عروض لقيناها$when';
+    return l10n.dealCached(when);
   }
 
   @override
@@ -816,7 +823,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
-                  'العروض المتاحة لنواقصك 🏷️',
+                  context.l10n.dealTitle,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -833,7 +840,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    'نتيجة بحث حي',
+                    context.l10n.dealLive,
                     style: TextStyle(fontSize: 10, color: ZadColors.info),
                   ),
                 ),
@@ -841,23 +848,23 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'عروض حقيقية على الأصناف الناقصة عندك',
+            context.l10n.dealSubtitle,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.lg),
           switch (_state) {
             _Fetch.notYet => Text(
-              'اضغط لتحديث النتائج من الإنترنت',
+              context.l10n.dealTapRefresh,
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
-            _Fetch.loading => const Row(
+            _Fetch.loading => Row(
               children: <Widget>[
-                SizedBox.square(
+                const SizedBox.square(
                   dimension: 14,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: ZadSpacing.sm),
-                Text('يبحث في الإنترنت...'),
+                const SizedBox(width: ZadSpacing.sm),
+                Text(context.l10n.dealSearching),
               ],
             ),
             // The search failed, and the last deals it found are still worth
@@ -866,22 +873,20 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  _cachedLabel(),
+                  _cachedLabel(context.l10n),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.xs),
                 _dealList(),
               ],
             ),
-            _Fetch.error => const ZadEmptyState(
+            _Fetch.error => ZadEmptyState(
               icon: Icons.cloud_off,
-              title: 'تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية',
-              message:
-                  'خدمة البحث مشغولة دلوقتي. دوس تحديث تاني بعد شوية — '
-                  'ولو اتكررت شوف النت.',
+              title: context.l10n.dealFailed,
+              message: context.l10n.dealFailedHint,
             ),
             _Fetch.fetched when _deals.isEmpty => Text(
-              'لا توجد نتائج بحث محددة متوفرة حالياً',
+              context.l10n.dealNone,
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
             _Fetch.fetched => _dealList(),
@@ -894,7 +899,7 @@ class _DealsState extends ConsumerState<LiveDealsCard> {
                   ? () => unawaited(_refresh(shortages))
                   : null,
               icon: const Icon(ZadIcons.retry, size: 16),
-              label: const Text('تحديث من النت 🔄'),
+              label: Text(context.l10n.dealRefresh),
             ),
           ),
         ],

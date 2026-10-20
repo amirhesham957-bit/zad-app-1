@@ -5,6 +5,8 @@
 /// (`zad-brain/eventDayBudget.ts`) عشان الشات مايقولش رقم تاني.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// A trip counts double.
 const double kTravelWeight = 2;
 
@@ -14,11 +16,15 @@ const double kOutingWeight = 1.5;
 /// How far ahead the rebalancing reaches.
 const int kEventHorizonDays = 7;
 
-final RegExp _travel = RegExp('سفر|مسافر|رحل[هة]|مصيف|طيار[هة]|المطار');
+// l10n: data-begin
+final RegExp _travel = RegExp(
+  'سفر|مسافر|رحل[هة]|مصيف|طيار[هة]|المطار',
+);
 final RegExp _outing = RegExp(
   'دكتور|عياد[هة]|مستشفي|مستشفى|تحاليل|[اأ]شع[هة]|خروج[هة]|فسح[هة]|سينما|'
   'مطعم|عزوم[هة]|فرح|عيد ميلاد|ملاهي|مول|النادي',
 );
+// l10n: data-end
 
 /// An appointment as the rule reads it.
 typedef OutingAppointment = ({
@@ -69,7 +75,7 @@ EventDayBudget? eventDayBudget({
     final i = DateTime.utc(l.year, l.month, l.day).difference(first).inDays;
     if (i < 0 || i >= horizon || w <= weights[i]) continue;
     weights[i] = w;
-    titles[i] = a.title.trim().isEmpty ? 'مشوار' : a.title.trim();
+    titles[i] = a.title.trim().isEmpty ? '' : a.title.trim();
   }
   final at = titles.indexWhere((t) => t != null);
   if (at < 0) return null;
@@ -84,20 +90,18 @@ EventDayBudget? eventDayBudget({
   );
 }
 
-const List<String> _weekdays = <String>[
-  'الاتنين',
-  'التلات',
-  'الأربع',
-  'الخميس',
-  'الجمعة',
-  'السبت',
-  'الحد',
-];
-
 /// The caption under the figure: why today is more, or why it is a little
 /// less. [weekday] is the event day's `DateTime.weekday`.
-String eventDayCaption(EventDayBudget e, {required int weekday}) {
-  if (e.eventInDays == 0) return 'زوّدناه عشان «${e.eventTitle}» النهارده';
-  final when = e.eventInDays == 1 ? 'بكرة' : 'يوم ${_weekdays[weekday - 1]}';
-  return 'شايلين حاجة لـ«${e.eventTitle}» $when';
+String eventDayCaption(
+  EventDayBudget e, {
+  required int weekday,
+  ZadL10n? l10n,
+}) {
+  final l = l10n ?? zadL10nArabic;
+  final title = e.eventTitle.isEmpty ? l.eventOuting : e.eventTitle;
+  if (e.eventInDays == 0) return l.eventToday(title);
+  final when = e.eventInDays == 1
+      ? l.eventTomorrow
+      : l.eventOnDay(l.weekdayName('d$weekday'));
+  return l.eventAhead(title, when);
 }

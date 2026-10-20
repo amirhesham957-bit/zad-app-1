@@ -15,6 +15,7 @@ import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
@@ -45,19 +46,19 @@ Future<bool> confirmDeleteTransaction(
   final ok = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('حذف'),
-      content: Text('هل أنت متأكد من حذف معاملة "${txn.title}"؟'),
+      title: Text(dialogContext.l10n.commonDelete),
+      content: Text(dialogContext.l10n.txDeleteConfirm(txn.title)),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(dialogContext.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
           style: TextButton.styleFrom(
             foregroundColor: ZadColors.terracottaRust,
           ),
-          child: const Text('حذف'),
+          child: Text(dialogContext.l10n.commonDelete),
         ),
       ],
     ),
@@ -173,12 +174,14 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Text('تعديل المعاملة', style: ZadType.titleMedium),
+            Text(context.l10n.txEdit, style: ZadType.titleMedium),
             const SizedBox(height: ZadSpacing.lg),
             TextField(
               controller: _title,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'الوصف'),
+              decoration: InputDecoration(
+                labelText: context.l10n.txDescription,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -189,13 +192,13 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
               ),
               textDirection: TextDirection.ltr,
               style: ZadType.figure(22),
-              decoration: const InputDecoration(labelText: 'المبلغ'),
+              decoration: InputDecoration(labelText: context.l10n.txAmount),
               onChanged: (_) => setState(() {}),
             ),
             if (!isTransfer) ...<Widget>[
               const SizedBox(height: ZadSpacing.lg),
               Text(
-                'النوع',
+                context.l10n.txType,
                 style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.sm),
@@ -203,12 +206,12 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
                 spacing: ZadSpacing.sm,
                 children: <Widget>[
                   ChoiceChip(
-                    label: const Text('مصروف'),
+                    label: Text(context.l10n.txExpense),
                     selected: _isExpense,
                     onSelected: (_) => setState(() => _isExpense = true),
                   ),
                   ChoiceChip(
-                    label: const Text('دخل'),
+                    label: Text(context.l10n.txIncome),
                     selected: !_isExpense,
                     onSelected: (_) => setState(() => _isExpense = false),
                   ),
@@ -217,7 +220,7 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
             ],
             const SizedBox(height: ZadSpacing.lg),
             Text(
-              'الفئة',
+              context.l10n.financesCategory,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -243,7 +246,7 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
                       foregroundColor: ZadColors.terracottaRust,
                       minimumSize: const Size(0, 48),
                     ),
-                    child: const Text('حذف'),
+                    child: Text(context.l10n.commonDelete),
                   ),
                 ),
                 const SizedBox(width: ZadSpacing.md),
@@ -254,7 +257,7 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 48),
                     ),
-                    child: const Text('حفظ'),
+                    child: Text(context.l10n.commonSave),
                   ),
                 ),
               ],

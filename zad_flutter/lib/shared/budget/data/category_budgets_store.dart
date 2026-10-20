@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Reads and writes the ceilings.
 class CategoryBudgetsStore {
@@ -80,10 +81,10 @@ class BehaviorAnalysis {
   final double predictedNext;
 
   /// The trend in words.
-  String get trendLabel => switch (trend) {
-    'increasing' => 'في ازدياد',
-    'decreasing' => 'في انخفاض',
-    _ => 'مستقر',
+  String trendLabel(ZadL10n l) => switch (trend) {
+    'increasing' => l.trendUp,
+    'decreasing' => l.trendDown,
+    _ => l.trendFlat,
   };
 }
 

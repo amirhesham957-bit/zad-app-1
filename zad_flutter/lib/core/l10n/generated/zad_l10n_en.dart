@@ -1317,4 +1317,737 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get voiceOrPick => 'Or pick a ready question:';
+
+  @override
+  String budgetSuggest(String amount) {
+    return 'Zad suggests changing your budget to $amount, based on the last two months\' average';
+  }
+
+  @override
+  String get commonApply => 'Apply';
+
+  @override
+  String get txFilterAll => 'All';
+
+  @override
+  String get txFilterExpenses => 'Expenses';
+
+  @override
+  String get txFilterIncome => 'Income';
+
+  @override
+  String get txFilterBank => 'Bank';
+
+  @override
+  String get budgetThisMonth => 'This month';
+
+  @override
+  String get budgetNoTransactions => 'No transactions yet.';
+
+  @override
+  String get budgetNoTransactionsHint =>
+      'Add a transaction or link your bank to track spending automatically';
+
+  @override
+  String get txEdit => 'Edit transaction';
+
+  @override
+  String get txDelete => 'Delete transaction';
+
+  @override
+  String get financesTitle => 'Budget and commitments';
+
+  @override
+  String get financesTabMoves => 'Movements and budget';
+
+  @override
+  String get financesAddTx => 'Transaction';
+
+  @override
+  String get financesCategoryBudgets => 'Category budgets';
+
+  @override
+  String get financesSetCategory => 'Set a category';
+
+  @override
+  String get financesNoCategories =>
+      'You haven\'t set a budget for any category yet. Tap \"Set a category\" so Zad follows each one on its own.';
+
+  @override
+  String get financesAvailable => 'Available';
+
+  @override
+  String get financesEditBalance => 'Edit balance';
+
+  @override
+  String get financesNoBudget => 'You haven\'t set your budget yet';
+
+  @override
+  String financesRemainingCommitted(String remaining, String committed) {
+    return '$remaining left · $committed committed';
+  }
+
+  @override
+  String financesNoLimit(String amount) {
+    return '$amount — no limit';
+  }
+
+  @override
+  String get financesSmartAnalysis => 'Smart analysis';
+
+  @override
+  String get financesSetCategoryBudget => 'Set a category budget';
+
+  @override
+  String financesEditCategoryBudget(String category) {
+    return 'Edit the $category budget';
+  }
+
+  @override
+  String get financesCategory => 'Category';
+
+  @override
+  String get financesMonthlyBudget => 'Monthly budget';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String financesInsightTitle(String category) {
+    return 'Smart analysis: $category';
+  }
+
+  @override
+  String get financesAnalysing => 'Analysing...';
+
+  @override
+  String get financesInsightEmpty =>
+      'Not enough data to analyse this category yet.';
+
+  @override
+  String financesPredictedNext(String amount) {
+    return 'Expected next month: $amount';
+  }
+
+  @override
+  String get gateTitle => 'Before we start, set your monthly ceiling';
+
+  @override
+  String get gateBody =>
+      'Zad doesn\'t make numbers up. Without a ceiling there\'s no \"left\" or \"available\" — every figure would be a guess.';
+
+  @override
+  String get gateMarket => 'Country and currency';
+
+  @override
+  String get commonChange => 'Change';
+
+  @override
+  String get gateCeiling => 'Monthly spending ceiling';
+
+  @override
+  String get gateStart => 'Let\'s start';
+
+  @override
+  String get budgetOver => 'Over budget! Try to cut back';
+
+  @override
+  String budgetNear(int pct) {
+    return 'You\'ve reached $pct% of your budget. Be careful';
+  }
+
+  @override
+  String budgetFine(int pct) {
+    return 'You\'ve spent $pct% of your budget. Doing well';
+  }
+
+  @override
+  String budgetGreat(int pct) {
+    return 'Great! You\'re on track — only $pct% spent';
+  }
+
+  @override
+  String get trendUp => 'Rising';
+
+  @override
+  String get trendDown => 'Falling';
+
+  @override
+  String get trendFlat => 'Steady';
+
+  @override
+  String eventToday(String title) {
+    return 'Raised for «$title» today';
+  }
+
+  @override
+  String eventAhead(String title, String when) {
+    return 'Keeping some aside for «$title» $when';
+  }
+
+  @override
+  String get eventTomorrow => 'tomorrow';
+
+  @override
+  String eventOnDay(String day) {
+    return 'on $day';
+  }
+
+  @override
+  String weekdayName(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      'd1': 'Monday',
+      'd2': 'Tuesday',
+      'd3': 'Wednesday',
+      'd4': 'Thursday',
+      'd5': 'Friday',
+      'd6': 'Saturday',
+      'd7': 'Sunday',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get eventOuting => 'an outing';
+
+  @override
+  String get txNoTitle => 'No description';
+
+  @override
+  String get txAddExpense => 'Add an expense';
+
+  @override
+  String get txAddIncome => 'Add income or salary';
+
+  @override
+  String get txKindExpense => 'Debit (expense)';
+
+  @override
+  String get txKindIncome => 'Credit (salary)';
+
+  @override
+  String get txDescriptionExample => 'Description (e.g. salary, rent)';
+
+  @override
+  String get txAmount => 'Amount';
+
+  @override
+  String get txDebit => 'Deduct the amount';
+
+  @override
+  String get txCredit => 'Add the amount';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String txDeleteConfirm(String title) {
+    return 'Are you sure you want to delete \"$title\"?';
+  }
+
+  @override
+  String get txDescription => 'Description';
+
+  @override
+  String get txType => 'Type';
+
+  @override
+  String get txExpense => 'Expense';
+
+  @override
+  String get txIncome => 'Income';
+
+  @override
+  String get quickCash => 'Cash expense';
+
+  @override
+  String get quickExpense => 'Quick expense';
+
+  @override
+  String get quickSubtitle => 'Log your expense in seconds';
+
+  @override
+  String get quickName => 'Name';
+
+  @override
+  String get quickNameHint => 'e.g. haircut, groceries';
+
+  @override
+  String get quickCategory => 'Category';
+
+  @override
+  String get txScanReceipt => 'Photograph a receipt';
+
+  @override
+  String get txLog => 'Log a transaction';
+
+  @override
+  String get txTitle => 'Transactions';
+
+  @override
+  String get txNoneHere => 'No transactions here';
+
+  @override
+  String get txTryFilter => 'Try another filter.';
+
+  @override
+  String get commonEdit => 'Edit';
+
+  @override
+  String get walletCash => 'Cash';
+
+  @override
+  String get walletCard => 'Card';
+
+  @override
+  String get walletBank => 'Bank';
+
+  @override
+  String get txPendingOne => 'Still saved here';
+
+  @override
+  String txPendingCount(int count) {
+    return '$count still saved here';
+  }
+
+  @override
+  String get txLoadFailed => 'I couldn\'t load the transactions';
+
+  @override
+  String get txNonePeriod => 'No transactions this period';
+
+  @override
+  String get txPullToRetry => 'Pull the screen down to try again.';
+
+  @override
+  String get txNoneHint =>
+      'As soon as you log an expense — or a bank message arrives — you\'ll find it here.';
+
+  @override
+  String get dateDayHeader => 'EEEE, d MMMM';
+
+  @override
+  String get cycleYearly => 'Yearly';
+
+  @override
+  String get cycleWeekly => 'Weekly';
+
+  @override
+  String get cycleMonthly => 'Monthly';
+
+  @override
+  String get subsTabAll => 'All';
+
+  @override
+  String get subsTabSubs => 'Subscriptions';
+
+  @override
+  String get subsTabBills => 'Bills';
+
+  @override
+  String get subsTabInstalments => 'Instalments';
+
+  @override
+  String get subsTabLoans => 'Loans';
+
+  @override
+  String get subsNone => 'No subscriptions';
+
+  @override
+  String get subsNoneInTab => 'Nothing in this category';
+
+  @override
+  String get subsActive => 'Active';
+
+  @override
+  String get subsMonthlyTotal => 'Monthly subscriptions total';
+
+  @override
+  String get subsActiveCount => 'Active subscriptions';
+
+  @override
+  String subsDetected(int count) {
+    return '$count found automatically';
+  }
+
+  @override
+  String get subsClearAll => 'Clear all';
+
+  @override
+  String get subsBnpl => 'Buy now, pay later';
+
+  @override
+  String get subsLoans => 'Instalments, loans and rent';
+
+  @override
+  String subsPaid(String title) {
+    return 'Recorded the payment for $title and moved the date to next month';
+  }
+
+  @override
+  String get subsFixed => 'Fixed commitments';
+
+  @override
+  String get subsTitle => 'Subscriptions and bills';
+
+  @override
+  String subsBnplTag(String name) {
+    return 'Buy now pay later · $name';
+  }
+
+  @override
+  String get subsRenewsToday => 'Renews today';
+
+  @override
+  String subsExpiredAgo(int days) {
+    return 'Ended $days days ago';
+  }
+
+  @override
+  String subsRenewsIn(int days) {
+    return 'Renews in $days days';
+  }
+
+  @override
+  String subsPerYear(String amount) {
+    return '≈ $amount/year';
+  }
+
+  @override
+  String get subsPaidMark => 'Paid ✓';
+
+  @override
+  String get subsToggleAuto => 'Turn auto-debit on or off';
+
+  @override
+  String get subsDisable => 'Disable';
+
+  @override
+  String get subsEnable => 'Enable';
+
+  @override
+  String get subsAdd => 'Add a new subscription';
+
+  @override
+  String get subsEdit => 'Edit subscription';
+
+  @override
+  String get commonConfirm => 'Confirm';
+
+  @override
+  String get subsSuggested => 'Suggested services and subscriptions:';
+
+  @override
+  String get subsKind => 'Kind of commitment:';
+
+  @override
+  String get subsKindSub => 'Monthly subscription';
+
+  @override
+  String get subsKindInstalment => 'Instalment';
+
+  @override
+  String get subsKindBill => 'Bill';
+
+  @override
+  String get subsKindRent => 'Commitment';
+
+  @override
+  String get subsTotalAmount => 'Total amount';
+
+  @override
+  String get subsRemaining => 'Instalments left';
+
+  @override
+  String get subsNameHint => 'Subscription name (e.g. Netflix)';
+
+  @override
+  String subsAmount(String symbol) {
+    return 'Amount ($symbol)';
+  }
+
+  @override
+  String get subsProvider => 'Provider';
+
+  @override
+  String get subsRenewalDate => 'Renewal date (YYYY-MM-DD)';
+
+  @override
+  String get commonPickDate => 'Pick a date';
+
+  @override
+  String get subsCycle => 'Billing cycle';
+
+  @override
+  String subsSuggestedCategory(String category) {
+    return 'Suggested category: $category';
+  }
+
+  @override
+  String get oblKindRent => 'Rent';
+
+  @override
+  String get oblKindInstallment => 'Instalment';
+
+  @override
+  String get oblKindDebt => 'Debt';
+
+  @override
+  String get oblKindTuition => 'School fees';
+
+  @override
+  String get oblKindUtility => 'Utility bill';
+
+  @override
+  String get oblKindOther => 'Other';
+
+  @override
+  String get recurMonthly => 'Monthly';
+
+  @override
+  String get recurQuarterly => 'Quarterly';
+
+  @override
+  String get recurYearly => 'Yearly';
+
+  @override
+  String get recurOnce => 'Once';
+
+  @override
+  String get oblStatusPaid => 'Paid';
+
+  @override
+  String get oblStatusPending => 'Due';
+
+  @override
+  String get oblStatusScheduled => 'Scheduled';
+
+  @override
+  String oblInDays(int days) {
+    return 'In $days days';
+  }
+
+  @override
+  String get oblTotal => 'Total commitments';
+
+  @override
+  String get oblAdd => 'Add a commitment';
+
+  @override
+  String get oblNone => 'No commitments';
+
+  @override
+  String get oblNoneHint =>
+      'Fixed instalments and bills show here as soon as they\'re recorded';
+
+  @override
+  String oblDeleteConfirm(String title) {
+    return 'Remove «$title» from your commitments?';
+  }
+
+  @override
+  String get oblAddNew => 'Add a new commitment';
+
+  @override
+  String get oblEdit => 'Edit commitment';
+
+  @override
+  String get oblNameHint => 'Commitment name (rent, electricity...)';
+
+  @override
+  String oblAmountIn(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String get oblDueDay => 'Monthly due day (1-31)';
+
+  @override
+  String get oblDayRange => 'From 1 to 31';
+
+  @override
+  String get oblRecurrence => 'Repeats';
+
+  @override
+  String get debtSaveFailed => 'Not saved — check your connection.';
+
+  @override
+  String debtPaymentOn(String name) {
+    return 'A payment on $name';
+  }
+
+  @override
+  String debtRemaining(String amount) {
+    return 'Left: $amount';
+  }
+
+  @override
+  String get debtPaidAmount => 'Amount paid';
+
+  @override
+  String get debtDelete => 'Delete the debt';
+
+  @override
+  String debtDeleteConfirm(String name) {
+    return 'Remove «$name» from your debts?';
+  }
+
+  @override
+  String get debtPlanner => 'Debt payoff planner';
+
+  @override
+  String get debtAdd => 'Add a debt';
+
+  @override
+  String get debtPickStrategy => 'Pick the payoff strategy that suits you';
+
+  @override
+  String get debtNone => 'No debts recorded';
+
+  @override
+  String get debtNoneHint =>
+      'Add your debts and we\'ll help you plan the payoff';
+
+  @override
+  String get debtSnowball => 'Snowball (smallest first)';
+
+  @override
+  String get debtAvalanche => 'Avalanche (highest interest first)';
+
+  @override
+  String debtMonths(int months) {
+    return '$months months';
+  }
+
+  @override
+  String get debtLogPayment => 'Log a payment';
+
+  @override
+  String debtMonthsToPayoff(int months) {
+    return '$months months to pay it all';
+  }
+
+  @override
+  String debtTotalInterest(String amount) {
+    return 'Total interest: $amount';
+  }
+
+  @override
+  String get debtAnalysing => 'Zad is analysing...';
+
+  @override
+  String get debtExplain => 'Explain with AI';
+
+  @override
+  String get debtName => 'Debt name';
+
+  @override
+  String get debtLeft => 'Amount left';
+
+  @override
+  String get debtRate => 'Annual interest rate %';
+
+  @override
+  String get debtMinimum => 'Minimum monthly payment';
+
+  @override
+  String dealDiscount(String pct) {
+    return '$pct% off';
+  }
+
+  @override
+  String dealAt(String price, String store) {
+    return '$price at $store';
+  }
+
+  @override
+  String dealCached(String when) {
+    return 'Search is busy right now — these are the last deals we found$when';
+  }
+
+  @override
+  String get dealTitle => 'Deals on what you\'re missing 🏷️';
+
+  @override
+  String get dealLive => 'Live search result';
+
+  @override
+  String get dealSubtitle => 'Real deals on the items you\'re short of';
+
+  @override
+  String get dealTapRefresh => 'Tap to refresh the results from the web';
+
+  @override
+  String get dealSearching => 'Searching the web...';
+
+  @override
+  String get dealFailed =>
+      'Couldn\'t search right now — try refreshing in a bit';
+
+  @override
+  String get dealFailedHint =>
+      'The search service is busy. Tap refresh again in a bit — and if it keeps happening, check your connection.';
+
+  @override
+  String get dealNone => 'No specific results right now';
+
+  @override
+  String get dealRefresh => 'Refresh from the web 🔄';
+
+  @override
+  String get goalTitle => 'What\'s your home\'s most important goal right now?';
+
+  @override
+  String get goalBody =>
+      'Pick one — Zad follows it with you every week for 3 months, and you can cancel any time.';
+
+  @override
+  String get goalSave => 'Save an amount every month';
+
+  @override
+  String get goalSaveHint =>
+      'Set the amount, and Zad watches your spending so you reach it';
+
+  @override
+  String get goalMonthly => 'Monthly amount';
+
+  @override
+  String get goalBudget => 'Stay within the month\'s budget';
+
+  @override
+  String get goalBudgetHint =>
+      'Zad warns you before spending outruns the budget';
+
+  @override
+  String get goalDebts => 'Pay off my debts';
+
+  @override
+  String get goalDebtsHint =>
+      'Zad follows what\'s left and the next instalment with you';
+
+  @override
+  String get goalWaste => 'Waste less food';
+
+  @override
+  String get goalWasteHint => 'Zad reminds you of items before they spoil';
+
+  @override
+  String get goalOwn => 'Another goal, in my words';
+
+  @override
+  String get goalOwnHint => 'Write it the way you\'d say it';
+
+  @override
+  String get goalWrite => 'Write your goal';
+
+  @override
+  String get goalTooMany =>
+      'You have 5 goals running — finish or cancel one first';
+
+  @override
+  String get goalSaveFailed => 'I couldn\'t save the goal — try again';
+
+  @override
+  String get goalStart => 'Start the goal';
 }

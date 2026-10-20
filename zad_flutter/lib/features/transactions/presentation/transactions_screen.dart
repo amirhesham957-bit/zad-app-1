@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -37,21 +38,24 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 /// Kotlin's four filter chips over the list.
 enum TxnFilter {
   /// Everything.
-  all('الكل'),
+  all,
 
   /// Money out.
-  expenses('المصروفات'),
+  expenses,
 
   /// Money in.
-  income('الدخل'),
+  income,
 
   /// What a bank message produced.
-  bank('البنك');
-
-  new(this.label);
+  bank;
 
   /// The chip's text.
-  final String label;
+  String label(ZadL10n l) => switch (this) {
+    TxnFilter.all => l.txFilterAll,
+    TxnFilter.expenses => l.txFilterExpenses,
+    TxnFilter.income => l.txFilterIncome,
+    TxnFilter.bank => l.txFilterBank,
+  };
 
   /// Whether [txn] passes.
   bool keeps(ZadTransaction txn) => switch (this) {
@@ -85,7 +89,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             heroTag: 'scan',
             onPressed: () =>
                 ZadScreens.showCameraScreen(context, CameraMode.receipt),
-            tooltip: 'صوّر فاتورة',
+            tooltip: context.l10n.txScanReceipt,
             backgroundColor: ZadColors.surface,
             foregroundColor: ZadColors.green800,
             child: const Icon(ZadIcons.scan),
@@ -95,7 +99,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             heroTag: 'add',
             onPressed: () => showAddTransactionSheet(context),
             icon: const Icon(ZadIcons.add),
-            label: const Text('سجّل عملية'),
+            label: Text(context.l10n.txLog),
             backgroundColor: ZadColors.green800,
             foregroundColor: Colors.white,
           ),
@@ -111,7 +115,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: <Widget>[
               SliverAppBar(
-                title: const Text('المعاملات'),
+                title: Text(context.l10n.txTitle),
                 floating: true,
                 backgroundColor: Colors.transparent,
                 actions: <Widget>[
@@ -135,7 +139,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                       children: <Widget>[
                         for (final f in TxnFilter.values) ...<Widget>[
                           ChoiceChip(
-                            label: Text(f.label),
+                            label: Text(f.label(context.l10n)),
                             selected: _filter == f,
                             showCheckmark: false,
                             shape: const StadiumBorder(),
@@ -153,12 +157,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   child: _Empty(hasError: view.error != null),
                 )
               else if (rows.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: ZadEmptyState(
                     icon: ZadIcons.search,
-                    title: 'مفيش معاملات هنا',
-                    message: 'جرّب فلتر تاني.',
+                    title: context.l10n.txNoneHere,
+                    message: context.l10n.txTryFilter,
                   ),
                 )
               else
@@ -184,7 +188,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       // 01:00 in Cairo belongs to that day, and a phone left on UTC would file
       // it under the one before.
       byDay
-          .putIfAbsent(_dayKey(row.createdAt, zone), () => <ZadTransaction>[])
+          .putIfAbsent(
+            _dayKey(row.createdAt, zone, context.l10n),
+            () => <ZadTransaction>[],
+          )
           .add(row);
     }
 
@@ -226,13 +233,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 /// is not `toLocal()`: the device's clock belongs to wherever the phone is,
 /// and a traveller's Tuesday purchase should not move to Monday because they
 /// changed timezone.
-String _dayKey(DateTime at, String? timeZone) {
+String _dayKey(DateTime at, String? timeZone, ZadL10n l10n) {
   final local = timeZone == null
       ? at.toUtc()
       : tz.TZDateTime.from(at.toUtc(), tz.getLocation(timeZone));
   return DateFormat(
-    'EEEE، d MMMM',
-    'ar',
+    l10n.dateDayHeader,
+    l10n.localeName,
   ).format(DateTime(local.year, local.month, local.day));
 }
 
@@ -300,7 +307,7 @@ class _RowState extends ConsumerState<_Row> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _RowText._subtitle(txn),
+                    _RowText._subtitle(txn, context.l10n),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: ZadType.bodySmall.copyWith(
@@ -335,7 +342,7 @@ class _RowState extends ConsumerState<_Row> {
                   setState(() => _actions = false);
                   unawaited(showEditTransactionSheet(context, txn));
                 },
-                tooltip: 'تعديل',
+                tooltip: context.l10n.commonEdit,
                 icon: const Icon(ZadIcons.edit, size: 18),
               ),
               IconButton(
@@ -343,7 +350,7 @@ class _RowState extends ConsumerState<_Row> {
                   setState(() => _actions = false);
                   unawaited(confirmDeleteTransaction(context, ref, txn));
                 },
-                tooltip: 'حذف',
+                tooltip: context.l10n.commonDelete,
                 icon: Icon(
                   ZadIcons.delete,
                   size: 18,
@@ -364,12 +371,12 @@ abstract final class _RowText {
   ///
   /// The category stays in Arabic: it is written to `ZadInventory.category`
   /// and matched against, not read from a translation table.
-  static String _subtitle(ZadTransaction txn) => <String>[
+  static String _subtitle(ZadTransaction txn, ZadL10n l10n) => <String>[
     if (txn.category case final c? when c.isNotEmpty) c,
     switch (txn.wallet) {
-      Wallet.cash => 'كاش',
-      Wallet.card => 'بطاقة',
-      Wallet.bank => 'بنك',
+      Wallet.cash => l10n.walletCash,
+      Wallet.card => l10n.walletCard,
+      Wallet.bank => l10n.walletBank,
     },
     if (txn.merchantName case final m? when m.isNotEmpty) m,
   ].join(' · ');
@@ -386,7 +393,7 @@ class _PendingMark extends StatelessWidget {
       Icon(ZadIcons.pending, size: 11, color: ZadColors.mustardOchre),
       const SizedBox(width: 3),
       Text(
-        'لسه محفوظة',
+        context.l10n.txPendingOne,
         style: ZadType.labelSmall.copyWith(color: ZadColors.mustardOchre),
       ),
     ],
@@ -410,7 +417,7 @@ class _PendingChip extends StatelessWidget {
         vertical: ZadSpacing.xs,
       ),
       child: Text(
-        '$count لسه محفوظة',
+        context.l10n.txPendingCount(count),
         style: ZadType.labelSmall.copyWith(color: ZadColors.mustardOchre),
       ),
     ),
@@ -425,10 +432,8 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ZadEmptyState(
     icon: hasError ? ZadIcons.failed : ZadIcons.budget,
-    title: hasError ? 'مقدرتش أجيب المعاملات' : 'مفيش معاملات الفترة دي',
-    message: hasError
-        ? 'اسحب الشاشة لتحت عشان نحاول تاني.'
-        : 'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — هتلاقيها هنا.',
+    title: hasError ? context.l10n.txLoadFailed : context.l10n.txNonePeriod,
+    message: hasError ? context.l10n.txPullToRetry : context.l10n.txNoneHint,
     tone: hasError ? ZadEmptyTone.problem : ZadEmptyTone.calm,
   );
 }

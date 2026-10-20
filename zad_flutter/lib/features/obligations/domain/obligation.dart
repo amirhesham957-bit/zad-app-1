@@ -9,35 +9,43 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 
 /// What an obligation is. The wire values are the table's CHECK constraint.
 enum ObligationKind {
   /// إيجار.
-  rent('rent', 'إيجار'),
+  rent('rent'),
 
   /// قسط.
-  installment('installment', 'قسط'),
+  installment('installment'),
 
   /// دين.
-  debt('debt', 'دين'),
+  debt('debt'),
 
   /// مصاريف دراسية.
-  tuition('tuition', 'مصاريف دراسية'),
+  tuition('tuition'),
 
   /// فاتورة مرافق.
-  utility('utility', 'فاتورة مرافق'),
+  utility('utility'),
 
   /// أخرى.
-  other('other', 'أخرى');
+  other('other');
 
-  new(this.wire, this.label);
+  new(this.wire);
 
   /// The stored value.
   final String wire;
 
   /// What the customer reads.
-  final String label;
+  String label(ZadL10n l) => switch (this) {
+    ObligationKind.rent => l.oblKindRent,
+    ObligationKind.installment => l.oblKindInstallment,
+    ObligationKind.debt => l.oblKindDebt,
+    ObligationKind.tuition => l.oblKindTuition,
+    ObligationKind.utility => l.oblKindUtility,
+    ObligationKind.other => l.oblKindOther,
+  };
 
   /// Reads a stored value; anything unknown is [other].
   static ObligationKind fromWire(String? wire) => ObligationKind.values
@@ -47,24 +55,29 @@ enum ObligationKind {
 /// How often it falls due. The wire values are the table's CHECK constraint.
 enum Recurrence {
   /// شهري.
-  monthly('monthly', 'شهري', 1),
+  monthly('monthly', 1),
 
   /// ربع سنوي.
-  quarterly('quarterly', 'ربع سنوي', 3),
+  quarterly('quarterly', 3),
 
   /// سنوي.
-  yearly('yearly', 'سنوي', 12),
+  yearly('yearly', 12),
 
   /// مرة واحدة.
-  once('once', 'مرة واحدة', 0);
+  once('once', 0);
 
-  new(this.wire, this.label, this.months);
+  new(this.wire, this.months);
 
   /// The stored value.
   final String wire;
 
   /// What the customer reads.
-  final String label;
+  String label(ZadL10n l) => switch (this) {
+    Recurrence.monthly => l.recurMonthly,
+    Recurrence.quarterly => l.recurQuarterly,
+    Recurrence.yearly => l.recurYearly,
+    Recurrence.once => l.recurOnce,
+  };
 
   /// Months between two due dates; zero for a one-off.
   final int months;
@@ -253,18 +266,20 @@ int _lengthOf(int year, int month) => DateTime.utc(year, month + 1, 0).day;
 /// Where an obligation stands, for its card.
 enum ObligationStatus {
   /// A one-off already gone by.
-  paid('مدفوع'),
+  paid,
 
   /// Due within a week.
-  pending('مستحق'),
+  pending,
 
   /// Further out, or with no date.
-  scheduled('مجدول');
-
-  new(this.label);
+  scheduled;
 
   /// The tag's text.
-  final String label;
+  String label(ZadL10n l) => switch (this) {
+    ObligationStatus.paid => l.oblStatusPaid,
+    ObligationStatus.pending => l.oblStatusPending,
+    ObligationStatus.scheduled => l.oblStatusScheduled,
+  };
 }
 
 /// The card's status, its bar (0..1) and the days to go — Kotlin's

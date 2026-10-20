@@ -8,7 +8,8 @@
 //
 // Data is declared, never guessed:
 //  * a whole file in [_dataFiles] (every literal in it was read and is data);
-//  * one line, by a trailing `// l10n: data` comment.
+//  * one line, by a trailing `// l10n: data` comment;
+//  * a block between `// l10n: data-begin` and `// l10n: data-end`.
 // Everything else is screen text not yet moved to the ARB files, counted per
 // file in tool/l10n/arabic_ui_baseline.json. A file may only go down: a new
 // Arabic string on a screen fails here until it is in the ARB or declared
@@ -39,6 +40,14 @@ const Set<String> _dataFiles = <String>{
   // customer's language in 6.4, on the server.
   'shared/voice/domain/speech_text.dart',
   'shared/voice/data/voice_openers.dart',
+  // BNPL company names and spellings, matched against a subscription's
+  // title and shown as the company calls itself.
+  'shared/subscriptions/domain/bnpl.dart',
+  // Stored category buckets and the «(N أقساط)» count kept in the title.
+  'shared/subscriptions/domain/subscription.dart',
+  // A chosen goal's stored title and metric (zad_life_goals), which the
+  // brain reads back.
+  'shared/goals/domain/life_goal_seed.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';
@@ -53,8 +62,20 @@ final RegExp _literal = RegExp(
 /// Arabic literals in [source] that are not declared data, line by line.
 int arabicUiLiterals(String source) {
   var n = 0;
+  var inData = false;
   for (final line in const LineSplitter().convert(source)) {
     final trimmed = line.trimLeft();
+    // A block of data: `// l10n: data-begin` … `// l10n: data-end`, for
+    // literals the formatter would split from a trailing marker.
+    if (trimmed.startsWith('// l10n: data-begin')) {
+      inData = true;
+      continue;
+    }
+    if (trimmed.startsWith('// l10n: data-end')) {
+      inData = false;
+      continue;
+    }
+    if (inData) continue;
     if (trimmed.startsWith('//')) continue;
     if (line.contains('// l10n: data')) continue;
     n += _literal
@@ -88,6 +109,12 @@ void main() {
     expect(arabicUiLiterals("/// 'كلام'"), 0);
     expect(arabicUiLiterals("unit: 'كجم', // l10n: data"), 0);
     expect(arabicUiLiterals("a('x', 'ب', \"ج\")"), 2);
+    expect(
+      arabicUiLiterals(
+        "// l10n: data-begin\nfinal a = 'سفر';\n// l10n: data-end\nb('ج');",
+      ),
+      1,
+    );
   });
 
   test('every data file still exists', () {

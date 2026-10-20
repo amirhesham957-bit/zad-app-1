@@ -3,6 +3,7 @@
 /// expenses in that category add up to.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// One category's card.
@@ -14,7 +15,10 @@ Map<String, double> spentByCategory(Iterable<ZadTransaction> rows) {
   final out = <String, double>{};
   for (final t in rows) {
     if (t.kind != TxnKind.expense) continue;
+    // The stored category key, never a label (l10n: data).
+    // l10n: data-begin
     final c = (t.category?.trim().isEmpty ?? true) ? 'أخرى' : t.category!;
+    // l10n: data-end
     out[c] = (out[c] ?? 0) + t.amount;
   }
   return out;
@@ -40,16 +44,18 @@ List<CategoryLine> categoryLines({
 ({String message, int tier}) budgetInsight({
   required double spent,
   required double budget,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final pct = budget > 0 ? (spent / budget * 100).toInt() : 0;
   if (pct >= 100) {
-    return (message: 'تجاوزت الميزانية! حاول تقليل المصاريف', tier: 3);
+    return (message: l.budgetOver, tier: 3);
   }
   if (pct >= 85) {
-    return (message: 'وصلت لـ $pct% من ميزانيتك. كن حذراً', tier: 2);
+    return (message: l.budgetNear(pct), tier: 2);
   }
   if (pct >= 60) {
-    return (message: 'صرفت $pct% من ميزانيتك. أداء جيد', tier: 1);
+    return (message: l.budgetFine(pct), tier: 1);
   }
-  return (message: 'رائع! أنت في المسار الصحيح. صرفت $pct% فقط', tier: 0);
+  return (message: l.budgetGreat(pct), tier: 0);
 }
