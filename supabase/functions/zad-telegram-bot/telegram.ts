@@ -384,24 +384,45 @@ export function parseMedicationCallback(data: string): { action: "confirm" | "ca
 /** Telegram Micro-Checkins — "is <item> still in stock?" prompt buttons. Only the prompt
  * row's id travels in callback_data (same reasoning as confirmSpendKeyboard: a long
  * Arabic item name risks the 64-byte callback_data cap). */
+/**
+ * «فاضل قد إيه؟» (ZAD_PLAN ٣.٩): الإجابة قراية حقيقية مش «موجود» بس. «لسه موجود» كانت بتسجّل نفس
+ * الكمية اللي اتسأل عليها، فالمعدّل مابيتعلمش منها حاجة. كل زرار نسبة من آخر شرا، والسيرفر بيحسب
+ * الكمية (update_inventory_qty.fraction_left). «y» فاضل بيتقرا للرسايل القديمة اللي لسه مفتوحة.
+ */
+export const CHECKIN_LEVELS = {
+  t: { label: "كتير", fraction: 0.75 },
+  h: { label: "نصه", fraction: 0.5 },
+  l: { label: "قليل", fraction: 0.2 },
+  n: { label: "خلص", fraction: 0 },
+} as const;
+type CheckinLevel = keyof typeof CHECKIN_LEVELS;
+const LEVEL_ORDER: CheckinLevel[] = ["t", "h", "l", "n"];
+
 export function checkInKeyboard(promptId: string): InlineKeyboardButton[][] {
-  return [[
-    { text: "✅ لسه موجود", callback_data: `ck:${promptId}:y` },
-    { text: "❌ خلص", callback_data: `ck:${promptId}:n` },
-  ]];
+  return [LEVEL_ORDER.map((k) => ({
+    text: k === "n" ? `❌ ${CHECKIN_LEVELS[k].label}` : CHECKIN_LEVELS[k].label,
+    callback_data: `ck:${promptId}:${k}`,
+  }))];
 }
 
-/** "ck:<uuid>:y|n" callback_data */
-export function parseCheckInCallback(data: string): { promptId: string; stillInStock: boolean } | null {
+/** "ck:<uuid>:t|h|l|n|y" callback_data. [fraction] null = «لسه موجود» القديمة (الكمية زي ما هي). */
+export function parseCheckInCallback(
+  data: string,
+): { promptId: string; stillInStock: boolean; fraction: number | null; label: string | null } | null {
   const parts = data.split(":");
   if (parts.length !== 3 || parts[0] !== "ck") return null;
-  if (parts[2] !== "y" && parts[2] !== "n") return null;
   if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
-  return { promptId: parts[1], stillInStock: parts[2] === "y" };
+  if (parts[2] === "y") return { promptId: parts[1], stillInStock: true, fraction: null, label: null };
+  if (!(parts[2] in CHECKIN_LEVELS)) return null;
+  const level = CHECKIN_LEVELS[parts[2] as CheckinLevel];
+  return { promptId: parts[1], stillInStock: level.fraction > 0, fraction: level.fraction, label: level.label };
 }
 
-export function checkInPromptMessage(itemName: string): string {
-  return `تذكير سريع: ${itemName} لسه موجود عندك ولا خلص؟`;
+/** [unit] من صف المخزون — السؤال بالوحدة («كام كيلو») عشان العميل يقدر يكتب رقم بدل الزرار. */
+export function checkInPromptMessage(itemName: string, unit?: string | null): string {
+  const u = (unit ?? "").trim();
+  const hint = u ? `«فاضل ٢ ${u}»` : "«فاضل ٢»";
+  return `تذكير سريع: فاضل قد إيه من ${itemName}؟\nاختار، أو اكتبلي الكمية زي ${hint}.`;
 }
 
 /**
@@ -413,7 +434,7 @@ export function checkInBundleMessage(items: string[], ignoredNote = false): stri
   const list = items.map((i) => `• ${i}`).join("\n");
   return ignoredNote
     ? `${CHECKIN_IGNORED_NOTE}\n${list}`
-    : `تذكير سريع: الحاجات دي لسه موجودة عندك ولا خلصت؟\n${list}`;
+    : `تذكير سريع: فاضل قد إيه من الحاجات دي؟\n${list}`;
 }
 
 /**
@@ -463,11 +484,12 @@ export const CHECKIN_OFF_CALLBACK = "ckoff";
 
 export function checkInBundleKeyboard(prompts: Array<{ id: string; label: string }>, offerStop = false): InlineKeyboardButton[][] {
   const rows = prompts.map((p) => {
-    const label = [...p.label].length > 18 ? [...p.label].slice(0, 17).join("") + "…" : p.label;
-    return [
-      { text: `✅ ${label} موجود`, callback_data: `ck:${p.id}:y` },
-      { text: `❌ ${label} خلص`, callback_data: `ck:${p.id}:n` },
-    ];
+    const label = [...p.label].length > 10 ? [...p.label].slice(0, 9).join("") + "…" : p.label;
+    // الصف بيبدأ باسم الصنف عشان كل صف يبان لأنهي حاجة.
+    return LEVEL_ORDER.map((k, i) => ({
+      text: i === 0 ? `${label}: ${CHECKIN_LEVELS[k].label}` : CHECKIN_LEVELS[k].label,
+      callback_data: `ck:${p.id}:${k}`,
+    }));
   });
   return offerStop ? [...rows, [{ text: "🔕 بطّل تسألني", callback_data: CHECKIN_OFF_CALLBACK }]] : rows;
 }

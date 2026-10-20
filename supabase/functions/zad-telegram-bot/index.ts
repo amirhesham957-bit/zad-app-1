@@ -321,9 +321,9 @@ async function deliverVoiceAlert(
  * already-pending prompt are excluded (the unique index on telegram_checkin_prompts is the
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
-async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number }>> {
+async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }] = await Promise.all([
-    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold").eq("user_id", userId),
+    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,unit").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
     // حاجات على فترات مابتتسألش «لسه عندك؟» (ZAD_PLAN ٣.١٠).
@@ -338,13 +338,13 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   );
   const pendingItems = new Set(((pending ?? []) as Array<{ item_name: string }>).map((p) => p.item_name));
 
-  return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null }>)
+  return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null; unit: string | null }>)
     .filter((item) => {
       if (pendingItems.has(item.item_name)) return false;
       if (occasionalItems.has(item.item_name.trim())) return false;
       return needsCheckIn(item.quantity, item.low_stock_threshold, consByItem.get(item.item_name)?.avg_daily_qty);
     })
-    .map((item) => ({ item_name: item.item_name, quantity: item.quantity }));
+    .map((item) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit }));
 }
 
 /** The daily cron entry point. Capped at 2 prompts/user/day — this is a check-in nudge,
@@ -379,7 +379,9 @@ async function checkinsSentToday(sb: SupabaseClient, userId: string): Promise<nu
 /** بيبعت prompt واحد فعلياً — مشترك بين الكرون اليومي والمسار الفوري (live_checkin)
  *  عشان الاتنين يحترموا نفس السقف اليومي، مش نسختين بمنطق مختلف شوية. بيرجع false
  *  لو الكتابة فشلت — الكولر بيقرر يعمل إيه بالفشل. */
-async function sendCheckInPrompt(sb: SupabaseClient, userId: string, chatId: number, itemName: string, quantity: number): Promise<boolean> {
+async function sendCheckInPrompt(
+  sb: SupabaseClient, userId: string, chatId: number, itemName: string, quantity: number, unit: string | null,
+): Promise<boolean> {
   const { data: prompt, error } = await sb.from("telegram_checkin_prompts")
     .insert({ user_id: userId, item_name: itemName, quantity_at_prompt: quantity })
     .select("id")
@@ -388,13 +390,13 @@ async function sendCheckInPrompt(sb: SupabaseClient, userId: string, chatId: num
     console.error("checkin prompt insert failed:", error?.message);
     return false;
   }
-  await sendTelegramMessage(chatId, checkInPromptMessage(isolate(sanitizeName(itemName))), checkInKeyboard((prompt as { id: string }).id));
+  await sendTelegramMessage(chatId, checkInPromptMessage(isolate(sanitizeName(itemName)), unit ? sanitizeName(unit) : null), checkInKeyboard((prompt as { id: string }).id));
   return true;
 }
 
 /** أكتر من صنف = رسالة واحدة (checkInBundleMessage). بيرجع عدد الأسئلة اللي اتسجلت واتبعتت. */
 async function sendCheckInBundle(
-  sb: SupabaseClient, userId: string, chatId: number, items: Array<{ item_name: string; quantity: number }>,
+  sb: SupabaseClient, userId: string, chatId: number, items: Array<{ item_name: string; quantity: number; unit: string | null }>,
   ignoredNote = false,
 ): Promise<number> {
   const prompts: Array<{ id: string; label: string }> = [];
@@ -466,7 +468,7 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
     let asked = 0;
     if (candidates.length === 1 && plan === "ask") {
-      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity)) asked = 1;
+      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity, candidates[0].unit)) asked = 1;
     } else if (candidates.length > 0) {
       asked = await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates, plan === "ask_with_note");
     }
@@ -474,7 +476,7 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
       promptsSent += asked;
       await recordConversation(sb, b.user_id, [{
         role: "assistant",
-        text: proactiveTurn("سؤال المخزون", `سألتك ${candidates.slice(0, asked).map((c) => c.item_name).join(" و")} لسه موجودين ولا خلصوا`),
+        text: proactiveTurn("سؤال المخزون", `سألتك فاضل قد إيه من ${candidates.slice(0, asked).map((c) => c.item_name).join(" و")}`),
       }]);
     }
   }
@@ -2409,10 +2411,14 @@ bot.on("callback_query:data", async (ctx) => {
     // نفس نمط zad-brain's update_inventory_qty tool بالظبط: أي إجابة كمية لازم تتسجل
     // كـ observation وتعيد حساب معدل الاستهلاك، وإلا الصنف يفضل "غير معروف" للأبد
     // (Task 18 Fault B) والعقل يسأل عنه تاني وتاني من غير ما يتعلم حاجة.
-    const newQty = checkin.stillInStock ? prompt.quantity_at_prompt : 0;
+    // «كتير/نصه/قليل» نسبة من آخر شرا، والعقل بيحسب الكمية (ZAD_PLAN ٣.٩). «لسه موجود» القديمة
+    // (fraction = null) بتسجّل الكمية زي ما هي.
+    const amount = checkin.fraction === null
+      ? { new_qty: prompt.quantity_at_prompt }
+      : checkin.fraction === 0 ? { new_qty: 0 } : { fraction_left: checkin.fraction };
     const observed = await agentExecute(userId, "update_inventory_qty", {
       item_name: prompt.item_name,
-      new_qty: newQty,
+      ...amount,
       reason: "إجابة العميل على سؤال متابعة المخزون",
     });
     if (!observed.ok) {
@@ -2425,7 +2431,12 @@ bot.on("callback_query:data", async (ctx) => {
       .update({ status: checkin.stillInStock ? "answered_yes" : "answered_no", answered_at: new Date().toISOString() })
       .eq("id", prompt.id);
 
-    await ctx.reply(checkin.stillInStock ? "تمام ✅ هفتكر إني سألت عنه." : `سجلتها خلصت ✅ ${isolate(sanitizeName(prompt.item_name))}`);
+    const itemLabel = isolate(sanitizeName(prompt.item_name));
+    await ctx.reply(
+      !checkin.stillInStock ? `سجلتها خلصت ✅ ${itemLabel}`
+        : checkin.label ? `تمام ✅ ${itemLabel}: فاضل ${checkin.label} — كده بتعلم بيخلص في قد إيه.`
+        : "تمام ✅ هفتكر إني سألت عنه.",
+    );
     return;
   }
 
@@ -3040,7 +3051,10 @@ Deno.serve(async (req: Request) => {
       if (existingPending) {
         return new Response(JSON.stringify({ ok: true, delivered: false, reason: "already pending" }), { headers: { "Content-Type": "application/json" } });
       }
-      const delivered = await sendCheckInPrompt(sb, user_id, chatId, item_name, quantity);
+      const { data: unitRow } = await sb.from("zad_inventory").select("unit")
+        .eq("user_id", user_id).eq("item_name", item_name).limit(1).maybeSingle();
+      const unit = (unitRow as { unit?: string | null } | null)?.unit ?? null;
+      const delivered = await sendCheckInPrompt(sb, user_id, chatId, item_name, quantity, unit);
       return new Response(JSON.stringify({ ok: true, delivered }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("live_checkin failed:", e);
