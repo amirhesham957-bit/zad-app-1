@@ -99,7 +99,7 @@ import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfi
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
-import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -7529,8 +7529,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
 
   const parsed = body.parsed ?? {};
   const clientClassification = normalizeClientClassification(body.client_classification);
-  let amount = Number(parsed.amount);
-  if ((!Number.isFinite(amount) || amount <= 0) && gate === "money" && verdict?.amount) amount = verdict.amount;
+  // المبلغ والعملة والتاجر وأرقام الكارت من قراءة الموديل لما يكون متأكد إن الفلوس اتحركت — مش من regex الموبايل بس.
+  const fields = proposalFieldsFromVerdict({ gate, verdict, parsed, rawText, packageName, title, knownSender });
+  const amount = fields.amount ?? NaN;
   const confidence = Number(parsed.confidence ?? 0);
   if (!Number.isFinite(amount) || amount <= 0) {
     await mark("ambiguous", "needs_confirmation");
@@ -7574,7 +7575,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   // البوابة قالت «فلوس اتحركت» ⇒ العميل بيأكد بس (مش بيصنّف). غير كده السلوك القديم.
   const needsClassification = gate !== "money" && (clientClassification !== "completed" || confidence < 0.9);
   const txnKind = needsClassification ? null : parsedKind;
-  const sourceLabel = String(parsed.merchant_name ?? parsed.bank_name ?? packageName).trim().slice(0, 80);
+  const sourceLabel = fields.merchantName;
 
   // تصنيف مقصد الخصم (اشتراك/قسط/فاتورة/إيجار) — العميل بيسأل "الخصم ده ليه؟"
   // فلما الإشعار فيه إشارة دورية، بنحوّل العنوان للنوع ونسأل بس لو مش متأكدين.
@@ -7600,11 +7601,12 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     amount: Math.round(amount * 100) / 100,
     title: suggestedTitle ?? (String(parsed.title ?? title).trim().slice(0, 80) || packageName),
     category: String(parsed.category ?? (txnKind === "income" ? "دخل" : txnKind === "transfer" ? "تحويل" : "أخرى")).trim().slice(0, 40),
-    currency: String(parsed.currency ?? "").trim() || null,
+    currency: fields.currency,
     wallet: "card",
     transfer_to: txnKind === "transfer" ? "cash" : null,
     merchant_name: sourceLabel,
-    bank_name: String(parsed.bank_name ?? packageName).trim().slice(0, 80),
+    bank_name: fields.bankName,
+    card_last_digits: fields.cardLastDigits,
     confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : null,
   };
 
