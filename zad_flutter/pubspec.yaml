@@ -161,6 +161,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # ZAD_PLAN ٦.١: ZadL10n from lib/core/l10n/*.arb (l10n.yaml).
+  generate: true
 
   assets:
     - assets/brand/

@@ -1,0 +1,15 @@
+{
+  "@@locale": "ar",
+  "appTitle": "زاد",
+  "@appTitle": {"description": "The app's name, in the task switcher."},
+  "settingsLanguageSection": "اللغة",
+  "@settingsLanguageSection": {"description": "Settings: the section that picks the app's language."},
+  "languageSystem": "زي الموبايل",
+  "@languageSystem": {"description": "Language choice: follow the phone's language."},
+  "languageArabic": "العربية",
+  "@languageArabic": {"description": "Language choice: Arabic. Always written in Arabic."},
+  "languageEnglish": "English",
+  "@languageEnglish": {"description": "Language choice: English. Always written in English."},
+  "languageEnglishPreview": "الإنجليزي لسه بيتترجم — شاشات كتير هتفضل عربي لحد ما يخلص.",
+  "@languageEnglishPreview": {"description": "Settings: shown under the language picker while the English translation is incomplete."}
+}
