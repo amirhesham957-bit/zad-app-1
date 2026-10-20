@@ -53,6 +53,7 @@
 // Validators (Task 16.1/16.2) live in validators.ts — untouched, still the sole gate
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
+import { qtyFromFraction } from "./readingFraction.ts";
 import { purchaseToolReply, toolPurchaseLines } from "./purchaseDoor.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { formatChefResult, pantryForChef } from "./chef.ts";
@@ -2067,11 +2068,23 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           previous: { restock_mode: (before as { restock_mode?: string | null }).restock_mode ?? null },
           next: { restock_mode: input.restock_mode },
         });
-        if (input.new_qty === undefined || input.new_qty === null) {
+        if ((input.new_qty === undefined || input.new_qty === null) && (input.fraction_left === undefined || input.fraction_left === null)) {
           return input.restock_mode === "occasional"
             ? `تمام، «${input.item_name}» بقى من الحاجات اللي بتجيبها كل فترة — مش هعتبره ناقص ولا هفكّرك بيه.`
             : `تمام، «${input.item_name}» بقى من الأساسيات — هفكّرك بيه لما يقرب يخلص.`;
         }
+      }
+      // «فاضل نصه» (ZAD_PLAN ٣.٩): النسبة بتتحسب هنا من آخر شرا، مش في الموديل.
+      if ((input.new_qty === undefined || input.new_qty === null) && typeof input.fraction_left === "number") {
+        const { data: lastBuy } = await sb.from("zad_inventory_observations").select("qty")
+          .eq("user_id", before.user_id ?? userId).eq("item_name", input.item_name).eq("source", "purchase")
+          .order("observed_at", { ascending: false }).limit(1).maybeSingle();
+        const full = lastBuy ? Number((lastBuy as { qty: number }).qty) : null;
+        const qty = qtyFromFraction(input.fraction_left, full, before.quantity === null ? null : Number(before.quantity));
+        if (qty === null) {
+          return "مرفوض: مفيش كمية أعرف أحسب منها النسبة — اسأل العميل عن الكمية بالرقم (كام كيلو/كام حبة).";
+        }
+        input = { ...input, new_qty: qty };
       }
       const w = await writeRows(
         sb.from("zad_inventory").update({ quantity: input.new_qty })
@@ -4466,6 +4479,10 @@ const TOOLS: ToolDef[] = [
       properties: {
         item_name: { type: "string" },
         new_qty: { type: "number" },
+        fraction_left: {
+          type: "number",
+          description: "لما العميل يقول الفاضل كنسبة مش رقم: «فاضل نصه» = 0.5، «ربعه» = 0.25، «تلته» = 0.33، «قليل/على الآخر» = 0.2، «لسه كتير» = 0.75، «زي ما هو» = 1. زاد بيحسب الكمية من آخر شرا. مكان new_qty مش معاه. «فاضل ٣ كيلو» رقم = new_qty: 3",
+        },
         restock_mode: {
           type: "string", enum: ["staple", "occasional"],
           description: "لما العميل يقول إن الصنف مش أساسي/بيجيبه كل فترة («دي مش أساسية»، «الرنجة كل شهرين») = occasional: زاد مابيعتبروش ناقص ولا بيفكّر بيه. «دي أساسية» = staple. من غير new_qty لو مفيش كمية",
@@ -4738,6 +4755,10 @@ export const CHAT_TOOLS: ToolDef[] = [
       properties: {
         item_name: { type: "string" },
         new_qty: { type: "number" },
+        fraction_left: {
+          type: "number",
+          description: "لما العميل يقول الفاضل كنسبة مش رقم: «فاضل نصه» = 0.5، «ربعه» = 0.25، «تلته» = 0.33، «قليل/على الآخر» = 0.2، «لسه كتير» = 0.75، «زي ما هو» = 1. زاد بيحسب الكمية من آخر شرا. مكان new_qty مش معاه. «فاضل ٣ كيلو» رقم = new_qty: 3",
+        },
         restock_mode: {
           type: "string", enum: ["staple", "occasional"],
           description: "لما العميل يقول إن الصنف مش أساسي/بيجيبه كل فترة («دي مش أساسية»، «الرنجة كل شهرين») = occasional: زاد مابيعتبروش ناقص ولا بيفكّر بيه. «دي أساسية» = staple. من غير new_qty لو مفيش كمية",

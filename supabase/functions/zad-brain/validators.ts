@@ -174,8 +174,21 @@ export const validateUpdateInventoryQty: Validator = (input, snap) => {
   if (mode !== undefined && mode !== null && mode !== "staple" && mode !== "occasional") {
     return { ok: false, reason: "restock_mode يا staple يا occasional" };
   }
-  if (input.new_qty === undefined || input.new_qty === null) {
-    if (!mode) return { ok: false, reason: "محتاج new_qty أو restock_mode" };
+  // «فاضل نصه» (ZAD_PLAN ٣.٩): نسبة بدل رقم، والتنفيذ بيحسبها من آخر شرا.
+  const hasQty = input.new_qty !== undefined && input.new_qty !== null;
+  const fraction = input.fraction_left;
+  if (fraction !== undefined && fraction !== null) {
+    if (hasQty) return { ok: false, reason: "يا new_qty يا fraction_left، مش الاتنين" };
+    if (typeof fraction !== "number" || !(fraction >= 0 && fraction <= 1)) {
+      return { ok: false, reason: "fraction_left رقم من 0 لـ1 (نصه = 0.5)" };
+    }
+    const known = (snap.stock ?? []).some((s: any) => s.name === input.item_name);
+    if (!known) return { ok: false, reason: "المنتج مش موجود في المخزون" };
+    if (!input.reason || input.reason.length < 10) return { ok: false, reason: "اكتب سبب واضح للتعديل" };
+    return { ok: true };
+  }
+  if (!hasQty) {
+    if (!mode) return { ok: false, reason: "محتاج new_qty أو fraction_left أو restock_mode" };
     const known = (snap.stock ?? []).some((s: any) => s.name === input.item_name);
     if (!known) return { ok: false, reason: "المنتج مش موجود في المخزون" };
     return { ok: true };

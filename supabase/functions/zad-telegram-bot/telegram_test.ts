@@ -124,23 +124,22 @@ Deno.test("dismissKeyboard encodes the insight id and all three reason codes", (
   assertEquals(codes.sort(), ["d:insight-1:n", "d:insight-1:t", "d:insight-1:w"]);
 });
 
-Deno.test("checkInKeyboard encodes the prompt id with y/n suffixes", () => {
+Deno.test("checkInKeyboard asks how much is left: plenty, half, little, finished (ZAD_PLAN 3.9)", () => {
   const kb = checkInKeyboard("11111111-1111-1111-1111-111111111111");
   const codes = kb[0].map((b) => b.callback_data);
-  assertEquals(codes, [
-    "ck:11111111-1111-1111-1111-111111111111:y",
-    "ck:11111111-1111-1111-1111-111111111111:n",
-  ]);
+  assertEquals(codes, ["ck:11111111-1111-1111-1111-111111111111:t", "ck:11111111-1111-1111-1111-111111111111:h", "ck:11111111-1111-1111-1111-111111111111:l", "ck:11111111-1111-1111-1111-111111111111:n"]);
+  assertEquals(kb[0].map((b) => b.text.replace("❌ ", "")), ["كتير", "نصه", "قليل", "خلص"]);
 });
 
-Deno.test("parseCheckInCallback parses a well-formed still-in-stock callback", () => {
-  const parsed = parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:y");
-  assertEquals(parsed, { promptId: "11111111-1111-1111-1111-111111111111", stillInStock: true });
+Deno.test("each level carries its fraction of the last purchase", () => {
+  assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:h"), { promptId: "11111111-1111-1111-1111-111111111111", stillInStock: true, fraction: 0.5, label: "نصه" });
+  assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:t")?.fraction, 0.75);
+  assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:l")?.fraction, 0.2);
+  assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:n"), { promptId: "11111111-1111-1111-1111-111111111111", stillInStock: false, fraction: 0, label: "خلص" });
 });
 
-Deno.test("parseCheckInCallback parses a well-formed finished callback", () => {
-  const parsed = parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:n");
-  assertEquals(parsed, { promptId: "11111111-1111-1111-1111-111111111111", stillInStock: false });
+Deno.test("an old «still there» button sent before the change is still read", () => {
+  assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:y"), { promptId: "11111111-1111-1111-1111-111111111111", stillInStock: true, fraction: null, label: null });
 });
 
 Deno.test("parseCheckInCallback rejects a non-checkin callback", () => {
@@ -155,8 +154,10 @@ Deno.test("parseCheckInCallback rejects an unknown answer letter", () => {
   assertEquals(parseCheckInCallback("ck:11111111-1111-1111-1111-111111111111:z"), null);
 });
 
-Deno.test("checkInPromptMessage includes the item name", () => {
+Deno.test("checkInPromptMessage includes the item name and asks in its unit", () => {
   assert(checkInPromptMessage("لبن").includes("لبن"));
+  assert(checkInPromptMessage("رز", "كيلو").includes("«فاضل ٢ كيلو»"));
+  assert(checkInPromptMessage("رز", "  ").includes("«فاضل ٢»"));
 });
 
 
@@ -425,9 +426,11 @@ Deno.test("two items one night = one message with a row of buttons each, answers
   assertEquals(msg.split("\n").length, 3);
   const kb = checkInBundleKeyboard([{ id: a, label: "رز" }, { id: b, label: "زيت عباد الشمس كريستال ١ لتر" }]);
   assertEquals(kb.length, 2);
-  assertEquals(parseCheckInCallback(kb[0][1].callback_data!), { promptId: a, stillInStock: false });
-  assertEquals(parseCheckInCallback(kb[1][0].callback_data!), { promptId: b, stillInStock: true });
-  // اسم طويل بيتقص في الزرار بس، مش في الرسالة.
+  assertEquals(parseCheckInCallback(kb[0][3].callback_data!)?.promptId, a);
+  assertEquals(parseCheckInCallback(kb[0][3].callback_data!)?.stillInStock, false);
+  assertEquals(parseCheckInCallback(kb[1][1].callback_data!), { promptId: b, stillInStock: true, fraction: 0.5, label: "نصه" });
+  // كل صف بيبدأ باسم صنفه؛ الاسم الطويل بيتقص في الزرار بس، مش في الرسالة.
+  assert(kb[0][0].text.startsWith("رز"));
   assertEquals(kb[1][0].text.includes("…"), true);
 });
 
