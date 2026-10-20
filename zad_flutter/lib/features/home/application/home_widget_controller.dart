@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/data/home_widget_sync.dart';
 import 'package:zad/shared/brain/presentation/daily_brief_lines.dart';
@@ -45,7 +46,9 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
   // The pet's row: its full-at moments, which change only on care.
   final care = ref.watch(petCareProvider);
   final petName = ref.watch(
-    companionProvider.select((v) => v.value?.persona.name ?? 'زادو'),
+    companionProvider.select(
+      (v) => v.value?.persona.name ?? 'زادو', // l10n: data
+    ),
   );
   final zone = ref.watch(accountTimeZoneProvider);
   unawaited(
@@ -58,6 +61,7 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
         campaign: campaign,
         upcoming: upcoming,
         brief: brief,
+        l10n: ref.watch(zadL10nProvider),
       ),
       ...petWidgetValues(care: care, name: petName, zone: zone),
     }),

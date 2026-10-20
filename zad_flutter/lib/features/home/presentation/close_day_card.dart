@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/day_close/application/day_close_controller.dart';
 import 'package:zad/shared/day_close/presentation/close_day_sheet.dart';
 
@@ -40,12 +41,12 @@ class CloseDayCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'اقفل يومك',
+                  context.l10n.homeCloseDay,
                   style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
                 ),
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
-                  'عشر ثواني: صرفت حاجة كاش النهارده؟ ورفيقك يتعشى',
+                  context.l10n.homeCloseDayHint,
                   style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ],

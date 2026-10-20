@@ -17,6 +17,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/memory_occasion.dart';
@@ -164,14 +165,14 @@ class BirthdayDialog extends StatelessWidget {
             const SizedBox(height: ZadSpacing.lg),
             Text(
               who == null || who.isEmpty
-                  ? 'كل سنة وإنت طيب! 🎂'
-                  : 'كل سنة وإنت طيب يا $who! 🎂',
+                  ? context.l10n.homeBirthday
+                  : context.l10n.homeBirthdayName(who),
               textAlign: TextAlign.center,
               style: ZadType.titleLarge,
             ),
             const SizedBox(height: ZadSpacing.sm),
             Text(
-              'زاد بيتمنالك سنة حلوة مليانة خير وراحة بال.',
+              context.l10n.homeBirthdayWish,
               textAlign: TextAlign.center,
               style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
             ),
@@ -181,7 +182,7 @@ class BirthdayDialog extends StatelessWidget {
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
-              child: const Text('شكراً يا زاد 💚'),
+              child: Text(context.l10n.homeBirthdayThanks),
             ),
           ],
         ),

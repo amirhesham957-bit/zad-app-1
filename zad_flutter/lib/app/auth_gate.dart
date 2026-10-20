@@ -8,6 +8,7 @@ import 'package:zad/app/zad_shell.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
@@ -79,7 +80,7 @@ class _Checking extends StatelessWidget {
             ),
             const SizedBox(height: ZadSpacing.lg),
             Text(
-              'بنجهّز حسابك…',
+              context.l10n.authPreparingAccount,
               style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
             ),
           ],

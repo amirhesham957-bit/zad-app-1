@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -73,9 +74,9 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
         .read(memoryControllerProvider.notifier)
         .saveProfile(edited);
     if (failure != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('مقدرناش نحفظ الملف — جرب تاني')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.profileSaveFailed)));
     }
   }
 
@@ -110,15 +111,14 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'عرّفني بنفسك',
+                        context.l10n.whoTitle,
                         style: ZadType.titleSmall.copyWith(
                           fontWeight: FontWeight.bold,
                           color: scheme.onSurface,
                         ),
                       ),
                       Text(
-                        'اسمك، وتحب أكلمك بصيغة راجل ولا ست، وشغلك وميعاد '
-                        'قبضك — عشان أكلمك صح وأفتكرك.',
+                        context.l10n.whoBody,
                         style: ZadType.bodySmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -139,7 +139,7 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
                       shape: const StadiumBorder(),
                     ),
                     onPressed: () => _edit(profile),
-                    child: const Text('يلا نتعرّف'),
+                    child: Text(context.l10n.whoGo),
                   ),
                 ),
                 const Spacer(),
@@ -147,7 +147,7 @@ class _WhoAreYouCardState extends ConsumerState<WhoAreYouCard> {
                   style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
                   onPressed: _dismiss,
                   child: Text(
-                    'لاحقاً',
+                    context.l10n.commonLater,
                     style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ),

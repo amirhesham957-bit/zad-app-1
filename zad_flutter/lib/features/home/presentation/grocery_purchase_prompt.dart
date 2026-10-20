@@ -18,6 +18,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
@@ -68,7 +69,7 @@ class GroceryPurchasePrompt extends Notifier<ZadTransaction?> {
             (r) =>
                 !previous.contains(r.id) &&
                 !prompted.contains(r.id) &&
-                r.category == 'البقالة' &&
+                r.category == 'البقالة' && // l10n: data
                 r.kind == TxnKind.expense &&
                 r.createdAt.isAfter(dayAgo),
           )
@@ -166,8 +167,7 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
         '${currency.isEmpty ? '' : ' $currency'}';
     return AlertDialog(
       title: Text(
-        'اشتريت من ${tx.merchantName ?? tx.title} بـ $amount — ضيف إيه '
-        'للمخزون؟',
+        context.l10n.groceryWhatToAdd(tx.merchantName ?? tx.title, amount),
         style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.bold),
       ),
       // A horizontal ListView inside AlertDialog needs a bounded width.
@@ -216,7 +216,7 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
                   child: TextField(
                     controller: _name,
                     decoration: InputDecoration(
-                      hintText: 'اسم منتج تاني…',
+                      hintText: context.l10n.groceryOtherItem,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -225,7 +225,7 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  tooltip: 'إضافة',
+                  tooltip: context.l10n.commonAdd,
                   onPressed: () {
                     final name = _name.text.trim();
                     if (name.isEmpty) return;
@@ -239,7 +239,7 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
             if (_added.isNotEmpty) ...<Widget>[
               const SizedBox(height: 8),
               Text(
-                'أضفت ${_added.length} أصناف ✅',
+                context.l10n.groceryAdded(_added.length),
                 style: ZadType.labelSmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: context.zadExt.success,
@@ -252,7 +252,7 @@ class _DialogState extends ConsumerState<_GroceryPurchaseDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('تم'),
+          child: Text(context.l10n.commonDone),
         ),
       ],
     );

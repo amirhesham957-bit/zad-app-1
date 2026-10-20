@@ -11,6 +11,7 @@ import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/domain/event_day_budget.dart';
 import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
 
@@ -51,7 +52,7 @@ class HomeMetricsDuo extends StatelessWidget {
       children: <Widget>[
         Expanded(
           child: _Metric(
-            label: 'معدل الصرف اليومي الآمن',
+            label: context.l10n.metricsSafeDaily,
             value: '${_money(daily < 0 ? 0 : daily)} $currency',
             caption: event?.caption,
           ),
@@ -59,11 +60,16 @@ class HomeMetricsDuo extends StatelessWidget {
         const SizedBox(width: ZadSpacing.md),
         Expanded(
           child: _Metric(
-            label: payday == null ? 'لحد آخر الشهر' : 'لحد القبض',
-            value: '$daysLeft يوم',
+            label: payday == null
+                ? context.l10n.metricsToMonthEnd
+                : context.l10n.metricsToPayday,
+            value: context.l10n.metricsDays(daysLeft),
             caption: payday == null
                 ? null
-                : 'يوم ${payday!.day} ${_arabicMonths[payday!.month - 1]}',
+                : context.l10n.metricsPaydayOn(
+                    payday!.day,
+                    context.l10n.monthName('m${payday!.month}'),
+                  ),
           ),
         ),
       ],
@@ -113,18 +119,3 @@ class _Metric extends StatelessWidget {
 }
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
-
-const List<String> _arabicMonths = <String>[
-  'يناير',
-  'فبراير',
-  'مارس',
-  'أبريل',
-  'مايو',
-  'يونيو',
-  'يوليو',
-  'أغسطس',
-  'سبتمبر',
-  'أكتوبر',
-  'نوفمبر',
-  'ديسمبر',
-];

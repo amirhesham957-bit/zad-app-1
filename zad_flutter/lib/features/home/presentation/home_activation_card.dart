@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/goals/data/life_goals_remote.dart';
@@ -166,7 +167,7 @@ class HomeActivationCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              'جهّز زاد لبيتك',
+                              context.l10n.activationTitle,
                               style: ZadType.titleMedium.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: scheme.onSurface,
@@ -174,8 +175,7 @@ class HomeActivationCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'أربع خطوات تجعل الرصيد والتنبيهات والتوقعات '
-                              'مفيدة من أول يوم',
+                              context.l10n.activationSubtitle,
                               style: ZadType.bodySmall.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
@@ -185,7 +185,10 @@ class HomeActivationCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        '${progress.completedCount} من ${progress.totalCount}',
+                        context.l10n.activationProgress(
+                          progress.completedCount,
+                          progress.totalCount,
+                        ),
                         style: ZadType.labelMedium.copyWith(
                           fontWeight: FontWeight.bold,
                           color: scheme.primary,
@@ -206,31 +209,30 @@ class HomeActivationCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _StepRow(
-              title: 'ثبّت رصيد البداية',
-              description:
-                  'اكتب المبلغ الموجود الآن ليحسب زاد السحب والإيداع بدقة',
+              title: context.l10n.activationBalance,
+              description: context.l10n.activationBalanceHint,
               complete: progress.isStepComplete(HomeActivationStep.setBalance),
               onTap: onSetBalance,
             ),
             _StepRow(
-              title: 'فعّل قراءة إشعارات البنك',
-              description: 'اسمح لزاد بالتقاط العمليات وعرضها للتأكيد',
+              title: context.l10n.activationBank,
+              description: context.l10n.activationBankHint,
               complete: progress.isStepComplete(
                 HomeActivationStep.enableBankReading,
               ),
               onTap: onEnableBankReading,
             ),
             _StepRow(
-              title: 'أضف أول صنف للبيت',
-              description: 'ابدأ بصنف متكرر ليتعلم زاد استهلاكك',
+              title: context.l10n.activationFirstItem,
+              description: context.l10n.activationFirstItemHint,
               complete: progress.isStepComplete(
                 HomeActivationStep.addFirstInventoryItem,
               ),
               onTap: onAddInventoryItem,
             ),
             _StepRow(
-              title: 'حدد أول هدف لبيتك',
-              description: 'زاد هيتابعه معاك كل أسبوع',
+              title: context.l10n.activationGoal,
+              description: context.l10n.activationGoalHint,
               complete: progress.isStepComplete(
                 HomeActivationStep.setFirstGoal,
               ),
@@ -271,7 +273,7 @@ class _CompleteCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'جهّز زاد لبيتك',
+                context.l10n.activationTitle,
                 style: ZadType.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -281,8 +283,7 @@ class _CompleteCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'كل حاجة جاهزة! 🎉 جرب تقول لزاد "صرفت ٥٠ بقالة" بالصوت أو من '
-            'بوت تليجرام — هيسألك تأكيد ويسجلها.',
+            context.l10n.activationAllSet,
             style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
@@ -333,7 +334,7 @@ class _StepRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    complete ? 'تم' : description,
+                    complete ? context.l10n.commonDone : description,
                     style: ZadType.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -346,7 +347,7 @@ class _StepRow extends StatelessWidget {
                 Icons.arrow_forward,
                 size: 20,
                 color: scheme.primary,
-                semanticLabel: 'فتح',
+                semanticLabel: context.l10n.commonOpen,
               ),
           ],
         ),

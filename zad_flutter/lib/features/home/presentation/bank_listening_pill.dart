@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -59,7 +60,7 @@ class FxExcludedNotice extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'استُبعدت $count معاملة من الإجمالي — عملتها مالهاش سعر صرف',
+                context.l10n.homeFxExcluded(count),
                 style: ZadType.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -126,8 +127,8 @@ class _BankListeningPillState extends ConsumerState<BankListeningPill> {
               Flexible(
                 child: Text(
                   alive
-                      ? 'بسمع رسايل البنك وحدّث رصيدك تلقائياً'
-                      : 'الاستماع لرسايل البنك وقف — اضغط للإصلاح',
+                      ? context.l10n.homeBankListening
+                      : context.l10n.homeBankStopped,
                   style: ZadType.labelSmall.copyWith(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

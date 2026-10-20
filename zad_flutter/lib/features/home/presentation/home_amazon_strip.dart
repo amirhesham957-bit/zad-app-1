@@ -24,6 +24,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -43,9 +45,9 @@ const int kAmazonNeedsShown = 10;
 String _key(String raw) => raw
     .trim()
     .toLowerCase()
-    .replaceAll(RegExp('[أإآ]'), 'ا')
-    .replaceAll('ة', 'ه')
-    .replaceAll('ى', 'ي')
+    .replaceAll(RegExp('[أإآ]'), 'ا') // l10n: data
+    .replaceAll('ة', 'ه') // l10n: data
+    .replaceAll('ى', 'ي') // l10n: data
     .replaceAll(RegExp(r'\s+'), ' ');
 
 /// What the home is short of, most urgent first: stocks that ran out, then
@@ -54,6 +56,7 @@ String _key(String raw) => raw
 List<AmazonNeed> amazonNeeds(WidgetRef ref) {
   final stock = groupPantry(ref.watch(pantryControllerProvider).items);
   final shopping = ref.watch(shoppingControllerProvider).items;
+  final l10n = ref.watch(zadL10nProvider);
   final out = <AmazonNeed>[];
   final seen = <String>{};
   void add(String name, String reason) {
@@ -65,13 +68,13 @@ List<AmazonNeed> amazonNeeds(WidgetRef ref) {
   }
 
   for (final g in stock) {
-    if (g.isShortOut) add(g.name, 'خلص');
+    if (g.isShortOut) add(g.name, l10n.amazonOut);
   }
   for (final g in stock) {
-    if (!g.isOut && g.isShortLow) add(g.name, 'قرب يخلص');
+    if (!g.isOut && g.isShortLow) add(g.name, l10n.amazonLow);
   }
   for (final s in shopping) {
-    if (!s.isPurchased) add(s.itemName, 'في قايمة التسوق');
+    if (!s.isPurchased) add(s.itemName, l10n.amazonOnList);
   }
   return out;
 }
@@ -109,7 +112,7 @@ class HomeAmazonStrip extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      '🛍️ تسوق من أمازون',
+                      context.l10n.amazonShopEmoji,
                       style: ZadType.titleMedium.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -117,10 +120,9 @@ class HomeAmazonStrip extends ConsumerWidget {
                     const SizedBox(height: ZadSpacing.xs),
                     Text(
                       switch (needs.length) {
-                        0 => 'ضيف اللي ناقصك، أو شوف عروض النهارده',
-                        1 => 'ناقصك ${needs.first.name} — اطلبه من أمازون',
-                        _ =>
-                          'ناقصك ${needs.length} حاجات — اطلب كل واحدة بضغطة',
+                        0 => context.l10n.amazonNoNeeds,
+                        1 => context.l10n.amazonOneNeed(needs.first.name),
+                        _ => context.l10n.amazonManyNeeds(needs.length),
                       },
                       style: ZadType.bodySmall.copyWith(
                         color: ZadColors.inkMuted,
@@ -168,7 +170,7 @@ class HomeAmazonStrip extends ConsumerWidget {
                         onPressed: () =>
                             unawaited(ZadScreens.showAddShoppingSheet(context)),
                         icon: const Icon(ZadIcons.add, size: 18),
-                        label: const Text('إضافة'),
+                        label: Text(context.l10n.commonAdd),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 44),
                           shape: const StadiumBorder(),
@@ -184,7 +186,11 @@ class HomeAmazonStrip extends ConsumerWidget {
                           openAmazonLink(amazonSuggestUrl(null, country)),
                         ),
                         icon: const Icon(ZadIcons.assistant, size: 18),
-                        label: Text(needs.isEmpty ? 'اقتراح' : 'العروض'),
+                        label: Text(
+                          needs.isEmpty
+                              ? context.l10n.amazonSuggest
+                              : context.l10n.amazonDeals,
+                        ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 44),
                           shape: const StadiumBorder(),
@@ -211,7 +217,7 @@ class _NeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final out = need.reason == 'خلص';
+    final out = need.reason == context.l10n.amazonOut;
     return SizedBox(
       width: 148,
       child: DecoratedBox(
@@ -251,7 +257,7 @@ class _NeedCard extends StatelessWidget {
                       horizontal: ZadSpacing.sm,
                     ),
                   ),
-                  child: const Text('🛒 اطلبه'),
+                  child: Text(context.l10n.amazonOrder),
                 ),
               ),
             ],

@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
@@ -71,7 +72,7 @@ class _StripState extends ConsumerState<CampaignStoriesStrip> {
         alignment: AlignmentDirectional.centerStart,
         child: Semantics(
           button: true,
-          label: 'حكايات زاد: ${c.eventName ?? c.title}',
+          label: context.l10n.homeStoriesLabel(c.eventName ?? c.title),
           child: InkWell(
             onTap: () => _open(active),
             customBorder: const CircleBorder(),
@@ -104,7 +105,7 @@ class _StripState extends ConsumerState<CampaignStoriesStrip> {
                 const SizedBox(height: ZadSpacing.xs),
                 ExcludeSemantics(
                   child: Text(
-                    c.eventName ?? 'حكايات زاد',
+                    c.eventName ?? context.l10n.homeStories,
                     style: ZadType.labelSmall.copyWith(
                       color: seen ? ZadColors.inkMuted : ZadColors.ink,
                       fontWeight: seen ? FontWeight.w400 : FontWeight.w700,
@@ -243,7 +244,7 @@ class _ViewerState extends State<CampaignStoryViewer>
                       const SizedBox(width: ZadSpacing.sm),
                       Expanded(
                         child: Text(
-                          c.eventName ?? 'حكايات زاد',
+                          c.eventName ?? context.l10n.homeStories,
                           style: ZadType.titleMedium.copyWith(
                             color: white,
                             fontWeight: FontWeight.w700,
@@ -251,7 +252,7 @@ class _ViewerState extends State<CampaignStoryViewer>
                         ),
                       ),
                       IconButton(
-                        tooltip: 'إغلاق',
+                        tooltip: context.l10n.commonClose,
                         onPressed: () => Navigator.of(context).pop(),
                         constraints: const BoxConstraints.tightFor(
                           width: kZadMinTapTarget,

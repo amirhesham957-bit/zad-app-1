@@ -73,6 +73,8 @@ Future<void> bootstrap(Widget app) async {
     // transactions list groups by day — so the first screen with a date on it
     // would be the one that crashed.
     initializeDateFormatting('ar'),
+    // And English, for the second language (ZAD_PLAN ٦.١).
+    initializeDateFormatting('en'),
     _startSentry(),
     Supabase.initialize(
       url: ZadEnv.supabaseUrl,

@@ -23,6 +23,7 @@ import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -75,10 +76,10 @@ typedef _Pick = ({AffiliateProduct product, String reason, int score});
 String _normalize(String raw) => raw
     .trim()
     .toLowerCase()
-    .replaceAll(RegExp('[ً-ْـ]'), '')
-    .replaceAll(RegExp('[أإآ]'), 'ا')
-    .replaceAll('ة', 'ه')
-    .replaceAll('ى', 'ي')
+    .replaceAll(RegExp('[ً-ْـ]'), '') // l10n: data
+    .replaceAll(RegExp('[أإآ]'), 'ا') // l10n: data
+    .replaceAll('ة', 'ه') // l10n: data
+    .replaceAll('ى', 'ي') // l10n: data
     .replaceAll(RegExp(r'\s+'), ' ');
 
 /// The server's recommendations: null while unread or when the server
@@ -186,11 +187,12 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
     final stock = groupPantry(inventory);
     final needs = <(String, int, String)>[
       for (final g in stock)
-        if (g.isShortOut) (g.name, 3, 'خلص من مخزونك'),
+        if (g.isShortOut) (g.name, 3, context.l10n.amazonOutOfStock),
       for (final g in stock)
-        if (!g.isOut && g.isShortLow) (g.name, 2, 'قارب على النفاد'),
+        if (!g.isOut && g.isShortLow)
+          (g.name, 2, context.l10n.amazonRunningLow),
       for (final s in shopping)
-        if (!s.isPurchased) (s.itemName, 2, 'في قايمة التسوق'),
+        if (!s.isPurchased) (s.itemName, 2, context.l10n.amazonOnList),
     ];
 
     // Local `affiliatePicks`.
@@ -273,7 +275,11 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
       for (final p in products) {
         if (picks.length >= 5) break;
         if (!p.isActive || picks.any((x) => x.product.id == p.id)) continue;
-        picks.add((product: p, reason: 'اقتراح لبيتك', score: 0));
+        picks.add((
+          product: p,
+          reason: context.l10n.amazonSuggestion,
+          score: 0,
+        ));
       }
     }
 
@@ -287,7 +293,7 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
         ? sortedNeeds.take(10).toList()
         : <_Need>[
             for (final s in shopping)
-              (name: s.itemName, reason: 'في قائمة التسوق', score: 1),
+              (name: s.itemName, reason: context.l10n.amazonOnList, score: 1),
           ].fold<List<_Need>>(<_Need>[], (acc, n) {
             if (acc.length < 5 && !acc.any((a) => a.name == n.name)) acc.add(n);
             return acc;
@@ -309,7 +315,7 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
               const Text('🛍️', style: ZadType.bodyLarge),
               const SizedBox(width: 6),
               Text(
-                'تسوق من أمازون',
+                context.l10n.amazonShop,
                 style: ZadType.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -544,10 +550,10 @@ class ZadAmazonDealCard extends ConsumerWidget {
                       ),
                       Text(
                         age == null
-                            ? 'سعر تقريبي'
+                            ? context.l10n.amazonApproxPrice
                             : age <= 1
-                            ? 'اتحدث النهاردة'
-                            : 'سعر منذ $age يوم',
+                            ? context.l10n.amazonUpdatedToday
+                            : context.l10n.amazonPriceAge(age),
                         maxLines: 1,
                         style: ZadType.labelSmall.copyWith(
                           color: scheme.onSurfaceVariant,
@@ -557,7 +563,7 @@ class ZadAmazonDealCard extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  'أمازون',
+                  context.l10n.amazonName,
                   style: ZadType.labelSmall.copyWith(
                     fontWeight: FontWeight.bold,
                     color: scheme.onSurfaceVariant,
@@ -568,7 +574,7 @@ class ZadAmazonDealCard extends ConsumerWidget {
             const SizedBox(height: 8),
             // The affiliate disclosure — Amazon's terms, and honesty.
             Text(
-              'رابط شراء أفلييت — عمولة لزاد بدون أي زيادة عليك',
+              context.l10n.amazonDisclosure,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: ZadType.labelSmall.copyWith(

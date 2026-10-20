@@ -15,6 +15,7 @@ import 'package:lottie/lottie.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/tasbiha/application/tasbiha_controller.dart';
 import 'package:zad/shared/tasbiha/domain/tasbiha.dart';
@@ -196,7 +197,7 @@ class _TasbihaHomeWidgetState extends State<TasbihaHomeWidget>
                       Icon(Icons.park, size: 18, color: ext.secondaryDark),
                       const SizedBox(width: 6),
                       Text(
-                        'بستان التسبيح',
+                        context.l10n.tasbihaGarden,
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.bold,
@@ -377,7 +378,7 @@ class _TasbihaHomeWidgetState extends State<TasbihaHomeWidget>
                             ),
                           ),
                           child: const Text(
-                            'سبحان الله',
+                            'سبحان الله', // l10n: data
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -482,7 +483,7 @@ class _ChallengeRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '$clicks من ${challenge.targetClicks} تسبيحة',
+                  context.l10n.tasbihaProgress(clicks, challenge.targetClicks),
                   style: TextStyle(
                     fontSize: 11,
                     color: scheme.onSurfaceVariant,

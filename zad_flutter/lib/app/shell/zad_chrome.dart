@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_shell_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
@@ -109,7 +110,7 @@ class ZadTopHeader extends StatelessWidget {
                         radius: 10,
                         color: kShellPrimary.withValues(alpha: 0.08),
                         onTap: onOpenDrawer,
-                        semantic: 'المزيد',
+                        semantic: context.l10n.navMore,
                         child: const Icon(
                           Icons.menu,
                           size: 18,
@@ -119,9 +120,9 @@ class ZadTopHeader extends StatelessWidget {
                       const SizedBox(width: 10),
                       const _CarrotTile(size: 32, radius: 9, glyph: 18),
                       const SizedBox(width: 10),
-                      const Text(
-                        'زاد',
-                        style: TextStyle(
+                      Text(
+                        context.l10n.appTitle,
+                        style: const TextStyle(
                           fontSize: 19,
                           height: 22 / 19,
                           letterSpacing: 0.2,
@@ -131,12 +132,12 @@ class ZadTopHeader extends StatelessWidget {
                       ),
                       if (kidsMode) ...<Widget>[
                         const SizedBox(width: 8),
-                        const _KidsPill('وضع الأطفال', fontSize: 11),
+                        _KidsPill(context.l10n.drawerKidsMode, fontSize: 11),
                       ],
                       const Spacer(),
                       if (kidsMode && onExitKidsMode != null) ...<Widget>[
                         _KidsPill(
-                          'الوضع الكامل',
+                          context.l10n.drawerFullMode,
                           fontSize: 11.5,
                           onTap: onExitKidsMode,
                           padding: const EdgeInsets.symmetric(
@@ -309,7 +310,7 @@ class _Avatar extends StatelessWidget {
         : const Icon(Icons.person, size: 20, color: kShellPrimary);
     return Semantics(
       button: true,
-      label: 'اضغط لعرض الملف الشخصي',
+      label: context.l10n.shellOpenProfile,
       child: Material(
         color: kShellPrimary.withValues(alpha: 0.12),
         shape: const CircleBorder(),
@@ -344,7 +345,7 @@ class _BellPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: 'الإشعارات',
+    label: context.l10n.drawerNotifications,
     child: Material(
       color: kShellPrimary.withValues(alpha: 0.08),
       shape: const CircleBorder(),
@@ -396,7 +397,7 @@ class ZadDrawerEntry {
     required this.icon,
     required this.label,
     this.accent = ZadSectionAccent.slate,
-    this.group = '',
+    this.group,
   });
 
   /// The route it opens.
@@ -405,15 +406,40 @@ class ZadDrawerEntry {
   /// Its glyph.
   final IconData icon;
 
-  /// Its name.
-  final String label;
+  /// Its name, in the app's language.
+  final String Function(ZadL10n) label;
 
   /// The colour of its tile — the section's own, as on the home grid.
   final Color accent;
 
   /// The heading it sits under; a change of group starts a new heading.
-  final String group;
+  final String Function(ZadL10n)? group;
 }
+
+// The drawer's names, resolved in the app's language when drawn.
+String _navHome(ZadL10n l) => l.navHome;
+String _drawerCompanion(ZadL10n l) => l.drawerCompanion;
+String _drawerBrain(ZadL10n l) => l.drawerBrain;
+String _drawerAppointments(ZadL10n l) => l.drawerAppointments;
+String _drawerPlaces(ZadL10n l) => l.drawerPlaces;
+String _navMoney(ZadL10n l) => l.navMoney;
+String _drawerObligations(ZadL10n l) => l.drawerObligations;
+String _drawerPlans(ZadL10n l) => l.drawerPlans;
+String _navHomeStock(ZadL10n l) => l.navHomeStock;
+String _drawerShopping(ZadL10n l) => l.drawerShopping;
+String _drawerPharmacy(ZadL10n l) => l.drawerPharmacy;
+String _drawerMaintenance(ZadL10n l) => l.drawerMaintenance;
+String _drawerDocuments(ZadL10n l) => l.drawerDocuments;
+String _drawerNearby(ZadL10n l) => l.drawerNearby;
+String _navMyFamily(ZadL10n l) => l.navMyFamily;
+String _drawerTips(ZadL10n l) => l.drawerTips;
+String _drawerTasbiha(ZadL10n l) => l.drawerTasbiha;
+String _drawerNotifications(ZadL10n l) => l.drawerNotifications;
+String _drawerAccount(ZadL10n l) => l.drawerAccount;
+String _drawerGroupZad(ZadL10n l) => l.drawerGroupZad;
+String _drawerGroupMoney(ZadL10n l) => l.drawerGroupMoney;
+String _drawerGroupHome(ZadL10n l) => l.drawerGroupHome;
+String _drawerGroupMore(ZadL10n l) => l.drawerGroupMore;
 
 /// The drawer: everything, grouped by the bar's four places (2026-09-30) —
 /// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest. رفيق
@@ -422,133 +448,133 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
   ZadDrawerEntry(
     id: 'home',
     icon: Icons.home_rounded,
-    label: 'الرئيسية',
+    label: _navHome,
     accent: ZadSectionAccent.emerald,
-    group: 'زاد',
+    group: _drawerGroupZad,
   ),
   ZadDrawerEntry(
     id: 'companion',
     icon: Icons.pets_rounded,
-    label: 'رفيق زاد',
+    label: _drawerCompanion,
     accent: ZadSectionAccent.amber,
-    group: 'زاد',
+    group: _drawerGroupZad,
   ),
   ZadDrawerEntry(
     id: 'assistant',
     icon: Icons.psychology,
-    label: 'عقل زاد',
+    label: _drawerBrain,
     accent: ZadSectionAccent.teal,
-    group: 'زاد',
+    group: _drawerGroupZad,
   ),
   ZadDrawerEntry(
     id: 'appointments',
     icon: Icons.event,
-    label: 'مواعيدي',
+    label: _drawerAppointments,
     accent: ZadSectionAccent.indigo,
-    group: 'زاد',
+    group: _drawerGroupZad,
   ),
   ZadDrawerEntry(
     id: 'places',
     icon: Icons.place,
-    label: 'أماكني',
+    label: _drawerPlaces,
     accent: ZadSectionAccent.rose,
-    group: 'زاد',
+    group: _drawerGroupZad,
   ),
   ZadDrawerEntry(
     id: 'budget',
     icon: Icons.account_balance_wallet,
-    label: 'فلوسي',
+    label: _navMoney,
     accent: ZadSectionAccent.green,
-    group: 'الفلوس',
+    group: _drawerGroupMoney,
   ),
   ZadDrawerEntry(
     id: 'subscriptions',
     icon: Icons.credit_card,
-    label: 'التزاماتي',
+    label: _drawerObligations,
     accent: ZadSectionAccent.blue,
-    group: 'الفلوس',
+    group: _drawerGroupMoney,
   ),
   ZadDrawerEntry(
     id: 'premium',
     icon: Icons.star_rounded,
-    label: 'باقات زاد الشهرية',
+    label: _drawerPlans,
     accent: ZadSectionAccent.amber,
-    group: 'الفلوس',
+    group: _drawerGroupMoney,
   ),
   ZadDrawerEntry(
     id: 'inventory',
     icon: Icons.kitchen,
-    label: 'بيتي',
+    label: _navHomeStock,
     accent: ZadSectionAccent.emerald,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'shopping',
     icon: Icons.shopping_cart,
-    label: 'قائمة التسوق',
+    label: _drawerShopping,
     accent: ZadSectionAccent.brown,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
-    label: 'صيدلية العائلة',
+    label: _drawerPharmacy,
     accent: ZadSectionAccent.rose,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'maintenance',
     icon: Icons.build,
-    label: 'صيانة المنزل',
-    group: 'البيت والعيلة',
+    label: _drawerMaintenance,
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'documents',
     icon: Icons.badge_outlined,
-    label: 'مستنداتي',
+    label: _drawerDocuments,
     accent: ZadSectionAccent.indigo,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'deals',
     icon: Icons.storefront,
-    label: 'المتاجر والأسواق القريبة',
+    label: _drawerNearby,
     accent: ZadSectionAccent.teal,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'family',
     icon: Icons.family_restroom,
-    label: 'عيلتي',
+    label: _navMyFamily,
     accent: ZadSectionAccent.violet,
-    group: 'البيت والعيلة',
+    group: _drawerGroupHome,
   ),
   ZadDrawerEntry(
     id: 'tips',
     icon: Icons.lightbulb,
-    label: 'نصايح زاد',
+    label: _drawerTips,
     accent: ZadSectionAccent.amber,
-    group: 'أكتر',
+    group: _drawerGroupMore,
   ),
   ZadDrawerEntry(
     id: 'tasbiha',
     icon: Icons.park,
-    label: 'تسبيحة',
+    label: _drawerTasbiha,
     accent: ZadSectionAccent.green,
-    group: 'أكتر',
+    group: _drawerGroupMore,
   ),
   ZadDrawerEntry(
     id: 'notifications',
     icon: Icons.notifications,
-    label: 'الإشعارات',
+    label: _drawerNotifications,
     accent: ZadSectionAccent.blue,
-    group: 'أكتر',
+    group: _drawerGroupMore,
   ),
   ZadDrawerEntry(
     id: 'profile',
     icon: Icons.person,
-    label: 'حسابي',
-    group: 'أكتر',
+    label: _drawerAccount,
+    group: _drawerGroupMore,
   ),
 ];
 
@@ -652,8 +678,9 @@ class _ZadDrawerState extends State<ZadDrawer>
     final n = widget.entries.length;
     String? group;
     for (final e in widget.entries) {
-      if (e.group.isNotEmpty && e.group != group) {
-        group = e.group;
+      final heading = e.group?.call(context.l10n);
+      if (heading != null && heading != group) {
+        group = heading;
         rows.add(
           _staggered(
             index,
@@ -666,7 +693,7 @@ class _ZadDrawerState extends State<ZadDrawer>
                 ZadSpacing.xs,
               ),
               child: Text(
-                e.group,
+                heading,
                 style: ZadType.labelMedium.copyWith(
                   color: _textTertiary,
                   fontWeight: FontWeight.w700,
@@ -743,14 +770,14 @@ class _ZadDrawerState extends State<ZadDrawer>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            widget.userName ?? 'مستخدم زاد',
+                            widget.userName ?? context.l10n.shellZadUser,
                             style: ZadType.titleSmall.copyWith(
                               fontWeight: FontWeight.w700,
                               color: kShellTextPrimary,
                             ),
                           ),
                           Text(
-                            'اضغط لعرض الملف الشخصي',
+                            context.l10n.shellOpenProfile,
                             style: ZadType.labelSmall.copyWith(
                               color: _textTertiary,
                             ),
@@ -826,7 +853,9 @@ class _CompanionHeader extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          name == null ? 'أهلاً بيك' : 'أهلاً يا $name',
+                          name == null
+                              ? context.l10n.shellHello
+                              : context.l10n.shellHelloName(name),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: ZadType.titleMedium.copyWith(
@@ -846,9 +875,11 @@ class _CompanionHeader extends ConsumerWidget {
                           ),
                           child: Text(
                             status == null
-                                ? 'رفيق زاد'
-                                : '${status.persona.name} · '
-                                      'لفل ${status.level}',
+                                ? context.l10n.drawerCompanion
+                                : context.l10n.shellCompanionTag(
+                                    status.persona.name,
+                                    status.level,
+                                  ),
                             style: ZadType.labelMedium.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -934,7 +965,7 @@ class _DrawerRow extends StatelessWidget {
                 const SizedBox(width: ZadSpacing.md),
                 Expanded(
                   child: Text(
-                    entry.label,
+                    entry.label(context.l10n),
                     style: ZadType.titleSmall.copyWith(
                       fontSize: 14.5,
                       fontWeight: active ? FontWeight.w800 : FontWeight.w600,
@@ -991,11 +1022,11 @@ class _MoreSheet extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: Text(
-                'المزيد',
-                style: TextStyle(
+                context.l10n.navMore,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: kShellTextPrimary,
@@ -1032,7 +1063,7 @@ class _MoreTile extends StatelessWidget {
   Widget build(BuildContext context) => ZadPressable(
     scale: 0.96,
     onPressed: () => Navigator.of(context).pop(section.id),
-    semanticLabel: section.label,
+    semanticLabel: section.label(context.l10n),
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -1054,7 +1085,7 @@ class _MoreTile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              section.label,
+              section.label(context.l10n),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
