@@ -18,6 +18,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -107,6 +109,9 @@ class SettingsScreen extends ConsumerWidget {
               ZadSlots.keepAliveGuide(),
 
               const SizedBox(height: ZadSpacing.lg),
+              const _LanguageSection(),
+
+              const SizedBox(height: ZadSpacing.lg),
               _Section(
                 title: 'الأصوات',
                 children: <Widget>[
@@ -158,6 +163,60 @@ class SettingsScreen extends ConsumerWidget {
     await ref
         .read(settingsControllerProvider.notifier)
         .setCycleStartDay(choice.day);
+  }
+}
+
+/// اللغة (ZAD_PLAN ٦.١): زي الموبايل، عربي، أو English — on this phone.
+class _LanguageSection extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final choice = ref.watch(appLanguageProvider);
+    final english = ref.watch(appLocaleProvider).languageCode == 'en';
+    return _Section(
+      title: l10n.settingsLanguageSection,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(ZadSpacing.md),
+          child: SegmentedButton<AppLanguage>(
+            key: const ValueKey<String>('app-language'),
+            showSelectedIcon: false,
+            segments: <ButtonSegment<AppLanguage>>[
+              ButtonSegment<AppLanguage>(
+                value: AppLanguage.system,
+                label: Text(l10n.languageSystem),
+              ),
+              ButtonSegment<AppLanguage>(
+                value: AppLanguage.arabic,
+                label: Text(l10n.languageArabic),
+              ),
+              ButtonSegment<AppLanguage>(
+                value: AppLanguage.english,
+                label: Text(l10n.languageEnglish),
+              ),
+            ],
+            selected: <AppLanguage>{choice},
+            onSelectionChanged: (s) =>
+                ref.read(appLanguageProvider.notifier).choose(s.single),
+          ),
+        ),
+        if (english && !kEnglishFollowsPhone)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.md,
+              0,
+              ZadSpacing.md,
+              ZadSpacing.md,
+            ),
+            child: Text(
+              l10n.languageEnglishPreview,
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          ),
+      ],
+    );
   }
 }
 

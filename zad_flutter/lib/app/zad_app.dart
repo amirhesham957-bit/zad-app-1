@@ -8,6 +8,8 @@ import 'package:zad/app/auth_gate.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Whether the app follows the phone's dark mode.
@@ -87,7 +89,7 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
       ..watch(placesRunnerProvider);
 
     return MaterialApp(
-      title: 'زاد',
+      onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       theme: ZadTheme.light(),
       darkTheme: ZadTheme.dark(),
@@ -95,9 +97,12 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
       // A switch is a swap, as in Compose: tweening from the light theme would
       // show the static tokens (already switched) against a half-dark scheme.
       themeAnimationDuration: Duration.zero,
-      locale: const Locale('ar'),
-      supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+      // The direction follows the locale: Arabic draws right to left, English
+      // left to right (ZAD_PLAN ٦.١).
+      locale: ref.watch(appLocaleProvider),
+      supportedLocales: kZadLocales,
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
+        ZadL10n.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

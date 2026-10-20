@@ -1,0 +1,8 @@
+# ZAD_PLAN ٦.١ — Arabic is the source language; English follows it.
+arb-dir: lib/core/l10n
+output-dir: lib/core/l10n/generated
+template-arb-file: app_ar.arb
+output-localization-file: zad_l10n.dart
+output-class: ZadL10n
+nullable-getter: false
+untranslated-messages-file: build/untranslated_messages.json
