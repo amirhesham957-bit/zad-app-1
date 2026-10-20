@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -101,6 +102,9 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       caresFor: _caresFor!.toList(),
       zadVoice: base.zadVoice,
     );
+    // The first steps (ZAD_PLAN ٢.٩) follow the introduction, and only it:
+    // armed before the save, so the gate finds them when it opens.
+    ref.read(firstStepsControllerProvider.notifier).arm();
     final failure = await ref
         .read(memoryControllerProvider.notifier)
         .saveProfile(profile);

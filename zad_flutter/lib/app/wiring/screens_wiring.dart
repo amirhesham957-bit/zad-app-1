@@ -5,6 +5,7 @@ library;
 import 'package:zad/features/achievements/presentation/achievements_screen.dart';
 import 'package:zad/features/affiliate/presentation/affiliate_product_card.dart';
 import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
+import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/presentation/alerts_settings_section.dart';
 import 'package:zad/features/appointments/presentation/appointments_screen.dart';
 import 'package:zad/features/auth/presentation/sign_out_action.dart';
@@ -134,6 +135,12 @@ void wireScreens() {
   ZadScreens.showEditTransactionSheet = showEditTransactionSheet;
   ZadScreens.confirmDeleteTransaction = confirmDeleteTransaction;
   ZadScreens.showQuickExpenseSheet = showQuickExpenseSheet;
+  ZadScreens.notificationsAllowed = (ref) async =>
+      await ref.read(notificationPermissionProvider).status() ==
+      AlertPermission.granted;
+  ZadScreens.askNotifications = (ref) async =>
+      await ref.read(notificationPermissionProvider).request() ==
+      AlertPermission.granted;
   ZadScreens.showCashExpenseSheet = showCashExpenseSheet;
 }
 
@@ -206,4 +213,5 @@ void wireSlots() {
   ZadSlots.subscriptionsScreen = ({embedded = false, initialTab = 0}) =>
       SubscriptionsScreen(embedded: embedded, initialTab: initialTab);
   ZadSlots.homeTelegramBlocks = () => const HomeTelegramBlocks();
+  ZadSlots.telegramBindingSection = () => const TelegramBindingSection();
 }

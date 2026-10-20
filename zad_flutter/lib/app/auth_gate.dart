@@ -10,8 +10,10 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/features/onboarding/application/intro_controller.dart';
 import 'package:zad/features/onboarding/application/introduction_gate.dart';
+import 'package:zad/features/onboarding/presentation/first_steps_screen.dart';
 import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 import 'package:zad/features/onboarding/presentation/introduce_yourself_screen.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
@@ -52,6 +54,8 @@ class ZadAuthGate extends ConsumerWidget {
       MarketGate.chosen || MarketGate.unknown =>
         ref.watch(needsIntroductionProvider)
             ? const IntroduceYourselfScreen()
+            : ref.watch(firstStepsDueProvider)
+            ? const FirstStepsScreen()
             : const ZadShell(),
     };
   }

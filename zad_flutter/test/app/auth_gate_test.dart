@@ -26,6 +26,7 @@ import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/features/market/presentation/market_selection_screen.dart';
+import 'package:zad/features/onboarding/presentation/first_steps_screen.dart';
 import 'package:zad/features/onboarding/presentation/intro_screen.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
@@ -606,6 +607,44 @@ void main() {
       await pumpGate(tester, container);
       await tester.pump(Duration.zero);
       expect(find.byType(IntroScreen), findsNothing);
+      expect(find.byType(ZadShell), findsOneWidget);
+    });
+  });
+
+  group('an account that has just introduced itself (ZAD_PLAN 2.9)', () {
+    setUp(
+      () => seedSettings(const AccountSettings(country: 'EG', currency: 'EGP')),
+    );
+
+    testWidgets('sees its first steps before the shell, and only its own', (
+      tester,
+    ) async {
+      await deviceBox.put('first_steps_due:user-1', 'true');
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      expect(find.byType(FirstStepsScreen), findsOneWidget);
+      expect(find.byType(ZadShell), findsNothing);
+
+      // «كمّل بعدين» opens the app, and the steps never come back.
+      await tester.tap(find.text('كمّل بعدين — افتح زاد'));
+      await tester.pump(Duration.zero);
+      expect(find.byType(ZadShell), findsOneWidget);
+      expect(deviceBox.get('first_steps_due:user-1'), isNull);
+    });
+
+    testWidgets('another account on the same phone is not walked through it', (
+      tester,
+    ) async {
+      await deviceBox.put('first_steps_due:user-2', 'true');
+      final container = containerFor('user-1');
+      addTearDown(container.dispose);
+
+      await pumpGate(tester, container);
+      await tester.pump(Duration.zero);
+      expect(find.byType(FirstStepsScreen), findsNothing);
       expect(find.byType(ZadShell), findsOneWidget);
     });
   });
