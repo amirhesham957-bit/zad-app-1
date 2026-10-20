@@ -17,6 +17,7 @@ import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_auth_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/terms_content.dart';
 import 'package:zad/shared/auth/application/auth_controller.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
@@ -79,7 +80,7 @@ class _BrandMark extends StatelessWidget {
         'assets/brand/carrot_logo.svg',
         width: 60,
         height: 60,
-        semanticsLabel: 'زاد',
+        semanticsLabel: context.l10n.appTitle,
       ),
       SizedBox(height: gap),
       Text(
@@ -136,7 +137,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                 const _BrandMark(wordmarkSize: 32, gap: 20),
                 const SizedBox(height: 10),
                 Text(
-                  'تدبير ذكي لبيت هادئ',
+                  context.l10n.authTagline,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -153,7 +154,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'تسجيل الدخول',
+                  context.l10n.authSignInTitle,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.bold,
@@ -161,7 +162,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'أدخل بريدك الإلكتروني وكلمة المرور',
+                  context.l10n.authSignInSubtitle,
                   style: ZadType.bodyMedium.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -176,7 +177,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'البريد الإلكتروني',
+                  context.l10n.authEmail,
                   style: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: 14,
@@ -191,7 +192,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'كلمة المرور',
+                  context.l10n.authPassword,
                   style: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: 14,
@@ -206,7 +207,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                     context,
                     fill: Colors.white,
                     suffix: IconButton(
-                      tooltip: 'إظهار/إخفاء كلمة المرور',
+                      tooltip: context.l10n.authTogglePassword,
                       onPressed: () => setState(() => _visible = !_visible),
                       icon: Icon(
                         _visible ? Icons.visibility : Icons.visibility_off,
@@ -221,7 +222,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                   child: TextButton(
                     onPressed: () => unawaited(_forgot()),
                     child: Text(
-                      'نسيت كلمة المرور؟',
+                      context.l10n.authForgotPassword,
                       style: TextStyle(color: scheme.onSurface, fontSize: 14),
                     ),
                   ),
@@ -234,12 +235,12 @@ class _SignInViewState extends ConsumerState<_SignInView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                failure.message,
+                failure.localized(context.l10n),
                 style: ZadType.bodySmall.copyWith(color: scheme.error),
               ),
             ),
           ZadPrimaryButton(
-            text: 'دخول',
+            text: context.l10n.authSignInButton,
             enabled: canSubmit,
             loading: form.submitting,
             onPressed: () => unawaited(
@@ -258,7 +259,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
-                  'ليس لديك حساب؟ ',
+                  context.l10n.authNoAccount,
                   style: TextStyle(
                     color: scheme.onSurface,
                     fontSize: 14,
@@ -271,7 +272,7 @@ class _SignInViewState extends ConsumerState<_SignInView> {
                       .read(authControllerProvider.notifier)
                       .setMode(AuthMode.signUp),
                   child: Text(
-                    'سجل الآن',
+                    context.l10n.authSignUpNow,
                     style: TextStyle(
                       color: scheme.primary,
                       fontSize: 14,
@@ -309,28 +310,26 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('استعادة كلمة المرور'),
+      title: Text(context.l10n.authResetTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text(
-              'أدخل بريدك الإلكتروني. سنرسل لك رابطاً لاستعادة كلمة المرور.',
-            ),
+            Text(context.l10n.authResetBody),
             const SizedBox(height: 8),
             TextField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'البريد الإلكتروني',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.authEmail,
+                border: const OutlineInputBorder(),
               ),
             ),
             if (_sent) ...<Widget>[
               const SizedBox(height: 8),
               Text(
-                'تم إرسال الرابط بنجاح!',
+                context.l10n.authResetSent,
                 style: TextStyle(
                   color: scheme.primary,
                   fontWeight: FontWeight.bold,
@@ -343,7 +342,7 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إغلاق'),
+          child: Text(context.l10n.commonClose),
         ),
         FilledButton(
           onPressed: () async {
@@ -356,7 +355,7 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
               // Kotlin shows the error on the screen behind; nothing here.
             }
           },
-          child: const Text('إرسال'),
+          child: Text(context.l10n.commonSend),
         ),
       ],
     );
@@ -448,15 +447,15 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
             TextButton(
               onPressed: () => Navigator.of(c).pop(false),
               child: Text(
-                'رفض',
+                context.l10n.authTermsDecline,
                 style: TextStyle(color: scheme.onSurfaceVariant),
               ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(c).pop(true),
-              child: const Text(
-                'موافق ومتابعة',
-                style: TextStyle(
+              child: Text(
+                context.l10n.authTermsAccept,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -506,7 +505,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'البلد',
+            context.l10n.authCountry,
             style: ZadType.labelMedium.copyWith(
               color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
@@ -526,7 +525,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
               ),
               child: Text(
                 switch (market) {
-                  null => 'اختار بلدك',
+                  null => context.l10n.authPickCountry,
                   final m => '${m.flag}  ${m.nameAr} · ${m.currencySymbol}',
                 },
                 style: TextStyle(
@@ -606,7 +605,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'إنشاء حساب',
+                  context.l10n.authSignUpTitle,
                   style: ZadType.displayMedium.copyWith(
                     fontSize: 28,
                     color: scheme.onSurface,
@@ -615,7 +614,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'أدخل بياناتك للمتابعة',
+                  context.l10n.authSignUpSubtitle,
                   style: ZadType.bodyMedium.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -630,13 +629,13 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 _field(
-                  label: 'اسم المستخدم',
+                  label: context.l10n.authName,
                   controller: _name,
-                  hint: 'محمد أحمد',
+                  hint: context.l10n.authNameHint,
                 ),
                 const SizedBox(height: 16),
                 _field(
-                  label: 'البريد الإلكتروني',
+                  label: context.l10n.authEmail,
                   controller: _email,
                   hint: 'your.email@gmail.com',
                   keyboard: TextInputType.emailAddress,
@@ -645,11 +644,11 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                 _marketField(),
                 const SizedBox(height: 16),
                 _field(
-                  label: 'كلمة المرور',
+                  label: context.l10n.authPassword,
                   controller: _password,
                   password: !_visible,
                   suffix: IconButton(
-                    tooltip: 'إظهار/إخفاء كلمة المرور',
+                    tooltip: context.l10n.authTogglePassword,
                     onPressed: () => setState(() => _visible = !_visible),
                     icon: Icon(
                       _visible ? Icons.visibility : Icons.visibility_off,
@@ -666,7 +665,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                       onChanged: (v) => setState(() => _terms = v ?? false),
                     ),
                     Text(
-                      'أوافق على ',
+                      context.l10n.authAgreeTo,
                       style: TextStyle(
                         color: scheme.onSurfaceVariant,
                         fontSize: 13,
@@ -676,7 +675,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                       style: TextButton.styleFrom(padding: EdgeInsets.zero),
                       onPressed: () => unawaited(_showTerms()),
                       child: Text(
-                        'الشروط وسياسة الخصوصية',
+                        context.l10n.authTermsLink,
                         style: TextStyle(
                           color: scheme.primary,
                           fontSize: 13,
@@ -703,7 +702,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'تم التسجيل بنجاح! جاري التوجيه...',
+                    context.l10n.authSignUpDone,
                     style: ZadType.bodyMedium.copyWith(
                       color: scheme.primary,
                       fontWeight: FontWeight.bold,
@@ -716,12 +715,12 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                failure.message,
+                failure.localized(context.l10n),
                 style: ZadType.bodySmall.copyWith(color: scheme.error),
               ),
             ),
           ZadPrimaryButton(
-            text: 'إنشاء حساب',
+            text: context.l10n.authSignUpTitle,
             enabled: canSubmit,
             loading: form.submitting,
             onPressed: () => unawaited(_submit()),
@@ -732,7 +731,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text(
-                  'لديك حساب بالفعل؟ ',
+                  context.l10n.authHaveAccount,
                   style: TextStyle(color: scheme.onSurface, fontSize: 14),
                 ),
                 TextButton(
@@ -741,7 +740,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
                       .read(authControllerProvider.notifier)
                       .setMode(AuthMode.signIn),
                   child: Text(
-                    'تسجيل الدخول',
+                    context.l10n.authSignInTitle,
                     style: TextStyle(
                       color: scheme.primary,
                       fontSize: 14,

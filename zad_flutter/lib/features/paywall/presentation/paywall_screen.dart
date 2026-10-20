@@ -26,6 +26,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/companion/presentation/companion_paywall_aside.dart';
@@ -40,34 +41,50 @@ enum _Plan {
   // Every perk here is one the server actually gives (zad_tiers, zad-brain's
   // paid lane, 2026-10-12): the plans differ only in attempts; every feature
   // is open on the free plan too, at its cost in attempts.
-  basic('الأساسية (Basic)', 300, 'الأكثر اقتصاداً', <String>[
-    'من غير إعلانات خالص',
-    '300 محاولة في الشهر (حوالي 10 في اليوم)',
-    'مكانك محجوز وقت الزحمة، وزاد بيفتكر كلامكم أطول',
-    'صور وفويس في بوت تليجرام',
-  ]),
-  plus('المتقدمة (Plus)', 1000, 'الأكثر شعبية ⭐', <String>[
-    'كل مزايا الأساسية',
-    '1000 محاولة في الشهر (حوالي 33 في اليوم)',
-    'تكفي مسح فواتير وتحليل عميق كل يوم',
-  ]),
-  ultra('العيلة (Family)', 2500, 'أكبر رصيد 👑', <String>[
-    'كل مزايا الأساسية',
-    '2500 محاولة في الشهر (حوالي 83 في اليوم)',
-    'لأكتر حد بيعتمد على زاد في البيت',
-  ]);
+  basic(300),
+  plus(1000),
+  ultra(2500);
 
-  new(this.title, this.quota, this.badge, this.perks);
+  new(this.quota);
 
-  final String title;
   final int quota;
-  final String badge;
+
+  String title(ZadL10n l) => switch (this) {
+    _Plan.basic => l.paywallBasicTitle,
+    _Plan.plus => l.paywallPlusTitle,
+    _Plan.ultra => l.paywallFamilyTitle,
+  };
+
+  String badge(ZadL10n l) => switch (this) {
+    _Plan.basic => l.paywallBasicBadge,
+    _Plan.plus => l.paywallPlusBadge,
+    _Plan.ultra => l.paywallFamilyBadge,
+  };
+
+  List<String> perks(ZadL10n l) => switch (this) {
+    _Plan.basic => <String>[
+      l.paywallBasicPerkNoAds,
+      l.paywallBasicPerkAttempts,
+      l.paywallBasicPerkPriority,
+      l.paywallBasicPerkTelegram,
+    ],
+    _Plan.plus => <String>[
+      l.paywallAllBasicPerks,
+      l.paywallPlusPerkAttempts,
+      l.paywallPlusPerkDaily,
+    ],
+    _Plan.ultra => <String>[
+      l.paywallAllBasicPerks,
+      l.paywallFamilyPerkAttempts,
+      l.paywallFamilyPerkHeavy,
+    ],
+  };
+
   Color get accent => switch (this) {
     _Plan.basic => ZadColors.forestEmerald,
     _Plan.plus => ZadColors.mustardOchre,
     _Plan.ultra => _lilac,
   };
-  final List<String> perks;
 
   /// The plans that glow (`_PlanCard.pulse`).
   bool get glows => this != _Plan.basic;
@@ -180,19 +197,18 @@ class _PaywallState extends ConsumerState<PaywallScreen>
         break;
       case BillingOutcome.unavailable:
         await _explain(
-          'Google Play مش متاح',
-          'الاشتراك بيتم من Google Play. لو زاد متثبت من ملف مش من المتجر، '
-              'نزّله من Google Play وبعدين اشترك من هنا.',
+          context.l10n.paywallNoPlayTitle,
+          context.l10n.paywallNoPlayBody,
         );
       case BillingOutcome.notOnPlay:
         await _explain(
-          'الباقة لسه مش على المتجر',
-          'الباقة دي لسه ماتفعّلتش على Google Play. جرّب تاني قريب.',
+          context.l10n.paywallNotOnPlayTitle,
+          context.l10n.paywallNotOnPlayBody,
         );
       case BillingOutcome.failed:
         await _explain(
-          'مقدرناش نفتح Google Play',
-          'حصلت مشكلة وإحنا بنفتح الدفع. اتأكد من النت وجرّب تاني.',
+          context.l10n.paywallFailedTitle,
+          context.l10n.paywallFailedBody,
         );
     }
   }
@@ -205,7 +221,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('تمام'),
+          child: Text(dialogContext.l10n.commonOk),
         ),
       ],
     ),
@@ -217,7 +233,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     appBar: AppBar(
       backgroundColor: Colors.transparent,
       title: Text(
-        'اشتراكات زاد بريميوم (Zad VIP)',
+        context.l10n.paywallTitle,
         style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
       ),
     ),
@@ -268,7 +284,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
               Icon(ZadIcons.assistant, size: 40, color: ZadColors.mustardLight),
               const SizedBox(height: 10),
               Text(
-                'اختر خطة زاد المناسبة لعائلتك',
+                context.l10n.paywallHeadline,
                 textAlign: TextAlign.center,
                 style: ZadType.titleLarge.copyWith(
                   fontWeight: FontWeight.w800,
@@ -277,8 +293,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
               ),
               const SizedBox(height: 6),
               Text(
-                'من غير إعلانات، برصيد محاولات أكبر، ومكان محجوز وقت الزحمة '
-                '— والدفع عبر متجر Google Play الرسمي.',
+                context.l10n.paywallSubhead,
                 textAlign: TextAlign.center,
                 style: ZadType.bodySmall.copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
@@ -340,7 +355,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
             onPressed: _buying ? null : () => unawaited(_subscribe()),
             icon: const Icon(Icons.shopping_bag, size: 20),
             label: Text(
-              'اشترك في ${_selected.title} عبر Google Play',
+              context.l10n.paywallSubscribeTo(_selected.title(context.l10n)),
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 14.5,
@@ -357,9 +372,9 @@ class _PaywallState extends ConsumerState<PaywallScreen>
         alignment: WrapAlignment.center,
         runSpacing: ZadSpacing.xs,
         children: <Widget>[
-          for (final (method, icon) in const <(String, String)>[
+          for (final (method, icon) in <(String, String)>[
             ('Google Play', '💳'),
-            ('دفع آمن ومحمي', '🔒'),
+            (context.l10n.paywallSafePayment, '🔒'),
           ])
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -381,8 +396,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
       ),
       const SizedBox(height: 10),
       Text(
-        'يتم الدفع وتجديد الاشتراك الشهري بأمان عبر حساب Google Play الخاص '
-        'بك، مع إمكانية الإلغاء في أي وقت من متجر التطبيقات.',
+        context.l10n.paywallBillingNote,
         textAlign: TextAlign.center,
         style: ZadType.bodySmall.copyWith(
           color: ZadColors.inkMuted.withValues(alpha: 0.7),
@@ -401,15 +415,13 @@ class _PaywallState extends ConsumerState<PaywallScreen>
           child: Column(
             children: <Widget>[
               Text(
-                'أو كمّل على المجاني',
+                context.l10n.paywallStayFree,
                 style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: ZadSpacing.xs),
               // The free plan as zad_entitlement_refresh gives it.
               Text(
-                '5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. '
-                'رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل '
-                'العميق بـ3.',
+                context.l10n.paywallFreeTerms,
                 textAlign: TextAlign.center,
                 style: ZadType.bodySmall.copyWith(
                   color: ZadColors.inkMuted,
@@ -508,7 +520,7 @@ class _PlanCard extends StatelessWidget {
   }
 
   /// The badge, with a light sweeping across it on the glowing plans.
-  Widget _badge() {
+  Widget _badge(BuildContext context) {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -516,7 +528,7 @@ class _PlanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        plan.badge,
+        plan.badge(context.l10n),
         style: ZadType.labelSmall.copyWith(
           fontWeight: FontWeight.w700,
           color: plan.accent,
@@ -579,7 +591,7 @@ class _PlanCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          plan.title,
+                          plan.title(context.l10n),
                           style: ZadType.titleMedium.copyWith(
                             fontWeight: FontWeight.w800,
                             color: selected
@@ -588,15 +600,15 @@ class _PlanCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${plan.quota} محاولة في الشهر',
+                          context.l10n.paywallAttemptsPerMonth(plan.quota),
                           style: TextStyle(
                             fontSize: 11.5,
                             color: ZadColors.inkMuted,
                           ),
                         ),
-                        if (price != null)
+                        if (price case final p?)
                           Text(
-                            '$price في الشهر',
+                            context.l10n.paywallPricePerMonth(p),
                             key: ValueKey<String>('price-${plan.name}'),
                             style: ZadType.labelLarge.copyWith(
                               fontWeight: FontWeight.w800,
@@ -613,7 +625,7 @@ class _PlanCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: <Widget>[
                         Text(
-                          'من Google Play',
+                          context.l10n.paywallFromPlay,
                           textAlign: TextAlign.end,
                           style: ZadType.titleSmall.copyWith(
                             fontWeight: FontWeight.w800,
@@ -621,7 +633,7 @@ class _PlanCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'اشتراك شهري تجديد تلقائي',
+                          context.l10n.paywallAutoRenew,
                           textAlign: TextAlign.end,
                           style: TextStyle(
                             fontSize: 9,
@@ -634,11 +646,11 @@ class _PlanCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: ZadSpacing.sm),
-              _badge(),
+              _badge(context),
               const SizedBox(height: 14),
               Divider(color: ZadColors.outline.withValues(alpha: 0.5)),
               const SizedBox(height: ZadSpacing.sm),
-              for (final perk in plan.perks)
+              for (final perk in plan.perks(context.l10n))
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Row(

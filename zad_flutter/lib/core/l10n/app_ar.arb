@@ -1,15 +1,176 @@
 {
   "@@locale": "ar",
   "appTitle": "زاد",
-  "@appTitle": {"description": "The app's name, in the task switcher."},
+  "@appTitle": {
+    "description": "The app's name, in the task switcher."
+  },
   "settingsLanguageSection": "اللغة",
-  "@settingsLanguageSection": {"description": "Settings: the section that picks the app's language."},
+  "@settingsLanguageSection": {
+    "description": "Settings: the section that picks the app's language."
+  },
   "languageSystem": "زي الموبايل",
-  "@languageSystem": {"description": "Language choice: follow the phone's language."},
+  "@languageSystem": {
+    "description": "Language choice: follow the phone's language."
+  },
   "languageArabic": "العربية",
-  "@languageArabic": {"description": "Language choice: Arabic. Always written in Arabic."},
+  "@languageArabic": {
+    "description": "Language choice: Arabic. Always written in Arabic."
+  },
   "languageEnglish": "English",
-  "@languageEnglish": {"description": "Language choice: English. Always written in English."},
+  "@languageEnglish": {
+    "description": "Language choice: English. Always written in English."
+  },
   "languageEnglishPreview": "الإنجليزي لسه بيتترجم — شاشات كتير هتفضل عربي لحد ما يخلص.",
-  "@languageEnglishPreview": {"description": "Settings: shown under the language picker while the English translation is incomplete."}
+  "@languageEnglishPreview": {
+    "description": "Settings: shown under the language picker while the English translation is incomplete."
+  },
+  "authTagline": "تدبير ذكي لبيت هادئ",
+  "@authTagline": {
+    "description": "Login: the line under the logo."
+  },
+  "authSignInTitle": "تسجيل الدخول",
+  "@authSignInTitle": {
+    "description": "Login: the sign-in title, and the link back to it."
+  },
+  "authSignInSubtitle": "أدخل بريدك الإلكتروني وكلمة المرور",
+  "authEmail": "البريد الإلكتروني",
+  "@authEmail": {
+    "description": "Login: the email field's label."
+  },
+  "authPassword": "كلمة المرور",
+  "authTogglePassword": "إظهار/إخفاء كلمة المرور",
+  "@authTogglePassword": {
+    "description": "Tooltip on the eye icon."
+  },
+  "authForgotPassword": "نسيت كلمة المرور؟",
+  "authSignInButton": "دخول",
+  "@authSignInButton": {
+    "description": "Login: the main button."
+  },
+  "authNoAccount": "ليس لديك حساب؟ ",
+  "@authNoAccount": {
+    "description": "Followed by the sign-up link; keep the trailing space."
+  },
+  "authSignUpNow": "سجل الآن",
+  "authResetTitle": "استعادة كلمة المرور",
+  "authResetBody": "أدخل بريدك الإلكتروني. سنرسل لك رابطاً لاستعادة كلمة المرور.",
+  "authResetSent": "تم إرسال الرابط بنجاح!",
+  "commonClose": "إغلاق",
+  "commonSend": "إرسال",
+  "authTermsDecline": "رفض",
+  "@authTermsDecline": {
+    "description": "Terms dialog: refuse."
+  },
+  "authTermsAccept": "موافق ومتابعة",
+  "authCountry": "البلد",
+  "@authCountry": {
+    "description": "Sign-up: the market field."
+  },
+  "authPickCountry": "اختار بلدك",
+  "authSignUpTitle": "إنشاء حساب",
+  "@authSignUpTitle": {
+    "description": "Sign-up: the title and the main button."
+  },
+  "authSignUpSubtitle": "أدخل بياناتك للمتابعة",
+  "authName": "اسم المستخدم",
+  "authNameHint": "محمد أحمد",
+  "@authNameHint": {
+    "description": "An example name in the name field."
+  },
+  "authAgreeTo": "أوافق على ",
+  "@authAgreeTo": {
+    "description": "Followed by the terms link; keep the trailing space."
+  },
+  "authTermsLink": "الشروط وسياسة الخصوصية",
+  "authSignUpDone": "تم التسجيل بنجاح! جاري التوجيه...",
+  "authHaveAccount": "لديك حساب بالفعل؟ ",
+  "@authHaveAccount": {
+    "description": "Followed by the sign-in link; keep the trailing space."
+  },
+  "authSignOut": "اخرج من الحساب",
+  "authSignOutTitle": "تخرج من الحساب؟",
+  "authSignOutBody": "هنحتاج تدخل تاني عشان توصل لحساباتك.",
+  "commonWait": "استنى",
+  "authSignOutConfirm": "اخرج",
+  "@authSignOutConfirm": {
+    "description": "Sign-out dialog: the confirming button."
+  },
+  "authErrorInvalidCredentials": "الإيميل أو كلمة السر مش مظبوطة.",
+  "authErrorEmailTaken": "الإيميل ده مسجّل قبل كده. جرّب تدخل بيه، أو غيّر كلمة السر.",
+  "authErrorWeakPassword": "كلمة السر قصيرة — خليها ٦ حروف على الأقل.",
+  "authErrorInvalidEmail": "الإيميل ده شكله مش مظبوط.",
+  "authErrorEmailNotConfirmed": "لسه محتاج تأكّد الإيميل. بصّ في رسايلك على اللينك اللي بعتناه.",
+  "authErrorRateLimited": "جرّبت مرات كتير في وقت قصير. استنى شوية وحاول تاني.",
+  "authErrorSignupDisabled": "التسجيل مقفول دلوقتي.",
+  "authErrorUserBanned": "الحساب ده موقوف.",
+  "authErrorOffline": "مفيش اتصال بالنت — الدخول محتاج نت.",
+  "authErrorServer": "الخدمة مش بتردّ دلوقتي. حاول تاني بعد شوية.",
+  "authErrorUnknown": "حصل خطأ مش متوقع. حاول تاني.",
+  "authSignOutPending": "{count, plural, =1{فيه عملية واحدة لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.} other{فيه {count} عمليات لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.}}",
+  "@authSignOutPending": {
+    "description": "Sign-out dialog when writes are still waiting to be sent.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallBasicTitle": "الأساسية (Basic)",
+  "paywallBasicBadge": "الأكثر اقتصاداً",
+  "paywallBasicPerkNoAds": "من غير إعلانات خالص",
+  "paywallBasicPerkAttempts": "300 محاولة في الشهر (حوالي 10 في اليوم)",
+  "paywallBasicPerkPriority": "مكانك محجوز وقت الزحمة، وزاد بيفتكر كلامكم أطول",
+  "paywallBasicPerkTelegram": "صور وفويس في بوت تليجرام",
+  "paywallPlusTitle": "المتقدمة (Plus)",
+  "paywallPlusBadge": "الأكثر شعبية ⭐",
+  "paywallAllBasicPerks": "كل مزايا الأساسية",
+  "paywallPlusPerkAttempts": "1000 محاولة في الشهر (حوالي 33 في اليوم)",
+  "paywallPlusPerkDaily": "تكفي مسح فواتير وتحليل عميق كل يوم",
+  "paywallFamilyTitle": "العيلة (Family)",
+  "paywallFamilyBadge": "أكبر رصيد 👑",
+  "paywallFamilyPerkAttempts": "2500 محاولة في الشهر (حوالي 83 في اليوم)",
+  "paywallFamilyPerkHeavy": "لأكتر حد بيعتمد على زاد في البيت",
+  "paywallNoPlayTitle": "Google Play مش متاح",
+  "paywallNoPlayBody": "الاشتراك بيتم من Google Play. لو زاد متثبت من ملف مش من المتجر، نزّله من Google Play وبعدين اشترك من هنا.",
+  "paywallNotOnPlayTitle": "الباقة لسه مش على المتجر",
+  "paywallNotOnPlayBody": "الباقة دي لسه ماتفعّلتش على Google Play. جرّب تاني قريب.",
+  "paywallFailedTitle": "مقدرناش نفتح Google Play",
+  "paywallFailedBody": "حصلت مشكلة وإحنا بنفتح الدفع. اتأكد من النت وجرّب تاني.",
+  "commonOk": "تمام",
+  "paywallTitle": "اشتراكات زاد بريميوم (Zad VIP)",
+  "paywallHeadline": "اختر خطة زاد المناسبة لعائلتك",
+  "paywallSubhead": "من غير إعلانات، برصيد محاولات أكبر، ومكان محجوز وقت الزحمة — والدفع عبر متجر Google Play الرسمي.",
+  "paywallSafePayment": "دفع آمن ومحمي",
+  "paywallBillingNote": "يتم الدفع وتجديد الاشتراك الشهري بأمان عبر حساب Google Play الخاص بك، مع إمكانية الإلغاء في أي وقت من متجر التطبيقات.",
+  "paywallStayFree": "أو كمّل على المجاني",
+  "paywallFreeTerms": "5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل العميق بـ3.",
+  "paywallFromPlay": "من Google Play",
+  "paywallAutoRenew": "اشتراك شهري تجديد تلقائي",
+  "paywallSubscribeTo": "اشترك في {plan} عبر Google Play",
+  "@paywallSubscribeTo": {
+    "description": "The buy button.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallAttemptsPerMonth": "{count} محاولة في الشهر",
+  "@paywallAttemptsPerMonth": {
+    "description": "Under a plan's name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallPricePerMonth": "{price} في الشهر",
+  "@paywallPricePerMonth": {
+    "description": "Play's formatted price, per month.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  }
 }

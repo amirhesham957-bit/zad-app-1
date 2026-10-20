@@ -8,9 +8,11 @@ library;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 
 /// The only question the login screen asks about an error.
 enum AuthFailureKind {
@@ -64,24 +66,23 @@ class AuthFailure implements Exception {
   /// The underlying message, kept only for [AuthFailureKind.unknown].
   final String? detail;
 
-  /// What to put in front of the customer.
-  String get message => switch (kind) {
-    AuthFailureKind.invalidCredentials => 'الإيميل أو كلمة السر مش مظبوطة.',
-    AuthFailureKind.emailTaken =>
-      'الإيميل ده مسجّل قبل كده. جرّب تدخل بيه، أو غيّر كلمة السر.',
-    AuthFailureKind.weakPassword => 'كلمة السر قصيرة — خليها ٦ حروف على الأقل.',
-    AuthFailureKind.invalidEmail => 'الإيميل ده شكله مش مظبوط.',
-    AuthFailureKind.emailNotConfirmed =>
-      'لسه محتاج تأكّد الإيميل. بصّ في رسايلك على اللينك اللي بعتناه.',
-    AuthFailureKind.rateLimited =>
-      'جرّبت مرات كتير في وقت قصير. استنى شوية وحاول تاني.',
-    AuthFailureKind.signupDisabled => 'التسجيل مقفول دلوقتي.',
-    AuthFailureKind.userBanned => 'الحساب ده موقوف.',
-    AuthFailureKind.offline => 'مفيش اتصال بالنت — الدخول محتاج نت.',
-    AuthFailureKind.serverError =>
-      'الخدمة مش بتردّ دلوقتي. حاول تاني بعد شوية.',
-    AuthFailureKind.unknown => 'حصل خطأ مش متوقع. حاول تاني.',
+  /// What to put in front of the customer, in [l10n]'s language.
+  String localized(ZadL10n l10n) => switch (kind) {
+    AuthFailureKind.invalidCredentials => l10n.authErrorInvalidCredentials,
+    AuthFailureKind.emailTaken => l10n.authErrorEmailTaken,
+    AuthFailureKind.weakPassword => l10n.authErrorWeakPassword,
+    AuthFailureKind.invalidEmail => l10n.authErrorInvalidEmail,
+    AuthFailureKind.emailNotConfirmed => l10n.authErrorEmailNotConfirmed,
+    AuthFailureKind.rateLimited => l10n.authErrorRateLimited,
+    AuthFailureKind.signupDisabled => l10n.authErrorSignupDisabled,
+    AuthFailureKind.userBanned => l10n.authErrorUserBanned,
+    AuthFailureKind.offline => l10n.authErrorOffline,
+    AuthFailureKind.serverError => l10n.authErrorServer,
+    AuthFailureKind.unknown => l10n.authErrorUnknown,
   };
+
+  /// The Arabic sentence, where no locale is at hand (logs, tests).
+  String get message => localized(lookupZadL10n(const Locale('ar')));
 
   @override
   String toString() =>

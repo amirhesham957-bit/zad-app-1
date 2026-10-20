@@ -6,9 +6,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
 import 'package:zad/shared/auth/domain/auth_failure.dart';
@@ -227,5 +230,40 @@ void main() {
     await tester.tap(find.byTooltip('إظهار/إخفاء كلمة المرور'));
     await tester.pump();
     expect(password().obscureText, isFalse);
+  });
+
+  testWidgets('in English it reads English, left to right (ZAD_PLAN 6.3)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authGatewayProvider.overrideWithValue(gateway)],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          locale: const Locale('en'),
+          supportedLocales: kZadLocales,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            ZadL10n.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const LoginScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Forgot your password?'), findsOneWidget);
+    expect(find.text('Sign up now'), findsOneWidget);
+    expect(find.text('نسيت كلمة المرور؟'), findsNothing);
+    expect(
+      Directionality.of(tester.element(find.text('Sign up now'))),
+      TextDirection.ltr,
+    );
+    const failure = AuthFailure(AuthFailureKind.offline);
+    expect(
+      failure.localized(lookupZadL10n(const Locale('en'))),
+      'No internet connection — signing in needs one.',
+    );
   });
 }

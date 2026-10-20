@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/auth/domain/auth_failure.dart';
 
@@ -16,7 +17,7 @@ class SignOutAction extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => IconButton(
     icon: const Icon(Icons.exit_to_app),
-    tooltip: 'اخرج من الحساب',
+    tooltip: context.l10n.authSignOut,
     onPressed: () => confirmAndSignOut(context, ref),
   );
 }
@@ -34,7 +35,7 @@ class SignOutTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => ListTile(
     leading: Icon(Icons.exit_to_app, color: ZadColors.terracottaRust),
     title: Text(
-      'اخرج من الحساب',
+      context.l10n.authSignOut,
       style: ZadType.titleSmall.copyWith(color: ZadColors.terracottaRust),
     ),
     onTap: () => confirmAndSignOut(context, ref),
@@ -48,31 +49,29 @@ class SignOutTile extends ConsumerWidget {
 Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
   final session = ref.read(sessionControllerProvider.notifier);
   final pending = session.pendingWriteCount;
-  final unit = pending == 1 ? 'عملية' : 'عمليات';
 
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('تخرج من الحساب؟'),
+      title: Text(dialogContext.l10n.authSignOutTitle),
       content: Text(
         pending == 0
-            ? 'هنحتاج تدخل تاني عشان توصل لحساباتك.'
+            ? dialogContext.l10n.authSignOutBody
             // Said plainly, with the number, because these are rows the
             // customer was already told were saved. They stay on the device
             // — the outbox is not one of the caches a sign-out clears — but
             // they carry this account's id, so the next session's token
             // cannot send them and the server would refuse them outright.
-            : 'فيه $pending $unit لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي '
-                  'مش هتتبعت. الأحسن تستنى لما النت يرجع.',
+            : dialogContext.l10n.authSignOutPending(pending),
       ),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('استنى'),
+          child: Text(dialogContext.l10n.commonWait),
         ),
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('اخرج'),
+          child: Text(dialogContext.l10n.authSignOutConfirm),
         ),
       ],
     ),
@@ -81,6 +80,7 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
   if (confirmed != true || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   // The gate swaps the app's root for the login screen, but a screen pushed
   // over it (settings is one) stays on top and covers it: the dialog closed
   // and the customer saw nothing happen (2026-10-10). Every route above the
@@ -92,7 +92,7 @@ Future<void> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
     // The device is signed out regardless — gotrue drops the stored session
     // before it calls the server — so this is a note, not a failure the
     // customer has to do anything about.
-    messenger.showSnackBar(SnackBar(content: Text(failure.message)));
+    messenger.showSnackBar(SnackBar(content: Text(failure.localized(l10n))));
   } finally {
     if (navigator.mounted) navigator.popUntil((route) => route.isFirst);
   }
