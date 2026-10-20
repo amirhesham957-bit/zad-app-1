@@ -19,6 +19,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -66,14 +67,14 @@ class ChatSectionCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'محادثة مع زاد',
+                          context.l10n.intChatTitle,
                           style: ZadType.titleMedium.copyWith(
                             fontWeight: FontWeight.bold,
                             color: scheme.onSurface,
                           ),
                         ),
                         Text(
-                          'اسأل عن مصاريفك، مخزونك، أو أي حاجة',
+                          context.l10n.intChatSubtitle,
                           style: ZadType.bodySmall.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
@@ -85,8 +86,8 @@ class ChatSectionCard extends ConsumerWidget {
                     expanded ? Icons.expand_less : Icons.expand_more,
                     color: scheme.onSurfaceVariant,
                     semanticLabel: expanded
-                        ? 'إخفاء المحادثة'
-                        : 'افتح المحادثة',
+                        ? context.l10n.intChatHide
+                        : context.l10n.intChatOpen,
                   ),
                 ],
               ),
@@ -115,13 +116,13 @@ class ChatTab extends ConsumerStatefulWidget {
 }
 
 class _ChatTabState extends ConsumerState<ChatTab> {
-  static const List<(IconData, String)> _prompts = <(IconData, String)>[
-    (Icons.restaurant, 'اقترح وصفة من الثلاجة'),
-    (Icons.bar_chart, 'حلل مصاريفي هذا الشهر'),
-    (Icons.shopping_cart, 'ما الذي ينقصني للتسوق؟'),
-    (Icons.monetization_on, 'كيف أوفر أكثر هذا الشهر؟'),
-    (Icons.assignment, 'اكتشف اشتراكاتي'),
-    (Icons.eco, 'وجبة صحية سريعة'),
+  static List<(IconData, String)> _prompts(ZadL10n l) => <(IconData, String)>[
+    (Icons.restaurant, l.intPromptRecipe),
+    (Icons.bar_chart, l.intPromptSpending),
+    (Icons.shopping_cart, l.intPromptShopping),
+    (Icons.monetization_on, l.intPromptSave),
+    (Icons.assignment, l.intPromptSubs),
+    (Icons.eco, l.intPromptHealthy),
   ];
 
   final TextEditingController _input = TextEditingController();
@@ -171,22 +172,22 @@ class _ChatTabState extends ConsumerState<ChatTab> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: const Text(
-          'مسح المحادثة',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          dialog.l10n.intChatClear,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'هنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون مش '
-          'هتتأثر.',
-        ),
+        content: Text(dialog.l10n.intChatClearBody),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(dialog.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(true),
-            child: Text('مسح المحادثة', style: TextStyle(color: scheme.error)),
+            child: Text(
+              dialog.l10n.intChatClear,
+              style: TextStyle(color: scheme.error),
+            ),
           ),
         ],
       ),
@@ -261,7 +262,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   color: scheme.onSurfaceVariant,
                 ),
                 label: Text(
-                  'مسح المحادثة',
+                  context.l10n.intChatClear,
                   style: ZadType.labelSmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -279,7 +280,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      'اسأل زاد عن أي شيء',
+                      context.l10n.intChatEmpty,
                       style: ZadType.labelMedium.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -293,10 +294,16 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                for (var i = 0; i < _prompts.length; i += 2) ...<Widget>[
+                for (
+                  var i = 0;
+                  i < _prompts(context.l10n).length;
+                  i += 2
+                ) ...<Widget>[
                   Row(
                     children: <Widget>[
-                      for (final (icon, prompt) in _prompts.skip(i).take(2))
+                      for (final (icon, prompt) in _prompts(
+                        context.l10n,
+                      ).skip(i).take(2))
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsetsDirectional.only(end: 8),
@@ -339,7 +346,9 @@ class _ChatTabState extends ConsumerState<ChatTab> {
               if (messages.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _IntChatBubble(message: kZadWelcomeMessage),
+                  child: _IntChatBubble(
+                    message: zadWelcomeMessage(context.l10n),
+                  ),
                 ),
               for (final m in messages)
                 if (!(m.isStreaming && m.text.isEmpty))
@@ -402,7 +411,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                     minLines: 1,
                     maxLines: 3,
                     decoration: InputDecoration(
-                      hintText: 'اسأل زاد عن ثلاجتك أو ميزانيتك...',
+                      hintText: context.l10n.intChatInputHint,
                       hintStyle: ZadType.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -437,7 +446,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                             ? Icons.mic
                             : Icons.mic_none,
                         color: Colors.white,
-                        semanticLabel: 'إرسال',
+                        semanticLabel: context.l10n.commonSend,
                       ),
                     ),
                   ),
@@ -507,7 +516,7 @@ class _IntChatBubbleState extends ConsumerState<_IntChatBubble> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'زاد',
+                      context.l10n.appTitle,
                       style: TextStyle(
                         fontSize: 10,
                         color: scheme.primary,
@@ -525,7 +534,7 @@ class _IntChatBubbleState extends ConsumerState<_IntChatBubble> {
                           Icons.volume_up,
                           size: 16,
                           color: scheme.onSurfaceVariant,
-                          semanticLabel: 'استمع',
+                          semanticLabel: context.l10n.intChatListen,
                         ),
                       ),
                     ),
@@ -559,8 +568,9 @@ class _IntChatBubbleState extends ConsumerState<_IntChatBubble> {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            'اتبنى على ${m.memoryAvailable.length} حاجة زاد '
-                            'فاكرها عنك',
+                            context.l10n.intChatMemoryUsed(
+                              m.memoryAvailable.length,
+                            ),
                             style: ZadType.labelSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -722,13 +732,13 @@ class _NeuralMeshBadgeState extends State<NeuralMeshBadge>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final label = widget.status == NeuralMeshStatus.thinking
-        ? 'الشبكة العصبية بتشتغل...'
+        ? context.l10n.meshThinking
         : switch (widget.specialistId) {
-            'finance' => 'وكيل المال متصل',
-            'pantry' => 'وكيل المطبخ والمخزون متصل',
-            'pharmacy' => 'وكيل الصيدلية متصل',
-            'family' => 'وكيل العائلة متصل',
-            _ => 'شبكة وكلاء زاد',
+            'finance' => context.l10n.meshFinance,
+            'pantry' => context.l10n.meshPantry,
+            'pharmacy' => context.l10n.meshPharmacy,
+            'family' => context.l10n.meshFamily,
+            _ => context.l10n.meshDefault,
           };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

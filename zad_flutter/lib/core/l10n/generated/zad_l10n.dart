@@ -1800,6 +1800,486 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{month, select, m1{يناير} m2{فبراير} m3{مارس} m4{أبريل} m5{مايو} m6{يونيو} m7{يوليو} m8{أغسطس} m9{سبتمبر} m10{أكتوبر} m11{نوفمبر} m12{ديسمبر} other{}}'**
   String monthName(String month);
+
+  /// No description provided for @chatVoiceUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت مش متاح دلوقتي — الرد مكتوب قدامك'**
+  String get chatVoiceUnavailable;
+
+  /// No description provided for @chatNewTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ محادثة جديدة'**
+  String get chatNewTooltip;
+
+  /// No description provided for @chatNewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبدأ محادثة جديدة؟'**
+  String get chatNewTitle;
+
+  /// No description provided for @chatNewBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك هيفضل زي ما هو.'**
+  String get chatNewBody;
+
+  /// No description provided for @chatClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get chatClear;
+
+  /// No description provided for @chatWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
+  String get chatWelcome;
+
+  /// No description provided for @chatBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'**
+  String get chatBusy;
+
+  /// No description provided for @chatUnexpected.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصل خطأ غير متوقع.'**
+  String get chatUnexpected;
+
+  /// No description provided for @chatResend.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماوصلتش — ابعتها تاني'**
+  String get chatResend;
+
+  /// No description provided for @chatStopVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف الصوت'**
+  String get chatStopVoice;
+
+  /// No description provided for @chatListen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمع الرد'**
+  String get chatListen;
+
+  /// No description provided for @chatThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بفكر…'**
+  String get chatThinking;
+
+  /// No description provided for @refillBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك رجع — ابعت رسالتك تاني'**
+  String get refillBack;
+
+  /// No description provided for @refillDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك بيتجدد بعد {days} أيام'**
+  String refillDays(int days);
+
+  /// No description provided for @refillHour.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة'**
+  String get refillHour;
+
+  /// No description provided for @refillTwoHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعتين'**
+  String get refillTwoHours;
+
+  /// No description provided for @refillFewHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{h} ساعات'**
+  String refillFewHours(int h);
+
+  /// No description provided for @refillManyHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{h} ساعة'**
+  String refillManyHours(int h);
+
+  /// No description provided for @refillMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{m} دقيقة'**
+  String refillMinutes(int m);
+
+  /// No description provided for @refillAnd.
+  ///
+  /// In ar, this message translates to:
+  /// **' و'**
+  String get refillAnd;
+
+  /// No description provided for @refillIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك بيتجدد بعد {span}'**
+  String refillIn(String span);
+
+  /// No description provided for @chatSubscribeFeature.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك وفعّل الميزة دي'**
+  String get chatSubscribeFeature;
+
+  /// No description provided for @chatSubscribeMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك وخد محاولات أكتر'**
+  String get chatSubscribeMore;
+
+  /// No description provided for @chatNotDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ماتنفذش.'**
+  String get chatNotDone;
+
+  /// No description provided for @chatDoIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعملها'**
+  String get chatDoIt;
+
+  /// No description provided for @chatTranscribing.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحوّل الكلام…'**
+  String get chatTranscribing;
+
+  /// No description provided for @chatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب لزاد…'**
+  String get chatHint;
+
+  /// No description provided for @chatSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت'**
+  String get chatSend;
+
+  /// No description provided for @voiceTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسكت الزرار بسرعة — دوس وابدأ اتكلم، وبعدين قف.'**
+  String get voiceTooShort;
+
+  /// No description provided for @voiceDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.'**
+  String get voiceDenied;
+
+  /// No description provided for @voiceFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحوّل الكلام. جرب تاني.'**
+  String get voiceFailed;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل صوت'**
+  String get voiceRecord;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get commonCancel;
+
+  /// No description provided for @voiceDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت'**
+  String get voiceDone;
+
+  /// No description provided for @chatEmergency.
+  ///
+  /// In ar, this message translates to:
+  /// **'طوارئ في البيت؟ الـ{trade} بتاعك قدامك بنقرة.'**
+  String chatEmergency(String trade);
+
+  /// No description provided for @chatTechnicians.
+  ///
+  /// In ar, this message translates to:
+  /// **'فنييني'**
+  String get chatTechnicians;
+
+  /// No description provided for @intChatTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محادثة مع زاد'**
+  String get intChatTitle;
+
+  /// No description provided for @intChatSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل عن مصاريفك، مخزونك، أو أي حاجة'**
+  String get intChatSubtitle;
+
+  /// No description provided for @intChatHide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء المحادثة'**
+  String get intChatHide;
+
+  /// No description provided for @intChatOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح المحادثة'**
+  String get intChatOpen;
+
+  /// No description provided for @intPromptRecipe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح وصفة من الثلاجة'**
+  String get intPromptRecipe;
+
+  /// No description provided for @intPromptSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل مصاريفي هذا الشهر'**
+  String get intPromptSpending;
+
+  /// No description provided for @intPromptShopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما الذي ينقصني للتسوق؟'**
+  String get intPromptShopping;
+
+  /// No description provided for @intPromptSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف أوفر أكثر هذا الشهر؟'**
+  String get intPromptSave;
+
+  /// No description provided for @intPromptSubs.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتشف اشتراكاتي'**
+  String get intPromptSubs;
+
+  /// No description provided for @intPromptHealthy.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجبة صحية سريعة'**
+  String get intPromptHealthy;
+
+  /// No description provided for @intChatClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح المحادثة'**
+  String get intChatClear;
+
+  /// No description provided for @intChatClearBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون مش هتتأثر.'**
+  String get intChatClearBody;
+
+  /// No description provided for @intChatEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل زاد عن أي شيء'**
+  String get intChatEmpty;
+
+  /// No description provided for @intChatInputHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل زاد عن ثلاجتك أو ميزانيتك...'**
+  String get intChatInputHint;
+
+  /// No description provided for @intChatListen.
+  ///
+  /// In ar, this message translates to:
+  /// **'استمع'**
+  String get intChatListen;
+
+  /// No description provided for @intChatMemoryUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتبنى على {count} حاجة زاد فاكرها عنك'**
+  String intChatMemoryUsed(int count);
+
+  /// No description provided for @meshThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشبكة العصبية بتشتغل...'**
+  String get meshThinking;
+
+  /// No description provided for @meshFinance.
+  ///
+  /// In ar, this message translates to:
+  /// **'وكيل المال متصل'**
+  String get meshFinance;
+
+  /// No description provided for @meshPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'وكيل المطبخ والمخزون متصل'**
+  String get meshPantry;
+
+  /// No description provided for @meshPharmacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'وكيل الصيدلية متصل'**
+  String get meshPharmacy;
+
+  /// No description provided for @meshFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'وكيل العائلة متصل'**
+  String get meshFamily;
+
+  /// No description provided for @meshDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة وكلاء زاد'**
+  String get meshDefault;
+
+  /// No description provided for @voiceChipSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل مصاريفي'**
+  String get voiceChipSpending;
+
+  /// No description provided for @voiceChipMeal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح وجبة'**
+  String get voiceChipMeal;
+
+  /// No description provided for @voiceChipLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'كام فاضل في الميزانية؟'**
+  String get voiceChipLeft;
+
+  /// No description provided for @voiceChipCoffee.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت 50 على القهوة'**
+  String get voiceChipCoffee;
+
+  /// No description provided for @voiceSheetDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'امنح التطبيق إذن استخدام الميكروفون'**
+  String get voiceSheetDenied;
+
+  /// No description provided for @voiceSheetFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ في التعرف على الصوت'**
+  String get voiceSheetFailed;
+
+  /// No description provided for @voiceSheetTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم أسمع كلامًا واضحًا، حاول مرة أخرى'**
+  String get voiceSheetTooShort;
+
+  /// No description provided for @voiceSheetBrainDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرتش أوصل لعقل زاد دلوقتي'**
+  String get voiceSheetBrainDown;
+
+  /// No description provided for @voiceSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيتكلم…'**
+  String get voiceSpeaking;
+
+  /// No description provided for @voiceWriting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكتب كلامك…'**
+  String get voiceWriting;
+
+  /// No description provided for @voiceThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكر…'**
+  String get voiceThinking;
+
+  /// No description provided for @voicePreparing.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيجهز صوته…'**
+  String get voicePreparing;
+
+  /// No description provided for @voiceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساعد زاد الصوتي'**
+  String get voiceTitle;
+
+  /// No description provided for @voiceErrorRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ {error}\nاضغط المايك وجرّب تاني'**
+  String voiceErrorRetry(String error);
+
+  /// No description provided for @voiceInterruptHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيتكلم… اتكلم في أي وقت تقاطعه'**
+  String get voiceInterruptHint;
+
+  /// No description provided for @voiceWorking.
+  ///
+  /// In ar, this message translates to:
+  /// **'يفكر عقل زاد وينفذ طلبك…'**
+  String get voiceWorking;
+
+  /// No description provided for @voiceListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد سامعك — اتكلم براحتك'**
+  String get voiceListening;
+
+  /// No description provided for @voiceTapMic.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط المايك وكلّم زاد 🎙️'**
+  String get voiceTapMic;
+
+  /// No description provided for @voiceHoldToTalk.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس مع الاستمرار واتكلم'**
+  String get voiceHoldToTalk;
+
+  /// No description provided for @voiceReleaseToReply.
+  ///
+  /// In ar, this message translates to:
+  /// **'بسمعك… سيب عشان أرد'**
+  String get voiceReleaseToReply;
+
+  /// No description provided for @voicePressToInterrupt.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس واتكلم عشان تقاطعني'**
+  String get voicePressToInterrupt;
+
+  /// No description provided for @voiceOrPick.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو اختار سؤال جاهز:'**
+  String get voiceOrPick;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -1050,4 +1050,271 @@ class ZadL10nEn extends ZadL10n {
     });
     return '$_temp0';
   }
+
+  @override
+  String get chatVoiceUnavailable =>
+      'Voice isn\'t available right now — the reply is written in front of you';
+
+  @override
+  String get chatNewTooltip => 'Start a new conversation';
+
+  @override
+  String get chatNewTitle => 'Start a new conversation?';
+
+  @override
+  String get chatNewBody =>
+      'The conversation so far is cleared from this phone. What Zad has learned about you stays as it is.';
+
+  @override
+  String get chatClear => 'Clear';
+
+  @override
+  String get chatWelcome =>
+      'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
+
+  @override
+  String get chatBusy =>
+      'The AI is a bit busy right now 🙏 Try again in a moment.';
+
+  @override
+  String get chatUnexpected => 'Something unexpected went wrong.';
+
+  @override
+  String get chatResend => 'Didn\'t arrive — send it again';
+
+  @override
+  String get chatStopVoice => 'Stop the voice';
+
+  @override
+  String get chatListen => 'Hear the reply';
+
+  @override
+  String get chatThinking => 'Thinking…';
+
+  @override
+  String get refillBack => 'Your attempts are back — send your message again';
+
+  @override
+  String refillDays(int days) {
+    return 'Your attempts refill in $days days';
+  }
+
+  @override
+  String get refillHour => 'an hour';
+
+  @override
+  String get refillTwoHours => 'two hours';
+
+  @override
+  String refillFewHours(int h) {
+    return '$h hours';
+  }
+
+  @override
+  String refillManyHours(int h) {
+    return '$h hours';
+  }
+
+  @override
+  String refillMinutes(int m) {
+    return '$m minutes';
+  }
+
+  @override
+  String get refillAnd => ' and ';
+
+  @override
+  String refillIn(String span) {
+    return 'Your attempts refill in $span';
+  }
+
+  @override
+  String get chatSubscribeFeature => 'Subscribe to turn this on';
+
+  @override
+  String get chatSubscribeMore => 'Subscribe for more attempts';
+
+  @override
+  String get chatNotDone => 'Not done yet.';
+
+  @override
+  String get chatDoIt => 'Do it';
+
+  @override
+  String get chatTranscribing => 'Turning speech into text…';
+
+  @override
+  String get chatHint => 'Write to Zad…';
+
+  @override
+  String get chatSend => 'Send';
+
+  @override
+  String get voiceTooShort =>
+      'That was a quick tap — press, start talking, then stop.';
+
+  @override
+  String get voiceDenied =>
+      'I need microphone permission. Open the app\'s settings and allow recording.';
+
+  @override
+  String get voiceFailed => 'I couldn\'t turn the speech into text. Try again.';
+
+  @override
+  String get voiceRecord => 'Record voice';
+
+  @override
+  String get commonCancel => 'Cancel';
+
+  @override
+  String get voiceDone => 'Done';
+
+  @override
+  String chatEmergency(String trade) {
+    return 'An emergency at home? Your $trade is one tap away.';
+  }
+
+  @override
+  String get chatTechnicians => 'My technicians';
+
+  @override
+  String get intChatTitle => 'Chat with Zad';
+
+  @override
+  String get intChatSubtitle =>
+      'Ask about your spending, your pantry, or anything';
+
+  @override
+  String get intChatHide => 'Hide the chat';
+
+  @override
+  String get intChatOpen => 'Open the chat';
+
+  @override
+  String get intPromptRecipe => 'Suggest a recipe from the fridge';
+
+  @override
+  String get intPromptSpending => 'Analyse my spending this month';
+
+  @override
+  String get intPromptShopping => 'What am I missing for shopping?';
+
+  @override
+  String get intPromptSave => 'How can I save more this month?';
+
+  @override
+  String get intPromptSubs => 'Find my subscriptions';
+
+  @override
+  String get intPromptHealthy => 'A quick healthy meal';
+
+  @override
+  String get intChatClear => 'Clear the chat';
+
+  @override
+  String get intChatClearBody =>
+      'We\'ll clear every message in the chat with Zad\'s brain. Your money data and pantry aren\'t affected.';
+
+  @override
+  String get intChatEmpty => 'Ask Zad anything';
+
+  @override
+  String get intChatInputHint => 'Ask Zad about your fridge or your budget...';
+
+  @override
+  String get intChatListen => 'Listen';
+
+  @override
+  String intChatMemoryUsed(int count) {
+    return 'Built on $count things Zad remembers about you';
+  }
+
+  @override
+  String get meshThinking => 'The neural network is working...';
+
+  @override
+  String get meshFinance => 'Money agent connected';
+
+  @override
+  String get meshPantry => 'Kitchen and pantry agent connected';
+
+  @override
+  String get meshPharmacy => 'Pharmacy agent connected';
+
+  @override
+  String get meshFamily => 'Family agent connected';
+
+  @override
+  String get meshDefault => 'Zad\'s agent network';
+
+  @override
+  String get voiceChipSpending => 'Analyse my spending';
+
+  @override
+  String get voiceChipMeal => 'Suggest a meal';
+
+  @override
+  String get voiceChipLeft => 'How much is left in the budget?';
+
+  @override
+  String get voiceChipCoffee => 'I spent 50 on coffee';
+
+  @override
+  String get voiceSheetDenied =>
+      'Give the app permission to use the microphone';
+
+  @override
+  String get voiceSheetFailed => 'Something went wrong recognising your voice';
+
+  @override
+  String get voiceSheetTooShort => 'I didn\'t hear anything clear — try again';
+
+  @override
+  String get voiceSheetBrainDown => 'I couldn\'t reach Zad\'s brain right now';
+
+  @override
+  String get voiceSpeaking => 'Zad is speaking…';
+
+  @override
+  String get voiceWriting => 'Writing down what you said…';
+
+  @override
+  String get voiceThinking => 'Thinking…';
+
+  @override
+  String get voicePreparing => 'Getting the voice ready…';
+
+  @override
+  String get voiceTitle => 'Zad\'s voice assistant';
+
+  @override
+  String voiceErrorRetry(String error) {
+    return '⚠️ $error\nTap the mic and try again';
+  }
+
+  @override
+  String get voiceInterruptHint =>
+      'Zad is speaking… talk any time to interrupt';
+
+  @override
+  String get voiceWorking =>
+      'Zad\'s brain is thinking and doing what you asked…';
+
+  @override
+  String get voiceListening => 'Zad is listening — take your time';
+
+  @override
+  String get voiceTapMic => 'Tap the mic and talk to Zad 🎙️';
+
+  @override
+  String get voiceHoldToTalk => 'Press and hold to talk';
+
+  @override
+  String get voiceReleaseToReply => 'I\'m listening… let go so I can answer';
+
+  @override
+  String get voicePressToInterrupt => 'Press and talk to interrupt me';
+
+  @override
+  String get voiceOrPick => 'Or pick a ready question:';
 }

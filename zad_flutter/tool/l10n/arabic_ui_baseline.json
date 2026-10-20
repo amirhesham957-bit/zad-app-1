@@ -32,8 +32,6 @@
   "features/budget/presentation/budget_gate_screen.dart": 8,
   "features/budget/presentation/budget_screen_parts.dart": 51,
   "features/budget/presentation/finances_screen.dart": 28,
-  "features/chat/presentation/chat_screen.dart": 43,
-  "features/chat/presentation/intelligence_chat_card.dart": 29,
   "features/companion/presentation/companion_studio_screen.dart": 84,
   "features/debts/presentation/debts_tab.dart": 50,
   "features/documents/presentation/documents_screen.dart": 33,
@@ -115,7 +113,6 @@
   "features/transactions/presentation/edit_transaction_sheet.dart": 13,
   "features/transactions/presentation/quick_expense_sheet.dart": 9,
   "features/transactions/presentation/transactions_screen.dart": 21,
-  "features/voice/presentation/zad_voice_sheet.dart": 24,
   "shared/ads/presentation/watch_ad_button.dart": 10,
   "shared/affiliate/domain/affiliate.dart": 6,
   "shared/alerts/application/local_reminders.dart": 51,
@@ -181,7 +178,5 @@
   "shared/subscriptions/domain/subscription.dart": 5,
   "shared/tasbiha/application/tasbiha_controller.dart": 6,
   "shared/tasbiha/data/tasbiha_remote.dart": 1,
-  "shared/tasbiha/domain/tasbiha.dart": 16,
-  "shared/voice/data/voice_openers.dart": 3,
-  "shared/voice/domain/speech_text.dart": 8
+  "shared/tasbiha/domain/tasbiha.dart": 16
 }

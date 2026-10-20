@@ -1013,4 +1013,265 @@ class ZadL10nAr extends ZadL10n {
     });
     return '$_temp0';
   }
+
+  @override
+  String get chatVoiceUnavailable => 'الصوت مش متاح دلوقتي — الرد مكتوب قدامك';
+
+  @override
+  String get chatNewTooltip => 'ابدأ محادثة جديدة';
+
+  @override
+  String get chatNewTitle => 'تبدأ محادثة جديدة؟';
+
+  @override
+  String get chatNewBody =>
+      'الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك هيفضل زي ما هو.';
+
+  @override
+  String get chatClear => 'امسح';
+
+  @override
+  String get chatWelcome =>
+      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
+
+  @override
+  String get chatBusy =>
+      'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.';
+
+  @override
+  String get chatUnexpected => 'حصل خطأ غير متوقع.';
+
+  @override
+  String get chatResend => 'ماوصلتش — ابعتها تاني';
+
+  @override
+  String get chatStopVoice => 'وقّف الصوت';
+
+  @override
+  String get chatListen => 'اسمع الرد';
+
+  @override
+  String get chatThinking => 'بفكر…';
+
+  @override
+  String get refillBack => 'رصيدك رجع — ابعت رسالتك تاني';
+
+  @override
+  String refillDays(int days) {
+    return 'رصيدك بيتجدد بعد $days أيام';
+  }
+
+  @override
+  String get refillHour => 'ساعة';
+
+  @override
+  String get refillTwoHours => 'ساعتين';
+
+  @override
+  String refillFewHours(int h) {
+    return '$h ساعات';
+  }
+
+  @override
+  String refillManyHours(int h) {
+    return '$h ساعة';
+  }
+
+  @override
+  String refillMinutes(int m) {
+    return '$m دقيقة';
+  }
+
+  @override
+  String get refillAnd => ' و';
+
+  @override
+  String refillIn(String span) {
+    return 'رصيدك بيتجدد بعد $span';
+  }
+
+  @override
+  String get chatSubscribeFeature => 'اشترك وفعّل الميزة دي';
+
+  @override
+  String get chatSubscribeMore => 'اشترك وخد محاولات أكتر';
+
+  @override
+  String get chatNotDone => 'لسه ماتنفذش.';
+
+  @override
+  String get chatDoIt => 'اعملها';
+
+  @override
+  String get chatTranscribing => 'بحوّل الكلام…';
+
+  @override
+  String get chatHint => 'اكتب لزاد…';
+
+  @override
+  String get chatSend => 'ابعت';
+
+  @override
+  String get voiceTooShort => 'مسكت الزرار بسرعة — دوس وابدأ اتكلم، وبعدين قف.';
+
+  @override
+  String get voiceDenied =>
+      'محتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.';
+
+  @override
+  String get voiceFailed => 'مقدرتش أحوّل الكلام. جرب تاني.';
+
+  @override
+  String get voiceRecord => 'سجّل صوت';
+
+  @override
+  String get commonCancel => 'إلغاء';
+
+  @override
+  String get voiceDone => 'خلصت';
+
+  @override
+  String chatEmergency(String trade) {
+    return 'طوارئ في البيت؟ الـ$trade بتاعك قدامك بنقرة.';
+  }
+
+  @override
+  String get chatTechnicians => 'فنييني';
+
+  @override
+  String get intChatTitle => 'محادثة مع زاد';
+
+  @override
+  String get intChatSubtitle => 'اسأل عن مصاريفك، مخزونك، أو أي حاجة';
+
+  @override
+  String get intChatHide => 'إخفاء المحادثة';
+
+  @override
+  String get intChatOpen => 'افتح المحادثة';
+
+  @override
+  String get intPromptRecipe => 'اقترح وصفة من الثلاجة';
+
+  @override
+  String get intPromptSpending => 'حلل مصاريفي هذا الشهر';
+
+  @override
+  String get intPromptShopping => 'ما الذي ينقصني للتسوق؟';
+
+  @override
+  String get intPromptSave => 'كيف أوفر أكثر هذا الشهر؟';
+
+  @override
+  String get intPromptSubs => 'اكتشف اشتراكاتي';
+
+  @override
+  String get intPromptHealthy => 'وجبة صحية سريعة';
+
+  @override
+  String get intChatClear => 'مسح المحادثة';
+
+  @override
+  String get intChatClearBody =>
+      'هنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون مش هتتأثر.';
+
+  @override
+  String get intChatEmpty => 'اسأل زاد عن أي شيء';
+
+  @override
+  String get intChatInputHint => 'اسأل زاد عن ثلاجتك أو ميزانيتك...';
+
+  @override
+  String get intChatListen => 'استمع';
+
+  @override
+  String intChatMemoryUsed(int count) {
+    return 'اتبنى على $count حاجة زاد فاكرها عنك';
+  }
+
+  @override
+  String get meshThinking => 'الشبكة العصبية بتشتغل...';
+
+  @override
+  String get meshFinance => 'وكيل المال متصل';
+
+  @override
+  String get meshPantry => 'وكيل المطبخ والمخزون متصل';
+
+  @override
+  String get meshPharmacy => 'وكيل الصيدلية متصل';
+
+  @override
+  String get meshFamily => 'وكيل العائلة متصل';
+
+  @override
+  String get meshDefault => 'شبكة وكلاء زاد';
+
+  @override
+  String get voiceChipSpending => 'حلل مصاريفي';
+
+  @override
+  String get voiceChipMeal => 'اقترح وجبة';
+
+  @override
+  String get voiceChipLeft => 'كام فاضل في الميزانية؟';
+
+  @override
+  String get voiceChipCoffee => 'صرفت 50 على القهوة';
+
+  @override
+  String get voiceSheetDenied => 'امنح التطبيق إذن استخدام الميكروفون';
+
+  @override
+  String get voiceSheetFailed => 'حدث خطأ في التعرف على الصوت';
+
+  @override
+  String get voiceSheetTooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى';
+
+  @override
+  String get voiceSheetBrainDown => 'ماقدرتش أوصل لعقل زاد دلوقتي';
+
+  @override
+  String get voiceSpeaking => 'زاد بيتكلم…';
+
+  @override
+  String get voiceWriting => 'بكتب كلامك…';
+
+  @override
+  String get voiceThinking => 'بيفكر…';
+
+  @override
+  String get voicePreparing => 'بيجهز صوته…';
+
+  @override
+  String get voiceTitle => 'مساعد زاد الصوتي';
+
+  @override
+  String voiceErrorRetry(String error) {
+    return '⚠️ $error\nاضغط المايك وجرّب تاني';
+  }
+
+  @override
+  String get voiceInterruptHint => 'زاد بيتكلم… اتكلم في أي وقت تقاطعه';
+
+  @override
+  String get voiceWorking => 'يفكر عقل زاد وينفذ طلبك…';
+
+  @override
+  String get voiceListening => 'زاد سامعك — اتكلم براحتك';
+
+  @override
+  String get voiceTapMic => 'اضغط المايك وكلّم زاد 🎙️';
+
+  @override
+  String get voiceHoldToTalk => 'دوس مع الاستمرار واتكلم';
+
+  @override
+  String get voiceReleaseToReply => 'بسمعك… سيب عشان أرد';
+
+  @override
+  String get voicePressToInterrupt => 'دوس واتكلم عشان تقاطعني';
+
+  @override
+  String get voiceOrPick => 'أو اختار سؤال جاهز:';
 }

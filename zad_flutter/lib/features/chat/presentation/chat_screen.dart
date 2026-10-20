@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -124,9 +125,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.listen(voiceOutputControllerProvider.select((v) => v.failed), (_, f) {
       if (!f) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الصوت مش متاح دلوقتي — الرد مكتوب قدامك'),
-        ),
+        SnackBar(content: Text(context.l10n.chatVoiceUnavailable)),
       );
     });
 
@@ -146,19 +145,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('زاد'),
+          title: Text(context.l10n.appTitle),
           actions: <Widget>[
             const AttemptsChip(),
             IconButton(
               onPressed: () => ZadScreens.showBrainHub(context),
               icon: const Icon(ZadIcons.brain),
-              tooltip: 'عقل زاد',
+              tooltip: context.l10n.drawerBrain,
             ),
             if (!view.isEmpty)
               IconButton(
                 onPressed: () => _confirmClear(context),
                 icon: const Icon(ZadIcons.dismiss),
-                tooltip: 'ابدأ محادثة جديدة',
+                tooltip: context.l10n.chatNewTooltip,
               ),
           ],
         ),
@@ -207,22 +206,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تبدأ محادثة جديدة؟'),
-        content: const Text(
+        title: Text(context.l10n.chatNewTitle),
+        content: Text(
           // Said plainly, because it is not obvious: what زاد knows about the
           // customer lives on the server and survives this. Only the
           // scrollback on this phone goes.
-          'الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك '
-          'هيفضل زي ما هو.',
+          context.l10n.chatNewBody,
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('استنى'),
+            child: Text(context.l10n.commonWait),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('امسح'),
+            child: Text(context.l10n.chatClear),
           ),
         ],
       ),
@@ -239,31 +237,29 @@ class _Welcome extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(ZadSpacing.gutter),
-    children: <Widget>[_Bubble(message: kZadWelcomeMessage)],
+    children: <Widget>[_Bubble(message: zadWelcomeMessage(context.l10n))],
   );
 }
 
 /// Kotlin's opening message (`zad_welcome_message`): shown while the
 /// conversation is empty, never saved and never sent.
-final ChatMessage kZadWelcomeMessage = ChatMessage(
+ChatMessage zadWelcomeMessage(ZadL10n l10n) => ChatMessage(
   id: 'init',
-  text:
-      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي '
-      'النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة '
-      'التسوق!',
+  text: l10n.chatWelcome,
   isUser: false,
   createdAt: DateTime.utc(2000),
 );
 
 /// Kotlin's reply when a turn fails: `zad_ai_busy` when the providers were
 /// out of capacity, `zad_unexpected_error` otherwise.
-String chatFailureReply(Object? error) {
+String chatFailureReply(Object? error, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
   final e = '$error';
   return e.contains('429') ||
           e.contains('503') ||
           e.contains('ProviderUnavailable')
-      ? 'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'
-      : 'حصل خطأ غير متوقع.';
+      ? l.chatBusy
+      : l.chatUnexpected;
 }
 
 /// One message.
@@ -361,7 +357,7 @@ class _Bubble extends ConsumerWidget {
               onPressed: () =>
                   ref.read(chatControllerProvider.notifier).retry(message.id),
               icon: const Icon(ZadIcons.retry, size: 16),
-              label: const Text('ماوصلتش — ابعتها تاني'),
+              label: Text(context.l10n.chatResend),
               style: TextButton.styleFrom(
                 foregroundColor: ZadColors.terracottaRust,
                 textStyle: ZadType.labelSmall,
@@ -387,7 +383,7 @@ class _SpeakButton extends ConsumerWidget {
     final mine = voice.isActive && voice.messageId == message.id;
     final controller = ref.read(voiceOutputControllerProvider.notifier);
     return IconButton(
-      tooltip: mine ? 'وقّف الصوت' : 'اسمع الرد',
+      tooltip: mine ? context.l10n.chatStopVoice : context.l10n.chatListen,
       onPressed: () => unawaited(
         mine
             ? controller.stop()
@@ -421,7 +417,7 @@ class _Thinking extends StatelessWidget {
       ),
       const SizedBox(width: ZadSpacing.sm),
       Text(
-        'بفكر…',
+        context.l10n.chatThinking,
         style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
       ),
     ],
@@ -486,24 +482,25 @@ class ChatReceipt extends StatelessWidget {
 
 /// When the attempts come back, said as a span of time — never a clock time,
 /// which would need the account's zone to be right.
-String refillPhrase(DateTime refillAt, DateTime now) {
+String refillPhrase(DateTime refillAt, DateTime now, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
   final minutes = (refillAt.difference(now).inSeconds / 60).ceil();
-  if (minutes <= 0) return 'رصيدك رجع — ابعت رسالتك تاني';
+  if (minutes <= 0) return l.refillBack;
   if (minutes >= 48 * 60) {
-    return 'رصيدك بيتجدد بعد ${(minutes / 1440).ceil()} أيام';
+    return l.refillDays((minutes / 1440).ceil());
   }
   final h = minutes ~/ 60;
   final m = minutes % 60;
   final hours = switch (h) {
     0 => '',
-    1 => 'ساعة',
-    2 => 'ساعتين',
-    <= 10 => '$h ساعات',
-    _ => '$h ساعة',
+    1 => l.refillHour,
+    2 => l.refillTwoHours,
+    <= 10 => l.refillFewHours(h),
+    _ => l.refillManyHours(h),
   };
-  final mins = m == 0 ? '' : '$m دقيقة';
-  final span = [hours, mins].where((p) => p.isNotEmpty).join(' و');
-  return 'رصيدك بيتجدد بعد $span';
+  final mins = m == 0 ? '' : l.refillMinutes(m);
+  final span = [hours, mins].where((p) => p.isNotEmpty).join(l.refillAnd);
+  return l.refillIn(span);
 }
 
 /// The way out under a reply that says the attempts ran out (ZAD_PLAN ٢.٨):
@@ -542,7 +539,7 @@ class ChatLockCard extends ConsumerWidget {
               if (refill != null) ...<Widget>[
                 const SizedBox(height: ZadSpacing.sm),
                 Text(
-                  refillPhrase(refill, now),
+                  refillPhrase(refill, now, context.l10n),
                   textAlign: TextAlign.center,
                   style: ZadType.labelMedium.copyWith(color: ZadColors.slate),
                 ),
@@ -554,8 +551,8 @@ class ChatLockCard extends ConsumerWidget {
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                 child: Text(
                   lock.reason == 'premium_only'
-                      ? 'اشترك وفعّل الميزة دي'
-                      : 'اشترك وخد محاولات أكتر',
+                      ? context.l10n.chatSubscribeFeature
+                      : context.l10n.chatSubscribeMore,
                 ),
               ),
             ],
@@ -603,7 +600,7 @@ class ChatProposal extends ConsumerWidget {
               ),
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                'لسه ماتنفذش.',
+                context.l10n.chatNotDone,
                 style: ZadType.labelSmall.copyWith(
                   color: ZadColors.mustardOchre,
                 ),
@@ -623,7 +620,7 @@ class ChatProposal extends ConsumerWidget {
                                     .confirm(messageId, proposal),
                               );
                             },
-                      child: const Text('اعملها'),
+                      child: Text(context.l10n.chatDoIt),
                     ),
                   ),
                 ],
@@ -661,7 +658,7 @@ class _Composer extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            if (_hint(voice.stage) case final hint?) ...<Widget>[
+            if (_hint(voice.stage, context.l10n) case final hint?) ...<Widget>[
               Padding(
                 padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
                 child: Text(
@@ -691,8 +688,8 @@ class _Composer extends ConsumerWidget {
                       onSubmitted: (_) => canSend ? onSend() : null,
                       decoration: InputDecoration(
                         hintText: voice.stage == VoiceStage.transcribing
-                            ? 'بحوّل الكلام…'
-                            : 'اكتب لزاد…',
+                            ? context.l10n.chatTranscribing
+                            : context.l10n.chatHint,
                         filled: true,
                         fillColor: ZadColors.surface,
                       ),
@@ -707,7 +704,7 @@ class _Composer extends ConsumerWidget {
                     child: IconButton.filled(
                       onPressed: canSend ? onSend : null,
                       icon: const Icon(ZadIcons.forward, size: 20),
-                      tooltip: 'ابعت',
+                      tooltip: context.l10n.chatSend,
                     ),
                   ),
                 ],
@@ -719,13 +716,12 @@ class _Composer extends ConsumerWidget {
   }
 
   /// What to say about the microphone, or nothing at all.
-  static String? _hint(VoiceStage stage) => switch (stage) {
+  static String? _hint(VoiceStage stage, ZadL10n l10n) => switch (stage) {
     // Named as the nudge it is, not as an error. The fix is to hold it a
     // moment longer, and saying so is what breaks the habit of tapping again.
-    VoiceStage.tooShort => 'مسكت الزرار بسرعة — دوس وابدأ اتكلم، وبعدين قف.',
-    VoiceStage.denied =>
-      'محتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.',
-    VoiceStage.failed => 'مقدرتش أحوّل الكلام. جرب تاني.',
+    VoiceStage.tooShort => l10n.voiceTooShort,
+    VoiceStage.denied => l10n.voiceDenied,
+    VoiceStage.failed => l10n.voiceFailed,
     _ => null,
   };
 }
@@ -755,7 +751,7 @@ class _MicButton extends ConsumerWidget {
           : IconButton(
               onPressed: () => unawaited(controller.start()),
               icon: const Icon(ZadIcons.voice, size: 20),
-              tooltip: 'سجّل صوت',
+              tooltip: context.l10n.voiceRecord,
               style: IconButton.styleFrom(
                 foregroundColor: ZadColors.green800,
                 backgroundColor: ZadColors.mint50,
@@ -787,7 +783,7 @@ class _Recording extends ConsumerWidget {
           child: IconButton(
             onPressed: () => unawaited(controller.cancel()),
             icon: const Icon(ZadIcons.dismiss, size: 20),
-            tooltip: 'إلغاء',
+            tooltip: context.l10n.commonCancel,
             style: IconButton.styleFrom(foregroundColor: ZadColors.inkMuted),
           ),
         ),
@@ -820,7 +816,7 @@ class _Recording extends ConsumerWidget {
           child: IconButton.filled(
             onPressed: () => unawaited(controller.stopAndTranscribe()),
             icon: const Icon(ZadIcons.synced, size: 20),
-            tooltip: 'خلصت',
+            tooltip: context.l10n.voiceDone,
           ),
         ),
       ],
@@ -951,13 +947,16 @@ class EmergencyTechniciansCard extends StatelessWidget {
               child: Text(
                 trade == TechnicianTrade.gas
                     ? kGasSafetyLine
-                    : 'طوارئ في البيت؟ الـ${trade.label} بتاعك قدامك بنقرة.',
+                    : context.l10n.chatEmergency(trade.label),
                 style: ZadType.bodySmall.copyWith(color: ZadColors.ink),
               ),
             ),
-            TextButton(onPressed: onOpen, child: const Text('فنييني')),
+            TextButton(
+              onPressed: onOpen,
+              child: Text(context.l10n.chatTechnicians),
+            ),
             IconButton(
-              tooltip: 'إخفاء',
+              tooltip: context.l10n.commonHide,
               onPressed: onDismiss,
               icon: const Icon(ZadIcons.dismiss, size: 18),
             ),
