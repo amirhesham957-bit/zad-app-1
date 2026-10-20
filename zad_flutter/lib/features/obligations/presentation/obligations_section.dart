@@ -14,6 +14,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
@@ -50,7 +51,7 @@ class ObligationsSection extends ConsumerWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  'إجمالي الالتزامات',
+                  context.l10n.oblTotal,
                   style: ZadType.labelLarge.copyWith(color: ZadColors.slate),
                 ),
               ),
@@ -63,7 +64,7 @@ class ObligationsSection extends ConsumerWidget {
               ),
               IconButton(
                 onPressed: () => unawaited(showObligationSheet(context)),
-                tooltip: 'إضافة التزام',
+                tooltip: context.l10n.oblAdd,
                 icon: Icon(ZadIcons.add, color: ZadColors.mustardOchre),
               ),
             ],
@@ -71,10 +72,10 @@ class ObligationsSection extends ConsumerWidget {
         ),
         const SizedBox(height: ZadSpacing.md),
         if (view.items.isEmpty)
-          const ZadEmptyState(
+          ZadEmptyState(
             icon: ZadIcons.obligation,
-            title: 'لا توجد التزامات',
-            message: 'الأقساط والفواتير الثابتة هتظهر هنا أول ما تتسجل',
+            title: context.l10n.oblNone,
+            message: context.l10n.oblNoneHint,
           )
         else
           for (final o in view.items) ...<Widget>[
@@ -119,8 +120,8 @@ class ObligationCard extends ConsumerWidget {
       ObligationStatus.scheduled => ZadColors.mustardOchre,
     };
     final when = s.daysUntil == null
-        ? obligation.recurrence.label
-        : 'بعد ${s.daysUntil} يوم';
+        ? obligation.recurrence.label(context.l10n)
+        : context.l10n.oblInDays(s.daysUntil!);
     return ZadPressable(
       onPressed: () => unawaited(showObligationSheet(context, obligation)),
       semanticLabel: obligation.title,
@@ -162,7 +163,7 @@ class ObligationCard extends ConsumerWidget {
                 IconButton(
                   onPressed: () =>
                       unawaited(_confirmDelete(context, ref, obligation)),
-                  tooltip: 'حذف',
+                  tooltip: context.l10n.commonDelete,
                   icon: Icon(
                     ZadIcons.delete,
                     size: 18,
@@ -175,7 +176,7 @@ class ObligationCard extends ConsumerWidget {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    '$when · ${obligation.kind.label}',
+                    '$when · ${obligation.kind.label(context.l10n)}',
                     maxLines: 1,
                     style: ZadType.labelMedium.copyWith(
                       color: ZadColors.inkMuted,
@@ -192,7 +193,7 @@ class ObligationCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(ZadRadii.pill),
                   ),
                   child: Text(
-                    s.status.label,
+                    s.status.label(context.l10n),
                     style: ZadType.labelSmall.copyWith(
                       color: color,
                       fontWeight: FontWeight.w700,
@@ -226,19 +227,19 @@ Future<void> _confirmDelete(
   final ok = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: const Text('حذف'),
-      content: Text('حذف «${o.title}» من قائمة الالتزامات؟'),
+      title: Text(c.l10n.commonDelete),
+      content: Text(c.l10n.oblDeleteConfirm(o.title)),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(c.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(c).pop(true),
           style: TextButton.styleFrom(
             foregroundColor: ZadColors.terracottaRust,
           ),
-          child: const Text('حذف'),
+          child: Text(c.l10n.commonDelete),
         ),
       ],
     ),
@@ -361,16 +362,14 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
           children: <Widget>[
             Text(
               widget.obligation == null
-                  ? 'إضافة التزام جديد'
-                  : 'تعديل الالتزام',
+                  ? context.l10n.oblAddNew
+                  : context.l10n.oblEdit,
               style: ZadType.titleMedium,
             ),
             const SizedBox(height: ZadSpacing.lg),
             TextField(
               controller: _title,
-              decoration: const InputDecoration(
-                labelText: 'اسم الالتزام (إيجار، كهرباء...)',
-              ),
+              decoration: InputDecoration(labelText: context.l10n.oblNameHint),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -381,7 +380,9 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
               ),
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(
-                labelText: currency.isEmpty ? 'المبلغ' : 'المبلغ ($currency)',
+                labelText: currency.isEmpty
+                    ? context.l10n.txAmount
+                    : context.l10n.oblAmountIn(currency),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -392,15 +393,15 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
               textDirection: TextDirection.ltr,
               maxLength: 2,
               decoration: InputDecoration(
-                labelText: 'يوم الاستحقاق الشهري (1-31)',
-                errorText: _dayOk ? null : 'من 1 لـ 31',
+                labelText: context.l10n.oblDueDay,
+                errorText: _dayOk ? null : context.l10n.oblDayRange,
                 counterText: '',
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'النوع',
+              context.l10n.txType,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -410,7 +411,7 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
               children: <Widget>[
                 for (final k in ObligationKind.values)
                   ChoiceChip(
-                    label: Text(k.label),
+                    label: Text(k.label(context.l10n)),
                     selected: _kind == k,
                     onSelected: (_) => setState(() => _kind = k),
                   ),
@@ -418,7 +419,7 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
             ),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'التكرار',
+              context.l10n.oblRecurrence,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -431,7 +432,7 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
                 // all. Kept, as the brain can still read it.
                 for (final r in Recurrence.values)
                   ChoiceChip(
-                    label: Text(r.label),
+                    label: Text(r.label(context.l10n)),
                     selected: _recurrence == r,
                     onSelected: (_) => setState(() => _recurrence = r),
                   ),
@@ -444,7 +445,7 @@ class _ObligationSheetState extends ConsumerState<ObligationSheet> {
                 minimumSize: const Size(0, 48),
                 shape: const StadiumBorder(),
               ),
-              child: const Text('حفظ'),
+              child: Text(context.l10n.commonSave),
             ),
           ],
         ),

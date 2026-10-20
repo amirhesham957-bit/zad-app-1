@@ -2280,6 +2280,1284 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'أو اختار سؤال جاهز:'**
   String get voiceOrPick;
+
+  /// No description provided for @budgetSuggest.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يقترح تعديل ميزانيتك إلى {amount} بناءً على متوسط آخر شهرين'**
+  String budgetSuggest(String amount);
+
+  /// No description provided for @commonApply.
+  ///
+  /// In ar, this message translates to:
+  /// **'تطبيق'**
+  String get commonApply;
+
+  /// No description provided for @txFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get txFilterAll;
+
+  /// No description provided for @txFilterExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات'**
+  String get txFilterExpenses;
+
+  /// No description provided for @txFilterIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخل'**
+  String get txFilterIncome;
+
+  /// No description provided for @txFilterBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'البنك'**
+  String get txFilterBank;
+
+  /// No description provided for @budgetThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الشهر'**
+  String get budgetThisMonth;
+
+  /// No description provided for @budgetNoTransactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد معاملات بعد.'**
+  String get budgetNoTransactions;
+
+  /// No description provided for @budgetNoTransactionsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف معاملة أو اربط البنك لتتبع مصاريفك تلقائياً'**
+  String get budgetNoTransactionsHint;
+
+  /// No description provided for @txEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل المعاملة'**
+  String get txEdit;
+
+  /// No description provided for @txDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح المعاملة'**
+  String get txDelete;
+
+  /// No description provided for @financesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية والالتزامات'**
+  String get financesTitle;
+
+  /// No description provided for @financesTabMoves.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحركات والميزانية'**
+  String get financesTabMoves;
+
+  /// No description provided for @financesAddTx.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاملة'**
+  String get financesAddTx;
+
+  /// No description provided for @financesCategoryBudgets.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانيات الفئات'**
+  String get financesCategoryBudgets;
+
+  /// No description provided for @financesSetCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد فئة'**
+  String get financesSetCategory;
+
+  /// No description provided for @financesNoCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما حددتش ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابعلك كل فئة لوحدها.'**
+  String get financesNoCategories;
+
+  /// No description provided for @financesAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح'**
+  String get financesAvailable;
+
+  /// No description provided for @financesEditBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الرصيد'**
+  String get financesEditBalance;
+
+  /// No description provided for @financesNoBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه محددتش ميزانيتك'**
+  String get financesNoBudget;
+
+  /// No description provided for @financesRemainingCommitted.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي {remaining} · محجوز {committed}'**
+  String financesRemainingCommitted(String remaining, String committed);
+
+  /// No description provided for @financesNoLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} — بدون حد'**
+  String financesNoLimit(String amount);
+
+  /// No description provided for @financesSmartAnalysis.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل ذكي'**
+  String get financesSmartAnalysis;
+
+  /// No description provided for @financesSetCategoryBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد ميزانية فئة'**
+  String get financesSetCategoryBudget;
+
+  /// No description provided for @financesEditCategoryBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل ميزانية {category}'**
+  String financesEditCategoryBudget(String category);
+
+  /// No description provided for @financesCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get financesCategory;
+
+  /// No description provided for @financesMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية'**
+  String get financesMonthlyBudget;
+
+  /// No description provided for @commonSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get commonSave;
+
+  /// No description provided for @financesInsightTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل ذكي: {category}'**
+  String financesInsightTitle(String category);
+
+  /// No description provided for @financesAnalysing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري التحليل...'**
+  String get financesAnalysing;
+
+  /// No description provided for @financesInsightEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش بيانات كافية لتحليل الفئة دي حالياً.'**
+  String get financesInsightEmpty;
+
+  /// No description provided for @financesPredictedNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتوقع الشهر القادم: {amount}'**
+  String financesPredictedNext(String amount);
+
+  /// No description provided for @gateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل ما نبدأ، حدد سقفك الشهري'**
+  String get gateTitle;
+
+  /// No description provided for @gateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد ما بيخترعش أرقام. من غير السقف مفيش \"متبقي\" ولا \"متاح\" — وكل رقم هتشوفه هيبقى تخمين.'**
+  String get gateBody;
+
+  /// No description provided for @gateMarket.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد والعملة'**
+  String get gateMarket;
+
+  /// No description provided for @commonChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير'**
+  String get commonChange;
+
+  /// No description provided for @gateCeiling.
+  ///
+  /// In ar, this message translates to:
+  /// **'سقف الصرف الشهري'**
+  String get gateCeiling;
+
+  /// No description provided for @gateStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا نبدأ'**
+  String get gateStart;
+
+  /// No description provided for @budgetOver.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت الميزانية! حاول تقليل المصاريف'**
+  String get budgetOver;
+
+  /// No description provided for @budgetNear.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت لـ {pct}% من ميزانيتك. كن حذراً'**
+  String budgetNear(int pct);
+
+  /// No description provided for @budgetFine.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {pct}% من ميزانيتك. أداء جيد'**
+  String budgetFine(int pct);
+
+  /// No description provided for @budgetGreat.
+  ///
+  /// In ar, this message translates to:
+  /// **'رائع! أنت في المسار الصحيح. صرفت {pct}% فقط'**
+  String budgetGreat(int pct);
+
+  /// No description provided for @trendUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'في ازدياد'**
+  String get trendUp;
+
+  /// No description provided for @trendDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'في انخفاض'**
+  String get trendDown;
+
+  /// No description provided for @trendFlat.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستقر'**
+  String get trendFlat;
+
+  /// No description provided for @eventToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'زوّدناه عشان «{title}» النهارده'**
+  String eventToday(String title);
+
+  /// No description provided for @eventAhead.
+  ///
+  /// In ar, this message translates to:
+  /// **'شايلين حاجة لـ«{title}» {when}'**
+  String eventAhead(String title, String when);
+
+  /// No description provided for @eventTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكرة'**
+  String get eventTomorrow;
+
+  /// No description provided for @eventOnDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم {day}'**
+  String eventOnDay(String day);
+
+  /// A weekday; day is d1 (Monday) .. d7 (Sunday), DateTime.weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'{day, select, d1{الاتنين} d2{التلات} d3{الأربع} d4{الخميس} d5{الجمعة} d6{السبت} d7{الحد} other{}}'**
+  String weekdayName(String day);
+
+  /// No description provided for @eventOuting.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشوار'**
+  String get eventOuting;
+
+  /// No description provided for @txNoTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون وصف'**
+  String get txNoTitle;
+
+  /// No description provided for @txAddExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مصروف'**
+  String get txAddExpense;
+
+  /// No description provided for @txAddIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دخل/راتب'**
+  String get txAddIncome;
+
+  /// No description provided for @txKindExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم (مصروف)'**
+  String get txKindExpense;
+
+  /// No description provided for @txKindIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيداع (راتب)'**
+  String get txKindIncome;
+
+  /// No description provided for @txDescriptionExample.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف (مثال: راتب، إيجار)'**
+  String get txDescriptionExample;
+
+  /// No description provided for @txAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get txAmount;
+
+  /// No description provided for @txDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم المبلغ'**
+  String get txDebit;
+
+  /// No description provided for @txCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة المبلغ'**
+  String get txCredit;
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get commonDelete;
+
+  /// No description provided for @txDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت متأكد من حذف معاملة \"{title}\"؟'**
+  String txDeleteConfirm(String title);
+
+  /// No description provided for @txDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف'**
+  String get txDescription;
+
+  /// No description provided for @txType.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get txType;
+
+  /// No description provided for @txExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get txExpense;
+
+  /// No description provided for @txIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل'**
+  String get txIncome;
+
+  /// No description provided for @quickCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف كاش'**
+  String get quickCash;
+
+  /// No description provided for @quickExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف سريع'**
+  String get quickExpense;
+
+  /// No description provided for @quickSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروفك في ثوانٍ'**
+  String get quickSubtitle;
+
+  /// No description provided for @quickName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get quickName;
+
+  /// No description provided for @quickNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: حلاقة، بقالة'**
+  String get quickNameHint;
+
+  /// No description provided for @quickCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get quickCategory;
+
+  /// No description provided for @txScanReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر فاتورة'**
+  String get txScanReceipt;
+
+  /// No description provided for @txLog.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل عملية'**
+  String get txLog;
+
+  /// No description provided for @txTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعاملات'**
+  String get txTitle;
+
+  /// No description provided for @txNoneHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش معاملات هنا'**
+  String get txNoneHere;
+
+  /// No description provided for @txTryFilter.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب فلتر تاني.'**
+  String get txTryFilter;
+
+  /// No description provided for @commonEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get commonEdit;
+
+  /// No description provided for @walletCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'كاش'**
+  String get walletCash;
+
+  /// No description provided for @walletCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get walletCard;
+
+  /// No description provided for @walletBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنك'**
+  String get walletBank;
+
+  /// No description provided for @txPendingOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه محفوظة'**
+  String get txPendingOne;
+
+  /// No description provided for @txPendingCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} لسه محفوظة'**
+  String txPendingCount(int count);
+
+  /// No description provided for @txLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب المعاملات'**
+  String get txLoadFailed;
+
+  /// No description provided for @txNonePeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش معاملات الفترة دي'**
+  String get txNonePeriod;
+
+  /// No description provided for @txPullToRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب الشاشة لتحت عشان نحاول تاني.'**
+  String get txPullToRetry;
+
+  /// No description provided for @txNoneHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — هتلاقيها هنا.'**
+  String get txNoneHint;
+
+  /// DateFormat pattern for a day's heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'EEEE، d MMMM'**
+  String get dateDayHeader;
+
+  /// No description provided for @cycleYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوي'**
+  String get cycleYearly;
+
+  /// No description provided for @cycleWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوعي'**
+  String get cycleWeekly;
+
+  /// No description provided for @cycleMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get cycleMonthly;
+
+  /// No description provided for @subsTabAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get subsTabAll;
+
+  /// No description provided for @subsTabSubs.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكات'**
+  String get subsTabSubs;
+
+  /// No description provided for @subsTabBills.
+  ///
+  /// In ar, this message translates to:
+  /// **'فواتير'**
+  String get subsTabBills;
+
+  /// No description provided for @subsTabInstalments.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقساط'**
+  String get subsTabInstalments;
+
+  /// No description provided for @subsTabLoans.
+  ///
+  /// In ar, this message translates to:
+  /// **'قروض'**
+  String get subsTabLoans;
+
+  /// No description provided for @subsNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد اشتراكات'**
+  String get subsNone;
+
+  /// No description provided for @subsNoneInTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عناصر في هذا التصنيف'**
+  String get subsNoneInTab;
+
+  /// No description provided for @subsActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'النشطة'**
+  String get subsActive;
+
+  /// No description provided for @subsMonthlyTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الاشتراكات الشهرية'**
+  String get subsMonthlyTotal;
+
+  /// No description provided for @subsActiveCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكات نشطة'**
+  String get subsActiveCount;
+
+  /// No description provided for @subsDetected.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} اشتراك مكتشف تلقائياً'**
+  String subsDetected(int count);
+
+  /// No description provided for @subsClearAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الكل'**
+  String get subsClearAll;
+
+  /// No description provided for @subsBnpl.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتري دلوقتي وادفع بعدين'**
+  String get subsBnpl;
+
+  /// No description provided for @subsLoans.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقساط وقروض وإيجار'**
+  String get subsLoans;
+
+  /// No description provided for @subsPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل سداد {title} وترحيل الموعد للشهر القادم بنجاح'**
+  String subsPaid(String title);
+
+  /// No description provided for @subsFixed.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزامات ثابتة'**
+  String get subsFixed;
+
+  /// No description provided for @subsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراكات والفواتير'**
+  String get subsTitle;
+
+  /// No description provided for @subsBnplTag.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتري وادفع بعدين · {name}'**
+  String subsBnplTag(String name);
+
+  /// No description provided for @subsRenewsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُجدد اليوم'**
+  String get subsRenewsToday;
+
+  /// No description provided for @subsExpiredAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي منذ {days} يوم'**
+  String subsExpiredAgo(int days);
+
+  /// No description provided for @subsRenewsIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُجدد بعد {days} يوم'**
+  String subsRenewsIn(int days);
+
+  /// No description provided for @subsPerYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'≈ {amount}/سنة'**
+  String subsPerYear(String amount);
+
+  /// No description provided for @subsPaidMark.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الدفع ✓'**
+  String get subsPaidMark;
+
+  /// No description provided for @subsToggleAuto.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل/إيقاف الخصم التلقائي'**
+  String get subsToggleAuto;
+
+  /// No description provided for @subsDisable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل'**
+  String get subsDisable;
+
+  /// No description provided for @subsEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get subsEnable;
+
+  /// No description provided for @subsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة اشتراك جديد'**
+  String get subsAdd;
+
+  /// No description provided for @subsEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الاشتراك'**
+  String get subsEdit;
+
+  /// No description provided for @commonConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get commonConfirm;
+
+  /// No description provided for @subsSuggested.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمات والاشتراكات المقترحة:'**
+  String get subsSuggested;
+
+  /// No description provided for @subsKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصنيف الالتزام:'**
+  String get subsKind;
+
+  /// No description provided for @subsKindSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك شهري'**
+  String get subsKindSub;
+
+  /// No description provided for @subsKindInstalment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط'**
+  String get subsKindInstalment;
+
+  /// No description provided for @subsKindBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get subsKindBill;
+
+  /// No description provided for @subsKindRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزام'**
+  String get subsKindRent;
+
+  /// No description provided for @subsTotalAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المبلغ'**
+  String get subsTotalAmount;
+
+  /// No description provided for @subsRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط المتبقية'**
+  String get subsRemaining;
+
+  /// No description provided for @subsNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الاشتراك (مثال: Netflix)'**
+  String get subsNameHint;
+
+  /// No description provided for @subsAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({symbol})'**
+  String subsAmount(String symbol);
+
+  /// No description provided for @subsProvider.
+  ///
+  /// In ar, this message translates to:
+  /// **'مزود الخدمة'**
+  String get subsProvider;
+
+  /// No description provided for @subsRenewalDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ التجديد (YYYY-MM-DD)'**
+  String get subsRenewalDate;
+
+  /// No description provided for @commonPickDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر التاريخ'**
+  String get commonPickDate;
+
+  /// No description provided for @subsCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة الفوترة'**
+  String get subsCycle;
+
+  /// No description provided for @subsSuggestedCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة المقترحة: {category}'**
+  String subsSuggestedCategory(String category);
+
+  /// No description provided for @oblKindRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار'**
+  String get oblKindRent;
+
+  /// No description provided for @oblKindInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط'**
+  String get oblKindInstallment;
+
+  /// No description provided for @oblKindDebt.
+  ///
+  /// In ar, this message translates to:
+  /// **'دين'**
+  String get oblKindDebt;
+
+  /// No description provided for @oblKindTuition.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريف دراسية'**
+  String get oblKindTuition;
+
+  /// No description provided for @oblKindUtility.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة مرافق'**
+  String get oblKindUtility;
+
+  /// No description provided for @oblKindOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخرى'**
+  String get oblKindOther;
+
+  /// No description provided for @recurMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get recurMonthly;
+
+  /// No description provided for @recurQuarterly.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربع سنوي'**
+  String get recurQuarterly;
+
+  /// No description provided for @recurYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنوي'**
+  String get recurYearly;
+
+  /// No description provided for @recurOnce.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get recurOnce;
+
+  /// No description provided for @oblStatusPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوع'**
+  String get oblStatusPaid;
+
+  /// No description provided for @oblStatusPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحق'**
+  String get oblStatusPending;
+
+  /// No description provided for @oblStatusScheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجدول'**
+  String get oblStatusScheduled;
+
+  /// No description provided for @oblInDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد {days} يوم'**
+  String oblInDays(int days);
+
+  /// No description provided for @oblTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الالتزامات'**
+  String get oblTotal;
+
+  /// No description provided for @oblAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة التزام'**
+  String get oblAdd;
+
+  /// No description provided for @oblNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد التزامات'**
+  String get oblNone;
+
+  /// No description provided for @oblNoneHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط والفواتير الثابتة هتظهر هنا أول ما تتسجل'**
+  String get oblNoneHint;
+
+  /// No description provided for @oblDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{title}» من قائمة الالتزامات؟'**
+  String oblDeleteConfirm(String title);
+
+  /// No description provided for @oblAddNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة التزام جديد'**
+  String get oblAddNew;
+
+  /// No description provided for @oblEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الالتزام'**
+  String get oblEdit;
+
+  /// No description provided for @oblNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الالتزام (إيجار، كهرباء...)'**
+  String get oblNameHint;
+
+  /// No description provided for @oblAmountIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({currency})'**
+  String oblAmountIn(String currency);
+
+  /// No description provided for @oblDueDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الاستحقاق الشهري (1-31)'**
+  String get oblDueDay;
+
+  /// No description provided for @oblDayRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'من 1 لـ 31'**
+  String get oblDayRange;
+
+  /// No description provided for @oblRecurrence.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار'**
+  String get oblRecurrence;
+
+  /// No description provided for @debtSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتسجلش — اتأكد من النت.'**
+  String get debtSaveFailed;
+
+  /// No description provided for @debtPaymentOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة على {name}'**
+  String debtPaymentOn(String name);
+
+  /// No description provided for @debtRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي: {amount}'**
+  String debtRemaining(String amount);
+
+  /// No description provided for @debtPaidAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المدفوع'**
+  String get debtPaidAmount;
+
+  /// No description provided for @debtDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الدين'**
+  String get debtDelete;
+
+  /// No description provided for @debtDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{name}» من قائمة الديون؟'**
+  String debtDeleteConfirm(String name);
+
+  /// No description provided for @debtPlanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخطط سداد الديون'**
+  String get debtPlanner;
+
+  /// No description provided for @debtAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دين'**
+  String get debtAdd;
+
+  /// No description provided for @debtPickStrategy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر استراتيجية السداد المناسبة لك'**
+  String get debtPickStrategy;
+
+  /// No description provided for @debtNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ديون مسجلة'**
+  String get debtNone;
+
+  /// No description provided for @debtNoneHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف ديونك لنساعدك في التخطيط للسداد'**
+  String get debtNoneHint;
+
+  /// No description provided for @debtSnowball.
+  ///
+  /// In ar, this message translates to:
+  /// **'كرة الثلج (الأصغر أولاً)'**
+  String get debtSnowball;
+
+  /// No description provided for @debtAvalanche.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانهيار الجليدي (الأعلى فائدة أولاً)'**
+  String get debtAvalanche;
+
+  /// No description provided for @debtMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'{months} شهر'**
+  String debtMonths(int months);
+
+  /// No description provided for @debtLogPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل دفعة'**
+  String get debtLogPayment;
+
+  /// No description provided for @debtMonthsToPayoff.
+  ///
+  /// In ar, this message translates to:
+  /// **'{months} شهر للسداد الكامل'**
+  String debtMonthsToPayoff(int months);
+
+  /// No description provided for @debtTotalInterest.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الفوائد: {amount}'**
+  String debtTotalInterest(String amount);
+
+  /// No description provided for @debtAnalysing.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يقوم بالتحليل...'**
+  String get debtAnalysing;
+
+  /// No description provided for @debtExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرح بالذكاء الاصطناعي'**
+  String get debtExplain;
+
+  /// No description provided for @debtName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدين'**
+  String get debtName;
+
+  /// No description provided for @debtLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المتبقي'**
+  String get debtLeft;
+
+  /// No description provided for @debtRate.
+  ///
+  /// In ar, this message translates to:
+  /// **'معدل الفائدة السنوي %'**
+  String get debtRate;
+
+  /// No description provided for @debtMinimum.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى للدفعة الشهرية'**
+  String get debtMinimum;
+
+  /// No description provided for @dealDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {pct}%'**
+  String dealDiscount(String pct);
+
+  /// No description provided for @dealAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'{price} عند {store}'**
+  String dealAt(String price, String store);
+
+  /// No description provided for @dealCached.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث مشغول دلوقتي — دي آخر عروض لقيناها{when}'**
+  String dealCached(String when);
+
+  /// No description provided for @dealTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العروض المتاحة لنواقصك 🏷️'**
+  String get dealTitle;
+
+  /// No description provided for @dealLive.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتيجة بحث حي'**
+  String get dealLive;
+
+  /// No description provided for @dealSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض حقيقية على الأصناف الناقصة عندك'**
+  String get dealSubtitle;
+
+  /// No description provided for @dealTapRefresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط لتحديث النتائج من الإنترنت'**
+  String get dealTapRefresh;
+
+  /// No description provided for @dealSearching.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبحث في الإنترنت...'**
+  String get dealSearching;
+
+  /// No description provided for @dealFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية'**
+  String get dealFailed;
+
+  /// No description provided for @dealFailedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة البحث مشغولة دلوقتي. دوس تحديث تاني بعد شوية — ولو اتكررت شوف النت.'**
+  String get dealFailedHint;
+
+  /// No description provided for @dealNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج بحث محددة متوفرة حالياً'**
+  String get dealNone;
+
+  /// No description provided for @dealRefresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث من النت 🔄'**
+  String get dealRefresh;
+
+  /// No description provided for @goalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيه أهم هدف لبيتك دلوقتي؟'**
+  String get goalTitle;
+
+  /// No description provided for @goalBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار واحد — زاد هيتابعه معاك كل أسبوع لمدة ٣ شهور، وتقدر تلغيه في أي وقت.'**
+  String get goalBody;
+
+  /// No description provided for @goalSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'أوفّر مبلغ كل شهر'**
+  String get goalSave;
+
+  /// No description provided for @goalSaveHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد المبلغ، وزاد يتابع صرفك عشان توصله'**
+  String get goalSaveHint;
+
+  /// No description provided for @goalMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ الشهري'**
+  String get goalMonthly;
+
+  /// No description provided for @goalBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألتزم بميزانية الشهر'**
+  String get goalBudget;
+
+  /// No description provided for @goalBudgetHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد ينبهك قبل ما الصرف يسبق الميزانية'**
+  String get goalBudgetHint;
+
+  /// No description provided for @goalDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسدد ديوني'**
+  String get goalDebts;
+
+  /// No description provided for @goalDebtsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يتابع معاك المتبقي وأقرب قسط'**
+  String get goalDebtsHint;
+
+  /// No description provided for @goalWaste.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقلل هدر المطبخ'**
+  String get goalWaste;
+
+  /// No description provided for @goalWasteHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يفكرك بالأصناف قبل ما تبوظ'**
+  String get goalWasteHint;
+
+  /// No description provided for @goalOwn.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف تاني بكلامي'**
+  String get goalOwn;
+
+  /// No description provided for @goalOwnHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتبه زي ما بتقوله'**
+  String get goalOwnHint;
+
+  /// No description provided for @goalWrite.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب هدفك'**
+  String get goalWrite;
+
+  /// No description provided for @goalTooMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك ٥ أهداف شغالة — خلّص واحد أو ألغيه الأول'**
+  String get goalTooMany;
+
+  /// No description provided for @goalSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرفتش أسجل الهدف — جرّب تاني'**
+  String get goalSaveFailed;
+
+  /// No description provided for @goalStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ الهدف'**
+  String get goalStart;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

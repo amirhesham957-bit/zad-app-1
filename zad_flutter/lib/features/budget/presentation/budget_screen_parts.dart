@@ -21,6 +21,7 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -119,9 +120,9 @@ class BudgetSuggestionCard extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'زاد يقترح تعديل ميزانيتك إلى '
-                    '${'${_money(suggestion)} $currency'.trim()} بناءً على '
-                    'متوسط آخر شهرين',
+                    context.l10n.budgetSuggest(
+                      '${_money(suggestion)} $currency'.trim(),
+                    ),
                     style: ZadType.bodyMedium.copyWith(
                       color: scheme.onSurface,
                       fontWeight: FontWeight.w600,
@@ -152,7 +153,10 @@ class BudgetSuggestionCard extends ConsumerWidget {
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                    child: const Text('تطبيق', style: ZadType.labelSmall),
+                    child: Text(
+                      context.l10n.commonApply,
+                      style: ZadType.labelSmall,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -172,7 +176,10 @@ class BudgetSuggestionCard extends ConsumerWidget {
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                    child: const Text('تجاهل', style: ZadType.labelSmall),
+                    child: Text(
+                      context.l10n.commonDismiss,
+                      style: ZadType.labelSmall,
+                    ),
                   ),
                 ),
               ],
@@ -199,8 +206,22 @@ class BudgetTransactionsSection extends ConsumerStatefulWidget {
   ConsumerState<BudgetTransactionsSection> createState() => _TxSectionState();
 }
 
+enum _TxFilter {
+  all,
+  expenses,
+  income,
+  bank;
+
+  String label(ZadL10n l) => switch (this) {
+    _TxFilter.all => l.txFilterAll,
+    _TxFilter.expenses => l.txFilterExpenses,
+    _TxFilter.income => l.txFilterIncome,
+    _TxFilter.bank => l.txFilterBank,
+  };
+}
+
 class _TxSectionState extends ConsumerState<BudgetTransactionsSection> {
-  String _filter = 'الكل';
+  _TxFilter _filter = _TxFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -214,11 +235,11 @@ class _TxSectionState extends ConsumerState<BudgetTransactionsSection> {
     final filtered = <ZadTransaction>[
       for (final t in rows)
         if (switch (_filter) {
-          'المصروفات' => t.kind == TxnKind.expense,
-          'الدخل' => t.kind == TxnKind.income,
-          'البنك' =>
+          _TxFilter.expenses => t.kind == TxnKind.expense,
+          _TxFilter.income => t.kind == TxnKind.income,
+          _TxFilter.bank =>
             t.sourceType == 'bank_sms' || t.sourceType == 'bank_notification',
-          _ => true,
+          _TxFilter.all => true,
         })
           t,
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -237,16 +258,11 @@ class _TxSectionState extends ConsumerState<BudgetTransactionsSection> {
           child: Wrap(
             spacing: 8,
             children: <Widget>[
-              for (final f in const <String>[
-                'الكل',
-                'المصروفات',
-                'الدخل',
-                'البنك',
-              ])
+              for (final f in _TxFilter.values)
                 FilterChip(
                   selected: _filter == f,
                   onSelected: (_) => setState(() => _filter = f),
-                  label: Text(f),
+                  label: Text(f.label(context.l10n)),
                   selectedColor: scheme.primary,
                   labelStyle: TextStyle(color: scheme.onSurface),
                   shape: const StadiumBorder(),
@@ -255,7 +271,7 @@ class _TxSectionState extends ConsumerState<BudgetTransactionsSection> {
           ),
         ),
         Text(
-          'هذا الشهر',
+          context.l10n.budgetThisMonth,
           style: ZadType.labelMedium.copyWith(
             color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
@@ -286,12 +302,12 @@ class _TxSectionState extends ConsumerState<BudgetTransactionsSection> {
         ),
         const SizedBox(height: 8),
         if (filtered.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(48),
+          Padding(
+            padding: const EdgeInsets.all(48),
             child: KtEmptyState(
               icon: Icons.receipt_long,
-              title: 'لا توجد معاملات بعد.',
-              subtitle: 'أضف معاملة أو اربط البنك لتتبع مصاريفك تلقائياً',
+              title: context.l10n.budgetNoTransactions,
+              subtitle: context.l10n.budgetNoTransactionsHint,
             ),
           )
         else
@@ -320,10 +336,10 @@ class _TxDateHeader extends ConsumerWidget {
     final now = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
     final today = DateTime.utc(now.year, now.month, now.day);
     final label = day == today
-        ? 'اليوم'
+        ? context.l10n.dayToday
         : day == today.subtract(const Duration(days: 1))
-        ? 'أمس'
-        : DateFormat('d MMMM', 'ar').format(day);
+        ? context.l10n.dayYesterday
+        : DateFormat('d MMMM', context.dateLocale).format(day);
     final total = txList.fold<double>(
       0,
       (s, t) => s + (t.isExpense ? -t.amount : t.amount),
@@ -366,6 +382,7 @@ class _TxRowItemState extends ConsumerState<_TxRowItem> {
 
   (IconData, Color, Color) _visual(String? category, bool expense) {
     final c = (category ?? '').toLowerCase();
+    // l10n: data-begin
     final icon = switch (c) {
       'طعام' || 'مطاعم' || 'المطاعم' => Icons.restaurant,
       'تسوق' || 'مشتريات' || 'البقالة' => Icons.shopping_cart,
@@ -395,6 +412,7 @@ class _TxRowItemState extends ConsumerState<_TxRowItem> {
             ? (ZadPalette.catDailyBg, ZadPalette.catDailyIcon)
             : (ZadPalette.catBankingBg, ZadPalette.catBankingIcon),
     };
+    // l10n: data-end
     return (icon, bg, fg);
   }
 
@@ -537,7 +555,7 @@ class _TxRowItemState extends ConsumerState<_TxRowItem> {
                       dimension: 32,
                       child: IconButton(
                         padding: EdgeInsets.zero,
-                        tooltip: 'تعديل المعاملة',
+                        tooltip: context.l10n.txEdit,
                         onPressed: () {
                           setState(() => _actions = false);
                           unawaited(
@@ -555,7 +573,7 @@ class _TxRowItemState extends ConsumerState<_TxRowItem> {
                       dimension: 32,
                       child: IconButton(
                         padding: EdgeInsets.zero,
-                        tooltip: 'مسح المعاملة',
+                        tooltip: context.l10n.txDelete,
                         onPressed: () {
                           setState(() => _actions = false);
                           unawaited(_delete());

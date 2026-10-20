@@ -22,6 +22,7 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -44,13 +45,14 @@ String _money(double amount, String symbol) {
 }
 
 /// Kotlin's `billingCycleLabel`.
-String _cycleLabel(BillingCycle cycle) => switch (cycle) {
-  BillingCycle.yearly => 'سنوي',
-  BillingCycle.weekly => 'أسبوعي',
-  BillingCycle.monthly => 'شهري',
+String _cycleLabel(BillingCycle cycle, ZadL10n l) => switch (cycle) {
+  BillingCycle.yearly => l.cycleYearly,
+  BillingCycle.weekly => l.cycleWeekly,
+  BillingCycle.monthly => l.cycleMonthly,
 };
 
 /// Kotlin's tab filters. `type` and `category` are stored values.
+// l10n: data-begin
 bool _inTab(Subscription s, int tab) => switch (tab) {
   1 => s.type == 'subscription' || s.category == 'اشتراك',
   2 => s.category == 'فواتير' || s.type == 'bill' || s.type == 'utility',
@@ -62,6 +64,7 @@ bool _inTab(Subscription s, int tab) => switch (tab) {
         s.type == 'rent',
   _ => true,
 };
+// l10n: data-end
 
 /// The `zad_obligations` kinds each tab also lists (stored values): a bill
 /// or a plan saved as an obligation belongs beside the subscriptions of its
@@ -75,11 +78,13 @@ Set<String>? _obligationKinds(int tab) => switch (tab) {
 
 /// Rows an old AI detector wrote, which no customer would have: Kotlin's
 /// «مسح الكل» targets.
+// l10n: data-begin
 bool _isAutoDetected(Subscription s) =>
     s.category == 'Auto-detected' ||
     s.category == 'ai_detected' ||
     ((s.category == 'اشتراك' || s.category == 'فواتير') &&
         s.title.trim().isEmpty);
+// l10n: data-end
 
 DateTime? _storedRenewal(Subscription s) {
   final raw = s.renewalDate;
@@ -111,12 +116,12 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
   // «التزاماتي» (owner, 2026-09-30): subscriptions, bills, instalments and
   // loans in one place. Loans are the debt payoff planner, not rows here.
   static const int _loansTab = 4;
-  static const List<String> _tabs = <String>[
-    'الكل',
-    'اشتراكات',
-    'فواتير',
-    'أقساط',
-    'قروض',
+  static List<String> _tabs(ZadL10n l) => <String>[
+    l.subsTabAll,
+    l.subsTabSubs,
+    l.subsTabBills,
+    l.subsTabInstalments,
+    l.subsTabLoans,
   ];
 
   Future<void> _clearDetected(List<Subscription> targets) async {
@@ -156,7 +161,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
     final detected = view.items.where(_isAutoDetected).toList();
 
     final tabs = ZadSegmentedTabs(
-      tabs: _tabs,
+      tabs: _tabs(context.l10n),
       selectedIndex: _tab,
       onSelect: (i) => setState(() => _tab = i),
     );
@@ -173,7 +178,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
       return widget.embedded
           ? loans
           : Scaffold(
-              appBar: AppBar(title: const Text('التزاماتي')),
+              appBar: AppBar(title: Text(context.l10n.drawerObligations)),
               body: loans,
             );
     }
@@ -182,7 +187,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: KtEmptyState(
         icon: Icons.credit_card,
-        title: _tab == 0 ? 'لا توجد اشتراكات' : 'لا توجد عناصر في هذا التصنيف',
+        title: _tab == 0 ? context.l10n.subsNone : context.l10n.subsNoneInTab,
       ),
     );
     final obligationKinds = _obligationKinds(_tab);
@@ -194,14 +199,14 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
             _Chip(
-              label: 'النشطة',
+              label: context.l10n.subsActive,
               selected: !_showInactive,
               selectedColor: scheme.primaryContainer,
               onTap: () => setState(() => _showInactive = false),
             ),
             const SizedBox(width: 6),
             _Chip(
-              label: 'الكل',
+              label: context.l10n.subsTabAll,
               selected: _showInactive,
               selectedColor: ext.surfaceContainerHigh,
               onTap: () => setState(() => _showInactive = true),
@@ -237,7 +242,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'إجمالي الاشتراكات الشهرية',
+                            context.l10n.subsMonthlyTotal,
                             style: ZadType.labelMedium.copyWith(
                               color: Colors.white.withValues(alpha: 0.85),
                             ),
@@ -263,7 +268,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: <Widget>[
                         Text(
-                          'اشتراكات نشطة',
+                          context.l10n.subsActiveCount,
                           style: ZadType.labelSmall.copyWith(
                             color: Colors.white.withValues(alpha: 0.7),
                           ),
@@ -293,7 +298,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  '${detected.length} اشتراك مكتشف تلقائياً',
+                  context.l10n.subsDetected(detected.length),
                   style: ZadType.labelMedium.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -302,7 +307,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                   onPressed: () => unawaited(_clearDetected(detected)),
                   icon: Icon(Icons.auto_delete, size: 16, color: scheme.error),
                   label: Text(
-                    'مسح الكل',
+                    context.l10n.subsClearAll,
                     style: ZadType.labelLarge.copyWith(color: scheme.error),
                   ),
                 ),
@@ -325,7 +330,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                 (i == 0 || isBnpl(filtered[i - 1]) != isBnpl(sub))) ...<Widget>[
               if (i > 0) const SizedBox(height: 16),
               Text(
-                isBnpl(sub) ? 'اشتري دلوقتي وادفع بعدين' : 'أقساط وقروض وإيجار',
+                isBnpl(sub) ? context.l10n.subsBnpl : context.l10n.subsLoans,
                 style: ZadType.titleSmall,
               ),
               const SizedBox(height: 8),
@@ -349,15 +354,9 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                 onDelete: () => unawaited(controller.remove(sub)),
                 onMarkAsPaid: () async {
                   final messenger = ScaffoldMessenger.of(context);
+                  final paid = context.l10n.subsPaid(sub.title);
                   await controller.markPaid(sub);
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'تم تسجيل سداد ${sub.title} وترحيل الموعد للشهر '
-                        'القادم بنجاح',
-                      ),
-                    ),
-                  );
+                  messenger.showSnackBar(SnackBar(content: Text(paid)));
                 },
               ),
             ),
@@ -365,7 +364,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
         if (filtered.isNotEmpty && obligationKinds != null)
           ZadSlots.obligationRows(
             kinds: obligationKinds,
-            title: 'التزامات ثابتة',
+            title: context.l10n.subsFixed,
           ),
       ],
     );
@@ -388,7 +387,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
                   unawaited(showAddEditSubscriptionDialog(context)),
               backgroundColor: scheme.primary,
               foregroundColor: Colors.white,
-              tooltip: 'إضافة',
+              tooltip: context.l10n.commonAdd,
               child: const Icon(Icons.add),
             ),
           ),
@@ -399,7 +398,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
     return Scaffold(
       appBar: widget.embedded
           ? null
-          : AppBar(title: const Text('الاشتراكات والفواتير')),
+          : AppBar(title: Text(context.l10n.subsTitle)),
       backgroundColor: widget.embedded ? Colors.transparent : null,
       body: body,
     );
@@ -647,7 +646,7 @@ class SubscriptionCardFull extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(99),
                                   ),
                                   child: Text(
-                                    'اشتري وادفع بعدين · ${bnpl.name}',
+                                    context.l10n.subsBnplTag(bnpl.name),
                                     style: TextStyle(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
@@ -659,9 +658,9 @@ class SubscriptionCardFull extends StatelessWidget {
                               Text(
                                 switch (daysLeft) {
                                   null => sub.provider ?? '',
-                                  0 => 'يُجدد اليوم',
-                                  < 0 => 'منتهي منذ ${-daysLeft} يوم',
-                                  _ => 'يُجدد بعد $daysLeft يوم',
+                                  0 => context.l10n.subsRenewsToday,
+                                  < 0 => context.l10n.subsExpiredAgo(-daysLeft),
+                                  _ => context.l10n.subsRenewsIn(daysLeft),
                                 },
                                 style: TextStyle(
                                   fontSize: 12,
@@ -693,7 +692,9 @@ class SubscriptionCardFull extends StatelessWidget {
                             if (sub.isActive) ...<Widget>[
                               const SizedBox(height: 6),
                               Text(
-                                '≈ ${_money(yearly, symbol)}/سنة',
+                                context.l10n.subsPerYear(
+                                  _money(yearly, symbol),
+                                ),
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Color(0xFF94A3B8),
@@ -729,7 +730,7 @@ class SubscriptionCardFull extends StatelessWidget {
                                         ),
                                         const SizedBox(width: 3),
                                         Text(
-                                          'تم الدفع ✓',
+                                          context.l10n.subsPaidMark,
                                           style: TextStyle(
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.bold,
@@ -748,7 +749,7 @@ class SubscriptionCardFull extends StatelessWidget {
                               children: <Widget>[
                                 quiet(
                                   Icons.bolt,
-                                  'تفعيل/إيقاف الخصم التلقائي',
+                                  context.l10n.subsToggleAuto,
                                   sub.autoDeduct
                                       ? scheme.primary
                                       : scheme.outlineVariant,
@@ -759,21 +760,23 @@ class SubscriptionCardFull extends StatelessWidget {
                                   sub.isActive
                                       ? Icons.pause_circle
                                       : Icons.play_circle,
-                                  sub.isActive ? 'تعطيل' : 'تفعيل',
+                                  sub.isActive
+                                      ? context.l10n.subsDisable
+                                      : context.l10n.subsEnable,
                                   scheme.onSurfaceVariant,
                                   onToggleActive,
                                 ),
                                 const SizedBox(width: 4),
                                 quiet(
                                   Icons.edit_note,
-                                  'تعديل الاشتراك',
+                                  context.l10n.subsEdit,
                                   scheme.onSurfaceVariant,
                                   onEdit,
                                 ),
                                 const SizedBox(width: 4),
                                 quiet(
                                   Icons.delete_outline,
-                                  'حذف',
+                                  context.l10n.commonDelete,
                                   scheme.onSurfaceVariant,
                                   onDelete,
                                 ),
@@ -809,6 +812,7 @@ typedef _Preset = ({
 /// companies are shown after them, then the bills.
 const int _subscriptionPresetCount = 6;
 
+// l10n: data-begin
 final List<_Preset> _presets = <_Preset>[
   (
     name: 'Netflix',
@@ -891,6 +895,7 @@ final List<_Preset> _presets = <_Preset>[
     type: 'rent',
   ),
 ];
+// l10n: data-end
 
 /// Kotlin's `parseFlexibleRenewalDate`: Arabic and Persian digits, the
 /// standard patterns, then any three (or two) numbers in a sensible order.
@@ -1004,7 +1009,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
     },
   );
   late String _type = _sub?.type ?? 'subscription';
-  late String _category = _sub?.category ?? 'اشتراك';
+  late String _category = _sub?.category ?? 'اشتراك'; // l10n: data
   late BillingCycle _cycle = _sub?.cycle ?? BillingCycle.monthly;
 
   @override
@@ -1063,8 +1068,8 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
       initialDate: today,
       firstDate: DateTime.utc(2000),
       lastDate: DateTime.utc(2100),
-      confirmText: 'تأكيد',
-      cancelText: 'إلغاء',
+      confirmText: context.l10n.commonConfirm,
+      cancelText: context.l10n.commonCancel,
     );
     if (picked != null && mounted) {
       _date.text = _iso(DateTime.utc(picked.year, picked.month, picked.day));
@@ -1076,6 +1081,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
     final today = ref.read(subscriptionsControllerProvider).today;
     final amount = double.tryParse(_amount.text) ?? 0;
     final date = parsed ?? today;
+    // l10n: data-begin
     final category = switch (_type) {
       'installment' =>
         _category == 'اشتراك' || _category.isEmpty ? 'أقساط' : _category,
@@ -1092,6 +1098,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
             !_title.text.contains('قسط')
         ? '${_title.text.trim()} ($remaining أقساط)'
         : _title.text.trim();
+    // l10n: data-end
     final provider = _provider.text.trim();
     final controller = ref.read(subscriptionsControllerProvider.notifier);
     final navigator = Navigator.of(context);
@@ -1162,7 +1169,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
         (
           name: b.name,
           provider: b.provider,
-          category: 'أقساط',
+          category: 'أقساط', // l10n: data
           icon: Icons.shopping_bag,
           color: scheme.secondary,
           type: 'installment',
@@ -1172,7 +1179,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
 
     return AlertDialog(
       title: Text(
-        _sub == null ? 'إضافة اشتراك جديد' : 'تعديل الاشتراك',
+        _sub == null ? context.l10n.subsAdd : context.l10n.subsEdit,
         style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.bold),
       ),
       // A horizontal ListView inside AlertDialog needs a bounded width, or
@@ -1184,7 +1191,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('الخدمات والاشتراكات المقترحة:', style: sectionLabel),
+              Text(context.l10n.subsSuggested, style: sectionLabel),
               const SizedBox(height: 12),
               SizedBox(
                 height: 36,
@@ -1253,16 +1260,16 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                 ),
               ),
               const SizedBox(height: 14),
-              Text('تصنيف الالتزام:', style: sectionLabel),
+              Text(context.l10n.subsKind, style: sectionLabel),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 6,
                 children: <Widget>[
-                  for (final (key, label) in const <(String, String)>[
-                    ('subscription', 'اشتراك شهري'),
-                    ('installment', 'قسط'),
-                    ('utility', 'فاتورة'),
-                    ('rent', 'التزام'),
+                  for (final (key, label) in <(String, String)>[
+                    ('subscription', context.l10n.subsKindSub),
+                    ('installment', context.l10n.subsKindInstalment),
+                    ('utility', context.l10n.subsKindBill),
+                    ('rent', context.l10n.subsKindRent),
                   ])
                     FilterChip(
                       selected: _type == key,
@@ -1279,9 +1286,9 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                       child: TextField(
                         controller: _total,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'إجمالي المبلغ',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.subsTotalAmount,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -1290,9 +1297,9 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                       child: TextField(
                         controller: _remaining,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'الأقساط المتبقية',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: context.l10n.subsRemaining,
+                          border: const OutlineInputBorder(),
                         ),
                       ),
                     ),
@@ -1302,9 +1309,9 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _title,
-                decoration: const InputDecoration(
-                  labelText: 'اسم الاشتراك (مثال: Netflix)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.subsNameHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1312,7 +1319,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                 controller: _amount,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'المبلغ ($symbol)',
+                  labelText: context.l10n.subsAmount(symbol),
                   border: const OutlineInputBorder(),
                   errorText:
                       _amount.text.trim().isNotEmpty &&
@@ -1324,23 +1331,23 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _provider,
-                decoration: const InputDecoration(
-                  labelText: 'مزود الخدمة',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: context.l10n.subsProvider,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _date,
                 decoration: InputDecoration(
-                  labelText: 'تاريخ التجديد (YYYY-MM-DD)',
+                  labelText: context.l10n.subsRenewalDate,
                   hintText: 'YYYY-MM-DD',
                   border: const OutlineInputBorder(),
                   errorText: _date.text.trim().isNotEmpty && parsed == null
                       ? ''
                       : null,
                   suffixIcon: IconButton(
-                    tooltip: 'اختر التاريخ',
+                    tooltip: context.l10n.commonPickDate,
                     onPressed: () => unawaited(_pickDate()),
                     icon: Icon(Icons.calendar_month, color: scheme.primary),
                   ),
@@ -1348,7 +1355,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
               ),
               const SizedBox(height: 12),
               Text(
-                'دورة الفوترة',
+                context.l10n.subsCycle,
                 style: ZadType.labelMedium.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -1366,7 +1373,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
                       selected: _cycle == cycle,
                       onSelected: (_) => setState(() => _cycle = cycle),
                       label: Text(
-                        _cycleLabel(cycle),
+                        _cycleLabel(cycle, context.l10n),
                         style: ZadType.labelSmall,
                       ),
                     ),
@@ -1375,7 +1382,7 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
               if (_title.text.length >= 3) ...<Widget>[
                 const SizedBox(height: 12),
                 Text(
-                  'الفئة المقترحة: $_category',
+                  context.l10n.subsSuggestedCategory(_category),
                   style: ZadType.labelSmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -1388,12 +1395,12 @@ class _DialogState extends ConsumerState<AddEditSubscriptionDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: canSave ? () => unawaited(_save(parsed)) : null,
           style: FilledButton.styleFrom(shape: const StadiumBorder()),
-          child: const Text('حفظ'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );

@@ -18,6 +18,7 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
@@ -311,7 +312,14 @@ class _Budget extends ConsumerWidget {
     );
     if (e == null) return null;
     final day = local(now).add(Duration(days: e.eventInDays));
-    return (budget: e, caption: eventDayCaption(e, weekday: day.weekday));
+    return (
+      budget: e,
+      caption: eventDayCaption(
+        e,
+        weekday: day.weekday,
+        l10n: ref.read(zadL10nProvider),
+      ),
+    );
   }
 
   /// The card's period, taken from the snapshot the money came from.

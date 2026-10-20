@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/sound/ui_sounds.dart';
@@ -92,7 +93,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
     final userId = ref.read(signedInUserIdProvider)();
     if (!_isValid || amount == null || userId == null) return;
     setState(() => _sending = true);
-    final category = _category ?? 'أخرى';
+    final category = _category ?? 'أخرى'; // l10n: data
     try {
       await ref
           .read(transactionsRepositoryProvider)
@@ -156,12 +157,12 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
                     children: <Widget>[
                       Text(
                         widget.wallet == Wallet.cash
-                            ? 'مصروف كاش'
-                            : 'مصروف سريع',
+                            ? context.l10n.quickCash
+                            : context.l10n.quickExpense,
                         style: ZadType.titleMedium,
                       ),
                       Text(
-                        'سجّل مصروفك في ثوانٍ',
+                        context.l10n.quickSubtitle,
                         style: ZadType.labelMedium.copyWith(
                           color: ZadColors.inkMuted,
                         ),
@@ -175,8 +176,8 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
             const Divider(height: 1, color: Color(0xFFF3F4F6)),
             const SizedBox(height: ZadSpacing.md),
             _Field(
-              label: 'الاسم',
-              hint: 'مثال: حلاقة، بقالة',
+              label: context.l10n.quickName,
+              hint: context.l10n.quickNameHint,
               controller: _name,
               autofocus: true,
               onChanged: () => setState(() {
@@ -185,7 +186,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
             ),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'التصنيف',
+              context.l10n.quickCategory,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xs),
@@ -198,7 +199,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
             ),
             const SizedBox(height: ZadSpacing.md),
             _Field(
-              label: 'المبلغ',
+              label: context.l10n.txAmount,
               hint: '0.00',
               controller: _amount,
               number: true,
@@ -223,7 +224,7 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
                   ),
                 ),
                 icon: const Icon(ZadIcons.send, size: 18),
-                label: const Text('إرسال'),
+                label: Text(context.l10n.commonSend),
               ),
             ),
           ],

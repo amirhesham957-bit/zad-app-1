@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/goals/data/life_goals_remote.dart';
 import 'package:zad/shared/goals/domain/life_goal_seed.dart';
 
@@ -89,7 +90,7 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
-                'إيه أهم هدف لبيتك دلوقتي؟',
+                context.l10n.goalTitle,
                 style: ZadType.titleLarge.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -97,8 +98,7 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                'اختار واحد — زاد هيتابعه معاك كل أسبوع لمدة ٣ شهور، '
-                'وتقدر تلغيه في أي وقت.',
+                context.l10n.goalBody,
                 style: ZadType.bodySmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -108,8 +108,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 value: LifeGoalPreset.saveMonthly,
                 selected: _preset,
                 icon: Icons.savings,
-                title: 'أوفّر مبلغ كل شهر',
-                description: 'حدد المبلغ، وزاد يتابع صرفك عشان توصله',
+                title: context.l10n.goalSave,
+                description: context.l10n.goalSaveHint,
                 onSelect: _select,
               ),
               if (_preset == LifeGoalPreset.saveMonthly) ...<Widget>[
@@ -125,9 +125,9 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                     LengthLimitingTextInputFormatter(12),
                   ],
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'المبلغ الشهري',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.goalMonthly,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -136,8 +136,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 value: LifeGoalPreset.stickToBudget,
                 selected: _preset,
                 icon: Icons.account_balance_wallet,
-                title: 'ألتزم بميزانية الشهر',
-                description: 'زاد ينبهك قبل ما الصرف يسبق الميزانية',
+                title: context.l10n.goalBudget,
+                description: context.l10n.goalBudgetHint,
                 onSelect: _select,
               ),
               const SizedBox(height: 8),
@@ -145,8 +145,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 value: LifeGoalPreset.payOffDebts,
                 selected: _preset,
                 icon: Icons.credit_card,
-                title: 'أسدد ديوني',
-                description: 'زاد يتابع معاك المتبقي وأقرب قسط',
+                title: context.l10n.goalDebts,
+                description: context.l10n.goalDebtsHint,
                 onSelect: _select,
               ),
               const SizedBox(height: 8),
@@ -154,8 +154,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 value: LifeGoalPreset.reduceWaste,
                 selected: _preset,
                 icon: Icons.kitchen,
-                title: 'أقلل هدر المطبخ',
-                description: 'زاد يفكرك بالأصناف قبل ما تبوظ',
+                title: context.l10n.goalWaste,
+                description: context.l10n.goalWasteHint,
                 onSelect: _select,
               ),
               const SizedBox(height: 8),
@@ -163,8 +163,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 value: LifeGoalPreset.custom,
                 selected: _preset,
                 icon: Icons.edit,
-                title: 'هدف تاني بكلامي',
-                description: 'اكتبه زي ما بتقوله',
+                title: context.l10n.goalOwn,
+                description: context.l10n.goalOwnHint,
                 onSelect: _select,
               ),
               if (_preset == LifeGoalPreset.custom) ...<Widget>[
@@ -176,9 +176,9 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                     LengthLimitingTextInputFormatter(200),
                   ],
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'اكتب هدفك',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.goalWrite,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -186,8 +186,8 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                 const SizedBox(height: 12),
                 Text(
                   _errorCode == 'too_many_active_goals'
-                      ? 'عندك ٥ أهداف شغالة — خلّص واحد أو ألغيه الأول'
-                      : 'معرفتش أسجل الهدف — جرّب تاني',
+                      ? context.l10n.goalTooMany
+                      : context.l10n.goalSaveFailed,
                   style: ZadType.bodySmall.copyWith(color: scheme.error),
                 ),
               ],
@@ -213,7 +213,7 @@ class _State extends ConsumerState<_LifeGoalPickerSheet> {
                           ),
                         )
                       : Text(
-                          'ابدأ الهدف',
+                          context.l10n.goalStart,
                           style: ZadType.titleSmall.copyWith(
                             fontWeight: FontWeight.bold,
                           ),

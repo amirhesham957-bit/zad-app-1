@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -71,7 +72,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'قبل ما نبدأ، حدد سقفك الشهري',
+                  context.l10n.gateTitle,
                   textAlign: TextAlign.center,
                   style: ZadType.titleLarge.copyWith(
                     fontWeight: FontWeight.w700,
@@ -79,8 +80,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                 ),
                 const SizedBox(height: ZadSpacing.sm),
                 Text(
-                  'زاد ما بيخترعش أرقام. من غير السقف مفيش "متبقي" ولا "متاح" '
-                  '— وكل رقم هتشوفه هيبقى تخمين.',
+                  context.l10n.gateBody,
                   textAlign: TextAlign.center,
                   style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
                 ),
@@ -108,7 +108,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                'البلد والعملة',
+                                context.l10n.gateMarket,
                                 style: ZadType.labelSmall.copyWith(
                                   color: ZadColors.inkMuted,
                                 ),
@@ -127,7 +127,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                         TextButton(
                           onPressed: () =>
                               unawaited(ZadScreens.showRegionalSheet(context)),
-                          child: const Text('تغيير'),
+                          child: Text(context.l10n.commonChange),
                         ),
                       ],
                     ),
@@ -139,13 +139,16 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  // Arabic-Indic digits are typed, not shown (l10n: data).
+                  // l10n: data-begin
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.allow(RegExp('[0-9.٠-٩٫]')),
                   ],
+                  // l10n: data-end
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => unawaited(_start()),
                   decoration: InputDecoration(
-                    labelText: 'سقف الصرف الشهري',
+                    labelText: context.l10n.gateCeiling,
                     suffixText:
                         market?.currencySymbol ?? view.settings?.currency,
                     border: const OutlineInputBorder(),
@@ -158,7 +161,7 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                   child: FilledButton(
                     style: FilledButton.styleFrom(shape: const StadiumBorder()),
                     onPressed: canContinue ? () => unawaited(_start()) : null,
-                    child: const Text('يلا نبدأ'),
+                    child: Text(context.l10n.gateStart),
                   ),
                 ),
               ],

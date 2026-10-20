@@ -1274,4 +1274,730 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceOrPick => 'أو اختار سؤال جاهز:';
+
+  @override
+  String budgetSuggest(String amount) {
+    return 'زاد يقترح تعديل ميزانيتك إلى $amount بناءً على متوسط آخر شهرين';
+  }
+
+  @override
+  String get commonApply => 'تطبيق';
+
+  @override
+  String get txFilterAll => 'الكل';
+
+  @override
+  String get txFilterExpenses => 'المصروفات';
+
+  @override
+  String get txFilterIncome => 'الدخل';
+
+  @override
+  String get txFilterBank => 'البنك';
+
+  @override
+  String get budgetThisMonth => 'هذا الشهر';
+
+  @override
+  String get budgetNoTransactions => 'لا توجد معاملات بعد.';
+
+  @override
+  String get budgetNoTransactionsHint =>
+      'أضف معاملة أو اربط البنك لتتبع مصاريفك تلقائياً';
+
+  @override
+  String get txEdit => 'تعديل المعاملة';
+
+  @override
+  String get txDelete => 'مسح المعاملة';
+
+  @override
+  String get financesTitle => 'الميزانية والالتزامات';
+
+  @override
+  String get financesTabMoves => 'الحركات والميزانية';
+
+  @override
+  String get financesAddTx => 'معاملة';
+
+  @override
+  String get financesCategoryBudgets => 'ميزانيات الفئات';
+
+  @override
+  String get financesSetCategory => 'تحديد فئة';
+
+  @override
+  String get financesNoCategories =>
+      'لسه ما حددتش ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابعلك كل فئة لوحدها.';
+
+  @override
+  String get financesAvailable => 'متاح';
+
+  @override
+  String get financesEditBalance => 'تعديل الرصيد';
+
+  @override
+  String get financesNoBudget => 'لسه محددتش ميزانيتك';
+
+  @override
+  String financesRemainingCommitted(String remaining, String committed) {
+    return 'متبقي $remaining · محجوز $committed';
+  }
+
+  @override
+  String financesNoLimit(String amount) {
+    return '$amount — بدون حد';
+  }
+
+  @override
+  String get financesSmartAnalysis => 'تحليل ذكي';
+
+  @override
+  String get financesSetCategoryBudget => 'تحديد ميزانية فئة';
+
+  @override
+  String financesEditCategoryBudget(String category) {
+    return 'تعديل ميزانية $category';
+  }
+
+  @override
+  String get financesCategory => 'الفئة';
+
+  @override
+  String get financesMonthlyBudget => 'الميزانية الشهرية';
+
+  @override
+  String get commonSave => 'حفظ';
+
+  @override
+  String financesInsightTitle(String category) {
+    return 'تحليل ذكي: $category';
+  }
+
+  @override
+  String get financesAnalysing => 'جاري التحليل...';
+
+  @override
+  String get financesInsightEmpty =>
+      'مفيش بيانات كافية لتحليل الفئة دي حالياً.';
+
+  @override
+  String financesPredictedNext(String amount) {
+    return 'المتوقع الشهر القادم: $amount';
+  }
+
+  @override
+  String get gateTitle => 'قبل ما نبدأ، حدد سقفك الشهري';
+
+  @override
+  String get gateBody =>
+      'زاد ما بيخترعش أرقام. من غير السقف مفيش \"متبقي\" ولا \"متاح\" — وكل رقم هتشوفه هيبقى تخمين.';
+
+  @override
+  String get gateMarket => 'البلد والعملة';
+
+  @override
+  String get commonChange => 'تغيير';
+
+  @override
+  String get gateCeiling => 'سقف الصرف الشهري';
+
+  @override
+  String get gateStart => 'يلا نبدأ';
+
+  @override
+  String get budgetOver => 'تجاوزت الميزانية! حاول تقليل المصاريف';
+
+  @override
+  String budgetNear(int pct) {
+    return 'وصلت لـ $pct% من ميزانيتك. كن حذراً';
+  }
+
+  @override
+  String budgetFine(int pct) {
+    return 'صرفت $pct% من ميزانيتك. أداء جيد';
+  }
+
+  @override
+  String budgetGreat(int pct) {
+    return 'رائع! أنت في المسار الصحيح. صرفت $pct% فقط';
+  }
+
+  @override
+  String get trendUp => 'في ازدياد';
+
+  @override
+  String get trendDown => 'في انخفاض';
+
+  @override
+  String get trendFlat => 'مستقر';
+
+  @override
+  String eventToday(String title) {
+    return 'زوّدناه عشان «$title» النهارده';
+  }
+
+  @override
+  String eventAhead(String title, String when) {
+    return 'شايلين حاجة لـ«$title» $when';
+  }
+
+  @override
+  String get eventTomorrow => 'بكرة';
+
+  @override
+  String eventOnDay(String day) {
+    return 'يوم $day';
+  }
+
+  @override
+  String weekdayName(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      'd1': 'الاتنين',
+      'd2': 'التلات',
+      'd3': 'الأربع',
+      'd4': 'الخميس',
+      'd5': 'الجمعة',
+      'd6': 'السبت',
+      'd7': 'الحد',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get eventOuting => 'مشوار';
+
+  @override
+  String get txNoTitle => 'بدون وصف';
+
+  @override
+  String get txAddExpense => 'إضافة مصروف';
+
+  @override
+  String get txAddIncome => 'إضافة دخل/راتب';
+
+  @override
+  String get txKindExpense => 'خصم (مصروف)';
+
+  @override
+  String get txKindIncome => 'إيداع (راتب)';
+
+  @override
+  String get txDescriptionExample => 'الوصف (مثال: راتب، إيجار)';
+
+  @override
+  String get txAmount => 'المبلغ';
+
+  @override
+  String get txDebit => 'خصم المبلغ';
+
+  @override
+  String get txCredit => 'إضافة المبلغ';
+
+  @override
+  String get commonDelete => 'حذف';
+
+  @override
+  String txDeleteConfirm(String title) {
+    return 'هل أنت متأكد من حذف معاملة \"$title\"؟';
+  }
+
+  @override
+  String get txDescription => 'الوصف';
+
+  @override
+  String get txType => 'النوع';
+
+  @override
+  String get txExpense => 'مصروف';
+
+  @override
+  String get txIncome => 'دخل';
+
+  @override
+  String get quickCash => 'مصروف كاش';
+
+  @override
+  String get quickExpense => 'مصروف سريع';
+
+  @override
+  String get quickSubtitle => 'سجّل مصروفك في ثوانٍ';
+
+  @override
+  String get quickName => 'الاسم';
+
+  @override
+  String get quickNameHint => 'مثال: حلاقة، بقالة';
+
+  @override
+  String get quickCategory => 'التصنيف';
+
+  @override
+  String get txScanReceipt => 'صوّر فاتورة';
+
+  @override
+  String get txLog => 'سجّل عملية';
+
+  @override
+  String get txTitle => 'المعاملات';
+
+  @override
+  String get txNoneHere => 'مفيش معاملات هنا';
+
+  @override
+  String get txTryFilter => 'جرّب فلتر تاني.';
+
+  @override
+  String get commonEdit => 'تعديل';
+
+  @override
+  String get walletCash => 'كاش';
+
+  @override
+  String get walletCard => 'بطاقة';
+
+  @override
+  String get walletBank => 'بنك';
+
+  @override
+  String get txPendingOne => 'لسه محفوظة';
+
+  @override
+  String txPendingCount(int count) {
+    return '$count لسه محفوظة';
+  }
+
+  @override
+  String get txLoadFailed => 'مقدرتش أجيب المعاملات';
+
+  @override
+  String get txNonePeriod => 'مفيش معاملات الفترة دي';
+
+  @override
+  String get txPullToRetry => 'اسحب الشاشة لتحت عشان نحاول تاني.';
+
+  @override
+  String get txNoneHint =>
+      'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — هتلاقيها هنا.';
+
+  @override
+  String get dateDayHeader => 'EEEE، d MMMM';
+
+  @override
+  String get cycleYearly => 'سنوي';
+
+  @override
+  String get cycleWeekly => 'أسبوعي';
+
+  @override
+  String get cycleMonthly => 'شهري';
+
+  @override
+  String get subsTabAll => 'الكل';
+
+  @override
+  String get subsTabSubs => 'اشتراكات';
+
+  @override
+  String get subsTabBills => 'فواتير';
+
+  @override
+  String get subsTabInstalments => 'أقساط';
+
+  @override
+  String get subsTabLoans => 'قروض';
+
+  @override
+  String get subsNone => 'لا توجد اشتراكات';
+
+  @override
+  String get subsNoneInTab => 'لا توجد عناصر في هذا التصنيف';
+
+  @override
+  String get subsActive => 'النشطة';
+
+  @override
+  String get subsMonthlyTotal => 'إجمالي الاشتراكات الشهرية';
+
+  @override
+  String get subsActiveCount => 'اشتراكات نشطة';
+
+  @override
+  String subsDetected(int count) {
+    return '$count اشتراك مكتشف تلقائياً';
+  }
+
+  @override
+  String get subsClearAll => 'مسح الكل';
+
+  @override
+  String get subsBnpl => 'اشتري دلوقتي وادفع بعدين';
+
+  @override
+  String get subsLoans => 'أقساط وقروض وإيجار';
+
+  @override
+  String subsPaid(String title) {
+    return 'تم تسجيل سداد $title وترحيل الموعد للشهر القادم بنجاح';
+  }
+
+  @override
+  String get subsFixed => 'التزامات ثابتة';
+
+  @override
+  String get subsTitle => 'الاشتراكات والفواتير';
+
+  @override
+  String subsBnplTag(String name) {
+    return 'اشتري وادفع بعدين · $name';
+  }
+
+  @override
+  String get subsRenewsToday => 'يُجدد اليوم';
+
+  @override
+  String subsExpiredAgo(int days) {
+    return 'منتهي منذ $days يوم';
+  }
+
+  @override
+  String subsRenewsIn(int days) {
+    return 'يُجدد بعد $days يوم';
+  }
+
+  @override
+  String subsPerYear(String amount) {
+    return '≈ $amount/سنة';
+  }
+
+  @override
+  String get subsPaidMark => 'تم الدفع ✓';
+
+  @override
+  String get subsToggleAuto => 'تفعيل/إيقاف الخصم التلقائي';
+
+  @override
+  String get subsDisable => 'تعطيل';
+
+  @override
+  String get subsEnable => 'تفعيل';
+
+  @override
+  String get subsAdd => 'إضافة اشتراك جديد';
+
+  @override
+  String get subsEdit => 'تعديل الاشتراك';
+
+  @override
+  String get commonConfirm => 'تأكيد';
+
+  @override
+  String get subsSuggested => 'الخدمات والاشتراكات المقترحة:';
+
+  @override
+  String get subsKind => 'تصنيف الالتزام:';
+
+  @override
+  String get subsKindSub => 'اشتراك شهري';
+
+  @override
+  String get subsKindInstalment => 'قسط';
+
+  @override
+  String get subsKindBill => 'فاتورة';
+
+  @override
+  String get subsKindRent => 'التزام';
+
+  @override
+  String get subsTotalAmount => 'إجمالي المبلغ';
+
+  @override
+  String get subsRemaining => 'الأقساط المتبقية';
+
+  @override
+  String get subsNameHint => 'اسم الاشتراك (مثال: Netflix)';
+
+  @override
+  String subsAmount(String symbol) {
+    return 'المبلغ ($symbol)';
+  }
+
+  @override
+  String get subsProvider => 'مزود الخدمة';
+
+  @override
+  String get subsRenewalDate => 'تاريخ التجديد (YYYY-MM-DD)';
+
+  @override
+  String get commonPickDate => 'اختر التاريخ';
+
+  @override
+  String get subsCycle => 'دورة الفوترة';
+
+  @override
+  String subsSuggestedCategory(String category) {
+    return 'الفئة المقترحة: $category';
+  }
+
+  @override
+  String get oblKindRent => 'إيجار';
+
+  @override
+  String get oblKindInstallment => 'قسط';
+
+  @override
+  String get oblKindDebt => 'دين';
+
+  @override
+  String get oblKindTuition => 'مصاريف دراسية';
+
+  @override
+  String get oblKindUtility => 'فاتورة مرافق';
+
+  @override
+  String get oblKindOther => 'أخرى';
+
+  @override
+  String get recurMonthly => 'شهري';
+
+  @override
+  String get recurQuarterly => 'ربع سنوي';
+
+  @override
+  String get recurYearly => 'سنوي';
+
+  @override
+  String get recurOnce => 'مرة واحدة';
+
+  @override
+  String get oblStatusPaid => 'مدفوع';
+
+  @override
+  String get oblStatusPending => 'مستحق';
+
+  @override
+  String get oblStatusScheduled => 'مجدول';
+
+  @override
+  String oblInDays(int days) {
+    return 'بعد $days يوم';
+  }
+
+  @override
+  String get oblTotal => 'إجمالي الالتزامات';
+
+  @override
+  String get oblAdd => 'إضافة التزام';
+
+  @override
+  String get oblNone => 'لا توجد التزامات';
+
+  @override
+  String get oblNoneHint => 'الأقساط والفواتير الثابتة هتظهر هنا أول ما تتسجل';
+
+  @override
+  String oblDeleteConfirm(String title) {
+    return 'حذف «$title» من قائمة الالتزامات؟';
+  }
+
+  @override
+  String get oblAddNew => 'إضافة التزام جديد';
+
+  @override
+  String get oblEdit => 'تعديل الالتزام';
+
+  @override
+  String get oblNameHint => 'اسم الالتزام (إيجار، كهرباء...)';
+
+  @override
+  String oblAmountIn(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get oblDueDay => 'يوم الاستحقاق الشهري (1-31)';
+
+  @override
+  String get oblDayRange => 'من 1 لـ 31';
+
+  @override
+  String get oblRecurrence => 'التكرار';
+
+  @override
+  String get debtSaveFailed => 'ماتسجلش — اتأكد من النت.';
+
+  @override
+  String debtPaymentOn(String name) {
+    return 'دفعة على $name';
+  }
+
+  @override
+  String debtRemaining(String amount) {
+    return 'المتبقي: $amount';
+  }
+
+  @override
+  String get debtPaidAmount => 'المبلغ المدفوع';
+
+  @override
+  String get debtDelete => 'حذف الدين';
+
+  @override
+  String debtDeleteConfirm(String name) {
+    return 'حذف «$name» من قائمة الديون؟';
+  }
+
+  @override
+  String get debtPlanner => 'مخطط سداد الديون';
+
+  @override
+  String get debtAdd => 'إضافة دين';
+
+  @override
+  String get debtPickStrategy => 'اختر استراتيجية السداد المناسبة لك';
+
+  @override
+  String get debtNone => 'لا توجد ديون مسجلة';
+
+  @override
+  String get debtNoneHint => 'أضف ديونك لنساعدك في التخطيط للسداد';
+
+  @override
+  String get debtSnowball => 'كرة الثلج (الأصغر أولاً)';
+
+  @override
+  String get debtAvalanche => 'الانهيار الجليدي (الأعلى فائدة أولاً)';
+
+  @override
+  String debtMonths(int months) {
+    return '$months شهر';
+  }
+
+  @override
+  String get debtLogPayment => 'سجّل دفعة';
+
+  @override
+  String debtMonthsToPayoff(int months) {
+    return '$months شهر للسداد الكامل';
+  }
+
+  @override
+  String debtTotalInterest(String amount) {
+    return 'إجمالي الفوائد: $amount';
+  }
+
+  @override
+  String get debtAnalysing => 'زاد يقوم بالتحليل...';
+
+  @override
+  String get debtExplain => 'اشرح بالذكاء الاصطناعي';
+
+  @override
+  String get debtName => 'اسم الدين';
+
+  @override
+  String get debtLeft => 'المبلغ المتبقي';
+
+  @override
+  String get debtRate => 'معدل الفائدة السنوي %';
+
+  @override
+  String get debtMinimum => 'الحد الأدنى للدفعة الشهرية';
+
+  @override
+  String dealDiscount(String pct) {
+    return 'خصم $pct%';
+  }
+
+  @override
+  String dealAt(String price, String store) {
+    return '$price عند $store';
+  }
+
+  @override
+  String dealCached(String when) {
+    return 'البحث مشغول دلوقتي — دي آخر عروض لقيناها$when';
+  }
+
+  @override
+  String get dealTitle => 'العروض المتاحة لنواقصك 🏷️';
+
+  @override
+  String get dealLive => 'نتيجة بحث حي';
+
+  @override
+  String get dealSubtitle => 'عروض حقيقية على الأصناف الناقصة عندك';
+
+  @override
+  String get dealTapRefresh => 'اضغط لتحديث النتائج من الإنترنت';
+
+  @override
+  String get dealSearching => 'يبحث في الإنترنت...';
+
+  @override
+  String get dealFailed => 'تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية';
+
+  @override
+  String get dealFailedHint =>
+      'خدمة البحث مشغولة دلوقتي. دوس تحديث تاني بعد شوية — ولو اتكررت شوف النت.';
+
+  @override
+  String get dealNone => 'لا توجد نتائج بحث محددة متوفرة حالياً';
+
+  @override
+  String get dealRefresh => 'تحديث من النت 🔄';
+
+  @override
+  String get goalTitle => 'إيه أهم هدف لبيتك دلوقتي؟';
+
+  @override
+  String get goalBody =>
+      'اختار واحد — زاد هيتابعه معاك كل أسبوع لمدة ٣ شهور، وتقدر تلغيه في أي وقت.';
+
+  @override
+  String get goalSave => 'أوفّر مبلغ كل شهر';
+
+  @override
+  String get goalSaveHint => 'حدد المبلغ، وزاد يتابع صرفك عشان توصله';
+
+  @override
+  String get goalMonthly => 'المبلغ الشهري';
+
+  @override
+  String get goalBudget => 'ألتزم بميزانية الشهر';
+
+  @override
+  String get goalBudgetHint => 'زاد ينبهك قبل ما الصرف يسبق الميزانية';
+
+  @override
+  String get goalDebts => 'أسدد ديوني';
+
+  @override
+  String get goalDebtsHint => 'زاد يتابع معاك المتبقي وأقرب قسط';
+
+  @override
+  String get goalWaste => 'أقلل هدر المطبخ';
+
+  @override
+  String get goalWasteHint => 'زاد يفكرك بالأصناف قبل ما تبوظ';
+
+  @override
+  String get goalOwn => 'هدف تاني بكلامي';
+
+  @override
+  String get goalOwnHint => 'اكتبه زي ما بتقوله';
+
+  @override
+  String get goalWrite => 'اكتب هدفك';
+
+  @override
+  String get goalTooMany => 'عندك ٥ أهداف شغالة — خلّص واحد أو ألغيه الأول';
+
+  @override
+  String get goalSaveFailed => 'معرفتش أسجل الهدف — جرّب تاني';
+
+  @override
+  String get goalStart => 'ابدأ الهدف';
 }

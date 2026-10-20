@@ -39,7 +39,7 @@ class SpendCoverage {
   bool get isFull => low >= 90;
 
   /// «٣٠–٤٠٪», or «٤٠٪» when both ends round alike.
-  String get label => low == high ? '$low٪' : '$low–$high٪';
+  String get label => low == high ? '$low٪' : '$low–$high٪'; // l10n: data
 }
 
 /// The reading, or null when there is nothing honest to say: no confirmed

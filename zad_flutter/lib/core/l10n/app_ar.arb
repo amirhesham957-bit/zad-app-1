@@ -834,5 +834,476 @@
   "voiceHoldToTalk": "دوس مع الاستمرار واتكلم",
   "voiceReleaseToReply": "بسمعك… سيب عشان أرد",
   "voicePressToInterrupt": "دوس واتكلم عشان تقاطعني",
-  "voiceOrPick": "أو اختار سؤال جاهز:"
+  "voiceOrPick": "أو اختار سؤال جاهز:",
+  "budgetSuggest": "زاد يقترح تعديل ميزانيتك إلى {amount} بناءً على متوسط آخر شهرين",
+  "@budgetSuggest": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "commonApply": "تطبيق",
+  "txFilterAll": "الكل",
+  "txFilterExpenses": "المصروفات",
+  "txFilterIncome": "الدخل",
+  "txFilterBank": "البنك",
+  "budgetThisMonth": "هذا الشهر",
+  "budgetNoTransactions": "لا توجد معاملات بعد.",
+  "budgetNoTransactionsHint": "أضف معاملة أو اربط البنك لتتبع مصاريفك تلقائياً",
+  "txEdit": "تعديل المعاملة",
+  "txDelete": "مسح المعاملة",
+  "financesTitle": "الميزانية والالتزامات",
+  "financesTabMoves": "الحركات والميزانية",
+  "financesAddTx": "معاملة",
+  "financesCategoryBudgets": "ميزانيات الفئات",
+  "financesSetCategory": "تحديد فئة",
+  "financesNoCategories": "لسه ما حددتش ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابعلك كل فئة لوحدها.",
+  "financesAvailable": "متاح",
+  "financesEditBalance": "تعديل الرصيد",
+  "financesNoBudget": "لسه محددتش ميزانيتك",
+  "financesRemainingCommitted": "متبقي {remaining} · محجوز {committed}",
+  "@financesRemainingCommitted": {
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "committed": {
+        "type": "String"
+      }
+    }
+  },
+  "financesNoLimit": "{amount} — بدون حد",
+  "@financesNoLimit": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "financesSmartAnalysis": "تحليل ذكي",
+  "financesSetCategoryBudget": "تحديد ميزانية فئة",
+  "financesEditCategoryBudget": "تعديل ميزانية {category}",
+  "@financesEditCategoryBudget": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "financesCategory": "الفئة",
+  "financesMonthlyBudget": "الميزانية الشهرية",
+  "commonSave": "حفظ",
+  "financesInsightTitle": "تحليل ذكي: {category}",
+  "@financesInsightTitle": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "financesAnalysing": "جاري التحليل...",
+  "financesInsightEmpty": "مفيش بيانات كافية لتحليل الفئة دي حالياً.",
+  "financesPredictedNext": "المتوقع الشهر القادم: {amount}",
+  "@financesPredictedNext": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gateTitle": "قبل ما نبدأ، حدد سقفك الشهري",
+  "gateBody": "زاد ما بيخترعش أرقام. من غير السقف مفيش \"متبقي\" ولا \"متاح\" — وكل رقم هتشوفه هيبقى تخمين.",
+  "gateMarket": "البلد والعملة",
+  "commonChange": "تغيير",
+  "gateCeiling": "سقف الصرف الشهري",
+  "gateStart": "يلا نبدأ",
+  "budgetOver": "تجاوزت الميزانية! حاول تقليل المصاريف",
+  "budgetNear": "وصلت لـ {pct}% من ميزانيتك. كن حذراً",
+  "@budgetNear": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetFine": "صرفت {pct}% من ميزانيتك. أداء جيد",
+  "@budgetFine": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetGreat": "رائع! أنت في المسار الصحيح. صرفت {pct}% فقط",
+  "@budgetGreat": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "trendUp": "في ازدياد",
+  "trendDown": "في انخفاض",
+  "trendFlat": "مستقر",
+  "eventToday": "زوّدناه عشان «{title}» النهارده",
+  "@eventToday": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "eventAhead": "شايلين حاجة لـ«{title}» {when}",
+  "@eventAhead": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "eventTomorrow": "بكرة",
+  "eventOnDay": "يوم {day}",
+  "@eventOnDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayName": "{day, select, d1{الاتنين} d2{التلات} d3{الأربع} d4{الخميس} d5{الجمعة} d6{السبت} d7{الحد} other{}}",
+  "@weekdayName": {
+    "description": "A weekday; day is d1 (Monday) .. d7 (Sunday), DateTime.weekday.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "eventOuting": "مشوار",
+  "txNoTitle": "بدون وصف",
+  "txAddExpense": "إضافة مصروف",
+  "txAddIncome": "إضافة دخل/راتب",
+  "txKindExpense": "خصم (مصروف)",
+  "txKindIncome": "إيداع (راتب)",
+  "txDescriptionExample": "الوصف (مثال: راتب، إيجار)",
+  "txAmount": "المبلغ",
+  "txDebit": "خصم المبلغ",
+  "txCredit": "إضافة المبلغ",
+  "commonDelete": "حذف",
+  "txDeleteConfirm": "هل أنت متأكد من حذف معاملة \"{title}\"؟",
+  "@txDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "txDescription": "الوصف",
+  "txType": "النوع",
+  "txExpense": "مصروف",
+  "txIncome": "دخل",
+  "quickCash": "مصروف كاش",
+  "quickExpense": "مصروف سريع",
+  "quickSubtitle": "سجّل مصروفك في ثوانٍ",
+  "quickName": "الاسم",
+  "quickNameHint": "مثال: حلاقة، بقالة",
+  "quickCategory": "التصنيف",
+  "txScanReceipt": "صوّر فاتورة",
+  "txLog": "سجّل عملية",
+  "txTitle": "المعاملات",
+  "txNoneHere": "مفيش معاملات هنا",
+  "txTryFilter": "جرّب فلتر تاني.",
+  "commonEdit": "تعديل",
+  "walletCash": "كاش",
+  "walletCard": "بطاقة",
+  "walletBank": "بنك",
+  "txPendingOne": "لسه محفوظة",
+  "txPendingCount": "{count} لسه محفوظة",
+  "@txPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txLoadFailed": "مقدرتش أجيب المعاملات",
+  "txNonePeriod": "مفيش معاملات الفترة دي",
+  "txPullToRetry": "اسحب الشاشة لتحت عشان نحاول تاني.",
+  "txNoneHint": "أول ما تسجّل مصروف — أو توصلك رسالة من البنك — هتلاقيها هنا.",
+  "dateDayHeader": "EEEE، d MMMM",
+  "@dateDayHeader": {
+    "description": "DateFormat pattern for a day's heading."
+  },
+  "cycleYearly": "سنوي",
+  "cycleWeekly": "أسبوعي",
+  "cycleMonthly": "شهري",
+  "subsTabAll": "الكل",
+  "subsTabSubs": "اشتراكات",
+  "subsTabBills": "فواتير",
+  "subsTabInstalments": "أقساط",
+  "subsTabLoans": "قروض",
+  "subsNone": "لا توجد اشتراكات",
+  "subsNoneInTab": "لا توجد عناصر في هذا التصنيف",
+  "subsActive": "النشطة",
+  "subsMonthlyTotal": "إجمالي الاشتراكات الشهرية",
+  "subsActiveCount": "اشتراكات نشطة",
+  "subsDetected": "{count} اشتراك مكتشف تلقائياً",
+  "@subsDetected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subsClearAll": "مسح الكل",
+  "subsBnpl": "اشتري دلوقتي وادفع بعدين",
+  "subsLoans": "أقساط وقروض وإيجار",
+  "subsPaid": "تم تسجيل سداد {title} وترحيل الموعد للشهر القادم بنجاح",
+  "@subsPaid": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "subsFixed": "التزامات ثابتة",
+  "subsTitle": "الاشتراكات والفواتير",
+  "subsBnplTag": "اشتري وادفع بعدين · {name}",
+  "@subsBnplTag": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subsRenewsToday": "يُجدد اليوم",
+  "subsExpiredAgo": "منتهي منذ {days} يوم",
+  "@subsExpiredAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subsRenewsIn": "يُجدد بعد {days} يوم",
+  "@subsRenewsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subsPerYear": "≈ {amount}/سنة",
+  "@subsPerYear": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "subsPaidMark": "تم الدفع ✓",
+  "subsToggleAuto": "تفعيل/إيقاف الخصم التلقائي",
+  "subsDisable": "تعطيل",
+  "subsEnable": "تفعيل",
+  "subsAdd": "إضافة اشتراك جديد",
+  "subsEdit": "تعديل الاشتراك",
+  "commonConfirm": "تأكيد",
+  "subsSuggested": "الخدمات والاشتراكات المقترحة:",
+  "subsKind": "تصنيف الالتزام:",
+  "subsKindSub": "اشتراك شهري",
+  "subsKindInstalment": "قسط",
+  "subsKindBill": "فاتورة",
+  "subsKindRent": "التزام",
+  "subsTotalAmount": "إجمالي المبلغ",
+  "subsRemaining": "الأقساط المتبقية",
+  "subsNameHint": "اسم الاشتراك (مثال: Netflix)",
+  "subsAmount": "المبلغ ({symbol})",
+  "@subsAmount": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      }
+    }
+  },
+  "subsProvider": "مزود الخدمة",
+  "subsRenewalDate": "تاريخ التجديد (YYYY-MM-DD)",
+  "commonPickDate": "اختر التاريخ",
+  "subsCycle": "دورة الفوترة",
+  "subsSuggestedCategory": "الفئة المقترحة: {category}",
+  "@subsSuggestedCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "oblKindRent": "إيجار",
+  "oblKindInstallment": "قسط",
+  "oblKindDebt": "دين",
+  "oblKindTuition": "مصاريف دراسية",
+  "oblKindUtility": "فاتورة مرافق",
+  "oblKindOther": "أخرى",
+  "recurMonthly": "شهري",
+  "recurQuarterly": "ربع سنوي",
+  "recurYearly": "سنوي",
+  "recurOnce": "مرة واحدة",
+  "oblStatusPaid": "مدفوع",
+  "oblStatusPending": "مستحق",
+  "oblStatusScheduled": "مجدول",
+  "oblInDays": "بعد {days} يوم",
+  "@oblInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "oblTotal": "إجمالي الالتزامات",
+  "oblAdd": "إضافة التزام",
+  "oblNone": "لا توجد التزامات",
+  "oblNoneHint": "الأقساط والفواتير الثابتة هتظهر هنا أول ما تتسجل",
+  "oblDeleteConfirm": "حذف «{title}» من قائمة الالتزامات؟",
+  "@oblDeleteConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "oblAddNew": "إضافة التزام جديد",
+  "oblEdit": "تعديل الالتزام",
+  "oblNameHint": "اسم الالتزام (إيجار، كهرباء...)",
+  "oblAmountIn": "المبلغ ({currency})",
+  "@oblAmountIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "oblDueDay": "يوم الاستحقاق الشهري (1-31)",
+  "oblDayRange": "من 1 لـ 31",
+  "oblRecurrence": "التكرار",
+  "debtSaveFailed": "ماتسجلش — اتأكد من النت.",
+  "debtPaymentOn": "دفعة على {name}",
+  "@debtPaymentOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "debtRemaining": "المتبقي: {amount}",
+  "@debtRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtPaidAmount": "المبلغ المدفوع",
+  "debtDelete": "حذف الدين",
+  "debtDeleteConfirm": "حذف «{name}» من قائمة الديون؟",
+  "@debtDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "debtPlanner": "مخطط سداد الديون",
+  "debtAdd": "إضافة دين",
+  "debtPickStrategy": "اختر استراتيجية السداد المناسبة لك",
+  "debtNone": "لا توجد ديون مسجلة",
+  "debtNoneHint": "أضف ديونك لنساعدك في التخطيط للسداد",
+  "debtSnowball": "كرة الثلج (الأصغر أولاً)",
+  "debtAvalanche": "الانهيار الجليدي (الأعلى فائدة أولاً)",
+  "debtMonths": "{months} شهر",
+  "@debtMonths": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "debtLogPayment": "سجّل دفعة",
+  "debtMonthsToPayoff": "{months} شهر للسداد الكامل",
+  "@debtMonthsToPayoff": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "debtTotalInterest": "إجمالي الفوائد: {amount}",
+  "@debtTotalInterest": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "debtAnalysing": "زاد يقوم بالتحليل...",
+  "debtExplain": "اشرح بالذكاء الاصطناعي",
+  "debtName": "اسم الدين",
+  "debtLeft": "المبلغ المتبقي",
+  "debtRate": "معدل الفائدة السنوي %",
+  "debtMinimum": "الحد الأدنى للدفعة الشهرية",
+  "dealDiscount": "خصم {pct}%",
+  "@dealDiscount": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "dealAt": "{price} عند {store}",
+  "@dealAt": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "dealCached": "البحث مشغول دلوقتي — دي آخر عروض لقيناها{when}",
+  "@dealCached": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "dealTitle": "العروض المتاحة لنواقصك 🏷️",
+  "dealLive": "نتيجة بحث حي",
+  "dealSubtitle": "عروض حقيقية على الأصناف الناقصة عندك",
+  "dealTapRefresh": "اضغط لتحديث النتائج من الإنترنت",
+  "dealSearching": "يبحث في الإنترنت...",
+  "dealFailed": "تعذّر البحث الآن — جرّب تحدّث تاني بعد شوية",
+  "dealFailedHint": "خدمة البحث مشغولة دلوقتي. دوس تحديث تاني بعد شوية — ولو اتكررت شوف النت.",
+  "dealNone": "لا توجد نتائج بحث محددة متوفرة حالياً",
+  "dealRefresh": "تحديث من النت 🔄",
+  "goalTitle": "إيه أهم هدف لبيتك دلوقتي؟",
+  "goalBody": "اختار واحد — زاد هيتابعه معاك كل أسبوع لمدة ٣ شهور، وتقدر تلغيه في أي وقت.",
+  "goalSave": "أوفّر مبلغ كل شهر",
+  "goalSaveHint": "حدد المبلغ، وزاد يتابع صرفك عشان توصله",
+  "goalMonthly": "المبلغ الشهري",
+  "goalBudget": "ألتزم بميزانية الشهر",
+  "goalBudgetHint": "زاد ينبهك قبل ما الصرف يسبق الميزانية",
+  "goalDebts": "أسدد ديوني",
+  "goalDebtsHint": "زاد يتابع معاك المتبقي وأقرب قسط",
+  "goalWaste": "أقلل هدر المطبخ",
+  "goalWasteHint": "زاد يفكرك بالأصناف قبل ما تبوظ",
+  "goalOwn": "هدف تاني بكلامي",
+  "goalOwnHint": "اكتبه زي ما بتقوله",
+  "goalWrite": "اكتب هدفك",
+  "goalTooMany": "عندك ٥ أهداف شغالة — خلّص واحد أو ألغيه الأول",
+  "goalSaveFailed": "معرفتش أسجل الهدف — جرّب تاني",
+  "goalStart": "ابدأ الهدف"
 }

@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/sound/ui_sounds.dart';
@@ -70,8 +71,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     if (userId == null || _saving) return;
     setState(() => _saving = true);
     final amount = parseMoneyInput(_amount.text) ?? 0;
-    final title = _title.text.isEmpty ? 'بدون وصف' : _title.text;
+    final title = _title.text.isEmpty ? context.l10n.txNoTitle : _title.text;
+    // l10n: data-begin
     final category = _isExpense ? (_category ?? 'أخرى') : 'دخل';
+    // l10n: data-end
     final now = ref.read(nowProvider)();
     try {
       await ref
@@ -161,7 +164,9 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
               alignment: Alignment.center,
               children: <Widget>[
                 Text(
-                  _isExpense ? 'إضافة مصروف' : 'إضافة دخل/راتب',
+                  _isExpense
+                      ? context.l10n.txAddExpense
+                      : context.l10n.txAddIncome,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.bold,
                     color: ZadColors.ink,
@@ -178,7 +183,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                         Icons.close,
                         size: 20,
                         color: ZadColors.textTertiary,
-                        semanticLabel: 'إلغاء',
+                        semanticLabel: context.l10n.commonCancel,
                       ),
                     ),
                   ),
@@ -188,15 +193,15 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             const SizedBox(height: 14),
             Row(
               children: <Widget>[
-                kind('خصم (مصروف)', expense: true),
+                kind(context.l10n.txKindExpense, expense: true),
                 const SizedBox(width: 8),
-                kind('إيداع (راتب)', expense: false),
+                kind(context.l10n.txKindIncome, expense: false),
               ],
             ),
             const SizedBox(height: 14),
             TextField(
               controller: _title,
-              decoration: field('الوصف (مثال: راتب، إيجار)'),
+              decoration: field(context.l10n.txDescriptionExample),
               onChanged: (t) {
                 if (!_picked) {
                   setState(() => _category = suggestExpenseCategory(t));
@@ -207,7 +212,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             TextField(
               controller: _amount,
               keyboardType: TextInputType.number,
-              decoration: field('المبلغ'),
+              decoration: field(context.l10n.txAmount),
             ),
             if (_isExpense) ...<Widget>[
               const SizedBox(height: 14),
@@ -231,7 +236,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   ),
                 ),
                 child: Text(
-                  _isExpense ? 'خصم المبلغ' : 'إضافة المبلغ',
+                  _isExpense ? context.l10n.txDebit : context.l10n.txCredit,
                   style: ZadType.titleSmall.copyWith(
                     fontWeight: FontWeight.bold,
                     color: scheme.onPrimary,
