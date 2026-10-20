@@ -235,6 +235,13 @@ abstract final class ZadScreens {
   /// التسبيحة.
   static late OpenScreen showTasbihaScreen;
 
+  // ── alerts
+  /// Whether this app may post notifications already.
+  static late Future<bool> Function(WidgetRef ref) notificationsAllowed;
+
+  /// Shows the system's notification prompt; whether they are on afterwards.
+  static late Future<bool> Function(WidgetRef ref) askNotifications;
+
   // ── transactions
   /// Adds a transaction.
   static late OpenScreen showAddTransactionSheet;

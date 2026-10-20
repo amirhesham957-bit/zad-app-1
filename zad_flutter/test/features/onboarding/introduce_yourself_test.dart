@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/features/onboarding/application/introduction_gate.dart';
 import 'package:zad/features/onboarding/presentation/introduce_yourself_screen.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
@@ -33,6 +34,16 @@ class _Memory extends MemoryController {
     saved = profile;
     return null;
   }
+}
+
+class _Steps extends FirstStepsController {
+  bool armed = false;
+
+  @override
+  bool build() => false;
+
+  @override
+  void arm() => armed = true;
 }
 
 class _Profile extends ProfileController {
@@ -120,6 +131,7 @@ void main() {
     tester,
   ) async {
     final memory = _Memory(null);
+    final steps = _Steps();
     tester.view
       ..physicalSize = const Size(1080, 3600)
       ..devicePixelRatio = 2.5;
@@ -129,6 +141,7 @@ void main() {
         overrides: [
           memoryControllerProvider.overrideWith(() => memory),
           profileControllerProvider.overrideWith(_Profile.new),
+          firstStepsControllerProvider.overrideWith(() => steps),
         ],
         child: const MaterialApp(
           home: Directionality(
@@ -168,5 +181,7 @@ void main() {
     expect(memory.saved?.householdRole, 'son');
     expect(memory.saved?.caresFor, <String>['parents']);
     expect(memory.saved?.payDay, 5);
+    // The first steps (ZAD_PLAN 2.9) follow the introduction.
+    expect(steps.armed, isTrue);
   });
 }

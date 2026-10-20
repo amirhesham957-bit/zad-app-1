@@ -156,4 +156,7 @@ abstract final class ZadSlots {
   // ── telegram
   /// Home's Telegram blocks.
   static late SlotBuilder homeTelegramBlocks;
+
+  /// The link card: the bot, the binding code, and whether it is linked.
+  static late SlotBuilder telegramBindingSection;
 }
