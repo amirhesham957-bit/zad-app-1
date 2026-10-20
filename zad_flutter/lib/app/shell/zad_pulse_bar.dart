@@ -20,20 +20,22 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 
 /// What the strip says for [report], or null when there is nothing waiting.
-String? pulseText(OutboxFlushReport? report) {
+String? pulseText(OutboxFlushReport? report, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
   if (report == null || report.stop != FlushStop.offline) return null;
   final n = report.remaining;
   if (n <= 0) return null;
   final what = switch (n) {
-    1 => 'حاجة واحدة محفوظة',
-    2 => 'حاجتين محفوظين',
-    <= 10 => '$n حاجات محفوظة',
-    _ => '$n حاجة محفوظة',
+    1 => l.pulseOneSaved,
+    2 => l.pulseTwoSaved,
+    <= 10 => l.pulseFewSaved(n),
+    _ => l.pulseManySaved(n),
   };
-  return 'مفيش نت — $what وهتتبعت أول ما النت يرجع';
+  return l.pulseOffline(what);
 }
 
 /// Which line the strip shows, or null for none.
@@ -45,12 +47,14 @@ String? pulseText(OutboxFlushReport? report) {
   required bool thinking,
   required bool sending,
   required OutboxFlushReport? report,
+  ZadL10n? l10n,
 }) {
-  if (thinking) return (key: 'pulse-thinking', text: 'زاد بيفكر…');
-  if (pulseText(report) case final offline?) {
+  final l = l10n ?? zadL10nArabic;
+  if (thinking) return (key: 'pulse-thinking', text: l.pulseThinking);
+  if (pulseText(report, l) case final offline?) {
     return (key: 'pulse-offline', text: offline);
   }
-  if (sending) return (key: 'pulse-syncing', text: 'بنزامن…');
+  if (sending) return (key: 'pulse-syncing', text: l.pulseSyncing);
   return null;
 }
 
@@ -65,6 +69,7 @@ class ZadPulseBar extends ConsumerWidget {
       thinking: ref.watch(chatAwaitingReplyProvider),
       sending: ref.watch(outboxSendingProvider),
       report: ref.watch(outboxLastReportProvider),
+      l10n: context.l10n,
     );
     final tone = line?.key == 'pulse-thinking'
         ? ZadColors.green700

@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -228,12 +229,12 @@ class PantryGlanceCard extends ConsumerWidget {
         _GlanceHeader(
           icon: ZadIcons.inventory,
           tint: ZadColors.forestEmerald,
-          title: 'صحة المخزون والنواقص',
-          subtitle: 'مراقبة التلف والاحتياج الفعلي',
+          title: context.l10n.glanceStockTitle,
+          subtitle: context.l10n.glanceStockSubtitle,
           trailing: short.isNotEmpty
               ? _LowPill(count: short.length)
               : _OpenLink(
-                  label: 'فتح المخزون ←',
+                  label: context.l10n.glanceOpenStock,
                   color: ZadColors.forestEmerald,
                   onTap: open,
                 ),
@@ -246,14 +247,14 @@ class PantryGlanceCard extends ConsumerWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      'مؤشر سلامة المؤونة',
+                      context.l10n.glanceStockHealth,
                       style: ZadType.labelMedium.copyWith(
                         color: ZadColors.slate,
                       ),
                     ),
                   ),
                   Text(
-                    '${(health * 100).toInt()}% مكتمل',
+                    context.l10n.glanceStockPercent((health * 100).toInt()),
                     style: ZadType.labelMedium.copyWith(
                       color: healthColor,
                       fontWeight: FontWeight.w700,
@@ -275,12 +276,10 @@ class PantryGlanceCard extends ConsumerWidget {
             ],
           ),
         if (items.isEmpty)
-          const ZadEmptyState(
+          ZadEmptyState(
             icon: ZadIcons.inventory,
-            title: 'المخزن لسه فاضي',
-            message:
-                'صوّر فاتورة السوبرماركت أو ضيف أصنافك، وزاد يقولك إيه قرب '
-                'يخلص قبل ما تحتاجه',
+            title: context.l10n.glanceStockEmpty,
+            message: context.l10n.glanceStockEmptyHint,
           )
         else
           SizedBox(
@@ -337,7 +336,7 @@ class _LowPill extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          '$count قارب النفاد',
+          context.l10n.glanceLowCount(count),
           style: ZadType.labelSmall.copyWith(
             color: ZadColors.terracottaRust,
             fontWeight: FontWeight.w700,
@@ -377,10 +376,11 @@ class _FoodTile extends StatelessWidget {
     // three cartons). The expiry, when known, is the days; otherwise the
     // line says what is actually left.
     final left = switch (days) {
-      final int d when d < 0 => 'انتهت صلاحيته',
-      final int d => 'متبقي $d ${d <= 10 ? 'أيام' : 'يوم'}',
-      null =>
-        'متبقي ${formatQuantity(item.quantity)} ${item.unit ?? ''}'.trim(),
+      final int d when d < 0 => context.l10n.glanceExpired,
+      final int d => context.l10n.glanceDaysLeft(d),
+      null => context.l10n.glanceQtyLeft(
+        '${formatQuantity(item.quantity)} ${item.unit ?? ''}'.trim(),
+      ),
     };
 
     return ZadPressable(
@@ -427,7 +427,7 @@ class _FoodTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(ZadRadii.pill),
                       ),
                       child: Text(
-                        'قارب ينتهي',
+                        context.l10n.glanceRunningOut,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: ZadType.labelSmall.copyWith(
@@ -480,7 +480,7 @@ class _FoodTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'أضف للسلة',
+                          context.l10n.glanceAddToCart,
                           style: ZadType.labelMedium.copyWith(
                             color: ZadColors.forestEmerald,
                             fontWeight: FontWeight.w700,
@@ -501,10 +501,12 @@ class _FoodTile extends StatelessWidget {
   /// else sits on the neutral tile. The names are the stored Arabic
   /// categories, matched as data.
   static Color _categoryTint(String? category) => switch (category) {
-    'خضار' => ZadColors.forestEmerald.withValues(alpha: 0.14),
-    'ألبان' || 'مشروبات' => ZadColors.info.withValues(alpha: 0.14),
-    'مخبوزات' => ZadColors.mustardOchre.withValues(alpha: 0.14),
-    'فاكهة' || 'لحوم' => ZadColors.terracottaRust.withValues(alpha: 0.14),
+    'خضار' => ZadColors.forestEmerald.withValues(alpha: 0.14), // l10n: data
+    'ألبان' || // l10n: data
+    'مشروبات' => ZadColors.info.withValues(alpha: 0.14), // l10n: data
+    'مخبوزات' => ZadColors.mustardOchre.withValues(alpha: 0.14), // l10n: data
+    'فاكهة' || // l10n: data
+    'لحوم' => ZadColors.terracottaRust.withValues(alpha: 0.14), // l10n: data
     _ => ZadColors.outlineVariant,
   };
 }
@@ -557,12 +559,17 @@ class PharmacyGlanceCard extends ConsumerWidget {
     final adherence = view.adherence;
     final next = nextDoseOf(view.today, now);
 
+    final l10n = context.l10n;
     final label = medicines.isEmpty
-        ? 'مفيش أدوية مسجّلة'
+        ? l10n.glancePharmacyEmptyLabel
         : adherence != null
-        ? 'الالتزام بالجرعات: $adherence% • '
-              '${adherence >= 80 ? 'منتظم' : 'محتاج انتباه'}'
-        : '${medicines.length} دواء نشط • لسه بنجمّع بيانات الالتزام';
+        ? l10n.glanceAdherence(
+            adherence,
+            adherence >= 80
+                ? l10n.glanceAdherenceGood
+                : l10n.glanceAdherenceLow,
+          )
+        : l10n.glanceActiveMedicines(medicines.length);
     final labelColor = medicines.isEmpty || adherence == null
         ? null
         : adherence < 80
@@ -577,7 +584,7 @@ class PharmacyGlanceCard extends ConsumerWidget {
         _GlanceHeader(
           icon: ZadIcons.pharmacy,
           tint: ZadColors.terracottaRust,
-          title: 'صيدلية العائلة والجرعات',
+          title: context.l10n.glancePharmacyTitle,
           subtitle: label,
           subtitleColor: labelColor,
           trailing: Row(
@@ -585,7 +592,7 @@ class PharmacyGlanceCard extends ConsumerWidget {
             children: <Widget>[
               if (medicines.isNotEmpty) _AdherenceRing(percent: adherence),
               _OpenLink(
-                label: 'فتح الصيدلية ←',
+                label: context.l10n.glanceOpenPharmacy,
                 color: ZadColors.terracottaRust,
                 onTap: open,
               ),
@@ -601,12 +608,10 @@ class PharmacyGlanceCard extends ConsumerWidget {
             ),
           ),
         if (medicines.isEmpty)
-          const ZadEmptyState(
+          ZadEmptyState(
             icon: ZadIcons.pharmacy,
-            title: 'الصيدلية فاضية',
-            message:
-                'صوّر شريط الدواء أو ضيفه يدوي، وزاد هيفكّرك بمواعيد الجرعات '
-                'وينبّهك قبل ما يخلص',
+            title: context.l10n.glancePharmacyEmpty,
+            message: context.l10n.glancePharmacyEmptyHint,
           )
         else
           for (final m in medicines.take(3)) _MedicineRow(medicine: m),
@@ -703,7 +708,7 @@ class _NextDose extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'الجرعة التالية',
+                  context.l10n.glanceNextDose,
                   style: ZadType.labelSmall.copyWith(
                     color: ZadColors.terracottaRust,
                     fontWeight: FontWeight.w700,
@@ -731,7 +736,7 @@ class _NextDose extends StatelessWidget {
                 shape: const StadiumBorder(),
               ),
               icon: const Icon(ZadIcons.selected, size: 14),
-              label: const Text('خدت الجرعة'),
+              label: Text(context.l10n.glanceTookDose),
             ),
         ],
       ),
@@ -751,7 +756,7 @@ class _MedicineRow extends StatelessWidget {
     final dosage = medicine.dosage;
     final note = dosage != null && dosage.trim().isNotEmpty
         ? dosage
-        : '${medicine.dailyDoseCount ?? 1} جرعة يومياً';
+        : context.l10n.glanceDosesPerDay(medicine.dailyDoseCount ?? 1);
     final low = medicine.isOutOfStock || medicine.isRunningOut;
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -825,29 +830,29 @@ class SubscriptionsGlanceCard extends ConsumerWidget {
         _GlanceHeader(
           icon: ZadIcons.card,
           tint: ZadColors.info,
-          title: 'الاشتراكات الشهرية',
+          title: context.l10n.glanceSubsTitle,
           subtitle: active.isEmpty
-              ? 'مفيش اشتراكات مسجّلة'
-              : 'إجمالي شهري: ${_money(total)} $currency'.trim(),
+              ? context.l10n.glanceSubsNone
+              : context.l10n.glanceSubsTotal(
+                  '${_money(total)} $currency'.trim(),
+                ),
           trailing: _OpenLink(
-            label: 'عرض الكل ←',
+            label: context.l10n.glanceSeeAll,
             color: ZadColors.info,
             onTap: open,
           ),
         ),
         if (active.isEmpty)
-          const ZadEmptyState(
+          ZadEmptyState(
             icon: ZadIcons.card,
-            title: 'مفيش اشتراكات لسه',
-            message:
-                'ضيف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويفكّرك '
-                'بمواعيد التجديد',
+            title: context.l10n.glanceSubsEmpty,
+            message: context.l10n.glanceSubsEmptyHint,
           )
         else ...<Widget>[
           if (next != null && nextDate != null)
             _NextRenewal(
               title: next.title,
-              when: DateFormat.MMMMd('ar').format(nextDate),
+              when: DateFormat.MMMMd(context.dateLocale).format(nextDate),
               amount: '${_money(next.amount)} $currency'.trim(),
             ),
           if (total > 0)
@@ -919,7 +924,7 @@ class _NextRenewal extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                'التجديد القادم: $title',
+                context.l10n.glanceNextRenewal(title),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: ZadType.labelLarge.copyWith(fontWeight: FontWeight.w700),
@@ -932,7 +937,7 @@ class _NextRenewal extends StatelessWidget {
           ),
         ),
         Text(
-          'القسط: $amount',
+          context.l10n.glanceInstalment(amount),
           style: ZadType.labelLarge.copyWith(
             color: ZadColors.info,
             fontWeight: FontWeight.w800,

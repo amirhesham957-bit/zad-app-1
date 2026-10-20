@@ -18,6 +18,7 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/budget_period.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/bank_listening_pill.dart';
@@ -191,10 +192,12 @@ class _Budget extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 14),
         child: ZadEmptyState(
           icon: view.error != null ? ZadIcons.failed : ZadIcons.budget,
-          title: view.error != null ? 'مقدرتش أوصل للسيرفر' : 'بنجهّز ميزانيتك',
+          title: view.error != null
+              ? context.l10n.homeServerDown
+              : context.l10n.homePreparing,
           message: view.error != null
-              ? 'هنحاول تاني لوحدنا. تقدر تسحب الشاشة لتحت دلوقتي.'
-              : 'ثانية واحدة وهتلاقي كل حاجة هنا.',
+              ? context.l10n.homeServerDownHint
+              : context.l10n.homePreparingHint,
           tone: view.error != null
               ? ZadEmptyTone.problem
               : ZadEmptyTone.waiting,

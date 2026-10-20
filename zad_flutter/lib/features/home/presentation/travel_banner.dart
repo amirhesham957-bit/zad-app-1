@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/market/application/switch_market.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
@@ -121,8 +122,10 @@ class _TravelBannerSlotState extends ConsumerState<TravelBannerSlot> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'شكلك في ${suggested.nameAr} — أحوّل لـ '
-                '${suggested.currencySymbol}؟',
+                context.l10n.travelSwitch(
+                  suggested.nameAr,
+                  suggested.currencySymbol,
+                ),
                 style: ZadType.bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: scheme.onSurface,
@@ -135,7 +138,7 @@ class _TravelBannerSlotState extends ConsumerState<TravelBannerSlot> {
                 await switchMarket(ref, marketFor(currentCountry), suggested);
               },
               child: Text(
-                'تحويل',
+                context.l10n.travelSwitchButton,
                 style: TextStyle(
                   color: scheme.primary,
                   fontWeight: FontWeight.bold,
@@ -146,7 +149,7 @@ class _TravelBannerSlotState extends ConsumerState<TravelBannerSlot> {
               dimension: 32,
               child: IconButton(
                 padding: EdgeInsets.zero,
-                tooltip: 'تجاهل',
+                tooltip: context.l10n.commonDismiss,
                 onPressed: () => _dismiss(detected),
                 icon: Icon(
                   Icons.close,

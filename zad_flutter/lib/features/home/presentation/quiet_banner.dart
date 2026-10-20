@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
@@ -35,9 +36,9 @@ class _QuietModeBannerState extends ConsumerState<QuietModeBanner> {
     if (ok) {
       ref.invalidate(quietModeProvider);
     } else {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(content: Text('مقدرتش أرجّع التنبيهات. جرّب تاني.')),
-      );
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text(context.l10n.quietRestoreFailed)));
     }
   }
 
@@ -73,7 +74,7 @@ class _QuietModeBannerState extends ConsumerState<QuietModeBanner> {
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
               onPressed: _busy ? null : () => unawaited(_end(quiet.id)),
-              child: const Text('رجّع التنبيهات'),
+              child: Text(context.l10n.quietRestore),
             ),
           ],
         ),

@@ -17,6 +17,7 @@ import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
@@ -91,14 +92,14 @@ class HomeOfflineBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'مفيش اتصال بالإنترنت',
+                    context.l10n.homeOffline,
                     style: ZadType.bodyLarge.copyWith(
                       fontWeight: FontWeight.w700,
                       color: _textPrimary,
                     ),
                   ),
                   Text(
-                    'بياناتك بتتحفظ محلياً وهتتزامن أول ما النت يرجع',
+                    context.l10n.homeOfflineHint,
                     style: ZadType.labelMedium.copyWith(
                       color: _onSurfaceVariant,
                     ),
@@ -154,7 +155,7 @@ class HomeCompanionHeader extends ConsumerWidget {
             Icons.mic_rounded,
             size: 24,
             color: _emerald,
-            semanticLabel: 'كلّم زاد',
+            semanticLabel: context.l10n.homeTalkToZad,
           ),
         ),
       ),
@@ -206,7 +207,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'أهلاً يا ${name ?? '...'}! 👋',
+                      context.l10n.homeHello(name ?? '...'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: ZadType.titleMedium.copyWith(
@@ -229,7 +230,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'عقل زاد نشط',
+                          context.l10n.homeBrainActive,
                           style: ZadType.labelMedium.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _emerald.withValues(alpha: 0.75),
@@ -245,7 +246,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Text(
-                            _companionLine(companion),
+                            _companionLine(companion, context.l10n),
                             key: const ValueKey<String>('home-companion-line'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -271,7 +272,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                       Icons.camera_alt,
                       size: 19,
                       color: _emerald,
-                      semanticLabel: 'مسح مخزون',
+                      semanticLabel: context.l10n.homeScanPantry,
                     ),
                   ),
                 ),
@@ -284,9 +285,10 @@ class HomeCompanionHeader extends ConsumerWidget {
   }
 }
 
-String _companionLine(CompanionStatus c) {
+String _companionLine(CompanionStatus c, ZadL10n l10n) {
   final streak = c.streak > 0 ? ' · 🔥 ${c.streak}' : '';
-  return '${c.persona.name} · لفل ${c.level}$streak · 🌱 ${c.seeds}';
+  return '${l10n.shellCompanionTag(c.persona.name, c.level)}'
+      '$streak · 🌱 ${c.seeds}';
 }
 
 // ── recent transactions ──────────────────────────────────────────────────────
@@ -321,7 +323,7 @@ class HomeRecentTransactions extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Text(
-              'أحدث المعاملات',
+              context.l10n.homeRecent,
               style: TextStyle(
                 fontSize: 15,
                 height: 22 / 15,
@@ -332,7 +334,7 @@ class HomeRecentTransactions extends ConsumerWidget {
             GestureDetector(
               onTap: () => unawaited(_showFullLog(context, recent)),
               child: Text(
-                'عرض الكل',
+                context.l10n.commonSeeAll,
                 style: TextStyle(
                   fontSize: 12.5,
                   height: 22 / 12.5,
@@ -359,7 +361,7 @@ class HomeRecentTransactions extends ConsumerWidget {
                 // Flexible: a large font scale wraps instead of overflowing.
                 Flexible(
                   child: Text(
-                    'سيتم عرض المعاملات البنكية هنا',
+                    context.l10n.homeRecentEmpty,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: _textTertiary),
                   ),
@@ -372,7 +374,7 @@ class HomeRecentTransactions extends ConsumerWidget {
             if (i > 0) const SizedBox(height: 10),
             _TxRow(
               tx: recent[i],
-              day: _relativeDay(recent[i].createdAt, now, zone),
+              day: _relativeDay(recent[i].createdAt, now, zone, context.l10n),
               currency: currency,
             ),
           ],
@@ -393,7 +395,7 @@ class HomeRecentTransactions extends ConsumerWidget {
       final ext = dialogContext.zadExt;
       final list = rows.reversed.toList();
       return AlertDialog(
-        title: const Text('السجل الكامل للمعاملات'),
+        title: Text(context.l10n.homeAllTransactions),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -441,7 +443,7 @@ class HomeRecentTransactions extends ConsumerWidget {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إغلاق'),
+            child: Text(context.l10n.commonClose),
           ),
         ],
       );
@@ -449,7 +451,12 @@ class HomeRecentTransactions extends ConsumerWidget {
   );
 
   /// اليوم / أمس / قبل N أيام, counted in the account's zone.
-  static String _relativeDay(DateTime at, DateTime now, String zone) {
+  static String _relativeDay(
+    DateTime at,
+    DateTime now,
+    String zone,
+    ZadL10n l10n,
+  ) {
     final location = tz.getLocation(zone);
     final a = tz.TZDateTime.from(at.toUtc(), location);
     final b = tz.TZDateTime.from(now.toUtc(), location);
@@ -458,9 +465,9 @@ class HomeRecentTransactions extends ConsumerWidget {
       b.month,
       b.day,
     ).difference(DateTime.utc(a.year, a.month, a.day)).inDays;
-    if (days <= 0) return 'اليوم';
-    if (days == 1) return 'أمس';
-    return 'قبل $days أيام';
+    if (days <= 0) return l10n.dayToday;
+    if (days == 1) return l10n.dayYesterday;
+    return l10n.dayAgo(days);
   }
 }
 

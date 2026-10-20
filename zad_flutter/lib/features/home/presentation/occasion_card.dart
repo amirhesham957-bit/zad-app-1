@@ -18,6 +18,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/occasion.dart';
@@ -158,7 +159,7 @@ class _OccasionCardSlotState extends ConsumerState<OccasionCardSlot> {
                 TextButton(
                   onPressed: () => _putAway(o),
                   style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
-                  child: const Text('مش دلوقتي'),
+                  child: Text(context.l10n.commonNotNow),
                 ),
               ],
             ),

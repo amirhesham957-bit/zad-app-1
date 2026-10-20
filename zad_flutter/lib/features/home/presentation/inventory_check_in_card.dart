@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 
@@ -134,14 +135,14 @@ class InventoryCheckInCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              'هل خلص $itemName؟',
+                              context.l10n.checkInFinished(itemName),
                               style: ZadType.titleMedium.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: scheme.onSurface,
                               ),
                             ),
                             Text(
-                              'حسب معدل استهلاكك، المفروض قرب يخلص',
+                              context.l10n.checkInHint,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: scheme.onSurfaceVariant,
@@ -164,7 +165,7 @@ class InventoryCheckInCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       _TonalButton(
                         icon: Icons.check,
-                        label: 'خلص',
+                        label: context.l10n.checkInDone,
                         color: scheme.error,
                         onPressed: onFinished,
                       ),
@@ -172,7 +173,7 @@ class InventoryCheckInCard extends StatelessWidget {
                       TextButton(
                         onPressed: onStillHave,
                         child: Text(
-                          'لسه',
+                          context.l10n.checkInNotYet,
                           style: TextStyle(color: scheme.onSurfaceVariant),
                         ),
                       ),

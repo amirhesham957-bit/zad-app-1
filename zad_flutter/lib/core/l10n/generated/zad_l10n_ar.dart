@@ -169,7 +169,8 @@ class ZadL10nAr extends ZadL10n {
       locale: localeName,
       other:
           'فيه $count عمليات لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.',
-      one: 'فيه عملية واحدة لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.',
+      one:
+          'فيه $count عملية لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.',
     );
     return '$_temp0';
   }
@@ -290,5 +291,726 @@ class ZadL10nAr extends ZadL10n {
   @override
   String paywallPricePerMonth(String price) {
     return '$price في الشهر';
+  }
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navMoney => 'فلوسي';
+
+  @override
+  String get navHomeStock => 'بيتي';
+
+  @override
+  String get navMore => 'المزيد';
+
+  @override
+  String get navFamily => 'العائلة';
+
+  @override
+  String get navMyFamily => 'عيلتي';
+
+  @override
+  String get navVoiceAssistant => 'زاد — المساعد الصوتي';
+
+  @override
+  String get navCamera => 'تصوير الفواتير والمنتجات';
+
+  @override
+  String get pulseOneSaved => 'حاجة واحدة محفوظة';
+
+  @override
+  String get pulseTwoSaved => 'حاجتين محفوظين';
+
+  @override
+  String pulseFewSaved(int n) {
+    return '$n حاجات محفوظة';
+  }
+
+  @override
+  String pulseManySaved(int n) {
+    return '$n حاجة محفوظة';
+  }
+
+  @override
+  String pulseOffline(String what) {
+    return 'مفيش نت — $what وهتتبعت أول ما النت يرجع';
+  }
+
+  @override
+  String get pulseThinking => 'زاد بيفكر…';
+
+  @override
+  String get pulseSyncing => 'بنزامن…';
+
+  @override
+  String get authPreparingAccount => 'بنجهّز حسابك…';
+
+  @override
+  String get shareTooLarge =>
+      'الملف أكبر من إن زاد يقراه مرة واحدة — ابعته أصغر';
+
+  @override
+  String get shareUnsupported => 'زاد بيقرا الكلام والصور وملفات PDF وCSV بس';
+
+  @override
+  String get shareUnreadable => 'مقدرتش أفتح اللي اتشارك — جرّب تبعته تاني';
+
+  @override
+  String get shareWhatImage => 'الصورة دي إيه؟';
+
+  @override
+  String get shareWhatImageHint =>
+      'زاد هيقراها ويوريك اللي لقاه قبل ما يسجل أي حاجة';
+
+  @override
+  String get shareReceipt => 'فاتورة شرا';
+
+  @override
+  String get shareStatement => 'كشف حساب';
+
+  @override
+  String get drawerCompanion => 'رفيق زاد';
+
+  @override
+  String get drawerBrain => 'عقل زاد';
+
+  @override
+  String get drawerAppointments => 'مواعيدي';
+
+  @override
+  String get drawerPlaces => 'أماكني';
+
+  @override
+  String get drawerObligations => 'التزاماتي';
+
+  @override
+  String get drawerPlans => 'باقات زاد الشهرية';
+
+  @override
+  String get drawerShopping => 'قائمة التسوق';
+
+  @override
+  String get drawerPharmacy => 'صيدلية العائلة';
+
+  @override
+  String get drawerMaintenance => 'صيانة المنزل';
+
+  @override
+  String get drawerDocuments => 'مستنداتي';
+
+  @override
+  String get drawerNearby => 'المتاجر والأسواق القريبة';
+
+  @override
+  String get drawerTips => 'نصايح زاد';
+
+  @override
+  String get drawerTasbiha => 'تسبيحة';
+
+  @override
+  String get drawerNotifications => 'الإشعارات';
+
+  @override
+  String get drawerAccount => 'حسابي';
+
+  @override
+  String get drawerGroupZad => 'زاد';
+
+  @override
+  String get drawerGroupMoney => 'الفلوس';
+
+  @override
+  String get drawerGroupHome => 'البيت والعيلة';
+
+  @override
+  String get drawerGroupMore => 'أكتر';
+
+  @override
+  String get drawerKidsMode => 'وضع الأطفال';
+
+  @override
+  String get drawerFullMode => 'الوضع الكامل';
+
+  @override
+  String get shellOpenProfile => 'اضغط لعرض الملف الشخصي';
+
+  @override
+  String get shellZadUser => 'مستخدم زاد';
+
+  @override
+  String get shellHello => 'أهلاً بيك';
+
+  @override
+  String shellHelloName(String name) {
+    return 'أهلاً يا $name';
+  }
+
+  @override
+  String shellCompanionTag(String name, int level) {
+    return '$name · لفل $level';
+  }
+
+  @override
+  String widgetSeasonTomorrow(String name) {
+    return 'بكرة $name';
+  }
+
+  @override
+  String widgetSeasonTwoDays(String name) {
+    return 'باقي يومين على $name';
+  }
+
+  @override
+  String widgetSeasonDays(int n, String name) {
+    return 'باقي $n أيام على $name';
+  }
+
+  @override
+  String homeFxExcluded(int count) {
+    return 'استُبعدت $count معاملة من الإجمالي — عملتها مالهاش سعر صرف';
+  }
+
+  @override
+  String get homeBankListening => 'بسمع رسايل البنك وحدّث رصيدك تلقائياً';
+
+  @override
+  String get homeBankStopped => 'الاستماع لرسايل البنك وقف — اضغط للإصلاح';
+
+  @override
+  String get homeBirthday => 'كل سنة وإنت طيب! 🎂';
+
+  @override
+  String homeBirthdayName(String who) {
+    return 'كل سنة وإنت طيب يا $who! 🎂';
+  }
+
+  @override
+  String get homeBirthdayWish => 'زاد بيتمنالك سنة حلوة مليانة خير وراحة بال.';
+
+  @override
+  String get homeBirthdayThanks => 'شكراً يا زاد 💚';
+
+  @override
+  String get commonHide => 'إخفاء';
+
+  @override
+  String homeStoriesLabel(String name) {
+    return 'حكايات زاد: $name';
+  }
+
+  @override
+  String get homeStories => 'حكايات زاد';
+
+  @override
+  String get homeCloseDay => 'اقفل يومك';
+
+  @override
+  String get homeCloseDayHint =>
+      'عشر ثواني: صرفت حاجة كاش النهارده؟ ورفيقك يتعشى';
+
+  @override
+  String get coverageBlind => 'لسه مش شايف أي مصروف الدورة دي';
+
+  @override
+  String get coverageBlindHint => 'قفّل يومك أو اربط البنك عشان أشوف';
+
+  @override
+  String get coverageFull => 'أنا شايف تقريباً كل مصروفك';
+
+  @override
+  String get coverageFullHint => 'كمّل كده، الأرقام اللي فوق دي حقيقية';
+
+  @override
+  String coveragePartial(String share) {
+    return 'أنا شايف حوالي $share من مصروفك';
+  }
+
+  @override
+  String get coveragePartialHint => 'قفّل يومك أو اربط البنك عشان أشوف أكتر';
+
+  @override
+  String get briefTitle => 'موجز زاد النهارده';
+
+  @override
+  String get briefAllGood => 'كله تمام — مفيش حاجة مستعجلة النهارده.';
+
+  @override
+  String get briefAskZad => 'اسأل زاد عن أي حاجة';
+
+  @override
+  String get glanceStockTitle => 'صحة المخزون والنواقص';
+
+  @override
+  String get glanceStockSubtitle => 'مراقبة التلف والاحتياج الفعلي';
+
+  @override
+  String get glanceOpenStock => 'فتح المخزون ←';
+
+  @override
+  String get glanceStockHealth => 'مؤشر سلامة المؤونة';
+
+  @override
+  String glanceStockPercent(int percent) {
+    return '$percent% مكتمل';
+  }
+
+  @override
+  String get glanceStockEmpty => 'المخزن لسه فاضي';
+
+  @override
+  String get glanceStockEmptyHint =>
+      'صوّر فاتورة السوبرماركت أو ضيف أصنافك، وزاد يقولك إيه قرب يخلص قبل ما تحتاجه';
+
+  @override
+  String glanceLowCount(int count) {
+    return '$count قارب النفاد';
+  }
+
+  @override
+  String get glanceExpired => 'انتهت صلاحيته';
+
+  @override
+  String glanceDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'متبقي $days يوم',
+      few: 'متبقي $days أيام',
+      two: 'متبقي $days أيام',
+      one: 'متبقي $days أيام',
+      zero: 'متبقي $days أيام',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String glanceQtyLeft(String qty) {
+    return 'متبقي $qty';
+  }
+
+  @override
+  String get glanceRunningOut => 'قارب ينتهي';
+
+  @override
+  String get glanceAddToCart => 'أضف للسلة';
+
+  @override
+  String get glancePharmacyEmptyLabel => 'مفيش أدوية مسجّلة';
+
+  @override
+  String glanceAdherence(int percent, String verdict) {
+    return 'الالتزام بالجرعات: $percent% • $verdict';
+  }
+
+  @override
+  String get glanceAdherenceGood => 'منتظم';
+
+  @override
+  String get glanceAdherenceLow => 'محتاج انتباه';
+
+  @override
+  String glanceActiveMedicines(int count) {
+    return '$count دواء نشط • لسه بنجمّع بيانات الالتزام';
+  }
+
+  @override
+  String get glancePharmacyTitle => 'صيدلية العائلة والجرعات';
+
+  @override
+  String get glanceOpenPharmacy => 'فتح الصيدلية ←';
+
+  @override
+  String get glancePharmacyEmpty => 'الصيدلية فاضية';
+
+  @override
+  String get glancePharmacyEmptyHint =>
+      'صوّر شريط الدواء أو ضيفه يدوي، وزاد هيفكّرك بمواعيد الجرعات وينبّهك قبل ما يخلص';
+
+  @override
+  String get glanceNextDose => 'الجرعة التالية';
+
+  @override
+  String get glanceTookDose => 'خدت الجرعة';
+
+  @override
+  String glanceDosesPerDay(int count) {
+    return '$count جرعة يومياً';
+  }
+
+  @override
+  String get glanceSubsTitle => 'الاشتراكات الشهرية';
+
+  @override
+  String get glanceSubsNone => 'مفيش اشتراكات مسجّلة';
+
+  @override
+  String glanceSubsTotal(String amount) {
+    return 'إجمالي شهري: $amount';
+  }
+
+  @override
+  String get glanceSeeAll => 'عرض الكل ←';
+
+  @override
+  String get glanceSubsEmpty => 'مفيش اشتراكات لسه';
+
+  @override
+  String get glanceSubsEmptyHint =>
+      'ضيف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويفكّرك بمواعيد التجديد';
+
+  @override
+  String glanceNextRenewal(String title) {
+    return 'التجديد القادم: $title';
+  }
+
+  @override
+  String glanceInstalment(String amount) {
+    return 'القسط: $amount';
+  }
+
+  @override
+  String groceryWhatToAdd(String shop, String amount) {
+    return 'اشتريت من $shop بـ $amount — ضيف إيه للمخزون؟';
+  }
+
+  @override
+  String get groceryOtherItem => 'اسم منتج تاني…';
+
+  @override
+  String get commonAdd => 'إضافة';
+
+  @override
+  String groceryAdded(int count) {
+    return 'أضفت $count أصناف ✅';
+  }
+
+  @override
+  String get commonDone => 'تم';
+
+  @override
+  String get activationTitle => 'جهّز زاد لبيتك';
+
+  @override
+  String get activationSubtitle =>
+      'أربع خطوات تجعل الرصيد والتنبيهات والتوقعات مفيدة من أول يوم';
+
+  @override
+  String activationProgress(int done, int total) {
+    return '$done من $total';
+  }
+
+  @override
+  String get activationBalance => 'ثبّت رصيد البداية';
+
+  @override
+  String get activationBalanceHint =>
+      'اكتب المبلغ الموجود الآن ليحسب زاد السحب والإيداع بدقة';
+
+  @override
+  String get activationBank => 'فعّل قراءة إشعارات البنك';
+
+  @override
+  String get activationBankHint => 'اسمح لزاد بالتقاط العمليات وعرضها للتأكيد';
+
+  @override
+  String get activationFirstItem => 'أضف أول صنف للبيت';
+
+  @override
+  String get activationFirstItemHint => 'ابدأ بصنف متكرر ليتعلم زاد استهلاكك';
+
+  @override
+  String get activationGoal => 'حدد أول هدف لبيتك';
+
+  @override
+  String get activationGoalHint => 'زاد هيتابعه معاك كل أسبوع';
+
+  @override
+  String get activationAllSet =>
+      'كل حاجة جاهزة! 🎉 جرب تقول لزاد \"صرفت ٥٠ بقالة\" بالصوت أو من بوت تليجرام — هيسألك تأكيد ويسجلها.';
+
+  @override
+  String get commonOpen => 'فتح';
+
+  @override
+  String get amazonOutOfStock => 'خلص من مخزونك';
+
+  @override
+  String get amazonRunningLow => 'قارب على النفاد';
+
+  @override
+  String get amazonOnList => 'في قايمة التسوق';
+
+  @override
+  String get amazonSuggestion => 'اقتراح لبيتك';
+
+  @override
+  String get amazonShop => 'تسوق من أمازون';
+
+  @override
+  String get amazonApproxPrice => 'سعر تقريبي';
+
+  @override
+  String get amazonUpdatedToday => 'اتحدث النهاردة';
+
+  @override
+  String amazonPriceAge(int days) {
+    return 'سعر منذ $days يوم';
+  }
+
+  @override
+  String get amazonName => 'أمازون';
+
+  @override
+  String get amazonDisclosure =>
+      'رابط شراء أفلييت — عمولة لزاد بدون أي زيادة عليك';
+
+  @override
+  String get amazonOut => 'خلص';
+
+  @override
+  String get amazonLow => 'قرب يخلص';
+
+  @override
+  String get amazonShopEmoji => '🛍️ تسوق من أمازون';
+
+  @override
+  String get amazonNoNeeds => 'ضيف اللي ناقصك، أو شوف عروض النهارده';
+
+  @override
+  String amazonOneNeed(String name) {
+    return 'ناقصك $name — اطلبه من أمازون';
+  }
+
+  @override
+  String amazonManyNeeds(int count) {
+    return 'ناقصك $count حاجات — اطلب كل واحدة بضغطة';
+  }
+
+  @override
+  String get amazonSuggest => 'اقتراح';
+
+  @override
+  String get amazonDeals => 'العروض';
+
+  @override
+  String get amazonOrder => '🛒 اطلبه';
+
+  @override
+  String get homeOffline => 'مفيش اتصال بالإنترنت';
+
+  @override
+  String get homeOfflineHint =>
+      'بياناتك بتتحفظ محلياً وهتتزامن أول ما النت يرجع';
+
+  @override
+  String get homeTalkToZad => 'كلّم زاد';
+
+  @override
+  String homeHello(String name) {
+    return 'أهلاً يا $name! 👋';
+  }
+
+  @override
+  String get homeBrainActive => 'عقل زاد نشط';
+
+  @override
+  String get homeScanPantry => 'مسح مخزون';
+
+  @override
+  String get homeRecent => 'أحدث المعاملات';
+
+  @override
+  String get commonSeeAll => 'عرض الكل';
+
+  @override
+  String get homeRecentEmpty => 'سيتم عرض المعاملات البنكية هنا';
+
+  @override
+  String get homeAllTransactions => 'السجل الكامل للمعاملات';
+
+  @override
+  String get dayToday => 'اليوم';
+
+  @override
+  String get dayYesterday => 'أمس';
+
+  @override
+  String dayAgo(int days) {
+    return 'قبل $days أيام';
+  }
+
+  @override
+  String get homeServerDown => 'مقدرتش أوصل للسيرفر';
+
+  @override
+  String get homePreparing => 'بنجهّز ميزانيتك';
+
+  @override
+  String get homeServerDownHint =>
+      'هنحاول تاني لوحدنا. تقدر تسحب الشاشة لتحت دلوقتي.';
+
+  @override
+  String get homePreparingHint => 'ثانية واحدة وهتلاقي كل حاجة هنا.';
+
+  @override
+  String checkInFinished(String item) {
+    return 'هل خلص $item؟';
+  }
+
+  @override
+  String get checkInHint => 'حسب معدل استهلاكك، المفروض قرب يخلص';
+
+  @override
+  String get checkInDone => 'خلص';
+
+  @override
+  String get checkInNotYet => 'لسه';
+
+  @override
+  String get metricsSafeDaily => 'معدل الصرف اليومي الآمن';
+
+  @override
+  String get metricsToMonthEnd => 'لحد آخر الشهر';
+
+  @override
+  String get metricsToPayday => 'لحد القبض';
+
+  @override
+  String metricsDays(int days) {
+    return '$days يوم';
+  }
+
+  @override
+  String get commonNotNow => 'مش دلوقتي';
+
+  @override
+  String get quietRestoreFailed => 'مقدرتش أرجّع التنبيهات. جرّب تاني.';
+
+  @override
+  String get quietRestore => 'رجّع التنبيهات';
+
+  @override
+  String metricsPaydayOn(int day, String month) {
+    return 'يوم $day $month';
+  }
+
+  @override
+  String get sectionPantry => 'المخزون';
+
+  @override
+  String get sectionBudget => 'الميزانية';
+
+  @override
+  String get sectionSubscriptions => 'الاشتراكات';
+
+  @override
+  String get sectionMap => 'خريطة زاد';
+
+  @override
+  String get sectionStatement => 'استيراد كشف حساب';
+
+  @override
+  String get sectionPlans => 'باقات زاد الشهرية الذكية';
+
+  @override
+  String sectionWithBadge(String name, int count) {
+    return '$name، $count';
+  }
+
+  @override
+  String get sectionsFewer => 'أقسام أقل';
+
+  @override
+  String sectionsAll(int count) {
+    return 'كل الأقسام ($count)';
+  }
+
+  @override
+  String get tasbihaGarden => 'بستان التسبيح';
+
+  @override
+  String tasbihaProgress(int clicks, int target) {
+    return '$clicks من $target تسبيحة';
+  }
+
+  @override
+  String travelSwitch(String country, String currency) {
+    return 'شكلك في $country — أحوّل لـ $currency؟';
+  }
+
+  @override
+  String get travelSwitchButton => 'تحويل';
+
+  @override
+  String get commonDismiss => 'تجاهل';
+
+  @override
+  String recipeAskSpoil(String items) {
+    return 'اقترح وصفات بـ $items قبل ما تتلف';
+  }
+
+  @override
+  String recipeAskRunOut(String items) {
+    return 'اقترح وصفات بـ $items قبل ما تخلص';
+  }
+
+  @override
+  String get listSeparator => '، ';
+
+  @override
+  String recipeStagnant(String names) {
+    return 'عندك $names من فترة وماستخدمتهاش 🤔';
+  }
+
+  @override
+  String recipeRunningOut(String names) {
+    return 'عندك $names هيخلص قريب 👀';
+  }
+
+  @override
+  String get recipeStagnantHint => 'وصفات تساعدك تستخدمها قبل ما تتلف';
+
+  @override
+  String get recipeRunningOutHint => 'وصفات مقترحة بيه قبل ما يضيع';
+
+  @override
+  String get recipeOpenChat => 'اضغط للمزيد في شات زاد ←';
+
+  @override
+  String get profileSaveFailed => 'مقدرناش نحفظ الملف — جرب تاني';
+
+  @override
+  String get whoTitle => 'عرّفني بنفسك';
+
+  @override
+  String get whoBody =>
+      'اسمك، وتحب أكلمك بصيغة راجل ولا ست، وشغلك وميعاد قبضك — عشان أكلمك صح وأفتكرك.';
+
+  @override
+  String get whoGo => 'يلا نتعرّف';
+
+  @override
+  String get commonLater => 'لاحقاً';
+
+  @override
+  String monthName(String month) {
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'm1': 'يناير',
+      'm2': 'فبراير',
+      'm3': 'مارس',
+      'm4': 'أبريل',
+      'm5': 'مايو',
+      'm6': 'يونيو',
+      'm7': 'يوليو',
+      'm8': 'أغسطس',
+      'm9': 'سبتمبر',
+      'm10': 'أكتوبر',
+      'm11': 'نوفمبر',
+      'm12': 'ديسمبر',
+      'other': '',
+    });
+    return '$_temp0';
   }
 }

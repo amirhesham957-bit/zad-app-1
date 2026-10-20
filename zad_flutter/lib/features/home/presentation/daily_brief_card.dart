@@ -7,6 +7,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/presentation/daily_brief_lines.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 
@@ -37,7 +38,7 @@ class DailyBriefCard extends ConsumerWidget {
                 const SizedBox(width: ZadSpacing.sm),
                 Expanded(
                   child: Text(
-                    'موجز زاد النهارده',
+                    context.l10n.briefTitle,
                     style: ZadType.titleMedium.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -45,14 +46,14 @@ class DailyBriefCard extends ConsumerWidget {
                 ),
                 TextButton(
                   onPressed: () => open(ShellTab.assistant),
-                  child: const Text('عقل زاد'),
+                  child: Text(context.l10n.drawerBrain),
                 ),
               ],
             ),
             const SizedBox(height: ZadSpacing.sm),
             DailyBriefLines(
               empty: Text(
-                'كله تمام — مفيش حاجة مستعجلة النهارده.',
+                context.l10n.briefAllGood,
                 style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
               ),
             ),
@@ -60,7 +61,7 @@ class DailyBriefCard extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () => open(ShellTab.chat),
               icon: const Icon(ZadIcons.assistant, size: 18),
-              label: const Text('اسأل زاد عن أي حاجة'),
+              label: Text(context.l10n.briefAskZad),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 44),
                 shape: const StadiumBorder(),

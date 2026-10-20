@@ -8,6 +8,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -36,6 +37,7 @@ Map<String, String> widgetValues({
   ActiveCampaign? campaign,
   ({Campaign campaign, int inDays})? upcoming,
   String? brief,
+  ZadL10n? l10n,
 }) {
   final newest = [...recent]
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -44,7 +46,7 @@ Map<String, String> widgetValues({
     'zad_updated':
         '${now.hour.toString().padLeft(2, '0')}:'
         '${now.minute.toString().padLeft(2, '0')}',
-    ...seasonValues(campaign: campaign, upcoming: upcoming),
+    ...seasonValues(campaign: campaign, upcoming: upcoming, l10n: l10n),
     'zad_brief': brief?.trim() ?? '',
   };
   for (var i = 0; i < 3; i++) {
@@ -65,7 +67,9 @@ Map<String, String> widgetValues({
 Map<String, String> seasonValues({
   ActiveCampaign? campaign,
   ({Campaign campaign, int inDays})? upcoming,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final Campaign c;
   final String line;
   if (campaign != null) {
@@ -75,9 +79,9 @@ Map<String, String> seasonValues({
     c = upcoming.campaign;
     final name = c.eventName!;
     line = switch (upcoming.inDays) {
-      1 => 'بكرة $name',
-      2 => 'باقي يومين على $name',
-      final n => 'باقي $n أيام على $name',
+      1 => l.widgetSeasonTomorrow(name),
+      2 => l.widgetSeasonTwoDays(name),
+      final n => l.widgetSeasonDays(n, name),
     };
   } else {
     return const <String, String>{

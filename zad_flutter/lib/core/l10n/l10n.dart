@@ -17,4 +17,12 @@ extension ZadL10nContext on BuildContext {
   ZadL10n get l10n =>
       Localizations.of<ZadL10n>(this, ZadL10n) ??
       lookupZadL10n(const Locale('ar'));
+
+  /// The language dates and numbers are formatted in: `DateFormat(…,
+  /// context.dateLocale)`. Follows [l10n], so Arabic without the delegate.
+  String get dateLocale => l10n.localeName;
 }
+
+/// The Arabic strings, for pure functions called where no context is at
+/// hand: they take a `ZadL10n?` and fall back to this.
+ZadL10n get zadL10nArabic => lookupZadL10n(const Locale('ar'));

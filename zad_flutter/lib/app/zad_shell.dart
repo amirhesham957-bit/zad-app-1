@@ -22,6 +22,7 @@ import 'package:zad/app/shell/zad_pulse_bar.dart';
 import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/brain_family/presentation/brain_family_screen.dart';
 import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
@@ -237,10 +238,10 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   }
 
   String get _title => switch (_tab) {
-    ZadNavDestination.money => 'فلوسي',
-    ZadNavDestination.inventory => 'بيتي',
-    ZadNavDestination.family => 'عيلتي',
-    ZadNavDestination.home || ZadNavDestination.more => 'الرئيسية',
+    ZadNavDestination.money => context.l10n.navMoney,
+    ZadNavDestination.inventory => context.l10n.navHomeStock,
+    ZadNavDestination.family => context.l10n.navMyFamily,
+    ZadNavDestination.home || ZadNavDestination.more => context.l10n.navHome,
   };
 
   Future<void> _openBrain() => showBrainFamily(context);

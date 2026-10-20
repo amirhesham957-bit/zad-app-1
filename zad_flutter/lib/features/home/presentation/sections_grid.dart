@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -85,8 +86,8 @@ class ZadSection {
   /// Its icon.
   final IconData icon;
 
-  /// Its name.
-  final String label;
+  /// Its name, in the app's language.
+  final String Function(ZadL10n) label;
 
   /// Its colour.
   final Color accent;
@@ -98,6 +99,27 @@ class ZadSection {
   final SectionBadge badge;
 }
 
+// The sections' names, resolved in the app's language when drawn.
+String _sectionPantry(ZadL10n l) => l.sectionPantry;
+String _drawerShopping(ZadL10n l) => l.drawerShopping;
+String _drawerAppointments(ZadL10n l) => l.drawerAppointments;
+String _drawerPlaces(ZadL10n l) => l.drawerPlaces;
+String _drawerTips(ZadL10n l) => l.drawerTips;
+String _navFamily(ZadL10n l) => l.navFamily;
+String _sectionBudget(ZadL10n l) => l.sectionBudget;
+String _sectionSubscriptions(ZadL10n l) => l.sectionSubscriptions;
+String _drawerPharmacy(ZadL10n l) => l.drawerPharmacy;
+String _drawerTasbiha(ZadL10n l) => l.drawerTasbiha;
+String _drawerMaintenance(ZadL10n l) => l.drawerMaintenance;
+String _drawerDocuments(ZadL10n l) => l.drawerDocuments;
+String _drawerCompanion(ZadL10n l) => l.drawerCompanion;
+String _drawerBrain(ZadL10n l) => l.drawerBrain;
+String _sectionMap(ZadL10n l) => l.sectionMap;
+String _drawerNotifications(ZadL10n l) => l.drawerNotifications;
+String _sectionStatement(ZadL10n l) => l.sectionStatement;
+String _sectionPlans(ZadL10n l) => l.sectionPlans;
+String _drawerAccount(ZadL10n l) => l.drawerAccount;
+
 /// The sections, in Kotlin's order (`zadAppSections`, ZadSectionsGrid.kt) —
 /// the same fifteen, with the same Material glyphs and accents, plus
 /// «نصايح زاد». The first eight are the most used.
@@ -105,7 +127,7 @@ final List<ZadSection> zadSections = <ZadSection>[
   const ZadSection(
     id: 'inventory',
     icon: Icons.inventory_2,
-    label: 'المخزون',
+    label: _sectionPantry,
     accent: ZadSectionAccent.emerald,
     badge: SectionBadge.shortages,
     open: _openInventoryTab,
@@ -113,7 +135,7 @@ final List<ZadSection> zadSections = <ZadSection>[
   ZadSection(
     id: 'shopping',
     icon: Icons.shopping_cart,
-    label: 'قائمة التسوق',
+    label: _drawerShopping,
     accent: ZadSectionAccent.amber,
     badge: SectionBadge.shopping,
     open: (c) => ZadScreens.showHouseholdSection(c, HouseholdSection.shopping),
@@ -122,14 +144,14 @@ final List<ZadSection> zadSections = <ZadSection>[
   ZadSection(
     id: 'appointments',
     icon: Icons.event_note,
-    label: 'مواعيدي',
+    label: _drawerAppointments,
     accent: ZadSectionAccent.teal,
     open: ZadScreens.showAppointmentsScreen,
   ),
   ZadSection(
     id: 'places',
     icon: Icons.place,
-    label: 'أماكني',
+    label: _drawerPlaces,
     accent: ZadSectionAccent.teal,
     open: ZadScreens.showMyPlaces,
   ),
@@ -138,28 +160,28 @@ final List<ZadSection> zadSections = <ZadSection>[
   ZadSection(
     id: 'tips',
     icon: Icons.lightbulb,
-    label: 'نصايح زاد',
+    label: _drawerTips,
     accent: ZadSectionAccent.green,
     open: ZadScreens.showRecommendationsScreen,
   ),
   const ZadSection(
     id: 'family',
     icon: Icons.family_restroom,
-    label: 'العائلة',
+    label: _navFamily,
     accent: ZadSectionAccent.violet,
     open: _openFamily,
   ),
   const ZadSection(
     id: 'budget',
     icon: Icons.bar_chart,
-    label: 'الميزانية',
+    label: _sectionBudget,
     accent: ZadSectionAccent.blue,
     open: _openMoneyTab,
   ),
   ZadSection(
     id: 'subscriptions',
     icon: Icons.credit_card,
-    label: 'الاشتراكات',
+    label: _sectionSubscriptions,
     accent: ZadSectionAccent.indigo,
     badge: SectionBadge.renewals,
     open: ZadScreens.showSubscriptionsScreen,
@@ -167,77 +189,77 @@ final List<ZadSection> zadSections = <ZadSection>[
   ZadSection(
     id: 'pharmacy',
     icon: Icons.local_pharmacy,
-    label: 'صيدلية العائلة',
+    label: _drawerPharmacy,
     accent: ZadSectionAccent.rose,
     open: (c) => ZadScreens.showHouseholdSection(c, HouseholdSection.pharmacy),
   ),
   ZadSection(
     id: 'tasbiha',
     icon: Icons.yard,
-    label: 'تسبيحة',
+    label: _drawerTasbiha,
     accent: ZadSectionAccent.green,
     open: ZadScreens.showTasbihaScreen,
   ),
   ZadSection(
     id: 'maintenance',
     icon: Icons.build,
-    label: 'صيانة المنزل',
+    label: _drawerMaintenance,
     accent: ZadSectionAccent.brown,
     open: ZadScreens.showMaintenanceScreen,
   ),
   ZadSection(
     id: 'documents',
     icon: Icons.badge_outlined,
-    label: 'مستنداتي',
+    label: _drawerDocuments,
     accent: ZadSectionAccent.slate,
     open: ZadScreens.showDocumentsScreen,
   ),
   ZadSection(
     id: 'companion',
     icon: Icons.pets_rounded,
-    label: 'رفيق زاد',
+    label: _drawerCompanion,
     accent: ZadSectionAccent.amber,
     open: ZadScreens.showCompanionStudio,
   ),
   const ZadSection(
     id: 'assistant',
     icon: Icons.psychology,
-    label: 'عقل زاد',
+    label: _drawerBrain,
     accent: ZadSectionAccent.teal,
     open: _openAssistantTab,
   ),
   ZadSection(
     id: 'knowledge_map',
     icon: Icons.hub,
-    label: 'خريطة زاد',
+    label: _sectionMap,
     accent: ZadSectionAccent.blue,
     open: ZadScreens.showKnowledgeMap,
   ),
   ZadSection(
     id: 'notifications',
     icon: Icons.notifications,
-    label: 'الإشعارات',
+    label: _drawerNotifications,
     accent: ZadSectionAccent.amber,
     open: ZadScreens.showNotificationCenter,
   ),
   ZadSection(
     id: 'statement',
     icon: Icons.receipt_long,
-    label: 'استيراد كشف حساب',
+    label: _sectionStatement,
     accent: ZadSectionAccent.slate,
     open: ZadScreens.showStatementImportScreen,
   ),
   ZadSection(
     id: 'premium',
     icon: Icons.star,
-    label: 'باقات زاد الشهرية الذكية',
+    label: _sectionPlans,
     accent: ZadSectionAccent.amber,
     open: ZadScreens.showPaywallScreen,
   ),
   ZadSection(
     id: 'profile',
     icon: Icons.person,
-    label: 'حسابي',
+    label: _drawerAccount,
     accent: ZadSectionAccent.slate,
     open: ZadScreens.showProfileScreen,
   ),
@@ -332,8 +354,8 @@ class _SectionsGridState extends ConsumerState<SectionsGrid> {
               children: <Widget>[
                 Text(
                   _expanded
-                      ? 'أقسام أقل'
-                      : 'كل الأقسام (${zadSections.length})',
+                      ? context.l10n.sectionsFewer
+                      : context.l10n.sectionsAll(zadSections.length),
                   style: ZadType.labelLarge.copyWith(
                     color: ZadColors.forestEmerald,
                     fontWeight: FontWeight.w700,
@@ -428,7 +450,9 @@ class SectionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ZadPressable(
     onPressed: () => section.open(context),
-    semanticLabel: badge > 0 ? '${section.label}، $badge' : section.label,
+    semanticLabel: badge > 0
+        ? context.l10n.sectionWithBadge(section.label(context.l10n), badge)
+        : section.label(context.l10n),
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
       child: Column(
@@ -474,7 +498,7 @@ class SectionTile extends StatelessWidget {
           ),
           const SizedBox(height: ZadSpacing.sm),
           Text(
-            section.label,
+            section.label(context.l10n),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,

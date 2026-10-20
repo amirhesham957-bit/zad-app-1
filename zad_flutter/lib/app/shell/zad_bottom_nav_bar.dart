@@ -16,6 +16,7 @@ import 'package:flutter/physics.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Kotlin's `primary` (`ZadForestEmerald`).
 Color get _primary => ZadColors.forestEmerald;
@@ -57,23 +58,29 @@ class _NavItem {
 
   final ZadNavDestination destination;
   final IconData icon;
-  final String label;
+  final String Function(ZadL10n) label;
 }
+
+String _navHome(ZadL10n l) => l.navHome;
+String _navMoney(ZadL10n l) => l.navMoney;
+String _navHomeStock(ZadL10n l) => l.navHomeStock;
+String _navMore(ZadL10n l) => l.navMore;
+String _navFamily(ZadL10n l) => l.navFamily;
 
 // Kotlin draws these with Material's filled icons (`Icons.Default.*`), so
 // these are the same glyphs, not Lucide look-alikes.
 // The owner, 2026-10-01: الرئيسية first, and the drawer back in the bar —
 // hunting for the menu square at the top was worse. عيلتي moved into it.
 const List<_NavItem> _adultItems = <_NavItem>[
-  _NavItem(ZadNavDestination.home, Icons.home, 'الرئيسية'),
-  _NavItem(ZadNavDestination.money, Icons.account_balance_wallet, 'فلوسي'),
-  _NavItem(ZadNavDestination.inventory, Icons.kitchen, 'بيتي'),
-  _NavItem(ZadNavDestination.more, Icons.menu, 'المزيد'),
+  _NavItem(ZadNavDestination.home, Icons.home, _navHome),
+  _NavItem(ZadNavDestination.money, Icons.account_balance_wallet, _navMoney),
+  _NavItem(ZadNavDestination.inventory, Icons.kitchen, _navHomeStock),
+  _NavItem(ZadNavDestination.more, Icons.menu, _navMore),
 ];
 
 const List<_NavItem> _kidsItems = <_NavItem>[
-  _NavItem(ZadNavDestination.home, Icons.home, 'الرئيسية'),
-  _NavItem(ZadNavDestination.family, Icons.family_restroom, 'العائلة'),
+  _NavItem(ZadNavDestination.home, Icons.home, _navHome),
+  _NavItem(ZadNavDestination.family, Icons.family_restroom, _navFamily),
 ];
 
 /// The bar.
@@ -116,12 +123,12 @@ class ZadBottomNavBar extends StatelessWidget {
   // Flexible and scaled down: on a 320dp phone the four tabs and the mic
   // slot need more than the pill has, and the row overflowed by 30px. Where
   // they fit, nothing changes.
-  Widget _tab(_NavItem item) => Flexible(
+  Widget _tab(BuildContext context, _NavItem item) => Flexible(
     child: FittedBox(
       fit: BoxFit.scaleDown,
       child: _ZadNavTab(
         icon: item.icon,
-        label: item.label,
+        label: item.label(context.l10n),
         selected: current == item.destination,
         accent: accent?.colors.first,
         onTap: () => item.destination == ZadNavDestination.more
@@ -158,14 +165,14 @@ class ZadBottomNavBar extends StatelessWidget {
                   height: 64,
                   child: _Pill(
                     children: kidsMode
-                        ? <Widget>[for (final i in items) _tab(i)]
+                        ? <Widget>[for (final i in items) _tab(context, i)]
                         : <Widget>[
-                            _tab(items[0]),
-                            _tab(items[1]),
+                            _tab(context, items[0]),
+                            _tab(context, items[1]),
                             // The slot the action cluster floats over.
                             const SizedBox(width: 108),
-                            _tab(items[2]),
-                            _tab(items[3]),
+                            _tab(context, items[2]),
+                            _tab(context, items[3]),
                           ],
                   ),
                 ),
@@ -406,7 +413,7 @@ class _MicOrbState extends State<_MicOrb> with SingleTickerProviderStateMixin {
               unawaited(Feedback.forLongPress(context));
               widget.onLongPress();
             },
-            semanticLabel: 'زاد — المساعد الصوتي',
+            semanticLabel: context.l10n.navVoiceAssistant,
             child: Container(
               width: 52,
               height: 52,
@@ -481,7 +488,7 @@ class _CameraFab extends StatelessWidget {
   Widget build(BuildContext context) => ZadPressable(
     scale: 0.96,
     onPressed: onTap,
-    semanticLabel: 'تصوير الفواتير والمنتجات',
+    semanticLabel: context.l10n.navCamera,
     child: Container(
       width: 46,
       height: 46,

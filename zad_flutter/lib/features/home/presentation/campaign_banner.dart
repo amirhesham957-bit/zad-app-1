@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
@@ -170,7 +171,7 @@ class CampaignBanner extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'إخفاء',
+                        tooltip: context.l10n.commonHide,
                         onPressed: onDismiss,
                         constraints: const BoxConstraints.tightFor(
                           width: kZadMinTapTarget,

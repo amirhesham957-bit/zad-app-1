@@ -13,6 +13,7 @@ import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 
 /// Whether the English translation covers enough to follow the phone.
 ///
@@ -97,4 +98,10 @@ final appLocaleProvider = Provider<Locale>(
     ref.watch(appLanguageProvider),
     ref.watch(phoneLocaleProvider),
   ),
+);
+
+/// The strings in the app's language, for code with a `ref` and no context:
+/// controllers, the home-screen widget, notifications.
+final zadL10nProvider = Provider<ZadL10n>(
+  (ref) => lookupZadL10n(ref.watch(appLocaleProvider)),
 );

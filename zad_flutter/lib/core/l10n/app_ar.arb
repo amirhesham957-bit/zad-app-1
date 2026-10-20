@@ -106,7 +106,7 @@
   "authErrorOffline": "مفيش اتصال بالنت — الدخول محتاج نت.",
   "authErrorServer": "الخدمة مش بتردّ دلوقتي. حاول تاني بعد شوية.",
   "authErrorUnknown": "حصل خطأ مش متوقع. حاول تاني.",
-  "authSignOutPending": "{count, plural, =1{فيه عملية واحدة لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.} other{فيه {count} عمليات لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.}}",
+  "authSignOutPending": "{count, plural, =1{فيه {count} عملية لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.} other{فيه {count} عمليات لسه ما اتبعتش للسيرفر. لو خرجت دلوقتي مش هتتبعت. الأحسن تستنى لما النت يرجع.}}",
   "@authSignOutPending": {
     "description": "Sign-out dialog when writes are still waiting to be sent.",
     "placeholders": {
@@ -169,6 +169,532 @@
     "description": "Play's formatted price, per month.",
     "placeholders": {
       "price": {
+        "type": "String"
+      }
+    }
+  },
+  "navHome": "الرئيسية",
+  "navMoney": "فلوسي",
+  "navHomeStock": "بيتي",
+  "navMore": "المزيد",
+  "navFamily": "العائلة",
+  "navMyFamily": "عيلتي",
+  "navVoiceAssistant": "زاد — المساعد الصوتي",
+  "navCamera": "تصوير الفواتير والمنتجات",
+  "pulseOneSaved": "حاجة واحدة محفوظة",
+  "pulseTwoSaved": "حاجتين محفوظين",
+  "pulseFewSaved": "{n} حاجات محفوظة",
+  "@pulseFewSaved": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pulseManySaved": "{n} حاجة محفوظة",
+  "@pulseManySaved": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pulseOffline": "مفيش نت — {what} وهتتبعت أول ما النت يرجع",
+  "@pulseOffline": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "pulseThinking": "زاد بيفكر…",
+  "pulseSyncing": "بنزامن…",
+  "authPreparingAccount": "بنجهّز حسابك…",
+  "shareTooLarge": "الملف أكبر من إن زاد يقراه مرة واحدة — ابعته أصغر",
+  "shareUnsupported": "زاد بيقرا الكلام والصور وملفات PDF وCSV بس",
+  "shareUnreadable": "مقدرتش أفتح اللي اتشارك — جرّب تبعته تاني",
+  "shareWhatImage": "الصورة دي إيه؟",
+  "shareWhatImageHint": "زاد هيقراها ويوريك اللي لقاه قبل ما يسجل أي حاجة",
+  "shareReceipt": "فاتورة شرا",
+  "shareStatement": "كشف حساب",
+  "drawerCompanion": "رفيق زاد",
+  "drawerBrain": "عقل زاد",
+  "drawerAppointments": "مواعيدي",
+  "drawerPlaces": "أماكني",
+  "drawerObligations": "التزاماتي",
+  "drawerPlans": "باقات زاد الشهرية",
+  "drawerShopping": "قائمة التسوق",
+  "drawerPharmacy": "صيدلية العائلة",
+  "drawerMaintenance": "صيانة المنزل",
+  "drawerDocuments": "مستنداتي",
+  "drawerNearby": "المتاجر والأسواق القريبة",
+  "drawerTips": "نصايح زاد",
+  "drawerTasbiha": "تسبيحة",
+  "drawerNotifications": "الإشعارات",
+  "drawerAccount": "حسابي",
+  "drawerGroupZad": "زاد",
+  "drawerGroupMoney": "الفلوس",
+  "drawerGroupHome": "البيت والعيلة",
+  "drawerGroupMore": "أكتر",
+  "drawerKidsMode": "وضع الأطفال",
+  "drawerFullMode": "الوضع الكامل",
+  "shellOpenProfile": "اضغط لعرض الملف الشخصي",
+  "shellZadUser": "مستخدم زاد",
+  "shellHello": "أهلاً بيك",
+  "shellHelloName": "أهلاً يا {name}",
+  "@shellHelloName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shellCompanionTag": "{name} · لفل {level}",
+  "@shellCompanionTag": {
+    "description": "The companion's name and level on the drawer card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetSeasonTomorrow": "بكرة {name}",
+  "@widgetSeasonTomorrow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetSeasonTwoDays": "باقي يومين على {name}",
+  "@widgetSeasonTwoDays": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetSeasonDays": "باقي {n} أيام على {name}",
+  "@widgetSeasonDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeFxExcluded": "استُبعدت {count} معاملة من الإجمالي — عملتها مالهاش سعر صرف",
+  "@homeFxExcluded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBankListening": "بسمع رسايل البنك وحدّث رصيدك تلقائياً",
+  "homeBankStopped": "الاستماع لرسايل البنك وقف — اضغط للإصلاح",
+  "homeBirthday": "كل سنة وإنت طيب! 🎂",
+  "homeBirthdayName": "كل سنة وإنت طيب يا {who}! 🎂",
+  "@homeBirthdayName": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBirthdayWish": "زاد بيتمنالك سنة حلوة مليانة خير وراحة بال.",
+  "homeBirthdayThanks": "شكراً يا زاد 💚",
+  "commonHide": "إخفاء",
+  "homeStoriesLabel": "حكايات زاد: {name}",
+  "@homeStoriesLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStories": "حكايات زاد",
+  "homeCloseDay": "اقفل يومك",
+  "homeCloseDayHint": "عشر ثواني: صرفت حاجة كاش النهارده؟ ورفيقك يتعشى",
+  "coverageBlind": "لسه مش شايف أي مصروف الدورة دي",
+  "coverageBlindHint": "قفّل يومك أو اربط البنك عشان أشوف",
+  "coverageFull": "أنا شايف تقريباً كل مصروفك",
+  "coverageFullHint": "كمّل كده، الأرقام اللي فوق دي حقيقية",
+  "coveragePartial": "أنا شايف حوالي {share} من مصروفك",
+  "@coveragePartial": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "coveragePartialHint": "قفّل يومك أو اربط البنك عشان أشوف أكتر",
+  "briefTitle": "موجز زاد النهارده",
+  "briefAllGood": "كله تمام — مفيش حاجة مستعجلة النهارده.",
+  "briefAskZad": "اسأل زاد عن أي حاجة",
+  "glanceStockTitle": "صحة المخزون والنواقص",
+  "glanceStockSubtitle": "مراقبة التلف والاحتياج الفعلي",
+  "glanceOpenStock": "فتح المخزون ←",
+  "glanceStockHealth": "مؤشر سلامة المؤونة",
+  "glanceStockPercent": "{percent}% مكتمل",
+  "@glanceStockPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "glanceStockEmpty": "المخزن لسه فاضي",
+  "glanceStockEmptyHint": "صوّر فاتورة السوبرماركت أو ضيف أصنافك، وزاد يقولك إيه قرب يخلص قبل ما تحتاجه",
+  "glanceLowCount": "{count} قارب النفاد",
+  "@glanceLowCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "glanceExpired": "انتهت صلاحيته",
+  "glanceDaysLeft": "{days, plural, zero{متبقي {days} أيام} one{متبقي {days} أيام} two{متبقي {days} أيام} few{متبقي {days} أيام} other{متبقي {days} يوم}}",
+  "@glanceDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "glanceQtyLeft": "متبقي {qty}",
+  "@glanceQtyLeft": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "glanceRunningOut": "قارب ينتهي",
+  "glanceAddToCart": "أضف للسلة",
+  "glancePharmacyEmptyLabel": "مفيش أدوية مسجّلة",
+  "glanceAdherence": "الالتزام بالجرعات: {percent}% • {verdict}",
+  "@glanceAdherence": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "verdict": {
+        "type": "String"
+      }
+    }
+  },
+  "glanceAdherenceGood": "منتظم",
+  "glanceAdherenceLow": "محتاج انتباه",
+  "glanceActiveMedicines": "{count} دواء نشط • لسه بنجمّع بيانات الالتزام",
+  "@glanceActiveMedicines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "glancePharmacyTitle": "صيدلية العائلة والجرعات",
+  "glanceOpenPharmacy": "فتح الصيدلية ←",
+  "glancePharmacyEmpty": "الصيدلية فاضية",
+  "glancePharmacyEmptyHint": "صوّر شريط الدواء أو ضيفه يدوي، وزاد هيفكّرك بمواعيد الجرعات وينبّهك قبل ما يخلص",
+  "glanceNextDose": "الجرعة التالية",
+  "glanceTookDose": "خدت الجرعة",
+  "glanceDosesPerDay": "{count} جرعة يومياً",
+  "@glanceDosesPerDay": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "glanceSubsTitle": "الاشتراكات الشهرية",
+  "glanceSubsNone": "مفيش اشتراكات مسجّلة",
+  "glanceSubsTotal": "إجمالي شهري: {amount}",
+  "@glanceSubsTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "glanceSeeAll": "عرض الكل ←",
+  "glanceSubsEmpty": "مفيش اشتراكات لسه",
+  "glanceSubsEmptyHint": "ضيف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويفكّرك بمواعيد التجديد",
+  "glanceNextRenewal": "التجديد القادم: {title}",
+  "@glanceNextRenewal": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "glanceInstalment": "القسط: {amount}",
+  "@glanceInstalment": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "groceryWhatToAdd": "اشتريت من {shop} بـ {amount} — ضيف إيه للمخزون؟",
+  "@groceryWhatToAdd": {
+    "placeholders": {
+      "shop": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "groceryOtherItem": "اسم منتج تاني…",
+  "commonAdd": "إضافة",
+  "groceryAdded": "أضفت {count} أصناف ✅",
+  "@groceryAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonDone": "تم",
+  "activationTitle": "جهّز زاد لبيتك",
+  "activationSubtitle": "أربع خطوات تجعل الرصيد والتنبيهات والتوقعات مفيدة من أول يوم",
+  "activationProgress": "{done} من {total}",
+  "@activationProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "activationBalance": "ثبّت رصيد البداية",
+  "activationBalanceHint": "اكتب المبلغ الموجود الآن ليحسب زاد السحب والإيداع بدقة",
+  "activationBank": "فعّل قراءة إشعارات البنك",
+  "activationBankHint": "اسمح لزاد بالتقاط العمليات وعرضها للتأكيد",
+  "activationFirstItem": "أضف أول صنف للبيت",
+  "activationFirstItemHint": "ابدأ بصنف متكرر ليتعلم زاد استهلاكك",
+  "activationGoal": "حدد أول هدف لبيتك",
+  "activationGoalHint": "زاد هيتابعه معاك كل أسبوع",
+  "activationAllSet": "كل حاجة جاهزة! 🎉 جرب تقول لزاد \"صرفت ٥٠ بقالة\" بالصوت أو من بوت تليجرام — هيسألك تأكيد ويسجلها.",
+  "commonOpen": "فتح",
+  "amazonOutOfStock": "خلص من مخزونك",
+  "amazonRunningLow": "قارب على النفاد",
+  "amazonOnList": "في قايمة التسوق",
+  "amazonSuggestion": "اقتراح لبيتك",
+  "amazonShop": "تسوق من أمازون",
+  "amazonApproxPrice": "سعر تقريبي",
+  "amazonUpdatedToday": "اتحدث النهاردة",
+  "amazonPriceAge": "سعر منذ {days} يوم",
+  "@amazonPriceAge": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "amazonName": "أمازون",
+  "amazonDisclosure": "رابط شراء أفلييت — عمولة لزاد بدون أي زيادة عليك",
+  "amazonOut": "خلص",
+  "amazonLow": "قرب يخلص",
+  "amazonShopEmoji": "🛍️ تسوق من أمازون",
+  "amazonNoNeeds": "ضيف اللي ناقصك، أو شوف عروض النهارده",
+  "amazonOneNeed": "ناقصك {name} — اطلبه من أمازون",
+  "@amazonOneNeed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "amazonManyNeeds": "ناقصك {count} حاجات — اطلب كل واحدة بضغطة",
+  "@amazonManyNeeds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "amazonSuggest": "اقتراح",
+  "amazonDeals": "العروض",
+  "amazonOrder": "🛒 اطلبه",
+  "homeOffline": "مفيش اتصال بالإنترنت",
+  "homeOfflineHint": "بياناتك بتتحفظ محلياً وهتتزامن أول ما النت يرجع",
+  "homeTalkToZad": "كلّم زاد",
+  "homeHello": "أهلاً يا {name}! 👋",
+  "@homeHello": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBrainActive": "عقل زاد نشط",
+  "homeScanPantry": "مسح مخزون",
+  "homeRecent": "أحدث المعاملات",
+  "commonSeeAll": "عرض الكل",
+  "homeRecentEmpty": "سيتم عرض المعاملات البنكية هنا",
+  "homeAllTransactions": "السجل الكامل للمعاملات",
+  "dayToday": "اليوم",
+  "dayYesterday": "أمس",
+  "dayAgo": "قبل {days} أيام",
+  "@dayAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeServerDown": "مقدرتش أوصل للسيرفر",
+  "homePreparing": "بنجهّز ميزانيتك",
+  "homeServerDownHint": "هنحاول تاني لوحدنا. تقدر تسحب الشاشة لتحت دلوقتي.",
+  "homePreparingHint": "ثانية واحدة وهتلاقي كل حاجة هنا.",
+  "checkInFinished": "هل خلص {item}؟",
+  "@checkInFinished": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInHint": "حسب معدل استهلاكك، المفروض قرب يخلص",
+  "checkInDone": "خلص",
+  "checkInNotYet": "لسه",
+  "metricsSafeDaily": "معدل الصرف اليومي الآمن",
+  "metricsToMonthEnd": "لحد آخر الشهر",
+  "metricsToPayday": "لحد القبض",
+  "metricsDays": "{days} يوم",
+  "@metricsDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "commonNotNow": "مش دلوقتي",
+  "quietRestoreFailed": "مقدرتش أرجّع التنبيهات. جرّب تاني.",
+  "quietRestore": "رجّع التنبيهات",
+  "metricsPaydayOn": "يوم {day} {month}",
+  "@metricsPaydayOn": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionPantry": "المخزون",
+  "sectionBudget": "الميزانية",
+  "sectionSubscriptions": "الاشتراكات",
+  "sectionMap": "خريطة زاد",
+  "sectionStatement": "استيراد كشف حساب",
+  "sectionPlans": "باقات زاد الشهرية الذكية",
+  "sectionWithBadge": "{name}، {count}",
+  "@sectionWithBadge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sectionsFewer": "أقسام أقل",
+  "sectionsAll": "كل الأقسام ({count})",
+  "@sectionsAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasbihaGarden": "بستان التسبيح",
+  "tasbihaProgress": "{clicks} من {target} تسبيحة",
+  "@tasbihaProgress": {
+    "placeholders": {
+      "clicks": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "travelSwitch": "شكلك في {country} — أحوّل لـ {currency}؟",
+  "@travelSwitch": {
+    "placeholders": {
+      "country": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "travelSwitchButton": "تحويل",
+  "commonDismiss": "تجاهل",
+  "recipeAskSpoil": "اقترح وصفات بـ {items} قبل ما تتلف",
+  "@recipeAskSpoil": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeAskRunOut": "اقترح وصفات بـ {items} قبل ما تخلص",
+  "@recipeAskRunOut": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "listSeparator": "، ",
+  "@listSeparator": {
+    "description": "Joins names in a list: «رز، زيت»."
+  },
+  "recipeStagnant": "عندك {names} من فترة وماستخدمتهاش 🤔",
+  "@recipeStagnant": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeRunningOut": "عندك {names} هيخلص قريب 👀",
+  "@recipeRunningOut": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeStagnantHint": "وصفات تساعدك تستخدمها قبل ما تتلف",
+  "recipeRunningOutHint": "وصفات مقترحة بيه قبل ما يضيع",
+  "recipeOpenChat": "اضغط للمزيد في شات زاد ←",
+  "profileSaveFailed": "مقدرناش نحفظ الملف — جرب تاني",
+  "whoTitle": "عرّفني بنفسك",
+  "whoBody": "اسمك، وتحب أكلمك بصيغة راجل ولا ست، وشغلك وميعاد قبضك — عشان أكلمك صح وأفتكرك.",
+  "whoGo": "يلا نتعرّف",
+  "commonLater": "لاحقاً",
+  "monthName": "{month, select, m1{يناير} m2{فبراير} m3{مارس} m4{أبريل} m5{مايو} m6{يونيو} m7{يوليو} m8{أغسطس} m9{سبتمبر} m10{أكتوبر} m11{نوفمبر} m12{ديسمبر} other{}}",
+  "@monthName": {
+    "description": "A month's name; month is m1..m12. Without date-format data, so it works anywhere.",
+    "placeholders": {
+      "month": {
         "type": "String"
       }
     }

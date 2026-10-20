@@ -18,6 +18,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -45,10 +46,11 @@ final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
   final cookable = <InventoryItem>[
     for (final i in items)
       if (!const <String>{
-            'مياه',
-            'مناديل',
+            'مياه', // l10n: data
+            'مناديل', // l10n: data
           }.contains(productFamilyOf(i.itemName)) &&
-          !RegExp('مشروب|منظف|عناية|مياه|ماء').hasMatch(i.category ?? ''))
+          !RegExp('مشروب|منظف|عناية|مياه|ماء') // l10n: data
+              .hasMatch(i.category ?? ''))
         i,
   ];
 
@@ -98,8 +100,13 @@ class UrgentRecipeSlot extends ConsumerWidget {
           ref
               .read(chatPrefillProvider.notifier)
               .offer(
-                'اقترح وصفات بـ ${urgent.triggers.join('، ')} '
-                'قبل ما ${urgent.stagnantOnly ? 'تتلف' : 'تخلص'}',
+                urgent.stagnantOnly
+                    ? context.l10n.recipeAskSpoil(
+                        urgent.triggers.join(context.l10n.listSeparator),
+                      )
+                    : context.l10n.recipeAskRunOut(
+                        urgent.triggers.join(context.l10n.listSeparator),
+                      ),
               );
           Navigator.of(context).push<void>(
             MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
@@ -132,7 +139,7 @@ class UrgentRecipeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final names = triggerItems.take(2).join('، ');
+    final names = triggerItems.take(2).join(context.l10n.listSeparator);
     return Material(
       color: scheme.tertiaryContainer,
       borderRadius: BorderRadius.circular(20),
@@ -166,8 +173,8 @@ class UrgentRecipeCard extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           isStagnantOnly
-                              ? 'عندك $names من فترة وماستخدمتهاش 🤔'
-                              : 'عندك $names هيخلص قريب 👀',
+                              ? context.l10n.recipeStagnant(names)
+                              : context.l10n.recipeRunningOut(names),
                           style: ZadType.titleSmall.copyWith(
                             fontWeight: FontWeight.bold,
                             color: scheme.onTertiaryContainer,
@@ -175,8 +182,8 @@ class UrgentRecipeCard extends StatelessWidget {
                         ),
                         Text(
                           isStagnantOnly
-                              ? 'وصفات تساعدك تستخدمها قبل ما تتلف'
-                              : 'وصفات مقترحة بيه قبل ما يضيع',
+                              ? context.l10n.recipeStagnantHint
+                              : context.l10n.recipeRunningOutHint,
                           style: ZadType.labelSmall.copyWith(
                             color: scheme.tertiary,
                           ),
@@ -188,7 +195,7 @@ class UrgentRecipeCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'اضغط للمزيد في شات زاد ←',
+                context.l10n.recipeOpenChat,
                 style: ZadType.labelSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.tertiary,

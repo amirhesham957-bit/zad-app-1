@@ -15,6 +15,7 @@ import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
@@ -31,6 +32,7 @@ Future<void> openShared(
 ) async {
   final navigator = Navigator.of(context)..popUntil((route) => route.isFirst);
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = context.l10n;
   void say(String text) =>
       messenger.showSnackBar(SnackBar(content: Text(text)));
 
@@ -46,7 +48,7 @@ Future<void> openShared(
     case ShareRoute.statement:
       final bytes = await _bytes(item);
       if (bytes == null) {
-        say(_unreadable);
+        say(l10n.shareUnreadable);
         return;
       }
       await navigator.push<void>(
@@ -59,7 +61,7 @@ Future<void> openShared(
     case ShareRoute.askImage:
       final bytes = await _bytes(item);
       if (bytes == null) {
-        say(_unreadable);
+        say(l10n.shareUnreadable);
         return;
       }
       if (!context.mounted) return;
@@ -71,7 +73,7 @@ Future<void> openShared(
           try {
             small = await shrinkForReceipt(bytes);
           } on Object {
-            say(_unreadable);
+            say(l10n.shareUnreadable);
             return;
           }
           if (!context.mounted) return;
@@ -91,15 +93,13 @@ Future<void> openShared(
           );
       }
     case ShareRoute.tooLarge:
-      say('الملف أكبر من إن زاد يقراه مرة واحدة — ابعته أصغر');
+      say(l10n.shareTooLarge);
     case ShareRoute.failed:
-      say(_unreadable);
+      say(l10n.shareUnreadable);
     case ShareRoute.unsupported:
-      say('زاد بيقرا الكلام والصور وملفات PDF وCSV بس');
+      say(l10n.shareUnsupported);
   }
 }
-
-const String _unreadable = 'مقدرتش أفتح اللي اتشارك — جرّب تبعته تاني';
 
 Future<Uint8List?> _bytes(SharedItem item) async {
   try {
@@ -128,21 +128,21 @@ Future<_ImageUse?> _askImageUse(BuildContext context) =>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('الصورة دي إيه؟', style: ZadType.titleMedium),
+              Text(context.l10n.shareWhatImage, style: ZadType.titleMedium),
               const SizedBox(height: ZadSpacing.sm),
               Text(
-                'زاد هيقراها ويوريك اللي لقاه قبل ما يسجل أي حاجة',
+                context.l10n.shareWhatImageHint,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.md),
               ListTile(
                 leading: const Icon(Icons.receipt_long_outlined),
-                title: const Text('فاتورة شرا'),
+                title: Text(context.l10n.shareReceipt),
                 onTap: () => Navigator.of(context).pop(_ImageUse.receipt),
               ),
               ListTile(
                 leading: const Icon(Icons.account_balance_outlined),
-                title: const Text('كشف حساب'),
+                title: Text(context.l10n.shareStatement),
                 onTap: () => Navigator.of(context).pop(_ImageUse.statement),
               ),
             ],

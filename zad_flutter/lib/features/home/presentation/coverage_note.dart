@@ -11,6 +11,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/domain/spend_coverage.dart';
 
 /// One line and a hint, tappable.
@@ -27,15 +28,12 @@ class CoverageNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (title, hint) = coverage.isBlind
-        ? (
-            'لسه مش شايف أي مصروف الدورة دي',
-            'قفّل يومك أو اربط البنك عشان أشوف',
-          )
+        ? (context.l10n.coverageBlind, context.l10n.coverageBlindHint)
         : coverage.isFull
-        ? ('أنا شايف تقريباً كل مصروفك', 'كمّل كده، الأرقام اللي فوق دي حقيقية')
+        ? (context.l10n.coverageFull, context.l10n.coverageFullHint)
         : (
-            'أنا شايف حوالي ${coverage.label} من مصروفك',
-            'قفّل يومك أو اربط البنك عشان أشوف أكتر',
+            context.l10n.coveragePartial(coverage.label),
+            context.l10n.coveragePartialHint,
           );
     return ZadCard(
       onTap: onTap,
