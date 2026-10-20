@@ -34,6 +34,11 @@ const Set<String> _dataFiles = <String>{
   // come, are a lookup over these keys — the keys themselves never change.
   'features/inventory/domain/pantry_categories.dart',
   'shared/transactions/domain/expense_categories.dart',
+  // Text for the Arabic voice (TTS): punctuation the speech is split on, and
+  // the openers spoken while the brain thinks. The voice follows the
+  // customer's language in 6.4, on the server.
+  'shared/voice/domain/speech_text.dart',
+  'shared/voice/data/voice_openers.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';

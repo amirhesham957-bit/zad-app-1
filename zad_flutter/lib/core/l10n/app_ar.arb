@@ -698,5 +698,141 @@
         "type": "String"
       }
     }
-  }
+  },
+  "chatVoiceUnavailable": "الصوت مش متاح دلوقتي — الرد مكتوب قدامك",
+  "chatNewTooltip": "ابدأ محادثة جديدة",
+  "chatNewTitle": "تبدأ محادثة جديدة؟",
+  "chatNewBody": "الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك هيفضل زي ما هو.",
+  "chatClear": "امسح",
+  "chatWelcome": "أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!",
+  "chatBusy": "الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.",
+  "chatUnexpected": "حصل خطأ غير متوقع.",
+  "chatResend": "ماوصلتش — ابعتها تاني",
+  "chatStopVoice": "وقّف الصوت",
+  "chatListen": "اسمع الرد",
+  "chatThinking": "بفكر…",
+  "refillBack": "رصيدك رجع — ابعت رسالتك تاني",
+  "refillDays": "رصيدك بيتجدد بعد {days} أيام",
+  "@refillDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "refillHour": "ساعة",
+  "refillTwoHours": "ساعتين",
+  "refillFewHours": "{h} ساعات",
+  "@refillFewHours": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "refillManyHours": "{h} ساعة",
+  "@refillManyHours": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "refillMinutes": "{m} دقيقة",
+  "@refillMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "refillAnd": " و",
+  "refillIn": "رصيدك بيتجدد بعد {span}",
+  "@refillIn": {
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "chatSubscribeFeature": "اشترك وفعّل الميزة دي",
+  "chatSubscribeMore": "اشترك وخد محاولات أكتر",
+  "chatNotDone": "لسه ماتنفذش.",
+  "chatDoIt": "اعملها",
+  "chatTranscribing": "بحوّل الكلام…",
+  "chatHint": "اكتب لزاد…",
+  "chatSend": "ابعت",
+  "voiceTooShort": "مسكت الزرار بسرعة — دوس وابدأ اتكلم، وبعدين قف.",
+  "voiceDenied": "محتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.",
+  "voiceFailed": "مقدرتش أحوّل الكلام. جرب تاني.",
+  "voiceRecord": "سجّل صوت",
+  "commonCancel": "إلغاء",
+  "voiceDone": "خلصت",
+  "chatEmergency": "طوارئ في البيت؟ الـ{trade} بتاعك قدامك بنقرة.",
+  "@chatEmergency": {
+    "placeholders": {
+      "trade": {
+        "type": "String"
+      }
+    }
+  },
+  "chatTechnicians": "فنييني",
+  "intChatTitle": "محادثة مع زاد",
+  "intChatSubtitle": "اسأل عن مصاريفك، مخزونك، أو أي حاجة",
+  "intChatHide": "إخفاء المحادثة",
+  "intChatOpen": "افتح المحادثة",
+  "intPromptRecipe": "اقترح وصفة من الثلاجة",
+  "intPromptSpending": "حلل مصاريفي هذا الشهر",
+  "intPromptShopping": "ما الذي ينقصني للتسوق؟",
+  "intPromptSave": "كيف أوفر أكثر هذا الشهر؟",
+  "intPromptSubs": "اكتشف اشتراكاتي",
+  "intPromptHealthy": "وجبة صحية سريعة",
+  "intChatClear": "مسح المحادثة",
+  "intChatClearBody": "هنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون مش هتتأثر.",
+  "intChatEmpty": "اسأل زاد عن أي شيء",
+  "intChatInputHint": "اسأل زاد عن ثلاجتك أو ميزانيتك...",
+  "intChatListen": "استمع",
+  "intChatMemoryUsed": "اتبنى على {count} حاجة زاد فاكرها عنك",
+  "@intChatMemoryUsed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meshThinking": "الشبكة العصبية بتشتغل...",
+  "meshFinance": "وكيل المال متصل",
+  "meshPantry": "وكيل المطبخ والمخزون متصل",
+  "meshPharmacy": "وكيل الصيدلية متصل",
+  "meshFamily": "وكيل العائلة متصل",
+  "meshDefault": "شبكة وكلاء زاد",
+  "voiceChipSpending": "حلل مصاريفي",
+  "voiceChipMeal": "اقترح وجبة",
+  "voiceChipLeft": "كام فاضل في الميزانية؟",
+  "voiceChipCoffee": "صرفت 50 على القهوة",
+  "voiceSheetDenied": "امنح التطبيق إذن استخدام الميكروفون",
+  "voiceSheetFailed": "حدث خطأ في التعرف على الصوت",
+  "voiceSheetTooShort": "لم أسمع كلامًا واضحًا، حاول مرة أخرى",
+  "voiceSheetBrainDown": "ماقدرتش أوصل لعقل زاد دلوقتي",
+  "voiceSpeaking": "زاد بيتكلم…",
+  "voiceWriting": "بكتب كلامك…",
+  "voiceThinking": "بيفكر…",
+  "voicePreparing": "بيجهز صوته…",
+  "voiceTitle": "مساعد زاد الصوتي",
+  "voiceErrorRetry": "⚠️ {error}\nاضغط المايك وجرّب تاني",
+  "@voiceErrorRetry": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceInterruptHint": "زاد بيتكلم… اتكلم في أي وقت تقاطعه",
+  "voiceWorking": "يفكر عقل زاد وينفذ طلبك…",
+  "voiceListening": "زاد سامعك — اتكلم براحتك",
+  "voiceTapMic": "اضغط المايك وكلّم زاد 🎙️",
+  "voiceHoldToTalk": "دوس مع الاستمرار واتكلم",
+  "voiceReleaseToReply": "بسمعك… سيب عشان أرد",
+  "voicePressToInterrupt": "دوس واتكلم عشان تقاطعني",
+  "voiceOrPick": "أو اختار سؤال جاهز:"
 }

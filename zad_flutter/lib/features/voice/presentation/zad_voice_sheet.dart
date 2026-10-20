@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/mascot/presentation/zad_mascot.dart';
@@ -53,11 +54,11 @@ class ZadVoiceSheet extends ConsumerStatefulWidget {
 }
 
 class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
-  static const List<String> _chips = <String>[
-    'حلل مصاريفي',
-    'اقترح وجبة',
-    'كام فاضل في الميزانية؟',
-    'صرفت 50 على القهوة',
+  static List<String> _chips(ZadL10n l) => <String>[
+    l.voiceChipSpending,
+    l.voiceChipMeal,
+    l.voiceChipLeft,
+    l.voiceChipCoffee,
   ];
 
   // Both captured in initState: `ref` may not be used in dispose.
@@ -172,10 +173,10 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
             transcribing || (_awaitingTurn && chat.isAwaitingReply);
         final preparingVoice = voiceStage == VoiceOutputStage.preparing;
         final error = switch (input.stage) {
-          VoiceStage.denied => 'امنح التطبيق إذن استخدام الميكروفون',
-          VoiceStage.failed => 'حدث خطأ في التعرف على الصوت',
-          VoiceStage.tooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى',
-          _ when _turnFailed => 'ماقدرتش أوصل لعقل زاد دلوقتي',
+          VoiceStage.denied => context.l10n.voiceSheetDenied,
+          VoiceStage.failed => context.l10n.voiceSheetFailed,
+          VoiceStage.tooShort => context.l10n.voiceSheetTooShort,
+          _ when _turnFailed => context.l10n.voiceSheetBrainDown,
           _ => null,
         };
         final indicator = error != null || isSpeaking
@@ -236,14 +237,14 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                             const SizedBox(width: 8),
                             Text(
                               isSpeaking
-                                  ? 'زاد بيتكلم…'
+                                  ? context.l10n.voiceSpeaking
                                   : transcribing
-                                  ? 'بكتب كلامك…'
+                                  ? context.l10n.voiceWriting
                                   : thinking
-                                  ? 'بيفكر…'
+                                  ? context.l10n.voiceThinking
                                   : preparingVoice
-                                  ? 'بيجهز صوته…'
-                                  : 'مساعد زاد الصوتي',
+                                  ? context.l10n.voicePreparing
+                                  : context.l10n.voiceTitle,
                               style: ZadType.labelLarge.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -256,7 +257,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                         children: <Widget>[
                           _SheetIconButton(
                             icon: Icons.close,
-                            label: 'إغلاق',
+                            label: context.l10n.commonClose,
                             onTap: () => Navigator.of(context).pop(),
                           ),
                         ],
@@ -287,16 +288,16 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       error != null
-                          ? '⚠️ $error\nاضغط المايك وجرّب تاني'
+                          ? context.l10n.voiceErrorRetry(error)
                           : _recognized.isNotEmpty && !isActive
                           ? _recognized
                           : isSpeaking
-                          ? 'زاد بيتكلم… اتكلم في أي وقت تقاطعه'
+                          ? context.l10n.voiceInterruptHint
                           : thinking
-                          ? 'يفكر عقل زاد وينفذ طلبك…'
+                          ? context.l10n.voiceWorking
                           : isActive
-                          ? 'زاد سامعك — اتكلم براحتك'
-                          : 'اضغط المايك وكلّم زاد 🎙️',
+                          ? context.l10n.voiceListening
+                          : context.l10n.voiceTapMic,
                       textAlign: TextAlign.center,
                       style: ZadType.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
@@ -332,7 +333,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                   const SizedBox(height: 16),
                   Semantics(
                     button: true,
-                    label: 'دوس مع الاستمرار واتكلم',
+                    label: context.l10n.voiceHoldToTalk,
                     child: Listener(
                       onPointerDown: (_) => unawaited(_pressDown()),
                       onPointerUp: (_) => unawaited(_release()),
@@ -379,10 +380,10 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                   const SizedBox(height: 16),
                   Text(
                     isActive
-                        ? 'بسمعك… سيب عشان أرد'
+                        ? context.l10n.voiceReleaseToReply
                         : isSpeaking
-                        ? 'دوس واتكلم عشان تقاطعني'
-                        : 'دوس مع الاستمرار واتكلم',
+                        ? context.l10n.voicePressToInterrupt
+                        : context.l10n.voiceHoldToTalk,
                     style: ZadType.labelMedium.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isActive
@@ -392,7 +393,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'أو اختار سؤال جاهز:',
+                    context.l10n.voiceOrPick,
                     style: ZadType.labelMedium.copyWith(
                       color: ZadPalette.voiceTextSoft,
                     ),
@@ -403,7 +404,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                     spacing: 8,
                     runSpacing: 8,
                     children: <Widget>[
-                      for (final chip in _chips)
+                      for (final chip in _chips(context.l10n))
                         Material(
                           color: Colors.white.withValues(alpha: 0.10),
                           shape: StadiumBorder(
