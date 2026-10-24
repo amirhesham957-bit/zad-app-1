@@ -242,7 +242,7 @@ Rules that apply to every Flutter change, in short:
 
 ## Project plan and task numbering
 
-**The one plan since 2026-10-18 is [`docs/agent/ZAD_PLAN.md`](./docs/agent/ZAD_PLAN.md)** (owner's
+**The one plan since 2026-10-24 is [`docs/agent/ZAD_PLAN.md`](./docs/agent/ZAD_PLAN.md)** — nine phases, starting with one outbound coordinator (alerts bunched at the wake hour, measured 2026-10-17) and the bank channel, then one aware brain, legal deal sources (receipts, paid search, official flyers, partner programs — never reverse-engineered apps), and the owner's 2026-10-24 ideas sorted item by item, with a verdict on every suggested repo; the 2026-10-18 plan is archived as `ZAD_PLAN_2026_10_18.md` (owner's
 decision: every older plan below is cancelled as a plan and kept as history; each carries a banner
 saying so). Work its phases one after another, not in parallel — only items waiting on the owner's
 hands run alongside. Item numbers in conversation («١.٣», «phase 4») refer to it. Tick its boxes in
