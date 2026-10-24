@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label in English. The default (values/) is Arabic: see
+         res/resources.properties, which says so to Android and to Play. -->
+    <string name="app_name">Zad</string>
+</resources>

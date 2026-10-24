@@ -157,7 +157,7 @@ doc: https://claude.ai/artifact/5nujux9wfMy4yHcbenjnQS
 البوابة: الحزمة اترفعت على مسار Closed testing من غير أخطاء، وإعلان واحد اتسجّل في `zad_ad_ssv_receipts`، وشرا
 اشتراك تجريبي بحساب مختبِر وصل `zad_entitlements`، و١٢ مختبِر بدأوا.
 
-- [ ] **٠.١ خطأ الترجمة في بلاي:** 🔑 في الكونسول: «زيادة عدد المستخدمين ← الترجمات ← نصوص التطبيق» تتقفل لـ`ar`
+- [~] **٠.١ خطأ الترجمة في بلاي:** (الكود في #٢٢٨؛ فاضل قفل الترجمة في الكونسول ورفع الحزمة الجاية) 🔑 في الكونسول: «زيادة عدد المستخدمين ← الترجمات ← نصوص التطبيق» تتقفل لـ`ar`
   (هي لغة المصدر) و`tr` (مفيش واجهة تركي). وفي الكود: `res/resources.properties` بـ`unqualifiedResLocale=ar` عشان
   أندرويد وبلاي يعرفوا إن النصوص الافتراضية عربي، و`androidResources { generateLocaleConfig = true; localeFilters
   += listOf("ar", "en") }` (AGP 9.1؛ `resConfigs` اللي في البرومبت قديم)، و`values-en/strings.xml` فيه «Zad». بعدها
