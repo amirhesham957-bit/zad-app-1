@@ -2012,4 +2012,125 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get goalStart => 'ابدأ الهدف';
+
+  @override
+  String get heldTitle => 'اللي سكتّ عنه وليه';
+
+  @override
+  String get heldNone =>
+      'الأسبوع ده ماسكتّش عن أي حاجة — كل اللي كان يستاهل يتقال اتقال.';
+
+  @override
+  String get heldFailed => 'مش قادر أقرا اللي سكتّ عنه دلوقتي.';
+
+  @override
+  String get heldLoading => 'بقرا…';
+
+  @override
+  String get heldAskHint =>
+      'تقدر تسألني «إيه اللي ماقولتليش عليه؟» في الشات وأقولك بالتفصيل.';
+
+  @override
+  String heldTimes(int count) {
+    return '$count مرات';
+  }
+
+  @override
+  String get heldActionDropped => 'ماقولتهاش';
+
+  @override
+  String get heldActionWaiting => 'لسه مستنية';
+
+  @override
+  String get heldActionPostponed => 'أجّلتها';
+
+  @override
+  String get heldReasonMuted => 'إنت قلتلي أبطّل النوع ده لفترة';
+
+  @override
+  String get heldReasonQuietHours => 'كان وقت نومك';
+
+  @override
+  String get heldReasonReplyHour => 'استنيت الساعة اللي بترد فيها عادة';
+
+  @override
+  String get heldReasonPacing => 'كان لسه واصلك حاجة من شوية';
+
+  @override
+  String get heldReasonDailyCap => 'وصلت لعدد الرسايل بتاع اليوم';
+
+  @override
+  String get heldReasonBusyDay => 'يومك كان مليان مواعيد';
+
+  @override
+  String get heldReasonCircumstance => 'كنت مراعي ظرفك';
+
+  @override
+  String get heldReasonDuplicate => 'كنت قلتهالك قبلها بشوية';
+
+  @override
+  String get heldReasonExpired => 'كلامها قدم قبل ما ألاقي وقت مناسب';
+
+  @override
+  String get heldReasonNotRelevant => 'مابقتش تفرق (اتعملت أو اتغيرت)';
+
+  @override
+  String get heldReasonNothingNew => 'ماكانش فيه جديد يتقال';
+
+  @override
+  String get heldReasonOther => 'سبب تاني';
+
+  @override
+  String get heldKindGoodNight => 'تصبح على خير';
+
+  @override
+  String get heldKindCloseDay => '«اقفل يومك»';
+
+  @override
+  String get heldKindMorning => 'صباح الخير';
+
+  @override
+  String get heldKindWeeklyStory => 'حكاية فلوس الأسبوع';
+
+  @override
+  String get heldKindNewcomer => 'سؤال التعارف';
+
+  @override
+  String get heldKindSalary => '«ده المرتب؟»';
+
+  @override
+  String get heldKindVoice => 'رسالة صوتية';
+
+  @override
+  String get heldKindDigest => 'ملخص البيت';
+
+  @override
+  String get heldKindForecast => 'توقّع مصروف الأسبوع';
+
+  @override
+  String get heldKindSpendingAhead => 'الصرف أسرع من الميزانية';
+
+  @override
+  String get heldKindBill => 'تذكير فاتورة';
+
+  @override
+  String get heldKindWarranty => 'ضمان قرب ينتهي';
+
+  @override
+  String get heldKindGoal => 'متابعة هدفك';
+
+  @override
+  String get heldKindHabit => 'عادة بتتكرر';
+
+  @override
+  String get heldKindShortage => 'حاجات هتخلص قريب';
+
+  @override
+  String get heldKindRestock => 'حاجة ضرورية خلصت';
+
+  @override
+  String get heldKindPet => 'نداء رفيقك';
+
+  @override
+  String get heldKindNote => 'ملاحظة من زاد';
 }

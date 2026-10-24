@@ -1155,3 +1155,47 @@ export function responsiveHourDecision(
   }
   return { action: "deliver" };
 }
+
+// ── الحراس بيتكلموا (ZAD_PLAN ٣.٥) ──
+// كود ثابت لكل حارس بيمسك رسالة. السيرفر بيكتبه (agent_tasks.held_reason، zad_voice_moments.error)،
+// وzad_held_messages بيرجّعه، والعربي هنا وفي شاشة «صحة العقل» بس.
+
+export type HoldCode =
+  | "muted" | "quiet_hours" | "reply_hour" | "pacing" | "daily_cap" | "busy_day" | "circumstance"
+  | "duplicate" | "expired" | "not_relevant" | "nothing_new" | "other";
+
+export const HOLD_REASON_AR: Record<HoldCode, string> = {
+  muted: "إنت قلتلي أبطّل النوع ده لفترة",
+  quiet_hours: "كان وقت نومك",
+  reply_hour: "استنيت الساعة اللي بترد فيها عادة",
+  pacing: "كان لسه واصلك حاجة من شوية",
+  daily_cap: "وصلت لعدد الرسايل بتاع اليوم",
+  busy_day: "يومك كان مليان مواعيد",
+  circumstance: "كنت مراعي ظرفك",
+  duplicate: "كنت قلتهالك قبلها بشوية",
+  expired: "كلامها قدم قبل ما ألاقي وقت مناسب",
+  not_relevant: "مابقتش تفرق (اتعملت أو اتغيرت)",
+  nothing_new: "ماكانش فيه جديد يتقال",
+  other: "سبب تاني",
+};
+
+/** سطور «إيه اللي ماقولتليش عليه» من صفوف zad_held_messages — الأحدث الأول، نوع واحد مرة. */
+export function heldMessagesSummary(
+  rows: ReadonlyArray<{ source?: string | null; kind?: string | null; reason?: string | null; action?: string | null; times?: number | null }>,
+): string {
+  if (rows.length === 0) return "الأسبوع ده ماسكتّش عن أي حاجة — كل اللي كان يستاهل يتقال اتقال.";
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const r of rows) {
+    const key = `${r.source}:${r.kind}:${r.reason}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const code = (r.reason && r.reason in HOLD_REASON_AR ? r.reason : "other") as HoldCode;
+    const what = r.source === "task" ? agentTaskNotice(r.kind).title : `لحظة «${r.kind ?? ""}»`;
+    const action = r.action === "dropped" ? "ماقولتهاش" : r.action === "waiting" ? "لسه مستنية" : "أجّلتها";
+    const times = (r.times ?? 1) > 1 ? ` (${r.times} مرات)` : "";
+    lines.push(`• ${what}: ${action}${times} — ${HOLD_REASON_AR[code]}`);
+    if (lines.length >= 12) break;
+  }
+  return lines.join("\n");
+}

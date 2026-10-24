@@ -7,8 +7,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/brain/data/brain_health_repository.dart';
+import 'package:zad/features/brain/data/held_messages_remote.dart';
 import 'package:zad/features/brain/domain/brain_health.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
+
+class _Held implements HeldMessagesRemote {
+  bool fail = false;
+  List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
+
+  @override
+  Future<List<Map<String, dynamic>>> week(int days) async {
+    if (fail) throw StateError('offline');
+    return rows;
+  }
+}
 
 class _Remote implements BrainHealthRemote {
   bool fail = false;
@@ -111,6 +123,9 @@ void main() {
   });
 
   group('the screen', () {
+    late _Held held;
+    setUp(() => held = _Held());
+
     Future<void> pump(WidgetTester tester) async {
       tester.view
         ..physicalSize = const Size(1080, 2400)
@@ -120,6 +135,7 @@ void main() {
         ProviderScope(
           overrides: [
             brainHealthRepositoryProvider.overrideWithValue(repo()),
+            heldMessagesRemoteProvider.overrideWithValue(held),
             nowProvider.overrideWithValue(() => now),
           ],
           child: MaterialApp(
@@ -170,6 +186,85 @@ void main() {
         find.text('زاد بطّل يبعت تنبيهات استباقية من 5 أيام'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('what the guards held (ZAD_PLAN 3.5)', () {
+    late _Held held;
+    setUp(() => held = _Held());
+
+    Future<void> pump(WidgetTester tester) async {
+      tester.view
+        ..physicalSize = const Size(1080, 4800)
+        ..devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            brainHealthRepositoryProvider.overrideWithValue(repo()),
+            heldMessagesRemoteProvider.overrideWithValue(held),
+            nowProvider.overrideWithValue(() => now),
+          ],
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: const Directionality(
+              textDirection: TextDirection.rtl,
+              child: BrainHealthScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('each guard says what it held and why', (tester) async {
+      held.rows = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'source': 'task',
+          'kind': 'spend_forecast',
+          'reason': 'expired',
+          'action': 'dropped',
+          'times': 1,
+        },
+        <String, dynamic>{
+          'source': 'task',
+          'kind': 'predicted_shortage',
+          'reason': 'reply_hour',
+          'action': 'waiting',
+          'times': 2,
+        },
+        <String, dynamic>{
+          'source': 'moment',
+          'kind': 'good_night',
+          'reason': 'quiet_hours',
+          'action': 'dropped',
+          'times': 1,
+        },
+      ];
+      await pump(tester);
+
+      expect(find.text('اللي سكتّ عنه وليه'), findsOneWidget);
+      expect(find.text('توقّع مصروف الأسبوع: ماقولتهاش'), findsOneWidget);
+      expect(find.text('كلامها قدم قبل ما ألاقي وقت مناسب'), findsOneWidget);
+      expect(
+        find.text('حاجات هتخلص قريب: لسه مستنية (2 مرات)'),
+        findsOneWidget,
+      );
+      expect(find.text('كان وقت نومك'), findsOneWidget);
+    });
+
+    testWidgets('a quiet week says nothing was held', (tester) async {
+      await pump(tester);
+      expect(find.textContaining('ماسكتّش عن أي حاجة'), findsOneWidget);
+    });
+
+    testWidgets('a failed read says so, and the verdict above still shows', (
+      tester,
+    ) async {
+      held.fail = true;
+      await pump(tester);
+      expect(find.text('مش قادر أقرا اللي سكتّ عنه دلوقتي.'), findsOneWidget);
+      expect(find.text('العقل شغال تمام'), findsOneWidget);
     });
   });
 

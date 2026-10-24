@@ -16,8 +16,11 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/brain_health_controller.dart';
+import 'package:zad/features/brain/data/held_messages_remote.dart';
 import 'package:zad/features/brain/domain/brain_health.dart';
+import 'package:zad/features/brain/domain/held_messages.dart';
 
 /// Opens the screen.
 Future<void> showBrainHealth(BuildContext context) => Navigator.of(context)
@@ -264,11 +267,106 @@ class _Body extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: ZadSpacing.md),
+        const _HeldThisWeek(),
         const SizedBox(height: ZadSpacing.xxl),
       ],
     );
   }
 }
+
+/// «اللي سكتّ عنه وليه» (ZAD_PLAN 3.5): each guard that held a message this
+/// week, in words. Its own read: a failure here never hides the verdict above.
+class _HeldThisWeek extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final held = ref.watch(heldThisWeekProvider);
+    final muted = ZadType.bodySmall.copyWith(color: ZadColors.inkMuted);
+    return _Section(
+      title: l.heldTitle,
+      children: switch (held) {
+        AsyncData(:final value) when value.isEmpty => <Widget>[
+          Text(l.heldNone, style: muted),
+        ],
+        AsyncData(:final value) => <Widget>[
+          for (final line in value)
+            Padding(
+              padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '${heldKindText(l, line)}: '
+                    '${heldActionText(l, line.action)}'
+                    '${line.times > 1 ? ' (${l.heldTimes(line.times)})' : ''}',
+                    style: ZadType.bodyMedium,
+                  ),
+                  Text(heldReasonText(l, line.reason), style: muted),
+                ],
+              ),
+            ),
+          Text(
+            l.heldAskHint,
+            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+          ),
+        ],
+        AsyncError() => <Widget>[Text(l.heldFailed, style: muted)],
+        _ => <Widget>[Text(l.heldLoading, style: muted)],
+      },
+    );
+  }
+}
+
+/// Why a guard held it.
+String heldReasonText(ZadL10n l, HeldReason r) => switch (r) {
+  HeldReason.muted => l.heldReasonMuted,
+  HeldReason.quietHours => l.heldReasonQuietHours,
+  HeldReason.replyHour => l.heldReasonReplyHour,
+  HeldReason.pacing => l.heldReasonPacing,
+  HeldReason.dailyCap => l.heldReasonDailyCap,
+  HeldReason.busyDay => l.heldReasonBusyDay,
+  HeldReason.circumstance => l.heldReasonCircumstance,
+  HeldReason.duplicate => l.heldReasonDuplicate,
+  HeldReason.expired => l.heldReasonExpired,
+  HeldReason.notRelevant => l.heldReasonNotRelevant,
+  HeldReason.nothingNew => l.heldReasonNothingNew,
+  HeldReason.other => l.heldReasonOther,
+};
+
+/// What happened to it.
+String heldActionText(ZadL10n l, HeldAction a) => switch (a) {
+  HeldAction.dropped => l.heldActionDropped,
+  HeldAction.waiting => l.heldActionWaiting,
+  HeldAction.postponed => l.heldActionPostponed,
+};
+
+/// The message, in words. Unknown kinds keep a generic name.
+String heldKindText(ZadL10n l, HeldLine line) => line.source == 'moment'
+    ? switch (line.kind) {
+        'good_night' => l.heldKindGoodNight,
+        'close_day' => l.heldKindCloseDay,
+        'morning_greeting' => l.heldKindMorning,
+        'weekly_money_story' => l.heldKindWeeklyStory,
+        'newcomer_question' => l.heldKindNewcomer,
+        'salary_cycle' => l.heldKindSalary,
+        _ => l.heldKindVoice,
+      }
+    : switch (line.kind) {
+        'home_weekly_digest' => l.heldKindDigest,
+        'spend_forecast' => l.heldKindForecast,
+        'spending_ahead' => l.heldKindSpendingAhead,
+        'bill_reminder' => l.heldKindBill,
+        'warranty_reminder' => l.heldKindWarranty,
+        'goal_review' => l.heldKindGoal,
+        'habit_budget' => l.heldKindHabit,
+        'predicted_shortage' => l.heldKindShortage,
+        'restock_link' => l.heldKindRestock,
+        'pet_call' => l.heldKindPet,
+        _ => l.heldKindNote,
+      };
 
 class _StatusBanner extends StatelessWidget {
   const new({required this.health});
