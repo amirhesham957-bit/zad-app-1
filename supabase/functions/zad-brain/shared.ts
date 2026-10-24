@@ -1038,7 +1038,7 @@ export const PACING_DAILY_CAP = 2;
 /**
  * المبادرة دي تعدّي سقف النهارده؟ [recent] = اللي اتبعت (recentOutbound)؛ اللحظات (`moment:`)
  * والتشيك-إن مابيتعدّوش هنا. سكوت إشعارات البنك (أولوية ٠) بيعدّي ويتعدّ: من غيره الصرف مش بيتسجّل.
- * فوق السقف ⇐ تتأجل لنهاية هدوء بكرة الصبح بتوقيته.
+ * فوق السقف ⇐ تاخد خانة بكرة من الصحيان بتوقيته (`capSlot`)، بعد المتأجلين اللي أهم منها.
  */
 export function dailyCapDecision(
   kind: string | null | undefined,
@@ -1046,6 +1046,7 @@ export function dailyCapDecision(
   timeZone: string,
   nowMs: number,
   w: QuietWindow = DEFAULT_QUIET,
+  parked: ReadonlyArray<{ kind: string | null; at: string }> = [],
 ): { action: "deliver" } | { action: "postpone"; until: string } {
   const k = (kind ?? "").trim();
   if (!agentTaskNotice(k).proactive || PACING_EXEMPT.has(k) || pacingPriority(k) === 0) return { action: "deliver" };
@@ -1058,6 +1059,51 @@ export function dailyCapDecision(
   });
   if (today.length < PACING_DAILY_CAP) return { action: "deliver" };
   const tomorrow = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
-  const until = resolveLocalIso(`${tomorrow}T${String(w.end).padStart(2, "0")}:00`, local.utc_offset);
-  return { action: "postpone", until: until ?? new Date(nowMs + 12 * 3_600_000).toISOString() };
+  const wake = resolveLocalIso(`${tomorrow}T${String(w.end).padStart(2, "0")}:00`, local.utc_offset);
+  if (!wake) return { action: "postpone", until: new Date(nowMs + 12 * 3_600_000).toISOString() };
+  return { action: "postpone", until: capSlot(k, Date.parse(wake), parked) };
+}
+
+// ── المنسّق ٤: التوزيع بدل التكويم (ZAD_PLAN ١.٤) ──
+// المقاس ٢٤/١٠: توقّع الصرف اتعمل ٤ الفجر، السقف أجّله لبكرة ٧ الصبح، ونداء الرفيق اتأجّل لنفس
+// الدقيقة. كل اللي فوق السقف كان بيقف على ساعة الصحيان، ويطلع بعد يوم بأرقام امبارح.
+
+/**
+ * خانة المبادرة في يوم بكرة: الصحيان، وبعده بساعتين، … — الأهم ياخد الأبدر. [parked] = مهام العميل
+ * المتأجلة أصلاً (وقتها ونوعها)؛ كل واحدة في نفس اليوم بأهمية أعلى أو زيها بتاخد خانة قبلها.
+ */
+export function capSlot(
+  kind: string,
+  wakeMs: number,
+  parked: ReadonlyArray<{ kind: string | null; at: string }>,
+): string {
+  const mine = pacingPriority(kind);
+  const ahead = parked.filter((p) => {
+    const at = Date.parse(p.at);
+    return Number.isFinite(at) && at >= wakeMs && at < wakeMs + 16 * 3_600_000 && pacingPriority(p.kind) <= mine;
+  }).length;
+  return new Date(wakeMs + ahead * PACING_GAP_MINUTES * 60_000).toISOString();
+}
+
+/**
+ * عمر المبادرة بالساعات من ساعة ما اتعملت. بعده كلامها بقى قديم: الماسح بيعمل واحدة جديدة بأرقام
+ * النهارده لو لسه صح. الفواتير والضمان ومتابعة الهدف ليها ميعاد حقيقي فمالهاش عمر هنا.
+ */
+const SHELF_LIFE_HOURS: Record<string, number> = {
+  spend_forecast: 24, spending_ahead: 24, habit_budget: 24, pet_call: 24,
+  predicted_shortage: 48, home_weekly_digest: 48,
+  restock_link: 72,
+};
+
+/** المبادرة لو اتبعتت في [atMs] هيكون كلامها قديم؟ المتكررة والطلبات عمرها ما تقدم. */
+export function outlivesShelf(
+  kind: string | null | undefined,
+  recurring: boolean,
+  createdAt: string | null | undefined,
+  atMs: number,
+): boolean {
+  const hours = SHELF_LIFE_HOURS[(kind ?? "").trim()];
+  const born = Date.parse(createdAt ?? "");
+  if (recurring || hours === undefined || !Number.isFinite(born)) return false;
+  return atMs > born + hours * 3_600_000;
 }

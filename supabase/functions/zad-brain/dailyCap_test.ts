@@ -57,3 +57,55 @@ Deno.test("a late sleeper's morning is their wake hour", () => {
   ];
   assertEquals(dailyCapDecision("goal_review", sent, TZ, NOW, { start: 1, end: 10 }), { action: "postpone", until: "2026-10-19T07:00:00.000Z" });
 });
+
+// ── المنسّق ٤ (ZAD_PLAN ١.٤): التوزيع بدل التكويم ──
+import { capSlot, outlivesShelf } from "./shared.ts";
+
+const FULL = [
+  { kind: "spending_ahead", at: "2026-10-18T06:00:00Z" },
+  { kind: "predicted_shortage", at: "2026-10-18T10:00:00Z" },
+];
+
+Deno.test("over the cap, the next ones take tomorrow's slots instead of all landing on the wake hour", () => {
+  // بنك ٧ الصبح (٠٤:٠٠ UTC) مأخوذ بحاجة أهم ⇐ التوقّع ياخد ٩.
+  const parked = [{ kind: "bill_reminder", at: "2026-10-19T04:00:00.000Z" }];
+  assertEquals(dailyCapDecision("spend_forecast", FULL, TZ, NOW, undefined, parked), { action: "postpone", until: "2026-10-19T06:00:00.000Z" });
+  // الأهم مايتزقّش ورا الأقل أهمية: الفاتورة تاخد الصحيان حتى لو الرفيق متأجل عليه.
+  assertEquals(dailyCapDecision("bill_reminder", FULL, TZ, NOW, undefined, [{ kind: "pet_call", at: "2026-10-19T04:00:00.000Z" }]),
+    { action: "postpone", until: "2026-10-19T04:00:00.000Z" });
+});
+
+Deno.test("capSlot ignores tasks parked on other days", () => {
+  const wake = Date.parse("2026-10-19T04:00:00Z");
+  assertEquals(capSlot("goal_review", wake, [
+    { kind: "bill_reminder", at: "2026-10-18T16:00:00Z" },
+    { kind: "bill_reminder", at: "2026-10-20T04:00:00Z" },
+  ]), "2026-10-19T04:00:00.000Z");
+  assertEquals(capSlot("goal_review", wake, [
+    { kind: "bill_reminder", at: "2026-10-19T04:00:00Z" },
+    { kind: "spend_forecast", at: "2026-10-19T06:00:00Z" },
+  ]), "2026-10-19T08:00:00.000Z");
+});
+
+Deno.test("yesterday's spend forecast is dropped, not sent tomorrow at 7 (the 2026-10-24 row)", () => {
+  // اتعمل ٠١:٠٧ UTC يوم ٢٤، والسقف كان هيطلّعه ٠٤:٠٠ يوم ٢٥ = بعد ٢٧ ساعة.
+  assertEquals(outlivesShelf("spend_forecast", false, "2026-10-24T01:07:02Z", Date.parse("2026-10-25T04:00:00Z")), true);
+  assertEquals(outlivesShelf("spend_forecast", false, "2026-10-24T01:07:02Z", Date.parse("2026-10-24T11:00:00Z")), false);
+});
+
+Deno.test("bills, warranties, goal follow-ups, recurring tasks and requests never go stale", () => {
+  const born = "2026-10-01T00:00:00Z", late = Date.parse("2026-10-20T00:00:00Z");
+  for (const k of ["bill_reminder", "warranty_reminder", "goal_review", "listener_gap_alert", "med_followup", "reminder", ""]) {
+    assertEquals(outlivesShelf(k, false, born, late), false, k);
+  }
+  assertEquals(outlivesShelf("spend_forecast", true, born, late), false);
+  assertEquals(outlivesShelf("spend_forecast", false, null, late), false);
+});
+
+Deno.test("a missing shortage still matters for two days, a restock link for three", () => {
+  const born = "2026-10-18T00:00:00Z";
+  assertEquals(outlivesShelf("predicted_shortage", false, born, Date.parse("2026-10-19T20:00:00Z")), false);
+  assertEquals(outlivesShelf("predicted_shortage", false, born, Date.parse("2026-10-20T04:00:00Z")), true);
+  assertEquals(outlivesShelf("restock_link", false, born, Date.parse("2026-10-20T11:00:00Z")), false);
+  assertEquals(outlivesShelf("restock_link", false, born, Date.parse("2026-10-21T04:00:00Z")), true);
+});
