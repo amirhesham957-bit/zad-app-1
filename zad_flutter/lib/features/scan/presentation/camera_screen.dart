@@ -25,6 +25,7 @@ import 'package:zad/features/scan/presentation/document_scan_sheet.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/destinations.dart';
+import 'package:zad/shared/quota/presentation/attempts_chip.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_document.dart';
@@ -334,6 +335,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               '  الماسح الذكي',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
+            // A scan costs two attempts; the balance is where the cost is
+            // paid (ZAD_PLAN ٠.٤).
+            actions: const <Widget>[AttemptsChip()],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20),

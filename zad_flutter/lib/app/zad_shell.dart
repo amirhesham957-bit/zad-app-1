@@ -59,6 +59,7 @@ import 'package:zad/shared/notifications/application/notifications_controller.da
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
 import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
+import 'package:zad/shared/quota/presentation/attempts_chip.dart';
 import 'package:zad/shared/session/product_events.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
@@ -411,6 +412,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onNotifications: () =>
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
+                balance: const AttemptsChip(),
                 sky: skyPhaseAt(
                   ref.watch(accountTimeZoneProvider),
                   ref.read(nowProvider)(),

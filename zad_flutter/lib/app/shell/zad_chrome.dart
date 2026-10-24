@@ -53,6 +53,7 @@ class ZadTopHeader extends StatelessWidget {
     this.kidsMode = false,
     this.onExitKidsMode,
     this.pet,
+    this.balance,
     this.sky = SkyPhase.day,
     super.key,
   });
@@ -66,6 +67,11 @@ class ZadTopHeader extends StatelessWidget {
   /// رفيق زاد, perched at the end of the title line on the header's rule
   /// (Home only).
   final Widget? pet;
+
+  /// The attempts balance (`AttemptsChip`), before the avatar. Shown on
+  /// every tab, not only the chat's bar: the owner could not find it
+  /// (ZAD_PLAN ٠.٤).
+  final Widget? balance;
 
   /// The menu square.
   final VoidCallback onOpenDrawer;
@@ -147,6 +153,7 @@ class ZadTopHeader extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                       ],
+                      ?balance,
                       _Avatar(url: avatarUrl, onTap: onAvatar),
                       const SizedBox(width: 8),
                       _BellPill(
