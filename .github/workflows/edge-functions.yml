@@ -168,6 +168,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/occasional_scaffold.sql supabase/migrations/20261020120000_occasional_items.sql supabase/sql/tests/occasional_items_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/occasional_scaffold.sql supabase/migrations/20261020120000_occasional_items.sql supabase/migrations/20261020130000_occasional_column.sql supabase/sql/tests/occasional_column_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024213500_night_one_message.sql supabase/sql/tests/night_one_message_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024223500_engagement_hours.sql supabase/sql/tests/engagement_hours_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.

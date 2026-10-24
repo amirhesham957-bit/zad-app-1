@@ -75,7 +75,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
@@ -6245,6 +6245,16 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     }
     return list;
   };
+  // ساعات رد كل عميل (zad_engagement_hours)، مرة في اللفة. فشل القراية = null = الافتراضي.
+  const engagementByUser = new Map<string, number[] | null>();
+  const engagementHoursFor = async (userId: string) => {
+    if (!engagementByUser.has(userId)) {
+      const { data, error } = await sb.rpc("zad_engagement_hours", { p_user: userId });
+      if (error) console.error("[agent_tasks] zad_engagement_hours failed:", error.message);
+      engagementByUser.set(userId, Array.isArray(data) ? (data as unknown[]).map((n) => Number(n) || 0) : null);
+    }
+    return engagementByUser.get(userId) ?? null;
+  };
   // أي تأجيل (كتم، هدوء، مسافة، سقف) بيعدّي من هنا: لو الخانة الجديدة بعد عمر المبادرة، بتتشال
   // ويتسجل ليه بدل ما تطلع بكرة بأرقام امبارح. true = اتأجلت.
   const park = async (task: DueTask, until: string, reason: string): Promise<boolean> => {
@@ -6290,6 +6300,14 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       );
       if (quietUntil) {
         if (await park(task, quietUntil, "quiet hours")) postponed++;
+        continue;
+      }
+      // المنسّق ٥ (ZAD_PLAN ١.٦): الاختيارية تستنى أقرب ساعة العميل بيرد فيها. لو الساعة دي بعد عمرها،
+      // بتطلع دلوقتي بدل ما تتشال — الأحسن تتقال في ساعة مش أحسن حاجة من إنها ماتتقالش.
+      const fit = responsiveHourDecision(task.kind, await engagementHoursFor(task.user_id), await accountTimeZone(sb, task.user_id), Date.now(),
+        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake));
+      if (fit.action === "postpone" && !outlivesShelf(task.kind, (task.recurrence ?? "once") !== "once", task.created_at, Date.parse(fit.until))) {
+        if (await park(task, fit.until, "waits for the hour they reply")) postponed++;
         continue;
       }
       const pace = pacingDecision(task.kind, (task.recurrence ?? "once") !== "once", await deliveredFor(task.user_id), Date.now());

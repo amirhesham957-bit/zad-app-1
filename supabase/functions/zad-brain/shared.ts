@@ -1107,3 +1107,51 @@ export function outlivesShelf(
   if (recurring || hours === undefined || !Number.isFinite(born)) return false;
   return atMs > born + hours * 3_600_000;
 }
+
+// ── المنسّق ٥: الوقت اللي العميل بيرد فيه (ZAD_PLAN ١.٦، طلب المالك ٢٤/١٠: «إنتراكتف مش مواعيد ثابتة») ──
+// المبادرات الاختيارية كانت بتطلع في أي ساعة صاحي فيها. دلوقتي بتستنى أقرب ساعة العميل ده بيرد فيها
+// فعلاً (zad_engagement_hours: الشات، أزرار تليجرام، فتح التطبيق، قفل اليوم، رد على الحارس)، والافتراضي
+// — زي الأول — لحد ما الداتا تكفي.
+
+/** أقل عدد ردود في ٣٠ يوم عشان الساعات تتحسب. أقل من كده = الافتراضي. */
+export const RESPONSIVE_MIN_EVENTS = 12;
+/** الساعة «بيرد فيها» لو هي وجيرانها (±١) فيهم ردين على الأقل. */
+const RESPONSIVE_HOUR_MIN = 2;
+
+/** اختيارية = اقتراحية ومش مستعجلة: البنك والصرف والفواتير (أولوية ٠–١) والمستثنيين ميعادهم جزء من معناهم. */
+export function isOptionalProactive(kind: string | null | undefined): boolean {
+  const k = (kind ?? "").trim();
+  return agentTaskNotice(k).proactive && !PACING_EXEMPT.has(k) && pacingPriority(k) >= 2;
+}
+
+/**
+ * المبادرة الاختيارية دي تطلع دلوقتي ولا تستنى ساعة رده؟ [hours] = ٢٤ رقم (ردود العميل في كل ساعة
+ * محلية آخر ٣٠ يوم). الساعة الجاية اللي بيرد فيها وبرّه نومه ⇐ تأجيل لأولها. مفيش ساعة كده في ٢٤
+ * ساعة، أو الداتا قليلة ⇐ تطلع.
+ */
+export function responsiveHourDecision(
+  kind: string | null | undefined,
+  hours: readonly number[] | null | undefined,
+  timeZone: string,
+  nowMs: number,
+  w: QuietWindow = DEFAULT_QUIET,
+): { action: "deliver" } | { action: "postpone"; until: string } {
+  if (!isOptionalProactive(kind) || !hours || hours.length !== 24) return { action: "deliver" };
+  const total = hours.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+  if (total < RESPONSIVE_MIN_EVENTS) return { action: "deliver" };
+  const at = (h: number) => hours[((h % 24) + 24) % 24] || 0;
+  const responsive = (h: number) => at(h - 1) + at(h) + at(h + 1) >= RESPONSIVE_HOUR_MIN;
+  const local = localNowContext(timeZone, new Date(nowMs));
+  const hour = Number(local.time.slice(0, 2));
+  if (responsive(hour)) return { action: "deliver" };
+  for (let step = 1; step < 24; step++) {
+    const h = (hour + step) % 24;
+    if (isQuietHourIn(h, w) || !responsive(h)) continue;
+    const date = hour + step >= 24
+      ? new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+      : local.date;
+    const until = resolveLocalIso(`${date}T${String(h).padStart(2, "0")}:00`, local.utc_offset);
+    return until ? { action: "postpone", until } : { action: "deliver" };
+  }
+  return { action: "deliver" };
+}
