@@ -75,7 +75,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
@@ -1721,6 +1721,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       lines.push("");
       lines.push(`💡 اقتراح التسوية: اتفقوا مين مسؤول عن الفئة دي، والتاني يرجّع نص مشترياته الأخيرة — أو قسموا الفئات بينكم مرة واحدة بدل الازدواج. الإجمالي المتكرر: ~${Math.round(totalDup)}`);
       return lines.join("\n");
+    }
+
+    case "what_i_held_back": {
+      const days = Math.min(30, Math.max(1, Math.round(Number(input.days) || 7)));
+      const { data, error } = await sb.rpc("zad_held_messages", { p_user: userId, p_days: days });
+      if (error) return `مقدرتش أقرا اللي سكتّ عنه دلوقتي: ${error.message}`;
+      return `آخر ${days} يوم:\n${heldMessagesSummary((data ?? []) as Array<Record<string, unknown>> as never)}`;
     }
 
     case "monthly_review": {
@@ -4366,6 +4373,17 @@ const TOOLS: ToolDef[] = [
     }
   },
   {
+    name: "what_i_held_back",
+    description:
+      "اللي سكتّ عنه وليه (ZAD_PLAN ٣.٥): الرسايل اللي الحراس أجّلوها أو شالوها آخر [days] يوم (الكتم، النوم، " +
+      "المسافة، سقف اليوم، ساعة الرد، التكرار، الكلام اللي قدم). نادِها لما العميل يسأل «إيه اللي ماقولتليش عليه؟» " +
+      "أو «ليه مابعتليش…؟». قول النتيجة زي ما هي بلهجته، ومتألّفش رسالة ماتسجلتش.",
+    input_schema: {
+      type: "object",
+      properties: { days: { type: "number", description: "كام يوم لورا (١–٣٠)، الافتراضي ٧" } },
+    },
+  },
+  {
     name: "monthly_review",
     description:
       "جلسة مراجعة شهرية — ٥ دقايق صوتية آخر كل شهر. بيسأل العميل ٣ أسئلة ذكية عن قراراته المالية " +
@@ -6207,7 +6225,7 @@ async function accountTimeZone(sb: SupabaseClient, userId: string): Promise<stri
 
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
   const { data: due } = await sb.from("agent_tasks")
-    .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at")
+    .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at,held_count")
     .eq("status", "pending")
     .lte("scheduled_for", new Date().toISOString())
     .order("scheduled_for", { ascending: true })
@@ -6216,7 +6234,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
   let processed = 0, failed = 0, postponed = 0;
   // منسّق المبادرات (pacingDecision في shared.ts): الأهم الأول، وواحدة كل ساعتين للعميل، والتكرار بيتلغي.
   // [delivered] = اللي اتبعت لكل عميل في آخر ٢٠ ساعة، من الداتابيز ومن اللفة دي.
-  type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string; created_at: string | null };
+  type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string; created_at: string | null; held_count?: number | null };
   const dueTasks = [...((due ?? []) as DueTask[])].sort((a, b) => pacingPriority(a.kind) - pacingPriority(b.kind));
   const delivered = new Map<string, Array<{ kind: string | null; at: string }>>();
   // المنسّق ٢: الذاكرة مشتركة (_shared/outbound.ts) — اللحظات الصوتية وسؤال المخزون بيتعدّوا كمان،
@@ -6257,7 +6275,8 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
   };
   // أي تأجيل (كتم، هدوء، مسافة، سقف) بيعدّي من هنا: لو الخانة الجديدة بعد عمر المبادرة، بتتشال
   // ويتسجل ليه بدل ما تطلع بكرة بأرقام امبارح. true = اتأجلت.
-  const park = async (task: DueTask, until: string, reason: string): Promise<boolean> => {
+  // ٣.٥ «الحراس بيتكلموا»: الحارس اللي أجّلها وكام مرة بيتكتبوا في الصف (held_reason، zad_held_messages).
+  const park = async (task: DueTask, until: string, reason: HoldCode | "late"): Promise<boolean> => {
     if (outlivesShelf(task.kind, (task.recurrence ?? "once") !== "once", task.created_at, Date.parse(until))) {
       await sb.from("agent_tasks").update({
         status: "cancelled", result: `expired: ${task.kind} found no slot before it went stale (${reason})`,
@@ -6266,7 +6285,10 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       console.log(`[agent_tasks] ${task.kind} task ${task.id} expired (${reason}, next slot ${until})`);
       return false;
     }
-    await sb.from("agent_tasks").update({ scheduled_for: until, updated_at: new Date().toISOString() }).eq("id", task.id);
+    const now = new Date().toISOString();
+    await sb.from("agent_tasks").update({
+      scheduled_for: until, updated_at: now, held_reason: reason, held_count: (task.held_count ?? 0) + 1, held_at: now,
+    }).eq("id", task.id);
     (await parkedFor(task.user_id)).push({ kind: task.kind, at: until });
     console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${until} (${reason})`);
     return true;
@@ -6288,7 +6310,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       if (muteErr) console.error(`[agent_tasks] mute lookup failed for task ${task.id}:`, muteErr.message);
       const until = postponeForSuppression(task.kind, (mutes ?? []) as Array<{ suppress_until: string | null }>, Date.now());
       if (until) {
-        if (await park(task, until, "muted by the user")) postponed++;
+        if (await park(task, until, "muted")) postponed++;
         continue;
       }
       // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
@@ -6299,7 +6321,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
       );
       if (quietUntil) {
-        if (await park(task, quietUntil, "quiet hours")) postponed++;
+        if (await park(task, quietUntil, "quiet_hours")) postponed++;
         continue;
       }
       // المنسّق ٥ (ZAD_PLAN ١.٦): الاختيارية تستنى أقرب ساعة العميل بيرد فيها. لو الساعة دي بعد عمرها،
@@ -6307,7 +6329,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       const fit = responsiveHourDecision(task.kind, await engagementHoursFor(task.user_id), await accountTimeZone(sb, task.user_id), Date.now(),
         quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake));
       if (fit.action === "postpone" && !outlivesShelf(task.kind, (task.recurrence ?? "once") !== "once", task.created_at, Date.parse(fit.until))) {
-        if (await park(task, fit.until, "waits for the hour they reply")) postponed++;
+        if (await park(task, fit.until, "reply_hour")) postponed++;
         continue;
       }
       const pace = pacingDecision(task.kind, (task.recurrence ?? "once") !== "once", await deliveredFor(task.user_id), Date.now());
@@ -6328,7 +6350,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
         await parkedFor(task.user_id));
       if (cap.action === "postpone") {
-        if (await park(task, cap.until, "daily cap")) postponed++;
+        if (await park(task, cap.until, "daily_cap")) postponed++;
         continue;
       }
     }

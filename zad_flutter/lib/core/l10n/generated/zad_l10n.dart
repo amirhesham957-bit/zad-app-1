@@ -3582,6 +3582,240 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ابدأ الهدف'**
   String get goalStart;
+
+  /// Brain health: the section listing messages the guards held this week.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي سكتّ عنه وليه'**
+  String get heldTitle;
+
+  /// Brain health: no message was held this week.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع ده ماسكتّش عن أي حاجة — كل اللي كان يستاهل يتقال اتقال.'**
+  String get heldNone;
+
+  /// Brain health: the held-messages read failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادر أقرا اللي سكتّ عنه دلوقتي.'**
+  String get heldFailed;
+
+  /// Brain health: the held-messages read is in flight.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا…'**
+  String get heldLoading;
+
+  /// Brain health: under the held list, how to ask the brain about it.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر تسألني «إيه اللي ماقولتليش عليه؟» في الشات وأقولك بالتفصيل.'**
+  String get heldAskHint;
+
+  /// Brain health: how many times a guard held the same message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مرات'**
+  String heldTimes(int count);
+
+  /// Held message: it was never sent.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقولتهاش'**
+  String get heldActionDropped;
+
+  /// Held message: it waits for its slot.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مستنية'**
+  String get heldActionWaiting;
+
+  /// Held message: held, then sent later.
+  ///
+  /// In ar, this message translates to:
+  /// **'أجّلتها'**
+  String get heldActionPostponed;
+
+  /// Guard: the customer muted this kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت قلتلي أبطّل النوع ده لفترة'**
+  String get heldReasonMuted;
+
+  /// Guard: inside the sleep window.
+  ///
+  /// In ar, this message translates to:
+  /// **'كان وقت نومك'**
+  String get heldReasonQuietHours;
+
+  /// Guard: waiting for the customer's reply hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'استنيت الساعة اللي بترد فيها عادة'**
+  String get heldReasonReplyHour;
+
+  /// Guard: too soon after the last message.
+  ///
+  /// In ar, this message translates to:
+  /// **'كان لسه واصلك حاجة من شوية'**
+  String get heldReasonPacing;
+
+  /// Guard: the daily cap.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت لعدد الرسايل بتاع اليوم'**
+  String get heldReasonDailyCap;
+
+  /// Guard: a busy day.
+  ///
+  /// In ar, this message translates to:
+  /// **'يومك كان مليان مواعيد'**
+  String get heldReasonBusyDay;
+
+  /// Guard: a hard time (travel, illness, a loss).
+  ///
+  /// In ar, this message translates to:
+  /// **'كنت مراعي ظرفك'**
+  String get heldReasonCircumstance;
+
+  /// Guard: a duplicate.
+  ///
+  /// In ar, this message translates to:
+  /// **'كنت قلتهالك قبلها بشوية'**
+  String get heldReasonDuplicate;
+
+  /// Guard: past its shelf life.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلامها قدم قبل ما ألاقي وقت مناسب'**
+  String get heldReasonExpired;
+
+  /// Guard: no longer relevant.
+  ///
+  /// In ar, this message translates to:
+  /// **'مابقتش تفرق (اتعملت أو اتغيرت)'**
+  String get heldReasonNotRelevant;
+
+  /// Guard: nothing new.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماكانش فيه جديد يتقال'**
+  String get heldReasonNothingNew;
+
+  /// Guard: a reason this build has no words for.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب تاني'**
+  String get heldReasonOther;
+
+  /// Held voice moment: good night.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصبح على خير'**
+  String get heldKindGoodNight;
+
+  /// Held voice moment: close your day.
+  ///
+  /// In ar, this message translates to:
+  /// **'«اقفل يومك»'**
+  String get heldKindCloseDay;
+
+  /// Held voice moment: good morning.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير'**
+  String get heldKindMorning;
+
+  /// Held voice moment: the weekly money story.
+  ///
+  /// In ar, this message translates to:
+  /// **'حكاية فلوس الأسبوع'**
+  String get heldKindWeeklyStory;
+
+  /// Held voice moment: the newcomer question.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال التعارف'**
+  String get heldKindNewcomer;
+
+  /// Held voice moment: the salary question.
+  ///
+  /// In ar, this message translates to:
+  /// **'«ده المرتب؟»'**
+  String get heldKindSalary;
+
+  /// Held voice moment of another kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة صوتية'**
+  String get heldKindVoice;
+
+  /// Held task: the weekly home digest.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص البيت'**
+  String get heldKindDigest;
+
+  /// Held task: the spending forecast.
+  ///
+  /// In ar, this message translates to:
+  /// **'توقّع مصروف الأسبوع'**
+  String get heldKindForecast;
+
+  /// Held task: spending ahead.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصرف أسرع من الميزانية'**
+  String get heldKindSpendingAhead;
+
+  /// Held task: a bill reminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير فاتورة'**
+  String get heldKindBill;
+
+  /// Held task: a warranty reminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضمان قرب ينتهي'**
+  String get heldKindWarranty;
+
+  /// Held task: a goal review.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة هدفك'**
+  String get heldKindGoal;
+
+  /// Held task: a habit and the budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'عادة بتتكرر'**
+  String get heldKindHabit;
+
+  /// Held task: predicted shortage.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجات هتخلص قريب'**
+  String get heldKindShortage;
+
+  /// Held task: restock link.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجة ضرورية خلصت'**
+  String get heldKindRestock;
+
+  /// Held task: the companion's call.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء رفيقك'**
+  String get heldKindPet;
+
+  /// Held task of another kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة من زاد'**
+  String get heldKindNote;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

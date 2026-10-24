@@ -2062,4 +2062,126 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get goalStart => 'Start the goal';
+
+  @override
+  String get heldTitle => 'What I held back, and why';
+
+  @override
+  String get heldNone =>
+      'Nothing held back this week — everything worth saying was said.';
+
+  @override
+  String get heldFailed => 'I can\'t read what I held back right now.';
+
+  @override
+  String get heldLoading => 'Reading…';
+
+  @override
+  String get heldAskHint =>
+      'You can ask me «what didn\'t you tell me?» in the chat for the details.';
+
+  @override
+  String heldTimes(int count) {
+    return '$count times';
+  }
+
+  @override
+  String get heldActionDropped => 'not sent';
+
+  @override
+  String get heldActionWaiting => 'still waiting';
+
+  @override
+  String get heldActionPostponed => 'sent later';
+
+  @override
+  String get heldReasonMuted => 'you asked me to stop this kind for a while';
+
+  @override
+  String get heldReasonQuietHours => 'it was your sleeping time';
+
+  @override
+  String get heldReasonReplyHour =>
+      'I waited for the hour you usually reply in';
+
+  @override
+  String get heldReasonPacing => 'something had just reached you';
+
+  @override
+  String get heldReasonDailyCap => 'the day\'s messages were used up';
+
+  @override
+  String get heldReasonBusyDay => 'your day was full of appointments';
+
+  @override
+  String get heldReasonCircumstance => 'I was giving you space';
+
+  @override
+  String get heldReasonDuplicate => 'I had said it a little before';
+
+  @override
+  String get heldReasonExpired => 'it went stale before a good moment came';
+
+  @override
+  String get heldReasonNotRelevant => 'it no longer mattered (done or changed)';
+
+  @override
+  String get heldReasonNothingNew => 'there was nothing new to say';
+
+  @override
+  String get heldReasonOther => 'another reason';
+
+  @override
+  String get heldKindGoodNight => 'Good night';
+
+  @override
+  String get heldKindCloseDay => '«Close your day»';
+
+  @override
+  String get heldKindMorning => 'Good morning';
+
+  @override
+  String get heldKindWeeklyStory => 'The week\'s money story';
+
+  @override
+  String get heldKindNewcomer => 'The getting-to-know-you question';
+
+  @override
+  String get heldKindSalary => '«Is this the salary?»';
+
+  @override
+  String get heldKindVoice => 'A voice message';
+
+  @override
+  String get heldKindDigest => 'The home digest';
+
+  @override
+  String get heldKindForecast => 'The week\'s spending forecast';
+
+  @override
+  String get heldKindSpendingAhead => 'Spending ahead of the budget';
+
+  @override
+  String get heldKindBill => 'A bill reminder';
+
+  @override
+  String get heldKindWarranty => 'A warranty about to end';
+
+  @override
+  String get heldKindGoal => 'Your goal follow-up';
+
+  @override
+  String get heldKindHabit => 'A repeating habit';
+
+  @override
+  String get heldKindShortage => 'Things running out soon';
+
+  @override
+  String get heldKindRestock => 'An essential ran out';
+
+  @override
+  String get heldKindPet => 'Your companion\'s call';
+
+  @override
+  String get heldKindNote => 'A note from Zad';
 }

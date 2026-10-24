@@ -186,6 +186,9 @@ const SAME_PRODUCT_INTENT = /نفس (ال)?(حاجه|صنف|منتج|شي)|اد�
 const STORE_LOCATION_INTENT = /لوكيشن|لوكيشين|location|(هات|ابعت|ابعتلي|ابعتيلي|ابعتهولي|فين|عايز|عاوز)\s*(لي)?\s*(ال)?(موقع|مكان|عنوان)\s*(ال)?(محل|سوبر ?ماركت|صيدليه|ده|دا|بتاعه|بتاعها)?|(علي|على) الخريطه|فين (ال)?(محل|السوبر ?ماركت|الصيدليه) ده/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
+// «إيه اللي ماقولتليش عليه؟» (ZAD_PLAN ٣.٥): اللي الحراس مسكوه الأسبوع ده وليه.
+const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|بعتليش|بلغتنيش)|(ما|م)قولتهوش|سكت(ت)? عن|سكتت?ش ليه|خبيت عني|اللي (ما|م)قولتهوش|ليه (ما|م) ?(قولتش|بتقولش|بعتش|بتبعتش)|الحاجات اللي (ما|م)وصلتنيش/;
+
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
 export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
@@ -211,6 +214,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (STORE_LOCATION_INTENT.test(norm)) tools.push("store_location");
   if (SAME_PRODUCT_INTENT.test(norm)) tools.push("answer_same_product");
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");
+  if (HELD_INTENT.test(norm)) tools.push("what_i_held_back");
   if (EXPENSE_INTENT.test(norm)) tools.push("log_transaction");
   if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
   // جواب «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts): «محمد ٠١٠٠…» لوحدها مافيهاش نية تجيب الأداة.

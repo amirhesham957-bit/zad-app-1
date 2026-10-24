@@ -1309,5 +1309,166 @@
   "goalWrite": "اكتب هدفك",
   "goalTooMany": "عندك ٥ أهداف شغالة — خلّص واحد أو ألغيه الأول",
   "goalSaveFailed": "معرفتش أسجل الهدف — جرّب تاني",
-  "goalStart": "ابدأ الهدف"
+  "goalStart": "ابدأ الهدف",
+  "heldTitle": "اللي سكتّ عنه وليه",
+  "@heldTitle": {
+    "description": "Brain health: the section listing messages the guards held this week."
+  },
+  "heldNone": "الأسبوع ده ماسكتّش عن أي حاجة — كل اللي كان يستاهل يتقال اتقال.",
+  "@heldNone": {
+    "description": "Brain health: no message was held this week."
+  },
+  "heldFailed": "مش قادر أقرا اللي سكتّ عنه دلوقتي.",
+  "@heldFailed": {
+    "description": "Brain health: the held-messages read failed."
+  },
+  "heldLoading": "بقرا…",
+  "@heldLoading": {
+    "description": "Brain health: the held-messages read is in flight."
+  },
+  "heldAskHint": "تقدر تسألني «إيه اللي ماقولتليش عليه؟» في الشات وأقولك بالتفصيل.",
+  "@heldAskHint": {
+    "description": "Brain health: under the held list, how to ask the brain about it."
+  },
+  "heldTimes": "{count} مرات",
+  "@heldTimes": {
+    "description": "Brain health: how many times a guard held the same message.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "heldActionDropped": "ماقولتهاش",
+  "@heldActionDropped": {
+    "description": "Held message: it was never sent."
+  },
+  "heldActionWaiting": "لسه مستنية",
+  "@heldActionWaiting": {
+    "description": "Held message: it waits for its slot."
+  },
+  "heldActionPostponed": "أجّلتها",
+  "@heldActionPostponed": {
+    "description": "Held message: held, then sent later."
+  },
+  "heldReasonMuted": "إنت قلتلي أبطّل النوع ده لفترة",
+  "@heldReasonMuted": {
+    "description": "Guard: the customer muted this kind."
+  },
+  "heldReasonQuietHours": "كان وقت نومك",
+  "@heldReasonQuietHours": {
+    "description": "Guard: inside the sleep window."
+  },
+  "heldReasonReplyHour": "استنيت الساعة اللي بترد فيها عادة",
+  "@heldReasonReplyHour": {
+    "description": "Guard: waiting for the customer's reply hour."
+  },
+  "heldReasonPacing": "كان لسه واصلك حاجة من شوية",
+  "@heldReasonPacing": {
+    "description": "Guard: too soon after the last message."
+  },
+  "heldReasonDailyCap": "وصلت لعدد الرسايل بتاع اليوم",
+  "@heldReasonDailyCap": {
+    "description": "Guard: the daily cap."
+  },
+  "heldReasonBusyDay": "يومك كان مليان مواعيد",
+  "@heldReasonBusyDay": {
+    "description": "Guard: a busy day."
+  },
+  "heldReasonCircumstance": "كنت مراعي ظرفك",
+  "@heldReasonCircumstance": {
+    "description": "Guard: a hard time (travel, illness, a loss)."
+  },
+  "heldReasonDuplicate": "كنت قلتهالك قبلها بشوية",
+  "@heldReasonDuplicate": {
+    "description": "Guard: a duplicate."
+  },
+  "heldReasonExpired": "كلامها قدم قبل ما ألاقي وقت مناسب",
+  "@heldReasonExpired": {
+    "description": "Guard: past its shelf life."
+  },
+  "heldReasonNotRelevant": "مابقتش تفرق (اتعملت أو اتغيرت)",
+  "@heldReasonNotRelevant": {
+    "description": "Guard: no longer relevant."
+  },
+  "heldReasonNothingNew": "ماكانش فيه جديد يتقال",
+  "@heldReasonNothingNew": {
+    "description": "Guard: nothing new."
+  },
+  "heldReasonOther": "سبب تاني",
+  "@heldReasonOther": {
+    "description": "Guard: a reason this build has no words for."
+  },
+  "heldKindGoodNight": "تصبح على خير",
+  "@heldKindGoodNight": {
+    "description": "Held voice moment: good night."
+  },
+  "heldKindCloseDay": "«اقفل يومك»",
+  "@heldKindCloseDay": {
+    "description": "Held voice moment: close your day."
+  },
+  "heldKindMorning": "صباح الخير",
+  "@heldKindMorning": {
+    "description": "Held voice moment: good morning."
+  },
+  "heldKindWeeklyStory": "حكاية فلوس الأسبوع",
+  "@heldKindWeeklyStory": {
+    "description": "Held voice moment: the weekly money story."
+  },
+  "heldKindNewcomer": "سؤال التعارف",
+  "@heldKindNewcomer": {
+    "description": "Held voice moment: the newcomer question."
+  },
+  "heldKindSalary": "«ده المرتب؟»",
+  "@heldKindSalary": {
+    "description": "Held voice moment: the salary question."
+  },
+  "heldKindVoice": "رسالة صوتية",
+  "@heldKindVoice": {
+    "description": "Held voice moment of another kind."
+  },
+  "heldKindDigest": "ملخص البيت",
+  "@heldKindDigest": {
+    "description": "Held task: the weekly home digest."
+  },
+  "heldKindForecast": "توقّع مصروف الأسبوع",
+  "@heldKindForecast": {
+    "description": "Held task: the spending forecast."
+  },
+  "heldKindSpendingAhead": "الصرف أسرع من الميزانية",
+  "@heldKindSpendingAhead": {
+    "description": "Held task: spending ahead."
+  },
+  "heldKindBill": "تذكير فاتورة",
+  "@heldKindBill": {
+    "description": "Held task: a bill reminder."
+  },
+  "heldKindWarranty": "ضمان قرب ينتهي",
+  "@heldKindWarranty": {
+    "description": "Held task: a warranty reminder."
+  },
+  "heldKindGoal": "متابعة هدفك",
+  "@heldKindGoal": {
+    "description": "Held task: a goal review."
+  },
+  "heldKindHabit": "عادة بتتكرر",
+  "@heldKindHabit": {
+    "description": "Held task: a habit and the budget."
+  },
+  "heldKindShortage": "حاجات هتخلص قريب",
+  "@heldKindShortage": {
+    "description": "Held task: predicted shortage."
+  },
+  "heldKindRestock": "حاجة ضرورية خلصت",
+  "@heldKindRestock": {
+    "description": "Held task: restock link."
+  },
+  "heldKindPet": "نداء رفيقك",
+  "@heldKindPet": {
+    "description": "Held task: the companion's call."
+  },
+  "heldKindNote": "ملاحظة من زاد",
+  "@heldKindNote": {
+    "description": "Held task of another kind."
+  }
 }
