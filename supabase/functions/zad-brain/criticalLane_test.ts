@@ -50,3 +50,21 @@ Deno.test("an ordinary proactive task is still held at night — the contract is
   assert(postponeForQuietHours("spending_ahead", TZ, NIGHT) !== null);
   assert(momentGate("weekly_money_story", 3, 0) !== null);
 });
+
+// ١.٣: «جرعة فاتت» كانت بتستنى معالج الـ٥ دقايق (٧ من ١٤ اتأخروا، ٢٤/١٠) لأن كرون الدقيقة كان بيصحى
+// لـ`appointment_soon` و`dose_due` بس. آخر مايجريشن بتجدول reminders-minutely لازم تصحى لكل نوع حرج.
+Deno.test("the minutely cron wakes the processor for every critical moment", async () => {
+  const dir = new URL("../../migrations/", import.meta.url);
+  const files: string[] = [];
+  for await (const f of Deno.readDir(dir)) if (f.name.endsWith(".sql")) files.push(f.name);
+  files.sort();
+  let latest = "";
+  for (const name of files) {
+    const sql = await Deno.readTextFile(new URL(name, dir));
+    if (/cron\.schedule\(\s*'reminders-minutely'/.test(sql)) latest = sql;
+  }
+  assert(latest !== "", "no migration schedules reminders-minutely");
+  const wake = /moment in \(([^)]*)\)/.exec(latest.slice(latest.indexOf("'reminders-minutely'")));
+  assert(wake, "reminders-minutely has no moment list");
+  for (const m of CRITICAL_MOMENTS) assert(wake[1].includes(`'${m}'`), `reminders-minutely does not wake for ${m}`);
+});
