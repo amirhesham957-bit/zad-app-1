@@ -52,7 +52,7 @@ import {
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
-  closeDayKeyboard, closeDayReply, parseCloseDayCallback,
+  closeDayKeyboard, closeDayReply, parseCloseDayCallback, nightMessage,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
   doseAlreadyReply,
 } from "./telegram.ts";
@@ -399,18 +399,7 @@ async function sendCheckInBundle(
   sb: SupabaseClient, userId: string, chatId: number, items: Array<{ item_name: string; quantity: number; unit: string | null }>,
   ignoredNote = false,
 ): Promise<number> {
-  const prompts: Array<{ id: string; label: string }> = [];
-  for (const item of items) {
-    const { data: prompt, error } = await sb.from("telegram_checkin_prompts")
-      .insert({ user_id: userId, item_name: item.item_name, quantity_at_prompt: item.quantity })
-      .select("id")
-      .single();
-    if (error || !prompt) {
-      console.error("checkin prompt insert failed:", error?.message);
-      continue;
-    }
-    prompts.push({ id: (prompt as { id: string }).id, label: sanitizeName(item.item_name) });
-  }
+  const prompts = await insertCheckinPrompts(sb, userId, items);
   if (prompts.length === 0) return 0;
   await sendTelegramMessage(
     chatId,
@@ -422,6 +411,63 @@ async function sendCheckInBundle(
 
 /** أقل مسافة بين آخر رسالة وصلت للعميل وسؤال المخزون. */
 const CHECKIN_GAP_MS = 20 * 60 * 1000;
+
+/**
+ * أسئلة المخزون بتاعة الليلة للعميل ده بعد كل الحراس: سؤال واحد في اليوم، «بطّل» (الكتم)، السكوت بعد
+ * التجاهل (checkinPlan)، والسقف. null = مفيش سؤال الليلة. مشتركة بين القفلة (اللي بتشيل الأسئلة)
+ * والسؤال الاحتياطي، عشان الحراس يبقوا نفسهم في الطريقين.
+ */
+async function nightCheckin(
+  sb: SupabaseClient, userId: string,
+): Promise<{ candidates: Array<{ item_name: string; quantity: number; unit: string | null }>; plan: "ask" | "ask_with_note" } | null> {
+  const alreadySentToday = await checkinsSentToday(sb, userId);
+  if (alreadySentToday > 0) return null;
+  const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
+  if (budget <= 0) return null;
+  // زاد بيلاحظ اللي اتساب (checkinPlan في telegram.ts): قال «بطّل» ⇒ ساكت لحد آخر الكتم؛ سابه
+  // مرتين ⇒ بيقول إنه واخد باله ويعرض يبطّل؛ ٤ ⇒ ساكت أسبوعين من نفسه.
+  const { data: mute } = await sb.from("zad_memory").select("id")
+    .eq("user_id", userId).eq("subject_kind", "checkin").gt("suppress_until", new Date().toISOString())
+    .limit(1).maybeSingle();
+  if (mute) return null;
+  const { data: recentPrompts } = await sb.from("telegram_checkin_prompts").select("status,sent_at")
+    .eq("user_id", userId).order("sent_at", { ascending: false }).limit(8);
+  const history = (recentPrompts ?? []) as Array<{ status: string; sent_at: string | null }>;
+  const plan = checkinPlan(
+    ignoredCheckinStreak(history.map((r) => r.status)),
+    history[0]?.sent_at ? Date.parse(history[0].sent_at) : null,
+    Date.now(),
+  );
+  if (plan === "rest") return null;
+  const candidates = (await findCheckInCandidates(sb, userId)).slice(0, budget);
+  return candidates.length > 0 ? { candidates, plan } : null;
+}
+
+/** بيسجّل الأسئلة ويرجّع id كل واحد باسمه — الأزرار بتشيل الـid. اللي فشل تسجيله بيتشال. */
+async function insertCheckinPrompts(
+  sb: SupabaseClient, userId: string, items: Array<{ item_name: string; quantity: number }>,
+): Promise<Array<{ id: string; label: string; item_name: string }>> {
+  const prompts: Array<{ id: string; label: string; item_name: string }> = [];
+  for (const item of items) {
+    const { data: prompt, error } = await sb.from("telegram_checkin_prompts")
+      .insert({ user_id: userId, item_name: item.item_name, quantity_at_prompt: item.quantity })
+      .select("id")
+      .single();
+    if (error || !prompt) {
+      console.error("checkin prompt insert failed:", error?.message);
+      continue;
+    }
+    prompts.push({ id: (prompt as { id: string }).id, label: sanitizeName(item.item_name), item_name: item.item_name });
+  }
+  return prompts;
+}
+
+async function recordCheckinTurn(sb: SupabaseClient, userId: string, items: string[]): Promise<void> {
+  await recordConversation(sb, userId, [{
+    role: "assistant",
+    text: proactiveTurn("سؤال المخزون", `سألتك فاضل قد إيه من ${items.join(" و")}`),
+  }]);
+}
 
 async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: number; promptsSent: number }> {
   // Pending prompts nobody ever answered would otherwise block that item forever.
@@ -439,33 +485,19 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
   let promptsSent = 0;
 
   for (const b of rows) {
-    const alreadySentToday = await checkinsSentToday(sb, b.user_id);
-    // المنسّق ٢: الكرون بيلف مرتين (٩:٢٠ و٩:٥٠، 20261018120000). اللي اتسأل في الأولى مايتسألش في
-    // التانية — سؤال واحد في الليلة، حتى لو فاضل له من السقف.
-    if (alreadySentToday > 0) continue;
-    // وصله حاجة في آخر ٢٠ دقيقة (جرعة، تحية، مهمة من العقل): يستنى اللفة التانية بدل ما تيجي
-    // الرسالتين ورا بعض. في اللفة التانية بيتسأل عادي — التأجيل مرة واحدة بس.
+    // رسالة الليل الواحدة (ZAD_PLAN ١.٥، 20261024213500): الأسئلة بتركب على «اقفل يومك» في ساعة ليل
+    // العميل. اللفة دي احتياطي للي ماوصلتلوش القفلة، بعد ساعته بـ٤٠ دقيقة. فشل القراية = مايسألش.
+    const { data: due, error: dueErr } = await sb.rpc("zad_checkin_night_due", { p_user: b.user_id });
+    if (dueErr) console.error("zad_checkin_night_due failed:", dueErr.message);
+    if (due !== true) continue;
+    // وصله حاجة في آخر ٢٠ دقيقة (جرعة، تحية، مهمة من العقل): يستنى لفة جاية بدل ما تيجي
+    // الرسالتين ورا بعض. لفات :٥٠ بتسأل عادي — التأجيل مرة واحدة بس.
     if (deferForRecentOutbound(new Date()) && (await recentOutbound(sb, b.user_id, new Date(Date.now() - CHECKIN_GAP_MS).toISOString(), ["chat_voice_reply"])).length > 0) {
       continue;
     }
-    const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
-    if (budget <= 0) continue;
-    // زاد بيلاحظ اللي اتساب (checkinPlan في telegram.ts): قال «بطّل» ⇒ ساكت لحد آخر الكتم؛ سابه
-    // مرتين ⇒ بيقول إنه واخد باله ويعرض يبطّل؛ ٤ ⇒ ساكت أسبوعين من نفسه.
-    const { data: mute } = await sb.from("zad_memory").select("id")
-      .eq("user_id", b.user_id).eq("subject_kind", "checkin").gt("suppress_until", new Date().toISOString())
-      .limit(1).maybeSingle();
-    if (mute) continue;
-    const { data: recentPrompts } = await sb.from("telegram_checkin_prompts").select("status,sent_at")
-      .eq("user_id", b.user_id).order("sent_at", { ascending: false }).limit(8);
-    const history = (recentPrompts ?? []) as Array<{ status: string; sent_at: string | null }>;
-    const plan = checkinPlan(
-      ignoredCheckinStreak(history.map((r) => r.status)),
-      history[0]?.sent_at ? Date.parse(history[0].sent_at) : null,
-      Date.now(),
-    );
-    if (plan === "rest") continue;
-    const candidates = (await findCheckInCandidates(sb, b.user_id)).slice(0, budget);
+    const night = await nightCheckin(sb, b.user_id);
+    if (!night) continue;
+    const { candidates, plan } = night;
     let asked = 0;
     if (candidates.length === 1 && plan === "ask") {
       if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity, candidates[0].unit)) asked = 1;
@@ -474,10 +506,7 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     }
     if (asked > 0) {
       promptsSent += asked;
-      await recordConversation(sb, b.user_id, [{
-        role: "assistant",
-        text: proactiveTurn("سؤال المخزون", `سألتك فاضل قد إيه من ${candidates.slice(0, asked).map((c) => c.item_name).join(" و")}`),
-      }]);
+      await recordCheckinTurn(sb, b.user_id, candidates.slice(0, asked).map((c) => c.item_name));
     }
   }
 
@@ -2864,14 +2893,34 @@ Deno.serve(async (req: Request) => {
       const dismissRows = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
         ? proactiveDismissKeyboard(dismiss_task_id)
         : [];
+      const closeDay = !dose_moment_id && close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id);
+      // رسالة الليل الواحدة (ZAD_PLAN ١.٥): «اقفل يومك» بتشيل أسئلة المخزون بأزرارها، بنفس حراس
+      // السؤال لوحده. فشل أي حاجة هنا = القفلة لوحدها، والسؤال الاحتياطي مابيطلعش الليلة دي.
+      let nightQuestions: { text: string; rows: InlineKeyboardButton[][]; items: string[] } | null = null;
+      if (closeDay) {
+        try {
+          const night = await nightCheckin(sb, user_id);
+          const prompts = night ? await insertCheckinPrompts(sb, user_id, night.candidates) : [];
+          if (night && prompts.length > 0) {
+            nightQuestions = {
+              text: checkInBundleMessage(prompts.map((p) => isolate(p.label)), night.plan === "ask_with_note"),
+              rows: checkInBundleKeyboard(prompts, night.plan === "ask_with_note"),
+              items: prompts.map((p) => p.item_name),
+            };
+          }
+        } catch (e) {
+          console.error("realtime_push: night questions failed:", e);
+        }
+      }
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
-        : close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id)
-        ? closeDayKeyboard(close_day_moment_id)
+        : closeDay
+        ? [...closeDayKeyboard(close_day_moment_id!), ...(nightQuestions?.rows ?? [])]
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...dismissRows]
         : undefined;
-      await sendTelegramMessage(chatId, `${title}\n\n${body}`, keyboard);
+      await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${body}`, nightQuestions?.text ?? null), keyboard);
+      if (nightQuestions) await recordCheckinTurn(sb, user_id, nightQuestions.items);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.
       const voice = wantsVoice(payload);
       if (voice) {

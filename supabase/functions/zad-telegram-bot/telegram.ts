@@ -438,8 +438,8 @@ export function checkInBundleMessage(items: string[], ignoredNote = false): stri
 }
 
 /**
- * سؤال المخزون بيلف مرتين بالليل (٩:٢٠ و٩:٥٠، 20261018120000). الأولى بس (قبل الدقيقة ٤٥ UTC)
- * بتأجّل العميل اللي وصله حاجة لسه — التانية آخر فرصة النهارده، فبتسأل.
+ * سؤال المخزون الاحتياطي بيلف كل نص ساعة بالليل (:٢٠ و:٥٠، 20261024213500). لفات :٢٠ بس (قبل
+ * الدقيقة ٤٥ UTC) بتأجّل العميل اللي وصله حاجة لسه — لفة :٥٠ اللي بعدها بتسأل.
  */
 export function deferForRecentOutbound(now: Date): boolean {
   return now.getUTCMinutes() < 45;
@@ -674,6 +674,14 @@ export function closeDayKeyboard(momentId: string): InlineKeyboardButton[][] {
       { text: "➕ في حاجة ناقصة", callback_data: `cd:${momentId}:m` },
     ],
   ];
+}
+
+/**
+ * رسالة الليل الواحدة (ZAD_PLAN ١.٥): «اقفل يومك» وتحتها أسئلة المخزون لو فيه. [questions] من
+ * checkInBundleMessage — أزرارها بتتحط تحت أزرار القفلة، وكل زرار شايل id سؤاله زي الأول.
+ */
+export function nightMessage(closeDay: string, questions: string | null): string {
+  return questions ? `${closeDay}\n\n${questions}` : closeDay;
 }
 
 /** "cd:<uuid>:o" (تمام) / "cd:<uuid>:c" (كاش) / "cd:<uuid>:m" (ناقص) */
