@@ -479,3 +479,21 @@ Deno.test("close day reply: says the points once, asks for the cash, and admits 
   assert(closeDayReply("all_good", null).includes("ماقدرتش"));
   assert(closeDayReply("all_good", { ok: false, reason: "stale" }).includes("يوم فات"));
 });
+
+// ── رسالة الليل الواحدة (ZAD_PLAN ١.٥) ──
+import { checkInBundleKeyboard, checkInBundleMessage, nightMessage } from "./telegram.ts";
+
+Deno.test("the day-close carries tonight's stock questions in the same message", () => {
+  const close = "🌙 اقفل يومك\n\nالنهارده شفت مصروفين. فيه حاجة كاش؟";
+  const questions = checkInBundleMessage(["رز", "زيت"]);
+  const text = nightMessage(close, questions);
+  assert(text.startsWith(close));
+  assert(text.includes("• رز") && text.includes("• زيت"));
+  assertEquals(nightMessage(close, null), close);
+  // أزرار الأسئلة بتفضل شايلة id كل سؤال، عشان الرد يتعامل زي الأول بالظبط.
+  const id = "11111111-2222-3333-4444-555555555555";
+  const rows = [...closeDayKeyboard(id), ...checkInBundleKeyboard([{ id, label: "رز" }])];
+  assert(rows.flat().some((b) => b.callback_data === `cd:${id}:o`));
+  assert(rows.flat().some((b) => b.callback_data?.startsWith(`ck:${id}:`)));
+  for (const b of rows.flat()) assert(new TextEncoder().encode(b.callback_data ?? "").length <= 64, b.callback_data);
+});
