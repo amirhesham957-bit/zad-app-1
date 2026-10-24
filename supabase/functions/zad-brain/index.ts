@@ -75,7 +75,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
@@ -6207,7 +6207,7 @@ async function accountTimeZone(sb: SupabaseClient, userId: string): Promise<stri
 
 async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: number; failed: number; postponed: number }> {
   const { data: due } = await sb.from("agent_tasks")
-    .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind")
+    .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at")
     .eq("status", "pending")
     .lte("scheduled_for", new Date().toISOString())
     .order("scheduled_for", { ascending: true })
@@ -6216,7 +6216,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
   let processed = 0, failed = 0, postponed = 0;
   // منسّق المبادرات (pacingDecision في shared.ts): الأهم الأول، وواحدة كل ساعتين للعميل، والتكرار بيتلغي.
   // [delivered] = اللي اتبعت لكل عميل في آخر ٢٠ ساعة، من الداتابيز ومن اللفة دي.
-  type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string };
+  type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string; created_at: string | null };
   const dueTasks = [...((due ?? []) as DueTask[])].sort((a, b) => pacingPriority(a.kind) - pacingPriority(b.kind));
   const delivered = new Map<string, Array<{ kind: string | null; at: string }>>();
   // المنسّق ٢: الذاكرة مشتركة (_shared/outbound.ts) — اللحظات الصوتية وسؤال المخزون بيتعدّوا كمان،
@@ -6232,7 +6232,41 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     }
     return list;
   };
+  // المنسّق ٤ (ZAD_PLAN ١.٤): مهام العميل المتأجلة أصلاً، عشان السقف يديله خانة بعدهم مش معاهم.
+  const parkedByUser = new Map<string, Array<{ kind: string | null; at: string }>>();
+  const parkedFor = async (userId: string) => {
+    let list = parkedByUser.get(userId);
+    if (!list) {
+      const { data, error } = await sb.from("agent_tasks").select("kind,scheduled_for")
+        .eq("user_id", userId).eq("status", "pending").gt("scheduled_for", new Date().toISOString());
+      if (error) console.error("[agent_tasks] parked lookup failed:", error.message);
+      list = ((data ?? []) as Array<{ kind: string | null; scheduled_for: string }>).map((r) => ({ kind: r.kind, at: r.scheduled_for }));
+      parkedByUser.set(userId, list);
+    }
+    return list;
+  };
+  // أي تأجيل (كتم، هدوء، مسافة، سقف) بيعدّي من هنا: لو الخانة الجديدة بعد عمر المبادرة، بتتشال
+  // ويتسجل ليه بدل ما تطلع بكرة بأرقام امبارح. true = اتأجلت.
+  const park = async (task: DueTask, until: string, reason: string): Promise<boolean> => {
+    if (outlivesShelf(task.kind, (task.recurrence ?? "once") !== "once", task.created_at, Date.parse(until))) {
+      await sb.from("agent_tasks").update({
+        status: "cancelled", result: `expired: ${task.kind} found no slot before it went stale (${reason})`,
+        updated_at: new Date().toISOString(),
+      }).eq("id", task.id);
+      console.log(`[agent_tasks] ${task.kind} task ${task.id} expired (${reason}, next slot ${until})`);
+      return false;
+    }
+    await sb.from("agent_tasks").update({ scheduled_for: until, updated_at: new Date().toISOString() }).eq("id", task.id);
+    (await parkedFor(task.user_id)).push({ kind: task.kind, at: until });
+    console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${until} (${reason})`);
+    return true;
+  };
   for (const task of dueTasks) {
+    // اتأخرت لحد ما كلامها قدم (كرون واقف مثلاً): بتتشال من غير ما تتبعت.
+    if (agentTaskNotice(task.kind).proactive && outlivesShelf(task.kind, (task.recurrence ?? "once") !== "once", task.created_at, Date.now())) {
+      await park(task, new Date().toISOString(), "late");
+      continue;
+    }
     // الكتم (رفض من تليجرام) كان بيتقرا في الماسح بس — المهام المتكررة زي متابعة الهدف
     // كانت بتعدّيه. التأجيل لنهاية الكتم بيحترم الرفض من غير ما يقتل السلسلة.
     if (agentTaskNotice(task.kind).proactive) {
@@ -6244,9 +6278,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       if (muteErr) console.error(`[agent_tasks] mute lookup failed for task ${task.id}:`, muteErr.message);
       const until = postponeForSuppression(task.kind, (mutes ?? []) as Array<{ suppress_until: string | null }>, Date.now());
       if (until) {
-        await sb.from("agent_tasks").update({ scheduled_for: until, updated_at: new Date().toISOString() }).eq("id", task.id);
-        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${until} (muted by the user)`);
-        postponed++;
+        if (await park(task, until, "muted by the user")) postponed++;
         continue;
       }
       // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.
@@ -6257,9 +6289,7 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
       );
       if (quietUntil) {
-        await sb.from("agent_tasks").update({ scheduled_for: quietUntil, updated_at: new Date().toISOString() }).eq("id", task.id);
-        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${quietUntil} (quiet hours)`);
-        postponed++;
+        if (await park(task, quietUntil, "quiet hours")) postponed++;
         continue;
       }
       const pace = pacingDecision(task.kind, (task.recurrence ?? "once") !== "once", await deliveredFor(task.user_id), Date.now());
@@ -6272,18 +6302,15 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         continue;
       }
       if (pace.action === "postpone") {
-        await sb.from("agent_tasks").update({ scheduled_for: pace.until, updated_at: new Date().toISOString() }).eq("id", task.id);
-        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${pace.until} (pacing)`);
-        postponed++;
+        if (await park(task, pace.until, "pacing")) postponed++;
         continue;
       }
-      // المنسّق ٣: سقف اليوم (اتنين) — الزيادة تستنى بكرة الصبح، وبالأهمية لأن الطابور متربّب.
+      // المنسّق ٣: سقف اليوم (اتنين) — الزيادة تاخد خانة بكرة من الصحيان، الأهم الأول.
       const cap = dailyCapDecision(task.kind, await deliveredFor(task.user_id), await accountTimeZone(sb, task.user_id), Date.now(),
-        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake));
+        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
+        await parkedFor(task.user_id));
       if (cap.action === "postpone") {
-        await sb.from("agent_tasks").update({ scheduled_for: cap.until, updated_at: new Date().toISOString() }).eq("id", task.id);
-        console.log(`[agent_tasks] ${task.kind} task ${task.id} postponed to ${cap.until} (daily cap)`);
-        postponed++;
+        if (await park(task, cap.until, "daily cap")) postponed++;
         continue;
       }
     }
