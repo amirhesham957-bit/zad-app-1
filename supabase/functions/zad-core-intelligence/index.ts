@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { budgetUsage, dailyCap, groundingPlan, KEY_REST_MS, keyRefused, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1291,14 +1291,16 @@ async function keyedSearchSnippets(query: string, maxResults: number): Promise<W
       const res = await fetch("https://api.tavily.com/search", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${tavily}` },
-        body: JSON.stringify({ query, max_results: maxResults, include_answer: true, search_depth: "basic" }),
+        body: JSON.stringify({ query, max_results: maxResults, include_answer: false, search_depth: "basic" }),
         signal: AbortSignal.timeout(12000),
       });
       if (res.ok) {
         const data = await res.json();
         const hits: WebHit[] = ((data?.results ?? []) as Array<{ title?: string; url?: string; content?: string }>)
           .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.content ?? "").slice(0, 500) }));
-        if (data?.answer) hits.unshift({ title: "ملخص البحث", url: hits[0]?.url ?? "https://tavily.com", snippet: String(data.answer).slice(0, 800) });
+        // Tavily's `answer` is its own model's summary, with no page or date behind it: on 24/10 it said
+        // «مانشستر سيتي 2023» for the last Club World Cup and the brain repeated it first. The pages go
+        // up as they are; the summary does not.
         lastWebSearchAttempts.push(`tavily:200 hits=${hits.length}`);
         if (hits.length > 0) return hits.slice(0, maxResults);
       } else {
@@ -1468,7 +1470,10 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
     ];
-  const ordered = withPaidGroundingFirst(sources, currentGroundingPlan()?.paid === true, live || asksLatest(query) || asksLatest(queryEn));
+  const ordered = encyclopediaFirstForLatest(
+    withPaidGroundingFirst(sources, currentGroundingPlan()?.paid === true, live || asksLatest(query) || asksLatest(queryEn)),
+    asksLatest(query) || asksLatest(queryEn),
+  );
   for (const [name, run] of ordered) {
     const raw = await run();
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
@@ -2416,7 +2421,8 @@ async function handle(req: Request): Promise<Response> {
         const country = typeof payload?.country === "string" ? payload.country.toUpperCase().slice(0, 2) : "";
         const qEn = typeof payload?.query_en === "string" ? payload.query_en.trim().slice(0, 200) : "";
         // v4 (٢٠٢٦-١٠-١١): ترتيب «آخر مرة» اتغير — نتايج v3 المحفوظة (٦ ساعات) كانت هتغطي عليه.
-        const cacheKey = `web_search:v4:${country}:${q}|${qEn}`;
+        // v5 (٢٠٢٦-١٠-٢٤): الموسوعة قبل Tavily في «آخر مرة»، وملخص Tavily اتشال — نتايج v4 فيها ملخصه.
+        const cacheKey = `web_search:v5:${country}:${q}|${qEn}`;
         const cached = await getCachedAiResponse(cacheKey, cacheTtlMs(q));
         if (cached) return jsonResponse({ ...cached, cached: true });
         const hits = await webSearchSnippets(q, 8, country || null, qEn || undefined);

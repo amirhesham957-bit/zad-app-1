@@ -1,6 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
   budgetUsage,
+  encyclopediaFirstForLatest,
   withPaidGroundingFirst,
   dailyCap,
   DEFAULT_DAILY_CAP,
@@ -119,4 +120,14 @@ Deno.test("a key the project refuses stops the walk; a model's own refusal does 
   assertEquals(keyRefused(429, "RESOURCE_EXHAUSTED"), false);
   assertEquals(keyRefused(400, '{"error":{"message":"thinkingConfig is not supported"}}'), false);
   assertEquals(keyRefused(503, ""), false);
+});
+
+// 2026-10-24: Tavily's first answer for «آخر مرة» was the 2023 winner; the encyclopedia ranks the newest edition.
+Deno.test("«آخر مرة» asks the encyclopedia before the keyed search; other questions keep their order", () => {
+  const chain: Array<[string, number]> = [["gemini_google_search", 0], ["search_api", 1], ["wikipedia", 2], ["bing_news", 3]];
+  assertEquals(encyclopediaFirstForLatest(chain, true).map(([n]) => n), ["gemini_google_search", "wikipedia", "search_api", "bing_news"]);
+  assertEquals(encyclopediaFirstForLatest(chain, false), chain);
+  // A chain where the encyclopedia already leads, or is absent (a live question), is left alone.
+  const live: Array<[string, number]> = [["bing_news", 0], ["search_api", 1], ["google_news", 2]];
+  assertEquals(encyclopediaFirstForLatest(live, true), live);
 });
