@@ -126,6 +126,23 @@ export function withPaidGroundingFirst<T extends [string, unknown]>(sources: T[]
 }
 
 /**
+ * «آخر مرة» goes to the encyclopedia before the keyed search engine (2026-10-24). The day Tavily's key
+ * landed, «مين كسب كاس العالم للأندية آخر مرة؟» stopped answering Chelsea (2025): Tavily ran first and
+ * its pages were the Arabic ones that still name the 2023 winner, while `wikipedia` — which ranks the
+ * newest edition first and adds its English twin — never ran because Tavily had already answered.
+ * Other questions keep their order.
+ */
+export function encyclopediaFirstForLatest<T extends [string, unknown]>(sources: T[], latest: boolean): T[] {
+  if (!latest) return sources;
+  const wiki = sources.findIndex(([name]) => name === "wikipedia");
+  const keyed = sources.findIndex(([name]) => name === "search_api");
+  if (wiki < 0 || keyed < 0 || wiki < keyed) return sources;
+  const out = sources.filter(([name]) => name !== "wikipedia");
+  out.splice(out.findIndex(([name]) => name === "search_api"), 0, sources[wiki]);
+  return out;
+}
+
+/**
  * A refusal about the key or its Google Cloud project, not about the model (2026-10-18): from
  * 17:38 that day every paid call answered 403 «Gemini API has not been used in project … or it
  * is disabled». Every model on that key answers the same, so walking the four models only spent
