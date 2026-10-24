@@ -211,6 +211,30 @@ abstract class ZadL10n {
   /// **'تم إرسال الرابط بنجاح!'**
   String get authResetSent;
 
+  /// No description provided for @authNewPasswordTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة سر جديدة'**
+  String get authNewPasswordTitle;
+
+  /// No description provided for @authNewPasswordBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كلمة السر الجديدة لحسابك.'**
+  String get authNewPasswordBody;
+
+  /// No description provided for @authNewPasswordSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get authNewPasswordSave;
+
+  /// No description provided for @authNewPasswordDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتغيرت كلمة السر.'**
+  String get authNewPasswordDone;
+
   /// No description provided for @commonClose.
   ///
   /// In ar, this message translates to:

@@ -222,6 +222,31 @@ void main() {
     expect(find.text('تم إرسال الرابط بنجاح!'), findsOneWidget);
   });
 
+  // ZAD_PLAN ٠.١٠: the dialog used to swallow any failure, so a reset that
+  // never left the phone looked like one that did.
+  testWidgets('a refused reset says why instead of looking sent', (
+    tester,
+  ) async {
+    gateway.failWith = const AuthFailure(AuthFailureKind.rateLimited);
+    await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('نسيت كلمة المرور؟'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('نسيت كلمة المرور؟'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'البريد الإلكتروني').last,
+      'amir@example.com',
+    );
+    await tester.tap(find.text('إرسال'));
+    await tester.pumpAndSettle();
+    expect(find.text('تم إرسال الرابط بنجاح!'), findsNothing);
+    expect(
+      find.text('جرّبت مرات كتير في وقت قصير. استنى شوية وحاول تاني.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('the password can be revealed', (tester) async {
     await pumpLogin(tester);
     await tester.pumpAndSettle();

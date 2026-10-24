@@ -21,6 +21,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/terms_content.dart';
 import 'package:zad/shared/auth/application/auth_controller.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
+import 'package:zad/shared/auth/domain/auth_failure.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/market/presentation/market_picker_grid.dart';
 
@@ -299,6 +300,7 @@ class _ResetDialog extends ConsumerStatefulWidget {
 class _ResetDialogState extends ConsumerState<_ResetDialog> {
   final TextEditingController _email = TextEditingController();
   bool _sent = false;
+  AuthFailure? _failure;
 
   @override
   void dispose() {
@@ -326,6 +328,13 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
                 border: const OutlineInputBorder(),
               ),
             ),
+            if (_failure case final failure?) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                failure.localized(context.l10n),
+                style: TextStyle(color: scheme.error),
+              ),
+            ],
             if (_sent) ...<Widget>[
               const SizedBox(height: 8),
               Text(
@@ -350,9 +359,21 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
               await ref
                   .read(authGatewayProvider)
                   .sendPasswordReset(_email.text.trim());
-              if (mounted) setState(() => _sent = true);
-            } on Object {
-              // Kotlin shows the error on the screen behind; nothing here.
+              if (mounted) {
+                setState(() {
+                  _sent = true;
+                  _failure = null;
+                });
+              }
+            } on AuthFailure catch (failure) {
+              // Said here: swallowing it left the customer waiting for an
+              // e-mail that was never sent (ZAD_PLAN ٠.١٠).
+              if (mounted) {
+                setState(() {
+                  _sent = false;
+                  _failure = failure;
+                });
+              }
             }
           },
           child: Text(context.l10n.commonSend),

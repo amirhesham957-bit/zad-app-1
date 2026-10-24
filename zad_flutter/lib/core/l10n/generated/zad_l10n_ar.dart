@@ -69,6 +69,18 @@ class ZadL10nAr extends ZadL10n {
   String get authResetSent => 'تم إرسال الرابط بنجاح!';
 
   @override
+  String get authNewPasswordTitle => 'كلمة سر جديدة';
+
+  @override
+  String get authNewPasswordBody => 'اكتب كلمة السر الجديدة لحسابك.';
+
+  @override
+  String get authNewPasswordSave => 'احفظ';
+
+  @override
+  String get authNewPasswordDone => 'اتغيرت كلمة السر.';
+
+  @override
   String get commonClose => 'إغلاق';
 
   @override

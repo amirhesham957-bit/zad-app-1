@@ -69,6 +69,18 @@ class ZadL10nEn extends ZadL10n {
   String get authResetSent => 'Link sent!';
 
   @override
+  String get authNewPasswordTitle => 'New password';
+
+  @override
+  String get authNewPasswordBody => 'Type the new password for your account.';
+
+  @override
+  String get authNewPasswordSave => 'Save';
+
+  @override
+  String get authNewPasswordDone => 'Your password was changed.';
+
+  @override
   String get commonClose => 'Close';
 
   @override
