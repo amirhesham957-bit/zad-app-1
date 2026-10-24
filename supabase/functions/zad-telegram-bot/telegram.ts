@@ -684,6 +684,33 @@ export function nightMessage(closeDay: string, questions: string | null): string
   return questions ? `${closeDay}\n\n${questions}` : closeDay;
 }
 
+// ── «ده المرتب؟» (20261025001500، ZAD_PLAN ٢.٤) ─────────────────────────────
+// "sal:" + uuid(36) + ":" + حرف = ٤٢ بايت.
+
+export function salaryKeyboard(momentId: string): InlineKeyboardButton[][] {
+  return [[
+    { text: "✅ أيوه، ابدأ الدورة من النهارده", callback_data: `sal:${momentId}:y` },
+    { text: "لأ، مش المرتب", callback_data: `sal:${momentId}:n` },
+  ]];
+}
+
+export function parseSalaryCallback(data: string): { momentId: string; yes: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "sal" || (parts[2] !== "y" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { momentId: parts[1], yes: parts[2] === "y" };
+}
+
+/** الرد بعد zad_salary_cycle_service. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function salaryReply(result: { ok?: boolean; already?: boolean; answer?: string; day?: number } | null): string {
+  if (!result) return "معلش، ماقدرتش أغيّر الدورة دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) return "ماقدرتش ألاقي السؤال ده — غيّر يوم القبض من «ملفي» لو حابب.";
+  if (result.answer === "yes") {
+    return result.already ? `الدورة بتبدأ يوم ${result.day} بالفعل ✅` : `تمام ✅ الدورة بقت بتبدأ يوم ${result.day}، والميزانية بتتحسب من النهارده.`;
+  }
+  return "تمام، سايب الدورة زي ما هي.";
+}
+
 /** "cd:<uuid>:o" (تمام) / "cd:<uuid>:c" (كاش) / "cd:<uuid>:m" (ناقص) */
 export function parseCloseDayCallback(data: string): { momentId: string; outcome: CloseDayOutcome } | null {
   const parts = data.split(":");

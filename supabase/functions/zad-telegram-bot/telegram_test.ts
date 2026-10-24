@@ -497,3 +497,23 @@ Deno.test("the day-close carries tonight's stock questions in the same message",
   assert(rows.flat().some((b) => b.callback_data?.startsWith(`ck:${id}:`)));
   for (const b of rows.flat()) assert(new TextEncoder().encode(b.callback_data ?? "").length <= 64, b.callback_data);
 });
+
+// ── «ده المرتب؟» (ZAD_PLAN ٢.٤) ──
+import { parseSalaryCallback, salaryKeyboard, salaryReply } from "./telegram.ts";
+
+Deno.test("salary buttons round-trip and fit Telegram's 64 bytes", () => {
+  const id = "11111111-2222-3333-4444-555555555555";
+  const buttons = salaryKeyboard(id).flat();
+  assertEquals(buttons.map((b) => parseSalaryCallback(b.callback_data!)), [{ momentId: id, yes: true }, { momentId: id, yes: false }]);
+  for (const b of buttons) assert(new TextEncoder().encode(b.callback_data!).length <= 64);
+  assertEquals(parseSalaryCallback("sal:not-a-uuid:y"), null);
+  assertEquals(parseSalaryCallback(`sal:${id}:x`), null);
+  assertEquals(parseSalaryCallback(`cd:${id}:o`), null);
+});
+
+Deno.test("salary reply says what happened, and a failed write says so", () => {
+  assertEquals(salaryReply({ ok: true, answer: "yes", day: 28 }), "تمام ✅ الدورة بقت بتبدأ يوم 28، والميزانية بتتحسب من النهارده.");
+  assertEquals(salaryReply({ ok: true, answer: "no", day: 28 }), "تمام، سايب الدورة زي ما هي.");
+  assert(salaryReply(null).includes("ماقدرتش"));
+  assert(salaryReply({ ok: false, reason: "not_found" } as never).includes("ملفي"));
+});

@@ -264,7 +264,12 @@ export async function pushToTelegram(
         ...(voice && speech ? { speech: speech.slice(0, 600) } : {}),
         ...(voice && emotion ? { emotion } : {}),
         // قفلة اليوم (20261019140000) بتاخد نفس المعرّف بأزرارها هي: [تمام كده] [صرفت كاش] [في حاجة ناقصة].
-        ...(doseMomentId ? (moment === "close_day" ? { close_day_moment_id: doseMomentId } : { dose_moment_id: doseMomentId }) : {}),
+        // و«ده المرتب؟» (20261025001500) بزرارين: [ابدأ الدورة من النهارده] [لأ، مش المرتب].
+        ...(doseMomentId
+          ? moment === "close_day" ? { close_day_moment_id: doseMomentId }
+          : moment === "salary_cycle" ? { salary_moment_id: doseMomentId }
+          : { dose_moment_id: doseMomentId }
+          : {}),
         ...(mapUrl ? { map_url: mapUrl } : {}),
         ...(amazonLinks?.length ? { amazon_links: amazonLinks } : {}),
       }),
