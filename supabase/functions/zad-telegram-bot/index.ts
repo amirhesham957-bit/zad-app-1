@@ -52,7 +52,7 @@ import {
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, DOSE_SNOOZE_MINUTES, type DoseAction,
-  closeDayKeyboard, closeDayReply, parseCloseDayCallback, nightMessage,
+  closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
   doseAlreadyReply,
 } from "./telegram.ts";
@@ -2057,6 +2057,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // «ده المرتب؟»: الدورة بتتنقل في الداتابيز الأول (الملكية من اللحظة جوه الـRPC)، والرد بعدين.
+  const salary = parseSalaryCallback(data);
+  if (salary) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_salary_cycle_service", {
+      p_user: userId, p_moment: salary.momentId, p_yes: salary.yes,
+    });
+    if (error) console.error("[salary_cycle] rpc failed:", error.message);
+    await ctx.reply(salaryReply(error ? null : result as Parameters<typeof salaryReply>[0]));
+    return;
+  }
+
   // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
   // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
   const amountWrongId = parseAmountWrongCallback(data);
@@ -2863,7 +2875,7 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, map_url, amazon_links } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, map_url, amazon_links } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
@@ -2871,6 +2883,8 @@ Deno.serve(async (req: Request) => {
         dose_moment_id?: string;
         // اختياري: «اقفل يومك» — معرّف اللحظة، بيتحوّل لأزرارها الـ٣.
         close_day_moment_id?: string;
+        // اختياري: «ده المرتب؟» — معرّف اللحظة، بيتحوّل لزرارين.
+        salary_moment_id?: string;
         // اختياري: رسالة محل — رابط خرايط المحل، بيبقى زرار فوق أزرار الرفض.
         map_url?: string;
         // اختياري: صنف ضروري خلص — لينكات أمازون، كل واحد زرار «🛒 … على أمازون».
@@ -2916,6 +2930,8 @@ Deno.serve(async (req: Request) => {
         ? doseKeyboard(dose_moment_id)
         : closeDay
         ? [...closeDayKeyboard(close_day_moment_id!), ...(nightQuestions?.rows ?? [])]
+        : salary_moment_id && /^[0-9a-fA-F-]{36}$/.test(salary_moment_id)
+        ? salaryKeyboard(salary_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...dismissRows]
         : undefined;

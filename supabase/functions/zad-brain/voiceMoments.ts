@@ -49,9 +49,9 @@ export interface ComposedMoment {
 }
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
-export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day"]);
+export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle"]);
 /** بتتقال بالقالب بس، من غير صياغة موديل. */
-export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day"]);
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle"]);
 
 /** «اقفل يومك» (20261019140000): رسالة الليل بالأزرار. */
 export const CLOSE_DAY_MOMENT = "close_day";
@@ -59,7 +59,10 @@ export const CLOSE_DAY_MOMENT = "close_day";
  * مكتوبة بس، بس بتروح تليجرام برضه — بأزرارها. باقي المكتوب بيفضل على الموبايل بس.
  * نفس القايمة في zad-telegram-bot (CLOSE_DAY_MOMENT) للأزرار.
  */
-export const TELEGRAM_TEXT_MOMENTS: ReadonlySet<string> = new Set([CLOSE_DAY_MOMENT]);
+export const TELEGRAM_TEXT_MOMENTS: ReadonlySet<string> = new Set([CLOSE_DAY_MOMENT, "salary_cycle"]);
+
+/** «ده المرتب؟» (20261025001500، ZAD_PLAN ٢.٤): دخل من البنك قريب من المعتاد ⇐ الدورة تبدأ من النهارده؟ */
+export const SALARY_CYCLE_MOMENT = "salary_cycle";
 
 /** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
 export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
@@ -649,6 +652,26 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         speech: `تصبح على خير${name ? ` يا ${name}` : ""}… نام كويس وارتاح، وأحلام سعيدة. ${reminder ? `${reminder}. ` : ""}أنا مستنياك الصبح.`,
       };
     }
+    case SALARY_CYCLE_MOMENT: {
+      const cur = str(facts.currency, 10);
+      const amount = Math.round(Number(facts.amount) || 0);
+      const day = Number(facts.day) || 0;
+      const payDay = Number(facts.pay_day) || 0;
+      const pantry = Array.isArray(facts.pantry) ? (facts.pantry as Array<{ name?: unknown; days?: unknown }>) : [];
+      const names = pantry.map((p) => str(p?.name, 30)).filter(Boolean).slice(0, 3);
+      const minDays = Math.min(...pantry.map((p) => Number(p?.days) || 0).filter((d) => d > 0));
+      const cycle = payDay > 0
+        ? `أبدأ دورة الصرف من النهارده (يوم ${day}) بدل يوم ${payDay}؟`
+        : `أبدأ دورة الصرف من النهارده (يوم ${day})؟`;
+      const stock = names.length > 0 && Number.isFinite(minDays)
+        ? `\nوعندك ${names.join(" و")} يكفوا ${minDays} يوم على الأقل، فركّز في الشرا على الطازة.`
+        : "";
+      return {
+        title: "💰 ده المرتب؟",
+        text: `نزلّك ${amount}${cur ? ` ${cur}` : ""}. لو ده المرتب، ${cycle}${stock}`,
+        speech: "",
+      };
+    }
     case CLOSE_DAY_MOMENT: {
       const cur = str(facts.currency, 10);
       const seen = Array.isArray(facts.seen) ? (facts.seen as Array<{ name?: unknown; amount?: unknown }>) : [];
@@ -829,6 +852,11 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
       p_viewer: row.user_id, p_owner: memberId, p_scope: "location",
     });
     return granted === true;
+  }
+  // الدورة اتنقلت لنفس اليوم من مكان تاني (ملفي، الشات) قبل ما السؤال يطلع = مفيش سؤال.
+  if (row.moment === SALARY_CYCLE_MOMENT) {
+    const { data: u } = await sb.from("zad_users").select("cycle_start_day").eq("id", row.user_id).maybeSingle();
+    return (u as { cycle_start_day?: number | null } | null)?.cycle_start_day !== Number(row.facts?.day);
   }
   // قفل يومه من التطبيق بعد ما اللحظة اتسجلت = مفيش سؤال.
   if (row.moment === CLOSE_DAY_MOMENT) {
@@ -1544,7 +1572,7 @@ export const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT
  * بتفتح الهدوء، وحرفياً كانت هتتمسح كل ليلة (الـ٤٥ اللي اتبعتوا كلهم جوه الشباك).
  * واللحظات اللي الموبايل نفسه طلبها، لأن العميل صاحي وبيعمل حاجة.
  */
-const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS]);
+const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS, SALARY_CYCLE_MOMENT]);
 
 export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstance";
 

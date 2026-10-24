@@ -445,3 +445,50 @@ Deno.test("close day: nothing seen today still asks about cash, and one thing re
   assertEquals(momentFallback("close_day", { seen_count: 1, seen: [{ name: "عيش", amount: 10 }], currency: "ج.م" }).text,
     "النهارده شفت حاجة واحدة: عيش 10 ج.م. فيه حاجة كاش؟");
 });
+
+// ── «ده المرتب؟» (20261025001500، ZAD_PLAN ٢.٤) ─────────────────────────────
+const salaryRow = (cycleStartDay: number | null) => ({
+  zad_voice_moments: [{ id: "00000000-0000-4000-8000-0000000005a1", user_id: "u1", moment: "salary_cycle", status: "pending", attempts: 0,
+    created_at: "2026-10-28T09:00:00Z",
+    facts: { txn_id: "t1", amount: 12000, currency: "ج.م", day: 28, pay_day: 25,
+      pantry: [{ name: "رز", days: 14 }, { name: "زيت", days: 10 }] } }],
+  zad_users: [{ id: "u1", country: "EG", name: "أمير", cycle_start_day: cycleStartDay }],
+});
+const atNoon = { now: () => Date.parse("2026-10-28T09:05:00Z"), timeZoneOf: () => Promise.resolve("Africa/Cairo") };
+
+Deno.test("salary: a template asking to move the cycle, with what the pantry still covers, and Telegram carrying the id for its buttons", async () => {
+  const { sb } = fakeSb(salaryRow(25));
+  const calls: string[] = [];
+  let composed = 0;
+  const res = await processVoiceMoments(sb, {
+    ...atNoon,
+    compose: () => { composed++; return Promise.resolve("{}"); },
+    pushDevice: (_u, _t, body) => { calls.push(`device:${body}`); return Promise.resolve("sent"); },
+    pushTelegram: (_u, _t, _b, voice, moment, _s, _e, momentId) => { calls.push(`tg:${voice}:${moment}:${momentId}`); return Promise.resolve("delivered"); },
+  });
+  assertEquals(res, { sent: 1, skipped: 0, failed: 0 });
+  assertEquals(composed, 0);
+  assertEquals(calls, [
+    "device:نزلّك 12000 ج.م. لو ده المرتب، أبدأ دورة الصرف من النهارده (يوم 28) بدل يوم 25؟\nوعندك رز وزيت يكفوا 10 يوم على الأقل، فركّز في الشرا على الطازة.",
+    "tg:false:salary_cycle:00000000-0000-4000-8000-0000000005a1",
+  ]);
+});
+
+Deno.test("salary: a cycle already moved to that day is not asked about", async () => {
+  const { sb, updates } = fakeSb(salaryRow(28));
+  let sent = 0;
+  const res = await processVoiceMoments(sb, {
+    ...atNoon,
+    compose: () => Promise.resolve("{}"),
+    pushDevice: () => { sent++; return Promise.resolve("sent"); },
+    pushTelegram: () => { sent++; return Promise.resolve("delivered"); },
+  });
+  assertEquals(res.skipped, 1);
+  assertEquals(sent, 0);
+  assertEquals(updates[0].values.error, "no longer relevant");
+});
+
+Deno.test("salary: no pay day yet and an empty pantry still reads well", () => {
+  assertEquals(momentFallback("salary_cycle", { amount: 9000.4, currency: "ر.س", day: 27, pay_day: null, pantry: [] }).text,
+    "نزلّك 9000 ر.س. لو ده المرتب، أبدأ دورة الصرف من النهارده (يوم 27)؟");
+});
