@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/auth/presentation/password_recovery_listener.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Whether the app follows the phone's dark mode.
@@ -107,7 +108,9 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const ZadAuthGate(),
+      // The reset link's new-password dialog sits over whichever screen the
+      // gate shows (ZAD_PLAN ٠.١٠).
+      home: const PasswordRecoveryListener(child: ZadAuthGate()),
     );
   }
 }

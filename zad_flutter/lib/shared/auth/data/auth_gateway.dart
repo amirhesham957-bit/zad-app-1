@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/auth/data/password_recovery.dart';
 import 'package:zad/shared/auth/domain/auth_failure.dart';
 
 /// What a successful sign-up left behind.
@@ -119,16 +120,18 @@ class SupabaseAuthGateway implements AuthGateway {
         : SignUpOutcome.signedIn;
   }
 
-  /// No `redirectTo`, matching the Kotlin client.
-  ///
-  /// A deep link would be better, and it is not invented here: the link has to
-  /// be registered in the project's "Redirect URLs" and in the Android
-  /// manifest's intent filter, and a `redirectTo` the dashboard does not allow
-  /// is rejected outright. Adding it is its own piece of work, in both places
-  /// at once.
+  /// The link opens the app ([kPasswordResetRedirect]), where
+  /// `password_recovery.dart` asks for the new password. Without a
+  /// `redirectTo` it opened the project's Site URL and the reset went nowhere
+  /// (2026-10-24). The redirect is listed in the manifest's intent filter and
+  /// must be in the project's Redirect URLs too.
   @override
-  Future<void> sendPasswordReset(String email) =>
-      _guard(() => _client.auth.resetPasswordForEmail(email));
+  Future<void> sendPasswordReset(String email) => _guard(
+    () => _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: kPasswordResetRedirect,
+    ),
+  );
 
   /// Ends the session.
   ///

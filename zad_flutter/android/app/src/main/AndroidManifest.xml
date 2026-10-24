@@ -98,6 +98,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- «نسيت كلمة السر» (ZAD_PLAN ٠.١٠): the reset e-mail's link opens the
+                 app here; supabase_flutter turns it into a session and the app
+                 asks for the new password. Same value as kPasswordResetRedirect. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.aistudio.zad.wrtqvx" android:host="reset-password"/>
+            </intent-filter>
             <!-- «شارك لزاد» (ZAD_PLAN ٣.٣): a bank message, a receipt photo or a
                  statement PDF/CSV from any app. MainActivity.readShare copies it;
                  nothing is recorded before the customer reviews it. -->
