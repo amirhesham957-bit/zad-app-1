@@ -193,6 +193,61 @@ Deno.test("على Groq بيتبعت البرومبت المختصر، وجيمي
   }
 });
 
+// القرار المصنّف (ZAD_PLAN ٣.١٠): جيميناي بيرد على المخطط من غير أدوات، وجروك على الموديل الأصغر بـJSON.
+const DECISION = {
+  model: "model-a",
+  system: "classify, reply with JSON",
+  tools: [],
+  history: [{ role: "user" as const, text: "تم خصم 50 ج.م" }],
+  maxTokens: 300,
+  responseSchema: { type: "object", properties: { kind: { type: "string", enum: ["debit", "credit"] } }, required: ["kind"] },
+  groqModel: "openai/gpt-oss-20b",
+};
+
+Deno.test("a classified decision asks Gemini for JSON on the schema, with no tools and no temperature", async () => {
+  const s = stubFetch(() => geminiOk());
+  try {
+    await callModel(DECISION);
+    const body = s.calls[0].body;
+    assertEquals(body.tools, undefined);
+    assertEquals(body.generationConfig.responseMimeType, "application/json");
+    assertEquals(body.generationConfig.responseSchema.properties.kind.enum, ["debit", "credit"]);
+    assertEquals(body.generationConfig.temperature, 0);
+    assertEquals(body.generationConfig.thinkingConfig, { thinkingBudget: 0 });
+    // the chat path is untouched: tools stay, no schema
+    await callModel({ ...BASE });
+    assertEquals(s.calls[1].body.generationConfig.responseSchema, undefined);
+    assertEquals(s.calls[1].body.tools[0].functionDeclarations.length, 1);
+  } finally {
+    s.restore();
+  }
+});
+
+Deno.test("Gemini down: a classified decision goes to the small Groq model in JSON mode with room to answer", async () => {
+  const s = stubFetch((url) => {
+    if (url.includes("api.groq.com")) {
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: '{"kind":"debit"}' } }], usage: { prompt_tokens: 3, completion_tokens: 1 } }),
+        { status: 200 },
+      );
+    }
+    return overloaded503();
+  });
+  try {
+    const reply = await callModel(DECISION);
+    assertEquals(reply.text, '{"kind":"debit"}');
+    assertEquals(reply.model, "openai/gpt-oss-20b");
+    const groq = s.calls.find((c) => c.url.includes("api.groq.com"))!.body;
+    assertEquals(groq.model, "openai/gpt-oss-20b");
+    assertEquals(groq.response_format, { type: "json_object" });
+    assertEquals(groq.reasoning_effort, "low");
+    assertEquals(groq.tools, undefined);
+    assert(groq.max_tokens >= 500, `reasoning eats max_tokens; got ${groq.max_tokens}`);
+  } finally {
+    s.restore();
+  }
+});
+
 Deno.test("التفكير مقفول افتراضياً ومفتوح لما يتطلب صراحة", async () => {
   const s = stubFetch(() => geminiOk());
   try {
