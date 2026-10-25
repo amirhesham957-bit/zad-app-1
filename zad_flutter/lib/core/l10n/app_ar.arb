@@ -1474,5 +1474,41 @@
   "heldKindNote": "ملاحظة من زاد",
   "@heldKindNote": {
     "description": "Held task of another kind."
+  },
+  "exampleCityEg": "مثل: القاهرة، الجيزة",
+  "@exampleCityEg": {
+    "description": "Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "exampleCitySa": "مثل: الرياض، جدة",
+  "@exampleCitySa": {
+    "description": "Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "exampleCityOther": "مثل: اسم مدينتك",
+  "@exampleCityOther": {
+    "description": "Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "exampleStoreEg": "مثل: كارفور، سبينيز",
+  "@exampleStoreEg": {
+    "description": "Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "exampleStoreSa": "مثل: بنده، العثيم",
+  "@exampleStoreSa": {
+    "description": "Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "exampleStoreOther": "مثل: اسم السوبر ماركت",
+  "@exampleStoreOther": {
+    "description": "Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13)."
+  },
+  "walletBankEg": "محفظة / إنستاباي",
+  "@walletBankEg": {
+    "description": "Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13)."
+  },
+  "walletBankSa": "محفظة / STC Pay",
+  "@walletBankSa": {
+    "description": "Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13)."
+  },
+  "walletBankOther": "محفظة / تحويل",
+  "@walletBankOther": {
+    "description": "Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13)."
   }
 }

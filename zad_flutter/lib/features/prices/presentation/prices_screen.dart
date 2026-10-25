@@ -20,7 +20,10 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/domain/market_examples.dart';
 import 'package:zad/shared/prices/domain/prices.dart';
 
 /// Opens the prices screen.
@@ -314,7 +317,7 @@ class _PriceReportFormState extends ConsumerState<PriceReportForm> {
         field(
           'المنطقة',
           _location,
-          'مثل: القاهرة، الجيزة',
+          cityExample(context.l10n, ref.watch(accountCountryProvider)),
           error: _problem == ReportProblem.cityTooLong
               ? 'الاسم طويل أوي'
               : null,
@@ -323,7 +326,7 @@ class _PriceReportFormState extends ConsumerState<PriceReportForm> {
         field(
           'اسم المتجر (اختياري)',
           _store,
-          'مثل: كارفور، سبينيز',
+          storeExample(context.l10n, ref.watch(accountCountryProvider)),
           error: _problem == ReportProblem.storeTooLong
               ? 'الاسم طويل أوي'
               : null,

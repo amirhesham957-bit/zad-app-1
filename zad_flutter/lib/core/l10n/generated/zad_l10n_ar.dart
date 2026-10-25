@@ -2137,4 +2137,31 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get heldKindNote => 'ملاحظة من زاد';
+
+  @override
+  String get exampleCityEg => 'مثل: القاهرة، الجيزة';
+
+  @override
+  String get exampleCitySa => 'مثل: الرياض، جدة';
+
+  @override
+  String get exampleCityOther => 'مثل: اسم مدينتك';
+
+  @override
+  String get exampleStoreEg => 'مثل: كارفور، سبينيز';
+
+  @override
+  String get exampleStoreSa => 'مثل: بنده، العثيم';
+
+  @override
+  String get exampleStoreOther => 'مثل: اسم السوبر ماركت';
+
+  @override
+  String get walletBankEg => 'محفظة / إنستاباي';
+
+  @override
+  String get walletBankSa => 'محفظة / STC Pay';
+
+  @override
+  String get walletBankOther => 'محفظة / تحويل';
 }
