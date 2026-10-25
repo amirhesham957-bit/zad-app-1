@@ -189,3 +189,8 @@ Deno.test("the privacy line still asks for the merchant or person — without it
   const { system } = gatePrompt({ packageName: "p", title: "t", text: "x", knownSender: null });
   assertStringIncludes(system, "always fill counterparty");
 });
+
+Deno.test("every field of the gate's answer is required (null when absent), so the model cannot skip the merchant", () => {
+  const schema = GATE_RESPONSE_SCHEMA as { properties: Record<string, unknown>; required: string[] };
+  assertEquals([...schema.required].sort(), Object.keys(schema.properties).sort());
+});
