@@ -93,3 +93,15 @@ Deno.test("morning: the deal is the greeting's last line — and not while the b
   assert(!momentFallback("morning_greeting", {}).text.includes("عرض"));
   dealSource.search = () => Promise.resolve(null);
 });
+
+// ZAD_PLAN 3.14: abroad, the morning deal is from the country they are in.
+import { dealCountry } from "./tasteDeals.ts";
+
+Deno.test("the morning deal searches where the customer is now", () => {
+  const now = Date.parse("2026-10-25T10:00:00Z");
+  const since = new Date(now - 3 * 86_400_000).toISOString();
+  assertEquals(dealCountry({ country: "EG", travel_country: "SA", travel_since: since }, now), "SA");
+  assertEquals(dealCountry({ country: "SA", travel_country: null, travel_since: null }, now), "SA");
+  assertEquals(dealCountry({ country: "sa", travel_country: "SA", travel_since: since }, now), "SA");
+  assertEquals(dealCountry(null, now), "");
+});

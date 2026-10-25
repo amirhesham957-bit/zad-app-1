@@ -10,7 +10,7 @@
 // مفيش مصدر للعروض بمفتاح؛ البحث هو اللي في zad-core-intelligence (جوجل عبر جيميناي، وإلا بحث ويب عادي).
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { countryNameAr, itemKey } from "./shared.ts";
+import { countryNameAr, itemKey, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 
@@ -102,6 +102,14 @@ export function pickDeal(raw: unknown, items: readonly string[], favorites: read
   return found[0] ?? null;
 }
 
+/** بلد العرض: البلد اللي العميل فيه دلوقتي (travelContext)، وإلا بلد الحساب. «» لو مش معروف. */
+export function dealCountry(
+  row: { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null | undefined,
+  nowMs: number,
+): string {
+  return travelContext(row, nowMs)?.in ?? String(row?.country ?? "").trim().toUpperCase();
+}
+
 /** مفاتيح العروض اللي اتقالت (facts.taste_deal.key في تحيات الصبح). */
 export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | undefined): Set<string> {
   const keys = new Set<string>();
@@ -119,7 +127,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
-      sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("merchant_name").eq("user_id", userId).eq("txn_kind", "expense")
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
       sb.from("zad_voice_moments").select("facts").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
@@ -134,7 +142,8 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       ((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
       Array.isArray(interests) ? interests.map(String) : [],
     );
-    const country = String((user as { country?: string | null } | null)?.country ?? "").toUpperCase();
+    // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
+    const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
     return pickDeal(
