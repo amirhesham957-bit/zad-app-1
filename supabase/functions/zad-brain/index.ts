@@ -9238,6 +9238,8 @@ async function handleRequest(req: Request): Promise<Response> {
     const systemPrompt = buildSystemPrompt(snap);
 
     let inputTokens = 0, outputTokens = 0;
+    // ٣.٨: الموديلات اللي ردّت، عشان التكلفة تتسعّر (نفس prompt_sizes.calls.models بتاع الشات).
+    const answeredBy: string[] = [];
     let modelOwnMessage = ""; // كلام الموديل الحر — يتصدق بس لو صفر actions اتحاولت خالص
     const executedSummaries: string[] = [];
     const allTurnRejections: string[] = [];
@@ -9276,6 +9278,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }
 
       inputTokens += reply.usage.inTok;
+      if (reply.model) answeredBy.push(reply.model);
       outputTokens += reply.usage.outTok;
       if (reply.text) modelOwnMessage = reply.text;
 
@@ -9340,6 +9343,7 @@ async function handleRequest(req: Request): Promise<Response> {
       try {
         const forced = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: rememberOnly, history, maxTokens: 400 });
         inputTokens += forced.usage.inTok;
+        if (forced.model) answeredBy.push(forced.model);
         outputTokens += forced.usage.outTok;
         for (const call of forced.toolCalls.filter((c) => c.name === "remember")) {
           const result = await runTool(sb, userId, call.name, call.input, snap, ctx, scope);
@@ -9359,6 +9363,7 @@ async function handleRequest(req: Request): Promise<Response> {
       try {
         const forced = await callModel({ model: MODEL_ROUTINE, system: systemPrompt, tools: rememberOnly, history, maxTokens: 400 });
         inputTokens += forced.usage.inTok;
+        if (forced.model) answeredBy.push(forced.model);
         outputTokens += forced.usage.outTok;
         const rememberCalls = forced.toolCalls.filter((c) => c.name === "remember");
         for (const call of rememberCalls) {
@@ -9390,6 +9395,7 @@ async function handleRequest(req: Request): Promise<Response> {
       status: "success", finished_at: new Date().toISOString(),
       input_tokens: inputTokens, output_tokens: outputTokens,
       mutations: ctx.mutations, rejections: ctx.rejections,
+      prompt_sizes: { calls: { models: answeredBy } },
     }).eq("id", runId);
 
     return new Response(JSON.stringify({
