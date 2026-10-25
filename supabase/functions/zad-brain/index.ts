@@ -8280,20 +8280,40 @@ async function handleRequest(req: Request): Promise<Response> {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
       }
+      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      // الليلي (ZAD_PLAN ٣.٣، كرون eval-nightly): الليلة ليها صف في zad_eval_nights بيقول الدفعة الجاية،
+      // فكل نداء بيكمّل من مكان اللي قبله. من غير مفتاح التقييم الليلة بتتقفل بسببها والكرون بيبطّل.
+      const nightly = body.nightly === true;
+      const today = new Date().toISOString().slice(0, 10);
+      let night: { run_id: string; next_offset: number | null } | null = null;
+      if (nightly) {
+        const { data: row } = await sbEval.from("zad_eval_nights").select("run_id,next_offset,finished_at").eq("day", today).maybeSingle();
+        if ((row as { finished_at?: string | null } | null)?.finished_at) {
+          return new Response(JSON.stringify({ ok: true, finished: true }), { headers: CORS_HEADERS });
+        }
+        night = row
+          ? { run_id: (row as { run_id: string }).run_id, next_offset: (row as { next_offset: number | null }).next_offset }
+          : { run_id: crypto.randomUUID(), next_offset: 0 };
+        if (!row) await sbEval.from("zad_eval_nights").insert({ day: today, run_id: night.run_id, next_offset: 0, total: EVAL_CASES.length });
+      }
       if (!hasEvalKey()) {
+        if (nightly) {
+          await sbEval.from("zad_eval_nights").update({ finished_at: new Date().toISOString(), note: "no_eval_key" }).eq("day", today);
+        }
         return new Response(JSON.stringify({ error: "no_eval_key", note: "set ZAD_EVAL_KEY (a billed key, not one of the pool)" }), { status: 409, headers: CORS_HEADERS });
       }
-      const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      const runId = typeof body.run_id === "string" && /^[0-9a-f-]{36}$/.test(body.run_id) ? body.run_id : crypto.randomUUID();
-      const offset = Math.max(0, Number(body.offset) || 0);
-      const limit = Math.min(20, Math.max(1, Number(body.limit) || 8));
+      const runId = night?.run_id ?? (typeof body.run_id === "string" && /^[0-9a-f-]{36}$/.test(body.run_id) ? body.run_id : crypto.randomUUID());
+      const offset = night ? Math.max(0, night.next_offset ?? 0) : Math.max(0, Number(body.offset) || 0);
+      const limit = Math.min(20, Math.max(1, Number(body.limit) || (nightly ? 10 : 8)));
       const childId = (Deno.env.get("ZAD_EVAL_CHILD_USER_ID") ?? "").trim();
       const batch = EVAL_CASES.slice(offset, offset + limit);
       const started = Date.now();
       const results: Array<Record<string, unknown>> = [];
       const wipe = async (uid: string, since: string) => {
         await sbEval.from("zad_chat_turns").delete().eq("user_id", uid);
-        for (const t of ["zad_appointments", "zad_shopping_list", "zad_pharmacy_items"]) {
+        // اللي الحالات بتكتبه في حساب الاختبار بيتمسح بعدها (من وقت الحالة بس).
+        for (const t of ["zad_appointments", "zad_shopping_list", "zad_pharmacy_items", "zad_inventory", "zad_subscriptions",
+          "zad_place_reminders", "zad_debts", "zad_obligations", "zad_memory", "agent_tasks"]) {
           await sbEval.from(t).delete().eq("user_id", uid).gte("created_at", since);
         }
       };
@@ -8341,7 +8361,13 @@ async function handleRequest(req: Request): Promise<Response> {
         });
         if (saveErr) console.error("[eval_run] save failed:", saveErr.message);
       }
-      const next = offset + batch.length < EVAL_CASES.length ? offset + batch.length : null;
+      // اللي اتخطّى عشان وقت الدفعة خلص بيبدأ بيه النداء الجاي، مايضيعش.
+      const cut = results.findIndex((r) => r.failure === "skipped: batch time");
+      const consumed = cut === -1 ? batch.length : Math.max(1, cut);
+      const next = offset + consumed < EVAL_CASES.length ? offset + consumed : null;
+      if (nightly) {
+        await sbEval.from("zad_eval_nights").update({ next_offset: next, ...(next === null ? { finished_at: new Date().toISOString() } : {}) }).eq("day", today);
+      }
       return new Response(JSON.stringify({ run_id: runId, offset, next, total: EVAL_CASES.length, results }), { headers: CORS_HEADERS });
     }
 

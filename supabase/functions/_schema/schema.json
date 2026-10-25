@@ -1375,5 +1375,14 @@
     "state",
     "user_id",
     "version"
+  ],
+  "zad_eval_nights": [
+    "day",
+    "finished_at",
+    "next_offset",
+    "note",
+    "run_id",
+    "started_at",
+    "total"
   ]
 }

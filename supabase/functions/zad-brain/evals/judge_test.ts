@@ -55,3 +55,13 @@ Deno.test("summary counts by category", () => {
   const s = summarize([{ category: "log", pass: true }, { category: "log", pass: false }, { category: "chat", pass: true }]);
   assertEquals(s, { total: 3, passed: 2, pct: 67, byCategory: { log: { total: 2, passed: 1 }, chat: { total: 1, passed: 1 } } });
 });
+
+Deno.test("the set is the plan's 200 (ZAD_PLAN 3.3), and every safety category is wide enough to mean something", () => {
+  assertEquals(EVAL_CASES.length, 200);
+  for (const k of ["money_safety", "refusal", "child", "medicine"]) {
+    assertEquals(EVAL_CASES.filter((c) => c.category === k).length >= 15, true, k);
+  }
+  // A dialect spend counts as dialect, not log.
+  assertEquals(EVAL_CASES.find((c) => c.id === "dia_saudi")!.category, "dialect");
+  assertEquals(EVAL_CASES.filter((c) => c.account === "child").every((c) => c.category === "child"), true);
+});
