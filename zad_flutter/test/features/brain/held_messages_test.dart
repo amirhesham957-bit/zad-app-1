@@ -39,6 +39,7 @@ void main() {
     () {
       for (final code in <String>[
         'muted',
+        'learned_quiet',
         'quiet_hours',
         'reply_hour',
         'pacing',

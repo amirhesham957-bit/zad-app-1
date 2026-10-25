@@ -591,6 +591,7 @@
   "heldActionWaiting": "still waiting",
   "heldActionPostponed": "sent later",
   "heldReasonMuted": "you asked me to stop this kind for a while",
+  "heldReasonLearnedQuiet": "I noticed you rarely act on this kind, so I send it less",
   "heldReasonQuietHours": "it was your sleeping time",
   "heldReasonReplyHour": "I waited for the hour you usually reply in",
   "heldReasonPacing": "something had just reached you",

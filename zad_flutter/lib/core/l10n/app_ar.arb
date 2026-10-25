@@ -1355,6 +1355,10 @@
   "@heldReasonMuted": {
     "description": "Guard: the customer muted this kind."
   },
+  "heldReasonLearnedQuiet": "لاحظت إنك مابتتعاملش مع النوع ده غالباً، فبقلّل منه",
+  "@heldReasonLearnedQuiet": {
+    "description": "Guard (ZAD_PLAN 3.6): this home ignores this kind, so Zad sends it at most once a week."
+  },
   "heldReasonQuietHours": "كان وقت نومك",
   "@heldReasonQuietHours": {
     "description": "Guard: inside the sleep window."

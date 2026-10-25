@@ -2048,6 +2048,10 @@ class ZadL10nAr extends ZadL10n {
   String get heldReasonMuted => 'إنت قلتلي أبطّل النوع ده لفترة';
 
   @override
+  String get heldReasonLearnedQuiet =>
+      'لاحظت إنك مابتتعاملش مع النوع ده غالباً، فبقلّل منه';
+
+  @override
   String get heldReasonQuietHours => 'كان وقت نومك';
 
   @override

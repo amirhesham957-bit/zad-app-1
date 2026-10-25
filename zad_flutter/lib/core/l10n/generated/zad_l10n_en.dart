@@ -2098,6 +2098,10 @@ class ZadL10nEn extends ZadL10n {
   String get heldReasonMuted => 'you asked me to stop this kind for a while';
 
   @override
+  String get heldReasonLearnedQuiet =>
+      'I noticed you rarely act on this kind, so I send it less';
+
+  @override
   String get heldReasonQuietHours => 'it was your sleeping time';
 
   @override

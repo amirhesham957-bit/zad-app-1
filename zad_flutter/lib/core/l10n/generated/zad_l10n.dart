@@ -3643,6 +3643,12 @@ abstract class ZadL10n {
   /// **'إنت قلتلي أبطّل النوع ده لفترة'**
   String get heldReasonMuted;
 
+  /// Guard (ZAD_PLAN 3.6): this home ignores this kind, so Zad sends it at most once a week.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحظت إنك مابتتعاملش مع النوع ده غالباً، فبقلّل منه'**
+  String get heldReasonLearnedQuiet;
+
   /// Guard: inside the sleep window.
   ///
   /// In ar, this message translates to:

@@ -15,6 +15,10 @@ enum HeldReason {
   /// The customer said «stop» to this kind.
   muted,
 
+  /// This home rarely acts on this kind, so it comes at most weekly
+  /// (ZAD_PLAN 3.6).
+  learnedQuiet,
+
   /// Inside their sleep window.
   quietHours,
 
@@ -51,6 +55,7 @@ enum HeldReason {
   /// The server's code, or [other].
   static HeldReason fromCode(Object? code) => switch (code) {
     'muted' => muted,
+    'learned_quiet' => learnedQuiet,
     'quiet_hours' => quietHours,
     'reply_hour' => replyHour,
     'pacing' => pacing,
