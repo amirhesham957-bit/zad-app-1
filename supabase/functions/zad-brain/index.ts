@@ -78,6 +78,7 @@ import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, t
 import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
+import { isDoseAction, muteCheckin, settleDoseReminder } from "../_shared/doseDoor.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
@@ -1726,6 +1727,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       lines.push("");
       lines.push(`💡 اقتراح التسوية: اتفقوا مين مسؤول عن الفئة دي، والتاني يرجّع نص مشترياته الأخيرة — أو قسموا الفئات بينكم مرة واحدة بدل الازدواج. الإجمالي المتكرر: ~${Math.round(totalDup)}`);
       return lines.join("\n");
+    }
+
+    // باب واحد للجرعة وكتم السؤال (ZAD_PLAN ٣.٤، _shared/doseDoor.ts): زراير تليجرام بتوصل هنا بـagent_execute.
+    // مش في TOOLS — الموديل عمره ما يناديهم؛ اللي بيناديهم زرار العميل.
+    case "answer_dose_reminder": {
+      const momentId = String(input.moment_id ?? "");
+      if (!/^[0-9a-fA-F-]{36}$/.test(momentId) || !isDoseAction(input.action)) return "مرفوض: تذكير أو رد مش مفهوم";
+      return await settleDoseReminder(sb, userId, momentId, input.action);
+    }
+
+    case "mute_checkin": {
+      return (await muteCheckin(sb, userId)) ? "تمام، مش هسألك عن المخزون بالليل" : "مرفوض: مقدرتش أحفظ الكتم";
     }
 
     case "what_i_held_back": {
@@ -7325,7 +7338,10 @@ const DIRECT_INGRESS_TOOLS = new Set([
   "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
   "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
   "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
+  "answer_dose_reminder", "mute_checkin",
 ]);
+// زرار في تليجرام مستني رد (ZAD_PLAN ٣.٤): الأدوات دي بتقرا اللي محتاجاه بنفسها، فمالهاش لقطة البيت كلها.
+const NO_SNAPSHOT_INGRESS_TOOLS = new Set(["answer_dose_reminder", "mute_checkin"]);
 
 async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const tool = String(body.tool ?? "");
@@ -7334,7 +7350,7 @@ async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any)
       status: 400, headers: CORS_HEADERS,
     });
   }
-  const snap = await buildSnapshot(sb, userId);
+  const snap = NO_SNAPSHOT_INGRESS_TOOLS.has(tool) ? {} : await buildSnapshot(sb, userId);
   const ctx = freshContext(userId);
   const source: AgentSource = body.source === "telegram" ? "telegram" : body.source === "voice" ? "voice" : "event";
   const result = await runTool(sb, userId, tool, body.input ?? {}, snap, ctx, { source, runId: null });
