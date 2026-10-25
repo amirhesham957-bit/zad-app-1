@@ -2188,4 +2188,31 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get heldKindNote => 'A note from Zad';
+
+  @override
+  String get exampleCityEg => 'e.g. Cairo, Giza';
+
+  @override
+  String get exampleCitySa => 'e.g. Riyadh, Jeddah';
+
+  @override
+  String get exampleCityOther => 'e.g. your city';
+
+  @override
+  String get exampleStoreEg => 'e.g. Carrefour, Spinneys';
+
+  @override
+  String get exampleStoreSa => 'e.g. Panda, Othaim';
+
+  @override
+  String get exampleStoreOther => 'e.g. the supermarket\'s name';
+
+  @override
+  String get walletBankEg => 'Wallet / InstaPay';
+
+  @override
+  String get walletBankSa => 'Wallet / STC Pay';
+
+  @override
+  String get walletBankOther => 'Wallet / transfer';
 }

@@ -21,7 +21,9 @@ import 'package:zad/shared/bank/domain/bank_notification.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/domain/family.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market.dart';
+import 'package:zad/shared/market/domain/market_examples.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
@@ -386,10 +388,11 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
   }
 
   void _testParser() {
-    const sample =
-        'CIB: تم خصم مبلغ 250.00 جنيه من حسابك لدى كارفور مصر الجديدة. '
-        'مرجع: TX48213';
-    final verdict = classifyBankNotification(title: 'CIB', text: sample);
+    final sample = bankSample(ref.read(accountCountryProvider));
+    final verdict = classifyBankNotification(
+      title: sample.title,
+      text: sample.text,
+    );
     final amount = verdict.amount;
     final ok = amount != null && verdict.reason == null;
     final result = ok
@@ -502,7 +505,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
                 .read(bankListenerProvider)
                 .sendTestNotification(
                   title: 'اختبار زاد — عملية تجريبية',
-                  body: 'تم خصم 123.45 جنيه من حسابك — اختبار رصد',
+                  body: testNotificationBody(ref.read(accountCountryProvider)),
                 );
             await notifier.refresh();
           },

@@ -3822,6 +3822,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ملاحظة من زاد'**
   String get heldKindNote;
+
+  /// Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: القاهرة، الجيزة'**
+  String get exampleCityEg;
+
+  /// Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: الرياض، جدة'**
+  String get exampleCitySa;
+
+  /// Hint under a price report's city field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: اسم مدينتك'**
+  String get exampleCityOther;
+
+  /// Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: كارفور، سبينيز'**
+  String get exampleStoreEg;
+
+  /// Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: بنده، العثيم'**
+  String get exampleStoreSa;
+
+  /// Hint under a price report's store field, from the account's market (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: اسم السوبر ماركت'**
+  String get exampleStoreOther;
+
+  /// Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة / إنستاباي'**
+  String get walletBankEg;
+
+  /// Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة / STC Pay'**
+  String get walletBankSa;
+
+  /// Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13).
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة / تحويل'**
+  String get walletBankOther;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

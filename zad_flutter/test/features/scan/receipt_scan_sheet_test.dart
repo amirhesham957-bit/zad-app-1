@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/generated/zad_l10n_ar.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
@@ -135,7 +136,7 @@ void main() {
     await pump(tester, ReceiptType.grocery);
 
     expect(find.text('اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'), findsOneWidget);
-    for (final (_, label) in kReceiptWallets) {
+    for (final (_, label) in receiptWallets(ZadL10nAr(), null)) {
       expect(find.text(label), findsOneWidget);
     }
     await tester.ensureVisible(find.text('كاش'));

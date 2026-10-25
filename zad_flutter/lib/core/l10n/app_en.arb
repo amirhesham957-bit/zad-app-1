@@ -620,5 +620,14 @@
   "heldKindShortage": "Things running out soon",
   "heldKindRestock": "An essential ran out",
   "heldKindPet": "Your companion's call",
-  "heldKindNote": "A note from Zad"
+  "heldKindNote": "A note from Zad",
+  "exampleCityEg": "e.g. Cairo, Giza",
+  "exampleCitySa": "e.g. Riyadh, Jeddah",
+  "exampleCityOther": "e.g. your city",
+  "exampleStoreEg": "e.g. Carrefour, Spinneys",
+  "exampleStoreSa": "e.g. Panda, Othaim",
+  "exampleStoreOther": "e.g. the supermarket's name",
+  "walletBankEg": "Wallet / InstaPay",
+  "walletBankSa": "Wallet / STC Pay",
+  "walletBankOther": "Wallet / transfer"
 }

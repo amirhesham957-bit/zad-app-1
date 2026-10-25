@@ -24,9 +24,12 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/market/domain/market_examples.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
@@ -316,7 +319,10 @@ class _ReadingState extends ConsumerState<_Reading> {
           Wrap(
             spacing: ZadSpacing.sm,
             children: <Widget>[
-              for (final (wallet, label) in kReceiptWallets)
+              for (final (wallet, label) in receiptWallets(
+                context.l10n,
+                ref.watch(accountCountryProvider),
+              ))
                 ChoiceChip(
                   label: Text(label),
                   selected: wallet == receipt.paidWith,
@@ -765,9 +771,11 @@ String _plain(double value) {
 }
 
 /// The three ways a receipt is paid, as the sheet offers them. A mobile
-/// wallet or InstaPay is a payment from the bank account.
-const List<(Wallet, String)> kReceiptWallets = <(Wallet, String)>[
-  (Wallet.card, 'فيزا / بطاقة'),
-  (Wallet.cash, 'كاش'),
-  (Wallet.bank, 'محفظة / إنستاباي'),
-];
+/// wallet or a bank transfer is a payment from the bank account; its name
+/// is the account's market's (InstaPay in Egypt, STC Pay in Saudi Arabia).
+List<(Wallet, String)> receiptWallets(ZadL10n l, String? country) =>
+    <(Wallet, String)>[
+      (Wallet.card, 'فيزا / بطاقة'),
+      (Wallet.cash, 'كاش'),
+      (Wallet.bank, bankWalletLabel(l, country)),
+    ];
