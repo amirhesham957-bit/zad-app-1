@@ -23,7 +23,7 @@ Deno.test("nothing held says so, and an unknown reason is not hidden", () => {
 });
 
 Deno.test("every guard the server writes has words", () => {
-  for (const code of ["muted", "quiet_hours", "reply_hour", "pacing", "daily_cap", "busy_day", "circumstance", "duplicate", "expired", "not_relevant", "nothing_new"]) {
+  for (const code of ["muted", "learned_quiet", "quiet_hours", "reply_hour", "pacing", "daily_cap", "busy_day", "circumstance", "duplicate", "expired", "not_relevant", "nothing_new"]) {
     assert(code in HOLD_REASON_AR, code);
   }
 });

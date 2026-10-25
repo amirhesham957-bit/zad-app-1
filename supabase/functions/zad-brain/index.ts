@@ -79,6 +79,7 @@ import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildStoreArrivalM
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
 import { isDoseAction, muteCheckin, settleDoseReminder } from "../_shared/doseDoor.ts";
+import { type KindOutcome, LEARN_WINDOW_DAYS, learnedPriority, learnedQuietUntil, outcomesByKind, type Stance, stanceOf } from "./outcomeLearning.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
@@ -6253,7 +6254,25 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
   // منسّق المبادرات (pacingDecision في shared.ts): الأهم الأول، وواحدة كل ساعتين للعميل، والتكرار بيتلغي.
   // [delivered] = اللي اتبعت لكل عميل في آخر ٢٠ ساعة، من الداتابيز ومن اللفة دي.
   type DueTask = { id: string; user_id: string; task_description: string; goal_id: string | null; recurrence: string | null; kind: string | null; scheduled_for: string; created_at: string | null; held_count?: number | null };
-  const dueTasks = [...((due ?? []) as DueTask[])].sort((a, b) => pacingPriority(a.kind) - pacingPriority(b.kind));
+  // ٣.٦ «يتعلم من النتيجة»: نتيجة كل نوع مبادرة لكل بيت (zad_kind_outcomes)، مرة في اللفة. فشل = عادي.
+  const outcomesByUser = new Map<string, Map<string, KindOutcome>>();
+  const outcomesFor = async (userId: string) => {
+    let m = outcomesByUser.get(userId);
+    if (!m) {
+      const { data, error } = await sb.rpc("zad_kind_outcomes", { p_user: userId, p_days: LEARN_WINDOW_DAYS });
+      if (error) console.error("[agent_tasks] zad_kind_outcomes failed:", error.message);
+      m = outcomesByKind((data ?? []) as Array<Record<string, unknown>>);
+      outcomesByUser.set(userId, m);
+    }
+    return m;
+  };
+  const stanceFor = async (t: { user_id: string; kind: string | null }) => stanceOf((await outcomesFor(t.user_id)).get(t.kind ?? ""));
+  const dueRows = (due ?? []) as DueTask[];
+  const stances = new Map<string, Stance>();
+  for (const t of dueRows) stances.set(t.id, agentTaskNotice(t.kind).proactive ? await stanceFor(t) : "normal");
+  // الأهم الأول؛ وجوه نفس الأهمية، النوع اللي البيت ده بيتعامل معاه قبل اللي بيتجاهله.
+  const dueTasks = [...dueRows].sort((a, b) =>
+    learnedPriority(pacingPriority(a.kind), stances.get(a.id) ?? "normal") - learnedPriority(pacingPriority(b.kind), stances.get(b.id) ?? "normal"));
   const delivered = new Map<string, Array<{ kind: string | null; at: string }>>();
   // المنسّق ٢: الذاكرة مشتركة (_shared/outbound.ts) — اللحظات الصوتية وسؤال المخزون بيتعدّوا كمان،
   // فمهمة مابتطلعش ورا تحية الصبح أو سؤال المخزون على طول. ردود الشات والجرعات مابتتعدّش.
@@ -6329,6 +6348,15 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       const until = postponeForSuppression(task.kind, (mutes ?? []) as Array<{ suppress_until: string | null }>, Date.now());
       if (until) {
         if (await park(task, until, "muted")) postponed++;
+        continue;
+      }
+      // ٣.٦: نوع البيت ده بيتجاهله (١٠ مرات وأقل من ١٠٪ اتعمل بيه) ⇒ مرة في الأسبوع بالكتير.
+      const outcome = (await outcomesFor(task.user_id)).get(task.kind ?? "");
+      const sentToday = (await deliveredFor(task.user_id)).filter((d) => d.kind === task.kind).map((d) => Date.parse(d.at));
+      const lastOfKind = [outcome?.last_at ? Date.parse(outcome.last_at) : NaN, ...sentToday].filter(Number.isFinite);
+      const learnedUntil = learnedQuietUntil(stances.get(task.id) ?? "normal", lastOfKind.length ? Math.max(...lastOfKind) : null, Date.now());
+      if (learnedUntil) {
+        if (await park(task, learnedUntil, "learned_quiet")) postponed++;
         continue;
       }
       // الفجوة ١٠: مبادرة استحقت بين ١١ بالليل و٧ الصبح بتوقيته بتستنى الصبح، مش بتتلغي.

@@ -323,6 +323,7 @@ class _HeldThisWeek extends ConsumerWidget {
 /// Why a guard held it.
 String heldReasonText(ZadL10n l, HeldReason r) => switch (r) {
   HeldReason.muted => l.heldReasonMuted,
+  HeldReason.learnedQuiet => l.heldReasonLearnedQuiet,
   HeldReason.quietHours => l.heldReasonQuietHours,
   HeldReason.replyHour => l.heldReasonReplyHour,
   HeldReason.pacing => l.heldReasonPacing,

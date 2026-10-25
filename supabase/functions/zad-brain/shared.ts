@@ -1161,11 +1161,12 @@ export function responsiveHourDecision(
 // وzad_held_messages بيرجّعه، والعربي هنا وفي شاشة «صحة العقل» بس.
 
 export type HoldCode =
-  | "muted" | "quiet_hours" | "reply_hour" | "pacing" | "daily_cap" | "busy_day" | "circumstance"
+  | "muted" | "learned_quiet" | "quiet_hours" | "reply_hour" | "pacing" | "daily_cap" | "busy_day" | "circumstance"
   | "duplicate" | "expired" | "not_relevant" | "nothing_new" | "other";
 
 export const HOLD_REASON_AR: Record<HoldCode, string> = {
   muted: "إنت قلتلي أبطّل النوع ده لفترة",
+  learned_quiet: "لاحظت إنك مابتتعاملش مع النوع ده غالباً، فبقلّل منه",
   quiet_hours: "كان وقت نومك",
   reply_hour: "استنيت الساعة اللي بترد فيها عادة",
   pacing: "كان لسه واصلك حاجة من شوية",
