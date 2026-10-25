@@ -52,3 +52,24 @@ Deno.test("water total and expense lines", () => {
   assertEquals(exp.check({ reply: "تمام", executed: [], proposals: [{}] }, { appointmentsCreated: 0 }), null);
   assertEquals(exp.check({ reply: "تمام سجلتها", executed: [], proposals: [] }, { appointmentsCreated: 0 }), "no expense proposed");
 });
+
+// ZAD_PLAN 3.7: the test account's daily cap.
+import { ACCEPTANCE_PROBE, TEST_DAILY_CAP_DEFAULT, testDailyCap } from "./acceptance.ts";
+
+Deno.test("the test account's cap is the owner's 20 unless a whole number says otherwise", () => {
+  assertEquals(TEST_DAILY_CAP_DEFAULT, 20);
+  assertEquals(testDailyCap(undefined), 20);
+  assertEquals(testDailyCap(""), 20);
+  assertEquals(testDailyCap("35"), 35);
+  assertEquals(testDailyCap("0"), 0);
+  assertEquals(testDailyCap("-3"), 20);
+  assertEquals(testDailyCap("2.5"), 20);
+  assertEquals(testDailyCap("كتير"), 20);
+});
+
+Deno.test("a request body cannot claim to be the deploy probe", () => {
+  const forged = JSON.parse(JSON.stringify({ message: "x", acceptance_probe: true, [ACCEPTANCE_PROBE]: true }));
+  assertEquals(forged[ACCEPTANCE_PROBE], undefined);
+  const probe = { message: "x", [ACCEPTANCE_PROBE]: true };
+  assertEquals(probe[ACCEPTANCE_PROBE], true);
+});
