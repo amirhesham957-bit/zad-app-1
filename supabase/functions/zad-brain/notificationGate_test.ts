@@ -144,7 +144,7 @@ Deno.test("model down: the old behaviour holds — phone's amount, and the sende
 
 Deno.test("the gate's schema lists exactly the kinds parseGateVerdict accepts, and nothing else passes", () => {
   const kinds = (GATE_RESPONSE_SCHEMA as { properties: { kind: { enum: string[] } } }).properties.kind.enum;
-  assertEquals(kinds.length, 12);
+  assertEquals(kinds.length, 13);
   for (const kind of kinds) {
     assertEquals(parseGateVerdict(JSON.stringify({ kind, confidence: 0.9 }))?.kind, kind);
   }
@@ -162,4 +162,18 @@ Deno.test("the gate prompt masks account and phone numbers before they reach the
   assertEquals(user.includes("1234567890123"), false);
   assertEquals(user.includes("01012345678"), false);
   assertStringIncludes(user, "1500");
+});
+
+Deno.test("an ATM withdrawal is cash moving to the pocket, not spending — so cash spent later is not counted twice", () => {
+  const atm = "تم سحب مبلغ 2000.00 جنيه من ماكينة الصراف الآلي ببطاقتكم المنتهية ب 5566";
+  const v = parseGateVerdict('{"kind":"debit","amount":2000,"confidence":0.95}', atm)!;
+  assertEquals(v.kind, "cash_withdrawal");
+  assertEquals(txnKindFor(v.kind), "transfer");
+  assertEquals(decideGate(v, "nbe"), "money");
+  // the model can say it directly too
+  assertEquals(parseGateVerdict('{"kind":"cash_withdrawal","amount":500,"confidence":0.9}', "ATM withdrawal SAR 500")?.kind, "cash_withdrawal");
+  // a card purchase stays spending
+  assertEquals(parseGateVerdict('{"kind":"debit","amount":250,"confidence":0.9}', "تم خصم 250 جنيه شراء من كارفور")?.kind, "debit");
+  // without the text (old callers) nothing is rewritten
+  assertEquals(parseGateVerdict('{"kind":"debit","amount":2000,"confidence":0.9}')?.kind, "debit");
 });

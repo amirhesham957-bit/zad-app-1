@@ -31,7 +31,13 @@ ZadTransaction? bankTwinOf({
   ZadTransaction? best;
   Duration? bestGap;
   for (final t in rows) {
-    if (t.sourceType != kBankSourceType || !t.isExpense) continue;
+    // A transfer (an ATM withdrawal moved to cash) keeps is_expense true in the
+    // table, but it is not the card payment a receipt is for.
+    if (t.sourceType != kBankSourceType ||
+        !t.isExpense ||
+        t.kind == TxnKind.transfer) {
+      continue;
+    }
     if ((t.amount - total).abs() >= 0.005) continue;
     final gap = t.createdAt.difference(spentAt).abs();
     if (gap > kBankTwinWindow) continue;

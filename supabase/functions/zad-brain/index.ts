@@ -7639,7 +7639,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
         gateTimer = setTimeout(() => reject(new Error(`gate timed out after ${NOTIFICATION_GATE_TIMEOUT_MS}ms`)), NOTIFICATION_GATE_TIMEOUT_MS);
       }),
     ]).finally(() => clearTimeout(gateTimer));
-    verdict = parseGateVerdict(reply.text ?? "");
+    verdict = parseGateVerdict(reply.text ?? "", rawText);
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
   }
@@ -7726,7 +7726,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     if (/فاتورة|كهربا|كهرباء|مياه|نت|إنترنت|جوال|bill|electric|water/i.test(t)) return "فاتورة";
     return null;
   })();
-  const suggestedTitle = deductionKind
+  const suggestedTitle = verdict?.kind === "cash_withdrawal"
+    ? `سحب كاش — ${fields.bankName}`.slice(0, 80)
+    : deductionKind
     ? `${deductionKind} — ${sourceLabel}`.slice(0, 80)
     : null;
 
@@ -8482,7 +8484,7 @@ async function handleRequest(req: Request): Promise<Response> {
               answeredBy = "rule";
             } else {
               const reply = await inLane("eval", () => gateCall(g, evalModel));
-              verdict = parseGateVerdict(reply.text ?? "");
+              verdict = parseGateVerdict(reply.text ?? "", c.text);
               answeredBy = reply.model ?? null;
               // رد وصل ومايتقراش: نحفظه (المجموعة متنقّحة، مفيش بيانات عميل) عشان نعرف ليه.
               if (!verdict) unreadable = (reply.text ?? "").slice(0, 300) || "(empty)";
