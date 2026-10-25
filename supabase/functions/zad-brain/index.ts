@@ -94,6 +94,7 @@ import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
+import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
@@ -196,6 +197,20 @@ const DECISION_GROQ_MODEL = Deno.env.get("ZAD_DECISION_GROQ_MODEL") ?? "openai/g
  * نداء بوابة الإشعار: نفس النداء للإشعار الحقيقي ولـ bank_eval_run، عشان التقييم يقيس اللي شغال
  * فعلاً. الرد مقفول على GATE_RESPONSE_SCHEMA (النوع من القايمة)، والتفكير مقفول من callModel.
  */
+// صيغ البنوك اللي اتعلمت (learnedFormats.ts): بتتقري كل ١٠ دقايق، ولو القراية فشلت يفضل اللي قبلها.
+const LEARNED_TTL_MS = 10 * 60_000;
+let learnedCache: { at: number; rows: LearnedFormat[] } | null = null;
+async function learnedFormats(sb: SupabaseClient): Promise<LearnedFormat[]> {
+  if (learnedCache && Date.now() - learnedCache.at < LEARNED_TTL_MS) return learnedCache.rows;
+  const { data, error } = await sb.rpc("zad_bank_formats_learned", { p_min_users: 3 });
+  if (error) {
+    console.warn("[learned_formats] read failed:", error.message);
+    return learnedCache?.rows ?? [];
+  }
+  learnedCache = { at: Date.now(), rows: (data ?? []) as LearnedFormat[] };
+  return learnedCache.rows;
+}
+
 function gateCall(g: { system: string; user: string }, model = MODEL_ROUTINE) {
   return callModel({
     model, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300,
@@ -7624,7 +7639,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   }
 
   // ── بوابة «فلوس اتحركت فعلاً؟» (notificationGate.ts) — قبل أي سؤال أو اقتراح. ──
-  const knownSender = knownFinancialSender(packageName, title);
+  const knownSender = senderKnown(packageName, title, learnedSenders(await learnedFormats(sb)));
   let verdict: GateVerdict | null = null;
   try {
     const g = gatePrompt({ packageName, title, text, knownSender });
@@ -8461,7 +8476,10 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const runId = crypto.randomUUID();
-      const cases = (bankCorpus as { cases: BankCase[] }).cases;
+      // الملف + الصيغ اللي العملاء علّموها (٢.٣): المجموعة بتكبر لوحدها مع كل بنك جديد.
+      const learnedRows = await learnedFormats(sbEval);
+      const cases = [...(bankCorpus as { cases: BankCase[] }).cases, ...learnedCases(learnedRows)];
+      const learned = learnedSenders(learnedRows);
       // {"model":"…"} بيقيس موديل تاني على نفس المجموعة قبل ما يتعتمد (٣.١٠) — من غيره اللي شغال.
       const evalModel = typeof body.model === "string" && /^[a-z0-9.\-]{3,60}$/.test(body.model) ? body.model : MODEL_ROUTINE;
       const started = Date.now();
@@ -8471,7 +8489,7 @@ async function handleRequest(req: Request): Promise<Response> {
       for (let i = 0; i < cases.length; i += 6) {
         if (Date.now() - started > 110_000) break;
         await Promise.all(cases.slice(i, i + 6).map(async (c) => {
-          const known = knownFinancialSender(c.package, c.title);
+          const known = senderKnown(c.package, c.title, learned);
           const g = gatePrompt({ packageName: c.package, title: c.title, text: c.text, knownSender: known });
           const t0 = Date.now();
           let verdict: GateVerdict | null = null;
