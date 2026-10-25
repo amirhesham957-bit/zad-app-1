@@ -46,7 +46,7 @@ export const BAR = { amount: 0.95, direction: 0.95, merchant: 0.9 } as const;
  * بيتعدّ هنا.
  */
 export function directionOf(kind: GateKind | null): "out" | "in" | null {
-  if (kind === "debit") return "out";
+  if (kind === "debit" || kind === "cash_withdrawal") return "out";
   if (kind === "credit" || kind === "refund") return "in";
   return null;
 }
