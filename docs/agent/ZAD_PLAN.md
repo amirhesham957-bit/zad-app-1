@@ -250,7 +250,7 @@ doc: https://claude.ai/artifact/5nujux9wfMy4yHcbenjnQS
   مرات بيتهدّى للبيت ده لوحده، ونوع بينجح بياخد خانة أحسن. (`engagement.ts` بداية)
 - [x] **٣.٧ سقف حساب الاختبار:** (`20261025041500_test_account_cap.sql`: `zad_test_turn_take` عدّاد يومي UTC، و`ZAD_TEST_DAILY_CAP` الافتراضي ٢٠؛ فحص القبول بعد النشر متعلّم بـ`ACCEPTANCE_PROBE` اللي JSON مايقدرش يزوّره، والتقييم الليلي برّه. المقاس: ١٧٣ لفة يوم ١٨/١٠) بعد ق٣. السقف على السيرفر، ونشرات الدوال بتعدّي.
 - [x] **٣.٨ رقم التكلفة:** (`20261025050500_brain_cost.sql`: `zad_model_prices` بالأسعار الرسمية بس — `gemini-3.5-flash` وGroq مش منشورين فمالهمش سعر؛ `zad_health_daily` فيه `brain_p90_secs` و`brain_fast_runs` و`brain_cost_usd` و`brain_unpriced_runs`، و`zad_brain_cost_monthly(month)` لكل بيت؛ التحليل اليومي بقى يسجّل موديلاته. المقاس أكتوبر: p90 ‏٨٫٤–٨٫٨ ثانية عند الاختبار والمالك، و٨٥–٨٨٪ تحت ٦ ثواني — البوابة ٩٠٪) تكلفة الذكاء لكل بيت في الشهر وزمن الرد في لوحة الحقيقة. (٧.٩)
-- [ ] **٣.٩ 🔑 البحث المدفوع:** تفعيل Generative Language API على مشروع `ZAD_SEARCH_KEY` والتأكد بـ`provider_health`.
+- [ ] **٣.٩ 🔑 البحث المدفوع:** (المقاس ٢٥/١٠ لحد ٣:٠٥ UTC: كل بحث بيرجع 403 — «Gemini API has not been used in project 782142254659 or it is disabled» و«Requests to this API … are blocked»، يعني الـAPI مقفول في المشروع وفيه قيود على المفتاح. المالك عمل سرّين ٢٥/١٠: `ZAD_EVAL_KEY` (الكود بيقراه) و`Generative_API_KEY` (مفيش كود بيقراه — البحث بيقرا `ZAD_SEARCH_KEY`)) تفعيل Generative Language API على مشروع `ZAD_SEARCH_KEY` والتأكد بـ`provider_health`.
   شرط للمرحلة ٤ كلها. (١.١)
 - [ ] **٣.١٠ القرارات المصنّفة (بديل Jev المجاني):** القرارات الصغيرة (الإشعار بنكي؟ الفئة؟ نفس الصنف؟ العرض يهم؟
   أنهي وكيل؟) بترجع اختيار من قايمة ونسبة ثقة، مش نص: (١) القاعدة الثابتة الأول، (٢) Gemini lite بـ`responseSchema`
