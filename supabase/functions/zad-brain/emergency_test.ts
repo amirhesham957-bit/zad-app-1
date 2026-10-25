@@ -49,3 +49,19 @@ Deno.test("emergency: a country without a number we are sure of gets none, never
   assertEquals(emergencyCard({ person: null, country: null, medicines: [], doses: [], appointments: [], notes: [], family: [], now: NOW }).ambulance, null);
   assertEquals(Object.keys(AMBULANCE_NUMBERS).sort(), ["AE", "EG", "JO", "KW", "QA", "SA", "TR"]);
 });
+
+// ZAD_PLAN 3.14: abroad, the ambulance is the country the customer is in.
+import { emergencyCountry } from "./emergency.ts";
+
+Deno.test("abroad, the ambulance number is the country they are in, not their account's", () => {
+  const now = Date.parse("2026-10-25T10:00:00Z");
+  const since = new Date(now - 2 * 86_400_000).toISOString();
+  assertEquals(emergencyCountry({ country: "EG", travel_country: "SA", travel_since: since }, now), "SA");
+  assertEquals(emergencyCard({ person: null, country: emergencyCountry({ country: "EG", travel_country: "SA", travel_since: since }, now),
+    medicines: [], doses: [], appointments: [], notes: [], family: [], now }).ambulance, "997");
+  // At home, or a travel flag for the home country itself, or an old one: the account's country.
+  assertEquals(emergencyCountry({ country: "EG", travel_country: null, travel_since: null }, now), "EG");
+  assertEquals(emergencyCountry({ country: "eg", travel_country: "EG", travel_since: since }, now), "EG");
+  assertEquals(emergencyCountry({ country: "SA", travel_country: "EG", travel_since: "2020-01-01T00:00:00Z" }, now), "SA");
+  assertEquals(emergencyCountry(null, now), null);
+});

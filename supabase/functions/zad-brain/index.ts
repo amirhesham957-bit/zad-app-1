@@ -137,7 +137,7 @@ import { DECISION_OPEN_MAX } from "./decisionReview.ts";
 import { monthlyTotals, resilience } from "./longMemory.ts";
 import { attentionBudget, DECLARED_DEFAULT_DAYS, DECLARED_MAX_DAYS, loadCircumstance } from "./circumstances.ts";
 import { activeShifts, type ShiftRow, shiftSince } from "./lifeShift.ts";
-import { emergencyCard } from "./emergency.ts";
+import { emergencyCard, emergencyCountry } from "./emergency.ts";
 import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollSummaries } from "./familyPolls.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
@@ -3843,7 +3843,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           return ((data ?? []) as Array<{ alias: string | null; role: string | null; user_id: string | null }>)
             .map((m) => ({ alias: m.alias, role: m.role, is_me: m.user_id === userId }));
         })().catch(() => []),
-        sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+        sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
         person
           ? sb.rpc("zad_memory_recall_entities", { p_user: userId, p_text: entityRecallText(person), p_limit: 5 })
             .then((r) => (r.error ? [] : ((r.data ?? []) as Array<{ note: string }>).map((n) => n.note)), () => [])
@@ -3852,7 +3852,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (meds.error) return `مقدرتش أجيب الأدوية دلوقتي: ${meds.error.message} — المهم دلوقتي الإسعاف.`;
       return JSON.stringify(emergencyCard({
         person,
-        country: (user.data as { country?: string | null } | null)?.country ?? null,
+        // ٣.١٤: مسافر ⇒ إسعاف البلد اللي هو فيه.
+        country: emergencyCountry(user.data as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now),
         medicines: (meds.data ?? []) as Parameters<typeof emergencyCard>[0]["medicines"],
         doses: (doses.data ?? []) as Parameters<typeof emergencyCard>[0]["doses"],
         appointments: (appts.data ?? []) as Parameters<typeof emergencyCard>[0]["appointments"],

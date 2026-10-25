@@ -8,7 +8,7 @@
 // رقم الإسعاف: من جدول صغير متأكدين منه بس. رقم غلط في طارئ أوحش من مفيش رقم — والبلد اللي مش هنا
 // بيتقال فيه «اتصل بالإسعاف في بلدك» من غير رقم.
 
-import { normalizeForPerson } from "./shared.ts";
+import { normalizeForPerson, travelContext } from "./shared.ts";
 
 /** الإسعاف — البلاد اللي الرقم فيها متأكد منه بس. */
 export const AMBULANCE_NUMBERS: Readonly<Record<string, string>> = {
@@ -31,6 +31,17 @@ export interface EmergencyCard {
   /** حاجات زاد عارفها عن الشخص (حساسية، حالة مزمنة) من الذاكرة. */
   notes: string[];
   family_to_call: string[];
+}
+
+/**
+ * البلد اللي الإسعاف بيتطلب منه (ZAD_PLAN ٣.١٤): وهو مسافر، البلد اللي هو فيه دلوقتي (travelContext) — مصري في
+ * الرياض رقمه ٩٩٧ مش ١٢٣. غير كده بلد الحساب. الميزانية والعملة مالهمش دعوة بده.
+ */
+export function emergencyCountry(
+  row: { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null | undefined,
+  nowMs: number,
+): string | null {
+  return travelContext(row, nowMs)?.in ?? (row?.country ? String(row.country).trim().toUpperCase() : null);
 }
 
 interface Med { id: string; name: string; dosage: string | null; dose_times: string | null; remaining_quantity: number | null; for_person: string | null }
