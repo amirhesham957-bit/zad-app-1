@@ -150,3 +150,9 @@ Deno.test("the gate's schema lists exactly the kinds parseGateVerdict accepts, a
   }
   assertEquals(parseGateVerdict('{"kind":"maybe_money","confidence":0.9}'), null);
 });
+
+Deno.test("the prompt says a transfer to someone else is a debit and a fee is not the amount (bank eval, 2026-10-25)", () => {
+  const { system } = gatePrompt({ packageName: "p", title: "t", text: "x", knownSender: null });
+  assertStringIncludes(system, "Use transfer ONLY when the text says both accounts belong to the customer");
+  assertStringIncludes(system, "never a fee printed on its own line");
+});
