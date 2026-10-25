@@ -103,7 +103,7 @@ import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfi
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
-import { decideGate, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -188,6 +188,20 @@ const NOTIFICATION_CONFIRM_SECRET = Deno.env.get("ZAD_CONFIRM_TRANSACTION_SECRET
 // is exactly why this change does not touch ZAD_MODEL_ROUTINE's value. Set ZAD_MODEL_AGENT
 // as a secret to override; callModel() falls through the rest of the chain from here.
 const MODEL_ROUTINE = Deno.env.get("ZAD_MODEL_AGENT") ?? "gemini-3.5-flash-lite";
+// القرارات المصنّفة (ZAD_PLAN ٣.١٠): لما جيميناي كله يقع، الأصغر على جروك — القرار JSON صغير،
+// ومش محتاج الـ١٢٠b بتاع الشات. اتقاس ٢٤/١٠: ٢٠٠ على الـ١١ مفتاح، ١٠٠٠ طلب/يوم لكل واحد.
+const DECISION_GROQ_MODEL = Deno.env.get("ZAD_DECISION_GROQ_MODEL") ?? "openai/gpt-oss-20b";
+
+/**
+ * نداء بوابة الإشعار: نفس النداء للإشعار الحقيقي ولـ bank_eval_run، عشان التقييم يقيس اللي شغال
+ * فعلاً. الرد مقفول على GATE_RESPONSE_SCHEMA (النوع من القايمة)، والتفكير مقفول من callModel.
+ */
+function gateCall(g: { system: string; user: string }, model = MODEL_ROUTINE) {
+  return callModel({
+    model, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300,
+    responseSchema: GATE_RESPONSE_SCHEMA, groqModel: DECISION_GROQ_MODEL,
+  });
+}
 // W8/W9/nightly_dream_reflection's cron leg — كلهم بيتفحصوا بـ secretMatches()
 // (_shared/cronSecret.ts) جوه الهاندلر نفسه، مش بثابت هنا: بتقرا Deno.env.get()
 // وقت النداء، بتسجّل طول+بصمة لو فيه اختلاف، وبقت (2026-09-13) بتتسامح مع مسافة
@@ -7630,7 +7644,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     // "الموديل وقع" الموثّق في decideGate (بنك معروف ⇒ نسأل).
     let gateTimer: ReturnType<typeof setTimeout> | undefined;
     const reply = await Promise.race([
-      callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 }),
+      gateCall(g),
       new Promise<never>((_, reject) => {
         gateTimer = setTimeout(() => reject(new Error(`gate timed out after ${NOTIFICATION_GATE_TIMEOUT_MS}ms`)), NOTIFICATION_GATE_TIMEOUT_MS);
       }),
@@ -8456,6 +8470,8 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbEval = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const runId = crypto.randomUUID();
       const cases = (bankCorpus as { cases: BankCase[] }).cases;
+      // {"model":"…"} بيقيس موديل تاني على نفس المجموعة قبل ما يتعتمد (٣.١٠) — من غيره اللي شغال.
+      const evalModel = typeof body.model === "string" && /^[a-z0-9.\-]{3,60}$/.test(body.model) ? body.model : MODEL_ROUTINE;
       const started = Date.now();
       const results: BankCaseResult[] = [];
       const rows: Array<Record<string, unknown>> = [];
@@ -8468,11 +8484,11 @@ async function handleRequest(req: Request): Promise<Response> {
           const t0 = Date.now();
           let verdict: GateVerdict | null = null;
           let error: string | null = null;
+          let answeredBy: string | null = null;
           try {
-            const reply = await inLane("eval", () =>
-              callModel({ model: MODEL_ROUTINE, system: g.system, tools: [], history: [{ role: "user", text: g.user }], maxTokens: 300 })
-            );
+            const reply = await inLane("eval", () => gateCall(g, evalModel));
             verdict = parseGateVerdict(reply.text ?? "");
+            answeredBy = reply.model ?? null;
           } catch (e) {
             error = String((e as Error)?.message ?? e).slice(0, 160);
           }
@@ -8482,7 +8498,7 @@ async function handleRequest(req: Request): Promise<Response> {
             run_id: runId, case_id: c.id, category: "bank",
             pass: failureOf(r, c) === null, failure: error ? `model failed: ${error}` : failureOf(r, c),
             reply: null, ms: Date.now() - t0,
-            detail: { market: c.market, origin: c.origin, decision: r.decision, kind: r.kind, counterparty: r.counterparty,
+            detail: { market: c.market, origin: c.origin, model: answeredBy, decision: r.decision, kind: r.kind, counterparty: r.counterparty,
               amountOk: r.amountOk, directionOk: r.directionOk, merchantOk: r.merchantOk },
           });
         }));
@@ -8491,7 +8507,7 @@ async function handleRequest(req: Request): Promise<Response> {
       if (saveErr) console.error("[bank_eval_run] save failed:", saveErr.message);
       const summary = summarize(cases, results);
       console.log(`[bank_eval_run] ${results.length}/${cases.length} meetsBar=${summary.meetsBar}`, JSON.stringify(summary));
-      return new Response(JSON.stringify({ run_id: runId, measured: results.length, total: cases.length, summary }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ run_id: runId, model: evalModel, measured: results.length, total: cases.length, summary }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "tools_probe") {

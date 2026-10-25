@@ -1,6 +1,6 @@
 // بوابة إشعارات البنوك: الضجيج مايتحولش لأسئلة «إيداع ولا خصم».
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { decideGate, gatePrompt, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
 
 Deno.test("known banks and wallets are recognised from the sender name or the package", () => {
   assertEquals(knownFinancialSender("com.google.android.apps.messaging", "CIB"), "cib");
@@ -140,4 +140,13 @@ Deno.test("model down: the old behaviour holds — phone's amount, and the sende
   });
   assertEquals(gate, "ask");
   assertEquals(fields, { amount: 99, currency: "EGP", merchantName: "qnb", bankName: "qnb", cardLastDigits: null });
+});
+
+Deno.test("the gate's schema lists exactly the kinds parseGateVerdict accepts, and nothing else passes", () => {
+  const kinds = (GATE_RESPONSE_SCHEMA as { properties: { kind: { enum: string[] } } }).properties.kind.enum;
+  assertEquals(kinds.length, 12);
+  for (const kind of kinds) {
+    assertEquals(parseGateVerdict(JSON.stringify({ kind, confidence: 0.9 }))?.kind, kind);
+  }
+  assertEquals(parseGateVerdict('{"kind":"maybe_money","confidence":0.9}'), null);
 });

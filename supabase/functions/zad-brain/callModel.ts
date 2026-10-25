@@ -251,6 +251,11 @@ export async function callModel(opts: {
   /** نفس الأدوات بترتيب الأهمية لـ Groq (الأدوات اللي الرسالة بتشير لها الأول): fitForGroq
    *  بتاخدهم بالترتيب لحد ما الميزانية تخلص، فالترتيب هو اللي بيحدد مين يفضل. */
   groqTools?: ToolDef[];
+  /** قرار مصنّف (ZAD_PLAN ٣.١٠): جيميناي بيرد JSON على المخطط ده بالظبط — `enum` بيقفل
+   *  الإجابة على القايمة — ومن غير أدوات، وجروك بيرد بـ `json_object`. من غيره رد نص عادي. */
+  responseSchema?: Record<string, unknown>;
+  /** موديل جروك للنداء ده بدل `ZAD_GROQ_TEXT_MODEL`: القرارات الصغيرة على الأصغر والأسرع. */
+  groqModel?: string;
 }): Promise<ModelReply> {
   const { provider } = cfg();
   if (provider !== "gemini") {
@@ -298,9 +303,10 @@ export async function callModel(opts: {
   }
 
   if (GROQ_KEY_POOL.length > 0) {
-    console.warn(`[zad-brain] whole Gemini chain unavailable [${trail.join(" | ")}]; falling back to Groq ${GROQ_MODEL}`);
+    const groqModel = opts.groqModel ?? GROQ_MODEL;
+    console.warn(`[zad-brain] whole Gemini chain unavailable [${trail.join(" | ")}]; falling back to Groq ${groqModel}`);
     try {
-      return { ...(await withRetry(() => sendGroq({ ...opts, model: GROQ_MODEL }))), model: GROQ_MODEL };
+      return { ...(await withRetry(() => sendGroq({ ...opts, model: groqModel }))), model: groqModel };
     } catch (e) {
       throw new RetryableError(
         `every gemini model unavailable [${trail.join(" | ")}] and groq failed too: ${e instanceof Error ? e.message : String(e)}`,
@@ -544,6 +550,7 @@ async function sendGemini(o: {
   thinking?: boolean;
   /** ما فضل من ميزانية السلسلة؛ callModel بيحدده. */
   timeoutMs?: number;
+  responseSchema?: Record<string, unknown>;
 }, retriedWithoutThinkingConfig = false, withDummySignatures = false): Promise<ModelReply> {
   const timeoutMs = o.timeoutMs ?? GEMINI_CALL_TIMEOUT_MS;
   const contents = buildGeminiContents(o.history, withDummySignatures);
@@ -554,21 +561,28 @@ async function sendGemini(o: {
   const body = JSON.stringify({
     systemInstruction: { parts: [{ text: o.system }] },
     contents,
-    tools: [{
-      functionDeclarations: o.tools.map((t) => ({
-        name: t.name,
-        description: t.description,
-        parameters: sanitizeSchema(t.input_schema),
-      })),
-    }],
+    // جيميناي مابيقبلش أدوات مع responseSchema في نفس الطلب، والقرار المصنّف مالوش أدوات أصلاً.
+    ...(o.responseSchema ? {} : {
+      tools: [{
+        functionDeclarations: o.tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+          parameters: sanitizeSchema(t.input_schema),
+        })),
+      }],
+    }),
     generationConfig: {
       maxOutputTokens: o.maxTokens ?? 1500,
-      temperature: 0.4,
+      // القرار نفس الإجابة كل مرة لنفس الرسالة، مش تنويع.
+      temperature: o.responseSchema ? 0 : 0.4,
       // See callModel's `thinking` docblock: thought tokens are billed against
       // maxOutputTokens, so leaving this unset let the model think itself out of an
       // answer. The lite models in the chain report 0 thought tokens either way; this is
       // what protects the thinking-capable ones when the chain falls through to them.
       ...(sendThinkingConfig ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+      ...(o.responseSchema
+        ? { responseMimeType: "application/json", responseSchema: sanitizeSchema(o.responseSchema) }
+        : {}),
     },
   });
 
@@ -778,8 +792,11 @@ const GROQ_REQUEST_BUDGET_TOKENS = 6800;
 
 async function sendGroq(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number; groqSystem?: string; groqTools?: ToolDef[];
+  responseSchema?: Record<string, unknown>;
 }): Promise<ModelReply> {
   o = fitForGroq({ ...o, system: o.groqSystem ?? o.system, tools: o.groqTools ?? o.tools });
+  // تفكير gpt-oss «low» + إجابة JSON صغيرة: أقل من ٥٠٠ كان بيرجع فاضي (نفس قياس core-intelligence).
+  if (o.responseSchema) o = { ...o, maxTokens: Math.max(o.maxTokens ?? 0, 500) };
   const start = groqKeyCursor % GROQ_KEY_POOL.length;
   groqKeyCursor = (groqKeyCursor + 1) % GROQ_KEY_POOL.length;
   // كان مفتاح واحد لكل محاولة، و401 = ConfigError مابيتعادش — فالمفتاح المرفوض كان بيوقّع رجل
@@ -823,6 +840,7 @@ const groqDeadKeys = new DeadKeys();
 
 async function sendOpenAICompatible(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
+  responseSchema?: Record<string, unknown>;
 }, override?: { key: string; baseUrl: string; who: string }): Promise<ModelReply> {
   const { key, baseUrl } = override ?? cfg();
   const who = override?.who ?? "openai_compatible";
@@ -857,13 +875,20 @@ async function sendOpenAICompatible(o: {
     body: JSON.stringify({
       model: o.model,
       max_tokens: o.maxTokens ?? 1500,
-      temperature: 0.4,
-      tools: o.tools.map((t) => ({
-        type: "function",
-        function: {
-          name: t.name, description: t.description, parameters: t.input_schema,
-        },
-      })),
+      temperature: o.responseSchema ? 0 : 0.4,
+      // قايمة أدوات فاضية مالهاش لازمة، وفيه مزوّدين بيرفضوها ("[] is too short").
+      ...(o.tools.length > 0 ? {
+        tools: o.tools.map((t) => ({
+          type: "function",
+          function: {
+            name: t.name, description: t.description, parameters: t.input_schema,
+          },
+        })),
+      } : {}),
+      // قرار مصنّف: JSON بس. gpt-oss بيفكر قبل ما يرد والتفكير من max_tokens — «low» بيسيب
+      // مكان للإجابة (zad-core-intelligence اتقاس عليه: ٥٠ توكن = رد فاضي).
+      ...(o.responseSchema ? { response_format: { type: "json_object" } } : {}),
+      ...(o.responseSchema && /gpt-oss/.test(o.model) ? { reasoning_effort: "low" } : {}),
       messages,
     }),
   });
