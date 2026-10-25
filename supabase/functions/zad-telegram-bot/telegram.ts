@@ -3,6 +3,10 @@
 // token to construct in some code paths); index.ts is the only place that touches
 // grammY or Supabase.
 
+// تسوية الجرعة اتنقلت لباب واحد (ZAD_PLAN ٣.٤): العقل بيكتب، والبوت بيعرض.
+import { DOSE_SNOOZE_MINUTES, type DoseAction } from "../_shared/doseDoor.ts";
+export { DOSE_SNOOZE_MINUTES, type DoseAction, doseAlreadyReply, doseSlots } from "../_shared/doseDoor.ts";
+
 /**
  * زر إما بـcallback_data (بيرجع للبوت) أو بـurl (بيفتح رابط عند العميل).
  *
@@ -624,8 +628,6 @@ export function isHumanUpdate(update: UpdateEnvelope | null | undefined): boolea
 //
 // الطول: "dz:" + uuid(36) + ":" + حرف = ٤١ بايت، تحت سقف تليجرام (٦٤ بايت) بمسافة.
 
-/** دقايق التأجيل لما العميل يدوس «فكّرني بعدين» — نفس الرقم في SQL (zad_dose_snoozes). */
-export const DOSE_SNOOZE_MINUTES = 15;
 
 export function doseKeyboard(momentId: string): InlineKeyboardButton[][] {
   return [
@@ -640,7 +642,6 @@ export function doseKeyboard(momentId: string): InlineKeyboardButton[][] {
   ];
 }
 
-export type DoseAction = "taken" | "skipped" | "snooze";
 
 /** "dz:<uuid>:t" (اتاخدت) / "dz:<uuid>:k" (مخدتهاش) / "dz:<uuid>:s" (أجّل) */
 export function parseDoseCallback(data: string): { momentId: string; action: DoseAction } | null {
@@ -792,28 +793,4 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
   "dose_due", "dose_nudge", "dose_missed", "dose_missed_again",
 ]);
 
-/**
- * خانة كل دوا في تذكير الجرعة. تذكير المجموعة (20260926120000) بيحمل `facts.slots`
- * — دوائين بينهم نص ساعة في رسالة واحدة، وكل واحد لازم يتسجّل في خانته هو عشان
- * الفهرس الفريد (user_id, item_id, scheduled_at) ومولّد التذكيرات يشوفوه متجاوب عليه.
- * التذكير القديم مافيهوش slots، فكل الأدوية بتاخد `fallback` (facts.scheduled_at).
- */
-export function doseSlots(facts: Record<string, unknown> | null | undefined, fallback: string): (itemId: string) => string {
-  const map = new Map<string, string>();
-  const slots = Array.isArray(facts?.slots) ? facts!.slots as unknown[] : [];
-  for (const s of slots) {
-    const o = s as { item_id?: unknown; scheduled_at?: unknown } | null;
-    if (typeof o?.item_id === "string" && typeof o?.scheduled_at === "string") map.set(o.item_id, o.scheduled_at);
-  }
-  return (itemId) => map.get(itemId) ?? fallback;
-}
 
-/**
- * «أخدتها» على جرعة متسجلة قبل كده — تذكيرين لنفس الخانة، أو ضغطة على رسالة قديمة. الـRPC
- * مابيعدّهاش مرتين (duplicate) بس البوت كان بيرد «اتسجلت جرعة … ✅» كل مرة: يوم ٢٠٢٦-١٠-٠١
- * خمس رسايل تأكيد على تلات جرعات، فبانت كأن الدوا اتسجل خمس مرات.
- */
-export function doseAlreadyReply(names: readonly string[]): string {
-  const label = [...new Set(names)].join(" و");
-  return `جرعة ${label} دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.`;
-}
