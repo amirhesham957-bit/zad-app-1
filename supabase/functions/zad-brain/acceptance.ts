@@ -9,6 +9,22 @@
 /** The probe account. It cannot sign in, has no phone or Telegram, and holds no one's data. */
 export const ACCEPTANCE_USER_ID = "a11ce000-0000-4000-8000-00000000a11a";
 
+// سقف حساب الاختبار (ZAD_PLAN ٣.٧، ق٣ المالك ٢٤/١٠): ٨٢٪ من اللفات آخر ١٤ يوم كانت الحساب ده (١٧٣ لفة يوم ١٨/١٠).
+// فحص القبول بعد كل نشر برّه السقف — بيتعلّم بالرمز ده، اللي طلب HTTP (JSON) مايقدرش يحطه. التقييم الليلي
+// برّه برضه: بينادي handleAgentTurnInLane على طول على مفتاحه هو. أي لفة تانية بتاخد من zad_test_turn_take.
+export const ACCEPTANCE_PROBE: unique symbol = Symbol("acceptance_probe");
+export const TEST_DAILY_CAP_DEFAULT = 20;
+
+/** ZAD_TEST_DAILY_CAP، وإلا ٢٠. رقم مش صحيح أو سالب = الافتراضي. */
+export function testDailyCap(raw: string | undefined | null): number {
+  const text = String(raw ?? "").trim();
+  const n = Number(text);
+  // Number("") = 0: سر فاضي كان هيقفل الحساب خالص بدل الافتراضي.
+  return text !== "" && Number.isInteger(n) && n >= 0 ? n : TEST_DAILY_CAP_DEFAULT;
+}
+
+export const TEST_CAP_REPLY = "حساب الاختبار خلّص سقفه النهارده (لفات برّه فحص النشر). جرّب بكرة، أو جرّب على حساب حقيقي.";
+
 export interface TurnOutcome {
   reply: string;
   executed: Array<{ tool: string }>;

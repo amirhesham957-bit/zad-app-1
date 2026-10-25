@@ -64,7 +64,7 @@ import { deliverRestockLink } from "./restockLink.ts";
 import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
-import { ACCEPTANCE_CASES, ACCEPTANCE_USER_ID, internalLeak, machineCloser } from "./acceptance.ts";
+import { ACCEPTANCE_CASES, ACCEPTANCE_PROBE, ACCEPTANCE_USER_ID, internalLeak, machineCloser, TEST_CAP_REPLY, testDailyCap } from "./acceptance.ts";
 import { EVAL_CASES } from "./evals/cases.ts";
 import { judgeEval } from "./evals/judge.ts";
 import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize } from "./evals/bankEval.ts";
@@ -6716,6 +6716,17 @@ async function handleAgentTurn(
     // ١٨/١٠ عمل ٨٩ لفة و١٫٨ مليون توكن من حارة العملاء، وكل لفة منهم كانت بتخصم من zad_free_load_take
     // اللي بيقرر إمتى العملاء المجانيين يتحوّلوا لجروك.
     if (userId === ACCEPTANCE_USER_ID) {
+      // ٣.٧: غير فحص القبول بعد النشر، الحساب ده ليه سقف يومي (ZAD_TEST_DAILY_CAP، الافتراضي ٢٠).
+      if (body?.[ACCEPTANCE_PROBE] !== true) {
+        const { data: allowed, error: capErr } = await sb.rpc("zad_test_turn_take", { p_cap: testDailyCap(Deno.env.get("ZAD_TEST_DAILY_CAP")) });
+        if (capErr) console.error("zad_test_turn_take failed, refusing the test turn:", capErr.message);
+        if (capErr || allowed !== true) {
+          console.log("[test_account] daily cap reached — turn refused");
+          return new Response(JSON.stringify({
+            ok: true, reply: TEST_CAP_REPLY, executed: [], proposals: [], tool_attempted: false, test_capped: true,
+          }), { headers: CORS_HEADERS });
+        }
+      }
       return await inLane("background", () => handleAgentTurnInLane(sb, userId, body, paid, onText));
     }
     let lane: Lane = "paid";
@@ -8237,7 +8248,7 @@ async function handleRequest(req: Request): Promise<Response> {
         const before = new Date().toISOString();
         const t0 = Date.now();
         try {
-          const res = await handleAgentTurn(sbProbe, ACCEPTANCE_USER_ID, { message: c.message, history: [] });
+          const res = await handleAgentTurn(sbProbe, ACCEPTANCE_USER_ID, { message: c.message, history: [], [ACCEPTANCE_PROBE]: true });
           const payload = await res.json().catch(() => null);
           if (payload?.ok === true) await recordSharedTurn(sbProbe, ACCEPTANCE_USER_ID, c.message, spokenRecord(payload));
           const { count } = await sbProbe.from("zad_appointments").select("id", { count: "exact", head: true })
