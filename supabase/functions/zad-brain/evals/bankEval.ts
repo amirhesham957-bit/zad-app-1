@@ -13,7 +13,8 @@ import { decideGate, type GateDecision, type GateKind, type GateVerdict, looksLi
 export interface BankCase {
   id: string;
   market: string;
-  origin: "real" | "shape";
+  /** learned = صيغة اتعلمت من ردود ٣ عملاء أو أكتر (learnedFormats.ts). */
+  origin: "real" | "shape" | "learned";
   package: string;
   title: string;
   text: string;
