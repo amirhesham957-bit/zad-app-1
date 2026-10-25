@@ -177,3 +177,10 @@ Deno.test("an ATM withdrawal is cash moving to the pocket, not spending — so c
   // without the text (old callers) nothing is rewritten
   assertEquals(parseGateVerdict('{"kind":"debit","amount":2000,"confidence":0.9}')?.kind, "debit");
 });
+
+Deno.test("currency is a closed list too, so a model cannot loop inside it (eval 2026-10-25)", () => {
+  const props = (GATE_RESPONSE_SCHEMA as { properties: Record<string, { enum?: string[] }> }).properties;
+  assertEquals(props.currency.enum?.includes("SAR"), true);
+  assertEquals(props.currency.enum?.includes("EGP"), true);
+  assertEquals(props.currency.enum?.every((c) => /^[A-Z]{3}$/.test(c)), true);
+});
