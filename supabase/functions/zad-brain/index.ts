@@ -103,7 +103,7 @@ import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfi
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
-import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, txnKindFor } from "./notificationGate.ts";
+import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -7421,13 +7421,6 @@ async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any)
   });
 }
 
-const NOTIFICATION_FAILED_RE =
-  /(لا يوجد رصيد كاف|لا يوجد رصيد كافي|رصيد غير كاف|رصيد غير كافي|عدم كفاية الرصيد|فشل|فشلت|رفض|مرفوض|لم تتم|لم تنجح|غير ناجحة|تعذر|insufficient|declined|failed|unsuccessful|rejected|yetersiz bakiye|başarısız|reddedildi)/i;
-const NOTIFICATION_PENDING_RE =
-  /(سيتم|سوف يتم|will be|will only).{0,80}(في حالة وجود رصيد|عند توفر|عند توفّر|لو توفر|لو توفّر|if sufficient balance|once balance|if funds become available)/i;
-const NOTIFICATION_NOISE_RE =
-  /(رمز التحقق|كود التحقق|otp|verification code|one-time|do not share|عرض خاص|اشترك الآن|promo|campaign|انتهت صلاحية|expired)/i;
-
 function normalizeClientClassification(raw: unknown): "completed" | "failed_or_pending" | "informational" | "ambiguous" {
   const value = String(raw ?? "").toLowerCase();
   if (value === "completed_transaction") return "completed";
@@ -7624,13 +7617,10 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       .eq("user_id", userId).eq("dedupe_hash", dedupeHash);
   };
 
-  if (NOTIFICATION_NOISE_RE.test(rawText)) {
-    await mark("ignored", "informational_only");
-    return new Response(JSON.stringify({ ok: true, status: "ignored", classification: "informational_only" }), { headers: CORS_HEADERS });
-  }
-  if (NOTIFICATION_FAILED_RE.test(rawText) || NOTIFICATION_PENDING_RE.test(rawText)) {
-    await mark("ignored", "failed_or_pending_transaction");
-    return new Response(JSON.stringify({ ok: true, status: "ignored", classification: "failed_or_pending_transaction" }), { headers: CORS_HEADERS });
+  const rule = ruleGate(rawText);
+  if (rule) {
+    await mark("ignored", rule);
+    return new Response(JSON.stringify({ ok: true, status: "ignored", classification: rule }), { headers: CORS_HEADERS });
   }
 
   // ── بوابة «فلوس اتحركت فعلاً؟» (notificationGate.ts) — قبل أي سؤال أو اقتراح. ──
@@ -8485,10 +8475,18 @@ async function handleRequest(req: Request): Promise<Response> {
           let verdict: GateVerdict | null = null;
           let error: string | null = null;
           let answeredBy: string | null = null;
+          let unreadable: string | null = null;
           try {
-            const reply = await inLane("eval", () => gateCall(g, evalModel));
-            verdict = parseGateVerdict(reply.text ?? "");
-            answeredBy = reply.model ?? null;
+            // نفس السلم بتاع الحي: القاعدة الثابتة الأول، والموديل بس لو ماحسمتش.
+            if (ruleGate(c.text)) {
+              answeredBy = "rule";
+            } else {
+              const reply = await inLane("eval", () => gateCall(g, evalModel));
+              verdict = parseGateVerdict(reply.text ?? "");
+              answeredBy = reply.model ?? null;
+              // رد وصل ومايتقراش: نحفظه (المجموعة متنقّحة، مفيش بيانات عميل) عشان نعرف ليه.
+              if (!verdict) unreadable = (reply.text ?? "").slice(0, 300) || "(empty)";
+            }
           } catch (e) {
             error = String((e as Error)?.message ?? e).slice(0, 160);
           }
@@ -8497,7 +8495,7 @@ async function handleRequest(req: Request): Promise<Response> {
           rows.push({
             run_id: runId, case_id: c.id, category: "bank",
             pass: failureOf(r, c) === null, failure: error ? `model failed: ${error}` : failureOf(r, c),
-            reply: null, ms: Date.now() - t0,
+            reply: unreadable, ms: Date.now() - t0,
             detail: { market: c.market, origin: c.origin, model: answeredBy, decision: r.decision, kind: r.kind, counterparty: r.counterparty,
               amountOk: r.amountOk, directionOk: r.directionOk, merchantOk: r.merchantOk },
           });

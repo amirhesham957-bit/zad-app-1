@@ -8,7 +8,7 @@
 //   - المبلغ والاتجاه لكل رسالة فلوس — الهدف ٩٥٪،
 //   - التاجر لما الحالة فيها تاجر يتقاس — الهدف ٩٠٪.
 
-import { decideGate, type GateDecision, type GateKind, type GateVerdict, looksLikeMoneyMoved } from "../notificationGate.ts";
+import { decideGate, type GateDecision, type GateKind, type GateVerdict, looksLikeMoneyMoved, ruleGate } from "../notificationGate.ts";
 
 export interface BankCase {
   id: string;
@@ -63,8 +63,8 @@ export function sameMerchant(got: string | null, want: string): boolean {
 
 /** الحكم على رسالة واحدة: verdict = رد الموديل بعد parseGateVerdict، أو null لو ماردّش. */
 export function judgeBankCase(c: BankCase, verdict: GateVerdict | null, knownSender: string | null): BankCaseResult {
-  // Same three inputs as the live path (index.ts handleNotification).
-  const decision = decideGate(verdict, knownSender, looksLikeMoneyMoved(c.text));
+  // Same ladder as the live path (index.ts handleNotification): the fixed rule first, then the model.
+  const decision = ruleGate(c.text) ? "ignore" : decideGate(verdict, knownSender, looksLikeMoneyMoved(c.text));
   const money = c.expect === "money";
   return {
     id: c.id,
