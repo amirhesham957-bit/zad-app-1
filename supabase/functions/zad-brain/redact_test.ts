@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { redactNotificationText } from "./redact.ts";
+import { redactNotificationText, redactForModel } from "./redact.ts";
 
 // النقطة اللي التنقية دي موجودة عشانها: التطبيق سقط إذن قراءة الرسايل وبقى بيقرا رسايل
 // البنك من إشعار تطبيق الرسايل، فتطبيقات المراسلة مستثناة من التجاهل عن قصد. يعني رسالة
@@ -51,4 +51,13 @@ Deno.test("مدخل فاضي أو null بيرجع نص فاضي مش استثن�
   assertEquals(redactNotificationText(""), "");
   assertEquals(redactNotificationText(null), "");
   assertEquals(redactNotificationText(undefined), "");
+});
+
+Deno.test("redactForModel keeps amounts up to seven digits and the card's last four, masks accounts and phones", () => {
+  const out = redactForModel("تم إيداع 125000.00 جنيه في حسابك 1234567890123 من 01012345678 بطاقة ****4321 IBAN SA4420000001234567891234");
+  assertEquals(out.includes("125000.00"), true);
+  assertEquals(out.includes("****4321"), true);
+  assertEquals(out.includes("1234567890123"), false);
+  assertEquals(out.includes("01012345678"), false);
+  assertEquals(out.includes("SA4420000001234567891234"), false);
 });

@@ -4,7 +4,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
 // إجابة مقاسة مش تخمين. كل الشبكة بتتحقن عشان يتختبر من غير نداءات حقيقية.
 
-import { geminiKeys as geminiKeyPool, groqKeys as groqKeyPool, MAX_KEYS } from "../_shared/keyPool.ts";
+import { aiDataTier, geminiKeys as geminiKeyPool, groqKeys as groqKeyPool, MAX_KEYS } from "../_shared/keyPool.ts";
 
 export interface ProbeResult {
   configured: boolean;
@@ -52,7 +52,7 @@ export function interestingSecretNames(allNames: string[]): string[] {
  */
 export function unreadAiKeyNames(allNames: string[]): string[] {
   const read = new Set(["ZAD_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY"]);
-  for (let n = 1; n <= MAX_KEYS; n++) read.add(`ZAD_API_KEY_${n}`).add(`GROQ_API_KEY_${n}`);
+  for (let n = 1; n <= MAX_KEYS; n++) read.add(`ZAD_API_KEY_${n}`).add(`GROQ_API_KEY_${n}`).add(`ZAD_PAID_KEY_${n}`);
   return allNames.filter((n) => /GROQ|GROK|XAI|GEMINI|ZAD_API/i.test(n) && /KEY/i.test(n) && !read.has(n)).sort();
 }
 
@@ -159,6 +159,8 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     exchange_rate,
     usda,
     resend: await resend,
+    // ٨.٢: "free" = داتا العملاء رايحة للطبقة المجانية، اللي شروطها بتمنع البيانات الشخصية.
+    ai_data_tier: aiDataTier(env),
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),

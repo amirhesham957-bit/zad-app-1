@@ -156,3 +156,10 @@ Deno.test("the prompt says a transfer to someone else is a debit and a fee is no
   assertStringIncludes(system, "Use transfer ONLY when the text says both accounts belong to the customer");
   assertStringIncludes(system, "never a fee printed on its own line");
 });
+
+Deno.test("the gate prompt masks account and phone numbers before they reach the model (ZAD_PLAN 8.2)", () => {
+  const { user } = gatePrompt({ packageName: "p", title: "BanqueMisr", text: "تم تحويل 1500 جنيه من حساب 1234567890123 إلى 01012345678", knownSender: null });
+  assertEquals(user.includes("1234567890123"), false);
+  assertEquals(user.includes("01012345678"), false);
+  assertStringIncludes(user, "1500");
+});
