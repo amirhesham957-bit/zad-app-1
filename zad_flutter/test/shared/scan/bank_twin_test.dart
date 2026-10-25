@@ -71,4 +71,23 @@ void main() {
       isNull,
     );
   });
+
+  test('an ATM withdrawal moved to cash is not the twin of a card receipt', () {
+    final atm = ZadTransaction.fromJson(<String, dynamic>{
+      'id': 'atm',
+      'user_id': 'u',
+      'amount': 2000,
+      'title': 'سحب كاش — NBE',
+      'created_at': paid.toIso8601String(),
+      'txn_kind': 'transfer',
+      'transfer_to': 'cash',
+      'is_expense': true,
+      'source_type': kBankSourceType,
+      'bank_name': 'NBE',
+    });
+    expect(
+      bankTwinOf(total: 2000, spentAt: paid, rows: <ZadTransaction>[atm]),
+      isNull,
+    );
+  });
 }
