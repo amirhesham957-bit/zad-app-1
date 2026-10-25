@@ -49,3 +49,21 @@ export function redactNotificationText(raw: string | null | undefined): string {
     .replace(EMAIL, "[بريد]")
     .replace(LONG_DIGITS, "[رقم]");
 }
+
+/** ٨ أرقام أو أكتر متصلة: حساب أو مرجع. المبالغ لحد ٩٬٩٩٩٬٩٩٩ من غير فاصلة بتعدّي. */
+const ACCOUNT_DIGITS = /\b\d{8,}\b/g;
+
+/**
+ * النص اللي بيتبعت لموديل البوابة (ZAD_PLAN ٨.٢، أقل داتا ممكنة): نفس حجب الآيبان والبطاقة
+ * والتليفون والبريد، بس الأرقام الطويلة من ٨ مش من ٦ — الموديل لازم يقرا المبلغ، و«تم إيداع 125000
+ * جنيه» كانت هتطلع «[رقم] جنيه» برّه. آخر ٤ أرقام من الكارت (****1234) بيفضلوا عشان مطابقة الكارت.
+ */
+export function redactForModel(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return raw
+    .replace(IBAN, "[حساب]")
+    .replace(CARD, "[بطاقة]")
+    .replace(PHONE, "[تليفون]")
+    .replace(EMAIL, "[بريد]")
+    .replace(ACCOUNT_DIGITS, "[رقم]");
+}

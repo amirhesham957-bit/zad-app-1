@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { geminiKeys, groqKeys, MAX_KEYS } from "./keyPool.ts";
+import { aiDataTier, geminiKeys, groqKeys, MAX_KEYS } from "./keyPool.ts";
 
 const envOf = (vars: Record<string, string>) => (n: string) => vars[n];
 
@@ -38,4 +38,16 @@ Deno.test("groqKeys: numbered keys then the singular, deduped", () => {
     ["a", "f"],
   );
   assertEquals(groqKeys(envOf({ GROQ_API_KEY: "s" })), ["s"]);
+});
+
+Deno.test("geminiKeys: a paid key replaces the free pool entirely — no free fallback (ZAD_PLAN 8.2)", () => {
+  const env = envOf({ ZAD_API_KEY_1: "free1", ZAD_API_KEY_2: "free2", GEMINI_API_KEY: "legacy", ZAD_PAID_KEY_1: "paid1", ZAD_PAID_KEY_3: "paid3" });
+  assertEquals(geminiKeys(env), ["paid1", "paid3"]);
+  assertEquals(aiDataTier(env), "paid");
+});
+
+Deno.test("geminiKeys: without a paid key nothing changes, and the tier says free", () => {
+  const env = envOf({ ZAD_API_KEY_1: "free1", ZAD_PAID_KEY_1: "  " });
+  assertEquals(geminiKeys(env), ["free1"]);
+  assertEquals(aiDataTier(env), "free");
 });

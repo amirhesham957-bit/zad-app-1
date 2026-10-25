@@ -4,6 +4,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { decideGate, knownFinancialSender, looksLikeMoneyMoved, ruleGate, type GateKind } from "./notificationGate.ts";
 import { judgeBankCase } from "./evals/bankEval.ts";
+import { gatePrompt } from "./notificationGate.ts";
 
 interface Case {
   id: string;
@@ -56,4 +57,16 @@ Deno.test("the eval runs the same ladder as the live gate: a declined purchase i
   const debit = { kind: "debit" as const, amount: 780, currency: "EGP", counterparty: null, confidence: 0.9 };
   // deno-lint-ignore no-explicit-any
   assertEquals(judgeBankCase(declined as any, debit, knownFinancialSender(declined.package, declined.title)).decisionOk, true);
+});
+
+Deno.test("what the model reads is masked, but every amount it must find is still there (ZAD_PLAN 8.2)", () => {
+  const lost = corpus.filter((c) => {
+    const amount = (c as unknown as { amount: number | null }).amount;
+    if (amount == null) return false;
+    const { user } = gatePrompt({ packageName: c.package, title: c.title, text: c.text, knownSender: null });
+    const nums = [...user.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/٬/g, ",").matchAll(/[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?/g)]
+      .map((m) => Number(m[0].replace(/,/g, "")));
+    return !nums.some((n) => Math.abs(n - amount) < 0.005);
+  }).map((c) => c.id);
+  assertEquals(lost, []);
 });

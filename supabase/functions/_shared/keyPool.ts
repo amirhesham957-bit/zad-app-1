@@ -26,10 +26,28 @@ function numbered(env: Env, prefix: string): string[] {
 const unique = (keys: string[]) => [...new Set(keys)];
 
 /**
- * مفاتيح جيميناي: `ZAD_API_KEY_1..20`، ولو ولا واحد متحط، المفرد القديم
+ * مفاتيح جيميناي المدفوعة (ZAD_PLAN ٨.٢): `ZAD_PAID_KEY_1..20`، من مشروع عليه فاتورة. شروط جوجل
+ * للمجاني صريحة: «Do not submit sensitive, confidential, or personal information to the Unpaid
+ * Services» — وبيستخدموا الطلبات في تحسين منتجاتهم ومراجعين بشر ممكن يقروها. المدفوع لأ.
+ */
+export function paidGeminiKeys(env: Env): string[] {
+  return unique(numbered(env, "ZAD_PAID_KEY_"));
+}
+
+/** داتا العملاء ماشية على أنهي طبقة: "paid" لو فيه مفتاح مدفوع، وإلا "free". */
+export function aiDataTier(env: Env): "paid" | "free" {
+  return paidGeminiKeys(env).length > 0 ? "paid" : "free";
+}
+
+/**
+ * مفاتيح جيميناي اللي بتشيل داتا العملاء. لو فيه مفتاح مدفوع، **هو بس** — المجاني مابيتلمسش حتى
+ * كاحتياطي، لأن احتياطي مجاني = نفس التسريب لما المدفوع يقع (الاحتياطي بعده جروك).
+ * من غير مدفوع: `ZAD_API_KEY_1..20`، ولو ولا واحد متحط، المفرد القديم
  * (`ZAD_API_KEY` ثم `GEMINI_API_KEY`) عشان مشروع نصه متنقل مايخسرش جيميناي.
  */
 export function geminiKeys(env: Env): string[] {
+  const paid = paidGeminiKeys(env);
+  if (paid.length > 0) return paid;
   const pool = unique(numbered(env, "ZAD_API_KEY_"));
   if (pool.length > 0) return pool;
   const legacy = env("ZAD_API_KEY")?.trim() || env("GEMINI_API_KEY")?.trim();
