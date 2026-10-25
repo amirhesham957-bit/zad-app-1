@@ -171,6 +171,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024223500_engagement_hours.sql supabase/sql/tests/engagement_hours_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/salary_opens_cycle_scaffold.sql supabase/migrations/20261025001500_salary_opens_cycle.sql supabase/sql/tests/salary_opens_cycle_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/guards_speak_scaffold.sql supabase/migrations/20261025003500_guards_speak.sql supabase/sql/tests/guards_speak_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/home_state_scaffold.sql supabase/migrations/20261025012500_home_state.sql supabase/sql/tests/home_state_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.

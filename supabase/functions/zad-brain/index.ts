@@ -77,6 +77,7 @@ import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
+import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
@@ -757,6 +758,7 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
 }
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
+  const snapshotStartedMs = Date.now();
   const cashKey = isoWeekKey(new Date());
   // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
   // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
@@ -1315,7 +1317,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     appointmentsToday: houseAppointmentsToday,
   });
 
-  return {
+  const snapshot = {
     // العملة والبلد دلوقتي من zad_users (بييجي من اختيار السوق في الكلاينت عبر
     // syncMarketProfile). "غير معروف" بدل افتراض ر.س — الموديل ممنوع يخترع عملة.
     currency: budgetState.currency ?? userRes.data?.currency ?? "غير معروف",
@@ -1588,6 +1590,9 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // "مفيش مصاريف" و"مقدرتش أقرا المصاريف"، والعقل كان بيقول الأولانية وهو يقصد التانية.
     data_errors: dataErrors,
   };
+  // حالة البيت (ZAD_PLAN ٣.١): الصف بيتحسب من اللقطة دي نفسها. فشل الحفظ مايوقفش اللفة.
+  await saveHomeState(sb, userId, snapshot, snapshotStartedMs);
+  return snapshot;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -8564,6 +8569,18 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const sbTasks = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const result = await processDueAgentTasks(sbTasks);
+      return new Response(JSON.stringify({ ok: true, ...result }), { headers: CORS_HEADERS });
+    }
+
+    // حالة البيت (ZAD_PLAN ٣.١): الكرون home-state-refresh بينادي هنا بس لو فيه بيت اتغير
+    // (zad_home_states_due في SQL)، بنفس سيكريت المهام. مفيش نداء موديل — قراية الجداول بس.
+    if (body.action === "refresh_home_state") {
+      if (!(await secretMatches(req.headers.get("X-Agent-Tasks-Cron-Secret"), "ZAD_AGENT_TASKS_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbHome = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const result = await refreshDueHomeStates(sbHome, (uid) => buildSnapshot(sbHome, uid));
+      console.log(`[home_state] refreshed=${result.refreshed} failed=${result.failed}`);
       return new Response(JSON.stringify({ ok: true, ...result }), { headers: CORS_HEADERS });
     }
 

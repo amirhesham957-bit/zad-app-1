@@ -1368,5 +1368,12 @@
     "user_id",
     "watered_at",
     "watered_day"
+  ],
+  "zad_home_state": [
+    "computed_at",
+    "dirty_at",
+    "state",
+    "user_id",
+    "version"
   ]
 }
