@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, sameCurrency } from "./liveDeals.ts";
-import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, takeSearchBudget, withPaidGroundingFirst } from "./paidSearch.ts";
+import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
 // (2-key pool) secondary for TEXT/JSON only — vision never touches Groq ──────────────────
@@ -1082,6 +1082,10 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
           lastWebSearchAttempts.push(`k${ki}/${model}:${res.status} ${msg}`);
           console.warn(`[CoreIntel] grounded search ${model} HTTP ${res.status}: ${msg}`);
           if (restRefusedKey(res.status, errText)) return [];
+          if (paidQuotaExhausted(res.status, grounding.paid)) {
+            groundedQuotaUntil = Date.now() + 30 * 60 * 1000;
+            return [];
+          }
           if (res.status !== 429) sawOnly429 = false;
           // الكوتة لكل موديل لوحده (CLAUDE.md) — 429 على موديل مش معناه إن التاني مقفول.
           continue;
@@ -1128,7 +1132,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
   // 429 from 2026-10-05, so walking all ten only delayed the fallback.
   const grounding = currentGroundingPlan();
   if (!grounding) return { parsed: null, ok: false };
-  if (Date.now() < groundingKeyRestUntil) return { parsed: null, ok: false };
+  if (Date.now() < groundingKeyRestUntil || Date.now() < groundedQuotaUntil) return { parsed: null, ok: false };
   const keys = grounding.keys;
   // The card waits on this, and compound still needs its turn: 40s in all.
   const deadline = Date.now() + 40_000;
@@ -1154,6 +1158,10 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
         if (!res.ok) {
           console.warn(`[CoreIntel] grounded json k${ki}/${model} HTTP ${res.status}`);
           if (restRefusedKey(res.status, await res.text())) return { parsed: null, ok: false };
+          if (paidQuotaExhausted(res.status, grounding.paid)) {
+            groundedQuotaUntil = Date.now() + 30 * 60 * 1000;
+            return { parsed: null, ok: false };
+          }
           continue;
         }
         const data = await res.json();
@@ -1252,7 +1260,41 @@ const decodeEntities = (v: string) => v
   .replace(/\s+/g, " ").trim();
 
 /**
- * محرك بحث حقيقي بمفتاح، لو موجود: Tavily (TAVILY_API_KEY) أو Brave (BRAVE_SEARCH_API_KEY). من
+ * Tavily (TAVILY_API_KEY, 1,000 free searches a month), its own source since 2026-10-25 so it can lead
+ * the chain while the paid grounding rests ([tavilyFirstWhileGroundingRests]).
+ */
+async function tavilySnippets(query: string, maxResults: number): Promise<WebHit[]> {
+  const tavily = Deno.env.get("TAVILY_API_KEY");
+  if (tavily) {
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tavily}` },
+        body: JSON.stringify({ query, max_results: maxResults, include_answer: false, search_depth: "basic" }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const hits: WebHit[] = ((data?.results ?? []) as Array<{ title?: string; url?: string; content?: string }>)
+          .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.content ?? "").slice(0, 500) }));
+        // Tavily's `answer` is its own model's summary, with no page or date behind it: on 24/10 it said
+        // «مانشستر سيتي 2023» for the last Club World Cup and the brain repeated it first. The pages go
+        // up as they are; the summary does not.
+        lastWebSearchAttempts.push(`tavily:200 hits=${hits.length}`);
+        return hits.slice(0, maxResults);
+      } else {
+        lastWebSearchAttempts.push(`tavily:${res.status}`);
+        await res.body?.cancel();
+      }
+    } catch (e) {
+      lastWebSearchAttempts.push(`tavily:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
+    }
+  }
+  return [];
+}
+
+/**
+ * محرك بحث حقيقي بمفتاح، لو موجود: جوجل CSE أو Brave (BRAVE_SEARCH_API_KEY) — Tavily مصدر لوحده تحت. من
  * سيرفر Supabase مفيش بحث مجاني بيشتغل لكل الأسئلة (٢٠٢٦-١٠-٠١): DuckDuckGo صفر، جوجل نيوز 503،
  * Groq compound اتشال، بحث Gemini خلصت كوتته، وBing News أخبار بس — «مين كسب كاس العالم للأندية
  * آخر مرة؟» مالوش إجابة فيها. الاتنين ليهم باقة مجانية؛ أول ما مفتاح يتحط في Supabase يبقى أول مصدر.
@@ -1284,32 +1326,6 @@ async function keyedSearchSnippets(query: string, maxResults: number): Promise<W
     }
   } else if (googleKey || googleCx) {
     lastWebSearchAttempts.push(googleKey ? "google_cse:no GOOGLE_SEARCH_CX" : "google_cse:no GOOGLE_SEARCH_API_KEY");
-  }
-  const tavily = Deno.env.get("TAVILY_API_KEY");
-  if (tavily) {
-    try {
-      const res = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tavily}` },
-        body: JSON.stringify({ query, max_results: maxResults, include_answer: false, search_depth: "basic" }),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const hits: WebHit[] = ((data?.results ?? []) as Array<{ title?: string; url?: string; content?: string }>)
-          .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.content ?? "").slice(0, 500) }));
-        // Tavily's `answer` is its own model's summary, with no page or date behind it: on 24/10 it said
-        // «مانشستر سيتي 2023» for the last Club World Cup and the brain repeated it first. The pages go
-        // up as they are; the summary does not.
-        lastWebSearchAttempts.push(`tavily:200 hits=${hits.length}`);
-        if (hits.length > 0) return hits.slice(0, maxResults);
-      } else {
-        lastWebSearchAttempts.push(`tavily:${res.status}`);
-        await res.body?.cancel();
-      }
-    } catch (e) {
-      lastWebSearchAttempts.push(`tavily:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
-    }
   }
   const brave = Deno.env.get("BRAVE_SEARCH_API_KEY");
   if (brave) {
@@ -1443,12 +1459,14 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     ? [
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
       ["search_api", () => keyedSearchSnippets(query, maxResults)],
+      ["tavily", () => tavilySnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
     ]
     : [
       ["search_api", () => keyedSearchSnippets(query, maxResults)],
+      ["tavily", () => tavilySnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       // معلومة ثابتة أو حدث عدّى: الموسوعة قبل الأخبار (٢٠٢٦-١٠-٠٢). بتتفلتر هنا لكل لغة على سؤالها.
       ["wikipedia", async () => {
@@ -1470,8 +1488,13 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
     ];
+  const groundingResting = Date.now() < groundedQuotaUntil || Date.now() < groundingKeyRestUntil;
   const ordered = encyclopediaFirstForLatest(
-    withPaidGroundingFirst(sources, currentGroundingPlan()?.paid === true, live || asksLatest(query) || asksLatest(queryEn)),
+    withPaidGroundingFirst(
+      tavilyFirstWhileGroundingRests(sources, groundingResting),
+      currentGroundingPlan()?.paid === true && !groundingResting,
+      live || asksLatest(query) || asksLatest(queryEn),
+    ),
     asksLatest(query) || asksLatest(queryEn),
   );
   for (const [name, run] of ordered) {

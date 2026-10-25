@@ -134,12 +134,33 @@ export function withPaidGroundingFirst<T extends [string, unknown]>(sources: T[]
  */
 export function encyclopediaFirstForLatest<T extends [string, unknown]>(sources: T[], latest: boolean): T[] {
   if (!latest) return sources;
+  const isKeyed = ([name]: T) => name === "search_api" || name === "tavily";
   const wiki = sources.findIndex(([name]) => name === "wikipedia");
-  const keyed = sources.findIndex(([name]) => name === "search_api");
+  const keyed = sources.findIndex(isKeyed);
   if (wiki < 0 || keyed < 0 || wiki < keyed) return sources;
   const out = sources.filter(([name]) => name !== "wikipedia");
-  out.splice(out.findIndex(([name]) => name === "search_api"), 0, sources[wiki]);
+  out.splice(out.findIndex(isKeyed), 0, sources[wiki]);
   return out;
+}
+
+/**
+ * A 429 on the paid key is its project's grounding quota, not one model's (2026-10-25): with the
+ * project unbilled, all four models answered 429 «check your plan and billing details» inside half a
+ * second, twice, and each try took one unit of the daily cap (140 of 150 that day, none answered).
+ * The free pool's quota is per model (CLAUDE.md), so this holds for the paid key only.
+ */
+export function paidQuotaExhausted(status: number, paid: boolean): boolean {
+  return paid && status === 429;
+}
+
+/**
+ * While grounding rests (its quota answered 429, or the key was refused), Tavily leads the chain
+ * (owner's decision 2026-10-25): the free path answers first instead of whatever source happened
+ * to sit ahead of it. `encyclopediaFirstForLatest` still runs after this for «آخر مرة».
+ */
+export function tavilyFirstWhileGroundingRests<T extends [string, unknown]>(sources: T[], resting: boolean): T[] {
+  if (!resting) return sources;
+  return [...sources.filter(([name]) => name === "tavily"), ...sources.filter(([name]) => name !== "tavily")];
 }
 
 /**

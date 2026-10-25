@@ -7,7 +7,9 @@ import {
   DEFAULT_DAILY_CAP,
   groundingPlan,
   keyRefused,
+  paidQuotaExhausted,
   paidSearchKey,
+  tavilyFirstWhileGroundingRests,
   takeSearchBudget,
 } from "./paidSearch.ts";
 
@@ -130,4 +132,22 @@ Deno.test("«آخر مرة» asks the encyclopedia before the keyed search; othe
   // A chain where the encyclopedia already leads, or is absent (a live question), is left alone.
   const live: Array<[string, number]> = [["bing_news", 0], ["search_api", 1], ["google_news", 2]];
   assertEquals(encyclopediaFirstForLatest(live, true), live);
+});
+
+// 2026-10-25: the unbilled paid project answered 429 on all four models; each try took one unit of the cap.
+Deno.test("a 429 on the paid key ends grounding for now; on the free pool it is one model's quota", () => {
+  assertEquals(paidQuotaExhausted(429, true), true);
+  assertEquals(paidQuotaExhausted(429, false), false);
+  assertEquals(paidQuotaExhausted(503, true), false);
+});
+
+Deno.test("while grounding rests Tavily leads, and «آخر مرة» still asks the encyclopedia before it", () => {
+  const chain: Array<[string, number]> = [["search_api", 0], ["tavily", 1], ["gemini_google_search", 2], ["wikipedia", 3], ["bing_news", 4]];
+  assertEquals(tavilyFirstWhileGroundingRests(chain, false), chain);
+  const resting = tavilyFirstWhileGroundingRests(chain, true);
+  assertEquals(resting.map(([n]) => n), ["tavily", "search_api", "gemini_google_search", "wikipedia", "bing_news"]);
+  assertEquals(encyclopediaFirstForLatest(resting, true).map(([n]) => n), ["wikipedia", "tavily", "search_api", "gemini_google_search", "bing_news"]);
+  // A live question: Tavily ahead of the news.
+  const live: Array<[string, number]> = [["bing_news", 0], ["search_api", 1], ["tavily", 2], ["google_news", 3]];
+  assertEquals(tavilyFirstWhileGroundingRests(live, true).map(([n]) => n), ["tavily", "bing_news", "search_api", "google_news"]);
 });
