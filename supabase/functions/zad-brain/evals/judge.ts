@@ -9,7 +9,9 @@
 import type { TurnOutcome } from "../acceptance.ts";
 
 export type EvalCategory =
-  | "log" | "question" | "correction" | "refusal" | "dialect" | "child" | "money_safety" | "medicine" | "chat";
+  | "log" | "question" | "correction" | "refusal" | "dialect" | "child" | "money_safety" | "medicine" | "chat"
+  // ZAD_PLAN 3.11: a customer's correction, replayed (evals/lessons.ts). Measured apart, outside green/red.
+  | "lesson";
 
 export interface EvalExpect {
   /** A write the turn must propose for confirmation (proposals[].tool), e.g. log_transaction. */

@@ -1397,5 +1397,15 @@
     "source",
     "valid_from",
     "valid_until"
+  ],
+  "zad_corrections": [
+    "created_at",
+    "id",
+    "kind",
+    "right_answer",
+    "source",
+    "subject",
+    "user_id",
+    "wrong"
   ]
 }
