@@ -184,3 +184,8 @@ Deno.test("currency is a closed list too, so a model cannot loop inside it (eval
   assertEquals(props.currency.enum?.includes("EGP"), true);
   assertEquals(props.currency.enum?.every((c) => /^[A-Z]{3}$/.test(c)), true);
 });
+
+Deno.test("the privacy line still asks for the merchant or person — without it the model left counterparty empty (eval 2026-10-25)", () => {
+  const { system } = gatePrompt({ packageName: "p", title: "t", text: "x", knownSender: null });
+  assertStringIncludes(system, "always fill counterparty");
+});
