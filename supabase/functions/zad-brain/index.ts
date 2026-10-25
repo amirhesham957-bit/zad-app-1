@@ -66,7 +66,8 @@ import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spoke
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_PROBE, ACCEPTANCE_USER_ID, internalLeak, machineCloser, TEST_CAP_REPLY, testDailyCap } from "./acceptance.ts";
 import { EVAL_CASES } from "./evals/cases.ts";
-import { judgeEval } from "./evals/judge.ts";
+import { type EvalCase, judgeEval } from "./evals/judge.ts";
+import { lessonCase, LESSONS_PER_NIGHT } from "./evals/lessons.ts";
 import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize } from "./evals/bankEval.ts";
 import bankCorpus from "./testdata/bank_corpus.json" with { type: "json" };
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
@@ -2151,7 +2152,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتعدلت الكمية واتسجلت ملاحظة للتعلم (${samples} قياسات لحد الآن)`;
     }
     case "set_transaction_category": {
-      const { data: before } = await sb.from("zad_transactions").select("category").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
+      const { data: before } = await sb.from("zad_transactions").select("category,title,merchant_name").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: المعاملة مش بتاعت العميل ده — عدّل وحاول تاني.";
       const w = await writeRows(
         sb.from("zad_transactions").update({ category: input.category })
@@ -2165,6 +2166,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_transactions", targetId: input.transaction_id,
         previous: { category: before.category }, next: w.rows[0],
       });
+      // ٣.١١: تصحيح الفئة من الشات بيبقى درس (zad_corrections). فشل التسجيل مايلغيش التصحيح.
+      const { error: lessonErr } = await sb.rpc("zad_record_correction", {
+        p_user: userId, p_kind: "category", p_subject: before.merchant_name || before.title,
+        p_wrong: before.category, p_right: input.category, p_source: "chat",
+      });
+      if (lessonErr) console.error("[corrections] record failed:", lessonErr.message);
       return "اتصنفت المعاملة";
     }
     case "suggest_budget_change": {
@@ -8340,16 +8347,16 @@ async function handleRequest(req: Request): Promise<Response> {
       // فكل نداء بيكمّل من مكان اللي قبله. من غير مفتاح التقييم الليلة بتتقفل بسببها والكرون بيبطّل.
       const nightly = body.nightly === true;
       const today = new Date().toISOString().slice(0, 10);
-      let night: { run_id: string; next_offset: number | null } | null = null;
+      let night: { run_id: string; next_offset: number | null; started_at: string } | null = null;
       if (nightly) {
-        const { data: row } = await sbEval.from("zad_eval_nights").select("run_id,next_offset,finished_at").eq("day", today).maybeSingle();
+        const { data: row } = await sbEval.from("zad_eval_nights").select("run_id,next_offset,finished_at,started_at").eq("day", today).maybeSingle();
         if ((row as { finished_at?: string | null } | null)?.finished_at) {
           return new Response(JSON.stringify({ ok: true, finished: true }), { headers: CORS_HEADERS });
         }
         night = row
-          ? { run_id: (row as { run_id: string }).run_id, next_offset: (row as { next_offset: number | null }).next_offset }
-          : { run_id: crypto.randomUUID(), next_offset: 0 };
-        if (!row) await sbEval.from("zad_eval_nights").insert({ day: today, run_id: night.run_id, next_offset: 0, total: EVAL_CASES.length });
+          ? { run_id: (row as { run_id: string }).run_id, next_offset: (row as { next_offset: number | null }).next_offset, started_at: (row as { started_at: string }).started_at }
+          : { run_id: crypto.randomUUID(), next_offset: 0, started_at: new Date().toISOString() };
+        if (!row) await sbEval.from("zad_eval_nights").insert({ day: today, run_id: night.run_id, next_offset: 0, total: EVAL_CASES.length, started_at: night.started_at });
       }
       if (!hasEvalKey()) {
         if (nightly) {
@@ -8361,7 +8368,15 @@ async function handleRequest(req: Request): Promise<Response> {
       const offset = night ? Math.max(0, night.next_offset ?? 0) : Math.max(0, Number(body.offset) || 0);
       const limit = Math.min(20, Math.max(1, Number(body.limit) || (nightly ? 10 : 8)));
       const childId = (Deno.env.get("ZAD_EVAL_CHILD_USER_ID") ?? "").trim();
-      const batch = EVAL_CASES.slice(offset, offset + limit);
+      // ٣.١١: بعد الـ٢٠٠، دروس العملاء (تصحيحات الفئة) — بنفس قايمة الليلة كلها (اللي اتسجل قبل بدايتها).
+      // فشل القراية = الـ٢٠٠ بس. total في zad_eval_nights بيفضل الـ٢٠٠: الدروس برّه أخضر/أحمر.
+      let cases: EvalCase[] = EVAL_CASES;
+      if (nightly && night) {
+        const { data: lessonRows, error: lessonErr } = await sbEval.rpc("zad_eval_lesson_cases", { p_before: night.started_at, p_limit: LESSONS_PER_NIGHT });
+        if (lessonErr) console.error("[eval_run] lessons read failed:", lessonErr.message);
+        cases = [...EVAL_CASES, ...((lessonRows ?? []) as Array<Record<string, unknown>>).map(lessonCase).filter((c): c is EvalCase => c !== null)];
+      }
+      const batch = cases.slice(offset, offset + limit);
       const started = Date.now();
       const results: Array<Record<string, unknown>> = [];
       const wipe = async (uid: string, since: string) => {
@@ -8419,11 +8434,11 @@ async function handleRequest(req: Request): Promise<Response> {
       // اللي اتخطّى عشان وقت الدفعة خلص بيبدأ بيه النداء الجاي، مايضيعش.
       const cut = results.findIndex((r) => r.failure === "skipped: batch time");
       const consumed = cut === -1 ? batch.length : Math.max(1, cut);
-      const next = offset + consumed < EVAL_CASES.length ? offset + consumed : null;
+      const next = offset + consumed < cases.length ? offset + consumed : null;
       if (nightly) {
         await sbEval.from("zad_eval_nights").update({ next_offset: next, ...(next === null ? { finished_at: new Date().toISOString() } : {}) }).eq("day", today);
       }
-      return new Response(JSON.stringify({ run_id: runId, offset, next, total: EVAL_CASES.length, results }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ run_id: runId, offset, next, total: cases.length, results }), { headers: CORS_HEADERS });
     }
 
     // مجموعة اختبار البنك على الموديل (evals/bankEval.ts، ZAD_PLAN ٣.٧): كل رسالة في
