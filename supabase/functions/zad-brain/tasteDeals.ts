@@ -7,7 +7,9 @@
 //
 // مش وقت عروض: الميزانية في خطر (threat OVER/DANGER)، أو وضع الطوارئ («أنا مفلس») شغال، أو البيت في ظرف — العرض
 // تشجيع على صرف.
-// مفيش مصدر للعروض بمفتاح؛ البحث هو اللي في zad-core-intelligence (جوجل عبر جيميناي، وإلا بحث ويب عادي).
+// المصدر الأول من ٢٦/١٠ (ZAD_PLAN ٤.٨/٤.٩): zad_deals — عروض متخزّنة بمحلها ومصدرها وتاريخها، من غير بحث جديد.
+// البحث الحي (zad-core-intelligence) بقى احتياطي لما مفيش عرض متخزّن يطابق. والاحتياج: قايمة الشراء، وبعدها اللي
+// هيخلص خلال أسبوع (zad_home_state)، وبعدها الاهتمامات.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { countryNameAr, itemKey, travelContext } from "./shared.ts";
@@ -34,6 +36,8 @@ export interface TasteDeal {
   favorite: boolean;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
+  /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
+  source?: { kind: string; url: string | null; until: string | null } | null;
 }
 
 /** الأصناف اللي بندوّر لها: قايمة الشراء المفتوحة الأول، وبعدها الاهتمامات. مفيش تكرار، ٥ بالكتير. */
@@ -90,8 +94,12 @@ export function pickDeal(raw: unknown, items: readonly string[], favorites: read
     if (!wanted) continue;
     const key = `deal:${itemKey(wanted)}:${itemKey(store)}`;
     if (skip.has(key)) continue;
+    const src = d?.source as { kind?: unknown; url?: unknown; until?: unknown } | undefined;
     found.push({
       item, store, key,
+      ...(src && typeof src.kind === "string"
+        ? { source: { kind: src.kind, url: typeof src.url === "string" ? src.url : null, until: typeof src.until === "string" ? src.until.slice(0, 10) : null } }
+        : {}),
       price: hasPrice ? Math.round(price * 100) / 100 : null,
       discount_percent: hasDiscount ? Math.round(discount) : null,
       note: typeof d?.note === "string" && d.note.trim() ? d.note.trim().slice(0, 120) : null,
@@ -100,6 +108,35 @@ export function pickDeal(raw: unknown, items: readonly string[], favorites: read
   }
   found.sort((a, b) => Number(b.favorite) - Number(a.favorite) || (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
   return found[0] ?? null;
+}
+
+export interface StoredDealRow {
+  store: string;
+  item_name: string;
+  price: number | string;
+  price_before: number | string | null;
+  source_kind: string;
+  source_url: string | null;
+  valid_until: string | null;
+}
+
+/** صفوف zad_deals بشكل نتيجة البحث اللي [pickDeal] بيقراه: الخصم من السعر قبل العرض، والمصدر معاه. */
+export function storedDeals(rows: readonly StoredDealRow[] | null | undefined): Array<Record<string, unknown>> {
+  return (rows ?? []).map((r) => {
+    const price = Number(r.price);
+    const before = Number(r.price_before);
+    const discount = Number.isFinite(before) && before > price && price > 0 ? ((before - price) / before) * 100 : null;
+    return {
+      item: r.item_name, store: r.store, price, discount_percent: discount, note: null,
+      source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
+    };
+  });
+}
+
+/** اللي هيخلص خلال أسبوع من حالة البيت (pantry.running_out)، الأقرب الأول. */
+export function runningOutNames(state: unknown): string[] {
+  const list = (state as { pantry?: { running_out?: unknown } } | null)?.pantry?.running_out;
+  return Array.isArray(list) ? list.map((r) => String((r as { name?: unknown })?.name ?? "")).filter(Boolean) : [];
 }
 
 /** بلد العرض: البلد اللي العميل فيه دلوقتي (travelContext)، وإلا بلد الحساب. «» لو مش معروف. */
@@ -124,7 +161,7 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | 
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now()): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);
-    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke] = await Promise.all([
+    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
@@ -135,23 +172,30 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       // فشل القراية = اعتبره شغال: عرض في يوم «أنا مفلس» أوحش من يوم من غير عرض.
       sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
         .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
+      sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle(),
     ]);
     if (broke) return null;
     const interests = (profile as { interests?: unknown } | null)?.interests;
     const items = tasteItems(
-      ((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
+      [
+        ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
+        ...runningOutNames((home as { state?: unknown } | null)?.state),
+      ],
       Array.isArray(interests) ? interests.map(String) : [],
     );
     // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
+    const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
+    const skip = askedDealKeys(past as Array<{ facts?: unknown }>);
+    const { data: stored, error: storedErr } = await sb.from("zad_deals")
+      .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
+      .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
+    if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
+    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip);
+    if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pickDeal(
-      (res as { deals?: unknown } | null)?.deals,
-      items,
-      favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
-      askedDealKeys(past as Array<{ facts?: unknown }>),
-    );
+    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;
