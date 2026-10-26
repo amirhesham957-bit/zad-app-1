@@ -116,12 +116,25 @@ export function readDeals(parsed: unknown): Array<{ item: string; store: string;
  * refuses a row without a link — so the model answers the result's number, never a URL of its own.
  */
 export function storeDealsQuery(store: string, countryName: string): string {
-  return `عروض ${store} ${countryName} الأسبوع`.replace(/\s+/g, " ").trim();
+  return `عروض ${searchStoreName(store)} ${countryName} الأسبوع`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The name people search a store by, not the legal name its receipt prints. Measured 2026-10-26: four of
+ * the seven stores zad_deal_search_targets picked came as «شركة … ستورز» («شركة بيم ستورز»). The
+ * company word goes; «ستورز» goes only when a real name of three letters or more is left
+ * («شركة سم ستورز» stays «سم ستورز», since «سم» alone searches something else).
+ */
+export function searchStoreName(store: string): string {
+  const name = store.trim().replace(/\s+/g, " ").replace(/^(شركة|شركه|مؤسسة|مؤسسه)\s+/, "");
+  const short = name.replace(/\s+(ستورز|ستور|للتجارة|للتجاره)$/, "").trim();
+  return short.replace(/\s/g, "").length >= 3 ? short : name;
 }
 
 export function storeDealsPrompt(
   store: string, countryName: string, currency: string, hits: DealHit[], today: string,
 ): { system: string; user: string } {
+  store = searchStoreName(store);
   const system =
     `أنت بتقرا نتايج بحث ويب وبتطلع منها عروض حالية لمحل «${store}» بس. ` +
     "خُد بس اللي مكتوب صراحة في نتيجة واحدة: اسم الصنف وسعره. ممنوع تخترع صنف أو سعر أو تاريخ، وممنوع تكمّل من معلوماتك، " +
