@@ -181,3 +181,15 @@ Deno.test("an English reminder is a reminder", () => {
   assert(intentToolHints("remind me tomorrow at 7pm to call mom").includes("add_appointment"));
   assert(!intentToolHints("I reminded him yesterday").includes("add_appointment"));
 });
+
+// إعادة الحالات الفاشلة بعد #273 (٢٠٢٦-١٠-٢٦ ١٢:٢٠): آخر ادعاءين كانوا بيعدّوا.
+Deno.test("«ضفت «شراب كحة»» and «بكرة الساعة ٨ أذكرك» are claims; asking for the time is not", async () => {
+  const { shouldWidenTools, unbackedReminderClaim, unbackedWriteClaim } = await import("./specialists.ts");
+  const syrup = "ابشر، ضفت «شراب كحة» لبنتك في الصيدلية 👌";
+  assert(shouldWidenTools(syrup));
+  assert(unbackedWriteClaim("ضيف شراب كحة لبنتي في الصيدلية", syrup));
+  const school = "ذكرني باچر الساعة ٨ اروح المدرسة";
+  assert(unbackedReminderClaim(school, "ابشر، أبشر، بكرة الساعة ٨ الصباح أذكرك تروح المدرسة 👌"));
+  assertEquals(unbackedReminderClaim(school, "تبي أذكرك الساعة ٨ الصبح ولا ٧ ونص؟"), false);
+  assertEquals(unbackedReminderClaim(school, "تحب أفكرك الساعة كام بالظبط؟"), false);
+});
