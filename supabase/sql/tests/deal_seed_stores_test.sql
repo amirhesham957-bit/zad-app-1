@@ -31,8 +31,11 @@ insert into public.price_index (item_name, price, currency, user_id, source, sto
 
 create temporary table t as select * from public.zad_deal_search_targets(50);
 
-select pg_temp.check((select count(*) from t where country = 'SA') = 11,
-  'with no Saudi customer at all, the eleven Saudi stores on the list are searched');
+select pg_temp.check((select count(*) from t where country = 'SA')
+    = (select count(*) from public.zad_deal_seed_stores where country = 'SA' and active)
+  and (select count(*) from t where country = 'SA') >= 15,
+  'with no Saudi customer at all, every Saudi store on the list is searched');
+select pg_temp.check(exists (select 1 from t where country = 'SA' and store = 'كيتا'), 'كيتا is on the Saudi list');
 select pg_temp.check(exists (select 1 from t where country = 'SA' and store = 'كيو' and currency = 'SAR'),
   'كيو is searched in Saudi Arabia, in riyals');
 select pg_temp.check((select count(*) from t where country = 'EG' and store = 'كارفور') = 1,

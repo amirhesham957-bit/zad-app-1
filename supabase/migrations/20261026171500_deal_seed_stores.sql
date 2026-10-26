@@ -3,7 +3,7 @@
 -- zad_deal_search_targets كان بيختار بس المحلات اللي العملاء اشتروا منها (فاتورة، أو تاجر دفعله بيتين). المقاس
 -- ٢٦/١٠: ٧ محلات كلهم مصر، وصفر محل سعودي — فبحث الخميس كان هيعدّي السعودية كلها. دلوقتي:
 --
---   • zad_deal_seed_stores — قايمة المالك لكل بلد: السوبرماركت، وتطبيقات التوصيل (صفحاتها وإعلاناتها العامة بس،
+--   • zad_deal_seed_stores — قايمة المالك لكل بلد (ومعاها كيتا وباقي التطبيقات والسوبرماركت الكبيرة، طلب المالك): السوبرماركت، وتطبيقات التوصيل (صفحاتها وإعلاناتها العامة بس،
 --     من غير دخول التطبيق — قرار المالك)، والمتاجر. بتدخل بعد محلات العملاء، ومن غير تكرار لنفس المحل.
 --   • zad_deal_search_log — كل محل اتبحث، حتى لو ماطلعش عرض. قبل كده «اتبحث الأسبوع ده» كان بيتعرف من zad_deals
 --     بس، فمحل من غير نتايج كان بيرجع في كل نداء وياخد دور غيره.
@@ -36,6 +36,12 @@ insert into public.zad_deal_seed_stores (country, store, currency, kind) values
   ('SA', 'نينجا', 'SAR', 'delivery'),
   ('SA', 'نون', 'SAR', 'marketplace'),
   ('SA', 'أمازون السعودية', 'SAR', 'marketplace'),
+  ('SA', 'كيتا', 'SAR', 'delivery'),
+  ('SA', 'مرسول', 'SAR', 'delivery'),
+  ('SA', 'كارفور السعودية', 'SAR', 'grocery'),
+  ('SA', 'التميمي', 'SAR', 'grocery'),
+  ('SA', 'الدانوب', 'SAR', 'grocery'),
+  ('SA', 'بن داود', 'SAR', 'grocery'),
   ('EG', 'كارفور', 'EGP', 'grocery'),
   ('EG', 'خير زمان', 'EGP', 'grocery'),
   ('EG', 'أولاد رجب', 'EGP', 'grocery'),
@@ -44,7 +50,13 @@ insert into public.zad_deal_seed_stores (country, store, currency, kind) values
   ('EG', 'سبينيس', 'EGP', 'grocery'),
   ('EG', 'طلبات', 'EGP', 'delivery'),
   ('EG', 'نون', 'EGP', 'marketplace'),
-  ('EG', 'أمازون مصر', 'EGP', 'marketplace')
+  ('EG', 'أمازون مصر', 'EGP', 'marketplace'),
+  ('EG', 'هايبر وان', 'EGP', 'grocery'),
+  ('EG', 'مترو ماركت', 'EGP', 'grocery'),
+  ('EG', 'أوسكار', 'EGP', 'grocery'),
+  ('EG', 'بريدفاست', 'EGP', 'delivery'),
+  ('EG', 'رابيت', 'EGP', 'delivery'),
+  ('EG', 'إنستاشوب', 'EGP', 'delivery')
 on conflict (country, store) do nothing;
 
 create table if not exists public.zad_deal_search_log (
