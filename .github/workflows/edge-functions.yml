@@ -187,6 +187,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/sql/tests/forecasts_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/sql/tests/forecast_said_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/migrations/20261026223500_forecast_accuracy_said.sql supabase/sql/tests/forecast_said_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/sql/tests/forecast_runs_out_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/migrations/20261026233000_forecast_runs_out.sql supabase/sql/tests/forecast_runs_out_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/house_learnings_scaffold.sql supabase/migrations/20261027001500_house_learnings.sql supabase/sql/tests/house_learnings_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/sql/tests/forecast_runs_out_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/migrations/20261026233000_forecast_runs_out.sql supabase/sql/tests/forecasts_test.sql
           LIST
 
