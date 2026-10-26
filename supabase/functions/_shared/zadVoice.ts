@@ -260,6 +260,8 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   ignored_days: "sulky",
   // «فين راحت فلوسي؟» كل جمعة — النبرة بتتحدد من الأرقام (voiceMoments.summarizeWeek).
   weekly_money_proud: "proud",
+  // حكاية البيت الشهرية (ZAD_PLAN ٥.٢).
+  monthly_story: "warm",
   weekly_money_reproach: "reproachful",
   weekly_money_story: "warm",
   // تحدي ٣٠ يوم توفير (20260914010000)
@@ -311,6 +313,7 @@ export const MOMENT_EMOTION_RANGE: Record<string, readonly VoiceEmotion[]> = {
   weekly_money_proud: ["proud", "cheerful", "playful"],
   weekly_money_reproach: ["reproachful", "playful", "worried"],
   weekly_money_story: ["warm", "cheerful", "caring"],
+  monthly_story: ["warm", "cheerful", "caring"],
   challenge_milestone: ["proud", "cheerful", "playful"],
   challenge_completed: ["proud", "cheerful"],
   challenge_streak_broken: ["sad", "caring", "sulky"],
