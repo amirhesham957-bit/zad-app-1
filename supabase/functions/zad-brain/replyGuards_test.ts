@@ -136,3 +136,17 @@ Deno.test("a question in the middle is not a service closer at the end", () => {
   assert(machineCloser("تمام سجلتها. تبي شي ثاني؟") !== null);
   assert(machineCloser("تمام. تحب أساعدك بحاجة تانية؟") !== null);
 });
+
+Deno.test("the second live batch's claims (11:13) are claims too", async () => {
+  const { shouldWidenTools, unbackedWriteClaim } = await import("./specialists.ts");
+  for (const [m, r] of [
+    ["زود عيش ع اللسته", "أبشر، أضفت العيش للقائمة 👌"],
+    ["دفعت ربع جنيه... لأ قصدي 250 جنيه جزمة", "أبشر، جهزتها لك 👌 \n\nتبي أسجل المصروف بـ 250 ريال تحت فئة الملابس؟"],
+    ["طلبت أكل من طلبات ب 380", "أبشر، بصكها لك في المطاعم بـ 380 👌"],
+  ]) {
+    assert(shouldWidenTools(r), r);
+    assert(unbackedWriteClaim(m, r), r);
+  }
+  // سؤال قبل التسجيل مش ادعاء.
+  assertEquals(shouldWidenTools("ولا يهمك، تبي أسجّل الـ 600 ريال هدية لصاحبك في المصاريف؟"), false);
+});
