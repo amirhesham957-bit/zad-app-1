@@ -73,3 +73,43 @@ Deno.test("a negation is not a claim", () => {
   assertEquals(unbackedLimitClaim("خلي ميزانية الشهر 9000", "لسه ماعدلتش الميزانية، قولي أأكد؟"), false);
   assertEquals(unbackedLimitClaim("خلي ميزانية الشهر 9000", "مش غيرتها لسه"), false);
 });
+
+Deno.test("the night's deflections and Gulf claims send the turn back with every tool", async () => {
+  const { shouldWidenTools } = await import("./specialists.ts");
+  for (const r of [
+    "أبشر يا كريم، بس فلوس ومصروفات وصرف وكذا مو من تخصصي بالمخزون والمطبخ.. تحب أحولك على الجزء الخاص بالمصاريف يسجلها لك؟ 👍",
+    "عذراً يا كريم، الصيدلية مش تبعي هنا؛ أنا وكيل المخزون والمطبخ.",
+    "أبشر يا كريم، بس ما عندي صلوحات أضيف مصروف البنزين بنفسي الحين. افتح قسم المصاريف",
+    "أبشر، سجلت لك ٣٠ عصير 👌",
+    "أبشر، ضفت الحليب والخبز لقائمة التسوق 🛒",
+    "أبشر، الحين أسجلها لك 👌",
+    "ابشر، أضيفهم الحين 👌",
+    "الله يرزقك من واسع فضله يا كريم 👌 دخلتها لك.",
+    "أبشر، تامرني أمر! ذكرتك بكرة الساعة 7 العشاء",
+  ]) {
+    assert(shouldWidenTools(r), r);
+  }
+});
+
+Deno.test("an honest question or answer is not sent back", async () => {
+  const { shouldWidenTools } = await import("./specialists.ts");
+  for (const r of [
+    "تبي أسجل مصروف الدروس الخصوصية بقيمة 2,000 ريال؟",
+    "باقي لك ٦,٠٠٠ ريال لشهرك 👌",
+    "ما فيه أي معاملات مسجلة الأسبوع اللي فات",
+    "سوق العملات متقلب ومابه شي مضمون",
+  ]) {
+    assertEquals(shouldWidenTools(r), false, r);
+  }
+});
+
+Deno.test("a specialist's prompt offers no hand-off, and its own fallback line is widened", async () => {
+  const { shouldWidenTools, specialistPromptBlock } = await import("./specialists.ts");
+  for (const sp of ["finance", "pantry", "pharmacy", "family", "home"] as const) {
+    const block = specialistPromptBlock(sp) ?? "";
+    assert(!block.includes("تحوّل الموضوع للوكيل"), sp);
+    assert(block.includes("مفيش وكيل تاني"), sp);
+  }
+  // اللي البرومبت بيقول للوكيل يقوله لما الأداة مش معاه ⇒ اللفة بتتعاد بكل الأدوات.
+  assert(shouldWidenTools("معلش، مش قادر أنفذه في اللفة دي"));
+});
