@@ -106,7 +106,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
@@ -7172,7 +7172,7 @@ async function handleAgentTurnInLane(
       if (executed.length > 0 || proposals.length > 0) {
         return new Response(JSON.stringify({
           ok: true,
-          reply: modelText.trim(),
+          reply: snapshotLeak(modelText) ? SNAPSHOT_REFUSAL_REPLY : modelText.trim(),
           executed: visibleReceipts(executed),
           proposals,
           tool_attempted: true,
@@ -7280,6 +7280,10 @@ async function handleAgentTurnInLane(
   if (executed.length === 0 && proposals.length === 0 && unbackedReminderClaim(message, reply, priorAssistantText(history))) {
     reply = "لسه **ماسجلتش** التذكير ده 🙏 قولّي الوقت بالظبط (مثلاً «فكّرني الساعة ٧:٣٠» أو «كمان ١٠ دقايق»، ولو عايزه يتكرر «وبعدين كل ساعة») وأنا أسجله وأفكّرك في وقته.";
   }
+  if (!proposals.some((p) => p.tool === "set_monthly_limit") && unbackedLimitClaim(message, reply, priorAssistantText(history))) {
+    reply = LIMIT_NOT_CHANGED_REPLY;
+  }
+  if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
   reply = silentWriteFallback(reply, executed, proposals.length);
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
   reply = dropServiceCloser(reply);
