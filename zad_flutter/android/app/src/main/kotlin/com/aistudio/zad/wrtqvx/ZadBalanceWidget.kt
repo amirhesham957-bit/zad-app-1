@@ -46,7 +46,7 @@ class ZadBalanceWidget : HomeWidgetProvider() {
                     }.getOrNull()
                     if (color != null) setInt(R.id.widget_season, "setBackgroundColor", color)
                 }
-                bindPet(this, widgetData)
+                bindPet(context, this, widgetData)
                 val brief = widgetData.getString("zad_brief", null)
                 if (brief.isNullOrBlank()) {
                     setViewVisibility(R.id.widget_brief, View.GONE)
@@ -79,7 +79,7 @@ class ZadBalanceWidget : HomeWidgetProvider() {
     }
 
     /** Mirrors `PetCare.mood` (pet_care.dart) — keep the two in step. */
-    private fun bindPet(views: RemoteViews, data: SharedPreferences) {
+    private fun bindPet(context: Context, views: RemoteViews, data: SharedPreferences) {
         val name = data.getString("zad_pet_name", null)
         val fedAt = data.getString("zad_pet_fed_at", null)?.toLongOrNull()
         val wateredAt = data.getString("zad_pet_watered_at", null)?.toLongOrNull()
@@ -104,16 +104,18 @@ class ZadBalanceWidget : HomeWidgetProvider() {
             ?.let { TimeZone.getTimeZone(it) } ?: TimeZone.getDefault()
         val hour = Calendar.getInstance(zone).apply { timeInMillis = now }
             .get(Calendar.HOUR_OF_DAY)
-        val (face, line) = when {
+        // The lines live in res/values*/strings.xml (ar default, en, tr), the name as %1$s.
+        val (face, lineRes) = when {
             hour >= 23 || hour < 6 ->
-                if (justCared) "😊" to "$name مبسوط 💚" else "😴" to "$name نايم… تصبح على خير"
-            fullness < 0.15 && hydration < 0.15 -> "😢" to "$name زعلان… وحشته"
-            hydration < NEED -> "🥵" to "$name عطشان — اسقيه 💧"
-            fullness < NEED -> "🤤" to "$name جعان — أكّله 🍎"
+                if (justCared) "😊" to R.string.widget_pet_happy else "😴" to R.string.widget_pet_sleeping
+            fullness < 0.15 && hydration < 0.15 -> "😢" to R.string.widget_pet_sad
+            hydration < NEED -> "🥵" to R.string.widget_pet_thirsty
+            fullness < NEED -> "🤤" to R.string.widget_pet_hungry
             justCared || (fullness > 0.6 && hydration > 0.6 && joy > 0.3) ->
-                "😊" to "$name مبسوط 💚"
-            else -> "🙂" to "$name تمام"
+                "😊" to R.string.widget_pet_happy
+            else -> "🙂" to R.string.widget_pet_fine
         }
+        val line = context.getString(lineRes, name)
         views.setViewVisibility(R.id.widget_pet, View.VISIBLE)
         views.setTextViewText(R.id.widget_pet_face, face)
         views.setTextViewText(R.id.widget_pet_line, line)
