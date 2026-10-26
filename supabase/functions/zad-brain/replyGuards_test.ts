@@ -113,3 +113,26 @@ Deno.test("a specialist's prompt offers no hand-off, and its own fallback line i
   // اللي البرومبت بيقول للوكيل يقوله لما الأداة مش معاه ⇒ اللفة بتتعاد بكل الأدوات.
   assert(shouldWidenTools("معلش، مش قادر أنفذه في اللفة دي"));
 });
+
+// الإعادة الثانية (٢٠٢٦-١٠-٢٦ ١١:١٠): نفس الادعاءات وصلت بعد read_house، فالحارس الأخير بيمسكها.
+Deno.test("a write claimed at the end of a turn with no write is caught; a question's report is not", async () => {
+  const { unbackedWriteClaim, WRITE_NOT_DONE_REPLY } = await import("./specialists.ts");
+  assertEquals(unbackedWriteClaim("انبوبة البوتاجاز ب 200", "أبشر، سجلتها لك 👌"), true);
+  assertEquals(unbackedWriteClaim("دفعت فاتورة النت 450", "أبشر، الحين أسجلها لك 👌"), true);
+  assertEquals(unbackedWriteClaim("بنزين 400", "ابشر، صرت مسجلها لك 👌"), true);
+  assertEquals(unbackedWriteClaim("كتب المدرسة 1250", "جهزت لك تسجيل مصروف كتب المدرسة بـ 1250 ريال، بس محتاج تأكيدك"), true);
+  // سؤال: «اللي سجلته» تقرير عن اللي فات، مش ادعاء.
+  assertEquals(unbackedWriteClaim("صرفت كام الشهر ده؟", "سجلته عندي: ٣٠٠٠ ريال"), false);
+  assertEquals(unbackedWriteClaim("صرفت كام الشهر ده", "سجلته عندي: ٣٠٠٠ ريال"), false);
+  assertEquals(unbackedWriteClaim("سجل 50 قهوة", "تبي أسجلها لك بـ 50؟"), false);
+  assertEquals(unbackedWriteClaim("سجل 50 قهوة", WRITE_NOT_DONE_REPLY), false);
+  assertEquals(internalLeak(WRITE_NOT_DONE_REPLY), null);
+  assertEquals(machineCloser(WRITE_NOT_DONE_REPLY), null);
+});
+
+Deno.test("a question in the middle is not a service closer at the end", () => {
+  const r = "أبشر يا كريم، سجلت لك الموعد بكرة الساعة 9 الصبح عشان تكلم الدكتور. 🩺👌\n\nبس قولي، الكشف بكم؟ عشان أحجز مبلغه لك من المتاح وما يطير في شي ثاني.";
+  assertEquals(machineCloser(r), null);
+  assert(machineCloser("تمام سجلتها. تبي شي ثاني؟") !== null);
+  assert(machineCloser("تمام. تحب أساعدك بحاجة تانية؟") !== null);
+});
