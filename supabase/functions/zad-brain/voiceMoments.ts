@@ -138,9 +138,12 @@ const str = (v: unknown, max = 80) => (typeof v === "string" ? v.trim().slice(0,
 /** تقرير «فين راحت فلوسي؟» — الكرون بيسجّله باسم ده، والنبرة بتتحدد وقت الكتابة من الأرقام. */
 export const WEEKLY_MONEY_MOMENT = "weekly_money_story";
 
+/** حكاية البيت الشهرية (ZAD_PLAN ٥.٢) — الأرقام بتتحسب في SQL وقت الإدخال (zad_monthly_story_facts). */
+export const MONTHLY_STORY_MOMENT = "monthly_story";
+
 /** سقف طول الكلام لكل لحظة. الحكاية الأسبوعية أطول من تنبيه؛ الباقي زي ما هو. */
 export function momentLimits(moment: string): { text: number; speech: number } {
-  return moment.startsWith("weekly_money") ? { text: 900, speech: 600 } : { text: 500, speech: 400 };
+  return moment.startsWith("weekly_money") || moment === MONTHLY_STORY_MOMENT ? { text: 900, speech: 600 } : { text: 500, speech: 400 };
 }
 
 /** توجيه إضافي للموديل لكل لحظة محتاجة شكل خاص (مش مجرد جملتين). */
@@ -227,6 +230,10 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "speech: من ٢ لـ٣ جمل ناعمة وحنينة جداً بصوت هادي كأنك بتطمني عليه قبل النوم: ناديه باسمه لو معروف، اتمنّي له نوم هادي وأحلام حلوة، " +
     "وقولي إنك مستنياه الصبح، وفكّريه بحاجة واحدة بس لبكرة لو موجودة. دفا زي حد قريب من العيلة — من غير دلع ولا أي كلام غرامي ولا ادعاء علاقة (قرار المالك ٢٠٢٦-١٠-٠٣)، " +
     "ومن غير أي كلام عن فلوس أو لوم.",
+  monthly_story:
+    "حكاية البيت الشهرية للشهر اللي خلص (month). text: من ٤ لـ٦ سطور قصيرة بأرقام من البيانات بس: المصروف ومقارنته بالشهر اللي قبله، " +
+    "أكبر فئة، أغلى أسبوع وأهداه، ولو فيه learned (حاجات العميل قال عليها «صح») سطر واحد منها، وآخر سطر حاجة واحدة للشهر الجاي. " +
+    "speech: من ٤ لـ٦ جمل بتحكي الشهر بدفء. ماتذكريش أسامي محلات ولا حركات، ومن غير لوم.",
   weekly_money_story:
     "ده تقرير «فين راحت فلوسي؟» الأسبوعي. text: من ٣ لـ٥ سطور قصيرة بأرقام من البيانات بس (المصروف، المقارنة، أكبر فئة، الهدر لو فيه) " +
     "وآخر سطر نصيحة واحدة. speech: من ٤ لـ٦ جمل بتحكي الأسبوع بدفء وتقولي فين راحت الفلوس.",
@@ -542,6 +549,29 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           ? `بص بقى، لازم نتكلم شوية. الأسبوع ده صرفت ${money(facts.spent)}${top ? `، وأغلبها على ${top}` : ""}${wasted.length ? `، وكمان ${wasted[0]} اتهدر` : ""}. يعني كده؟ الأسبوع الجاي هنظبطها سوا، ماشي؟`
           : `ده أسبوعك يا صاحبي: صرفت ${money(facts.spent)}${top ? `، أغلبها على ${top}` : ""}. خلينا نبص على الأسبوع الجاي سوا.`;
       return { title: "💸 فين راحت فلوسك الأسبوع ده؟", text: lines.join("\n"), speech };
+    }
+    case MONTHLY_STORY_MOMENT: {
+      const cur = str(facts.currency, 10);
+      const money = (v: unknown) => `${Math.round(Number(v) || 0)}${cur ? ` ${cur}` : ""}`;
+      const tops = Array.isArray(facts.top_categories) ? (facts.top_categories as Array<{ name?: string; amount?: number }>) : [];
+      const weeks = (facts.weeks ?? {}) as { count?: number; highest?: { spent?: number }; lowest?: { spent?: number } };
+      const learned = Array.isArray(facts.learned) ? (facts.learned as unknown[]).map((l) => str(l, 160)).filter(Boolean) : [];
+      const last = Number(facts.last_month_spent) || 0;
+      const top = tops[0]?.name ? str(tops[0].name, 40) : "";
+      const lines = [
+        `صرفت ${money(facts.spent)} الشهر اللي فات${last > 0 ? ` (اللي قبله ${money(last)})` : ""}.`,
+        top ? `أغلبها راح على ${top}: ${money(tops[0].amount)}.` : "",
+        (Number(weeks.count) || 0) > 1 && weeks.highest && weeks.lowest
+          ? `أغلى أسبوع ${money(weeks.highest.spent)} وأهداه ${money(weeks.lowest.spent)}.`
+          : "",
+        learned.length ? `واتعلمت إن ${learned[0]}` : "",
+        "الشهر الجاي: نبص على أكبر فئة سوا.",
+      ].filter(Boolean);
+      return {
+        title: "📖 حكاية البيت الشهر اللي فات",
+        text: lines.join("\n"),
+        speech: `ده شهرك يا صاحبي: صرفت ${money(facts.spent)}${top ? `، أغلبها على ${top}` : ""}. خلينا نبدأ الشهر الجديد سوا.`,
+      };
     }
     case "iftar_soon": {
       const mins = Math.round(Number(facts.minutes_to_iftar) || 20);
@@ -1607,7 +1637,7 @@ export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstanc
  */
 export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
   "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken", NEWCOMER_MOMENT,
-  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach",
+  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach", MONTHLY_STORY_MOMENT,
 ]);
 export const BUSY_DAY_APPOINTMENTS = 3;
 
