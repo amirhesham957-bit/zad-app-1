@@ -1044,7 +1044,7 @@ async function groundedSearchSnippets(query: string, maxResults: number): Promis
   // كانت بتصرف ٨ نداءات فاشلة قبل المصادر التانية. ZAD_GROUNDED_SEARCH=on بيرجّعه لو اتدفع.
   const grounding = currentGroundingPlan();
   if (!grounding) {
-    lastWebSearchAttempts.push("gemini_google_search:off (no ZAD_SEARCH_KEY; ZAD_GROUNDED_SEARCH=on uses the free pool)");
+    lastWebSearchAttempts.push("gemini_google_search:off (free only since 2026-10-26; ZAD_GROUNDED_SEARCH=paid with ZAD_SEARCH_KEY turns it on)");
     return [];
   }
   if (Date.now() < groundedQuotaUntil) {
