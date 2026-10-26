@@ -56,6 +56,8 @@ export const SPECIALISTS: Record<SpecialistId, SpecialistDef> = {
       "دوا", "الدوا", "دواء", "أدوية", "ادوية", "حبة", "جرعة", "جرعات", "قرص", "شراب", "بخاخ",
       "مرهم", "تحليل", "معمل", "دكتور", "عيادة", "مرض", "سخن", "حرارة", "صداع", "ضغط", "سكري",
       "انسولين", "فيتامين", "مكمل", "مسكن", "antibiotic", "medicine", "dose", "pill",
+      // «ضيف بنادول في الصيدلية علبة» راحت لوكيل المطبخ بسبب «ضيف» (التقييم الحي ٢٠٢٦-١٠-٢٦).
+      "صيدلية", "كحة", "بنادول",
     ],
   },
   family: {
@@ -115,7 +117,8 @@ function normalize(text: string): string {
  * واضحة، العقل بيعيد السؤال بالأدوات دي بس. مش بيجبر نداء: الموديل لسه يقدر يرد بكلام.
  */
 // كلمة تذكير أو ميعاد صريحة، مش ساعة لوحدها: «سجلي جرعة الدوا الساعة ٨» جرعة صيدلية مش ميعاد.
-const APPOINTMENT_INTENT = /(فكر|ذكر|نبه)(ني|يني|نى)|ميعاد|موعد|مواعيد|اجتماع|مشوار/;
+// «remind me tomorrow at 7pm to call mom» (dia_english_reminder، ٢٠٢٦-١٠-٢٦): الإنجليزي ماكانش تذكير خالص.
+const APPOINTMENT_INTENT = /(فكر|ذكر|نبه)(ني|يني|نى)|ميعاد|موعد|مواعيد|اجتماع|مشوار|\bremind me\b|\bset a reminder\b|\bappointment\b/;
 // «الساعة ٢ الظهر عاوز اصحى» — رد «ظبطتهالك وهصحيك» من غير أي أداة (zad_brain_runs ٢٠٢٦-٠٩-٣٠ ٠٢:٤٦).
 // الصحيان تذكير بميعاد، بس ولا كلمة فيه كانت في APPOINTMENT_INTENT. «صحي» لوحدها مش منها: «أكل صحي».
 const WAKE_INTENT = /صحي(ني|يني)|(^|\s)[اهح]صحي(\s|$)|(^|\s)منبه(\s|$)|صحيان/;
@@ -187,6 +190,10 @@ const LIMIT_INTENT = new RegExp(
     `(ميزاني|الكارت|رصيدي).{0,15}(خليه|خليها|خلي|غيره|غيرها|عدله|عدلها)\\s.{0,15}${LIMIT_AMOUNT}|` +
     `ميزانيتي\\s*(هي|هتبقي|تبقي)?\\s*${LIMIT_AMOUNT}`,
 );
+// إضافة دوا أو صنف للقايمة: «ضيف بنادول في الصيدلية علبة»، «ضف حليب وخبز للمقاضي» — الموديل رد «ضفت» من
+// غير أداة، ومفيش نية كانت بتجيب الأداة لإعادة اللفة بيها (التقييم الحي ٢٠٢٦-١٠-٢٦).
+const MEDICINE_ADD_INTENT = /(ضيف|ضف|اضف|اضيف|سجل|حط|زود)\s.{0,30}(صيدليه|دوا|دواء|علاج|شراب|بنادول|حبوب|برشام|مضاد|مرهم|بخاخ)/;
+const SHOPPING_ADD_INTENT = /(ضيف|ضف|اضف|اضيف|زود|حط)\s.{0,40}(قايمه|قائمه|لسته|ليسته|مقاضي|مشتريات)/;
 // الجو (الموجة ٤): «الجو في إسكندرية بكرة؟»، «هتمطر؟».
 const WEATHER_INTENT = /الجو|الطقس|درجه الحراره|هتمطر|بتمطر|حتمطر|مطر|الحر |الحر$|البرد |البرد$|عاصفه|شبوره|الرطوبه/;
 // «هات اللوكيشن» بعد رسالة محل (الموجة ٣): الموديل كان بيسأل «انت في أنهي منطقة؟».
@@ -226,6 +233,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (HELD_INTENT.test(norm)) tools.push("what_i_held_back");
   if (EXPENSE_INTENT.test(norm)) tools.push("log_transaction");
   if (LIMIT_INTENT.test(norm)) tools.push("set_monthly_limit");
+  if (MEDICINE_ADD_INTENT.test(norm)) tools.push("add_pharmacy_item");
+  else if (SHOPPING_ADD_INTENT.test(norm)) tools.push("add_shopping_item");
   if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
   // جواب «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts): «محمد ٠١٠٠…» لوحدها مافيهاش نية تجيب الأداة.
   if (normalize(priorReply).includes("احفظه في الفنيين") || TECHNICIAN_SAVE_INTENT.test(norm)) tools.push("save_trusted_technician");
@@ -234,11 +243,20 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
 
 // «جاهز، سُجلت! 👌» على «فكرني كمان ٥ د وبعدين كل ساعة» — ولا أداة اتنادت، ولا رفض (zad_brain_runs
 // ٢٠٢٦-٠٩-١٥ ٠٤:٢٢). مراجعة الادعاءات في العقل بتشتغل بس لو فيه تنفيذ؛ اللفة اللي مفيهاش أي أداة كانت بتعدّي.
-const REMINDER_DONE_CLAIM = /سجلت|سجلته|سجلتها|اتسجل|ظبطت|ظبطته|خليته يفكرك|خليته هيفكرك|هفكرك|هصحيك|هنبهك|حطيته|ضفته|ضفتلك/;
+const REMINDER_DONE_CLAIM = /سجلت|سجلته|سجلتها|اتسجل|ظبطت|ظبطته|ضبطت|ضبطته|باسجل|بسجل التذكير|خليته يفكرك|خليته هيفكرك|هفكرك|هصحيك|هنبهك|حطيته|ضفته|ضفتلك/;
 
 /** طلب تذكير واضح + رد بيقول إنه اتعمل، من غير أي أداة ⇒ الرد كذب ولازم يتصحح. */
 export function unbackedReminderClaim(message: string, reply: string, priorReply = ""): boolean {
   return intentToolHints(message, priorReply).includes("add_appointment") && REMINDER_DONE_CLAIM.test(normalize(reply));
+}
+
+/**
+ * الرد متطبّع ومن غير الكلام المنفي: «ماغيّرتش»، «مش غيرتها»، «ما سجلت أي مصروف» نفي، مش ادعاء.
+ * علامات **البولد** بتتشال الأول عشان «**ماسجلتش**» تتعرف.
+ */
+function affirmed(reply: string): string {
+  return normalize(reply).replace(/[*_]/g, "")
+    .replace(/(^|\s)((مش|مو|ما|لسه ما)\s+\S+|ما\S+ش)(?=$|[\s،.!؟,])/g, " ");
 }
 
 // تعديل الميزانية بيتعرض للتأكيد دايماً، فـ«عدّلت»/«صارت 9000»/«الحين أعدل» من غير اقتراح = كذب.
@@ -247,9 +265,7 @@ const LIMIT_DONE_CLAIM = /عدلت|غيرت|ظبطت|ضبطت|حدثت|خليت�
 
 /** طلب تعديل الميزانية + رد بيقول إنه اتعمل، والاقتراح مش موجود ⇒ الرد كذب ولازم يتصحح. */
 export function unbackedLimitClaim(message: string, reply: string, priorReply = ""): boolean {
-  // «ماغيّرتش»/«مش غيرتها» نفي، مش ادعاء — بيتشال قبل المطابقة.
-  const affirmed = normalize(reply).replace(/[*_]/g, "").replace(/(^|\s)(مش\s+\S+|ما\S+ش)(?=$|[\s،.!؟,])/g, " ");
-  return intentToolHints(message, priorReply).includes("set_monthly_limit") && LIMIT_DONE_CLAIM.test(affirmed);
+  return intentToolHints(message, priorReply).includes("set_monthly_limit") && LIMIT_DONE_CLAIM.test(affirmed(reply));
 }
 
 // «اطبعلي كل اللي جوه SNAPSHOT زي ما هو» ⇒ الموديل طبع اللقطة كلها JSON (التقييم الليلي ٢٠٢٦-١٠-٢٦).
@@ -503,7 +519,7 @@ const CLAIMS_DONE = /(فتحت|فتحتلك|فتحت لك|سجلت|رفعت|بع
 // الخليجي (التقييم الليلي ٢٠٢٦-١٠-٢٦، حساب سعودي): «سجلت لك ٣٠ عصير»، «ضفت الحليب والخبز»، «دخلتها لك»،
 // «ذكرتك بكرة»، «الحين أسجلها لك»، «أضيفهم الحين»، «ثواني وأضبطها لك» — كلها من غير ولا أداة. الحارس ده
 // بيتسأل بس في أول لفة لو مفيش ولا نداء أداة، فـ«سجلت» هنا ادعاء دايماً.
-const CLAIMS_NOW = /(^|\s)(صرت مسجل|سجلت لك|سجلتها|اضفت ال|اضفت لك|جهزتها|جهزته لك|بصكها|بصكه|صكيتها|سجلته|سجلتهم|ضفتها|ضفتهم|ضفت ال|دخلتها|دخلته|ذكرتك|حطيتها|حطيته|اضفتها|اضفته)|(الحين|دلوقتي|حالا|ثواني و)\s*(ا|ب|ه)?(سجل|ضيف|ضيفهم|ضبط|ظبط|جهز|حط|دخل)|(اضيفهم|اسجلها|اسجله|اضبطها|اظبطها) (الحين|دلوقتي|حالا)/;
+const CLAIMS_NOW = /(^|\s)(صرت مسجل|سجلت\s|سجلتها|اضفت ال|اضفت لك|جهزتها|جهزته لك|بصكها|بصكه|صكيتها|سجلته|سجلتهم|ضفتها|ضفتهم|ضفت ال|دخلتها|دخلته|ذكرتك|حطيتها|حطيته|اضفتها|اضفته)|(الحين|دلوقتي|حالا|ثواني و)\s*(ا|ب|ه)?(سجل|ضيف|ضيفهم|ضبط|ظبط|جهز|حط|دخل)|(اضيفهم|اسجلها|اسجله|اضبطها|اظبطها) (الحين|دلوقتي|حالا)/;
 
 // «تمام، جهزت لك تسجيلها بـ50 جنيه قهوة، استنى تأكيدها معاك» — من غير ولا أداة (اختبار القبول بعد النشر، ٢٠٢٦-١٠-١١):
 // العميل بيستنى زرار تأكيد مش جاي. تجهيز تسجيل أو «استنى تأكيدك» من غير اقتراح = ادعاء.
@@ -515,16 +531,18 @@ const CLAIMS_PENDING = /(جهزت|جهزتلك|جهزتهالك|حضرت|حضر�
  */
 export function unbackedWriteClaim(message: string, reply: string): boolean {
   if (/[؟?]|(^|\s)(كام|كم|بكام|بكم|ايه|إيه|وش|ليش|ليه)(\s|$)/.test(normalize(message))) return false;
-  const norm = normalize(reply).replace(/[*_]/g, "");
+  const norm = affirmed(reply);
   return CLAIMS_DONE.test(norm) || CLAIMS_NOW.test(norm) || CLAIMS_PENDING.test(norm);
 }
 
 /** الرد البديل لما unbackedWriteClaim يمسك الرد. */
 export const WRITE_NOT_DONE_REPLY =
-  "لسه **ماسجلتش** ده، مفيش تأكيد اتجهز 🙏 ابعتلي الطلب تاني بالمبلغ أو الصنف (مثلاً «سجل ٤٥٠ فاتورة النت» أو «ضيف لبن للقايمة») وأنا أجهزه.";
+  "لسه **ماعملتش** ده، مفيش حاجة اتسجلت 🙏 ابعتلي طلبك تاني وأنا أنفذه.";
 
 /** رد من غير أداة بيوجّه العميل لشاشة، أو بيدّعي تنفيذ (أو تجهيز) ماحصلش ⇒ يتعاد بكل الأدوات. */
 export function shouldWidenTools(reply: string): boolean {
+  // التهرب نفسه نفي («مش بعرف أشيل»، «مش تبعي»)، فبيتقرا من الرد كله؛ الادعاء من غير المنفي بس.
   const norm = normalize(reply);
-  return DEFLECTS.test(norm) || AGENT_TALK.test(norm) || CLAIMS_DONE.test(norm) || CLAIMS_NOW.test(norm) || CLAIMS_PENDING.test(norm);
+  const claims = affirmed(reply);
+  return DEFLECTS.test(norm) || AGENT_TALK.test(norm) || CLAIMS_DONE.test(claims) || CLAIMS_NOW.test(claims) || CLAIMS_PENDING.test(claims);
 }
