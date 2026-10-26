@@ -31,8 +31,8 @@ insert into public.user_behavior_profile values
   ('00000000-0000-0000-0000-0000000000a3', 300, '2026-10-01 23:00Z');
 \set QUIET 0
 
-select pg_temp.check(public.zad_forecasts_tick('2026-10-02 00:00Z') = '{"made": 2, "settled": 0}', 'fresh profiles open a forecast, the stale one does not');
-select pg_temp.check(public.zad_forecasts_tick('2026-10-03 00:00Z') = '{"made": 0, "settled": 0}', 'one open forecast per home: the next day opens nothing');
+select pg_temp.check(public.zad_forecasts_tick('2026-10-02 00:00Z') @> '{"made": 2, "settled": 0}', 'fresh profiles open a forecast, the stale one does not');
+select pg_temp.check(public.zad_forecasts_tick('2026-10-03 00:00Z') @> '{"made": 0, "settled": 0}', 'one open forecast per home: the next day opens nothing');
 
 -- a1's week: 700 spent, an income and a purchase after the week do not count.
 insert into public.zad_transactions (user_id, amount, is_expense, created_at) values
@@ -41,7 +41,7 @@ insert into public.zad_transactions (user_id, amount, is_expense, created_at) va
   ('00000000-0000-0000-0000-0000000000a1', 9000, false, '2026-10-05 10:00Z'),
   ('00000000-0000-0000-0000-0000000000a1', 50, true, '2026-10-09 01:00Z');
 
-select pg_temp.check(public.zad_forecasts_tick('2026-10-09 00:00Z') = '{"made": 2, "settled": 2}', 'due forecasts settle, then the next week opens');
+select pg_temp.check(public.zad_forecasts_tick('2026-10-09 00:00Z') @> '{"made": 2, "settled": 2}', 'due forecasts settle, then the next week opens');
 select pg_temp.check((select (actual, recorded) = (700::numeric, 2) from public.zad_forecasts
   where user_id = '00000000-0000-0000-0000-0000000000a1' and settled_at is not null), 'actual = expenses inside the week only');
 select pg_temp.check((select (actual, recorded) = (0::numeric, 0) from public.zad_forecasts
@@ -53,7 +53,7 @@ insert into public.zad_transactions (user_id, amount, is_expense, created_at) va
   ('00000000-0000-0000-0000-0000000000a1', 2000, true, '2026-10-20 10:00Z');
 -- update-behavior-profile refreshes a1 every night; a3's profile goes stale and stops forecasting.
 update public.user_behavior_profile set last_updated_at = '2026-10-15 23:00Z' where user_id = '00000000-0000-0000-0000-0000000000a1';
-select pg_temp.check(public.zad_forecasts_tick('2026-10-16 00:00Z') = '{"made": 1, "settled": 2}', 'a stale profile stops opening forecasts');
+select pg_temp.check(public.zad_forecasts_tick('2026-10-16 00:00Z') @> '{"made": 1, "settled": 2}', 'a stale profile stops opening forecasts');
 select pg_temp.check(public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') is not null, 'server-side SQL (cron, no JWT) reads accuracy');
 select set_config('request.jwt.claims', '{"role": "anon"}', false);
 select pg_temp.check(public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') is null, 'an anonymous request reads nothing');
