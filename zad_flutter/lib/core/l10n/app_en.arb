@@ -629,5 +629,6 @@
   "exampleStoreOther": "e.g. the supermarket's name",
   "walletBankEg": "Wallet / InstaPay",
   "walletBankSa": "Wallet / STC Pay",
-  "walletBankOther": "Wallet / transfer"
+  "walletBankOther": "Wallet / transfer",
+  "keepAliveAllow": "Keep Zad running"
 }

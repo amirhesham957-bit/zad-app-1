@@ -3876,6 +3876,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'محفظة / تحويل'**
   String get walletBankOther;
+
+  /// Battery card: asks Android for the battery-optimisation exemption so the bank reading keeps running (ZAD_PLAN 2.1).
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي زاد شغال دايماً'**
+  String get keepAliveAllow;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

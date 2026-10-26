@@ -2164,4 +2164,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get walletBankOther => 'محفظة / تحويل';
+
+  @override
+  String get keepAliveAllow => 'خلّي زاد شغال دايماً';
 }

@@ -1,12 +1,10 @@
 package com.aistudio.zad.banklistener
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.service.notification.NotificationListenerService
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -29,6 +27,12 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
         channel = MethodChannel(binding.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
         inBackgroundEngine = BackgroundDelivery.creatingHeadless
+        // الحارس بيصحى كل كام ساعة حتى والتطبيق مقفول (ZAD_PLAN ٢.١). التسجيل متكرر وآمن.
+        try {
+            ListenerWatchdog.schedule(context)
+        } catch (e: Exception) {
+            android.util.Log.e(ZadNotificationListenerService.TAG, "watchdog schedule failed: ${e.message}")
+        }
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -147,23 +151,7 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
         }
     }
 
-    /**
-     * الصلاحية ممنوحة؟
-     *
-     * بتتقرا من `enabled_notification_listeners` مباشرة. `isNotificationListenerAccessGranted`
-     * موجودة من API 27 بس، والتطبيق minSdk بتاعه 24.
-     */
-    private fun isPermissionGranted(): Boolean {
-        val flat = Settings.Secure.getString(
-            context.contentResolver,
-            "enabled_notification_listeners",
-        ) ?: return false
-        val me = ComponentName(context, ZadNotificationListenerService::class.java)
-        return flat.split(':').any {
-            val parsed = ComponentName.unflattenFromString(it)
-            parsed != null && parsed == me
-        }
-    }
+    private fun isPermissionGranted(): Boolean = ListenerWatchdog.isGranted(context)
 
     /** مين ثبّت التطبيق: `com.android.vending` = جوجل بلاي، null = ملف APK في الغالب. */
     private fun installerPackage(): String? = try {
@@ -183,21 +171,7 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
         context.startActivity(intent)
     }
 
-    /**
-     * بيطلب من النظام يربط الخدمة تاني.
-     *
-     * `requestRebind` من API 24، لكن الربط نفسه مابيحصلش لو الصلاحية مش ممنوحة —
-     * فالفحص الأول مش زيادة. بترجع false لما مفيش حاجة تتعمل، عشان الواجهة
-     * تقدر تفرّق بين "طلبنا" و"مش ممنوح أصلاً" بدل ما تدّعي نجاح.
-     */
-    private fun requestRebind(): Boolean {
-        if (!isPermissionGranted()) return false
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
-        NotificationListenerService.requestRebind(
-            ComponentName(context, ZadNotificationListenerService::class.java),
-        )
-        return true
-    }
+    private fun requestRebind(): Boolean = ListenerWatchdog.rebind(context)
 
     private companion object {
         const val CHANNEL = "com.aistudio.zad/bank_listener"

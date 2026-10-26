@@ -120,6 +120,13 @@ class ZadNotificationListenerService : NotificationListenerService() {
     override fun onListenerDisconnected() {
         ScreenEvents.unregister(applicationContext)
         super.onListenerDisconnected()
+        // أندرويد بيفك الخدمة تحت ضغط الذاكرة ومش دايماً بيرجع يربطها. قبل كده الربط كان
+        // مستني العميل يفتح زاد؛ دلوقتي بيتطلب هنا فوراً، والحارس بيكرره كل كام ساعة.
+        try {
+            ListenerWatchdog.rebind(applicationContext)
+        } catch (e: Exception) {
+            Log.e(TAG, "rebind on disconnect failed: ${e.message}")
+        }
     }
 
     override fun onDestroy() {

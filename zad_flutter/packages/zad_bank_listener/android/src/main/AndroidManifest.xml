@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- ListenerWatchdog: يرجّع منبّه الحارس ويطلب الربط بعد إعادة التشغيل. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <application>
         <!--
           BIND_NOTIFICATION_LISTENER_SERVICE is granted by the user in system
@@ -20,5 +23,17 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- حارس الخدمة (ZAD_PLAN ٢.١): منبّه كل كام ساعة، وإعادة التشغيل، وتحديث
+             التطبيق. Not exported: only the system broadcasts and this app's own
+             PendingIntent reach it. -->
+        <receiver
+            android:name=".WatchdogReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
