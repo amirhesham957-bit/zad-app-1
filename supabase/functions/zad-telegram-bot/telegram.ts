@@ -728,6 +728,30 @@ export function dealReply(result: { ok?: boolean; already?: boolean; answer?: st
   return `تمام، مش هعرض عليك «${item}» تاني الشهر ده.`;
 }
 
+// «اتعلمت إن» (ZAD_PLAN ٥.٢): "hl:" + uuid(36) + ":" + حرف = ٤١ بايت. الجواب بيقيس بوابة المرحلة ٥.
+
+export function learningKeyboard(learningId: string): InlineKeyboardButton[][] {
+  return [[
+    { text: "✅ صح", callback_data: `hl:${learningId}:y` },
+    { text: "❌ مش صح", callback_data: `hl:${learningId}:n` },
+  ]];
+}
+
+export function parseLearningCallback(data: string): { learningId: string; yes: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "hl" || (parts[2] !== "y" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { learningId: parts[1], yes: parts[2] === "y" };
+}
+
+/** الرد بعد zad_house_learning_answer_service. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function learningReply(result: { ok?: boolean; already?: boolean; answer?: string } | null): string {
+  if (!result) return "معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) return "الملاحظة دي مابقتش موجودة.";
+  if (result.already) return "تمام، ردك اتسجّل قبل كده.";
+  return result.answer === "yes" ? "تمام ✅ هفتكرها." : "تمام، شكراً إنك صحّحتني — مش هقولها تاني.";
+}
+
 /** الرد بعد zad_salary_cycle_service. `null` = الكتابة فشلت — يتقال صراحةً. */
 export function salaryReply(result: { ok?: boolean; already?: boolean; answer?: string; day?: number } | null): string {
   if (!result) return "معلش، ماقدرتش أغيّر الدورة دلوقتي — جرّب تاني بعد شوية.";
