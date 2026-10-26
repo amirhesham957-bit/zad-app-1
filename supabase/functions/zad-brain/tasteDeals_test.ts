@@ -105,3 +105,49 @@ Deno.test("the morning deal searches where the customer is now", () => {
   assertEquals(dealCountry({ country: "sa", travel_country: "SA", travel_since: since }, now), "SA");
   assertEquals(dealCountry(null, now), "");
 });
+
+// ZAD_PLAN ٤.٨/٤.٩: zad_deals الأول — عرض متخزّن بمصدره وتاريخه يغلب البحث، ومن غير ما نبحث خالص.
+import { runningOutNames, storedDeals } from "./tasteDeals.ts";
+
+const STORED = [
+  { store: "كارفور", item_name: "زيت عافية ١.٥ لتر", price: "72", price_before: "90", source_kind: "search",
+    source_url: "https://example.com/carrefour", valid_until: "2026-10-30T00:00:00Z" },
+  { store: "بنده", item_name: "تليفزيون", price: 900, price_before: 1800, source_kind: "search", source_url: "https://x.example", valid_until: null },
+];
+
+Deno.test("stored deals: the discount comes from the price before, and the source rides along", () => {
+  const [oil, tv] = storedDeals(STORED);
+  assertEquals([oil.price, oil.discount_percent], [72, 20]);
+  assertEquals(oil.source, { kind: "search", url: "https://example.com/carrefour", until: "2026-10-30T00:00:00Z" });
+  assertEquals(tv.discount_percent, 50);
+  assertEquals(storedDeals([{ ...STORED[0], price_before: null }])[0].discount_percent, null);
+  assertEquals(storedDeals(null), []);
+  assertEquals(runningOutNames({ pantry: { running_out: [{ name: "رز", days: 3 }, { name: "" }] } }), ["رز"]);
+  assertEquals(runningOutNames(null), []);
+});
+
+Deno.test("deal: a stored deal on what they need wins, with no search at all", async () => {
+  let searched = 0;
+  dealSource.search = () => { searched++; return Promise.resolve({ deals: DEALS }); };
+  const d = await loadTasteDeal(fakeSb({ ...TABLES, zad_deals: STORED }), "u");
+  assertEquals([d?.store, d?.discount_percent, d?.favorite, d?.source?.until, searched], ["كارفور", 20, true, "2026-10-30", 0]);
+
+  // صنف هيخلص خلال أسبوع (حالة البيت) احتياج زي القايمة؛ العرض اللي مالوش احتياج (التليفزيون) مايتقالش.
+  const rice = [{ ...STORED[0], item_name: "رز مصري ٥ كيلو", store: "خير زمان" }, STORED[1]];
+  const r = await loadTasteDeal(fakeSb({
+    ...TABLES, zad_shopping_list: [], zad_customer_profile: [{ interests: [] }], zad_deals: rice,
+    zad_home_state: [{ state: { pantry: { running_out: [{ name: "رز", days: 2 }] } } }],
+  }), "u");
+  assertEquals([r?.item, searched], ["رز مصري ٥ كيلو", 0]);
+
+  // مفيش متخزّن يطابق ⇒ البحث الحي زي الأول.
+  const live = await loadTasteDeal(fakeSb({ ...TABLES, zad_deals: [STORED[1]] }), "u");
+  assertEquals([live?.store, live?.source, searched], ["كارفور مصر", undefined, 1]);
+  dealSource.search = () => Promise.resolve(null);
+});
+
+Deno.test("morning: a stored deal says until when", async () => {
+  dealSource.search = () => Promise.resolve(null);
+  const facts = await morningFacts(fakeSb({ ...TABLES, zad_deals: STORED }, { zad_budget_state: { threat: "SAFE" } }), "u", LOCAL);
+  assertStringIncludes(momentFallback("morning_greeting", facts).text, "فيه عرض عليه في كارفور (محلك) بخصم 20٪ لحد 2026-10-30.");
+});

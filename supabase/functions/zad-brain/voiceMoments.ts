@@ -153,6 +153,8 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح. " +
     "لو فيه taste_deal: جملة واحدة في الآخر: العرض على taste_deal.item في taste_deal.store بالسعر أو الخصم زي ما هو بالظبط " +
     "(ولو favorite = true قولي إنه في المحل اللي بيروحه) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
+    "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك) " +
+    "ولحد إمتى لو source.until موجود، وإنه ممكن يكون خلص. " +
     "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
     "اقتراح مش واجب، ومن غير «إنتوا مش بتقعدوا مع بعض».",
   family_dose_missed:
@@ -606,10 +608,11 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
-      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; favorite?: boolean } | undefined;
+      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; favorite?: boolean; source?: { until?: string | null } | null } | undefined;
       const deal = dealFact?.item && dealFact?.store
         ? `ولو محتاج ${str(dealFact.item, 60)}: فيه عرض عليه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : ""}` +
-          (dealFact.discount_percent ? ` بخصم ${dealFact.discount_percent}٪` : dealFact.price ? ` بـ${dealFact.price}` : "") + "."
+          (dealFact.discount_percent ? ` بخصم ${dealFact.discount_percent}٪` : dealFact.price ? ` بـ${dealFact.price}` : "") +
+          (dealFact.source?.until ? ` لحد ${str(dealFact.source.until, 10)}` : "") + "."
         : "";
       return {
         title: occasion.own ? "🎂 كل سنة وإنت طيب" : alert ? "⛈️ صباح الخير — خلي بالك من الجو" : "☀️ صباح الخير",
