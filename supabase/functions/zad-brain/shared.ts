@@ -350,6 +350,7 @@ export function buildStoreArrivalMessage(input: {
   clientHints: string[];
   seenHere?: SeenHere[];
   cheaperHere?: CheaperHere[];
+  dealsHere?: DealHere[];
 }): { title: string; body: string; itemCount: number } | null {
   const seen = new Set<string>();
   const items: string[] = [];
@@ -374,13 +375,32 @@ export function buildStoreArrivalMessage(input: {
   const seenLines = (input.seenHere ?? []).slice(0, 5).map((s) => `${cleanText(s.item, 40)} (${agoText(s.hours)})`);
   const cheaperLines = (input.cheaperHere ?? []).slice(0, 3)
     .map((c) => `${cleanText(c.item, 40)} ${c.price} (في محلات تانية حوالي ${c.typical})`);
+  const dealLines = (input.dealsHere ?? []).slice(0, 3).map((d) =>
+    `${cleanText(d.item, 40)} بـ${d.price}${d.price_before ? ` بدل ${d.price_before}` : ""}${d.until ? ` لحد ${d.until}` : ""} (${DEAL_SOURCE_LABEL[d.source_kind] ?? "مصدر عام"})`
+  );
   const body = [
     intro, ...listed, ...(more > 0 ? [`… و${more} كمان`] : []),
     ...(seenLines.length > 0 ? [`👀 اتشاف في محل بنفس الاسم من فواتير عملاء زاد: ${seenLines.join("، ")}`] : []),
     ...(cheaperLines.length > 0 ? [`💰 أرخص هنا من فواتير عملاء زاد: ${cheaperLines.join("، ")}`] : []),
+    ...(dealLines.length > 0 ? [`🏷️ عليه عرض هنا: ${dealLines.join("، ")} — ممكن يكون خلص`] : []),
   ].join("\n");
   return { title, body, itemCount: items.length };
 }
+
+/** عرض ساري من zad_deals في المحل ده على صنف ناقص (ZAD_PLAN ٤.٩). */
+export interface DealHere {
+  item: string;
+  price: number;
+  price_before: number | null;
+  until: string | null;
+  source_kind: string;
+}
+
+/** جاي منين، بكلام العميل — نفس اللي عرض الصبح بيقوله. */
+const DEAL_SOURCE_LABEL: Record<string, string> = {
+  search: "صفحة المحل", flyer: "نشرتهم", receipt: "فواتير بيوت حواليك", partner: "شريك رسمي",
+  youtube: "قناتهم على يوتيوب", instagram: "حسابهم على إنستجرام", email: "نشرتهم على الإيميل",
+};
 
 /** صنف ناقص اتشاف في محل بنفس الاسم، وبقاله كام ساعة. */
 export interface SeenHere {

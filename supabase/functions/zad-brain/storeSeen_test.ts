@@ -137,3 +137,33 @@ Deno.test("another city's report is not «here»; an unknown city still counts",
   assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW, new Map(), "القاهرة"), [], "two homes left in the city");
   assertEquals(cheaperHereItems(priced, "كارفور", ["لبن"], NOW).length, 1);
 });
+
+// ZAD_PLAN ٤.٩: «انت جنب المحل» بيذكر العرض الساري هناك على اللي ناقص.
+import { dealsHere } from "./tasteDeals.ts";
+
+const DEAL_ROWS = [
+  { store: "كارفور ماركت", item_name: "زيت عافية ١.٥ لتر", price: "72", price_before: "90", source_kind: "search", source_url: "https://x.example", valid_until: "2026-10-30T00:00:00Z" },
+  { store: "كارفور", item_name: "زيت كريستال", price: 70, price_before: null, source_kind: "flyer", source_url: "https://y.example", valid_until: null },
+  { store: "كارفور", item_name: "زيتون أسود", price: 30, price_before: 40, source_kind: "search", source_url: "https://z.example", valid_until: null },
+  { store: "بنده", item_name: "رز الضحى", price: 40, price_before: 50, source_kind: "search", source_url: "https://w.example", valid_until: null },
+  { store: "كارفور", item_name: "لبن جهينة", price: 30, price_before: "30", source_kind: "receipt", source_url: null, valid_until: null },
+];
+
+Deno.test("dealsHere: this store only, one offer per need, «زيت» is not «زيتون», «before» only when higher", () => {
+  assertEquals(dealsHere(DEAL_ROWS, "كارفور", ["زيت", "رز", "لبن"]), [
+    { item: "زيت عافية ١.٥ لتر", price: 72, price_before: 90, until: "2026-10-30", source_kind: "search" },
+    { item: "لبن جهينة", price: 30, price_before: null, until: null, source_kind: "receipt" },
+  ]);
+  assertEquals(dealsHere(DEAL_ROWS, "خير زمان", ["زيت"]), []);
+  assertEquals(dealsHere(null, "كارفور", ["زيت"]), []);
+});
+
+Deno.test("arrival: the deal here is named with its price, source and «ممكن يكون خلص»", () => {
+  const msg = buildStoreArrivalMessage({
+    storeName: "كارفور", category: "supermarket", shopping: ["زيت"], lowStock: [], clientHints: [],
+    dealsHere: dealsHere(DEAL_ROWS, "كارفور", ["زيت"]),
+  });
+  assertStringIncludes(msg!.body, "🏷️ عليه عرض هنا: زيت عافية ١.٥ لتر بـ72 بدل 90 لحد 2026-10-30 (صفحة المحل) — ممكن يكون خلص");
+  const none = buildStoreArrivalMessage({ storeName: "كارفور", category: "supermarket", shopping: ["زيت"], lowStock: [], clientHints: [] });
+  assertEquals(none!.body.includes("عرض"), false);
+});
