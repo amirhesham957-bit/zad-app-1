@@ -175,10 +175,16 @@ Deno.test("deal: a stored deal on what they need wins, with no search at all", a
   dealSource.search = () => Promise.resolve(null);
 });
 
-Deno.test("morning: a stored deal says until when", async () => {
+Deno.test("morning: a stored deal says until when — and the saving in money, not a percent (ZAD_PLAN 4.9)", async () => {
   dealSource.search = () => Promise.resolve(null);
   const facts = await morningFacts(fakeSb({ ...TABLES, zad_deals: STORED }, { zad_budget_state: { threat: "SAFE" } }), "u", LOCAL);
-  assertStringIncludes(momentFallback("morning_greeting", facts).text, "فيه عرض عليه في كارفور (محلك) بخصم 20٪ لحد 2026-10-30.");
+  const deal = facts.taste_deal as { price_before?: number; saving?: number };
+  assertEquals([deal.price_before, deal.saving], [90, 18]);
+  assertStringIncludes(momentFallback("morning_greeting", facts).text, "فيه عرض عليه في كارفور (محلك) بـ72 بدل 90 (توفّر 18) لحد 2026-10-30.");
+
+  // من غير سعر قبل (البحث الحي، أو «قبل» مش أغلى) مفيش توفير يتقال — النسبة زي ما هي.
+  const flat = await morningFacts(fakeSb({ ...TABLES, zad_deals: [{ ...STORED[0], price_before: "72" }] }, { zad_budget_state: { threat: "SAFE" } }), "u", LOCAL);
+  assertEquals((flat.taste_deal as { saving?: number }).saving, undefined);
 });
 
 // ZAD_PLAN ٤.٧: المحلات حوالين آخر نقطة ليه — بعد محلاته المتكررة وقبل الخصم الأكبر.

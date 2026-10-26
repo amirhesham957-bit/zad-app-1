@@ -42,6 +42,10 @@ export interface TasteDeal {
   store: string;
   price: number | null;
   discount_percent: number | null;
+  /** السعر قبل العرض لما المصدر قاله (zad_deals) — التوفير بيتقال بالفلوس بدل النسبة (٤.٩). */
+  price_before?: number | null;
+  /** price_before − price، متحسوب هنا عشان الرقم اللي يتقال يبقى في الداتا. */
+  saving?: number | null;
   note: string | null;
   /** في محل من محلاته المتكررة. */
   favorite: boolean;
@@ -168,6 +172,8 @@ export function pickDeal(
     const discount = Number(d?.discount_percent);
     const hasPrice = Number.isFinite(price) && price > 0;
     const hasDiscount = Number.isFinite(discount) && discount > 0 && discount < 100;
+    const before = Number(d?.price_before);
+    const hasBefore = hasPrice && Number.isFinite(before) && before > price;
     if (!item || store.length < 2 || (!hasPrice && !hasDiscount) || (tight && !hasPrice)) continue;
     const wanted = items.find((w) => offerMatchesNeed(w, item));
     if (!wanted) continue;
@@ -181,6 +187,7 @@ export function pickDeal(
         : {}),
       price: hasPrice ? Math.round(price * 100) / 100 : null,
       discount_percent: hasDiscount ? Math.round(discount) : null,
+      ...(hasBefore ? { price_before: Math.round(before * 100) / 100, saving: Math.round((before - price) * 100) / 100 } : {}),
       note: typeof d?.note === "string" && d.note.trim() ? d.note.trim().slice(0, 120) : null,
       favorite: favorites.some((f) => sameName(f, store)),
       nearby: nearby.some((n) => sameName(n, store)),
@@ -217,7 +224,7 @@ export function storedDeals(rows: readonly StoredDealRow[] | null | undefined): 
     const before = Number(r.price_before);
     const discount = Number.isFinite(before) && before > price && price > 0 ? ((before - price) / before) * 100 : null;
     return {
-      item: r.item_name, store: r.store, price, discount_percent: discount, note: null,
+      item: r.item_name, store: r.store, price, price_before: Number.isFinite(before) ? before : null, discount_percent: discount, note: null,
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
     };
   });
