@@ -399,7 +399,7 @@ export interface DealHere {
 
 /** جاي منين، بكلام العميل — نفس اللي عرض الصبح بيقوله. */
 const DEAL_SOURCE_LABEL: Record<string, string> = {
-  search: "صفحة المحل", flyer: "نشرتهم", receipt: "فواتير بيوت حواليك", partner: "شريك رسمي",
+  search: "صفحة المحل", flyer: "نشرتهم", receipt: "فواتير بيوت حواليك", partner: "رابط شراكة",
   youtube: "قناتهم على يوتيوب", instagram: "حسابهم على إنستجرام", email: "نشرتهم على الإيميل",
 };
 
