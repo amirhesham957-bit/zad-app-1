@@ -112,6 +112,36 @@ export function samePairCandidates(names: readonly string[], decided: ReadonlySe
   return [...staple, ...head];
 }
 
+// ── العرض ده للصنف اللي البيت محتاجه؟ (ZAD_PLAN ٤.٦، ٢٦/١٠) ─────────────────────────────────────
+// عرض الصبح كان بيطابق بمقارنة نص جزئي: «زيت» كانت بتطابق «زيتون»، و«لبن» كانت بتطابق «لبن زبادي»،
+// و«لبن» ماكانتش بتطابق «حليب المراعي». هنا المقارنة بالكلمة، بعيلات الأساسيات نفسها، ومن غير تغليف
+// ولا أحجام («١ لتر» و«١٠٠٠ مل» الاتنين بيتشالوا).
+
+/** كلمات الاسم من غير علامات ترقيم («سكر (10 كيلو)»). */
+function nameWords(name: string): string[] {
+  return meaningfulWords(String(name ?? "").replace(/[()[\]{}،,؛;:.\-/+*«»"']/g, " "));
+}
+
+const sameWord = (a: string, b: string) => a === b || (GROUP_OF.has(a) && GROUP_OF.get(a) === GROUP_OF.get(b));
+
+/**
+ * [offered] (اسم الصنف في العرض) هو [need] (من قايمة الشرا أو اللي هيخلص)؟ لازم:
+ *   - كل كلمة أساسيات في الاحتياج موجودة في العرض (أو مرادفها: لبن/حليب)،
+ *   - وتلتين كلمات الاحتياج على الأقل موجودين (اسم الماركة أو «شرائح» ممكن يختلفوا)،
+ *   - ومفيش في العرض كلمة أساسيات من عيلة تانية («لبن» قصاد «لبن زبادي» = لأ).
+ * الشك = لأ: عرض غلط في تحية الصبح أوحش من يوم من غير عرض.
+ */
+export function offerMatchesNeed(need: string, offered: string): boolean {
+  const want = nameWords(need);
+  const have = nameWords(offered);
+  if (want.length === 0 || have.length === 0) return false;
+  const covered = want.filter((w) => have.some((h) => sameWord(w, h)));
+  if (want.some((w) => GROUP_OF.has(w) && !covered.includes(w))) return false;
+  if (covered.length < Math.ceil((want.length * 2) / 3)) return false;
+  const wantGroups = new Set(want.map((w) => GROUP_OF.get(w) ?? -1));
+  return !have.some((h) => GROUP_OF.has(h) && !wantGroups.has(GROUP_OF.get(h) ?? -1));
+}
+
 /** السؤال كـ«فضول» بأداة الجواب. */
 export function samePairQuestion(p: SamePair): Curiosity {
   return {

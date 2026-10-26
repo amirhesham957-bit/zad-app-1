@@ -44,6 +44,16 @@ Deno.test("deal: only one of their items, at a named store with a price or disco
   assertEquals([...askedDealKeys([{ facts: { taste_deal: { key: "deal:a:b" } } }, { facts: null }])], ["deal:a:b"]);
 });
 
+Deno.test("deal: the need is matched by word — «زيت» is not «زيتون», and «لبن» finds «حليب» (ZAD_PLAN 4.6)", () => {
+  const deals = [
+    { item: "زيتون أسود", store: "كارفور", price: 40, discount_percent: 30 },
+    { item: "حليب المراعي 1 لتر", store: "بنده", price: 6 },
+  ];
+  assertEquals(pickDeal(deals, ["زيت"], [], new Set()), null);
+  const milk = pickDeal(deals, ["لبن"], [], new Set())!;
+  assertEquals([milk.store, milk.key], ["بنده", "deal:لبن:بنده"]);
+});
+
 function fakeSb(tables: Record<string, unknown[]>, rpcs: Record<string, unknown> = {}): SupabaseClient {
   const chain = (data: unknown): unknown =>
     new Proxy({}, {

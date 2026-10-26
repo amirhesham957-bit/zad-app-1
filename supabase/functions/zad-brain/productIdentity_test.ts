@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { meaningfulWords, pairKey, productNameKey, samePairCandidates, samePairQuestion } from "./productIdentity.ts";
+import { meaningfulWords, offerMatchesNeed, pairKey, productNameKey, samePairCandidates, samePairQuestion } from "./productIdentity.ts";
 
 Deno.test("the key is SQL's zad_inventory_name_key", () => {
   assertEquals(productNameKey("  الحليب  "), "حليب");
@@ -42,4 +42,32 @@ Deno.test("the question carries its tool and both names", () => {
   assertEquals(q.tool, "answer_same_product");
   assertEquals(q.key, `same:${pairKey("لبن", "حليب")}`);
   assertEquals(q.question.includes("«لبن»") && q.question.includes("«حليب»"), true);
+});
+
+// ZAD_PLAN ٤.٦: عرض الصبح كان بيطابق بنص جزئي — «زيت» = «زيتون»، و«لبن» = «لبن زبادي»، و«لبن» ≠ «حليب».
+// الاحتياجات من قايمة شرا حقيقية (٢٦/١٠)، والعروض بصيغ المحلات.
+Deno.test("offer matches need: by word, synonyms count, sizes and packaging don't", () => {
+  const yes: Array<[string, string]> = [
+    ["لبن", "حليب المراعي كامل الدسم 1 لتر"],
+    ["زيت", "زيت عافية 1.5 لتر"],
+    ["اريا لبن كامل الدسم 1 لتر", "لبن المراعي كامل الدسم 1000 مل"],
+    ["سكر (10 كيلو)", "سكر الأسرة 1 كيلو"],
+    ["رز", "أرز بسمتي أبو كاس 5 كجم"],
+    ["جبنة فريش فارم شرائح", "جبنه فريش فارم 500 جم"],
+    ["فراخ", "دجاج الوطنية مجمد"],
+    ["مياه", "مياه نستله 1.5 لتر"],
+  ];
+  for (const [need, offer] of yes) assertEquals(offerMatchesNeed(need, offer), true, `${need} | ${offer}`);
+});
+
+Deno.test("offer matches need: another staple, a longer word, or a brand alone is not the need", () => {
+  const no: Array<[string, string]> = [
+    ["زيت", "زيتون أخضر"],
+    ["لبن", "لبن زبادي جهينة"],
+    ["خبز بلدي طازج", "توست برانش"],
+    // الماركة لوحدها شك — مايتقالش في تحية الصبح (الأقرب في pgvector لما zad_deals يتملى).
+    ["حليب نادك ١ لتر", "نادك كامل الدسم ١٠٠٠ مل"],
+    ["", "زيت عافية"],
+  ];
+  for (const [need, offer] of no) assertEquals(offerMatchesNeed(need, offer), false, `${need} | ${offer}`);
 });
