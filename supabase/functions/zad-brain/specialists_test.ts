@@ -1,7 +1,9 @@
 // specialists_test.ts — اختبارات توجيه الوكلاء المتخصصين.
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import {
+  fullOnFirstCall,
   intentToolHints,
+  MAX_SPECIALIST_TOOLS,
   routeSpecialist,
   routeSpecialists,
   scopeToolsForSpecialist,
@@ -221,4 +223,48 @@ Deno.test("scopeToolsForSpecialist: a general message gets the core set plus wha
   assertEquals(general, ["read_house", "web_search", "add_appointment"]);
   const hinted = scopeToolsForSpecialist(all, "general", null, ["delete_debt"]).map((t) => t.name);
   assertEquals(hinted, ["read_house", "web_search", "add_appointment", "delete_debt"]);
+});
+
+// ── رجيم السياق (ZAD_PLAN ٣.٢) ─────────────────────────────────────────────────────────────
+
+const SPECIALIST_IDS = ["finance", "pantry", "pharmacy", "family", "home"] as const;
+
+Deno.test("context diet 3.2: no specialist, with any consultant, is offered more than 39 tools", async () => {
+  const { CHAT_TOOLS } = await import("./index.ts");
+  assertEquals(MAX_SPECIALIST_TOOLS < 40, true);
+  for (const sp of SPECIALIST_IDS) {
+    for (const sec of [null, ...SPECIALIST_IDS.filter((x) => x !== sp)]) {
+      const n = scopeToolsForSpecialist(CHAT_TOOLS, sp, sec).length;
+      assertEquals(n <= MAX_SPECIALIST_TOOLS, true, `${sp}+${sec}: ${n}`);
+    }
+  }
+});
+
+Deno.test("context diet 3.2: past the cap, the message's intent still gets its tool", async () => {
+  const { CHAT_TOOLS } = await import("./index.ts");
+  const names = scopeToolsForSpecialist(CHAT_TOOLS, "finance", "home", ["suggest_recipes"]).map((t) => t.name);
+  assert(names.includes("suggest_recipes"));
+  assert(names.includes("log_transaction"));
+});
+
+Deno.test("context diet 3.2: money tools that left the fixed list stay with the finance agent", () => {
+  const tools = ["set_transaction_category", "update_emergency_fund_balance", "start_savings_challenge", "set_broke_mode"]
+    .map((name) => ({ name }));
+  assertEquals(scopeToolsForSpecialist(tools, "finance").length, 4);
+  assertEquals(scopeToolsForSpecialist(tools, "pharmacy").length, 0);
+  // «أنا مفلس» في أي موضوع: بالنية.
+  assertEquals(scopeToolsForSpecialist(tools, "pantry", null, intentToolHints("أنا مفلس خالص")).map((t) => t.name), ["set_broke_mode"]);
+});
+
+Deno.test("context diet 3.2: a place reminder can be cancelled by intent", () => {
+  assert(intentToolHints("شيل تذكير البنادول").includes("cancel_place_reminder"));
+});
+
+Deno.test("context diet 3.2: a specialist's first call keeps its own tools full, the rest lean", () => {
+  const finance = fullOnFirstCall("finance");
+  assert(finance.has("log_transaction") && finance.has("add_obligation") && finance.has("read_house"));
+  assert(!finance.has("save_document"));
+  const general = fullOnFirstCall("general");
+  assert(general.has("read_house") && general.has("log_transaction") && general.has("add_appointment"));
+  assert(!general.has("update_customer_profile"));
 });

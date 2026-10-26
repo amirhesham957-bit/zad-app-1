@@ -48,7 +48,13 @@ Deno.test("a date for someone routes to remember_occasion, in every specialist",
   assert(intentToolHints("ذكرى جوازنا يوم ٥ يونيو").includes("remember_occasion"));
   assert(!intentToolHints("صرفت ٥٠ قهوة").includes("remember_occasion"));
   const tools = [{ name: "remember_occasion" }, { name: "add_inventory_item" }];
-  assert(scopeToolsForSpecialist(tools, "pantry").some((t) => t.name === "remember_occasion"));
+  // من رجيم السياق (ZAD_PLAN ٣.٢) الأداة بتيجي بنية الرسالة مش ثابتة — وبتيجي في كل وكيل.
+  for (const sp of ["finance", "pantry", "pharmacy", "family", "home"] as const) {
+    assert(
+      scopeToolsForSpecialist(tools, sp, null, intentToolHints("عيد ميلاد مراتي ١٢ مارس")).some((t) => t.name === "remember_occasion"),
+      sp,
+    );
+  }
   assert(
     scopeToolsForSpecialist(tools, "general", null, intentToolHints("عيد ميلاد ماما امتى؟")).some((t) => t.name === "remember_occasion"),
   );

@@ -106,7 +106,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, shouldWidenTools, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist, fullOnFirstCall } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
@@ -6666,10 +6666,15 @@ const GROQ_ALWAYS_FULL = ["read_house", "log_transaction"];
  * وupdate_appointment بيفضل فيهم الـenum. الباقي إرشاده في وصفه بس (أقسام read_house، فئات
  * log_transaction، «مرة لكل صنف» في المخزون، الدوا والمواعيد والملف) فبيفضل كامل.
  */
-export function toolsForCall<T extends ToolDef>(tools: T[], hinted: string[], called: string[], turn: number): T[] {
+export function toolsForCall<T extends ToolDef>(
+  tools: T[], hinted: string[], called: string[], turn: number, domain: ReadonlySet<string> | null = null,
+): T[] {
   if (turn > 0) return leanTools(tools, new Set([...hinted, ...called]));
   const leanFirst = new Set(FIRST_CALL_LEAN_TOOLS);
-  return leanTools(tools, new Set(tools.map((t) => t.name).filter((n) => !leanFirst.has(n) || hinted.includes(n))));
+  // [domain] (fullOnFirstCall، ZAD_PLAN ٣.٢): اللي برّه نطاق الوكيل خفيف من أول نداء إلا لو عليه نية.
+  return leanTools(tools, new Set(tools.map((t) => t.name).filter((n) =>
+    hinted.includes(n) || (!leanFirst.has(n) && (domain === null || domain.has(n)))
+  )));
 }
 
 /**
@@ -6683,14 +6688,14 @@ export function groqToolsFor<T extends ToolDef>(tools: T[], hinted: string[], me
 
 async function callAgentModel(
   system: string, tools: ToolDef[], history: Turn[], message: string, turn: number, groqSystem?: string,
-  onText?: (delta: string) => void,
+  onText?: (delta: string) => void, domain: ReadonlySet<string> | null = null,
 ) {
   const hinted = intentToolHints(message, priorAssistantText(history));
   const narrowed = CHAT_TOOLS.filter((t) => hinted.includes(t.name));
   const called = history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []);
   // Groq من التعريفات الأصلية: بيقرر الخفيف بنفسه، وread_house وlog_transaction يفضلوا كاملين.
   const groqTools = groqToolsFor(tools, hinted, message);
-  tools = toolsForCall(tools, hinted, called, turn);
+  tools = toolsForCall(tools, hinted, called, turn, domain);
   const plain = () => callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
   // بث حقيقي (تشخيص زاد ٢.٢): أول لفة بس، ولما الرسالة مش بتشير لأداة — رسالة فيها تلميح
   // أداة ممكن تتعاد بأدوات أضيق تحت، والنص اللي اتبث كان هيتشال. أي فشل في البث ⇒ النداء العادي.
@@ -7027,6 +7032,8 @@ async function handleAgentTurnInLane(
       ...(snap?.asked_this_morning?.tool ? [snap.asked_this_morning.tool] : []),
       // «صلحت الحنفية» — الأداة جاهزة لو قال الاسم والرقم في نفس الرسالة.
       ...(technicianFollowUp(message, snap?.trusted_technicians, []) ? ["save_trusted_technician"] : []),
+      // «خلاص جبته» على تذكير مكان مفتوح: مافيهاش كلمة «تذكير» تجيب الأداة بالنية.
+      ...((snap?.place_reminders?.length ?? 0) > 0 ? ["cancel_place_reminder"] : []),
     ],
   );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
@@ -7156,7 +7163,7 @@ async function handleAgentTurnInLane(
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
-      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText);
+      reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText, fullOnFirstCall(specialist));
       calls.loops++;
       calls.model += reply.calls;
       // اسم الموديل اللي رد فعلاً (تراجع التذكير ١٨/١٠ ماكانش ينفع يتشخّص من غيره).
@@ -8604,7 +8611,7 @@ async function handleRequest(req: Request): Promise<Response> {
           const reply = await Promise.race([
             callAgentModel(
               soulBlock() + (specialistPromptBlock(primary, secondary) ?? "") + "\n" + buildChatSystemPrompt(snap),
-              tools, [{ role: "user", text: c.message }], c.message, 0,
+              tools, [{ role: "user", text: c.message }], c.message, 0, undefined, undefined, fullOnFirstCall(primary),
             ),
             new Promise<never>((_, reject) => {
               caseTimer = setTimeout(

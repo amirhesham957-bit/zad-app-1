@@ -186,6 +186,9 @@ const SAME_PRODUCT_INTENT = /نفس (ال)?(حاجه|صنف|منتج|شي)|اد�
 const STORE_LOCATION_INTENT = /لوكيشن|لوكيشين|location|(هات|ابعت|ابعتلي|ابعتيلي|ابعتهولي|فين|عايز|عاوز)\s*(لي)?\s*(ال)?(موقع|مكان|عنوان)\s*(ال)?(محل|سوبر ?ماركت|صيدليه|ده|دا|بتاعه|بتاعها)?|(علي|على) الخريطه|فين (ال)?(محل|السوبر ?ماركت|الصيدليه) ده/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
+// «شيل تذكير البنادول» (رجيم السياق، ZAD_PLAN ٣.٢): الإلغاء كان أداة ثابتة مع كل وكيل، دلوقتي بالنية.
+const PLACE_CANCEL_INTENT = /(شيل|شيله|شيلها|الغي|الغيه|الغيها|امسح|امسحه|امسحها|وقف|بطل).{0,15}(التذكير|تذكير)/;
+
 // «إيه اللي ماقولتليش عليه؟» (ZAD_PLAN ٣.٥): اللي الحراس مسكوه الأسبوع ده وليه.
 const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|بعتليش|بلغتنيش)|(ما|م)قولتهوش|سكت(ت)? عن|سكتت?ش ليه|خبيت عني|اللي (ما|م)قولتهوش|ليه (ما|م) ?(قولتش|بتقولش|بعتش|بتبعتش)|الحاجات اللي (ما|م)وصلتنيش/;
 
@@ -194,6 +197,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
   const tools: string[] = [];
   if (reminderIntent(norm, normalize(priorReply))) tools.push("add_appointment", "update_appointment", "add_place_reminder");
+  if (PLACE_CANCEL_INTENT.test(norm)) tools.push("cancel_place_reminder", "update_appointment");
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
@@ -361,6 +365,9 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "forward_ledger", "check_price_online", "query_family", "weekly_savings_plan",
     "home_health_score", "propose_next_month_budget", "decision_impact", "log_decision", "household_resilience",
     "confirm_life_shift",
+    // كانوا في الأدوات الثابتة لكل وكيل (رجيم السياق، ZAD_PLAN ٣.٢): فلوس بس.
+    "set_transaction_category", "update_emergency_fund_balance", "start_savings_challenge", "stop_savings_challenge",
+    "set_broke_mode",
   ],
   pantry: [
     "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
@@ -413,6 +420,25 @@ export const GENERAL_CORE_TOOLS: readonly string[] = [
 // الشيف، المحلات القريبة — ٧ أدوات (~٣ آلاف حرف) كانت بتتبعت مع كل «مرحبا». بتيجي بنية الرسالة
 // (intentToolHints) أو بالوكيل المتخصص، وقواعدها في البرومبت معاها (buildChatSystemPrompt).
 
+/**
+ * الأدوات الثابتة مع كل وكيل متخصص (رجيم السياق، ZAD_PLAN ٣.٢). كانت ٢٧ أداة بتتبعت مع كل وكيل، فوكيل
+ * المال كان بياخد ٥٢ أداة في المتوسط و٦٠ بالكتير (zad_brain_runs، ٥١٠ لفة آخر ٧ أيام، ٢٦/١٠): نص
+ * البرومبت تعريفات أدوات. فضل هنا اللي مالوش نية تجيبه وبيتسأل في أي موضوع؛ اللي ليه نية (المناسبات،
+ * الشكوى، «أنا مفلس»، تذكير المكان) بييجي بـ[intentToolHints]، واللي بتاع وكيل واحد راح لنطاقه. لو
+ * الموديل قال «مقدرش» أو ادّعى تنفيذ من غير أداة، اللفة بتتعاد بكل الأدوات (shouldWidenTools).
+ */
+export const SPECIALIST_ALWAYS_TOOLS: readonly string[] = [
+  "remember", "web_search", "read_house", "app_command", "update_customer_profile",
+  // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك» للمال.
+  "add_appointment", "update_appointment",
+  // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
+  "gold_price", "fetch_current_exchange_rate",
+  "set_market",
+];
+
+/** سقف الأدوات لوكيل واحد (ZAD_PLAN ٣.٢: أقل من ٤٠). */
+export const MAX_SPECIALIST_TOOLS = 39;
+
 export function scopeToolsForSpecialist<T extends { name: string }>(
   tools: T[],
   specialist: SpecialistId,
@@ -423,31 +449,43 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     const core = new Set([...GENERAL_CORE_TOOLS, ...extra]);
     return tools.filter((t) => core.has(t.name));
   }
-  const allowed = new Set([
-    ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
-    ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
-    // الأدوات العابرة للنطاقات — متاحة دايمًا
-    "remember", "remember_occasion", "link_memory", "web_search", "set_market", "set_transaction_category",
-    // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
-    "gold_price", "fetch_current_exchange_rate",
-    // الشكوى بتتقال في أي موضوع.
-    "open_support_ticket",
-    "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
-    "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
-    // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
-    // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
-    "add_appointment", "update_appointment",
-    "add_place_reminder", "cancel_place_reminder",
-    // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
-    "set_broke_mode",
-    "start_savings_challenge", "stop_savings_challenge",
-    // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
-    "update_customer_profile",
-    // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
-    "read_house",
-    ...extra,
-  ]);
+  // الأولوية لو القايمة عدّت السقف: نية الرسالة، ثم الثابتة، ثم الوكيل الأساسي، ثم الاستشاري.
+  const offered = new Set(tools.map((t) => t.name));
+  const allowed = new Set<string>();
+  for (
+    const name of [
+      ...extra,
+      ...SPECIALIST_ALWAYS_TOOLS,
+      ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
+      ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
+    ]
+  ) {
+    if (allowed.size >= MAX_SPECIALIST_TOOLS) break;
+    if (offered.has(name)) allowed.add(name);
+  }
   return tools.filter((t) => allowed.has(t.name));
+}
+
+/**
+ * الرسالة العامة (٦٧٪ من اللفات): كاملين بس اللي بيتنادوا من غير نية واضحة أو إرشادهم في وصفهم —
+ * القراية والتسجيل والميعاد والمخزن والقايمة. الباقي خفيف إلا لو النية بتشاور عليه: رسالة عن دوا بتروح
+ * لوكيل الصيدلية (أدواته كاملة هناك)، و«أنا اسمي…» بتجيب update_customer_profile بالنية.
+ */
+const GENERAL_FULL_TOOLS: ReadonlySet<string> = new Set([
+  "read_house", "log_transaction", "add_appointment", "add_inventory_item", "add_shopping_item",
+]);
+
+/**
+ * الأدوات اللي بتتبعت بتعريفها الكامل في أول نداء للوكيل [specialist]: أدوات نطاقه والأساسية، لأن
+ * إرشاد كتير منها جوه وصفها بس (أقسام read_house، فئات log_transaction، الدوا والمواعيد). اللي برّه
+ * نطاقه (الاستشاري والثابتة) بيتبعت خفيف إلا لو الرسالة بتشاور عليه.
+ */
+export function fullOnFirstCall(specialist: SpecialistId): ReadonlySet<string> {
+  if (specialist === "general") return GENERAL_FULL_TOOLS;
+  return new Set([
+    ...GENERAL_CORE_TOOLS,
+    ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
+  ]);
 }
 
 // ── الرد اللي بيتهرب من التنفيذ ──────────────────────────────────────────────────────────────

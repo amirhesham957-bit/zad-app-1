@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals } from "jsr:@std/assert@1";
 import { heaviestKeys, promptSizes } from "./promptBudget.ts";
 
 Deno.test("the heaviest snapshot keys come first, and empty ones are left out", () => {
@@ -73,4 +73,21 @@ Deno.test("context diet 3b: Groq gets every specialist tool, lean, instead of dr
   assertEquals(changed, ["app_command", "remember", "update_appointment"].filter((n) => tools.some((t) => t.name === n)).sort());
   // عليهم نية ⇒ كاملين.
   assertEquals(toolsForCall(tools, ["remember"], [], 0).find((t) => t.name === "remember"), tools.find((t) => t.name === "remember"));
+});
+
+Deno.test("context diet 3.2: out of the agent's domain is lean on the first call unless the message points to it", async () => {
+  const { CHAT_TOOLS, toolsForCall } = await import("./index.ts");
+  const { fullOnFirstCall, scopeToolsForSpecialist } = await import("./specialists.ts");
+  const tools = scopeToolsForSpecialist(CHAT_TOOLS, "pharmacy", null);
+  const first = toolsForCall(tools, [], [], 0, fullOnFirstCall("pharmacy"));
+  const full = (n: string, list = first) => list.find((t) => t.name === n) === tools.find((t) => t.name === n);
+  assert(full("add_pharmacy_item"));
+  assert(!full("gold_price"));
+  assert(full("gold_price", toolsForCall(tools, ["gold_price"], [], 0, fullOnFirstCall("pharmacy"))));
+  assert(JSON.stringify(first).length < JSON.stringify(tools).length);
+});
+
+Deno.test("context diet 3.2: every turn records the prompt version", async () => {
+  const { PROMPT_VERSION, promptSizes } = await import("./promptBudget.ts");
+  assertEquals(promptSizes({ parts: {}, snapshot: {}, tools: [], history: [] }).prompt_version, PROMPT_VERSION);
 });
