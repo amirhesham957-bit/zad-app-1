@@ -228,3 +228,39 @@ Deno.test("nearby: the morning asks around their coarse point, and says «قري
   assertEquals([fallback?.store, fallback?.nearby], ["هايبر وان", false]);
   nearbySource.search = () => Promise.resolve(null);
 });
+
+// ZAD_PLAN ٤.١٥: ماركة البيت من المشتريات — أسامي من مخزن حقيقي (٢٦/١٠).
+import { houseBrands, offerBrand } from "./tasteDeals.ts";
+
+const BOUGHT = [
+  "شاي اسود 40جم بروك", "شاي اسود 40 جم بروك",
+  "ماء إيلان", "ماء إيلان", "مياه نستله بيور لايف", "ماء بوفانا", "مياه داساني جالون",
+  "صافي مياه معدنية 1.5 لتر", "صافي, مياه معدنيه 1.5 لتر", "ماء صافى",
+  "اريا لبن كامل الدسم 1 لتر", "حليب", "خميرة فورى 12 جم دريم", "فانيليا 2 جم دريم",
+];
+
+Deno.test("house brand: twice and at least half of that staple's buys; descriptors and sizes are not brands", () => {
+  const brands = houseBrands(BOUGHT);
+  // الشاي: بروك مرتين من مرتين. المية: صافي ٣ من ٨ — مش نص، فمفيش ماركة. اللبن: «كامل» و«دسم» أوصاف.
+  assertEquals([...brands.values()], ["بروك"]);
+  assertEquals(offerBrand("شاي بروك 100 جم", brands), "بروك");
+  assertEquals(offerBrand("شاي العروسة 40 فتلة", brands), null);
+  // «دريم» اتكرر بس مع حاجات مش من الأساسيات — مالوش صنف يتربط بيه.
+  assertEquals(offerBrand("خميرة دريم", brands), null);
+  assertEquals(houseBrands([]).size, 0);
+});
+
+Deno.test("house brand: an offer on their brand comes after their store and before a nearer one or a bigger discount", () => {
+  const brands = houseBrands(BOUGHT);
+  const deals = [
+    { item: "شاي العروسة", store: "بنده", price: 20, discount_percent: 40 },
+    { item: "شاي بروك 40 جم", store: "العثيم", price: 22, discount_percent: 10 },
+  ];
+  const d = pickDeal(deals, ["شاي"], [], new Set(), ["بنده"], false, brands)!;
+  assertEquals([d.store, d.brand], ["العثيم", "بروك"]);
+  assertStringIncludes(momentFallback("morning_greeting", { taste_deal: d }).text, "(الماركة اللي بتجيبوها)");
+  // محله المعتاد لسه الأول.
+  assertEquals(pickDeal(deals, ["شاي"], ["بنده"], new Set(), [], false, brands)?.store, "بنده");
+  // والفلوس ضيقة: الأرخص، مش الماركة.
+  assertEquals(pickDeal(deals, ["شاي"], [], new Set(), [], true, brands)?.store, "بنده");
+});

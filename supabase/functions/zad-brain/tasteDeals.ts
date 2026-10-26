@@ -15,7 +15,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { countryNameAr, itemKey, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
-import { offerMatchesNeed } from "./productIdentity.ts";
+import { meaningfulWords, offerMatchesNeed, stapleGroup } from "./productIdentity.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -45,12 +45,64 @@ export interface TasteDeal {
   favorite: boolean;
   /** في محل حوالين آخر نقطة ليه (٣ كم). */
   nearby?: boolean;
+  /** الماركة اللي البيت بيجيبها للصنف ده (٤.١٥). */
+  brand?: string | null;
   /** الفلوس ضيقة (الميزانية في خطر أو «أنا مفلس»): أرخص سعر لحاجة ناقصة، مش عرض. */
   tight?: boolean;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
   source?: { kind: string; url: string | null; until: string | null } | null;
+}
+
+// ── ماركة البيت (ZAD_PLAN ٤.١٥) ───────────────────────────────────────────────────────────────────
+// من المشتريات نفسها: «شاي اسود 40جم بروك» مرتين = البيت ده بيجيب بروك. المقاس ٢٦/١٠ على المخزن: الشاي بروك ×٢،
+// والمية صافي ×٣ قصاد إيلان ×٢ ونستله وداساني وبوفانا — فالماركة بتتحسب لما تبقى نص مرات الصنف على الأقل.
+
+/** أوصاف مش ماركات (بعد المفتاح). */
+const DESCRIPTORS = new Set([
+  "كامل", "دسم", "قليل", "خالي", "اسود", "اخضر", "ابيض", "احمر", "بلدي", "رفيع", "وسط", "سايب", "سايبه",
+  "معدني", "معدنيه", "طبيعي", "طبيعيه", "طازج", "طازه", "مستورد", "شرائح", "قمح", "جالون", "فوري", "صغير",
+  "كبير", "عادي", "مصري", "اصلي", "جديد", "بيور", "لايف", "متعدد", "استخدام",
+]);
+export const BRAND_MIN_TIMES = 2;
+
+/** كلمات الماركة المرشّحة في اسم صنف: من غير الأساسيات والأوصاف والتغليف والأرقام. */
+function brandWords(name: string): { group: number | undefined; words: string[] } {
+  const words = meaningfulWords(String(name ?? "").replace(/[()[\]{}،,؛;:.\-/+*«»"'×]/g, " "))
+    .filter((w) => !/\d/.test(w));
+  const group = words.map(stapleGroup).find((g) => g !== undefined);
+  return { group, words: words.filter((w) => stapleGroup(w) === undefined && !DESCRIPTORS.has(w) && w.length >= 3) };
+}
+
+/**
+ * ماركة البيت لكل عيلة أساسيات: كلمة اتكررت مع الصنف ده [BRAND_MIN_TIMES] مرات أو أكتر، وفي نص مرات الصنف على
+ * الأقل. [names] = أسامي اللي اتشرى (المخزن). الناتج: عيلة ⇐ كلمة الماركة (بعد المفتاح).
+ */
+export function houseBrands(names: readonly string[]): Map<number, string> {
+  const perGroup = new Map<number, { rows: number; counts: Map<string, number> }>();
+  for (const name of names) {
+    const { group, words } = brandWords(name);
+    if (group === undefined) continue;
+    const g = perGroup.get(group) ?? { rows: 0, counts: new Map() };
+    g.rows++;
+    for (const w of new Set(words)) g.counts.set(w, (g.counts.get(w) ?? 0) + 1);
+    perGroup.set(group, g);
+  }
+  const out = new Map<number, string>();
+  for (const [group, g] of perGroup) {
+    const [best] = [...g.counts.entries()].sort((a, b) => b[1] - a[1]);
+    if (best && best[1] >= BRAND_MIN_TIMES && best[1] * 2 >= g.rows) out.set(group, best[0]);
+  }
+  return out;
+}
+
+/** ماركة البيت في اسم العرض ده، أو null. */
+export function offerBrand(offered: string, brands: ReadonlyMap<number, string>): string | null {
+  if (brands.size === 0) return null;
+  const { group, words } = brandWords(offered);
+  const brand = group === undefined ? undefined : brands.get(group);
+  return brand && words.includes(brand) ? brand : null;
 }
 
 /** الأصناف اللي بندوّر لها: قايمة الشراء المفتوحة الأول، وبعدها الاهتمامات. مفيش تكرار، ٥ بالكتير. */
@@ -90,7 +142,8 @@ const sameName = (a: string, b: string) => {
 
 /**
  * العرض اللي يتقال، أو null. لازم: صنفه من أصناف الذوق، محل باسم، وسعر أو خصم موجب. الأولوية: محل من محلاته،
- * بعدها محل قريب منه ([nearby] = أسامي محلات حوالين آخر نقطة)، بعدها أكبر خصم. [skip] = مفاتيح اتقالت آخر أسبوع.
+ * بعدها الماركة اللي البيت بيجيبها ([brands]، ٤.١٥)، بعدها محل قريب منه ([nearby] = أسامي محلات حوالين آخر نقطة)،
+ * بعدها أكبر خصم. [skip] = مفاتيح اتقالت آخر أسبوع.
  *
  * [tight] (ZAD_PLAN ٤.٨، الفلوس ضيقة): [items] هي النواقص بس بترتيب الأهمية، والسعر شرط. أول ناقص ليه عرض
  * بياخد الخانة، وجواه الأرخص — محله المعتاد مش ميزة لو أغلى — والقريب لو السعر واحد.
@@ -102,6 +155,7 @@ export function pickDeal(
   skip: ReadonlySet<string>,
   nearby: readonly string[] = [],
   tight = false,
+  brands: ReadonlyMap<number, string> = new Map(),
 ): TasteDeal | null {
   if (!Array.isArray(raw)) return null;
   const found: TasteDeal[] = [];
@@ -128,6 +182,7 @@ export function pickDeal(
       note: typeof d?.note === "string" && d.note.trim() ? d.note.trim().slice(0, 120) : null,
       favorite: favorites.some((f) => sameName(f, store)),
       nearby: nearby.some((n) => sameName(n, store)),
+      brand: offerBrand(item, brands),
       ...(tight ? { tight: true } : {}),
     });
   }
@@ -137,7 +192,7 @@ export function pickDeal(
     return found[0] ?? null;
   }
   found.sort((a, b) =>
-    Number(b.favorite) - Number(a.favorite) || Number(b.nearby) - Number(a.nearby) ||
+    Number(b.favorite) - Number(a.favorite) || Number(!!b.brand) - Number(!!a.brand) || Number(b.nearby) - Number(a.nearby) ||
     (b.discount_percent ?? 0) - (a.discount_percent ?? 0)
   );
   return found[0] ?? null;
@@ -221,7 +276,7 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | 
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now(), opts: { tight?: boolean } = {}): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);
-    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }] = await Promise.all([
+    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }, { data: bought }] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
@@ -233,6 +288,8 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
         .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
       sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle(),
+      // ٤.١٥: اللي اتشرى قبل كده — منه ماركة البيت لكل صنف.
+      sb.from("zad_inventory").select("item_name").or(householdFilter(userId, family)).limit(300),
     ]);
     const tight = broke || opts.tight === true;
     const interests = (profile as { interests?: unknown } | null)?.interests;
@@ -246,6 +303,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
     const skip = askedDealKeys(past as Array<{ facts?: unknown }>);
+    const brands = houseBrands(((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? ""));
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
     const point = nearbyPoint(user as { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null } | null, now);
     const nearby = point
@@ -257,10 +315,10 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
-    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby, tight);
+    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby, tight, brands);
     if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby, tight);
+    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby, tight, brands);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;

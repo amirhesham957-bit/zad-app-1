@@ -61,6 +61,11 @@ const STAPLE_GROUPS: ReadonlyArray<readonly string[]> = [
 const GROUP_OF = new Map<string, number>();
 STAPLE_GROUPS.forEach((g, i) => g.forEach((w) => GROUP_OF.set(w, i)));
 
+/** عيلة الأساسيات اللي الكلمة منها (بعد المفتاح)، أو undefined. */
+export function stapleGroup(word: string): number | undefined {
+  return GROUP_OF.get(word);
+}
+
 /** الكلمات اللي تفرق: من غير تغليف ولا أرقام. */
 export function meaningfulWords(name: string): string[] {
   return productNameKey(name).split(" ")
