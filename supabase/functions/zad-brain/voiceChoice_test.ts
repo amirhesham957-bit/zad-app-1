@@ -29,11 +29,11 @@ Deno.test("soul: no flirting, whatever the voice and whoever starts it", () => {
 });
 
 Deno.test("voice mode: the call and the chat follow the chosen voice", () => {
-  assertStringIncludes(voiceModeInstruction(true, "male"), "أنت ولد");
+  assertStringIncludes(voiceModeInstruction(true, "male"), "أنت صاحب");
   assertStringIncludes(voiceModeInstruction(true, "male"), "رجالي");
   assertEquals(voiceModeInstruction(true, "male").includes("أنثوي"), false);
   assertStringIncludes(voiceModeInstruction(false, "male"), "بصيغة المذكر");
-  assertStringIncludes(voiceModeInstruction(true), "بنت حرة");
+  assertStringIncludes(voiceModeInstruction(true), "أنتي صاحبة");
 });
 
 Deno.test("moments: a boy's voice writes the moment as a friend, with a boy's delivery", () => {

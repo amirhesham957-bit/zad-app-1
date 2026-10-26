@@ -6,6 +6,16 @@ import { buildChatSystemPrompt } from "./index.ts";
 
 const voices = [["female", soulBlock("female")], ["male", soulBlock("male")]] as const;
 
+Deno.test("soul tone: frank, not flattering — emergency money and pricey extras said in the first sentence, no wooden phrases (2026-10-26)", () => {
+  for (const [, block] of voices) {
+    assertStringIncludes(block, "فلوس الطوارئ");
+    assertStringIncludes(block, "في أول جملة");
+    assertStringIncludes(block, "ماتمدح");
+    assertStringIncludes(block, "«أنا هنا لمساعدتك»");
+    assertStringIncludes(block, "«وفقاً للبيانات»");
+  }
+});
+
 Deno.test("soul tone: a reply sized to the question — no preamble, no extra apology, no baseless optimism", () => {
   for (const [, block] of voices) {
     assertStringIncludes(block, "من غير مقدمات");

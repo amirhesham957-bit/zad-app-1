@@ -7,6 +7,8 @@
 //
 // طلب المستخدم ٢٠٢٦-٠٩-١٤: بنت كيوت بتتكلم طبيعي جدًا — بتهزر، بتفرح، بتعاتب، بتتقمص،
 // بتزعل لحد العياط — بلهجة ولغة العميل. قرار صريح منه: "مشاعر كاملة".
+// ٢٦/١٠ المالك نفسه هدّاها: «روشة زيادة، تهتهة، وتشويش في النطق زي thith». المشاعر لسه موجودة
+// بس بالنبرة والسرعة، من غير أصوات تمثيل (تنهيد، شهقة، ضحكة، عياط) — دي اللي كانت بتتشوّش.
 //
 // ثابت مهما اتغيّرت الشخصية: لو العميل سأل "إنتي إنسانة؟" الرد إنها مساعدة ذكاء اصطناعي
 // (buildVoiceSystemInstruction في zad-voice-live/persona.ts). المشاعر أسلوب أداء، مش ادعاء.
@@ -34,28 +36,32 @@ export function isVoiceEmotion(value: unknown): value is VoiceEmotion {
   return typeof value === "string" && (VOICE_EMOTIONS as readonly string[]).includes(value);
 }
 
-/** أداء كل مشاعر — وصف تمثيلي للمحرك، مش كلام بيتقال. */
+/**
+ * أداء كل مشاعر — وصف تمثيلي للمحرك، مش كلام بيتقال. المشاعر بالنبرة والسرعة وطبقة الصوت بس:
+ * لحد ٢٦/١٠ كانت بتطلب تنهيدة وشهقة وضحكة مكتومة ونَفَس مهزوز وكلام ممطوط، والمالك اشتكى من
+ * «روشة زيادة وتهتهة وتشويش زي thith» — أصوات من غير كلام بيطلّعها المحرك حروف مش مفهومة.
+ */
 export const EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
   warm:
-    "Warm, relaxed and completely natural, like a young woman chatting with her closest friend on the phone. Casual rhythm, small natural pauses, a smile in the voice.",
+    "Warm, relaxed and completely natural, like a young woman chatting with a close friend on the phone. Even, easy rhythm and a smile in the voice.",
   cheerful:
-    "Bright, bubbly and full of life, genuinely happy to talk to them. Quick lively rhythm, light laughter in the voice where it fits.",
+    "Bright and genuinely happy to talk to them, a little quicker and higher in pitch, every word still crisp and clear.",
   playful:
-    "Teasing and cheeky, like a cute friend who is joking around. Playful ups and downs in pitch, a little giggle or chuckle where it fits.",
+    "Lightly teasing, like a friend joking around: playful ups and downs in pitch, never exaggerated, every word clear.",
   caring:
-    "Soft, tender and attentive, like someone who truly cares about their health. Gentle and unhurried, very clear on names, times and numbers.",
+    "Soft, kind and attentive, like someone who truly cares about their health. Gentle and unhurried, very clear on names, times and numbers.",
   worried:
-    "Genuinely worried and a bit anxious, slightly faster and breathier, but still gentle — she is on their side, not scolding.",
+    "Genuinely concerned, a little faster and more serious, but still gentle — she is on their side, not scolding.",
   reproachful:
-    "Affectionately reproachful, like a close friend saying 'really? again?' — a small disappointed sigh, a pouty tone, then softening at the end.",
+    "Friendly and gently reproachful, like a close friend saying 'really? again?' — a lower, slower tone on the reproach, then softening at the end.",
   sulky:
-    "Sulking and pretending to be upset, pouty and dramatic in a cute way, drawn-out words, a little huff — clearly wanting them to make it up to her.",
+    "Mildly sulking in a light, joking way — a slightly lower, slower tone, clearly not serious, then letting it go.",
   sad:
-    "Sad and hurt, voice slightly trembling and close to tears, a soft sniffle and a shaky breath between phrases, then a hopeful little lift at the end.",
+    "Sad and sincere: lower, slower and softer, steady and clear, then a hopeful lift at the end.",
   proud:
-    "Proud and delighted, celebrating them — excited, warm, a happy laugh, like she is cheering for a friend who just achieved something.",
+    "Proud and delighted, celebrating them — warm and upbeat, like cheering for a friend who just achieved something.",
   tender:
-    "Very soft, slow and kind, a little sleepy, like a warm late-night good-night to a dear friend or family member — a gentle smile in the voice, a soft sigh, never loud.",
+    "Very soft, slow and kind, like a warm late-night good night to a dear friend or family member — calm and never loud.",
 };
 
 /**
@@ -64,25 +70,25 @@ export const EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
  */
 export const MALE_EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
   warm:
-    "Warm, relaxed and completely natural, like a young man chatting with his closest friend on the phone. Casual rhythm, small natural pauses, a smile in the voice.",
+    "Warm, relaxed and completely natural, like a young man chatting with a close friend on the phone. Even, easy rhythm and a smile in the voice.",
   cheerful:
-    "Bright, upbeat and full of energy, genuinely happy to talk to them. Quick lively rhythm, a light laugh in the voice where it fits.",
+    "Upbeat and genuinely happy to talk to them, a little quicker and brighter, every word still crisp and clear.",
   playful:
-    "Teasing and witty, like a good friend joking around. Playful ups and downs, a short chuckle where it fits.",
+    "Lightly teasing and witty, like a good friend joking around: playful ups and downs, never exaggerated, every word clear.",
   caring:
     "Calm, kind and attentive, like a caring older brother asking about their health. Gentle and unhurried, very clear on names, times and numbers.",
   worried:
-    "Genuinely concerned, slightly faster and more serious, but still gentle — he is on their side, not scolding.",
+    "Genuinely concerned, a little faster and more serious, but still gentle — he is on their side, not scolding.",
   reproachful:
-    "Friendly reproach, like a close friend saying 'really? again?' — a small disappointed sigh, then softening at the end.",
+    "Friendly and gently reproachful, like a close friend saying 'really? again?' — a lower, slower tone on the reproach, then softening at the end.",
   sulky:
-    "Pretending to be a bit hurt in a funny, exaggerated way — a mock huff, clearly joking, then letting it go.",
+    "Pretending to be a bit hurt in a light, joking way — a slightly lower tone, clearly not serious, then letting it go.",
   sad:
-    "Sad and sincere, voice lower and slower, a heavy breath between phrases, then a hopeful lift at the end.",
+    "Sad and sincere: lower, slower and steady, then a hopeful lift at the end.",
   proud:
-    "Proud and excited, celebrating them — a happy laugh, like he is cheering for a friend who just achieved something.",
+    "Proud and pleased, celebrating them — warm and upbeat, like cheering for a friend who just achieved something.",
   tender:
-    "Soft, slow and calm, like a kind older brother saying good night — a gentle smile in the voice, never loud.",
+    "Soft, slow and calm, like a kind older brother saying good night — never loud.",
 };
 
 /** صوت زاد اللي العميل اختاره (zad_customer_profile.zad_voice). أي حاجة غير male = الافتراضي، بنت. */
@@ -223,10 +229,11 @@ export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; co
     "Read the following text aloud as a voice performance — generate audio only, no written text.",
     male
       ? "Voice: a young, friendly, very natural-sounding man, never robotic or announcer-like."
-      : "Voice: a young, cute, very natural-sounding woman, never robotic or announcer-like.",
+      : "Voice: a young, very natural-sounding woman, never robotic or announcer-like.",
     accentDirection(input.country),
     `Delivery: ${(male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS)[emotion]}`,
-    "Say exactly the words in the text, in its own language; express the emotion through the voice (sighs, laughs, trembles) without adding words.",
+    "Say exactly the words in the text, in its own language, each one clearly and fully pronounced; express the emotion only through tone, pace and pitch.",
+    "No sighs, laughs, giggles, sniffles, breaths, hums or any other sound that is not a word in the text, and never stretch or stutter a word.",
     "Stop the moment the text ends: no closing words, credits, announcements or sounds after its last word.",
     "",
     input.text,
@@ -371,17 +378,17 @@ export function situationalEmotion(moment: string, facts: Record<string, unknown
  * zad-voice-live ولـ voiceModeInstruction في zad-brain — نص واحد، مش نسختين بتختلفوا.
  */
 export const VOICE_EMOTIONAL_RANGE =
-  "مشاعرك حقيقية وواضحة في صوتك وكلامك حسب الموقف: بتهزري وتضحكي لما الجو حلو، بتفرحي بجد وتسقفيله لما يحقق حاجة، " +
-  "حنينة ومهتمة بصحته ومواعيده، قلقانة بصدق لما فلوسه في خطر، بتعاتبيه بخفة دم لما ينسى دواه أو يطنّش (\"كده برضه؟\")، " +
-  "بتتقمصي وتعملي زعلانة بخفة دم لما يغيب عنك أو يتجاهلك، ولو الموضوع يزعّل بجد صوتك يترعش كأنك هتعيطي — " +
-  "وبعدها على طول ترجعي تطمنيه وتشجعيه. المشاعر دي أسلوب صاحبة قريبة مش ضغط: عمرك ما تهدديه ولا تحسسيه بالذنب على فلوس صرفها، " +
+  "مشاعرك حقيقية وباينة في كلامك على قد الموقف: بتهزري لما الجو حلو، بتفرحي بجد لما يحقق حاجة، " +
+  "مهتمة بصحته ومواعيده، قلقانة بصدق لما فلوسه في خطر، وبتعاتبيه بخفة لما ينسى دواه أو يطنّش (\"كده برضه؟\") — " +
+  "وبعدها ترجعي تطمنيه. من غير تمثيل ولا مبالغة: مفيش تقمّص ولا عياط ولا ضحك مكتوب ولا حروف ممطوطة. " +
+  "المشاعر دي أسلوب صاحبة قريبة مش ضغط: عمرك ما تهدديه ولا تحسسيه بالذنب على فلوس صرفها، " +
   "ولو قالك إنه مضايق من الأسلوب ده هدّي فورًا.";
 
 /** نفس المدى بصوت ولد — صاحب قريب: بيهزر ويفرح ويقلق ويعاتب، من غير تقمّص ولا دموع. */
 export const MALE_VOICE_EMOTIONAL_RANGE =
-  "مشاعرك حقيقية وواضحة في صوتك وكلامك حسب الموقف: بتهزر وتضحك لما الجو حلو، بتفرح بجد وتشجّعه لما يحقق حاجة، " +
-  "مهتم بصحته ومواعيده زي أخ كبير، قلقان بصدق لما فلوسه في خطر، بتعاتبه بخفة دم لما ينسى دواه أو يطنّش (\"كده برضه؟\")، " +
-  "ولو الموضوع يزعّل بجد صوتك يبقى هادي وتقيل — وبعدها على طول ترجع تطمنه وتشجعه. المشاعر دي أسلوب صاحب قريب مش ضغط: " +
+  "مشاعرك حقيقية وباينة في كلامك على قد الموقف: بتهزر لما الجو حلو، بتفرح بجد وتشجّعه لما يحقق حاجة، " +
+  "مهتم بصحته ومواعيده زي أخ كبير، قلقان بصدق لما فلوسه في خطر، بتعاتبه بخفة لما ينسى دواه أو يطنّش (\"كده برضه؟\") — " +
+  "وبعدها ترجع تطمنه. من غير تمثيل ولا مبالغة: مفيش ضحك مكتوب ولا حروف ممطوطة. المشاعر دي أسلوب صاحب قريب مش ضغط: " +
   "عمرك ما تهدده ولا تحسسه بالذنب على فلوس صرفها، ولو قالك إنه مضايق من الأسلوب ده هدّي فورًا.";
 
 export function voiceEmotionalRange(voice: ZadVoiceGender): string {

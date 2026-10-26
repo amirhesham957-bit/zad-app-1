@@ -15,7 +15,17 @@ Deno.test("persona follows the account country, the customer's own choice and ho
 
 Deno.test("voice mode asks for speech-sized turns", () => {
   assertMatch(voiceModeInstruction(true), /جملك قصيرة/);
-  assertMatch(voiceModeInstruction(true), /بنت حرة/);
+  assertMatch(voiceModeInstruction(true), /صاحبة ذكية/);
+});
+
+Deno.test("voice mode: the reply is plain spoken Arabic — no Latin, written laughter or stretched letters (2026-10-26)", () => {
+  for (const voice of [voiceModeInstruction(true), voiceModeInstruction(true, "male")]) {
+    assertMatch(voice, /حروف لاتيني/);
+    assertMatch(voice, /هههه/);
+    assertMatch(voice, /ممطوطة/);
+    // «روشة زيادة»: the old wording asked for a free spirit who interrupts and laughs aloud.
+    assertEquals(/بنت حرة|تضحك|يترعش|هتعيطي|بتتقمصي/.test(voice), false);
+  }
   assertMatch(voiceModeInstruction(false), /محادثة مكتوبة/);
 });
 

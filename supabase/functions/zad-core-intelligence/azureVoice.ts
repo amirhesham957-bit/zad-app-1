@@ -67,9 +67,21 @@ export function azureVoiceFor(text: string, country: unknown, geminiVoiceId: str
   return geminiVoiceId === ZAD_MALE_VOICE ? pair[1] : pair[0];
 }
 
-/** Gemini بيسكت على الإيموجي؛ مايكروسوفت بيقرا اسمها بصوت عالي («وجه ضاحك»). */
+/**
+ * Gemini بيسكت على الإيموجي؛ مايكروسوفت بيقرا اسمها بصوت عالي («وجه ضاحك»). والضحك المكتوب
+ * («هههه») والحروف الممطوطة («حلوووو») والتطويل («يـــا») المحركين بيطلّعوهم تهتهة وأصوات مش
+ * مفهومة (شكوى المالك ٢٦/١٠: «تشويش في النطق زي thith»).
+ */
 export function speakableText(text: string): string {
-  return text.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
+  return text
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "")
+    .replace(/\u0640+/g, "")
+    .replace(/(?<![\p{L}])(?:ه{3,}|ها(?:ها)+|هه(?:ه)*\s*ه{2,})(?![\p{L}])/gu, "")
+    .replace(/(?<![\p{L}])(\p{L})\1{2,}(?![\p{L}])/gu, "")
+    .replace(/(\p{L})\1{2,}/gu, "$1")
+    .replace(/\s+([،,.!؟?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function escapeXml(text: string): string {

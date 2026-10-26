@@ -79,7 +79,7 @@ Deno.test("TTS prompt uses the account accent and the chosen emotion", async () 
   await requestGeminiVoice({ text: "صباح الخير", voiceId: "Aoede", emotion: "cheerful", country: "SA" }, "k", fetcher);
   const prompt = JSON.parse(body).contents[0].parts[0].text as string;
   assertEquals(prompt.includes("Saudi"), true);
-  assertEquals(prompt.includes("bubbly"), true);
+  assertEquals(prompt.includes("genuinely happy"), true);
 });
 
 Deno.test("one voice named Zad: any persona, or none, is Aoede", () => {

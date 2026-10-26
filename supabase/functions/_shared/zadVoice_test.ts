@@ -7,6 +7,7 @@ import {
   emotionForMoment,
   inferEmotion,
   isVoiceEmotion,
+  MALE_EMOTION_DIRECTIONS,
   MOMENT_EMOTIONS,
   PERSONA_VOICES,
   VOICE_EMOTIONS,
@@ -20,8 +21,20 @@ Deno.test("every emotion has a performance direction and every moment maps to a 
 
 Deno.test("the full emotional range the user asked for is present", () => {
   for (const e of ["playful", "reproachful", "sulky", "sad", "cheerful", "proud"]) assert(isVoiceEmotion(e), e);
-  assertMatch(EMOTION_DIRECTIONS.sad, /tears|trembl/);
-  assertMatch(EMOTION_DIRECTIONS.sulky, /pout|sulk/i);
+  assertMatch(EMOTION_DIRECTIONS.sad, /sad/i);
+  assertMatch(EMOTION_DIRECTIONS.sulky, /sulk/i);
+});
+
+// المالك ٢٦/١٠: «تهتهة وتشويش في النطق زي thith». الأصوات اللي مش كلام كانت بتطلع حروف مش مفهومة.
+Deno.test("emotion lives in tone, pace and pitch — no direction asks for a sound that is not a word", () => {
+  const sounds = /sigh|sniffl|giggl|chuckl|huff|laugh|breath|tears|trembl|shaky|drawn-out|cute/i;
+  for (const e of VOICE_EMOTIONS) {
+    assertEquals(sounds.test(EMOTION_DIRECTIONS[e]), false, e);
+    assertEquals(sounds.test(MALE_EMOTION_DIRECTIONS[e]), false, e);
+  }
+  const p = buildTtsPrompt({ text: "تمام", emotion: "sad" });
+  assertStringIncludes(p, "No sighs, laughs");
+  assertStringIncludes(p, "clearly and fully pronounced");
 });
 
 Deno.test("accent follows the account country, including Arabic names and Turkey", () => {

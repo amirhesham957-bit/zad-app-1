@@ -22,7 +22,7 @@
 // والإنتاج ميت — نفس المتغير، افتراضيين مختلفين. متحقَّق حي 2026-09-12: الموديل ده
 // رجّع 77504 بايت صوت بصوت Aoede.
 import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion, type ZadVoiceGender } from "../_shared/zadVoice.ts";
-import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
+import { type AzureSpeechConfig, requestAzureVoice, speakableText } from "./azureVoice.ts";
 import { trimRunawaySpeech } from "../_shared/ttsTrim.ts";
 
 /**
@@ -118,7 +118,7 @@ export function bearerToken(req: Request): string {
 export function validateVoicePayload(payload: unknown): ValidVoiceRequest | null {
   if (!payload || typeof payload !== "object") return null;
   const row = payload as Record<string, unknown>;
-  const text = typeof row.text === "string" ? row.text.trim() : "";
+  const text = typeof row.text === "string" ? speakableText(row.text) : "";
   // صوت واحد (زاد): الـpersona اختياري، وأي قيمة — حتى من نسخة قديمة — بتطلع نفس الصوت.
   const voiceId = voiceForPersona(row.persona);
   if (!text || text.length > 1200) return null;

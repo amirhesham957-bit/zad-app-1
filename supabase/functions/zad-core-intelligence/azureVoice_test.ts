@@ -57,6 +57,16 @@ Deno.test("الإيموجي بيتشال — مايكروسوفت كان هيق�
   assertEquals(speakableText("👨‍👩‍👧"), "");
 });
 
+Deno.test("الضحك المكتوب والمط والتطويل بيتشالوا — المحرك كان بيطلّعهم تهتهة (٢٦/١٠)", () => {
+  assertEquals(speakableText("هههههه ماشي يا عم"), "ماشي يا عم");
+  assertEquals(speakableText("هاهاها ده حلو"), "ده حلو");
+  assertEquals(speakableText("حلوووو كده"), "حلو كده");
+  assertEquals(speakableText("يـــا سلام"), "يا سلام");
+  assertEquals(speakableText("مممم ماشي"), "ماشي");
+  // كلام عادي بحرفين متكررين بيفضل زي ما هو.
+  assertEquals(speakableText("الله يحفظه، شدّ حيلك"), "الله يحفظه، شدّ حيلك");
+});
+
 Deno.test("نداء Azure: الهوست من الريجن، فورمات PCM 24kHz، والمفتاح في الهيدر بس", async () => {
   const { fetcher, calls } = router({ gemini: geminiAudio, azure: () => new Response(new Uint8Array([1, 2, 3, 4])) });
   const res = await requestAzureVoice({ text: "أهلاً 🎉", voiceId: "Aoede", country: "EG" }, AZURE, fetcher);
