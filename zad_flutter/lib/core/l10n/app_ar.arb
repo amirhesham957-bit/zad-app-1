@@ -1510,5 +1510,9 @@
   "walletBankOther": "محفظة / تحويل",
   "@walletBankOther": {
     "description": "Receipt scanner: paid from the bank account, named as the account's market names it (ZAD_PLAN 3.13)."
+  },
+  "keepAliveAllow": "خلّي زاد شغال دايماً",
+  "@keepAliveAllow": {
+    "description": "Battery card: asks Android for the battery-optimisation exemption so the bank reading keeps running (ZAD_PLAN 2.1)."
   }
 }

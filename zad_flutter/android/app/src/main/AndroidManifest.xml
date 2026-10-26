@@ -41,6 +41,14 @@
          PharmacyReminderScheduler + BootReceiver do. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!--
+      The bank reading (ZAD_PLAN 2.1): the owner's phone revoked or stalled the
+      notification listener four times in 21 days. The «خلّي زاد شغال» card
+      asks for the exemption with the system dialog instead of only pointing
+      at settings (owner's decision 2026-10-26). Play-sensitive: declare it in
+      the Play Console (ZAD_PLAN 0.6) as needed for the bank reading.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <!--
       A child can agree to share coming to and leaving zones a parent sets

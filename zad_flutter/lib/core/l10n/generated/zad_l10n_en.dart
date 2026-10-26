@@ -2215,4 +2215,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get walletBankOther => 'Wallet / transfer';
+
+  @override
+  String get keepAliveAllow => 'Keep Zad running';
 }

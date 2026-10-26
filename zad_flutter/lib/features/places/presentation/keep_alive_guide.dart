@@ -7,9 +7,11 @@
 /// the Chinese brands, turn on auto-start. This card says so, per brand, and
 /// opens the app's system page.
 ///
-/// It only reads whether battery optimisation is already off — it never asks
-/// for REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, which is Play-sensitive and
-/// undecided (CLAUDE.md).
+/// While battery optimisation is on, the button asks for the exemption with
+/// the system dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, owner's decision
+/// 2026-10-26, ZAD_PLAN 2.1) and falls back to the app's page when that is
+/// refused or unavailable. Once off, it opens the app's page for auto-start,
+/// which no permission covers.
 library;
 
 import 'dart:async';
@@ -19,6 +21,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// The steps, per brand. UI text.
 const List<(String, String)> kKeepAliveSteps = <(String, String)>[
@@ -106,6 +109,19 @@ class _KeepAliveGuideState extends State<KeepAliveGuide>
     }
   }
 
+  /// The system's «السماح لزاد بالعمل في الخلفية؟» dialog; the app's page if
+  /// the customer says no or the phone has no such dialog.
+  Future<void> _askExemption() async {
+    var granted = false;
+    try {
+      granted = await Permission.ignoreBatteryOptimizations.request().isGranted;
+    } on Object {
+      // No plugin (a test host).
+    }
+    if (!granted) await _openSettings();
+    await _check();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ok = _unrestricted ?? false;
@@ -183,9 +199,12 @@ class _KeepAliveGuideState extends State<KeepAliveGuide>
                   child: Text(_open ? 'اخفي الخطوات' : 'الخطوات لموبايلي'),
                 ),
                 FilledButton(
-                  onPressed: () => unawaited(_openSettings()),
+                  onPressed: () =>
+                      unawaited(ok ? _openSettings() : _askExemption()),
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                  child: const Text('افتح إعدادات زاد'),
+                  child: Text(
+                    ok ? 'افتح إعدادات زاد' : context.l10n.keepAliveAllow,
+                  ),
                 ),
               ],
             ),

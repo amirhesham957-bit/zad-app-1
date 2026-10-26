@@ -269,8 +269,10 @@ permanently-off "قراءة الرسايل" row whose Enable button the system r
 even showing a dialog). Verified in the **merged** manifest
 (`:app:processDebugMainManifest`), not just the source one — 14 permissions, none of
 them SMS. Remaining SMS mentions in `.kt` files are comments documenting the decision.
-Two other Play-sensitive permissions survive and are undecided:
-`ACCESS_BACKGROUND_LOCATION` and `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`. Update the
+Two other Play-sensitive permissions survive. `ACCESS_BACKGROUND_LOCATION` was decided
+on 2026-09-29 (store arrivals), and `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` on 2026-10-26:
+the owner chose to request it for the bank reading (ZAD_PLAN 2.1), and it must be
+declared in the Play Console (0.6). Update the
 session file
 (don't just append to PROGRESS.md) whenever a Task 25+ item or Phase A/C item lands, so
 a fresh session — this file is auto-loaded every time, no manual paste needed — starts

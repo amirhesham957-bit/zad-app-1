@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
 
 void main() {
@@ -11,6 +12,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ZadTheme.light(),
+        locale: const Locale('ar'),
+        localizationsDelegates: ZadL10n.localizationsDelegates,
+        supportedLocales: ZadL10n.supportedLocales,
         home: const Scaffold(
           body: SingleChildScrollView(child: KeepAliveGuide()),
         ),
@@ -24,7 +28,10 @@ void main() {
     for (final (brand, _) in kKeepAliveSteps) {
       expect(find.text(brand), findsOneWidget);
     }
-    await tester.tap(find.text('افتح إعدادات زاد'));
+    // Battery optimisation still on (or unknown): the button asks for the
+    // exemption rather than only pointing at settings (ZAD_PLAN 2.1).
+    expect(find.text('افتح إعدادات زاد'), findsNothing);
+    await tester.tap(find.text('خلّي زاد شغال دايماً'));
     await tester.pump();
   });
 }
