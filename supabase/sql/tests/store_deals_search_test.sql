@@ -68,7 +68,8 @@ select pg_temp.check(not exists (select 1 from t where store = 'أحمد محم�
   'a name only one home paid never goes to a search engine');
 select pg_temp.check(not exists (select 1 from t where store = 'العثيمين'),
   'two members of one family are one home');
-select pg_temp.check(not exists (select 1 from t where store = 'نون'), 'transfers are left out');
+-- «نون» is on the seed list from 20261026171500 (homes 0): a transfer still never makes a home its customer.
+select pg_temp.check(not exists (select 1 from t where store = 'نون' and homes > 0), 'transfers are left out');
 select pg_temp.check(not exists (select 1 from t where store = 'شركة الراتب'), 'income is left out');
 select pg_temp.check(not exists (select 1 from t where store = 'سعودي ماركت'), 'a receipt older than 60 days is left out');
 select pg_temp.check((select store from t limit 1) = 'بنده', 'the store most homes share comes first');
