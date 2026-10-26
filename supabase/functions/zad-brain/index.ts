@@ -106,7 +106,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
@@ -7153,6 +7153,7 @@ async function handleAgentTurnInLane(
   let inputTokens = 0, outputTokens = 0;
   // ميزان اللفة: كام نداء موديل في اللفة دي ومنين — عشان فرق التوكنز بين لفتين يتفسّر بالحجم ولا بعدد النداءات.
   const calls = { model: 0, loops: 0, retries: 0, answer: 0, models: [] as string[] };
+  let lateWidened = false;
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
@@ -7190,6 +7191,26 @@ async function handleAgentTurnInLane(
 
     inputTokens += reply.usage.inTok;
     outputTokens += reply.usage.outTok;
+    // «سجلتها لك 👌» بعد ما read_house رجع (التقييم ٢٠٢٦-١٠-٢٦، loops:2): الإعادة بكل الأدوات في
+    // callAgentModel بتتسأل في أول لفة بس، فالادعاء بعد أدوات قراية كان بيعدّي. مرة واحدة هنا كمان.
+    if (reply.toolCalls.length === 0 && turn > 0 && !lateWidened && executed.length === 0 && proposals.length === 0 &&
+      shouldWidenTools(reply.text ?? "")) {
+      lateWidened = true;
+      try {
+        const again = await callModel({
+          model: MODEL_ROUTINE, system: systemPrompt + WIDEN_NOTE, tools: CHAT_TOOLS, history, maxTokens: 1200,
+          groqSystem: groqSystem ? groqSystem + WIDEN_NOTE : undefined,
+        });
+        inputTokens += again.usage.inTok;
+        outputTokens += again.usage.outTok;
+        calls.model++;
+        calls.retries++;
+        if (again.model && !calls.models.includes(again.model)) calls.models.push(again.model);
+        if (again.toolCalls.length > 0 || again.text.trim()) reply = { ...again, intentRetry: null, calls: 1 };
+      } catch (e) {
+        console.warn("[agent_turn] late widen failed:", (e as Error)?.message ?? e);
+      }
+    }
     if (reply.text) modelText = reply.text;
     if (reply.toolCalls.length === 0) break;
     anyToolAttempted = true;
@@ -7283,6 +7304,7 @@ async function handleAgentTurnInLane(
   if (!proposals.some((p) => p.tool === "set_monthly_limit") && unbackedLimitClaim(message, reply, priorAssistantText(history))) {
     reply = LIMIT_NOT_CHANGED_REPLY;
   }
+  if (executed.length === 0 && proposals.length === 0 && unbackedWriteClaim(message, reply)) reply = WRITE_NOT_DONE_REPLY;
   if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
   reply = silentWriteFallback(reply, executed, proposals.length);
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.

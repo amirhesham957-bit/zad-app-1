@@ -63,7 +63,8 @@ export function internalLeak(reply: string): string | null {
  * إنه بيكلم آلة». dropServiceCloser بيشيله؛ ده بيتأكد إنه اتشال على العقل الحي.
  */
 export function machineCloser(reply: string): string | null {
-  const last = reply.trim().split(/[\n.!]+/).filter((s) => s.trim()).at(-1) ?? "";
+  // «؟» نهاية جملة كمان: «الكشف بكم؟ عشان أحجز مبلغه وما يطير في شي ثاني.» آخر جملة فيها مش سؤال (٢٠٢٦-١٠-٢٦).
+  const last = reply.trim().split(/(?<=[؟?])|[\n.!]+/).filter((s) => s.trim()).at(-1) ?? "";
   if (/[؟?]/.test(last) && /(حاج[ةه]|شي|شيء)\s+(تاني[ةه]?|ثاني[ةه]?|غيره?)|تامرني|في حاجة تانية/.test(last)) {
     return `ends with a service question: «${last.trim().slice(0, 60)}»`;
   }
