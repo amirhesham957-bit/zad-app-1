@@ -264,3 +264,25 @@ Deno.test("house brand: an offer on their brand comes after their store and befo
   // والفلوس ضيقة: الأرخص، مش الماركة.
   assertEquals(pickDeal(deals, ["شاي"], [], new Set(), [], true, brands)?.store, "بنده");
 });
+
+// ZAD_PLAN ٤.٢٠: «مش مهتم» بيسكّت الاحتياج ده ٣٠ يوم في أي محل؛ والعرض اللي اتقال بيتكرر بعد أسبوع زي الأول.
+import { hasDealButtons } from "./voiceMoments.ts";
+
+Deno.test("declined: «not interested» quiets that need for 30 days at any store; a plain repeat waits a week", () => {
+  const now = Date.parse("2026-10-26T08:00:00Z");
+  const day = 86_400_000;
+  const keys = askedDealKeys([
+    { facts: { taste_deal: { key: "deal:زيت:كارفور", answer: "no" } }, created_at: new Date(now - 20 * day).toISOString() },
+    { facts: { taste_deal: { key: "deal:رز:بنده" } }, created_at: new Date(now - 10 * day).toISOString() },
+    { facts: { taste_deal: { key: "deal:شاي:كيو" } }, created_at: new Date(now - 2 * day).toISOString() },
+  ], now);
+  assertEquals([...keys].sort(), ["deal:شاي:كيو", "need:زيت"]);
+  const deals = [{ item: "زيت عافية", store: "بنده", price: 60 }, { item: "رز مصري", store: "بنده", price: 30 }];
+  assertEquals(pickDeal(deals, ["زيت", "رز"], [], keys)?.item, "رز مصري");
+});
+
+Deno.test("deal buttons ride only on a morning greeting that carries a deal", () => {
+  assert(hasDealButtons("morning_greeting", { taste_deal: { item: "زيت" } }));
+  assert(!hasDealButtons("morning_greeting", { weather: {} }));
+  assert(!hasDealButtons("good_night", { taste_deal: { item: "زيت" } }));
+});

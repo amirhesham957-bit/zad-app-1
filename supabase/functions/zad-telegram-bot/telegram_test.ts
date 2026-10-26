@@ -517,3 +517,24 @@ Deno.test("salary reply says what happened, and a failed write says so", () => {
   assert(salaryReply(null).includes("ماقدرتش"));
   assert(salaryReply({ ok: false, reason: "not_found" } as never).includes("ملفي"));
 });
+
+// ZAD_PLAN ٤.٢٠: عرض الصبح بزرارين.
+import { dealKeyboard, dealReply, parseDealCallback } from "./telegram.ts";
+
+Deno.test("deal buttons: add / not interested round-trip, under Telegram's 64-byte limit", () => {
+  const id = "0f8b6c9e-1234-4abc-9def-001122334455";
+  const [[add, no]] = dealKeyboard(id);
+  assertEquals(parseDealCallback(add.callback_data!), { momentId: id, add: true });
+  assertEquals(parseDealCallback(no.callback_data!), { momentId: id, add: false });
+  assert(new TextEncoder().encode(add.callback_data!).length <= 64);
+  assertEquals(parseDealCallback("dl:not-a-uuid:a"), null);
+  assertEquals(parseDealCallback(`sal:${id}:y`), null);
+});
+
+Deno.test("deal buttons: the reply says what happened, and a failed write is said", () => {
+  assertEquals(dealReply({ ok: true, answer: "add", item: "زيت" }), "تمام ✅ ضفت «زيت» لقايمتك.");
+  assertEquals(dealReply({ ok: true, answer: "add", item: "زيت", already_listed: true }), "«زيت» كان في قايمتك أصلاً ✅");
+  assertEquals(dealReply({ ok: true, answer: "no", item: "شاي" }), "تمام، مش هعرض عليك «شاي» تاني الشهر ده.");
+  assertEquals(dealReply({ ok: false }), "العرض ده مابقاش موجود.");
+  assert(dealReply(null).includes("ماقدرتش"));
+});

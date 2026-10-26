@@ -702,6 +702,32 @@ export function parseSalaryCallback(data: string): { momentId: string; yes: bool
   return { momentId: parts[1], yes: parts[2] === "y" };
 }
 
+// عرض الصبح (ZAD_PLAN ٤.٢٠): "dl:" + uuid(36) + ":" + حرف = ٤١ بايت.
+
+export function dealKeyboard(momentId: string): InlineKeyboardButton[][] {
+  return [[
+    { text: "🛒 ضيفه لقايمتي", callback_data: `dl:${momentId}:a` },
+    { text: "🙅 مش مهتم", callback_data: `dl:${momentId}:n` },
+  ]];
+}
+
+export function parseDealCallback(data: string): { momentId: string; add: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "dl" || (parts[2] !== "a" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { momentId: parts[1], add: parts[2] === "a" };
+}
+
+/** الرد بعد zad_deal_answer_service. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function dealReply(result: { ok?: boolean; already?: boolean; answer?: string; item?: string; already_listed?: boolean } | null): string {
+  if (!result) return "معلش، ماقدرتش أسجّل ده دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) return "العرض ده مابقاش موجود.";
+  const item = result.item ?? "الصنف";
+  if (result.already) return result.answer === "add" ? `«${item}» في قايمتك بالفعل ✅` : "تمام، اتسجّل قبل كده.";
+  if (result.answer === "add") return result.already_listed ? `«${item}» كان في قايمتك أصلاً ✅` : `تمام ✅ ضفت «${item}» لقايمتك.`;
+  return `تمام، مش هعرض عليك «${item}» تاني الشهر ده.`;
+}
+
 /** الرد بعد zad_salary_cycle_service. `null` = الكتابة فشلت — يتقال صراحةً. */
 export function salaryReply(result: { ok?: boolean; already?: boolean; answer?: string; day?: number } | null): string {
   if (!result) return "معلش، ماقدرتش أغيّر الدورة دلوقتي — جرّب تاني بعد شوية.";

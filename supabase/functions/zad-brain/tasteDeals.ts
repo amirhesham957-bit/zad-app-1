@@ -21,6 +21,8 @@ export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
 export const FAVORITE_WINDOW_DAYS = 60;
 export const DEAL_REPEAT_DAYS = 7;
+/** «🙅 مش مهتم» في تليجرام (٤.٢٠): الاحتياج ده مايتعرضش عليه عرض المدة دي. */
+export const DEAL_DECLINED_DAYS = 30;
 /** آخر نقطة للعميل أقدم من كده = مش بيته ولا مكانه دلوقتي (ZAD_PLAN ٤.٧). */
 export const NEARBY_POINT_MAX_AGE_DAYS = 7;
 export const NEARBY_RADIUS_METERS = 3000;
@@ -170,7 +172,7 @@ export function pickDeal(
     const wanted = items.find((w) => offerMatchesNeed(w, item));
     if (!wanted) continue;
     const key = `deal:${itemKey(wanted)}:${itemKey(store)}`;
-    if (skip.has(key)) continue;
+    if (skip.has(key) || skip.has(`need:${itemKey(wanted)}`)) continue;
     const src = d?.source as { kind?: unknown; url?: unknown; until?: unknown } | undefined;
     found.push({
       item, store, key,
@@ -258,12 +260,21 @@ export function dealCountry(
   return travelContext(row, nowMs)?.in ?? String(row?.country ?? "").trim().toUpperCase();
 }
 
-/** مفاتيح العروض اللي اتقالت (facts.taste_deal.key في تحيات الصبح). */
-export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | undefined): Set<string> {
+/**
+ * مفاتيح العروض اللي اتقالت (facts.taste_deal.key في تحيات الصبح) آخر [DEAL_REPEAT_DAYS] يوم، و`need:<صنف>` لكل عرض
+ * اتقال عليه «مش مهتم» (facts.taste_deal.answer = no) آخر [DEAL_DECLINED_DAYS] يوم. صف من غير تاريخ = جديد.
+ */
+export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?: string | null }> | null | undefined, nowMs = Date.now()): Set<string> {
   const keys = new Set<string>();
   for (const r of rows ?? []) {
-    const key = (r?.facts as { taste_deal?: { key?: unknown } } | null)?.taste_deal?.key;
-    if (typeof key === "string" && key) keys.add(key);
+    const deal = (r?.facts as { taste_deal?: { key?: unknown; answer?: unknown } } | null)?.taste_deal;
+    const key = deal?.key;
+    if (typeof key !== "string" || !key) continue;
+    const at = Date.parse(String(r?.created_at ?? ""));
+    const age = Number.isFinite(at) ? nowMs - at : 0;
+    if (age <= DEAL_REPEAT_DAYS * 86_400_000) keys.add(key);
+    const need = key.split(":")[1];
+    if (deal?.answer === "no" && need && age <= DEAL_DECLINED_DAYS * 86_400_000) keys.add(`need:${need}`);
   }
   return keys;
 }
@@ -282,8 +293,8 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("merchant_name").eq("user_id", userId).eq("txn_kind", "expense")
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
-      sb.from("zad_voice_moments").select("facts").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
-        .gte("created_at", new Date(now - DEAL_REPEAT_DAYS * 86_400_000).toISOString()).limit(20),
+      sb.from("zad_voice_moments").select("facts,created_at").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
+        .gte("created_at", new Date(now - DEAL_DECLINED_DAYS * 86_400_000).toISOString()).limit(40),
       // فشل القراية = اعتبره شغال: النواقص بس بأرخص سعر، مش عرض تخزين.
       sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
         .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
@@ -302,7 +313,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
-    const skip = askedDealKeys(past as Array<{ facts?: unknown }>);
+    const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
     const brands = houseBrands(((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? ""));
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
     const point = nearbyPoint(user as { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null } | null, now);

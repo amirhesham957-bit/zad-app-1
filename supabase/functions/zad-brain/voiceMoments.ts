@@ -67,6 +67,12 @@ export const SALARY_CYCLE_MOMENT = "salary_cycle";
 /** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
 export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
 
+/** تحية صبح فيها عرض (ZAD_PLAN ٤.٢٠): البوت بيحط تحتها [🛒 ضيفه لقايمتي] [🙅 مش مهتم] بمعرّف الصف. */
+export function hasDealButtons(moment: string, facts: unknown): boolean {
+  const deal = (facts as { taste_deal?: { item?: unknown } } | null)?.taste_deal;
+  return moment === "morning_greeting" && typeof deal?.item === "string" && deal.item.trim() !== "";
+}
+
 /**
  * لحظات على تليجرام بس. ميعاد الجرعة نفسه (20260915002000): الموبايل عنده منبه دقيق بيتكلم لوحده
  * (PharmacyReminderReceiver)، ففويس من السيرفر كمان كان هيتقال مرتين على نفس الجهاز.
@@ -1098,7 +1104,8 @@ export async function processVoiceMoments(
           : await deps.pushTelegram(
             row.user_id, composed.title, composed.text, voice, deliveryMoment,
             composed.speech || composed.text, emotion,
-            DOSE_MOMENTS.has(deliveryMoment) || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) ? row.id : undefined,
+            DOSE_MOMENTS.has(deliveryMoment) || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) || hasDealButtons(deliveryMoment, row.facts)
+              ? row.id : undefined,
           );
 
       const delivered = device === "sent" || telegram === "delivered";

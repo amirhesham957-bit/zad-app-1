@@ -53,6 +53,7 @@ import {
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
+  dealKeyboard, parseDealCallback, dealReply,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
 } from "./telegram.ts";
 import {
@@ -1974,6 +1975,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // عرض الصبح (ZAD_PLAN ٤.٢٠): «ضيفه لقايمتي» / «مش مهتم» — الملكية والكتابة جوه الـRPC، والرد بعدين.
+  const deal = parseDealCallback(data);
+  if (deal) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_deal_answer_service", {
+      p_user: userId, p_moment: deal.momentId, p_add: deal.add,
+    });
+    if (error) console.error("[deal_answer] rpc failed:", error.message);
+    await ctx.reply(dealReply(error ? null : result as Parameters<typeof dealReply>[0]));
+    return;
+  }
+
   // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
   // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
   const amountWrongId = parseAmountWrongCallback(data);
@@ -2777,7 +2790,7 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, map_url, amazon_links } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, deal_moment_id, map_url, amazon_links } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
@@ -2787,6 +2800,8 @@ Deno.serve(async (req: Request) => {
         close_day_moment_id?: string;
         // اختياري: «ده المرتب؟» — معرّف اللحظة، بيتحوّل لزرارين.
         salary_moment_id?: string;
+        // اختياري: تحية صبح فيها عرض — معرّف اللحظة، بيتحوّل لـ[ضيفه لقايمتي] [مش مهتم].
+        deal_moment_id?: string;
         // اختياري: رسالة محل — رابط خرايط المحل، بيبقى زرار فوق أزرار الرفض.
         map_url?: string;
         // اختياري: صنف ضروري خلص — لينكات أمازون، كل واحد زرار «🛒 … على أمازون».
@@ -2834,6 +2849,8 @@ Deno.serve(async (req: Request) => {
         ? [...closeDayKeyboard(close_day_moment_id!), ...(nightQuestions?.rows ?? [])]
         : salary_moment_id && /^[0-9a-fA-F-]{36}$/.test(salary_moment_id)
         ? salaryKeyboard(salary_moment_id)
+        : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
+        ? dealKeyboard(deal_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...dismissRows]
         : undefined;
