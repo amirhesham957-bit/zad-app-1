@@ -54,16 +54,16 @@ android {
             if (kidsGeofencing) "isMonitoringTool" else "zad.kids_geofencing_off"
     }
 
-    // Play rejected the bundle on 2026-10-24 with «تعذرت الترجمة إلى ar, tr»: its
-    // Gemini app-strings translation took the unqualified strings for English and
-    // tried to translate them into Arabic (they are Arabic already) and Turkish
-    // (no Turkish UI exists). res/resources.properties says the default strings
-    // are Arabic; generateLocaleConfig hands Android 13+ and Play the real list;
-    // localeFilters drops the plugins' strings for every other language, so the
-    // bundle claims exactly the two languages the app speaks (ZAD_PLAN ٠.١).
+    // Play rejected the bundle on 2026-10-24 with «تعذرت الترجمة إلى ar, tr». The
+    // owner confirmed on 2026-10-26 that Play's Gemini translation was never on,
+    // and decided the bundle ships its own strings for both: values-ar and
+    // values-tr hold a hand-written strings.xml each. res/resources.properties says
+    // the default strings are Arabic; generateLocaleConfig hands Android 13+ and
+    // Play the list; localeFilters keeps exactly these three languages, so tr has
+    // to be listed here or its folder is stripped from the bundle (ZAD_PLAN ٠.١).
     androidResources {
         generateLocaleConfig = true
-        localeFilters += listOf("ar", "en")
+        localeFilters += listOf("ar", "en", "tr")
     }
 
     // Play upload key, env-var only (never in the repo). Set KEYSTORE_PATH,

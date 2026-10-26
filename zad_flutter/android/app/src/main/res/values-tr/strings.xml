@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label in Turkish (ZAD_PLAN ٠.١). The brand keeps its Latin
+         spelling, as in English. -->
+    <string name="app_name">Zad</string>
+    <string name="widget_available">Kullanılabilir</string>
+    <string name="widget_empty">Henüz işlem yok</string>
+    <string name="widget_pet_happy">%1$s mutlu 💚</string>
+    <string name="widget_pet_sleeping">%1$s uyuyor… iyi geceler</string>
+    <string name="widget_pet_sad">%1$s üzgün… seni özledi</string>
+    <string name="widget_pet_thirsty">%1$s susadı — su ver 💧</string>
+    <string name="widget_pet_hungry">%1$s acıktı — besle 🍎</string>
+    <string name="widget_pet_fine">%1$s iyi</string>
+</resources>

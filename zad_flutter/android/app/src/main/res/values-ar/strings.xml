@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label in Arabic, written out for Play (ZAD_PLAN ٠.١). The
+         default (values/) is Arabic too: see res/resources.properties. -->
+    <string name="app_name">زاد</string>
+    <string name="widget_available">متاح</string>
+    <string name="widget_empty">لسه مفيش معاملات</string>
+    <string name="widget_pet_happy">%1$s مبسوط 💚</string>
+    <string name="widget_pet_sleeping">%1$s نايم… تصبح على خير</string>
+    <string name="widget_pet_sad">%1$s زعلان… وحشته</string>
+    <string name="widget_pet_thirsty">%1$s عطشان — اسقيه 💧</string>
+    <string name="widget_pet_hungry">%1$s جعان — أكّله 🍎</string>
+    <string name="widget_pet_fine">%1$s تمام</string>
+</resources>

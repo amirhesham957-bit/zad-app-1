@@ -3,4 +3,12 @@
     <!-- The launcher label in English. The default (values/) is Arabic: see
          res/resources.properties, which says so to Android and to Play. -->
     <string name="app_name">Zad</string>
+    <string name="widget_available">Available</string>
+    <string name="widget_empty">No transactions yet</string>
+    <string name="widget_pet_happy">%1$s is happy 💚</string>
+    <string name="widget_pet_sleeping">%1$s is asleep… good night</string>
+    <string name="widget_pet_sad">%1$s is sad… misses you</string>
+    <string name="widget_pet_thirsty">%1$s is thirsty — give it water 💧</string>
+    <string name="widget_pet_hungry">%1$s is hungry — feed it 🍎</string>
+    <string name="widget_pet_fine">%1$s is fine</string>
 </resources>
