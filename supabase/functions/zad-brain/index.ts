@@ -130,7 +130,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
-import { dealSource, nearbySource } from "./tasteDeals.ts";
+import { dealCountry, dealSource, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, searchedDeals, STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
@@ -6076,9 +6076,10 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   // هنا (١٤ يوم) قصاد وسيط باقي المحلات (٣٠ يوم) — بعملة العميل بس؛ من غير عملة معروفة مفيش مقارنة أسعار.
   let seenHere: SeenHere[] = [];
   let cheaperHere: CheaperHere[] = [];
+  let dealsAtStore: ReturnType<typeof dealsHere> = [];
   if (category !== "pharmacy") {
     const [{ data: me }, { data: profile }] = await Promise.all([
-      sb.from("zad_users").select("currency").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("currency,country,travel_country,travel_since").eq("id", userId).maybeSingle(),
       sb.from("zad_customer_profile").select("city").eq("user_id", userId).maybeSingle(),
     ]);
     const currency = (me as { currency?: string | null } | null)?.currency ?? null;
@@ -6097,10 +6098,19 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
       const homes = await homeMap(sb, rows.map((r) => r.user_id ?? ""));
       cheaperHere = cheaperHereItems(rows.filter((r) => r.currency === currency), storeName, missing, Date.now(), homes, city);
     }
+    // ZAD_PLAN ٤.٩: عرض ساري هنا على حاجة ناقصة — من بلده (أو بلد السفر)، زي عرض الصبح.
+    const country = dealCountry(me as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, Date.now());
+    if (/^[A-Z]{2}$/.test(country) && missing.length > 0) {
+      const { data: deals, error: dealsErr } = await sb.from("zad_deals")
+        .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
+        .eq("country", country).gt("expires_at", nowIso).limit(300);
+      if (dealsErr) console.error("[store_arrival] deals lookup failed:", dealsErr.message);
+      dealsAtStore = dealsHere(deals as StoredDealRow[] | null, storeName, missing);
+    }
   }
 
   const message = buildStoreArrivalMessage({
-    storeName, category, shopping, lowStock, clientHints, seenHere, cheaperHere,
+    storeName, category, shopping, lowStock, clientHints, seenHere, cheaperHere, dealsHere: dealsAtStore,
   });
   if (!message) return json({ ok: true, sent: false, reason: "nothing_missing", reminders: reminderStatus });
 

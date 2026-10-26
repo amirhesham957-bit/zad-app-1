@@ -12,7 +12,7 @@
 // هيخلص خلال أسبوع (zad_home_state)، وبعدها الاهتمامات.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { countryNameAr, itemKey, travelContext } from "./shared.ts";
+import { countryNameAr, type DealHere, itemKey, sameStore, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { meaningfulWords, offerMatchesNeed, stapleGroup } from "./productIdentity.ts";
@@ -248,6 +248,29 @@ export function storedDeals(rows: readonly StoredDealRow[] | null | undefined): 
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
     };
   });
+}
+
+/**
+ * «انت جنب المحل» (ZAD_PLAN ٤.٩): عروض zad_deals السارية في المحل ده على اللي ناقص ([missing] بترتيب أهميته)،
+ * عرض لكل احتياج، ٣ بالكتير. «قبل» بيتقال بس لو أغلى من السعر.
+ */
+export function dealsHere(rows: readonly StoredDealRow[] | null | undefined, storeName: string, missing: readonly string[]): DealHere[] {
+  const out: DealHere[] = [];
+  const taken = new Set<string>();
+  for (const r of rows ?? []) {
+    const price = Number(r.price);
+    if (!(price > 0) || !sameStore(r.store, storeName)) continue;
+    const need = missing.find((w) => offerMatchesNeed(w, r.item_name));
+    if (!need || taken.has(itemKey(need))) continue;
+    taken.add(itemKey(need));
+    const before = Number(r.price_before);
+    out.push({
+      item: r.item_name, price, price_before: Number.isFinite(before) && before > price ? before : null,
+      until: r.valid_until ? r.valid_until.slice(0, 10) : null, source_kind: r.source_kind,
+    });
+    if (out.length === 3) break;
+  }
+  return out;
 }
 
 /**
