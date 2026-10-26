@@ -797,7 +797,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
   // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
   const householdFamily = await householdFamilyId(sb, userId);
-  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes] =
+  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes, forecastRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
       // `id` مضاف عشان set_transaction_category و update_transaction يقدروا يشاوروا على
@@ -897,6 +897,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId).maybeSingle(),
       // حارس المستندات (الشريحة ٣٢): النوع وصاحبه والتاريخ بس. آخر عنصر — نفس سبب ملاحظة الترتيب فوق.
       sb.from("zad_documents").select("kind,holder,label,expires_on").eq("user_id", userId).limit(50),
+      // ٥.٥: دقة avg_weekly_spending المقاسة عند البيت ده (دفتر التوقعات) — بتتقال جنب التوقع.
+      sb.rpc("zad_forecast_accuracy", { p_user: userId, p_kind: "weekly_spend" }),
     ]);
 
   // ── الحاجة اللي خلّت كل ده يفضل مستخبي سنة ──────────────────────────────
@@ -1487,6 +1489,9 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         top_categories: behaviorRes.data.top_spending_categories,
         by_weekday: behaviorRes.data.spending_pattern_by_weekday,
         subscription_load_monthly: behaviorRes.data.subscription_load_monthly,
+        // {weeks, enough, median_error_pct, within_25pct}: الوسيط = الفرق كنسبة من اللي اتصرف فعلاً.
+        // enough=false أو null = لسه ماتقاسش (أقل من ٣ أسابيع)، فالمتوسط تقريبي.
+        weekly_forecast_accuracy: forecastRes?.error ? null : forecastRes?.data ?? null,
       }
       : null,
     // الجهة الخارجة — إيه اللي اتقال للمستخدم فعلاً آخر أسبوع، وقراه ولا لأ.
