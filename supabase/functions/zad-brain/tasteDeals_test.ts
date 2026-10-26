@@ -161,3 +161,51 @@ Deno.test("morning: a stored deal says until when", async () => {
   const facts = await morningFacts(fakeSb({ ...TABLES, zad_deals: STORED }, { zad_budget_state: { threat: "SAFE" } }), "u", LOCAL);
   assertStringIncludes(momentFallback("morning_greeting", facts).text, "فيه عرض عليه في كارفور (محلك) بخصم 20٪ لحد 2026-10-30.");
 });
+
+// ZAD_PLAN ٤.٧: المحلات حوالين آخر نقطة ليه — بعد محلاته المتكررة وقبل الخصم الأكبر.
+import { nearbyPoint, nearbySource, nearbyStoreNames } from "./tasteDeals.ts";
+
+Deno.test("nearby: a fresh point is rounded to about a kilometre; an old or missing one is no point", () => {
+  const now = Date.parse("2026-10-26T10:00:00Z");
+  const fresh = new Date(now - 2 * 86_400_000).toISOString();
+  assertEquals(nearbyPoint({ last_lat: 24.71362, last_lon: 46.67531, last_location_at: fresh }, now), { lat: 24.71, lon: 46.68 });
+  assertEquals(nearbyPoint({ last_lat: 24.7, last_lon: 46.6, last_location_at: new Date(now - 8 * 86_400_000).toISOString() }, now), null);
+  assertEquals(nearbyPoint({ last_lat: null, last_lon: 46.6, last_location_at: fresh }, now), null);
+  assertEquals(nearbyPoint(null, now), null);
+  assertEquals(nearbyStoreNames({ stores: [{ name: "بنده - النخيل" }, { name: "" }, {}] }), ["بنده - النخيل"]);
+  assertEquals(nearbyStoreNames(null), []);
+});
+
+Deno.test("nearby: their own store first, then the one near them, then the bigger discount", () => {
+  const deals = [
+    { item: "زيت عافية", store: "كارفور", price: 70, discount_percent: 30 },
+    { item: "زيت عافية", store: "بنده", price: 80, discount_percent: 10 },
+    { item: "زيت عافية", store: "العثيم", price: 75, discount_percent: 20 },
+  ];
+  assertEquals(pickDeal(deals, ["زيت"], [], new Set(), ["بنده - النخيل"])?.store, "بنده");
+  assertEquals(pickDeal(deals, ["زيت"], [], new Set(), ["بنده - النخيل"])?.nearby, true);
+  assertEquals(pickDeal(deals, ["زيت"], ["العثيم"], new Set(), ["بنده - النخيل"])?.store, "العثيم");
+  assertEquals(pickDeal(deals, ["زيت"], [], new Set())?.store, "كارفور");
+});
+
+Deno.test("nearby: the morning asks around their coarse point, and says «قريب منك»", async () => {
+  const at = new Date(Date.now() - 86_400_000).toISOString();
+  let asked: Record<string, unknown> | null = null;
+  nearbySource.search = (payload) => { asked = payload; return Promise.resolve({ stores: [{ name: "خير زمان فرع المعادي" }] }); };
+  dealSource.search = () => Promise.resolve(null);
+  const deals = [
+    { ...STORED[0], store: "هايبر وان", price_before: "100" },
+    { ...STORED[0], store: "خير زمان", price_before: "80" },
+  ];
+  const users = [{ id: "u", country: "EG", created_at: "2025-01-01T00:00:00Z", last_lat: 29.96051, last_lon: 31.25712, last_location_at: at }];
+  const d = await loadTasteDeal(fakeSb({ ...TABLES, zad_users: users, zad_transactions: [], zad_deals: deals }), "u");
+  assertEquals([d?.store, d?.nearby], ["خير زمان", true]);
+  assertEquals(asked, { lat: 29.96, lon: 31.26, tag: "supermarket", radius_meters: 3000 });
+  assertStringIncludes(momentFallback("morning_greeting", { taste_deal: d }).text, "خير زمان (قريب منك)");
+
+  // البحث عن المحلات وقع ⇒ العرض برضه، من غير ترتيب بالقرب.
+  nearbySource.search = () => Promise.reject(new Error("down"));
+  const fallback = await loadTasteDeal(fakeSb({ ...TABLES, zad_users: users, zad_transactions: [], zad_deals: deals }), "u");
+  assertEquals([fallback?.store, fallback?.nearby], ["هايبر وان", false]);
+  nearbySource.search = () => Promise.resolve(null);
+});
