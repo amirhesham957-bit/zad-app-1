@@ -292,3 +292,44 @@ Deno.test("deal buttons ride only on a morning greeting that carries a deal", ()
   assert(!hasDealButtons("morning_greeting", { weather: {} }));
   assert(!hasDealButtons("good_night", { taste_deal: { item: "زيت" } }));
 });
+
+// ZAD_PLAN ٤.٨: الميزانية مرتاحة ⇒ عرض على أساسي بيتخزّن والبيت بيشتريه = فرصة تخزين.
+import { storableBought } from "./tasteDeals.ts";
+import { budgetComfortable } from "./householdLoad.ts";
+
+Deno.test("comfortable: SAFE with 30% of the budget left; anything else is not", () => {
+  assertEquals(budgetComfortable("SAFE", 300, 1000), true);
+  assertEquals(budgetComfortable("SAFE", 299, 1000), false);
+  assertEquals(budgetComfortable("WATCH", 900, 1000), false);
+  assertEquals(budgetComfortable("SAFE", 900, null), false);
+  assertEquals(budgetComfortable("SAFE", null, 1000), false);
+});
+
+Deno.test("stock up: only staples that keep, and only ones the house has bought", () => {
+  const groups = storableBought(["زيت كريستال ١ لتر", "لبن جهينة", "عيش بلدي", "رز الضحى ٥ كيلو"]);
+  assertEquals(pickDeal([{ item: "زيت عافية", store: "كارفور", price: 72, discount_percent: 20 }], ["زيت"], [], new Set(), [], false, new Map(), groups)?.stock, true);
+  assertEquals(pickDeal([{ item: "لبن المراعي", store: "كارفور", price: 30, discount_percent: 20 }], ["لبن"], [], new Set(), [], false, new Map(), groups)?.stock, undefined);
+  assertEquals(pickDeal([{ item: "سكر الأسرة", store: "كارفور", price: 30, discount_percent: 20 }], ["سكر"], [], new Set(), [], false, new Map(), groups)?.stock, undefined);
+  // سعر من غير خصم مش فرصة.
+  assertEquals(pickDeal([{ item: "زيت عافية", store: "كارفور", price: 72 }], ["زيت"], [], new Set(), [], false, new Map(), groups)?.stock, undefined);
+});
+
+Deno.test("morning: a comfortable, confirmed budget turns a staple's deal into a chance to stock up", async () => {
+  dealSource.search = () => Promise.resolve(null);
+  const tables = { ...TABLES, zad_deals: STORED, zad_inventory: [{ item_name: "زيت عافية ١.٥ لتر" }] };
+  const easy = { threat: "SAFE", limit_confirmed: true, monthly_limit: 10000, available: 4000 };
+  const facts = await morningFacts(fakeSb(tables, { zad_budget_state: easy }), "u", LOCAL);
+  assertEquals((facts.taste_deal as { stock?: boolean }).stock, true);
+  assertStringIncludes(momentFallback("morning_greeting", facts).text, "لحد 2026-10-30، والميزانية مرتاحة فممكن تخزّن منه.");
+
+  for (const budget of [
+    { ...easy, available: 2000 }, // أقل من ٣٠٪
+    { ...easy, limit_confirmed: false }, // ميزانية مش مؤكدة
+    { ...easy, threat: "DANGER" }, // ضيقة ⇒ أرخص سعر مش تخزين
+  ]) {
+    const f = await morningFacts(fakeSb(tables, { zad_budget_state: budget }), "u", LOCAL);
+    assert(f.taste_deal, JSON.stringify(budget));
+    assertEquals((f.taste_deal as { stock?: boolean } | undefined)?.stock, undefined, JSON.stringify(budget));
+    assert(!momentFallback("morning_greeting", f).text.includes("تخزّن"), JSON.stringify(budget));
+  }
+});

@@ -14,6 +14,13 @@ export interface HouseholdLoad {
   reasons: string[];
 }
 
+/** الميزانية مرتاحة: الصرف ماشي في وقته (SAFE) والمتاح ٣٠٪ من الميزانية أو أكتر. */
+export function budgetComfortable(threat: unknown, available: unknown, budget: unknown): boolean {
+  const a = Number(available);
+  const b = Number(budget);
+  return threat === "SAFE" && b > 0 && available !== null && available !== undefined && Number.isFinite(a) && a >= 0.3 * b;
+}
+
 export function householdLoad(input: {
   threat: string | null | undefined;
   available: number | null | undefined;
@@ -37,7 +44,7 @@ export function householdLoad(input: {
   if ((input.appointmentsToday ?? 0) >= 3) reasons.push(`النهارده فيه ${input.appointmentsToday} مواعيد`);
   if (reasons.length > 0) return { level: "high", reasons };
 
-  if (input.threat === "SAFE" && budget > 0 && Number.isFinite(available) && available >= 0.3 * budget) {
+  if (budgetComfortable(input.threat, available, budget)) {
     return { level: "easy", reasons: [`المتاح ${Math.round(available)} — أكتر من ٣٠٪ من الميزانية`] };
   }
   return { level: "normal", reasons: [] };
