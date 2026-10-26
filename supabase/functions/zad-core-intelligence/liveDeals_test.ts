@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, storeDealsQuery } from "./liveDeals.ts";
+import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
 import { isLiveQuery } from "./searchQuality.ts";
 
 Deno.test("duplicates and blanks are dropped, order kept", () => {
@@ -108,4 +108,17 @@ Deno.test("store deals: an end date months away is not believed, the offer stays
 
 Deno.test("store deals: the query names the store and the country", () => {
   assertEquals(storeDealsQuery("كيو", "السعودية"), "عروض كيو السعودية الأسبوع");
+});
+
+Deno.test("store deals: the search uses the name people know, not the receipt's legal name", () => {
+  assertEquals(searchStoreName("شركة بيم ستورز"), "بيم");
+  assertEquals(searchStoreName("شركة سم ستورز"), "سم ستورز");
+  assertEquals(searchStoreName("شركة سي سي ستورز"), "سي سي");
+  assertEquals(searchStoreName("كازيون"), "كازيون");
+  assertEquals(searchStoreName("فتح الله العطار"), "فتح الله العطار");
+  assertEquals(storeDealsQuery("شركة بيم ستورز", "مصر"), "عروض بيم مصر الأسبوع");
+  // والموديل بيدوّر على نفس الاسم في النتايج، وإلا صفحة «بيم» تتشال كأنها محل تاني.
+  const { system, user } = storeDealsPrompt("شركة بيم ستورز", "مصر", "EGP", [], "2026-10-26");
+  assertStringIncludes(system, "«بيم»");
+  assertStringIncludes(user, "المحل: بيم\n");
 });
