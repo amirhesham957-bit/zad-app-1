@@ -15,18 +15,18 @@ import {
 
 const env = (vars: Record<string, string>) => (n: string) => vars[n];
 
-Deno.test("the paid key alone runs grounding; the free pool is never asked", () => {
-  assertEquals(groundingPlan(env({ ZAD_SEARCH_KEY: " paid " }), ["f1", "f2"]), {
+Deno.test("free only (owner, 2026-10-26): a paid key alone does not turn grounding on", () => {
+  assertEquals(groundingPlan(env({ ZAD_SEARCH_KEY: "paid" }), ["f1", "f2"]), null);
+  assertEquals(groundingPlan(env({ ZAD_SEARCH_KEY: "paid", ZAD_GROUNDED_SEARCH: "off" }), ["f1"]), null);
+});
+
+Deno.test("the paid key runs grounding only behind ZAD_GROUNDED_SEARCH=paid, and alone", () => {
+  assertEquals(groundingPlan(env({ ZAD_SEARCH_KEY: " paid ", ZAD_GROUNDED_SEARCH: "paid" }), ["f1", "f2"]), {
     keys: ["paid"],
     paid: true,
   });
-  // Even with the old switch on, the paid key wins.
-  assertEquals(
-    groundingPlan(env({ ZAD_SEARCH_KEY: "paid", ZAD_GROUNDED_SEARCH: "on" }), [
-      "f1",
-    ]),
-    { keys: ["paid"], paid: true },
-  );
+  // «paid» without a paid key: off, the free pool is not asked.
+  assertEquals(groundingPlan(env({ ZAD_GROUNDED_SEARCH: "paid" }), ["f1"]), null);
 });
 
 Deno.test("no paid key: off, unless the explicit switch turns the free pool back on", () => {

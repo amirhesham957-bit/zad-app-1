@@ -29,13 +29,19 @@ export function paidSearchKey(env: Env): string | null {
   return k.length > 0 ? k : null;
 }
 
-/** Null = grounding off. The paid key wins; the free pool only behind the explicit switch. */
+/**
+ * Null = grounding off — the default since the owner's decision of 2026-10-26: no billing, search
+ * runs free on Tavily, Bing News and the Custom Search key, and Gemini only reads the results.
+ * `ZAD_SEARCH_KEY` alone no longer turns paid grounding on (its project answered 429 "check your
+ * plan and billing" that day); it takes `ZAD_GROUNDED_SEARCH=paid` as well. `on` keeps the old
+ * free-pool switch.
+ */
 export function groundingPlan(
   env: Env,
   freeKeys: string[],
 ): GroundingPlan | null {
   const paid = paidSearchKey(env);
-  if (paid) return { keys: [paid], paid: true };
+  if (paid && env("ZAD_GROUNDED_SEARCH") === "paid") return { keys: [paid], paid: true };
   if (env("ZAD_GROUNDED_SEARCH") === "on" && freeKeys.length > 0) {
     return { keys: freeKeys, paid: false };
   }
