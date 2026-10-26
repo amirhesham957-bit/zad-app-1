@@ -108,7 +108,8 @@ as $fn$
 declare
   v jsonb;
 begin
-  if coalesce(auth.role(), '') <> 'service_role' and auth.uid() is distinct from p_user then
+  -- من غير JWT خالص = SQL جوه السيرفر (الكرون، تنبيه spend_forecast)؛ أي طلب من PostgREST شايل role.
+  if auth.role() is not null and auth.role() <> 'service_role' and auth.uid() is distinct from p_user then
     return null;
   end if;
   select jsonb_build_object(

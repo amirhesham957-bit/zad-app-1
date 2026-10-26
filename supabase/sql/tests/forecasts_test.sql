@@ -54,7 +54,9 @@ insert into public.zad_transactions (user_id, amount, is_expense, created_at) va
 -- update-behavior-profile refreshes a1 every night; a3's profile goes stale and stops forecasting.
 update public.user_behavior_profile set last_updated_at = '2026-10-15 23:00Z' where user_id = '00000000-0000-0000-0000-0000000000a1';
 select pg_temp.check(public.zad_forecasts_tick('2026-10-16 00:00Z') = '{"made": 1, "settled": 2}', 'a stale profile stops opening forecasts');
-select pg_temp.check(public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') is null, 'nobody reads accuracy without a role');
+select pg_temp.check(public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') is not null, 'server-side SQL (cron, no JWT) reads accuracy');
+select set_config('request.jwt.claims', '{"role": "anon"}', false);
+select pg_temp.check(public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') is null, 'an anonymous request reads nothing');
 select pg_temp.who('00000000-0000-0000-0000-0000000000a1');
 select pg_temp.check(not (public.zad_forecast_accuracy('00000000-0000-0000-0000-0000000000a1') ->> 'enough')::boolean, 'two weeks are not enough to state accuracy');
 reset role;
