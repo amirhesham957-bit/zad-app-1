@@ -158,6 +158,7 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه weather: نص جملة عن جو النهارده بالأرقام اللي فيه بس (المدينة والعظمى). " +
     "لو فيه weather_clothes: قوليه جملة خفيفة كاقتراح. " +
     "لو فيه taste_deal: جملة واحدة في الآخر: العرض على taste_deal.item في taste_deal.store بالسعر أو الخصم زي ما هو بالظبط " +
+    "(ولو فيه price_before و saving: قولي السعر وبدل كام والتوفير saving بالفلوس، مش بالنسبة) " +
     "(ولو favorite = true قولي إنه في المحل اللي بيروحه، ولو nearby = true إنه قريب منه، ولو brand موجودة إنها الماركة اللي بيجيبوها؛ ولو tight = true فده أرخص سعر لحاجة ناقصة " +
     "والفلوس ضيقة: قوليه كده، من غير «فرصة» ولا تشجيع على شرا أكتر من الناقص) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
     "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك) " +
@@ -615,12 +616,13 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
-      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
+      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
       const deal = dealFact?.item && dealFact?.store
         ? (dealFact.tight
           ? `أرخص ${str(dealFact.item, 60)} لقيته في ${str(dealFact.store, 60)}${dealFact.nearby ? " (قريب منك)" : ""}`
           : `ولو محتاج ${str(dealFact.item, 60)}${dealFact.brand ? " (الماركة اللي بتجيبوها)" : ""}: فيه عرض عليه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`) +
           (dealFact.tight && dealFact.price ? ` بـ${dealFact.price}`
+            : dealFact.price && dealFact.price_before && dealFact.saving ? ` بـ${dealFact.price} بدل ${dealFact.price_before} (توفّر ${dealFact.saving})`
             : dealFact.discount_percent ? ` بخصم ${dealFact.discount_percent}٪` : dealFact.price ? ` بـ${dealFact.price}` : "") +
           (dealFact.source?.until ? ` لحد ${str(dealFact.source.until, 10)}` : "") + "."
         : "";
