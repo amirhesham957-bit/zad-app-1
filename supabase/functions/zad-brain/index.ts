@@ -131,6 +131,7 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealSource } from "./tasteDeals.ts";
+import { dealPutPayload, searchedDeals, STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -465,7 +466,7 @@ function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | 
 // العروض حسب الذوق (tasteDeals.ts) بتدوّر بنفس البحث الحي بتاع core-intelligence.
 dealSource.search = (payload, userId) => callCoreIntel("fetch_live_deals", payload, userId);
 
-async function callCoreIntel(action: string, payload: unknown, userId: string): Promise<any | null> {
+async function callCoreIntel(action: string, payload: unknown, userId: string, timeoutMs = 25_000): Promise<any | null> {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-core-intelligence`, {
       method: "POST",
@@ -474,7 +475,7 @@ async function callCoreIntel(action: string, payload: unknown, userId: string): 
         "authorization": `Bearer ${SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({ action, user_id: userId, payload }),
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) {
       console.error(`callCoreIntel ${action} → ${res.status}`);
@@ -8461,6 +8462,36 @@ async function handleRequest(req: Request): Promise<Response> {
         await sbEval.from("zad_eval_nights").update({ next_offset: next, ...(next === null ? { finished_at: new Date().toISOString() } : {}) }).eq("day", today);
       }
       return new Response(JSON.stringify({ run_id: runId, offset, next, total: cases.length, results }), { headers: CORS_HEADERS });
+    }
+
+    // عروض المحلات الأسبوعية (storeDeals.ts، ZAD_PLAN ٤.٣): لكل محل من zad_deal_search_targets بحث واحد
+    // في zad-core-intelligence (store_deals)، وكل عرض برابطه بيدخل zad_deals من zad_deal_put.
+    if (body.action === "deals_search_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDeals = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: targets, error: targetErr } = await sbDeals.rpc("zad_deal_search_targets", { p_limit: STORES_PER_RUN });
+      if (targetErr) {
+        console.error("[deals_search_run] targets failed:", targetErr.message);
+        return new Response(JSON.stringify({ error: "targets_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const started = Date.now();
+      const stores: Array<Record<string, unknown>> = [];
+      for (const t of (targets ?? []) as Array<{ country: string; store: string; currency: string }>) {
+        if (Date.now() - started > 120_000) break;
+        const reply = await callCoreIntel("store_deals", t, "deals_search_run", 45_000);
+        let put = 0;
+        let refused = 0;
+        for (const deal of searchedDeals(reply)) {
+          const { data, error } = await sbDeals.rpc("zad_deal_put", { p: dealPutPayload(t, deal) });
+          if (!error && (data as { ok?: boolean } | null)?.ok) put++;
+          else refused++;
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, source: reply?.source ?? null, put, refused });
+      }
+      console.log(`[deals_search_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
+      return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
     }
 
     // مجموعة اختبار البنك على الموديل (evals/bankEval.ts، ZAD_PLAN ٣.٧): كل رسالة في
