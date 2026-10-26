@@ -73,3 +73,17 @@ Deno.test("a request body cannot claim to be the deploy probe", () => {
   const probe = { message: "x", [ACCEPTANCE_PROBE]: true };
   assertEquals(probe[ACCEPTANCE_PROBE], true);
 });
+
+// نشر ٢٦/١٠: «المتاح عندك 6 000 ريال» اتحسب «مفيش رقم» — الفاصل كان مسافة مش فاصلة.
+import { plainNumbers } from "./acceptance.ts";
+
+Deno.test("acceptance: a thousands separator is a separator, whatever the model typed", () => {
+  for (const s of ["6,000", "٦٬٠٠٠", "6 000", "6 000", "6 000"]) {
+    assertEquals(plainNumbers(`المتاح ${s} ريال`).includes("6000") || plainNumbers(`المتاح ${s} ريال`).includes("٦٠٠٠"), true, s);
+  }
+  // رقم عشري مش آلاف.
+  assertEquals(plainNumbers("خلصت 3.3 مرة"), "خلصت 3.3 مرة");
+  const pushback = ACCEPTANCE_CASES.find((c) => c.id === "9_pushback_big_purchase")!;
+  const reply = "ناوي تصرف 20 000 ريال، لكن المتاح عندك الآن 6 000 ريال بس. يعني الفارق 14 000 ريال، أي تقريبًا 3.3 مرّة.";
+  assertEquals(pushback.check({ reply, executed: [], proposals: [] } as never, { appointmentsCreated: 0 }), null);
+});
