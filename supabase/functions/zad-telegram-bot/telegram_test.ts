@@ -538,3 +538,25 @@ Deno.test("deal buttons: the reply says what happened, and a failed write is sai
   assertEquals(dealReply({ ok: false }), "العرض ده مابقاش موجود.");
   assert(dealReply(null).includes("ماقدرتش"));
 });
+
+// «اتعلمت إن» (ZAD_PLAN ٥.٢): الزرارين بيرجعوا لنفس الصف، والزرار المضروب مايوصلش للداتابيز.
+import { learningKeyboard, learningReply, parseLearningCallback } from "./telegram.ts";
+
+Deno.test("learning buttons: yes/no round-trip, under 64 bytes, junk refused", () => {
+  const id = "0b9c3f6e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
+  const [[yes, no]] = learningKeyboard(id);
+  assertEquals(parseLearningCallback(yes.callback_data!), { learningId: id, yes: true });
+  assertEquals(parseLearningCallback(no.callback_data!), { learningId: id, yes: false });
+  assert(new TextEncoder().encode(yes.callback_data!).length <= 64);
+  assertEquals(parseLearningCallback("hl:not-a-uuid:y"), null);
+  assertEquals(parseLearningCallback(`hl:${id}:x`), null);
+  assertEquals(parseLearningCallback(`dl:${id}:y`), null);
+});
+
+Deno.test("learning reply: says what happened, and says a failed write plainly", () => {
+  assertEquals(learningReply({ ok: true, answer: "yes" }), "تمام ✅ هفتكرها.");
+  assertEquals(learningReply({ ok: true, answer: "no" }), "تمام، شكراً إنك صحّحتني — مش هقولها تاني.");
+  assertEquals(learningReply({ ok: true, already: true, answer: "no" }), "تمام، ردك اتسجّل قبل كده.");
+  assertEquals(learningReply({ ok: false }), "الملاحظة دي مابقتش موجودة.");
+  assert(learningReply(null).startsWith("معلش"));
+});

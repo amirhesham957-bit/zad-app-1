@@ -54,6 +54,7 @@ import {
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   dealKeyboard, parseDealCallback, dealReply,
+  learningKeyboard, parseLearningCallback, learningReply,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
 } from "./telegram.ts";
 import {
@@ -165,6 +166,15 @@ async function resolveChatId(sb: SupabaseClient, userId: string): Promise<number
     .maybeSingle();
   if (error) throw new Error(`telegram binding lookup failed (${error.code ?? "unknown"})`);
   return (data as { chat_id: number } | null)?.chat_id ?? null;
+}
+
+/** «اتعلمت إن» اللي اتقال في مهمة [taskId] ولسه مااتجاوبش ⇐ «صح / مش صح». أي فشل = من غير أزرار. */
+async function learningRowsForTask(sb: SupabaseClient, userId: string, taskId: string): Promise<InlineKeyboardButton[][]> {
+  const { data, error } = await sb.from("zad_house_learnings")
+    .select("id").eq("user_id", userId).eq("task_id", taskId).is("answer", null).maybeSingle();
+  if (error) console.error("[house_learning] lookup failed:", error.message);
+  const id = (data as { id: string } | null)?.id;
+  return id ? learningKeyboard(id) : [];
 }
 
 /** Direct Telegram API call, not a grammY ctx.reply — this fires OUTSIDE any inbound
@@ -1987,6 +1997,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // «اتعلمت إن» (ZAD_PLAN ٥.٢): «صح / مش صح» — الملكية والجواب الواحد جوه الـRPC، والرد بعدين.
+  const learning = parseLearningCallback(data);
+  if (learning) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_house_learning_answer_service", {
+      p_user: userId, p_learning: learning.learningId, p_yes: learning.yes,
+    });
+    if (error) console.error("[house_learning] rpc failed:", error.message);
+    await ctx.reply(learningReply(error ? null : result as Parameters<typeof learningReply>[0]));
+    return;
+  }
+
   // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
   // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
   const amountWrongId = parseAmountWrongCallback(data);
@@ -2824,6 +2846,8 @@ Deno.serve(async (req: Request) => {
       const dismissRows = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
         ? proactiveDismissKeyboard(dismiss_task_id)
         : [];
+      // «اتعلمت إن» (٥.٢): الملخص الأسبوعي اللي قال نمط بياخد «صح / مش صح» فوق أزرار الرفض. فشل القراية = من غيرهم.
+      const learningRows = dismissRows.length ? await learningRowsForTask(sb, user_id, dismiss_task_id!) : [];
       const closeDay = !dose_moment_id && close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id);
       // رسالة الليل الواحدة (ZAD_PLAN ١.٥): «اقفل يومك» بتشيل أسئلة المخزون بأزرارها، بنفس حراس
       // السؤال لوحده. فشل أي حاجة هنا = القفلة لوحدها، والسؤال الاحتياطي مابيطلعش الليلة دي.
@@ -2852,7 +2876,7 @@ Deno.serve(async (req: Request) => {
         : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
         ? dealKeyboard(deal_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
-        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...dismissRows]
+        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...dismissRows]
         : undefined;
       await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${body}`, nightQuestions?.text ?? null), keyboard);
       if (nightQuestions) await recordCheckinTurn(sb, user_id, nightQuestions.items);
