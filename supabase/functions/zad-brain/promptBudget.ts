@@ -4,7 +4,15 @@
 // المقاس بالحروف مش بالتوكنز: التوكنايزر بتاع كل موديل مختلف، والحروف بتتقارن بين لفتين ومع
 // input_tokens اللي الموديل رجّعها في نفس الصف. الأجزاء الفاضية مابتتسجلش.
 
+/**
+ * نسخة برومبت الشات (ZAD_PLAN ٣.٢). بتتسجّل مع كل لفة في prompt_sizes.prompt_version، عشان أي
+ * فرق في الحجم أو في التقييم الليلي يتنسب لنسخة. زوّدها في الكومِت اللي بيغيّر البرومبت أو الأدوات المعروضة.
+ */
+export const PROMPT_VERSION = "2026-10-26.1";
+
 export interface PromptSizes {
+  /** نسخة البرومبت ([PROMPT_VERSION]). */
+  prompt_version: string;
   /** حجم كل بلوك نصي في البرومبت، بالحروف. */
   parts: Record<string, number>;
   /** أتقل مفاتيح الـSNAPSHOT، بالحروف بعد JSON.stringify. */
@@ -45,6 +53,7 @@ export function promptSizes(input: {
   const history_chars = input.history.reduce((s, t) => s + String((t as { text?: unknown }).text ?? "").length, 0);
   const total_chars = Object.values(parts).reduce((s, n) => s + n, 0) + tools_chars + history_chars;
   return {
+    prompt_version: PROMPT_VERSION,
     parts,
     snapshot_keys: heaviestKeys(input.snapshot),
     tools_chars,
