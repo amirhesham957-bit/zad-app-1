@@ -43,6 +43,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
 import { instagramProbe, youtubeProbe } from "./socialSources.ts";
+import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
@@ -1262,36 +1263,14 @@ const decodeEntities = (v: string) => v
 
 /**
  * Tavily (TAVILY_API_KEY, 1,000 free searches a month), its own source since 2026-10-25 so it can lead
- * the chain while the paid grounding rests ([tavilyFirstWhileGroundingRests]).
+ * the chain while the paid grounding rests ([tavilyFirstWhileGroundingRests]). The call is in tavily.ts.
  */
 async function tavilySnippets(query: string, maxResults: number): Promise<WebHit[]> {
   const tavily = Deno.env.get("TAVILY_API_KEY");
-  if (tavily) {
-    try {
-      const res = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tavily}` },
-        body: JSON.stringify({ query, max_results: maxResults, include_answer: false, search_depth: "basic" }),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const hits: WebHit[] = ((data?.results ?? []) as Array<{ title?: string; url?: string; content?: string }>)
-          .filter((r) => r.url).map((r) => ({ title: r.title ?? r.url!, url: r.url!, snippet: String(r.content ?? "").slice(0, 500) }));
-        // Tavily's `answer` is its own model's summary, with no page or date behind it: on 24/10 it said
-        // «مانشستر سيتي 2023» for the last Club World Cup and the brain repeated it first. The pages go
-        // up as they are; the summary does not.
-        lastWebSearchAttempts.push(`tavily:200 hits=${hits.length}`);
-        return hits.slice(0, maxResults);
-      } else {
-        lastWebSearchAttempts.push(`tavily:${res.status}`);
-        await res.body?.cancel();
-      }
-    } catch (e) {
-      lastWebSearchAttempts.push(`tavily:threw ${String((e as Error)?.message ?? e).slice(0, 50)}`);
-    }
-  }
-  return [];
+  if (!tavily) return [];
+  const r = await tavilySearch(tavily, query, maxResults);
+  lastWebSearchAttempts.push(r.ok ? `tavily:200 hits=${r.items.length}` : r.status === 0 ? `tavily:threw ${r.reason ?? ""}` : `tavily:${r.status}`);
+  return r.items;
 }
 
 /**
@@ -1659,7 +1638,7 @@ async function handle(req: Request): Promise<Response> {
           return { error: String((e as Error)?.message ?? e).slice(0, 160) };
         }
       };
-      const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote, youtube, instagram] = await Promise.all([
+      const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote, youtube, instagram, tavily] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
         ttsHealth(GEMINI_KEYS, fetch, deep),
         azureTtsHealth(AZURE_SPEECH),
@@ -1679,6 +1658,8 @@ async function handle(req: Request): Promise<Response> {
         // ٤.١١/٤.١٢: المفتاح موجود وبيشتغل؟ (يوتيوب ١٠٠ وحدة لكل نشر؛ إنستجرام: الحساب والبحث بالهاشتاج)
         youtubeProbe(Deno.env.get("YOUTUBE_API_KEY")),
         instagramProbe(Deno.env.get("INSTAGRAM_ACCESS_TOKEN"), Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")),
+        // ٤.١٤: احتياطي البحث موجود وبيرد؟ (بحث واحد من الألف في الشهر لكل نشر)
+        tavilyProbe(Deno.env.get("TAVILY_API_KEY")),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;
@@ -1710,7 +1691,7 @@ async function handle(req: Request): Promise<Response> {
           ? { error: error.message.slice(0, 120) }
           : budgetUsage((data ?? []) as { day: string; used: number }[], today, dailyCap((n) => Deno.env.get(n)));
       }
-      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget, youtube_probe: youtube, instagram_probe: instagram });
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget, youtube_probe: youtube, instagram_probe: instagram, tavily_probe: tavily });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
