@@ -1433,5 +1433,20 @@
     "subject",
     "user_id",
     "wrong"
+  ],
+  "zad_deal_search_log": [
+    "country",
+    "hits",
+    "id",
+    "put",
+    "searched_at",
+    "store_key"
+  ],
+  "zad_deal_seed_stores": [
+    "active",
+    "country",
+    "currency",
+    "kind",
+    "store"
   ]
 }

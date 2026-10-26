@@ -8518,6 +8518,14 @@ async function handleRequest(req: Request): Promise<Response> {
           else refused++;
         }
         stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, source: reply?.source ?? null, put, refused });
+        // ٤.١٦: اتبحث الأسبوع ده حتى لو مفيش عرض — من غيره محل من غير نتايج بيرجع في كل نداء. بحث فشل
+        // (المزوّد واقع) مابيتسجّلش، فبيتجرب في النداء الجاي.
+        if (reply?.ok) {
+          const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({
+            country: t.country, store_key: productNameKey(t.store), hits: Number(reply?.hits) || 0, put,
+          });
+          if (logErr) console.error("[deals_search_run] log failed:", logErr.message);
+        }
       }
       console.log(`[deals_search_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
