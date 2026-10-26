@@ -184,6 +184,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/bank_formats_scaffold.sql supabase/migrations/20261025213500_bank_formats_learned.sql supabase/sql/tests/bank_formats_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261025041500_test_account_cap.sql supabase/sql/tests/test_account_cap_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261019210000_eval_results.sql supabase/migrations/20261025021500_eval_nightly.sql supabase/sql/tests/eval_nightly_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/sql/tests/forecasts_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
