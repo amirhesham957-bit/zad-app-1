@@ -797,7 +797,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
   // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
   const householdFamily = await householdFamilyId(sb, userId);
-  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes, forecastRes] =
+  const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes, forecastRes, runsOutRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
       // `id` مضاف عشان set_transaction_category و update_transaction يقدروا يشاوروا على
@@ -899,6 +899,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       sb.from("zad_documents").select("kind,holder,label,expires_on").eq("user_id", userId).limit(50),
       // ٥.٥: دقة avg_weekly_spending المقاسة عند البيت ده (دفتر التوقعات) — بتتقال جنب التوقع.
       sb.rpc("zad_forecast_accuracy", { p_user: userId, p_kind: "weekly_spend" }),
+      // ٥.٥: دقة «هيخلص» المقاسة عند البيت ده — بتتقال جنب daysLeft بتاع المخزون.
+      sb.rpc("zad_forecast_accuracy", { p_user: userId, p_kind: "runs_out" }),
     ]);
 
   // ── الحاجة اللي خلّت كل ده يفضل مستخبي سنة ──────────────────────────────
@@ -1401,6 +1403,9 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // suggested_day=null يعني مفيش تجمّع دخل واضح لسه (بيانات مش كفاية، أو دخل غير منتظم).
     cycle_detection: cycleDetection,
     byCategory, stock, stock_totals: stockTotals, stock_unknown: stockUnknownNames, anomalies, upcoming,
+    // {judged, enough, hit_pct, median_days_off, ...}: كام «هيخلص» اتحكم عليه من إجابات البيت، وكام خلص فعلاً
+    // في ميعاده. enough=false أو null = أقل من ٥ أحكام، فـdaysLeft تقريبي ومايتقالش كأنه أكيد.
+    runs_out_accuracy: runsOutRes?.error ? null : runsOutRes?.data ?? null,
     shopping_list_pending: (shopRes.data ?? []).map((s) => s.item_name),
     // evidence_count كان بيتقري من zad_memory وبيتترمي هنا من غير سبب — وهو بالظبط
     // رقم "اتقال كام مرة" (zad_memory_upsert بيزوده كل ما ملاحظة جديدة تشبه واحدة
