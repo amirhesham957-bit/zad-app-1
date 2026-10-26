@@ -7366,6 +7366,8 @@ async function handleAgentTurnInLane(
     observations: ctx.observations,
     // الوكيل اللي عالج الرسالة — الكلاينت بيعرضه ككارت تنفيذ حي.
     specialist,
+    // الموديلات اللي ردّت فعلاً: التقييم الليلي بيكتبها في detail.model، وكانت null في كل الحالات.
+    model: calls.models.join(",") || null,
     // شفافية الذاكرة: أعلى ٣ ملاحظات كانت **متاحة** للعقل وقت الرد ده (relevantMemory
     // مرتبة بالصلة). "متاحة" مش "استُخدمت فعلاً" — مفيش طريقة نتأكد إن الموديل استند
     // عليها بالظبط من غير تحليل النص نفسه، فده أصدق ادعاء نقدر نقوله.
@@ -8444,7 +8446,7 @@ async function handleRequest(req: Request): Promise<Response> {
             id: c.id, category: c.category, pass: failure === null, failure, reply: outcome.reply.slice(0, 600),
             executed: outcome.executed.map((e: { tool?: string }) => e.tool),
             proposed: outcome.proposals.map((p: { tool?: string }) => p?.tool), consulted: outcome.consulted,
-            model: payload?.model ?? null, ms: Date.now() - t0,
+            model: payload?.model ?? null, specialist: payload?.specialist ?? null, ms: Date.now() - t0,
           };
         } catch (e) {
           row = { id: c.id, category: c.category, pass: false, failure: `threw: ${String((e as Error)?.message ?? e).slice(0, 160)}`, ms: Date.now() - t0 };
@@ -8453,7 +8455,7 @@ async function handleRequest(req: Request): Promise<Response> {
         await wipe(uid, since);
         const { error: saveErr } = await sbEval.from("zad_eval_results").insert({
           run_id: runId, case_id: c.id, category: c.category, pass: row.pass === true, failure: row.failure ?? null,
-          reply: row.reply ?? null, detail: { executed: row.executed, proposed: row.proposed, consulted: row.consulted, model: row.model },
+          reply: row.reply ?? null, detail: { executed: row.executed, proposed: row.proposed, consulted: row.consulted, model: row.model, specialist: row.specialist },
           ms: row.ms ?? null,
         });
         if (saveErr) console.error("[eval_run] save failed:", saveErr.message);
