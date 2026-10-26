@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals } from "./liveDeals.ts";
+import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, storeDealsQuery } from "./liveDeals.ts";
 import { isLiveQuery } from "./searchQuality.ts";
 
 Deno.test("duplicates and blanks are dropped, order kept", () => {
@@ -63,4 +63,49 @@ Deno.test("only deals with an item, a store and a positive price are kept", () =
   assertEquals(deals[1].discount_percent, 0);
   assertEquals(readDeals([{ item: "a", store: "b", price: 1 }]).length, 1);
   assertEquals(readDeals(null), []);
+});
+
+// ── store_deals (ZAD_PLAN 4.3) ──────────────────────────────────────────────
+
+const storeHits = [
+  { title: "عروض كيو", url: "https://example.sa/q-offers", snippet: "زيت عافية ١.٥ لتر 21.95 ريال بدل 27.50" },
+  { title: "منتدى", url: "http://insecure.example/x", snippet: "رز 40 ريال" },
+];
+const oct26 = new Date("2026-10-26T04:00:00Z");
+
+Deno.test("store deals: each offer carries the https result it was read from", () => {
+  const deals = readStoreDeals({
+    deals: [
+      { item: "زيت عافية ١.٥ لتر", price: 21.95, price_before: 27.5, currency: "ريال", valid_until: "2026-10-31", source: 1 },
+      { item: "رز", price: 40, currency: "ريال", source: 2 },
+      { item: "سكر", price: 9, currency: "ريال", source: 7 },
+    ],
+  }, storeHits, "SAR", oct26);
+  assertEquals(deals.length, 1);
+  assertEquals(deals[0].source_url, "https://example.sa/q-offers");
+  assertEquals(deals[0].price_before, 27.5);
+  assertEquals(deals[0].valid_until, "2026-10-31T23:59:59.000Z");
+});
+
+Deno.test("store deals: another currency, a finished offer and a duplicate are dropped", () => {
+  const deals = readStoreDeals({
+    deals: [
+      { item: "حليب", price: 6, currency: "جنيه", source: 1 },
+      { item: "جبنة", price: 12, currency: "ريال", valid_until: "2026-10-20", source: 1 },
+      { item: "تونة", price: 5, currency: "SAR", source: 1 },
+      { item: "تونة", price: 4, currency: "SAR", source: 1 },
+    ],
+  }, storeHits, "SAR", oct26);
+  assertEquals(deals.map((d) => d.item_name), ["تونة"]);
+  assertEquals(deals[0].price, 5);
+});
+
+Deno.test("store deals: an end date months away is not believed, the offer stays", () => {
+  const [deal] = readStoreDeals({ deals: [{ item: "شاي", price: 15, currency: "ر.س", valid_until: "2027-06-01", source: 1 }] }, storeHits, "SAR", oct26);
+  assertEquals(deal.valid_until, null);
+  assertEquals(deal.price_before, null);
+});
+
+Deno.test("store deals: the query names the store and the country", () => {
+  assertEquals(storeDealsQuery("كيو", "السعودية"), "عروض كيو السعودية الأسبوع");
 });
