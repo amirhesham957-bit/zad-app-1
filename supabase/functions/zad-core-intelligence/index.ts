@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
+import { instagramProbe, youtubeProbe } from "./socialSources.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
@@ -1658,7 +1659,7 @@ async function handle(req: Request): Promise<Response> {
           return { error: String((e as Error)?.message ?? e).slice(0, 160) };
         }
       };
-      const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote] = await Promise.all([
+      const [keysReport, tts, azureTts, pipeline, brainTools, voiceNote, youtube, instagram] = await Promise.all([
         providerHealth((n) => Deno.env.get(n), Object.keys(Deno.env.toObject())),
         ttsHealth(GEMINI_KEYS, fetch, deep),
         azureTtsHealth(AZURE_SPEECH),
@@ -1675,6 +1676,9 @@ async function handle(req: Request): Promise<Response> {
             body: "{}",
           })
           : Promise.resolve("skipped — pass payload.deep=true (spends TTS quota)"),
+        // ٤.١١/٤.١٢: المفتاح موجود وبيشتغل؟ (يوتيوب ١٠٠ وحدة لكل نشر؛ إنستجرام: الحساب والبحث بالهاشتاج)
+        youtubeProbe(Deno.env.get("YOUTUBE_API_KEY")),
+        instagramProbe(Deno.env.get("INSTAGRAM_ACCESS_TOKEN"), Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;
@@ -1706,7 +1710,7 @@ async function handle(req: Request): Promise<Response> {
           ? { error: error.message.slice(0, 120) }
           : budgetUsage((data ?? []) as { day: string; used: number }[], today, dailyCap((n) => Deno.env.get(n)));
       }
-      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget });
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget, youtube_probe: youtube, instagram_probe: instagram });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
