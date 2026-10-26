@@ -150,3 +150,34 @@ Deno.test("the second live batch's claims (11:13) are claims too", async () => {
   // سؤال قبل التسجيل مش ادعاء.
   assertEquals(shouldWidenTools("ولا يهمك، تبي أسجّل الـ 600 ريال هدية لصاحبك في المصاريف؟"), false);
 });
+
+// التشغيل الحي الكامل (٢٠٢٦-١٠-٢٦ ١١:٢٨، run 9b2f4e61): اللي فضل بعد #272.
+Deno.test("a medicine or a list item reaches its tool, and medicine reaches the pharmacist", async () => {
+  const { routeSpecialists } = await import("./specialists.ts");
+  for (const m of ["ضيف بنادول في الصيدلية علبة", "ضيف شراب كحة لبنتي في الصيدلية"]) {
+    assert(intentToolHints(m).includes("add_pharmacy_item"), m);
+    assertEquals(routeSpecialists(m).primary, "pharmacy", m);
+  }
+  assert(intentToolHints("ضف حليب وخبز للمقاضي").includes("add_shopping_item"));
+  assert(intentToolHints("زود عيش ع اللسته").includes("add_shopping_item"));
+  // المطبخ لسه للمطبخ.
+  assertEquals(routeSpecialists("ضيف زيت وسكر للمخزن").primary, "pantry");
+  assert(!intentToolHints("الزيت خلص من البيت").includes("add_shopping_item"));
+});
+
+Deno.test("the full run's surviving claims are caught, its negations are not", async () => {
+  const { shouldWidenTools, unbackedReminderClaim, unbackedWriteClaim } = await import("./specialists.ts");
+  assert(unbackedReminderClaim("ذكرني بكره الساعه ١٠ اراجع المستشفى", "أبشر، ولا يهمك يا كريم. ضبطت التذكير للمستشفى بكرة الساعة ١٠ الصباح 👌"));
+  assert(unbackedReminderClaim("remind me tomorrow at 7pm to call mom", "أبشر، بكرة الساعة 7 العشاء بأسجل التذكير عشان تتصل على الوالدة 👌"));
+  assert(unbackedWriteClaim("كتب المدرسة 1250", "أبشر، ولا يهمك يا كريم، سجلت مصاريف المدرسة 1250 👌"));
+  assert(unbackedWriteClaim("كشف الدكتور 500", "أبشر يا كريم، سجلت تكلفة كشف الدكتور (500 ريال)."));
+  // «ما سجلت أي مصروف» تقرير منفي: لا إعادة ولا استبدال.
+  assertEquals(shouldWidenTools("على حسب السجلات اللي عندي، ما سجلت أي مصروف على الأكل هالشهر."), false);
+  // التهرب المنفي لسه بيتمسك.
+  assert(shouldWidenTools("أنا مش بعرف أشيل الأدوية بنفسي"));
+});
+
+Deno.test("an English reminder is a reminder", () => {
+  assert(intentToolHints("remind me tomorrow at 7pm to call mom").includes("add_appointment"));
+  assert(!intentToolHints("I reminded him yesterday").includes("add_appointment"));
+});
