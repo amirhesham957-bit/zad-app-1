@@ -55,6 +55,7 @@ import {
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   dealKeyboard, parseDealCallback, dealReply,
   learningKeyboard, parseLearningCallback, learningReply,
+  memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
 } from "./telegram.ts";
 import {
@@ -175,6 +176,14 @@ async function learningRowsForTask(sb: SupabaseClient, userId: string, taskId: s
   if (error) console.error("[house_learning] lookup failed:", error.message);
   const id = (data as { id: string } | null)?.id;
   return id ? learningKeyboard(id) : [];
+}
+
+/** مراجعة الذاكرة (٥.٣) اللي اتسألت في مهمة [taskId] ولسه فيها سؤال مااتجاوبش. أي فشل = من غيرها. */
+async function memoryChecksForTask(sb: SupabaseClient, userId: string, taskId: string): Promise<MemoryCheck[]> {
+  const { data, error } = await sb.from("zad_memory_checks")
+    .select("id,note,position").eq("user_id", userId).eq("task_id", taskId).is("answer", null);
+  if (error) console.error("[memory_check] lookup failed:", error.message);
+  return ((data ?? []) as MemoryCheck[]);
 }
 
 /** Direct Telegram API call, not a grammY ctx.reply — this fires OUTSIDE any inbound
@@ -2009,6 +2018,26 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // مراجعة الذاكرة (ZAD_PLAN ٥.٣): زرار لكل ملاحظة — بيتشال لوحده بس، عشان الباقيين يفضلوا يتجاوبوا.
+  const memoryCheck = parseMemoryCheckCallback(data);
+  if (memoryCheck) {
+    const { data: result, error } = await sb.rpc("zad_memory_check_answer_service", {
+      p_user: userId, p_check: memoryCheck.checkId, p_yes: memoryCheck.yes,
+    });
+    if (error) console.error("[memory_check] rpc failed:", error.message);
+    const rows = (ctx.callbackQuery?.message as { reply_markup?: { inline_keyboard?: InlineKeyboardButton[][] } } | undefined)
+      ?.reply_markup?.inline_keyboard ?? [];
+    const left = new InlineKeyboard();
+    for (const row of rows) {
+      if (row.some((b) => b.callback_data?.startsWith(`mc:${memoryCheck.checkId}:`))) continue;
+      for (const b of row) b.url ? left.url(b.text, b.url) : left.text(b.text, b.callback_data ?? "");
+      left.row();
+    }
+    await ctx.editMessageReplyMarkup({ reply_markup: left }).catch(() => {});
+    await ctx.reply(memoryCheckReply(error ? null : result as Parameters<typeof memoryCheckReply>[0]));
+    return;
+  }
+
   // «✏️ المبلغ غلط» (٢٠٢٦-٠٩-٢٥): الاقتراح بيترفض — الرقم الغلط مايدخلش الدفتر أبداً — والعميل
   // بيتقاله يكتب المبلغ الصح، فبيعدّي على لفة الوكيل وزرار تأكيد عادي زي أي مصروف.
   const amountWrongId = parseAmountWrongCallback(data);
@@ -2848,6 +2877,9 @@ Deno.serve(async (req: Request) => {
         : [];
       // «اتعلمت إن» (٥.٢): الملخص الأسبوعي اللي قال نمط بياخد «صح / مش صح» فوق أزرار الرفض. فشل القراية = من غيرهم.
       const learningRows = dismissRows.length ? await learningRowsForTask(sb, user_id, dismiss_task_id!) : [];
+      // مراجعة الذاكرة (٥.٣): الملاحظات مترقّمة تحت الرسالة وزرارين لكل واحدة — النص من الجدول، مش من الموديل.
+      const memoryChecks = dismissRows.length ? await memoryChecksForTask(sb, user_id, dismiss_task_id!) : [];
+      const memoryBlock = memoryChecks.length ? memoryCheckBlock(memoryChecks) : null;
       const closeDay = !dose_moment_id && close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id);
       // رسالة الليل الواحدة (ZAD_PLAN ١.٥): «اقفل يومك» بتشيل أسئلة المخزون بأزرارها، بنفس حراس
       // السؤال لوحده. فشل أي حاجة هنا = القفلة لوحدها، والسؤال الاحتياطي مابيطلعش الليلة دي.
@@ -2876,9 +2908,10 @@ Deno.serve(async (req: Request) => {
         : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
         ? dealKeyboard(deal_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
-        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...dismissRows]
+        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...(memoryBlock?.rows ?? []), ...dismissRows]
         : undefined;
-      await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${body}`, nightQuestions?.text ?? null), keyboard);
+      const shown = memoryBlock ? `${body}\n\n${memoryBlock.text}` : body;
+      await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${shown}`, nightQuestions?.text ?? null), keyboard);
       if (nightQuestions) await recordCheckinTurn(sb, user_id, nightQuestions.items);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.
       const voice = wantsVoice(payload);

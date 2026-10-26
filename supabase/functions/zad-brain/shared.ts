@@ -53,6 +53,7 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
     predicted_shortage: "🥛 زاد شايف حاجات هتخلص قريب",
     restock_link: "🛒 حاجة ضرورية خلصت عندك",
     pet_call: "🥺 رفيقك مستنيك",
+    memory_check: "🧠 زاد بيتأكد من حاجات فاكرها",
   };
   return { title: titles[k] ?? "💡 زاد لاحظ حاجة تهمّك", proactive: true, voice: VOICE_ALERT_KINDS.has(k) };
 }
@@ -1009,7 +1010,9 @@ const PACING_PRIORITY: Record<string, number> = {
   spending_ahead: 1, bill_reminder: 1,
   predicted_shortage: 2, restock_link: 2, habit_budget: 2,
   warranty_reminder: 3, spend_forecast: 3, home_weekly_digest: 3, goal_review: 3,
-  // الرفيق آخر حاجة: لو المبادرتين اتاخدوا بحاجة تهم البيت، النداء يستنى بكرة (ZAD_PLAN ٥.٥).
+  // مراجعة الذاكرة الشهرية (ZAD_PLAN ٥.٣) بعد اللي يهم البيت؛ الرفيق آخر حاجة: لو المبادرتين اتاخدوا بحاجة
+  // تهم البيت، النداء يستنى بكرة (ZAD_PLAN ٥.٥).
+  memory_check: 3,
   pet_call: 4,
 };
 
@@ -1111,7 +1114,7 @@ export function capSlot(
  */
 const SHELF_LIFE_HOURS: Record<string, number> = {
   spend_forecast: 24, spending_ahead: 24, habit_budget: 24, pet_call: 24,
-  predicted_shortage: 48, home_weekly_digest: 48,
+  predicted_shortage: 48, home_weekly_digest: 48, memory_check: 72,
   restock_link: 72,
 };
 
