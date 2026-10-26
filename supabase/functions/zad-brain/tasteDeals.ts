@@ -45,6 +45,8 @@ export interface TasteDeal {
   favorite: boolean;
   /** في محل حوالين آخر نقطة ليه (٣ كم). */
   nearby?: boolean;
+  /** الفلوس ضيقة (الميزانية في خطر أو «أنا مفلس»): أرخص سعر لحاجة ناقصة، مش عرض. */
+  tight?: boolean;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
@@ -89,6 +91,9 @@ const sameName = (a: string, b: string) => {
 /**
  * العرض اللي يتقال، أو null. لازم: صنفه من أصناف الذوق، محل باسم، وسعر أو خصم موجب. الأولوية: محل من محلاته،
  * بعدها محل قريب منه ([nearby] = أسامي محلات حوالين آخر نقطة)، بعدها أكبر خصم. [skip] = مفاتيح اتقالت آخر أسبوع.
+ *
+ * [tight] (ZAD_PLAN ٤.٨، الفلوس ضيقة): [items] هي النواقص بس بترتيب الأهمية، والسعر شرط. أول ناقص ليه عرض
+ * بياخد الخانة، وجواه الأرخص — محله المعتاد مش ميزة لو أغلى — والقريب لو السعر واحد.
  */
 export function pickDeal(
   raw: unknown,
@@ -96,6 +101,7 @@ export function pickDeal(
   favorites: readonly string[],
   skip: ReadonlySet<string>,
   nearby: readonly string[] = [],
+  tight = false,
 ): TasteDeal | null {
   if (!Array.isArray(raw)) return null;
   const found: TasteDeal[] = [];
@@ -106,7 +112,7 @@ export function pickDeal(
     const discount = Number(d?.discount_percent);
     const hasPrice = Number.isFinite(price) && price > 0;
     const hasDiscount = Number.isFinite(discount) && discount > 0 && discount < 100;
-    if (!item || store.length < 2 || (!hasPrice && !hasDiscount)) continue;
+    if (!item || store.length < 2 || (!hasPrice && !hasDiscount) || (tight && !hasPrice)) continue;
     const wanted = items.find((w) => offerMatchesNeed(w, item));
     if (!wanted) continue;
     const key = `deal:${itemKey(wanted)}:${itemKey(store)}`;
@@ -122,7 +128,13 @@ export function pickDeal(
       note: typeof d?.note === "string" && d.note.trim() ? d.note.trim().slice(0, 120) : null,
       favorite: favorites.some((f) => sameName(f, store)),
       nearby: nearby.some((n) => sameName(n, store)),
+      ...(tight ? { tight: true } : {}),
     });
+  }
+  if (tight) {
+    const need = (d: TasteDeal) => items.findIndex((w) => offerMatchesNeed(w, d.item));
+    found.sort((a, b) => need(a) - need(b) || (a.price ?? 0) - (b.price ?? 0) || Number(b.nearby) - Number(a.nearby));
+    return found[0] ?? null;
   }
   found.sort((a, b) =>
     Number(b.favorite) - Number(a.favorite) || Number(b.nearby) - Number(a.nearby) ||
@@ -202,7 +214,11 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | 
 }
 
 /** عرض الصبح: القرايات، البحث، والاختيار. أي فشل = مفيش عرض. */
-export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now()): Promise<TasteDeal | null> {
+/**
+ * [tight] = الميزانية في خطر (OVER/DANGER). هو و«أنا مفلس» مابيقفلوش العرض زي الأول (ZAD_PLAN ٤.٨): بيقصروه على
+ * النواقص — اللي هيخلص الأول، وبعده قايمة الشرا — وبأرخص سعر، من غير اهتمامات.
+ */
+export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now(), opts: { tight?: boolean } = {}): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);
     const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }] = await Promise.all([
@@ -213,20 +229,18 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
       sb.from("zad_voice_moments").select("facts").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
         .gte("created_at", new Date(now - DEAL_REPEAT_DAYS * 86_400_000).toISOString()).limit(20),
-      // فشل القراية = اعتبره شغال: عرض في يوم «أنا مفلس» أوحش من يوم من غير عرض.
+      // فشل القراية = اعتبره شغال: النواقص بس بأرخص سعر، مش عرض تخزين.
       sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
         .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
       sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle(),
     ]);
-    if (broke) return null;
+    const tight = broke || opts.tight === true;
     const interests = (profile as { interests?: unknown } | null)?.interests;
-    const items = tasteItems(
-      [
-        ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
-        ...runningOutNames((home as { state?: unknown } | null)?.state),
-      ],
-      Array.isArray(interests) ? interests.map(String) : [],
-    );
+    const shopping = ((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name);
+    const runningOut = runningOutNames((home as { state?: unknown } | null)?.state);
+    const items = tight
+      ? tasteItems([...runningOut, ...shopping], [])
+      : tasteItems([...shopping, ...runningOut], Array.isArray(interests) ? interests.map(String) : []);
     // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
@@ -243,10 +257,10 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
-    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby);
+    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby, tight);
     if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby);
+    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby, tight);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;

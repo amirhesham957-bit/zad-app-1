@@ -44,6 +44,20 @@ Deno.test("deal: only one of their items, at a named store with a price or disco
   assertEquals([...askedDealKeys([{ facts: { taste_deal: { key: "deal:a:b" } } }, { facts: null }])], ["deal:a:b"]);
 });
 
+Deno.test("deal, tight: the most urgent need first, a price is required, then the cheapest, then the nearer", () => {
+  const deals = [
+    { item: "زيت عافية", store: "كارفور", price: 70 },
+    { item: "رز مصري", store: "خير زمان", discount_percent: 40 },
+    { item: "رز مصري", store: "بنده", price: 30 },
+    { item: "رز مصري", store: "العثيم", price: 28 },
+    { item: "رز مصري", store: "الدانوب", price: 28 },
+  ];
+  const d = pickDeal(deals, ["رز", "زيت"], ["بنده"], new Set(), ["الدانوب"], true)!;
+  assertEquals([d.store, d.price, d.nearby, d.tight], ["الدانوب", 28, true, true]);
+  // خصم من غير سعر مايتقالش والفلوس ضيقة.
+  assertEquals(pickDeal([deals[1]], ["رز"], [], new Set(), [], true), null);
+});
+
 Deno.test("deal: the need is matched by word — «زيت» is not «زيتون», and «لبن» finds «حليب» (ZAD_PLAN 4.6)", () => {
   const deals = [
     { item: "زيتون أسود", store: "كارفور", price: 40, discount_percent: 30 },
@@ -73,7 +87,7 @@ const TABLES = {
   zad_transactions: Array(3).fill({ merchant_name: "كارفور" }),
 };
 
-Deno.test("deal: one search in the customer's market; none in «أنا مفلس», none without items", async () => {
+Deno.test("deal: one search in the customer's market; in «أنا مفلس» the needs only at the lowest price; none without items", async () => {
   const asked: Array<Record<string, unknown>> = [];
   dealSource.search = (payload) => { asked.push(payload); return Promise.resolve({ deals: DEALS }); };
   const d = await loadTasteDeal(fakeSb(TABLES), "u");
@@ -81,16 +95,18 @@ Deno.test("deal: one search in the customer's market; none in «أنا مفلس�
   assertEquals(asked, [{ items: ["زيت", "قهوة"], location: "مصر", country: "EG" }]);
 
   const broke = await loadTasteDeal(fakeSb({ ...TABLES, zad_broke_mode: [{ ends_at: new Date(Date.now() + 86_400_000).toISOString(), ended_at: null }] }), "u");
-  assertEquals([broke, asked.length], [null, 1]);
+  // ZAD_PLAN ٤.٨: «أنا مفلس» = النواقص بس، من غير الاهتمامات، وأرخص سعر — محله المعتاد مش ميزة لو أغلى.
+  assertEquals([broke?.store, broke?.price, broke?.tight, asked.length], ["هايبر وان", 85, true, 2]);
+  assertEquals(asked[1].items, ["زيت"]);
   assertEquals(await loadTasteDeal(fakeSb({ ...TABLES, zad_shopping_list: [], zad_customer_profile: [{ interests: [] }] }), "u"), null);
-  assertEquals(asked.length, 1);
+  assertEquals(asked.length, 2);
   dealSource.search = () => Promise.reject(new Error("down"));
   assertEquals(await loadTasteDeal(fakeSb(TABLES), "u"), null);
 });
 
 const LOCAL = { date: "2026-10-11", time_zone: "Africa/Cairo", utc_offset: "+03:00" };
 
-Deno.test("morning: the deal is the greeting's last line — and not while the budget is in danger", async () => {
+Deno.test("morning: the deal is the greeting's last line — and while the budget is in danger, the cheapest price on a need", async () => {
   dealSource.search = () => Promise.resolve({ deals: DEALS });
   const facts = await morningFacts(fakeSb(TABLES, { zad_budget_state: { threat: "SAFE" } }), "u", LOCAL);
   assertEquals((facts.taste_deal as { store: string }).store, "كارفور مصر");
@@ -98,7 +114,10 @@ Deno.test("morning: the deal is the greeting's last line — and not while the b
   assertStringIncludes(msg.text, "فيه عرض عليه في كارفور مصر (محلك) بخصم 10٪");
   for (const threat of ["DANGER", "OVER"]) {
     const tight = await morningFacts(fakeSb(TABLES, { zad_budget_state: { threat } }), "u", LOCAL);
-    assertEquals(tight.taste_deal, undefined, threat);
+    assertEquals((tight.taste_deal as { tight?: boolean }).tight, true, threat);
+    const line = momentFallback("morning_greeting", tight).text;
+    assertStringIncludes(line, "أرخص زيت عباد الشمس كريستال لقيته في هايبر وان بـ85.");
+    assert(!line.includes("فيه عرض"), threat);
   }
   assert(!momentFallback("morning_greeting", {}).text.includes("عرض"));
   dealSource.search = () => Promise.resolve(null);
