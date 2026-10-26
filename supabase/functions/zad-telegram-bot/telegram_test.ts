@@ -560,3 +560,25 @@ Deno.test("learning reply: says what happened, and says a failed write plainly",
   assertEquals(learningReply({ ok: false }), "الملاحظة دي مابقتش موجودة.");
   assert(learningReply(null).startsWith("معلش"));
 });
+
+// مراجعة الذاكرة (ZAD_PLAN ٥.٣): الملاحظات مترقّمة بنفس رقم زرارينها، والزرار المضروب مايوصلش للداتابيز.
+import { memoryCheckBlock, memoryCheckReply, parseMemoryCheckCallback } from "./telegram.ts";
+
+Deno.test("memory check block: numbered notes in order, two buttons each with the same number, under 64 bytes", () => {
+  const a = "0b9c3f6e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
+  const b = "1b9c3f6e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
+  const block = memoryCheckBlock([{ id: b, note: "انتقل لبيت جديد", position: 2 }, { id: a, note: "عيد ميلاد العميل: 19 أغسطس", position: 1 }]);
+  assertEquals(block.text, "١) عيد ميلاد العميل: 19 أغسطس\n٢) انتقل لبيت جديد");
+  assertEquals(block.rows.map((r) => r.map((x) => x.text)), [["✅ ١ صح", "❌ ١ مش صح"], ["✅ ٢ صح", "❌ ٢ مش صح"]]);
+  assertEquals(parseMemoryCheckCallback(block.rows[1][1].callback_data!), { checkId: b, yes: false });
+  assert(block.rows.flat().every((x) => new TextEncoder().encode(x.callback_data!).length <= 64));
+  assertEquals(parseMemoryCheckCallback(`hl:${a}:y`), null);
+  assertEquals(parseMemoryCheckCallback("mc:nope:y"), null);
+});
+
+Deno.test("memory check reply: names the note's number, and says a failed write plainly", () => {
+  assertEquals(memoryCheckReply({ ok: true, answer: "yes", position: 1 }), "تمام ✅ هفضل فاكرها (١).");
+  assertEquals(memoryCheckReply({ ok: true, answer: "no", position: 3 }), "تمام، شلتها (٣) — شكراً إنك صحّحتني.");
+  assertEquals(memoryCheckReply({ ok: true, already: true, answer: "no", position: 2 }), "ردك على دي (٢) اتسجّل قبل كده.");
+  assert(memoryCheckReply(null).startsWith("معلش"));
+});

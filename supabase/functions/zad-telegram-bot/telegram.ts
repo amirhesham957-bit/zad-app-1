@@ -752,6 +752,41 @@ export function learningReply(result: { ok?: boolean; already?: boolean; answer?
   return result.answer === "yes" ? "تمام ✅ هفتكرها." : "تمام، شكراً إنك صحّحتني — مش هقولها تاني.";
 }
 
+// مراجعة الذاكرة الشهرية (ZAD_PLAN ٥.٣): "mc:" + uuid(36) + ":" + حرف = ٤١ بايت. كل ملاحظة سطر برقمها وزرارين.
+
+const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+const arabicNumber = (n: number) => String(n).replace(/\d/g, (d) => ARABIC_DIGITS[Number(d)]);
+
+export interface MemoryCheck { id: string; note: string; position: number }
+
+/** الملاحظات مترقّمة تحت رسالة الموديل، وكل واحدة بزرارينها بنفس الرقم. */
+export function memoryCheckBlock(checks: readonly MemoryCheck[]): { text: string; rows: InlineKeyboardButton[][] } {
+  const sorted = [...checks].sort((a, b) => a.position - b.position);
+  return {
+    text: sorted.map((c) => `${arabicNumber(c.position)}) ${c.note}`).join("\n"),
+    rows: sorted.map((c) => [
+      { text: `✅ ${arabicNumber(c.position)} صح`, callback_data: `mc:${c.id}:y` },
+      { text: `❌ ${arabicNumber(c.position)} مش صح`, callback_data: `mc:${c.id}:n` },
+    ]),
+  };
+}
+
+export function parseMemoryCheckCallback(data: string): { checkId: string; yes: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "mc" || (parts[2] !== "y" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { checkId: parts[1], yes: parts[2] === "y" };
+}
+
+/** الرد بعد zad_memory_check_answer_service. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function memoryCheckReply(result: { ok?: boolean; already?: boolean; answer?: string; position?: number } | null): string {
+  if (!result) return "معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) return "الملاحظة دي مابقتش موجودة.";
+  const n = typeof result.position === "number" ? ` (${arabicNumber(result.position)})` : "";
+  if (result.already) return `ردك على دي${n} اتسجّل قبل كده.`;
+  return result.answer === "yes" ? `تمام ✅ هفضل فاكرها${n}.` : `تمام، شلتها${n} — شكراً إنك صحّحتني.`;
+}
+
 /** الرد بعد zad_salary_cycle_service. `null` = الكتابة فشلت — يتقال صراحةً. */
 export function salaryReply(result: { ok?: boolean; already?: boolean; answer?: string; day?: number } | null): string {
   if (!result) return "معلش، ماقدرتش أغيّر الدورة دلوقتي — جرّب تاني بعد شوية.";
