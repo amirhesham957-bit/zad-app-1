@@ -130,7 +130,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
-import { dealSource } from "./tasteDeals.ts";
+import { dealSource, nearbySource } from "./tasteDeals.ts";
 import { dealPutPayload, searchedDeals, STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
@@ -465,6 +465,7 @@ function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | 
  */
 // العروض حسب الذوق (tasteDeals.ts) بتدوّر بنفس البحث الحي بتاع core-intelligence.
 dealSource.search = (payload, userId) => callCoreIntel("fetch_live_deals", payload, userId);
+nearbySource.search = (payload, userId) => callCoreIntel("nearby_pois", payload, userId);
 
 async function callCoreIntel(action: string, payload: unknown, userId: string, timeoutMs = 25_000): Promise<any | null> {
   try {

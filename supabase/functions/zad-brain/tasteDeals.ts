@@ -21,9 +21,17 @@ export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
 export const FAVORITE_WINDOW_DAYS = 60;
 export const DEAL_REPEAT_DAYS = 7;
+/** آخر نقطة للعميل أقدم من كده = مش بيته ولا مكانه دلوقتي (ZAD_PLAN ٤.٧). */
+export const NEARBY_POINT_MAX_AGE_DAYS = 7;
+export const NEARBY_RADIUS_METERS = 3000;
 
 /** البحث (fetch_live_deals). index.ts بيوصّله وقت التشغيل؛ من غيره مفيش عروض — والتستات مابتكلمش النت. */
 export const dealSource: { search: (payload: Record<string, unknown>, userId: string) => Promise<unknown> } = {
+  search: () => Promise.resolve(null),
+};
+
+/** المحلات حوالين نقطة (nearby_pois — جوجل ثم LocationIQ، متخزّن لكل خلية). index.ts بيوصّله. */
+export const nearbySource: { search: (payload: Record<string, unknown>, userId: string) => Promise<unknown> } = {
   search: () => Promise.resolve(null),
 };
 
@@ -35,6 +43,8 @@ export interface TasteDeal {
   note: string | null;
   /** في محل من محلاته المتكررة. */
   favorite: boolean;
+  /** في محل حوالين آخر نقطة ليه (٣ كم). */
+  nearby?: boolean;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
@@ -78,9 +88,15 @@ const sameName = (a: string, b: string) => {
 
 /**
  * العرض اللي يتقال، أو null. لازم: صنفه من أصناف الذوق، محل باسم، وسعر أو خصم موجب. الأولوية: محل من محلاته،
- * بعدها أكبر خصم. [skip] = مفاتيح اتقالت آخر أسبوع.
+ * بعدها محل قريب منه ([nearby] = أسامي محلات حوالين آخر نقطة)، بعدها أكبر خصم. [skip] = مفاتيح اتقالت آخر أسبوع.
  */
-export function pickDeal(raw: unknown, items: readonly string[], favorites: readonly string[], skip: ReadonlySet<string>): TasteDeal | null {
+export function pickDeal(
+  raw: unknown,
+  items: readonly string[],
+  favorites: readonly string[],
+  skip: ReadonlySet<string>,
+  nearby: readonly string[] = [],
+): TasteDeal | null {
   if (!Array.isArray(raw)) return null;
   const found: TasteDeal[] = [];
   for (const d of raw as Array<Record<string, unknown>>) {
@@ -105,9 +121,13 @@ export function pickDeal(raw: unknown, items: readonly string[], favorites: read
       discount_percent: hasDiscount ? Math.round(discount) : null,
       note: typeof d?.note === "string" && d.note.trim() ? d.note.trim().slice(0, 120) : null,
       favorite: favorites.some((f) => sameName(f, store)),
+      nearby: nearby.some((n) => sameName(n, store)),
     });
   }
-  found.sort((a, b) => Number(b.favorite) - Number(a.favorite) || (b.discount_percent ?? 0) - (a.discount_percent ?? 0));
+  found.sort((a, b) =>
+    Number(b.favorite) - Number(a.favorite) || Number(b.nearby) - Number(a.nearby) ||
+    (b.discount_percent ?? 0) - (a.discount_percent ?? 0)
+  );
   return found[0] ?? null;
 }
 
@@ -132,6 +152,29 @@ export function storedDeals(rows: readonly StoredDealRow[] | null | undefined): 
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
     };
   });
+}
+
+/**
+ * النقطة اللي نسأل حواليها: آخر موقع للعميل لو عمره أقل من أسبوع، مقرّبة لخانتين (~١ كم) — نقطة البيت
+ * التقريبية مش مكانه بالظبط، والجيران بيشاركوا نفس الكاش. null = مفيش نقطة أو قديمة.
+ */
+export function nearbyPoint(
+  row: { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null } | null | undefined,
+  nowMs: number,
+): { lat: number; lon: number } | null {
+  const lat = Number(row?.last_lat);
+  const lon = Number(row?.last_lon);
+  const at = Date.parse(String(row?.last_location_at ?? ""));
+  if (!row?.last_lat || !row?.last_lon || !Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(at)) return null;
+  if (nowMs - at > NEARBY_POINT_MAX_AGE_DAYS * 86_400_000) return null;
+  return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+}
+
+/** أسامي المحلات من رد nearby_pois ({stores: [{name}]}). */
+export function nearbyStoreNames(raw: unknown): string[] {
+  const stores = (raw as { stores?: unknown } | null)?.stores;
+  if (!Array.isArray(stores)) return [];
+  return stores.map((s) => String((s as { name?: unknown })?.name ?? "").trim()).filter((n) => n.length >= 2).slice(0, 20);
 }
 
 /** اللي هيخلص خلال أسبوع من حالة البيت (pantry.running_out)، الأقرب الأول. */
@@ -165,7 +208,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
-      sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
+      sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("merchant_name").eq("user_id", userId).eq("txn_kind", "expense")
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
       sb.from("zad_voice_moments").select("facts").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
@@ -189,14 +232,21 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
     const skip = askedDealKeys(past as Array<{ facts?: unknown }>);
+    // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
+    const point = nearbyPoint(user as { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null } | null, now);
+    const nearby = point
+      ? nearbyStoreNames(
+        await nearbySource.search({ ...point, tag: "supermarket", radius_meters: NEARBY_RADIUS_METERS }, userId).catch(() => null),
+      )
+      : [];
     const { data: stored, error: storedErr } = await sb.from("zad_deals")
       .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
-    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip);
+    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby);
     if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip);
+    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;
