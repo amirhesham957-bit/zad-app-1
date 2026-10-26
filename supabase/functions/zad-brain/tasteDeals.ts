@@ -15,6 +15,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { countryNameAr, itemKey, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
+import { offerMatchesNeed } from "./productIdentity.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -90,7 +91,7 @@ export function pickDeal(raw: unknown, items: readonly string[], favorites: read
     const hasPrice = Number.isFinite(price) && price > 0;
     const hasDiscount = Number.isFinite(discount) && discount > 0 && discount < 100;
     if (!item || store.length < 2 || (!hasPrice && !hasDiscount)) continue;
-    const wanted = items.find((w) => sameName(w, item));
+    const wanted = items.find((w) => offerMatchesNeed(w, item));
     if (!wanted) continue;
     const key = `deal:${itemKey(wanted)}:${itemKey(store)}`;
     if (skip.has(key)) continue;
