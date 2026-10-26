@@ -265,9 +265,12 @@ export async function pushToTelegram(
         ...(voice && emotion ? { emotion } : {}),
         // قفلة اليوم (20261019140000) بتاخد نفس المعرّف بأزرارها هي: [تمام كده] [صرفت كاش] [في حاجة ناقصة].
         // و«ده المرتب؟» (20261025001500) بزرارين: [ابدأ الدورة من النهارده] [لأ، مش المرتب].
+        // `moment` هنا من غير شرط الصوت: تحية الصبح بتتبعت بصوت، وزرار العرض لازم يوصل معاها.
         ...(doseMomentId
           ? moment === "close_day" ? { close_day_moment_id: doseMomentId }
           : moment === "salary_cycle" ? { salary_moment_id: doseMomentId }
+          // عرض الصبح (ZAD_PLAN ٤.٢٠): [🛒 ضيفه لقايمتي] [🙅 مش مهتم].
+          : moment === "morning_greeting" ? { deal_moment_id: doseMomentId }
           : { dose_moment_id: doseMomentId }
           : {}),
         ...(mapUrl ? { map_url: mapUrl } : {}),

@@ -170,6 +170,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024213500_night_one_message.sql supabase/sql/tests/night_one_message_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024223500_engagement_hours.sql supabase/sql/tests/engagement_hours_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/salary_opens_cycle_scaffold.sql supabase/migrations/20261025001500_salary_opens_cycle.sql supabase/sql/tests/salary_opens_cycle_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/deal_buttons_scaffold.sql supabase/migrations/20261026183500_deal_buttons.sql supabase/sql/tests/deal_buttons_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/guards_speak_scaffold.sql supabase/migrations/20261025003500_guards_speak.sql supabase/sql/tests/guards_speak_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/home_state_scaffold.sql supabase/migrations/20261025012500_home_state.sql supabase/sql/tests/home_state_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/corrections_lessons_scaffold.sql supabase/migrations/20261019210000_eval_results.sql supabase/migrations/20261025021500_eval_nightly.sql supabase/migrations/20261025061500_corrections_lessons.sql supabase/sql/tests/corrections_lessons_test.sql
