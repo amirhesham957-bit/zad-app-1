@@ -25,6 +25,14 @@ export function testDailyCap(raw: string | undefined | null): number {
 
 export const TEST_CAP_REPLY = "حساب الاختبار خلّص سقفه النهارده (لفات برّه فحص النشر). جرّب بكرة، أو جرّب على حساب حقيقي.";
 
+/**
+ * فواصل الآلاف متشالة: «6,000» و«٦٬٠٠٠» و«6 000» (مسافة عادية أو ثابتة أو ضيقة) كلهم 6000. نشر ٢٦/١٠ وقع
+ * على «المتاح عندك 6 000 ريال» — الرقم صح، والفاصل مسافة (9_pushback_big_purchase).
+ */
+export function plainNumbers(text: string): string {
+  return text.replace(/([\d٠-٩])[,٬\s\u00A0\u202F](?=[\d٠-٩]{3}(?![\d٠-٩]))/g, "$1");
+}
+
 export interface TurnOutcome {
   reply: string;
   executed: Array<{ tool: string }>;
@@ -88,7 +96,7 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
     message: "سعر الدهب عيار 21 النهارده",
     check: (o) => {
       const first = firstSentence(o.reply);
-      if (!/\d{3}/.test(first.replace(/[,٬]/g, ""))) return "no price in the first sentence";
+      if (!/\d{3}/.test(plainNumbers(first))) return "no price in the first sentence";
       if (NOT_FOUND.test(first)) return "said it could not find it";
       return null;
     },
@@ -128,7 +136,7 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
     id: "9_pushback_big_purchase",
     message: "هشتري موبايل جديد بـ20 ألف جنيه النهارده كاش",
     check: (o) => {
-      const r = o.reply.replace(/[,٬]/g, "");
+      const r = plainNumbers(o.reply);
       const numbered = /6000|٦٠٠٠|6 ?آلاف|٦ ?آلاف|ستة آلاف|ست تلاف|14000|١٤٠٠٠|14 ?ألف|١٤ ?ألف|تلات أضعاف|3 أضعاف|٣ أضعاف/.test(r);
       if (!numbered) return "no number from the budget (6000 available / 14000 over)";
       if (/^(مبروك|ألف مبروك|يا سلام)/.test(o.reply.trim())) return "opened with congratulations";
