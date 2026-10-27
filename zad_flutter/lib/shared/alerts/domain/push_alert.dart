@@ -33,6 +33,7 @@ class PushAlert {
     this.proposalId,
     this.speech,
     this.habitTrial,
+    this.houseLearningId,
   });
 
   /// Reads a message: the notification block when there is one, the data
@@ -45,6 +46,7 @@ class PushAlert {
     final proposal = (data['proposal_id'] as String? ?? '').trim();
     final trial = (data['trial_id'] as String? ?? '').trim();
     final stage = habitTrialStageFor(data['stage'] as String?);
+    final learning = (data['learning_id'] as String? ?? '').trim();
     return PushAlert(
       title: (notificationTitle ?? data['title'] as String? ?? '').trim(),
       body: (notificationBody ?? data['body'] as String? ?? '').trim(),
@@ -60,6 +62,9 @@ class PushAlert {
       habitTrial:
           data['kind'] == kHabitTrialKind && trial.isNotEmpty && stage != null
           ? (id: trial, stage: stage)
+          : null,
+      houseLearningId: data['kind'] == kHouseLearningKind && learning.isNotEmpty
+          ? learning
           : null,
     );
   }
@@ -84,6 +89,10 @@ class PushAlert {
   /// A two-week trial waiting for an answer (ZAD_PLAN 5.4) — the notification
   /// then carries the stage's two buttons.
   final HabitTrialRef? habitTrial;
+
+  /// A weekly «اتعلمت إن» waiting for «صح / مش صح» (ZAD_PLAN 5.2) — the
+  /// notification then carries the two buttons.
+  final String? houseLearningId;
 
   /// Worth showing at all.
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
@@ -239,13 +248,45 @@ bool? habitAnswerFromAction(String? actionId) => switch (actionId) {
   _ => null,
 };
 
+/// `data.kind` of zad-brain's weekly digest push that said a learning.
+const String kHouseLearningKind = 'house_learning';
+
+/// The learning notification's «صح» button.
+const String kLearningYesActionId = 'zad_learning_yes';
+
+/// Its «مش صح» button.
+const String kLearningNoActionId = 'zad_learning_no';
+
+const String _learningPayloadPrefix = 'house_learning:';
+
+/// The payload of a learning notification.
+String houseLearningPayload(String learningId) =>
+    '$_learningPayloadPrefix$learningId';
+
+/// The learning a payload asks about, or null.
+String? houseLearningFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_learningPayloadPrefix)) {
+    return null;
+  }
+  return _nonEmpty(payload.substring(_learningPayloadPrefix.length));
+}
+
+/// A learning button's answer: true for «صح», false for «مش صح», null for a
+/// tap on the notification itself.
+bool? learningAnswerFromAction(String? actionId) => switch (actionId) {
+  kLearningYesActionId => true,
+  kLearningNoActionId => false,
+  _ => null,
+};
+
 /// Where a tapped local notification goes, for every payload shape.
 AlertDestination? destinationForPayload(String? payload) =>
     proposalIdFromPayload(payload) != null
     ? AlertDestination.proposals
     : doseFromPayload(payload) != null
     ? AlertDestination.pharmacy
-    : habitTrialFromPayload(payload) != null
+    : habitTrialFromPayload(payload) != null ||
+          houseLearningFromPayload(payload) != null
     ? AlertDestination.home
     : destinationFor(payload);
 

@@ -12,6 +12,7 @@ import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/habit_trial_answers.dart';
+import 'package:zad/shared/alerts/data/house_learning_answers.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -58,6 +59,7 @@ class AlertsController extends Notifier<AlertsView> {
       onDose: _doseAnswered,
       onSpeak: _speak,
       onHabit: _habitAnswered,
+      onLearning: _learningAnswered,
     );
 
     final registrar = ref.read(pushRegistrarProvider);
@@ -238,6 +240,26 @@ class AlertsController extends Notifier<AlertsView> {
         .show(PushAlert(title: l10n.habitTrialTitle, body: reply));
   }
 
+  /// «صح» / «مش صح» pressed under a weekly learning (ZAD_PLAN 5.2). As with
+  /// a trial, the reply comes back as a notification of its own.
+  Future<void> _learningAnswered(String learningId, {required bool yes}) async {
+    ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
+    final l10n = zadL10nArabic;
+    String reply;
+    try {
+      final outcome = await ref
+          .read(houseLearningAnswersProvider)
+          .answer(learningId, yes: yes);
+      reply = houseLearningReply(l10n, outcome);
+    } on Object {
+      reply = l10n.learningFailed;
+    }
+    if (!ref.mounted) return;
+    await ref
+        .read(pushPlatformProvider)
+        .show(PushAlert(title: l10n.learningTitle, body: reply));
+  }
+
   /// «أيوه، أنا» / «مش أنا» pressed on a bank question in the notification.
   ///
   /// The confirmations tab opens as well: the server may ask back (a
@@ -269,4 +291,13 @@ String habitTrialReply(ZadL10n l10n, HabitTrialOutcome outcome) =>
       HabitTrialOutcome.dropped => l10n.habitTrialDropped,
       HabitTrialOutcome.already => l10n.habitTrialAlready,
       HabitTrialOutcome.gone => l10n.habitTrialGone,
+    };
+
+/// What the customer is told after «صح / مش صح» — the bot's `learningReply`.
+String houseLearningReply(ZadL10n l10n, HouseLearningOutcome outcome) =>
+    switch (outcome) {
+      HouseLearningOutcome.right => l10n.learningKept,
+      HouseLearningOutcome.wrong => l10n.learningCorrected,
+      HouseLearningOutcome.already => l10n.learningAlready,
+      HouseLearningOutcome.gone => l10n.learningGone,
     };
