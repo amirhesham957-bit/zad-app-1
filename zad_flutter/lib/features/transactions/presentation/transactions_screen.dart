@@ -367,7 +367,8 @@ class _RowState extends ConsumerState<_Row> {
 
 /// The row's subtitle.
 abstract final class _RowText {
-  /// Category, wallet, and the merchant when a bank message named one.
+  /// Category, wallet, the merchant when a bank message named one, and who
+  /// in the house it was for.
   ///
   /// The category stays in Arabic: it is written to `ZadInventory.category`
   /// and matched against, not read from a translation table.
@@ -379,6 +380,7 @@ abstract final class _RowText {
       Wallet.bank => l10n.walletBank,
     },
     if (txn.merchantName case final m? when m.isNotEmpty) m,
+    if (txn.forPerson case final p? when p.isNotEmpty) l10n.txForPersonTag(p),
   ].join(' · ');
 }
 

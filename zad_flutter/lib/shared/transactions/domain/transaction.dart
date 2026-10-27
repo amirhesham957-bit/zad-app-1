@@ -8,6 +8,7 @@
 library;
 
 import 'package:zad/core/money/money.dart';
+import 'package:zad/shared/transactions/domain/for_person.dart';
 
 /// `zad_transactions.txn_kind`.
 enum TxnKind {
@@ -72,6 +73,7 @@ class ZadTransaction {
     this.sourceType,
     this.bankName,
     this.isPending = false,
+    this.forPerson,
   });
 
   /// Money out.
@@ -91,6 +93,7 @@ class ZadTransaction {
     bool countsTowardBudget = true,
     bool isPending = false,
     String? sourceType,
+    String? forPerson,
   }) => ZadTransaction._(
     id: id,
     userId: userId,
@@ -106,6 +109,7 @@ class ZadTransaction {
     countsTowardBudget: countsTowardBudget,
     isPending: isPending,
     sourceType: sourceType,
+    forPerson: normalizeForPerson(forPerson),
   );
 
   /// Money in.
@@ -202,6 +206,7 @@ class ZadTransaction {
     sourceType: json['source_type'] as String?,
     bankName: json['bank_name'] as String?,
     isPending: json['_pending'] as bool? ?? false,
+    forPerson: json['for_person'] as String?,
   );
 
   /// The row id, decided on the device.
@@ -266,6 +271,10 @@ class ZadTransaction {
         null => false,
       };
 
+  /// Who in the house this was for («ماما», «يوسف»), already normalised; null
+  /// is the customer or the whole house. See [normalizeForPerson].
+  final String? forPerson;
+
   /// Whether this row is still only local.
   ///
   /// Not a column. It is kept in the cache so the UI can mark the row as not
@@ -292,6 +301,7 @@ class ZadTransaction {
     'counts_toward_budget': countsTowardBudget,
     'merchant_name': merchantName,
     'source_type': sourceType,
+    'for_person': forPerson,
   };
 
   /// The form kept in the local cache, which is the insert body plus the local
@@ -316,6 +326,8 @@ class ZadTransaction {
     required double amount,
     required String? category,
     bool? isExpense,
+    String? forPerson,
+    bool clearForPerson = false,
   }) {
     final flip = kind != TxnKind.transfer && isExpense != null;
     final expense = flip ? isExpense : this.isExpense;
@@ -336,18 +348,28 @@ class ZadTransaction {
       sourceType: sourceType,
       bankName: bankName,
       isPending: true,
+      // A typed «أنا» normalises to null and clears it, like an empty field.
+      forPerson: clearForPerson || forPerson != null
+          ? normalizeForPerson(forPerson)
+          : this.forPerson,
     );
   }
 
   /// The columns an edit writes.
-  Map<String, dynamic> toEditJson() => <String, dynamic>{
-    'id': id,
-    'title': title,
-    'amount': amount,
-    'category': category,
-    'is_expense': isExpense,
-    'txn_kind': kind.wireName,
-  };
+  ///
+  /// `for_person` only with [withForPerson]: a row cached before the column
+  /// existed reads as null here, and sending that null would wipe a person
+  /// the chat had set.
+  Map<String, dynamic> toEditJson({bool withForPerson = false}) =>
+      <String, dynamic>{
+        'id': id,
+        'title': title,
+        'amount': amount,
+        'category': category,
+        'is_expense': isExpense,
+        'txn_kind': kind.wireName,
+        if (withForPerson) 'for_person': forPerson,
+      };
 
   /// Returns a copy with [isPending] set.
   ZadTransaction markPending({required bool pending}) => ZadTransaction._(
@@ -367,5 +389,6 @@ class ZadTransaction {
     sourceType: sourceType,
     bankName: bankName,
     isPending: pending,
+    forPerson: forPerson,
   );
 }

@@ -204,13 +204,28 @@ class TransactionsRepository {
     required double amount,
     required String? category,
     bool? isExpense,
+    String? forPerson,
+    bool clearForPerson = false,
   }) async {
     final next = txn.edited(
       title: title,
       amount: amount,
       category: category,
       isExpense: isExpense,
+      forPerson: forPerson,
+      clearForPerson: clearForPerson,
     );
+    // Sent when it changed, or when an edit still queued already carries it —
+    // this edit replaces that entry and must not drop its person.
+    final withForPerson =
+        next.forPerson != txn.forPerson ||
+        _outbox()
+            .entries(includeDead: false)
+            .any(
+              (e) =>
+                  e.id == editIdFor(txn.id) &&
+                  e.payload.containsKey('for_person'),
+            );
     await _cache.put(next.id, jsonEncode(next.toCacheJson()));
     if (_hasQueuedInsert(txn.id)) {
       await _outbox().enqueue(
@@ -222,7 +237,7 @@ class TransactionsRepository {
       await _outbox().enqueue(
         id: editIdFor(next.id),
         kind: OutboxKind.updateTransaction,
-        payload: next.toEditJson(),
+        payload: next.toEditJson(withForPerson: withForPerson),
       );
     }
     return next;
@@ -254,7 +269,9 @@ class TransactionsRepository {
     final sent = entry.payload;
     if (stored['title'] != sent['title'] ||
         stored['txn_kind'] != sent['txn_kind'] ||
-        stored['category'] != sent['category']) {
+        stored['category'] != sent['category'] ||
+        (sent.containsKey('for_person') &&
+            stored['for_person'] != sent['for_person'])) {
       throw StateError('transaction ${sent['id']} did not take the edit');
     }
     final confirmed = ZadTransaction.fromJson(stored)

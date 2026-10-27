@@ -1,5 +1,6 @@
 /// "تعديل المعاملة" — Kotlin's `TransactionEditDialog`: title, amount, kind
-/// and category, plus the delete Kotlin offers beside it.
+/// and category, plus the delete Kotlin offers beside it, and «لمين؟» for an
+/// expense (ZAD_PLAN 5.3).
 ///
 /// Both write through the repository: the cache changes at once and the
 /// server hears about it through the outbox.
@@ -97,6 +98,9 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
   late final TextEditingController _amount = TextEditingController(
     text: _plain(widget.txn.amount),
   );
+  late final TextEditingController _forPerson = TextEditingController(
+    text: widget.txn.forPerson ?? '',
+  );
   late bool _isExpense = widget.txn.isExpense;
   late String? _category = widget.txn.category;
   bool _saving = false;
@@ -115,6 +119,7 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
   void dispose() {
     _title.dispose();
     _amount.dispose();
+    _forPerson.dispose();
     super.dispose();
   }
 
@@ -136,6 +141,9 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
             amount: amount,
             category: _category,
             isExpense: _isExpense,
+            forPerson: _isExpense ? _forPerson.text : null,
+            // Emptied, or no longer spending: nobody it was for.
+            clearForPerson: !_isExpense || _forPerson.text.trim().isEmpty,
           );
       // A corrected category is remembered for the merchant, so the next
       // import from it needs no correction.
@@ -216,6 +224,19 @@ class _EditTransactionSheetState extends ConsumerState<EditTransactionSheet> {
                     onSelected: (_) => setState(() => _isExpense = false),
                   ),
                 ],
+              ),
+            ],
+            if (!isTransfer && _isExpense) ...<Widget>[
+              const SizedBox(height: ZadSpacing.md),
+              TextField(
+                controller: _forPerson,
+                maxLength: 40,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: context.l10n.txForPerson,
+                  hintText: context.l10n.txForPersonHint,
+                  counterText: '',
+                ),
               ),
             ],
             const SizedBox(height: ZadSpacing.lg),
