@@ -1766,8 +1766,11 @@ async function handle(req: Request): Promise<Response> {
       if (chatReply && !voiceRequest.emotion) {
         voiceRequest.emotion = chatReplyEmotion((payload as { feeling_from?: unknown } | null)?.feeling_from);
       }
+      // رد الشات كمان على Gemini الأول (طلب المالك ٢٠٢٦-١٠-٢٧: «بشري بشهقات ونبرات ومشاعر»).
+      // سلمى (Azure) كانت الأول من ٢٠٢٦-١٠-٠١ — صوت واحد ثابت بس من غير أي مشاعر، فالمساعد كله
+      // كان بيتقال محايد. دلوقتي Azure احتياطي بس لما كوتة Gemini تخلص.
       const upstream = await requestVoiceWithFallback(
-        voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload), chatReply,
+        voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload),
       );
       if (!upstream.ok || !upstream.body) {
         // جرّبنا المسبح كله + Azure — نرجّع تفاصيل المحاولات (بدون أي مادة مفتاح) عشان اللوج يقول الحقيقة

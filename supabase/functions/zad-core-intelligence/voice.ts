@@ -24,6 +24,7 @@
 import { buildTtsPrompt, emotionForMoment, GEMINI_TTS_CHAIN, inferEmotion, isVoiceEmotion, PERSONA_VOICES, voiceForPersona, type VoiceEmotion, type ZadVoiceGender } from "../_shared/zadVoice.ts";
 import { type AzureSpeechConfig, requestAzureVoice } from "./azureVoice.ts";
 import { trimRunawaySpeech } from "../_shared/ttsTrim.ts";
+import { cutSpokenTail } from "../_shared/ttsTail.ts";
 
 /**
  * إحساس رد الشات كله: من أول جملة فيه (`feeling_from` من التطبيق)، ونفس الإحساس لكل
@@ -239,8 +240,8 @@ export async function requestVoiceWithFallback(
   dialectInstruction = "",
   preferAzure = false,
 ): Promise<Response> {
-  // ردود الشات: سلمى (Azure) الأول لما تكون مضبوطة — نفس الصوت في كل جملة ومن غير كوتة ١٠ نداءات
-  // في اليوم (قرار المالك ٢٠٢٦-١٠-٠١). لحظات اليوم بمشاعرها بتفضل على Gemini.
+  // سلمى (Azure) الأول — كانت لردود الشات من ٢٠٢٦-١٠-٠١ لحد ٢٠٢٦-١٠-٢٧، ومحدش بيطلبها دلوقتي:
+  // المالك عاوز المشاعر في الشات كمان، وسلمى مالهاش مشاعر.
   if (preferAzure && azure) {
     try {
       const res = await requestAzureVoice(input, azure, fetcher);
@@ -332,7 +333,9 @@ export async function requestGeminiVoice(
     });
   }
   // Gemini sometimes keeps speaking after the text (ttsTrim.ts): the tail goes before it is played.
-  const pcmBytes = trimRunawaySpeech(Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0)), input.text);
+  // What Whisper hears after the text goes first (ttsTail.ts), then the length guard.
+  const heard = await cutSpokenTail(Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0)), input.text);
+  const pcmBytes = trimRunawaySpeech(heard, input.text);
   return new Response(pcmBytes, {
     status: 200,
     headers: { "Content-Type": "audio/pcm" },
