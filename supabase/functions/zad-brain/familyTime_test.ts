@@ -1,7 +1,7 @@
 // وقت العيلة قبل الويك إند (familyTime.ts، الموجة ٤): مرة في الأسبوع، للبيت اللي فيه أكتر من فرد، بالجو والتوفير.
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { familyTime, isFamilyHome, isWeekendEve, outdoorDay } from "./familyTime.ts";
+import { familyTime, isFamilyHome, isWeekendEve, outdoorDay, weekendOuting } from "./familyTime.ts";
 import type { DayWeather } from "./weather.ts";
 import { weatherSource } from "./weather.ts";
 import { dealSource } from "./tasteDeals.ts";
@@ -99,4 +99,38 @@ Deno.test("morning: Thursday's greeting carries the family's weekend, and the te
   assertEquals((await morningFacts(fakeSb(TABLES), "u", { ...LOCAL, date: FRI })).family_time, undefined);
   assertEquals((await morningFacts(fakeSb({ zad_users: TABLES.zad_users }), "u", LOCAL)).family_time, undefined);
   weatherSource.fetch = () => Promise.reject(new Error("no network in unit tests"));
+});
+
+// ٥.٨ (٢): ليلة الويك إند والميزانية مرتاحة ⇒ خروجة في مدينته بدل صنف بيت.
+const COMFY = { ...SAVING, monthly_limit: 5000, limit_confirmed: true };
+
+Deno.test("weekend outing (5.8): the eve of the weekend, a comfortable budget, his city and the savings' ceiling", () => {
+  const o = weekendOuting({ date: THU, country: "EG", comfortable: true, city: "المعادي", budget: SAVING })!;
+  assertEquals([o.city, o.budget], ["المعادي", 70]);
+  assertStringIncludes(o.line, "خروجة أو عشا برّه في المعادي في حدود 70 EGP");
+  assertEquals(weekendOuting({ date: THU, country: "EG", comfortable: false, budget: SAVING }), null);
+  assertEquals(weekendOuting({ date: FRI, country: "EG", comfortable: true, budget: SAVING }), null);
+  // مفيش توفير يتحسب ⇒ من غير رقم، ومفيش مدينة ⇒ من غير «في».
+  const plain = weekendOuting({ date: THU, country: "EG", comfortable: true, budget: { ...SAVING, velocity: 1.2 } })!;
+  assertEquals(plain.budget, null);
+  assertEquals(plain.line, "الميزانية مرتاحة الأسبوع ده، وبكرة أول الويك إند — خروجة أو عشا برّه؟");
+});
+
+Deno.test("morning (5.8): someone on their own gets the outing in the offer slot; a family gets family time instead", async () => {
+  const alone = { zad_users: TABLES.zad_users, zad_customer_profile: [{ city: "المعادي" }], zad_shopping_list: [{ item_name: "زيت" }] };
+  dealSource.search = () => Promise.resolve({ deals: [{ item: "زيت عافية ١ لتر", store: "كارفور", price: 80 }] });
+  // الخميس: الخروجة بتاخد خانة العرض، وعرض الزيت بيستنى.
+  const facts = await morningFacts(fakeSb(alone, { zad_budget_state: COMFY }), "u", LOCAL);
+  assertEquals((facts.weekend_outing as { city: string }).city, "المعادي");
+  assertEquals(facts.taste_deal, undefined);
+  // الجمعة نفس البيت ونفس العرض ⇒ العرض بيرجع لخانته.
+  assertEquals((await morningFacts(fakeSb(alone, { zad_budget_state: COMFY }), "u", { ...LOCAL, date: FRI })).taste_deal !== undefined, true);
+  assertStringIncludes(momentFallback("morning_greeting", facts).text, "خروجة أو عشا برّه في المعادي");
+  // مش مرتاحة، أو يوم تاني ⇒ مفيش.
+  assertEquals((await morningFacts(fakeSb(alone, { zad_budget_state: SAVING }), "u", LOCAL)).weekend_outing, undefined);
+  assertEquals((await morningFacts(fakeSb(alone, { zad_budget_state: COMFY }), "u", { ...LOCAL, date: FRI })).weekend_outing, undefined);
+  // عيلة ⇒ family_time بس، مش الاتنين.
+  const family = await morningFacts(fakeSb(TABLES, { zad_budget_state: COMFY }), "u", LOCAL);
+  assertEquals([!!family.family_time, family.weekend_outing], [true, undefined]);
+  dealSource.search = () => Promise.resolve(null);
 });

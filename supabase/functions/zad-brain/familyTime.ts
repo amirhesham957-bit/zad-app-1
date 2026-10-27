@@ -74,3 +74,32 @@ export function familyTime(o: {
       : `آخر الأسبوع جه — وقت عيلة سوا؟ خروجة قريبة أو قعدة في البيت${money}.`;
   return { outdoor, budget, currency, line };
 }
+
+/**
+ * خانة العرض ليلة الويك إند (ZAD_PLAN ٥.٨ (٢)، «الخروجة بدل المنظفات»): الميزانية مرتاحة (`budgetComfortable`) ⇒
+ * خروجة أو عشا برّه في مدينته بدل صنف بيت — مرة في الأسبوع، لأن ليلة الويك إند يوم واحد. المبلغ من نفس حسبة وقت العيلة
+ * (اللي اتوفّر)، ومن غيره الاقتراح من غير رقم. بيت فيه أكتر من فرد بياخد [familyTime] بدله في نفس اليوم.
+ */
+export interface WeekendOuting {
+  city: string | null;
+  budget: number | null;
+  currency: string | null;
+  line: string;
+}
+
+export function weekendOuting(o: {
+  date: string;
+  country: string | null | undefined;
+  comfortable: boolean;
+  city?: string | null;
+  budget?: { threat?: string | null; velocity?: number | null; spent?: number | null; available?: number | null; currency?: string | null } | null;
+}): WeekendOuting | null {
+  if (!o.comfortable || !isWeekendEve(o.date, o.country)) return null;
+  const saved = o.budget ? savedSoFar(o.budget) : null;
+  const budget = saved === null ? null : activityBudget(saved, Number(o.budget?.available));
+  const currency = o.budget?.currency ?? null;
+  const city = String(o.city ?? "").trim().slice(0, 40) || null;
+  const money = budget ? ` في حدود ${budget}${currency ? ` ${currency}` : ""} من اللي اتوفّر` : "";
+  const line = `الميزانية مرتاحة الأسبوع ده، وبكرة أول الويك إند — خروجة أو عشا برّه${city ? ` في ${city}` : ""}${money}؟`;
+  return { city, budget, currency, line };
+}
