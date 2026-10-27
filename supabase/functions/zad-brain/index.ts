@@ -129,6 +129,7 @@ import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./hous
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
@@ -1333,6 +1334,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // حالة البيت (circumstances.ts، الشريحة ٢٩): ظرف طارئ، امتحانات، استغاثة، أو تعافي بعدهم — زاد بيتكلم أقل.
   const circumstance = await loadCircumstance(sb, userId);
+  // ZAD_PLAN ٥.٦ — الظرف الطارئ اللي العميل قاله: المتاح ساعته والتكلفة، عشان الباقي يتوزع على الأيام.
+  const { data: circumstanceRow } = circumstance.mode === "exceptional" && circumstance.reason === "exceptional" && circumstance.id
+    ? await sb.from("zad_life_circumstances").select("detail").eq("id", circumstance.id).eq("user_id", userId).maybeSingle()
+    : { data: null };
   // التحول السلوكي القايم (lifeShift.ts، الشريحة ٣٠): الطبيعي الجديد اللي الحسابات بتقيس عليه.
   const { data: shiftRows } = await sb.from("zad_life_circumstances")
     .select("kind,started_at,ends_at,ended_at,confirmed,detail").eq("user_id", userId).like("kind", "shift_%")
@@ -1646,6 +1651,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     // منسّق الانتباه (attention.ts): الكروت المفتوحة قدام العميل، وعناوين كروت آخر ٢٤ ساعة (مايتقالوش تاني في الشات).
     // normal = عادي. exceptional/recovery = اتبع قاعدة «حالة البيت» في البرومبت.
     circumstance,
+    // null = مفيش ظرف طارئ قاله العميل، أو اتقال من غير متاح، أو الدورة اتغيّرت (circumstanceBudget.ts).
+    circumstance_budget: circumstanceBudget({
+      detail: (circumstanceRow as { detail?: Record<string, unknown> | null } | null)?.detail ?? null,
+      available, daysLeft: daysLeftInCycle, cycleEnd,
+    }),
     // null = مفيش تحول قايم. confirmed: null = لسه ماتسألش، true = أكّد.
     life_shift: liveShifts.length
       ? liveShifts.map((r) => ({ kind: r.kind, since: String(r.started_at).slice(0, 10), detail: r.detail ?? {}, confirmed: r.confirmed ?? null }))
@@ -4157,25 +4167,50 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const days = Math.min(DECLARED_MAX_DAYS, Math.max(1, Math.round(Number(input?.days) || DECLARED_DEFAULT_DAYS)));
       const now = new Date();
       const endsAt = new Date(now.getTime() + days * 86_400_000).toISOString();
-      const { data: active } = await sb.from("zad_life_circumstances").select("id,ends_at")
+      // ZAD_PLAN ٥.٦ — الظرف الطارئ بيحفظ المتاح ساعته (والتكلفة لو قالها)، عشان الباقي يتوزع على الأيام (circumstanceBudget.ts).
+      const cost = kind === "exceptional" ? circumstanceCost(input?.cost) : null;
+      const replan = (detail: Record<string, unknown>) =>
+        kind === "exceptional"
+          ? circumstanceBudgetLine(circumstanceBudget({
+            detail, available: snap?.available, daysLeft: snap?.cycle?.days_left, cycleEnd: snap?.cycle?.cycle_end ?? null,
+          }), snap?.currency)
+          : "";
+      const { data: active } = await sb.from("zad_life_circumstances").select("id,kind,ends_at,detail")
         .eq("user_id", userId).in("kind", ["exceptional", "exams"]).is("ended_at", null).gt("ends_at", now.toISOString())
         .order("ends_at", { ascending: false }).limit(1).maybeSingle();
       if (active) {
-        // نفس الهدوء شغال: نمدّه بس (مانقصّرهوش من غير ما العميل يقول «رجّع»).
-        const row = active as { id: string; ends_at: string };
+        // نفس الهدوء شغال: نمدّه بس (مانقصّرهوش من غير ما العميل يقول «رجّع»). المتاح ساعة الظرف مايتبدلش، والتكلفة الجديدة تكسب.
+        const row = active as { id: string; kind: string; ends_at: string; detail: Record<string, unknown> | null };
         const longer = endsAt > row.ends_at ? endsAt : row.ends_at;
-        const { error } = await sb.from("zad_life_circumstances").update({ ends_at: longer }).eq("id", row.id).eq("user_id", userId);
+        const detail = { ...(row.detail ?? {}) };
+        if (row.kind === "exceptional" && kind === "exceptional") {
+          if (!detail.budget_at_start) {
+            const start = budgetAtStart(snap);
+            if (start) detail.budget_at_start = start;
+          }
+          if (cost !== null) detail.cost = cost;
+        }
+        const { error } = await sb.from("zad_life_circumstances").update({ ends_at: longer, detail })
+          .eq("id", row.id).eq("user_id", userId);
         if (error) return `مقدرتش أحدّث: ${error.message}`;
         ctx.mutationCount++;
-        return `الهدوء شغال لحد ${longer.slice(0, 10)}.`;
+        const line = row.kind === "exceptional" ? replan(detail) : "";
+        return `الهدوء شغال لحد ${longer.slice(0, 10)}.${line ? ` ${line}` : ""}`;
       }
+      const start = kind === "exceptional" ? budgetAtStart(snap) : null;
+      const detail: Record<string, unknown> = {
+        ...(start ? { budget_at_start: start } : {}),
+        ...(cost !== null ? { cost } : {}),
+      };
       const { error } = await sb.from("zad_life_circumstances").insert({
         user_id: userId, kind, source: "customer", started_at: now.toISOString(), ends_at: endsAt,
+        ...(Object.keys(detail).length ? { detail } : {}),
       });
       if (error) return `مقدرتش أسجّل: ${error.message}`;
       ctx.mutationCount++;
+      const line = replan(detail);
       return `اتسجّل. لحد ${endsAt.slice(0, 10)}: الجرعات والمواعيد والأمان زي ما هم، والباقي يستنى. ` +
-        "قوله إنه يقدر يرجّع التنبيهات من الرئيسية أو يقولك «رجّع».";
+        "قوله إنه يقدر يرجّع التنبيهات من الرئيسية أو يقولك «رجّع»." + (line ? ` ${line}` : "");
     }
     case "end_life_circumstance": {
       // نفس zad_circumstance_end اللي زرار الرئيسية بيناديها — بس بهوية السيرفر وللظروف المفتوحة كلها.
@@ -5680,12 +5715,15 @@ export const CHAT_TOOLS: ToolDef[] = [
     description:
       "العميل **قال** إن البيت في ظرف: حد عيان أو طوارئ (kind = exceptional)، أو فترة امتحانات (kind = exams) — والمدة بالأيام " +
       "(افتراضي ٣، أقصى ١٤). زاد بيأجّل التذكيرات غير العاجلة؛ الجرعات والمواعيد والأمان زي ما هم. " +
-      "**ماتستنتجش ظرف** من مشتريات أو من نبرة كلامه — بس لما يقوله، أو يوافق لما تسأله «أهدّي التنبيهات كام يوم؟».",
+      "**ماتستنتجش ظرف** من مشتريات أو من نبرة كلامه — بس لما يقوله، أو يوافق لما تسأله «أهدّي التنبيهات كام يوم؟». " +
+      "في الطارئ، لو قال الظرف هيكلّف كام (مستشفى، تصليح) ابعت cost: المبلغ بيتحجز والباقي بيتوزع على الأيام، والرد فيه اليوم الجديد. " +
+      "لو قال التكلفة بعد ما الظرف اتسجّل، نادِها تاني بنفس kind ومعاها cost.",
     input_schema: {
       type: "object",
       properties: {
         kind: { type: "string", enum: ["exceptional", "exams"] },
         days: { type: "number", description: "كام يوم (١–١٤)" },
+        cost: { type: "number", description: "الطارئ بس: الظرف هيكلّف كام (اللي العميل قاله — ماتقدّرش من عندك)" },
       },
       required: ["kind"],
     },
@@ -8216,6 +8254,7 @@ ${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = ا�
    - ${householdLoadRule(snap)}
    - ${toneRule(snap) || "مفيش tone."}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
+   - ${circumstanceBudgetRule(snap) || "مفيش circumstance_budget."}
    - ${homeEmergencyRule(snap)}
 ${campaignAndTasteRules(snap)}${weatherRule(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
 4. **التنفيذ الفوري للمهام (Instant Function Calling)**:
