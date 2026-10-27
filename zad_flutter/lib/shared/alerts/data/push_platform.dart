@@ -28,7 +28,7 @@ abstract interface class PushPlatform {
   /// [onAnswer] gets a bank confirmation settled from a notification button;
   /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken);
   /// [onSpeak] a voice moment's «اسمع زاد»; [onHabit] a two-week trial's
-  /// yes or no.
+  /// yes or no; [onLearning] a weekly learning's «صح» or «مش صح».
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
@@ -37,6 +37,7 @@ abstract interface class PushPlatform {
     onDose,
     void Function(String speech)? onSpeak,
     void Function(HabitTrialRef trial, {required bool yes})? onHabit,
+    void Function(String learningId, {required bool yes})? onLearning,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -66,6 +67,7 @@ class SilentPushPlatform implements PushPlatform {
     onDose,
     void Function(String speech)? onSpeak,
     void Function(HabitTrialRef trial, {required bool yes})? onHabit,
+    void Function(String learningId, {required bool yes})? onLearning,
   }) async {}
 
   @override
@@ -135,6 +137,23 @@ List<AndroidNotificationAction> _habitActions(HabitTrialStage stage) {
   ];
 }
 
+/// «صح / مش صح» under a weekly learning (ZAD_PLAN 5.2) — the bot's words.
+List<AndroidNotificationAction> _learningActions() {
+  final l10n = zadL10nArabic;
+  return <AndroidNotificationAction>[
+    AndroidNotificationAction(
+      kLearningYesActionId,
+      l10n.learningRight,
+      showsUserInterface: true,
+    ),
+    AndroidNotificationAction(
+      kLearningNoActionId,
+      l10n.learningWrong,
+      showsUserInterface: true,
+    ),
+  ];
+}
+
 Future<void> _showLocal(PushAlert alert) async {
   if (!alert.isShowable) return;
   await _local.show(
@@ -158,6 +177,8 @@ Future<void> _showLocal(PushAlert alert) async {
         // press brings the app up and settles it there (AlertsController).
         actions: alert.habitTrial != null
             ? _habitActions(alert.habitTrial!.stage)
+            : alert.houseLearningId != null
+            ? _learningActions()
             : alert.speech != null
             ? const <AndroidNotificationAction>[
                 // Speaking needs the app's player, so the press brings the
@@ -186,6 +207,8 @@ Future<void> _showLocal(PushAlert alert) async {
     ),
     payload: alert.habitTrial != null
         ? habitTrialPayload(alert.habitTrial!)
+        : alert.houseLearningId != null
+        ? houseLearningPayload(alert.houseLearningId!)
         : alert.speech != null
         ? speakPayload(alert.speech!)
         : alert.proposalId == null
@@ -320,11 +343,18 @@ void routeNotificationResponse({
   void Function(String medicineId, String time, {required bool taken})? onDose,
   void Function(String speech)? onSpeak,
   void Function(HabitTrialRef trial, {required bool yes})? onHabit,
+  void Function(String learningId, {required bool yes})? onLearning,
 }) {
   final trial = habitTrialFromPayload(payload);
   final yes = habitAnswerFromAction(actionId);
   if (trial != null && yes != null && onHabit != null) {
     onHabit(trial, yes: yes);
+    return;
+  }
+  final learning = houseLearningFromPayload(payload);
+  final right = learningAnswerFromAction(actionId);
+  if (learning != null && right != null && onLearning != null) {
+    onLearning(learning, yes: right);
     return;
   }
   final proposal = proposalIdFromPayload(payload);
@@ -397,6 +427,7 @@ class FirebasePushPlatform implements PushPlatform {
     onDose,
     void Function(String speech)? onSpeak,
     void Function(HabitTrialRef trial, {required bool yes})? onHabit,
+    void Function(String learningId, {required bool yes})? onLearning,
   }) async {
     if (_started) return;
     _started = true;
@@ -411,6 +442,7 @@ class FirebasePushPlatform implements PushPlatform {
         onDose: onDose,
         onSpeak: onSpeak,
         onHabit: onHabit,
+        onLearning: onLearning,
       ),
     );
 
@@ -449,6 +481,7 @@ class FirebasePushPlatform implements PushPlatform {
           onDose: onDose,
           onSpeak: onSpeak,
           onHabit: onHabit,
+          onLearning: onLearning,
         );
       }
     }

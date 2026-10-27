@@ -1568,6 +1568,31 @@ class ZadL10nAr extends ZadL10n {
       'معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.';
 
   @override
+  String get learningTitle => '🧠 اتعلمت إن';
+
+  @override
+  String get learningRight => '✅ صح';
+
+  @override
+  String get learningWrong => '❌ مش صح';
+
+  @override
+  String get learningKept => 'تمام ✅ هفتكرها.';
+
+  @override
+  String get learningCorrected => 'تمام، شكراً إنك صحّحتني — مش هقولها تاني.';
+
+  @override
+  String get learningAlready => 'تمام، ردك اتسجّل قبل كده.';
+
+  @override
+  String get learningGone => 'الملاحظة دي مابقتش موجودة.';
+
+  @override
+  String get learningFailed =>
+      'معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.';
+
+  @override
   String get txType => 'النوع';
 
   @override

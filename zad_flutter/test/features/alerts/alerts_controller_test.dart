@@ -17,6 +17,7 @@ import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/habit_trial_answers.dart';
+import 'package:zad/shared/alerts/data/house_learning_answers.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -37,6 +38,7 @@ class _Platform extends SilentPushPlatform {
   void Function(String, String, {required bool taken})? dosed;
   void Function(String)? spoke;
   void Function(HabitTrialRef, {required bool yes})? habited;
+  void Function(String, {required bool yes})? learned;
   final List<PushAlert> shown = <PushAlert>[];
 
   @override
@@ -51,8 +53,10 @@ class _Platform extends SilentPushPlatform {
     onDose,
     void Function(String speech)? onSpeak,
     void Function(HabitTrialRef trial, {required bool yes})? onHabit,
+    void Function(String learningId, {required bool yes})? onLearning,
   }) async {
     habited = onHabit;
+    learned = onLearning;
     alerted = onAlert;
     opened = onOpened;
     answered = onAnswer;
@@ -65,6 +69,22 @@ class _Platform extends SilentPushPlatform {
 
   @override
   Stream<String> get tokenRefreshes => refreshes.stream;
+}
+
+class _Learnings implements HouseLearningAnswers {
+  final List<(String, bool)> calls = <(String, bool)>[];
+  HouseLearningOutcome next = HouseLearningOutcome.right;
+  bool fail = false;
+
+  @override
+  Future<HouseLearningOutcome> answer(
+    String learningId, {
+    required bool yes,
+  }) async {
+    calls.add((learningId, yes));
+    if (fail) throw StateError('offline');
+    return next;
+  }
 }
 
 class _Answers implements HabitTrialAnswers {
@@ -157,6 +177,7 @@ void main() {
   late Box<String> device;
   late _Platform platform;
   late _Answers answers;
+  late _Learnings learnings;
   late _Permission permission;
   late ProviderContainer container;
   late Outbox outbox;
@@ -173,6 +194,7 @@ void main() {
     device = await Hive.openBox<String>('device$run');
     platform = _Platform();
     answers = _Answers();
+    learnings = _Learnings();
     permission = _Permission(starting);
     outbox = Outbox(box: box, send: (_) async {});
     synth = _Synth();
@@ -192,6 +214,7 @@ void main() {
         localStoreProvider.overrideWithValue(store),
         pushPlatformProvider.overrideWithValue(platform),
         habitTrialAnswersProvider.overrideWithValue(answers),
+        houseLearningAnswersProvider.overrideWithValue(learnings),
         proposalsControllerProvider.overrideWith(_Proposals.new),
         notificationPermissionProvider.overrideWithValue(permission),
         voiceSynthesizerProvider.overrideWithValue(synth),
@@ -331,6 +354,35 @@ void main() {
       ), yes: false);
       await pumpEventQueue();
       expect(answers.calls.last, ('t-1', false));
+      expect(
+        platform.shown.last.body,
+        contains('ماقدرتش'),
+        reason: 'a failed call is said, not swallowed',
+      );
+    },
+  );
+
+  test(
+    '«صح / مش صح» answers the learning with the session and says what happened',
+    () async {
+      await build(AlertPermission.granted);
+      await container.read(alertsControllerProvider.notifier).start();
+
+      platform.learned!('l-1', yes: true);
+      await pumpEventQueue();
+      expect(learnings.calls, <(String, bool)>[('l-1', true)]);
+      expect(platform.shown.single.body, contains('هفتكرها'));
+      expect(container.read(shellNavigationProvider), ShellTab.home);
+
+      learnings.next = HouseLearningOutcome.wrong;
+      platform.learned!('l-2', yes: false);
+      await pumpEventQueue();
+      expect(learnings.calls.last, ('l-2', false));
+      expect(platform.shown.last.body, contains('صحّحتني'));
+
+      learnings.fail = true;
+      platform.learned!('l-3', yes: true);
+      await pumpEventQueue();
       expect(
         platform.shown.last.body,
         contains('ماقدرتش'),

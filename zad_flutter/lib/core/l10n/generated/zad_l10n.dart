@@ -2773,6 +2773,54 @@ abstract class ZadL10n {
   /// **'معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.'**
   String get habitTrialFailed;
 
+  /// No description provided for @learningTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧠 اتعلمت إن'**
+  String get learningTitle;
+
+  /// No description provided for @learningRight.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ صح'**
+  String get learningRight;
+
+  /// No description provided for @learningWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ مش صح'**
+  String get learningWrong;
+
+  /// No description provided for @learningKept.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام ✅ هفتكرها.'**
+  String get learningKept;
+
+  /// No description provided for @learningCorrected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، شكراً إنك صحّحتني — مش هقولها تاني.'**
+  String get learningCorrected;
+
+  /// No description provided for @learningAlready.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، ردك اتسجّل قبل كده.'**
+  String get learningAlready;
+
+  /// No description provided for @learningGone.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملاحظة دي مابقتش موجودة.'**
+  String get learningGone;
+
+  /// No description provided for @learningFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.'**
+  String get learningFailed;
+
   /// No description provided for @txType.
   ///
   /// In ar, this message translates to:

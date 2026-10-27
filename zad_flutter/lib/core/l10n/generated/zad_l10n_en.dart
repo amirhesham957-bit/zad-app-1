@@ -1613,6 +1613,32 @@ class ZadL10nEn extends ZadL10n {
       'Sorry, I couldn\'t record your answer right now — try again in a bit.';
 
   @override
+  String get learningTitle => '🧠 I\'ve learned';
+
+  @override
+  String get learningRight => '✅ Right';
+
+  @override
+  String get learningWrong => '❌ Not right';
+
+  @override
+  String get learningKept => 'Got it ✅ I\'ll remember that.';
+
+  @override
+  String get learningCorrected =>
+      'OK, thanks for correcting me — I won\'t say it again.';
+
+  @override
+  String get learningAlready => 'OK, your answer was already recorded.';
+
+  @override
+  String get learningGone => 'That note no longer exists.';
+
+  @override
+  String get learningFailed =>
+      'Sorry, I couldn\'t record your answer right now — try again in a bit.';
+
+  @override
   String get txType => 'Type';
 
   @override
