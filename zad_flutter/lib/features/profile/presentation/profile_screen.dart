@@ -17,8 +17,10 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/features/profile/presentation/automation_diagnostics_screen.dart';
 import 'package:zad/features/profile/presentation/profile_sub_screens.dart';
 import 'package:zad/shared/budget/data/category_budgets_store.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -181,6 +183,13 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
+                  _MenuRow(
+                    icon: ZadIcons.brainHealth,
+                    title: context.l10n.diagTitle,
+                    subtitle: context.l10n.diagMenuSubtitle,
+                    onTap: () =>
+                        unawaited(showAutomationDiagnosticsScreen(context)),
+                  ),
                   _MenuRow(
                     icon: Icons.support_agent,
                     title: 'الدعم الفني',

@@ -2295,4 +2295,209 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get keepAliveAllow => 'Keep Zad running';
+
+  @override
+  String get diagTitle => 'Automation check';
+
+  @override
+  String get diagMenuSubtitle =>
+      'Bank notifications and Zad\'s messages — where exactly they stop';
+
+  @override
+  String get diagRefresh => 'Refresh';
+
+  @override
+  String get diagBankTitle => 'What reached the server from bank notifications';
+
+  @override
+  String get diagBankNote =>
+      'The last 14 days: every notification the phone sent, and what Zad did with it and why.';
+
+  @override
+  String get diagReadFailedTitle => 'Couldn\'t read from the server';
+
+  @override
+  String get diagReadFailedBody =>
+      'Check your connection and pull down to refresh.';
+
+  @override
+  String get diagBankEmptyTitle => 'No notification reached the server';
+
+  @override
+  String get diagBankEmptyBody =>
+      'If you paid by card lately, the break is on the phone — see the section above.';
+
+  @override
+  String get diagNotification => 'Notification';
+
+  @override
+  String get diagBankNoAccess =>
+      'Stopped at the first step: notification access is off. Turn it on in the section above.';
+
+  @override
+  String get diagBankNotBound =>
+      'Access is on but the reading service never connected. Turn access off and on again.';
+
+  @override
+  String get diagBankSilent =>
+      'The reading service has seen nothing for two days — Android stopped it. Turn access off and on, and take Zad out of battery saving.';
+
+  @override
+  String get diagBankStuck =>
+      'Some notifications were read on the phone but not sent yet. Go online and keep Zad open for a minute.';
+
+  @override
+  String get diagBankNothing =>
+      'The phone is working but no bank notification reached the server. If you paid by card, your bank sends from an app we don\'t follow — tell us its name.';
+
+  @override
+  String get diagBankSetAside =>
+      'Notifications reached the server but all were set aside — the reason is next to each one below.';
+
+  @override
+  String get diagBankWaiting =>
+      'Some transactions are waiting for you. Confirm them from the notification or the home screen so they are recorded.';
+
+  @override
+  String get diagBankOk => 'Working: notifications arrive and are recorded.';
+
+  @override
+  String get diagProTitle => 'Messages Zad starts';
+
+  @override
+  String get diagProNote =>
+      'Good morning, doses, appointments, «close your day» — whether they arrived and why.';
+
+  @override
+  String get diagTelegram => 'Telegram';
+
+  @override
+  String get diagPush => 'App notifications';
+
+  @override
+  String get diagUnknown => 'Unknown';
+
+  @override
+  String get diagLinked => 'Linked';
+
+  @override
+  String get diagNotLinked => 'Not linked';
+
+  @override
+  String get diagPushOff =>
+      'This phone is not registered for Zad\'s notifications';
+
+  @override
+  String get diagProEmptyTitle => 'Zad started no message in the last 14 days';
+
+  @override
+  String get diagProEmptyBody =>
+      'The first good-morning arrives next morning if there is a way to reach you.';
+
+  @override
+  String get diagProNoChannel =>
+      'Zad has no way to reach you: no Telegram linked and this phone isn\'t registered for notifications. Link Telegram in settings, or open the app and allow notifications.';
+
+  @override
+  String get diagProNothing =>
+      'The server sent nothing in 14 days. That isn\'t normal — send us a screenshot of this.';
+
+  @override
+  String get diagProFailing =>
+      'Most messages failed — the reason is next to each one below.';
+
+  @override
+  String get diagProOk => 'Working: Zad starts messages and they reach you.';
+
+  @override
+  String get diagMomentMorning => 'Good morning';
+
+  @override
+  String get diagMomentNight => 'Good night';
+
+  @override
+  String get diagMomentCloseDay => 'Close your day';
+
+  @override
+  String get diagMomentDoseDue => 'Dose time';
+
+  @override
+  String get diagMomentDoseMissed => 'Missed dose';
+
+  @override
+  String get diagMomentDoseNudge => 'Dose reminder';
+
+  @override
+  String get diagMomentAppointment => 'Appointment soon';
+
+  @override
+  String get diagMomentWeekly => 'Weekly summary';
+
+  @override
+  String get diagMomentMonthly => 'Monthly story';
+
+  @override
+  String get diagIngestRecorded => 'Recorded as an expense';
+
+  @override
+  String get diagIngestWaiting => 'Waiting for you to confirm';
+
+  @override
+  String get diagIngestPromo => 'Judged an advert, not money moving';
+
+  @override
+  String get diagIngestOtp => 'A verification code or security alert';
+
+  @override
+  String get diagIngestOrder => 'An order or delivery status';
+
+  @override
+  String get diagIngestPersonal => 'A personal message';
+
+  @override
+  String get diagIngestNonFinancial => 'Not about money';
+
+  @override
+  String get diagIngestUnavailable =>
+      'The brain didn\'t answer and the sender is unknown';
+
+  @override
+  String get diagIngestInfo => 'An information message (balance or alert)';
+
+  @override
+  String get diagIngestFailedTxn => 'A failed or pending transaction';
+
+  @override
+  String get diagIngestMerged =>
+      'The same transaction arrived elsewhere and was merged';
+
+  @override
+  String get diagIngestServerError => 'A server error — it will be retried';
+
+  @override
+  String get diagIngestReviewing => 'Arrived, still being reviewed';
+
+  @override
+  String get diagMomentNoChannel =>
+      'No way to reach you: no Telegram and no app notifications';
+
+  @override
+  String get diagMomentSkipped =>
+      'Postponed or dropped (quiet hours or the daily cap)';
+
+  @override
+  String get diagMomentSent => 'Delivered';
+
+  @override
+  String get diagMomentPending => 'Waiting for its time';
+
+  @override
+  String diagPushOn(int count) {
+    return 'This phone is registered ($count)';
+  }
+
+  @override
+  String diagIngestKind(String kind) {
+    return 'Classified as $kind';
+  }
 }

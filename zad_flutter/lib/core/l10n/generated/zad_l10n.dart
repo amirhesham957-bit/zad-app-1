@@ -4020,6 +4020,366 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'خلّي زاد شغال دايماً'**
   String get keepAliveAllow;
+
+  /// Title of the automation diagnostics screen and its settings row.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشخيص الأتمتة'**
+  String get diagTitle;
+
+  /// Settings row subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات البنك ورسايل زاد — واقفة فين بالظبط'**
+  String get diagMenuSubtitle;
+
+  /// Button that reads the diagnosis again.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث التشخيص'**
+  String get diagRefresh;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي وصل السيرفر من إشعارات البنك'**
+  String get diagBankTitle;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر ١٤ يوم: كل إشعار الموبايل بعته، وزاد عمل بيه إيه وليه.'**
+  String get diagBankNote;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرتش أقرا من السيرفر'**
+  String get diagReadFailedTitle;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت واسحب لتحت عشان تحدّث.'**
+  String get diagReadFailedBody;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إشعار وصل السيرفر'**
+  String get diagBankEmptyTitle;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو دفعت بالكارت الأيام دي، العطل على الموبايل — شوف القسم اللي فوق.'**
+  String get diagBankEmptyBody;
+
+  /// A row whose notification had no title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعار'**
+  String get diagNotification;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'واقفة عند أول خطوة: صلاحية قراءة الإشعارات مقفولة. فعّلها من القسم اللي فوق.'**
+  String get diagBankNoAccess;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية شغالة بس خدمة القراءة عمرها ما اتوصلت. اقفل الصلاحية وافتحها تاني.'**
+  String get diagBankNotBound;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة القراءة ماشافتش ولا إشعار من يومين — أندرويد وقّفها. اقفل الصلاحية وافتحها، وشيل زاد من توفير البطارية.'**
+  String get diagBankSilent;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه إشعارات اتقرت على الموبايل ولسه مااتبعتتش للسيرفر. افتح النت وسيب زاد مفتوح دقيقة.'**
+  String get diagBankStuck;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل شغال بس مفيش إشعار بنك وصل السيرفر. لو دفعت بالكارت، يبقى البنك بيبعت الرسالة من تطبيق مش متابَع — ابعتلنا اسمه.'**
+  String get diagBankNothing;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات وصلت السيرفر بس كلها اتشالت — السبب جنب كل واحدة تحت.'**
+  String get diagBankSetAside;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه حركات مستنية تأكيدك. أكّدها من الإشعار أو من الرئيسية عشان تتسجل.'**
+  String get diagBankWaiting;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلسلة شغالة: الإشعارات بتوصل وبتتسجل.'**
+  String get diagBankOk;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسايل زاد اللي بيبدأها'**
+  String get diagProTitle;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير، الجرعات، المواعيد، «اقفل يومك» — وصلت ولا لأ وليه.'**
+  String get diagProNote;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'تليجرام'**
+  String get diagTelegram;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات التطبيق'**
+  String get diagPush;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش عارف'**
+  String get diagUnknown;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مربوط'**
+  String get diagLinked;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش مربوط'**
+  String get diagNotLinked;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل مش متسجّل لاستقبال إشعارات زاد'**
+  String get diagPushOff;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مابدأش أي رسالة آخر ١٤ يوم'**
+  String get diagProEmptyTitle;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول تحية صباح بتوصل الصبح الجاي لو فيه طريق يوصلك.'**
+  String get diagProEmptyBody;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مش لاقي طريق يوصلك: لا تليجرام مربوط ولا الموبايل متسجّل للإشعارات. اربط تليجرام من الإعدادات، أو افتح التطبيق واسمح بالإشعارات.'**
+  String get diagProNoChannel;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'السيرفر مابعتش حاجة آخر ١٤ يوم. ده مش طبيعي — ابعتلنا لقطة الشاشة دي.'**
+  String get diagProNothing;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'أغلب الرسايل فشلت — السبب جنب كل واحدة تحت.'**
+  String get diagProFailing;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلسلة شغالة: زاد بيبدأ وبيوصلك.'**
+  String get diagProOk;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير'**
+  String get diagMomentMorning;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصبح على خير'**
+  String get diagMomentNight;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل يومك'**
+  String get diagMomentCloseDay;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد جرعة'**
+  String get diagMomentDoseDue;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعة فاتت'**
+  String get diagMomentDoseMissed;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير جرعة'**
+  String get diagMomentDoseNudge;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد قريب'**
+  String get diagMomentAppointment;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص الأسبوع'**
+  String get diagMomentWeekly;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'حكاية الشهر'**
+  String get diagMomentMonthly;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجلت مصروف'**
+  String get diagIngestRecorded;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنية تأكيدك («أكّد الحركة»)'**
+  String get diagIngestWaiting;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'العقل شافها إعلان أو عرض، مش فلوس اتحركت'**
+  String get diagIngestPromo;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود تحقق أو تنبيه أمان'**
+  String get diagIngestOtp;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة طلب أو توصيل'**
+  String get diagIngestOrder;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة شخصية'**
+  String get diagIngestPersonal;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالهاش علاقة بالفلوس'**
+  String get diagIngestNonFinancial;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'العقل ماردّش وقتها والمصدر مش معروف'**
+  String get diagIngestUnavailable;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة معلومات (رصيد أو تنبيه)'**
+  String get diagIngestInfo;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملية فشلت أو لسه معلّقة'**
+  String get diagIngestFailedTxn;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفس العملية وصلت من مكان تاني واتدمجت'**
+  String get diagIngestMerged;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطأ في السيرفر — هتتجرب تاني'**
+  String get diagIngestServerError;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت ولسه بتتراجع'**
+  String get diagIngestReviewing;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش طريق يوصلك: لا تليجرام ولا إشعارات التطبيق'**
+  String get diagMomentNoChannel;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأجلت أو اتشالت (هدوء أو سقف اليوم)'**
+  String get diagMomentSkipped;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت'**
+  String get diagMomentSent;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنية ميعادها'**
+  String get diagMomentPending;
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل متسجّل ({count})'**
+  String diagPushOn(int count);
+
+  /// Automation diagnostics screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصنفت {kind}'**
+  String diagIngestKind(String kind);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
