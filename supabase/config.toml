@@ -68,6 +68,10 @@ verify_jwt = false
 [functions.sync-admitad-offers]
 verify_jwt = false
 
+# نفس النمط: الكرون مابيحملش JWT، والحارس هيدر X-Dcm-Cron-Secret جوه الدالة.
+[functions.sync-dcm-offers]
+verify_jwt = false
+
 # مقصود إنها false: إشعارات Google Play RTDN بتوصل من Pub/Sub وهي **مبتحملش
 # توكن سوبابيز خالص**، فـ verify_jwt = true كانت بترفضها عند البوابة قبل ما
 # الدالة تشتغل أصلاً. ده السبب الحقيقي إن تتبع التجديد/الإلغاء مكانش شغال —

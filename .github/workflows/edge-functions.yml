@@ -109,6 +109,10 @@ jobs:
         working-directory: supabase/functions/sync-admitad-offers
         run: deno test --allow-all
 
+      - name: Test sync-dcm-offers
+        working-directory: supabase/functions/sync-dcm-offers
+        run: deno test --allow-all
+
       - name: Test zad-support
         working-directory: supabase/functions/zad-support
         run: deno test --allow-all
