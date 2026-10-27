@@ -120,6 +120,7 @@ import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gathering.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
+import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
@@ -651,12 +652,21 @@ export function parseFactSkillExtraction(
  * كتابة ملاحظة ذاكرة + توليد embedding + ربط تلقائي (31.1) — منطق remember() نفسه،
  * مستخرج عشان يتشارك مع أي مصدر تاني بيكتب ذاكرة (استخلاص تلقائي بعد اللفة، 31.2).
  * fail-open في الـembedding/الربط زي ما كان بالظبط — فشلهم مايأثرش على نجاح الحفظ.
+ *
+ * الحساس (sensitiveMemory.ts) مابيتكتبش هنا من غير [time.confirmed]: «sensitive» = محدش سأل العميل.
+ * remember بيركنها ويسأل؛ الاستخلاص بعد اللفة والتأمل الليلي مفيش حد يسألوه، فبتتساب.
  */
 async function writeMemoryNoteWithLinking(
   sb: SupabaseClient, userId: string, scope: string, note: string, confidence: number,
   familyId: string | null = null,
-  time: { validUntil?: string | null; about?: MemoryEntity[] } = {},
-): Promise<{ status: "inserted" | "strengthened" | "conflict" | "expired" } | { status: "error"; message: string }> {
+  time: { validUntil?: string | null; about?: MemoryEntity[]; confirmed?: boolean } = {},
+): Promise<
+  | { status: "inserted" | "strengthened" | "conflict" | "expired" }
+  | { status: "sensitive"; topic: SensitiveTopic }
+  | { status: "error"; message: string }
+> {
+  const topic = time.confirmed ? null : sensitiveTopic(note);
+  if (topic) return { status: "sensitive", topic };
   const { data, error } = await sb.rpc("zad_memory_upsert", {
     p_user: userId, p_scope: scope, p_note: note, p_conf: confidence, p_family_id: familyId,
     p_valid_until: time.validUntil ?? null,
@@ -1305,6 +1315,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
     .order("sent_at", { ascending: false }).limit(1).maybeSingle();
 
+  // ملاحظات حساسة مستنية «صح؟» (ZAD_PLAN ٥.٣): رسالة الأداة بالـid مابتوصلش اللفة الجاية، فاللقطة بتشيلها.
+  const { data: pendingMemory } = await sb.from("zad_memory_pending")
+    .select("id,note,created_at")
+    .eq("user_id", userId).is("resolved_at", null)
+    .gte("created_at", new Date(Date.now() - PENDING_TTL_MS).toISOString())
+    .order("created_at", { ascending: false }).limit(3);
+
   // القرارات الكبيرة اللي اتسجّلت (الشريحة ٢٦) — عشان مايتسجّلش نفس القرار مرتين، ولو العميل سأل «قرار العربية طلع إزاي؟».
   const { data: decisionRows } = await sb.from("zad_decision_log")
     .select("label,decided_at,reviews,outcome").eq("user_id", userId)
@@ -1630,6 +1647,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     engagement: insightHistErr ? null : engagementFrom((insightHistory ?? []) as InsightRow[], Date.now(), { telegram: (telegramBound ?? 0) > 0 }),
     // null = مفيش سؤال صبح اتبعت آخر ٢٠ ساعة.
     asked_this_morning: askedThisMorning(morningRow as { facts?: unknown; sent_at?: string | null } | null),
+    // null = مفيش ملاحظة حساسة مستنية جواب.
+    memory_pending: (pendingMemory ?? []).length
+      ? (pendingMemory as Array<{ id: string; note: string; created_at: string }>).map((p) => ({ id: p.id, note: p.note, asked: p.created_at.slice(0, 10) }))
+      : null,
     // Task: مصادر فشلت في التحميل. مش فاضية — مجهولة. الفرق ده هو كل الفرق بين
     // "مفيش مصاريف" و"مقدرتش أقرا المصاريف"، والعقل كان بيقول الأولانية وهو يقصد التانية.
     data_errors: dataErrors,
@@ -1946,6 +1967,40 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const about = normalizeMemoryEntities(input.about);
       const validUntil = resolveValidUntil(input.valid_until, snap?.now_local?.time_zone ?? "UTC", Date.now());
 
+      // جواب «صح؟» على ملاحظة حساسة اتركنت في لفة قبل كده (sensitiveMemory.ts). الحارس: الصف لازم يكون
+      // اتعمل قبل اللفة دي، يعني العقل سأل والعميل ردّ برسالة جديدة — مش ركن وتأكيد في نفس النفس.
+      const pendingId = input.pending_id;
+      if (pendingId) {
+        if (!ctx.heard) return "مرفوض: الملاحظة الحساسة بتتأكد من كلام العميل في الشات بس.";
+        const { data: row, error: rowErr } = await sb.from("zad_memory_pending")
+          .select("id,scope,note,confidence,family_id,valid_until,about,created_at,resolved_at")
+          .eq("id", pendingId).eq("user_id", userId).maybeSingle();
+        if (rowErr) return `فشل الحفظ: ${rowErr.message}`;
+        if (!row) return "مرفوض: الملاحظة المستنية دي مش موجودة.";
+        const state = pendingAnswerable(row, ctx.startedAt ?? Date.now(), Date.now());
+        if (state === "same_turn") return "مرفوض: لسه ماسألتش العميل. اسأله «صح؟» واستنى رده في رسالته الجاية.";
+        if (state === "resolved") return "الملاحظة دي اتجاوب عليها قبل كده.";
+        if (state === "expired") return "مرفوض: السؤال عليها عدّى عليه أكتر من ٣ أيام — لو العميل لسه عايزها، ابدأ بـremember من الأول.";
+        const resolve = (resolution: "saved" | "declined") =>
+          sb.from("zad_memory_pending").update({ resolution, resolved_at: new Date().toISOString() })
+            .eq("id", row.id).is("resolved_at", null);
+        if (input.pending_yes !== true) {
+          await resolve("declined");
+          return "ماتحفظتش — ومتسألش عليها تاني.";
+        }
+        const saved = await writeMemoryNoteWithLinking(
+          sb, userId, row.scope, row.note, row.confidence, row.family_id,
+          { validUntil: row.valid_until, about: normalizeMemoryEntities(row.about), confirmed: true },
+        );
+        if (saved.status === "error") return `فشل الحفظ: ${saved.message}`;
+        if (saved.status === "conflict") {
+          return "متعارضة مع ملاحظة متخزنة — ماخزنتش حاجة. اسأل العميل أنهي واحدة الصح، وبعدين remember بنفس الملاحظة مع replaces_note_id.";
+        }
+        await resolve("saved");
+        if (saved.status === "expired") return "العميل أكّد، بس الميعاد اللي كانت صحيحة لحده عدّى — ماسجلتهاش.";
+        return "اتحفظت بعد ما العميل أكّد";
+      }
+
       // The customer already settled a conflict this tool reported last turn. The old belief
       // is closed (superseded, not deleted — having been wrong once is evidence too) and the
       // new one inherits its entities; a 'contradicts' link keeps the history visible.
@@ -1968,10 +2023,29 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         const { data: fam } = await sb.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
         shareFamilyId = (fam as { family_id: string } | null)?.family_id ?? null;
       }
+
+      // الحساس بيتركن ويتسأل عليه، مايتكتبش (ZAD_PLAN ٥.٣). الكشف ثابت، والموديل يقدر يزود بـsensitive=true.
+      const topic: SensitiveTopic | "model" | null = sensitiveTopic(input.note) ?? (input.sensitive === true ? "model" : null);
+      if (topic) {
+        // برّه الشات (مبادرة، لفة درس مجبرة) مفيش حد يتسأل، فبتتساب زي الاستخلاص الليلي.
+        if (!ctx.heard) return "ماحفظتهاش: معلومة حساسة ومفيش حد أسأله «صح؟» دلوقتي.";
+        const { data: parked, error: parkErr } = await sb.from("zad_memory_pending").insert({
+          user_id: userId, scope, note: input.note, confidence: input.confidence ?? 0.5,
+          family_id: shareFamilyId, valid_until: validUntil, about, topic,
+        }).select("id").single();
+        if (parkErr) return `فشل الحفظ: ${parkErr.message}`;
+        const label = topic === "model" ? "خاصة" : SENSITIVE_TOPIC_LABEL[topic];
+        return `دي معلومة حساسة (${label}) — ماحفظتهاش. في نفس ردك اسأل العميل سؤال واحد خفيف بكلامه: `
+          + `«أفتكر إن ${input.note}؟ صح؟»${shareFamilyId ? " وقوله إنها هتبان لباقي العيلة" : ""}. `
+          + `في رسالته الجاية نادِ remember بـpending_id="${(parked as { id: string }).id}" `
+          + `وpending_yes = true لو قال آه أو false لو قال لأ، ومتسألش تاني.`;
+      }
+
       const written = await writeMemoryNoteWithLinking(
         sb, userId, scope, input.note, input.confidence ?? 0.5, shareFamilyId, { validUntil, about },
       );
       if (written.status === "error") return `فشل الحفظ: ${written.message}`;
+      if (written.status === "sensitive") return "ماحفظتهاش: حساسة."; // الكشف فوق مسكها قبل كده
       if (written.status === "expired") return "مرفوض: الميعاد اللي الحقيقة دي صحيحة لحده عدّى — ماسجلتهاش.";
       const data = written.status;
 
@@ -4366,6 +4440,18 @@ const REMEMBER_ABOUT_AND_UNTIL = {
       "بس لو الحقيقة مؤقتة («أخويا عندنا لحد الجمعة»، «صايم الشهر ده»، «في إجازة الأسبوع ده»): آخر يوم ليها " +
       "YYYY-MM-DD. من غيرها الملاحظة دائمة.",
   },
+  // الحساس مايتحفظش غير بعد «صح؟» (ZAD_PLAN ٥.٣، sensitiveMemory.ts).
+  sensitive: {
+    type: "boolean",
+    description:
+      "true لو الملاحظة خاصة أوي لو اتفهمت غلط أو اتشاركت تجرح (صحة، حمل، خلافات بيت، دين، قضايا) والكشف " +
+      "ممكن يفوّتها. الملاحظة مش هتتحفظ، والأداة هتقولك تسأل العميل «صح؟».",
+  },
+  pending_id: {
+    type: "string",
+    description: "جواب العميل على ملاحظة حساسة سألته عليها: الـid من رسالة الأداة أو من memory_pending، ومعاه pending_yes.",
+  },
+  pending_yes: { type: "boolean", description: "true = قال «آه/صح» فتتحفظ، false = قال «لأ» فمش هتتحفظ ولا تتسأل تاني." },
 } as const;
 
 const TOOLS: ToolDef[] = [
@@ -8123,7 +8209,8 @@ ${campaignAndTasteRules(snap)}${weatherRule(snap)}   - ${replyCadenceRule(snap) 
    - **اكتب الاستنتاج مش الجملة الخام.** "عنده عيّلين في سن المدرسة (أحمد ونور)" أنفع من نسخ كلامه. وحطّ "confidence" صادقة: تصريح مباشر عالي، استنتاج من إشارة واحدة منخفض.
    - **متستنتجش من معاملة واحدة.** خصم يوم ٢٧ مرة واحدة مش ميعاد راتب؛ تكراره شهرين هو اللي يبقى نمط. الملاحظة الغلط بتفضل وتوجّه كل قرار جاي.
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
-   - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
+   - **الحساس بيتسأل الأول**: صحة، حمل، خلافات بيت، دين، قضايا — remember هترجّعلك إنها اتركنت ومااتحفظتش؛ اسأل «صح؟» زي ما قالتلك ومن غير ما تقول «حساسة».
+${snap?.memory_pending ? `   - **memory_pending** = ملاحظات حساسة سألت عليها ولسه مستنية. لو رسالة العميل جواب عليها («آه»، «صح»، «لأ مش كده») نادِ remember بـpending_id وpending_yes، وقوله في جملة إنك هتفتكرها أو مش هتفتكرها. لو رسالته عن حاجة تانية، ماتفتحهاش.\n` : ""}   - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
 ${((snap?.memory ?? []) as Array<{ scope?: string }>).some((m) => m.scope === "trait") ? `   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.\n` : ""}
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
