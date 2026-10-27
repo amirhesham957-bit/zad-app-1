@@ -8718,6 +8718,37 @@ async function handleRequest(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
     }
 
+    // سعر البنزين الشهري (tripCost.ts، ZAD_PLAN ٤.١٠): لكل بلد فيها عملاء ومااتبحثتش آخر ٢٥ يوم، بحث واحد في
+    // zad-core-intelligence (fuel_price)، والرقم بمصدره في zad_fuel_prices. فشل البحث = البلد بتتجرب الشهر الجاي.
+    if (body.action === "fuel_price_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbFuel = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: targets, error: targetErr } = await sbFuel.rpc("zad_fuel_price_targets");
+      if (targetErr) {
+        console.error("[fuel_price_run] targets failed:", targetErr.message);
+        return new Response(JSON.stringify({ error: "targets_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const countries: Array<Record<string, unknown>> = [];
+      for (const t of (targets ?? []) as Array<{ country: string }>) {
+        const reply = await callCoreIntel("fuel_price", { country: t.country }, "fuel_price_run", 45_000);
+        const fuel = reply?.fuel as { grade?: string; price?: number; source_url?: string } | null | undefined;
+        let saved = false;
+        if (fuel?.price && fuel.grade && fuel.source_url && typeof reply?.currency === "string") {
+          const { error } = await sbFuel.from("zad_fuel_prices").upsert({
+            country: t.country, grade: fuel.grade, price: fuel.price, currency: reply.currency,
+            source_url: fuel.source_url, found_at: new Date().toISOString(),
+          });
+          if (error) console.error("[fuel_price_run] save failed:", error.message);
+          saved = !error;
+        }
+        countries.push({ country: t.country, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, source: reply?.source ?? null, price: fuel?.price ?? null, saved });
+      }
+      console.log("[fuel_price_run]", JSON.stringify(countries));
+      return new Response(JSON.stringify({ ok: true, countries }), { headers: CORS_HEADERS });
+    }
+
     // مجموعة اختبار البنك على الموديل (evals/bankEval.ts، ZAD_PLAN ٣.٧): كل رسالة في
     // testdata/bank_corpus.json على نفس برومبت البوابة اللي الإشعار الحقيقي بيعدّي عليه، على مفتاح
     // التقييم. مابيكتبش أي حاجة في حساب حد — بيصنّف بس. كل رسالة صف في zad_eval_results

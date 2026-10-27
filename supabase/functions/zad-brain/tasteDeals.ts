@@ -17,6 +17,7 @@ import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { meaningfulWords, offerMatchesNeed, stapleGroup } from "./productIdentity.ts";
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
+import { type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -58,6 +59,8 @@ export interface TasteDeal {
   tight?: boolean;
   /** الفلوس مرتاحة والصنف بيتخزّن والبيت بيشتريه، والعرض فيه خصم: فرصة تخزين (٤.٨). */
   stock?: boolean;
+  /** المشوار بالعربية للمحل ده من نقطته (٤.١٠) — بس لو المحل ليه إحداثيات وسعر البنزين معروف. */
+  trip?: Trip;
   /** الحاجة زي ما العميل قالها في «عايز أشتري …» (ZAD_PLAN ٥.٨ (٣)) — العرض ده على نية مش على احتياج. */
   intent?: string;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
@@ -214,6 +217,7 @@ export function pickDeal(
       favorite: favorites.some((f) => sameName(f, store)),
       nearby: nearby.some((n) => sameName(n, store)),
       brand: offerBrand(item, brands),
+      ...(d?.trip && typeof d.trip === "object" ? { trip: d.trip as Trip } : {}),
       ...(tight ? { tight: true } : {}),
       ...(!tight && (hasBefore || hasDiscount) && stockable.has(brandWords(item).group ?? -1) ? { stock: true } : {}),
     });
@@ -232,6 +236,8 @@ export function pickDeal(
 
 export interface StoredDealRow {
   store: string;
+  lat?: number | string | null;
+  lng?: number | string | null;
   item_name: string;
   price: number | string;
   price_before: number | string | null;
@@ -240,17 +246,28 @@ export interface StoredDealRow {
   valid_until: string | null;
 }
 
-/** صفوف zad_deals بشكل نتيجة البحث اللي [pickDeal] بيقراه: الخصم من السعر قبل العرض، والمصدر معاه. */
-export function storedDeals(rows: readonly StoredDealRow[] | null | undefined): Array<Record<string, unknown>> {
-  return (rows ?? []).map((r) => {
+/**
+ * صفوف zad_deals بشكل نتيجة البحث اللي [pickDeal] بيقراه: الخصم من السعر قبل العرض، والمصدر معاه. [trip] = المشوار
+ * للمحل (٤.١٠): لو بياكل التوفير كله العرض بيتشال هنا، وإلا بيمشي مع العرض عشان يتقال.
+ */
+export function storedDeals(
+  rows: readonly StoredDealRow[] | null | undefined,
+  trip: (r: StoredDealRow) => Trip | null = () => null,
+): Array<Record<string, unknown>> {
+  const out: Array<Record<string, unknown>> = [];
+  for (const r of rows ?? []) {
     const price = Number(r.price);
     const before = Number(r.price_before);
     const discount = Number.isFinite(before) && before > price && price > 0 ? ((before - price) / before) * 100 : null;
-    return {
+    const t = trip(r);
+    if (tripEatsSaving(t, Number.isFinite(before) && before > price ? before - price : null)) continue;
+    out.push({
       item: r.item_name, store: r.store, price, price_before: Number.isFinite(before) ? before : null, discount_percent: discount, note: null,
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
-    };
-  });
+      ...(t ? { trip: t } : {}),
+    });
+  }
+  return out;
 }
 
 /**
@@ -385,9 +402,12 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
         await nearbySource.search({ ...point, tag: "supermarket", radius_meters: NEARBY_RADIUS_METERS }, userId).catch(() => null),
       )
       : [];
-    const { data: stored, error: storedErr } = await sb.from("zad_deals")
-      .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
-      .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
+    const [{ data: stored, error: storedErr }, { data: fuelRow }] = await Promise.all([
+      sb.from("zad_deals")
+        .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng")
+        .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300),
+      sb.from("zad_fuel_prices").select("price,currency,found_at").eq("country", country).maybeSingle(),
+    ]);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
     // النية الأول: عرض على حاجة قال إنه عايزها يغلب محله المعتاد على حاجة من القايمة.
     const pick = (raw: unknown): TasteDeal | null => {
@@ -395,7 +415,10 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       if (wanted) return { ...wanted, intent: wants.find((w) => offerMatchesNeed(w, wanted.item)) };
       return pickDeal(raw, items, favorites, skip, nearby, tight, brands, stockable);
     };
-    const fromStore = pick(storedDeals(stored as StoredDealRow[] | null));
+    // ٤.١٠: المشوار من نقطته (مقرّبة لكيلو) للمحل اللي ليه إحداثيات، بسعر بنزين بلده.
+    const tripOf = (r: StoredDealRow & { currency?: string | null }) =>
+      tripCost(point, r, usableFuel(fuelRow as { price?: number; currency?: string; found_at?: string } | null, r.currency ?? null, now));
+    const fromStore = pick(storedDeals(stored as StoredDealRow[] | null, tripOf));
     if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
     return pick((res as { deals?: unknown } | null)?.deals);

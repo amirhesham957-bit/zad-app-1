@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
+import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import { instagramProbe, youtubeProbe } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
@@ -2739,6 +2740,23 @@ async function handle(req: Request): Promise<Response> {
         const parsed = await callJsonModel(system, user, 1500, "routine");
         if (parsed === null) return jsonResponse({ ok: false, reason: "no_model", hits: hits.length, source: lastWebSearchSource });
         return jsonResponse({ ok: true, deals: readStoreDeals(parsed, hits, currency, new Date()), hits: hits.length, source: lastWebSearchSource });
+      }
+
+      // ──────────────────────────────────────────────
+      // FUEL_PRICE — this month's per-litre fuel price in one country (ZAD_PLAN 4.10). Service role
+      // only: zad-brain's monthly fuel_price_run calls it per country and keeps the answer in
+      // zad_fuel_prices, with the result it came from.
+      // ──────────────────────────────────────────────
+      case "fuel_price": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const market = marketOf(payload?.country);
+        const now = new Date();
+        const hits = await webSearchSnippets(fuelPriceQuery(market.code, market.name, now.getUTCFullYear()), 8, market.code);
+        if (hits.length === 0) return jsonResponse({ ok: true, fuel: null, hits: 0, source: lastWebSearchSource });
+        const { system, user } = fuelPricePrompt(market.code, market.name, market.currency, hits, now.toISOString().slice(0, 10));
+        const parsed = await callJsonModel(system, user, 300, "routine");
+        if (parsed === null) return jsonResponse({ ok: false, reason: "no_model", hits: hits.length, source: lastWebSearchSource });
+        return jsonResponse({ ok: true, fuel: readFuelPrice(parsed, hits, market.code, market.currency), currency: market.currency, hits: hits.length, source: lastWebSearchSource });
       }
 
       // ──────────────────────────────────────────────
