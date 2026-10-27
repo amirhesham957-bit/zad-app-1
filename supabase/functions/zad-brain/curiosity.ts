@@ -335,7 +335,7 @@ export const ASKED_RELEVANT_MS = 20 * 3_600_000;
 
 export interface AskedThisMorning {
   question: string;
-  kind: "profile" | "curiosity" | "gift" | "occasion";
+  kind: "profile" | "curiosity" | "gift" | "occasion" | "event_reserve";
   /** خانة zad_customer_profile لو السؤال من أسئلة الملف. */
   field?: string;
   record?: string;
@@ -373,6 +373,15 @@ export function askedThisMorning(
       ...(typeof gift.amount === "number" ? { amount: gift.amount } : {}),
       ...(typeof gift.currency === "string" ? { currency: gift.currency } : {}),
       ...(typeof gift.deadline === "string" ? { deadline: gift.deadline } : {}),
+      sent_at: row.sent_at,
+    };
+  }
+  const reserve = facts.event_reserve as { title?: unknown; on?: unknown } | undefined;
+  if (facts.daily_question_kind === "event_reserve" && reserve && typeof reserve === "object" && typeof reserve.title === "string") {
+    // ZAD_PLAN ٥.٦ — «نحجز مبلغ لرمضان؟»: for = عنوان الهدف، deadline = يوم الحدث.
+    return {
+      question, kind: "event_reserve", for: reserve.title,
+      ...(typeof reserve.on === "string" ? { deadline: reserve.on } : {}),
       sent_at: row.sent_at,
     };
   }

@@ -29,6 +29,7 @@ import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
+import { eventAhead, eventAheadQuestion, SEASON_ASK_DAYS, TRAVEL_ASK_DAYS, type EventAhead } from "./eventAhead.ts";
 import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
 import { type CadenceAppointment, type ReplyCadence, replyCadence, replyCadenceMomentLine } from "./replyCadence.ts";
 
@@ -157,6 +158,8 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه occasions: in_days = 0 وfor = null ⇒ ابدئي بتهنئة فرحانة بعيد ميلاده (أو ذكرى جوازه لو anniversary)؛ " +
     "in_days = 0 وfor اسم ⇒ فكّريه إن النهارده عيد ميلاد الشخص ده يكلّمه ويهنّيه؛ in_days = 3 ⇒ فكّريه إنه بعد ٣ أيام. " +
     "لو daily_question_kind = gift فالسؤال عرض: تحجزي gift_offer.amount من المتاح لهدية gift_offer.for — قوليه بالرقم والعملة. " +
+    "لو daily_question_kind = event_reserve فالسؤال عن حدث كبير جاي (event_reserve.title بعد in_days يوم): اسألي تحبي تحجزي " +
+    "مبلغ ليه وقد إيه — من غير ما تقترحي رقم. " +
     "ماتخترعيش مناسبة مش في occasions. " +
     "لو فيه weather_alert: قوليه بوضوح بعد التحية على طول ومعاه نصيحته (ده أمان، حتى لو quiet). " +
     "لو فيه weather: نص جملة عن جو النهارده بالأرقام اللي فيه بس (المدينة والعظمى). " +
@@ -1263,20 +1266,23 @@ export async function morningFacts(
       on: occasionDateLabel(giftFor.md),
     }
     : null;
+  // القرارات الكبيرة في وقتها (eventAhead.ts، ZAD_PLAN ٥.٦): قبل رمضان/ذي الحجة/المدارس بـ١٤ يوم، أو السفر بـ٣ ⇒
+  // «نحجز مبلغ ليه؟». نفس خانة سؤال اليوم، بعد الهدية (ميعادها أقرب)، ومش في ظرف.
+  const bigEvent = quiet || gift ? null : await loadEventAhead(sb, userId, local, dayStart, profile ?? null);
   // undefined = the read failed: ask nothing rather than ask what may be known.
-  const ask = profile === undefined || quiet || gift ? null : dailyQuestion(profile, local.date);
+  const ask = profile === undefined || quiet || gift || bigEvent ? null : dailyQuestion(profile, local.date);
   // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
   // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
-  const occasionAsk = profile === undefined || ask || gift || quiet ? null : occasionQuestion(occasionRows, people, local.date);
+  const occasionAsk = profile === undefined || ask || gift || bigEvent || quiet ? null : occasionQuestion(occasionRows, people, local.date);
   const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
   // «دول نفس الحاجة؟» (productIdentity.ts) قبل الفضول العادي: من غير اسم واحد للصنف مفيش معدل
   // استهلاك ولا «هيخلص إمتى؟». نفس الخانة ونفس الشروط — سؤال واحد في اليوم.
-  const curious = profile === undefined || ask || gift || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
+  const curious = profile === undefined || ask || gift || bigEvent || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
     ? null
     : (await sameProductAsk(sb, userId)) ?? await curiosityQuestion(sb, userId, Date.parse(dayStart));
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
   // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
-  const newcomer = quiet || gift ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
+  const newcomer = quiet || gift || bigEvent ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
   // الجو (weather.ts): أزمة جو بتتقال حتى في الظرف (أمان)، وتبديل هدوم الموسم مرة في الموسم ومش في الظرف.
   const weather = await morningWeather(sb, userId, local, (profile as { city?: string | null } | null | undefined)?.city ?? null);
   const alert = weatherAlert(weather, local.date);
@@ -1292,7 +1298,7 @@ export async function morningFacts(
   // وقت العيلة قبل الويك إند (familyTime.ts): مش في ظرف؛ والميزانية في خطر أو «أنا مفلس» ⇒ أفكار ببلاش.
   const together = quiet ? null : await familyTimeFor(sb, userId, local.date, weather, budget, profile ?? null, threat);
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
-  const medAsk = quiet || gift || newcomer ? null : await doseTimesAsk(sb, userId);
+  const medAsk = quiet || gift || bigEvent || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
@@ -1306,6 +1312,9 @@ export async function morningFacts(
         daily_question: `أحجزلك ${gift.amount}${gift.currency ? ` ${gift.currency}` : ""} من المتاح لهدية ${gift.for}؟`,
         daily_question_kind: "gift",
       }
+      : {}),
+    ...(bigEvent
+      ? { daily_question: eventAheadQuestion(bigEvent), daily_question_kind: "event_reserve", event_reserve: bigEvent }
       : {}),
     ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
     ...(curious
@@ -1338,13 +1347,47 @@ export async function morningFacts(
   };
 }
 
+/** الحدث الكبير اللي النهارده يومه يتسأل عنه. فشل أي قراية = مفيش سؤال (أحسن من سؤال غلط). */
+async function loadEventAhead(
+  sb: SupabaseClient,
+  userId: string,
+  local: { date: string; time_zone: string },
+  dayStart: string,
+  profile: Record<string, unknown> | null,
+): Promise<EventAhead | null> {
+  try {
+    const start = Date.parse(dayStart);
+    const seasonDay = new Date(Date.parse(`${local.date}T00:00:00Z`) + SEASON_ASK_DAYS * 86_400_000).toISOString().slice(0, 10);
+    const [{ data: trips, error: tripErr }, { data: windows }, { data: u }] = await Promise.all([
+      sb.from("zad_appointments").select("title,kind,starts_at,recurrence,status").eq("user_id", userId).eq("status", "upcoming")
+        .gte("starts_at", new Date(start + TRAVEL_ASK_DAYS * 86_400_000).toISOString())
+        .lt("starts_at", new Date(start + (TRAVEL_ASK_DAYS + 1) * 86_400_000).toISOString()).limit(10),
+      sb.from("seasonal_event_windows").select("start_date,seasonal_events(slug,family_id)").eq("start_date", seasonDay).limit(10),
+      sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+    ]);
+    if (tripErr) return null;
+    return eventAhead({
+      localDate: local.date,
+      timeZone: local.time_zone,
+      country: (u as { country?: string | null } | null)?.country ?? null,
+      kidsCount: Number(profile?.kids_count) || 0,
+      seasonWindows: ((windows ?? []) as Array<{ start_date: string; seasonal_events: { slug?: string; family_id?: string | null } | null }>)
+        .filter((w) => w.seasonal_events?.slug && !w.seasonal_events.family_id)
+        .map((w) => ({ slug: w.seasonal_events!.slug as string, start_date: w.start_date })),
+      appointments: (trips ?? []) as Array<Record<string, string | null>>,
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** لحظة السؤال التاني في أول ٧٢ ساعة (newcomer.ts) — ٤ العصر بتوقيت العميل (20261010170000). */
 export const NEWCOMER_MOMENT = "newcomer_question";
 
 /** facts السؤال من غير حقول سؤال تاني ممكن تكون اتحطت قبله في نفس التحية. */
 function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
   return {
-    daily_question_field: undefined, curiosity: undefined, occasion_ask: undefined, gift_offer: undefined,
+    daily_question_field: undefined, curiosity: undefined, occasion_ask: undefined, gift_offer: undefined, event_reserve: undefined,
     ...newcomerFacts(q),
   };
 }
