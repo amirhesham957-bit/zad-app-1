@@ -56,6 +56,7 @@ import {
   dealKeyboard, parseDealCallback, dealReply,
   learningKeyboard, parseLearningCallback, learningReply,
   memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
+  habitTrialBlock, parseHabitTrialCallback, habitTrialReply, type HabitTrial,
   parseAmountWrongCallback, parseDoseReply, parseYesNoReply, type TransactionProposalDecision, doseSlots,
 } from "./telegram.ts";
 import {
@@ -184,6 +185,17 @@ async function memoryChecksForTask(sb: SupabaseClient, userId: string, taskId: s
     .select("id,note,position").eq("user_id", userId).eq("task_id", taskId).is("answer", null);
   if (error) console.error("[memory_check] lookup failed:", error.message);
   return ((data ?? []) as MemoryCheck[]);
+}
+
+/** تجربة الأسبوعين (٥.٤) اللي اتقترحت أو اتقاست في مهمة [taskId] ولسه مستنية رد. أي فشل = من غيرها. */
+async function habitTrialForTask(sb: SupabaseClient, userId: string, taskId: string): Promise<HabitTrial | null> {
+  const { data, error } = await sb.from("zad_habit_trials")
+    .select("id,kind,category,currency,status,baseline_weekly,result_weekly")
+    .eq("user_id", userId)
+    .or(`and(proposal_task_id.eq.${taskId},status.eq.proposed),and(result_task_id.eq.${taskId},status.eq.measured)`)
+    .maybeSingle();
+  if (error) console.error("[habit_trial] lookup failed:", error.message);
+  return (data as HabitTrial | null) ?? null;
 }
 
 /** Direct Telegram API call, not a grammY ctx.reply — this fires OUTSIDE any inbound
@@ -2018,6 +2030,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // تجربة الأسبوعين (ZAD_PLAN ٥.٤): «نجرب / لأ» ثم «ثبّتها / بطّلها» — المرحلة والملكية جوه الـRPC.
+  const habitTrial = parseHabitTrialCallback(data);
+  if (habitTrial) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const { data: result, error } = await sb.rpc("zad_habit_trial_answer_service", {
+      p_user: userId, p_trial: habitTrial.trialId, p_yes: habitTrial.yes,
+    });
+    if (error) console.error("[habit_trial] rpc failed:", error.message);
+    await ctx.reply(habitTrialReply(error ? null : result as Parameters<typeof habitTrialReply>[0]));
+    return;
+  }
+
   // مراجعة الذاكرة (ZAD_PLAN ٥.٣): زرار لكل ملاحظة — بيتشال لوحده بس، عشان الباقيين يفضلوا يتجاوبوا.
   const memoryCheck = parseMemoryCheckCallback(data);
   if (memoryCheck) {
@@ -2880,6 +2904,9 @@ Deno.serve(async (req: Request) => {
       // مراجعة الذاكرة (٥.٣): الملاحظات مترقّمة تحت الرسالة وزرارين لكل واحدة — النص من الجدول، مش من الموديل.
       const memoryChecks = dismissRows.length ? await memoryChecksForTask(sb, user_id, dismiss_task_id!) : [];
       const memoryBlock = memoryChecks.length ? memoryCheckBlock(memoryChecks) : null;
+      // تجربة الأسبوعين (٥.٤): السلوك والأرقام من الجدول تحت الرسالة، وزرارين المرحلة.
+      const habitTrial = dismissRows.length ? await habitTrialForTask(sb, user_id, dismiss_task_id!) : null;
+      const habitBlock = habitTrial ? habitTrialBlock(habitTrial) : null;
       const closeDay = !dose_moment_id && close_day_moment_id && /^[0-9a-fA-F-]{36}$/.test(close_day_moment_id);
       // رسالة الليل الواحدة (ZAD_PLAN ١.٥): «اقفل يومك» بتشيل أسئلة المخزون بأزرارها، بنفس حراس
       // السؤال لوحده. فشل أي حاجة هنا = القفلة لوحدها، والسؤال الاحتياطي مابيطلعش الليلة دي.
@@ -2908,9 +2935,9 @@ Deno.serve(async (req: Request) => {
         : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
         ? dealKeyboard(deal_moment_id)
         : mapRow || amazonRows.length || dismissRows.length
-        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...(memoryBlock?.rows ?? []), ...dismissRows]
+        ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...(memoryBlock?.rows ?? []), ...(habitBlock?.rows ?? []), ...dismissRows]
         : undefined;
-      const shown = memoryBlock ? `${body}\n\n${memoryBlock.text}` : body;
+      const shown = [body, memoryBlock?.text, habitBlock?.text].filter(Boolean).join("\n\n");
       await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${shown}`, nightQuestions?.text ?? null), keyboard);
       if (nightQuestions) await recordCheckinTurn(sb, user_id, nightQuestions.items);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.

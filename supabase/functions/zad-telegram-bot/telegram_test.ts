@@ -582,3 +582,37 @@ Deno.test("memory check reply: names the note's number, and says a failed write 
   assertEquals(memoryCheckReply({ ok: true, already: true, answer: "no", position: 2 }), "ردك على دي (٢) اتسجّل قبل كده.");
   assert(memoryCheckReply(null).startsWith("معلش"));
 });
+
+import { habitTrialBlock, habitTrialReply, parseHabitTrialCallback } from "./telegram.ts";
+
+Deno.test("habit trial (5.4): the proposal and the result carry the table's numbers and their own buttons", () => {
+  const id = "11111111-2222-3333-4444-555555555555";
+  const base = { id, kind: "eat_out_less", category: "المطاعم", currency: "EGP", baseline_weekly: "600.00", result_weekly: null };
+  const proposed = habitTrialBlock({ ...base, status: "proposed" })!;
+  assert(proposed.text.includes("مرة واحدة بس في الأسبوع") && proposed.text.includes("٦٠٠ EGP"));
+  assertEquals(proposed.rows[0].map((b) => b.text), ["✅ نجرب أسبوعين", "🙅 لأ شكراً"]);
+  assertEquals(parseHabitTrialCallback(proposed.rows[0][0].callback_data!), { trialId: id, yes: true });
+  assertEquals(parseHabitTrialCallback(proposed.rows[0][1].callback_data!), { trialId: id, yes: false });
+  assert(proposed.rows[0].every((b) => new TextEncoder().encode(b.callback_data!).length <= 64));
+
+  const measured = habitTrialBlock({ ...base, status: "measured", result_weekly: 299.6 })!;
+  assert(measured.text.includes("قبل التجربة ٦٠٠ EGP") && measured.text.includes("أثناءها ٣٠٠ EGP"));
+  assertEquals(measured.rows[0].map((b) => b.text), ["✅ ثبّتها", "❌ بطّلها"]);
+
+  assertEquals(habitTrialBlock({ ...base, status: "active" }), null);
+  assertEquals(habitTrialBlock({ ...base, status: "measured" }), null);
+  assertEquals(habitTrialBlock({ ...base, kind: "unknown", status: "proposed" }), null);
+});
+
+Deno.test("habit trial (5.4): callbacks are strict, and every answer has its own reply", () => {
+  const id = "11111111-2222-3333-4444-555555555555";
+  assertEquals(parseHabitTrialCallback(`mc:${id}:y`), null);
+  assertEquals(parseHabitTrialCallback(`ht:${id}:x`), null);
+  assertEquals(parseHabitTrialCallback("ht:nope:y"), null);
+  const replies = ["start", "decline", "keep", "drop"].map((answer) => habitTrialReply({ ok: true, answer }));
+  assertEquals(new Set(replies).size, 4);
+  assert(habitTrialReply({ ok: true, answer: "start" }).includes("أسبوعين"));
+  assert(habitTrialReply(null).includes("ماقدرتش"));
+  assert(habitTrialReply({ ok: false }).includes("مابقتش موجودة"));
+  assert(habitTrialReply({ ok: true, already: true }).includes("قبل كده"));
+});

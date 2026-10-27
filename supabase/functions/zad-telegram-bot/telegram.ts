@@ -787,6 +787,74 @@ export function memoryCheckReply(result: { ok?: boolean; already?: boolean; answ
   return result.answer === "yes" ? `تمام ✅ هفضل فاكرها${n}.` : `تمام، شلتها${n} — شكراً إنك صحّحتني.`;
 }
 
+// حلقة المبادرة (ZAD_PLAN ٥.٤): "ht:" + uuid(36) + ":" + حرف = ٤١ بايت. نفس الزرارين بيبدأوا التجربة وبعدها بيثبّتوها،
+// والمرحلة من الصف. الأرقام من الجدول، مش من الموديل.
+
+export interface HabitTrial {
+  id: string;
+  kind: string;
+  category: string;
+  currency: string | null;
+  status: string;
+  baseline_weekly: number | string;
+  result_weekly: number | string | null;
+}
+
+const HABIT_BEHAVIOUR: Record<string, string> = {
+  eat_out_less: "أكل برّه أو دليفري مرة واحدة بس في الأسبوع",
+  one_grocery_trip: "مشوار بقالة واحد في الأسبوع بقايمة، بدل كذا مرة",
+};
+
+const money = (v: number | string | null, currency: string | null) =>
+  `${arabicNumber(Math.round(Number(v) || 0))}${currency ? ` ${currency}` : ""}`;
+
+/** سطور التجربة تحت رسالة الموديل وزرارينها؛ null لو المرحلة مافيهاش سؤال أو النوع مش معروف. */
+export function habitTrialBlock(trial: HabitTrial): { text: string; rows: InlineKeyboardButton[][] } | null {
+  const behaviour = HABIT_BEHAVIOUR[trial.kind];
+  if (!behaviour) return null;
+  if (trial.status === "proposed") {
+    return {
+      text: `🧪 التجربة: ${behaviour}، لمدة أسبوعين.
+دلوقتي: ${money(trial.baseline_weekly, trial.currency)} في الأسبوع على «${trial.category}».`,
+      rows: [[
+        { text: "✅ نجرب أسبوعين", callback_data: `ht:${trial.id}:y` },
+        { text: "🙅 لأ شكراً", callback_data: `ht:${trial.id}:n` },
+      ]],
+    };
+  }
+  if (trial.status === "measured" && trial.result_weekly !== null) {
+    return {
+      text: `🧪 «${trial.category}» في الأسبوع: قبل التجربة ${money(trial.baseline_weekly, trial.currency)} · أثناءها ${money(trial.result_weekly, trial.currency)}.`,
+      rows: [[
+        { text: "✅ ثبّتها", callback_data: `ht:${trial.id}:y` },
+        { text: "❌ بطّلها", callback_data: `ht:${trial.id}:n` },
+      ]],
+    };
+  }
+  return null;
+}
+
+export function parseHabitTrialCallback(data: string): { trialId: string; yes: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "ht" || (parts[2] !== "y" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { trialId: parts[1], yes: parts[2] === "y" };
+}
+
+/** الرد بعد zad_habit_trial_answer_service. `null` = الكتابة فشلت — يتقال صراحةً. */
+export function habitTrialReply(result: { ok?: boolean; already?: boolean; answer?: string } | null): string {
+  if (!result) return "معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.";
+  if (!result.ok) return "التجربة دي مابقتش موجودة.";
+  if (result.already) return "تمام، ردك اتسجّل قبل كده.";
+  switch (result.answer) {
+    case "start": return "يلا بينا ✅ التجربة بدأت النهارده لمدة أسبوعين، وبعدها هقولك النتيجة بالأرقام.";
+    case "decline": return "تمام، مش هقترحها تاني الفترة دي.";
+    case "keep": return "تمام ✅ ثبّتناها — هفتكرها وأبني عليها.";
+    case "drop": return "تمام، بطّلناها. شكراً إنك جرّبت.";
+    default: return "تمام.";
+  }
+}
+
 /** الرد بعد zad_salary_cycle_service. `null` = الكتابة فشلت — يتقال صراحةً. */
 export function salaryReply(result: { ok?: boolean; already?: boolean; answer?: string; day?: number } | null): string {
   if (!result) return "معلش، ماقدرتش أغيّر الدورة دلوقتي — جرّب تاني بعد شوية.";
