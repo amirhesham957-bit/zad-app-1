@@ -256,6 +256,9 @@ export async function callModel(opts: {
   responseSchema?: Record<string, unknown>;
   /** موديل جروك للنداء ده بدل `ZAD_GROQ_TEXT_MODEL`: القرارات الصغيرة على الأصغر والأسرع. */
   groqModel?: string;
+  /** اسم أداة لازم الموديل ينادِيها (جيميناي: `mode: ANY` عليها بس؛ جروك: `tool_choice`). لمحاولة
+   *  تانية بعد لفة الرسالة فيها طلب واضح والموديل رد بكلام من غير أداة (index.ts، forcedLogRetry). */
+  forceTool?: string;
 }): Promise<ModelReply> {
   const { provider } = cfg();
   if (provider !== "gemini") {
@@ -551,6 +554,7 @@ async function sendGemini(o: {
   /** ما فضل من ميزانية السلسلة؛ callModel بيحدده. */
   timeoutMs?: number;
   responseSchema?: Record<string, unknown>;
+  forceTool?: string;
 }, retriedWithoutThinkingConfig = false, withDummySignatures = false): Promise<ModelReply> {
   const timeoutMs = o.timeoutMs ?? GEMINI_CALL_TIMEOUT_MS;
   const contents = buildGeminiContents(o.history, withDummySignatures);
@@ -570,6 +574,7 @@ async function sendGemini(o: {
           parameters: sanitizeSchema(t.input_schema),
         })),
       }],
+      ...(o.forceTool ? { toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [o.forceTool] } } } : {}),
     }),
     generationConfig: {
       maxOutputTokens: o.maxTokens ?? 1500,
@@ -793,6 +798,7 @@ const GROQ_REQUEST_BUDGET_TOKENS = 6800;
 async function sendGroq(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number; groqSystem?: string; groqTools?: ToolDef[];
   responseSchema?: Record<string, unknown>;
+  forceTool?: string;
 }): Promise<ModelReply> {
   o = fitForGroq({ ...o, system: o.groqSystem ?? o.system, tools: o.groqTools ?? o.tools });
   // تفكير gpt-oss «low» + إجابة JSON صغيرة: أقل من ٥٠٠ كان بيرجع فاضي (نفس قياس core-intelligence).
@@ -841,6 +847,7 @@ const groqDeadKeys = new DeadKeys();
 async function sendOpenAICompatible(o: {
   model: string; system: string; tools: ToolDef[]; history: Turn[]; maxTokens?: number;
   responseSchema?: Record<string, unknown>;
+  forceTool?: string;
 }, override?: { key: string; baseUrl: string; who: string }): Promise<ModelReply> {
   const { key, baseUrl } = override ?? cfg();
   const who = override?.who ?? "openai_compatible";
@@ -884,6 +891,9 @@ async function sendOpenAICompatible(o: {
             name: t.name, description: t.description, parameters: t.input_schema,
           },
         })),
+        ...(o.forceTool && o.tools.some((t) => t.name === o.forceTool)
+          ? { tool_choice: { type: "function", function: { name: o.forceTool } } }
+          : {}),
       } : {}),
       // قرار مصنّف: JSON بس. gpt-oss بيفكر قبل ما يرد والتفكير من max_tokens — «low» بيسيب
       // مكان للإجابة (zad-core-intelligence اتقاس عليه: ٥٠ توكن = رد فاضي).

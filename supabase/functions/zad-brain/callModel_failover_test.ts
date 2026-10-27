@@ -511,3 +511,23 @@ Deno.test("كل مفاتيح Groq رجعت 429 بانتظار طويل → فش�
     s.restore();
   }
 });
+
+Deno.test("forceTool: Gemini is told to call that one tool, Groq gets tool_choice (ZAD_PLAN 3.3)", async () => {
+  const { calls, restore } = stubFetch((url) => (url.includes("generativelanguage") ? overloaded503() : new Response(
+    JSON.stringify({ choices: [{ message: { content: "تمام" } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }),
+    { status: 200 },
+  )));
+  try {
+    await callModel({ ...BASE, forceTool: "t" });
+    const gemini = calls.find((c) => c.url.includes("generativelanguage"))!;
+    assertEquals(gemini.body.toolConfig, { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["t"] } });
+    const groq = calls.find((c) => !c.url.includes("generativelanguage"));
+    assertEquals(groq?.body.tool_choice, { type: "function", function: { name: "t" } });
+    // من غيره مفيش toolConfig خالص.
+    calls.length = 0;
+    await callModel(BASE);
+    assertEquals(calls.find((c) => c.url.includes("generativelanguage"))!.body.toolConfig, undefined);
+  } finally {
+    restore();
+  }
+});
