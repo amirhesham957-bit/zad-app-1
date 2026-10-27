@@ -10,7 +10,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { secretMatches } from "../_shared/cronSecret.ts";
-import { couponsOf, DCM_API, DCM_PAGE_SIZE, type DcmCoupon, mapCoupon } from "./dcm.ts";
+import { couponsOf, DCM_API, DCM_PAGE_SIZE, type DcmCoupon, describeAnswer, mapCoupon } from "./dcm.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -29,6 +29,9 @@ Deno.serve(async (req) => {
   if (!key) return json({ error: "no_api_key" }, 500);
 
   const coupons: DcmCoupon[] = [];
+  // Zero coupons can mean none assigned, an answer shaped otherwise, or a refused key answered with a 200:
+  // the dry run shows the first page as it came, with the key cut out.
+  let firstAnswer: unknown = undefined;
   for (let page = 1; page <= MAX_PAGES; page++) {
     // The key is in the path: log the status, never the URL.
     const res = await fetch(`${DCM_API}/get-active-coupons/${encodeURIComponent(key)}?page=${page}&pageSize=${DCM_PAGE_SIZE}`, {
@@ -39,7 +42,15 @@ Deno.serve(async (req) => {
       console.error("dcm coupons http", res.status, (await res.text()).slice(0, 300));
       return json({ error: "coupons_failed", status: res.status, page }, 502);
     }
-    const results = couponsOf(await res.json());
+    const text = await res.text();
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+    if (firstAnswer === undefined) firstAnswer = body;
+    const results = couponsOf(body);
     coupons.push(...results);
     if (results.length < DCM_PAGE_SIZE) break;
   }
@@ -72,5 +83,6 @@ Deno.serve(async (req) => {
   return json({
     coupons: coupons.length, mapped, put, dry, skipped, rejected,
     ...(dry && coupons[0] ? { first_keys: Object.keys(coupons[0]) } : {}),
+    ...(dry ? { answer: describeAnswer(firstAnswer, key) } : {}),
   });
 });

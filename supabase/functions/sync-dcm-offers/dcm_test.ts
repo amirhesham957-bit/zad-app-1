@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { countriesOf, couponsOf, mapCoupon, validUntil } from "./dcm.ts";
+import { countriesOf, couponsOf, describeAnswer, mapCoupon, validUntil } from "./dcm.ts";
 
 const NOW = Date.parse("2026-10-27T12:00:00Z");
 // The data points of DCM's "Get Active Coupons" (their Publisher APIs page), spelled as they list them.
@@ -75,4 +75,14 @@ Deno.test("the page's coupons wherever the answer keeps them", () => {
   assertEquals(couponsOf({ status: "ok", coupons: [noon] }).length, 1);
   assertEquals(couponsOf({ message: "Invalid key" }), []);
   assertEquals(couponsOf(null), []);
+});
+
+Deno.test("the dry run's view of the answer: keys and types, a short sample, the key never in it", () => {
+  assertEquals(describeAnswer({ status: true, message: "Invalid key abc123", data: [] }, "abc123"), {
+    shape: { status: "boolean", message: "string", data: "array(0)" },
+    sample: '{"status":true,"message":"Invalid key [key]","data":[]}',
+  });
+  assertEquals(describeAnswer([], "k").shape, "array(0)");
+  assertEquals(describeAnswer("<html>Forbidden</html>", "k"), { shape: "string", sample: "<html>Forbidden</html>" });
+  assertEquals(describeAnswer({ blob: "x".repeat(900) }, "k").sample.length, 600);
 });

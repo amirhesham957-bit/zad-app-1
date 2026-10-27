@@ -128,3 +128,17 @@ export function couponsOf(body: unknown): DcmCoupon[] {
   }
   return [];
 }
+
+/**
+ * What the first page looked like, for the dry run: its top-level keys with their type (and a list's length),
+ * and its first 600 characters with [key] cut out wherever it appears.
+ */
+export function describeAnswer(body: unknown, key: string): { shape: Record<string, string> | string; sample: string } {
+  const kind = (v: unknown) => Array.isArray(v) ? `array(${v.length})` : v === null ? "null" : typeof v;
+  const shape = body && typeof body === "object" && !Array.isArray(body)
+    ? Object.fromEntries(Object.entries(body as Record<string, unknown>).map(([k, v]) => [k, kind(v)]))
+    : kind(body);
+  const raw = typeof body === "string" ? body : JSON.stringify(body) ?? "";
+  const sample = (key ? raw.split(key).join("[key]") : raw).slice(0, 600);
+  return { shape, sample };
+}
