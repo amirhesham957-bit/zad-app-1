@@ -1007,6 +1007,16 @@
     }
   },
   "txDescription": "الوصف",
+  "txForPerson": "لمين؟ (سيبها فاضية لو ليك أو للبيت كله)",
+  "txForPersonHint": "ماما، بابا، يوسف…",
+  "txForPersonTag": "لـ{person}",
+  "@txForPersonTag": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
   "txType": "النوع",
   "txExpense": "مصروف",
   "txIncome": "دخل",

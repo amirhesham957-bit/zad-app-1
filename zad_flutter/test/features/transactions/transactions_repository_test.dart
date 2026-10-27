@@ -371,6 +371,68 @@ void main() {
       },
     );
 
+    test('«لمين؟» is written normalised, and only when it changed', () async {
+      final txn = await repo.record(coffee);
+      await outbox.flush();
+      // The chat set a person the cached row has never seen.
+      remote.rows[txn.id]!['for_person'] = 'يوسف';
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة الصبح',
+        amount: 50,
+        category: null,
+      );
+      expect(
+        outbox.entries().single.payload.containsKey('for_person'),
+        isFalse,
+      );
+      await outbox.flush();
+      expect(remote.rows[txn.id]!['for_person'], 'يوسف');
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة الصبح',
+        amount: 50,
+        category: null,
+        forPerson: 'لـ أمي',
+      );
+      await outbox.flush();
+      expect(remote.rows[txn.id]!['for_person'], 'ماما');
+      expect(repo.allCached().single.forPerson, 'ماما');
+
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة الصبح',
+        amount: 50,
+        category: null,
+        clearForPerson: true,
+      );
+      await outbox.flush();
+      expect(remote.rows[txn.id]!['for_person'], isNull);
+    });
+
+    test("a second queued edit keeps the first one's person", () async {
+      final txn = await repo.record(coffee);
+      await outbox.flush();
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة',
+        amount: 50,
+        category: null,
+        forPerson: 'سارة',
+      );
+      await repo.edit(
+        repo.allCached().single,
+        title: 'قهوة سارة',
+        amount: 50,
+        category: null,
+      );
+      await outbox.flush();
+      expect(remote.rows[txn.id]!['for_person'], 'سارة');
+      expect(remote.rows[txn.id]!['title'], 'قهوة سارة');
+    });
+
     test('an edit before the insert went out rewrites the insert', () async {
       final txn = await repo.record(coffee);
       await repo.edit(

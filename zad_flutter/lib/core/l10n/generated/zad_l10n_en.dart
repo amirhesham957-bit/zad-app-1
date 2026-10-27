@@ -1562,6 +1562,18 @@ class ZadL10nEn extends ZadL10n {
   String get txDescription => 'Description';
 
   @override
+  String get txForPerson =>
+      'For whom? (leave empty if for you or the whole house)';
+
+  @override
+  String get txForPersonHint => 'Mum, Dad, Youssef…';
+
+  @override
+  String txForPersonTag(String person) {
+    return 'for $person';
+  }
+
+  @override
   String get txType => 'Type';
 
   @override

@@ -2683,6 +2683,24 @@ abstract class ZadL10n {
   /// **'الوصف'**
   String get txDescription;
 
+  /// No description provided for @txForPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟ (سيبها فاضية لو ليك أو للبيت كله)'**
+  String get txForPerson;
+
+  /// No description provided for @txForPersonHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماما، بابا، يوسف…'**
+  String get txForPersonHint;
+
+  /// No description provided for @txForPersonTag.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{person}'**
+  String txForPersonTag(String person);
+
   /// No description provided for @txType.
   ///
   /// In ar, this message translates to:

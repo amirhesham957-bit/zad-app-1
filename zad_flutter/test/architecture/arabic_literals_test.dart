@@ -48,6 +48,9 @@ const Set<String> _dataFiles = <String>{
   // A chosen goal's stored title and metric (zad_life_goals), which the
   // brain reads back.
   'shared/goals/domain/life_goal_seed.dart',
+  // Kinship words a «لمين؟» is normalised by, stored in
+  // zad_transactions.for_person and matched by the brain.
+  'shared/transactions/domain/for_person.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';

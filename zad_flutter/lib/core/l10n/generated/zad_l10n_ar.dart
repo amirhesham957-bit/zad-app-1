@@ -1519,6 +1519,17 @@ class ZadL10nAr extends ZadL10n {
   String get txDescription => 'الوصف';
 
   @override
+  String get txForPerson => 'لمين؟ (سيبها فاضية لو ليك أو للبيت كله)';
+
+  @override
+  String get txForPersonHint => 'ماما، بابا، يوسف…';
+
+  @override
+  String txForPersonTag(String person) {
+    return 'لـ$person';
+  }
+
+  @override
   String get txType => 'النوع';
 
   @override
