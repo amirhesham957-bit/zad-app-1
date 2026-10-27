@@ -130,6 +130,7 @@ import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./hous
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
+import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
@@ -7464,6 +7465,38 @@ async function handleAgentTurnInLane(
     if (inputTokens + outputTokens >= MAX_CHAT_TOKENS_PER_RUN) {
       // سقف التوكنز — وقف الاستدعاء بس سيب اللي اتنفذ فعلاً زي ما هو، مش نلغيه.
       break;
+    }
+  }
+
+  // رسالة فلوس واضحة («حلاقة 80»، «قبضت المرتب 18000») والموديل رد «تبي أسجلها؟» أو ادّعى التسجيل من غير أداة
+  // (forcedLog.ts، التقييم الليلي ٢٧/١٠: ١٧ من ٢٠ فشل). محاولة واحدة بأداة log_transaction بس والنداء إجباري؛
+  // النتيجة اقتراح بكارت «أكّد؟» زي أي اقتراح — نفس validateTool، ومفيش تسجيل من غير موافقته.
+  if (executed.length === 0 && proposals.length === 0 && wantsForcedLog(message, modelText)) {
+    const logTool = CHAT_TOOLS.find((t) => t.name === "log_transaction");
+    if (logTool) {
+      try {
+        const forced = await callModel({
+          model: MODEL_ROUTINE, system: systemPrompt, tools: [logTool], history, maxTokens: 600, forceTool: "log_transaction",
+          groqSystem,
+        });
+        inputTokens += forced.usage.inTok;
+        outputTokens += forced.usage.outTok;
+        calls.model++;
+        calls.retries++;
+        if (forced.model && !calls.models.includes(forced.model)) calls.models.push(forced.model);
+        const call = forced.toolCalls.find((c) => c.name === "log_transaction");
+        if (call) {
+          const v = await validateTool(call.name, call.input, snap, ctx);
+          if (v.ok) {
+            ctx.counts[call.name] = (ctx.counts[call.name] ?? 0) + 1;
+            const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف");
+            proposals.push({ tool: call.name, input: call.input, summary });
+            modelText = forcedLogReply(summary);
+          }
+        }
+      } catch (e) {
+        console.warn("[agent_turn] forced log retry failed:", (e as Error)?.message ?? e);
+      }
     }
   }
 
