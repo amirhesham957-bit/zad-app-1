@@ -168,7 +168,8 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "(ولو فيه price_before و saving: قولي السعر وبدل كام والتوفير saving بالفلوس، مش بالنسبة) " +
     "(ولو favorite = true قولي إنه في المحل اللي بيروحه، ولو nearby = true إنه قريب منه، ولو brand موجودة إنها الماركة اللي بيجيبوها؛ ولو tight = true فده أرخص سعر لحاجة ناقصة " +
     "والفلوس ضيقة: قوليه كده، من غير «فرصة» ولا تشجيع على شرا أكتر من الناقص؛ ولو stock = true فالميزانية مرتاحة والصنف بيتخزّن " +
-    "وبيشتروه: قولي إنها فرصة يخزّنوا منه، اقتراح مش ضغط) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
+    "وبيشتروه: قولي إنها فرصة يخزّنوا منه، اقتراح مش ضغط؛ ولو intent موجود فهو اللي قال قبل كده إنه ناوي يشتري taste_deal.intent: " +
+    "فكّريه بكلمته هو، من غير ما تقولي إمتى قالها) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
     "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك، partner = «رابط شراكة» — قوليها بالنص، زاد بياخد عمولة منه) " +
     "ولحد إمتى لو source.until موجود، وإنه ممكن يكون خلص. " +
     "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
@@ -653,10 +654,12 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
-      const dealFact = facts.taste_deal as { item?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
+      const dealFact = facts.taste_deal as { item?: string; intent?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
       const deal = dealFact?.item && dealFact?.store
         ? (dealFact.tight
           ? `أرخص ${str(dealFact.item, 60)} لقيته في ${str(dealFact.store, 60)}${dealFact.nearby ? " (قريب منك)" : ""}`
+          : dealFact.intent
+          ? `قلتلي إنك ناوي تشتري ${str(dealFact.intent, 40)} — لقيت عرض على ${str(dealFact.item, 60)} في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`
           : `ولو محتاج ${str(dealFact.item, 60)}${dealFact.brand ? " (الماركة اللي بتجيبوها)" : ""}: فيه عرض عليه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`) +
           (dealFact.tight && dealFact.price ? ` بـ${dealFact.price}`
             : dealFact.price && dealFact.price_before && dealFact.saving ? ` بـ${dealFact.price} بدل ${dealFact.price_before} (توفّر ${dealFact.saving})`

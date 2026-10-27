@@ -1045,6 +1045,16 @@
     "user_id",
     "verdict"
   ],
+  "zad_purchase_intents": [
+    "closed_at",
+    "expires_at",
+    "id",
+    "item",
+    "item_key",
+    "said_at",
+    "status",
+    "user_id"
+  ],
   "zad_purchases": [
     "created_at",
     "id",
