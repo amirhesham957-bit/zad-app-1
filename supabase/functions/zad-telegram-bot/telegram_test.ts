@@ -604,6 +604,12 @@ Deno.test("habit trial (5.4): the proposal and the result carry the table's numb
   assertEquals(habitTrialBlock({ ...base, kind: "unknown", status: "proposed" }), null);
 });
 
+Deno.test("habit trial (5.4): pantry trials are counted, not priced", () => {
+  const id = "11111111-2222-3333-4444-555555555555";
+  const b = habitTrialBlock({ id, kind: "fewer_stockouts", category: "المخزن", currency: "SAR", status: "proposed", baseline_weekly: 0.75, result_weekly: null })!;
+  assert(b.text.includes("٠٫٨ مرة صنف خلص في الأسبوع") && !b.text.includes("SAR"), b.text);
+});
+
 Deno.test("habit trial (5.4): callbacks are strict, and every answer has its own reply", () => {
   const id = "11111111-2222-3333-4444-555555555555";
   assertEquals(parseHabitTrialCallback(`mc:${id}:y`), null);

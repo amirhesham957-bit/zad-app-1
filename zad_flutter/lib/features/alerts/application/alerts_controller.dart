@@ -7,9 +7,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/alerts/data/habit_trial_answers.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -55,6 +57,7 @@ class AlertsController extends Notifier<AlertsView> {
       onAnswer: _answered,
       onDose: _doseAnswered,
       onSpeak: _speak,
+      onHabit: _habitAnswered,
     );
 
     final registrar = ref.read(pushRegistrarProvider);
@@ -214,6 +217,27 @@ class AlertsController extends Notifier<AlertsView> {
     await (taken ? pharmacy.take(slot) : pharmacy.snooze(slot));
   }
 
+  /// A two-week trial's yes or no pressed on the notification (ZAD_PLAN
+  /// 5.4). The reply comes back as a notification of its own: the press
+  /// opened the app on the home, where nothing else says it took.
+  Future<void> _habitAnswered(HabitTrialRef trial, {required bool yes}) async {
+    ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
+    final l10n = zadL10nArabic;
+    String reply;
+    try {
+      final outcome = await ref
+          .read(habitTrialAnswersProvider)
+          .answer(trial.id, yes: yes);
+      reply = habitTrialReply(l10n, outcome);
+    } on Object {
+      reply = l10n.habitTrialFailed;
+    }
+    if (!ref.mounted) return;
+    await ref
+        .read(pushPlatformProvider)
+        .show(PushAlert(title: l10n.habitTrialTitle, body: reply));
+  }
+
   /// «أيوه، أنا» / «مش أنا» pressed on a bank question in the notification.
   ///
   /// The confirmations tab opens as well: the server may ask back (a
@@ -234,3 +258,15 @@ class AlertsController extends Notifier<AlertsView> {
 final alertsControllerProvider = NotifierProvider<AlertsController, AlertsView>(
   AlertsController.new,
 );
+
+/// What the customer is told after answering a trial — the same words as the
+/// bot's `habitTrialReply`.
+String habitTrialReply(ZadL10n l10n, HabitTrialOutcome outcome) =>
+    switch (outcome) {
+      HabitTrialOutcome.started => l10n.habitTrialStarted,
+      HabitTrialOutcome.declined => l10n.habitTrialDeclined,
+      HabitTrialOutcome.kept => l10n.habitTrialKept,
+      HabitTrialOutcome.dropped => l10n.habitTrialDropped,
+      HabitTrialOutcome.already => l10n.habitTrialAlready,
+      HabitTrialOutcome.gone => l10n.habitTrialGone,
+    };

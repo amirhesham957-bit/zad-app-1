@@ -2701,6 +2701,78 @@ abstract class ZadL10n {
   /// **'لـ{person}'**
   String txForPersonTag(String person);
 
+  /// No description provided for @habitTrialTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧪 تجربة الأسبوعين'**
+  String get habitTrialTitle;
+
+  /// No description provided for @habitTrialTry.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ نجرب أسبوعين'**
+  String get habitTrialTry;
+
+  /// No description provided for @habitTrialNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'🙅 لأ شكراً'**
+  String get habitTrialNo;
+
+  /// No description provided for @habitTrialKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ ثبّتها'**
+  String get habitTrialKeep;
+
+  /// No description provided for @habitTrialDrop.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ بطّلها'**
+  String get habitTrialDrop;
+
+  /// No description provided for @habitTrialStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا بينا ✅ التجربة بدأت النهارده لمدة أسبوعين، وبعدها هقولك النتيجة بالأرقام.'**
+  String get habitTrialStarted;
+
+  /// No description provided for @habitTrialDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، مش هقترحها تاني الفترة دي.'**
+  String get habitTrialDeclined;
+
+  /// No description provided for @habitTrialKept.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام ✅ ثبّتناها — هفتكرها وأبني عليها.'**
+  String get habitTrialKept;
+
+  /// No description provided for @habitTrialDropped.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، بطّلناها. شكراً إنك جرّبت.'**
+  String get habitTrialDropped;
+
+  /// No description provided for @habitTrialAlready.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، ردك اتسجّل قبل كده.'**
+  String get habitTrialAlready;
+
+  /// No description provided for @habitTrialGone.
+  ///
+  /// In ar, this message translates to:
+  /// **'التجربة دي مابقتش موجودة.'**
+  String get habitTrialGone;
+
+  /// No description provided for @habitTrialFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.'**
+  String get habitTrialFailed;
+
   /// No description provided for @txType.
   ///
   /// In ar, this message translates to:

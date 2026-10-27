@@ -4,6 +4,7 @@
 // grammY or Supabase.
 
 // تسوية الجرعة اتنقلت لباب واحد (ZAD_PLAN ٣.٤): العقل بيكتب، والبوت بيعرض.
+import { type HabitTrial, habitTrialLabels, habitTrialStage, habitTrialText } from "../_shared/habitTrial.ts";
 import { DOSE_SNOOZE_MINUTES, type DoseAction } from "../_shared/doseDoor.ts";
 export { DOSE_SNOOZE_MINUTES, type DoseAction, doseAlreadyReply, doseSlots } from "../_shared/doseDoor.ts";
 
@@ -787,51 +788,24 @@ export function memoryCheckReply(result: { ok?: boolean; already?: boolean; answ
   return result.answer === "yes" ? `تمام ✅ هفضل فاكرها${n}.` : `تمام، شلتها${n} — شكراً إنك صحّحتني.`;
 }
 
+export type { HabitTrial };
+
 // حلقة المبادرة (ZAD_PLAN ٥.٤): "ht:" + uuid(36) + ":" + حرف = ٤١ بايت. نفس الزرارين بيبدأوا التجربة وبعدها بيثبّتوها،
 // والمرحلة من الصف. الأرقام من الجدول، مش من الموديل.
 
-export interface HabitTrial {
-  id: string;
-  kind: string;
-  category: string;
-  currency: string | null;
-  status: string;
-  baseline_weekly: number | string;
-  result_weekly: number | string | null;
-}
-
-const HABIT_BEHAVIOUR: Record<string, string> = {
-  eat_out_less: "أكل برّه أو دليفري مرة واحدة بس في الأسبوع",
-  one_grocery_trip: "مشوار بقالة واحد في الأسبوع بقايمة، بدل كذا مرة",
-};
-
-const money = (v: number | string | null, currency: string | null) =>
-  `${arabicNumber(Math.round(Number(v) || 0))}${currency ? ` ${currency}` : ""}`;
-
 /** سطور التجربة تحت رسالة الموديل وزرارينها؛ null لو المرحلة مافيهاش سؤال أو النوع مش معروف. */
 export function habitTrialBlock(trial: HabitTrial): { text: string; rows: InlineKeyboardButton[][] } | null {
-  const behaviour = HABIT_BEHAVIOUR[trial.kind];
-  if (!behaviour) return null;
-  if (trial.status === "proposed") {
-    return {
-      text: `🧪 التجربة: ${behaviour}، لمدة أسبوعين.
-دلوقتي: ${money(trial.baseline_weekly, trial.currency)} في الأسبوع على «${trial.category}».`,
-      rows: [[
-        { text: "✅ نجرب أسبوعين", callback_data: `ht:${trial.id}:y` },
-        { text: "🙅 لأ شكراً", callback_data: `ht:${trial.id}:n` },
-      ]],
-    };
-  }
-  if (trial.status === "measured" && trial.result_weekly !== null) {
-    return {
-      text: `🧪 «${trial.category}» في الأسبوع: قبل التجربة ${money(trial.baseline_weekly, trial.currency)} · أثناءها ${money(trial.result_weekly, trial.currency)}.`,
-      rows: [[
-        { text: "✅ ثبّتها", callback_data: `ht:${trial.id}:y` },
-        { text: "❌ بطّلها", callback_data: `ht:${trial.id}:n` },
-      ]],
-    };
-  }
-  return null;
+  const text = habitTrialText(trial);
+  const stage = habitTrialStage(trial);
+  if (!text || !stage) return null;
+  const labels = habitTrialLabels(stage);
+  return {
+    text,
+    rows: [[
+      { text: labels.yes, callback_data: `ht:${trial.id}:y` },
+      { text: labels.no, callback_data: `ht:${trial.id}:n` },
+    ]],
+  };
 }
 
 export function parseHabitTrialCallback(data: string): { trialId: string; yes: boolean } | null {

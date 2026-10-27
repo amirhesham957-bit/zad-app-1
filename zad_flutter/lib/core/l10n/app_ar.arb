@@ -1017,6 +1017,18 @@
       }
     }
   },
+  "habitTrialTitle": "🧪 تجربة الأسبوعين",
+  "habitTrialTry": "✅ نجرب أسبوعين",
+  "habitTrialNo": "🙅 لأ شكراً",
+  "habitTrialKeep": "✅ ثبّتها",
+  "habitTrialDrop": "❌ بطّلها",
+  "habitTrialStarted": "يلا بينا ✅ التجربة بدأت النهارده لمدة أسبوعين، وبعدها هقولك النتيجة بالأرقام.",
+  "habitTrialDeclined": "تمام، مش هقترحها تاني الفترة دي.",
+  "habitTrialKept": "تمام ✅ ثبّتناها — هفتكرها وأبني عليها.",
+  "habitTrialDropped": "تمام، بطّلناها. شكراً إنك جرّبت.",
+  "habitTrialAlready": "تمام، ردك اتسجّل قبل كده.",
+  "habitTrialGone": "التجربة دي مابقتش موجودة.",
+  "habitTrialFailed": "معلش، ماقدرتش أسجّل ردك دلوقتي — جرّب تاني بعد شوية.",
   "txType": "النوع",
   "txExpense": "مصروف",
   "txIncome": "دخل",
