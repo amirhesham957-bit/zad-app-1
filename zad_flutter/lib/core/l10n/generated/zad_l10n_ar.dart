@@ -2241,4 +2241,202 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get keepAliveAllow => 'خلّي زاد شغال دايماً';
+
+  @override
+  String get diagTitle => 'تشخيص الأتمتة';
+
+  @override
+  String get diagMenuSubtitle => 'إشعارات البنك ورسايل زاد — واقفة فين بالظبط';
+
+  @override
+  String get diagRefresh => 'حدّث التشخيص';
+
+  @override
+  String get diagBankTitle => 'اللي وصل السيرفر من إشعارات البنك';
+
+  @override
+  String get diagBankNote =>
+      'آخر ١٤ يوم: كل إشعار الموبايل بعته، وزاد عمل بيه إيه وليه.';
+
+  @override
+  String get diagReadFailedTitle => 'ماقدرتش أقرا من السيرفر';
+
+  @override
+  String get diagReadFailedBody => 'اتأكد من النت واسحب لتحت عشان تحدّث.';
+
+  @override
+  String get diagBankEmptyTitle => 'مفيش إشعار وصل السيرفر';
+
+  @override
+  String get diagBankEmptyBody =>
+      'لو دفعت بالكارت الأيام دي، العطل على الموبايل — شوف القسم اللي فوق.';
+
+  @override
+  String get diagNotification => 'إشعار';
+
+  @override
+  String get diagBankNoAccess =>
+      'واقفة عند أول خطوة: صلاحية قراءة الإشعارات مقفولة. فعّلها من القسم اللي فوق.';
+
+  @override
+  String get diagBankNotBound =>
+      'الصلاحية شغالة بس خدمة القراءة عمرها ما اتوصلت. اقفل الصلاحية وافتحها تاني.';
+
+  @override
+  String get diagBankSilent =>
+      'خدمة القراءة ماشافتش ولا إشعار من يومين — أندرويد وقّفها. اقفل الصلاحية وافتحها، وشيل زاد من توفير البطارية.';
+
+  @override
+  String get diagBankStuck =>
+      'فيه إشعارات اتقرت على الموبايل ولسه مااتبعتتش للسيرفر. افتح النت وسيب زاد مفتوح دقيقة.';
+
+  @override
+  String get diagBankNothing =>
+      'الموبايل شغال بس مفيش إشعار بنك وصل السيرفر. لو دفعت بالكارت، يبقى البنك بيبعت الرسالة من تطبيق مش متابَع — ابعتلنا اسمه.';
+
+  @override
+  String get diagBankSetAside =>
+      'الإشعارات وصلت السيرفر بس كلها اتشالت — السبب جنب كل واحدة تحت.';
+
+  @override
+  String get diagBankWaiting =>
+      'فيه حركات مستنية تأكيدك. أكّدها من الإشعار أو من الرئيسية عشان تتسجل.';
+
+  @override
+  String get diagBankOk => 'السلسلة شغالة: الإشعارات بتوصل وبتتسجل.';
+
+  @override
+  String get diagProTitle => 'رسايل زاد اللي بيبدأها';
+
+  @override
+  String get diagProNote =>
+      'صباح الخير، الجرعات، المواعيد، «اقفل يومك» — وصلت ولا لأ وليه.';
+
+  @override
+  String get diagTelegram => 'تليجرام';
+
+  @override
+  String get diagPush => 'إشعارات التطبيق';
+
+  @override
+  String get diagUnknown => 'مش عارف';
+
+  @override
+  String get diagLinked => 'مربوط';
+
+  @override
+  String get diagNotLinked => 'مش مربوط';
+
+  @override
+  String get diagPushOff => 'الموبايل مش متسجّل لاستقبال إشعارات زاد';
+
+  @override
+  String get diagProEmptyTitle => 'زاد مابدأش أي رسالة آخر ١٤ يوم';
+
+  @override
+  String get diagProEmptyBody =>
+      'أول تحية صباح بتوصل الصبح الجاي لو فيه طريق يوصلك.';
+
+  @override
+  String get diagProNoChannel =>
+      'زاد مش لاقي طريق يوصلك: لا تليجرام مربوط ولا الموبايل متسجّل للإشعارات. اربط تليجرام من الإعدادات، أو افتح التطبيق واسمح بالإشعارات.';
+
+  @override
+  String get diagProNothing =>
+      'السيرفر مابعتش حاجة آخر ١٤ يوم. ده مش طبيعي — ابعتلنا لقطة الشاشة دي.';
+
+  @override
+  String get diagProFailing => 'أغلب الرسايل فشلت — السبب جنب كل واحدة تحت.';
+
+  @override
+  String get diagProOk => 'السلسلة شغالة: زاد بيبدأ وبيوصلك.';
+
+  @override
+  String get diagMomentMorning => 'صباح الخير';
+
+  @override
+  String get diagMomentNight => 'تصبح على خير';
+
+  @override
+  String get diagMomentCloseDay => 'اقفل يومك';
+
+  @override
+  String get diagMomentDoseDue => 'ميعاد جرعة';
+
+  @override
+  String get diagMomentDoseMissed => 'جرعة فاتت';
+
+  @override
+  String get diagMomentDoseNudge => 'تذكير جرعة';
+
+  @override
+  String get diagMomentAppointment => 'ميعاد قريب';
+
+  @override
+  String get diagMomentWeekly => 'ملخص الأسبوع';
+
+  @override
+  String get diagMomentMonthly => 'حكاية الشهر';
+
+  @override
+  String get diagIngestRecorded => 'اتسجلت مصروف';
+
+  @override
+  String get diagIngestWaiting => 'مستنية تأكيدك («أكّد الحركة»)';
+
+  @override
+  String get diagIngestPromo => 'العقل شافها إعلان أو عرض، مش فلوس اتحركت';
+
+  @override
+  String get diagIngestOtp => 'كود تحقق أو تنبيه أمان';
+
+  @override
+  String get diagIngestOrder => 'حالة طلب أو توصيل';
+
+  @override
+  String get diagIngestPersonal => 'رسالة شخصية';
+
+  @override
+  String get diagIngestNonFinancial => 'مالهاش علاقة بالفلوس';
+
+  @override
+  String get diagIngestUnavailable => 'العقل ماردّش وقتها والمصدر مش معروف';
+
+  @override
+  String get diagIngestInfo => 'رسالة معلومات (رصيد أو تنبيه)';
+
+  @override
+  String get diagIngestFailedTxn => 'عملية فشلت أو لسه معلّقة';
+
+  @override
+  String get diagIngestMerged => 'نفس العملية وصلت من مكان تاني واتدمجت';
+
+  @override
+  String get diagIngestServerError => 'خطأ في السيرفر — هتتجرب تاني';
+
+  @override
+  String get diagIngestReviewing => 'وصلت ولسه بتتراجع';
+
+  @override
+  String get diagMomentNoChannel =>
+      'مفيش طريق يوصلك: لا تليجرام ولا إشعارات التطبيق';
+
+  @override
+  String get diagMomentSkipped => 'اتأجلت أو اتشالت (هدوء أو سقف اليوم)';
+
+  @override
+  String get diagMomentSent => 'وصلت';
+
+  @override
+  String get diagMomentPending => 'مستنية ميعادها';
+
+  @override
+  String diagPushOn(int count) {
+    return 'الموبايل متسجّل ($count)';
+  }
+
+  @override
+  String diagIngestKind(String kind) {
+    return 'اتصنفت $kind';
+  }
 }

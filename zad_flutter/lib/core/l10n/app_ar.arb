@@ -1544,5 +1544,255 @@
   "keepAliveAllow": "خلّي زاد شغال دايماً",
   "@keepAliveAllow": {
     "description": "Battery card: asks Android for the battery-optimisation exemption so the bank reading keeps running (ZAD_PLAN 2.1)."
+  },
+  "diagTitle": "تشخيص الأتمتة",
+  "@diagTitle": {
+    "description": "Title of the automation diagnostics screen and its settings row."
+  },
+  "diagMenuSubtitle": "إشعارات البنك ورسايل زاد — واقفة فين بالظبط",
+  "@diagMenuSubtitle": {
+    "description": "Settings row subtitle."
+  },
+  "diagRefresh": "حدّث التشخيص",
+  "@diagRefresh": {
+    "description": "Button that reads the diagnosis again."
+  },
+  "diagBankTitle": "اللي وصل السيرفر من إشعارات البنك",
+  "@diagBankTitle": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankNote": "آخر ١٤ يوم: كل إشعار الموبايل بعته، وزاد عمل بيه إيه وليه.",
+  "@diagBankNote": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagReadFailedTitle": "ماقدرتش أقرا من السيرفر",
+  "@diagReadFailedTitle": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagReadFailedBody": "اتأكد من النت واسحب لتحت عشان تحدّث.",
+  "@diagReadFailedBody": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankEmptyTitle": "مفيش إشعار وصل السيرفر",
+  "@diagBankEmptyTitle": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankEmptyBody": "لو دفعت بالكارت الأيام دي، العطل على الموبايل — شوف القسم اللي فوق.",
+  "@diagBankEmptyBody": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagNotification": "إشعار",
+  "@diagNotification": {
+    "description": "A row whose notification had no title."
+  },
+  "diagBankNoAccess": "واقفة عند أول خطوة: صلاحية قراءة الإشعارات مقفولة. فعّلها من القسم اللي فوق.",
+  "@diagBankNoAccess": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankNotBound": "الصلاحية شغالة بس خدمة القراءة عمرها ما اتوصلت. اقفل الصلاحية وافتحها تاني.",
+  "@diagBankNotBound": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankSilent": "خدمة القراءة ماشافتش ولا إشعار من يومين — أندرويد وقّفها. اقفل الصلاحية وافتحها، وشيل زاد من توفير البطارية.",
+  "@diagBankSilent": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankStuck": "فيه إشعارات اتقرت على الموبايل ولسه مااتبعتتش للسيرفر. افتح النت وسيب زاد مفتوح دقيقة.",
+  "@diagBankStuck": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankNothing": "الموبايل شغال بس مفيش إشعار بنك وصل السيرفر. لو دفعت بالكارت، يبقى البنك بيبعت الرسالة من تطبيق مش متابَع — ابعتلنا اسمه.",
+  "@diagBankNothing": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankSetAside": "الإشعارات وصلت السيرفر بس كلها اتشالت — السبب جنب كل واحدة تحت.",
+  "@diagBankSetAside": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankWaiting": "فيه حركات مستنية تأكيدك. أكّدها من الإشعار أو من الرئيسية عشان تتسجل.",
+  "@diagBankWaiting": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagBankOk": "السلسلة شغالة: الإشعارات بتوصل وبتتسجل.",
+  "@diagBankOk": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProTitle": "رسايل زاد اللي بيبدأها",
+  "@diagProTitle": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProNote": "صباح الخير، الجرعات، المواعيد، «اقفل يومك» — وصلت ولا لأ وليه.",
+  "@diagProNote": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagTelegram": "تليجرام",
+  "@diagTelegram": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagPush": "إشعارات التطبيق",
+  "@diagPush": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagUnknown": "مش عارف",
+  "@diagUnknown": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagLinked": "مربوط",
+  "@diagLinked": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagNotLinked": "مش مربوط",
+  "@diagNotLinked": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagPushOff": "الموبايل مش متسجّل لاستقبال إشعارات زاد",
+  "@diagPushOff": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProEmptyTitle": "زاد مابدأش أي رسالة آخر ١٤ يوم",
+  "@diagProEmptyTitle": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProEmptyBody": "أول تحية صباح بتوصل الصبح الجاي لو فيه طريق يوصلك.",
+  "@diagProEmptyBody": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProNoChannel": "زاد مش لاقي طريق يوصلك: لا تليجرام مربوط ولا الموبايل متسجّل للإشعارات. اربط تليجرام من الإعدادات، أو افتح التطبيق واسمح بالإشعارات.",
+  "@diagProNoChannel": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProNothing": "السيرفر مابعتش حاجة آخر ١٤ يوم. ده مش طبيعي — ابعتلنا لقطة الشاشة دي.",
+  "@diagProNothing": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProFailing": "أغلب الرسايل فشلت — السبب جنب كل واحدة تحت.",
+  "@diagProFailing": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagProOk": "السلسلة شغالة: زاد بيبدأ وبيوصلك.",
+  "@diagProOk": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentMorning": "صباح الخير",
+  "@diagMomentMorning": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentNight": "تصبح على خير",
+  "@diagMomentNight": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentCloseDay": "اقفل يومك",
+  "@diagMomentCloseDay": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentDoseDue": "ميعاد جرعة",
+  "@diagMomentDoseDue": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentDoseMissed": "جرعة فاتت",
+  "@diagMomentDoseMissed": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentDoseNudge": "تذكير جرعة",
+  "@diagMomentDoseNudge": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentAppointment": "ميعاد قريب",
+  "@diagMomentAppointment": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentWeekly": "ملخص الأسبوع",
+  "@diagMomentWeekly": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentMonthly": "حكاية الشهر",
+  "@diagMomentMonthly": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestRecorded": "اتسجلت مصروف",
+  "@diagIngestRecorded": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestWaiting": "مستنية تأكيدك («أكّد الحركة»)",
+  "@diagIngestWaiting": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestPromo": "العقل شافها إعلان أو عرض، مش فلوس اتحركت",
+  "@diagIngestPromo": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestOtp": "كود تحقق أو تنبيه أمان",
+  "@diagIngestOtp": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestOrder": "حالة طلب أو توصيل",
+  "@diagIngestOrder": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestPersonal": "رسالة شخصية",
+  "@diagIngestPersonal": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestNonFinancial": "مالهاش علاقة بالفلوس",
+  "@diagIngestNonFinancial": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestUnavailable": "العقل ماردّش وقتها والمصدر مش معروف",
+  "@diagIngestUnavailable": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestInfo": "رسالة معلومات (رصيد أو تنبيه)",
+  "@diagIngestInfo": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestFailedTxn": "عملية فشلت أو لسه معلّقة",
+  "@diagIngestFailedTxn": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestMerged": "نفس العملية وصلت من مكان تاني واتدمجت",
+  "@diagIngestMerged": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestServerError": "خطأ في السيرفر — هتتجرب تاني",
+  "@diagIngestServerError": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagIngestReviewing": "وصلت ولسه بتتراجع",
+  "@diagIngestReviewing": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentNoChannel": "مفيش طريق يوصلك: لا تليجرام ولا إشعارات التطبيق",
+  "@diagMomentNoChannel": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentSkipped": "اتأجلت أو اتشالت (هدوء أو سقف اليوم)",
+  "@diagMomentSkipped": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentSent": "وصلت",
+  "@diagMomentSent": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagMomentPending": "مستنية ميعادها",
+  "@diagMomentPending": {
+    "description": "Automation diagnostics screen."
+  },
+  "diagPushOn": "الموبايل متسجّل ({count})",
+  "@diagPushOn": {
+    "description": "Automation diagnostics screen.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagIngestKind": "اتصنفت {kind}",
+  "@diagIngestKind": {
+    "description": "Automation diagnostics screen.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
   }
 }
