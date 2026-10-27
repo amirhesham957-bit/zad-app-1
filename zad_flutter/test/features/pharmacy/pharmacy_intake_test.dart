@@ -138,6 +138,22 @@ void main() {
       expect(plan.restocks.single.add, 60);
     });
 
+    test('a delivery or fee line is never a medicine (2026-10-28)', () {
+      final plan = planPharmacyIntake(
+        proposals: <RestockProposal>[
+          proposeRestock(_line('توصيل منزلي داخل 600'), <Medicine>[]),
+          proposeRestock(_line('رسوم خدمة'), <Medicine>[]),
+          proposeRestock(_line('أوجمنتين 14 قرص'), <Medicine>[]),
+        ],
+        shopping: const <ShoppingItem>[],
+      );
+      expect(plan.additions.map((a) => a.name), <String>['أوجمنتين 14 قرص']);
+      expect(isServiceLine('Delivery fee'), isTrue);
+      expect(isServiceLine('الإجمالي'), isTrue);
+      expect(isServiceLine('Diosmin Plus 30 Tabs'), isFalse);
+      expect(isServiceLine('مستخدم'), isFalse);
+    });
+
     test('two lines for one new medicine are one medicine', () {
       final plan = planPharmacyIntake(
         proposals: <RestockProposal>[
