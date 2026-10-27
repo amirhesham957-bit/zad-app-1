@@ -126,6 +126,7 @@ import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type Sensitiv
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
+import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
@@ -1584,6 +1585,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     broke_mode: brokeActive ? brokeRow : null,
     // «ضغط البيت» (householdLoad.ts) من أرقام البيت والساعة — مش حالة العميل النفسية.
     household_load: houseLoad,
+    // النبرة الواحدة (ZAD_PLAN ٥.١، tone.ts): ضغط البيت والظرف والصرف الغريب وأيام التوفير بترتيب ثابت.
+    // الشات بيزوّد عليها كلام العميل في الرسالة (toneWithMessage).
+    tone: toneFromState({
+      load: houseLoad,
+      circumstanceMode: circumstance.mode,
+      txns: transactions as ToneTxn[],
+      timeZone: budgetState.timezone ?? "UTC",
+      challengeStreak: (challengeRow as { streak?: number } | null)?.streak ?? null,
+    }),
     // طول الرد حسب وقته (replyCadence.ts، الشريحة ٤٤): ميعاد دلوقتي أو يوم مزحوم ⇒ قصير، مسا فاضي ⇒ أوسع.
     reply_cadence: replyCadence({
       appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
@@ -7043,6 +7053,8 @@ async function handleAgentTurnInLane(
   // message nobody answered is dropped (dropStaleUnanswered) on every channel alike.
   const sharedHistoryEarly = loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
+  // النبرة (٥.١): اللي العميل قاله عن نفسه في الرسالة دي فوق نبرة الأرقام.
+  snap.tone = toneWithMessage(snap.tone, message);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
   // بند 31.6 — أساسي + استشاري تانٍ (لو الرسالة بتمس نطاقين مع بعض)، مش اختيار واحد يقصّ نص السؤال.
@@ -8202,6 +8214,7 @@ ${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = ا�
      · غيّر في بداياتك — متبدأش ردين ورا بعض بنفس الكلمة.
      · لو رجع بعد غياب أو قال «صباح الخير»، رد زي صاحب فاكره («أهلاً! بقالك يومين 😄») مش «مرحباً، كيف يمكنني مساعدتك».
    - ${householdLoadRule(snap)}
+   - ${toneRule(snap) || "مفيش tone."}
    - ${eventDayBudgetRule(snap) || "مفيش event_day_budget."}
    - ${homeEmergencyRule(snap)}
 ${campaignAndTasteRules(snap)}${weatherRule(snap)}   - ${replyCadenceRule(snap) || "طول الرد عادي."}
