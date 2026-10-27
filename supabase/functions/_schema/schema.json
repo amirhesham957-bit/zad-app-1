@@ -746,6 +746,14 @@
     "day",
     "turns"
   ],
+  "zad_fuel_prices": [
+    "country",
+    "currency",
+    "found_at",
+    "grade",
+    "price",
+    "source_url"
+  ],
   "zad_fx_rates": [
     "code",
     "updated_at",

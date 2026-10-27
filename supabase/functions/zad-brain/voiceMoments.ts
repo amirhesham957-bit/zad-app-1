@@ -170,6 +170,7 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "والفلوس ضيقة: قوليه كده، من غير «فرصة» ولا تشجيع على شرا أكتر من الناقص؛ ولو stock = true فالميزانية مرتاحة والصنف بيتخزّن " +
     "وبيشتروه: قولي إنها فرصة يخزّنوا منه، اقتراح مش ضغط؛ ولو intent موجود فهو اللي قال قبل كده إنه ناوي يشتري taste_deal.intent: " +
     "فكّريه بكلمته هو، من غير ما تقولي إمتى قالها) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
+    "ولو فيه taste_deal.trip: قولي المشوار بالعربية رايح جاي trip.km كم بـtrip.cost بنزين، ولو فيه saving التوفير الصافي (saving − trip.cost) — من غير أي رقم تاني. " +
     "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك، partner = «رابط شراكة» — قوليها بالنص، زاد بياخد عمولة منه) " +
     "ولحد إمتى لو source.until موجود، وإنه ممكن يكون خلص. " +
     "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
@@ -654,7 +655,7 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
-      const dealFact = facts.taste_deal as { item?: string; intent?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
+      const dealFact = facts.taste_deal as { trip?: { km?: number; cost?: number } | null; item?: string; intent?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
       const deal = dealFact?.item && dealFact?.store
         ? (dealFact.tight
           ? `أرخص ${str(dealFact.item, 60)} لقيته في ${str(dealFact.store, 60)}${dealFact.nearby ? " (قريب منك)" : ""}`
@@ -665,6 +666,10 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
             : dealFact.price && dealFact.price_before && dealFact.saving ? ` بـ${dealFact.price} بدل ${dealFact.price_before} (توفّر ${dealFact.saving})`
             : dealFact.discount_percent ? ` بخصم ${dealFact.discount_percent}٪` : dealFact.price ? ` بـ${dealFact.price}` : "") +
           (dealFact.source?.until ? ` لحد ${str(dealFact.source.until, 10)}` : "") +
+          (dealFact.trip?.km && dealFact.trip?.cost
+            ? `، والمشوار بالعربية حوالي ${dealFact.trip.km} كم رايح جاي بـ${dealFact.trip.cost} بنزين` +
+              (dealFact.saving ? ` (يعني توفّر حوالي ${Math.round((dealFact.saving - dealFact.trip.cost) * 10) / 10} صافي)` : "")
+            : "") +
           (dealFact.stock ? "، والميزانية مرتاحة فممكن تخزّن منه" : "") + "."
         : "";
       return {
