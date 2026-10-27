@@ -120,6 +120,7 @@ import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gathering.ts";
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
+import { type PersonTxn, spendByPerson } from "./spendByPerson.ts";
 import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
@@ -819,7 +820,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       // الـ٢٠٠ صف كانت بتخلص قبل ما توصل ٩٠ يوم فعلياً، فـ"آخر شهرين/تلاتة للتحليل والتنبؤ"
       // كان بيتقصر بصمت من غير ما حد يلاحظ. ١٢٠ يوم عشان يغطي أطول نافذة مستخدمة (اكتشاف
       // دورة الراتب/الالتزام الثابت)، مش بس أقصر نافذة (الشذوذ).
-      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name")
+      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at")
@@ -1647,6 +1648,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     engagement: insightHistErr ? null : engagementFrom((insightHistory ?? []) as InsightRow[], Date.now(), { telegram: (telegramBound ?? 0) > 0 }),
     // null = مفيش سؤال صبح اتبعت آخر ٢٠ ساعة.
     asked_this_morning: askedThisMorning(morningRow as { facts?: unknown; sent_at?: string | null } | null),
+    // الصرف لكل شخص آخر ٣٠ يوم (ZAD_PLAN ٥.٣، spendByPerson.ts). null = محدش اتسجل له صرف.
+    spend_by_person: (() => {
+      const rows = spendByPerson(transactions as PersonTxn[], Date.now());
+      return rows.length ? rows : null;
+    })(),
     // null = مفيش ملاحظة حساسة مستنية جواب.
     memory_pending: (pendingMemory ?? []).length
       ? (pendingMemory as Array<{ id: string; note: string; created_at: string }>).map((p) => ({ id: p.id, note: p.note, asked: p.created_at.slice(0, 10) }))
@@ -2510,6 +2516,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         }
         const reply = purchaseToolReply(bought as Record<string, unknown> | null, { title, amount });
         if (!reply.ok) return reply.text;
+        // باب الشرا (zad_record_purchase_service) مابيعرفش «لمين؟»، فبتتكتب على المعاملة بعده.
+        const purchaseFor = normalizeForPerson(input.for_person);
+        if (purchaseFor && reply.transactionId) {
+          const { error: forErr } = await sb.from("zad_transactions").update({ for_person: purchaseFor })
+            .eq("id", reply.transactionId).eq("user_id", userId);
+          if (forErr) console.error("[log_transaction] for_person not set:", forErr.message);
+        }
         ctx.mutationCount++;
         ctx.mutations.push({ tool: name, old: null, new: { amount: input.amount, title: input.title, lines: purchaseLines.length } });
         await recordAction(sb, userId, scope, {
@@ -2534,7 +2547,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           source_type: txnSourceType(input.source_type, scope.source),
           // اسم المحل من الفاتورة (تليجرام)، عشان «أرخص هنا» وعادات المحلات يشوفوه.
           merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
-        }).select("id,amount,title,category,txn_kind"),
+          // لمين في البيت (ZAD_PLAN ٥.٣) — مصروف بس.
+          for_person: isExpense ? normalizeForPerson(input.for_person) : null,
+        }).select("id,amount,title,category,txn_kind,for_person"),
         "تسجيل المعاملة",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
@@ -2548,9 +2563,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "update_transaction": {
       const { data: before } = await sb.from("zad_transactions")
-        .select("amount,title,category,txn_kind").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
+        .select("amount,title,category,txn_kind,for_person").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: المعاملة مش بتاعت العميل ده — عدّل وحاول تاني.";
       const patch: Record<string, unknown> = {};
+      if (input.for_person !== undefined) patch.for_person = normalizeForPerson(input.for_person);
       if (input.amount !== undefined) patch.amount = Math.round(input.amount * 100) / 100;
       if (input.title !== undefined) patch.title = String(input.title).trim().slice(0, 80);
       if (input.category !== undefined) patch.category = String(input.category).trim().slice(0, 40);
@@ -2560,7 +2576,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
       const w = await writeRows(
         sb.from("zad_transactions").update(patch)
-          .eq("id", input.transaction_id).eq("user_id", userId).select("amount,title,category,txn_kind"),
+          .eq("id", input.transaction_id).eq("user_id", userId).select("amount,title,category,txn_kind,for_person"),
         "تعديل المعاملة",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
@@ -4797,6 +4813,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         title: { type: "string", description: "وصف قصير من كلام العميل نفسه" },
         category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
+        for_person: { type: "string", description: "لمين في البيت؛ فاضي = العميل/البيت" },
         lines: {
           type: "array",
           description:
@@ -4818,10 +4835,8 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
         allow_duplicate: {
           type: "boolean",
-          description:
-            "متبعتهاش من نفسك. الأداة بترفض لو فيه معاملة بنفس المبلغ والنوع اتسجلت خلال " +
-            "١٠ دقايق، عشان الإرسال المتكرر ما يسجّلش نفس العملية مرتين. ابعت true بس بعد " +
-            "ما تسأل العميل ويأكد إنها عملية تانية مختلفة فعلاً.",
+          // مختصرة عن قصد: log_transaction بيتبعت كامل لـGroq دايماً (GROQ_ALWAYS_FULL)، وكل حرف هنا على حساب أداة تانية.
+          description: "true بس بعد ما العميل يأكد إنها عملية تانية — الأداة بترفض نفس المبلغ والنوع خلال ١٠ دقايق.",
         },
       },
       required: ["amount", "txn_kind", "title"],
@@ -4855,6 +4870,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         title: { type: "string" },
         category: { type: "string" },
         txn_kind: { type: "string", enum: ["expense", "income"] },
+        for_person: { type: "string", description: "لمين في البيت؛ \"\" يشيله" },
       },
       required: ["transaction_id"],
     },
@@ -8214,7 +8230,7 @@ ${snap?.memory_pending ? `   - **memory_pending** = ملاحظات حساسة س
 ${((snap?.memory ?? []) as Array<{ scope?: string }>).some((m) => m.scope === "trait") ? `   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.\n` : ""}
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
-6ج. **شكوى أو مشكلة محتاجة إنسان** (عطل في التطبيق، «عايز أكلم حد»، حاجة مقدرتش تحلها معاه) ⇒ open_support_ticket بملخص المشكلة بكلامه، وقوله إن الفريق هيرد عليه.
+${snap?.spend_by_person ? "   - **spend_by_person** = الصرف على كل شخص في البيت آخر ٣٠ يوم (اللي اتسجل له بس). «صرفنا كام على يوسف؟» منه، وقول إنه اللي اتسجل ليه بالاسم مش كل اللي اتصرف عليه.\n" : ""}6ج. **شكوى أو مشكلة محتاجة إنسان** (عطل في التطبيق، «عايز أكلم حد»، حاجة مقدرتش تحلها معاه) ⇒ open_support_ticket بملخص المشكلة بكلامه، وقوله إن الفريق هيرد عليه.
 6ب. **قدراتك في كل قناة**: في التطبيق بتكلم العميل كتابة وصوت. في تليجرام بترد كتابة، والتنبيهات المهمة (الدوا، المواعيد، الصبح) بتوصله فويس. متقولش «أنا تكست بس»، ولو طلب ترد عليه فويس في تليجرام قوله إن ده لسه مش متاح في الرد العادي وإن الصوت شغال في التطبيق.
 7. أدوات الفلوس (log_transaction, update_transaction, delete_transaction, set_monthly_limit) بتعرض تأكيد على العميل قبل الكتابة. قول إنك مجهزها ومحتاج تأكيده — مش إنها اتسجلت نهائي.
    - لو رجعتلك نتيجة أداة فيها status=awaiting_user_confirmation: **متقولش إنه اتسجل**. قول للعميل بجملة طبيعية إنك محتاج موافقته، من غير ما تنقل أي نص تقني أو اسم حالة.
