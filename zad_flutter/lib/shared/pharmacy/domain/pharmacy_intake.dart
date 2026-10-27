@@ -214,6 +214,63 @@ RestockProposal proposeRestock(PharmacyLine line, List<Medicine> medicines) {
   );
 }
 
+// l10n: data-begin
+/// Words that make a receipt line a fee, delivery, tax or total — matched
+/// against the printed line, never shown. The same list as the server's
+/// `zad-brain/serviceLine.ts`.
+const Set<String> _serviceWords = <String>{
+  'توصيل',
+  'توصيله',
+  'رسوم',
+  'رسم',
+  'خدمه',
+  'خدمات',
+  'شحن',
+  'ضريبه',
+  'مضافه',
+  'اكراميه',
+  'بقشيش',
+  'خصم',
+  'اجمالي',
+  'المجموع',
+  'مجموع',
+  'باقي',
+  'delivery',
+  'service',
+  'fee',
+  'fees',
+  'shipping',
+  'vat',
+  'tax',
+  'tip',
+  'discount',
+  'total',
+  'subtotal',
+};
+const String _article = 'ال';
+// l10n: data-end
+
+/// Whether [name] is a fee, delivery, tax or total line rather than a
+/// medicine. Measured 2026-10-28 on the owner's account: «توصيل منزلي داخل
+/// 600» from a pharmacy receipt became a medicine, and the morning greeting
+/// asked when to take it. Whole words only — «مستخدم» is not «خدمة».
+bool isServiceLine(String name) {
+  final folded = name
+      .replaceAll(RegExp('[\u064B-\u0652\u0640]'), '')
+      .replaceAll(RegExp('[أإآ]'), 'ا') // l10n: data
+      .replaceAll('ة', 'ه') // l10n: data
+      .replaceAll('ى', 'ي') // l10n: data
+      .toLowerCase();
+  return folded
+      .split(RegExp(r'[^\p{L}]+', unicode: true))
+      .where((w) => w.isNotEmpty)
+      .any(
+        (w) =>
+            _serviceWords.contains(w) ||
+            (w.startsWith(_article) && _serviceWords.contains(w.substring(2))),
+      );
+}
+
 /// Plans what [proposals] — the ticked lines, with any counts the customer
 /// gave — do to the pharmacy and to [shopping].
 PharmacyIntakePlan planPharmacyIntake({
@@ -226,6 +283,8 @@ PharmacyIntakePlan planPharmacyIntake({
   var uncounted = 0;
 
   for (final p in proposals) {
+    // A fee or delivery line is not a medicine, counted or not.
+    if (isServiceLine(p.line.name)) continue;
     final count = p.count;
     if (count == null || count < 1) {
       uncounted++;

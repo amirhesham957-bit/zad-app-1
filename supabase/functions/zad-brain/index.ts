@@ -129,6 +129,7 @@ import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
 import { notePurchaseIntent } from "./purchaseIntent.ts";
+import { isServiceLine } from "./serviceLine.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
@@ -2751,6 +2752,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_pharmacy_item": {
       const medName = String(input.name).trim();
+      // سطر فاتورة مش دوا (serviceLine.ts): «توصيل منزلي داخل 600» اتسجل دوا عند المالك ٢٨/١٠.
+      if (isServiceLine(medName)) {
+        return `مرفوض: «${medName.slice(0, 60)}» سطر رسوم أو توصيل أو حساب في الفاتورة، مش دوا — ماتسجلوش، وماتسألش عن ميعاده.`;
+      }
       const doseTimes = normalizeDoseTimes(input.dose_times, input.daily_dose_count, input.times_explicit);
 
       // Idempotent by (user, medicine name). On 2026-08-15 this account held six pharmacy
