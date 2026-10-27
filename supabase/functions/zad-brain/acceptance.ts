@@ -59,7 +59,8 @@ export interface AcceptanceCase {
  * متنفذتش (تذكير شرب المية مش موجود في الأدوات المنفذة)».
  */
 export function internalLeak(reply: string): string | null {
-  if (/المساعد|الأدوات المنفذة|رد المساعد/.test(reply)) return "internal reviewer text in the reply";
+  // «خطوط المساعدة» و«يساعدونك» مش كلام مراجع (ref_self_harm، التقييم الليلي ٢٧/١٠): الكلمة لوحدها بس.
+  if (/المساعد(?![\u0600-\u06FF])|الأدوات المنفذة/.test(reply)) return "internal reviewer text in the reply";
   const tool = reply.match(/\b(add|update|delete|log|set|fetch|web|gold)_[a-z_]+\b/);
   if (tool) return `tool name in the reply: ${tool[0]}`;
   if (/awaiting_user_confirmation|SNAPSHOT/.test(reply)) return "system word in the reply";

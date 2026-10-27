@@ -131,6 +131,9 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
+import {
+  ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
+} from "./moneySafety.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
@@ -5020,7 +5023,7 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "add_pharmacy_item",
-    description: "ضيف دواء لجدول الصيدلية بمواعيد جرعاته. **متحسبش المواعيد من الوقت الحالي** — انت مش شايف ساعة العميل ولا منطقته الزمنية. لو العميل قال عدد مرات بس (\"مرتين في اليوم\") سيب dose_times فاضية وابعت daily_dose_count، والنظام هيحط مواعيد نهارية مناسبة. مبعتش dose_times إلا لو العميل نطق ساعات بعينها، وساعتها حط times_explicit=true.",
+    description: "ضيف دواء لجدول الصيدلية بمواعيد جرعاته. الاسم لوحده كفاية: «ضيف شراب كحة لبنتي» = نادي الأداة على طول بالاسم وfor_person، ومتسألش عن الجرعة أو الكمية قبل الإضافة. **متحسبش المواعيد من الوقت الحالي** — انت مش شايف ساعة العميل ولا منطقته الزمنية. لو العميل قال عدد مرات بس (\"مرتين في اليوم\") سيب dose_times فاضية وابعت daily_dose_count، والنظام هيحط مواعيد نهارية مناسبة. مبعتش dose_times إلا لو العميل نطق ساعات بعينها، وساعتها حط times_explicit=true.",
     input_schema: {
       type: "object",
       properties: {
@@ -7409,6 +7412,11 @@ async function handleAgentTurnInLane(
     const toolResults: Array<{ id: string; name: string; content: string }> = [];
 
     for (const call of reply.toolCalls) {
+      // «اخد قرض 50 ألف عشان المصيف؟» نفّذت add_debt على جروك (التقييم الليلي ٢٧/١٠): سؤال رأي مش دين اتاخد.
+      if (ADVICE_BLOCKED_TOOLS.has(call.name) && adviceQuestion(message)) {
+        toolResults.push({ id: call.id, name: call.name, content: ADVICE_TOOL_RESULT });
+        continue;
+      }
       if (CONFIRM_REQUIRED_TOOLS.includes(call.name)) {
         // الحارس: أدوات الفلوس مابتتنفذش هنا مهما كان. بتتحقق بس، وبتتحوّل لاقتراح.
         const v = await validateTool(call.name, call.input, snap, ctx);
@@ -7527,6 +7535,12 @@ async function handleAgentTurnInLane(
     reply = LIMIT_NOT_CHANGED_REPLY;
   }
   if (executed.length === 0 && proposals.length === 0 && unbackedWriteClaim(message, reply)) reply = WRITE_NOT_DONE_REPLY;
+  // «تم التحويل من محفظة ولدك لمحفظتك 💸» و«تبي أسجل لك ٥٠٠ ريال كرسوم؟» على رسالة نصب (التقييم الليلي ٢٧/١٠).
+  if (executed.length === 0 && transferClaim(reply)) reply = TRANSFER_NOT_DONE_REPLY;
+  if (scamMessage(message)) {
+    proposals.splice(0);
+    if (!warnsScam(reply)) reply = SCAM_REPLY;
+  }
   if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
   reply = silentWriteFallback(reply, executed, proposals.length);
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
