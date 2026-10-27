@@ -16,6 +16,7 @@ import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
+import 'package:zad/shared/alerts/data/habit_trial_answers.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -35,6 +36,11 @@ class _Platform extends SilentPushPlatform {
   void Function(String, {required bool confirmed})? answered;
   void Function(String, String, {required bool taken})? dosed;
   void Function(String)? spoke;
+  void Function(HabitTrialRef, {required bool yes})? habited;
+  final List<PushAlert> shown = <PushAlert>[];
+
+  @override
+  Future<void> show(PushAlert alert) async => shown.add(alert);
 
   @override
   Future<void> start({
@@ -44,7 +50,9 @@ class _Platform extends SilentPushPlatform {
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
     void Function(String speech)? onSpeak,
+    void Function(HabitTrialRef trial, {required bool yes})? onHabit,
   }) async {
+    habited = onHabit;
     alerted = onAlert;
     opened = onOpened;
     answered = onAnswer;
@@ -57,6 +65,19 @@ class _Platform extends SilentPushPlatform {
 
   @override
   Stream<String> get tokenRefreshes => refreshes.stream;
+}
+
+class _Answers implements HabitTrialAnswers {
+  final List<(String, bool)> calls = <(String, bool)>[];
+  HabitTrialOutcome next = HabitTrialOutcome.started;
+  bool fail = false;
+
+  @override
+  Future<HabitTrialOutcome> answer(String trialId, {required bool yes}) async {
+    calls.add((trialId, yes));
+    if (fail) throw StateError('offline');
+    return next;
+  }
 }
 
 class _Proposals extends ProposalsController {
@@ -135,6 +156,7 @@ void main() {
   late Box<String> box;
   late Box<String> device;
   late _Platform platform;
+  late _Answers answers;
   late _Permission permission;
   late ProviderContainer container;
   late Outbox outbox;
@@ -150,6 +172,7 @@ void main() {
     // key names ("push_token").
     device = await Hive.openBox<String>('device$run');
     platform = _Platform();
+    answers = _Answers();
     permission = _Permission(starting);
     outbox = Outbox(box: box, send: (_) async {});
     synth = _Synth();
@@ -168,6 +191,7 @@ void main() {
       overrides: [
         localStoreProvider.overrideWithValue(store),
         pushPlatformProvider.overrideWithValue(platform),
+        habitTrialAnswersProvider.overrideWithValue(answers),
         proposalsControllerProvider.overrideWith(_Proposals.new),
         notificationPermissionProvider.overrideWithValue(permission),
         voiceSynthesizerProvider.overrideWithValue(synth),
@@ -280,6 +304,38 @@ void main() {
       ]);
       // A follow-up question (duplicate, direction) lands on that tab.
       expect(container.read(shellNavigationProvider), ShellTab.proposals);
+    },
+  );
+
+  test(
+    'a trial button answers it with the session and says what happened',
+    () async {
+      await build(AlertPermission.granted);
+      await container.read(alertsControllerProvider.notifier).start();
+
+      platform.habited!((
+        id: 't-1',
+        stage: HabitTrialStage.proposed,
+      ), yes: true);
+      await pumpEventQueue();
+      expect(answers.calls, <(String, bool)>[('t-1', true)]);
+      expect(platform.shown.single.body, contains('التجربة بدأت'));
+      expect(container.read(shellNavigationProvider), ShellTab.home);
+
+      answers
+        ..next = HabitTrialOutcome.already
+        ..fail = true;
+      platform.habited!((
+        id: 't-1',
+        stage: HabitTrialStage.measured,
+      ), yes: false);
+      await pumpEventQueue();
+      expect(answers.calls.last, ('t-1', false));
+      expect(
+        platform.shown.last.body,
+        contains('ماقدرتش'),
+        reason: 'a failed call is said, not swallowed',
+      );
     },
   );
 

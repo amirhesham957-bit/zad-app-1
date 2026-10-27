@@ -1574,6 +1574,45 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
+  String get habitTrialTitle => '🧪 Two-week trial';
+
+  @override
+  String get habitTrialTry => '✅ Try for two weeks';
+
+  @override
+  String get habitTrialNo => '🙅 No thanks';
+
+  @override
+  String get habitTrialKeep => '✅ Keep it';
+
+  @override
+  String get habitTrialDrop => '❌ Drop it';
+
+  @override
+  String get habitTrialStarted =>
+      'Let\'s go ✅ The trial starts today for two weeks, then I\'ll tell you how it went in numbers.';
+
+  @override
+  String get habitTrialDeclined => 'OK, I won\'t suggest it again for a while.';
+
+  @override
+  String get habitTrialKept =>
+      'Done ✅ It\'s kept — I\'ll remember it and build on it.';
+
+  @override
+  String get habitTrialDropped => 'OK, dropped. Thanks for trying.';
+
+  @override
+  String get habitTrialAlready => 'OK, your answer was already recorded.';
+
+  @override
+  String get habitTrialGone => 'That trial no longer exists.';
+
+  @override
+  String get habitTrialFailed =>
+      'Sorry, I couldn\'t record your answer right now — try again in a bit.';
+
+  @override
   String get txType => 'Type';
 
   @override

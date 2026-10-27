@@ -32,6 +32,7 @@ class PushAlert {
     this.destination,
     this.proposalId,
     this.speech,
+    this.habitTrial,
   });
 
   /// Reads a message: the notification block when there is one, the data
@@ -42,6 +43,8 @@ class PushAlert {
     String? notificationBody,
   }) {
     final proposal = (data['proposal_id'] as String? ?? '').trim();
+    final trial = (data['trial_id'] as String? ?? '').trim();
+    final stage = habitTrialStageFor(data['stage'] as String?);
     return PushAlert(
       title: (notificationTitle ?? data['title'] as String? ?? '').trim(),
       body: (notificationBody ?? data['body'] as String? ?? '').trim(),
@@ -53,6 +56,10 @@ class PushAlert {
           ? ((data['speech'] as String?)?.trim() ?? '').isNotEmpty
                 ? (data['speech'] as String).trim()
                 : null
+          : null,
+      habitTrial:
+          data['kind'] == kHabitTrialKind && trial.isNotEmpty && stage != null
+          ? (id: trial, stage: stage)
           : null,
     );
   }
@@ -73,6 +80,10 @@ class PushAlert {
   /// What Zad says out loud — a voice moment's `speech` (the morning
   /// greeting, a dose, «رجعت!»). Null for a plain alert.
   final String? speech;
+
+  /// A two-week trial waiting for an answer (ZAD_PLAN 5.4) — the notification
+  /// then carries the stage's two buttons.
+  final HabitTrialRef? habitTrial;
 
   /// Worth showing at all.
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
@@ -174,12 +185,68 @@ bool? doseAnswerFromAction(String? actionId) => switch (actionId) {
   _ => null,
 };
 
+/// Where a stage of a two-week trial stands: asked to start, or measured and
+/// asked to keep (ZAD_PLAN 5.4).
+enum HabitTrialStage {
+  /// «نجرب أسبوعين؟»
+  proposed,
+
+  /// «نثبّتها ولا نبطّلها؟»
+  measured,
+}
+
+/// A trial a notification asks about.
+typedef HabitTrialRef = ({String id, HabitTrialStage stage});
+
+/// The stage a push's `data.stage` names, or null for one this app does not
+/// know.
+HabitTrialStage? habitTrialStageFor(String? wire) => switch (wire) {
+  'proposed' => HabitTrialStage.proposed,
+  'measured' => HabitTrialStage.measured,
+  _ => null,
+};
+
+/// `data.kind` of zad-brain's habit trial push.
+const String kHabitTrialKind = 'habit_trial';
+
+/// The trial notification's yes button: «نجرب» or «ثبّتها».
+const String kHabitYesActionId = 'zad_habit_yes';
+
+/// Its no button: «لأ» or «بطّلها».
+const String kHabitNoActionId = 'zad_habit_no';
+
+const String _habitPayloadPrefix = 'habit_trial:';
+
+/// The payload of a trial notification. The stage rides along so the button
+/// labels and the reply match what was asked.
+String habitTrialPayload(HabitTrialRef trial) =>
+    '$_habitPayloadPrefix${trial.id}|${trial.stage.name}';
+
+/// The trial a payload asks about, or null.
+HabitTrialRef? habitTrialFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_habitPayloadPrefix)) return null;
+  final parts = payload.substring(_habitPayloadPrefix.length).split('|');
+  if (parts.length != 2 || parts[0].isEmpty) return null;
+  final stage = habitTrialStageFor(parts[1]);
+  return stage == null ? null : (id: parts[0], stage: stage);
+}
+
+/// A trial button's answer: true for yes, false for no, null for a tap on
+/// the notification itself.
+bool? habitAnswerFromAction(String? actionId) => switch (actionId) {
+  kHabitYesActionId => true,
+  kHabitNoActionId => false,
+  _ => null,
+};
+
 /// Where a tapped local notification goes, for every payload shape.
 AlertDestination? destinationForPayload(String? payload) =>
     proposalIdFromPayload(payload) != null
     ? AlertDestination.proposals
     : doseFromPayload(payload) != null
     ? AlertDestination.pharmacy
+    : habitTrialFromPayload(payload) != null
+    ? AlertDestination.home
     : destinationFor(payload);
 
 /// A notification button's answer: true for «أيوه، أنا», false for «مش أنا»,

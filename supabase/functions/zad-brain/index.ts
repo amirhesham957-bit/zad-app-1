@@ -98,6 +98,7 @@ import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from ".
 import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
@@ -6679,8 +6680,12 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       await sb.from("app_notifications").insert({
         user_id: task.user_id, title: notice.title, message: finalText,
       });
-      // FCM — الإشعار يوصل الجهاز فوراً حتى والتطبيق مقفول (fire-and-forget).
-      await pushToDevice(sb, task.user_id, notice.title, finalText.slice(0, 180));
+      // FCM — الإشعار يوصل الجهاز فوراً حتى والتطبيق مقفول (fire-and-forget). تجربة الأسبوعين (٥.٤) بتروح
+      // data-only بزرارينها، عشان التطبيق هو اللي يعرضها؛ لو مابقتش مستنية رد بتروح عادي.
+      const trial = HABIT_TRIAL_KINDS.has(task.kind ?? "") ? await habitTrialForTask(sb, task.user_id, task.id) : null;
+      const trialPush = trial ? habitTrialPush(trial, finalText) : null;
+      if (trialPush) await pushToDevice(sb, task.user_id, notice.title, trialPush.body, trialPush.data, true);
+      else await pushToDevice(sb, task.user_id, notice.title, finalText.slice(0, 180));
       // المبادرات بتروح تليجرام كمان: من غيرها كانت بتقف في قايمة جوه التطبيق (FCM صفر
       // توكن). الطلبات مابتروحش — العميل غالبًا طلبها من نفس القناة اللي هيشوف ردها فيها.
       if (notice.proactive) {

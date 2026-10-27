@@ -13,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 
 /// The channel alerts arrive on. Kotlin's id, so an alert is the same channel
@@ -26,7 +27,8 @@ abstract interface class PushPlatform {
   /// app is open; [onOpened] gets where a tapped alert should land;
   /// [onAnswer] gets a bank confirmation settled from a notification button;
   /// [onDose] a dose reminder's «أخدتها» (taken) or «أجّل» (not taken);
-  /// [onSpeak] a voice moment's «اسمع زاد».
+  /// [onSpeak] a voice moment's «اسمع زاد»; [onHabit] a two-week trial's
+  /// yes or no.
   Future<void> start({
     required void Function(PushAlert alert) onAlert,
     required void Function(AlertDestination? destination) onOpened,
@@ -34,6 +36,7 @@ abstract interface class PushPlatform {
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
     void Function(String speech)? onSpeak,
+    void Function(HabitTrialRef trial, {required bool yes})? onHabit,
   });
 
   /// This device's push token, or null when there is none to have.
@@ -62,6 +65,7 @@ class SilentPushPlatform implements PushPlatform {
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
     void Function(String speech)? onSpeak,
+    void Function(HabitTrialRef trial, {required bool yes})? onHabit,
   }) async {}
 
   @override
@@ -115,6 +119,22 @@ Future<void> _initLocal({DidReceiveNotificationResponseCallback? onTap}) async {
       );
 }
 
+/// A trial's two buttons for its stage. Arabic only until the launch has a
+/// second language (owner's decision 2026-09-29), as the rest of this file.
+List<AndroidNotificationAction> _habitActions(HabitTrialStage stage) {
+  final l10n = zadL10nArabic;
+  final (yes, no) = switch (stage) {
+    HabitTrialStage.proposed => (l10n.habitTrialTry, l10n.habitTrialNo),
+    HabitTrialStage.measured => (l10n.habitTrialKeep, l10n.habitTrialDrop),
+  };
+  // showsUserInterface: the answer needs the signed-in session, which lives
+  // in the app (AlertsController).
+  return <AndroidNotificationAction>[
+    AndroidNotificationAction(kHabitYesActionId, yes, showsUserInterface: true),
+    AndroidNotificationAction(kHabitNoActionId, no, showsUserInterface: true),
+  ];
+}
+
 Future<void> _showLocal(PushAlert alert) async {
   if (!alert.isShowable) return;
   await _local.show(
@@ -136,7 +156,9 @@ Future<void> _showLocal(PushAlert alert) async {
         // A bank question carries its two answers. showsUserInterface: the
         // decision needs the signed-in session, which lives in the app, so a
         // press brings the app up and settles it there (AlertsController).
-        actions: alert.speech != null
+        actions: alert.habitTrial != null
+            ? _habitActions(alert.habitTrial!.stage)
+            : alert.speech != null
             ? const <AndroidNotificationAction>[
                 // Speaking needs the app's player, so the press brings the
                 // app up and زاد says it there (AlertsController).
@@ -162,7 +184,9 @@ Future<void> _showLocal(PushAlert alert) async {
               ],
       ),
     ),
-    payload: alert.speech != null
+    payload: alert.habitTrial != null
+        ? habitTrialPayload(alert.habitTrial!)
+        : alert.speech != null
         ? speakPayload(alert.speech!)
         : alert.proposalId == null
         ? payloadFor(alert.destination)
@@ -295,7 +319,14 @@ void routeNotificationResponse({
   void Function(String proposalId, {required bool confirmed})? onAnswer,
   void Function(String medicineId, String time, {required bool taken})? onDose,
   void Function(String speech)? onSpeak,
+  void Function(HabitTrialRef trial, {required bool yes})? onHabit,
 }) {
+  final trial = habitTrialFromPayload(payload);
+  final yes = habitAnswerFromAction(actionId);
+  if (trial != null && yes != null && onHabit != null) {
+    onHabit(trial, yes: yes);
+    return;
+  }
   final proposal = proposalIdFromPayload(payload);
   final confirmed = confirmationFromAction(actionId);
   if (proposal != null && confirmed != null && onAnswer != null) {
@@ -365,6 +396,7 @@ class FirebasePushPlatform implements PushPlatform {
     void Function(String medicineId, String time, {required bool taken})?
     onDose,
     void Function(String speech)? onSpeak,
+    void Function(HabitTrialRef trial, {required bool yes})? onHabit,
   }) async {
     if (_started) return;
     _started = true;
@@ -378,6 +410,7 @@ class FirebasePushPlatform implements PushPlatform {
         onAnswer: onAnswer,
         onDose: onDose,
         onSpeak: onSpeak,
+        onHabit: onHabit,
       ),
     );
 
@@ -415,6 +448,7 @@ class FirebasePushPlatform implements PushPlatform {
           onAnswer: onAnswer,
           onDose: onDose,
           onSpeak: onSpeak,
+          onHabit: onHabit,
         );
       }
     }
