@@ -222,3 +222,8 @@ Deno.test("scopeToolsForSpecialist: a general message gets the core set plus wha
   const hinted = scopeToolsForSpecialist(all, "general", null, ["delete_debt"]).map((t) => t.name);
   assertEquals(hinted, ["read_house", "web_search", "add_appointment", "delete_debt"]);
 });
+
+Deno.test("intentToolHints: «آه» بعد «أفتكر إن …؟ صح؟» بتجيب remember (ZAD_PLAN ٥.٣)", () => {
+  assertEquals(intentToolHints("آه", "سلامتها 🤍 أفتكر إن مراتك حامل في الشهر الرابع؟ صح؟").includes("remember"), true);
+  assertEquals(intentToolHints("آه", "تحب أضيف الزيت للقايمة؟").includes("remember"), false);
+});

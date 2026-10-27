@@ -213,6 +213,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
+  // جواب «أفتكر إن …؟ صح؟» على ملاحظة حساسة (sensitiveMemory.ts): «آه» لوحدها مافيهاش نية، السؤال اللي قبلها فيه.
+  if (/افتكر ان .*صح\s*؟/.test(normalize(priorReply)) && !tools.includes("remember")) tools.push("remember");
   if (OCCASION_INTENT.test(norm)) tools.push("remember_occasion");
   if (GOLD_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("gold_price");
   else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");

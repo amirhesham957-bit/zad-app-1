@@ -27,12 +27,14 @@ export interface RunContext {
   observations: Array<{ item: string; qty: number; samples: number; rateKnown: boolean }>;
   /** What web_search asked and got this run — for the acceptance probe's report (2026-10-11). */
   searches?: Array<{ query: string; query_en: string | null; source: string; titles: string[] }>;
+  /** بداية اللفة (ms). ملاحظة حساسة اتركنت بعدها لسه محدش اتسأل عليها (sensitiveMemory.ts). */
+  startedAt?: number;
 }
 
 export type Validator = (input: any, snap: any, ctx: RunContext) => Promise<Validation> | Validation;
 
 export function freshContext(userId: string): RunContext {
-  return { userId, counts: {}, mutationCount: 0, insightCount: 0, rejections: [], mutations: [], abortedTools: new Set(), observations: [] };
+  return { userId, counts: {}, mutationCount: 0, insightCount: 0, rejections: [], mutations: [], abortedTools: new Set(), observations: [], startedAt: Date.now() };
 }
 
 const DEDUPE_KEY_RE = /^[a-z0-9_]{3,60}$/;
@@ -255,6 +257,8 @@ export const validateRememberOccasion: Validator = (input, _snap, ctx) => {
 
 export const validateRemember: Validator = (input, snap, ctx) => {
   if ((ctx.counts["remember"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ ملاحظات في المرة" };
+  // جواب «صح؟» على ملاحظة حساسة مستنية: الملاحظة نفسها في الصف، والـid بس اللي يهم.
+  if (input.pending_id) return { ok: true };
   const len = (input.note ?? "").length;
   if (len < 10) return { ok: false, reason: "الملاحظة قصيرة أوي" };
   if (len > 200) return { ok: false, reason: "طويلة أوي، لخّصها في جملة" };
