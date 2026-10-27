@@ -77,8 +77,9 @@ Deno.test("time spent out of stock before a restock is not consumption", async (
   const d = await db();
   await d.exec(await migration(BUSY_TIME));
   const u = await addUser(d);
-  // ١ ← ٠ في يوم، ٢٠ يوم خلصان، اشترى ٢، ٢ ← ١ في يومين.
-  await observe(d, u, "جبنة", [[30, 1], [29, 0], [9, 0], [9, 2], [7, 1]]);
+  // ١ ← ٠ في يوم، ٢٠ يوم خلصان، اشترى ٢، ٢ ← ١ في يومين. القراية الفاضية قبل الشرا بدقيقة: لو الاتنين في
+  // نفس اللحظة ممكن يقعوا في نفس المللي ثانية وترتيبهم يتقلب (فشل في CI ٢٧/١٠ بمعدل ٣ بدل ⅔).
+  await observe(d, u, "جبنة", [[30, 1], [29, 0], [9 + 1 / 1440, 0], [9, 2], [7, 1]]);
   await recompute(d, u, "جبنة");
   assertAlmostEquals((await rate(d, u, "جبنة")).avg_daily_qty, 2 / 3, 0.01);
 });
