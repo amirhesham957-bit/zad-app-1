@@ -16,6 +16,7 @@
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
 import { geminiKeys } from "../_shared/keyPool.ts";
 import { trimRunawaySpeech } from "../_shared/ttsTrim.ts";
+import { cutSpokenTail } from "../_shared/ttsTail.ts";
 import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, type VoiceEmotion, voiceNameFor, type ZadVoiceGender } from "../_shared/zadVoice.ts";
 
 export const ALERT_TTS_MODELS: readonly string[] = GEMINI_TTS_CHAIN;
@@ -129,7 +130,8 @@ export async function synthesizeAlertPcm(
           continue;
         }
         // Gemini sometimes keeps speaking after the text (ttsTrim.ts): the tail goes before the MP3.
-        return trimRunawaySpeech(Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0)), text);
+        const heard = await cutSpokenTail(Uint8Array.from(atob(inline.inlineData.data), (c) => c.charCodeAt(0)), text);
+        return trimRunawaySpeech(heard, text);
       } catch (_e) {
         attempts.push(`k${ki}/${model}:threw`);
       }

@@ -37,25 +37,25 @@ export function isVoiceEmotion(value: unknown): value is VoiceEmotion {
 /** أداء كل مشاعر — وصف تمثيلي للمحرك، مش كلام بيتقال. */
 export const EMOTION_DIRECTIONS: Record<VoiceEmotion, string> = {
   warm:
-    "Warm, relaxed and completely natural, like a young woman chatting with her closest friend on the phone. Casual rhythm, small natural pauses, a smile in the voice.",
+    "Warm, relaxed and completely natural, like a young woman chatting with her closest friend on the phone. Casual rhythm, audible breaths, a tiny 'hmm' of thought, small natural pauses, a smile you can hear.",
   cheerful:
-    "Bright, bubbly and full of life, genuinely happy to talk to them. Quick lively rhythm, light laughter in the voice where it fits.",
+    "Bright, bubbly and full of life, genuinely happy to talk to them. Quick lively rhythm, a happy little gasp at the start, light laughter in the voice where it fits.",
   playful:
-    "Teasing and cheeky, like a cute friend who is joking around. Playful ups and downs in pitch, a little giggle or chuckle where it fits.",
+    "Teasing and cheeky, like a cute friend who is joking around. Playful ups and downs in pitch, a giggle or a snort of laughter, a dramatic gasp when she pretends to be shocked.",
   caring:
-    "Soft, tender and attentive, like someone who truly cares about their health. Gentle and unhurried, very clear on names, times and numbers.",
+    "Soft, tender and attentive, like someone who truly cares about their health. A soft breath before she speaks, gentle and unhurried, very clear on names, times and numbers.",
   worried:
-    "Genuinely worried and a bit anxious, slightly faster and breathier, but still gentle — she is on their side, not scolding.",
+    "Genuinely worried and anxious: a sharp little gasp at the start, faster and breathier, a nervous catch in the throat — but still gentle, she is on their side, not scolding.",
   reproachful:
-    "Affectionately reproachful, like a close friend saying 'really? again?' — a small disappointed sigh, a pouty tone, then softening at the end.",
+    "Annoyed and affectionately reproachful, like a close friend saying 'really? again?!' — an exasperated huff and a long disappointed sigh, a pouty, fed-up tone, then softening at the end.",
   sulky:
-    "Sulking and pretending to be upset, pouty and dramatic in a cute way, drawn-out words, a little huff — clearly wanting them to make it up to her.",
+    "Sulking and upset with them, pouty and dramatic in a cute way: a loud huff through the nose, drawn-out words, short clipped phrases — clearly wanting them to make it up to her.",
   sad:
-    "Sad and hurt, voice slightly trembling and close to tears, a soft sniffle and a shaky breath between phrases, then a hopeful little lift at the end.",
+    "Sad and hurt, voice trembling and close to tears: a shaky indrawn breath, a soft sniffle, her voice cracking on a word, slow heavy pauses — then a brave, hopeful little lift at the end.",
   proud:
-    "Proud and delighted, celebrating them — excited, warm, a happy laugh, like she is cheering for a friend who just achieved something.",
+    "Proud and overjoyed, celebrating them: an excited gasp, a happy laugh, her voice jumping up with joy — like she is cheering for a friend who just achieved something.",
   tender:
-    "Very soft, slow and kind, a little sleepy, like a warm late-night good-night to a dear friend or family member — a gentle smile in the voice, a soft sigh, never loud.",
+    "Very soft, slow and kind, a little sleepy, like a warm late-night good-night to a dear friend or family member — a gentle smile in the voice, a soft sigh, almost a whisper, never loud.",
 };
 
 /**
@@ -200,14 +200,14 @@ export function voiceForPersona(_persona: unknown): string {
 export function inferEmotion(text: string): VoiceEmotion {
   // الإيموجي بالبدائل (`|`) مش بين أقواس `[]`: من غير فلاج u الكلاس بيتقري نص الحرف (surrogate)
   // لوحده، فـ«تمام 😊» كانت بتطلع sad و«يلا ❤️» worried (اتمسك ٢٠٢٦-١٠-٠٤، voiceReply_test).
-  if (/😢|😭|💔|زعلانة|زعلت|وحشتني|نسيتني/u.test(text)) return "sad";
-  if (/😤|😒|متقمصة|مش بتكلمني|مخاصماك/u.test(text)) return "sulky";
+  if (/😢|😭|💔|زعلانة|زعلت|زعلتني|وحشتني|نسيتني|للأسف|مع الأسف|قلبي وجعني/u.test(text)) return "sad";
+  if (/😤|😒|😠|متقمصة|مش بتكلمني|مخاصماك|مضايقة|مضايقاني|خلاص مش هكلمك/u.test(text)) return "sulky";
   if (/كده برضه|تاني\s*[؟?]|ليه ماخدتش|نسيت (الدوا|تاخد)/u.test(text)) return "reproachful";
   if (/🚨|⚠|⛔|خطر|انتبه|تجاوزت|وصلت لحد|قاربت النفاد|وقفت/u.test(text)) return "worried";
-  if (/🎉|🏆|⭐|مبروك|أحسنت|برافو|حققت|وفرت/u.test(text)) return "proud";
+  if (/🎉|🏆|⭐|🥳|مبروك|أحسنت|برافو|حققت|وفرت|فرحانة|مبسوطة بيك|يا سلام/u.test(text)) return "proud";
   if (/صباح الخير|صباح النور|يا صباح|Günaydın/iu.test(text)) return "cheerful";
   if (/دوا|جرعة|دكتور|صيدلية|ميعاد|موعد/u.test(text)) return "caring";
-  if (/😂|🤣|😜|هههه/u.test(text)) return "playful";
+  if (/😂|🤣|😜|😅|هههه|بهزر/u.test(text)) return "playful";
   return "warm";
 }
 
@@ -226,7 +226,8 @@ export function buildTtsPrompt(input: { text: string; emotion?: VoiceEmotion; co
       : "Voice: a young, cute, very natural-sounding woman, never robotic or announcer-like.",
     accentDirection(input.country),
     `Delivery: ${(male ? MALE_EMOTION_DIRECTIONS : EMOTION_DIRECTIONS)[emotion]}`,
-    "Say exactly the words in the text, in its own language; express the emotion through the voice (sighs, laughs, trembles) without adding words.",
+    "She must sound like a real human being with real feelings, never like an assistant reading a script: breathing you can hear, natural hesitations, and the feeling carried by sounds as well as tone.",
+    "Say exactly the words in the text, in its own language; express the emotion through the voice (gasps, breaths, sighs, huffs, laughs, sniffles, a cracking voice) without adding words.",
     "Stop the moment the text ends: no closing words, credits, announcements or sounds after its last word.",
     "",
     input.text,
