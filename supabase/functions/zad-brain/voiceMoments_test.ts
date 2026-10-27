@@ -419,10 +419,12 @@ Deno.test("close day: a template (no model), a plain notification, and Telegram 
   });
   assertEquals(res, { sent: 1, skipped: 0, failed: 0 });
   assertEquals(composed, 0);
-  assertEquals(calls, [
-    "device:false:-:close_day:النهارده شفت 4 حاجات: قهوة 50 ج.م، كارفور 320 ج.م، أوبر 85 ج.م وكمان 1. فيه حاجة كاش؟",
-    "tg:false:close_day:00000000-0000-4000-8000-0000000000cd",
-  ]);
+  // الصيغة بتلف بالتاريخ (بلاغ المالك ٢٨/١٠)؛ اللي ثابت: اللي اتشاف بأرقامه، وسؤال الكاش.
+  assertEquals(calls.length, 2);
+  assert(calls[0].startsWith("device:false:-:close_day:"), calls[0]);
+  assert(calls[0].includes("4 حاجات: قهوة 50 ج.م، كارفور 320 ج.م، أوبر 85 ج.م وكمان 1."), calls[0]);
+  assert(/كاش|بإيدك/.test(calls[0]), calls[0]);
+  assertEquals(calls[1], "tg:false:close_day:00000000-0000-4000-8000-0000000000cd");
   assertEquals((updates.at(-1)?.values.delivery as Row).composed_by, "template");
 });
 
