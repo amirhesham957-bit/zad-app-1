@@ -16,6 +16,7 @@ import { countryNameAr, type DealHere, itemKey, sameStore, travelContext } from 
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { meaningfulWords, offerMatchesNeed, stapleGroup } from "./productIdentity.ts";
+import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -57,6 +58,8 @@ export interface TasteDeal {
   tight?: boolean;
   /** الفلوس مرتاحة والصنف بيتخزّن والبيت بيشتريه، والعرض فيه خصم: فرصة تخزين (٤.٨). */
   stock?: boolean;
+  /** الحاجة زي ما العميل قالها في «عايز أشتري …» (ZAD_PLAN ٥.٨ (٣)) — العرض ده على نية مش على احتياج. */
+  intent?: string;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
@@ -341,7 +344,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
-      sb.from("zad_transactions").select("merchant_name").eq("user_id", userId).eq("txn_kind", "expense")
+      sb.from("zad_transactions").select("merchant_name,title,created_at").eq("user_id", userId).eq("txn_kind", "expense")
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
       sb.from("zad_voice_moments").select("facts,created_at").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
         .gte("created_at", new Date(now - DEAL_DECLINED_DAYS * 86_400_000).toISOString()).limit(40),
@@ -350,15 +353,22 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
         .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
       sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle(),
       // ٤.١٥: اللي اتشرى قبل كده — منه ماركة البيت لكل صنف.
-      sb.from("zad_inventory").select("item_name").or(householdFilter(userId, family)).limit(300),
+      sb.from("zad_inventory").select("item_name,created_at").or(householdFilter(userId, family)).limit(300),
     ]);
     const tight = broke || opts.tight === true;
     const interests = (profile as { interests?: unknown } | null)?.interests;
     const shopping = ((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name);
     const runningOut = runningOutNames((home as { state?: unknown } | null)?.state);
+    // ٥.٨ (٣): «عايز أشتري جاكيت» — قبل قايمة الشرا لأنه قالها بنفسه؛ واللي اتشرى بيتقفل هنا. الفلوس ضيقة = مش وقت
+    // رغبات، النواقص بس.
+    const boughtRows = [
+      ...((txns ?? []) as Array<{ title?: string | null; created_at?: string | null }>).map((t) => ({ name: t.title ?? null, at: t.created_at ?? null })),
+      ...((bought ?? []) as Array<{ item_name: string | null; created_at?: string | null }>).map((b) => ({ name: b.item_name, at: b.created_at ?? null })),
+    ];
+    const wants = tight ? [] : (await openIntents(sb, userId, boughtRows, now)).slice(0, MAX_INTENT_ITEMS).map((i) => i.item);
     const items = tight
       ? tasteItems([...runningOut, ...shopping], [])
-      : tasteItems([...shopping, ...runningOut], Array.isArray(interests) ? interests.map(String) : []);
+      : tasteItems([...wants, ...shopping, ...runningOut], Array.isArray(interests) ? interests.map(String) : []);
     // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
@@ -379,10 +389,16 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
-    const fromStore = pickDeal(storedDeals(stored as StoredDealRow[] | null), items, favorites, skip, nearby, tight, brands, stockable);
+    // النية الأول: عرض على حاجة قال إنه عايزها يغلب محله المعتاد على حاجة من القايمة.
+    const pick = (raw: unknown): TasteDeal | null => {
+      const wanted = wants.length ? pickDeal(raw, wants, favorites, skip, nearby, false, brands, stockable) : null;
+      if (wanted) return { ...wanted, intent: wants.find((w) => offerMatchesNeed(w, wanted.item)) };
+      return pickDeal(raw, items, favorites, skip, nearby, tight, brands, stockable);
+    };
+    const fromStore = pick(storedDeals(stored as StoredDealRow[] | null));
     if (fromStore) return fromStore;
     const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pickDeal((res as { deals?: unknown } | null)?.deals, items, favorites, skip, nearby, tight, brands, stockable);
+    return pick((res as { deals?: unknown } | null)?.deals);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;

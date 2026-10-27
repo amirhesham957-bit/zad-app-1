@@ -128,6 +128,7 @@ import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace } from "./goalPace.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
+import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
@@ -7096,6 +7097,8 @@ async function handleAgentTurnInLane(
   const snap = await buildSnapshot(sb, userId);
   // النبرة (٥.١): اللي العميل قاله عن نفسه في الرسالة دي فوق نبرة الأرقام.
   snap.tone = toneWithMessage(snap.tone, message);
+  // ٥.٨ (٣): «عايز أشتري جاكيت» بتتحفظ نية، وعرض الصبح بيدوّر لها. بقواعد ثابتة، من غير أداة ولا سطر برومبت.
+  void notePurchaseIntent(sb, userId, message);
   const ctx: RunContext = freshContext(userId);
   // التوجيه للوكيل المتخصص: deterministic، قبل أي نداء موديل. general = برومبت زي ما هو.
   // بند 31.6 — أساسي + استشاري تانٍ (لو الرسالة بتمس نطاقين مع بعض)، مش اختيار واحد يقصّ نص السؤال.
