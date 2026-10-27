@@ -23,7 +23,7 @@ import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
 import { budgetComfortable } from "./householdLoad.ts";
-import { familyTime, type FamilyTime, isWeekendEve } from "./familyTime.ts";
+import { familyTime, type FamilyTime, isWeekendEve, weekendOuting, type WeekendOuting } from "./familyTime.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
@@ -172,7 +172,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك، partner = «رابط شراكة» — قوليها بالنص، زاد بياخد عمولة منه) " +
     "ولحد إمتى لو source.until موجود، وإنه ممكن يكون خلص. " +
     "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
-    "اقتراح مش واجب، ومن غير «إنتوا مش بتقعدوا مع بعض».",
+    "اقتراح مش واجب، ومن غير «إنتوا مش بتقعدوا مع بعض». " +
+    "لو فيه weekend_outing: جملة واحدة في الآخر بدل العرض — خروجة أو عشا برّه بكرة في weekend_outing.city بالمبلغ اللي فيه بس " +
+    "(budget = null ⇒ من غير رقم)، اقتراح خفيف مش واجب، ومن غير اسم مكان مش موجود في الحقايق.",
   family_dose_missed:
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
@@ -670,6 +672,7 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           (clothes ? ` ${clothes}` : "") +
           (deal ? ` ${deal}` : "") +
           (str((facts.family_time as { line?: string } | undefined)?.line, 200) ? ` ${str((facts.family_time as { line?: string }).line, 200)}` : "") +
+          (str((facts.weekend_outing as { line?: string } | undefined)?.line, 200) ? ` ${str((facts.weekend_outing as { line?: string }).line, 200)}` : "") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
         speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${alert ? `${alert} ` : ""}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${clothes ? `${clothes} ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
@@ -1291,12 +1294,17 @@ export async function morningFacts(
   // بأرخص سعر، مش عرض.
   const threat = String((budget as { threat?: unknown } | null)?.threat ?? "");
   // والميزانية مرتاحة (مؤكدة، SAFE، و٣٠٪ متاح): الأساسي اللي بيتخزّن بيتقال كفرصة تخزين.
-  const deal = quiet ? null : await loadTasteDeal(sb, userId, Date.now(), {
+  const comfortable = !!budget?.limit_confirmed && budgetComfortable(threat, budget?.available, budget?.monthly_limit);
+  const homeDeal = quiet ? null : await loadTasteDeal(sb, userId, Date.now(), {
     tight: threat === "OVER" || threat === "DANGER",
-    comfortable: !!budget?.limit_confirmed && budgetComfortable(threat, budget?.available, budget?.monthly_limit),
+    comfortable,
   });
   // وقت العيلة قبل الويك إند (familyTime.ts): مش في ظرف؛ والميزانية في خطر أو «أنا مفلس» ⇒ أفكار ببلاش.
   const together = quiet ? null : await familyTimeFor(sb, userId, local.date, weather, budget, profile ?? null, threat);
+  // ٥.٨ (٢): ليلة الويك إند والميزانية مرتاحة ⇒ خانة العرض لخروجة مش لصنف بيت. البيت اللي فيه أكتر من فرد خد
+  // خروجته في family_time؛ الفرد لوحده بياخدها هنا.
+  const outing = quiet || together || !comfortable ? null : await weekendOutingFor(sb, userId, local.date, budget, profile ?? null);
+  const deal = comfortable && (outing || together) ? null : homeDeal;
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   const medAsk = quiet || gift || bigEvent || newcomer ? null : await doseTimesAsk(sb, userId);
   return {
@@ -1333,6 +1341,7 @@ export async function morningFacts(
     ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
     ...(deal ? { taste_deal: deal } : {}),
     ...(together ? { family_time: together } : {}),
+    ...(outing ? { weekend_outing: outing } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
     ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
     time_zone: local.time_zone,
@@ -1489,6 +1498,24 @@ function todayOf(w: WeatherFacts, date: string): Record<string, unknown> | null 
 }
 
 /** وقت العيلة: بلده، عدد العيلة في التطبيق، و«أنا مفلس». أي قراية فشلت ⇒ مفيش اقتراح. */
+async function weekendOutingFor(
+  sb: SupabaseClient, userId: string, date: string,
+  budget: Record<string, unknown> | null, profile: Record<string, unknown> | null,
+): Promise<WeekendOuting | null> {
+  try {
+    const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();
+    return weekendOuting({
+      date,
+      country: (u as { country?: string | null } | null)?.country ?? null,
+      comfortable: true,
+      city: typeof profile?.city === "string" ? profile.city : null,
+      budget: budget as { threat?: string; velocity?: number; spent?: number; available?: number; currency?: string } | null,
+    });
+  } catch {
+    return null;
+  }
+}
+
 async function familyTimeFor(
   sb: SupabaseClient, userId: string, date: string, weather: WeatherFacts | null,
   budget: Record<string, unknown> | null, profile: Record<string, unknown> | null, threat: string,
