@@ -39,6 +39,21 @@ const ROUTINE_LOG = new RegExp(
   ].join("|"),
 );
 
+// Setting, moving or cancelling a reminder or an appointment (owner, 2026-10-28, ZAD_PLAN
+// 8c.1): free like recording an expense — Zad is the customer's organiser before it is
+// anything else. Asking about them ("عندي إيه بكرة؟") is a question and still costs.
+const REMINDER = new RegExp(
+  [
+    "فكرني", "فكّرني", "فكرنى", "ذكرني", "ذكّرني", "نبهني", "نبّهني", "صحيني", "صحّيني",
+    "remind me",
+    "عندي ميعاد", "عندي موعد", "حطلي ميعاد", "حط ميعاد", "احجزلي ميعاد",
+    "أجّل", "اجّل", "أجل الميعاد", "اجل الميعاد", "أجل الموعد", "اجل الموعد",
+    "الغي الميعاد", "ألغي الميعاد", "الغي الموعد", "ألغي الموعد", "الغي التذكير", "ألغي التذكير",
+    "شيل الميعاد", "شيل التذكير",
+  ].join("|"),
+  "i",
+);
+
 // Asking Zad to reason over the data rather than store a fact in it.
 const DEEP_ANALYSIS = new RegExp(
   [
@@ -61,7 +76,7 @@ const DEEP_ANALYSIS = new RegExp(
 export function classifyMessage(message: string): MessageEntitlementKind {
   const text = (message ?? "").trim();
   if (!text) return "chat";
-  if (ROUTINE_LOG.test(text)) return "routine";
+  if (ROUTINE_LOG.test(text) || REMINDER.test(text)) return "routine";
   if (DEEP_ANALYSIS.test(text)) return "brain";
   return "chat";
 }
