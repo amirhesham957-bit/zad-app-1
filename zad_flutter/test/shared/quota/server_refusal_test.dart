@@ -15,6 +15,8 @@ void main() {
     );
     expect(r?.title, 'رصيد المحاولات مايكفيش');
     expect(r?.message, 'رصيد محاولاتك مايكفيش قراية الصورة');
+    // An ad can bring an attempt here (ZAD_PLAN 8b.2).
+    expect(r?.outOfAttempts, isTrue);
   });
 
   test('429: too fast, also when the body arrived as text', () {
@@ -26,6 +28,7 @@ void main() {
     );
     expect(r?.title, 'استنى شوية');
     expect(r?.message, 'بالراحة عليّ شوية');
+    expect(r?.outOfAttempts, isFalse);
   });
 
   test('anything else is the screen own failure, not a refusal', () {

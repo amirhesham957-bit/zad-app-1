@@ -122,6 +122,43 @@ void main() {
     expect(find.textContaining('بيفتح الصندوق'), findsOneWidget);
   });
 
+  testWidgets('three ads, one attempt: the first two count toward it', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      preview: const AdRewardPreview(
+        available: true,
+        boxBonus: 1,
+        adsToday: 1,
+        dailyCap: 9,
+      ),
+    );
+    expect(find.text('شاهد إعلان — ٢ من ٣'), findsOneWidget);
+    expect(
+      find.text('كل ٣ إعلانات = محاولة واحدة — شفت ١ من ٣'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('three ads, one attempt: the third opens it', (tester) async {
+    await _pump(
+      tester,
+      preview: const AdRewardPreview(
+        available: true,
+        boxNext: true,
+        boxBonus: 1,
+        adsToday: 2,
+        dailyCap: 9,
+      ),
+    );
+    expect(find.text('شاهد إعلان وخد محاولة واحدة'), findsOneWidget);
+    expect(
+      find.text('الإعلان ده بيكمّل التلاتة ويفتح محاولة واحدة'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('nothing where ads may not show', (tester) async {
     await _pump(tester, allowed: false);
     expect(_button(), findsNothing);

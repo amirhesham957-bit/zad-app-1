@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/ads/data/rewarded_ads.dart';
@@ -106,6 +107,9 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
       label = 'خلصت إعلانات النهارده';
     } else if (waiting) {
       label = 'الإعلان الجاي بعد دقيقة';
+    } else if (preview.total == 0) {
+      // ٣ إعلانات = محاولة (قرار المالك ٢٨/١٠): الإعلان ده خطوة منهم.
+      label = context.l10n.adWatchStep(arabicDigits(preview.adsToday % 3 + 1));
     } else {
       label = 'شاهد إعلان وخد ${attemptsLabel(preview.total)}';
     }
@@ -132,11 +136,7 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
         if (preview.available && !preview.capped) ...<Widget>[
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            preview.boxNext
-                ? 'الإعلان ده بيفتح الصندوق: '
-                      '+${arabicDigits(preview.boxBonus)} زيادة'
-                : 'كل تالت إعلان بيفتح صندوق — '
-                      '${arabicDigits(preview.adsToday % 3)} من ٣',
+            _progressLine(context.l10n, preview),
             textAlign: TextAlign.center,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
@@ -153,4 +153,19 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
       ],
     );
   }
+}
+
+/// The line under the button: what the three ads come to.
+String _progressLine(ZadL10n l, AdRewardPreview p) {
+  if (p.reward == 0) {
+    return p.boxNext
+        ? l.adThirdOpens(attemptsLabel(p.boxBonus))
+        : l.adThreeForOne(
+            attemptsLabel(p.boxBonus),
+            arabicDigits(p.adsToday % 3),
+          );
+  }
+  return p.boxNext
+      ? 'الإعلان ده بيفتح الصندوق: +${arabicDigits(p.boxBonus)} زيادة'
+      : 'كل تالت إعلان بيفتح صندوق — ${arabicDigits(p.adsToday % 3)} من ٣';
 }
