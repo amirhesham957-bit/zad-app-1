@@ -2514,4 +2514,13 @@ class ZadL10nAr extends ZadL10n {
   String adThreeForOne(String attempts, String seen) {
     return 'كل ٣ إعلانات = $attempts — شفت $seen من ٣';
   }
+
+  @override
+  String get appointmentGuardTitle => 'قبل ما أسجّله:';
+
+  @override
+  String get appointmentGuardAsk => 'تسجّله كده ولا تغيّر الوقت؟';
+
+  @override
+  String get appointmentGuardKeep => 'احفظه برضه';
 }

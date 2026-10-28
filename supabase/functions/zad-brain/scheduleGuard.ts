@@ -220,11 +220,13 @@ export const SLEEP_GRACE_MINUTES = 30;
 /** تذكير دوا أقرب من كده لجرعة الصيدلية = نفس الجرعة. */
 export const DOSE_TWIN_MINUTES = 30;
 
-export interface BookingConflict { kind: "clash" | "work" | "sleep" | "dose"; text: string }
+/** `text` للعقل (عن العميل)، `say` للعميل نفسه — صفحة المواعيد بتعرضه قبل الحفظ (`booking_check`). */
+export interface BookingConflict { kind: "clash" | "work" | "sleep" | "dose"; text: string; say: string }
 
 /**
  * التعارضات قبل الحجز. الشغل والنوم للعميل نفسه بس (`for_person` فاضي): الملف والنوم بتوعه، مش بتوع بابا ولا يوسف.
  * الشغل مابيتراجعش على ميعاد شغل، ولا تذكير يومي/كل ساعة (اشرب مية، الدوا)، ولا تذكير دوا — دول بيتعملوا وهو في الشغل.
+ * excludeId = الميعاد نفسه لما بيتعدّل (مايتعارضش مع نفسه).
  */
 export function bookingConflicts(input: {
   title: string;
@@ -234,6 +236,7 @@ export function bookingConflicts(input: {
   forPerson?: string | null;
   timeZone: string;
   existing: ReadonlyArray<ScheduledLike>;
+  excludeId?: string | null;
   workSchedule?: string | null;
   sleep?: { bed?: string | null; wake?: string | null } | null;
   medicines?: ReadonlyArray<{ name?: string | null; for?: string | null; times?: string | null }>;
@@ -248,25 +251,30 @@ export function bookingConflicts(input: {
   const clock = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
   const out: BookingConflict[] = [];
 
-  const clashes = scheduleClashes({ startsAt: input.startsAt, forPerson: input.forPerson, recurrence: rec, existing: input.existing, timeZone: tz });
+  const clashes = scheduleClashes({ startsAt: input.startsAt, forPerson: input.forPerson, recurrence: rec, existing: input.existing, timeZone: tz, excludeId: input.excludeId });
   if (clashes.length) {
     const list = clashes.slice(0, 3).map((c) => {
       const when = new Date(c.starts_at ?? "").toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
       return `«${c.title ?? "ميعاد"}» ${when}${c.recurrence && c.recurrence !== "once" ? " (متكرر)" : ""}`;
     }).join("، ");
-    out.push({ kind: "clash", text: `في نفس الوقت تقريباً عنده ${list}` });
+    out.push({ kind: "clash", text: `في نفس الوقت تقريباً عنده ${list}`, say: `في نفس الوقت تقريباً فيه ${list}` });
   }
 
   const work = self && !medicine && input.kind !== "work" && rec !== "hourly" && rec !== "daily"
     ? parseWorkSchedule(input.workSchedule) : null;
   if (work && atWork(at, work, tz)) {
-    out.push({ kind: "work", text: `الوقت ده جوه مواعيد شغله («${String(input.workSchedule).trim()}»)` });
+    const said = String(input.workSchedule).trim();
+    out.push({ kind: "work", text: `الوقت ده جوه مواعيد شغله («${said}»)`, say: `الوقت ده جوه مواعيد شغلك («${said}»)` });
   }
 
   const bed = hhmm(input.sleep?.bed ?? ""), wake = hhmm(input.sleep?.wake ?? "");
   if (self && medicine && rec !== "hourly" && bed != null && wake != null &&
     within(minute, (bed + SLEEP_GRACE_MINUTES) % 1440, wake)) {
-    out.push({ kind: "sleep", text: `الدوا ده ${clock(minute)} وهو بيكون نايم (بينام ${clock(bed)} وبيصحى ${clock(wake)})` });
+    out.push({
+      kind: "sleep",
+      text: `الدوا ده ${clock(minute)} وهو بيكون نايم (بينام ${clock(bed)} وبيصحى ${clock(wake)})`,
+      say: `الدوا ده ${clock(minute)} وانت بتكون نايم (بتنام ${clock(bed)} وبتصحى ${clock(wake)})`,
+    });
   }
 
   if (medicine && rec !== "hourly") {
@@ -274,7 +282,12 @@ export function bookingConflicts(input: {
       if (!samePerson(m.for, input.forPerson)) continue;
       const twin = (m.times ?? "").split(",").map(hhmm).find((d) => d != null && clockGap(d, minute) <= DOSE_TWIN_MINUTES);
       if (twin != null) {
-        out.push({ kind: "dose", text: `الصيدلية بتفكّره أصلاً بـ«${m.name ?? "دوا"}» الساعة ${clock(twin)}` });
+        const name = m.name ?? "دوا";
+        out.push({
+          kind: "dose",
+          text: `الصيدلية بتفكّره أصلاً بـ«${name}» الساعة ${clock(twin)}`,
+          say: `الصيدلية بتفكّرك أصلاً بـ«${name}» الساعة ${clock(twin)}`,
+        });
         break;
       }
     }
@@ -282,9 +295,13 @@ export function bookingConflicts(input: {
   return out;
 }
 
-/** نتيجة الأداة لما فيه تعارض: الميعاد ماتسجلش، وسؤال واحد يجمع الأسباب كلها. */
-export function bookingQuestion(conflicts: ReadonlyArray<BookingConflict>): string {
-  return `مرفوض: لسه ماسجّلتش الميعاد — ${conflicts.map((c) => c.text).join("؛ ")}. ` +
-    "اسأل العميل سؤال واحد بيجمع ده (يسجّله كده ولا وقت تاني؟). لو قال يسجّله زي ما هو ابعت نفس add_appointment بنفس القيم " +
-    "ومعاها confirm_conflict=true؛ لو قال وقت تاني ابعت الوقت الجديد من غير confirm_conflict. ماتقولش إنه اتسجل.";
+/** نتيجة الأداة لما فيه تعارض: الميعاد ماتسجلش (أو ماتعدّلش)، وسؤال واحد يجمع الأسباب كلها. */
+export function bookingQuestion(
+  conflicts: ReadonlyArray<BookingConflict>,
+  tool: "add_appointment" | "update_appointment" = "add_appointment",
+): string {
+  const done = tool === "add_appointment" ? "ماسجّلتش الميعاد" : "ماعدّلتش الميعاد";
+  return `مرفوض: لسه ${done} — ${conflicts.map((c) => c.text).join("؛ ")}. ` +
+    `اسأل العميل سؤال واحد بيجمع ده (يسيبه كده ولا وقت تاني؟). لو قال يسيبه زي ما هو ابعت نفس ${tool} بنفس القيم ` +
+    `ومعاها confirm_conflict=true؛ لو قال وقت تاني ابعت الوقت الجديد من غير confirm_conflict. ماتقولش إنه ${tool === "add_appointment" ? "اتسجل" : "اتعدّل"}.`;
 }

@@ -25,7 +25,9 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/appointments/data/appointments_repository.dart';
+import 'package:zad/features/appointments/data/booking_guard.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -677,6 +679,21 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   bool _saving = false;
   String? _error;
 
+  /// What the server's guard said about [_askedFor] — shown, and a second
+  /// «احفظه برضه» saves it. Any change to the appointment asks again.
+  List<String> _guard = const <String>[];
+  String? _askedFor;
+
+  String get _asking => <Object>[
+    _title.text.trim(),
+    _kind,
+    _startsAt.toUtc().toIso8601String(),
+    _recurrence,
+    _forPerson.text.trim(),
+  ].join('|');
+
+  bool get _guardStands => _guard.isNotEmpty && _askedFor == _asking;
+
   @override
   void initState() {
     super.initState();
@@ -709,6 +726,30 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
       _saving = true;
       _error = null;
     });
+    // ٨ج.٥: the brain's own guard, before the row exists — the same check the
+    // chat's add_appointment runs. Already answered for this very
+    // appointment = the customer chose to keep it.
+    if (!_guardStands) {
+      final asking = _asking;
+      final reasons = await ref
+          .read(bookingGuardProvider)
+          .check(
+            title: _title.text,
+            kind: _kind,
+            startsAt: _startsAt,
+            recurrence: _recurrence,
+            forPerson: _forPerson.text,
+          );
+      if (!mounted) return;
+      if (reasons != null && reasons.isNotEmpty) {
+        setState(() {
+          _guard = reasons;
+          _askedFor = asking;
+          _saving = false;
+        });
+        return;
+      }
+    }
     final repo = ref.read(appointmentsRepositoryProvider);
     final outbox = ref.read(outboxProvider);
     try {
@@ -756,9 +797,10 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   Widget build(BuildContext context) {
     final blocked = _inPast && _recurrence == 'once';
     // حارس التوقيت (الشريحة ٤١): تنبيه، مش منع — اتنين في نفس الساعة ممكن
-    // يكونوا مقصودين. السيرفر بيعمل نفس الفحص على كل المواعيد لو اتسجل من
-    // الشات.
-    final clashes = blocked
+    // يكونوا مقصودين. ده الفحص اللي على الموبايل (شغال من غير نت)؛ حارس
+    // السيرفر (٨ج.٥) بيتسأل لما يدوس حفظ، ولما يرد هو اللي بيتعرض.
+    final guarded = _guardStands;
+    final clashes = blocked || guarded
         ? const <Appointment>[]
         : appointmentClashes(
             startsAt: _startsAt.toUtc(),
@@ -909,6 +951,30 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
                 ),
               ),
             ],
+            if (guarded) ...<Widget>[
+              const SizedBox(height: ZadSpacing.sm),
+              Text(
+                context.l10n.appointmentGuardTitle,
+                style: ZadType.labelLarge.copyWith(
+                  color: ZadColors.mustardOchre,
+                ),
+              ),
+              for (final reason in _guard)
+                Padding(
+                  padding: const EdgeInsets.only(top: ZadSpacing.xs),
+                  child: Text(
+                    '• $reason',
+                    style: ZadType.bodySmall.copyWith(
+                      color: ZadColors.mustardOchre,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                context.l10n.appointmentGuardAsk,
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+            ],
             if (_error != null || blocked) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
               Text(
@@ -930,7 +996,7 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
           onPressed: _title.text.trim().length >= 2 && !_saving && !blocked
               ? () => unawaited(_save())
               : null,
-          child: const Text('حفظ'),
+          child: Text(guarded ? context.l10n.appointmentGuardKeep : 'حفظ'),
         ),
       ],
     );
