@@ -84,6 +84,18 @@ abstract final class OutboxKind {
   /// Delete an obligation row (`obligation_delete:<id>`).
   static const String deleteObligation = 'delete_obligation';
 
+  /// Add a row to `zad_appointments` (`appointment:<id>`) — the table the
+  /// brain writes from chat, voice and Telegram. Sent as an insert that
+  /// leaves an existing row alone, so a replay never moves it back.
+  static const String addAppointment = 'add_appointment';
+
+  /// Mark an appointment done or cancelled (`appointment_status:<id>`): a
+  /// patch of the status only, never the whole row.
+  static const String setAppointmentStatus = 'set_appointment_status';
+
+  /// Delete an appointment (`appointment_delete:<id>`).
+  static const String deleteAppointment = 'delete_appointment';
+
   /// Remove a row from `zad_subscriptions`.
   static const String deleteSubscription = 'delete_subscription';
 
