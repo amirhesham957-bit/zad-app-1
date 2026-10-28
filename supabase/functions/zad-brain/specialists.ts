@@ -128,6 +128,8 @@ const CLOCK_TIME = /الساعه\s*[0-9٠-٩]|[0-9٠-٩]{1,2}(:[0-9٠-٩]{2})?\s
 // («الساعة ٢ الظهر») هو الطلب نفسه حتى لو مافيهوش ولا كلمة تذكير.
 const ASKED_REMINDER_TIME = /(افكرك|اصحيك|انبهك|اسجلهولك|اسجله|اسجلها).{0,40}(الساعه كام|امتي|بالظبط|وقت)|(الساعه كام|امتي بالظبط).{0,40}(افكرك|اصحيك|انبهك)/;
 
+// «عندي إيه بكرة؟»، «ورايا إيه الخميس؟»، «إمتى الدكتور؟» — سؤال عن الجدول من غير كلمة «ميعاد» (٨ج.٣).
+const AGENDA_INTENT = /(عندي|ورايا|ورايه|وراي|عندنا)\s*(ايه|اي|شو|ايش)\s*(النهارده|اليوم|بكره|بكرا|بعد بكره|الاسبوع|اسبوع|السبت|الحد|الاحد|الاتنين|الاثنين|التلات|الثلاثاء|الاربع|الخميس|الجمعه)|امتي\s*(ال)?(دكتور|دكتوره|كشف|اجتماع|مشوار|معاد)|\bwhat do i have\b|\bmy schedule\b/;
 function reminderIntent(norm: string, priorNorm: string): boolean {
   if (APPOINTMENT_INTENT.test(norm) || WAKE_INTENT.test(norm)) return true;
   return CLOCK_TIME.test(norm) && ASKED_REMINDER_TIME.test(priorNorm);
@@ -209,7 +211,9 @@ const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|ب
 export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
   const tools: string[] = [];
-  if (reminderIntent(norm, normalize(priorReply))) tools.push("add_appointment", "update_appointment", "add_place_reminder");
+  if (reminderIntent(norm, normalize(priorReply))) {
+    tools.push("add_appointment", "update_appointment", "delete_appointment", "find_appointments", "add_place_reminder");
+  } else if (AGENDA_INTENT.test(norm)) tools.push("find_appointments", "update_appointment", "delete_appointment");
   if (PROFILE_INTENT.test(norm)) tools.push("update_customer_profile", "remember");
   // «افتكر إني مش باكل تونة» — قياس ما بعد النشر: الموديل رد بكلام ومانداش remember.
   if (MEMORY_INTENT.test(norm) && !tools.includes("remember")) tools.push("remember", "update_customer_profile");
@@ -496,6 +500,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
     // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
     // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
+    // find_appointments وdelete_appointment (٨ج.٣) بيجوا بالنية (AGENDA_INTENT/reminderIntent) مش هنا: اتنين
+    // زيادة مع كل رسالة نزّلوا وكيل المال على Groq من ٤٢ أداة لـ٣٨ (promptBudget_test).
     "add_appointment", "update_appointment",
     "add_place_reminder", "cancel_place_reminder",
     // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
