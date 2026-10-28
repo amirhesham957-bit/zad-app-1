@@ -1134,6 +1134,16 @@ class ZadL10nAr extends ZadL10n {
   String get voiceFailed => 'مقدرتش أحوّل الكلام. جرب تاني.';
 
   @override
+  String get subscribePulseTitle => 'اشترك وزاد يبقى معاك على طول';
+
+  @override
+  String get subscribePulseBody =>
+      'من غير إعلانات، ومحاولات أكتر، وصوت من غير حد.';
+
+  @override
+  String get subscribePulseClose => 'اقفل';
+
+  @override
   String get voiceOutToday =>
       'خلصت أسئلتك الصوتية النهارده (٣ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
 
