@@ -12,13 +12,16 @@ function fakeRpc(answers: Record<string, { data: unknown; error?: { message: str
   return { rpc, calls };
 }
 
-Deno.test("the five scans cost a scan, the two voice actions go through voice, the rest only count", () => {
+Deno.test("the five scans cost a scan, a voice question costs a voice try, reading aloud and the rest only count", () => {
   for (const a of ["analyze_receipt", "analyze_inventory_image", "analyze_medicine_image", "analyze_document_image", "analyze_statement"]) {
     assertEquals(meterFor(a)?.kind, "scan", a);
     assertEquals(meterFor(a)?.bucket, "vision", a);
   }
-  assertEquals(meterFor("voice_synthesize")?.kind, "voice");
   assertEquals(meterFor("voice_agent")?.kind, "voice");
+  assertEquals(meterFor("voice_agent")?.bucket, "voice");
+  // Reading a reply aloud is free (owner, 2026-10-28): still paced, never charged.
+  assertEquals(meterFor("voice_synthesize")?.kind, null);
+  assertEquals(meterFor("voice_synthesize")?.bucket, "voice");
   assertEquals(meterFor("meal_suggestions")?.kind, null);
   assertEquals(meterFor("meal_suggestions")?.bucket, "other");
 });
@@ -45,6 +48,9 @@ Deno.test("an empty reading is refunded, a real one is not — each action's own
   assert(!scanCameBackEmpty("analyze_statement", { statement: { rows: [{}] } }));
   assert(scanCameBackEmpty("analyze_receipt", { error: "boom" }));
   assert(scanCameBackEmpty("analyze_receipt", null));
+  assert(scanCameBackEmpty("voice_agent", { action: "chat", message: "لم أتمكن من فهم الصوت، حاول مرة أخرى.", data: null }));
+  assert(scanCameBackEmpty("voice_agent", { action: "chat", message: "", data: null, transcript: "  " }));
+  assert(!scanCameBackEmpty("voice_agent", { action: "chat", message: "", data: null, transcript: "صرفت ٥٠ قهوة" }));
 });
 
 Deno.test("too fast: 429 with Zad's words, and nothing is charged", async () => {
@@ -89,8 +95,34 @@ Deno.test("voice while it is free (unlimited) or a media pass: allowed, nothing 
       zad_rate_take: { data: { ok: true } },
       zad_entitlement_consume: { data: { allowed: true, reason } },
     });
-    assertEquals(await openGate(db.rpc, "u1", meterFor("voice_synthesize")!), {}, reason);
+    assertEquals(await openGate(db.rpc, "u1", meterFor("voice_agent")!), {}, reason);
   }
+});
+
+Deno.test("a free voice question within the day's three is charged, so an empty one can be refunded", async () => {
+  const db = fakeRpc({
+    zad_rate_take: { data: { ok: true } },
+    zad_entitlement_consume: { data: { allowed: true, reason: "quota", voice_left: 2, voice_daily: 3 } },
+  });
+  assertEquals(await openGate(db.rpc, "u1", meterFor("voice_agent")!), { charged: "voice" });
+  assertEquals(db.calls[1].args, { p_user: "u1", p_kind: "voice", p_tz: "UTC" });
+});
+
+Deno.test("the fourth free voice question: 402 no_voice_today, in Zad's words", async () => {
+  const db = fakeRpc({
+    zad_rate_take: { data: { ok: true } },
+    zad_entitlement_consume: { data: { allowed: false, reason: "voice_daily_cap", voice_daily: 3, voice_left: 0 } },
+  });
+  const g = await openGate(db.rpc, "u1", meterFor("voice_agent")!);
+  assertEquals(g.refusal?.status, 402);
+  assertEquals(g.refusal?.body.error, "no_voice_today");
+  assert(String(g.refusal?.body.message).includes("٣ في اليوم"));
+});
+
+Deno.test("reading a reply aloud never calls consume", async () => {
+  const db = fakeRpc({ zad_rate_take: { data: { ok: true } } });
+  assertEquals(await openGate(db.rpc, "u1", meterFor("voice_synthesize")!), {});
+  assertEquals(db.calls.map((c) => c.fn), ["zad_rate_take"]);
 });
 
 Deno.test("text actions only count: no consume call", async () => {

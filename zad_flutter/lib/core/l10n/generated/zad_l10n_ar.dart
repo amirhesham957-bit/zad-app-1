@@ -1134,6 +1134,10 @@ class ZadL10nAr extends ZadL10n {
   String get voiceFailed => 'مقدرتش أحوّل الكلام. جرب تاني.';
 
   @override
+  String get voiceOutToday =>
+      'خلصت أسئلتك الصوتية النهارده (٣ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
+
+  @override
   String get voiceRecord => 'سجّل صوت';
 
   @override
@@ -1236,6 +1240,10 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceSheetFailed => 'حدث خطأ في التعرف على الصوت';
+
+  @override
+  String get voiceSheetOutToday =>
+      'خلصت أسئلتك الصوتية النهارده — ٣ في اليوم، وبترجع بكرة';
 
   @override
   String get voiceSheetTooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى';

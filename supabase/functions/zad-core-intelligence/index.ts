@@ -1578,7 +1578,7 @@ Deno.serve(async (req: Request) => {
   const res = await handle(req);
   if (gate.charged) {
     let empty = res.status >= 400;
-    if (!empty && gate.charged === "scan") {
+    if (!empty) {
       try {
         empty = scanCameBackEmpty(action as string, await res.clone().json());
       } catch {

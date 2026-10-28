@@ -175,6 +175,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
         final error = switch (input.stage) {
           VoiceStage.denied => context.l10n.voiceSheetDenied,
           VoiceStage.failed => context.l10n.voiceSheetFailed,
+          VoiceStage.outOfVoiceToday => context.l10n.voiceSheetOutToday,
           VoiceStage.tooShort => context.l10n.voiceSheetTooShort,
           _ when _turnFailed => context.l10n.voiceSheetBrainDown,
           _ => null,

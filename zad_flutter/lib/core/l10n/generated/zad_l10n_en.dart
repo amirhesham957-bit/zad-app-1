@@ -1173,6 +1173,10 @@ class ZadL10nEn extends ZadL10n {
   String get voiceFailed => 'I couldn\'t turn the speech into text. Try again.';
 
   @override
+  String get voiceOutToday =>
+      'That\'s today\'s voice questions (3 a day) — they\'re back tomorrow. Type your question, or subscribe to talk to Zad without a limit.';
+
+  @override
   String get voiceRecord => 'Record voice';
 
   @override
@@ -1277,6 +1281,10 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get voiceSheetFailed => 'Something went wrong recognising your voice';
+
+  @override
+  String get voiceSheetOutToday =>
+      'That\'s today\'s voice questions — 3 a day, back tomorrow';
 
   @override
   String get voiceSheetTooShort => 'I didn\'t hear anything clear — try again';
