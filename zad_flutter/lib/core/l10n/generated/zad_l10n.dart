@@ -2011,6 +2011,12 @@ abstract class ZadL10n {
   /// **'مقدرتش أحوّل الكلام. جرب تاني.'**
   String get voiceFailed;
 
+  /// No description provided for @voiceOutToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت أسئلتك الصوتية النهارده (٣ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.'**
+  String get voiceOutToday;
+
   /// No description provided for @voiceRecord.
   ///
   /// In ar, this message translates to:
@@ -2208,6 +2214,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'حدث خطأ في التعرف على الصوت'**
   String get voiceSheetFailed;
+
+  /// No description provided for @voiceSheetOutToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت أسئلتك الصوتية النهارده — ٣ في اليوم، وبترجع بكرة'**
+  String get voiceSheetOutToday;
 
   /// No description provided for @voiceSheetTooShort.
   ///

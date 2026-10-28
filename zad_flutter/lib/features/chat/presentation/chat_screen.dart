@@ -722,6 +722,7 @@ class _Composer extends ConsumerWidget {
     VoiceStage.tooShort => l10n.voiceTooShort,
     VoiceStage.denied => l10n.voiceDenied,
     VoiceStage.failed => l10n.voiceFailed,
+    VoiceStage.outOfVoiceToday => l10n.voiceOutToday,
     _ => null,
   };
 }

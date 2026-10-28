@@ -30,6 +30,7 @@ const LOCKED_PHOTO =
   "وتقدر برضه تكتب الفاتورة هنا عادي ومجاناً.";
 
 const EXHAUSTED_VOICE = "🔒 خلص رصيد الرسايل الصوتية في باقتك الشهرية. تقدر ترقّي باقتك من التطبيق.";
+const VOICE_TODAY_DONE = "🔒 خلصت أسئلتك الصوتية النهارده (٣ في اليوم في الباقة المجانية) — بترجع بكرة. اكتبلي عادي، أو اشترك من التطبيق وكلّمني بصوتك من غير حد.";
 // مسح الصورة بمحاولتين من الرصيد الواحد (20261012020000).
 const EXHAUSTED_PHOTO = "🔒 مسح الفاتورة محتاج محاولتين، ومحاولات باقتك خلصت الشهر ده. تقدر ترقّي باقتك من التطبيق.";
 
@@ -70,6 +71,8 @@ export async function mediaGate(sb: Sb, userId: string, kind: MediaKind): Promis
     }
     const d = data as { allowed?: boolean; reason?: string };
     if (d?.allowed === true) return { allowed: true };
+    // المجاني ٣ أسئلة صوتية في اليوم (20261028020000) — حتى بتصريح الإعلان القديم.
+    if (d?.reason === "voice_daily_cap") return { allowed: false, reply: VOICE_TODAY_DONE };
     if (d?.reason === "quota_exhausted") {
       return { allowed: false, reply: kind === "voice" ? EXHAUSTED_VOICE : EXHAUSTED_PHOTO };
     }

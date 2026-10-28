@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/data/transcriber.dart';
 import 'package:zad/shared/chat/data/voice_recorder.dart';
@@ -206,6 +207,42 @@ void main() {
 
     test('a transcription failure is its own state', () async {
       transcriber.failWith = Exception('offline');
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(voiceInputControllerProvider.notifier);
+
+      await controller.start();
+      await controller.stopAndTranscribe();
+
+      expect(
+        container.read(voiceInputControllerProvider).stage,
+        VoiceStage.failed,
+      );
+    });
+
+    test('the three free voice questions used is not a failure', () async {
+      transcriber.failWith = const FunctionException(
+        status: 402,
+        details: <String, dynamic>{'error': 'no_voice_today', 'message': 'x'},
+      );
+      final container = containerWith();
+      addTearDown(container.dispose);
+      final controller = container.read(voiceInputControllerProvider.notifier);
+
+      await controller.start();
+      await controller.stopAndTranscribe();
+
+      expect(
+        container.read(voiceInputControllerProvider).stage,
+        VoiceStage.outOfVoiceToday,
+      );
+    });
+
+    test('any other 402 is still a failure', () async {
+      transcriber.failWith = const FunctionException(
+        status: 402,
+        details: <String, dynamic>{'error': 'no_attempts'},
+      );
       final container = containerWith();
       addTearDown(container.dispose);
       final controller = container.read(voiceInputControllerProvider.notifier);

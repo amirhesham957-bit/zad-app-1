@@ -35,6 +35,20 @@ ServerRefusal? serverRefusal(Object? error) {
   );
 }
 
+/// Whether [error] is the server saying today's free voice questions are
+/// used (402 `no_voice_today`, `zad-core-intelligence/meter.ts`). An ad does
+/// not reopen these, so it is told apart from a refusal that is
+/// `outOfAttempts`.
+bool isVoiceQuestionsDone(Object? error) {
+  if (error is! FunctionException || error.status != 402) return false;
+  final details = switch (error.details) {
+    final Map<dynamic, dynamic> map => map,
+    final String text => _decode(text),
+    _ => null,
+  };
+  return details?['error'] == 'no_voice_today';
+}
+
 Map<dynamic, dynamic>? _decode(String text) {
   try {
     final decoded = jsonDecode(text);

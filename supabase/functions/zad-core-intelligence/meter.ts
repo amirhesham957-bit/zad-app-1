@@ -4,9 +4,11 @@
 //
 // القاعدة:
 //   * توكن عميل: حد في الدقيقة وفي اليوم لكل نوع (zad_rate_take)، والمسح بيخصم محاولتين
-//     (zad_entitlement_consume 'scan')، والصوت بيعدّي على نفس البوابة بسعره من zad_tiers
-//     (مجاني دلوقتي بقرار المالك ٢٠٢٦-٠٩-١٤ — voice_monthly = -1).
-//   * مسح رجع فاضي (صورة مش مقروءة، الموديل ماردّش) بيرجّع اللي اتخصم — العميل مابيدفعش
+//     (zad_entitlement_consume 'scan')، والسؤال الصوتي (voice_agent) بيخصم محاولة صوت واحدة —
+//     المجاني ٣ في اليوم والمدفوع من غير حد (قرار المالك ٢٠٢٦-١٠-٢٨، zad_tiers.voice_daily).
+//     قراية الرد بصوت (voice_synthesize) بتتعدّ بس ومابتخصمش: السؤال ورده محاولة واحدة،
+//     وقراية ردود الشات مجانية للكل.
+//   * مسح أو سؤال صوتي رجع فاضي (صورة مش مقروءة، الموديل ماردّش) بيرجّع اللي اتخصم — العميل مابيدفعش
 //     على حاجة ماخدهاش، والحد في الدقيقة واليوم هو اللي بيمنع استغلال ده.
 //   * توكن الخدمة (العقل، بوت تليجرام): من غير عدّاد هنا — ليهم بواباتهم.
 //   * من غير حساب (مفتاح anon اللي جوه الـAPK): المسح والصوت مرفوضين.
@@ -40,11 +42,12 @@ const OWN_GUARD = new Set(["provider_health", "voice_selftest", "admin_recent_ac
 export function meterFor(action: unknown): Meter | null {
   if (typeof action !== "string" || !action || OWN_GUARD.has(action)) return null;
   if (SCAN_ACTIONS.has(action)) return { bucket: "vision", kind: "scan", perMinute: 6, perDay: 100 };
-  if (VOICE_ACTIONS.has(action)) return { bucket: "voice", kind: "voice", perMinute: 40, perDay: 1000 };
+  if (action === "voice_agent") return { bucket: "voice", kind: "voice", perMinute: 40, perDay: 1000 };
+  if (VOICE_ACTIONS.has(action)) return { bucket: "voice", kind: null, perMinute: 40, perDay: 1000 };
   return { bucket: "other", kind: null, perMinute: 40, perDay: 800 };
 }
 
-/** المسح رجع من غير قراءة — الأشكال الفاضية اللي كل أكشن بيرجّعها في index.ts. */
+/** المسح رجع من غير قراءة، أو السؤال الصوتي من غير كلام — الأشكال الفاضية اللي كل أكشن بيرجّعها في index.ts. */
 export function scanCameBackEmpty(action: string, body: unknown): boolean {
   if (!body || typeof body !== "object") return true;
   const b = body as Record<string, unknown>;
@@ -60,6 +63,8 @@ export function scanCameBackEmpty(action: string, body: unknown): boolean {
       return b.document == null;
     case "analyze_statement":
       return b.statement == null;
+    case "voice_agent":
+      return !(typeof b.transcript === "string" && b.transcript.trim());
     default:
       return false;
   }
@@ -70,6 +75,8 @@ export const DAY_CAP_MESSAGE = "وصلت لحد النهارده من الطلب
 export const NO_ATTEMPTS_SCAN_MESSAGE =
   "رصيد محاولاتك مايكفيش قراية الصورة (القراية بمحاولتين). الرصيد بيتجدد لوحده، أو تقدر تشوف الباقات.";
 export const NO_ATTEMPTS_VOICE_MESSAGE = "رصيد الصوت خلص لحد التجديد الجاي.";
+export const NO_VOICE_TODAY_MESSAGE =
+  "خلصت أسئلتك الصوتية النهارده (٣ في اليوم في الباقة المجانية) — بترجع بكرة. اكتب سؤالك عادي، أو اشترك وكلّم زاد بصوتك من غير حد.";
 
 export type Rpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 
@@ -104,6 +111,9 @@ export async function openGate(rpc: Rpc, userId: string, meter: Meter): Promise<
     return { refusal: { status: 503, body: { error: "entitlement_unavailable" } } };
   }
   const c = data as { allowed?: boolean; reason?: string } | null;
+  if (c?.allowed !== true && c?.reason === "voice_daily_cap") {
+    return { refusal: { status: 402, body: { error: "no_voice_today", message: NO_VOICE_TODAY_MESSAGE, entitlement: c } } };
+  }
   if (c?.allowed !== true) {
     return {
       refusal: {

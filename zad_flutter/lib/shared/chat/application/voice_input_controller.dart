@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/chat/data/transcriber.dart';
 import 'package:zad/shared/chat/data/voice_recorder.dart';
+import 'package:zad/shared/quota/domain/server_refusal.dart';
 
 /// Where the microphone is.
 enum VoiceStage {
@@ -33,6 +34,11 @@ enum VoiceStage {
 
   /// The transcription call failed.
   failed,
+
+  /// The server refused: the free plan's voice questions for today are used
+  /// (3 a day, `20261028020000_three_voice_questions_a_day.sql`). Not a
+  /// failure — retrying will not help until tomorrow, so it is worded apart.
+  outOfVoiceToday,
 }
 
 /// What the composer's microphone draws.
@@ -151,8 +157,13 @@ class VoiceInputController extends Notifier<VoiceInputView> {
           : VoiceInputView(transcript: transcript);
     } on VoiceClipDiscarded {
       if (ref.mounted) state = const VoiceInputView(stage: VoiceStage.tooShort);
-    } on Object {
-      if (ref.mounted) state = const VoiceInputView(stage: VoiceStage.failed);
+    } on Object catch (error) {
+      if (!ref.mounted) return;
+      state = VoiceInputView(
+        stage: isVoiceQuestionsDone(error)
+            ? VoiceStage.outOfVoiceToday
+            : VoiceStage.failed,
+      );
     }
   }
 
