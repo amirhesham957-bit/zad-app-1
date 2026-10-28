@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { attempts, classifyMessage, consume, lockedReply } from "./entitlement.ts";
+import { attempts, classifyMessage, consume, lockedReply, quotaExempt } from "./entitlement.ts";
 
 // القاعدة اللي الاختبارات دي بتحرسها: التسجيل مجاني للأبد، التفكير هو اللي بيتباع.
 // أي تسريب في الاتجاه الأول (تسجيل بيتحاسب كتحليل) بيضرب العادة اللي التطبيق كله قايم
@@ -132,4 +132,12 @@ Deno.test("العدد والكلمة متوافقين: محاولة واحدة،
   assertEquals(attempts(10), "١٠ محاولات");
   assertEquals(attempts(11), "١١ محاولة");
   assertEquals(attempts(300), "٣٠٠ محاولة");
+});
+
+Deno.test("the test accounts never spend the customers' «محاولات»", () => {
+  const probe = "a11ce000-0000-4000-8000-00000000a11a";
+  assertEquals(quotaExempt(probe, [probe, undefined]), true);
+  assertEquals(quotaExempt("child-1", [probe, " child-1 "]), true);
+  assertEquals(quotaExempt("customer", [probe, undefined, ""]), false);
+  assertEquals(quotaExempt("", [probe, ""]), false, "an unset child id exempts nobody");
 });

@@ -95,7 +95,7 @@ import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.t
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
 import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
-import { classifyMessage, consume as consumeEntitlement, lockedReply } from "./entitlement.ts";
+import { classifyMessage, consume as consumeEntitlement, lockedReply, quotaExempt } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
@@ -7186,6 +7186,8 @@ async function handleAgentTurnInLane(
   const entitlementKind = classifyMessage(message);
   const entitlement = entitlementKind === "routine"
     ? { allowed: true, reason: "routine_free" }
+    : quotaExempt(userId, [ACCEPTANCE_USER_ID, Deno.env.get("ZAD_EVAL_CHILD_USER_ID")])
+    ? { allowed: true, reason: "test_account" }
     : await consumeEntitlement(sb, userId, entitlementKind, String(body.tz ?? "UTC"));
   if (!entitlement.allowed) {
     // ok:true مش خطأ: ده رد فعلي للعميل، والتطبيق بيعرضه في نفس فقاعة الشات. الكتلة
