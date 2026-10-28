@@ -7,6 +7,7 @@ import { quietTopicRejection } from "./engagement.ts";
 import { cardBudgetRejection } from "./attention.ts";
 import { resolveValidUntil } from "./shared.ts";
 import { DOCUMENT_KINDS } from "./documents.ts";
+import { daysBetween, isLocalDate, MAX_AGENDA_DAYS } from "./appointmentsQuery.ts";
 
 export type Validation = { ok: true } | { ok: false; reason: string };
 
@@ -995,11 +996,47 @@ export const validateUpdateAppointment: Validator = (input, _snap, ctx) => {
       return { ok: false, reason: "starts_at لازم ISO 8601 فيه المنطقة الزمنية" };
     }
   }
-  if (input.status === undefined && input.starts_at === undefined && input.title === undefined && input.expected_cost === undefined) {
-    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم أو التكلفة" };
+  if (input.title !== undefined) {
+    const title = String(input.title ?? "").trim();
+    if (title.length < 2 || title.length > 160) return { ok: false, reason: "اسم الميعاد لازم من حرفين لـ١٦٠" };
+  }
+  if (input.recurrence !== undefined && !APPOINTMENT_RECURRENCES.includes(String(input.recurrence))) {
+    return { ok: false, reason: "recurrence لازم once أو hourly أو daily أو weekly أو monthly — مفيش تكرار بالدقايق" };
+  }
+  if (input.remind_minutes_before !== undefined) {
+    const m = Number(input.remind_minutes_before);
+    if (!Number.isInteger(m) || m < 0 || m > 10080) return { ok: false, reason: "التذكير قبلها لازم دقايق من ٠ لـ ١٠٠٨٠" };
+  }
+  if (input.place_label != null && String(input.place_label).length > 120) return { ok: false, reason: "اسم المكان طويل أوي" };
+  const changes = ["status", "starts_at", "title", "expected_cost", "place_label", "recurrence", "remind_minutes_before"];
+  if (!changes.some((k) => input[k] !== undefined)) {
+    return { ok: false, reason: "حدد اللي يتغير: الحالة أو الوقت أو الاسم أو المكان أو التكرار أو التذكير أو التكلفة" };
   }
   const cost = expectedCostRejection(input, ctx);
   if (cost) return { ok: false, reason: cost };
+  return { ok: true };
+};
+
+export const validateDeleteAppointment: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["delete_appointment"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ مواعيد تتمسح في المرة" };
+  if (String(input.appointment_id ?? "").trim().length < 10) {
+    return { ok: false, reason: "appointment_id لازم من appointments في الـsnapshot أو من find_appointments" };
+  }
+  return { ok: true };
+};
+
+/** ٨ج.٣ — قراية بس: أيام محلية (لحد MAX_AGENDA_DAYS) أو كلمة بحث. */
+export const validateFindAppointments: Validator = (input) => {
+  const hasQuery = input.query != null && String(input.query).trim().length >= 2;
+  if (input.query != null && String(input.query).length > 80) return { ok: false, reason: "كلمة البحث طويلة — كلمة أو اتنين من اسم الميعاد" };
+  if (input.from == null) {
+    return hasQuery ? { ok: true } : { ok: false, reason: "حدد from (YYYY-MM-DD من now_local) أو query بكلمة من اسم الميعاد" };
+  }
+  if (!isLocalDate(input.from)) return { ok: false, reason: "from لازم YYYY-MM-DD بتوقيت العميل" };
+  const to = input.to ?? input.from;
+  if (!isLocalDate(to)) return { ok: false, reason: "to لازم YYYY-MM-DD بتوقيت العميل" };
+  if (to < input.from) return { ok: false, reason: "to قبل from" };
+  if (daysBetween(input.from, to).length > MAX_AGENDA_DAYS) return { ok: false, reason: `أقصى مدة ${MAX_AGENDA_DAYS} يوم في المرة` };
   return { ok: true };
 };
 
@@ -1156,6 +1193,8 @@ export const VALIDATORS: Record<string, Validator> = {
   learn_skill: validateLearnSkill,
   add_appointment: validateAddAppointment,
   update_appointment: validateUpdateAppointment,
+  delete_appointment: validateDeleteAppointment,
+  find_appointments: validateFindAppointments,
   add_place_reminder: validateAddPlaceReminder,
   cancel_place_reminder: validateCancelPlaceReminder,
   set_broke_mode: validateSetBrokeMode,
@@ -1193,7 +1232,7 @@ export const MUTATING_TOOLS = [
   // إيقاع النوم يدوي (الشريحة ٣٧).
   "set_sleep_window",
   // مواعيد العميل (20260914004000)
-  "add_appointment", "update_appointment",
+  "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",
   "set_broke_mode",
   "start_savings_challenge", "stop_savings_challenge",

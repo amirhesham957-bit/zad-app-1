@@ -776,7 +776,8 @@ export function fitForGroq<T extends { system: string; tools: ToolDef[]; history
   let used = 0;
   for (const t of o.tools) {
     const cost = est(JSON.stringify(t).length);
-    if (used + cost > toolBudget) break;
+    // أداة كبيرة مش داخلة ماتقفلش الباب على الأصغر اللي بعدها (٨ج.٣): `break` كان بيرمي ٩ أدوات عشان واحدة بـ١٤٦ توكن.
+    if (used + cost > toolBudget) continue;
     tools.push(t);
     used += cost;
   }
