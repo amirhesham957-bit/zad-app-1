@@ -2439,4 +2439,46 @@ class ZadL10nAr extends ZadL10n {
   String diagIngestKind(String kind) {
     return 'اتصنفت $kind';
   }
+
+  @override
+  String get introTagline => 'تدبير ذكي لبيت هادئ';
+
+  @override
+  String get introPantryTitle => 'إدارة المخزين';
+
+  @override
+  String get introPantryBody => 'تتبع كل ما في مطبخك وبيتك بذكاء';
+
+  @override
+  String get introFamilyTitle => 'العائلة كلها';
+
+  @override
+  String get introFamilyBody => 'شارك الميزانية والمهام مع عائلتك';
+
+  @override
+  String get introAssistantTitle => 'مساعد ذكي';
+
+  @override
+  String get introAssistantBody => 'ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك';
+
+  @override
+  String get introBudgetTitle => 'الميزانية بذكاء';
+
+  @override
+  String get introBudgetBody => 'حلل إنفاقك ووفّر أكثر باقتراحات ذكية';
+
+  @override
+  String get introNext => 'التالي';
+
+  @override
+  String get introStart => 'ابدأ مع زاد';
+
+  @override
+  String get introSkip => 'تخطي';
+
+  @override
+  String get introSignUp => 'ليس لديك حساب؟ أنشئ حساباً جديداً';
+
+  @override
+  String get introLogoLabel => 'شعار زاد';
 }

@@ -3,8 +3,8 @@
 /// page dots, «التالي» / «ابدأ مع زاد», «تخطي» and the sign-up link — on the
 /// auth canvas.
 ///
-/// Kotlin's language toggle is not here: this client has no second language
-/// to switch to yet.
+/// Kotlin's language toggle is back at the top (owner, 2026-10-27): عربي or
+/// English before anything else, the same choice as settings.
 library;
 
 import 'package:flutter/material.dart';
@@ -15,33 +15,34 @@ import 'package:zad/core/design/components/zad_auth_surfaces.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/onboarding/application/intro_controller.dart';
 import 'package:zad/shared/auth/application/auth_controller.dart';
 
 /// One card of the carousel.
 typedef IntroPage = ({IconData icon, String title, String body});
 
-/// Kotlin's four features, in order.
-const List<IntroPage> kIntroPages = <IntroPage>[
-  (
-    icon: Icons.inventory_2,
-    title: 'إدارة المخزين',
-    body: 'تتبع كل ما في مطبخك وبيتك بذكاء',
-  ),
+/// How many cards the carousel has.
+const int kIntroPageCount = 4;
+
+/// Kotlin's four features, in order, in the app's language.
+List<IntroPage> introPages(ZadL10n l) => <IntroPage>[
+  (icon: Icons.inventory_2, title: l.introPantryTitle, body: l.introPantryBody),
   (
     icon: Icons.family_restroom,
-    title: 'العائلة كلها',
-    body: 'شارك الميزانية والمهام مع عائلتك',
+    title: l.introFamilyTitle,
+    body: l.introFamilyBody,
   ),
   (
     icon: Icons.smart_toy,
-    title: 'مساعد ذكي',
-    body: 'ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك',
+    title: l.introAssistantTitle,
+    body: l.introAssistantBody,
   ),
   (
     icon: Icons.account_balance_wallet,
-    title: 'الميزانية بذكاء',
-    body: 'حلل إنفاقك ووفّر أكثر باقتراحات ذكية',
+    title: l.introBudgetTitle,
+    body: l.introBudgetBody,
   ),
 ];
 
@@ -58,7 +59,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   final PageController _pages = PageController();
   int _page = 0;
 
-  bool get _onLast => _page == kIntroPages.length - 1;
+  bool get _onLast => _page == kIntroPageCount - 1;
 
   @override
   void dispose() {
@@ -81,14 +82,20 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
+    final pages = introPages(l);
     return Scaffold(
       body: ZadAuthBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 36),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 20),
+                const Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: IntroLanguageToggle(),
+                ),
+                const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -96,11 +103,11 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                       'assets/brand/carrot_logo.svg',
                       width: 52,
                       height: 52,
-                      semanticsLabel: 'شعار زاد',
+                      semanticsLabel: l.introLogoLabel,
                     ),
                     const SizedBox(width: 14),
                     Text(
-                      'زاد',
+                      l.appTitle,
                       style: ZadType.displayLarge.copyWith(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -111,7 +118,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'تدبير ذكي لبيت هادئ',
+                  l.introTagline,
                   style: ZadType.labelLarge.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -120,13 +127,13 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pages,
-                    itemCount: kIntroPages.length,
+                    itemCount: pages.length,
                     onPageChanged: (p) => setState(() => _page = p),
                     itemBuilder: (_, i) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: _FeatureCard(
                         page: i,
-                        feature: kIntroPages[i],
+                        feature: pages[i],
                         color: _color(i, scheme),
                         selected: i == _page,
                       ),
@@ -137,7 +144,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    for (var i = 0; i < kIntroPages.length; i++) ...<Widget>[
+                    for (var i = 0; i < pages.length; i++) ...<Widget>[
                       if (i > 0) const SizedBox(width: 8),
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -155,7 +162,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                 ),
                 const SizedBox(height: 32),
                 ZadPrimaryButton(
-                  text: _onLast ? 'ابدأ مع زاد' : 'التالي',
+                  text: _onLast ? l.introStart : l.introNext,
                   onPressed: () {
                     if (_onLast) {
                       _finish();
@@ -173,7 +180,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                   TextButton(
                     onPressed: _finish,
                     child: Text(
-                      'تخطي',
+                      l.introSkip,
                       style: TextStyle(color: scheme.onSurfaceVariant),
                     ),
                   ),
@@ -181,7 +188,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                 TextButton(
                   onPressed: () => _finish(mode: AuthMode.signUp),
                   child: Text(
-                    'ليس لديك حساب؟ أنشئ حساباً جديداً',
+                    l.introSignUp,
                     style: TextStyle(
                       color: scheme.primary,
                       fontWeight: FontWeight.bold,
@@ -273,6 +280,42 @@ class _FeatureCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// «عربي | English» at the top of the first screen: the same choice as
+/// settings (`appLanguageProvider`), so the intro and everything after it
+/// redraw in the language picked.
+class IntroLanguageToggle extends ConsumerWidget {
+  /// Creates the toggle.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final english = Localizations.localeOf(context).languageCode == 'en';
+    return SegmentedButton<AppLanguage>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        minimumSize: WidgetStatePropertyAll<Size>(Size(64, 44)),
+      ),
+      segments: <ButtonSegment<AppLanguage>>[
+        ButtonSegment<AppLanguage>(
+          value: AppLanguage.arabic,
+          label: Text(l.languageArabic),
+        ),
+        ButtonSegment<AppLanguage>(
+          value: AppLanguage.english,
+          label: Text(l.languageEnglish),
+        ),
+      ],
+      selected: <AppLanguage>{
+        if (english) AppLanguage.english else AppLanguage.arabic,
+      },
+      onSelectionChanged: (s) =>
+          ref.read(appLanguageProvider.notifier).choose(s.first),
     );
   }
 }

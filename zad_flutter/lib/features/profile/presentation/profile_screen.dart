@@ -104,14 +104,6 @@ class ProfileScreen extends ConsumerWidget {
                     subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
                     onTap: () => unawaited(_newGoal(context, ref)),
                   ),
-                  _MenuRow(
-                    icon: ZadIcons.shopping,
-                    title: 'توصيات الشراء الذكية',
-                    subtitle: 'توصيات مبنية على الأسعار والسوق',
-                    onTap: () => unawaited(
-                      ZadScreens.showRecommendationsScreen(context),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),

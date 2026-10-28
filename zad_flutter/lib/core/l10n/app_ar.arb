@@ -1794,5 +1794,61 @@
         "type": "String"
       }
     }
+  },
+  "introTagline": "تدبير ذكي لبيت هادئ",
+  "@introTagline": {
+    "description": "Intro: the line under the brand."
+  },
+  "introPantryTitle": "إدارة المخزين",
+  "@introPantryTitle": {
+    "description": "Intro card 1 title."
+  },
+  "introPantryBody": "تتبع كل ما في مطبخك وبيتك بذكاء",
+  "@introPantryBody": {
+    "description": "Intro card 1 body."
+  },
+  "introFamilyTitle": "العائلة كلها",
+  "@introFamilyTitle": {
+    "description": "Intro card 2 title."
+  },
+  "introFamilyBody": "شارك الميزانية والمهام مع عائلتك",
+  "@introFamilyBody": {
+    "description": "Intro card 2 body."
+  },
+  "introAssistantTitle": "مساعد ذكي",
+  "@introAssistantTitle": {
+    "description": "Intro card 3 title."
+  },
+  "introAssistantBody": "ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك",
+  "@introAssistantBody": {
+    "description": "Intro card 3 body."
+  },
+  "introBudgetTitle": "الميزانية بذكاء",
+  "@introBudgetTitle": {
+    "description": "Intro card 4 title."
+  },
+  "introBudgetBody": "حلل إنفاقك ووفّر أكثر باقتراحات ذكية",
+  "@introBudgetBody": {
+    "description": "Intro card 4 body."
+  },
+  "introNext": "التالي",
+  "@introNext": {
+    "description": "Intro: next card."
+  },
+  "introStart": "ابدأ مع زاد",
+  "@introStart": {
+    "description": "Intro: last card's button."
+  },
+  "introSkip": "تخطي",
+  "@introSkip": {
+    "description": "Intro: skip the cards."
+  },
+  "introSignUp": "ليس لديك حساب؟ أنشئ حساباً جديداً",
+  "@introSignUp": {
+    "description": "Intro: go to sign-up."
+  },
+  "introLogoLabel": "شعار زاد",
+  "@introLogoLabel": {
+    "description": "Intro: the logo, for TalkBack."
   }
 }

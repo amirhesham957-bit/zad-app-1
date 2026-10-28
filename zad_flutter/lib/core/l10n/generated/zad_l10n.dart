@@ -4380,6 +4380,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اتصنفت {kind}'**
   String diagIngestKind(String kind);
+
+  /// Intro: the line under the brand.
+  ///
+  /// In ar, this message translates to:
+  /// **'تدبير ذكي لبيت هادئ'**
+  String get introTagline;
+
+  /// Intro card 1 title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة المخزين'**
+  String get introPantryTitle;
+
+  /// Intro card 1 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع كل ما في مطبخك وبيتك بذكاء'**
+  String get introPantryBody;
+
+  /// Intro card 2 title.
+  ///
+  /// In ar, this message translates to:
+  /// **'العائلة كلها'**
+  String get introFamilyTitle;
+
+  /// Intro card 2 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك الميزانية والمهام مع عائلتك'**
+  String get introFamilyBody;
+
+  /// Intro card 3 title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساعد ذكي'**
+  String get introAssistantTitle;
+
+  /// Intro card 3 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك'**
+  String get introAssistantBody;
+
+  /// Intro card 4 title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية بذكاء'**
+  String get introBudgetTitle;
+
+  /// Intro card 4 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل إنفاقك ووفّر أكثر باقتراحات ذكية'**
+  String get introBudgetBody;
+
+  /// Intro: next card.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get introNext;
+
+  /// Intro: last card's button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ مع زاد'**
+  String get introStart;
+
+  /// Intro: skip the cards.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي'**
+  String get introSkip;
+
+  /// Intro: go to sign-up.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس لديك حساب؟ أنشئ حساباً جديداً'**
+  String get introSignUp;
+
+  /// Intro: the logo, for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'شعار زاد'**
+  String get introLogoLabel;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

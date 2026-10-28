@@ -53,7 +53,6 @@ import 'package:zad/features/profile/presentation/profile_screen.dart';
 import 'package:zad/features/proposals/presentation/proposals_screen.dart';
 import 'package:zad/features/recipes/presentation/home_chef_section.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
-import 'package:zad/features/recommendations/presentation/recommendations_screen.dart';
 import 'package:zad/features/savings/presentation/family_savings_screen.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/features/scan/presentation/photo_scan_sheet.dart';
@@ -117,7 +116,6 @@ void wireScreens() {
   ZadScreens.showPricesScreen = showPricesScreen;
   ZadScreens.showProfileScreen = showProfileScreen;
   ZadScreens.showRegionalSheet = showRegionalSheet;
-  ZadScreens.showRecommendationsScreen = showRecommendationsScreen;
   ZadScreens.showFamilySavingsScreen = showFamilySavingsScreen;
   ZadScreens.openZadCamera = openZadCamera;
   ZadScreens.showCameraScreen = showCameraScreen;

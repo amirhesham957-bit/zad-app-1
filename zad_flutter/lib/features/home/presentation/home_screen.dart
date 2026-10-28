@@ -115,6 +115,11 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // The sections right under the money card (owner, 2026-10-27): they
+          // had sunk under the brief, the bot's link and the Amazon strip.
+          const SizedBox(height: 16),
+          const ZadAppearOnEntry(delayMs: 30, child: SectionsGrid()),
+          const SizedBox(height: 16),
           // ZAD_PLAN ٣.٢: in the evening, close the day.
           const ZadTrailingGap(
             gap: 16,
@@ -134,10 +139,6 @@ class HomeScreen extends ConsumerWidget {
           // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
           // in بيتي, the obligations in فلوسي, every section in the drawer.
           const ZadAppearOnEntry(child: DailyBriefCard()),
-          const SizedBox(height: 16),
-          // The sections back under the brief, eight at a glance and the rest
-          // behind «المزيد» (owner, 2026-10-01: the squares were missed).
-          const ZadAppearOnEntry(delayMs: 30, child: SectionsGrid()),
           const SizedBox(height: 16),
           ZadSlots.homeProposalsSection(),
           ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),

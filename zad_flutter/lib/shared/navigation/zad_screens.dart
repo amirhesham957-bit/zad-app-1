@@ -179,10 +179,6 @@ abstract final class ZadScreens {
   /// The market and currency sheet.
   static late OpenScreen showRegionalSheet;
 
-  // ── recommendations
-  /// اقتراحات زاد.
-  static late OpenScreen showRecommendationsScreen;
-
   // ── savings
   /// The family savings.
   static late OpenScreen showFamilySavingsScreen;

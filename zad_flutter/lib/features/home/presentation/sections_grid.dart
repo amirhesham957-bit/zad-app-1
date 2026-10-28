@@ -104,7 +104,6 @@ String _sectionPantry(ZadL10n l) => l.sectionPantry;
 String _drawerShopping(ZadL10n l) => l.drawerShopping;
 String _drawerAppointments(ZadL10n l) => l.drawerAppointments;
 String _drawerPlaces(ZadL10n l) => l.drawerPlaces;
-String _drawerTips(ZadL10n l) => l.drawerTips;
 String _navFamily(ZadL10n l) => l.navFamily;
 String _sectionBudget(ZadL10n l) => l.sectionBudget;
 String _sectionSubscriptions(ZadL10n l) => l.sectionSubscriptions;
@@ -121,8 +120,9 @@ String _sectionPlans(ZadL10n l) => l.sectionPlans;
 String _drawerAccount(ZadL10n l) => l.drawerAccount;
 
 /// The sections, in Kotlin's order (`zadAppSections`, ZadSectionsGrid.kt) —
-/// the same fifteen, with the same Material glyphs and accents, plus
-/// «نصايح زاد». The first eight are the most used.
+/// the same fifteen, with the same Material glyphs and accents. «نصايح زاد»
+/// is gone (owner, 2026-10-27): the brain says its tips in the brief and the
+/// notifications. The first eight are the most used.
 final List<ZadSection> zadSections = <ZadSection>[
   const ZadSection(
     id: 'inventory',
@@ -154,15 +154,6 @@ final List<ZadSection> zadSections = <ZadSection>[
     label: _drawerPlaces,
     accent: ZadSectionAccent.teal,
     open: ZadScreens.showMyPlaces,
-  ),
-  // نصايح زاد in the first eight: it lived only inside the profile menu, off
-  // every path a customer takes (the owner, 2026-09-28).
-  ZadSection(
-    id: 'tips',
-    icon: Icons.lightbulb,
-    label: _drawerTips,
-    accent: ZadSectionAccent.green,
-    open: ZadScreens.showRecommendationsScreen,
   ),
   const ZadSection(
     id: 'family',
