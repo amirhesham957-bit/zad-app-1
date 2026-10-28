@@ -2577,4 +2577,13 @@ class ZadL10nEn extends ZadL10n {
   String adThreeForOne(String attempts, String seen) {
     return 'Every 3 ads = $attempts — $seen of 3 watched';
   }
+
+  @override
+  String get appointmentGuardTitle => 'Before I save it:';
+
+  @override
+  String get appointmentGuardAsk => 'Save it like this, or change the time?';
+
+  @override
+  String get appointmentGuardKeep => 'Save anyway';
 }

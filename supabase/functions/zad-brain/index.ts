@@ -135,7 +135,7 @@ import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
 } from "./moneySafety.ts";
-import { bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, clashNote, scheduleClashes, type ScheduledLike } from "./scheduleGuard.ts";
+import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
@@ -3497,6 +3497,23 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (input.expected_cost !== undefined) {
         patch.expected_cost = input.expected_cost === null ? null : Math.round(Number(input.expected_cost) * 100) / 100;
       }
+      const b = before as { title: string; starts_at: string; kind?: string | null; for_person?: string | null; recurrence?: string | null; status?: string | null };
+      // ٨ج.٥: نفس مراجعة add_appointment **قبل** التعديل — الوقت أو التكرار أو الاسم (دوا؟) أو رجوعه upcoming بيغيّر
+      // التعارض. خلّص/اتلغى مابيتراجعش. فشل القراية = يتعدّل.
+      const status = typeof patch.status === "string" ? patch.status : b.status ?? "upcoming";
+      const retimed = patch.starts_at !== undefined || patch.recurrence !== undefined || patch.title !== undefined ||
+        (patch.status === "upcoming" && b.status !== "upcoming");
+      if (retimed && status === "upcoming" && input.confirm_conflict !== true) {
+        const startsAt = typeof patch.starts_at === "string" ? patch.starts_at : b.starts_at;
+        const conflicts = bookingConflicts({
+          title: typeof patch.title === "string" ? patch.title : b.title, startsAt, kind: b.kind,
+          recurrence: typeof patch.recurrence === "string" ? patch.recurrence : b.recurrence ?? "once",
+          forPerson: b.for_person ?? null, timeZone: snap?.now_local?.time_zone ?? "UTC",
+          existing: await clashCandidates(sb, userId, startsAt), excludeId: id,
+          workSchedule: snap?.customer?.work_schedule, sleep: snap?.sleep, medicines: snap?.medicines,
+        });
+        if (conflicts.length) return bookingQuestion(conflicts, "update_appointment");
+      }
       const w = await writeRows(
         sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status,expected_cost"),
         "تعديل الميعاد",
@@ -3507,19 +3524,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
       });
-      const b = before as { title: string; starts_at: string; for_person?: string | null; recurrence?: string | null };
-      const after = {
-        startsAt: typeof patch.starts_at === "string" ? patch.starts_at : b.starts_at,
-        forPerson: b.for_person ?? null,
-        recurrence: typeof patch.recurrence === "string" ? patch.recurrence : b.recurrence ?? "once",
-      };
-      // التعارض بيتغير بالوقت أو بالتكرار — مش بالوقت بس.
-      const clash = patch.starts_at !== undefined || patch.recurrence !== undefined
-        ? await appointmentClashNote(sb, userId, { ...after, excludeId: id, timeZone: snap?.now_local?.time_zone ?? "UTC" })
-        : "";
       const cost = (w.rows[0] as { expected_cost?: number | null }).expected_cost;
       const reserved = input.expected_cost === undefined ? "" : cost ? ` وحجزت ${cost} من المتاح لحد الميعاد.` : " وشلت الحجز.";
-      return `تم تعديل الميعاد «${b.title}».${reserved}${clash}`;
+      return `تم تعديل الميعاد «${b.title}».${reserved}`;
     }
     case "delete_appointment": {
       // حذف حقيقي (٨ج.٣) — «الغيه» لسه update_appointment بـcancelled؛ ده لـ«امسحه خالص» أو ميعاد اتسجل غلط.
@@ -4897,15 +4904,37 @@ const RECURRING_HINT =
 // ═══════════════════════════════════════════════════════════
 
 /**
- * حارس التوقيت (الشريحة ٤١): بعد تسجيل ميعاد أو تأجيله، المواعيد اللي في نفس الساعة لنفس الشخص ⇒ سطر في نتيجة الأداة
- * العقل يقوله ويسأل. بيقرا المرة الواحدة القريبة والمتكرر كله (المتكرر بيتقارن بالساعة المحلية). فشل القراية = مفيش سطر —
- * الحارس عمره ما يوقف الحفظ.
+ * ٨ج.٥ من صفحة المواعيد (`booking_check`): نفس `bookingConflicts` اللي add_appointment بيشغّلها، على نفس المصادر —
+ * المواعيد، `work_schedule`، النوم، وأدوية الصيدلية — من غير snapshot كامل. الصفحة بتعرض `say` وتسأل قبل الحفظ.
+ * فشل أي قراية = الجزء ده بيتشال (الحارس مابيوقفش الحفظ).
  */
-async function appointmentClashNote(
-  sb: SupabaseClient, userId: string,
-  q: { startsAt: string; forPerson: string | null; recurrence: string; excludeId: string; timeZone: string },
-): Promise<string> {
-  return clashNote(scheduleClashes({ ...q, existing: await clashCandidates(sb, userId, q.startsAt) }), q.timeZone);
+export async function bookingCheck(sb: SupabaseClient, userId: string, body: Record<string, unknown>): Promise<BookingConflict[] | null> {
+  const title = String(body.title ?? "").trim();
+  const startsAt = String(body.starts_at ?? "");
+  if (title.length < 2 || !Number.isFinite(Date.parse(startsAt))) return null;
+  const [{ data: u }, { data: prof }, { data: meds }, existing] = await Promise.all([
+    sb.from("zad_users").select("country,sleep_bed,sleep_wake").eq("id", userId).maybeSingle(),
+    sb.from("zad_customer_profile").select("work_schedule").eq("user_id", userId).maybeSingle(),
+    sb.from("zad_pharmacy_items").select("name,for_person,dose_times").eq("user_id", userId),
+    clashCandidates(sb, userId, startsAt),
+  ]);
+  const user = u as { country?: string | null; sleep_bed?: string | null; sleep_wake?: string | null } | null;
+  const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: user?.country ?? null });
+  return bookingConflicts({
+    title, startsAt,
+    kind: typeof body.kind === "string" ? body.kind : null,
+    recurrence: APPOINTMENT_RECURRENCES.includes(String(body.recurrence)) ? String(body.recurrence) : "once",
+    forPerson: normalizeForPerson(body.for_person),
+    timeZone: typeof tz === "string" && tz ? tz : "UTC",
+    existing,
+    excludeId: typeof body.appointment_id === "string" ? body.appointment_id : null,
+    workSchedule: (prof as { work_schedule?: string | null } | null)?.work_schedule ?? null,
+    sleep: user?.sleep_bed && user?.sleep_wake
+      ? { bed: String(user.sleep_bed).slice(0, 5), wake: String(user.sleep_wake).slice(0, 5) }
+      : null,
+    medicines: ((meds ?? []) as Array<{ name: string; for_person: string | null; dose_times: string | null }>)
+      .map((m) => ({ name: m.name, for: m.for_person, times: m.dose_times })),
+  });
 }
 
 /** المرة الواحدة اللي في نفس الساعة والمتكرر كله — اللي scheduleClashes بتقارن بيه. فشل القراية = [] (الحارس مابيوقفش الحفظ). */
@@ -5477,6 +5506,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         recurrence: { type: "string", enum: ["once", "hourly", "daily", "weekly", "monthly"] },
         remind_minutes_before: { type: "number", description: "يفكّره قبلها بكام دقيقة (0 = في وقته)" },
         expected_cost: { type: "number", nullable: true, description: EXPECTED_COST_HINT + " null = شيل الحجز." },
+        confirm_conflict: { type: "boolean", description: "true بس بعد ما الأداة سألت عن تعارض والعميل قال يسيبه زي ما هو." },
       },
       required: ["appointment_id"],
     },
@@ -9691,6 +9721,15 @@ async function handleRequest(req: Request): Promise<Response> {
         console.error("[explain] model failed:", (e as Error)?.message ?? e);
         return new Response(JSON.stringify({ ok: false, text: null }), { headers: CORS_HEADERS });
       }
+    }
+
+    // ٨ج.٥: صفحة المواعيد بتسأل نفس حارس الشات قبل ما تحفظ. الهوية من JWT بس.
+    if (body.action === "booking_check") {
+      const uid = await resolveRequestUserId(req, body);
+      if (!uid) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      const conflicts = await bookingCheck(createClient(SUPABASE_URL, SERVICE_ROLE_KEY), uid, body);
+      if (!conflicts) return new Response(JSON.stringify({ ok: false, error: "bad_request" }), { status: 400, headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ ok: true, conflicts: conflicts.map(({ kind, say }) => ({ kind, say })) }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {

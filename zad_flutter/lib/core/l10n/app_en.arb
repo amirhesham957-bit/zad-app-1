@@ -735,5 +735,8 @@
   "introLogoLabel": "Zad logo",
   "adWatchStep": "Watch an ad — {step} of 3",
   "adThirdOpens": "This ad completes three and opens {attempts}",
-  "adThreeForOne": "Every 3 ads = {attempts} — {seen} of 3 watched"
+  "adThreeForOne": "Every 3 ads = {attempts} — {seen} of 3 watched",
+  "appointmentGuardTitle": "Before I save it:",
+  "appointmentGuardAsk": "Save it like this, or change the time?",
+  "appointmentGuardKeep": "Save anyway"
 }

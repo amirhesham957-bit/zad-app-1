@@ -4512,6 +4512,24 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'كل ٣ إعلانات = {attempts} — شفت {seen} من ٣'**
   String adThreeForOne(String attempts, String seen);
+
+  /// No description provided for @appointmentGuardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل ما أسجّله:'**
+  String get appointmentGuardTitle;
+
+  /// No description provided for @appointmentGuardAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجّله كده ولا تغيّر الوقت؟'**
+  String get appointmentGuardAsk;
+
+  /// No description provided for @appointmentGuardKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظه برضه'**
+  String get appointmentGuardKeep;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
