@@ -2011,6 +2011,24 @@ abstract class ZadL10n {
   /// **'مقدرتش أحوّل الكلام. جرب تاني.'**
   String get voiceFailed;
 
+  /// No description provided for @subscribePulseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك وزاد يبقى معاك على طول'**
+  String get subscribePulseTitle;
+
+  /// No description provided for @subscribePulseBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير إعلانات، ومحاولات أكتر، وصوت من غير حد.'**
+  String get subscribePulseBody;
+
+  /// No description provided for @subscribePulseClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل'**
+  String get subscribePulseClose;
+
   /// No description provided for @voiceOutToday.
   ///
   /// In ar, this message translates to:

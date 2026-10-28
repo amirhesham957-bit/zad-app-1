@@ -38,6 +38,7 @@ import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
+import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
@@ -129,6 +130,8 @@ class HomeScreen extends ConsumerWidget {
           // 2026-10-13): the reminders come from Telegram.
           ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
+          // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
+          const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
           const AdWeekCard(),
           // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no

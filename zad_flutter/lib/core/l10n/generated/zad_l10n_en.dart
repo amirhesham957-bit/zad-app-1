@@ -1173,6 +1173,16 @@ class ZadL10nEn extends ZadL10n {
   String get voiceFailed => 'I couldn\'t turn the speech into text. Try again.';
 
   @override
+  String get subscribePulseTitle => 'Subscribe and keep Zad with you';
+
+  @override
+  String get subscribePulseBody =>
+      'No ads, more attempts, and voice without a limit.';
+
+  @override
+  String get subscribePulseClose => 'Close';
+
+  @override
   String get voiceOutToday =>
       'That\'s today\'s voice questions (3 a day) — they\'re back tomorrow. Type your question, or subscribe to talk to Zad without a limit.';
 
