@@ -439,7 +439,6 @@ String _drawerMaintenance(ZadL10n l) => l.drawerMaintenance;
 String _drawerDocuments(ZadL10n l) => l.drawerDocuments;
 String _drawerNearby(ZadL10n l) => l.drawerNearby;
 String _navMyFamily(ZadL10n l) => l.navMyFamily;
-String _drawerTips(ZadL10n l) => l.drawerTips;
 String _drawerTasbiha(ZadL10n l) => l.drawerTasbiha;
 String _drawerNotifications(ZadL10n l) => l.drawerNotifications;
 String _drawerAccount(ZadL10n l) => l.drawerAccount;
@@ -555,13 +554,6 @@ const List<ZadDrawerEntry> zadDrawerEntries = <ZadDrawerEntry>[
     label: _navMyFamily,
     accent: ZadSectionAccent.violet,
     group: _drawerGroupHome,
-  ),
-  ZadDrawerEntry(
-    id: 'tips',
-    icon: Icons.lightbulb,
-    label: _drawerTips,
-    accent: ZadSectionAccent.amber,
-    group: _drawerGroupMore,
   ),
   ZadDrawerEntry(
     id: 'tasbiha',

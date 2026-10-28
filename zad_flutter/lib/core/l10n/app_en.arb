@@ -713,5 +713,19 @@
   "diagMomentSent": "Delivered",
   "diagMomentPending": "Waiting for its time",
   "diagPushOn": "This phone is registered ({count})",
-  "diagIngestKind": "Classified as {kind}"
+  "diagIngestKind": "Classified as {kind}",
+  "introTagline": "Smart care for a calm home",
+  "introPantryTitle": "Your pantry",
+  "introPantryBody": "Keep track of everything in your kitchen and home",
+  "introFamilyTitle": "The whole family",
+  "introFamilyBody": "Share the budget and chores with your family",
+  "introAssistantTitle": "A smart assistant",
+  "introAssistantBody": "AI that sees what you need and learns from you",
+  "introBudgetTitle": "A smarter budget",
+  "introBudgetBody": "See where your money goes and save more",
+  "introNext": "Next",
+  "introStart": "Start with Zad",
+  "introSkip": "Skip",
+  "introSignUp": "No account? Create one",
+  "introLogoLabel": "Zad logo"
 }

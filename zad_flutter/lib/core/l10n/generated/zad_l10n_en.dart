@@ -2500,4 +2500,48 @@ class ZadL10nEn extends ZadL10n {
   String diagIngestKind(String kind) {
     return 'Classified as $kind';
   }
+
+  @override
+  String get introTagline => 'Smart care for a calm home';
+
+  @override
+  String get introPantryTitle => 'Your pantry';
+
+  @override
+  String get introPantryBody =>
+      'Keep track of everything in your kitchen and home';
+
+  @override
+  String get introFamilyTitle => 'The whole family';
+
+  @override
+  String get introFamilyBody => 'Share the budget and chores with your family';
+
+  @override
+  String get introAssistantTitle => 'A smart assistant';
+
+  @override
+  String get introAssistantBody =>
+      'AI that sees what you need and learns from you';
+
+  @override
+  String get introBudgetTitle => 'A smarter budget';
+
+  @override
+  String get introBudgetBody => 'See where your money goes and save more';
+
+  @override
+  String get introNext => 'Next';
+
+  @override
+  String get introStart => 'Start with Zad';
+
+  @override
+  String get introSkip => 'Skip';
+
+  @override
+  String get introSignUp => 'No account? Create one';
+
+  @override
+  String get introLogoLabel => 'Zad logo';
 }
