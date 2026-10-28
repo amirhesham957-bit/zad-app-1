@@ -29,4 +29,18 @@ void main() {
       'ماتسجلش الميعاد، جرّب تاني.',
     );
   });
+
+  test('a refusal the outbox recorded still names its cause', () {
+    const recorded =
+        'PostgrestException(message: new row violates check constraint, '
+        'code: 23514, details: null, hint: null)';
+    expect(
+      appointmentSaveError(appointmentRefusal(recorded)),
+      contains('من ٢ لـ١٦٠ حرف'),
+    );
+    expect(
+      appointmentSaveError(appointmentRefusal(null)),
+      startsWith('السيرفر رفض الميعاد'),
+    );
+  });
 }

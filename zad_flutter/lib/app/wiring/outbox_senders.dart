@@ -7,6 +7,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
+import 'package:zad/features/appointments/data/appointments_repository.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/obligations/data/obligations_repository.dart';
 import 'package:zad/features/recipes/data/recipes_repository.dart';
@@ -83,5 +84,11 @@ Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>
         await ref.read(obligationsRepositoryProvider).sendQueued(entry),
       OutboxKind.deleteObligation =>
         await ref.read(obligationsRepositoryProvider).sendQueuedDelete(entry),
+      OutboxKind.addAppointment =>
+        await ref.read(appointmentsRepositoryProvider).sendQueuedAdd(entry),
+      OutboxKind.setAppointmentStatus =>
+        await ref.read(appointmentsRepositoryProvider).sendQueuedStatus(entry),
+      OutboxKind.deleteAppointment =>
+        await ref.read(appointmentsRepositoryProvider).sendQueuedDelete(entry),
       _ => throw StateError('no sender for outbox kind "${entry.kind}"'),
     };

@@ -4,7 +4,9 @@
 /// «ميعاد جديد» button and dialog, and a tap on any row to cancel or delete.
 ///
 /// No model call here — the screen reads the tables only. Civil time is the
-/// account's market zone.
+/// account's market zone. Writes go through the outbox
+/// (`AppointmentsRepository`): the same `zad_appointments` the brain writes
+/// from chat, voice and Telegram, so a row from either side shows on both.
 library;
 
 import 'dart:async';
@@ -15,14 +17,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/outbox_entry.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/appointments/data/appointments_repository.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -96,34 +99,17 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
       });
       return;
     }
-    final cache = ref.read(screenCacheProvider);
-    // Last time's list first; the server's answer replaces it.
-    if (_items == null) {
-      if (cache.read('appointments', userId) case final cached?) {
-        setState(() {
-          _items = <Appointment>[
-            for (final r in cached) appointmentFromJson(r),
-          ];
-          _loading = false;
-        });
-      }
+    final repo = ref.read(appointmentsRepositoryProvider);
+    // Last time's list and anything still queued first; the server's answer
+    // replaces it.
+    if (repo.view() case final local?) {
+      setState(() {
+        _items = local;
+        _loading = false;
+      });
     }
     try {
-      final since = ref
-          .read(nowProvider)()
-          .toUtc()
-          .subtract(const Duration(days: 14))
-          .toIso8601String();
-      final rows = await client
-          .from('zad_appointments')
-          .select()
-          .eq('user_id', userId)
-          .neq('status', 'cancelled')
-          .gte('starts_at', since)
-          .order('starts_at')
-          .limit(200);
-      unawaited(cache.write('appointments', userId, rows));
-      final items = <Appointment>[for (final r in rows) appointmentFromJson(r)];
+      final items = await repo.refresh(now: ref.read(nowProvider)().toUtc());
       var reminders = _agentReminders;
       try {
         final tasks = await client
@@ -155,39 +141,34 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
       debugPrint('appointments read failed: $e');
       if (!mounted) return;
       setState(() {
-        _failed = true;
+        // Offline with a list on the device is not a failure.
+        _failed = _items == null;
         _loading = false;
       });
     }
   }
 
-  Future<void> _setStatus(Appointment a, String status) async {
+  /// Shows what the device holds now, then sends the queue and reads the
+  /// server's answer.
+  Future<void> _afterWrite() async {
+    if (!mounted) return;
+    setState(() => _items = ref.read(appointmentsRepositoryProvider).view());
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_appointments')
-          .update(<String, dynamic>{
-            'status': status,
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', a.id);
+      await ref.read(outboxProvider).flush();
     } on Object catch (e) {
-      debugPrint('appointment status failed: $e');
+      debugPrint('appointments flush failed: $e');
     }
     await _load();
   }
 
+  Future<void> _setStatus(Appointment a, String status) async {
+    await ref.read(appointmentsRepositoryProvider).setStatus(a.id, status);
+    await _afterWrite();
+  }
+
   Future<void> _delete(Appointment a) async {
-    try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_appointments')
-          .delete()
-          .eq('id', a.id);
-    } on Object catch (e) {
-      debugPrint('appointment delete failed: $e');
-    }
-    await _load();
+    await ref.read(appointmentsRepositoryProvider).remove(a.id);
+    await _afterWrite();
   }
 
   String _when(Appointment a) {
@@ -249,7 +230,7 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
         existing: _items ?? const <Appointment>[],
       ),
     );
-    if (saved ?? false) await _load();
+    if (saved ?? false) await _afterWrite();
   }
 
   void _openVoice() {
@@ -728,21 +709,33 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
       _saving = true;
       _error = null;
     });
-    final client = ref.read(supabaseClientProvider);
-    final place = _place.text.trim();
-    final who = _forPerson.text.trim();
+    final repo = ref.read(appointmentsRepositoryProvider);
+    final outbox = ref.read(outboxProvider);
     try {
-      await client.from('zad_appointments').insert(<String, dynamic>{
-        'user_id': client.auth.currentUser?.id,
-        'title': _title.text.trim(),
-        'kind': _kind,
-        'starts_at': _startsAt.toUtc().toIso8601String(),
-        'place_label': place.isEmpty ? null : place,
-        'remind_minutes_before': _remind,
-        'recurrence': _recurrence,
-        'source': 'app',
-        if (who.isNotEmpty) 'for_person': who,
-      });
+      final id = await repo.add(
+        title: _title.text,
+        kind: _kind,
+        startsAt: _startsAt,
+        placeLabel: _place.text,
+        remindMinutesBefore: _remind,
+        recurrence: _recurrence,
+        forPerson: _forPerson.text,
+      );
+      // Queued and on the page already. One try now, so a row the table
+      // refuses is said here, where it can be fixed; offline it simply waits.
+      try {
+        await outbox.flush().timeout(const Duration(seconds: 8));
+      } on Object catch (e) {
+        debugPrint('appointment send deferred: $e');
+      }
+      final dead = <OutboxEntry>[
+        for (final e in outbox.deadLetters())
+          if (e.id == AppointmentsRepository.outboxIdFor(id)) e,
+      ];
+      if (dead.isNotEmpty) {
+        await outbox.discard(dead.first.id);
+        throw appointmentRefusal(dead.first.lastError);
+      }
       if (mounted) Navigator.of(context).pop(true);
     } on Object catch (e, st) {
       // Kept in the crash log (support screen → 🐞): the table has never
@@ -943,6 +936,13 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
     );
   }
 }
+
+/// The server's refusal of a queued add, rebuilt from the outbox's record of
+/// it so [appointmentSaveError] can name the cause.
+PostgrestException appointmentRefusal(String? lastError) => PostgrestException(
+  message: lastError ?? '',
+  code: RegExp(r'code: (\w+)').firstMatch(lastError ?? '')?.group(1),
+);
 
 /// Why an appointment was not saved, in words the customer can act on.
 /// Every failure used to read «ماتسجلش الميعاد، جرّب تاني», which says
