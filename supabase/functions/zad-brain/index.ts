@@ -135,7 +135,7 @@ import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
 } from "./moneySafety.ts";
-import { CLASH_WINDOW_MINUTES, clashNote, scheduleClashes } from "./scheduleGuard.ts";
+import { bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, clashNote, scheduleClashes, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
@@ -3433,6 +3433,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // غلط أسوأ من إنه مايتسجلش.
       const startsAt = resolveLocalIso(input.starts_at, snap?.now_local?.utc_offset ?? "+00:00");
       if (!startsAt) return "مرفوض: الوقت مش مفهوم — اكتبه ISO بالمنطقة الزمنية (مثال 2026-09-19T17:00:00+03:00) أو اسأل العميل الساعة بالظبط.";
+      const tz = snap?.now_local?.time_zone ?? "UTC";
+      // ٨ج.٥: المراجعة قبل الحجز — تعارض، شغل، نوم، جرعة متكررة ⇒ سؤال واحد بدل ميعاد غلط. فشل القراية = يتحجز.
+      if (input.confirm_conflict !== true) {
+        const conflicts = bookingConflicts({
+          title, startsAt, kind: input.kind, recurrence: String(input.recurrence ?? "once"),
+          forPerson: normalizeForPerson(input.for_person), timeZone: tz,
+          existing: await clashCandidates(sb, userId, startsAt),
+          workSchedule: snap?.customer?.work_schedule, sleep: snap?.sleep, medicines: snap?.medicines,
+        });
+        if (conflicts.length) return bookingQuestion(conflicts);
+      }
       const w = await writeRows(
         sb.from("zad_appointments").insert({
           user_id: userId,
@@ -3457,15 +3468,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_appointments", targetId: row.id, previous: null, next: row,
       });
-      const tz = snap?.now_local?.time_zone ?? "UTC";
       const when = new Date(row.starts_at).toLocaleString("ar-EG", { timeZone: tz, weekday: "long", hour: "numeric", minute: "2-digit" });
       const repeat = String(input.recurrence) === "hourly" ? " وبعدها كل ساعة" : "";
-      const clash = await appointmentClashNote(sb, userId, {
-        startsAt: row.starts_at, forPerson: normalizeForPerson(input.for_person), recurrence: String(input.recurrence ?? "once"),
-        excludeId: row.id, timeZone: tz,
-      });
       const reserved = row.expected_cost ? ` وحجزت ${row.expected_cost} من المتاح لحد الميعاد.` : "";
-      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${reserved}${clash}`;
+      const recalled = await appointmentMemory(sb, userId, [title, input.place_label, input.for_person]);
+      return `تم تسجيل الميعاد «${title}» ${when}${repeat} — هفكّره بصوتي ${Number(input.remind_minutes_before) > 0 ? "قبلها" : "في وقته"}.${reserved}${recalled}`;
     }
     case "update_appointment": {
       const id = String(input.appointment_id).trim();
@@ -4532,7 +4539,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
   }
 }
 
-async function runTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
+/** مُصدَّرة للاختبار (bookingGuard_test.ts). */
+export async function runTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   const v = await validateTool(name, input, snap, ctx);
   if (!v.ok) return `مرفوض: ${v.reason} — عدّل وحاول تاني.`;
   ctx.counts[name] = (ctx.counts[name] ?? 0) + 1;
@@ -4897,8 +4905,13 @@ async function appointmentClashNote(
   sb: SupabaseClient, userId: string,
   q: { startsAt: string; forPerson: string | null; recurrence: string; excludeId: string; timeZone: string },
 ): Promise<string> {
-  const at = Date.parse(q.startsAt);
-  if (!Number.isFinite(at)) return "";
+  return clashNote(scheduleClashes({ ...q, existing: await clashCandidates(sb, userId, q.startsAt) }), q.timeZone);
+}
+
+/** المرة الواحدة اللي في نفس الساعة والمتكرر كله — اللي scheduleClashes بتقارن بيه. فشل القراية = [] (الحارس مابيوقفش الحفظ). */
+async function clashCandidates(sb: SupabaseClient, userId: string, startsAt: string): Promise<ScheduledLike[]> {
+  const at = Date.parse(startsAt);
+  if (!Number.isFinite(at)) return [];
   const lo = new Date(at - CLASH_WINDOW_MINUTES * 60_000).toISOString();
   const hi = new Date(at + CLASH_WINDOW_MINUTES * 60_000).toISOString();
   const { data, error } = await sb.from("zad_appointments").select("id,title,starts_at,recurrence,for_person,status")
@@ -4907,9 +4920,25 @@ async function appointmentClashNote(
     .limit(200);
   if (error) {
     console.error("[schedule guard] read failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as ScheduledLike[];
+}
+
+/**
+ * ٨ج.٥: اللي اتقال قبل كده عن الميعاد ده (الدكتور، المكان، الشخص) من كيانات zad_memory (الشريحة ١) — «الدكتور قال هات
+ * الأشعة». سطر في نتيجة الأداة العقل يستعمله؛ مفيش = "".
+ */
+async function appointmentMemory(sb: SupabaseClient, userId: string, parts: unknown[]): Promise<string> {
+  const text = parts.filter((p) => typeof p === "string" && p.trim()).join(" ");
+  if (!text) return "";
+  const { data, error } = await sb.rpc("zad_memory_recall_entities", { p_user: userId, p_text: entityRecallText(text), p_limit: 3 });
+  if (error) {
+    console.warn("[appointment memory] recall skipped:", error.message);
     return "";
   }
-  return clashNote(scheduleClashes({ ...q, existing: data ?? [] }), q.timeZone);
+  const notes = ((data ?? []) as Array<{ note: string }>).map((n) => `«${n.note}»`);
+  return notes.length ? `\nفاكر عن الميعاد ده: ${notes.join("، ")} — لو فيها حاجة تنفعه (يجهّزها، ياخدها معاه) قولها في جملة.` : "";
 }
 
 /** تكلفة الميعاد (20261010190000) — الوصف في الأداتين. */
@@ -5428,6 +5457,7 @@ export const CHAT_TOOLS: ToolDef[] = [
           description: "افتراضي once. «كل ساعة» = hourly (ومعاه starts_at أول مرة). مفيش تكرار بالدقايق — لو طلب «كل ١٠ دقايق» قوله إن أقل تكرار كل ساعة واسأله يوافق.",
         },
         expected_cost: { type: "number", description: EXPECTED_COST_HINT },
+        confirm_conflict: { type: "boolean", description: "true بس بعد ما الأداة سألت عن تعارض والعميل قال يتسجل زي ما هو." },
       },
       required: ["title", "starts_at"],
     },
@@ -6881,6 +6911,8 @@ async function answerFastPath(
       starts_at: new Date(Date.now() + intent.minutes * 60_000).toISOString(),
       kind: "personal",
       remind_minutes_before: 0,
+      // «كمان ١٠ دقايق» تايمر من دلوقتي اللي هو صاحي فيه — مفيش حجز غلط يتراجع (٨ج.٥).
+      confirm_conflict: true,
     }, { now_local: localNowContext(tz) }, ctx, { source, runId: null });
     if (result.startsWith("مرفوض")) {
       console.warn("fast path reminder refused, the model takes it:", result.slice(0, 160));
