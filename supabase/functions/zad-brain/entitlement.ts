@@ -73,6 +73,16 @@ const DEEP_ANALYSIS = new RegExp(
  * Which bucket this message spends from. Not a security decision on its own — the SQL
  * function is what actually authorizes — just which price to quote it at.
  */
+/**
+ * حسابات الاختبار مابتاخدش من «محاولات» العملاء: فحص القبول بعد كل نشر والتقييم الليلي بيلفّوا على
+ * حساب الاختبار (وحساب الطفل بتاع التقييم). ٢٨/١٠ الحساب خلّص الـ`chat_left` بتاعه في نص الشهر، فكل حالة
+ * محتاجة الموديل رجعت «🔒 خلصت محاولات باقتك» — الفحص بقى أحمر من غير ما الكود يتغير. سقفهم هو
+ * `zad_test_turn_take` (ZAD_PLAN ٣.٧) مش الباقة.
+ */
+export function quotaExempt(userId: string, testUserIds: ReadonlyArray<string | null | undefined>): boolean {
+  return testUserIds.some((id) => !!id && id.trim() === userId);
+}
+
 export function classifyMessage(message: string): MessageEntitlementKind {
   const text = (message ?? "").trim();
   if (!text) return "chat";
