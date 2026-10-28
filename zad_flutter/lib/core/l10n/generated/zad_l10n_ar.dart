@@ -2481,4 +2481,19 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get introLogoLabel => 'شعار زاد';
+
+  @override
+  String adWatchStep(String step) {
+    return 'شاهد إعلان — $step من ٣';
+  }
+
+  @override
+  String adThirdOpens(String attempts) {
+    return 'الإعلان ده بيكمّل التلاتة ويفتح $attempts';
+  }
+
+  @override
+  String adThreeForOne(String attempts, String seen) {
+    return 'كل ٣ إعلانات = $attempts — شفت $seen من ٣';
+  }
 }

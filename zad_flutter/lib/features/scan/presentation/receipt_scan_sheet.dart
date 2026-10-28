@@ -27,6 +27,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market_examples.dart';
@@ -87,11 +88,24 @@ class ReceiptScanSheet extends ConsumerWidget {
                 'الأخير ظاهر في الصورة.',
             tone: ZadEmptyTone.waiting,
           ),
-          ScanStage.failed => _Retry(
-            title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
-            message:
-                refusal?.message ?? 'الصورة لسه معاك. جرب تاني لما النت يرجع.',
-            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
+          ScanStage.failed => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _Retry(
+                title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
+                message:
+                    refusal?.message ??
+                    'الصورة لسه معاك. جرب تاني لما النت يرجع.',
+                tone: refusal != null
+                    ? ZadEmptyTone.waiting
+                    : ZadEmptyTone.problem,
+              ),
+              // The balance ran out: an ad can bring an attempt (٨ب.٢).
+              if (refusal?.outOfAttempts ?? false) ...<Widget>[
+                const SizedBox(height: ZadSpacing.md),
+                const WatchAdButton(),
+              ],
+            ],
           ),
           ScanStage.ready => _Reading(receipt: view.receipt!),
         },

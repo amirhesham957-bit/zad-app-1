@@ -1850,5 +1850,35 @@
   "introLogoLabel": "شعار زاد",
   "@introLogoLabel": {
     "description": "Intro: the logo, for TalkBack."
+  },
+  "adWatchStep": "شاهد إعلان — {step} من ٣",
+  "@adWatchStep": {
+    "description": "Ad button: this ad is one step of three; step in Arabic digits.",
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "adThirdOpens": "الإعلان ده بيكمّل التلاتة ويفتح {attempts}",
+  "@adThirdOpens": {
+    "description": "Under the ad button: the third ad opens the attempt.",
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "adThreeForOne": "كل ٣ إعلانات = {attempts} — شفت {seen} من ٣",
+  "@adThreeForOne": {
+    "description": "Under the ad button: progress toward the attempt.",
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      },
+      "seen": {
+        "type": "String"
+      }
+    }
   }
 }

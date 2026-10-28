@@ -5,10 +5,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/generated/zad_l10n_ar.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/presentation/receipt_scan_sheet.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
@@ -184,5 +187,53 @@ void main() {
     expect(find.text('كام قرص؟'), findsOneWidget);
     expect(find.text('احفظ وضيف للصيدلية'), findsOneWidget);
     expect(find.textContaining('للمراجعة بس'), findsNothing);
+  });
+
+  testWidgets('out of attempts: the ad button under the server words', (
+    tester,
+  ) async {
+    Future<void> failWith(int status) async {
+      fake = _Scan(
+        ScanView(
+          stage: ScanStage.failed,
+          error: FunctionsHttpException(
+            status: status,
+            details: const <String, dynamic>{'message': 'رصيدك خلص'},
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          key: UniqueKey(),
+          overrides: [
+            scanControllerProvider.overrideWith(() => fake),
+            adsAllowedProvider.overrideWithValue(true),
+            adRewardPreviewProvider.overrideWith(
+              (ref) async =>
+                  const AdRewardPreview(available: true, boxBonus: 1),
+            ),
+          ],
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: const Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: SingleChildScrollView(child: ReceiptScanSheet()),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    await failWith(402);
+    expect(find.text('رصيدك خلص'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsOneWidget);
+
+    // Too fast (429): an ad does not help, so no button.
+    await failWith(429);
+    expect(find.text('رصيدك خلص'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsNothing);
   });
 }

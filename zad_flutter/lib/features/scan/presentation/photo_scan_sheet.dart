@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/photo_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
@@ -89,11 +90,23 @@ class PhotoScanSheet extends ConsumerWidget {
                 : 'صوّر وش العلبة اللي عليه اسم الدواء، قريب ومن غير لمعة.',
             tone: ZadEmptyTone.waiting,
           ),
-          ScanStage.failed => _Retry(
-            kind: kind,
-            title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
-            message: refusal?.message ?? 'جرب تاني لما النت يرجع.',
-            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
+          ScanStage.failed => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _Retry(
+                kind: kind,
+                title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
+                message: refusal?.message ?? 'جرب تاني لما النت يرجع.',
+                tone: refusal != null
+                    ? ZadEmptyTone.waiting
+                    : ZadEmptyTone.problem,
+              ),
+              // The balance ran out: an ad can bring an attempt (٨ب.٢).
+              if (refusal?.outOfAttempts ?? false) ...<Widget>[
+                const SizedBox(height: ZadSpacing.md),
+                const WatchAdButton(),
+              ],
+            ],
           ),
           ScanStage.ready => _PantryReading(view: view),
         },

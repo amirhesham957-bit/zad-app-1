@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/document_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/domain/scanned_document.dart';
@@ -80,12 +81,24 @@ class DocumentScanSheet extends ConsumerWidget {
             message: 'صوّر الورقة كلها قريب، من غير لمعة وفي إضاءة كويسة.',
             tone: ZadEmptyTone.waiting,
           ),
-          ScanStage.failed => _Retry(
-            kind: kind,
-            title: refusal?.title ?? 'مقدرتش أكمّل',
-            message:
-                refusal?.message ?? 'النت أو السيرفر — جرب تاني كمان شوية.',
-            tone: refusal != null ? ZadEmptyTone.waiting : ZadEmptyTone.problem,
+          ScanStage.failed => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _Retry(
+                kind: kind,
+                title: refusal?.title ?? 'مقدرتش أكمّل',
+                message:
+                    refusal?.message ?? 'النت أو السيرفر — جرب تاني كمان شوية.',
+                tone: refusal != null
+                    ? ZadEmptyTone.waiting
+                    : ZadEmptyTone.problem,
+              ),
+              // The balance ran out: an ad can bring an attempt (٨ب.٢).
+              if (refusal?.outOfAttempts ?? false) ...<Widget>[
+                const SizedBox(height: ZadSpacing.md),
+                const WatchAdButton(),
+              ],
+            ],
           ),
           ScanStage.ready when isPrescription => _PrescriptionReview(
             view: view,

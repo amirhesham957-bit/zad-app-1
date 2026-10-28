@@ -2544,4 +2544,19 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get introLogoLabel => 'Zad logo';
+
+  @override
+  String adWatchStep(String step) {
+    return 'Watch an ad — $step of 3';
+  }
+
+  @override
+  String adThirdOpens(String attempts) {
+    return 'This ad completes three and opens $attempts';
+  }
+
+  @override
+  String adThreeForOne(String attempts, String seen) {
+    return 'Every 3 ads = $attempts — $seen of 3 watched';
+  }
 }

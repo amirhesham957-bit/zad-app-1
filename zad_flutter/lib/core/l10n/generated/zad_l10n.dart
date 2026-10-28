@@ -4464,6 +4464,24 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'شعار زاد'**
   String get introLogoLabel;
+
+  /// Ad button: this ad is one step of three; step in Arabic digits.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاهد إعلان — {step} من ٣'**
+  String adWatchStep(String step);
+
+  /// Under the ad button: the third ad opens the attempt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان ده بيكمّل التلاتة ويفتح {attempts}'**
+  String adThirdOpens(String attempts);
+
+  /// Under the ad button: progress toward the attempt.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل ٣ إعلانات = {attempts} — شفت {seen} من ٣'**
+  String adThreeForOne(String attempts, String seen);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -11,7 +11,10 @@ import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The server's refusal: a title for the screen and its own message.
-typedef ServerRefusal = ({String title, String message});
+///
+/// [outOfAttempts]: the balance ran out (402) — an ad can help there, the
+/// pace (429) it cannot.
+typedef ServerRefusal = ({String title, String message, bool outOfAttempts});
 
 /// The refusal behind [error], or null for any other failure (offline, a
 /// server error), which the screen words itself.
@@ -28,6 +31,7 @@ ServerRefusal? serverRefusal(Object? error) {
   return (
     title: error.status == 402 ? 'رصيد المحاولات مايكفيش' : 'استنى شوية',
     message: message,
+    outOfAttempts: error.status == 402,
   );
 }
 

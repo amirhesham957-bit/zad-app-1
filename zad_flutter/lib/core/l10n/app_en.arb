@@ -727,5 +727,8 @@
   "introStart": "Start with Zad",
   "introSkip": "Skip",
   "introSignUp": "No account? Create one",
-  "introLogoLabel": "Zad logo"
+  "introLogoLabel": "Zad logo",
+  "adWatchStep": "Watch an ad — {step} of 3",
+  "adThirdOpens": "This ad completes three and opens {attempts}",
+  "adThreeForOne": "Every 3 ads = {attempts} — {seen} of 3 watched"
 }
