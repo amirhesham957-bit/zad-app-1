@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/app/auth_gate.dart';
@@ -108,6 +109,13 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // Status-bar icons for the screens with no AppBar to set them (the
+      // onboarding screens, emulator 2026-11-01); an AppBar's own style, from
+      // the theme, still wins under it.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: ZadTheme.overlayStyleFor(Theme.of(context).brightness),
+        child: child ?? const SizedBox.shrink(),
+      ),
       // The reset link's new-password dialog sits over whichever screen the
       // gate shows (ZAD_PLAN ٠.١٠).
       home: const PasswordRecoveryListener(child: ZadAuthGate()),

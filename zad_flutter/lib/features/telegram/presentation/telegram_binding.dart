@@ -209,8 +209,11 @@ class _BindingState extends ConsumerState<TelegramBindingSection> {
             'بوت زاد على تليجرام',
             style: ZadType.labelMedium.copyWith(color: scheme.onSurfaceVariant),
           ),
+          // A handle is Latin, start to end: in the Arabic row it drew as
+          // «ZadhApp_bot@» (emulator, 2026-11-01).
           Text(
             '@$kTelegramBotUsername',
+            textDirection: TextDirection.ltr,
             style: ZadType.labelLarge.copyWith(
               fontWeight: FontWeight.bold,
               color: _brand,
@@ -280,7 +283,9 @@ class _BindingState extends ConsumerState<TelegramBindingSection> {
       ),
       const SizedBox(height: 12),
       Text(
-        'مش اشتغل الزرار؟ ابعت للبوت: /start ‏$code',
+        // The command in a left-to-right isolate (U+2066…U+2069): with only an
+        // RLM it drew «CODE start/».
+        'مش اشتغل الزرار؟ ابعت للبوت: \u2066/start $code\u2069',
         style: ZadType.labelSmall.copyWith(color: scheme.onSurfaceVariant),
       ),
       const SizedBox(height: 12),

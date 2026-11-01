@@ -14,6 +14,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
@@ -111,6 +112,14 @@ abstract final class ZadTheme {
       ? ZadPalette.iosBackgroundDark
       : ZadPalette.iosBackground;
 
+  /// Status-bar icons that read on [brightness]'s background: dark icons on
+  /// the light theme, light ones on the dark. Screens without an AppBar get
+  /// the same from the app root.
+  static SystemUiOverlayStyle overlayStyleFor(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? SystemUiOverlayStyle.light
+      : SystemUiOverlayStyle.dark;
+
   /// The light theme.
   static ThemeData light() =>
       _build(lightScheme, ZadExtendedColors.light, ZadPalette.iosBackground);
@@ -150,11 +159,16 @@ abstract final class ZadTheme {
         shape: zadSquircle(ZadRadii.card),
         margin: EdgeInsets.zero,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        // A transparent bar leaves Flutter to guess the status-bar icons, and
+        // over the light background it guessed white: the clock and battery
+        // were near-invisible on «عرّفني بيك», «أول خطوة» and the budget
+        // screen (emulator, 2026-11-01). The icons follow the theme instead.
+        systemOverlayStyle: overlayStyleFor(scheme.brightness),
       ),
       dividerTheme: const DividerThemeData(
         color: ZadColors.hairline,

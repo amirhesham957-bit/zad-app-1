@@ -16,6 +16,7 @@ import 'package:lottie/lottie.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_auth_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/terms_content.dart';
@@ -617,9 +618,11 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const SizedBox(height: 48),
+          // 48 + 48 here pushed «إنشاء حساب» half under the bottom edge of a
+          // 1080×2400 phone (emulator, 2026-11-01); the form is what matters.
+          const SizedBox(height: ZadSpacing.xl),
           const ZadAppearOnEntry(child: _BrandMark(wordmarkSize: 28, gap: 16)),
-          const SizedBox(height: 48),
+          const SizedBox(height: ZadSpacing.xl),
           ZadAppearOnEntry(
             delayMs: 80,
             child: Column(
