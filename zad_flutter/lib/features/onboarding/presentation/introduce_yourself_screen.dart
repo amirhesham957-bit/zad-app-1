@@ -214,6 +214,11 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
               child: DropdownButtonFormField<int?>(
                 initialValue: _payDay,
                 isExpanded: true,
+                // Without a style it took the theme's title — large and bold
+                // beside the choice chips above (emulator, 2026-11-01).
+                style: ZadType.bodyLarge.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: <DropdownMenuItem<int?>>[
                   const DropdownMenuItem<int?>(
