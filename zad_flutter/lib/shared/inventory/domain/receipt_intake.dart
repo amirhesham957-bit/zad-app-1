@@ -111,6 +111,7 @@ bool sameItemName(String a, String b) {
 /// text. The server's `pantryMatch.ts` and `zad_inventory_unit_key` agree.
 String unitKey(String? unit) {
   final u = (unit ?? '').trim().toLowerCase();
+  // l10n: data-begin
   return switch (u) {
     '' || 'ea' || 'pc' || 'pcs' || 'piece' || 'قطعة' || 'قطعه' || 'حبة' ||
     'حبه' || 'عدد' => 'piece',
@@ -118,6 +119,7 @@ String unitKey(String? unit) {
     'لتر' || 'l' || 'liter' || 'litre' => 'l',
     _ => u,
   };
+  // l10n: data-end
 }
 
 /// Whether two stated units are the same, a unit missing on either side
