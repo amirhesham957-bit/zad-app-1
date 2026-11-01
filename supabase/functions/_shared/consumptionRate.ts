@@ -19,6 +19,9 @@ export function rateConfidence(avgDailyQty: number | null | undefined, rateKnown
  * `_inventory_needs_checkin` في SQL.
  */
 export function needsCheckIn(quantity: number, threshold: number | null | undefined, avgDailyQty: number | null | undefined): boolean {
+  // اللي كميته صفر خلص فعلاً — مكانه قايمة الشرا، مش «لسه عندك؟». المالك ١/١١: «بيسألني على حاجات
+  // خلصانة من شهرين» — مياه نستله اتسألت ٣ مرات وهي صفر.
+  if (!(quantity > 0)) return false;
   if (quantity <= (threshold ?? 2)) return true;
   const rate = Number(avgDailyQty);
   return rate > 0 && quantity / rate <= 2;

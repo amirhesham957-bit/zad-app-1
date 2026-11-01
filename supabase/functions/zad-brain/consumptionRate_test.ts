@@ -17,3 +17,11 @@ Deno.test("needsCheckIn: an approximate rate asks before the item runs out", () 
   assertEquals(needsCheckIn(2, null, null), true, "under the default threshold of 2");
   assertEquals(needsCheckIn(5, 1, null), false, "no rate, above the threshold");
 });
+
+Deno.test("needsCheckIn: an item already at zero is not asked about (2026-11-01)", () => {
+  // «مياه نستله» was asked «لسه عندك؟» three times at 0. Gone is known; the list holds it.
+  assertEquals(needsCheckIn(0, null, null), false);
+  assertEquals(needsCheckIn(0, 2, 1), false);
+  assertEquals(needsCheckIn(-1, 2, null), false);
+  assertEquals(needsCheckIn(0.2, null, null), true, "a little left is still worth asking");
+});
