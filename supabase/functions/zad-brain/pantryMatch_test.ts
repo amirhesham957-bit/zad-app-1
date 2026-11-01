@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { normalizeItemName, pickPantryMatch, samePantryItem } from "./pantryMatch.ts";
+import { normalizeItemName, pickPantryMatch, samePantryItem, sameUnit, unitKey } from "./pantryMatch.ts";
 
 Deno.test("names normalise the way the app's normalizeItemName does", () => {
   assertEquals(normalizeItemName("  الجبنة   الرومي "), "جبنه رومي");
@@ -38,4 +38,19 @@ Deno.test("another unit or another item is a new row", () => {
   assertEquals(pickPantryMatch(rows, "سكر", "كيلو"), null);
   assertEquals(pickPantryMatch(rows, "لبن"), null);
   assertEquals(pickPantryMatch([], "بلح"), null);
+});
+
+Deno.test("one unit under its spellings, and a number stuck to a word, are one row (2026-11-01)", () => {
+  // The owner's tea: «40جم» [EA] beside «40 جم» [قطعة] made a third row.
+  const tea = [
+    { id: "ea", item_name: "شاي اسود 40جم بروك", quantity: 2, unit: "EA", created_at: "2026-10-21T00:00:00Z" },
+  ];
+  assertEquals(pickPantryMatch(tea, "شاي اسود 40 جم بروك", "قطعة")?.id, "ea");
+  const tomato = [{ id: "kg", item_name: "طماطم", quantity: 3, unit: "كجم", created_at: "2026-10-30T00:00:00Z" }];
+  assertEquals(pickPantryMatch(tomato, "طماطم", "كيلو")?.id, "kg");
+  assertEquals(pickPantryMatch(tomato, "طماطم", "كيس"), null, "another unit is still another item");
+  assertEquals(unitKey("EA"), unitKey("قطعة"));
+  assertEquals(unitKey(null), "piece");
+  assertEquals(sameUnit("كيلو", "علبة"), false);
+  assertEquals(normalizeItemName("زيت 1.5لتر"), "زيت 1.5 لتر");
 });
