@@ -371,4 +371,14 @@ void main() {
     expect(itemNamesMatch('لبن', 'لبن زبادي'), isTrue, reason: 'receipts');
     expect(sameItemName('', 'بلح'), isFalse);
   });
+
+  test('one unit under its spellings, and «40جم» = «40 جم» (2026-11-01)', () {
+    expect(sameItemName('شاي اسود 40جم بروك', 'شاي اسود 40 جم بروك'), isTrue);
+    expect(normalizeItemName('زيت 1.5لتر'), 'زيت 1.5 لتر');
+    expect(sameUnit('EA', 'قطعة'), isTrue);
+    expect(sameUnit('كيلو', 'كجم'), isTrue);
+    expect(sameUnit(null, 'كيس'), isTrue, reason: 'a missing unit fits any');
+    expect(sameUnit('كيلو', 'كيس'), isFalse);
+    expect(unitKey('حبة'), 'piece');
+  });
 }

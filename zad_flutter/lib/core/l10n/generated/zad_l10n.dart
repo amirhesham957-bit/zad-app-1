@@ -4420,7 +4420,7 @@ abstract class ZadL10n {
   /// Intro card 1 title.
   ///
   /// In ar, this message translates to:
-  /// **'إدارة المخزين'**
+  /// **'إدارة المخزون'**
   String get introPantryTitle;
 
   /// Intro card 1 body.

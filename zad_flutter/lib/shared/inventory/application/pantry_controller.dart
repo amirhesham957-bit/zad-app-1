@@ -118,7 +118,8 @@ class PantryController extends Notifier<PantryView> {
 
   /// Adds a row — or, when the same item is already in the pantry, adds the
   /// count to it. Buying «بلح» again made a second «بلح» beside the first
-  /// (2026-10-10); a different unit stated on both sides is a different item.
+  /// (2026-10-10); a different unit stated on both sides is a different item,
+  /// but «EA» and «قطعة» are one unit ([sameUnit], 2026-11-01).
   Future<void> add({
     required String itemName,
     double quantity = 1,
@@ -130,12 +131,9 @@ class PantryController extends Notifier<PantryView> {
     // The name the home chose («حليب» ⇒ «لبن» once it said they are the
     // same), so the match below finds the row the server would write it to.
     final name = householdProductNames(ref).canonical(itemName);
-    final wantedUnit = unit?.trim() ?? '';
-    final existing = state.items.where((i) {
-      final rowUnit = i.unit?.trim() ?? '';
-      return sameItemName(i.itemName, name) &&
-          (wantedUnit.isEmpty || rowUnit.isEmpty || rowUnit == wantedUnit);
-    }).firstOrNull;
+    final existing = state.items
+        .where((i) => sameItemName(i.itemName, name) && sameUnit(i.unit, unit))
+        .firstOrNull;
     if (existing != null && quantity > 0) {
       await adjust(existing.id, quantity);
       return;

@@ -1804,7 +1804,7 @@
   "@introTagline": {
     "description": "Intro: the line under the brand."
   },
-  "introPantryTitle": "إدارة المخزين",
+  "introPantryTitle": "إدارة المخزون",
   "@introPantryTitle": {
     "description": "Intro card 1 title."
   },

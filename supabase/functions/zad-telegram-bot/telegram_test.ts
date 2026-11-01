@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import * as telegramModule from "./telegram.ts";
 import {
-  normalizeBindingCode, parseDismissCallback, reasonForCode, memoryNoteForDismissal,
+  normalizeBindingCode, parseDismissCallback, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
   checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
   confirmToolKeyboard, parseToolCallback,
@@ -621,4 +621,16 @@ Deno.test("habit trial (5.4): callbacks are strict, and every answer has its own
   assert(habitTrialReply(null).includes("ماقدرتش"));
   assert(habitTrialReply({ ok: false }).includes("مابقتش موجودة"));
   assert(habitTrialReply({ ok: true, already: true }).includes("قبل كده"));
+});
+
+Deno.test("a family code sent to the bot is named, not called wrong (2026-11-01)", () => {
+  // A tester sent «ZAD-…» from the family page and got «الكود ده غلط أو منتهي».
+  assert(isFamilyInviteCode("ZAD-AB12CD34EF"));
+  assert(isFamilyInviteCode(" zad-ab12cd34ef "));
+  assert(!isFamilyInviteCode("AB12CD34"));
+  assert(FAMILY_CODE_REPLY.includes("العيلة") && FAMILY_CODE_REPLY.includes("ربط بوت تليجرام"));
+  // The link code itself, sent without /start, is redeemed.
+  assert(looksLikeLinkCode("wh7lqx2k"));
+  assert(!looksLikeLinkCode("صرفت 50"));
+  assert(!looksLikeLinkCode("ABCDEFG1"), "1 is not in the app's alphabet");
 });

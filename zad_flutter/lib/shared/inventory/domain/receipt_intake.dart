@@ -73,13 +73,17 @@ int wholeCount(double quantity) {
 }
 
 /// The Kotlin engine's `normalizeName`: case, the alef forms, taa marbuta,
-/// alef maqsura, and the article on every word.
+/// alef maqsura, and the article on every word. A number stuck to a word is
+/// split off («40جم» = «40 جم»): the owner's tea sat in two rows over that
+/// one space (2026-11-01).
 String normalizeItemName(String name) => name
     .trim()
     .toLowerCase()
     .replaceAll(RegExp('[أإآ]'), 'ا')
     .replaceAll('ة', 'ه')
     .replaceAll('ى', 'ي')
+    .replaceAllMapped(RegExp(r'(\d)([^\d\s.])'), (m) => '${m[1]} ${m[2]}')
+    .replaceAllMapped(RegExp(r'([^\d\s.])(\d)'), (m) => '${m[1]} ${m[2]}')
     .split(RegExp(r'\s+'))
     .map((w) => w.startsWith('ال') ? w.substring(2) : w)
     .join(' ');
@@ -100,6 +104,29 @@ bool sameItemName(String a, String b) {
   final wb = words(nb);
   return wa.length == wb.length &&
       Iterable<int>.generate(wa.length).every((i) => wa[i] == wb[i]);
+}
+
+/// One unit under its spellings: a receipt writes «EA», the chat «قطعة», the
+/// app «كيلو» where another source wrote «كجم». Matching data, not display
+/// text. The server's `pantryMatch.ts` and `zad_inventory_unit_key` agree.
+String unitKey(String? unit) {
+  final u = (unit ?? '').trim().toLowerCase();
+  // l10n: data-begin
+  return switch (u) {
+    '' || 'ea' || 'pc' || 'pcs' || 'piece' || 'قطعة' || 'قطعه' || 'حبة' ||
+    'حبه' || 'عدد' => 'piece',
+    'كجم' || 'كيلو' || 'كيلوجرام' || 'كيلوغرام' || 'كغ' || 'kg' => 'kg',
+    'لتر' || 'l' || 'liter' || 'litre' => 'l',
+    _ => u,
+  };
+  // l10n: data-end
+}
+
+/// Whether two stated units are the same, a unit missing on either side
+/// fitting any. «كيلو» against «كيس» is still another item.
+bool sameUnit(String? a, String? b) {
+  if ((a ?? '').trim().isEmpty || (b ?? '').trim().isEmpty) return true;
+  return unitKey(a) == unitKey(b);
 }
 
 /// The Kotlin engine's `namesMatch`: the same name once normalised, or enough

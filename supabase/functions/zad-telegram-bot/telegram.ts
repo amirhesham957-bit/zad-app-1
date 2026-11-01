@@ -121,6 +121,22 @@ export function normalizeBindingCode(arg: string | undefined): string | null {
   return trimmed.toUpperCase();
 }
 
+/** كود العيلة («ZAD-» + ١٠، `family_groups.invite_code`) — مش كود ربط تليجرام. مختبِرة بعتته
+ * للبوت ٣١/١٠ وردّه كان «الكود ده غلط أو منتهي» من غير ما يقول الكود ده بيتحط فين. */
+export function isFamilyInviteCode(text: string | undefined): boolean {
+  return /^ZAD-[A-Z0-9]{6,}$/i.test((text ?? "").trim());
+}
+
+export const FAMILY_CODE_REPLY =
+  "ده كود العيلة، مش كود ربط تليجرام 🙂 ادخله في تطبيق زاد من «العيلة» ← «انضم بكود». " +
+  "وعشان تربط تليجرام: افتح الرئيسية في التطبيق ودوس «ربط بوت تليجرام»، وهيرجعك هنا مربوط على طول.";
+
+/** كود الربط نفسه مبعوت كرسالة عادية من غير «/start» (٨ حروف من أبجدية التطبيق،
+ * `TelegramLinkRemote._codeChars`). */
+export function looksLikeLinkCode(text: string | undefined): boolean {
+  return /^[A-HJ-NP-Z2-9]{8}$/i.test((text ?? "").trim());
+}
+
 /** What `zad_redeem_telegram_code` answered (20261010120000). A fresh code moves the chat to
  * the account that made it — the code is the proof — so "already bound to another user" is no
  * longer a refusal. `null` = the call itself failed. */
