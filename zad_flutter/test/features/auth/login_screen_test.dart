@@ -204,6 +204,31 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
+  // Emulator, 2026-11-01: closing the picker gave focus back to the email
+  // field, the keyboard came up again and covered the password field.
+  testWidgets('choosing the country does not bring the keyboard back', (
+    tester,
+  ) async {
+    await pumpLogin(tester);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('سجل الآن'));
+    await tester.tap(find.text('سجل الآن'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField).at(1));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, isTrue);
+
+    final field = find.byKey(const ValueKey<String>('sign-up-market'));
+    await tester.ensureVisible(field);
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مصر'));
+    await tester.pumpAndSettle();
+
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
   testWidgets('«نسيت كلمة المرور؟» sends the reset link', (tester) async {
     await pumpLogin(tester);
     await tester.pumpAndSettle();
