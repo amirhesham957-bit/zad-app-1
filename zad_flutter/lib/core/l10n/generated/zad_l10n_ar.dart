@@ -2523,4 +2523,13 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get appointmentGuardKeep => 'احفظه برضه';
+
+  @override
+  String get qtyLeftLittle => 'فاضل قليل';
+
+  @override
+  String get qtyLeftHalf => 'فاضل نصه';
+
+  @override
+  String get qtyLeftMost => 'فاضل كتير';
 }

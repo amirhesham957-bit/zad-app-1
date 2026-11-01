@@ -1888,5 +1888,8 @@
   },
   "appointmentGuardTitle": "قبل ما أسجّله:",
   "appointmentGuardAsk": "تسجّله كده ولا تغيّر الوقت؟",
-  "appointmentGuardKeep": "احفظه برضه"
+  "appointmentGuardKeep": "احفظه برضه",
+  "qtyLeftLittle": "فاضل قليل",
+  "qtyLeftHalf": "فاضل نصه",
+  "qtyLeftMost": "فاضل كتير"
 }

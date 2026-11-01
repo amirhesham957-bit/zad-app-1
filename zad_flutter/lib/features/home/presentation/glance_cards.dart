@@ -25,6 +25,7 @@ import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
@@ -378,6 +379,11 @@ class _FoodTile extends StatelessWidget {
     final left = switch (days) {
       final int d when d < 0 => context.l10n.glanceExpired,
       final int d => context.l10n.glanceDaysLeft(d),
+      null when pieceLeft(item.quantity, item.unit) != null => quantityText(
+        context,
+        item.quantity,
+        item.unit,
+      ),
       null => context.l10n.glanceQtyLeft(
         '${formatQuantity(item.quantity)} ${item.unit ?? ''}'.trim(),
       ),

@@ -51,4 +51,25 @@ void main() {
     expect(item.lowStockThreshold, 0.25);
     expect(item.isLowStock, isTrue, reason: 'threshold is at least one');
   });
+
+  test(
+    'a part of one counted piece reads as the check-in word (2026-11-01)',
+    () {
+      // The owner's pantry showed «0.2 قطعة» — their own «قليل».
+      expect(pieceLeft(0.2, 'قطعة'), PieceLeft.little);
+      expect(pieceLeft(0.5, 'EA'), PieceLeft.half);
+      expect(pieceLeft(0.75, null), PieceLeft.most);
+      expect(
+        pieceLeft(0.5, 'كجم'),
+        isNull,
+        reason: 'half a kilo keeps its number',
+      );
+      expect(
+        pieceLeft(1.5, 'قطعة'),
+        isNull,
+        reason: 'more than one piece keeps its number',
+      );
+      expect(pieceLeft(0, 'قطعة'), isNull);
+    },
+  );
 }
