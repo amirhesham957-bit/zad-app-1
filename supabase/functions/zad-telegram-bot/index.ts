@@ -18,7 +18,7 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
 import { nextRenewal } from "../_shared/nextRenewal.ts";
-import { Bot, InlineKeyboard, webhookCallback } from "npm:grammy@1";
+import { Bot, type Context, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { routePhoto } from "./photoRoute.ts";
@@ -39,7 +39,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -1007,6 +1007,10 @@ bot.api.config.use(async (prev, method, payload, signal) => {
 bot.command("start", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const chatId = ctx.chat.id;
+  if (isFamilyInviteCode(ctx.match as string | undefined)) {
+    await ctx.reply(FAMILY_CODE_REPLY);
+    return;
+  }
   const code = normalizeBindingCode(ctx.match as string | undefined);
 
   if (!code) {
@@ -1018,9 +1022,13 @@ bot.command("start", async (ctx) => {
     }
     return;
   }
+  await redeemLinkCode(ctx, sb, code);
+});
 
-  // كود جديد = إثبات ملكية الحساب اللي عمله، فالشات بيتنقل له حتى لو كان مربوط بحساب
-  // تاني — في transaction واحدة جوه الداتابيز (20261010120000).
+/** كود جديد = إثبات ملكية الحساب اللي عمله، فالشات بيتنقل له حتى لو كان مربوط بحساب تاني — في
+ * transaction واحدة جوه الداتابيز (20261010120000). من «/start الكود» أو الكود لوحده كرسالة. */
+async function redeemLinkCode(ctx: Context, sb: SupabaseClient, code: string): Promise<void> {
+  const chatId = ctx.chat!.id;
   const { data, error } = await sb.rpc("zad_redeem_telegram_code", { p_code: code, p_chat_id: chatId });
   if (error) console.error("[start] redeem failed:", error.message);
   const status = error ? null : ((data as { status?: BindingStatus } | null)?.status ?? null);
@@ -1031,7 +1039,7 @@ bot.command("start", async (ctx) => {
   } else {
     await ctx.reply(bindingReply(status));
   }
-});
+}
 
 bot.command("unlink", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -1409,7 +1417,13 @@ bot.on("message:text", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const userId = await resolveUserId(sb, ctx.chat.id);
   if (!userId) {
-    await ctx.reply("أهلاً! لو عندك كود ربط من تطبيق زاد ابعته كده: /start الكود");
+    if (isFamilyInviteCode(ctx.message.text)) {
+      await ctx.reply(FAMILY_CODE_REPLY);
+    } else if (looksLikeLinkCode(ctx.message.text)) {
+      await redeemLinkCode(ctx, sb, normalizeBindingCode(ctx.message.text)!);
+    } else {
+      await ctx.reply("أهلاً! لو عندك كود ربط من تطبيق زاد ابعته كده: /start الكود");
+    }
     return;
   }
   await maybeAskCountry(sb, ctx.chat.id, userId);
