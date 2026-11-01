@@ -95,6 +95,22 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
   bool _filling = false;
 
   @override
+  void initState() {
+    super.initState();
+    // The list is kept alive across tabs, so opening it again only showed the
+    // cache. A line the bot wrote while a live change was missed stayed
+    // hidden until a restart (a tester, 2026-10-31: four lines on the server,
+    // an empty list on two opens). One read each time the list is opened.
+    unawaited(
+      Future<void>.microtask(() async {
+        if (mounted) {
+          await ref.read(shoppingControllerProvider.notifier).refresh();
+        }
+      }),
+    );
+  }
+
+  @override
   void dispose() {
     _entry.dispose();
     super.dispose();

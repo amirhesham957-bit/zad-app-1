@@ -126,8 +126,10 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(familyControllerProvider.notifier);
-    final canJoin =
-        _code.text.trim().isNotEmpty && _alias.text.trim().isNotEmpty;
+    // The code alone is enough: the server names a member without an alias
+    // «فرد من العيلة». Requiring the alias left the button dead with the
+    // alias field scrolled out of sight (owner's phone, 2026-10-30).
+    final canJoin = _code.text.trim().isNotEmpty;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(ZadSpacing.xl),
@@ -202,7 +204,7 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
           controller: _alias,
           textInputAction: TextInputAction.next,
           decoration: const InputDecoration(
-            labelText: 'اسمك (Alias)',
+            labelText: 'اسمك في العيلة (اختياري)',
             hintText: 'مثال: الابن أحمد',
           ),
           onChanged: (_) => setState(() {}),
