@@ -491,6 +491,10 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
   }
 
   Future<void> _pickMarket() async {
+    // Closing the sheet hands focus back to whatever had it, and a field that
+    // had it brings the keyboard back over the password (emulator, 2026-11-01).
+    // The field itself, not the scope: the scope would restore it on pop.
+    FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showModalBottomSheet<Market>(
       context: context,
       isScrollControlled: true,
