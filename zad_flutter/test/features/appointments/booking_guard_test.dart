@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
@@ -162,6 +163,21 @@ void main() {
       expect(guard.asked, hasLength(1));
       expect(repo.added, <String>['دكتور الأسنان'], reason: '$answer');
     }
+  });
+
+  // CI, 2026-11-01 23:10 Cairo: the default was `(hour + 1) % 24` on today's
+  // date — 00:00 today, already past — and the three tests above failed.
+  test('the default is the next whole hour, on its own date', () {
+    final cairo = tz.getLocation('Africa/Cairo');
+    var (date, time) = nextWholeHour(tz.TZDateTime(cairo, 2026, 11, 1, 23, 10));
+    expect(date, DateTime(2026, 11, 2));
+    expect(time, const TimeOfDay(hour: 0, minute: 0));
+    (date, time) = nextWholeHour(tz.TZDateTime(cairo, 2026, 10, 31, 23, 59));
+    expect(date, DateTime(2026, 11));
+    expect(time, const TimeOfDay(hour: 0, minute: 0));
+    (date, time) = nextWholeHour(tz.TZDateTime(cairo, 2026, 11, 1, 14, 20));
+    expect(date, DateTime(2026, 11));
+    expect(time, const TimeOfDay(hour: 15, minute: 0));
   });
 
   test("the answer's say lines, or null when it is not an answer", () {

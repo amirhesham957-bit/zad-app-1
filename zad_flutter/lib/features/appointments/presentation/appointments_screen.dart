@@ -655,6 +655,18 @@ class _Row extends StatelessWidget {
 
 // ── Dialogs ─────────────────────────────────────────────────────────────────
 
+/// A new appointment's default: the next whole hour, on its own date. At
+/// 23:xx that is tomorrow 00:00 — `(hour + 1) % 24` on today's date was
+/// already past, and «حفظ» refused it (CI, 2026-11-01 23:10 Cairo).
+@visibleForTesting
+(DateTime, TimeOfDay) nextWholeHour(tz.TZDateTime now) {
+  final next = now.add(const Duration(hours: 1));
+  return (
+    DateTime(next.year, next.month, next.day),
+    TimeOfDay(hour: next.hour, minute: 0),
+  );
+}
+
 class _AddAppointmentDialog extends ConsumerStatefulWidget {
   const new({required this.zone, required this.existing});
 
@@ -697,9 +709,9 @@ class _AddState extends ConsumerState<_AddAppointmentDialog> {
   @override
   void initState() {
     super.initState();
-    final now = tz.TZDateTime.now(widget.zone);
-    _date = DateTime(now.year, now.month, now.day);
-    _time = TimeOfDay(hour: (now.hour + 1) % 24, minute: 0);
+    final (date, time) = nextWholeHour(tz.TZDateTime.now(widget.zone));
+    _date = date;
+    _time = time;
   }
 
   @override
