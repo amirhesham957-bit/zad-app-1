@@ -113,8 +113,16 @@ String unitKey(String? unit) {
   final u = (unit ?? '').trim().toLowerCase();
   // l10n: data-begin
   return switch (u) {
-    '' || 'ea' || 'pc' || 'pcs' || 'piece' || 'قطعة' || 'قطعه' || 'حبة' ||
-    'حبه' || 'عدد' => 'piece',
+    '' ||
+    'ea' ||
+    'pc' ||
+    'pcs' ||
+    'piece' ||
+    'قطعة' ||
+    'قطعه' ||
+    'حبة' ||
+    'حبه' ||
+    'عدد' => 'piece',
     'كجم' || 'كيلو' || 'كيلوجرام' || 'كيلوغرام' || 'كغ' || 'kg' => 'kg',
     'لتر' || 'l' || 'liter' || 'litre' => 'l',
     _ => u,

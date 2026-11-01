@@ -738,5 +738,8 @@
   "adThreeForOne": "Every 3 ads = {attempts} — {seen} of 3 watched",
   "appointmentGuardTitle": "Before I save it:",
   "appointmentGuardAsk": "Save it like this, or change the time?",
-  "appointmentGuardKeep": "Save anyway"
+  "appointmentGuardKeep": "Save anyway",
+  "qtyLeftLittle": "A little left",
+  "qtyLeftHalf": "About half left",
+  "qtyLeftMost": "Most of it left"
 }

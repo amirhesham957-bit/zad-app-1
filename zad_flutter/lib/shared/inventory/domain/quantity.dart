@@ -3,6 +3,8 @@
 /// numeric(12,3), migration 20261020110000); so does this.
 library;
 
+import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+
 /// Reads what the customer typed: `0.5`, `٠٫٥`, `1,5`, `نص`, `ربع`, `1 ونص`.
 /// Null for nothing readable or nothing above zero.
 double? parseQuantity(String raw) {
@@ -62,4 +64,29 @@ String formatQuantity(num q) {
   if (glyph != null) return whole == 0 ? glyph : '$whole$glyph';
   final s = r.toStringAsFixed(3).replaceFirst(RegExp(r'0+$'), '');
   return s.endsWith('.') ? s.substring(0, s.length - 1) : s;
+}
+
+/// What is left of one piece, in the words the check-in asked with («كتير /
+/// نصه / قليل», `CHECKIN_LEVELS` in the bot). «0.2 قطعة» read as nonsense on
+/// the owner's pantry (2026-11-01); it was their own «قليل». Null when the
+/// amount is not a part of one counted piece, so weights and whole counts keep
+/// their numbers.
+enum PieceLeft {
+  /// «قليل»: up to about a quarter.
+  little,
+
+  /// «نصه»: about half.
+  half,
+
+  /// «كتير»: most of it.
+  most,
+}
+
+/// The [PieceLeft] for [quantity] of [unit], or null.
+PieceLeft? pieceLeft(num quantity, String? unit) {
+  if (unitKey(unit) != 'piece') return null;
+  if (quantity <= 0 || quantity >= 1) return null;
+  if (quantity <= 0.3) return PieceLeft.little;
+  if (quantity <= 0.6) return PieceLeft.half;
+  return PieceLeft.most;
 }

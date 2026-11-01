@@ -4530,6 +4530,24 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'احفظه برضه'**
   String get appointmentGuardKeep;
+
+  /// No description provided for @qtyLeftLittle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل قليل'**
+  String get qtyLeftLittle;
+
+  /// No description provided for @qtyLeftHalf.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل نصه'**
+  String get qtyLeftHalf;
+
+  /// No description provided for @qtyLeftMost.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل كتير'**
+  String get qtyLeftMost;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

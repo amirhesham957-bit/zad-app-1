@@ -34,6 +34,7 @@ import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
+import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
@@ -1144,8 +1145,7 @@ class _InventoryItemCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
-                      '${formatQuantity(item.quantity)} ${item.unit ?? ''}'
-                          .trim(),
+                      quantityText(context, item.quantity, item.unit),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -1288,7 +1288,7 @@ class _FamilyCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${formatQuantity(group.total)} $unit'.trim(),
+                quantityText(context, group.total, unit),
                 style: ZadType.titleSmall.copyWith(color: scheme.primary),
               ),
               IconButton(

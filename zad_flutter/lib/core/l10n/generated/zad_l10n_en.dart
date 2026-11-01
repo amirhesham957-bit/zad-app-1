@@ -2586,4 +2586,13 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get appointmentGuardKeep => 'Save anyway';
+
+  @override
+  String get qtyLeftLittle => 'A little left';
+
+  @override
+  String get qtyLeftHalf => 'About half left';
+
+  @override
+  String get qtyLeftMost => 'Most of it left';
 }
