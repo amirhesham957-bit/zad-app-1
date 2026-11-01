@@ -610,6 +610,7 @@ Future<void> showMemberSheet(
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
+  useSafeArea: true,
   backgroundColor: ZadColors.surface,
   shape: zadSquircle(ZadRadii.sheet),
   builder: (_) => _MemberSheet(

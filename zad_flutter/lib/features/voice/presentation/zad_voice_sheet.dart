@@ -36,6 +36,7 @@ Future<void> showZadVoiceSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: ZadPalette.voiceDarkSheetBg,
       barrierColor: Colors.black.withValues(alpha: 0.70),
       shape: const RoundedRectangleBorder(

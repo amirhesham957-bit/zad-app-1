@@ -32,6 +32,7 @@ Future<void> showDocumentScanSheet(BuildContext context, DocumentKind kind) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: ZadColors.surface,
     shape: zadSquircle(ZadRadii.sheet),
     builder: (_) => DocumentScanSheet(kind: kind),

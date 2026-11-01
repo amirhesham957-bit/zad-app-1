@@ -17,6 +17,7 @@ Future<CustomerProfile?> showProfileSheet(
 ) => showModalBottomSheet<CustomerProfile>(
   context: context,
   isScrollControlled: true,
+  useSafeArea: true,
   showDragHandle: true,
   builder: (_) => ProfileSheet(initial: current ?? const CustomerProfile()),
 );

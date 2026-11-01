@@ -112,6 +112,7 @@ class _MemoryGraphScreenState extends ConsumerState<MemoryGraphScreen> {
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        useSafeArea: true,
         builder: (_) => _EntitySheet(graph: graph, entity: entity, zone: zone),
       ),
     );

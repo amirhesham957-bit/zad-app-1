@@ -571,6 +571,7 @@ Future<void> showFamilyReport(BuildContext context, String currency) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => _FamilyReportSheet(currency: currency),
     );
 
@@ -676,6 +677,7 @@ class _Zones extends ConsumerWidget {
     final draft = await showModalBottomSheet<_ZoneDraft>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => const _AddZoneSheet(),
     );
     if (draft == null) return;

@@ -965,6 +965,7 @@ Future<void> showAddMedicineSheet(
 }) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
+  useSafeArea: true,
   backgroundColor: ZadColors.surface,
   shape: zadSquircle(ZadRadii.sheet),
   builder: (_) => _AddMedicineSheet(scanned: scanned),
@@ -1411,6 +1412,7 @@ Future<void> showDoseTimesSheet(BuildContext context, Medicine medicine) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: ZadColors.surface,
       shape: zadSquircle(ZadRadii.sheet),
       builder: (_) => _DoseTimesSheet(medicine: medicine),

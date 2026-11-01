@@ -868,6 +868,7 @@ Future<void> showAddShoppingSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: ZadColors.surface,
       shape: zadSquircle(ZadRadii.sheet),
       builder: (_) => const _AddSheet(),

@@ -54,6 +54,7 @@ class _StreetAlertsSectionState extends ConsumerState<StreetAlertsSection>
     final agreed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
