@@ -335,7 +335,7 @@ export const ASKED_RELEVANT_MS = 20 * 3_600_000;
 
 export interface AskedThisMorning {
   question: string;
-  kind: "profile" | "curiosity" | "gift" | "occasion" | "event_reserve";
+  kind: "profile" | "curiosity" | "gift" | "occasion" | "event_reserve" | "appointment_follow_up";
   /** خانة zad_customer_profile لو السؤال من أسئلة الملف. */
   field?: string;
   record?: string;
@@ -347,6 +347,9 @@ export interface AskedThisMorning {
   amount?: number;
   currency?: string;
   deadline?: string;
+  /** ميعاد امبارح اللي اتسأل عنه (appointmentFollowUp.ts): for = عنوانه، on = يومه. */
+  appointment_id?: string;
+  on?: string;
   sent_at: string;
 }
 
@@ -382,6 +385,16 @@ export function askedThisMorning(
     return {
       question, kind: "event_reserve", for: reserve.title,
       ...(typeof reserve.on === "string" ? { deadline: reserve.on } : {}),
+      sent_at: row.sent_at,
+    };
+  }
+  const followUp = facts.appointment_follow_up as { id?: unknown; title?: unknown; on?: unknown } | undefined;
+  if (facts.daily_question_kind === "appointment_follow_up" && followUp && typeof followUp === "object" && typeof followUp.title === "string") {
+    // ZAD_PLAN ٨ج.٦ — «روحت الدكتور امبارح؟»: الجواب بيتسجل بـremember، ومارحش ⇒ يعرض يحجز تاني.
+    return {
+      question, kind: "appointment_follow_up", for: followUp.title,
+      ...(typeof followUp.id === "string" ? { appointment_id: followUp.id } : {}),
+      ...(typeof followUp.on === "string" ? { on: followUp.on } : {}),
       sent_at: row.sent_at,
     };
   }

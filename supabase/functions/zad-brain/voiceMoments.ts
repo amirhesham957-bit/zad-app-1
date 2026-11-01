@@ -19,6 +19,7 @@ import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowConte
 import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
+import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
@@ -210,6 +211,8 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو فيه occasions: in_days = 0 وfor = null ⇒ ابدئي بتهنئة فرحانة بعيد ميلاده (أو ذكرى جوازه لو anniversary)؛ " +
     "in_days = 0 وfor اسم ⇒ فكّريه إن النهارده عيد ميلاد الشخص ده يكلّمه ويهنّيه؛ in_days = 3 ⇒ فكّريه إنه بعد ٣ أيام. " +
     "لو daily_question_kind = gift فالسؤال عرض: تحجزي gift_offer.amount من المتاح لهدية gift_offer.for — قوليه بالرقم والعملة. " +
+    "لو daily_question_kind = appointment_follow_up فده ميعاد كان عنده امبارح (appointment_follow_up.title): اسأليه عنه " +
+    "باهتمام صاحب — روح ولا لأ وحصل إيه — من غير ما تفترضي النتيجة ولا تقولي أي حاجة طبية. " +
     "لو daily_question_kind = event_reserve فالسؤال عن حدث كبير جاي (event_reserve.title بعد in_days يوم): اسألي تحبي تحجزي " +
     "مبلغ ليه وقد إيه — من غير ما تقترحي رقم. " +
     "ماتخترعيش مناسبة مش في occasions. " +
@@ -1358,15 +1361,18 @@ export async function morningFacts(
   // القرارات الكبيرة في وقتها (eventAhead.ts، ZAD_PLAN ٥.٦): قبل رمضان/ذي الحجة/المدارس بـ١٤ يوم، أو السفر بـ٣ ⇒
   // «نحجز مبلغ ليه؟». نفس خانة سؤال اليوم، بعد الهدية (ميعادها أقرب)، ومش في ظرف.
   const bigEvent = quiet || gift ? null : await loadEventAhead(sb, userId, local, dayStart, profile ?? null);
+  // «روحت الدكتور امبارح؟» (appointmentFollowUp.ts، ZAD_PLAN ٨ج.٦): بعد الهدية والحدث الكبير (ليهم ميعاد)،
+  // وقبل الملف والمناسبة والفضول — «امبارح» مالهاش معنى بكرة.
+  const followUp = quiet || gift || bigEvent ? null : await loadAppointmentFollowUp(sb, userId, dayStart);
   // undefined = the read failed: ask nothing rather than ask what may be known.
-  const ask = profile === undefined || quiet || gift || bigEvent ? null : dailyQuestion(profile, local.date);
+  const ask = profile === undefined || quiet || gift || bigEvent || followUp ? null : dailyQuestion(profile, local.date);
   // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
   // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
-  const occasionAsk = profile === undefined || ask || gift || bigEvent || quiet ? null : occasionQuestion(occasionRows, people, local.date);
+  const occasionAsk = profile === undefined || ask || gift || bigEvent || followUp || quiet ? null : occasionQuestion(occasionRows, people, local.date);
   const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
   // «دول نفس الحاجة؟» (productIdentity.ts) قبل الفضول العادي: من غير اسم واحد للصنف مفيش معدل
   // استهلاك ولا «هيخلص إمتى؟». نفس الخانة ونفس الشروط — سؤال واحد في اليوم.
-  const curious = profile === undefined || ask || gift || bigEvent || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
+  const curious = profile === undefined || ask || gift || bigEvent || followUp || (occasionAsk && occasionDay) || !attentionBudget(circumstance.mode).curiosity
     ? null
     : (await sameProductAsk(sb, userId)) ?? await curiosityQuestion(sb, userId, Date.parse(dayStart));
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
@@ -1392,7 +1398,8 @@ export async function morningFacts(
   const outing = quiet || together || !comfortable ? null : await weekendOutingFor(sb, userId, local.date, budget, profile ?? null);
   const deal = comfortable && (outing || together) ? null : homeDeal;
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
-  const medAsk = quiet || gift || bigEvent || newcomer ? null : await doseTimesAsk(sb, userId);
+  // سؤال «امبارح» مايستناش؛ مواعيد الدوا تستنى يوم.
+  const medAsk = quiet || gift || bigEvent || newcomer || followUp ? null : await doseTimesAsk(sb, userId);
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
@@ -1409,6 +1416,13 @@ export async function morningFacts(
       : {}),
     ...(bigEvent
       ? { daily_question: eventAheadQuestion(bigEvent), daily_question_kind: "event_reserve", event_reserve: bigEvent }
+      : {}),
+    ...(followUp
+      ? {
+        daily_question: followUp.question,
+        daily_question_kind: "appointment_follow_up",
+        appointment_follow_up: { id: followUp.id, title: followUp.title, kind: followUp.kind, on: followUp.on },
+      }
       : {}),
     ...(ask ? { daily_question: ask.question, daily_question_field: ask.field, daily_question_kind: "profile" } : {}),
     ...(curious
@@ -1483,6 +1497,7 @@ export const NEWCOMER_MOMENT = "newcomer_question";
 function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
   return {
     daily_question_field: undefined, curiosity: undefined, occasion_ask: undefined, gift_offer: undefined, event_reserve: undefined,
+    appointment_follow_up: undefined,
     ...newcomerFacts(q),
   };
 }
