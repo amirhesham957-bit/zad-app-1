@@ -41,6 +41,10 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The push run of #336 (2026-10-28) stalled in "Test zad-brain" after its downloads, before any test
+    # ran, and held the job for GitHub's 6h ceiling; deploy never ran. The PR run of the same code took
+    # 1m37s. A stall now fails in 30 minutes and can be re-run.
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v5

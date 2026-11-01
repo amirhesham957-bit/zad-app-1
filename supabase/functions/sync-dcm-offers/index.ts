@@ -5,7 +5,7 @@
 //      highest-commission linked ones per country flagged is_trending. Skipped when DCM_MAIN_API_KEY is unset.
 // A row this run did not see is turned inactive — only for a source whose fetch succeeded.
 //
-// Secrets: DCM_API_KEY (the "Data API Key" under Account > User Details & API Key on partner.dcmnetwork.com,
+// Secrets: DCM_API_KEY or DCM_COUPONS_API_KEY (the "Data API Key" under Account > User Details & API Key on partner.dcmnetwork.com,
 // already set on the project), DCM_MAIN_API_KEY (the HasOffers affiliate API key), DCM_NETWORK_ID (default
 // "dcm"), and DCM_SYNC_CRON_SECRET against the X-Dcm-Cron-Secret header. ?dry=1 maps and counts without
 // writing, and returns the first coupon's keys so the field names get checked against a real answer — the
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     return json({ error: "unauthorized" }, 401);
   }
   const dry = new URL(req.url).searchParams.get("dry") === "1";
-  const key = (Deno.env.get("DCM_API_KEY") ?? "").trim();
+  const key = (Deno.env.get("DCM_API_KEY") || Deno.env.get("DCM_COUPONS_API_KEY") || "").trim();
   if (!key) return json({ error: "no_api_key" }, 500);
 
   const coupons: DcmCoupon[] = [];
