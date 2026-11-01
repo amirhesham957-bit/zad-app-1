@@ -2462,7 +2462,7 @@ class ZadL10nAr extends ZadL10n {
   String get introTagline => 'تدبير ذكي لبيت هادئ';
 
   @override
-  String get introPantryTitle => 'إدارة المخزين';
+  String get introPantryTitle => 'إدارة المخزون';
 
   @override
   String get introPantryBody => 'تتبع كل ما في مطبخك وبيتك بذكاء';

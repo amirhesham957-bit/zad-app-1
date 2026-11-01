@@ -228,55 +228,71 @@ class _FeatureCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: ZadListCard(
           padding: const EdgeInsets.all(32),
-          child: SingleChildScrollView(
-            child: Column(
-              children: <Widget>[
-                switch (page) {
-                  0 => Lottie.asset(
-                    'assets/lottie/lottie_onboarding_welcome.json',
-                    width: 200,
-                    height: 200,
-                    repeat: false,
-                  ),
-                  2 => Lottie.asset(
-                    'assets/lottie/lottie_onboarding_ai.json',
-                    width: 200,
-                    height: 200,
-                    repeat: false,
-                  ),
-                  _ => Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      gradient: LinearGradient(
-                        colors: <Color>[color, color.withValues(alpha: 0.7)],
+          // The picture gives way, not the words: on a 1080×2400 phone the
+          // card was ~15dp short and the body's last line was cut in half
+          // (seen on the emulator, 2026-11-01). 140 is what the title and two
+          // lines of body take.
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final art = (box.maxHeight - 140).clamp(80.0, 200.0);
+              return SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    switch (page) {
+                      0 => Lottie.asset(
+                        'assets/lottie/lottie_onboarding_welcome.json',
+                        width: art,
+                        height: art,
+                        repeat: false,
+                      ),
+                      2 => Lottie.asset(
+                        'assets/lottie/lottie_onboarding_ai.json',
+                        width: art,
+                        height: art,
+                        repeat: false,
+                      ),
+                      _ => Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: LinearGradient(
+                            colors: <Color>[
+                              color,
+                              color.withValues(alpha: 0.7),
+                            ],
+                          ),
+                        ),
+                        child: Icon(
+                          feature.icon,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                    },
+                    const SizedBox(height: 24),
+                    Text(
+                      feature.title,
+                      textAlign: TextAlign.center,
+                      style: ZadType.headlineMedium.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onSurface,
                       ),
                     ),
-                    child: Icon(feature.icon, size: 40, color: Colors.white),
-                  ),
-                },
-                const SizedBox(height: 24),
-                Text(
-                  feature.title,
-                  textAlign: TextAlign.center,
-                  style: ZadType.headlineMedium.copyWith(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: scheme.onSurface,
-                  ),
+                    const SizedBox(height: 12),
+                    Text(
+                      feature.body,
+                      textAlign: TextAlign.center,
+                      style: ZadType.bodyLarge.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 24 / 15,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  feature.body,
-                  textAlign: TextAlign.center,
-                  style: ZadType.bodyLarge.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    height: 24 / 15,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

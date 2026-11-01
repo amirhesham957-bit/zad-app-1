@@ -40,7 +40,7 @@ void main() {
     );
     await tester.pump();
     expect(find.text('التالي'), findsOneWidget);
-    expect(find.text('إدارة المخزين'), findsOneWidget);
+    expect(find.text('إدارة المخزون'), findsOneWidget);
 
     await tester.tap(find.text('English'));
     await tester.pump();
