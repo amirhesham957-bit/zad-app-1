@@ -80,8 +80,10 @@ related:
 
 ## المود والأدوات المحلية
 
-- **مود `zad-plan`:** في `~/.claude/dev-mods/<session>/zad-plan/` (مش في git). بيقرا [[ZAD_PLAN]] من كل
-  worktree ومن `origin/main` ويختار الأحدث. أمر `/zad-plan`. لو ناقص في جلسة جديدة: انسخه من جلسة قبلها.
+- **مود `zad-plan`:** في `~/.claude/mods/zad-plan/` (مش في git)، ومتحمّل في كل جلسة من خلال
+  `CLAUDE_CODE_PLUGIN_DIRS` في `env` جوه `~/.claude/settings.json` (١/١١: كان في `dev-mods/<session>/` واختفى بعد
+  `/clear`). بيقرا [[ZAD_PLAN]] من كل worktree ومن `origin/main` ويختار الأحدث. أمر `/zad-plan`. لو اختفى تاني:
+  اتأكد إن المتغير لسه موجود في الإعدادات.
 - **Flutter:** `~/flutter/bin` (موجود). **Deno:** `~/.deno/bin/deno` (موجود). **Android SDK: مش موجود**
   في الكودسبيس ده — بناء الـAPK محتاج تسطيب (CLAUDE.md) وسواب على ٨ جيجا.
 - **`env.json`:** في كل worktree جديد `cp env.example.json env.json` قبل `flutter test`.
