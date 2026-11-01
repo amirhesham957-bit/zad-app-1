@@ -113,6 +113,10 @@ jobs:
         working-directory: supabase/functions/sync-dcm-offers
         run: deno test --allow-all
 
+      - name: Test get-user-deals
+        working-directory: supabase/functions/get-user-deals
+        run: deno test --allow-all
+
       - name: Test zad-support
         working-directory: supabase/functions/zad-support
         run: deno test --allow-all

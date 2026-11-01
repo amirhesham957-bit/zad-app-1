@@ -15,6 +15,7 @@
  */
 
 import { MARKET_CURRENCY, PARTNER_CONFIDENCE, priceFromTitle } from "../sync-admitad-offers/admitad.ts";
+import type { CouponRow } from "./hasoffers.ts";
 
 export const DCM_API = "https://api.dcmnetwork.com/affiliate-user";
 export const DCM_PAGE_SIZE = 50;
@@ -141,4 +142,39 @@ export function describeAnswer(body: unknown, key: string): { shape: Record<stri
   const raw = typeof body === "string" ? body : JSON.stringify(body) ?? "";
   const sample = (key ? raw.split(key).join("[key]") : raw).slice(0, 600);
   return { shape, sample };
+}
+
+/**
+ * A Codes Hub coupon as zad_coupons rows, one per country (or one 'GLOBAL' when it names none). Unlike
+ * mapCoupon, a store-wide code is kept: zad_coupons is where codes without a price belong. null when the
+ * coupon has no id, store or tracked link, or its terms say it is over.
+ */
+export function couponRows(c: DcmCoupon, nowMs: number, syncedAt: string): CouponRow[] | null {
+  const id = field(c, "IdPK", "id", "coupon_id").slice(0, 80);
+  const store = field(c, "brand", "brand_name", "store", "store_name", "campaign", "campaign_name", "name").slice(0, 80);
+  const link = field(c, "web_link", "weblink", "tracking_url", "tracking_link", "link", "app_link");
+  if (!id || !store || !/^https:\/\//.test(link) || link.length > 1000) return null;
+  const until = validUntil(field(c, "user_terms", "terms", "terms_and_conditions", "conditions"));
+  if (until && Date.parse(until) <= nowMs) return null;
+  const code = field(c, "coupon", "code", "coupon_code").slice(0, 60) || null;
+  const logo = field(c, "logo", "logo_url", "image");
+  const countries = countriesOf(c.countries ?? c.country ?? c.Countries);
+  return (countries.length ? countries : ["GLOBAL"]).map((cc) => ({
+    source: "dcm_coupon",
+    external_id: id,
+    country_code: cc,
+    store,
+    title: field(c, "coupon_desc", "coupon_description", "description", "desc", "title").slice(0, 200),
+    code,
+    category: null,
+    click_url: link,
+    logo_url: /^https:\/\//.test(logo) && logo.length <= 500 ? logo : null,
+    payout_percent: null,
+    payout_flat: null,
+    payout_currency: null,
+    is_trending: false,
+    valid_until: until,
+    active: true,
+    synced_at: syncedAt,
+  }));
 }
