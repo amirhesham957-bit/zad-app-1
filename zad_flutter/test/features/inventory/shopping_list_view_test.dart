@@ -35,9 +35,13 @@ class _List extends QuietShopping {
   new(this.items);
 
   final List<ShoppingItem> items;
+  int refreshes = 0;
 
   @override
   ShoppingView build() => ShoppingView(items: items);
+
+  @override
+  Future<void> refresh() async => refreshes++;
 }
 
 class _Budget extends BudgetController {
@@ -110,24 +114,25 @@ void main() {
     expect(text, isNot(contains('ماء إيلان')));
   });
 
+  late _List list;
+
   Future<_Ai> pump(
     WidgetTester tester, {
     List<ShoppingItem>? items,
     List<InventoryItem> pantry = const <InventoryItem>[],
   }) async {
     final ai = _Ai();
+    list = _List(
+      items ??
+          <ShoppingItem>[
+            _s('1', 'لبن', priority: ShoppingPriority.high),
+            _s('2', 'مناديل', priority: ShoppingPriority.low),
+          ],
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          shoppingControllerProvider.overrideWith(
-            () => _List(
-              items ??
-                  <ShoppingItem>[
-                    _s('1', 'لبن', priority: ShoppingPriority.high),
-                    _s('2', 'مناديل', priority: ShoppingPriority.low),
-                  ],
-            ),
-          ),
+          shoppingControllerProvider.overrideWith(() => list),
           pantryControllerProvider.overrideWith(
             () => QuietPantry(PantryView(items: pantry)),
           ),
@@ -146,6 +151,15 @@ void main() {
     );
     return ai;
   }
+
+  testWidgets('opening the list reads the server, not only the cache', (
+    tester,
+  ) async {
+    // A line the bot wrote while a live change was missed (2026-10-31).
+    await pump(tester);
+    await tester.pump();
+    expect(list.refreshes, 1);
+  });
 
   testWidgets('priority chips keep only their lines', (tester) async {
     await pump(tester);

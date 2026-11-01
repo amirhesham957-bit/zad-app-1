@@ -347,8 +347,8 @@ class _JoinDialogState extends State<_JoinDialog> {
     super.dispose();
   }
 
-  bool get _ready =>
-      _code.text.trim().isNotEmpty && _alias.text.trim().isNotEmpty;
+  // The code alone is enough (see the family screen's canJoin).
+  bool get _ready => _code.text.trim().isNotEmpty;
 
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
@@ -373,7 +373,7 @@ class _JoinDialogState extends State<_JoinDialog> {
           TextField(
             controller: _alias,
             decoration: const InputDecoration(
-              labelText: 'اسمك (Alias)',
+              labelText: 'اسمك في العيلة (اختياري)',
               hintText: 'مثال: الابن أحمد',
             ),
             onChanged: (_) => setState(() {}),

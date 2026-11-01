@@ -114,32 +114,32 @@ void main() {
     await tester.pump(const Duration(seconds: 7));
   }
 
-  testWidgets('no family: start one, or join once a name and code are typed', (
-    tester,
-  ) async {
-    await pump(tester, const NoFamily());
+  testWidgets(
+    'no family: start one, or join once a code is typed — the name is optional',
+    (tester) async {
+      await pump(tester, const NoFamily());
 
-    expect(find.text('إنشاء عائلة جديدة كمدير (Admin)'), findsOneWidget);
-    final join = find.ancestor(
-      of: find.text('الانضمام للعائلة'),
-      matching: find.byType(OutlinedButton),
-    );
-    OutlinedButton joinButton() => tester.widget<OutlinedButton>(join);
-    expect(joinButton().onPressed, isNull);
+      expect(find.text('إنشاء عائلة جديدة كمدير (Admin)'), findsOneWidget);
+      final join = find.ancestor(
+        of: find.text('الانضمام للعائلة'),
+        matching: find.byType(OutlinedButton),
+      );
+      OutlinedButton joinButton() => tester.widget<OutlinedButton>(join);
+      expect(joinButton().onPressed, isNull);
 
-    await tester.enterText(find.byType(TextField).at(0), 'أحمد');
-    await tester.enterText(find.byType(TextField).at(1), 'ZAD-1A2B3C4D5E');
-    await tester.pump();
-    expect(joinButton().onPressed, isNotNull);
-    await tester.ensureVisible(join);
-    await tester.tap(join);
-    await tester.pump();
+      await tester.enterText(find.byType(TextField).at(1), 'ZAD-1A2B3C4D5E');
+      await tester.pump();
+      expect(joinButton().onPressed, isNotNull);
+      await tester.ensureVisible(join);
+      await tester.tap(join);
+      await tester.pump();
 
-    expect(fake.calls, <String>['join:ZAD-1A2B3C4D5E']);
-    // The refusal is said.
-    await tester.pump();
-    expect(find.text(FamilyFailure.invalidCode.message), findsOneWidget);
-  });
+      expect(fake.calls, <String>['join:ZAD-1A2B3C4D5E']);
+      // The refusal is said.
+      await tester.pump();
+      expect(find.text(FamilyFailure.invalidCode.message), findsOneWidget);
+    },
+  );
 
   testWidgets('an admin does not manage their own row', (tester) async {
     await pump(tester, InFamily(_family(myRole: 'admin')));
