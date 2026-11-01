@@ -20,6 +20,7 @@ import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
 import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
+import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
@@ -1400,6 +1401,8 @@ export async function morningFacts(
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   // سؤال «امبارح» مايستناش؛ مواعيد الدوا تستنى يوم.
   const medAsk = quiet || gift || bigEvent || newcomer || followUp ? null : await doseTimesAsk(sb, userId);
+  // دوا بيتاخد بانتظام متأخر عن ميعاده (doseHabit.ts، ZAD_PLAN ٨ج.٦): «أنقل تذكيره؟» — بعد سؤال مواعيد الدوا.
+  const habit = quiet || gift || bigEvent || newcomer || followUp || medAsk ? null : await loadDoseHabit(sb, userId, local.time_zone);
   return {
     local_date: local.date,
     ...(quiet ? { quiet: true } : {}),
@@ -1443,7 +1446,7 @@ export async function morningFacts(
     ...(together ? { family_time: together } : {}),
     ...(outing ? { weekend_outing: outing } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
-    ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : {}),
+    ...(newcomer ? withoutQuestion(newcomer) : medAsk ? withoutQuestion(medAsk) : habit ? habitQuestion(habit) : {}),
     time_zone: local.time_zone,
     meds_today: meds.filter((m) => (m.dose_times ?? "").trim()).map((m) => ({ name: m.name, times: m.dose_times, for_person: m.for_person })),
     appointments_today: appts,
@@ -1492,6 +1495,16 @@ async function loadEventAhead(
 
 /** لحظة السؤال التاني في أول ٧٢ ساعة (newcomer.ts) — ٤ العصر بتوقيت العميل (20261010170000). */
 export const NEWCOMER_MOMENT = "newcomer_question";
+
+/** سؤال عادة الدوا مكان أي سؤال تاني في نفس التحية (نفس شكل سؤال مواعيد الدوا). */
+function habitQuestion(h: DoseHabit): Record<string, unknown> {
+  return {
+    daily_question_field: undefined, occasion_ask: undefined, gift_offer: undefined, event_reserve: undefined,
+    appointment_follow_up: undefined,
+    daily_question: h.question,
+    ...h.facts,
+  };
+}
 
 /** facts السؤال من غير حقول سؤال تاني ممكن تكون اتحطت قبله في نفس التحية. */
 function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
