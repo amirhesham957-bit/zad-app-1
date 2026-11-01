@@ -43,6 +43,7 @@ Future<T?> _open<T>(BuildContext context, PhotoKind kind) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: ZadColors.surface,
     shape: zadSquircle(ZadRadii.sheet),
     builder: (_) => PhotoScanSheet(kind: kind),

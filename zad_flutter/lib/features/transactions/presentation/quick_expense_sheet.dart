@@ -36,6 +36,7 @@ Future<void> showQuickExpenseSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: ZadColors.surface,
       shape: zadSquircle(ZadRadii.hero),
@@ -47,6 +48,7 @@ Future<void> showCashExpenseSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: ZadColors.surface,
       shape: zadSquircle(ZadRadii.hero),

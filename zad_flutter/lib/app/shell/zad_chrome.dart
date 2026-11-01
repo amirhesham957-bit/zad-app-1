@@ -998,6 +998,7 @@ Future<String?> showZadMoreSheet(BuildContext context) =>
     showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: ZadColors.surface,
       shape: const RoundedRectangleBorder(

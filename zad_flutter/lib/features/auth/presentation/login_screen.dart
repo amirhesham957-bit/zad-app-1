@@ -494,6 +494,7 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
     final picked = await showModalBottomSheet<Market>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (c) => SafeArea(
         child: Padding(

@@ -22,6 +22,7 @@ Future<void> showTrustedTechnicians(BuildContext context, {String? trade}) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (_) => TrustedTechniciansSheet(
         first: trade == null ? null : TechnicianTrade.fromWire(trade),

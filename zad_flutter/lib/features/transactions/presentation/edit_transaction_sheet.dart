@@ -32,6 +32,7 @@ Future<void> showEditTransactionSheet(
 ) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
+  useSafeArea: true,
   showDragHandle: true,
   backgroundColor: ZadColors.surface,
   shape: zadSquircle(ZadRadii.sheet),

@@ -93,6 +93,7 @@ Future<void> showAttemptsSheet(
   showDragHandle: true,
   // Scrolls instead of overflowing on a short phone or at large text.
   isScrollControlled: true,
+  useSafeArea: true,
   builder: (sheetContext) => SafeArea(
     child: SingleChildScrollView(
       child: Padding(

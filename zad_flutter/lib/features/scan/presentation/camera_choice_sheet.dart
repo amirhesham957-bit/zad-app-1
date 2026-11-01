@@ -32,6 +32,7 @@ Future<ZadCameraChoice?> showZadCameraSheet(BuildContext context) =>
     showModalBottomSheet<ZadCameraChoice>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       backgroundColor: ZadColors.surface,
       shape: const RoundedRectangleBorder(

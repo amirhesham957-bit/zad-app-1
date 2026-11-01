@@ -135,6 +135,7 @@ Future<void> showExecutiveDossierSheet(
 ) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
+  useSafeArea: true,
   backgroundColor: _sheet,
   shape: const RoundedRectangleBorder(
     borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

@@ -325,6 +325,7 @@ Future<void> showRecipeSheet(BuildContext context, Recipe recipe) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: ZadColors.surface,
       shape: zadSquircle(ZadRadii.sheet),
       builder: (_) => RecipeSheet(recipe: recipe),

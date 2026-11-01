@@ -679,6 +679,7 @@ Future<void> showCompanionCareSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: ZadColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(

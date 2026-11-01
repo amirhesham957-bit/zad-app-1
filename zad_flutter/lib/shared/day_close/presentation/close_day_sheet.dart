@@ -39,6 +39,7 @@ Future<void> showCloseDaySheet(BuildContext context, WidgetRef ref) async {
   final next = await showModalBottomSheet<CloseDayNext>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
     backgroundColor: ZadColors.surface,
     shape: zadSquircle(ZadRadii.hero),
