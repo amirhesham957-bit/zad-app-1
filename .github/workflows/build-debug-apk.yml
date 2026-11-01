@@ -42,6 +42,18 @@ jobs:
     timeout-minutes: 25 # 2. تحديد وقت أقصى للبناء حتى لا يتعطل السيرفر
 
     steps:
+      # Run #647 (2026-11-01) died in "Build APK" with «No space left on device» while the
+      # Android Gradle plugin unzipped the NDK — the same commit built fine on the PR run an
+      # hour earlier. Runners differ in free space; this build needs the NDK, three APK
+      # variants and an AAB. Toolchains it never touches go first (~20 GB); the Android SDK
+      # under /usr/local/lib/android stays.
+      - name: Free disk space
+        run: |
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY/CodeQL" /usr/local/share/powershell /usr/share/swift || true
+          df -h / | tail -1
+
       - uses: actions/checkout@v4
 
       # 3. تثبيت جافا وتفعيل الكاش لـ Gradle لتسريع بناء الأندرويد
