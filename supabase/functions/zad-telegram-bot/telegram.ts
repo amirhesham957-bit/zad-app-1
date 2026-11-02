@@ -207,13 +207,34 @@ export function confirmSpendKeyboard(pendingId: string): InlineKeyboardButton[][
   ]];
 }
 
-/** "x:<uuid>" (confirm) / "c:<uuid>" (cancel) */
-export function parseSpendCallback(data: string): { action: "confirm" | "cancel"; pendingId: string } | null {
+/** "x:<uuid>" (confirm) / "c:<uuid>" (cancel) / "xa:<uuid>" (confirm — «دي عملية تانية»، allow_duplicate) */
+export function parseSpendCallback(data: string): { action: "confirm" | "cancel" | "again"; pendingId: string } | null {
   const parts = data.split(":");
   if (parts.length !== 2) return null;
-  if (parts[0] !== "x" && parts[0] !== "c") return null;
+  if (parts[0] !== "x" && parts[0] !== "c" && parts[0] !== "xa") return null;
   if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
-  return { action: parts[0] === "x" ? "confirm" : "cancel", pendingId: parts[1] };
+  return { action: parts[0] === "x" ? "confirm" : parts[0] === "xa" ? "again" : "cancel", pendingId: parts[1] };
+}
+
+/**
+ * العقل رفض التسجيل بعد «أكد» — الرد للعميل بسببه، مش «جرب تاني» (حساب المالك ١/١١: ٣ ضغطات على «أكد» للإيجار
+ * ورسالة واحدة «التسجيل فشل»، والسبب إن مصروف بنفس المبلغ اتسجل من دقايق). نص الرفض مكتوب للموديل
+ * («اسأل العميل… allow_duplicate=true»)، فبيتحوّل هنا لكلام وزرارين لو هو تكرار، وأول جملة بس لو حاجة تانية.
+ */
+export function refusedSpendReply(summary: string | undefined, pendingId: string): { text: string; keyboard?: InlineKeyboardButton[][] } {
+  const s = String(summary ?? "");
+  const dup = s.match(/بنفس المبلغ \(([^)]+)\) اتسجّل من (\d+) دقيقة باسم "([^"]*)"/);
+  if (dup) {
+    return {
+      text: `فيه مصروف بنفس المبلغ (${dup[1]}) اتسجّل من ${dup[2]} دقيقة باسم «${dup[3]}». دي عملية تانية ولا نفس اللي فاتت؟`,
+      keyboard: [[
+        { text: "➕ دي عملية تانية", callback_data: `xa:${pendingId}` },
+        { text: "✖️ نفس اللي فاتت", callback_data: `c:${pendingId}` },
+      ]],
+    };
+  }
+  const reason = s.replace(/^مرفوض:\s*/, "").split(/(?<=[.!؟?])\s/)[0]?.trim();
+  return { text: reason && s.startsWith("مرفوض") ? `ماسجلتهاش: ${reason}` : "معلش، التسجيل فشل — جرب تاني." };
 }
 
 export type TransactionProposalDecision =

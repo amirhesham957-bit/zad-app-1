@@ -132,6 +132,7 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
+import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
 } from "./moneySafety.ts";
@@ -2498,6 +2499,38 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // says why, and the agent has to ask. `allow_duplicate` is how the customer's "لأ،
       // دي عملية تانية" gets through — it exists so the answer comes from them, not from
       // a heuristic.
+      // صف البنك لنفس الدفعة، لسه من غير فئة (20261102060000): «إيجار شقة 3500» بعد إشعار BDC بـ3500 هو نفس
+      // الفلوس — الصف بياخد الاسم والفئة بدل ما الدفعة تتحسب مرتين (حساب المالك ١/١١). الأصناف بتعدّي على
+      // باب الشرا وهو بيدمج لوحده؛ الكاش و«دي عملية تانية» مابيتدمجوش.
+      if (isExpense && input.allow_duplicate !== true && input.wallet !== "cash" && toolPurchaseLines(input.lines).length === 0) {
+        const { data: twinId, error: twinErr } = await sb.rpc("zad_bank_twin_service", { p_user: userId, p_amount: input.amount });
+        if (twinErr) console.error("[log_transaction] bank twin read failed:", twinErr.message);
+        if (!twinErr && typeof twinId === "string") {
+          const { data: before } = await sb.from("zad_transactions")
+            .select("id,amount,title,category,merchant_name,created_at").eq("id", twinId).eq("user_id", userId).maybeSingle();
+          if (before) {
+            const title = String(input.title).trim().slice(0, 80);
+            const patch: Record<string, unknown> = { title };
+            if (input.category) patch.category = String(input.category).trim().slice(0, 40);
+            if (input.merchant_name) patch.merchant_name = String(input.merchant_name).trim().slice(0, 80) || null;
+            const forPerson = normalizeForPerson(input.for_person);
+            if (forPerson) patch.for_person = forPerson;
+            const w = await writeRows(
+              sb.from("zad_transactions").update(patch).eq("id", twinId).eq("user_id", userId)
+                .select("id,amount,title,category,txn_kind,for_person"),
+              "تسجيل المعاملة",
+            );
+            if (!w.ok) return `مرفوض: ${w.reason}`;
+            ctx.mutationCount++;
+            ctx.mutations.push({ tool: name, old: { title: before.title, category: before.category }, new: patch });
+            await recordAction(sb, userId, scope, {
+              tool: name, input, table: "zad_transactions", targetId: twinId, previous: before, next: w.rows[0],
+            });
+            return bankTwinMergedReply(String(before.title ?? ""), Number(before.amount), title, String(before.created_at));
+          }
+        }
+      }
+
       if (input.allow_duplicate !== true) {
         const windowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data: recent } = await sb.from("zad_transactions")

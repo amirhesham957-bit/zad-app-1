@@ -41,7 +41,7 @@ import {
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
   reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
-  confirmSpendKeyboard, parseSpendCallback,
+  confirmSpendKeyboard, parseSpendCallback, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
   duplicateProposalKeyboard, duplicateProposalMessage,
   notificationReviewMessage,
@@ -823,6 +823,11 @@ async function agentTurn(userId: string, message: string, history: Array<{ role:
  * zad-brain so it gets the same validation, audit trail, and budget side effects as
  * an approval from the in-app chat.
  */
+/** دمج مع صف البنك (zad-brain bankTwin.ts): سطر يقول إن مفيش صف تاني. */
+function bankTwinNote(summary: string | undefined): string {
+  return String(summary ?? "").includes("نفس حركة البنك") ? "\nدي نفس حركة البنك اللي وصلت قبلها — سمّيتها بدل ما تتحسب مرتين." : "";
+}
+
 async function agentConfirm(userId: string, tool: string, input: Record<string, unknown>): Promise<{ ok: boolean; summary?: string }> {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-brain`, {
@@ -1289,7 +1294,7 @@ async function agentTurnReply(
  * سؤال جديد)، وfalse لو مفيش حاجة معلّقة.
  */
 async function handleSpendCallbackText(
-  ctx: { reply: (t: string) => Promise<unknown> },
+  ctx: { reply: (t: string, o?: { reply_markup: InlineKeyboard }) => Promise<unknown> },
   sb: SupabaseClient,
   userId: string,
   isAffirm: boolean
@@ -1348,14 +1353,15 @@ async function handleSpendCallbackText(
     lines: Array.isArray(row.purchase_lines) ? row.purchase_lines : undefined,
   });
   if (!confirmed.ok) {
-    console.error("telegram text confirmation via zad-brain failed");
+    console.error("telegram text confirmation via zad-brain refused:", String(confirmed.summary ?? "").slice(0, 200));
     await sb.from("telegram_pending_writes").update({ status: "pending" }).eq("id", row.id);
-    await ctx.reply("معلش، التسجيل فشل — جرب تاني.");
+    const refused = refusedSpendReply(confirmed.summary, row.id);
+    await ctx.reply(refused.text, refused.keyboard ? { reply_markup: toGrammyKeyboard(refused.keyboard) } : undefined);
     return true;
   }
   const { data: u } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
   const cur = (u as { currency?: string } | null)?.currency ?? "غير معروف";
-  await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(row.amount, cur))}`);
+  await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(row.amount, cur))}` + bankTwinNote(confirmed.summary));
   return true;
 }
 
@@ -2327,17 +2333,20 @@ bot.on("callback_query:data", async (ctx) => {
       source_type: row.source_type ?? undefined,
       // أصناف «اشتريت لبن وعيش بـ٤٠» (٣.٦ د): log_transaction بيبعتهم مع الفلوس لباب الشرا.
       lines: Array.isArray(row.purchase_lines) ? row.purchase_lines : undefined,
+      // «➕ دي عملية تانية» تحت سؤال التكرار: الجواب من العميل نفسه.
+      ...(spend.action === "again" ? { allow_duplicate: true } : {}),
     });
     if (!confirmed.ok) {
-      console.error("telegram expense confirmation via zad-brain failed");
+      console.error("telegram expense confirmation via zad-brain refused:", String(confirmed.summary ?? "").slice(0, 200));
       await sb.from("telegram_pending_writes").update({ status: "pending" }).eq("id", row.id);
-      await ctx.reply("معلش، التسجيل فشل — جرب تاني.");
+      const refused = refusedSpendReply(confirmed.summary, row.id);
+      await ctx.reply(refused.text, refused.keyboard ? { reply_markup: toGrammyKeyboard(refused.keyboard) } : undefined);
       return;
     }
 
     const { data: u } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
     const cur = (u as { currency?: string } | null)?.currency ?? "غير معروف";
-    await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(row.amount, cur))}`);
+    await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(row.amount, cur))}` + bankTwinNote(confirmed.summary));
     return;
   }
 
