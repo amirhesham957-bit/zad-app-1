@@ -8315,9 +8315,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   let createdProposal = false;
   if (!existingProposal && fuzzySibling) {
     // repost بنص مختلف لنفس العملية — نعيد استخدام اقتراح الأخ بدل ما نكرر الإزعاج.
-    await sb.from("zad_notification_ingest_events")
-      .update({ status: "duplicate_fuzzy" })
-      .eq("id", ingestEventId);
+    // كانت `status: "duplicate_fuzzy"` وهي مش في status_check: الـPATCH بيرجع 400 من غير ما حد يشوفه، والصف
+    // بيفضل received، فكل إعادة لنفس الإشعار بتعدّي البوابة تاني (truecaller ١/١١ ١٧:٤٠، نفس رسالة البنك).
+    await mark("ignored", "duplicate_fuzzy");
     const promptDeliveryFuzzy = await deliverNotificationPrompt(sb, userId, ingestEventId, {
       job: "confirm_transaction",
       proposalId: fuzzySibling.id,
