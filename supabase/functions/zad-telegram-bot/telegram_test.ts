@@ -634,3 +634,27 @@ Deno.test("a family code sent to the bot is named, not called wrong (2026-11-01)
   assert(!looksLikeLinkCode("صرفت 50"));
   assert(!looksLikeLinkCode("ABCDEFG1"), "1 is not in the app's alphabet");
 });
+
+Deno.test("a refused «أكد» says why — the owner's three taps on the rent (1/11) got «جرب تاني» each time", async () => {
+  const { refusedSpendReply, parseSpendCallback } = await import("./telegram.ts");
+  const id = "3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607";
+  const dup = refusedSpendReply(
+    'مرفوض: فيه مصروف بنفس المبلغ (3500) اتسجّل من 1 دقيقة باسم "BDC". غالباً دي نفس العملية اتبعتت تاني. اسأل العميل: دي عملية تانية فعلاً ولا نفس اللي فاتت؟ لو أكّد إنها تانية، نادِ الأداة تاني بـ allow_duplicate=true.',
+    id,
+  );
+  assertEquals(dup.text, "فيه مصروف بنفس المبلغ (3500) اتسجّل من 1 دقيقة باسم «BDC». دي عملية تانية ولا نفس اللي فاتت؟");
+  assertEquals(dup.keyboard?.[0].map((b) => b.callback_data), [`xa:${id}`, `c:${id}`]);
+  assertEquals(parseSpendCallback(`xa:${id}`), { action: "again", pendingId: id });
+  assertEquals(parseSpendCallback(`xb:${id}`), null);
+  // سبب تاني: أول جملة، من غير تعليمات الموديل.
+  assertEquals(refusedSpendReply("مرفوض: المبلغ لازم يكون أكبر من صفر. صحّح وحاول تاني.", id).text, "ماسجلتهاش: المبلغ لازم يكون أكبر من صفر.");
+  assertEquals(refusedSpendReply(undefined, id).text, "معلش، التسجيل فشل — جرب تاني.");
+});
+
+Deno.test("categorising the expense answers «كان على إيه؟» — logging something else does not", async () => {
+  const { pendingQuestionAnswered } = await import("./telegram.ts");
+  assertEquals(pendingQuestionAnswered(["set_transaction_category"]), true);
+  assertEquals(pendingQuestionAnswered(["update_transaction", "add_inventory_item"]), true);
+  assertEquals(pendingQuestionAnswered(["log_transaction"]), false);
+  assertEquals(pendingQuestionAnswered([]), false);
+});
