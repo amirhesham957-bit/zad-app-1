@@ -1514,7 +1514,8 @@
     "id",
     "put",
     "searched_at",
-    "store_key"
+    "store_key",
+    "source"
   ],
   "zad_deal_seed_stores": [
     "active",

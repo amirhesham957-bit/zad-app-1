@@ -48,3 +48,10 @@ Deno.test("a section heading is not an item (the 29/10 search, reviewed 2/11)", 
   }).map((x) => x.item_name);
   assertEquals(kept, ["Saban أرز مصري رفيع الحبة ٥ كجم", "لبنة فاخرة كاملة الدسم-400 غرام", "صامولي", "أجهزة منزلية سامسونج غسالة 7 كيلو"]);
 });
+
+Deno.test("a deal read from a store's YouTube video is a youtube row with the video as its link", () => {
+  const row = dealPutPayload({ country: "SA", store: "كيو", currency: "SAR" },
+    { item_name: "زبادي يوناني", price: 1.8, price_before: null, valid_until: null, source_url: "https://www.youtube.com/watch?v=aaaaaaaaaa1" }, "youtube");
+  assertEquals(row.source_kind, "youtube");
+  assertEquals(row.source_url, "https://www.youtube.com/watch?v=aaaaaaaaaa1");
+});
