@@ -26,11 +26,15 @@ select set_config('request.jwt.claims', '{"role":"service_role"}', false);
 
 update public.zad_transactions set merchant_name = 'etisalat' where id = 'b0000000-0000-0000-0000-000000000007';
 update public.zad_transactions set merchant_name = 'com.google.android.apps.messaging' where id = 'b0000000-0000-0000-0000-000000000008';
+-- The bank's own name as merchant (an InstaPay transfer with no counterparty): no merchant (20261102080000).
+insert into public.zad_transactions (id, user_id, amount, title, category, source_type, merchant_name, bank_name, created_at) values
+  ('b0000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-00000000000a', 999, 'BDC', 'أخرى', 'notification_listener', 'BDC', 'bdc', now() - interval '18 minutes');
 
 do $$
 declare r jsonb; n int;
 begin
   assert public.zad_bank_twin_service('00000000-0000-0000-0000-00000000000a', 777) is null, 'a named merchant is not the words';
+  assert public.zad_bank_twin_service('00000000-0000-0000-0000-00000000000a', 999) = 'b0000000-0000-0000-0000-000000000009', 'the bank is not a merchant';
   assert public.zad_bank_twin_service('00000000-0000-0000-0000-00000000000a', 888) = 'b0000000-0000-0000-0000-000000000008', 'the messaging app is not a merchant';
   -- …but a receipt to the piaster still merges into it.
   assert private.zad_bank_twin('00000000-0000-0000-0000-00000000000a', 777, now()) = 'b0000000-0000-0000-0000-000000000007';
