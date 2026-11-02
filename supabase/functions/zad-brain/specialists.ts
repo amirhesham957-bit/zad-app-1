@@ -205,6 +205,9 @@ const SAME_PRODUCT_INTENT = /نفس (ال)?(حاجه|صنف|منتج|شي)|اد�
 const STORE_LOCATION_INTENT = /لوكيشن|لوكيشين|location|(هات|ابعت|ابعتلي|ابعتيلي|ابعتهولي|فين|عايز|عاوز)\s*(لي)?\s*(ال)?(موقع|مكان|عنوان)\s*(ال)?(محل|سوبر ?ماركت|صيدليه|ده|دا|بتاعه|بتاعها)?|(علي|على) الخريطه|فين (ال)?(محل|السوبر ?ماركت|الصيدليه) ده/;
 const MEDICINE_EDIT_INTENT = /(شيل|شلها|شيلها|شيلهم|امسح|امسحها|امسحهم|احذف|احذفها|احذفهم|الغي|الغيها).{0,30}(دوا|دوه|ادوي|علاج|حبوب|اقراص|كريم|مرهم|صيدليه)|(دوا|دوه|ادوي|علاج|كورس).{0,40}(شيل|شلها|شيلها|امسح|احذف|من (الليسته|اللسته|القايمه))/;
 
+// زاد نفسه سأل «أحذف/أشيل الدوا؟» في الرد اللي قبل.
+const MEDICINE_DELETE_ASKED = /(احذف|اشيل|امسح|اشيله|اشيلها|احذفه|احذفها|امسحه|امسحها).{0,40}(دوا|دوه|ادوي|علاج|صيدليه)/;
+
 // «إيه اللي ماقولتليش عليه؟» (ZAD_PLAN ٣.٥): اللي الحراس مسكوه الأسبوع ده وليه.
 const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|بعتليش|بلغتنيش)|(ما|م)قولتهوش|سكت(ت)? عن|سكتت?ش ليه|خبيت عني|اللي (ما|م)قولتهوش|ليه (ما|م) ?(قولتش|بتقولش|بعتش|بتبعتش)|الحاجات اللي (ما|م)وصلتنيش/;
 
@@ -229,7 +232,11 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
   if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
-  if (MEDICINE_EDIT_INTENT.test(norm)) tools.push("delete_pharmacy_item", "update_pharmacy_item");
+  // «آه» على «أحذف الدواء خالص من الصيدلية؟» (حساب المالك ٢/١١): الرسالة مافيهاش نية، السؤال اللي قبلها فيه —
+  // من غير أداة المسح الموديل عدّل الكمية لصفر وقال «شلتهولك».
+  if (MEDICINE_EDIT_INTENT.test(norm) || MEDICINE_DELETE_ASKED.test(normalize(priorReply))) {
+    tools.push("delete_pharmacy_item", "update_pharmacy_item");
+  }
   if (DOCUMENT_INTENT.test(norm)) tools.push("save_document", "delete_document", "read_house");
   if (HANDOVER_INTENT.test(norm)) tools.push("handover_card");
   if (GATHERING_INTENT.test(norm)) tools.push("plan_gathering", "add_gathering_to_list", "add_appointment");
@@ -548,6 +555,18 @@ export function unbackedWriteClaim(message: string, reply: string): boolean {
   const norm = affirmed(reply);
   return CLAIMS_DONE.test(norm) || CLAIMS_NOW.test(norm) || CLAIMS_PENDING.test(norm);
 }
+
+/** «شلتهولك من الصيدلية خالص» والأداة اللي اتنفذت تعديل مش مسح (حساب المالك ٢/١١). */
+const CLAIMS_DELETED = /(^|\s)(شلت|شلته|شلتها|شلتهم|شلتهولك|شلتهالك|مسحت|مسحته|مسحتها|مسحتهم|مسحتهولك|حذفت|حذفته|حذفتها|حذفتهم)(\s|$)/;
+
+/** الرد بيقول «مسحت» ومفيش أداة delete_* اتنفذت في اللفة. */
+export function unbackedDeleteClaim(reply: string, executedTools: readonly string[]): boolean {
+  if (executedTools.some((t) => t.startsWith("delete_") || t === "complete_shopping_item" || t === "merge_duplicate_expense")) return false;
+  return CLAIMS_DELETED.test(affirmed(reply));
+}
+
+/** الرد البديل لما unbackedDeleteClaim يمسك الرد — الإيصالات (✅) بتفضل تحته وبتقول اللي اتعمل فعلاً. */
+export const DELETE_NOT_DONE_REPLY = "لسه **ماشلتوش** — اللي اتعمل هو اللي تحت بس. قولّي «امسحه» وأنا أشيله خالص.";
 
 /** الرد البديل لما unbackedWriteClaim يمسك الرد. */
 export const WRITE_NOT_DONE_REPLY =
