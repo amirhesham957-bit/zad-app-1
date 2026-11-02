@@ -211,6 +211,19 @@ const MEDICINE_DELETE_ASKED = /(احذف|اشيل|امسح|اشيله|اشيله
 // «إيه اللي ماقولتليش عليه؟» (ZAD_PLAN ٣.٥): اللي الحراس مسكوه الأسبوع ده وليه.
 const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|بعتليش|بلغتنيش)|(ما|م)قولتهوش|سكت(ت)? عن|سكتت?ش ليه|خبيت عني|اللي (ما|م)قولتهوش|ليه (ما|م) ?(قولتش|بتقولش|بعتش|بتبعتش)|الحاجات اللي (ما|م)وصلتنيش/;
 
+/**
+ * رجيم السياق ٣.٢ (الشريحة ٢): أدوات تعديل ومسح الدفتر والديون والالتزامات والاشتراكات. ٣٠ يوم من agent_actions:
+ * نداء واحد للتمانية (update_transaction)، وكانوا بيتبعتوا مع كل رسالة لوكيل المال (٤١ أداة). بييجوا بنية التصحيح
+ * بس — والنية واسعة عن قصد («مش»، «لأ»، «غلط»، «كان»): أداة زيادة أرخص من تصحيح مايتنفذش (فئة correction، ١٨ حالة).
+ */
+export const LEDGER_EDIT_TOOLS: readonly string[] = [
+  "update_transaction", "delete_transaction", "update_debt", "delete_debt",
+  "update_obligation", "delete_obligation", "update_subscription", "delete_subscription",
+];
+const CORRECTION_INTENT = /(^|\s)(لا|مش|مو|مب|غلط|صحح|صلح|عدل|عدلها|عدله|غير|غيرها|غيره|بدل|امسح|امسحها|امسحه|احذف|احذفها|احذفه|شيل|شيلها|شيله|الغي|الغيها|كنسل|ارجع|رجع|رجعها|مرتين|اتسجل|اتكرر|متكرر|كان|كانت|بطل|وقف|وقفه|خلص|خلصت|سددت|دفعت ال)(\s|$)|ماصرفتش|ماشتريتش|مادفعتش|مش بتاعتي|مش بتاعي|سجلت .{0,20} مرتين/;
+// زاد نفسه سأل «أعدّل/أمسح المصروف؟» في الرد اللي قبل، والرد «آه».
+const LEDGER_EDIT_ASKED = /(اعدل|اغير|اصحح|امسح|احذف|اشيل|الغي|اوقف).{0,40}(مصروف|حركه|عمليه|الدين|القسط|الالتزام|الاشتراك|المبلغ)/;
+
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
 export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
@@ -252,6 +265,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
   // جواب «مين السباك؟ أحفظه في الفنيين؟» (homeEmergency.ts): «محمد ٠١٠٠…» لوحدها مافيهاش نية تجيب الأداة.
   if (normalize(priorReply).includes("احفظه في الفنيين") || TECHNICIAN_SAVE_INTENT.test(norm)) tools.push("save_trusted_technician");
+  if (CORRECTION_INTENT.test(norm) || LEDGER_EDIT_ASKED.test(normalize(priorReply))) tools.push(...LEDGER_EDIT_TOOLS);
   return [...new Set(tools)];
 }
 
@@ -520,6 +534,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     "read_house",
     ...extra,
   ]);
+  // تعديل ومسح الدفتر بالنية بس (LEDGER_EDIT_TOOLS)، حتى لو في نطاق الوكيل.
+  for (const t of LEDGER_EDIT_TOOLS) if (!extra.includes(t)) allowed.delete(t);
   return tools.filter((t) => allowed.has(t.name));
 }
 
