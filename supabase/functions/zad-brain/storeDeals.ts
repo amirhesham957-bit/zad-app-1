@@ -36,7 +36,13 @@ export function dealPutPayload(target: DealTarget, deal: SearchedDeal): Record<s
   };
 }
 
-/** store_deals' answer, kept only when it is the shape that service promises. */
+/**
+ * A section heading read as an item (ZAD_PLAN 4.19, the 29/10 search reviewed by hand on 2/11): «أجهزة» at 5,099 from
+ * Noon and «عروض الآيس كريم والحلويات الباردة» at 5.75 from Amazon. Neither is something a home can buy at that price.
+ */
+const NOT_AN_ITEM = /^\s*(عروض|عرض|خصومات|خصم|تخفيضات|تخفيض|اوكازيون|أوكازيون|offers?|deals?|sale)(\s|$)|^\s*(أجهزة|اجهزة|إلكترونيات|الكترونيات|منتجات|مستلزمات|أدوات|ادوات|electronics|appliances)\s*$/i;
+
+/** store_deals' answer, kept only when it is the shape that service promises and names one item at a real price. */
 export function searchedDeals(reply: unknown): SearchedDeal[] {
   const deals = reply && typeof reply === "object" ? (reply as { deals?: unknown }).deals : null;
   if (!Array.isArray(deals)) return [];
@@ -44,6 +50,8 @@ export function searchedDeals(reply: unknown): SearchedDeal[] {
     !!d && typeof d === "object" &&
     typeof (d as SearchedDeal).item_name === "string" &&
     typeof (d as SearchedDeal).price === "number" &&
-    typeof (d as SearchedDeal).source_url === "string"
+    (d as SearchedDeal).price > 0 &&
+    typeof (d as SearchedDeal).source_url === "string" &&
+    !NOT_AN_ITEM.test((d as SearchedDeal).item_name)
   );
 }
