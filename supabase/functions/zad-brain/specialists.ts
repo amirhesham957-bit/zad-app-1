@@ -502,21 +502,17 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
     // الأدوات العابرة للنطاقات — متاحة دايمًا
-    "remember", "remember_occasion", "link_memory", "web_search", "set_market", "set_transaction_category",
-    // أسعار النهارده: الدهب والعملات بيتسألوا في أي سياق، ومن غيرهم الموديل بيقول «مش لاقي».
-    "gold_price", "fetch_current_exchange_rate",
-    // الشكوى بتتقال في أي موضوع.
-    "open_support_ticket",
-    "update_emergency_fund_balance", "add_maintenance_item", "update_maintenance_item",
-    "delete_maintenance_item", "app_command", "learn_skill", "home_health_score",
+    "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
+    // رجيم السياق ٣.٢ (٢/١١): الدهب والعملات والشكوى والمناسبات و«أنا مفلس» بيجوا بنية الرسالة (intentToolHints)،
+    // والصيانة وhome_health_score في نطاق وكيل البيت/المال — كانوا ٩ أدوات مع كل رسالة لأي وكيل، و٣٠ يوم من
+    // agent_actions: صفر نداء لـ٨ منهم ونداء واحد لـset_broke_mode.
+    "update_emergency_fund_balance", "app_command", "learn_skill",
     // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
     // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
     // find_appointments وdelete_appointment (٨ج.٣) بيجوا بالنية (AGENDA_INTENT/reminderIntent) مش هنا: اتنين
     // زيادة مع كل رسالة نزّلوا وكيل المال على Groq من ٤٢ أداة لـ٣٨ (promptBudget_test).
     "add_appointment", "update_appointment",
     "add_place_reminder", "cancel_place_reminder",
-    // «أنا مفلس» ممكن تتقال في أي سياق (أكل، شراء، فلوس) — لو في نطاق واحد كانت هتضيع.
-    "set_broke_mode",
     "start_savings_challenge", "stop_savings_challenge",
     // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
     "update_customer_profile",
