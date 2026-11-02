@@ -6,6 +6,9 @@
 /** Stores searched in one run: ten a week stays far inside ZAD_SEARCH_DAILY_CAP. */
 export const STORES_PER_RUN = 10;
 
+/** Stores read on YouTube in one run (ZAD_PLAN 4.11): a video read is tens of seconds, the run has 120. */
+export const YOUTUBE_STORES_PER_RUN = 3;
+
 /** A searched offer is a web page read by a model: below a receipt floor (0.6 at 3 homes). */
 export const SEARCH_CONFIDENCE = 0.5;
 
@@ -19,7 +22,7 @@ export interface SearchedDeal {
   source_url: string;
 }
 
-export function dealPutPayload(target: DealTarget, deal: SearchedDeal): Record<string, unknown> {
+export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" = "search"): Record<string, unknown> {
   return {
     country: target.country,
     city: "",
@@ -30,7 +33,7 @@ export function dealPutPayload(target: DealTarget, deal: SearchedDeal): Record<s
     currency: target.currency,
     deal_kind: deal.price_before !== null ? "discount" : "price",
     valid_until: deal.valid_until,
-    source_kind: "search",
+    source_kind: sourceKind,
     source_url: deal.source_url,
     confidence: SEARCH_CONFIDENCE,
   };

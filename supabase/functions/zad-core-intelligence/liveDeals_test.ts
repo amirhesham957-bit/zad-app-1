@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
+import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos } from "./liveDeals.ts";
 import { isLiveQuery } from "./searchQuality.ts";
 
 Deno.test("duplicates and blanks are dropped, order kept", () => {
@@ -121,4 +121,33 @@ Deno.test("store deals: the search uses the name people know, not the receipt's 
   const { system, user } = storeDealsPrompt("شركة بيم ستورز", "مصر", "EGP", [], "2026-10-26");
   assertStringIncludes(system, "«بيم»");
   assertStringIncludes(user, "المحل: بيم\n");
+});
+
+Deno.test("only a store's own offer videos are read (ZAD_PLAN 4.11)", () => {
+  const v = (title: string, id = "abcDEF12345") => ({ title, url: `https://www.youtube.com/watch?v=${id}` });
+  const videos = [
+    v("عروض كيو الأسبوعية من الأحد للثلاثاء", "aaaaaaaaaa1"),
+    v("جولة في كيو ماركت", "aaaaaaaaaa2"), // مش عروض
+    v("عروض بنده اليوم", "aaaaaaaaaa3"), // محل تاني
+    v("خصومات كيو على الألبان 🔥", "aaaaaaaaaa4"),
+    v("عروض كيو برضه", "aaaaaaaaaa5"), // بعد الحد
+  ];
+  assertEquals(youtubeDealVideos(videos, "كيو").map((x) => x.url.slice(-2)), ["a1", "a4"]);
+  assertEquals(youtubeDealVideos(videos, "شركة بيم ستورز"), []);
+  assertEquals(youtubeDealVideos([v("عروض بيم الجديدة")], "شركة بيم ستورز").length, 1);
+  // رابط مش فيديو يوتيوب عادي مايتقراش.
+  assertEquals(youtubeDealVideos([{ title: "عروض كيو", url: "https://example.com/watch?v=aaaaaaaaaa1" }], "كيو"), []);
+});
+
+Deno.test("a video's offers are read like a search result, with the video as the link", () => {
+  const today = new Date("2026-11-05T06:00:00Z");
+  const hits = [{ title: "عروض كيو", url: "https://www.youtube.com/watch?v=aaaaaaaaaa1", snippet: "" }];
+  const deals = readStoreDeals({ deals: [
+    { item: "زبادي يوناني ١٧٠ جم", price: 1.8, price_before: 2.5, currency: "ر.س", valid_until: "2026-11-08", source: 1 },
+    { item: "حليب", price: 6, currency: "EGP", source: 1 }, // عملة تانية
+  ] }, hits, "SAR", today);
+  assertEquals(deals.length, 1);
+  assertEquals(deals[0].source_url, hits[0].url);
+  const { system } = videoDealsPrompt("شركة كيو", "السعودية", "SAR", "عروض كيو", "2026-11-05");
+  assertEquals(system.includes("«كيو»"), true);
 });

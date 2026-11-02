@@ -41,9 +41,9 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, storeDealsPrompt, storeDealsQuery } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
-import { instagramProbe, youtubeProbe } from "./socialSources.ts";
+import { instagramProbe, youtubeProbe, youtubeSearch } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -490,6 +490,13 @@ function toGeminiParts(content: string | Array<Record<string, unknown>>): Array<
       const url = (block.image_url as { url?: string } | undefined)?.url || "";
       const m = /^data:([^;]+);base64,(.*)$/s.exec(url);
       if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
+    } else if (block.type === "video_url") {
+      // فيديو يوتيوب عام بالرابط (ZAD_PLAN ٤.١١). أول دقيقتين بس، بأقل دقة: فيديو العروض بيعرض الأسعار في الأول،
+      // والتوكنز بتتحسب بالثانية — فيديو ١٠ دقايق كامل كان هياكل حد الدقيقة على المفتاح لوحده.
+      const url = (block.video_url as { url?: string } | undefined)?.url || "";
+      if (/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{6,20}$/.test(url)) {
+        parts.push({ file_data: { file_uri: url }, video_metadata: { end_offset: "120s" } });
+      }
     }
   }
   return parts;
@@ -527,6 +534,9 @@ async function callGeminiNative(opts: {
       maxOutputTokens: Math.max(opts.maxTokens ?? 1000, 300),
     };
     if (opts.jsonMode) generationConfig.response_mime_type = "application/json";
+    if (Array.isArray(opts.content) && opts.content.some((b) => b.type === "video_url")) {
+      generationConfig.mediaResolution = "MEDIA_RESOLUTION_LOW";
+    }
     // Not every model tolerates the field. Measured 2026-08-15 against this project:
     // gemini-3.5-flash-lite and gemini-flash-lite-latest answer **400 INVALID_ARGUMENT**
     // if thinkingConfig is present at all, while gemini-3.1-flash-lite accepts it — the
@@ -2740,6 +2750,41 @@ async function handle(req: Request): Promise<Response> {
         const parsed = await callJsonModel(system, user, 1500, "routine");
         if (parsed === null) return jsonResponse({ ok: false, reason: "no_model", hits: hits.length, source: lastWebSearchSource });
         return jsonResponse({ ok: true, deals: readStoreDeals(parsed, hits, currency, new Date()), hits: hits.length, source: lastWebSearchSource });
+      }
+
+      // ──────────────────────────────────────────────
+      // STORE_DEALS_YOUTUBE — one store's offer videos this week, read by Gemini (ZAD_PLAN 4.11). Service
+      // role only: zad-brain's weekly deals_youtube_run calls it per store. Official YouTube Data API for
+      // the search, the public video by its link for the reading — nothing downloaded or scraped.
+      // ──────────────────────────────────────────────
+      case "store_deals_youtube": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const ytKey = Deno.env.get("YOUTUBE_API_KEY");
+        if (!ytKey) return jsonResponse({ ok: false, reason: "no_key" });
+        const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
+        if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
+        const market = marketOf(payload?.country);
+        const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
+        const found = await youtubeSearch(ytKey, `عروض ${searchStoreName(store)}`, market.code, { days: 10, max: 10 });
+        if (!found.ok) return jsonResponse({ ok: false, reason: found.reason ?? `youtube_${found.status}` });
+        const videos = youtubeDealVideos(found.items, store);
+        const today = new Date().toISOString().slice(0, 10);
+        const deals: ReturnType<typeof readStoreDeals> = [];
+        let read = 0;
+        for (const video of videos) {
+          const { system, user } = videoDealsPrompt(store, market.name, currency, video.title, today);
+          const answer = await callGeminiPool({
+            model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system,
+            content: [{ type: "video_url", video_url: { url: video.url } }, { type: "text", text: user }],
+            temperature: 0.1, maxTokens: 1500, jsonMode: true, thinkingBudget: 0, timeoutMs: 50_000,
+            deadline: Date.now() + 55_000,
+          });
+          if (!answer.ok || !answer.content) continue;
+          read++;
+          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+          deals.push(...readStoreDeals(parsed, [{ title: video.title, url: video.url, snippet: "" }], currency, new Date()));
+        }
+        return jsonResponse({ ok: true, deals, hits: found.items.length, videos: videos.length, read, source: "youtube" });
       }
 
       // ──────────────────────────────────────────────

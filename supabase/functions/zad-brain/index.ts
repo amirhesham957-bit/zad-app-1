@@ -146,7 +146,7 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealCountry, dealSource, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
-import { dealPutPayload, searchedDeals, STORES_PER_RUN } from "./storeDeals.ts";
+import { dealPutPayload, searchedDeals, STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -8996,6 +8996,47 @@ async function handleRequest(req: Request): Promise<Response> {
         }
       }
       console.log(`[deals_search_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
+      return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
+    }
+
+    // عروض يوتيوب الأسبوعية (ZAD_PLAN ٤.١١): نفس المحلات بأسبوعها لوحده (zad_deal_source_targets بـ'youtube')، فيديو
+    // «عروض المحل» بيتقري في zad-core-intelligence (store_deals_youtube)، وكل عرض برابط الفيديو بيدخل zad_deals.
+    if (body.action === "deals_youtube_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDeals = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: targets, error: targetErr } = await sbDeals.rpc("zad_deal_source_targets", { p_limit: YOUTUBE_STORES_PER_RUN, p_source: "youtube" });
+      if (targetErr) {
+        console.error("[deals_youtube_run] targets failed:", targetErr.message);
+        return new Response(JSON.stringify({ error: "targets_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const started = Date.now();
+      const stores: Array<Record<string, unknown>> = [];
+      for (const t of (targets ?? []) as Array<{ country: string; store: string; currency: string }>) {
+        if (Date.now() - started > 90_000) break;
+        const reply = await callCoreIntel("store_deals_youtube", t, "deals_youtube_run", 60_000);
+        // من غير مفتاح يوتيوب مفيش محل هيتقري — وقف هنا بدل ما كل محل يرجع نفس السبب.
+        if (reply?.reason === "no_key") {
+          stores.push({ country: t.country, store: t.store, ok: false, reason: "no_key" });
+          break;
+        }
+        let put = 0;
+        let refused = 0;
+        for (const deal of searchedDeals(reply)) {
+          const { data, error } = await sbDeals.rpc("zad_deal_put", { p: dealPutPayload(t, deal, "youtube") });
+          if (!error && (data as { ok?: boolean } | null)?.ok) put++;
+          else refused++;
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, reason: reply?.reason ?? null });
+        if (reply?.ok) {
+          const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({
+            country: t.country, store_key: productNameKey(t.store), hits: Number(reply?.hits) || 0, put, source: "youtube",
+          });
+          if (logErr) console.error("[deals_youtube_run] log failed:", logErr.message);
+        }
+      }
+      console.log(`[deals_youtube_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
     }
 
