@@ -108,7 +108,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
@@ -7727,6 +7727,7 @@ async function handleAgentTurnInLane(
     reply = LIMIT_NOT_CHANGED_REPLY;
   }
   if (executed.length === 0 && proposals.length === 0 && unbackedWriteClaim(message, reply)) reply = WRITE_NOT_DONE_REPLY;
+  if (executed.length > 0 && unbackedDeleteClaim(reply, executed.filter((e) => e.ok).map((e) => e.tool))) reply = DELETE_NOT_DONE_REPLY;
   // «تم التحويل من محفظة ولدك لمحفظتك 💸» و«تبي أسجل لك ٥٠٠ ريال كرسوم؟» على رسالة نصب (التقييم الليلي ٢٧/١٠).
   if (executed.length === 0 && transferClaim(reply)) reply = TRANSFER_NOT_DONE_REPLY;
   if (scamMessage(message)) {
