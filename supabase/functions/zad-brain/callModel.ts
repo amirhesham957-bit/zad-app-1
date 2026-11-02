@@ -23,9 +23,9 @@
 // كل محوّل بيترجم الشكل ده لصيغته في كل نداء، فتبديل المزوّد
 // وسط محادثة يبقى ممكن.
 // ------------------------------------------------------------
-import { evalKeyOrder, keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
+import { evalKeyOrder, internalKeyOrder, keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
 import { DeadKeys, RATE_LIMIT_DEFAULT_MS } from "../_shared/deadKeys.ts";
-import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
+import { freeGeminiKeys, geminiKeys, groqKeys, paidGeminiKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
 export type Turn =
@@ -60,8 +60,14 @@ export type Provider = "anthropic" | "gemini" | "openai_compatible";
 const GEMINI_KEY_POOL: string[] = geminiKeys((n) => Deno.env.get(n));
 // The nightly eval's own key (keyLanes.ts evalKeyOrder), kept after the pool so pool indices stay.
 const EVAL_KEY = (Deno.env.get("ZAD_EVAL_KEY") ?? "").trim();
-const CALL_KEYS: string[] = EVAL_KEY ? [...GEMINI_KEY_POOL, EVAL_KEY] : GEMINI_KEY_POOL;
+// The free keys, kept apart only when a paid key took the pool over: the test account's lane (keyLanes.ts
+// internalKeyOrder). Customers never reach them — they stay on the paid key alone.
+const INTERNAL_KEYS: string[] = paidGeminiKeys((n) => Deno.env.get(n)).length > 0
+  ? freeGeminiKeys((n) => Deno.env.get(n))
+  : [];
+const CALL_KEYS: string[] = [...GEMINI_KEY_POOL, ...(EVAL_KEY ? [EVAL_KEY] : []), ...INTERNAL_KEYS];
 const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
+const INTERNAL_KEY_START = GEMINI_KEY_POOL.length + (EVAL_KEY ? 1 : 0);
 
 /** Whether the nightly eval has its own key; without one it does not run. */
 export function hasEvalKey(): boolean {
@@ -71,6 +77,7 @@ export function hasEvalKey(): boolean {
 // Round-robin starting point across warm invocations, so consecutive requests don't all
 // hammer key 1 first. sendGemini() walks the whole pool from here on a 429.
 let geminiKeyCursor = 0;
+let internalKeyCursor = 0;
 function nextGeminiKeyIndex(): number {
   const i = geminiKeyCursor % Math.max(GEMINI_KEY_POOL.length, 1);
   geminiKeyCursor = (geminiKeyCursor + 1) % Math.max(GEMINI_KEY_POOL.length, 1);
@@ -113,6 +120,11 @@ export function inLane<T>(lane: Lane, fn: () => T): T {
 /** The keys this call may try, in order, for the lane it runs in. */
 function keysToTry(): number[] {
   if (currentLane() === "eval") return evalKeyOrder(EVAL_KEY_INDEX);
+  if (currentLane() === "internal") {
+    const cursor = internalKeyCursor++;
+    return internalKeyOrder(INTERNAL_KEY_START, INTERNAL_KEYS.length, cursor,
+      keyOrder("background", GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex(), PAID_KEYS));
+  }
   return keyOrder(currentLane(), GEMINI_KEY_POOL.length, RESERVED_KEYS, nextGeminiKeyIndex(), PAID_KEYS);
 }
 

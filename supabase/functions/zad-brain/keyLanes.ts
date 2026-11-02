@@ -22,7 +22,18 @@
  *     عليه خالص وبيروح لجروك على طول (callModel)، فالمشتركين مابيتأثروش.
  */
 
-export type Lane = "customer" | "background" | "paid" | "free" | "free_busy" | "eval";
+export type Lane = "customer" | "background" | "paid" | "free" | "free_busy" | "eval" | "internal";
+
+/**
+ * حارة حساب الاختبار (قرار المالك ٢/١١): لما المفتاح المدفوع متحط، داتا العملاء عليه لوحده، وحساب الاختبار
+ * (داتا مصطنعة) بياخد المجاني اللي اتساب — من [freeStart] لـ[freeCount] مفتاح، بالدور من [cursor]. من غير
+ * مفاتيح مجانية منفصلة بيرجع لترتيب الخلفية [fallback]، زي ما كان قبل الحارة دي.
+ */
+export function internalKeyOrder(freeStart: number, freeCount: number, cursor: number, fallback: number[]): number[] {
+  if (freeCount <= 0) return fallback;
+  const shift = ((cursor % freeCount) + freeCount) % freeCount;
+  return Array.from({ length: freeCount }, (_, i) => freeStart + ((shift + i) % freeCount));
+}
 
 /**
  * حارة التقييم الليلي (ZAD_DREAM_PLAN.md ٢.١): مفتاح واحد لوحده، `ZAD_EVAL_KEY`، مش من المسبح.

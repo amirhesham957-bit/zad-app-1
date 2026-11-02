@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { keyOrder, laneFor, paidReservedCount, reservedCount } from "./keyLanes.ts";
+import { internalKeyOrder, keyOrder, laneFor, paidReservedCount, reservedCount } from "./keyLanes.ts";
 
 Deno.test("scheduled analysis is background; reminders and chat are the customer's", () => {
   for (const a of ["run_daily_brain", "nightly_dream_reflection", "run_proactive_scan", "process_agent_tasks", "tools_probe"]) {
@@ -70,4 +70,11 @@ Deno.test("without a paid key the order is exactly what it was", () => {
     assertEquals(keyOrder("free", 15, 5, c, 0), keyOrder("customer", 15, 5, c));
     assertEquals(keyOrder("paid", 15, 5, c, 0), keyOrder("customer", 15, 5, c));
   }
+});
+
+Deno.test("the test account walks the free keys after the paid pool, and falls back to background without them", () => {
+  // pool = [paid], eval key at 1, free keys at 2..4
+  assertEquals(internalKeyOrder(2, 3, 0, [0]), [2, 3, 4]);
+  assertEquals(internalKeyOrder(2, 3, 4, [0]), [3, 4, 2]);
+  assertEquals(internalKeyOrder(2, 0, 0, [7, 8]), [7, 8], "no paid key: the background order, as before");
 });
