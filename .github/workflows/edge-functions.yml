@@ -271,11 +271,14 @@ jobs:
         # false) خلّى رن #٣٦١ يستنى لحد ما رن #٣٦٢ ينشر — وبعدين نشر كوده هو، الأقدم، فوقه. الرن اللي الكومِت بتاعه
         # مش آخر main مابينشرش: الأحدث نشر قبله أو هينشر بعده.
         run: |
+          # «أحدث» = فيه كومِت أحدث غيّر حاجة بتتنشر، مش أي كومِت: كومِت دوكس بس مابيشغّلش الورك فلو (paths فوق)،
+          # فلو الرن ده اتخطى عشانه مكانش حد هينشر خالص.
           git fetch --quiet --depth=1 origin main
           latest="$(git rev-parse FETCH_HEAD)"
-          if [ "$latest" != "$GITHUB_SHA" ]; then
+          if [ "$latest" != "$GITHUB_SHA" ] && ! git diff --quiet "$GITHUB_SHA" "$latest" -- \
+              supabase/functions supabase/migrations supabase/config.toml supabase/sql .github/workflows/edge-functions.yml; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Deploy skipped::$GITHUB_SHA is no longer the tip of main ($latest is) - that newer commit's run deploys instead of this older code."
+            echo "::notice title=Deploy skipped::$latest on main changes deployed code after $GITHUB_SHA - that newer commit's run deploys instead of this older code."
             echo "### Deploy skipped: a newer commit ($latest) is on main and deploys instead" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
