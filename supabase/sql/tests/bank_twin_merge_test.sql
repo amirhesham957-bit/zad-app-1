@@ -16,14 +16,25 @@ insert into public.zad_transactions (id, user_id, amount, title, category, sourc
   ('b0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-00000000000a', 60, 'BDC', null, 'notification_listener', now() - interval '7 hours'),
   -- Not from the bank.
   ('b0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-00000000000a', 45, 'قهوة', null, 'telegram', now() - interval '1 hour'),
+  -- The bank named a merchant: words are not pulled onto it (20261102070000) — «إيجار شقة» was not etisalat.
+  ('b0000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-00000000000a', 777, 'BDC', 'أخرى', 'notification_listener', now() - interval '20 minutes'),
+  ('b0000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-00000000000a', 888, 'BDC', 'أخرى', 'notification_listener', now() - interval '20 minutes'),
   -- Someone else's.
   ('b0000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-00000000000b', 200, 'BDC', null, 'notification_listener', now() - interval '1 hour');
 
 select set_config('request.jwt.claims', '{"role":"service_role"}', false);
 
+update public.zad_transactions set merchant_name = 'etisalat' where id = 'b0000000-0000-0000-0000-000000000007';
+update public.zad_transactions set merchant_name = 'com.google.android.apps.messaging' where id = 'b0000000-0000-0000-0000-000000000008';
+
 do $$
 declare r jsonb; n int;
 begin
+  assert public.zad_bank_twin_service('00000000-0000-0000-0000-00000000000a', 777) is null, 'a named merchant is not the words';
+  assert public.zad_bank_twin_service('00000000-0000-0000-0000-00000000000a', 888) = 'b0000000-0000-0000-0000-000000000008', 'the messaging app is not a merchant';
+  -- …but a receipt to the piaster still merges into it.
+  assert private.zad_bank_twin('00000000-0000-0000-0000-00000000000a', 777, now()) = 'b0000000-0000-0000-0000-000000000007';
+
   -- The receipt 33 minutes later merges: one row, the shop's name, the bank's amount and time.
   r := public.zad_record_purchase_service('00000000-0000-0000-0000-00000000000a', jsonb_build_object(
     'id', 'c0000000-0000-0000-0000-000000000001', 'amount', 124.54, 'title', 'فتح الله العطار',
