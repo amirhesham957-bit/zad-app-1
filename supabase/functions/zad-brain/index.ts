@@ -132,6 +132,7 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
+import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
 import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
@@ -7697,6 +7698,40 @@ async function handleAgentTurnInLane(
         }
       } catch (e) {
         console.warn("[agent_turn] forced log retry failed:", (e as Error)?.message ?? e);
+      }
+    }
+  }
+
+  // «فكرني بكرة الساعة 9 الصبح اكلم الدكتور»، «ضيف شراب كحة لبنتي في الصيدلية»، «زود عيش ع اللسته» والموديل رد
+  // «سويت/ضفت» من غير أداة، حتى بعد إعادة النية (forcedIntent.ts، التقييم ٢٥/١٠–٢/١١). محاولة واحدة بالأداة دي بس
+  // والنداء إجباري؛ runTool بيتحقق زي أي نداء، والإيصال بيقول اللي اتسجل فعلاً.
+  const forcedTool = executed.length === 0 && proposals.length === 0
+    ? forcedIntentTool(message, intentToolHints(message, priorAssistantText(history)))
+    : null;
+  if (forcedTool) {
+    const apptTool = CHAT_TOOLS.find((t) => t.name === forcedTool);
+    if (apptTool) {
+      try {
+        const forced = await callModel({
+          model: MODEL_ROUTINE, system: systemPrompt, tools: [apptTool], history, maxTokens: 600, forceTool: forcedTool,
+          groqSystem,
+        });
+        inputTokens += forced.usage.inTok;
+        outputTokens += forced.usage.outTok;
+        calls.model++;
+        calls.retries++;
+        if (forced.model && !calls.models.includes(forced.model)) calls.models.push(forced.model);
+        const call = forced.toolCalls.find((c) => c.name === forcedTool);
+        if (call) {
+          anyToolAttempted = true;
+          const mutationsBefore = ctx.mutationCount;
+          const result = await runTool(sb, userId, call.name, call.input, snap, ctx, scope);
+          if (recordCall(executed, consulted, call.name, result, ctx.mutationCount > mutationsBefore)) {
+            modelText = FORCED_REPLIES[forcedTool];
+          }
+        }
+      } catch (e) {
+        console.warn(`[agent_turn] forced ${forcedTool} retry failed:`, (e as Error)?.message ?? e);
       }
     }
   }
