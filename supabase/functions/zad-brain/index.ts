@@ -7151,7 +7151,11 @@ async function handleAgentTurnInLane(
   // دلوقتي: بعد ما الكوتة المجانية تخلص، كل نداء بيستهلك رصيد إعلان واحد. الاستهلاك
   // عبر RPC ذرّية لأن قراءة-ثم-كتابة من هنا بتسمح لنداءين متوازيين ياخدوا نفس
   // الرصيد الأخير.
-  if (!isPaidSubscriber) {
+  //
+  // حساب الفحص وحساب الطفل بتاع التقييم برّه السقف ده زي ما هم برّه zad_entitlement_consume (#٣٣٥):
+  // التقييم بينادي اللفة كمجاني، فمن ٢٩/١٠ كان بيقف بعد ٦ لفات (٢٠٠ ألف توكن) على chat_left = صفر،
+  // و~٧٠ حالة في الليلة رجعت الرد ده بدل ما تتقاس. سقفهم zad_test_turn_take وحارة eval.
+  if (!isPaidSubscriber && !quotaExempt(userId, [ACCEPTANCE_USER_ID, Deno.env.get("ZAD_EVAL_CHILD_USER_ID")])) {
     const today = new Date().toISOString().slice(0, 10);
     const { data: usageRow } = await sb.from("agent_usage")
       .select("request_count,input_tokens,output_tokens")

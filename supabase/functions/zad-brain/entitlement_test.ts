@@ -141,3 +141,13 @@ Deno.test("the test accounts never spend the customers' «محاولات»", () 
   assertEquals(quotaExempt("customer", [probe, undefined, ""]), false);
   assertEquals(quotaExempt("", [probe, ""]), false, "an unset child id exempts nobody");
 });
+
+Deno.test("both quota gates skip the test accounts — the eval was measuring the paywall from 29/10", async () => {
+  // التقييم بينادي اللفة كمجاني: لو بوابة واحدة بس فيها الإعفاء، الحساب بيقف بعد ٦ لفات على chat_left.
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  const exempt = /quotaExempt\(userId, \[ACCEPTANCE_USER_ID, Deno\.env\.get\("ZAD_EVAL_CHILD_USER_ID"\)\]\)/g;
+  assertEquals(src.match(exempt)?.length, 2, "zad_entitlement_consume and the daily free cap (W4)");
+  const w4 = src.indexOf('rpc("zad_chat_credit_consume"');
+  const guard = src.lastIndexOf("if (!isPaidSubscriber && !quotaExempt(", w4);
+  assertEquals(guard > 0 && w4 - guard < 1200, true, "the W4 cap's own if carries the exemption");
+});
