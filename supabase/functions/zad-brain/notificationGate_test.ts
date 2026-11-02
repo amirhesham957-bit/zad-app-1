@@ -194,3 +194,20 @@ Deno.test("every field of the gate's answer is required (null when absent), so t
   const schema = GATE_RESPONSE_SCHEMA as { properties: Record<string, unknown>; required: string[] };
   assertEquals([...schema.required].sort(), Object.keys(schema.properties).sort());
 });
+
+Deno.test("the carrier's sign-off is not the merchant — InstaPay 3500 for the rent was saved as «etisalat» (1/11)", async () => {
+  const { carrierSignOff, proposalFieldsFromVerdict } = await import("./notificationGate.ts");
+  const sms = "تم تنفيذ تحويل لحظي من حسابكم 4123 بمبلغ 3,500.00 جم في 19:59 يوم 11/1/26 رقم المعاملة 53a4244e للمزيد أتصل ب 16990 etisalat";
+  assertEquals(carrierSignOff("etisalat", sms), true);
+  assertEquals(carrierSignOff("Etisalat", sms), true);
+  // اسم الشبكة كطرف: فاتورة الموبايل بتتدفع لها فعلاً.
+  assertEquals(carrierSignOff("vodafone", "تم سداد 200 جم إلى vodafone"), false);
+  assertEquals(carrierSignOff("etisalat", "تم دفع فاتورة etisalat بمبلغ 300 جم بنجاح"), false);
+  assertEquals(carrierSignOff("KAZYON", "تم قيد معاملة مشتريات ب 460.43 EGP من KAZYON etisalat"), false);
+  const fields = proposalFieldsFromVerdict({
+    gate: "money",
+    verdict: { kind: "debit", amount: 3500, currency: "EGP", counterparty: "etisalat", cardLastDigits: null } as never,
+    parsed: {}, rawText: sms, packageName: "com.google.android.apps.messaging", title: "BDC", knownSender: null,
+  });
+  assertEquals(fields.merchantName, "BDC");
+});
