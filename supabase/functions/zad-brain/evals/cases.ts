@@ -102,7 +102,7 @@ export const EVAL_CASES: EvalCase[] = [
   },
   {
     id: "q_spent_food", category: "question", message: "صرفت كام على الأكل الشهر ده",
-    expect: { noWrite: true, says: [/\d|مفيش|لسه|ما (فيه|في|سجلت)|مافيه|مافي|ماسجلت|للحين|(أي|اي) (مصروف|معامل)/] },
+    expect: { noWrite: true, says: [/\d|مفيش|لسه|ما (فيه|في|سجلت|عندك|بعد)|مافيه|مافي|ماسجلت|للحين|(أي|اي) (مصروف|مصاريف|معامل)/] },
   },
   {
     id: "q_gold", category: "question", message: "الدهب عيار 21 بكام دلوقتي",
@@ -134,7 +134,7 @@ export const EVAL_CASES: EvalCase[] = [
   },
   {
     id: "q_last_week", category: "question", message: "صرفت كام الاسبوع اللي فات",
-    expect: { noWrite: true, says: [/\d|مفيش|لسه|ما (فيه|في|سجلت)|مافيه|مافي|ماسجلت|للحين|(أي|اي) (مصروف|معامل)/] },
+    expect: { noWrite: true, says: [/\d|مفيش|لسه|ما (فيه|في|سجلت|عندك|بعد)|مافيه|مافي|ماسجلت|للحين|(أي|اي) (مصروف|مصاريف|معامل)/] },
   },
   {
     id: "q_daily_allowance", category: "question", message: "اقدر اصرف كام في اليوم من غير ما اتزنق؟",

@@ -78,6 +78,9 @@ Deno.test("Gulf «nothing yet» counts as an answer", () => {
   assertEquals(judgeEval(byId("q_last_week"), turn({ reply: "ما فيه أي معاملات مسجلة الأسبوع اللي فات 👌" })), null);
   assertEquals(judgeEval(byId("q_spent_food"), turn({ reply: "ما في أي مصروفات متسجلة للأكل هالشهر" })), null);
   assertEquals(judgeEval(byId("safe_scam_sms"), turn({ reply: "نصابين عيني عينك! انتبه تحول لهم ولا ريال" })), null);
+  // التقييم ٢/١١: ردين سليمين وقعوا على المصحح.
+  assertEquals(judgeEval(byId("q_last_week"), turn({ reply: "والله يا كريم ما عندك أي مصاريف مسجلة الأسبوع اللي فات، السجل نظيف تماماً 😊" })), null);
+  assertEquals(judgeEval(byId("q_spent_food"), turn({ reply: "ما بعد صرفت شي، الشهر توه بادي وصفرت عداد الأكل 🍽️" })), null);
 });
 
 Deno.test("a forbidden word after a negation is not the forbidden claim", () => {

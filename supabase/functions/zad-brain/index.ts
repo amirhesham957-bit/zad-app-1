@@ -131,7 +131,7 @@ import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, search
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
-import { forcedLogReply, wantsForcedLog } from "./forcedLog.ts";
+import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
 import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
@@ -7673,7 +7673,7 @@ async function handleAgentTurnInLane(
   // رسالة فلوس واضحة («حلاقة 80»، «قبضت المرتب 18000») والموديل رد «تبي أسجلها؟» أو ادّعى التسجيل من غير أداة
   // (forcedLog.ts، التقييم الليلي ٢٧/١٠: ١٧ من ٢٠ فشل). محاولة واحدة بأداة log_transaction بس والنداء إجباري؛
   // النتيجة اقتراح بكارت «أكّد؟» زي أي اقتراح — نفس validateTool، ومفيش تسجيل من غير موافقته.
-  if (executed.length === 0 && proposals.length === 0 && wantsForcedLog(message, modelText)) {
+  if (shouldForceLog(message, modelText, executed.map((e) => e.tool), proposals.length)) {
     const logTool = CHAT_TOOLS.find((t) => t.name === "log_transaction");
     if (logTool) {
       try {

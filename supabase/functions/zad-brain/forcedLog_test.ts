@@ -1,6 +1,6 @@
 // رسالة فلوس واضحة ⇒ محاولة إجبار log_transaction (forcedLog.ts). الحالات من التقييم الليلي ٢٧/١٠ حرفياً.
 import { assertEquals } from "jsr:@std/assert@1";
-import { bareMoneyLog, wantsForcedLog } from "./forcedLog.ts";
+import { bareMoneyLog, shouldForceLog, wantsForcedLog } from "./forcedLog.ts";
 
 const NOT_DONE = "لسه **ماعملتش** ده، مفيش حاجة اتسجلت 🙏 ابعتلي طلبك تاني وأنا أنفذه.";
 
@@ -87,4 +87,14 @@ Deno.test("a card number, a secret or a forgery is never forced into a log — t
   for (const m of ["حلاقة 80", "كتب المدرسة 1250", "فاتورة الكهرباء 450", "هدية عيد ميلاد لصاحبي 600 جنيه"]) {
     assertEquals(bareMoneyLog(m), true, m);
   }
+});
+
+Deno.test("a silent profile write does not cancel the forced log", () => {
+  // التقييم ٢/١١ ١٨:٠٣: update_customer_profile {income_source} اتنفذ والرد «سجلت مصدر الدخل» من غير اقتراح.
+  const m = "دخلي 3500 من شغل فري لانس", r = "يا هلا بك يا كريم، أبشر سجلت مصدر الدخل 👌";
+  assertEquals(shouldForceLog(m, r, ["update_customer_profile"], 0), true);
+  assertEquals(shouldForceLog(m, r, [], 0), true);
+  // كتابة ظاهرة أو اقتراح = اللفة عملت حاجة، مفيش إجبار.
+  assertEquals(shouldForceLog(m, r, ["update_customer_profile", "add_obligation"], 0), false);
+  assertEquals(shouldForceLog(m, r, [], 1), false);
 });

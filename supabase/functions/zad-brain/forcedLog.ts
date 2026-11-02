@@ -8,6 +8,8 @@
 // القاعدة هنا ثابتة ومن غير موديل: الرسالة فيها مبلغ، ومش سؤال، ومش تحويل أو نصب أو قرض أو التزام أو مسح، وفيها فعل
 // صرف/قبض أو الرد نفسه بيعرض التسجيل. لو آه ⇒ محاولة واحدة بأداة log_transaction بس وإجبار النداء.
 
+import { SILENT_WRITE_TOOLS } from "./receipts.ts";
+
 const normalize = (text: string) =>
   text.replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
 
@@ -50,6 +52,15 @@ export function wantsForcedLog(message: string, reply: string): boolean {
   const m = normalize(message ?? "");
   if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || REFUSAL_SHAPE.test(m)) return false;
   return MONEY_VERB.test(m) || bareMoneyLog(message) || REPLY_OFFERS_LOG.test(normalize(reply ?? ""));
+}
+
+/**
+ * [wantsForcedLog] بعد اللفة: مفيش اقتراح، ومفيش كتابة غير الصامتة. «دخلي 3500 من شغل فري لانس» (التقييم ٢/١١ ١٨:٠٣):
+ * الموديل حفظ `update_customer_profile {income_source}` ورد «سجلت مصدر الدخل»، فـ`executed` ماكانش فاضي والإجبار
+ * اتخطّى — والتقييم شاف «proposed: nothing» لأن الإيصال ده مخفي. حفظ الملف مش تسجيل الفلوس.
+ */
+export function shouldForceLog(message: string, reply: string, executedTools: readonly string[], proposals: number): boolean {
+  return proposals === 0 && executedTools.every((t) => SILENT_WRITE_TOOLS.has(t)) && wantsForcedLog(message, reply);
 }
 
 /** الرد لو الموديل نادى الأداة من غير كلام. */
