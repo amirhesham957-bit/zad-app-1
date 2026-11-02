@@ -203,10 +203,14 @@ Deno.test("intentToolHints: gold and currency questions get the price tools, own
   assertEquals(intentToolHints("صرفت 500 على دهب"), ["log_transaction"]);
 });
 
-Deno.test("scopeToolsForSpecialist: today's prices are offered to every specialist", () => {
+Deno.test("scopeToolsForSpecialist: today's prices reach any specialist through the message's intent, not on every turn (3.2)", () => {
   const tools = ["gold_price", "fetch_current_exchange_rate", "web_search", "add_pharmacy_item"].map((name) => ({ name }));
-  const names = scopeToolsForSpecialist(tools, "pharmacy").map((t) => t.name);
-  assert(names.includes("gold_price") && names.includes("fetch_current_exchange_rate"));
+  const plain = scopeToolsForSpecialist(tools, "pharmacy").map((t) => t.name);
+  assert(!plain.includes("gold_price") && !plain.includes("fetch_current_exchange_rate"));
+  for (const [message, tool] of [["سعر الدهب", "gold_price"], ["الدولار بكام؟", "fetch_current_exchange_rate"]]) {
+    const names = scopeToolsForSpecialist(tools, "pharmacy", null, intentToolHints(message)).map((t) => t.name);
+    assert(names.includes(tool), message);
+  }
 });
 
 Deno.test("intentToolHints: a question about a recent event searches the web", () => {
