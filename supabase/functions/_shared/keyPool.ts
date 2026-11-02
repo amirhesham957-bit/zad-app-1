@@ -47,7 +47,14 @@ export function aiDataTier(env: Env): "paid" | "free" {
  */
 export function geminiKeys(env: Env): string[] {
   const paid = paidGeminiKeys(env);
-  if (paid.length > 0) return paid;
+  return paid.length > 0 ? paid : freeGeminiKeys(env);
+}
+
+/**
+ * مفاتيح المجاني (`ZAD_API_KEY_1..20`، أو المفرد القديم) من غير اعتبار للمدفوع. لما المدفوع متحط، دي
+ * بتشيل حساب الاختبار بس (حارة `internal` في zad-brain) — داتا مصطنعة، مش داتا عميل (قرار المالك ٢/١١).
+ */
+export function freeGeminiKeys(env: Env): string[] {
   const pool = unique(numbered(env, "ZAD_API_KEY_"));
   if (pool.length > 0) return pool;
   const legacy = env("ZAD_API_KEY")?.trim() || env("GEMINI_API_KEY")?.trim();

@@ -7138,7 +7138,8 @@ async function handleAgentTurn(
           }), { headers: CORS_HEADERS });
         }
       }
-      return await inLane("background", () => handleAgentTurnInLane(sb, userId, body, paid, onText));
+      // قرار المالك ٢/١١: لما المدفوع متحط، الحساب ده على المجاني (حارة internal)؛ من غيره زي الخلفية.
+      return await inLane("internal", () => handleAgentTurnInLane(sb, userId, body, paid, onText));
     }
     let lane: Lane = "paid";
     if (!paid) {
