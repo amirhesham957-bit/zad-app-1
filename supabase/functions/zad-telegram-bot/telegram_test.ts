@@ -650,3 +650,11 @@ Deno.test("a refused «أكد» says why — the owner's three taps on the rent 
   assertEquals(refusedSpendReply("مرفوض: المبلغ لازم يكون أكبر من صفر. صحّح وحاول تاني.", id).text, "ماسجلتهاش: المبلغ لازم يكون أكبر من صفر.");
   assertEquals(refusedSpendReply(undefined, id).text, "معلش، التسجيل فشل — جرب تاني.");
 });
+
+Deno.test("categorising the expense answers «كان على إيه؟» — logging something else does not", async () => {
+  const { pendingQuestionAnswered } = await import("./telegram.ts");
+  assertEquals(pendingQuestionAnswered(["set_transaction_category"]), true);
+  assertEquals(pendingQuestionAnswered(["update_transaction", "add_inventory_item"]), true);
+  assertEquals(pendingQuestionAnswered(["log_transaction"]), false);
+  assertEquals(pendingQuestionAnswered([]), false);
+});

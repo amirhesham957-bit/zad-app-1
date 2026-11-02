@@ -958,3 +958,8 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
 ]);
 
 
+
+/** أدوات بتجاوب سؤال «كان على إيه؟» (تصنيف أو تعديل المصروف). */
+export function pendingQuestionAnswered(executedTools: readonly string[]): boolean {
+  return executedTools.some((t) => t === "set_transaction_category" || t === "update_transaction");
+}

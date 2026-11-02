@@ -41,7 +41,7 @@ import {
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
   reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
-  confirmSpendKeyboard, parseSpendCallback, refusedSpendReply,
+  confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
   duplicateProposalKeyboard, duplicateProposalMessage,
   notificationReviewMessage,
@@ -1150,6 +1150,9 @@ async function retryFailedTurns(sb: SupabaseClient): Promise<{ answered: number;
   return { answered, dropped, waiting };
 }
 
+/** كام رسالة يتلزق فيهم السؤال المعلّق بالكتير. */
+const PENDING_QUESTION_MAX_TURNS = 3;
+
 async function agentTurnReply(
   sb: SupabaseClient,
   userId: string,
@@ -1169,7 +1172,7 @@ async function agentTurnReply(
   // يربط، والتعليمات بتقوله يتجاهل لو مفيش علاقة. الجزم بيغلط، الاختيار لأ.
   let outgoing = text;
   const { data: openQ } = await sb.from("zad_insights")
-    .select("title,body,about_item,created_at")
+    .select("id,title,body,about_item,created_at")
     .eq("user_id", userId)
     .eq("kind", "question")
     .eq("status", "pending")
@@ -1178,7 +1181,18 @@ async function agentTurnReply(
     .limit(1)
     .maybeSingle();
 
-  const q = openQ as { title: string; body: string; about_item: string | null } | null;
+  let q = openQ as { id: string; title: string; body: string; about_item: string | null; created_at: string } | null;
+  // سؤال اتبعت مع ٣ رسايل ومااتردش عليه بيبطّل يتلزق (حساب المالك ١/١١–٢/١١: «مصاريف من غير تصنيف 124.54» اتلزق
+  // في ٧ رسايل والعقل سأل «أحطها في البقالة؟» تاني بعد ما صنّفها). الكارت بيفضل في التطبيق.
+  if (q) {
+    const { count } = await sb.from("zad_chat_turns").select("id", { count: "exact", head: true })
+      .eq("user_id", userId).eq("role", "user").gte("created_at", q.created_at)
+      .like("text", "=== سؤال معلّق من زاد%");
+    if ((count ?? 0) >= PENDING_QUESTION_MAX_TURNS) {
+      await sb.from("zad_insights").update({ status: "seen" }).eq("id", q.id).eq("status", "pending");
+      q = null;
+    }
+  }
   if (q) {
     const about = q.about_item ? ` (بخصوص: ${q.about_item})` : "";
     outgoing =
@@ -1213,6 +1227,11 @@ async function agentTurnReply(
   if (turn.needs_ad_credit) {
     await recordChatTurn(sb, userId, "assistant", turn.reply);
     return { lines: [turn.reply.trim()], needsAdCredit: true };
+  }
+
+  // العقل صنّف المصروف في لفة شايلة السؤال ⇒ السؤال اتجاوب، مايتلزقش في الرسالة الجاية.
+  if (q && pendingQuestionAnswered(turn.executed.map((e) => e.tool))) {
+    await sb.from("zad_insights").update({ status: "acted" }).eq("id", q.id).eq("status", "pending");
   }
 
   const lines: string[] = [];
