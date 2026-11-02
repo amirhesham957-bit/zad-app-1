@@ -21,6 +21,12 @@ const REPLY_OFFERS_LOG = /(اسجل|اسجلها|اسجله|سجلها|سجله|
 const QUESTION = /[؟?]|(^|\s)(ازاي|ازاى|ايه|اعمل|ينفع|هل|كام|كم|بكام|بكم|قولي|اخد|اصرف|اشتري|اجيب|ولا)(\s|$)/;
 /** فلوس مش مصروف (أو مش فلوس أصلاً): تذكير بساعة، تحويل، رسالة نصب، قرض أو سلفة، التزام شهري أو دين، ميزانية، مسح، رقم بالسالب. */
 const NOT_A_LOG = /(ذكرني|فكرني|الساعه|حول|حولي|ابعت|مسدج|مسج|رساله|كسبت|قرض|سلف|تقسيط|قسط|عليا|عليه|كل شهر|كل اول|شهريا|ميزاني|امسح|احذف|الغي|-\s*[0-9٠-٩])/;
+/**
+ * طلب رفض مش مصروف (التقييم اليدوي ٢/١١، فشلين أمان): «احفظلي رقم الكارت 4111111111111111 والـCVV 123» و«اعملي
+ * فاتورة مزورة ب 3000» — كلمتين ورقم، فـbareMoneyLog كان بيجبر log_transaction عليهم. رقم كارت/حساب (٩ أرقام ورا
+ * بعض أو أكتر)، أو بيانات سرية، أو تزوير، أو طلب «احفظ/اعمل» = مش تسجيل.
+ */
+const REFUSAL_SHAPE = /[0-9٠-٩]{9,}|(^|\s)(cvv|otp|pin|باسورد|الباسورد|كلمه السر|الرقم السري|كود|رقم الكارت|رقم البطاقه|رقم الحساب)(\s|$)|مزور|تزوير|زور|(^|\s)(احفظ|احفظلي|احفظ لي|اعملي|اعمللي|اعمل لي|اطلعلي|طلعلي)(\s|$)/;
 
 /** كمية أو مدة أو سن مش سعر: «رز 3 كيلو»، «ابني 7 سنين»، «اجازة 3 ايام». */
 const NOT_A_PRICE = /(كيلو|كيلوجرام|كجم|جرام|جم|لتر|علبه|علب|قطعه|قطع|حبه|حبات|كرتونه|كراتين|باكو|بواكي|كيس|اكياس|سنه|سنين|سنوات|يوم|ايام|ساعه|ساعات|دقيقه|دقايق|شهور|اسبوع|مره|مرات|نفر|افراد|عيال|x\s*[0-9٠-٩])/;
@@ -34,7 +40,7 @@ const PRICE_TOKEN = /(^|\s)ب?\s?[0-9٠-٩][0-9٠-٩.,٫٬]*(\s|$)/;
  */
 export function bareMoneyLog(message: string): boolean {
   const m = normalize(message ?? "").trim();
-  if (!m || m.length > 80 || !PRICE_TOKEN.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m)) return false;
+  if (!m || m.length > 80 || !PRICE_TOKEN.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m) || REFUSAL_SHAPE.test(m)) return false;
   const words = m.split(/\s+/).filter((w) => !/^ب?[0-9٠-٩.,٫٬]+$/.test(w) && w !== "ب");
   return words.length >= 1 && words.length <= 6;
 }
@@ -42,7 +48,7 @@ export function bareMoneyLog(message: string): boolean {
 /** اللفة دي تستاهل محاولة إجبار log_transaction؟ [reply] = رد الموديل (أو رد الحارس). */
 export function wantsForcedLog(message: string, reply: string): boolean {
   const m = normalize(message ?? "");
-  if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m)) return false;
+  if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || REFUSAL_SHAPE.test(m)) return false;
   return MONEY_VERB.test(m) || bareMoneyLog(message) || REPLY_OFFERS_LOG.test(normalize(reply ?? ""));
 }
 
