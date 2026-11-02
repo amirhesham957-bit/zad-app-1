@@ -22,11 +22,28 @@ const QUESTION = /[؟?]|(^|\s)(ازاي|ازاى|ايه|اعمل|ينفع|هل|�
 /** فلوس مش مصروف (أو مش فلوس أصلاً): تذكير بساعة، تحويل، رسالة نصب، قرض أو سلفة، التزام شهري أو دين، ميزانية، مسح، رقم بالسالب. */
 const NOT_A_LOG = /(ذكرني|فكرني|الساعه|حول|حولي|ابعت|مسدج|مسج|رساله|كسبت|قرض|سلف|تقسيط|قسط|عليا|عليه|كل شهر|كل اول|شهريا|ميزاني|امسح|احذف|الغي|-\s*[0-9٠-٩])/;
 
+/** كمية أو مدة أو سن مش سعر: «رز 3 كيلو»، «ابني 7 سنين»، «اجازة 3 ايام». */
+const NOT_A_PRICE = /(كيلو|كيلوجرام|كجم|جرام|جم|لتر|علبه|علب|قطعه|قطع|حبه|حبات|كرتونه|كراتين|باكو|بواكي|كيس|اكياس|سنه|سنين|سنوات|يوم|ايام|ساعه|ساعات|دقيقه|دقايق|شهور|اسبوع|مره|مرات|نفر|افراد|عيال|x\s*[0-9٠-٩])/;
+/** رقم لوحده كتوكن: «80»، «ب 135»، «ب٢٧٫٥»، «14,500». */
+const PRICE_TOKEN = /(^|\s)ب?\s?[0-9٠-٩][0-9٠-٩.,٫٬]*(\s|$)/;
+
+/**
+ * «حلاقة 80»، «كتب المدرسة 1250»، «انبوبة البوتاجاز ب 200»: صنف ومبلغ وبس — من غير فعل. ده تسجيل مصروف.
+ * التقييم ٢/١١: الرسايل دي راحت لوكيل المخزن والبيت والعيلة بالكلمة («قهوة»، «انبوبة»، «المدرسة»)، وواحدة
+ * اتسجلت add_obligation. ٦ كلمات بالكتير، ومش سؤال ولا تحويل ولا كمية.
+ */
+export function bareMoneyLog(message: string): boolean {
+  const m = normalize(message ?? "").trim();
+  if (!m || m.length > 80 || !PRICE_TOKEN.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m)) return false;
+  const words = m.split(/\s+/).filter((w) => !/^ب?[0-9٠-٩.,٫٬]+$/.test(w) && w !== "ب");
+  return words.length >= 1 && words.length <= 6;
+}
+
 /** اللفة دي تستاهل محاولة إجبار log_transaction؟ [reply] = رد الموديل (أو رد الحارس). */
 export function wantsForcedLog(message: string, reply: string): boolean {
   const m = normalize(message ?? "");
   if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m)) return false;
-  return MONEY_VERB.test(m) || REPLY_OFFERS_LOG.test(normalize(reply ?? ""));
+  return MONEY_VERB.test(m) || bareMoneyLog(message) || REPLY_OFFERS_LOG.test(normalize(reply ?? ""));
 }
 
 /** الرد لو الموديل نادى الأداة من غير كلام. */

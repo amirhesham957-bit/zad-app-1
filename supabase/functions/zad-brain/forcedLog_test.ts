@@ -47,3 +47,28 @@ Deno.test("never a question, a transfer, a scam, a loan, an obligation, a delete
   assertEquals(wantsForcedLog("عشيت برا", offer), false);
   assertEquals(wantsForcedLog("الساعة 9 عندي ميعاد", "تمام هفكرك"), false);
 });
+
+Deno.test("item + amount and nothing else is a log — routed to finance, forced even when the reply only thanks (eval 2/11)", async () => {
+  const { bareMoneyLog } = await import("./forcedLog.ts");
+  const { routeSpecialists } = await import("./specialists.ts");
+  // التلاتة اللي راحوا للمخزن والبيت والعيلة ليلة ٢/١١، والردود اللي رجعت فعلاً.
+  const night: Array<[string, string]> = [
+    ["قهوة وكرواسون ب 135", "ابشر، بسجلك القهوة والكرواسون بـ 135 ريال. أعتمدها في المعاملات؟"],
+    ["انبوبة البوتاجاز ب 200", "أبشر، شكراً لتنبيهك بالسعر 👌"],
+    ["كتب المدرسة 1250", "أبشر، سجلت كتب المدرسة بـ ١٢٥𝟎 ريال 👌"],
+  ];
+  for (const [m, r] of night) {
+    assertEquals(bareMoneyLog(m), true, m);
+    assertEquals(wantsForcedLog(m, r), true, m);
+    assertEquals(routeSpecialists(m).primary, "finance", m);
+  }
+  for (const m of ["حلاقة 80", "عصير ب ٢٧٫٥", "هدية عيد ميلاد سارة 300"]) assertEquals(bareMoneyLog(m), true, m);
+  // كمية أو سن أو مدة أو سؤال أو التزام أو رسالة طويلة: مش تسجيل.
+  for (const m of [
+    "رز 3 كيلو", "عندي 2 علبة تونة", "ابني عنده 7 سنين", "اجازة 3 ايام", "بيض x2",
+    "كتب المدرسة بكام؟", "عليا إيجار 4000 كل أول شهر", "ذكرني الساعة 8 بالدوا",
+    "انا وولادي التلاتة رحنا النادي وقعدنا هناك لحد المغرب 300", "قهوة",
+  ]) assertEquals(bareMoneyLog(m), false, m);
+  // الكمية تفضل للمخزن.
+  assertEquals(routeSpecialists("رز 3 كيلو").primary === "finance", false);
+});

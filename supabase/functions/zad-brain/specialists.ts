@@ -9,6 +9,7 @@
 // - الأدوات نفسها بتتحقق في validators.ts زي ما هي — التوجيه ما بيغيرش صلاحيات.
 
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { bareMoneyLog } from "./forcedLog.ts";
 
 export type SpecialistId = "finance" | "pantry" | "pharmacy" | "family" | "home" | "general";
 
@@ -315,12 +316,15 @@ function scoreAll(message: string): Array<{ id: SpecialistId; score: number }> {
   const norm = normalize(message);
   // نية ميعاد/تذكير واضحة بتكسب التعادل لوكيل العيلة: «فكّريني أروح البنك» ميعاد، مش عملية فلوس.
   const appointmentBonus = APPOINTMENT_INTENT.test(norm) || WAKE_INTENT.test(norm) ? 1 : 0;
+  // «قهوة وكرواسون ب 135»، «كتب المدرسة 1250»: صنف ومبلغ = تسجيل مصروف، مهما الصنف شبه المخزن أو العيلة
+  // (التقييم ٢/١١: راحوا للمخزن والبيت والعيلة، وواحدة اتسجلت التزام). البونص أكبر من أي كلمتين.
+  const moneyBonus = bareMoneyLog(message) ? 3 : 0;
   return ORDER.map((id) => ({
     id,
     score: SPECIALISTS[id].keywords.reduce(
       (acc, kw) => acc + (norm.includes(normalize(kw)) ? 1 : 0),
       0,
-    ) + (id === "family" ? appointmentBonus : 0),
+    ) + (id === "family" ? appointmentBonus : 0) + (id === "finance" ? moneyBonus : 0),
   }));
 }
 
