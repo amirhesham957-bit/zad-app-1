@@ -773,10 +773,15 @@ export function dealSourceRow(source: DealSource): InlineKeyboardButton[] | null
 }
 
 /**
- * ZAD_PLAN 4.20: a picture for the deal. A YouTube deal shows its video's thumbnail (public, by the video's id). An
- * Instagram post's picture is never stored, so its link button carries it instead.
+ * ZAD_PLAN 4.20: a picture for the deal. A YouTube deal shows its video's thumbnail (public, by the video's id), and a
+ * flyer deal the flyer itself — only from Zad's own bucket ([flyerPrefix]). An Instagram post's picture is never stored,
+ * so its link button carries it instead.
  */
-export function dealPhotoUrl(source: DealSource): string | null {
+export function dealPhotoUrl(source: DealSource, flyerPrefix = ""): string | null {
+  if (source?.kind === "flyer" && typeof source.url === "string" && flyerPrefix && source.url.startsWith(flyerPrefix) &&
+    /^https:\/\/[^\s]{4,500}$/.test(source.url)) {
+    return source.url;
+  }
   if (source?.kind !== "youtube" || typeof source.url !== "string") return null;
   const id = /^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{6,20})$/.exec(source.url.trim())?.[1];
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
@@ -998,3 +1003,102 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
 export function pendingQuestionAnswered(executedTools: readonly string[]): boolean {
   return executedTools.some((t) => t === "set_transaction_category" || t === "update_transaction");
 }
+
+// ── نشرات المحلات من شات الأدمن (طلب المالك ٣/١١: «كل العروض والنشرات على بوت تليجرام بالصور مش الجيميل») ──
+
+/** بلاد أسواق زاد بالاسم أو بالكود، زي ما المالك ممكن يكتبها في كلام الصورة. */
+const FLYER_COUNTRY_WORDS: Record<string, string> = {
+  "السعوديه": "SA", "السعودية": "SA", "سعودي": "SA", "sa": "SA", "ksa": "SA",
+  "مصر": "EG", "eg": "EG", "الامارات": "AE", "الإمارات": "AE", "ae": "AE", "uae": "AE",
+  "الكويت": "KW", "kw": "KW", "قطر": "QA", "qa": "QA", "البحرين": "BH", "bh": "BH", "عمان": "OM", "عُمان": "OM", "om": "OM",
+  "الاردن": "JO", "الأردن": "JO", "jo": "JO",
+};
+
+const FLYER_FILLER = new Set(["نشره", "نشرة", "نشرات", "عروض", "عرض", "flyer", "offers", "-", "—", ":"]);
+
+/** «نشرة كيو السعودية» ⇒ المحل «كيو» والبلد SA. من غير اسم محل = null. */
+export function parseFlyerCaption(caption: string | null | undefined): { store: string; country: string | null } | null {
+  const words = String(caption ?? "").replace(/[«»"#]/g, " ").split(/\s+/).filter(Boolean);
+  let country: string | null = null;
+  const kept: string[] = [];
+  for (const w of words) {
+    const code = FLYER_COUNTRY_WORDS[w.toLowerCase()];
+    if (code && !country) { country = code; continue; }
+    if (FLYER_FILLER.has(w.toLowerCase())) continue;
+    kept.push(w);
+  }
+  const store = kept.join(" ").trim().slice(0, 60);
+  return store.length >= 2 ? { store, country } : null;
+}
+
+/** مفتاح اسم المحل: من غير «ال» ولا أشكال الألف والتاء المربوطة، زي zad_inventory_name_key. */
+export function flyerStoreKey(name: string): string {
+  return String(name ?? "").trim().toLowerCase().replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي")
+    .split(/\s+/).filter(Boolean).map((w) => (w.startsWith("ال") && w.length > 2 ? w.slice(2) : w)).join(" ");
+}
+
+export type FlyerStoreRow = { country: string; store: string; currency: string };
+
+/**
+ * المحل والبلد والعملة من قايمة محلات العروض (zad_deal_seed_stores). محل في أكتر من بلد (نون) من غير بلد في الكلام =
+ * «قولي البلد»؛ محل مش في القايمة بس البلد مكتوبة = بعملة البلد دي من القايمة.
+ */
+export function pickFlyerStore(
+  rows: readonly FlyerStoreRow[], parsed: { store: string; country: string | null },
+): FlyerStoreRow | { error: "ambiguous" | "unknown" } {
+  const key = flyerStoreKey(parsed.store);
+  const named = rows.filter((r) => flyerStoreKey(r.store) === key && (!parsed.country || r.country === parsed.country));
+  if (named.length === 1) return named[0];
+  if (named.length > 1) return { error: "ambiguous" };
+  const inCountry = parsed.country ? rows.find((r) => r.country === parsed.country) : undefined;
+  return inCountry ? { country: inCountry.country, store: parsed.store, currency: inCountry.currency } : { error: "unknown" };
+}
+
+/** عرض مقري من النشرة ⇒ zad_deal_put. ثقة ٠٫٧: نشرة المحل نفسه والمالك هو اللي بعتها. */
+export function flyerDealPayload(
+  target: FlyerStoreRow,
+  deal: { item_name: string; price: number; price_before: number | null; valid_until: string | null },
+  imageUrl: string,
+): Record<string, unknown> {
+  return {
+    country: target.country, city: "", store: target.store, item_name: deal.item_name, price: deal.price,
+    price_before: deal.price_before, currency: target.currency,
+    deal_kind: deal.price_before !== null ? "discount" : "price", valid_until: deal.valid_until,
+    source_kind: "flyer", source_url: imageUrl, confidence: 0.7,
+  };
+}
+
+/** الرد على المالك بعد ما النشرة اتقرت. */
+export function flyerReply(
+  store: string,
+  result: { read: boolean; put: number; refused: number; items: string[]; until: string | null },
+): string {
+  if (!result.read) return `معلش، ماقدرتش أقرا نشرة «${store}» دلوقتي — ابعتها تاني بعد شوية.`;
+  if (result.put === 0) {
+    return result.refused > 0
+      ? `قريت ${result.refused} عرض من نشرة «${store}» بس ولا واحد اتسجّل (سعر أو تاريخ مش مقبول).`
+      : `مالقيتش في الصورة دي عروض واضحة لـ«${store}» (صنف وسعره). جرّب صورة أوضح أو صفحة تانية من النشرة.`;
+  }
+  const shown = result.items.slice(0, 8).map((i) => `• ${i}`).join("\n");
+  const more = result.items.length > 8 ? `\n… و${result.items.length - 8} كمان` : "";
+  return `📰 نشرة «${store}»: سجّلت ${result.put} عرض${result.until ? ` لحد ${result.until}` : " (من غير تاريخ ⇒ ٧ أيام)"}:\n${shown}${more}` +
+    (result.refused > 0 ? `\n(و${result.refused} اترفضوا)` : "") +
+    "\n\nهتوصل العملاء اللي محتاجينها في تحية الصبح بصورة النشرة.";
+}
+
+/**
+ * الصورة دي نشرة ولا فاتورة؟ شات الأدمن بس. ولو شات الأدمن مربوط بحساب عميل (المالك حط شاته هو)، فواتيره لازم
+ * تفضل فواتير: النشرة ساعتها بس لما الكلام يبدأ بـ«نشرة» أو «عروض».
+ */
+export function isFlyerPhoto(chatId: number, adminChat: number | null, isCustomer: boolean, caption: string | null | undefined): boolean {
+  if (adminChat === null || chatId !== adminChat) return false;
+  return !isCustomer || /^\s*(نشر[هة]|نشرات|عروض)/.test(String(caption ?? ""));
+}
+
+// نصوص شات الأدمن: المالك بس بيشوفها، فمالهاش نسخ لهجات زي ردود العملاء (botDialect_test).
+
+/** الصورة ماتحفظتش في zad-flyers. */
+export const FLYER_SAVE_FAILED = "معلش، ماقدرتش أحفظ صورة النشرة — جرب تاني بعد شوية.";
+
+/** «نشرة» من غير اسم محل: إزاي تتبعت. */
+export const FLYER_HOW_TO = "ابعت صورة النشرة ومعاها اسم المحل في الكلام، زي: «كيو» أو «نشرة كارفور مصر». صفحة صفحة لو النشرة كذا صفحة.";

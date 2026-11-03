@@ -54,6 +54,7 @@ import {
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply,
+  isFlyerPhoto, parseFlyerCaption, pickFlyerStore, flyerDealPayload, flyerReply, FLYER_HOW_TO, FLYER_SAVE_FAILED, type FlyerStoreRow,
   learningKeyboard, parseLearningCallback, learningReply,
   memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
   habitTrialBlock, parseHabitTrialCallback, habitTrialReply, type HabitTrial,
@@ -1673,9 +1674,79 @@ bot.on("callback_query:data", async (ctx, next) => {
   ]);
 });
 
+/** Zad's public flyer bucket (migration 20261103200000) — the only pictures a deal may carry. */
+const FLYER_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/zad-flyers/`;
+
+/**
+ * نشرة محل من شات الأدمن (طلب المالك ٣/١١ بدل الإيميل في ٤.١٣): الصورة بتتحفظ في zad-flyers، وجيميناي بيقرا عروضها،
+ * وكل عرض بيدخل zad_deals بـ`flyer` ورابط الصورة — فتحية الصبح بتبعت النشرة نفسها للي محتاج الصنف. شات الأدمن بس:
+ * عميل بيبعت صورة = فاتورة زي ما هي، ومحدش غير المالك يقدر يدخّل عروض.
+ */
+async function handleFlyerPhoto(ctx: Context & { message: { photo: Array<{ file_id: string }>; caption?: string } }): Promise<void> {
+  const parsed = parseFlyerCaption(ctx.message.caption);
+  if (!parsed) {
+    await ctx.reply(FLYER_HOW_TO);
+    return;
+  }
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const { data: rows, error: rowsErr } = await sb.from("zad_deal_seed_stores").select("country,store,currency").eq("active", true);
+  if (rowsErr) console.error("[flyer] seed stores failed:", rowsErr.message);
+  const target = pickFlyerStore((rows ?? []) as FlyerStoreRow[], parsed);
+  if ("error" in target) {
+    await ctx.reply(target.error === "ambiguous"
+      ? `«${parsed.store}» موجود في أكتر من بلد — اكتب البلد كمان، زي: «${parsed.store} السعودية».`
+      : `مش عارف «${parsed.store}» في أي بلد — اكتب البلد كمان، زي: «${parsed.store} مصر».`);
+    return;
+  }
+  await ctx.replyWithChatAction("typing");
+  const sizes = ctx.message.photo;
+  const bytes = await downloadTelegramFileBytes(sizes[sizes.length - 1].file_id);
+  if (!bytes) {
+    await ctx.reply("معلش، مقدرتش أنزّل الصورة — جرب تاني.");
+    return;
+  }
+  const path = `${target.country}/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.jpg`;
+  const { error: upErr } = await sb.storage.from("zad-flyers").upload(path, new Uint8Array(bytes), { contentType: "image/jpeg" });
+  if (upErr) {
+    console.error("[flyer] upload failed:", upErr.message);
+    await ctx.reply(FLYER_SAVE_FAILED);
+    return;
+  }
+  const imageUrl = `${FLYER_PREFIX}${path}`;
+  const reply = await callCoreIntelligence<{ ok?: boolean; deals?: Array<{ item_name: string; price: number; price_before: number | null; valid_until: string | null }> }>(
+    "store_deals_flyer", { store: target.store, country: target.country, currency: target.currency, image_url: imageUrl, caption: ctx.message.caption ?? "" },
+  );
+  const deals = reply?.ok && Array.isArray(reply.deals) ? reply.deals : [];
+  let put = 0;
+  let refused = 0;
+  const items: string[] = [];
+  let until: string | null = null;
+  for (const deal of deals) {
+    const { data, error } = await sb.rpc("zad_deal_put", { p: flyerDealPayload(target, deal, imageUrl) });
+    if (!error && (data as { ok?: boolean } | null)?.ok) {
+      put++;
+      items.push(`${deal.item_name} بـ${deal.price}${deal.price_before ? ` بدل ${deal.price_before}` : ""}`);
+      if (deal.valid_until && (!until || deal.valid_until.slice(0, 10) > until)) until = deal.valid_until.slice(0, 10);
+    } else {
+      refused++;
+      if (error) console.error("[flyer] deal put failed:", error.message);
+    }
+  }
+  if (put === 0) {
+    const { error: rmErr } = await sb.storage.from("zad-flyers").remove([path]);
+    if (rmErr) console.error("[flyer] cleanup failed:", rmErr.message);
+  }
+  console.log(`[flyer] ${target.country} «${target.store}» read=${deals.length} put=${put} refused=${refused}`);
+  await ctx.reply(flyerReply(target.store, { read: !!reply?.ok, put, refused, items, until }));
+}
+
 bot.on("message:photo", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const userId = await resolveUserId(sb, ctx.chat.id);
+  if (isFlyerPhoto(ctx.chat.id, adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID")), !!userId, ctx.message.caption)) {
+    await handleFlyerPhoto(ctx);
+    return;
+  }
   if (!userId) {
     await ctx.reply("أهلاً! لو عندك كود ربط من تطبيق زاد ابعته كده: /start الكود");
     return;
@@ -2989,7 +3060,7 @@ Deno.serve(async (req: Request) => {
         const deal = (moment as { facts?: { taste_deal?: { item?: unknown; store?: unknown; source?: { kind?: unknown; url?: unknown } } } } | null)
           ?.facts?.taste_deal;
         dealSource.row = dealSourceRow(deal?.source);
-        dealSource.photo = dealPhotoUrl(deal?.source);
+        dealSource.photo = dealPhotoUrl(deal?.source, FLYER_PREFIX);
         dealSource.caption = `🏷️ ${String(deal?.item ?? "")}${deal?.store ? ` — ${String(deal.store)}` : ""}`;
       }
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)

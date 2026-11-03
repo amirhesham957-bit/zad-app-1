@@ -41,7 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import { instagramHashtagPosts, instagramProbe, storeHashtag, youtubeProbe, youtubeSearch } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
@@ -2841,6 +2841,37 @@ async function handle(req: Request): Promise<Response> {
           deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
         }
         return jsonResponse({ ok: true, deals, hits: found.items.length, posts: posts.length, read, tag, source: "instagram" });
+      }
+
+      // ──────────────────────────────────────────────
+      // STORE_DEALS_FLYER — a shop's flyer picture the owner sent the bot from the admin chat (owner's request
+      // 2026-11-03, instead of the newsletter inbox in ZAD_PLAN 4.13). Service role only: the bot stores the picture in
+      // the public zad-flyers bucket first, and every deal read here carries that picture's URL as its source.
+      // ──────────────────────────────────────────────
+      case "store_deals_flyer": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
+        if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
+        const imageUrl = typeof payload?.image_url === "string" ? payload.image_url : "";
+        if (!imageUrl.startsWith(`${supabaseUrl}/storage/v1/object/public/zad-flyers/`)) {
+          return jsonResponse({ ok: false, reason: "bad_image" }, 400);
+        }
+        const market = marketOf(payload?.country);
+        const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
+        const picture = await pictureAsDataUrl(imageUrl);
+        if (!picture) return jsonResponse({ ok: false, reason: "no_image" });
+        const caption = typeof payload?.caption === "string" ? payload.caption : "";
+        const { system, user } = flyerDealsPrompt(store, market.name, currency, caption, new Date().toISOString().slice(0, 10));
+        const answer = await callGeminiPool({
+          model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system,
+          content: [{ type: "image_url", image_url: { url: picture } }, { type: "text", text: user }],
+          temperature: 0.1, maxTokens: 3000, jsonMode: true, thinkingBudget: 0, timeoutMs: 45_000,
+          deadline: Date.now() + 50_000,
+        });
+        if (!answer.ok || !answer.content) return jsonResponse({ ok: false, reason: "no_model" });
+        const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+        const deals = readStoreDeals(parsed, [{ title: `نشرة ${store}`, url: imageUrl, snippet: "" }], currency, new Date());
+        return jsonResponse({ ok: true, deals, source: "flyer" });
       }
 
       // ──────────────────────────────────────────────
