@@ -116,3 +116,13 @@ Deno.test("instagram token: the exchange returns a new long-lived token and when
   const bad = await exchangeLongLivedToken("OLD_abcdefghijklmnopqrstuvwxyz", "app1", "sec1", now);
   assertEquals([bad.ok, bad.reason, bad.token], [false, "OAuthException/101", undefined]);
 });
+
+import { metaAppKeys } from "./socialSources.ts";
+
+Deno.test("meta app keys: found under any sensible name, META_ first, never the business account id", () => {
+  const k = metaAppKeys({ INSTAGRAM_APP_ID: "111", INSTAGRAM_APP_SECRET: "s1", INSTAGRAM_BUSINESS_ACCOUNT_ID: "999", INSTAGRAM_ACCESS_TOKEN: "t" });
+  assertEquals([k.id, k.secret, k.idName, k.secretName], ["111", "s1", "INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET"]);
+  assertEquals(metaAppKeys({ INSTA_ID: "7", INSTA_SECRET: "x", META_APP_ID: "8", META_APP_SECRET: "y" }).id, "8");
+  assertEquals(metaAppKeys({ FB_APP_ID: "5", FB_APP_SECRET: "z" }).secretName, "FB_APP_SECRET");
+  assertEquals(metaAppKeys({ INSTAGRAM_BUSINESS_ACCOUNT_ID: "999", META_APP_ID: " " }), { id: undefined, secret: undefined, idName: undefined, secretName: undefined });
+});

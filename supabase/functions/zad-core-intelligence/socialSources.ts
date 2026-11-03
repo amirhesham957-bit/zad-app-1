@@ -246,3 +246,16 @@ export async function exchangeLongLivedToken(
     return { ok: false, reason: String((e as Error)?.message ?? e).slice(0, 60) };
   }
 }
+
+/**
+ * مفاتيح تطبيق Meta بأي اسم معقول اتحط بيه في سوبابيز (META_APP_ID، FACEBOOK_APP_ID، INSTAGRAM_APP_ID، INSTA_ID…)،
+ * وMETA_ الأول. بيرجع الأسامي اللي لقاها عشان الفحص يقولها — الأسامي بس، عمر القيمة ما تطلع.
+ */
+const APP_PREFIX = "(META|FACEBOOK|FB|INSTAGRAM|INSTA|IG)";
+export function metaAppKeys(env: Record<string, string>): { id?: string; secret?: string; idName?: string; secretName?: string } {
+  const rank = (n: string) => ["META", "FACEBOOK", "FB", "INSTAGRAM", "INSTA", "IG"].findIndex((p) => n.toUpperCase().startsWith(p));
+  const pick = (re: RegExp) => Object.keys(env).filter((n) => re.test(n) && env[n]?.trim()).sort((a, b) => rank(a) - rank(b))[0];
+  const idName = pick(new RegExp(`^${APP_PREFIX}_?(APP_?)?(CLIENT_?)?ID$`, "i"));
+  const secretName = pick(new RegExp(`^${APP_PREFIX}_?(APP_?)?(CLIENT_?)?SECRET$`, "i"));
+  return { id: idName ? env[idName].trim() : undefined, secret: secretName ? env[secretName].trim() : undefined, idName, secretName };
+}
