@@ -399,3 +399,58 @@ Deno.test("paused sources: rows from a source the customers keep calling wrong a
   assertEquals(withoutPausedSources(rows, new Set(["youtube"])).map((r) => r.n), [1, 3]);
   assertEquals(withoutPausedSources(null, new Set()), []);
 });
+
+// ٤.٨: العرض الناري بيعدّي بالفئة كمان — البيت بيشتري جبنة، فـ١+١ على نوع جبنة تاني يتقال.
+import { boughtFamilies } from "./tasteDeals.ts";
+
+Deno.test("fire deal: rides on the category the house buys, not only the exact item", () => {
+  assertEquals(boughtFamilies(["جبنة بيضا دومتي", "زيت عافيه", "شوكولاته", "جبنه رومي"]), ["جبنه", "زيت"]);
+  const raw = storedDeals([
+    { store: "كيو", item_name: "جبنة رومي", price: 40, price_before: null, source_kind: "search", source_url: "https://q.example", valid_until: null, deal_kind: "multi_buy" },
+    { store: "كيو", item_name: "زبادي", price: 5, price_before: 20, source_kind: "search", source_url: "https://q.example", valid_until: null },
+  ]);
+  const fire = pickFireDeal(raw, ["جبنة بيضا دومتي"], [], new Set());
+  assertEquals([fire?.item, fire?.fire], ["جبنة رومي", true]);
+  // a house that only buys cheese is not offered yoghurt, however big the discount.
+  assertEquals(pickFireDeal(raw.slice(1), ["جبنة بيضا دومتي"], [], new Set()), null);
+  // never when money is tight.
+  assertEquals(pickFireDeal(raw, ["جبنة بيضا دومتي"], [], new Set(), [], true), null);
+});
+
+// ٤.١٥: المحل اللي قاله في الشات بيتعدّ من محلاته.
+import { statedStores } from "./tasteDeals.ts";
+
+Deno.test("stated stores: the shop the customer named counts as theirs; a rejected one does not", () => {
+  assertEquals(statedStores(["كيو", "من بنده مش العثيم", "كيو", "مش كارفور", ""]), ["كيو", "بنده"]);
+  const raw = storedDeals([
+    { store: "العثيم", item_name: "زيت عافية", price: 20, price_before: 30, source_kind: "search", source_url: "https://a.example", valid_until: null },
+    { store: "كيو", item_name: "زيت عافية", price: 25, price_before: 30, source_kind: "search", source_url: "https://q.example", valid_until: null },
+  ]);
+  assertEquals(pickDeal(raw, ["زيت"], statedStores(["كيو"]), new Set())?.store, "كيو");
+});
+
+// ٤.٧ + ٤.١٠: فرع عرض البحث من المحلات حوالين نقطته، و«معندناش عربية».
+import { nearbyStorePlaces, saysNoCar, withBranch } from "./tasteDeals.ts";
+
+Deno.test("branch: a deal with no coordinates takes the nearest branch of that shop around the customer", () => {
+  const places = nearbyStorePlaces({ stores: [
+    { name: "كيو ماركت - العليا", lat: 24.70, lon: 46.68 },
+    { name: "كيو ماركت - النخيل", lat: 24.75, lon: 46.62 },
+    { name: "بنده", lat: 24.71, lon: 46.69 },
+    { name: "x" },
+  ] });
+  assertEquals(places.length, 3);
+  const home = { lat: 24.69, lon: 46.68 };
+  const row = { store: "كيو ماركت", lat: null, lng: null };
+  assertEquals([withBranch(row, places, home).lat, withBranch(row, places, home).lng], [24.70, 46.68]);
+  // a receipt deal keeps its own point; no point or no matching shop = unchanged.
+  assertEquals(withBranch({ store: "كيو ماركت", lat: 1, lng: 2 }, places, home).lat, 1);
+  assertEquals(withBranch(row, places, null).lat, null);
+  assertEquals(withBranch({ store: "العثيم", lat: null, lng: null }, places, home).lat, null);
+});
+
+Deno.test("transport: «معندناش عربية» or getting around by bus means no car trip; having a car does not", () => {
+  for (const n of ["معندناش عربية", "مش عندنا عربية", "ماعندناش سيارة", "بنروح مواصلات", "بنطلب أوبر"]) assert(saysNoCar([n]), n);
+  for (const n of ["عندنا عربية", "عندنا سيارة وبنروح مشي ساعات", ""]) assert(!saysNoCar([n]), n);
+  assert(!saysNoCar([]));
+});

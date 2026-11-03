@@ -66,6 +66,11 @@ export function stapleGroup(word: string): number | undefined {
   return GROUP_OF.get(word);
 }
 
+/** أول كلمة في عيلة الأساسيات (بعد المفتاح) — اسم «الفئة» نفسها: «جبنه»، «زيت». */
+export function stapleHead(group: number): string | undefined {
+  return STAPLE_GROUPS[group]?.[0];
+}
+
 /** الكلمات اللي تفرق: من غير تغليف ولا أرقام. */
 export function meaningfulWords(name: string): string[] {
   return productNameKey(name).split(" ")
@@ -136,9 +141,24 @@ const sameWord = (a: string, b: string) => a === b || (GROUP_OF.has(a) && GROUP_
  *   - ومفيش في العرض كلمة أساسيات من عيلة تانية («لبن» قصاد «لبن زبادي» = لأ).
  * الشك = لأ: عرض غلط في تحية الصبح أوحش من يوم من غير عرض.
  */
+/**
+ * كلمات بتسمّي عيلة واحدة لما الاسم مافيهوش كلمة أساسيات (٤.٦): «نادك كامل الدسم» حليب، «الوليمة بسمتي» رز.
+ * «جبنة قليلة الدسم» فيها «جبنه» فالتلميح مابيشتغلش. أي كلمة تانية = شك، والشك = لأ.
+ */
+const FAMILY_HINTS = new Map<string, string>([
+  ["دسم", "حليب"],
+  ["بسمتي", "رز"],
+].map(([w, g]) => [productNameKey(w), productNameKey(g)]));
+
+function withFamilyHint(words: string[]): string[] {
+  if (words.some((w) => GROUP_OF.has(w))) return words;
+  const hint = words.map((w) => FAMILY_HINTS.get(w)).find((g) => g !== undefined);
+  return hint ? [...words, hint] : words;
+}
+
 export function offerMatchesNeed(need: string, offered: string): boolean {
   const want = nameWords(need);
-  const have = nameWords(offered);
+  const have = withFamilyHint(nameWords(offered));
   if (want.length === 0 || have.length === 0) return false;
   const covered = want.filter((w) => have.some((h) => sameWord(w, h)));
   if (want.some((w) => GROUP_OF.has(w) && !covered.includes(w))) return false;
