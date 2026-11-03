@@ -3,6 +3,7 @@
 --   psql < supabase/sql/tests/scratch_scaffold.sql
 --   psql < supabase/sql/tests/travel_from_location_scaffold.sql
 --   psql < supabase/migrations/20261103180000_travel_from_location.sql
+--   psql < supabase/migrations/20261103190000_travel_follows_market.sql
 --   psql < supabase/sql/tests/travel_from_location_test.sql
 --
 -- Raises on the first failed check; each passing one prints "ok:".
@@ -70,3 +71,12 @@ select pg_temp.check((select travel_country is null from public.zad_users where 
 -- 7. Customers cannot call the trigger function.
 select pg_temp.check(not has_function_privilege('authenticated', 'public.zad_users_travel_from_location()', 'execute'),
   'the trigger function is not a customer door');
+
+-- 8. (20261103190000) Switching the market to the country he is in ends the trip.
+\set w '''00000000-0000-0000-0000-0000000000c1'''
+insert into auth.users (id) values (:w) on conflict do nothing;
+insert into public.zad_users (id, currency, country) values (:w, 'SAR', 'SA');
+update public.zad_users set last_lat = 29.9, last_lon = 31.0 where id = :w;
+select pg_temp.check((select travel_country = 'EG' from public.zad_users where id = :w), 'abroad before the switch');
+update public.zad_users set country = 'EG', currency = 'EGP' where id = :w;
+select pg_temp.check((select travel_country is null from public.zad_users where id = :w), 'the market switch ends the trip');
