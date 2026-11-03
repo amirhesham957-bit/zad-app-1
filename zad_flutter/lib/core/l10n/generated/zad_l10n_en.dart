@@ -3606,4 +3606,447 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get familyChatReadingAllowMine => 'Let it read mine';
+
+  @override
+  String get profileTitle => 'My account';
+
+  @override
+  String get profileSectionBrain => 'Zad\'s brain';
+
+  @override
+  String get profileMemoryTitle => 'What Zad knows about me';
+
+  @override
+  String get profileMemorySubtitle =>
+      'Zad learns from your spending and pantry to help you — see what it learnt and delete anything';
+
+  @override
+  String get profileActionLogTitle => 'Zad\'s change log';
+
+  @override
+  String get profileActionLogSubtitle =>
+      'Everything Zad saved or changed for you';
+
+  @override
+  String get profileAlertsTitle => 'Smart assistant alerts';
+
+  @override
+  String get profileAlertsSubtitle => 'Choose which smart alerts you get';
+
+  @override
+  String get profileNewGoalTitle => 'New life goal';
+
+  @override
+  String get profileNewGoalSubtitle =>
+      'Let Zad keep you on track with a savings goal or a habit';
+
+  @override
+  String get profileSectionMeFamily => 'Me and my family';
+
+  @override
+  String get profileEditTitle => 'Edit profile';
+
+  @override
+  String get profileEditSubtitle => 'Your name or nickname';
+
+  @override
+  String get profileFamilyManageTitle => 'Manage family';
+
+  @override
+  String get profileFamilyManageSubtitle => 'Members and roles';
+
+  @override
+  String get profileRegionalTitle => 'Region';
+
+  @override
+  String get profileRegionalSubtitle => 'Country and currency';
+
+  @override
+  String get profileSectionMoney => 'My money';
+
+  @override
+  String get profileBudgetPaymentTitle => 'Budget and payment';
+
+  @override
+  String get profileBudgetPaymentSubtitle => 'Monthly budget and bank link';
+
+  @override
+  String get profileStatementTitle => 'Import a statement';
+
+  @override
+  String get profileStatementSubtitle =>
+      'Import a CSV statement from your bank';
+
+  @override
+  String get profileSectionMyZad => 'My Zad';
+
+  @override
+  String get profileAchievementsTitle => 'Achievements and ranks';
+
+  @override
+  String get profileAchievementsSubtitle =>
+      'Points and badges for sharing prices';
+
+  @override
+  String get profileSectionHelp => 'Help';
+
+  @override
+  String get profileSupportTitle => 'Support';
+
+  @override
+  String get profileSupportSubtitle =>
+      'A complaint or a problem? Talk to the support team';
+
+  @override
+  String get profileTermsTitle => 'Terms and conditions';
+
+  @override
+  String get profileTermsSubtitle => 'Terms of use and privacy';
+
+  @override
+  String get profileSectionAccount => 'Account';
+
+  @override
+  String get profileDeleteAccountTitle => 'Delete account';
+
+  @override
+  String get profileDeleteAccountSubtitle => 'Delete your account for good';
+
+  @override
+  String get profileSignOut => 'Sign out';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'Are you sure you want to delete your account for good? This can\'t be undone.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'Yes, delete my account';
+
+  @override
+  String get profileDeleteAccountFailed =>
+      'Couldn\'t delete the account. Check your connection and try again.';
+
+  @override
+  String get profileSaved => 'Changes saved';
+
+  @override
+  String get profileSaveFailedRetry =>
+      'Couldn\'t save the changes — check your connection and try again';
+
+  @override
+  String get profileEditName => 'Edit name';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileGoalName => 'Goal';
+
+  @override
+  String get profileGoalMetricEgypt =>
+      'How do we measure it? (e.g. 500 EGP a month)';
+
+  @override
+  String get profileGoalMetricOther =>
+      'How do we measure it? (e.g. 500 SAR a month)';
+
+  @override
+  String get profileGoalDeadline => 'Deadline (optional)';
+
+  @override
+  String get profileGoalDeadlineHint => 'e.g. 2026-12-31';
+
+  @override
+  String get profileSaveShort => 'Save';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileAliasLabel => 'Name / nickname';
+
+  @override
+  String get profileAliasHint => 'e.g. Dad';
+
+  @override
+  String get profileSaveChanges => 'Save changes';
+
+  @override
+  String get profileCountry => 'Country';
+
+  @override
+  String get profileCurrency => 'Currency';
+
+  @override
+  String get profileCurrencyAuto =>
+      'The currency follows the country you pick above';
+
+  @override
+  String profileChangeCountryTitle(String country) {
+    return 'Change the country to $country?';
+  }
+
+  @override
+  String profileCurrencyWillBe(String symbol, String code) {
+    return 'The currency will be $symbol ($code).';
+  }
+
+  @override
+  String profileLimitConverts(
+    String from,
+    String fromSymbol,
+    String to,
+    String toSymbol,
+  ) {
+    return 'Your monthly cap changes from $from $fromSymbol to $to $toSymbol, and so do your category budgets.';
+  }
+
+  @override
+  String get profileChange => 'Change';
+
+  @override
+  String get profileNoRate =>
+      'I don\'t know the exchange rate, so your monthly cap keeps the same number — check it after the change.';
+
+  @override
+  String get profileKidsRelockTitle => 'Lock kids mode again';
+
+  @override
+  String get profileKidsRelockSubtitle => 'Puts the phone back in kids mode';
+
+  @override
+  String get profileKidsModeTitle => 'Switch to kids mode';
+
+  @override
+  String get profileKidsModeSubtitle =>
+      'When you hand the phone to your child for a bit — leaving needs the PIN';
+
+  @override
+  String get profileNoFamily => 'You\'re not in a family yet.';
+
+  @override
+  String get profileFamilyInviteCode => 'Family invite code';
+
+  @override
+  String get profileFamilyMembers => 'Family members';
+
+  @override
+  String get profileRoleAdmin => 'Family admin';
+
+  @override
+  String get profileRoleChild => 'Child';
+
+  @override
+  String get profileRoleMember => 'Member';
+
+  @override
+  String get profileKickFailed =>
+      'Couldn\'t remove the member. Please try again later.';
+
+  @override
+  String get profileRoleChangeFailed =>
+      'Couldn\'t change the role. Please try again later.';
+
+  @override
+  String get profileMakeAdmin => 'Make admin';
+
+  @override
+  String get profileMakeMember => 'Make member';
+
+  @override
+  String get profileMakeChild => 'Set as child';
+
+  @override
+  String get profileKick => 'Remove member';
+
+  @override
+  String get profilePaymentBudgetTitle => 'Payment and budget';
+
+  @override
+  String get profileCurrentMonthlyBudget => 'Current monthly budget';
+
+  @override
+  String get profileDiagNoPermission =>
+      '❌ Permission not granted — turn it on in notification access settings';
+
+  @override
+  String get profileDiagNotBound =>
+      '❌ The service isn\'t connected — tap retry';
+
+  @override
+  String get profileDiagNoNotifications =>
+      '❌ The service is connected but gets no notifications — try requestRebind';
+
+  @override
+  String get profileDiagWaitingTest =>
+      '⏳ Waiting for the test notification to reach the listener...';
+
+  @override
+  String get profileDiagAllWorking => '✅ Bank reading works end to end';
+
+  @override
+  String get profileDiagListenerWorking =>
+      '✅ The listener caught it and filtering works';
+
+  @override
+  String get profileDiagUnknown => '❓ Unknown state — try again';
+
+  @override
+  String profileParseOk(String amount, String kind) {
+    return 'Parsed ✓\nAmount: $amount\nMerchant: —\nType: $kind';
+  }
+
+  @override
+  String get profileParseCompleted => 'Completed transaction';
+
+  @override
+  String get profileParsePending => 'Pending';
+
+  @override
+  String get profileParseInfo => 'Information';
+
+  @override
+  String get profileParseServer => 'Checked on the server';
+
+  @override
+  String get profileParseFailed =>
+      'Parsing failed — no parser matched the sample message';
+
+  @override
+  String get profileTest => 'Test';
+
+  @override
+  String get profileOk => 'OK';
+
+  @override
+  String get profileBankReading => 'Reading bank notifications';
+
+  @override
+  String get profileBankReadingHint =>
+      'The real state of the permissions — if one was revoked in system settings, you\'ll see it here right away';
+
+  @override
+  String get profileEnable => 'Turn on';
+
+  @override
+  String get profileReaderConnection => 'Reading service connection';
+
+  @override
+  String get profileRetry => 'Retry';
+
+  @override
+  String profileLastConnected(String time) {
+    return 'Last connected: $time';
+  }
+
+  @override
+  String get profileNeverConnected =>
+      'The service hasn\'t connected yet, even if the permission is on';
+
+  @override
+  String get profileNotificationsArriving => 'Notifications reaching the phone';
+
+  @override
+  String profileLastNotification(String time) {
+    return 'Last notification seen: $time';
+  }
+
+  @override
+  String get profileNoNotificationYet =>
+      'No notification has reached the service yet';
+
+  @override
+  String profileLastParsed(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Last transaction read: $minutes minutes ago',
+      one: 'Last transaction read: 1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get profileNothingParsed => 'No transaction read yet';
+
+  @override
+  String get profileSendTestNotification => 'Test — send a sample transaction';
+
+  @override
+  String get profileRejectedTitle => 'Recently rejected messages';
+
+  @override
+  String get profileRejectedHint =>
+      'If a bank or wallet isn\'t being recorded, the reason is here (an OTP, a pending message, or text that wasn\'t understood).';
+
+  @override
+  String profileStatusOn(String label) {
+    return '$label: on ✓';
+  }
+
+  @override
+  String profileStatusOff(String label) {
+    return '$label: off';
+  }
+
+  @override
+  String get profileVoiceAlertsTitle => '🔔 Spoken alerts and doses';
+
+  @override
+  String get profileVoiceAlertsDesc =>
+      'Zad reads medicine and appointment reminders aloud while the app is open; when it\'s closed, the notification has a “Listen to Zad” button.';
+
+  @override
+  String get profileLowStockTitle => 'Low-stock alerts';
+
+  @override
+  String get profileLowStockDesc =>
+      'A notification when a staple is about to run out';
+
+  @override
+  String get profileBudgetOverrunTitle => 'Budget alerts';
+
+  @override
+  String get profileBudgetOverrunDesc =>
+      'An early heads-up when much of the budget is spent';
+
+  @override
+  String get profileTasbihTitle => 'Tasbih reminder';
+
+  @override
+  String get profileTasbihDesc =>
+      'A gentle reminder at 5 pm if you haven\'t done your tasbih today';
+
+  @override
+  String get profileCompanionNapTitle =>
+      'Zad\'s companion calls me if I\'m away';
+
+  @override
+  String get profileCompanionNapDesc =>
+      'One notification after two days away, and one more two days later — never more than once a day, and never at night';
+
+  @override
+  String get profileCompanionCareTitle =>
+      'Zad\'s companion reminds me to feed it';
+
+  @override
+  String get profileCompanionCareDesc =>
+      'One notification when it\'s hungry or thirsty, pushed back each time you feed or water it — and never at night';
+
+  @override
+  String get profileLearnSleepTitle => 'Zad learns my sleep hours';
+
+  @override
+  String get profileLearnSleepDesc =>
+      'From when the screen locks and unlocks at night, so alerts don\'t come while you sleep. Only your bedtime and wake-up hour are saved — not the moments themselves. Doses and emergencies still come as usual.';
+
+  @override
+  String get profileNotificationSound => 'Notification sound';
+
+  @override
+  String get profileNotificationSoundHint =>
+      'Pick any notification sound on your phone instead of the default';
+
+  @override
+  String get profileDefaultSound => 'Default sound';
 }

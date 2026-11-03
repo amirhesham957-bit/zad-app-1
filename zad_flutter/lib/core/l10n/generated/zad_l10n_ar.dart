@@ -3505,4 +3505,429 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get familyChatReadingAllowMine => 'خلّيه يقرا رسايلي';
+
+  @override
+  String get profileTitle => 'حسابي';
+
+  @override
+  String get profileSectionBrain => 'عقل زاد';
+
+  @override
+  String get profileMemoryTitle => 'زاد عارف عني إيه';
+
+  @override
+  String get profileMemorySubtitle =>
+      'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف اللي اتعلمه وامسح أي حاجة';
+
+  @override
+  String get profileActionLogTitle => 'سجل تعديلات زاد';
+
+  @override
+  String get profileActionLogSubtitle => 'كل حاجة زاد سجّلها أو عدّلها لك';
+
+  @override
+  String get profileAlertsTitle => 'تنبيهات المساعد الذكي';
+
+  @override
+  String get profileAlertsSubtitle => 'التحكم في التنبيهات الذكية';
+
+  @override
+  String get profileNewGoalTitle => 'هدف حياة جديد';
+
+  @override
+  String get profileNewGoalSubtitle => 'خلّي زاد يتابع معاك هدف توفير أو عادة';
+
+  @override
+  String get profileSectionMeFamily => 'أنا وعيلتي';
+
+  @override
+  String get profileEditTitle => 'تعديل الملف الشخصي';
+
+  @override
+  String get profileEditSubtitle => 'الاسم أو اللقب';
+
+  @override
+  String get profileFamilyManageTitle => 'إدارة العائلة';
+
+  @override
+  String get profileFamilyManageSubtitle => 'الأعضاء والصلاحيات';
+
+  @override
+  String get profileRegionalTitle => 'الإعدادات الإقليمية';
+
+  @override
+  String get profileRegionalSubtitle => 'البلد والعملة';
+
+  @override
+  String get profileSectionMoney => 'فلوسي';
+
+  @override
+  String get profileBudgetPaymentTitle => 'الميزانية وطرق الدفع';
+
+  @override
+  String get profileBudgetPaymentSubtitle => 'الميزانية الشهرية والربط البنكي';
+
+  @override
+  String get profileStatementTitle => 'استيراد كشف حساب';
+
+  @override
+  String get profileStatementSubtitle => 'استورد كشف حساب CSV من البنك';
+
+  @override
+  String get profileSectionMyZad => 'زاد بتاعي';
+
+  @override
+  String get profileAchievementsTitle => 'الإنجازات والرتب';
+
+  @override
+  String get profileAchievementsSubtitle =>
+      'نقاطك وإنجازاتك من المساهمة بالأسعار';
+
+  @override
+  String get profileSectionHelp => 'المساعدة';
+
+  @override
+  String get profileSupportTitle => 'الدعم الفني';
+
+  @override
+  String get profileSupportSubtitle => 'شكوى أو مشكلة؟ كلّم فريق الدعم';
+
+  @override
+  String get profileTermsTitle => 'الشروط والأحكام';
+
+  @override
+  String get profileTermsSubtitle => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String get profileSectionAccount => 'الحساب';
+
+  @override
+  String get profileDeleteAccountTitle => 'حذف الحساب';
+
+  @override
+  String get profileDeleteAccountSubtitle => 'حذف الحساب نهائياً';
+
+  @override
+  String get profileSignOut => 'تسجيل الخروج';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'نعم، احذف الحساب';
+
+  @override
+  String get profileDeleteAccountFailed =>
+      'تعذر حذف الحساب. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String get profileSaved => 'تم حفظ التغييرات';
+
+  @override
+  String get profileSaveFailedRetry =>
+      'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى';
+
+  @override
+  String get profileEditName => 'تعديل الاسم';
+
+  @override
+  String get profileName => 'الاسم';
+
+  @override
+  String get profileGoalName => 'اسم الهدف';
+
+  @override
+  String get profileGoalMetricEgypt => 'إزاي بنقيسه؟ (مثال: 500 جنيه شهرياً)';
+
+  @override
+  String get profileGoalMetricOther => 'إزاي بنقيسه؟ (مثال: 500 ريال شهرياً)';
+
+  @override
+  String get profileGoalDeadline => 'الاستحقاق (اختياري)';
+
+  @override
+  String get profileGoalDeadlineHint => 'مثال: 2026-12-31';
+
+  @override
+  String get profileSaveShort => 'احفظ';
+
+  @override
+  String get profileEmail => 'البريد الإلكتروني';
+
+  @override
+  String get profileAliasLabel => 'الاسم / اللقب';
+
+  @override
+  String get profileAliasHint => 'مثال: الأب';
+
+  @override
+  String get profileSaveChanges => 'حفظ التغييرات';
+
+  @override
+  String get profileCountry => 'البلد';
+
+  @override
+  String get profileCurrency => 'العملة';
+
+  @override
+  String get profileCurrencyAuto =>
+      'العملة بتتحدد تلقائياً حسب البلد المختار فوق';
+
+  @override
+  String profileChangeCountryTitle(String country) {
+    return 'تغيّر البلد لـ $country؟';
+  }
+
+  @override
+  String profileCurrencyWillBe(String symbol, String code) {
+    return 'العملة هتبقى $symbol ($code).';
+  }
+
+  @override
+  String profileLimitConverts(
+    String from,
+    String fromSymbol,
+    String to,
+    String toSymbol,
+  ) {
+    return 'سقفك الشهري هيتحوّل من $from $fromSymbol إلى $to $toSymbol، وميزانيات الفئات كمان.';
+  }
+
+  @override
+  String get profileChange => 'غيّر';
+
+  @override
+  String get profileNoRate =>
+      'مش عارف سعر التحويل، فسقفك الشهري هيفضل بنفس الرقم — راجعه بعد التغيير.';
+
+  @override
+  String get profileKidsRelockTitle => 'إعادة قفل وضع الأطفال';
+
+  @override
+  String get profileKidsRelockSubtitle => 'يرجع الجهاز لوضع الأطفال';
+
+  @override
+  String get profileKidsModeTitle => 'تبديل لوضع الأطفال';
+
+  @override
+  String get profileKidsModeSubtitle =>
+      'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN';
+
+  @override
+  String get profileNoFamily => 'أنت لست منضماً لأي عائلة حالياً.';
+
+  @override
+  String get profileFamilyInviteCode => 'كود دعوة العائلة';
+
+  @override
+  String get profileFamilyMembers => 'أفراد العائلة';
+
+  @override
+  String get profileRoleAdmin => 'مدير العائلة';
+
+  @override
+  String get profileRoleChild => 'ابن/ابنة';
+
+  @override
+  String get profileRoleMember => 'عضو';
+
+  @override
+  String get profileKickFailed => 'فشل طرد العضو، يرجى المحاولة لاحقاً.';
+
+  @override
+  String get profileRoleChangeFailed =>
+      'فشل تغيير الصلاحية، يرجى المحاولة لاحقاً.';
+
+  @override
+  String get profileMakeAdmin => 'ترقية لمدير (Admin)';
+
+  @override
+  String get profileMakeMember => 'إرجاع لعضو (Member)';
+
+  @override
+  String get profileMakeChild => 'تعيين كابن/ابنة';
+
+  @override
+  String get profileKick => 'طرد العضو';
+
+  @override
+  String get profilePaymentBudgetTitle => 'طرق الدفع والميزانية';
+
+  @override
+  String get profileCurrentMonthlyBudget => 'الميزانية الشهرية الحالية';
+
+  @override
+  String get profileDiagNoPermission =>
+      '❌ الصلاحية مش ممنوحة — فعّلها من إعدادات الوصول للإشعارات';
+
+  @override
+  String get profileDiagNotBound => '❌ السيرفس مش مربوط — اضغط زر إعادة الربط';
+
+  @override
+  String get profileDiagNoNotifications =>
+      '❌ السيرفس مربوط بس مش بيوصلوش إشعارات — جرب requestRebind';
+
+  @override
+  String get profileDiagWaitingTest =>
+      '⏳ مستني وصول الإشعار التجريبي للمستمع...';
+
+  @override
+  String get profileDiagAllWorking => '✅ الرصد شغال بالكامل';
+
+  @override
+  String get profileDiagListenerWorking => '✅ المستمع مسكه والفلترة شغالة';
+
+  @override
+  String get profileDiagUnknown => '❓ حالة غير معروفة — جرب تاني';
+
+  @override
+  String profileParseOk(String amount, String kind) {
+    return 'نجح التحليل ✓\nالمبلغ: $amount\nالتاجر: —\nالنوع: $kind';
+  }
+
+  @override
+  String get profileParseCompleted => 'عملية مكتملة';
+
+  @override
+  String get profileParsePending => 'معلّقة';
+
+  @override
+  String get profileParseInfo => 'معلومة';
+
+  @override
+  String get profileParseServer => 'تتأكد على السيرفر';
+
+  @override
+  String get profileParseFailed =>
+      'فشل التحليل — الرسالة العينة معملهاش parser';
+
+  @override
+  String get profileTest => 'اختبار';
+
+  @override
+  String get profileOk => 'تمام';
+
+  @override
+  String get profileBankReading => 'قراءة إشعارات البنك';
+
+  @override
+  String get profileBankReadingHint =>
+      'الحالة الحقيقية للصلاحيات — لو الصلاحية متسحوبة من إعدادات النظام، هتلاقيها هنا فوراً';
+
+  @override
+  String get profileEnable => 'تفعيل';
+
+  @override
+  String get profileReaderConnection => 'اتصال خدمة القراءة';
+
+  @override
+  String get profileRetry => 'إعادة المحاولة';
+
+  @override
+  String profileLastConnected(String time) {
+    return 'آخر اتصال فعلي: $time';
+  }
+
+  @override
+  String get profileNeverConnected =>
+      'الخدمة لم تتصل بعد، حتى لو كانت الصلاحية مفعلة';
+
+  @override
+  String get profileNotificationsArriving => 'وصول إشعارات للجهاز';
+
+  @override
+  String profileLastNotification(String time) {
+    return 'آخر إشعار وصل للخدمة: $time';
+  }
+
+  @override
+  String get profileNoNotificationYet => 'لم يصل أي إشعار للخدمة بعد';
+
+  @override
+  String profileLastParsed(int minutes) {
+    return 'آخر عملية اتقرأت: قبل $minutes دقيقة';
+  }
+
+  @override
+  String get profileNothingParsed => 'لسه ما اتقرتش أي عملية';
+
+  @override
+  String get profileSendTestNotification =>
+      'اختبار — اختبار زاد — عملية تجريبية';
+
+  @override
+  String get profileRejectedTitle => 'آخر الرسائل اللي اترفضت';
+
+  @override
+  String get profileRejectedHint =>
+      'لو بنك أو محفظة معينة مش بتتسجل، هتلاقي السبب هنا (OTP، رسالة معلّقة، أو نص محصلش فهمه).';
+
+  @override
+  String profileStatusOn(String label) {
+    return '$label: شغالة ✓';
+  }
+
+  @override
+  String profileStatusOff(String label) {
+    return '$label: مش شغالة';
+  }
+
+  @override
+  String get profileVoiceAlertsTitle => '🔔 النطق الصوتي للإشعارات والجرعات';
+
+  @override
+  String get profileVoiceAlertsDesc =>
+      'زاد تقول تذكير الدوا والمواعيد بصوتها لما التطبيق مفتوح، ولما يكون مقفول الإشعار بيبقى عليه «اسمع زاد».';
+
+  @override
+  String get profileLowStockTitle => 'تنبيهات نقص المخزون';
+
+  @override
+  String get profileLowStockDesc => 'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي';
+
+  @override
+  String get profileBudgetOverrunTitle => 'تنبيهات تخطي الميزانية';
+
+  @override
+  String get profileBudgetOverrunDesc =>
+      'تحذير مبكر عند صرف جزء كبير من الميزانية';
+
+  @override
+  String get profileTasbihTitle => 'تذكير التسبيح';
+
+  @override
+  String get profileTasbihDesc =>
+      'تذكير لطيف الساعة 5 عصراً لو لسه ما سبّحتش النهاردة';
+
+  @override
+  String get profileCompanionNapTitle => 'رفيق زاد يناديني لو غبت';
+
+  @override
+  String get profileCompanionNapDesc =>
+      'إشعار واحد لو غبت يومين، وواحد كمان بعد يومين — مش أكتر من مرة في اليوم، ومش بالليل';
+
+  @override
+  String get profileCompanionCareTitle => 'رفيق زاد يفكّرني بأكله ومَيّته';
+
+  @override
+  String get profileCompanionCareDesc =>
+      'إشعار واحد لما يجوع أو يعطش، بيتأجّل كل ما تأكّله أو تسقيه — ومش بالليل';
+
+  @override
+  String get profileLearnSleepTitle => 'زاد يتعلّم مواعيد نومي';
+
+  @override
+  String get profileLearnSleepDesc =>
+      'من أوقات قفل وفتح الشاشة بالليل، عشان مايبعتش تنبيهات وإنت نايم. ساعة النوم وساعة الصحيان بس اللي بتتحفظ — مش اللحظات نفسها. الجرعات والطوارئ زي ما هي.';
+
+  @override
+  String get profileNotificationSound => 'صوت الإشعارات';
+
+  @override
+  String get profileNotificationSoundHint =>
+      'اختار من أي صوت إشعار مثبّت على جهازك بدل الصوت الافتراضي';
+
+  @override
+  String get profileDefaultSound => 'الصوت الافتراضي';
 }

@@ -2615,5 +2615,209 @@
     }
   },
   "familyChatReadingStopMine": "وقّف لرسايلي",
-  "familyChatReadingAllowMine": "خلّيه يقرا رسايلي"
+  "familyChatReadingAllowMine": "خلّيه يقرا رسايلي",
+  "profileTitle": "حسابي",
+  "profileSectionBrain": "عقل زاد",
+  "profileMemoryTitle": "زاد عارف عني إيه",
+  "profileMemorySubtitle": "زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف اللي اتعلمه وامسح أي حاجة",
+  "profileActionLogTitle": "سجل تعديلات زاد",
+  "profileActionLogSubtitle": "كل حاجة زاد سجّلها أو عدّلها لك",
+  "profileAlertsTitle": "تنبيهات المساعد الذكي",
+  "profileAlertsSubtitle": "التحكم في التنبيهات الذكية",
+  "profileNewGoalTitle": "هدف حياة جديد",
+  "profileNewGoalSubtitle": "خلّي زاد يتابع معاك هدف توفير أو عادة",
+  "profileSectionMeFamily": "أنا وعيلتي",
+  "profileEditTitle": "تعديل الملف الشخصي",
+  "profileEditSubtitle": "الاسم أو اللقب",
+  "profileFamilyManageTitle": "إدارة العائلة",
+  "profileFamilyManageSubtitle": "الأعضاء والصلاحيات",
+  "profileRegionalTitle": "الإعدادات الإقليمية",
+  "profileRegionalSubtitle": "البلد والعملة",
+  "profileSectionMoney": "فلوسي",
+  "profileBudgetPaymentTitle": "الميزانية وطرق الدفع",
+  "profileBudgetPaymentSubtitle": "الميزانية الشهرية والربط البنكي",
+  "profileStatementTitle": "استيراد كشف حساب",
+  "profileStatementSubtitle": "استورد كشف حساب CSV من البنك",
+  "profileSectionMyZad": "زاد بتاعي",
+  "profileAchievementsTitle": "الإنجازات والرتب",
+  "profileAchievementsSubtitle": "نقاطك وإنجازاتك من المساهمة بالأسعار",
+  "profileSectionHelp": "المساعدة",
+  "profileSupportTitle": "الدعم الفني",
+  "profileSupportSubtitle": "شكوى أو مشكلة؟ كلّم فريق الدعم",
+  "profileTermsTitle": "الشروط والأحكام",
+  "profileTermsSubtitle": "سياسة الاستخدام والخصوصية",
+  "profileSectionAccount": "الحساب",
+  "profileDeleteAccountTitle": "حذف الحساب",
+  "profileDeleteAccountSubtitle": "حذف الحساب نهائياً",
+  "profileSignOut": "تسجيل الخروج",
+  "profileDeleteAccountBody": "هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+  "profileDeleteAccountConfirm": "نعم، احذف الحساب",
+  "profileDeleteAccountFailed": "تعذر حذف الحساب. تحقق من الاتصال وحاول مرة أخرى.",
+  "profileSaved": "تم حفظ التغييرات",
+  "profileSaveFailedRetry": "تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى",
+  "profileEditName": "تعديل الاسم",
+  "profileName": "الاسم",
+  "profileGoalName": "اسم الهدف",
+  "profileGoalMetricEgypt": "إزاي بنقيسه؟ (مثال: 500 جنيه شهرياً)",
+  "profileGoalMetricOther": "إزاي بنقيسه؟ (مثال: 500 ريال شهرياً)",
+  "profileGoalDeadline": "الاستحقاق (اختياري)",
+  "profileGoalDeadlineHint": "مثال: 2026-12-31",
+  "profileSaveShort": "احفظ",
+  "profileEmail": "البريد الإلكتروني",
+  "profileAliasLabel": "الاسم / اللقب",
+  "profileAliasHint": "مثال: الأب",
+  "profileSaveChanges": "حفظ التغييرات",
+  "profileCountry": "البلد",
+  "profileCurrency": "العملة",
+  "profileCurrencyAuto": "العملة بتتحدد تلقائياً حسب البلد المختار فوق",
+  "profileChangeCountryTitle": "تغيّر البلد لـ {country}؟",
+  "@profileChangeCountryTitle": {
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCurrencyWillBe": "العملة هتبقى {symbol} ({code}).",
+  "@profileCurrencyWillBe": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "profileLimitConverts": "سقفك الشهري هيتحوّل من {from} {fromSymbol} إلى {to} {toSymbol}، وميزانيات الفئات كمان.",
+  "@profileLimitConverts": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "fromSymbol": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "toSymbol": {
+        "type": "String"
+      }
+    }
+  },
+  "profileChange": "غيّر",
+  "profileNoRate": "مش عارف سعر التحويل، فسقفك الشهري هيفضل بنفس الرقم — راجعه بعد التغيير.",
+  "profileKidsRelockTitle": "إعادة قفل وضع الأطفال",
+  "profileKidsRelockSubtitle": "يرجع الجهاز لوضع الأطفال",
+  "profileKidsModeTitle": "تبديل لوضع الأطفال",
+  "profileKidsModeSubtitle": "لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN",
+  "profileNoFamily": "أنت لست منضماً لأي عائلة حالياً.",
+  "profileFamilyInviteCode": "كود دعوة العائلة",
+  "profileFamilyMembers": "أفراد العائلة",
+  "profileRoleAdmin": "مدير العائلة",
+  "profileRoleChild": "ابن/ابنة",
+  "profileRoleMember": "عضو",
+  "profileKickFailed": "فشل طرد العضو، يرجى المحاولة لاحقاً.",
+  "profileRoleChangeFailed": "فشل تغيير الصلاحية، يرجى المحاولة لاحقاً.",
+  "profileMakeAdmin": "ترقية لمدير (Admin)",
+  "profileMakeMember": "إرجاع لعضو (Member)",
+  "profileMakeChild": "تعيين كابن/ابنة",
+  "profileKick": "طرد العضو",
+  "profilePaymentBudgetTitle": "طرق الدفع والميزانية",
+  "profileCurrentMonthlyBudget": "الميزانية الشهرية الحالية",
+  "profileDiagNoPermission": "❌ الصلاحية مش ممنوحة — فعّلها من إعدادات الوصول للإشعارات",
+  "profileDiagNotBound": "❌ السيرفس مش مربوط — اضغط زر إعادة الربط",
+  "profileDiagNoNotifications": "❌ السيرفس مربوط بس مش بيوصلوش إشعارات — جرب requestRebind",
+  "profileDiagWaitingTest": "⏳ مستني وصول الإشعار التجريبي للمستمع...",
+  "profileDiagAllWorking": "✅ الرصد شغال بالكامل",
+  "profileDiagListenerWorking": "✅ المستمع مسكه والفلترة شغالة",
+  "profileDiagUnknown": "❓ حالة غير معروفة — جرب تاني",
+  "profileParseOk": "نجح التحليل ✓\nالمبلغ: {amount}\nالتاجر: —\nالنوع: {kind}",
+  "@profileParseOk": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "profileParseCompleted": "عملية مكتملة",
+  "profileParsePending": "معلّقة",
+  "profileParseInfo": "معلومة",
+  "profileParseServer": "تتأكد على السيرفر",
+  "profileParseFailed": "فشل التحليل — الرسالة العينة معملهاش parser",
+  "profileTest": "اختبار",
+  "profileOk": "تمام",
+  "profileBankReading": "قراءة إشعارات البنك",
+  "profileBankReadingHint": "الحالة الحقيقية للصلاحيات — لو الصلاحية متسحوبة من إعدادات النظام، هتلاقيها هنا فوراً",
+  "profileEnable": "تفعيل",
+  "profileReaderConnection": "اتصال خدمة القراءة",
+  "profileRetry": "إعادة المحاولة",
+  "profileLastConnected": "آخر اتصال فعلي: {time}",
+  "@profileLastConnected": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNeverConnected": "الخدمة لم تتصل بعد، حتى لو كانت الصلاحية مفعلة",
+  "profileNotificationsArriving": "وصول إشعارات للجهاز",
+  "profileLastNotification": "آخر إشعار وصل للخدمة: {time}",
+  "@profileLastNotification": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "profileNoNotificationYet": "لم يصل أي إشعار للخدمة بعد",
+  "profileLastParsed": "آخر عملية اتقرأت: قبل {minutes} دقيقة",
+  "@profileLastParsed": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "profileNothingParsed": "لسه ما اتقرتش أي عملية",
+  "profileSendTestNotification": "اختبار — اختبار زاد — عملية تجريبية",
+  "profileRejectedTitle": "آخر الرسائل اللي اترفضت",
+  "profileRejectedHint": "لو بنك أو محفظة معينة مش بتتسجل، هتلاقي السبب هنا (OTP، رسالة معلّقة، أو نص محصلش فهمه).",
+  "profileStatusOn": "{label}: شغالة ✓",
+  "@profileStatusOn": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "profileStatusOff": "{label}: مش شغالة",
+  "@profileStatusOff": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "profileVoiceAlertsTitle": "🔔 النطق الصوتي للإشعارات والجرعات",
+  "profileVoiceAlertsDesc": "زاد تقول تذكير الدوا والمواعيد بصوتها لما التطبيق مفتوح، ولما يكون مقفول الإشعار بيبقى عليه «اسمع زاد».",
+  "profileLowStockTitle": "تنبيهات نقص المخزون",
+  "profileLowStockDesc": "يرسل إشعاراً عند اقتراب نفاذ منتج أساسي",
+  "profileBudgetOverrunTitle": "تنبيهات تخطي الميزانية",
+  "profileBudgetOverrunDesc": "تحذير مبكر عند صرف جزء كبير من الميزانية",
+  "profileTasbihTitle": "تذكير التسبيح",
+  "profileTasbihDesc": "تذكير لطيف الساعة 5 عصراً لو لسه ما سبّحتش النهاردة",
+  "profileCompanionNapTitle": "رفيق زاد يناديني لو غبت",
+  "profileCompanionNapDesc": "إشعار واحد لو غبت يومين، وواحد كمان بعد يومين — مش أكتر من مرة في اليوم، ومش بالليل",
+  "profileCompanionCareTitle": "رفيق زاد يفكّرني بأكله ومَيّته",
+  "profileCompanionCareDesc": "إشعار واحد لما يجوع أو يعطش، بيتأجّل كل ما تأكّله أو تسقيه — ومش بالليل",
+  "profileLearnSleepTitle": "زاد يتعلّم مواعيد نومي",
+  "profileLearnSleepDesc": "من أوقات قفل وفتح الشاشة بالليل، عشان مايبعتش تنبيهات وإنت نايم. ساعة النوم وساعة الصحيان بس اللي بتتحفظ — مش اللحظات نفسها. الجرعات والطوارئ زي ما هي.",
+  "profileNotificationSound": "صوت الإشعارات",
+  "profileNotificationSoundHint": "اختار من أي صوت إشعار مثبّت على جهازك بدل الصوت الافتراضي",
+  "profileDefaultSound": "الصوت الافتراضي"
 }

@@ -6180,6 +6180,767 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'خلّيه يقرا رسايلي'**
   String get familyChatReadingAllowMine;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابي'**
+  String get profileTitle;
+
+  /// No description provided for @profileSectionBrain.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقل زاد'**
+  String get profileSectionBrain;
+
+  /// No description provided for @profileMemoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد عارف عني إيه'**
+  String get profileMemoryTitle;
+
+  /// No description provided for @profileMemorySubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف اللي اتعلمه وامسح أي حاجة'**
+  String get profileMemorySubtitle;
+
+  /// No description provided for @profileActionLogTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل تعديلات زاد'**
+  String get profileActionLogTitle;
+
+  /// No description provided for @profileActionLogSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حاجة زاد سجّلها أو عدّلها لك'**
+  String get profileActionLogSubtitle;
+
+  /// No description provided for @profileAlertsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات المساعد الذكي'**
+  String get profileAlertsTitle;
+
+  /// No description provided for @profileAlertsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحكم في التنبيهات الذكية'**
+  String get profileAlertsSubtitle;
+
+  /// No description provided for @profileNewGoalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف حياة جديد'**
+  String get profileNewGoalTitle;
+
+  /// No description provided for @profileNewGoalSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي زاد يتابع معاك هدف توفير أو عادة'**
+  String get profileNewGoalSubtitle;
+
+  /// No description provided for @profileSectionMeFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا وعيلتي'**
+  String get profileSectionMeFamily;
+
+  /// No description provided for @profileEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الملف الشخصي'**
+  String get profileEditTitle;
+
+  /// No description provided for @profileEditSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم أو اللقب'**
+  String get profileEditSubtitle;
+
+  /// No description provided for @profileFamilyManageTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة العائلة'**
+  String get profileFamilyManageTitle;
+
+  /// No description provided for @profileFamilyManageSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء والصلاحيات'**
+  String get profileFamilyManageSubtitle;
+
+  /// No description provided for @profileRegionalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات الإقليمية'**
+  String get profileRegionalTitle;
+
+  /// No description provided for @profileRegionalSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد والعملة'**
+  String get profileRegionalSubtitle;
+
+  /// No description provided for @profileSectionMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسي'**
+  String get profileSectionMoney;
+
+  /// No description provided for @profileBudgetPaymentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية وطرق الدفع'**
+  String get profileBudgetPaymentTitle;
+
+  /// No description provided for @profileBudgetPaymentSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية والربط البنكي'**
+  String get profileBudgetPaymentSubtitle;
+
+  /// No description provided for @profileStatementTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد كشف حساب'**
+  String get profileStatementTitle;
+
+  /// No description provided for @profileStatementSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استورد كشف حساب CSV من البنك'**
+  String get profileStatementSubtitle;
+
+  /// No description provided for @profileSectionMyZad.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بتاعي'**
+  String get profileSectionMyZad;
+
+  /// No description provided for @profileAchievementsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات والرتب'**
+  String get profileAchievementsTitle;
+
+  /// No description provided for @profileAchievementsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاطك وإنجازاتك من المساهمة بالأسعار'**
+  String get profileAchievementsSubtitle;
+
+  /// No description provided for @profileSectionHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعدة'**
+  String get profileSectionHelp;
+
+  /// No description provided for @profileSupportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدعم الفني'**
+  String get profileSupportTitle;
+
+  /// No description provided for @profileSupportSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكوى أو مشكلة؟ كلّم فريق الدعم'**
+  String get profileSupportSubtitle;
+
+  /// No description provided for @profileTermsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والأحكام'**
+  String get profileTermsTitle;
+
+  /// No description provided for @profileTermsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الاستخدام والخصوصية'**
+  String get profileTermsSubtitle;
+
+  /// No description provided for @profileSectionAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get profileSectionAccount;
+
+  /// No description provided for @profileDeleteAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get profileDeleteAccountTitle;
+
+  /// No description provided for @profileDeleteAccountSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب نهائياً'**
+  String get profileDeleteAccountSubtitle;
+
+  /// No description provided for @profileSignOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج'**
+  String get profileSignOut;
+
+  /// No description provided for @profileDeleteAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'**
+  String get profileDeleteAccountBody;
+
+  /// No description provided for @profileDeleteAccountConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'نعم، احذف الحساب'**
+  String get profileDeleteAccountConfirm;
+
+  /// No description provided for @profileDeleteAccountFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حذف الحساب. تحقق من الاتصال وحاول مرة أخرى.'**
+  String get profileDeleteAccountFailed;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ التغييرات'**
+  String get profileSaved;
+
+  /// No description provided for @profileSaveFailedRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى'**
+  String get profileSaveFailedRetry;
+
+  /// No description provided for @profileEditName.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الاسم'**
+  String get profileEditName;
+
+  /// No description provided for @profileName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get profileName;
+
+  /// No description provided for @profileGoalName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الهدف'**
+  String get profileGoalName;
+
+  /// No description provided for @profileGoalMetricEgypt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي بنقيسه؟ (مثال: 500 جنيه شهرياً)'**
+  String get profileGoalMetricEgypt;
+
+  /// No description provided for @profileGoalMetricOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي بنقيسه؟ (مثال: 500 ريال شهرياً)'**
+  String get profileGoalMetricOther;
+
+  /// No description provided for @profileGoalDeadline.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستحقاق (اختياري)'**
+  String get profileGoalDeadline;
+
+  /// No description provided for @profileGoalDeadlineHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: 2026-12-31'**
+  String get profileGoalDeadlineHint;
+
+  /// No description provided for @profileSaveShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get profileSaveShort;
+
+  /// No description provided for @profileEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد الإلكتروني'**
+  String get profileEmail;
+
+  /// No description provided for @profileAliasLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم / اللقب'**
+  String get profileAliasLabel;
+
+  /// No description provided for @profileAliasHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: الأب'**
+  String get profileAliasHint;
+
+  /// No description provided for @profileSaveChanges.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التغييرات'**
+  String get profileSaveChanges;
+
+  /// No description provided for @profileCountry.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد'**
+  String get profileCountry;
+
+  /// No description provided for @profileCurrency.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة'**
+  String get profileCurrency;
+
+  /// No description provided for @profileCurrencyAuto.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة بتتحدد تلقائياً حسب البلد المختار فوق'**
+  String get profileCurrencyAuto;
+
+  /// No description provided for @profileChangeCountryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيّر البلد لـ {country}؟'**
+  String profileChangeCountryTitle(String country);
+
+  /// No description provided for @profileCurrencyWillBe.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة هتبقى {symbol} ({code}).'**
+  String profileCurrencyWillBe(String symbol, String code);
+
+  /// No description provided for @profileLimitConverts.
+  ///
+  /// In ar, this message translates to:
+  /// **'سقفك الشهري هيتحوّل من {from} {fromSymbol} إلى {to} {toSymbol}، وميزانيات الفئات كمان.'**
+  String profileLimitConverts(
+    String from,
+    String fromSymbol,
+    String to,
+    String toSymbol,
+  );
+
+  /// No description provided for @profileChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'غيّر'**
+  String get profileChange;
+
+  /// No description provided for @profileNoRate.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش عارف سعر التحويل، فسقفك الشهري هيفضل بنفس الرقم — راجعه بعد التغيير.'**
+  String get profileNoRate;
+
+  /// No description provided for @profileKidsRelockTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة قفل وضع الأطفال'**
+  String get profileKidsRelockTitle;
+
+  /// No description provided for @profileKidsRelockSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجع الجهاز لوضع الأطفال'**
+  String get profileKidsRelockSubtitle;
+
+  /// No description provided for @profileKidsModeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبديل لوضع الأطفال'**
+  String get profileKidsModeTitle;
+
+  /// No description provided for @profileKidsModeSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN'**
+  String get profileKidsModeSubtitle;
+
+  /// No description provided for @profileNoFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت لست منضماً لأي عائلة حالياً.'**
+  String get profileNoFamily;
+
+  /// No description provided for @profileFamilyInviteCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود دعوة العائلة'**
+  String get profileFamilyInviteCode;
+
+  /// No description provided for @profileFamilyMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفراد العائلة'**
+  String get profileFamilyMembers;
+
+  /// No description provided for @profileRoleAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدير العائلة'**
+  String get profileRoleAdmin;
+
+  /// No description provided for @profileRoleChild.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابن/ابنة'**
+  String get profileRoleChild;
+
+  /// No description provided for @profileRoleMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'عضو'**
+  String get profileRoleMember;
+
+  /// No description provided for @profileKickFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل طرد العضو، يرجى المحاولة لاحقاً.'**
+  String get profileKickFailed;
+
+  /// No description provided for @profileRoleChangeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل تغيير الصلاحية، يرجى المحاولة لاحقاً.'**
+  String get profileRoleChangeFailed;
+
+  /// No description provided for @profileMakeAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترقية لمدير (Admin)'**
+  String get profileMakeAdmin;
+
+  /// No description provided for @profileMakeMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع لعضو (Member)'**
+  String get profileMakeMember;
+
+  /// No description provided for @profileMakeChild.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين كابن/ابنة'**
+  String get profileMakeChild;
+
+  /// No description provided for @profileKick.
+  ///
+  /// In ar, this message translates to:
+  /// **'طرد العضو'**
+  String get profileKick;
+
+  /// No description provided for @profilePaymentBudgetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طرق الدفع والميزانية'**
+  String get profilePaymentBudgetTitle;
+
+  /// No description provided for @profileCurrentMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية الحالية'**
+  String get profileCurrentMonthlyBudget;
+
+  /// No description provided for @profileDiagNoPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ الصلاحية مش ممنوحة — فعّلها من إعدادات الوصول للإشعارات'**
+  String get profileDiagNoPermission;
+
+  /// No description provided for @profileDiagNotBound.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ السيرفس مش مربوط — اضغط زر إعادة الربط'**
+  String get profileDiagNotBound;
+
+  /// No description provided for @profileDiagNoNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ السيرفس مربوط بس مش بيوصلوش إشعارات — جرب requestRebind'**
+  String get profileDiagNoNotifications;
+
+  /// No description provided for @profileDiagWaitingTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ مستني وصول الإشعار التجريبي للمستمع...'**
+  String get profileDiagWaitingTest;
+
+  /// No description provided for @profileDiagAllWorking.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ الرصد شغال بالكامل'**
+  String get profileDiagAllWorking;
+
+  /// No description provided for @profileDiagListenerWorking.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ المستمع مسكه والفلترة شغالة'**
+  String get profileDiagListenerWorking;
+
+  /// No description provided for @profileDiagUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'❓ حالة غير معروفة — جرب تاني'**
+  String get profileDiagUnknown;
+
+  /// No description provided for @profileParseOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجح التحليل ✓\nالمبلغ: {amount}\nالتاجر: —\nالنوع: {kind}'**
+  String profileParseOk(String amount, String kind);
+
+  /// No description provided for @profileParseCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملية مكتملة'**
+  String get profileParseCompleted;
+
+  /// No description provided for @profileParsePending.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلّقة'**
+  String get profileParsePending;
+
+  /// No description provided for @profileParseInfo.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلومة'**
+  String get profileParseInfo;
+
+  /// No description provided for @profileParseServer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتأكد على السيرفر'**
+  String get profileParseServer;
+
+  /// No description provided for @profileParseFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل التحليل — الرسالة العينة معملهاش parser'**
+  String get profileParseFailed;
+
+  /// No description provided for @profileTest.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار'**
+  String get profileTest;
+
+  /// No description provided for @profileOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام'**
+  String get profileOk;
+
+  /// No description provided for @profileBankReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة إشعارات البنك'**
+  String get profileBankReading;
+
+  /// No description provided for @profileBankReadingHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة الحقيقية للصلاحيات — لو الصلاحية متسحوبة من إعدادات النظام، هتلاقيها هنا فوراً'**
+  String get profileBankReadingHint;
+
+  /// No description provided for @profileEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get profileEnable;
+
+  /// No description provided for @profileReaderConnection.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصال خدمة القراءة'**
+  String get profileReaderConnection;
+
+  /// No description provided for @profileRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get profileRetry;
+
+  /// No description provided for @profileLastConnected.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر اتصال فعلي: {time}'**
+  String profileLastConnected(String time);
+
+  /// No description provided for @profileNeverConnected.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة لم تتصل بعد، حتى لو كانت الصلاحية مفعلة'**
+  String get profileNeverConnected;
+
+  /// No description provided for @profileNotificationsArriving.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصول إشعارات للجهاز'**
+  String get profileNotificationsArriving;
+
+  /// No description provided for @profileLastNotification.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر إشعار وصل للخدمة: {time}'**
+  String profileLastNotification(String time);
+
+  /// No description provided for @profileNoNotificationYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يصل أي إشعار للخدمة بعد'**
+  String get profileNoNotificationYet;
+
+  /// No description provided for @profileLastParsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر عملية اتقرأت: قبل {minutes} دقيقة'**
+  String profileLastParsed(int minutes);
+
+  /// No description provided for @profileNothingParsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما اتقرتش أي عملية'**
+  String get profileNothingParsed;
+
+  /// No description provided for @profileSendTestNotification.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار — اختبار زاد — عملية تجريبية'**
+  String get profileSendTestNotification;
+
+  /// No description provided for @profileRejectedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر الرسائل اللي اترفضت'**
+  String get profileRejectedTitle;
+
+  /// No description provided for @profileRejectedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو بنك أو محفظة معينة مش بتتسجل، هتلاقي السبب هنا (OTP، رسالة معلّقة، أو نص محصلش فهمه).'**
+  String get profileRejectedHint;
+
+  /// No description provided for @profileStatusOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'{label}: شغالة ✓'**
+  String profileStatusOn(String label);
+
+  /// No description provided for @profileStatusOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'{label}: مش شغالة'**
+  String profileStatusOff(String label);
+
+  /// No description provided for @profileVoiceAlertsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔔 النطق الصوتي للإشعارات والجرعات'**
+  String get profileVoiceAlertsTitle;
+
+  /// No description provided for @profileVoiceAlertsDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد تقول تذكير الدوا والمواعيد بصوتها لما التطبيق مفتوح، ولما يكون مقفول الإشعار بيبقى عليه «اسمع زاد».'**
+  String get profileVoiceAlertsDesc;
+
+  /// No description provided for @profileLowStockTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات نقص المخزون'**
+  String get profileLowStockTitle;
+
+  /// No description provided for @profileLowStockDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي'**
+  String get profileLowStockDesc;
+
+  /// No description provided for @profileBudgetOverrunTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات تخطي الميزانية'**
+  String get profileBudgetOverrunTitle;
+
+  /// No description provided for @profileBudgetOverrunDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحذير مبكر عند صرف جزء كبير من الميزانية'**
+  String get profileBudgetOverrunDesc;
+
+  /// No description provided for @profileTasbihTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير التسبيح'**
+  String get profileTasbihTitle;
+
+  /// No description provided for @profileTasbihDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير لطيف الساعة 5 عصراً لو لسه ما سبّحتش النهاردة'**
+  String get profileTasbihDesc;
+
+  /// No description provided for @profileCompanionNapTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد يناديني لو غبت'**
+  String get profileCompanionNapTitle;
+
+  /// No description provided for @profileCompanionNapDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعار واحد لو غبت يومين، وواحد كمان بعد يومين — مش أكتر من مرة في اليوم، ومش بالليل'**
+  String get profileCompanionNapDesc;
+
+  /// No description provided for @profileCompanionCareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد يفكّرني بأكله ومَيّته'**
+  String get profileCompanionCareTitle;
+
+  /// No description provided for @profileCompanionCareDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعار واحد لما يجوع أو يعطش، بيتأجّل كل ما تأكّله أو تسقيه — ومش بالليل'**
+  String get profileCompanionCareDesc;
+
+  /// No description provided for @profileLearnSleepTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يتعلّم مواعيد نومي'**
+  String get profileLearnSleepTitle;
+
+  /// No description provided for @profileLearnSleepDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'من أوقات قفل وفتح الشاشة بالليل، عشان مايبعتش تنبيهات وإنت نايم. ساعة النوم وساعة الصحيان بس اللي بتتحفظ — مش اللحظات نفسها. الجرعات والطوارئ زي ما هي.'**
+  String get profileLearnSleepDesc;
+
+  /// No description provided for @profileNotificationSound.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوت الإشعارات'**
+  String get profileNotificationSound;
+
+  /// No description provided for @profileNotificationSoundHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار من أي صوت إشعار مثبّت على جهازك بدل الصوت الافتراضي'**
+  String get profileNotificationSoundHint;
+
+  /// No description provided for @profileDefaultSound.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت الافتراضي'**
+  String get profileDefaultSound;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

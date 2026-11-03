@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('حسابي')),
+        appBar: AppBar(title: Text(context.l10n.profileTitle)),
         body: RefreshIndicator(
           onRefresh: ref.read(profileControllerProvider.notifier).refresh,
           child: ListView(
@@ -68,53 +68,51 @@ class ProfileScreen extends ConsumerWidget {
               // the smart-analysis switch and what Zad knows used to sit at the
               // bottom of one sixteen-row «الإعدادات» list (owner: «التفعيلات
               // مستخبية جوه البروفايل», 2026-09-30).
-              const _SectionTitle('عقل زاد'),
+              _SectionTitle(context.l10n.profileSectionBrain),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.memory,
-                    title: 'زاد عارف عني إيه',
+                    title: context.l10n.profileMemoryTitle,
                     // «التحليل الذكي للسلوك» was a switch that saved a flag
                     // nothing read (owner: «التفعيلات وهمية», 2026-10-01).
                     // Zad analyses to help either way; this is where the
                     // customer sees what it learnt and deletes any of it.
-                    subtitle:
-                        'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف '
-                        'اللي اتعلمه وامسح أي حاجة',
+                    subtitle: context.l10n.profileMemorySubtitle,
                     onTap: () =>
                         unawaited(ZadScreens.showMemoryScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.actionLog,
-                    title: 'سجل تعديلات زاد',
-                    subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
+                    title: context.l10n.profileActionLogTitle,
+                    subtitle: context.l10n.profileActionLogSubtitle,
                     onTap: () =>
                         unawaited(ZadScreens.showAgentActionLog(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.notifications,
-                    title: 'تنبيهات المساعد الذكي',
-                    subtitle: 'التحكم في التنبيهات الذكية',
+                    title: context.l10n.profileAlertsTitle,
+                    subtitle: context.l10n.profileAlertsSubtitle,
                     onTap: () => unawaited(showAssistantAlertsScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.savings,
-                    title: 'هدف حياة جديد',
-                    subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
+                    title: context.l10n.profileNewGoalTitle,
+                    subtitle: context.l10n.profileNewGoalSubtitle,
                     onTap: () => unawaited(_newGoal(context, ref)),
                   ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('أنا وعيلتي'),
+              _SectionTitle(context.l10n.profileSectionMeFamily),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.profile,
-                    title: 'تعديل الملف الشخصي',
-                    subtitle: 'الاسم أو اللقب',
+                    title: context.l10n.profileEditTitle,
+                    subtitle: context.l10n.profileEditSubtitle,
                     onTap: () => Navigator.of(context).push<void>(
                       MaterialPageRoute<void>(
                         builder: (_) => const EditProfileScreen(),
@@ -123,33 +121,33 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _MenuRow(
                     icon: ZadIcons.family,
-                    title: 'إدارة العائلة',
-                    subtitle: 'الأعضاء والصلاحيات',
+                    title: context.l10n.profileFamilyManageTitle,
+                    subtitle: context.l10n.profileFamilyManageSubtitle,
                     onTap: () => unawaited(showFamilyManagementScreen(context)),
                   ),
                   _MenuRow(
                     icon: ZadIcons.market,
-                    title: 'الإعدادات الإقليمية',
-                    subtitle: 'البلد والعملة',
+                    title: context.l10n.profileRegionalTitle,
+                    subtitle: context.l10n.profileRegionalSubtitle,
                     onTap: () => unawaited(showRegionalSheet(context)),
                   ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('فلوسي'),
+              _SectionTitle(context.l10n.profileSectionMoney),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.budget,
-                    title: 'الميزانية وطرق الدفع',
-                    subtitle: 'الميزانية الشهرية والربط البنكي',
+                    title: context.l10n.profileBudgetPaymentTitle,
+                    subtitle: context.l10n.profileBudgetPaymentSubtitle,
                     onTap: () => unawaited(showPaymentAndBudgetScreen(context)),
                   ),
                   _MenuRow(
                     icon: Icons.upload_file,
-                    title: 'استيراد كشف حساب',
-                    subtitle: 'استورد كشف حساب CSV من البنك',
+                    title: context.l10n.profileStatementTitle,
+                    subtitle: context.l10n.profileStatementSubtitle,
                     onTap: () => unawaited(
                       ZadScreens.showStatementImportScreen(context),
                     ),
@@ -157,21 +155,21 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('زاد بتاعي'),
+              _SectionTitle(context.l10n.profileSectionMyZad),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.leaderboard,
-                    title: 'الإنجازات والرتب',
-                    subtitle: 'نقاطك وإنجازاتك من المساهمة بالأسعار',
+                    title: context.l10n.profileAchievementsTitle,
+                    subtitle: context.l10n.profileAchievementsSubtitle,
                     onTap: () =>
                         unawaited(ZadScreens.showAchievementsScreen(context)),
                   ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('المساعدة'),
+              _SectionTitle(context.l10n.profileSectionHelp),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
@@ -184,28 +182,28 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _MenuRow(
                     icon: Icons.support_agent,
-                    title: 'الدعم الفني',
-                    subtitle: 'شكوى أو مشكلة؟ كلّم فريق الدعم',
+                    title: context.l10n.profileSupportTitle,
+                    subtitle: context.l10n.profileSupportSubtitle,
                     onTap: () =>
                         unawaited(ZadScreens.showHelpSupportScreen(context)),
                   ),
                   _MenuRow(
                     icon: Icons.description,
-                    title: 'الشروط والأحكام',
-                    subtitle: 'سياسة الاستخدام والخصوصية',
+                    title: context.l10n.profileTermsTitle,
+                    subtitle: context.l10n.profileTermsSubtitle,
                     onTap: () => unawaited(ZadScreens.showTermsScreen(context)),
                   ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('الحساب'),
+              _SectionTitle(context.l10n.profileSectionAccount),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.delete,
-                    title: 'حذف الحساب',
-                    subtitle: 'حذف الحساب نهائياً',
+                    title: context.l10n.profileDeleteAccountTitle,
+                    subtitle: context.l10n.profileDeleteAccountSubtitle,
                     danger: true,
                     onTap: () => unawaited(_deleteAccount(context, ref)),
                   ),
@@ -225,7 +223,7 @@ class ProfileScreen extends ConsumerWidget {
                   onPressed: () =>
                       unawaited(ZadScreens.confirmAndSignOut(context, ref)),
                   icon: const Icon(ZadIcons.leave, size: 20),
-                  label: const Text('تسجيل الخروج'),
+                  label: Text(context.l10n.profileSignOut),
                 ),
               ),
             ],
@@ -240,23 +238,21 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (c) => AlertDialog(
         title: Text(
-          'حذف الحساب',
+          context.l10n.profileDeleteAccountTitle,
           style: TextStyle(color: ZadColors.terracottaRust),
         ),
-        content: const Text(
-          'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
-        ),
+        content: Text(context.l10n.profileDeleteAccountBody),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: ZadColors.terracottaRust,
             ),
             onPressed: () => Navigator.of(c).pop(true),
-            child: const Text('نعم، احذف الحساب'),
+            child: Text(context.l10n.profileDeleteAccountConfirm),
           ),
         ],
       ),
@@ -264,6 +260,7 @@ class ProfileScreen extends ConsumerWidget {
     if (!(sure ?? false) || !context.mounted) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final failed = context.l10n.profileDeleteAccountFailed;
     unawaited(
       showDialog<void>(
         context: context,
@@ -279,11 +276,7 @@ class ProfileScreen extends ConsumerWidget {
     if (deleted) {
       navigator.popUntil((r) => r.isFirst);
     } else {
-      messenger?.showSnackBar(
-        const SnackBar(
-          content: Text('تعذر حذف الحساب. تحقق من الاتصال وحاول مرة أخرى.'),
-        ),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text(failed)));
     }
   }
 
@@ -298,6 +291,9 @@ class ProfileScreen extends ConsumerWidget {
     );
     if (goal == null || !context.mounted) return;
     final (title, metric, deadline) = goal;
+    // An order to the brain, read by the model with its tool names: it
+    // stays Arabic (CLAUDE.md's i18n rule — a prompt is data).
+    // l10n: data-begin
     final message = StringBuffer('سجل هدف جديد باسم «$title»');
     if (metric.isNotEmpty) message.write(' والمقياس هو $metric');
     if (deadline.isNotEmpty) message.write(' والاستحقاق بتاريخ $deadline');
@@ -305,6 +301,7 @@ class ProfileScreen extends ConsumerWidget {
       ' — وسجّله بـ set_life_goal وبعدين فكّكه لمهام متكررة بـ schedule_task '
       'واربط كل مهمة بيه.',
     );
+    // l10n: data-end
     unawaited(ref.read(chatControllerProvider.notifier).send('$message'));
     ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
     Navigator.of(context).popUntil((r) => r.isFirst);
@@ -330,9 +327,7 @@ class _Header extends ConsumerWidget {
     if (context.mounted) {
       _say(
         context,
-        ok
-            ? 'تم حفظ التغييرات'
-            : 'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى',
+        ok ? context.l10n.profileSaved : context.l10n.profileSaveFailedRetry,
       );
     }
   }
@@ -347,9 +342,7 @@ class _Header extends ConsumerWidget {
     if (context.mounted) {
       _say(
         context,
-        ok
-            ? 'تم حفظ التغييرات'
-            : 'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى',
+        ok ? context.l10n.profileSaved : context.l10n.profileSaveFailedRetry,
       );
     }
   }
@@ -603,18 +596,18 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(
-      'تعديل الاسم',
+      context.l10n.profileEditName,
       style: ZadType.titleLarge.copyWith(color: ZadColors.green700),
     ),
     content: TextField(
       controller: _name,
       autofocus: true,
-      decoration: const InputDecoration(labelText: 'الاسم'),
+      decoration: InputDecoration(labelText: context.l10n.profileName),
     ),
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       FilledButton(
         onPressed: () {
@@ -622,7 +615,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
             Navigator.of(context).pop(_name.text.trim());
           }
         },
-        child: const Text('حفظ'),
+        child: Text(context.l10n.commonSave),
       ),
     ],
   );
@@ -653,7 +646,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('هدف حياة جديد'),
+    title: Text(context.l10n.profileNewGoalTitle),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -661,7 +654,9 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
           TextField(
             controller: _title,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'اسم الهدف'),
+            decoration: InputDecoration(
+              labelText: context.l10n.profileGoalName,
+            ),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 10),
@@ -669,16 +664,16 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
             controller: _metric,
             decoration: InputDecoration(
               labelText: widget.egypt
-                  ? 'إزاي بنقيسه؟ (مثال: 500 جنيه شهرياً)'
-                  : 'إزاي بنقيسه؟ (مثال: 500 ريال شهرياً)',
+                  ? context.l10n.profileGoalMetricEgypt
+                  : context.l10n.profileGoalMetricOther,
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _deadline,
-            decoration: const InputDecoration(
-              labelText: 'الاستحقاق (اختياري)',
-              hintText: 'مثال: 2026-12-31',
+            decoration: InputDecoration(
+              labelText: context.l10n.profileGoalDeadline,
+              hintText: context.l10n.profileGoalDeadlineHint,
             ),
           ),
         ],
@@ -687,7 +682,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       TextButton(
         onPressed: _title.text.trim().isEmpty
@@ -697,7 +692,7 @@ class _NewGoalDialogState extends State<_NewGoalDialog> {
                 _metric.text.trim(),
                 _deadline.text.trim(),
               )),
-        child: const Text('احفظ'),
+        child: Text(context.l10n.profileSaveShort),
       ),
     ],
   );
@@ -740,9 +735,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _saving = false);
     _say(
       context,
-      ok
-          ? 'تم حفظ التغييرات'
-          : 'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى',
+      ok ? context.l10n.profileSaved : context.l10n.profileSaveFailedRetry,
     );
     if (ok) {
       await HapticFeedback.mediumImpact();
@@ -763,7 +756,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('تعديل الملف الشخصي')),
+        appBar: AppBar(title: Text(context.l10n.profileEditTitle)),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: <Widget>[
@@ -787,14 +780,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               initialValue: view.email,
               enabled: false,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+              decoration: InputDecoration(labelText: context.l10n.profileEmail),
             ),
             const SizedBox(height: ZadSpacing.lg),
             TextField(
               controller: _alias,
-              decoration: const InputDecoration(
-                labelText: 'الاسم / اللقب',
-                hintText: 'مثال: الأب',
+              decoration: InputDecoration(
+                labelText: context.l10n.profileAliasLabel,
+                hintText: context.l10n.profileAliasHint,
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -809,7 +802,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('حفظ التغييرات'),
+                    : Text(context.l10n.profileSaveChanges),
               ),
             ),
           ],
@@ -851,9 +844,9 @@ class _RegionalSheet extends ConsumerWidget {
         controller: scroll,
         padding: const EdgeInsets.fromLTRB(20, ZadSpacing.xl, 20, 32),
         children: <Widget>[
-          const Text('الإعدادات الإقليمية', style: ZadType.titleLarge),
+          Text(context.l10n.profileRegionalTitle, style: ZadType.titleLarge),
           const SizedBox(height: 20),
-          const Text('البلد', style: ZadType.titleSmall),
+          Text(context.l10n.profileCountry, style: ZadType.titleSmall),
           const SizedBox(height: ZadSpacing.sm),
           GridView.count(
             crossAxisCount: 3,
@@ -874,7 +867,7 @@ class _RegionalSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: ZadSpacing.xl),
-          const Text('العملة', style: ZadType.titleSmall),
+          Text(context.l10n.profileCurrency, style: ZadType.titleSmall),
           const SizedBox(height: ZadSpacing.sm),
           Text(
             current == null
@@ -884,7 +877,7 @@ class _RegionalSheet extends ConsumerWidget {
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'العملة بتتحدد تلقائياً حسب البلد المختار فوق',
+            context.l10n.profileCurrencyAuto,
             style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
           ),
         ],
@@ -907,25 +900,29 @@ class _RegionalSheet extends ConsumerWidget {
     final sure = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text('تغيّر البلد لـ ${to.nameAr}؟'),
+        title: Text(context.l10n.profileChangeCountryTitle(to.nameAr)),
         content: Text(
           <String>[
-            'العملة هتبقى ${to.currencySymbol} (${to.currency}).',
+            context.l10n.profileCurrencyWillBe(to.currencySymbol, to.currency),
             if (limit > 0 && converted != null)
-              'سقفك الشهري هيتحوّل من ${limit.asMoney} ${from!.currencySymbol} '
-                  'إلى $converted ${to.currencySymbol}، وميزانيات الفئات كمان.'
+              context.l10n.profileLimitConverts(
+                '${limit.asMoney}',
+                from!.currencySymbol,
+                '$converted',
+                to.currencySymbol,
+              )
             else if (limit > 0)
-              _noRate,
+              context.l10n.profileNoRate,
           ].join('\n\n'),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(c).pop(true),
-            child: const Text('غيّر'),
+            child: Text(context.l10n.profileChange),
           ),
         ],
       ),
@@ -944,12 +941,9 @@ class _RegionalSheet extends ConsumerWidget {
         if (amount > 0) await store.write(category, (amount * rate).asMoney);
       }
     }
-    if (context.mounted) _say(context, 'تم حفظ التغييرات');
+    if (context.mounted) _say(context, context.l10n.profileSaved);
   }
 }
-
-const String _noRate =
-    'مش عارف سعر التحويل، فسقفك الشهري هيفضل بنفس الرقم — راجعه بعد التغيير.';
 
 class _MarketTile extends StatelessWidget {
   const new({required this.market, required this.selected, this.onTap});
@@ -1009,8 +1003,8 @@ class _KidsModeCard extends ConsumerWidget {
         rows: <_MenuRow>[
           _MenuRow(
             icon: Icons.lock,
-            title: 'إعادة قفل وضع الأطفال',
-            subtitle: 'يرجع الجهاز لوضع الأطفال',
+            title: context.l10n.profileKidsRelockTitle,
+            subtitle: context.l10n.profileKidsRelockSubtitle,
             onTap: () => ref.read(kidsModeProvider.notifier).relock(),
           ),
         ],
@@ -1030,8 +1024,8 @@ class _KidsModeCard extends ConsumerWidget {
       rows: <_MenuRow>[
         _MenuRow(
           icon: ZadIcons.child,
-          title: 'تبديل لوضع الأطفال',
-          subtitle: 'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN',
+          title: context.l10n.profileKidsModeTitle,
+          subtitle: context.l10n.profileKidsModeSubtitle,
           onTap: () => unawaited(enter()),
           trailing: Switch(
             value: false,

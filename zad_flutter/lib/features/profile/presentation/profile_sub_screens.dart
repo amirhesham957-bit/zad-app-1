@@ -12,6 +12,7 @@ import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
@@ -74,16 +75,16 @@ class FamilyManagementScreen extends ConsumerWidget {
     final me = family?.me(view.userId);
 
     return Scaffold(
-      appBar: const SubScreenTopBar(title: 'إدارة العائلة'),
+      appBar: SubScreenTopBar(title: context.l10n.profileFamilyManageTitle),
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: family == null
-              ? const Padding(
-                  padding: EdgeInsets.all(40),
+              ? Padding(
+                  padding: const EdgeInsets.all(40),
                   child: KtEmptyState(
                     icon: Icons.people,
-                    title: 'أنت لست منضماً لأي عائلة حالياً.',
+                    title: context.l10n.profileNoFamily,
                   ),
                 )
               : Column(
@@ -95,7 +96,7 @@ class FamilyManagementScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'كود دعوة العائلة',
+                            context.l10n.profileFamilyInviteCode,
                             style: ZadType.labelMedium.copyWith(
                               color: Colors.white.withValues(alpha: 0.8),
                             ),
@@ -112,7 +113,7 @@ class FamilyManagementScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'أفراد العائلة',
+                      context.l10n.profileFamilyMembers,
                       style: ZadType.titleMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: scheme.onSurface,
@@ -145,9 +146,12 @@ class FamilyManagementScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       switch (member.role) {
-                                        FamilyRole.admin => 'مدير العائلة',
-                                        FamilyRole.child => 'ابن/ابنة',
-                                        FamilyRole.member => 'عضو',
+                                        FamilyRole.admin =>
+                                          context.l10n.profileRoleAdmin,
+                                        FamilyRole.child =>
+                                          context.l10n.profileRoleChild,
+                                        FamilyRole.member =>
+                                          context.l10n.profileRoleMember,
                                       },
                                       style: TextStyle(
                                         fontSize: 12,
@@ -162,41 +166,45 @@ class FamilyManagementScreen extends ConsumerWidget {
                                 PopupMenuButton<String>(
                                   tooltip: 'More',
                                   icon: const Icon(Icons.more_vert),
-                                  onSelected: (choice) => unawaited(
-                                    switch (choice) {
-                                      'kick' => _act(
-                                        context,
-                                        () => controller.remove(member),
-                                        'فشل طرد العضو، يرجى المحاولة لاحقاً.',
-                                      ),
-                                      _ => _act(
-                                        context,
-                                        () => controller.setRole(
-                                          member,
-                                          FamilyRole.fromWire(choice),
+                                  onSelected: (choice) =>
+                                      unawaited(switch (choice) {
+                                        'kick' => _act(
+                                          context,
+                                          () => controller.remove(member),
+                                          context.l10n.profileKickFailed,
                                         ),
-                                        'فشل تغيير الصلاحية، يرجى المحاولة '
-                                        'لاحقاً.',
-                                      ),
-                                    },
-                                  ),
+                                        _ => _act(
+                                          context,
+                                          () => controller.setRole(
+                                            member,
+                                            FamilyRole.fromWire(choice),
+                                          ),
+                                          context.l10n.profileRoleChangeFailed,
+                                        ),
+                                      }),
                                   itemBuilder: (_) => <PopupMenuEntry<String>>[
-                                    const PopupMenuItem<String>(
+                                    PopupMenuItem<String>(
                                       value: 'admin',
-                                      child: Text('ترقية لمدير (Admin)'),
+                                      child: Text(
+                                        context.l10n.profileMakeAdmin,
+                                      ),
                                     ),
-                                    const PopupMenuItem<String>(
+                                    PopupMenuItem<String>(
                                       value: 'member',
-                                      child: Text('إرجاع لعضو (Member)'),
+                                      child: Text(
+                                        context.l10n.profileMakeMember,
+                                      ),
                                     ),
-                                    const PopupMenuItem<String>(
+                                    PopupMenuItem<String>(
                                       value: 'child',
-                                      child: Text('تعيين كابن/ابنة'),
+                                      child: Text(
+                                        context.l10n.profileMakeChild,
+                                      ),
                                     ),
                                     PopupMenuItem<String>(
                                       value: 'kick',
                                       child: Text(
-                                        'طرد العضو',
+                                        context.l10n.profileKick,
                                         style: TextStyle(color: scheme.error),
                                       ),
                                     ),
@@ -245,7 +253,7 @@ class _PaymentState extends ConsumerState<PaymentAndBudgetScreen> {
         .trim();
 
     return Scaffold(
-      appBar: const SubScreenTopBar(title: 'طرق الدفع والميزانية'),
+      appBar: SubScreenTopBar(title: context.l10n.profilePaymentBudgetTitle),
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -258,7 +266,7 @@ class _PaymentState extends ConsumerState<PaymentAndBudgetScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'الميزانية الشهرية الحالية',
+                      context.l10n.profileCurrentMonthlyBudget,
                       style: ZadType.labelMedium.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -285,12 +293,12 @@ class _PaymentState extends ConsumerState<PaymentAndBudgetScreen> {
                               );
                               setState(() => _edit = false);
                             },
-                            child: const Text('حفظ'),
+                            child: Text(context.l10n.commonSave),
                           ),
                           const SizedBox(width: 8),
                           TextButton(
                             onPressed: () => setState(() => _edit = false),
-                            child: const Text('إلغاء'),
+                            child: Text(context.l10n.commonCancel),
                           ),
                         ],
                       ),
@@ -364,26 +372,27 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
   }
 
   String _time(DateTime at) =>
-      DateFormat('d MMM y h:mm a', 'ar').format(at.toLocal());
+      DateFormat('d MMM y h:mm a', context.dateLocale).format(at.toLocal());
 
   /// Kotlin's `BankReadingStatus.diagnose`.
   String _diagnose(BankAccessState s, DateTime? lastParsed) {
+    final l10n = context.l10n;
     if (!s.granted) {
-      return '❌ الصلاحية مش ممنوحة — فعّلها من إعدادات الوصول للإشعارات';
+      return l10n.profileDiagNoPermission;
     }
     if (s.lastConnectedAt == null) {
-      return '❌ السيرفس مش مربوط — اضغط زر إعادة الربط';
+      return l10n.profileDiagNotBound;
     }
     return switch (s.testResult) {
       null || 'sent' =>
         s.lastSeenAnyAt == null
-            ? '❌ السيرفس مربوط بس مش بيوصلوش إشعارات — جرب requestRebind'
-            : '⏳ مستني وصول الإشعار التجريبي للمستمع...',
+            ? l10n.profileDiagNoNotifications
+            : l10n.profileDiagWaitingTest,
       'received_by_listener' =>
         lastParsed != null
-            ? '✅ الرصد شغال بالكامل'
-            : '✅ المستمع مسكه والفلترة شغالة',
-      _ => '❓ حالة غير معروفة — جرب تاني',
+            ? l10n.profileDiagAllWorking
+            : l10n.profileDiagListenerWorking,
+      _ => l10n.profileDiagUnknown,
     };
   }
 
@@ -395,30 +404,33 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
     );
     final amount = verdict.amount;
     final ok = amount != null && verdict.reason == null;
+    final l10n = context.l10n;
     final result = ok
-        ? 'نجح التحليل ✓\n'
-              'المبلغ: $amount ${verdict.currency ?? ''}\n'
-              'التاجر: —\n'
-              'النوع: ${switch (verdict.classification) {
-                BankNotificationClass.completedTransaction => 'عملية مكتملة',
-                BankNotificationClass.failedOrPendingTransaction => 'معلّقة',
-                BankNotificationClass.informationalOnly => 'معلومة',
-                BankNotificationClass.ambiguous => 'تتأكد على السيرفر',
-              }}'
-        : 'فشل التحليل — الرسالة العينة معملهاش parser';
+        ? l10n.profileParseOk(
+            '$amount ${verdict.currency ?? ''}',
+            switch (verdict.classification) {
+              BankNotificationClass.completedTransaction =>
+                l10n.profileParseCompleted,
+              BankNotificationClass.failedOrPendingTransaction =>
+                l10n.profileParsePending,
+              BankNotificationClass.informationalOnly => l10n.profileParseInfo,
+              BankNotificationClass.ambiguous => l10n.profileParseServer,
+            },
+          )
+        : l10n.profileParseFailed;
     unawaited(
       showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
-          title: const Text(
-            'اختبار',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          title: Text(
+            l10n.profileTest,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: Text(result),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(c).pop(),
-              child: const Text('تمام'),
+              child: Text(l10n.profileOk),
             ),
           ],
         ),
@@ -446,70 +458,75 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(
-          'قراءة إشعارات البنك',
+          context.l10n.profileBankReading,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: scheme.onSurface,
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          'الحالة الحقيقية للصلاحيات — لو الصلاحية متسحوبة من إعدادات النظام، '
-          'هتلاقيها هنا فوراً',
-          style: small(),
-        ),
+        Text(context.l10n.profileBankReadingHint, style: small()),
         const SizedBox(height: 12),
         _StatusRow(
-          label: 'قراءة إشعارات البنك',
+          label: context.l10n.profileBankReading,
           isOn: s.granted,
-          actionLabel: s.granted ? null : 'تفعيل',
+          actionLabel: s.granted ? null : context.l10n.profileEnable,
           onAction: () => unawaited(ZadScreens.showBankAccessGuide(context)),
         ),
         const SizedBox(height: 8),
         _StatusRow(
-          label: 'اتصال خدمة القراءة',
+          label: context.l10n.profileReaderConnection,
           isOn: s.lastConnectedAt != null,
           actionLabel: s.granted && s.lastConnectedAt == null
-              ? 'إعادة المحاولة'
+              ? context.l10n.profileRetry
               : null,
           onAction: () => unawaited(notifier.refresh()),
         ),
         Text(
           s.lastConnectedAt != null
-              ? 'آخر اتصال فعلي: ${_time(s.lastConnectedAt!)}'
-              : 'الخدمة لم تتصل بعد، حتى لو كانت الصلاحية مفعلة',
+              ? context.l10n.profileLastConnected(_time(s.lastConnectedAt!))
+              : context.l10n.profileNeverConnected,
           style: small(),
         ),
         const SizedBox(height: 8),
-        _StatusRow(label: 'وصول إشعارات للجهاز', isOn: s.lastSeenAnyAt != null),
+        _StatusRow(
+          label: context.l10n.profileNotificationsArriving,
+          isOn: s.lastSeenAnyAt != null,
+        ),
         Text(
           s.lastSeenAnyAt != null
-              ? 'آخر إشعار وصل للخدمة: ${_time(s.lastSeenAnyAt!)}'
-              : 'لم يصل أي إشعار للخدمة بعد',
+              ? context.l10n.profileLastNotification(_time(s.lastSeenAnyAt!))
+              : context.l10n.profileNoNotificationYet,
           style: small(),
         ),
         const SizedBox(height: 8),
         Text(
           lastParsed != null
-              ? 'آخر عملية اتقرأت: قبل ${now.difference(lastParsed).inMinutes} '
-                    'دقيقة'
-              : 'لسه ما اتقرتش أي عملية',
+              ? context.l10n.profileLastParsed(
+                  now.difference(lastParsed).inMinutes,
+                )
+              : context.l10n.profileNothingParsed,
           style: small(),
         ),
         const SizedBox(height: 16),
-        FilledButton(onPressed: _testParser, child: const Text('اختبار')),
+        FilledButton(
+          onPressed: _testParser,
+          child: Text(context.l10n.profileTest),
+        ),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () async {
             await ref
                 .read(bankListenerProvider)
                 .sendTestNotification(
-                  title: 'اختبار زاد — عملية تجريبية',
+                  // Goes through the real bank pipeline with the sample
+                  // body: kept as the Arabic a bank would send.
+                  title: 'اختبار زاد — عملية تجريبية', // l10n: data
                   body: testNotificationBody(ref.read(accountCountryProvider)),
                 );
             await notifier.refresh();
           },
-          child: const Text('اختبار — اختبار زاد — عملية تجريبية'),
+          child: Text(context.l10n.profileSendTestNotification),
         ),
         Padding(
           padding: const EdgeInsets.only(top: 4),
@@ -518,7 +535,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
         if (rejected.isNotEmpty) ...<Widget>[
           const SizedBox(height: 16),
           Text(
-            'آخر الرسائل اللي اترفضت',
+            context.l10n.profileRejectedTitle,
             style: ZadType.labelLarge.copyWith(
               fontWeight: FontWeight.bold,
               color: scheme.onSurface,
@@ -526,8 +543,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            'لو بنك أو محفظة معينة مش بتتسجل، هتلاقي السبب هنا (OTP، رسالة '
-            'معلّقة، أو نص محصلش فهمه).',
+            context.l10n.profileRejectedHint,
             style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
@@ -614,7 +630,9 @@ class _StatusRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$label: ${isOn ? 'شغالة ✓' : 'مش شغالة'}',
+              isOn
+                  ? context.l10n.profileStatusOn(label)
+                  : context.l10n.profileStatusOff(label),
               style: TextStyle(color: scheme.onSurface, fontSize: 13),
             ),
           ),
@@ -667,7 +685,7 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
         setState(() => prefs.setEnabled(key, enabled: v));
 
     return Scaffold(
-      appBar: const SubScreenTopBar(title: 'تنبيهات المساعد الذكي'),
+      appBar: SubScreenTopBar(title: context.l10n.profileAlertsTitle),
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -678,30 +696,28 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
               // decision (2026-09-29), and the tone picker chose between
               // voices زاد no longer has — both switches did nothing.
               AlertSwitchItem(
-                title: '🔔 النطق الصوتي للإشعارات والجرعات',
-                desc:
-                    'زاد تقول تذكير الدوا والمواعيد بصوتها لما التطبيق مفتوح، '
-                    'ولما يكون مقفول الإشعار بيبقى عليه «اسمع زاد».',
+                title: context.l10n.profileVoiceAlertsTitle,
+                desc: context.l10n.profileVoiceAlertsDesc,
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.voiceSpokenAlerts),
                 onChanged: (v) => set(AlertPrefs.voiceSpokenAlerts, v: v),
               ),
               AlertSwitchItem(
-                title: 'تنبيهات نقص المخزون',
-                desc: 'يرسل إشعاراً عند اقتراب نفاذ منتج أساسي',
+                title: context.l10n.profileLowStockTitle,
+                desc: context.l10n.profileLowStockDesc,
                 // What the alerts read: on until turned off. Shown with
                 // isEnabled, it read «off» while the alerts kept coming.
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.lowInventory),
                 onChanged: (v) => set(AlertPrefs.lowInventory, v: v),
               ),
               AlertSwitchItem(
-                title: 'تنبيهات تخطي الميزانية',
-                desc: 'تحذير مبكر عند صرف جزء كبير من الميزانية',
+                title: context.l10n.profileBudgetOverrunTitle,
+                desc: context.l10n.profileBudgetOverrunDesc,
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.budgetOverrun),
                 onChanged: (v) => set(AlertPrefs.budgetOverrun, v: v),
               ),
               AlertSwitchItem(
-                title: 'تذكير التسبيح',
-                desc: 'تذكير لطيف الساعة 5 عصراً لو لسه ما سبّحتش النهاردة',
+                title: context.l10n.profileTasbihTitle,
+                desc: context.l10n.profileTasbihDesc,
                 checked: on(AlertPrefs.tasbihReminder),
                 onChanged: (v) {
                   set(AlertPrefs.tasbihReminder, v: v);
@@ -709,10 +725,8 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                 },
               ),
               AlertSwitchItem(
-                title: 'رفيق زاد يناديني لو غبت',
-                desc:
-                    'إشعار واحد لو غبت يومين، وواحد كمان بعد يومين — '
-                    'مش أكتر من مرة في اليوم، ومش بالليل',
+                title: context.l10n.profileCompanionNapTitle,
+                desc: context.l10n.profileCompanionNapDesc,
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.companionNap),
                 onChanged: (v) {
                   set(AlertPrefs.companionNap, v: v);
@@ -722,10 +736,8 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                 },
               ),
               AlertSwitchItem(
-                title: 'رفيق زاد يفكّرني بأكله ومَيّته',
-                desc:
-                    'إشعار واحد لما يجوع أو يعطش، بيتأجّل كل ما تأكّله '
-                    'أو تسقيه — ومش بالليل',
+                title: context.l10n.profileCompanionCareTitle,
+                desc: context.l10n.profileCompanionCareDesc,
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.companionCare),
                 onChanged: (v) {
                   set(AlertPrefs.companionCare, v: v);
@@ -738,11 +750,8 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
               ),
               // إيقاع النوم (الشريحة ٣٧): النتيجة بس بتروح للسيرفر.
               AlertSwitchItem(
-                title: 'زاد يتعلّم مواعيد نومي',
-                desc:
-                    'من أوقات قفل وفتح الشاشة بالليل، عشان مايبعتش '
-                    'تنبيهات وإنت نايم. ساعة النوم وساعة الصحيان بس اللي '
-                    'بتتحفظ — مش اللحظات نفسها. الجرعات والطوارئ زي ما هي.',
+                title: context.l10n.profileLearnSleepTitle,
+                desc: context.l10n.profileLearnSleepDesc,
                 checked: prefs.isEnabledUnlessOff(AlertPrefs.learnSleep),
                 onChanged: (v) {
                   set(AlertPrefs.learnSleep, v: v);
@@ -751,7 +760,7 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
               ),
               Divider(color: scheme.outlineVariant, height: 32),
               Text(
-                'صوت الإشعارات',
+                context.l10n.profileNotificationSound,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -759,7 +768,7 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'اختار من أي صوت إشعار مثبّت على جهازك بدل الصوت الافتراضي',
+                context.l10n.profileNotificationSoundHint,
                 style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 12),
@@ -767,7 +776,7 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      _soundTitle ?? 'الصوت الافتراضي',
+                      _soundTitle ?? context.l10n.profileDefaultSound,
                       style: TextStyle(
                         fontSize: 13,
                         color: scheme.onSurfaceVariant,
@@ -777,14 +786,14 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
                   TextButton(
                     onPressed: () async {
                       final picked = await pickNotificationSound(
-                        title: 'صوت الإشعارات',
+                        title: context.l10n.profileNotificationSound,
                         existing: prefs.notificationSoundUri,
                       );
                       if (picked.cancelled) return;
                       prefs.setNotificationSoundUri(picked.uri);
                       await _readSoundTitle();
                     },
-                    child: const Text('تغيير'),
+                    child: Text(context.l10n.commonChange),
                   ),
                 ],
               ),
