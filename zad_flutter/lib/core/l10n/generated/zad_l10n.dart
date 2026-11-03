@@ -6941,6 +6941,294 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'الصوت الافتراضي'**
   String get profileDefaultSound;
+
+  /// No description provided for @supportFallback.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادر أرد دلوقتي. جرّب تاني كمان شوية، ولو المشكلة مستمرة افتح «سجل الأعطال» من الشاشة دي وابعته لنا — فيه اللي نحتاجه عشان نصلحها.'**
+  String get supportFallback;
+
+  /// No description provided for @supportFaqBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان زاد يقرا رسايل البنك: من الرئيسية دوس «فعّل قراءة إشعارات البنك» وامشي على الخطوات. لو المفتاح رمادي أو ظهرت «إعداد مقيَّد»: افتح «معلومات التطبيق» ← ⋮ فوق ← «السماح بالإعدادات المقيدة»، وارجع فعّل الإذن. وعلى شاومي وأوبو خلي البطارية «بدون قيود» عشان مايقفش.'**
+  String get supportFaqBank;
+
+  /// No description provided for @supportFaqAllowance.
+  ///
+  /// In ar, this message translates to:
+  /// **'من «العائلة» ← «مصاريف الأبناء» تلاقي كل طفل ورصيده. «حوّل مصروف» بيزوّد رصيده على طول. والطفل يقدر يطلب «مصروف» (بيتضاف لو وافقت) أو «أشتري حاجة» (بيتخصم لو وافقت ورصيده يكفي).'**
+  String get supportFaqAllowance;
+
+  /// No description provided for @supportFaqReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة من زرار الكاميرا. زاد بيقرا المبلغ والأصناف وتاريخ الفاتورة، وبيسجلها على يومها. راجع المبلغ والفئة قبل الحفظ، وتقدر تضيف الأصناف للمخزن في نفس الخطوة.'**
+  String get supportFaqReceipt;
+
+  /// No description provided for @supportFaqCountry.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد والعملة بيتحددوا وقت التسجيل. لو محتاج تغيّرهم: «حسابي» ← «الإعدادات» ← السوق. التوقيت ومواعيد التذكير بيمشوا على بلد الحساب.'**
+  String get supportFaqCountry;
+
+  /// No description provided for @supportFaqVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس على المايك في الشات واتكلم، وزاد بيرد بصوت. لو الرد اتأخر أو ماجاش صوت، اتأكد من النت وجرّب تاني — والرد المكتوب بيفضل ظاهر في الشات.'**
+  String get supportFaqVoice;
+
+  /// No description provided for @supportFaqAppointments.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد من «مواعيدي» ← «ميعاد جديد»، أو قول لزاد في الشات «فكرني بميعاد الدكتور يوم الخميس الساعة ٥». الأدوية من «صيدلية العائلة»، وتقدر تحدد الدوا لمين في العيلة.'**
+  String get supportFaqAppointments;
+
+  /// No description provided for @supportFaqFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'من «العائلة» اعمل عيلة جديدة وابعت الكود لأهلك، أو دوس «انضم» واكتب الكود اللي وصلك. المسؤول بس هو اللي يقدر يغيّر الأدوار والمكافآت.'**
+  String get supportFaqFamily;
+
+  /// No description provided for @supportFaqPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'من شاشة الدخول دوس «نسيت كلمة المرور» واكتب إيميلك، هيوصلك لينك تغيّرها منه.'**
+  String get supportFaqPassword;
+
+  /// No description provided for @supportFaqDeleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب من «حسابي» ← «حذف الحساب». ده بيمسح بياناتك كلها نهائياً ومايترجعش.'**
+  String get supportFaqDeleteAccount;
+
+  /// No description provided for @supportWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً! أنا مساعد أسئلة استخدام تطبيق زاد — أقدر أساعدك تفهم أي ميزة أو تحل مشكلة تقنية. لو سؤالك عن بياناتك الشخصية (مصاريفك، رصيدك، اشتراكاتك)، الأفضل تسأل شات \"عقل زاد\" لأنه هو بس اللي شايف حسابك الفعلي.'**
+  String get supportWelcome;
+
+  /// No description provided for @supportContactTeam.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلّم فريق الدعم'**
+  String get supportContactTeam;
+
+  /// No description provided for @supportContactHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المشكلة أو الشكوى، وهيوصل لفريق الدعم على طول ويردوا عليك على إيميلك.'**
+  String get supportContactHint;
+
+  /// No description provided for @supportSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموضوع'**
+  String get supportSubject;
+
+  /// No description provided for @supportSubjectHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: صفحة الصيدلية فاضية'**
+  String get supportSubjectHint;
+
+  /// No description provided for @supportDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفاصيل'**
+  String get supportDetails;
+
+  /// No description provided for @supportAttachLog.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرفق سجل الأعطال (يساعدنا نصلحها أسرع)'**
+  String get supportAttachLog;
+
+  /// No description provided for @supportSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get supportSend;
+
+  /// No description provided for @supportSentByEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت رسالتك لفريق الدعم ✅ — هيردوا عليك على إيميلك في أقرب وقت.'**
+  String get supportSentByEmail;
+
+  /// No description provided for @supportMailOpened.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتحنالك الإيميل — دوس إرسال وهتوصل لفريق الدعم'**
+  String get supportMailOpened;
+
+  /// No description provided for @supportWriteTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت لنا على {email}'**
+  String supportWriteTo(String email);
+
+  /// No description provided for @supportCrashLog.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل الأعطال'**
+  String get supportCrashLog;
+
+  /// No description provided for @supportShareLog.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة السجل'**
+  String get supportShareLog;
+
+  /// No description provided for @supportShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'📤 مشاركة'**
+  String get supportShare;
+
+  /// No description provided for @supportClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗑️ مسح'**
+  String get supportClear;
+
+  /// No description provided for @supportClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get supportClose;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساعدة استخدام التطبيق'**
+  String get supportTitle;
+
+  /// No description provided for @supportSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة عامة — مش وصل لحسابك الشخصي'**
+  String get supportSubtitle;
+
+  /// No description provided for @supportComplaintBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك شكوى أو مشكلة؟ كلّم فريق الدعم'**
+  String get supportComplaintBanner;
+
+  /// No description provided for @supportInputHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رسالتك هنا...'**
+  String get supportInputHint;
+
+  /// No description provided for @supportTyping.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الكتابة...'**
+  String get supportTyping;
+
+  /// No description provided for @supportTermsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والأحكام'**
+  String get supportTermsTitle;
+
+  /// No description provided for @supportTermsHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الاستخدام واتفاقية المستخدم'**
+  String get supportTermsHeading;
+
+  /// No description provided for @supportTermsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحديث: يوليو 2026\n\nمن فضلك اقرأ شروط الاستخدام دي بعناية قبل ما تستخدم تطبيق زاد.'**
+  String get supportTermsIntro;
+
+  /// No description provided for @supportTerms1Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'١. الموافقة على الشروط'**
+  String get supportTerms1Title;
+
+  /// No description provided for @supportTerms1Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإنشائك حساب أو استخدامك لتطبيق زاد، فإنك توافق على هذه الشروط. لو مش موافق، من فضلك متستخدمش التطبيق.'**
+  String get supportTerms1Body;
+
+  /// No description provided for @supportTerms2Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٢. طبيعة الخدمة — إحنا أداة، مش جهة مسؤولة'**
+  String get supportTerms2Title;
+
+  /// No description provided for @supportTerms2Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هو أداة تنظيمية ومساعدة شخصية فقط. إحنا بنوفر برنامج بيساعدك تتابع وتنظم وتعرض بياناتك المالية والمنزلية الخاصة بيك. إحنا مش بندير فلوسك، ولا بناخد قرارات نيابةً عنك، ولا بنحتفظ بأموالك، ولا بنعالج مدفوعات، ولا بنعمل كمؤسسة مالية أو مستشار مالي أو أمين استئماني من أي نوع.\n\nكل ميزة في التطبيق — بما فيها إدارة الميزانية، تتبع المصاريف، مسح الفواتير، متابعة المخزون، تتبع الاشتراكات، اكتشاف المعاملات عن طريق الإشعارات، وأي رؤية \"ذكية\" أو \"مبنية على الذكاء الاصطناعي\" — موجودة فقط عشان تساعدك تنظم معلومات إنت أصلاً عندك أو بتنتجها. إحنا مش بنتحقق من دقة المعلومات دي ولا بنضمنها ولا بنتحمل مسؤوليتها، ولا مسؤولية أي إجراء تتخذه بناءً عليها.\n\nإنت، وإنت بس، المسؤول عن:\n- كل قرار مالي بتاخده؛\n- التأكد من دقة أي بيانات معروضة أو محسوبة أو مكتشَفة أو مقترحة من التطبيق؛\n- نتائج اعتمادك على أي ميزة آلية، بما فيها الرؤى أو التوقعات المولّدة بالذكاء الاصطناعي أو الاكتشاف عن طريق الإشعارات؛\n- كل النتائج المتعلقة بميزانيتك أو إنفاقك أو مدخراتك أو إدارة منزلك، سواء كانت معلومات التطبيق دقيقة أو لأ.\n\nإحنا مش بنتحمل أي مسؤولية أو التزام من أي نوع عن نتائج استخدامك للتطبيق. استخدامك لزاد مش بينشئ أي علاقة استشارية أو التزام أمانة أو ضمان لأي نتيجة بينك وبيننا. التطبيق متاح كأداة تنظيمية وتسهيلية بحتة — مسؤولية إزاي بتستخدم المعلومات اللي بيعرضها بالكامل عليك.'**
+  String get supportTerms2Body;
+
+  /// No description provided for @supportTerms3Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٣. الخصوصية والبيانات'**
+  String get supportTerms3Title;
+
+  /// No description provided for @supportTerms3Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحترم خصوصيتك. بياناتك مخزنة بشكل آمن. إحنا مش بنبيع بياناتك المالية الشخصية لأي طرف تالت.'**
+  String get supportTerms3Body;
+
+  /// No description provided for @supportTerms4Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٤. ميزات الذكاء الاصطناعي من أطراف خارجية — مساعدة فقط، مش مرجعية'**
+  String get supportTerms4Title;
+
+  /// No description provided for @supportTerms4Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعض الميزات (مسح الفواتير، توقعات الإنفاق، اكتشاف الاشتراكات، الرؤى السلوكية، اقتراحات الوجبات، الإدخال الصوتي) بتستخدم خدمات ذكاء اصطناعي من أطراف خارجية لمعالجة البيانات وتوليد الاقتراحات. المخرجات دي متاحة كتسهيل فقط، وميتعاملش معاها أبدًا كأنها دقيقة أو كاملة أو موثّقة أو مرجعية. المحتوى المولّد بالذكاء الاصطناعي ممكن يكون غلط أو قديم أو مش مناسب لحالتك.\n\nإحنا مش مالكين ولا متحكمين في نماذج الذكاء الاصطناعي المستخدمة. إحنا مش مسؤولين عن أي حاجة الذكاء الاصطناعي يولدها أو يقترحها أو يتوقعها أو يفشل يكتشفها. لازم تتأكد بنفسك من أي رقم أو تصنيف أو توصية قبل ما تتصرف بناءً عليها. اعتمادك على أي مخرج من الذكاء الاصطناعي كتوجيه مالي بيكون بالكامل على مسؤوليتك الخاصة.'**
+  String get supportTerms4Body;
+
+  /// No description provided for @supportTerms5Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٥. مشاركة العائلة'**
+  String get supportTerms5Title;
+
+  /// No description provided for @supportTerms5Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو دعيت أفراد من عائلتك، إنت المسؤول عن وصولهم لبيانات منزلك.'**
+  String get supportTerms5Body;
+
+  /// No description provided for @supportTerms6Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٦. السلوك الممنوع'**
+  String get supportTerms6Title;
+
+  /// No description provided for @supportTerms6Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممنوع تعمل هندسة عكسية أو اختراق أو تستخدم زاد في أي نشاط غير قانوني.'**
+  String get supportTerms6Body;
+
+  /// No description provided for @supportTerms7Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'٧. إحنا بنوفر الأداة — وإنت المسؤول عن النتيجة'**
+  String get supportTerms7Title;
+
+  /// No description provided for @supportTerms7Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'إحنا مش بنضمن ولا بنتحمل مسؤولية دقة أي رصيد أو فئة مصروف أو حالة اشتراك أو مستوى مخزون أو تنبيه نقص أو توقع ميزانية معروض في التطبيق. وإحنا مش بنضمن إن الاكتشاف التلقائي للمعاملات هيلتقط كل معاملة، ولا إنه هيكون صح دايمًا لما يلتقطها.\n\nباستخدامك لزاد، إنت مقر بإن:\n- إحنا أداة تنظيم معلومات سلبية، مش طرف فاعل في قراراتك المالية؛\n- أي خسارة مالية أو دفعة فاتت أو إسراف في الإنفاق أو تلف مخزون أو خلاف عائلي أو أي نتيجة سلبية تانية ناتجة عن استخدامك أو اعتمادك على التطبيق هي مسؤوليتك وحدك؛\n- إحنا مش هنتحمل أي مسؤولية، مالية أو غيرها، عن النتايج دي، لأقصى حد يسمح بيه القانون.'**
+  String get supportTerms7Body;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

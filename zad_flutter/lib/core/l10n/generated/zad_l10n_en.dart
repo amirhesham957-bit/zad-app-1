@@ -4049,4 +4049,177 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get profileDefaultSound => 'Default sound';
+
+  @override
+  String get supportFallback =>
+      'I can\'t answer right now. Try again in a little while, and if it keeps happening, open the “Crash log” on this screen and send it to us — it has what we need to fix it.';
+
+  @override
+  String get supportFaqBank =>
+      'To let Zad read your bank messages: on Home, tap “Turn on bank notification reading” and follow the steps. If the switch is grey or you see “Restricted setting”: open “App info” → ⋮ at the top → “Allow restricted settings”, then come back and turn the permission on. On Xiaomi and Oppo, set the battery to “No restrictions” so it doesn\'t stop.';
+
+  @override
+  String get supportFaqAllowance =>
+      'In “Family” → “Kids\' spending” you\'ll find each child and their balance. “Send allowance” adds to it straight away. A child can ask for an “allowance” (added if you approve) or to “buy something” (deducted if you approve and the balance covers it).';
+
+  @override
+  String get supportFaqReceipt =>
+      'Snap the receipt with the camera button. Zad reads the total, the items and the receipt\'s date, and logs it on that day. Check the amount and the category before saving — you can add the items to the pantry in the same step.';
+
+  @override
+  String get supportFaqCountry =>
+      'Your country and currency are set when you sign up. To change them: “My account” → “Region”. Times and reminders follow the account\'s country.';
+
+  @override
+  String get supportFaqVoice =>
+      'Tap the mic in the chat and talk — Zad answers out loud. If the answer is slow or there\'s no sound, check your internet and try again; the written reply stays in the chat.';
+
+  @override
+  String get supportFaqAppointments =>
+      'Add appointments from “My appointments” → “New appointment”, or tell Zad in the chat “remind me of the doctor on Thursday at 5”. Medicines live in “Family pharmacy”, where you can say who in the family each one is for.';
+
+  @override
+  String get supportFaqFamily =>
+      'In “Family”, start a new family and send the code to your people, or tap “Join” and enter the code you got. Only the admin can change roles and rewards.';
+
+  @override
+  String get supportFaqPassword =>
+      'On the sign-in screen, tap “Forgot password” and enter your email — you\'ll get a link to change it.';
+
+  @override
+  String get supportFaqDeleteAccount =>
+      'Delete your account from “My account” → “Delete account”. It erases all your data for good, with no way back.';
+
+  @override
+  String get supportWelcome =>
+      'Hi! I\'m Zad\'s help assistant — I can explain any feature or sort out a technical problem. If your question is about your own data (spending, balance, subscriptions), ask the \"Zad\'s brain\" chat instead: it\'s the only one that sees your actual account.';
+
+  @override
+  String get supportContactTeam => 'Contact support';
+
+  @override
+  String get supportContactHint =>
+      'Describe the problem or complaint — it goes straight to the support team, and they\'ll reply by email.';
+
+  @override
+  String get supportSubject => 'Subject';
+
+  @override
+  String get supportSubjectHint => 'e.g. The pharmacy page is empty';
+
+  @override
+  String get supportDetails => 'Details';
+
+  @override
+  String get supportAttachLog =>
+      'Attach the crash log (helps us fix it faster)';
+
+  @override
+  String get supportSend => 'Send';
+
+  @override
+  String get supportSentByEmail =>
+      'Your message reached the support team ✅ — they\'ll reply by email as soon as they can.';
+
+  @override
+  String get supportMailOpened =>
+      'Your email app is open — tap send and it reaches the support team';
+
+  @override
+  String supportWriteTo(String email) {
+    return 'Write to us at $email';
+  }
+
+  @override
+  String get supportCrashLog => 'Crash log';
+
+  @override
+  String get supportShareLog => 'Share log';
+
+  @override
+  String get supportShare => '📤 Share';
+
+  @override
+  String get supportClear => '🗑️ Clear';
+
+  @override
+  String get supportClose => 'Close';
+
+  @override
+  String get supportTitle => 'App help';
+
+  @override
+  String get supportSubtitle => 'General questions — no access to your account';
+
+  @override
+  String get supportComplaintBanner =>
+      'A complaint or a problem? Contact support';
+
+  @override
+  String get supportInputHint => 'Type your message...';
+
+  @override
+  String get supportTyping => 'Typing...';
+
+  @override
+  String get supportTermsTitle => 'Terms and conditions';
+
+  @override
+  String get supportTermsHeading => 'Terms of Use and User Agreement';
+
+  @override
+  String get supportTermsIntro =>
+      'Last updated: July 2026\n\nPlease read these terms of use carefully before using Zad.';
+
+  @override
+  String get supportTerms1Title => '1. Accepting the terms';
+
+  @override
+  String get supportTerms1Body =>
+      'By creating an account or using Zad, you agree to these terms. If you don\'t agree, please don\'t use the app.';
+
+  @override
+  String get supportTerms2Title =>
+      '2. What the service is — a tool, not a responsible party';
+
+  @override
+  String get supportTerms2Body =>
+      'Zad is an organising and personal-assistance tool only. We provide software that helps you track, organise and view your own financial and household data. We do not manage your money, make decisions on your behalf, hold your funds, process payments, or act as a financial institution, financial adviser or fiduciary of any kind.\n\nEvery feature in the app — including budgeting, expense tracking, receipt scanning, pantry tracking, subscription tracking, transaction detection from notifications, and any \"smart\" or \"AI-based\" insight — exists only to help you organise information you already have or produce. We do not verify, guarantee or take responsibility for the accuracy of that information, or for any action you take based on it.\n\nYou, and only you, are responsible for:\n- every financial decision you make;\n- checking the accuracy of any data the app shows, calculates, detects or suggests;\n- the results of relying on any automated feature, including AI-generated insights or forecasts and detection from notifications;\n- every outcome relating to your budget, spending, savings or household management, whether or not the app\'s information is accurate.\n\nWe accept no responsibility or liability of any kind for the results of your use of the app. Using Zad does not create any advisory relationship, fiduciary duty or guarantee of any outcome between you and us. The app is offered purely as an organising and convenience tool — how you use the information it shows is entirely your responsibility.';
+
+  @override
+  String get supportTerms3Title => '3. Privacy and data';
+
+  @override
+  String get supportTerms3Body =>
+      'We respect your privacy. Your data is stored securely. We do not sell your personal financial data to any third party.';
+
+  @override
+  String get supportTerms4Title =>
+      '4. Third-party AI features — assistance only, not authoritative';
+
+  @override
+  String get supportTerms4Body =>
+      'Some features (receipt scanning, spending forecasts, subscription detection, behavioural insights, meal suggestions, voice input) use third-party AI services to process data and generate suggestions. These outputs are offered as a convenience only and must never be treated as accurate, complete, verified or authoritative. AI-generated content may be wrong, out of date or unsuitable for your situation.\n\nWe do not own or control the AI models used. We are not responsible for anything the AI generates, suggests, predicts or fails to detect. You must check any number, category or recommendation yourself before acting on it. Relying on any AI output as financial guidance is entirely at your own risk.';
+
+  @override
+  String get supportTerms5Title => '5. Family sharing';
+
+  @override
+  String get supportTerms5Body =>
+      'If you invite family members, you are responsible for their access to your household\'s data.';
+
+  @override
+  String get supportTerms6Title => '6. Prohibited conduct';
+
+  @override
+  String get supportTerms6Body =>
+      'You may not reverse-engineer or hack Zad, or use it for any unlawful activity.';
+
+  @override
+  String get supportTerms7Title =>
+      '7. We provide the tool — you are responsible for the outcome';
+
+  @override
+  String get supportTerms7Body =>
+      'We do not guarantee, and take no responsibility for, the accuracy of any balance, expense category, subscription status, stock level, low-stock alert or budget forecast shown in the app. Nor do we guarantee that automatic transaction detection will catch every transaction, or that it will always be right when it does.\n\nBy using Zad, you acknowledge that:\n- we are a passive information-organising tool, not an active party to your financial decisions;\n- any financial loss, missed payment, overspending, spoiled stock, family disagreement or other negative outcome arising from your use of or reliance on the app is your responsibility alone;\n- we will accept no liability, financial or otherwise, for those outcomes, to the fullest extent permitted by law.';
 }

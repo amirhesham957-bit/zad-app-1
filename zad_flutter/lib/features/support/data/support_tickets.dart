@@ -79,12 +79,13 @@ class SupportTickets {
         : crashLog;
     final log = shortLog == null || shortLog.trim().isEmpty
         ? ''
-        : '\n\n── سجل الأعطال ──\n$shortLog';
+        : '\n\n── سجل الأعطال ──\n$shortLog'; // l10n: data
     return Uri(
       scheme: 'mailto',
       path: inbox,
       query: _query(<String, String>{
-        'subject': '[زاد – دعم] $subject',
+        // The mail is read by the support team, who read Arabic.
+        'subject': '[زاد – دعم] $subject', // l10n: data
         'body': '$message$log',
       }),
     );
