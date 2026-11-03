@@ -83,3 +83,36 @@ Deno.test("store hashtag: no spaces or marks", () => {
   assertEquals(storeHashtag("هايبر وان"), "عروض_هايبر_وان");
   assertEquals(storeHashtag("Spinneys!"), "عروض_Spinneys");
 });
+
+// ٤.١٢ (قرار ٤/١١): التوكن بيتجدد لوحده قبل ما يخلص.
+import { exchangeLongLivedToken, instagramTokenInfo, tokenDaysLeft, tokenNeedsRefresh, TOKEN_REFRESH_DAYS } from "./socialSources.ts";
+
+Deno.test("instagram token: a page token never needs a refresh; a long-lived one does inside the last 20 days", async () => {
+  const now = Date.UTC(2026, 10, 4);
+  const day = 86_400;
+  assertEquals(tokenNeedsRefresh({ ok: true, status: 200, expires_at: 0 }, now), false);
+  assertEquals(tokenDaysLeft({ ok: true, status: 200, expires_at: 0 }, now), null);
+  assertEquals(tokenNeedsRefresh({ ok: true, status: 200, expires_at: now / 1000 + (TOKEN_REFRESH_DAYS + 5) * day }, now), false);
+  assertEquals(tokenNeedsRefresh({ ok: true, status: 200, expires_at: now / 1000 + 10 * day }, now), true);
+  assertEquals(tokenDaysLeft({ ok: true, status: 200, expires_at: now / 1000 + 10 * day }, now), 10);
+  assertEquals(tokenNeedsRefresh({ ok: false, status: 400 }, now), false);
+
+  const seen = stubFetch([[/debug_token/, 200, { data: { is_valid: true, expires_at: 1799999999 } }]]);
+  const info = await instagramTokenInfo("TOKEN_abcdefghijklmnopqrstuvwxyz", "app1", "sec1");
+  assertEquals([info.ok, info.expires_at], [true, 1799999999]);
+  assert(seen[0].includes("access_token=app1%7Csec1"), "app keys check the token when present");
+  stubFetch([[/debug_token/, 200, { data: { is_valid: false } }]]);
+  assertEquals((await instagramTokenInfo("TOKEN_abcdefghijklmnopqrstuvwxyz")).reason, "invalid");
+  stubFetch([[/debug_token/, 400, { error: { type: "OAuthException", code: 190 } }]]);
+  assertEquals((await instagramTokenInfo("TOKEN_abcdefghijklmnopqrstuvwxyz")).reason, "OAuthException/190");
+});
+
+Deno.test("instagram token: the exchange returns a new long-lived token and when it ends; a failure says why", async () => {
+  const now = Date.UTC(2026, 10, 4);
+  stubFetch([[/fb_exchange_token/, 200, { access_token: "NEW_abcdefghijklmnopqrstuvwxyz", expires_in: 5_184_000 }]]);
+  const ok = await exchangeLongLivedToken("OLD_abcdefghijklmnopqrstuvwxyz", "app1", "sec1", now);
+  assertEquals([ok.ok, ok.token, ok.expires_at], [true, "NEW_abcdefghijklmnopqrstuvwxyz", new Date(now + 60 * 86_400_000).toISOString()]);
+  stubFetch([[/fb_exchange_token/, 400, { error: { type: "OAuthException", code: 101 } }]]);
+  const bad = await exchangeLongLivedToken("OLD_abcdefghijklmnopqrstuvwxyz", "app1", "sec1", now);
+  assertEquals([bad.ok, bad.reason, bad.token], [false, "OAuthException/101", undefined]);
+});
