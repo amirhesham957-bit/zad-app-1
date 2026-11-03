@@ -41,9 +41,9 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
-import { instagramProbe, youtubeProbe, youtubeSearch } from "./socialSources.ts";
+import { instagramHashtagPosts, instagramProbe, storeHashtag, youtubeProbe, youtubeSearch } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -474,6 +474,22 @@ async function callGroqPool(opts: {
   }
   console.error("[CoreIntel] All Groq fallback keys exhausted — no provider left for this call");
   return { content: null, ok: false };
+}
+
+/** صورة بوست عام كـdata URL للقراية بس (ZAD_PLAN ٤.١٢): ٤ ميجا بالكتير، صور بس، وأي فشل = البوست بيتقري من كلامه. */
+async function pictureAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    const type = res.headers.get("content-type") ?? "";
+    if (!res.ok || !/^image\/(jpeg|png|webp)$/.test(type.split(";")[0].trim())) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > 4_000_000) return null;
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return `data:${type.split(";")[0].trim()};base64,${btoa(binary)}`;
+  } catch {
+    return null;
+  }
 }
 
 // Translates the OpenAI-style content shape this file already speaks (plain string, or
@@ -2785,6 +2801,46 @@ async function handle(req: Request): Promise<Response> {
           deals.push(...readStoreDeals(parsed, [{ title: video.title, url: video.url, snippet: "" }], currency, new Date()));
         }
         return jsonResponse({ ok: true, deals, hits: found.items.length, videos: videos.length, read, source: "youtube" });
+      }
+
+      // ──────────────────────────────────────────────
+      // STORE_DEALS_INSTAGRAM — one store's offer posts this week, read by Gemini (ZAD_PLAN 4.12). Service role
+      // only: zad-brain's weekly deals_instagram_run calls it per store. Official Graph API hashtag search
+      // («#عروض_<المحل>»); the post's caption and its picture are read, the deal keeps the post's link — the
+      // picture itself is never stored. Each new hashtag counts against 30 a week on the account.
+      // ──────────────────────────────────────────────
+      case "store_deals_instagram": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const igToken = Deno.env.get("INSTAGRAM_ACCESS_TOKEN");
+        const igAccount = Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID");
+        if (!igToken || !igAccount) return jsonResponse({ ok: false, reason: "no_key" });
+        const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
+        if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
+        const market = marketOf(payload?.country);
+        const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
+        const tag = storeHashtag(searchStoreName(store));
+        const found = await instagramHashtagPosts(igToken, igAccount, tag, { days: 10, max: 15 });
+        if (!found.ok) return jsonResponse({ ok: false, reason: found.reason ?? `instagram_${found.status}` });
+        const posts = instagramDealPosts(found.items, store);
+        const today = new Date().toISOString().slice(0, 10);
+        const deals: ReturnType<typeof readStoreDeals> = [];
+        let read = 0;
+        for (const post of posts) {
+          const { system, user } = postDealsPrompt(store, market.name, currency, post.caption, today);
+          const content: Array<Record<string, unknown>> = [{ type: "text", text: user }];
+          const picture = post.image_url ? await pictureAsDataUrl(post.image_url) : null;
+          if (picture) content.unshift({ type: "image_url", image_url: { url: picture } });
+          const answer = await callGeminiPool({
+            model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system, content,
+            temperature: 0.1, maxTokens: 1500, jsonMode: true, thinkingBudget: 0, timeoutMs: 30_000,
+            deadline: Date.now() + 35_000,
+          });
+          if (!answer.ok || !answer.content) continue;
+          read++;
+          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+          deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
+        }
+        return jsonResponse({ ok: true, deals, hits: found.items.length, posts: posts.length, read, tag, source: "instagram" });
       }
 
       // ──────────────────────────────────────────────
