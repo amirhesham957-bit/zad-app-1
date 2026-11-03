@@ -1525,6 +1525,14 @@
     "kind",
     "store"
   ],
+  "zad_deal_store_accounts": [
+    "checked_at",
+    "country",
+    "followers",
+    "platform",
+    "store",
+    "username"
+  ],
   "zad_coupons": [
     "active",
     "category",
