@@ -12,7 +12,7 @@
 import { latestOutboundMs, recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CHAT_VOICE_REPLY_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { CHAT_VOICE_REPLY_MOMENT, TELEGRAM_WELCOME_MOMENT, EMOTION_DIRECTIONS, emotionRangeForMoment, isVoiceEmotion, MALE_EMOTION_DIRECTIONS, situationalEmotion, voiceEmotionalRange, type VoiceEmotion, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { conversationProfile } from "./persona.ts";
 import { soulBlock } from "./soul.ts";
 import { countryNameAr, DEFAULT_QUIET, isQuietHourIn, localHourIn, localNowContext, type QuietWindow, quietWindowOf, resolveLocalIso } from "./shared.ts";
@@ -1807,7 +1807,7 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
 ]);
 
 /** مابتتعدّش في السقف ولا في المسافة: اللي مابيتمسكش، وردود شات تليجرام بالصوت (رد مش تنبيه). */
-export const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT];
+export const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT_VOICE_REPLY_MOMENT, TELEGRAM_WELCOME_MOMENT];
 
 /**
  * بتتقال جوه الهدوء (بس بتتعدّ في السقف): «تصبح على خير» بتتبعت ١١ بالظبط — هي اللي

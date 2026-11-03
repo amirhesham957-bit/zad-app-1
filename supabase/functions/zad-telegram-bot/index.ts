@@ -27,7 +27,7 @@ import { detectDialectFromText } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
-import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
+import { CHAT_VOICE_REPLIES_PER_DAY, CHAT_VOICE_REPLY_MOMENT, TELEGRAM_WELCOME_MOMENT, type VoiceEmotion, type ZadVoiceGender, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { voiceReplyEmotion } from "./voiceReply.ts";
 import {
   parsePurchaseCallback, purchaseDoneLine, purchaseFromPending, purchaseKeyboard, purchaseLinesFromPhoto,
@@ -54,7 +54,7 @@ import {
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply,
-  isFlyerPhoto, parseFlyerCaption, pickFlyerStore, flyerDealPayload, flyerReply, FLYER_HOW_TO, FLYER_SAVE_FAILED, type FlyerStoreRow,
+  welcomeSpeech, isFlyerPhoto, parseFlyerCaption, pickFlyerStore, flyerDealPayload, flyerReply, FLYER_HOW_TO, FLYER_SAVE_FAILED, type FlyerStoreRow,
   learningKeyboard, parseLearningCallback, learningReply,
   memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
   habitTrialBlock, parseHabitTrialCallback, habitTrialReply, type HabitTrial,
@@ -323,6 +323,32 @@ async function maybeVoiceReply(sb: SupabaseClient, userId: string, chatId: numbe
     return;
   }
   await deliverVoiceAlert(sb, userId, chatId, "", text, emotion);
+}
+
+/**
+ * الترحيب الصوتي أول ربط (طلب المالك ٣/١١): مرة واحدة للحساب طول العمر. الصف بيتحجز قبل التوليد بمفتاح
+ * `telegram_welcome` (فريد مع user_id)، فـ/start مرتين أو ربط تاني بعد فك الربط مابيرحّبش تاني. ببلاش — مش جوه
+ * وسائط تليجرام المدفوعة: ده أول انطباع، مرة واحدة.
+ */
+async function sendLinkWelcome(sb: SupabaseClient, userId: string, chatId: number): Promise<void> {
+  const [{ data: user }, { data: profile }] = await Promise.all([
+    sb.from("zad_users").select("name,country,currency").eq("id", userId).maybeSingle(),
+    sb.from("zad_customer_profile").select("preferred_name,dialect").eq("user_id", userId).maybeSingle(),
+  ]);
+  const u = user as { name?: string | null; country?: string | null; currency?: string | null } | null;
+  const p = profile as { preferred_name?: string | null; dialect?: string | null } | null;
+  const dialect = chatBotDialect({ preferred: p?.dialect, country: u?.country, currency: u?.currency });
+  const speech = welcomeSpeech(p?.preferred_name || u?.name || null, dialect);
+  const { error: claimErr } = await sb.from("zad_voice_moments").insert({
+    user_id: userId, moment: TELEGRAM_WELCOME_MOMENT, facts: { dialect },
+    dedupe_key: TELEGRAM_WELCOME_MOMENT, status: "sent", sent_at: new Date().toISOString(),
+  });
+  if (claimErr) {
+    // 23505 = اترحّب بيه قبل كده. غير كده: من غير صف مافيش ترحيب، بدل ما يتكرر.
+    if (claimErr.code !== "23505") console.error("[welcome] claim failed:", claimErr.message);
+    return;
+  }
+  await deliverVoiceAlert(sb, userId, chatId, "", speech, "cheerful", speech, TELEGRAM_WELCOME_MOMENT);
 }
 
 async function deliverVoiceAlert(
@@ -1052,6 +1078,8 @@ async function redeemLinkCode(ctx: Context, sb: SupabaseClient, code: string): P
   if (status === "bound" || status === "moved" || status === "already_bound") {
     await ctx.reply(bindingReply(status), { reply_markup: toGrammyKeyboard(mainMenuKeyboard()) });
     const userId = (data as { user_id?: string }).user_id;
+    // أول ربط للحساب ده (مش «مربوط بالفعل»): ترحيب بصوت زاد، في الخلفية — الرد النصي وصل خلاص.
+    if (userId && status !== "already_bound") runInBackground(sendLinkWelcome(sb, userId, chatId));
     if (userId) await maybeAskCountry(sb, chatId, userId);
   } else {
     await ctx.reply(bindingReply(status));

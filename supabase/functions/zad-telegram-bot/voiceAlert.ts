@@ -27,7 +27,9 @@ export const ALERT_SPEECH_MAX_CHARS = 320;
 export const STORY_SPEECH_MAX_CHARS = 600;
 
 export function speechLimitForMoment(moment: unknown): number {
-  return typeof moment === "string" && moment.startsWith("weekly_money") ? STORY_SPEECH_MAX_CHARS : ALERT_SPEECH_MAX_CHARS;
+  // الترحيب أول ربط (telegram_welcome) بيعرّف بزاد كله في نَفَس واحد — مايتقصّش في نص الجملة.
+  return typeof moment === "string" && (moment.startsWith("weekly_money") || moment === "telegram_welcome")
+    ? STORY_SPEECH_MAX_CHARS : ALERT_SPEECH_MAX_CHARS;
 }
 const PCM_SAMPLE_RATE = 24_000;
 

@@ -734,3 +734,19 @@ Deno.test("deal photo: a flyer deal shows the flyer, only from Zad's own bucket"
   assertEquals(dealPhotoUrl({ kind: "flyer", url: "https://evil.example/a.jpg" }, prefix), null);
   assertEquals(dealPhotoUrl({ kind: "flyer", url: `${prefix}a.jpg` }), null);
 });
+
+// الترحيب الصوتي أول ربط (طلب المالك ٣/١١).
+import { welcomeSpeech } from "./telegram.ts";
+import { STORY_SPEECH_MAX_CHARS, speechLimitForMoment } from "./voiceAlert.ts";
+
+Deno.test("link welcome: by name, in the customer's dialect, whole within the story limit", () => {
+  assert(welcomeSpeech("أمير", "EG").startsWith("أهلاً يا أمير! أنا زاد"));
+  assert(welcomeSpeech("أمير", "GULF").startsWith("هلا والله يا أمير!"));
+  assert(welcomeSpeech(null, "EG").startsWith("أهلاً! أنا زاد"));
+  assert(welcomeSpeech("Sam!*", "EN").startsWith("Hi Sam! I'm Zad"));
+  for (const d of ["EG", "GULF", "LEVANT", "MAGHREB", "EN"] as const) {
+    const text = welcomeSpeech("عبدالرحمن محمد", d);
+    assert(text.length <= STORY_SPEECH_MAX_CHARS, `${d} is ${text.length} chars`);
+  }
+  assertEquals(speechLimitForMoment("telegram_welcome"), STORY_SPEECH_MAX_CHARS);
+});
