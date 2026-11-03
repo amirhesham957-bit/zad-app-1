@@ -55,8 +55,13 @@ class ZadTopHeader extends StatelessWidget {
     this.pet,
     this.balance,
     this.sky = SkyPhase.day,
+    this.season,
     super.key,
   });
+
+  /// The occasion's colours and particles behind the header's controls
+  /// (`SeasonHeaderLayer`), on every screen; null on a plain day.
+  final Widget? season;
 
   /// The time of day the header's sky shows (zad_sky.dart).
   final SkyPhase sky;
@@ -102,6 +107,7 @@ class ZadTopHeader extends StatelessWidget {
         color: _surfaceContainerLow.withValues(alpha: 0.92),
         child: ZadSky(
           phase: sky,
+          season: season,
           child: SafeArea(
             bottom: false,
             child: Padding(

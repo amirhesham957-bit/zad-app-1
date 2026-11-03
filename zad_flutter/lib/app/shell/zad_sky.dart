@@ -66,10 +66,13 @@ List<Color> skyTint(SkyPhase phase) => switch (phase) {
 /// The header's sky: [child] on its tint, with stars at night.
 class ZadSky extends StatelessWidget {
   /// Creates the sky.
-  const new({required this.phase, required this.child, super.key});
+  const new({required this.phase, required this.child, this.season, super.key});
 
   /// The time of day.
   final SkyPhase phase;
+
+  /// The occasion's layer, over the sky and under the controls.
+  final Widget? season;
 
   /// The header.
   final Widget child;
@@ -77,28 +80,31 @@ class ZadSky extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tint = skyTint(phase);
-    if (tint.isEmpty) return child;
+    final season = this.season;
+    if (tint.isEmpty && season == null) return child;
     final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return Stack(
       children: <Widget>[
-        Positioned.fill(
-          child: DecoratedBox(
-            key: ValueKey<String>('sky-${phase.name}'),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: tint,
+        if (tint.isNotEmpty)
+          Positioned.fill(
+            child: DecoratedBox(
+              key: ValueKey<String>('sky-${phase.name}'),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: tint,
+                ),
               ),
             ),
           ),
-        ),
         if (phase == SkyPhase.night)
           Positioned.fill(
             child: RepaintBoundary(
               child: IgnorePointer(child: _Stars(still: still)),
             ),
           ),
+        if (season != null) Positioned.fill(child: season),
         child,
       ],
     );

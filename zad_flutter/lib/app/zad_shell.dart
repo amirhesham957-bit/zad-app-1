@@ -33,6 +33,7 @@ import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/home/presentation/season_header.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/household/presentation/household_screen.dart';
 import 'package:zad/features/kids/presentation/kids_shell.dart';
@@ -413,6 +414,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                     unawaited(showNotificationCenter(context)),
                 onAvatar: () => unawaited(showProfileScreen(context)),
                 balance: const AttemptsChip(),
+                season: const SeasonHeaderLayer(),
                 sky: skyPhaseAt(
                   ref.watch(accountTimeZoneProvider),
                   ref.read(nowProvider)(),
