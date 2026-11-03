@@ -19,7 +19,11 @@ enum StoreKind {
   supermarket('supermarket'),
 
   /// Pharmacies.
-  pharmacy('pharmacy');
+  pharmacy('pharmacy'),
+
+  /// Restaurants. Watched for street alerts only (ZAD_PLAN 4.18): walking past
+  /// one says its live offers, and nothing when it has none.
+  restaurant('restaurant');
 
   new(this.tag);
 

@@ -164,6 +164,7 @@ void main() {
     expect(host.registered!.map((f) => f.id), <String>[
       'supermarket_0',
       'pharmacy_0',
+      'restaurant_0',
       kAreaFence,
     ]);
     // Coarse point to the shop finder and the server; exact stays here.

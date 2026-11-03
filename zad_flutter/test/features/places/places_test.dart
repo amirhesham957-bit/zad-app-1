@@ -113,6 +113,22 @@ void main() {
       expect(area.exit, isTrue);
     });
 
+    test('restaurants get their own fences, and all three kinds stay under '
+        "Android's 100", () {
+      final plan = planFences(
+        shops: <NearbyStore>[
+          for (final kind in StoreKind.values)
+            for (var i = 0; i < 20; i++)
+              shop('${kind.tag} $i', i * 0.0005, kind),
+        ],
+        center: home,
+        home: home,
+      );
+      expect(plan.shops['restaurant_0']?.kind, StoreKind.restaurant);
+      expect(plan.shops, hasLength(kShopsPerKind * StoreKind.values.length));
+      expect(plan.fences.length, lessThanOrEqualTo(100));
+    });
+
     test('no home yet, no home fence; never more than 15 shops a kind', () {
       final plan = planFences(
         shops: <NearbyStore>[

@@ -76,7 +76,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQue
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
 import { isDoseAction, muteCheckin, settleDoseReminder } from "../_shared/doseDoor.ts";
@@ -145,7 +145,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
-import { dealCountry, dealSource, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
+import { dealCountry, dealSource, dealsAtPlace, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, INSTAGRAM_STORES_PER_RUN, searchedDeals, STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
@@ -6368,6 +6368,8 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   if (muteErr) console.error("[store_arrival] mute lookup failed:", muteErr.message);
   const muted = (mutes ?? []).length > 0;
 
+  if (category === "restaurant") return await restaurantArrival(sb, userId, storeName, muted, body, nowIso, json);
+
   // تحذير «متفقين نوفّر» في السوبرماركت/المول بس (الدوا مش هدر)، ومش لو العميل كتم رسايل المحلات.
   const agreement = category === "pharmacy" || muted ? null : await loadSavingsAgreement(sb, userId);
 
@@ -6521,10 +6523,54 @@ async function loadSavingsAgreement(sb: SupabaseClient, userId: string): Promise
   }
 }
 
+/**
+ * «انت جنب المطعم» (ZAD_PLAN ٤.١٨): عروضه السارية من zad_deals بس — مفيش نواقص في مطعم. نفس حارس المحل/اليوم وكتم
+ * رسايل المحلات، ومن غير تذكيرات أماكن ولا تحذير التوفير. اتفاق توفير شغال (طوارئ، تحدي، ميزانية في خطر) = ولا كلمة:
+ * عرض مطعم عمره ما بيعدّي وضع الطوارئ.
+ */
+async function restaurantArrival(
+  sb: SupabaseClient, userId: string, storeName: string, muted: boolean, body: any, nowIso: string,
+  json: (payload: Record<string, unknown>, status?: number) => Response,
+): Promise<Response> {
+  if (muted) return json({ ok: true, sent: false, reason: "muted" });
+  const { data: recent, error: recentErr } = await sb.from("agent_tasks")
+    .select("created_at,task_description")
+    .eq("user_id", userId).eq("kind", "store_arrival")
+    .gte("created_at", new Date(Date.now() - 24 * 3_600_000).toISOString());
+  if (recentErr) console.error("[store_arrival] recent lookup failed:", recentErr.message);
+  const blocked = storeArrivalBlock((recent ?? []) as Array<{ created_at: string; task_description: string }>, storeName, Date.now());
+  if (blocked) return json({ ok: true, sent: false, reason: blocked });
+  if (await loadSavingsAgreement(sb, userId)) return json({ ok: true, sent: false, reason: "saving" });
+
+  const { data: me } = await sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle();
+  const country = dealCountry(me as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, Date.now());
+  if (!/^[A-Z]{2}$/.test(country)) return json({ ok: true, sent: false, reason: "no_deal" });
+  const { data: deals, error: dealsErr } = await sb.from("zad_deals")
+    .select("store,item_name,price,price_before,source_kind,source_url,valid_until")
+    .eq("country", country).gt("expires_at", nowIso).order("found_at", { ascending: false }).limit(300);
+  if (dealsErr) console.error("[store_arrival] deals lookup failed:", dealsErr.message);
+  const message = buildRestaurantArrivalMessage(storeName, dealsAtPlace(deals as StoredDealRow[] | null, storeName));
+  if (!message) return json({ ok: true, sent: false, reason: "no_deal" });
+
+  const task = storeArrivalTask(userId, storeArrivalDescription(storeName, "restaurant"), message.body, body?.store_lat, body?.store_lon, nowIso);
+  const { data: taskRow, error: taskErr } = await sb.from("agent_tasks").insert(task).select("id").single();
+  if (taskErr) {
+    console.error("[store_arrival] task insert failed — not sending:", taskErr.message);
+    return json({ ok: false, error: "record_failed" }, 500);
+  }
+  const taskId = (taskRow as { id: string }).id;
+  const telegram = await pushToTelegram(
+    userId, message.title, message.body, fetch, taskId,
+    undefined, undefined, undefined, undefined, undefined, task.map_url ?? undefined,
+  );
+  console.log(`[store_arrival] restaurant «${storeName}» deals=${message.itemCount} → telegram: ${telegram}`);
+  return json({ ok: true, sent: telegram === "delivered", telegram, items: message.itemCount, task_id: taskId, title: message.title, body: message.body });
+}
+
 async function firePlaceReminders(
   sb: SupabaseClient,
   userId: string,
-  category: "supermarket" | "mall" | "pharmacy",
+  category: Exclude<StoreCategory, "restaurant">,
   storeName: string,
   agreement: (SavingsAgreement & { time_zone: string }) | null,
 ): Promise<string> {

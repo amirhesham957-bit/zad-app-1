@@ -30,6 +30,8 @@ export function googlePlacesKeys(env: (name: string) => string | undefined): Arr
 export const PLACE_TYPES: Record<string, string[]> = {
   supermarket: ["supermarket", "grocery_store", "convenience_store"],
   pharmacy: ["pharmacy", "drugstore"],
+  // «انت جنب المطعم» (ZAD_PLAN ٤.١٨). LocationIQ عنده نفس الـtag.
+  restaurant: ["restaurant", "fast_food_restaurant"],
 };
 
 export interface NearbyPlace {

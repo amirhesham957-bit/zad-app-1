@@ -106,6 +106,9 @@ class ServerThenOverpassRemote implements NearbyRemote {
             '(around:$radius,${at.lat},${at.lon});',
       StoreKind.pharmacy =>
         'nwr["amenity"="pharmacy"](around:$radius,${at.lat},${at.lon});',
+      StoreKind.restaurant =>
+        'nwr["amenity"~"restaurant|fast_food"]'
+            '(around:$radius,${at.lat},${at.lon});',
     };
     final response = await _http
         .post(

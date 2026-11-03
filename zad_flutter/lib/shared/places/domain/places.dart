@@ -3,9 +3,9 @@
 /// Kotlin's `HomePlace` + `GroceryGeofenceManager`, ported. What they do:
 ///
 /// * **Shops.** Android watches a 120 m circle round each of the nearest
-///   supermarkets and pharmacies. Walking into one asks the server
-///   (`store_arrival`) what is missing at home; it answers with the list, and
-///   the phone shows it.
+///   supermarkets, pharmacies and restaurants. Walking into one asks the
+///   server (`store_arrival`) what is missing at home — at a restaurant, what
+///   it has on offer; it answers with the list, and the phone shows it.
 /// * **Home.** Where the phone sleeps (sampled between 01:00 and 05:00, two
 ///   different nights within 150 m) is home. **Its coordinates never leave the
 ///   phone.** Leaving and coming back after 45 min – 18 h sends the server only
@@ -33,8 +33,8 @@ const double kAreaRadius = 1500;
 /// past its edge are already watched when the phone crosses it.
 const int kSearchRadius = 3000;
 
-/// Shops per kind. Android allows 100 fences an app; two kinds, home and the
-/// area stay far under.
+/// Shops per kind. Android allows 100 fences an app; three kinds (45), home
+/// and the area stay far under.
 const int kShopsPerKind = 15;
 
 /// Shorter than this away is a trip to the corner, not an outing.
