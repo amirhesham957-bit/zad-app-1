@@ -6274,4 +6274,141 @@ class ZadL10nAr extends ZadL10n {
   String familyCoolingAfterHours(int hours) {
     return 'وقفة التفكير: تقدر توافق بعد $hours ساعة — أو ارفضه دلوقتي لو مش مقتنع.';
   }
+
+  @override
+  String attemptsCount(num count, String digits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$digits محاولة',
+      few: '$digits محاولات',
+      two: 'محاولتين',
+      one: 'محاولة واحدة',
+      zero: 'ولا محاولة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsPlanName(String tier) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'starter': 'الأساسية',
+      'plus': 'بلس',
+      'pro': 'العيلة',
+      'other': 'المجانية',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsRefillPlan(String plan) {
+    return 'باقتك $plan';
+  }
+
+  @override
+  String attemptsRefillPlanOn(String plan, String day, String month) {
+    return 'باقتك $plan — بتتجدد يوم $day $month';
+  }
+
+  @override
+  String get attemptsRefillFull => 'رصيدك كامل';
+
+  @override
+  String get attemptsRefillNow => 'رصيدك بيرجع دلوقتي';
+
+  @override
+  String attemptsRefillAt(String count, String clock) {
+    return 'بيرجع $count الساعة $clock';
+  }
+
+  @override
+  String attemptsRefillTomorrowAt(String count, String clock) {
+    return 'بيرجع $count بكرة الساعة $clock';
+  }
+
+  @override
+  String get attemptsClockAm => 'ص';
+
+  @override
+  String get attemptsClockPm => 'م';
+
+  @override
+  String attemptsChipSemantics(String attempts) {
+    return 'رصيدك $attempts';
+  }
+
+  @override
+  String get attemptsSheetTitle => 'طاقة زاد';
+
+  @override
+  String attemptsSheetBalance(String attempts) {
+    return 'معاك $attempts';
+  }
+
+  @override
+  String get attemptsCostLog => 'تسجيل مصروف أو دخل';
+
+  @override
+  String get attemptsCostFree => 'مجاني';
+
+  @override
+  String get attemptsCostChat => 'رسالة شات';
+
+  @override
+  String get attemptsCostScan => 'مسح فاتورة أو صورة';
+
+  @override
+  String get attemptsCostBrain => 'تحليل عميق أو خطة';
+
+  @override
+  String get attemptsSubscribeNoAds => 'اشترك من غير إعلانات';
+
+  @override
+  String get attemptsSeePlans => 'شوف الباقات';
+
+  @override
+  String get refusalNoAttemptsTitle => 'رصيد المحاولات مايكفيش';
+
+  @override
+  String get refusalSlowDownTitle => 'استنى شوية';
+
+  @override
+  String adWeekTitle(int count) {
+    return 'شفت $count إعلان الأسبوع ده';
+  }
+
+  @override
+  String adWeekBody(int minutes) {
+    return 'يعني حوالي $minutes دقيقة من وقتك. الاشتراك من غير إعلانات خالص، ومعاه محاولات أكتر.';
+  }
+
+  @override
+  String get adsCappedToday => 'خلصت إعلانات النهارده';
+
+  @override
+  String get adNextInAMinute => 'الإعلان الجاي بعد دقيقة';
+
+  @override
+  String adWatchFor(String attempts) {
+    return 'شاهد إعلان وخد $attempts';
+  }
+
+  @override
+  String adOpensBox(String bonus) {
+    return 'الإعلان ده بيفتح الصندوق: +$bonus زيادة';
+  }
+
+  @override
+  String adBoxProgress(String done) {
+    return 'كل تالت إعلان بيفتح صندوق — $done من ٣';
+  }
+
+  @override
+  String get adRewardOnTheWay => 'المكافأة في الطريق لرصيدك…';
+
+  @override
+  String get adClosedEarly => 'الإعلان اتقفل قبل المكافأة.';
+
+  @override
+  String get adNoneNow => 'مفيش إعلان دلوقتي. جرّب كمان شوية.';
 }

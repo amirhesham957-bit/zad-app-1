@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -32,11 +33,12 @@ class AttemptsChip extends ConsumerWidget {
     if (balance == null) return const SizedBox.shrink();
     final low = balance.isLow;
     final fg = low ? ZadColors.mustardOchre : ZadColors.forestEmerald;
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: ZadSpacing.xs),
       child: Semantics(
         button: true,
-        label: 'رصيدك ${attemptsLabel(balance.left)}',
+        label: l10n.attemptsChipSemantics(attemptsLabel(balance.left, l10n)),
         excludeSemantics: true,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
@@ -65,7 +67,7 @@ class AttemptsChip extends ConsumerWidget {
                       Icon(ZadIcons.bill, size: 18, color: fg),
                       const SizedBox(width: ZadSpacing.xs),
                       Text(
-                        arabicDigits(balance.left),
+                        arabicDigits(balance.left, l10n),
                         style: ZadType.labelLarge.copyWith(
                           color: fg,
                           fontWeight: FontWeight.w800,
@@ -108,7 +110,7 @@ Future<void> showAttemptsSheet(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              'طاقة زاد',
+              sheetContext.l10n.attemptsSheetTitle,
               style: ZadType.titleMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xs),
@@ -116,11 +118,12 @@ Future<void> showAttemptsSheet(
             Consumer(
               builder: (context, ref, _) {
                 final now = ref.watch(attemptsBalanceProvider).value ?? balance;
+                final l10n = context.l10n;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      'معاك ${attemptsLabel(now.left)}',
+                      l10n.attemptsSheetBalance(attemptsLabel(now.left, l10n)),
                       style: ZadType.headlineMedium.copyWith(
                         color: ZadColors.ink,
                         fontWeight: FontWeight.w800,
@@ -128,7 +131,7 @@ Future<void> showAttemptsSheet(
                     ),
                     const SizedBox(height: ZadSpacing.xs),
                     Text(
-                      refillLine(now, DateTime.now(), zone),
+                      refillLine(now, DateTime.now(), zone, l10n),
                       style: ZadType.bodyMedium.copyWith(
                         color: ZadColors.inkMuted,
                       ),
@@ -138,18 +141,21 @@ Future<void> showAttemptsSheet(
               },
             ),
             const SizedBox(height: ZadSpacing.lg),
-            const _CostRow(label: 'تسجيل مصروف أو دخل', cost: 'مجاني'),
             _CostRow(
-              label: 'رسالة شات',
-              cost: attemptsLabel(AttemptCosts.chat),
+              label: sheetContext.l10n.attemptsCostLog,
+              cost: sheetContext.l10n.attemptsCostFree,
             ),
             _CostRow(
-              label: 'مسح فاتورة أو صورة',
-              cost: attemptsLabel(AttemptCosts.scan),
+              label: sheetContext.l10n.attemptsCostChat,
+              cost: attemptsLabel(AttemptCosts.chat, sheetContext.l10n),
             ),
             _CostRow(
-              label: 'تحليل عميق أو خطة',
-              cost: attemptsLabel(AttemptCosts.brain),
+              label: sheetContext.l10n.attemptsCostScan,
+              cost: attemptsLabel(AttemptCosts.scan, sheetContext.l10n),
+            ),
+            _CostRow(
+              label: sheetContext.l10n.attemptsCostBrain,
+              cost: attemptsLabel(AttemptCosts.brain, sheetContext.l10n),
             ),
             const SizedBox(height: ZadSpacing.xl),
             const WatchAdButton(),
@@ -164,7 +170,9 @@ Future<void> showAttemptsSheet(
                 unawaited(ZadScreens.showPaywallScreen(context));
               },
               child: Text(
-                balance.isFree ? 'اشترك من غير إعلانات' : 'شوف الباقات',
+                balance.isFree
+                    ? sheetContext.l10n.attemptsSubscribeNoAds
+                    : sheetContext.l10n.attemptsSeePlans,
               ),
             ),
           ],
@@ -205,26 +213,41 @@ class _CostRow extends StatelessWidget {
 
 /// When the balance comes back, on the account's clock:
 /// «بيرجع ٥ الساعة ٦:٣٠ م»، «بيرجع ٥ بكرة الساعة ١:١٥ ص»، or for a plan
-/// «باقتك الأساسية — بتتجدد يوم ١٢ نوفمبر».
-String refillLine(AttemptsBalance b, DateTime now, String zone) {
+/// «باقتك الأساسية — بتتجدد يوم ١٢ نوفمبر». In [l10n]'s language, Arabic by
+/// default.
+String refillLine(
+  AttemptsBalance b,
+  DateTime now,
+  String zone, [
+  ZadL10n? l10n,
+]) {
+  final l = l10n ?? zadL10nArabic;
   final next = b.nextRefillAt;
   if (!b.isFree) {
-    if (next == null) return 'باقتك ${b.planName}';
+    final plan = b.planName(l);
+    if (next == null) return l.attemptsRefillPlan(plan);
     final at = _inZone(next, zone);
-    final day = '${arabicDigits(at.day)} ${_months[at.month - 1]}';
-    return 'باقتك ${b.planName} — بتتجدد يوم $day';
+    return l.attemptsRefillPlanOn(
+      plan,
+      arabicDigits(at.day, l),
+      l.monthName('m${at.month}'),
+    );
   }
-  if (b.cycleLeft >= b.perCycle) return 'رصيدك كامل';
-  if (next == null || !next.isAfter(now)) return 'رصيدك بيرجع دلوقتي';
+  if (b.cycleLeft >= b.perCycle) return l.attemptsRefillFull;
+  if (next == null || !next.isAfter(now)) return l.attemptsRefillNow;
   final at = _inZone(next, zone);
   final today = _inZone(now, zone);
   final sameDay =
       at.year == today.year && at.month == today.month && at.day == today.day;
   final h12 = at.hour % 12 == 0 ? 12 : at.hour % 12;
-  final mm = '${arabicDigits(at.minute ~/ 10)}${arabicDigits(at.minute % 10)}';
-  final clock = '${arabicDigits(h12)}:$mm ${at.hour < 12 ? 'ص' : 'م'}';
-  final when = sameDay ? 'الساعة $clock' : 'بكرة الساعة $clock';
-  return 'بيرجع ${arabicDigits(b.perCycle)} $when';
+  final mm =
+      '${arabicDigits(at.minute ~/ 10, l)}${arabicDigits(at.minute % 10, l)}';
+  final period = at.hour < 12 ? l.attemptsClockAm : l.attemptsClockPm;
+  final clock = '${arabicDigits(h12, l)}:$mm $period';
+  final count = arabicDigits(b.perCycle, l);
+  return sameDay
+      ? l.attemptsRefillAt(count, clock)
+      : l.attemptsRefillTomorrowAt(count, clock);
 }
 
 DateTime _inZone(DateTime t, String zone) {
@@ -234,18 +257,3 @@ DateTime _inZone(DateTime t, String zone) {
     return t.toLocal();
   }
 }
-
-const List<String> _months = <String>[
-  'يناير',
-  'فبراير',
-  'مارس',
-  'أبريل',
-  'مايو',
-  'يونيو',
-  'يوليو',
-  'أغسطس',
-  'سبتمبر',
-  'أكتوبر',
-  'نوفمبر',
-  'ديسمبر',
-];

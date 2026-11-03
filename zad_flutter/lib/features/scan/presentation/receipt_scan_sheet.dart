@@ -74,7 +74,7 @@ class ReceiptScanSheet extends ConsumerWidget {
     final view = ref.watch(scanControllerProvider);
 
     // The balance or the pace, said as the server said it (meter.ts).
-    final refusal = serverRefusal(view.error);
+    final refusal = serverRefusal(view.error, context.l10n);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(

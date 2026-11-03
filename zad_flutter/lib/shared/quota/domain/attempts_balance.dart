@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// What each kind of request costs — the server's `zad_attempt_cost`.
 abstract final class AttemptCosts {
@@ -82,13 +83,10 @@ class AttemptsBalance {
   /// Low enough to say so: less than one deep analysis.
   bool get isLow => left < AttemptCosts.brain;
 
-  /// The plan's name as the paywall says it.
-  String get planName => switch (tier) {
-    'starter' => 'الأساسية',
-    'plus' => 'بلس',
-    'pro' => 'العيلة',
-    _ => 'المجانية',
-  };
+  /// The plan's name as the paywall says it, in [l10n]'s language (Arabic
+  /// by default).
+  String planName([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).attemptsPlanName(tier);
 
   @override
   bool operator ==(Object other) =>
@@ -106,18 +104,19 @@ class AttemptsBalance {
 }
 
 /// «محاولة واحدة»، «محاولتين»، «٣ محاولات»، «١١ محاولة» — the noun agrees with
-/// the count, the same rule as the server's `attempts()`.
-String attemptsLabel(int n) {
+/// the count, the same rule as the server's `attempts()`. In [l10n]'s
+/// language, Arabic by default.
+String attemptsLabel(int n, [ZadL10n? l10n]) {
   final k = n < 0 ? 0 : n;
-  if (k == 0) return 'ولا محاولة';
-  if (k == 1) return 'محاولة واحدة';
-  if (k == 2) return 'محاولتين';
-  final digits = arabicDigits(k);
-  return k <= 10 ? '$digits محاولات' : '$digits محاولة';
+  return (l10n ?? zadL10nArabic).attemptsCount(k, arabicDigits(k, l10n));
 }
 
-/// Western digits to Arabic-Indic, as the rest of the copy writes them.
-String arabicDigits(int n) {
+/// Western digits to Arabic-Indic, as the rest of the copy writes them — for
+/// Arabic only: in another language [l10n] gets the Western digits back.
+String arabicDigits(int n, [ZadL10n? l10n]) {
+  if (l10n != null && l10n.localeName != 'ar') return n.toString();
+  // The digit glyphs themselves, not a sentence to translate.
+  // l10n: data-begin
   const map = <String, String>{
     '0': '٠',
     '1': '١',
@@ -130,5 +129,6 @@ String arabicDigits(int n) {
     '8': '٨',
     '9': '٩',
   };
+  // l10n: data-end
   return n.toString().split('').map((c) => map[c] ?? c).join();
 }

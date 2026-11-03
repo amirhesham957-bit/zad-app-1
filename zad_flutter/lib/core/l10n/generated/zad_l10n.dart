@@ -10889,6 +10889,198 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'وقفة التفكير: تقدر توافق بعد {hours} ساعة — أو ارفضه دلوقتي لو مش مقتنع.'**
   String familyCoolingAfterHours(int hours);
+
+  /// An attempts count; digits is the count as the language writes it.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{ولا محاولة} =1{محاولة واحدة} =2{محاولتين} few{{digits} محاولات} other{{digits} محاولة}}'**
+  String attemptsCount(num count, String digits);
+
+  /// The plan's name, by tier.
+  ///
+  /// In ar, this message translates to:
+  /// **'{tier, select, starter{الأساسية} plus{بلس} pro{العيلة} other{المجانية}}'**
+  String attemptsPlanName(String tier);
+
+  /// Attempts sheet: the plan, no renewal date known.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقتك {plan}'**
+  String attemptsRefillPlan(String plan);
+
+  /// Attempts sheet: the plan and its renewal date.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقتك {plan} — بتتجدد يوم {day} {month}'**
+  String attemptsRefillPlanOn(String plan, String day, String month);
+
+  /// Attempts sheet: nothing to refill.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك كامل'**
+  String get attemptsRefillFull;
+
+  /// Attempts sheet: the refill is due.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك بيرجع دلوقتي'**
+  String get attemptsRefillNow;
+
+  /// Attempts sheet: the free attempts come back today at a time.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيرجع {count} الساعة {clock}'**
+  String attemptsRefillAt(String count, String clock);
+
+  /// Attempts sheet: the free attempts come back tomorrow at a time.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيرجع {count} بكرة الساعة {clock}'**
+  String attemptsRefillTomorrowAt(String count, String clock);
+
+  /// Before noon, after a clock time.
+  ///
+  /// In ar, this message translates to:
+  /// **'ص'**
+  String get attemptsClockAm;
+
+  /// After noon, after a clock time.
+  ///
+  /// In ar, this message translates to:
+  /// **'م'**
+  String get attemptsClockPm;
+
+  /// Screen reader label of the attempts chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك {attempts}'**
+  String attemptsChipSemantics(String attempts);
+
+  /// Attempts sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'طاقة زاد'**
+  String get attemptsSheetTitle;
+
+  /// Attempts sheet: the balance.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاك {attempts}'**
+  String attemptsSheetBalance(String attempts);
+
+  /// Attempts sheet: a cost row.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل مصروف أو دخل'**
+  String get attemptsCostLog;
+
+  /// Attempts sheet: the cost of logging.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجاني'**
+  String get attemptsCostFree;
+
+  /// Attempts sheet: a cost row.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة شات'**
+  String get attemptsCostChat;
+
+  /// Attempts sheet: a cost row.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح فاتورة أو صورة'**
+  String get attemptsCostScan;
+
+  /// Attempts sheet: a cost row.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل عميق أو خطة'**
+  String get attemptsCostBrain;
+
+  /// Attempts sheet: the free tier's plan button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك من غير إعلانات'**
+  String get attemptsSubscribeNoAds;
+
+  /// Button opening the plans.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف الباقات'**
+  String get attemptsSeePlans;
+
+  /// Title when the server refused for the balance (402).
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد المحاولات مايكفيش'**
+  String get refusalNoAttemptsTitle;
+
+  /// Title when the server refused for the pace (429).
+  ///
+  /// In ar, this message translates to:
+  /// **'استنى شوية'**
+  String get refusalSlowDownTitle;
+
+  /// Weekly ads card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'شفت {count} إعلان الأسبوع ده'**
+  String adWeekTitle(int count);
+
+  /// Weekly ads card body.
+  ///
+  /// In ar, this message translates to:
+  /// **'يعني حوالي {minutes} دقيقة من وقتك. الاشتراك من غير إعلانات خالص، ومعاه محاولات أكتر.'**
+  String adWeekBody(int minutes);
+
+  /// Watch-ad button: the day's cap is reached.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت إعلانات النهارده'**
+  String get adsCappedToday;
+
+  /// Watch-ad button: waiting between ads.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان الجاي بعد دقيقة'**
+  String get adNextInAMinute;
+
+  /// Watch-ad button.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاهد إعلان وخد {attempts}'**
+  String adWatchFor(String attempts);
+
+  /// Under the watch-ad button.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان ده بيفتح الصندوق: +{bonus} زيادة'**
+  String adOpensBox(String bonus);
+
+  /// Under the watch-ad button.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل تالت إعلان بيفتح صندوق — {done} من ٣'**
+  String adBoxProgress(String done);
+
+  /// After a rewarded ad was watched to the end.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكافأة في الطريق لرصيدك…'**
+  String get adRewardOnTheWay;
+
+  /// A rewarded ad dismissed early.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان اتقفل قبل المكافأة.'**
+  String get adClosedEarly;
+
+  /// No rewarded ad available.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إعلان دلوقتي. جرّب كمان شوية.'**
+  String get adNoneNow;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

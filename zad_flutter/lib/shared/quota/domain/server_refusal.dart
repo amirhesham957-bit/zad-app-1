@@ -9,6 +9,7 @@ library;
 import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// The server's refusal: a title for the screen and its own message.
 ///
@@ -17,8 +18,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 typedef ServerRefusal = ({String title, String message, bool outOfAttempts});
 
 /// The refusal behind [error], or null for any other failure (offline, a
-/// server error), which the screen words itself.
-ServerRefusal? serverRefusal(Object? error) {
+/// server error), which the screen words itself. The title is in [l10n]'s
+/// language (Arabic by default); the message is the server's own.
+ServerRefusal? serverRefusal(Object? error, [ZadL10n? l10n]) {
   if (error is! FunctionException) return null;
   if (error.status != 402 && error.status != 429) return null;
   final details = switch (error.details) {
@@ -28,8 +30,11 @@ ServerRefusal? serverRefusal(Object? error) {
   };
   final message = details?['message'];
   if (message is! String || message.isEmpty) return null;
+  final l = l10n ?? zadL10nArabic;
   return (
-    title: error.status == 402 ? 'رصيد المحاولات مايكفيش' : 'استنى شوية',
+    title: error.status == 402
+        ? l.refusalNoAttemptsTitle
+        : l.refusalSlowDownTitle,
     message: message,
     outOfAttempts: error.status == 402,
   );

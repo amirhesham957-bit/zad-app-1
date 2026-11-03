@@ -6386,4 +6386,151 @@ class ZadL10nEn extends ZadL10n {
     );
     return 'Thinking pause: you can approve in $_temp0 — or turn it down now if you\'re not convinced.';
   }
+
+  @override
+  String attemptsCount(num count, String digits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$digits attempts',
+      one: '1 attempt',
+      zero: 'no attempts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsPlanName(String tier) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'starter': 'Basic',
+      'plus': 'Plus',
+      'pro': 'Family',
+      'other': 'Free',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsRefillPlan(String plan) {
+    return 'Your $plan plan';
+  }
+
+  @override
+  String attemptsRefillPlanOn(String plan, String day, String month) {
+    return 'Your $plan plan — renews on $month $day';
+  }
+
+  @override
+  String get attemptsRefillFull => 'Your balance is full';
+
+  @override
+  String get attemptsRefillNow => 'Your balance is coming back now';
+
+  @override
+  String attemptsRefillAt(String count, String clock) {
+    return '$count come back at $clock';
+  }
+
+  @override
+  String attemptsRefillTomorrowAt(String count, String clock) {
+    return '$count come back tomorrow at $clock';
+  }
+
+  @override
+  String get attemptsClockAm => 'AM';
+
+  @override
+  String get attemptsClockPm => 'PM';
+
+  @override
+  String attemptsChipSemantics(String attempts) {
+    return 'Your balance: $attempts';
+  }
+
+  @override
+  String get attemptsSheetTitle => 'Zad\'s energy';
+
+  @override
+  String attemptsSheetBalance(String attempts) {
+    return 'You have $attempts';
+  }
+
+  @override
+  String get attemptsCostLog => 'Logging an expense or income';
+
+  @override
+  String get attemptsCostFree => 'Free';
+
+  @override
+  String get attemptsCostChat => 'A chat message';
+
+  @override
+  String get attemptsCostScan => 'Scanning a receipt or photo';
+
+  @override
+  String get attemptsCostBrain => 'A deep analysis or plan';
+
+  @override
+  String get attemptsSubscribeNoAds => 'Subscribe, no ads';
+
+  @override
+  String get attemptsSeePlans => 'See the plans';
+
+  @override
+  String get refusalNoAttemptsTitle => 'Not enough attempts';
+
+  @override
+  String get refusalSlowDownTitle => 'Wait a little';
+
+  @override
+  String adWeekTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You watched $count ads this week',
+      one: 'You watched 1 ad this week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adWeekBody(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes',
+      one: '1 minute',
+    );
+    return 'That\'s about $_temp0 of your time. A plan has no ads at all, and more attempts.';
+  }
+
+  @override
+  String get adsCappedToday => 'No more ads today';
+
+  @override
+  String get adNextInAMinute => 'Next ad in a minute';
+
+  @override
+  String adWatchFor(String attempts) {
+    return 'Watch an ad, get $attempts';
+  }
+
+  @override
+  String adOpensBox(String bonus) {
+    return 'This ad opens the box: +$bonus extra';
+  }
+
+  @override
+  String adBoxProgress(String done) {
+    return 'Every third ad opens a box — $done of 3';
+  }
+
+  @override
+  String get adRewardOnTheWay => 'Your reward is on its way to your balance…';
+
+  @override
+  String get adClosedEarly => 'The ad closed before the reward.';
+
+  @override
+  String get adNoneNow => 'No ad right now. Try again in a little while.';
 }

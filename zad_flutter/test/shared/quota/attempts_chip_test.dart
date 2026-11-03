@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -72,7 +73,7 @@ void main() {
       expect(b.perCycle, 1000);
       expect(b.nextRefillAt, DateTime.utc(2026, 11, 12, 10));
       expect(b.isFree, isFalse);
-      expect(b.planName, 'بلس');
+      expect(b.planName(), 'بلس');
     });
 
     test('reads the share earned from ads; a server without it says 0', () {
@@ -114,6 +115,33 @@ void main() {
     expect(attemptsLabel(3), '٣ محاولات');
     expect(attemptsLabel(11), '١١ محاولة');
     expect(attemptsLabel(2500), '٢٥٠٠ محاولة');
+  });
+
+  test('in English: Western digits and an English noun', () {
+    final en = lookupZadL10n(const Locale('en'));
+    expect(attemptsLabel(0, en), 'no attempts');
+    expect(attemptsLabel(1, en), '1 attempt');
+    expect(attemptsLabel(11, en), '11 attempts');
+    final now = DateTime.utc(2026, 10, 12, 10);
+    expect(
+      refillLine(_free(), now, 'Africa/Cairo', en),
+      '5 come back at 6:30 PM',
+    );
+    expect(
+      refillLine(
+        AttemptsBalance(
+          tier: 'starter',
+          left: 120,
+          perCycle: 300,
+          nextRefillAt: DateTime.utc(2026, 11, 12, 9),
+          adsEnabled: false,
+        ),
+        now,
+        'Africa/Cairo',
+        en,
+      ),
+      'Your Basic plan — renews on November 12',
+    );
   });
 
   group('refillLine, on the account clock', () {

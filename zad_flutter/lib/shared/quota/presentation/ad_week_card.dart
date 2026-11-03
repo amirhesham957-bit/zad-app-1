@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/quota/data/ad_week_remote.dart';
@@ -61,15 +62,14 @@ class _AdWeekCardState extends ConsumerState<AdWeekCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'شفت ${week.ads} إعلان الأسبوع ده',
+                        context.l10n.adWeekTitle(week.ads),
                         style: ZadType.titleMedium.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: ZadSpacing.xs),
                       Text(
-                        'يعني حوالي ${week.minutes} دقيقة من وقتك. '
-                        'الاشتراك من غير إعلانات خالص، ومعاه محاولات أكتر.',
+                        context.l10n.adWeekBody(week.minutes),
                         style: ZadType.bodyMedium.copyWith(
                           color: ZadColors.slate,
                         ),
@@ -82,7 +82,7 @@ class _AdWeekCardState extends ConsumerState<AdWeekCard> {
                               height: 44,
                               child: FilledButton(
                                 onPressed: () => _close(openPlans: true),
-                                child: const Text('شوف الباقات'),
+                                child: Text(context.l10n.attemptsSeePlans),
                               ),
                             ),
                           ),
@@ -91,7 +91,7 @@ class _AdWeekCardState extends ConsumerState<AdWeekCard> {
                             height: 44,
                             child: TextButton(
                               onPressed: () => _close(openPlans: false),
-                              child: const Text('مش دلوقتي'),
+                              child: Text(context.l10n.commonNotNow),
                             ),
                           ),
                         ],

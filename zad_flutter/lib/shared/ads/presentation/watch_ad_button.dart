@@ -72,9 +72,9 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
     setState(() {
       _busy = false;
       _note = switch (outcome) {
-        RewardedOutcome.earned => 'المكافأة في الطريق لرصيدك…',
-        RewardedOutcome.dismissed => 'الإعلان اتقفل قبل المكافأة.',
-        RewardedOutcome.unavailable => 'مفيش إعلان دلوقتي. جرّب كمان شوية.',
+        RewardedOutcome.earned => context.l10n.adRewardOnTheWay,
+        RewardedOutcome.dismissed => context.l10n.adClosedEarly,
+        RewardedOutcome.unavailable => context.l10n.adNoneNow,
       };
     });
     if (outcome == RewardedOutcome.earned) {
@@ -102,16 +102,17 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
       });
     }
 
+    final l10n = context.l10n;
     final String label;
     if (preview.capped) {
-      label = 'خلصت إعلانات النهارده';
+      label = l10n.adsCappedToday;
     } else if (waiting) {
-      label = 'الإعلان الجاي بعد دقيقة';
+      label = l10n.adNextInAMinute;
     } else if (preview.total == 0) {
       // ٣ إعلانات = محاولة (قرار المالك ٢٨/١٠): الإعلان ده خطوة منهم.
-      label = context.l10n.adWatchStep(arabicDigits(preview.adsToday % 3 + 1));
+      label = l10n.adWatchStep(arabicDigits(preview.adsToday % 3 + 1, l10n));
     } else {
-      label = 'شاهد إعلان وخد ${attemptsLabel(preview.total)}';
+      label = l10n.adWatchFor(attemptsLabel(preview.total, l10n));
     }
     final enabled = preview.available && !waiting && !_busy;
 
@@ -159,13 +160,13 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
 String _progressLine(ZadL10n l, AdRewardPreview p) {
   if (p.reward == 0) {
     return p.boxNext
-        ? l.adThirdOpens(attemptsLabel(p.boxBonus))
+        ? l.adThirdOpens(attemptsLabel(p.boxBonus, l))
         : l.adThreeForOne(
-            attemptsLabel(p.boxBonus),
-            arabicDigits(p.adsToday % 3),
+            attemptsLabel(p.boxBonus, l),
+            arabicDigits(p.adsToday % 3, l),
           );
   }
   return p.boxNext
-      ? 'الإعلان ده بيفتح الصندوق: +${arabicDigits(p.boxBonus)} زيادة'
-      : 'كل تالت إعلان بيفتح صندوق — ${arabicDigits(p.adsToday % 3)} من ٣';
+      ? l.adOpensBox(arabicDigits(p.boxBonus, l))
+      : l.adBoxProgress(arabicDigits(p.adsToday % 3, l));
 }

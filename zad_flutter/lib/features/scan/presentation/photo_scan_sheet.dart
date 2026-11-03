@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/scan/application/photo_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
@@ -72,7 +73,7 @@ class PhotoScanSheet extends ConsumerWidget {
 
     final isPantry = kind == PhotoKind.pantry;
     // The balance or the pace, said as the server said it (meter.ts).
-    final refusal = serverRefusal(view.error);
+    final refusal = serverRefusal(view.error, context.l10n);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(

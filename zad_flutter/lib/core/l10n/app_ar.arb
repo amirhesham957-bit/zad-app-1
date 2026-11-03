@@ -5993,5 +5993,213 @@
         "type": "int"
       }
     }
+  },
+  "attemptsCount": "{count, plural, =0{ولا محاولة} =1{محاولة واحدة} =2{محاولتين} few{{digits} محاولات} other{{digits} محاولة}}",
+  "@attemptsCount": {
+    "description": "An attempts count; digits is the count as the language writes it.",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      },
+      "digits": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsPlanName": "{tier, select, starter{الأساسية} plus{بلس} pro{العيلة} other{المجانية}}",
+  "@attemptsPlanName": {
+    "description": "The plan's name, by tier.",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsRefillPlan": "باقتك {plan}",
+  "@attemptsRefillPlan": {
+    "description": "Attempts sheet: the plan, no renewal date known.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsRefillPlanOn": "باقتك {plan} — بتتجدد يوم {day} {month}",
+  "@attemptsRefillPlanOn": {
+    "description": "Attempts sheet: the plan and its renewal date.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsRefillFull": "رصيدك كامل",
+  "@attemptsRefillFull": {
+    "description": "Attempts sheet: nothing to refill."
+  },
+  "attemptsRefillNow": "رصيدك بيرجع دلوقتي",
+  "@attemptsRefillNow": {
+    "description": "Attempts sheet: the refill is due."
+  },
+  "attemptsRefillAt": "بيرجع {count} الساعة {clock}",
+  "@attemptsRefillAt": {
+    "description": "Attempts sheet: the free attempts come back today at a time.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "clock": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsRefillTomorrowAt": "بيرجع {count} بكرة الساعة {clock}",
+  "@attemptsRefillTomorrowAt": {
+    "description": "Attempts sheet: the free attempts come back tomorrow at a time.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "clock": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsClockAm": "ص",
+  "@attemptsClockAm": {
+    "description": "Before noon, after a clock time."
+  },
+  "attemptsClockPm": "م",
+  "@attemptsClockPm": {
+    "description": "After noon, after a clock time."
+  },
+  "attemptsChipSemantics": "رصيدك {attempts}",
+  "@attemptsChipSemantics": {
+    "description": "Screen reader label of the attempts chip.",
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsSheetTitle": "طاقة زاد",
+  "@attemptsSheetTitle": {
+    "description": "Attempts sheet title."
+  },
+  "attemptsSheetBalance": "معاك {attempts}",
+  "@attemptsSheetBalance": {
+    "description": "Attempts sheet: the balance.",
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "attemptsCostLog": "تسجيل مصروف أو دخل",
+  "@attemptsCostLog": {
+    "description": "Attempts sheet: a cost row."
+  },
+  "attemptsCostFree": "مجاني",
+  "@attemptsCostFree": {
+    "description": "Attempts sheet: the cost of logging."
+  },
+  "attemptsCostChat": "رسالة شات",
+  "@attemptsCostChat": {
+    "description": "Attempts sheet: a cost row."
+  },
+  "attemptsCostScan": "مسح فاتورة أو صورة",
+  "@attemptsCostScan": {
+    "description": "Attempts sheet: a cost row."
+  },
+  "attemptsCostBrain": "تحليل عميق أو خطة",
+  "@attemptsCostBrain": {
+    "description": "Attempts sheet: a cost row."
+  },
+  "attemptsSubscribeNoAds": "اشترك من غير إعلانات",
+  "@attemptsSubscribeNoAds": {
+    "description": "Attempts sheet: the free tier's plan button."
+  },
+  "attemptsSeePlans": "شوف الباقات",
+  "@attemptsSeePlans": {
+    "description": "Button opening the plans."
+  },
+  "refusalNoAttemptsTitle": "رصيد المحاولات مايكفيش",
+  "@refusalNoAttemptsTitle": {
+    "description": "Title when the server refused for the balance (402)."
+  },
+  "refusalSlowDownTitle": "استنى شوية",
+  "@refusalSlowDownTitle": {
+    "description": "Title when the server refused for the pace (429)."
+  },
+  "adWeekTitle": "شفت {count} إعلان الأسبوع ده",
+  "@adWeekTitle": {
+    "description": "Weekly ads card title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adWeekBody": "يعني حوالي {minutes} دقيقة من وقتك. الاشتراك من غير إعلانات خالص، ومعاه محاولات أكتر.",
+  "@adWeekBody": {
+    "description": "Weekly ads card body.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "adsCappedToday": "خلصت إعلانات النهارده",
+  "@adsCappedToday": {
+    "description": "Watch-ad button: the day's cap is reached."
+  },
+  "adNextInAMinute": "الإعلان الجاي بعد دقيقة",
+  "@adNextInAMinute": {
+    "description": "Watch-ad button: waiting between ads."
+  },
+  "adWatchFor": "شاهد إعلان وخد {attempts}",
+  "@adWatchFor": {
+    "description": "Watch-ad button.",
+    "placeholders": {
+      "attempts": {
+        "type": "String"
+      }
+    }
+  },
+  "adOpensBox": "الإعلان ده بيفتح الصندوق: +{bonus} زيادة",
+  "@adOpensBox": {
+    "description": "Under the watch-ad button.",
+    "placeholders": {
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
+  "adBoxProgress": "كل تالت إعلان بيفتح صندوق — {done} من ٣",
+  "@adBoxProgress": {
+    "description": "Under the watch-ad button.",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      }
+    }
+  },
+  "adRewardOnTheWay": "المكافأة في الطريق لرصيدك…",
+  "@adRewardOnTheWay": {
+    "description": "After a rewarded ad was watched to the end."
+  },
+  "adClosedEarly": "الإعلان اتقفل قبل المكافأة.",
+  "@adClosedEarly": {
+    "description": "A rewarded ad dismissed early."
+  },
+  "adNoneNow": "مفيش إعلان دلوقتي. جرّب كمان شوية.",
+  "@adNoneNow": {
+    "description": "No rewarded ad available."
   }
 }
