@@ -1956,5 +1956,19 @@
   "orbMood": "{mood, select, listening{Zad: listening} focused{Zad: thinking} speaking{Zad: speaking} happy{Zad: pleased} alert{Zad: alert} celebrating{Zad: celebrating} sad{Zad: sad} hungry{Zad: hungry} thirsty{Zad: thirsty} sleepy{Zad: sleepy} other{Zad: calm}}",
   "orbAccessoryLabel": "{accessory, select, bow{Bow} glasses{Glasses} flower{Flower} crown{Crown} other{None}}",
   "orbPetAsleep": "{name} is asleep",
-  "orbPetMood": "{name}: {mood}"
+  "orbPetMood": "{name}: {mood}",
+  "insightKindLabel": "{kind, select, question{Question} alert{Alert} other{Info}}",
+  "insightDismissReason": "{reason, select, notRelevant{Not relevant to me} wrongData{The number is wrong} other{I already knew}}",
+  "localInsightBudgetTitle": "Your {category} budget is almost used up",
+  "localInsightBudgetBody": "You've spent {spent} of {budget} on {category} this month.",
+  "localInsightUnusedTitle": "Unused subscription: {name}",
+  "localInsightUnusedBody": "We haven't seen any activity on {name} lately. Cancelling could save {yearly} a year.",
+  "localInsightCostlyTitle": "Costly subscription: {name}",
+  "localInsightCostlyBody": "This subscription costs you {yearly} a year. Is it worth keeping?",
+  "localInsightWelcomeTitle": "Welcome to Zad",
+  "localInsightWelcomeBody": "Add transactions or pantry items so we can analyse your data and make smart suggestions.",
+  "questionYes": "Yes",
+  "questionNo": "No",
+  "questionOpenCamera": "Open the camera",
+  "questionSend": "Send"
 }

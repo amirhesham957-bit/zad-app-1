@@ -7340,4 +7340,73 @@ class ZadL10nEn extends ZadL10n {
   String orbPetMood(String name, String mood) {
     return '$name: $mood';
   }
+
+  @override
+  String insightKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'question': 'Question',
+      'alert': 'Alert',
+      'other': 'Info',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String insightDismissReason(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notRelevant': 'Not relevant to me',
+      'wrongData': 'The number is wrong',
+      'other': 'I already knew',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String localInsightBudgetTitle(String category) {
+    return 'Your $category budget is almost used up';
+  }
+
+  @override
+  String localInsightBudgetBody(String spent, String budget, String category) {
+    return 'You\'ve spent $spent of $budget on $category this month.';
+  }
+
+  @override
+  String localInsightUnusedTitle(String name) {
+    return 'Unused subscription: $name';
+  }
+
+  @override
+  String localInsightUnusedBody(String name, String yearly) {
+    return 'We haven\'t seen any activity on $name lately. Cancelling could save $yearly a year.';
+  }
+
+  @override
+  String localInsightCostlyTitle(String name) {
+    return 'Costly subscription: $name';
+  }
+
+  @override
+  String localInsightCostlyBody(String yearly) {
+    return 'This subscription costs you $yearly a year. Is it worth keeping?';
+  }
+
+  @override
+  String get localInsightWelcomeTitle => 'Welcome to Zad';
+
+  @override
+  String get localInsightWelcomeBody =>
+      'Add transactions or pantry items so we can analyse your data and make smart suggestions.';
+
+  @override
+  String get questionYes => 'Yes';
+
+  @override
+  String get questionNo => 'No';
+
+  @override
+  String get questionOpenCamera => 'Open the camera';
+
+  @override
+  String get questionSend => 'Send';
 }

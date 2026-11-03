@@ -7176,5 +7176,110 @@
         "type": "String"
       }
     }
+  },
+  "insightKindLabel": "{kind, select, question{سؤال} alert{تنبيه} other{معلومة}}",
+  "@insightKindLabel": {
+    "description": "The tag on an insight card.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "insightDismissReason": "{reason, select, notRelevant{مش مهم ليا} wrongData{الرقم غلط} other{عرفت خلاص}}",
+  "@insightDismissReason": {
+    "description": "Why an insight was dismissed.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightBudgetTitle": "ميزانية {category} على وشك النفاد",
+  "@localInsightBudgetTitle": {
+    "description": "Local insight: a category budget at 90%.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightBudgetBody": "صرفت {spent} من أصل {budget} في {category} هذا الشهر.",
+  "@localInsightBudgetBody": {
+    "description": "Local insight: a category budget at 90%.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightUnusedTitle": "اشتراك غير مستغل: {name}",
+  "@localInsightUnusedTitle": {
+    "description": "Local insight: a subscription with no recent activity.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightUnusedBody": "لم نلاحظ أي نشاط لاشتراك {name} مؤخراً. التوفير المحتمل: {yearly} سنوياً عند الإلغاء.",
+  "@localInsightUnusedBody": {
+    "description": "Local insight: a subscription with no recent activity.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "yearly": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightCostlyTitle": "تكلفة اشتراك عالية: {name}",
+  "@localInsightCostlyTitle": {
+    "description": "Local insight: an expensive subscription.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightCostlyBody": "هذا الاشتراك يكلفك {yearly} سنوياً. هل يستحق الاستمرار؟",
+  "@localInsightCostlyBody": {
+    "description": "Local insight: an expensive subscription.",
+    "placeholders": {
+      "yearly": {
+        "type": "String"
+      }
+    }
+  },
+  "localInsightWelcomeTitle": "أهلاً بك في زاد",
+  "@localInsightWelcomeTitle": {
+    "description": "Local insight on an empty account."
+  },
+  "localInsightWelcomeBody": "أضف معاملات أو عناصر للمخزون لنتمكن من تحليل بياناتك وتقديم توصيات ذكية.",
+  "@localInsightWelcomeBody": {
+    "description": "Local insight on an empty account."
+  },
+  "questionYes": "أيوة",
+  "@questionYes": {
+    "description": "Brain question card: quick answer."
+  },
+  "questionNo": "لأ",
+  "@questionNo": {
+    "description": "Brain question card: quick answer."
+  },
+  "questionOpenCamera": "افتح الكاميرا",
+  "@questionOpenCamera": {
+    "description": "Brain question card: answer with a photo."
+  },
+  "questionSend": "إرسال",
+  "@questionSend": {
+    "description": "Brain question card: send a typed answer."
   }
 }

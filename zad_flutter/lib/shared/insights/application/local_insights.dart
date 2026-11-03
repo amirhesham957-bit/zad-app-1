@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/application/category_budgets_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -76,6 +77,7 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
   final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
   final now = ref.read(nowProvider)();
   final local = tz.TZDateTime.from(now.toUtc(), zone);
+  final l = ref.watch(zadL10nProvider);
 
   final out = <LocalInsight>[];
 
@@ -85,7 +87,7 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
     if (!t.isExpense) continue;
     final d = tz.TZDateTime.from(t.createdAt.toUtc(), zone);
     if (d.year != local.year || d.month != local.month) continue;
-    final c = t.category ?? 'أخرى';
+    final c = t.category ?? 'أخرى'; // l10n: data
     spent[c] = (spent[c] ?? 0) + t.amount;
   }
   for (final MapEntry(key: cat, value: budget) in ceilings.entries) {
@@ -93,10 +95,12 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
     if (budget <= 0 || s < budget * 0.9) continue;
     out.add(
       LocalInsight(
-        title: 'ميزانية $cat على وشك النفاد',
-        description:
-            'صرفت ${_money(s, currency)} من أصل ${_money(budget, currency)} '
-            'في $cat هذا الشهر.',
+        title: l.localInsightBudgetTitle(cat),
+        description: l.localInsightBudgetBody(
+          _money(s, currency),
+          _money(budget, currency),
+          cat,
+        ),
         type: 'Warning',
         actionType: 'increase_budget',
         actionRefId: cat,
@@ -119,10 +123,11 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
     if (!recent && related.isNotEmpty) {
       subInsights.add(
         LocalInsight(
-          title: 'اشتراك غير مستغل: ${sub.title}',
-          description:
-              'لم نلاحظ أي نشاط لاشتراك ${sub.title} مؤخراً. التوفير المحتمل: '
-              '${_money(yearly, currency)} سنوياً عند الإلغاء.',
+          title: l.localInsightUnusedTitle(sub.title),
+          description: l.localInsightUnusedBody(
+            sub.title,
+            _money(yearly, currency),
+          ),
           type: 'Warning',
           actionType: 'cancel_subscription',
           actionRefId: sub.id,
@@ -132,10 +137,8 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
     } else if (yearly > 1000) {
       subInsights.add(
         LocalInsight(
-          title: 'تكلفة اشتراك عالية: ${sub.title}',
-          description:
-              'هذا الاشتراك يكلفك ${_money(yearly, currency)} سنوياً. هل يستحق '
-              'الاستمرار؟',
+          title: l.localInsightCostlyTitle(sub.title),
+          description: l.localInsightCostlyBody(_money(yearly, currency)),
           type: 'Tip',
           actionType: 'cancel_subscription',
           actionRefId: sub.id,
@@ -148,11 +151,9 @@ final localInsightsProvider = Provider<List<LocalInsight>>((ref) {
   final all = <LocalInsight>[...subInsights, ...out];
   if (rows.isEmpty && pantry.isEmpty) {
     all.add(
-      const LocalInsight(
-        title: 'أهلاً بك في زاد',
-        description:
-            'أضف معاملات أو عناصر للمخزون لنتمكن من تحليل بياناتك '
-            'وتقديم توصيات ذكية.',
+      LocalInsight(
+        title: l.localInsightWelcomeTitle,
+        description: l.localInsightWelcomeBody,
         type: 'Tip',
       ),
     );

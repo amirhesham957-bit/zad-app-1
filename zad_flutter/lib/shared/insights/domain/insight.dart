@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// An insight.
 @immutable
@@ -102,12 +103,9 @@ class ZadInsight {
   /// Critical.
   bool get isCritical => priority == 'critical';
 
-  /// The tag on its card.
-  String get kindLabel => switch (kind) {
-    'question' => 'سؤال',
-    'alert' => 'تنبيه',
-    _ => 'معلومة',
-  };
+  /// The tag on its card, in [l10n]'s language (Arabic by default).
+  String kindLabel([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).insightKindLabel(kind);
 
   /// Round-trips through the cache.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -172,21 +170,22 @@ List<ZadInsight> bellInsights(List<ZadInsight> pending, {DateTime? now}) {
 /// insight may come back later.
 enum DismissReason {
   /// Not interested in this kind of thing.
-  notRelevant('not_relevant', 'مش مهم ليا'),
+  notRelevant('not_relevant'),
 
   /// The figure in it is wrong.
-  wrongData('wrong_data', 'الرقم غلط'),
+  wrongData('wrong_data'),
 
   /// Already knew.
-  timing('timing', 'عرفت خلاص');
+  timing('timing');
 
-  new(this.wire, this.label);
+  new(this.wire);
 
   /// What `dismiss_reason` stores.
   final String wire;
 
-  /// What the customer taps.
-  final String label;
+  /// What the customer taps, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).insightDismissReason(name);
 }
 
 /// The memory note a dismissal leaves for the brain — copied word for word
@@ -197,6 +196,8 @@ enum DismissReason {
   ZadInsight insight,
 ) {
   final subject = insight.aboutItem ?? insight.title;
+  // The brain reads these notes back: they stay Arabic.
+  // l10n: data-begin
   return switch (reason) {
     DismissReason.notRelevant => (
       scope: 'dismissal',
@@ -214,10 +215,11 @@ enum DismissReason {
       confidence: 0.3,
     ),
   };
+  // l10n: data-end
 }
 
 /// The chat message an answer to a brain question becomes. It goes through
 /// the agent like anything the customer types, so the brain acts on it with
 /// its own tools and the reply is on screen.
 String answerMessage(ZadInsight question, String answer) =>
-    'ردًا على سؤالك «${question.title}»: ${answer.trim()}';
+    'ردًا على سؤالك «${question.title}»: ${answer.trim()}'; // l10n: data

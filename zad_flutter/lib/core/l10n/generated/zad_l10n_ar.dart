@@ -7195,4 +7195,73 @@ class ZadL10nAr extends ZadL10n {
   String orbPetMood(String name, String mood) {
     return '$name: $mood';
   }
+
+  @override
+  String insightKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'question': 'سؤال',
+      'alert': 'تنبيه',
+      'other': 'معلومة',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String insightDismissReason(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notRelevant': 'مش مهم ليا',
+      'wrongData': 'الرقم غلط',
+      'other': 'عرفت خلاص',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String localInsightBudgetTitle(String category) {
+    return 'ميزانية $category على وشك النفاد';
+  }
+
+  @override
+  String localInsightBudgetBody(String spent, String budget, String category) {
+    return 'صرفت $spent من أصل $budget في $category هذا الشهر.';
+  }
+
+  @override
+  String localInsightUnusedTitle(String name) {
+    return 'اشتراك غير مستغل: $name';
+  }
+
+  @override
+  String localInsightUnusedBody(String name, String yearly) {
+    return 'لم نلاحظ أي نشاط لاشتراك $name مؤخراً. التوفير المحتمل: $yearly سنوياً عند الإلغاء.';
+  }
+
+  @override
+  String localInsightCostlyTitle(String name) {
+    return 'تكلفة اشتراك عالية: $name';
+  }
+
+  @override
+  String localInsightCostlyBody(String yearly) {
+    return 'هذا الاشتراك يكلفك $yearly سنوياً. هل يستحق الاستمرار؟';
+  }
+
+  @override
+  String get localInsightWelcomeTitle => 'أهلاً بك في زاد';
+
+  @override
+  String get localInsightWelcomeBody =>
+      'أضف معاملات أو عناصر للمخزون لنتمكن من تحليل بياناتك وتقديم توصيات ذكية.';
+
+  @override
+  String get questionYes => 'أيوة';
+
+  @override
+  String get questionNo => 'لأ';
+
+  @override
+  String get questionOpenCamera => 'افتح الكاميرا';
+
+  @override
+  String get questionSend => 'إرسال';
 }

@@ -11843,6 +11843,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{name}: {mood}'**
   String orbPetMood(String name, String mood);
+
+  /// The tag on an insight card.
+  ///
+  /// In ar, this message translates to:
+  /// **'{kind, select, question{سؤال} alert{تنبيه} other{معلومة}}'**
+  String insightKindLabel(String kind);
+
+  /// Why an insight was dismissed.
+  ///
+  /// In ar, this message translates to:
+  /// **'{reason, select, notRelevant{مش مهم ليا} wrongData{الرقم غلط} other{عرفت خلاص}}'**
+  String insightDismissReason(String reason);
+
+  /// Local insight: a category budget at 90%.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانية {category} على وشك النفاد'**
+  String localInsightBudgetTitle(String category);
+
+  /// Local insight: a category budget at 90%.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {spent} من أصل {budget} في {category} هذا الشهر.'**
+  String localInsightBudgetBody(String spent, String budget, String category);
+
+  /// Local insight: a subscription with no recent activity.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك غير مستغل: {name}'**
+  String localInsightUnusedTitle(String name);
+
+  /// Local insight: a subscription with no recent activity.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نلاحظ أي نشاط لاشتراك {name} مؤخراً. التوفير المحتمل: {yearly} سنوياً عند الإلغاء.'**
+  String localInsightUnusedBody(String name, String yearly);
+
+  /// Local insight: an expensive subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكلفة اشتراك عالية: {name}'**
+  String localInsightCostlyTitle(String name);
+
+  /// Local insight: an expensive subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الاشتراك يكلفك {yearly} سنوياً. هل يستحق الاستمرار؟'**
+  String localInsightCostlyBody(String yearly);
+
+  /// Local insight on an empty account.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بك في زاد'**
+  String get localInsightWelcomeTitle;
+
+  /// Local insight on an empty account.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف معاملات أو عناصر للمخزون لنتمكن من تحليل بياناتك وتقديم توصيات ذكية.'**
+  String get localInsightWelcomeBody;
+
+  /// Brain question card: quick answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيوة'**
+  String get questionYes;
+
+  /// Brain question card: quick answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأ'**
+  String get questionNo;
+
+  /// Brain question card: answer with a photo.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الكاميرا'**
+  String get questionOpenCamera;
+
+  /// Brain question card: send a typed answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get questionSend;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
