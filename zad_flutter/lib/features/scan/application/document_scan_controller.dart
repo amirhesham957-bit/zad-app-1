@@ -93,7 +93,10 @@ pharmacyRowFor(PrescriptionLine m) => (
   // A course's doses when both are written; otherwise 0 — «not bought yet»,
   // never a count the paper did not give.
   quantity: m.courseDoses ?? 0,
+  // The stored unit (zad_medicines.unit).
+  // l10n: data-begin
   unit: (m.form?.trim().isNotEmpty ?? false) ? m.form!.trim() : 'قرص',
+  // l10n: data-end
   dailyDoseCount: m.timesPerDay ?? 1,
   doseTimes: m.legible ? m.suggestedTimes : null,
   dosage: _dosage(m),

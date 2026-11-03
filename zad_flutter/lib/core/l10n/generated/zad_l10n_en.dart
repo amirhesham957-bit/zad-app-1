@@ -7409,4 +7409,1145 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get questionSend => 'Send';
+
+  @override
+  String scanSummaryAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new items',
+      one: '1 new item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanSummaryToppedUp(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count restocked',
+      one: '1 restocked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanSummaryTicked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ticked off the shopping list ✅',
+      one: '1 ticked off the shopping list ✅',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanSummaryNone => 'Nothing changed';
+
+  @override
+  String get scanQueuedOffline =>
+      'The items will go into your pantry as soon as you\'re back online';
+
+  @override
+  String get scanSheetTitle => 'Zad\'s smart camera';
+
+  @override
+  String get scanSheetPantry => 'Scan pantry';
+
+  @override
+  String get scanSheetReceipt => 'Scan receipt';
+
+  @override
+  String get scanSheetPrescription => 'Prescription';
+
+  @override
+  String get scanSheetTimetable => 'School timetable';
+
+  @override
+  String get scanCameraIntro =>
+      'Snap your fridge, your grocery bags or a receipt and Zad will read it for you!';
+
+  @override
+  String get scanCameraBlocked =>
+      'Camera access is turned off — open Settings and allow it so you can take photos';
+
+  @override
+  String get scanCameraDenied =>
+      'We need the camera to scan. You can still add items by hand';
+
+  @override
+  String get scanCameraUnavailable =>
+      'Couldn\'t open the camera. Install a camera app or add items by hand';
+
+  @override
+  String get scanAnalyzingPhoto => 'Reading your photo…';
+
+  @override
+  String scanRecognized(String name) {
+    return 'Found: $name';
+  }
+
+  @override
+  String get scanMedicineUnreadable =>
+      'Couldn\'t read the box clearly — try again from a better angle';
+
+  @override
+  String scanItemsFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count items! Check them and confirm',
+      one: 'Found 1 item! Check it and confirm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanNoItems =>
+      'No clear items spotted. Try a closer shot or better light, or add them by hand';
+
+  @override
+  String scanReceiptFound(String store) {
+    return 'Read the $store receipt! Check it and confirm';
+  }
+
+  @override
+  String get scanReceiptUnreadable =>
+      'We couldn\'t read the receipt — please try a clearer photo';
+
+  @override
+  String get scanAnalysisFailed =>
+      'Something went wrong while reading. Try again';
+
+  @override
+  String get scanAddCancelled => 'Nothing was added';
+
+  @override
+  String scanAddingItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Adding $count items to your pantry…',
+      one: 'Adding 1 item to your pantry…',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanAddedSummary(String summary) {
+    return 'Done: $summary';
+  }
+
+  @override
+  String get scanReceiptErrorTitle => 'Couldn\'t read the receipt';
+
+  @override
+  String get scanReceiptErrorOk => 'OK';
+
+  @override
+  String get scanReceiptCancelled => 'Receipt discarded';
+
+  @override
+  String scanPharmacyReceiptSaved(String store, String total) {
+    return 'Saved the $store receipt ($total) to your pharmacy!';
+  }
+
+  @override
+  String scanHouseholdReceiptSaved(String store, String total) {
+    return 'Saved the $store receipt ($total) and updated your pantry!';
+  }
+
+  @override
+  String scanReceiptResult(String store, String summary) {
+    return '$store receipt: $summary';
+  }
+
+  @override
+  String scanReceiptSaving(String store, String total) {
+    return 'Saved the $store receipt for $total, and the items are in your pantry!';
+  }
+
+  @override
+  String scanReceiptResultTotal(String store, String total, String summary) {
+    return '$store receipt ($total): $summary';
+  }
+
+  @override
+  String scanManualAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count items by hand!',
+      one: 'Added 1 item by hand!',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanScreenTitle => 'Smart scanner';
+
+  @override
+  String get scanCapturedPhoto => 'The photo you took';
+
+  @override
+  String get scanPrompt => 'Snap your pantry or a receipt';
+
+  @override
+  String get scanPromptHint => 'Zad will pick out the items for you';
+
+  @override
+  String get scanAnalyzing => 'Reading…';
+
+  @override
+  String get scanMedicineBox => 'Scan a medicine box';
+
+  @override
+  String get scanPantryButton => 'Scan pantry';
+
+  @override
+  String get scanReceiptButton => 'Scan receipt';
+
+  @override
+  String get scanAddManually => 'Add items by hand';
+
+  @override
+  String get scanOpenSettings => 'Open app settings';
+
+  @override
+  String get scanConfirmPantryTitle => 'Check what we found';
+
+  @override
+  String get scanConfirmPantryHint =>
+      'Here\'s what we found. Review it before saving:';
+
+  @override
+  String get scanAddToPantry => 'Add to pantry';
+
+  @override
+  String scanExpiry(String date) {
+    return 'Expires: $date';
+  }
+
+  @override
+  String get scanSaveToPharmacy => 'Save to pharmacy';
+
+  @override
+  String get scanConfirmReceiptTitle => 'Check the receipt';
+
+  @override
+  String get scanConfirmReceiptHint =>
+      'Review the items before they go into your spending and pantry:';
+
+  @override
+  String get scanReceiptTypeHint =>
+      'Receipt type (Zad picked one, you can change it):';
+
+  @override
+  String scanReceiptType(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'pharmacy': 'Pharmacy',
+      'grocery': 'Supermarket',
+      'other': 'General spending',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get scanQtyDown => 'Decrease quantity';
+
+  @override
+  String get scanQtyUp => 'Increase quantity';
+
+  @override
+  String get scanSaveReceipt => 'Save receipt';
+
+  @override
+  String get scanAddAnother => 'Add another item';
+
+  @override
+  String scanSaveCount(int count) {
+    return 'Save ($count)';
+  }
+
+  @override
+  String get scanItemName => 'Item name';
+
+  @override
+  String get scanQuantity => 'Quantity';
+
+  @override
+  String get scanUnit => 'Unit';
+
+  @override
+  String get scanCategory => 'Category';
+
+  @override
+  String get scanReceiptUnreadableTitle => 'I couldn\'t read the receipt';
+
+  @override
+  String get scanReceiptUnreadableHint =>
+      'Try a clearer photo — paper flat, good light, and the total in the shot.';
+
+  @override
+  String get scanServerUnreachable => 'I couldn\'t reach the server';
+
+  @override
+  String get scanServerUnreachableHint =>
+      'Your photo is still here. Try again once you\'re back online.';
+
+  @override
+  String get scanPickTitle => 'Snap the receipt';
+
+  @override
+  String get scanPickHint =>
+      'I\'ll read the shop, the total and the items, and show you before saving anything.';
+
+  @override
+  String get scanOpenCamera => 'Open camera';
+
+  @override
+  String get scanPickFromGallery => 'Choose from photos';
+
+  @override
+  String get scanPickBalanceHint =>
+      'You can also pick a screenshot of a balance or salary message, and I\'ll offer to make it your budget.';
+
+  @override
+  String get scanReadingReceipt => 'Reading the receipt…';
+
+  @override
+  String get scanRetake => 'Take another';
+
+  @override
+  String get scanCheckReceipt => 'Check the receipt';
+
+  @override
+  String get scanNotAPurchase => 'This isn\'t a purchase receipt';
+
+  @override
+  String get scanCheckReceiptHint =>
+      'Check the amount and category before saving. Nothing\'s saved yet.';
+
+  @override
+  String get scanNotAPurchaseHint =>
+      'This looks like a balance or salary, not money spent. I can make this figure your budget instead of logging it as spending.';
+
+  @override
+  String scanReceiptDate(String date) {
+    return 'Receipt date $date — it\'ll be logged on that day and month.';
+  }
+
+  @override
+  String get scanAmount => 'Amount';
+
+  @override
+  String get scanBalance => 'Balance';
+
+  @override
+  String get scanCategoryHeading => 'Category';
+
+  @override
+  String get scanPaidHowUnknown =>
+      'How did you pay? (The receipt doesn\'t say)';
+
+  @override
+  String get scanPaid => 'Paid with';
+
+  @override
+  String scanBankTwin(String bank, String amount, String title) {
+    return 'This amount was already logged from your bank$bank: $amount — “$title”';
+  }
+
+  @override
+  String get scanSamePayment => 'Same payment';
+
+  @override
+  String get scanOtherPayment => 'A different one';
+
+  @override
+  String scanAddItemsToPantry(int count) {
+    return 'Add the items to the pantry ($count)';
+  }
+
+  @override
+  String get scanAddItemsToPantryHint =>
+      'What you have gets topped up, and anything on your shopping list is ticked off.';
+
+  @override
+  String scanAddMedicines(int count) {
+    return 'Add the medicines to the pharmacy ($count)';
+  }
+
+  @override
+  String get scanAddMedicinesHint =>
+      'Medicines you have are topped up by the dose, not the box, and new ones are added. Tap a count to change it.';
+
+  @override
+  String scanItemsReadOnly(int count) {
+    return 'Items I read ($count) — just for a look';
+  }
+
+  @override
+  String get scanSaveExpense => 'Save as spending';
+
+  @override
+  String get scanSaveAndPantry => 'Save and add to pantry';
+
+  @override
+  String get scanSaveAndPharmacy => 'Save and add to pharmacy';
+
+  @override
+  String get scanMakeBudget => 'Make it my budget';
+
+  @override
+  String get scanSavedQueued =>
+      'Spending saved. The items will go in once you\'re back online.';
+
+  @override
+  String scanPartNew(int count) {
+    return '$count new';
+  }
+
+  @override
+  String scanPartToppedUp(int count) {
+    return '$count topped up';
+  }
+
+  @override
+  String scanPartTicked(int count) {
+    return '$count off the shopping list';
+  }
+
+  @override
+  String scanPartRestocked(int count) {
+    return '$count restocked';
+  }
+
+  @override
+  String scanPartUncounted(int count) {
+    return '$count not added (no count)';
+  }
+
+  @override
+  String scanPartsJoin(String a, String b) {
+    return '$a, $b';
+  }
+
+  @override
+  String scanSavedPantry(String parts) {
+    return 'Spending saved — pantry: $parts.';
+  }
+
+  @override
+  String get scanPharmacyPartial =>
+      'Spending saved, but not every medicine made it into the pharmacy. Check them from home.';
+
+  @override
+  String scanSavedPharmacy(String parts) {
+    return 'Spending saved — pharmacy: $parts.';
+  }
+
+  @override
+  String scanAddsTo(String name) {
+    return 'Adds to: $name';
+  }
+
+  @override
+  String get scanNewInPharmacy => 'New in your pharmacy';
+
+  @override
+  String scanHowMany(String unit) {
+    return 'How many ($unit)?';
+  }
+
+  @override
+  String scanCountHint(String name) {
+    return '$name — boxes × how many in each box.';
+  }
+
+  @override
+  String get scanCountOk => 'OK';
+
+  @override
+  String get scanWalletCard => 'Card';
+
+  @override
+  String get scanWalletCash => 'Cash';
+
+  @override
+  String get scanLineIllegible =>
+      'Not clear in the photo — fix it or remove it';
+
+  @override
+  String get scanLineAsNeeded => 'As needed — no set times';
+
+  @override
+  String scanLineTimesPerDay(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times a day',
+      two: 'twice a day',
+      one: 'once a day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanLineForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'for $days days',
+      one: 'for 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimesSeparator => ', ';
+
+  @override
+  String get scanLineNoTimes =>
+      'Times aren\'t written — set them in the pharmacy';
+
+  @override
+  String get scanPrescriptionUnreadable => 'I couldn\'t read the prescription';
+
+  @override
+  String get scanTimetableUnreadable => 'I couldn\'t read the timetable';
+
+  @override
+  String get scanPaperHint =>
+      'Get the whole page in, up close, with no glare and good light.';
+
+  @override
+  String get scanCouldNotFinish => 'I couldn\'t finish';
+
+  @override
+  String get scanCouldNotFinishHint =>
+      'The connection or the server — try again in a bit.';
+
+  @override
+  String get scanPrescriptionTitle => 'Snap the prescription';
+
+  @override
+  String get scanTimetableTitle => 'Snap the school timetable';
+
+  @override
+  String get scanPrescriptionIntro =>
+      'I\'ll copy the medicines and doses exactly as written, and you check them before they go into the pharmacy with their times.';
+
+  @override
+  String get scanTimetableIntro =>
+      'I\'ll read the days and classes and you check them before I save — then each evening I\'ll remind you to pack tomorrow\'s bag.';
+
+  @override
+  String get scanReadingPaper => 'Reading the page…';
+
+  @override
+  String get scanPickAnother => 'Choose another photo';
+
+  @override
+  String scanFoundMedicines(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count medicines',
+      one: 'Found 1 medicine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanPrescriptionCaution =>
+      'Zad only copies what\'s on the prescription — check doses and times with your pharmacist or doctor.';
+
+  @override
+  String get scanPrescriptionFor => 'Who\'s the prescription for?';
+
+  @override
+  String scanPrescriptionForNamed(String name) {
+    return 'It says: $name — leave empty for you';
+  }
+
+  @override
+  String get scanPrescriptionForYou => 'Leave empty for you';
+
+  @override
+  String scanAddToPharmacyCount(int count) {
+    return 'Add to pharmacy ($count)';
+  }
+
+  @override
+  String scanMedicinesAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count medicines to your pharmacy with their times.',
+      one: 'Added 1 medicine to your pharmacy with its times.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanMedicinesNoneAdded =>
+      'Nothing was added — check your pharmacy and add them by hand.';
+
+  @override
+  String scanTimetableDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'A $count-day timetable',
+      one: 'A 1-day timetable',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimetableFor => 'Whose timetable is this?';
+
+  @override
+  String scanTimetableClass(String name) {
+    return 'Class $name';
+  }
+
+  @override
+  String get scanChildName => 'Child\'s name';
+
+  @override
+  String get scanNameFirst => 'Enter their name first';
+
+  @override
+  String scanSaveTimetable(String name) {
+    return 'Save $name\'s timetable';
+  }
+
+  @override
+  String scanTimetableSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Timetable saved ($count classes) — I\'ll remind you about tomorrow\'s bag each evening.',
+      one: 'Timetable saved (1 class) — I\'ll remind you about tomorrow\'s bag each evening.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimetableNotSaved =>
+      'The timetable wasn\'t saved — try again.';
+
+  @override
+  String get scanNoPantryItems => 'I didn\'t spot any items';
+
+  @override
+  String get scanBoxUnreadable => 'I couldn\'t read the box';
+
+  @override
+  String get scanPantryPhotoHint =>
+      'Get closer so the items and their labels show, in good light.';
+
+  @override
+  String get scanBoxPhotoHint =>
+      'Snap the side of the box with the medicine\'s name, up close and without glare.';
+
+  @override
+  String get scanTryWhenOnline => 'Try again once you\'re back online.';
+
+  @override
+  String get scanPantryTitle => 'Snap your pantry';
+
+  @override
+  String get scanBoxTitle => 'Snap the medicine box';
+
+  @override
+  String get scanPantryIntro =>
+      'A shelf, the fridge or a shopping bag — I\'ll read the items and amounts and let you pick before they go into the pantry.';
+
+  @override
+  String get scanBoxIntro =>
+      'I\'ll read the name, count, dose and expiry, and open the add form filled in for you to check.';
+
+  @override
+  String get scanReadingPhoto => 'Reading the photo…';
+
+  @override
+  String scanFoundItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count items',
+      one: 'Found 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanFoundItemsHint =>
+      'Untick anything that\'s wrong. What you have gets topped up, and anything on your shopping list is ticked off.';
+
+  @override
+  String scanAddToPantryCount(int count) {
+    return 'Add to pantry ($count)';
+  }
+
+  @override
+  String get scanPantryPartial =>
+      'Not every item made it into the pantry — check it and add the rest by hand.';
+
+  @override
+  String scanPantryResult(String parts) {
+    return 'Pantry: $parts.';
+  }
+
+  @override
+  String get statementUnreadableFile =>
+      'Couldn\'t read that file — send a CSV, a PDF or a photo of the statement';
+
+  @override
+  String get statementTooBig =>
+      'The file is over 10 MB — send one month at a time or photograph the pages';
+
+  @override
+  String get statementNoRows =>
+      'I couldn\'t find any transactions I can read in this statement — try a clearer photo or a PDF from your bank\'s app';
+
+  @override
+  String get statementServerDown =>
+      'I couldn\'t reach the server — check your connection and try again';
+
+  @override
+  String statementImported(int imported, int skipped) {
+    String _temp0 = intl.Intl.pluralLogic(
+      imported,
+      locale: localeName,
+      other: 'Imported $imported transactions',
+      one: 'Imported 1 transaction',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      skipped,
+      locale: localeName,
+      other: 'skipped $skipped duplicates',
+      one: 'skipped 1 duplicate',
+      zero: 'no duplicates',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get statementTitle => 'Import a bank statement';
+
+  @override
+  String get statementIntro =>
+      'Pick your statement: a PDF from your bank\'s app, a photo, or a CSV file. Zad reads the transactions and checks them against the statement\'s balance, and nothing is saved until you\'ve reviewed it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPick => 'Choose statement';
+
+  @override
+  String get statementMapHint =>
+      'Tell me which column holds what — every bank\'s file is different';
+
+  @override
+  String get statementColDate => 'Date column';
+
+  @override
+  String get statementColTitle => 'Description column';
+
+  @override
+  String get statementColAmount => 'Amount column';
+
+  @override
+  String get statementColCategory => 'Category column (optional)';
+
+  @override
+  String get statementInvert =>
+      'Flip the amount\'s sign (if negative means money in, not spending)';
+
+  @override
+  String get statementContinue => 'Continue to review';
+
+  @override
+  String get statementNone => 'None';
+
+  @override
+  String statementColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementRowsSummary(int rows, int checked) {
+    String _temp0 = intl.Intl.pluralLogic(
+      rows,
+      locale: localeName,
+      other: '$rows rows',
+      one: '1 row',
+    );
+    return '$_temp0 — $checked selected to import';
+  }
+
+  @override
+  String get statementEmptyTitle => 'No transactions in this file';
+
+  @override
+  String get statementEmptyMessage =>
+      'The file opened but has no rows I can import — make sure it\'s a bank statement in CSV or a readable PDF.';
+
+  @override
+  String statementImportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $count transactions',
+      one: 'Import 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementRowError =>
+      'Couldn\'t read the date or amount in this row';
+
+  @override
+  String get statementRowMismatch =>
+      'The statement\'s balance doesn\'t match this row — check the amount';
+
+  @override
+  String get statementBalanced => 'The figures match the statement\'s balance';
+
+  @override
+  String get statementMismatch =>
+      'Some figures don\'t match the statement\'s balance — those rows are unticked, check them';
+
+  @override
+  String get statementUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rows couldn\'t be read.',
+      one: '1 row couldn\'t be read.',
+    );
+    return '$text. $_temp0';
+  }
+
+  @override
+  String get pharmacyCostHealth => 'Health spending this month';
+
+  @override
+  String get pharmacyCostBoxes => 'Medicine box prices';
+
+  @override
+  String get pharmacyAdd => 'Add';
+
+  @override
+  String get pharmacyAdherence => 'Doses taken on time';
+
+  @override
+  String get pharmacyAdherenceWaiting => 'Waiting for the first dose';
+
+  @override
+  String get pharmacyTotal => 'Medicines';
+
+  @override
+  String get pharmacyExpiringSoon => 'Expiring soon';
+
+  @override
+  String get pharmacyLowStock => 'Running low';
+
+  @override
+  String pharmacyExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines have expired — dispose of them safely',
+      one: '1 medicine has expired — dispose of it safely',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyExpiringHeading =>
+      'Expiring soon — dispose of them safely';
+
+  @override
+  String pharmacyExpiresIn(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expires in $days days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyTodayDoses => 'Today\'s doses';
+
+  @override
+  String get pharmacyNoDosesLeft => 'No doses left today.';
+
+  @override
+  String get pharmacyNoSchedules =>
+      'No medicine has set times yet — set times for one below and I\'ll remind you.';
+
+  @override
+  String get pharmacyLoadFailed => 'I couldn\'t load your medicines';
+
+  @override
+  String get pharmacyEmptyTitle => 'No medicines yet';
+
+  @override
+  String get pharmacyPullToRetry => 'Pull down to try again.';
+
+  @override
+  String get pharmacyEmptyMessage =>
+      'Add one with the button, or tell Zad: \"I take one Concor tablet morning and night\" and it\'ll log it with its times.';
+
+  @override
+  String get pharmacyMedicines => 'Medicines';
+
+  @override
+  String pharmacyDoseState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'taken': 'Taken',
+      'due': 'Due now',
+      'missed': 'Missed',
+      'other': 'Coming up',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacySnoozed => 'Snoozed for a bit';
+
+  @override
+  String get pharmacyLater => 'Later';
+
+  @override
+  String get pharmacyTook => 'Took it';
+
+  @override
+  String pharmacyForPerson(String name) {
+    return 'for $name';
+  }
+
+  @override
+  String get pharmacyCourseDone => 'Course finished ✓';
+
+  @override
+  String pharmacyExpiredAgo(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expired $days days ago',
+      one: 'Expired 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyRemaining(String count, String unit) {
+    return '$count $unit left';
+  }
+
+  @override
+  String get pharmacyBadDoseTime => 'A dose time doesn\'t make sense — fix it';
+
+  @override
+  String get pharmacyNoTimes => 'No set times — I won\'t remind you';
+
+  @override
+  String get pharmacySetTimes => 'Set times';
+
+  @override
+  String pharmacySupplyDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Lasts $days days',
+      one: 'Lasts 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyConfirmQty => 'Confirm the quantity';
+
+  @override
+  String get pharmacyTakeDose => 'Take a dose';
+
+  @override
+  String get pharmacyRefill => 'Refill';
+
+  @override
+  String get pharmacyHowMuchLeft => 'How much is really left?';
+
+  @override
+  String pharmacyDeleteConfirm(String name) {
+    return 'Remove “$name” from the pharmacy?';
+  }
+
+  @override
+  String pharmacyCurrentQty(String name, int count, String unit) {
+    return '$name — logged quantity now: $count $unit';
+  }
+
+  @override
+  String pharmacyUnitsPerDose(String unit) {
+    return 'How many ($unit) per dose?';
+  }
+
+  @override
+  String get pharmacyUnitsPerDoseHelp =>
+      'Without this I can\'t work out how many days your supply will last';
+
+  @override
+  String pharmacyRefillTitle(String name) {
+    return 'Refill $name';
+  }
+
+  @override
+  String pharmacyAddedQty(String unit) {
+    return 'Amount added ($unit)';
+  }
+
+  @override
+  String get pharmacyPrice => 'Price';
+
+  @override
+  String get pharmacyExpiryDate => 'Expiry date';
+
+  @override
+  String get pharmacyScanOk => 'Got the medicine\'s details';
+
+  @override
+  String get pharmacyPickDoseTime => 'Pick a dose time';
+
+  @override
+  String get pharmacyAddMedicine => 'Add a medicine';
+
+  @override
+  String get pharmacyReviewMedicine => 'Check the medicine';
+
+  @override
+  String get pharmacyReadFromBox =>
+      'I read this off the box — fix anything wrong before saving.';
+
+  @override
+  String get pharmacyReadingBox => 'Reading the medicine box…';
+
+  @override
+  String get pharmacyScanBox => 'Scan the box';
+
+  @override
+  String get pharmacyName => 'Medicine name';
+
+  @override
+  String get pharmacyWhoFor => 'Who\'s it for? (leave empty if it\'s yours)';
+
+  @override
+  String get pharmacyWhoForHint => 'Mum, Dad, Youssef…';
+
+  @override
+  String get pharmacyRemainingQty => 'Quantity left';
+
+  @override
+  String get pharmacyUnit => 'Unit';
+
+  @override
+  String get pharmacyDailyDoses => 'Doses a day';
+
+  @override
+  String get pharmacyDoseTimesOptional => 'Dose times (optional)';
+
+  @override
+  String get pharmacyAddTime => 'Add a time';
+
+  @override
+  String pharmacySuggestedTimes(String times) {
+    return 'No times added yet — suggested: $times';
+  }
+
+  @override
+  String get pharmacyExpiryPick => 'Expiry date — tap to choose';
+
+  @override
+  String get pharmacyAmount => 'Price';
+
+  @override
+  String pharmacyAmountIn(String currency) {
+    return 'Price ($currency)';
+  }
+
+  @override
+  String get pharmacyExtras => 'More details (optional)';
+
+  @override
+  String get pharmacyIngredient => 'Active ingredient';
+
+  @override
+  String get pharmacyDosageHint => 'Dose (e.g. one tablet every 8 hours)';
+
+  @override
+  String get pharmacyRecurring =>
+      'Ongoing medicine / monthly repeat prescription';
+
+  @override
+  String get pharmacyFamilyMember => 'Which family member';
+
+  @override
+  String get pharmacyNoMember => 'No one';
+
+  @override
+  String pharmacyPreset(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'morning': '🌅 Morning',
+      'noon': '☀️ Midday',
+      'evening': '🌙 Evening',
+      'other': '🛌 Bedtime',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyTimesOf(String name) {
+    return '$name\'s times';
+  }
+
+  @override
+  String get pharmacyTimesHint =>
+      'I\'ll remind you at each time, and you can log the dose with one tap.';
+
+  @override
+  String get pharmacySaveTimes => 'Save times';
+
+  @override
+  String get pharmacyFamilyTooltip => 'Family medicines';
+
+  @override
+  String get pharmacyFamilyEmptyTitle => 'No medicines you can see yet';
+
+  @override
+  String get pharmacyFamilyEmptyMessage =>
+      'Each person\'s medicines show here once they agree — ask to follow from their page in “My family”';
+
+  @override
+  String get pharmacyNoInitial => '?';
+
+  @override
+  String get pharmacyExactAlarm =>
+      'Turn on \"Alarms & reminders\" in Settings so your dose reminders ring on time';
 }

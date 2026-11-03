@@ -7281,5 +7281,1445 @@
   "questionSend": "إرسال",
   "@questionSend": {
     "description": "Brain question card: send a typed answer."
+  },
+  "scanSummaryAdded": "{count} منتج جديد",
+  "@scanSummaryAdded": {
+    "description": "Pantry intake summary part: new items added.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanSummaryToppedUp": "تحديث كمية {count}",
+  "@scanSummaryToppedUp": {
+    "description": "Pantry intake summary part: existing items whose quantity went up.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanSummaryTicked": "شُطب {count} من النواقص ✅",
+  "@scanSummaryTicked": {
+    "description": "Pantry intake summary part: shopping-list items ticked off.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanSummaryNone": "لا تغييرات",
+  "@scanSummaryNone": {
+    "description": "Pantry intake summary when nothing changed."
+  },
+  "scanQueuedOffline": "الأصناف هتدخل المخزن أول ما النت يرجع",
+  "@scanQueuedOffline": {
+    "description": "Receipt saved offline; the pantry fills once online."
+  },
+  "scanSheetTitle": "زاد الذكي بالكاميرا",
+  "@scanSheetTitle": {
+    "description": "Camera choice sheet title."
+  },
+  "scanSheetPantry": "مسح مخزون",
+  "@scanSheetPantry": {
+    "description": "Camera choice: scan the pantry."
+  },
+  "scanSheetReceipt": "مسح فاتورة",
+  "@scanSheetReceipt": {
+    "description": "Camera choice: scan a receipt."
+  },
+  "scanSheetPrescription": "روشتة",
+  "@scanSheetPrescription": {
+    "description": "Camera choice: scan a prescription."
+  },
+  "scanSheetTimetable": "جدول حصص",
+  "@scanSheetTimetable": {
+    "description": "Camera choice: scan a school timetable."
+  },
+  "scanCameraIntro": "التقط صورة للثلاجة أو أكياس البقالة أو الفاتورة وسيستخرجها الذكاء الاصطناعي!",
+  "@scanCameraIntro": {
+    "description": "Camera screen's first status line."
+  },
+  "scanCameraBlocked": "صلاحية الكاميرا ممنوعة نهائياً — افتح الإعدادات وفعّلها عشان تقدر تصوّر",
+  "@scanCameraBlocked": {
+    "description": "Camera permission permanently denied."
+  },
+  "scanCameraDenied": "نحتاج صلاحية الكاميرا للمسح. يمكنك الإضافة يدوياً",
+  "@scanCameraDenied": {
+    "description": "Camera permission denied."
+  },
+  "scanCameraUnavailable": "تعذر فتح الكاميرا. ثبّت تطبيق كاميرا أو استخدم الإدخال اليدوي",
+  "@scanCameraUnavailable": {
+    "description": "No camera app could be opened."
+  },
+  "scanAnalyzingPhoto": "جاري تحليل الصورة بالذكاء الاصطناعي...",
+  "@scanAnalyzingPhoto": {
+    "description": "Status while the photo is analysed."
+  },
+  "scanRecognized": "تم التعرف على: {name}",
+  "@scanRecognized": {
+    "description": "A medicine box was recognised.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanMedicineUnreadable": "تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح",
+  "@scanMedicineUnreadable": {
+    "description": "Medicine box not readable."
+  },
+  "scanItemsFound": "تم استخراج {count} منتج! راجعها وأكّد",
+  "@scanItemsFound": {
+    "description": "Pantry photo read.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanNoItems": "لم يتعرف AI على منتجات واضحة. جرب تصوير أقرب أو بإضاءة أفضل، أو أضفها يدوياً",
+  "@scanNoItems": {
+    "description": "Pantry photo had nothing readable."
+  },
+  "scanReceiptFound": "تم استخراج فاتورة {store}! راجعها وأكّد",
+  "@scanReceiptFound": {
+    "description": "Receipt read.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReceiptUnreadable": "لم نتمكن من قراءة الفاتورة، يرجى المحاولة بصورة أوضح",
+  "@scanReceiptUnreadable": {
+    "description": "Receipt not readable."
+  },
+  "scanAnalysisFailed": "حدث خطأ أثناء التحليل. جرب مرة أخرى",
+  "@scanAnalysisFailed": {
+    "description": "Analysis threw."
+  },
+  "scanAddCancelled": "تم إلغاء الإضافة",
+  "@scanAddCancelled": {
+    "description": "The customer cancelled the review dialog."
+  },
+  "scanAddingItems": "جاري حقن {count} منتجات في المخزون...",
+  "@scanAddingItems": {
+    "description": "Status while items go into the pantry.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanAddedSummary": "تم الحقن: {summary}",
+  "@scanAddedSummary": {
+    "description": "Pantry intake done, with the summary.",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReceiptErrorTitle": "تعذّرت قراءة الفاتورة",
+  "@scanReceiptErrorTitle": {
+    "description": "Receipt error dialog title."
+  },
+  "scanReceiptErrorOk": "حسناً",
+  "@scanReceiptErrorOk": {
+    "description": "Receipt error dialog button."
+  },
+  "scanReceiptCancelled": "تم إلغاء الفاتورة",
+  "@scanReceiptCancelled": {
+    "description": "The customer cancelled the receipt review."
+  },
+  "scanPharmacyReceiptSaved": "تم تسجيل فاتورة {store} ({total}) في الصيدلية!",
+  "@scanPharmacyReceiptSaved": {
+    "description": "Pharmacy receipt saved.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "scanHouseholdReceiptSaved": "تم تسجيل فاتورة {store} ({total}) وتحديث المخزون!",
+  "@scanHouseholdReceiptSaved": {
+    "description": "Household receipt saved.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReceiptResult": "فاتورة {store}: {summary}",
+  "@scanReceiptResult": {
+    "description": "Receipt saved, with the pantry summary.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReceiptSaving": "تم تسجيل فاتورة {store} بقيمة {total} والمنتجات في المخزون!",
+  "@scanReceiptSaving": {
+    "description": "Receipt saved.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReceiptResultTotal": "فاتورة {store} ({total}): {summary}",
+  "@scanReceiptResultTotal": {
+    "description": "Receipt saved, with total and pantry summary.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "scanManualAdded": "تمت إضافة {count} منتجات يدوياً!",
+  "@scanManualAdded": {
+    "description": "Manual items added.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanScreenTitle": "الماسح الذكي",
+  "@scanScreenTitle": {
+    "description": "Camera screen title."
+  },
+  "scanCapturedPhoto": "الصورة الملتقطة",
+  "@scanCapturedPhoto": {
+    "description": "Semantic label of the captured photo."
+  },
+  "scanPrompt": "التقط صورة للمخزون أو الفاتورة",
+  "@scanPrompt": {
+    "description": "Camera placeholder title."
+  },
+  "scanPromptHint": "سيقوم AI باستخراج المنتجات تلقائياً",
+  "@scanPromptHint": {
+    "description": "Camera placeholder subtitle."
+  },
+  "scanAnalyzing": "جاري التحليل...",
+  "@scanAnalyzing": {
+    "description": "Overlay while analysing."
+  },
+  "scanMedicineBox": "مسح علبة دواء",
+  "@scanMedicineBox": {
+    "description": "Button / dialog title: scan a medicine box."
+  },
+  "scanPantryButton": "مسح المخزون",
+  "@scanPantryButton": {
+    "description": "Camera screen button."
+  },
+  "scanReceiptButton": "مسح الفاتورة",
+  "@scanReceiptButton": {
+    "description": "Camera screen button."
+  },
+  "scanAddManually": "إضافة منتجات يدوياً",
+  "@scanAddManually": {
+    "description": "Button / dialog title for manual entry."
+  },
+  "scanOpenSettings": "افتح إعدادات التطبيق",
+  "@scanOpenSettings": {
+    "description": "Button after a refused camera permission."
+  },
+  "scanConfirmPantryTitle": "تأكيد المخزون المستخرج",
+  "@scanConfirmPantryTitle": {
+    "description": "Pantry review dialog title."
+  },
+  "scanConfirmPantryHint": "تم استخراج المنتجات التالية. يمكنك مراجعتها قبل الحفظ:",
+  "@scanConfirmPantryHint": {
+    "description": "Pantry review dialog hint."
+  },
+  "scanAddToPantry": "حقن في المخزون",
+  "@scanAddToPantry": {
+    "description": "Pantry review dialog confirm."
+  },
+  "scanExpiry": "تاريخ الانتهاء: {date}",
+  "@scanExpiry": {
+    "description": "Medicine expiry date line.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "scanSaveToPharmacy": "حفظ في الصيدلية",
+  "@scanSaveToPharmacy": {
+    "description": "Medicine dialog confirm."
+  },
+  "scanConfirmReceiptTitle": "تأكيد الفاتورة المستخرجة",
+  "@scanConfirmReceiptTitle": {
+    "description": "Receipt review dialog title."
+  },
+  "scanConfirmReceiptHint": "راجع المنتجات قبل التسجيل في المصروفات والمخزون:",
+  "@scanConfirmReceiptHint": {
+    "description": "Receipt review dialog hint."
+  },
+  "scanReceiptTypeHint": "نوع الفاتورة (زاد صنّفها تلقائياً، وتقدر تغيّرها):",
+  "@scanReceiptTypeHint": {
+    "description": "Receipt type chips heading."
+  },
+  "scanReceiptType": "{type, select, pharmacy{صيدلية} grocery{سوبرماركت} other{مصاريف عامة}}",
+  "@scanReceiptType": {
+    "description": "Receipt type chip, by ReceiptType name.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "scanQtyDown": "إنقاص الكمية",
+  "@scanQtyDown": {
+    "description": "Tooltip."
+  },
+  "scanQtyUp": "زيادة الكمية",
+  "@scanQtyUp": {
+    "description": "Tooltip."
+  },
+  "scanSaveReceipt": "تسجيل الفاتورة",
+  "@scanSaveReceipt": {
+    "description": "Receipt review dialog confirm."
+  },
+  "scanAddAnother": "إضافة منتج آخر",
+  "@scanAddAnother": {
+    "description": "Manual dialog: add a row."
+  },
+  "scanSaveCount": "حفظ ({count})",
+  "@scanSaveCount": {
+    "description": "Manual dialog save with the row count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanItemName": "اسم المنتج",
+  "@scanItemName": {
+    "description": "Field label."
+  },
+  "scanQuantity": "الكمية",
+  "@scanQuantity": {
+    "description": "Field label."
+  },
+  "scanUnit": "الوحدة",
+  "@scanUnit": {
+    "description": "Field label."
+  },
+  "scanCategory": "التصنيف",
+  "@scanCategory": {
+    "description": "Field label."
+  },
+  "scanReceiptUnreadableTitle": "مقدرتش أقرا الفاتورة",
+  "@scanReceiptUnreadableTitle": {
+    "description": "Receipt sheet: unreadable photo title."
+  },
+  "scanReceiptUnreadableHint": "جرب صورة أوضح — الورقة مفرودة، الإضاءة كويسة، والمبلغ الأخير ظاهر في الصورة.",
+  "@scanReceiptUnreadableHint": {
+    "description": "Receipt sheet: unreadable photo advice."
+  },
+  "scanServerUnreachable": "مقدرتش أوصل للسيرفر",
+  "@scanServerUnreachable": {
+    "description": "Receipt sheet: network failure title."
+  },
+  "scanServerUnreachableHint": "الصورة لسه معاك. جرب تاني لما النت يرجع.",
+  "@scanServerUnreachableHint": {
+    "description": "Receipt sheet: network failure message."
+  },
+  "scanPickTitle": "صوّر الفاتورة",
+  "@scanPickTitle": {
+    "description": "Receipt sheet title."
+  },
+  "scanPickHint": "هقرا المحل والمبلغ والأصناف، وأوريهملك تتأكد منهم قبل ما أسجّل أي حاجة.",
+  "@scanPickHint": {
+    "description": "Receipt sheet intro."
+  },
+  "scanOpenCamera": "افتح الكاميرا",
+  "@scanOpenCamera": {
+    "description": "Button."
+  },
+  "scanPickFromGallery": "اختار من الصور",
+  "@scanPickFromGallery": {
+    "description": "Button."
+  },
+  "scanPickBalanceHint": "تقدر كمان تختار صورة إشعار رصيد أو راتب، وهعرض عليك تخليه ميزانيتك.",
+  "@scanPickBalanceHint": {
+    "description": "Receipt sheet: balance screenshots work too."
+  },
+  "scanReadingReceipt": "بقرا الفاتورة…",
+  "@scanReadingReceipt": {
+    "description": "Receipt sheet: working."
+  },
+  "scanRetake": "صوّر تاني",
+  "@scanRetake": {
+    "description": "Button: retake the photo."
+  },
+  "scanCheckReceipt": "اتأكد من الفاتورة",
+  "@scanCheckReceipt": {
+    "description": "Receipt sheet: review title."
+  },
+  "scanNotAPurchase": "دي مش فاتورة شراء",
+  "@scanNotAPurchase": {
+    "description": "Receipt sheet: a balance card was read."
+  },
+  "scanCheckReceiptHint": "راجع المبلغ والفئة قبل ما تحفظ. لسه ماتسجّلش حاجة.",
+  "@scanCheckReceiptHint": {
+    "description": "Receipt sheet: review hint."
+  },
+  "scanNotAPurchaseHint": "دي شكلها صورة رصيد أو راتب، مش حاجة اتصرفت. أقدر أخلي الرقم ده ميزانيتك بدل ما أسجّله مصروف.",
+  "@scanNotAPurchaseHint": {
+    "description": "Receipt sheet: balance card hint."
+  },
+  "scanReceiptDate": "تاريخ الفاتورة {date} — هتتسجل على يومها وشهرها.",
+  "@scanReceiptDate": {
+    "description": "Receipt sheet: the receipt's own date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "scanAmount": "المبلغ",
+  "@scanAmount": {
+    "description": "Field label."
+  },
+  "scanBalance": "الرصيد",
+  "@scanBalance": {
+    "description": "Field label."
+  },
+  "scanCategoryHeading": "الفئة",
+  "@scanCategoryHeading": {
+    "description": "Receipt sheet: category chips heading."
+  },
+  "scanPaidHowUnknown": "اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)",
+  "@scanPaidHowUnknown": {
+    "description": "Receipt sheet: payment heading when unknown."
+  },
+  "scanPaid": "اتدفعت",
+  "@scanPaid": {
+    "description": "Receipt sheet: payment heading."
+  },
+  "scanBankTwin": "المبلغ ده اتسجل من البنك{bank}: {amount} — «{title}»",
+  "@scanBankTwin": {
+    "description": "Receipt sheet: the bank already logged this payment. bank is ' (Name)' or empty.",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "scanSamePayment": "نفس العملية",
+  "@scanSamePayment": {
+    "description": "Chip."
+  },
+  "scanOtherPayment": "عملية تانية",
+  "@scanOtherPayment": {
+    "description": "Chip."
+  },
+  "scanAddItemsToPantry": "ضيف الأصناف للمخزن ({count})",
+  "@scanAddItemsToPantry": {
+    "description": "Receipt sheet switch.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanAddItemsToPantryHint": "اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.",
+  "@scanAddItemsToPantryHint": {
+    "description": "Receipt sheet switch subtitle."
+  },
+  "scanAddMedicines": "ضيف الأدوية للصيدلية ({count})",
+  "@scanAddMedicines": {
+    "description": "Receipt sheet switch.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanAddMedicinesHint": "اللي عندك هيزيد رصيده بالحباية مش بالعلبة، والجديد هيتسجل. دوس على العدد لو عايز تعدّله.",
+  "@scanAddMedicinesHint": {
+    "description": "Receipt sheet switch subtitle."
+  },
+  "scanItemsReadOnly": "الأصناف اللي قريتها ({count}) — للمراجعة بس",
+  "@scanItemsReadOnly": {
+    "description": "Receipt sheet: review-only items.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanSaveExpense": "احفظ كمصروف",
+  "@scanSaveExpense": {
+    "description": "Button."
+  },
+  "scanSaveAndPantry": "احفظ وضيف للمخزن",
+  "@scanSaveAndPantry": {
+    "description": "Button."
+  },
+  "scanSaveAndPharmacy": "احفظ وضيف للصيدلية",
+  "@scanSaveAndPharmacy": {
+    "description": "Button."
+  },
+  "scanMakeBudget": "خليها ميزانيتي",
+  "@scanMakeBudget": {
+    "description": "Button."
+  },
+  "scanSavedQueued": "اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.",
+  "@scanSavedQueued": {
+    "description": "Snackbar."
+  },
+  "scanPartNew": "{count} جديد",
+  "@scanPartNew": {
+    "description": "Intake part.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPartToppedUp": "{count} زادت كميته",
+  "@scanPartToppedUp": {
+    "description": "Pantry intake part.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPartTicked": "{count} اتشال من المشتريات",
+  "@scanPartTicked": {
+    "description": "Intake part.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPartRestocked": "{count} زاد رصيده",
+  "@scanPartRestocked": {
+    "description": "Pharmacy intake part.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPartUncounted": "{count} من غير عدد مازادش",
+  "@scanPartUncounted": {
+    "description": "Pharmacy intake part.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPartsJoin": "{a}، {b}",
+  "@scanPartsJoin": {
+    "description": "Joins two summary parts.",
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "scanSavedPantry": "اتسجل المصروف — المخزن: {parts}.",
+  "@scanSavedPantry": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "scanPharmacyPartial": "المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.",
+  "@scanPharmacyPartial": {
+    "description": "Snackbar."
+  },
+  "scanSavedPharmacy": "اتسجل المصروف — الصيدلية: {parts}.",
+  "@scanSavedPharmacy": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "scanAddsTo": "يزيد: {name}",
+  "@scanAddsTo": {
+    "description": "Medicine row: which medicine it restocks.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanNewInPharmacy": "جديد في الصيدلية",
+  "@scanNewInPharmacy": {
+    "description": "Medicine row."
+  },
+  "scanHowMany": "كام {unit}؟",
+  "@scanHowMany": {
+    "description": "Count prompt; unit is the stored unit.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "scanCountHint": "{name} — عدد العلب × اللي في العلبة الواحدة.",
+  "@scanCountHint": {
+    "description": "Count dialog hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanCountOk": "تمام",
+  "@scanCountOk": {
+    "description": "Count dialog confirm."
+  },
+  "scanWalletCard": "فيزا / بطاقة",
+  "@scanWalletCard": {
+    "description": "Payment chip."
+  },
+  "scanWalletCash": "كاش",
+  "@scanWalletCash": {
+    "description": "Payment chip."
+  },
+  "scanLineIllegible": "مش واضحة في الصورة — صحّحها أو شيلها",
+  "@scanLineIllegible": {
+    "description": "Prescription line could not be read."
+  },
+  "scanLineAsNeeded": "عند اللزوم — من غير مواعيد",
+  "@scanLineAsNeeded": {
+    "description": "Prescription line taken as needed."
+  },
+  "scanLineTimesPerDay": "{count} مرات في اليوم",
+  "@scanLineTimesPerDay": {
+    "description": "Prescription line frequency.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanLineForDays": "لمدة {days} يوم",
+  "@scanLineForDays": {
+    "description": "Prescription line duration.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "scanTimesSeparator": "، ",
+  "@scanTimesSeparator": {
+    "description": "Separator between dose times / subjects in a list (with its trailing space)."
+  },
+  "scanLineNoTimes": "المرات مش مكتوبة — حددها في الصيدلية",
+  "@scanLineNoTimes": {
+    "description": "Prescription line without a schedule."
+  },
+  "scanPrescriptionUnreadable": "مقدرتش أقرا الروشتة",
+  "@scanPrescriptionUnreadable": {
+    "description": "Document sheet error title."
+  },
+  "scanTimetableUnreadable": "مقدرتش أقرا الجدول",
+  "@scanTimetableUnreadable": {
+    "description": "Document sheet error title."
+  },
+  "scanPaperHint": "صوّر الورقة كلها قريب، من غير لمعة وفي إضاءة كويسة.",
+  "@scanPaperHint": {
+    "description": "Document sheet error advice."
+  },
+  "scanCouldNotFinish": "مقدرتش أكمّل",
+  "@scanCouldNotFinish": {
+    "description": "Document sheet failure title."
+  },
+  "scanCouldNotFinishHint": "النت أو السيرفر — جرب تاني كمان شوية.",
+  "@scanCouldNotFinishHint": {
+    "description": "Document sheet failure message."
+  },
+  "scanPrescriptionTitle": "صوّر الروشتة",
+  "@scanPrescriptionTitle": {
+    "description": "Document sheet title."
+  },
+  "scanTimetableTitle": "صوّر جدول الحصص",
+  "@scanTimetableTitle": {
+    "description": "Document sheet title."
+  },
+  "scanPrescriptionIntro": "هنقل الأدوية والجرعات زي ما هي مكتوبة، وتراجعها قبل ما تدخل الصيدلية بمواعيدها.",
+  "@scanPrescriptionIntro": {
+    "description": "Document sheet intro."
+  },
+  "scanTimetableIntro": "هقرا الأيام والحصص، وتراجعها قبل ما أحفظها — وبالليل أفكّرك بشنطة بكرة.",
+  "@scanTimetableIntro": {
+    "description": "Document sheet intro."
+  },
+  "scanReadingPaper": "بقرا الورقة…",
+  "@scanReadingPaper": {
+    "description": "Document sheet working."
+  },
+  "scanPickAnother": "اختار صورة تانية",
+  "@scanPickAnother": {
+    "description": "Button."
+  },
+  "scanFoundMedicines": "لقيت {count} دوا",
+  "@scanFoundMedicines": {
+    "description": "Prescription review title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPrescriptionCaution": "زاد بينقل اللي مكتوب في الروشتة بس — راجع الجرعات والمواعيد مع الصيدلي أو الدكتور.",
+  "@scanPrescriptionCaution": {
+    "description": "Prescription review caution."
+  },
+  "scanPrescriptionFor": "الروشتة لمين؟",
+  "@scanPrescriptionFor": {
+    "description": "Field label."
+  },
+  "scanPrescriptionForNamed": "مكتوب عليها: {name} — فاضي = ليك",
+  "@scanPrescriptionForNamed": {
+    "description": "Field hint with the printed patient name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanPrescriptionForYou": "فاضي = ليك",
+  "@scanPrescriptionForYou": {
+    "description": "Field hint."
+  },
+  "scanAddToPharmacyCount": "ضيف للصيدلية ({count})",
+  "@scanAddToPharmacyCount": {
+    "description": "Button.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanMedicinesAdded": "اتضاف {count} دوا للصيدلية بمواعيدهم.",
+  "@scanMedicinesAdded": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanMedicinesNoneAdded": "مااتضافش حاجة — راجع الصيدلية وضيف بإيدك.",
+  "@scanMedicinesNoneAdded": {
+    "description": "Snackbar."
+  },
+  "scanTimetableDays": "جدول {count} أيام",
+  "@scanTimetableDays": {
+    "description": "Timetable review title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanTimetableFor": "الجدول ده لمين؟",
+  "@scanTimetableFor": {
+    "description": "Field label."
+  },
+  "scanTimetableClass": "فصل {name}",
+  "@scanTimetableClass": {
+    "description": "Field hint with the printed class.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanChildName": "اسم الطفل",
+  "@scanChildName": {
+    "description": "Field hint."
+  },
+  "scanNameFirst": "اكتب اسمه الأول",
+  "@scanNameFirst": {
+    "description": "Disabled button."
+  },
+  "scanSaveTimetable": "احفظ جدول {name}",
+  "@scanSaveTimetable": {
+    "description": "Button.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanTimetableSaved": "اتحفظ الجدول ({count} حصة) — هفكّرك بشنطة بكرة بالليل.",
+  "@scanTimetableSaved": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanTimetableNotSaved": "مااتحفظش الجدول — جرب تاني.",
+  "@scanTimetableNotSaved": {
+    "description": "Snackbar."
+  },
+  "scanNoPantryItems": "مالقيتش أصناف في الصورة",
+  "@scanNoPantryItems": {
+    "description": "Photo sheet error title."
+  },
+  "scanBoxUnreadable": "مقدرتش أقرا العلبة",
+  "@scanBoxUnreadable": {
+    "description": "Photo sheet error title."
+  },
+  "scanPantryPhotoHint": "قرّب أكتر وخلّي الأصناف والكلام اللي عليها باين، والإضاءة كويسة.",
+  "@scanPantryPhotoHint": {
+    "description": "Photo sheet error advice."
+  },
+  "scanBoxPhotoHint": "صوّر وش العلبة اللي عليه اسم الدواء، قريب ومن غير لمعة.",
+  "@scanBoxPhotoHint": {
+    "description": "Photo sheet error advice."
+  },
+  "scanTryWhenOnline": "جرب تاني لما النت يرجع.",
+  "@scanTryWhenOnline": {
+    "description": "Photo sheet failure message."
+  },
+  "scanPantryTitle": "صوّر المخزن",
+  "@scanPantryTitle": {
+    "description": "Photo sheet title."
+  },
+  "scanBoxTitle": "صوّر علبة الدواء",
+  "@scanBoxTitle": {
+    "description": "Photo sheet title."
+  },
+  "scanPantryIntro": "الرف أو التلاجة أو شنطة المشتريات — هقرا الأصناف وكمياتها، وأوريهالك تختار منها قبل ما تدخل المخزن.",
+  "@scanPantryIntro": {
+    "description": "Photo sheet intro."
+  },
+  "scanBoxIntro": "هقرا الاسم والعدد والجرعة والانتهاء، وأفتحلك فورم الإضافة متعبّي تراجعه قبل الحفظ.",
+  "@scanBoxIntro": {
+    "description": "Photo sheet intro."
+  },
+  "scanReadingPhoto": "بقرا الصورة…",
+  "@scanReadingPhoto": {
+    "description": "Photo sheet working."
+  },
+  "scanFoundItems": "لقيت {count} صنف",
+  "@scanFoundItems": {
+    "description": "Photo review title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanFoundItemsHint": "شيل علامة أي حاجة غلط. اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.",
+  "@scanFoundItemsHint": {
+    "description": "Photo review hint."
+  },
+  "scanAddToPantryCount": "ضيف للمخزن ({count})",
+  "@scanAddToPantryCount": {
+    "description": "Button.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanPantryPartial": "الأصناف مادخلتش المخزن كلها — راجع المخزن وضيف الناقص بإيدك.",
+  "@scanPantryPartial": {
+    "description": "Snackbar."
+  },
+  "scanPantryResult": "المخزن: {parts}.",
+  "@scanPantryResult": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      }
+    }
+  },
+  "statementUnreadableFile": "تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف",
+  "@statementUnreadableFile": {
+    "description": "Statement import: unreadable file."
+  },
+  "statementTooBig": "الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات",
+  "@statementTooBig": {
+    "description": "Statement import: file too large."
+  },
+  "statementNoRows": "ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو ملف PDF من تطبيق البنك",
+  "@statementNoRows": {
+    "description": "Statement import: nothing read."
+  },
+  "statementServerDown": "مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني",
+  "@statementServerDown": {
+    "description": "Statement import: network failure."
+  },
+  "statementImported": "تم استيراد {imported} معاملة، تجاهل {skipped} مكررة",
+  "@statementImported": {
+    "description": "Statement import done.",
+    "placeholders": {
+      "imported": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "statementTitle": "استيراد كشف حساب",
+  "@statementTitle": {
+    "description": "Screen title."
+  },
+  "statementIntro": "اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.",
+  "@statementIntro": {
+    "description": "Statement import intro."
+  },
+  "statementReading": "بقرا الكشف… الكشف الطويل بياخد دقيقة",
+  "@statementReading": {
+    "description": "Statement import: working."
+  },
+  "statementPick": "اختيار الكشف",
+  "@statementPick": {
+    "description": "Button."
+  },
+  "statementMapHint": "حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك",
+  "@statementMapHint": {
+    "description": "CSV mapping hint."
+  },
+  "statementColDate": "عمود التاريخ",
+  "@statementColDate": {
+    "description": "Column picker."
+  },
+  "statementColTitle": "عمود الوصف/العنوان",
+  "@statementColTitle": {
+    "description": "Column picker."
+  },
+  "statementColAmount": "عمود المبلغ",
+  "@statementColAmount": {
+    "description": "Column picker."
+  },
+  "statementColCategory": "عمود التصنيف (اختياري)",
+  "@statementColCategory": {
+    "description": "Column picker."
+  },
+  "statementInvert": "اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)",
+  "@statementInvert": {
+    "description": "Switch."
+  },
+  "statementContinue": "متابعة للمراجعة",
+  "@statementContinue": {
+    "description": "Button."
+  },
+  "statementNone": "بدون",
+  "@statementNone": {
+    "description": "Optional column picker hint."
+  },
+  "statementColumnN": "عمود {n}",
+  "@statementColumnN": {
+    "description": "A column with no header.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "statementRowsSummary": "{rows} صف — {checked} محدد للاستيراد",
+  "@statementRowsSummary": {
+    "description": "Preview header.",
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "statementEmptyTitle": "ما لقيتش أي معاملة في الملف",
+  "@statementEmptyTitle": {
+    "description": "Empty state title."
+  },
+  "statementEmptyMessage": "الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.",
+  "@statementEmptyMessage": {
+    "description": "Empty state message."
+  },
+  "statementImportCount": "استيراد {count} معاملة",
+  "@statementImportCount": {
+    "description": "Button.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statementRowError": "تعذّرت قراءة التاريخ أو المبلغ في هذا الصف",
+  "@statementRowError": {
+    "description": "Row error."
+  },
+  "statementRowMismatch": "الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ",
+  "@statementRowMismatch": {
+    "description": "Row warning."
+  },
+  "statementBalanced": "الأرقام متطابقة مع رصيد الكشف",
+  "@statementBalanced": {
+    "description": "Check banner."
+  },
+  "statementMismatch": "في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها",
+  "@statementMismatch": {
+    "description": "Check banner."
+  },
+  "statementUnknown": "الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
+  "@statementUnknown": {
+    "description": "Check banner."
+  },
+  "statementDropped": "{text}. وفي {count} صف ماقدرتش أقراه.",
+  "@statementDropped": {
+    "description": "Check banner with rows left out.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyCostHealth": "صرف الصحة الشهر ده",
+  "@pharmacyCostHealth": {
+    "description": "Cost stat label: the period's health spending."
+  },
+  "pharmacyCostBoxes": "أسعار علب الأدوية",
+  "@pharmacyCostBoxes": {
+    "description": "Cost stat label: the boxes' prices added up."
+  },
+  "pharmacyAdd": "إضافة",
+  "@pharmacyAdd": {
+    "description": "FAB tooltip."
+  },
+  "pharmacyAdherence": "الالتزام بالجرعات",
+  "@pharmacyAdherence": {
+    "description": "Stat label."
+  },
+  "pharmacyAdherenceWaiting": "في انتظار أول جرعة",
+  "@pharmacyAdherenceWaiting": {
+    "description": "Stat value before any dose."
+  },
+  "pharmacyTotal": "إجمالي الأدوية",
+  "@pharmacyTotal": {
+    "description": "Count label."
+  },
+  "pharmacyExpiringSoon": "قرب الانتهاء",
+  "@pharmacyExpiringSoon": {
+    "description": "Count label."
+  },
+  "pharmacyLowStock": "مخزون منخفض",
+  "@pharmacyLowStock": {
+    "description": "Count label."
+  },
+  "pharmacyExpiredBanner": "{count} دواء منتهي الصلاحية — تخلص منه بأمان",
+  "@pharmacyExpiredBanner": {
+    "description": "Banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyExpiringHeading": "قرب الانتهاء — تخلص منها بأمان",
+  "@pharmacyExpiringHeading": {
+    "description": "Section heading."
+  },
+  "pharmacyExpiresIn": "تنتهي خلال {days} يوم",
+  "@pharmacyExpiresIn": {
+    "description": "Expiry badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyTodayDoses": "جرعات النهارده",
+  "@pharmacyTodayDoses": {
+    "description": "Section heading."
+  },
+  "pharmacyNoDosesLeft": "مفيش جرعات فاضلة النهارده.",
+  "@pharmacyNoDosesLeft": {
+    "description": "Today section empty."
+  },
+  "pharmacyNoSchedules": "ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.",
+  "@pharmacyNoSchedules": {
+    "description": "Today section empty, nothing scheduled."
+  },
+  "pharmacyLoadFailed": "مقدرتش أجيب الأدوية",
+  "@pharmacyLoadFailed": {
+    "description": "Empty state title on error."
+  },
+  "pharmacyEmptyTitle": "لا توجد أدوية مسجلة بعد",
+  "@pharmacyEmptyTitle": {
+    "description": "Empty state title."
+  },
+  "pharmacyPullToRetry": "اسحب لتحت نجرب تاني.",
+  "@pharmacyPullToRetry": {
+    "description": "Empty state message on error."
+  },
+  "pharmacyEmptyMessage": "ضيفه بالزرار، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.",
+  "@pharmacyEmptyMessage": {
+    "description": "Empty state message."
+  },
+  "pharmacyMedicines": "الأدوية",
+  "@pharmacyMedicines": {
+    "description": "Section heading."
+  },
+  "pharmacyDoseState": "{state, select, taken{اتاخدت} due{وقتها دلوقتي} missed{فاتت} other{جاية}}",
+  "@pharmacyDoseState": {
+    "description": "A dose's state, by DoseState name.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacySnoozed": "اتأجلت شوية",
+  "@pharmacySnoozed": {
+    "description": "Dose snoozed."
+  },
+  "pharmacyLater": "بعدين",
+  "@pharmacyLater": {
+    "description": "Snooze button."
+  },
+  "pharmacyTook": "خدته",
+  "@pharmacyTook": {
+    "description": "Dose taken button."
+  },
+  "pharmacyForPerson": "لـ{name}",
+  "@pharmacyForPerson": {
+    "description": "Whose medicine it is.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyCourseDone": "الكورس خلص ✓",
+  "@pharmacyCourseDone": {
+    "description": "Badge."
+  },
+  "pharmacyExpiredAgo": "منتهي منذ {days} يوم",
+  "@pharmacyExpiredAgo": {
+    "description": "Badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyRemaining": "متبقي {count} {unit}",
+  "@pharmacyRemaining": {
+    "description": "Badge; unit is the stored unit, maybe empty.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyBadDoseTime": "وقت جرعة مش مفهوم — عدّله",
+  "@pharmacyBadDoseTime": {
+    "description": "Warning."
+  },
+  "pharmacyNoTimes": "مالوش مواعيد — مش هفكّرك بيه",
+  "@pharmacyNoTimes": {
+    "description": "Warning."
+  },
+  "pharmacySetTimes": "حدد مواعيده",
+  "@pharmacySetTimes": {
+    "description": "Button."
+  },
+  "pharmacySupplyDays": "يكفي {days} يوم",
+  "@pharmacySupplyDays": {
+    "description": "Badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyConfirmQty": "الكمية محتاجة تأكيد",
+  "@pharmacyConfirmQty": {
+    "description": "Badge."
+  },
+  "pharmacyTakeDose": "تناول جرعة",
+  "@pharmacyTakeDose": {
+    "description": "Button."
+  },
+  "pharmacyRefill": "تجديد الطلب",
+  "@pharmacyRefill": {
+    "description": "Button."
+  },
+  "pharmacyHowMuchLeft": "فاضل قد إيه فعلاً؟",
+  "@pharmacyHowMuchLeft": {
+    "description": "Button / dialog title."
+  },
+  "pharmacyDeleteConfirm": "حذف «{name}» من الصيدلية؟",
+  "@pharmacyDeleteConfirm": {
+    "description": "Delete dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyCurrentQty": "{name} — الكمية الحالية المسجلة: {count} {unit}",
+  "@pharmacyCurrentQty": {
+    "description": "Confirm quantity dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyUnitsPerDose": "الجرعة الواحدة كام {unit}؟",
+  "@pharmacyUnitsPerDose": {
+    "description": "Field label.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyUnitsPerDoseHelp": "من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم",
+  "@pharmacyUnitsPerDoseHelp": {
+    "description": "Field helper."
+  },
+  "pharmacyRefillTitle": "تجديد طلب {name}",
+  "@pharmacyRefillTitle": {
+    "description": "Refill dialog title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyAddedQty": "الكمية المضافة ({unit})",
+  "@pharmacyAddedQty": {
+    "description": "Field label.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyPrice": "السعر",
+  "@pharmacyPrice": {
+    "description": "Field label."
+  },
+  "pharmacyExpiryDate": "تاريخ الانتهاء",
+  "@pharmacyExpiryDate": {
+    "description": "Button."
+  },
+  "pharmacyScanOk": "تم استخراج بيانات الدواء بنجاح",
+  "@pharmacyScanOk": {
+    "description": "Snackbar."
+  },
+  "pharmacyPickDoseTime": "اختر ميعاد الجرعة",
+  "@pharmacyPickDoseTime": {
+    "description": "Time picker title."
+  },
+  "pharmacyAddMedicine": "إضافة دواء",
+  "@pharmacyAddMedicine": {
+    "description": "Sheet title."
+  },
+  "pharmacyReviewMedicine": "راجع الدواء",
+  "@pharmacyReviewMedicine": {
+    "description": "Sheet title after a scan."
+  },
+  "pharmacyReadFromBox": "قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.",
+  "@pharmacyReadFromBox": {
+    "description": "Sheet hint after a scan."
+  },
+  "pharmacyReadingBox": "جاري قراءة علبة الدواء بالذكاء الاصطناعي...",
+  "@pharmacyReadingBox": {
+    "description": "Scanning."
+  },
+  "pharmacyScanBox": "مسح العبوة بالكاميرا",
+  "@pharmacyScanBox": {
+    "description": "Button."
+  },
+  "pharmacyName": "اسم الدواء",
+  "@pharmacyName": {
+    "description": "Field label."
+  },
+  "pharmacyWhoFor": "لمين؟ (سيبها فاضية لو ليك)",
+  "@pharmacyWhoFor": {
+    "description": "Field label."
+  },
+  "pharmacyWhoForHint": "ماما، بابا، يوسف…",
+  "@pharmacyWhoForHint": {
+    "description": "Field hint."
+  },
+  "pharmacyRemainingQty": "الكمية المتبقية",
+  "@pharmacyRemainingQty": {
+    "description": "Field label."
+  },
+  "pharmacyUnit": "الوحدة",
+  "@pharmacyUnit": {
+    "description": "Heading."
+  },
+  "pharmacyDailyDoses": "جرعات اليوم",
+  "@pharmacyDailyDoses": {
+    "description": "Field label."
+  },
+  "pharmacyDoseTimesOptional": "مواعيد الجرعة (اختياري)",
+  "@pharmacyDoseTimesOptional": {
+    "description": "Heading."
+  },
+  "pharmacyAddTime": "إضافة ميعاد",
+  "@pharmacyAddTime": {
+    "description": "Chip."
+  },
+  "pharmacySuggestedTimes": "لسه مفيش مواعيد مضافة — مقترح: {times}",
+  "@pharmacySuggestedTimes": {
+    "description": "Hint.",
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyExpiryPick": "تاريخ الانتهاء — اضغط لاختيار التاريخ",
+  "@pharmacyExpiryPick": {
+    "description": "Button."
+  },
+  "pharmacyAmount": "المبلغ",
+  "@pharmacyAmount": {
+    "description": "Field label."
+  },
+  "pharmacyAmountIn": "المبلغ ({currency})",
+  "@pharmacyAmountIn": {
+    "description": "Field label.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyExtras": "تفاصيل إضافية (اختياري)",
+  "@pharmacyExtras": {
+    "description": "Toggle."
+  },
+  "pharmacyIngredient": "المادة الفعالة",
+  "@pharmacyIngredient": {
+    "description": "Field label."
+  },
+  "pharmacyDosageHint": "الجرعة (مثال: قرص كل 8 ساعات)",
+  "@pharmacyDosageHint": {
+    "description": "Field label."
+  },
+  "pharmacyRecurring": "دواء مزمن / روشتة متجددة شهرياً",
+  "@pharmacyRecurring": {
+    "description": "Checkbox."
+  },
+  "pharmacyFamilyMember": "لمين في العائلة",
+  "@pharmacyFamilyMember": {
+    "description": "Dropdown label."
+  },
+  "pharmacyNoMember": "بدون",
+  "@pharmacyNoMember": {
+    "description": "Dropdown option."
+  },
+  "pharmacyPreset": "{slot, select, morning{🌅 صباحاً} noon{☀️ ظهراً} evening{🌙 مساءً} other{🛌 قبل النوم}}",
+  "@pharmacyPreset": {
+    "description": "Dose time preset chip.",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyTimesOf": "مواعيد {name}",
+  "@pharmacyTimesOf": {
+    "description": "Times sheet title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyTimesHint": "هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.",
+  "@pharmacyTimesHint": {
+    "description": "Times sheet hint."
+  },
+  "pharmacySaveTimes": "احفظ المواعيد",
+  "@pharmacySaveTimes": {
+    "description": "Button."
+  },
+  "pharmacyFamilyTooltip": "أدوية العيلة",
+  "@pharmacyFamilyTooltip": {
+    "description": "Toggle tooltip."
+  },
+  "pharmacyFamilyEmptyTitle": "لسه مفيش أدوية تقدر تشوفها",
+  "@pharmacyFamilyEmptyTitle": {
+    "description": "Family empty state."
+  },
+  "pharmacyFamilyEmptyMessage": "أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»",
+  "@pharmacyFamilyEmptyMessage": {
+    "description": "Family empty state."
+  },
+  "pharmacyNoInitial": "؟",
+  "@pharmacyNoInitial": {
+    "description": "Avatar letter when the name is empty."
+  },
+  "pharmacyExactAlarm": "فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة",
+  "@pharmacyExactAlarm": {
+    "description": "Exact alarm hint."
   }
 }

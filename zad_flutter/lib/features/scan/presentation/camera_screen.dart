@@ -19,6 +19,7 @@ import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/scan/application/camera_actions.dart';
 import 'package:zad/features/scan/presentation/camera_choice_sheet.dart';
 import 'package:zad/features/scan/presentation/document_scan_sheet.dart';
@@ -55,12 +56,15 @@ Future<void> openZadCamera(BuildContext context) async {
   }
 }
 
-const List<(ReceiptType, String)> _receiptTypes = <(ReceiptType, String)>[
-  (ReceiptType.pharmacy, 'صيدلية'),
-  (ReceiptType.grocery, 'سوبرماركت'),
-  (ReceiptType.general, 'مصاريف عامة'),
+const List<ReceiptType> _receiptTypes = <ReceiptType>[
+  ReceiptType.pharmacy,
+  ReceiptType.grocery,
+  ReceiptType.general,
 ];
 
+// The values written to zad_inventory.unit and .category (CLAUDE.md's i18n
+// rule), shown as stored until they get a label lookup.
+// l10n: data-begin
 const List<String> _units = <String>[
   'قطعة',
   'كجم',
@@ -83,6 +87,7 @@ const List<String> _manualCategories = <String>[
   'معلبات',
   'عام',
 ];
+// l10n: data-end
 
 /// The screen.
 class CameraScreen extends ConsumerStatefulWidget {
@@ -99,9 +104,8 @@ class CameraScreen extends ConsumerStatefulWidget {
 class _CameraScreenState extends ConsumerState<CameraScreen> {
   late CameraMode _mode = widget.initialMode;
   Uint8List? _image;
-  String _status =
-      'التقط صورة للثلاجة أو أكياس البقالة أو الفاتورة وسيستخرجها الذكاء '
-      'الاصطناعي!';
+  // Null until something happens: the intro, in the screen's language.
+  String? _status;
   bool _analyzing = false;
   bool _flash = false;
   bool _permanentlyDenied = false;
@@ -119,16 +123,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
   Future<void> _shoot(CameraMode mode) async {
     setState(() => _mode = mode);
+    final l10n = context.l10n;
     final status = await Permission.camera.request();
     if (!mounted) return;
     if (!status.isGranted) {
       final blocked = status.isPermanentlyDenied;
       setState(() {
         _permanentlyDenied = blocked;
-        _status = blocked
-            ? 'صلاحية الكاميرا ممنوعة نهائياً — افتح الإعدادات وفعّلها عشان '
-                  'تقدر تصوّر'
-            : 'نحتاج صلاحية الكاميرا للمسح. يمكنك الإضافة يدوياً';
+        _status = blocked ? l10n.scanCameraBlocked : l10n.scanCameraDenied;
       });
       return;
     }
@@ -139,7 +141,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
           .read(receiptCameraProvider)
           .capture(ReceiptImageSource.camera);
     } on Object {
-      _say('تعذر فتح الكاميرا. ثبّت تطبيق كاميرا أو استخدم الإدخال اليدوي');
+      _say(l10n.scanCameraUnavailable);
       return;
     }
     if (bytes == null || !mounted) return;
@@ -147,7 +149,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       _image = bytes;
       _flash = true;
       _analyzing = true;
-      _status = 'جاري تحليل الصورة بالذكاء الاصطناعي...';
+      _status = l10n.scanAnalyzingPhoto;
     });
     Future<void>.delayed(const Duration(milliseconds: 700), () {
       if (mounted) setState(() => _flash = false);
@@ -157,6 +159,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
   }
 
   Future<void> _analyze(Uint8List bytes) async {
+    final l10n = context.l10n;
     final userId = ref.read(signedInUserIdProvider)() ?? '';
     try {
       switch (_mode) {
@@ -166,10 +169,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               .medicine(userId: userId, image: bytes);
           if (med != null && med.name.trim().isNotEmpty) {
             unawaited(HapticFeedback.mediumImpact());
-            _say('تم التعرف على: ${med.name}');
+            _say(l10n.scanRecognized(med.name));
             if (mounted) unawaited(_confirmMedicine(med));
           } else {
-            _say('تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح');
+            _say(l10n.scanMedicineUnreadable);
           }
         case CameraMode.inventory:
           final items = await ref
@@ -177,13 +180,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               .pantry(userId: userId, image: bytes);
           if (items.isNotEmpty) {
             unawaited(HapticFeedback.mediumImpact());
-            _say('تم استخراج ${items.length} منتج! راجعها وأكّد');
+            _say(l10n.scanItemsFound(items.length));
             if (mounted) unawaited(_confirmPantry(items));
           } else {
-            _say(
-              'لم يتعرف AI على منتجات واضحة. جرب تصوير أقرب أو بإضاءة أفضل، '
-              'أو أضفها يدوياً',
-            );
+            _say(l10n.scanNoItems);
           }
         case CameraMode.receipt:
           final receipt = await ref
@@ -192,15 +192,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
           // A silent "0" save is worse than an error.
           if (receipt.total > 0 || receipt.items.isNotEmpty) {
             unawaited(HapticFeedback.mediumImpact());
-            _say('تم استخراج فاتورة ${receipt.storeName}! راجعها وأكّد');
+            _say(l10n.scanReceiptFound(receipt.storeName));
             if (mounted) unawaited(_confirmReceipt(receipt));
           } else {
-            _say('لم نتمكن من قراءة الفاتورة، يرجى المحاولة بصورة أوضح');
+            _say(l10n.scanReceiptUnreadable);
             if (mounted) unawaited(_receiptError());
           }
       }
     } on Object {
-      _say('حدث خطأ أثناء التحليل. جرب مرة أخرى');
+      _say(l10n.scanAnalysisFailed);
     }
   }
 
@@ -210,13 +210,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       builder: (_) => _PantryConfirmDialog(items: parsed),
     );
     if (!mounted) return;
+    final l10n = context.l10n;
     if (kept == null) {
-      _say('تم إلغاء الإضافة');
+      _say(l10n.scanAddCancelled);
       return;
     }
     setState(() {
       _image = null;
-      _status = 'جاري حقن ${kept.length} منتجات في المخزون...';
+      _status = l10n.scanAddingItems(kept.length);
     });
     final summary = await ref.read(cameraActionsProvider.notifier).injectPantry(
       <IntakeLine>[
@@ -229,7 +230,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
           ),
       ],
     );
-    _say('تم الحقن: $summary');
+    _say(l10n.scanAddedSummary(summary));
   }
 
   Future<void> _confirmMedicine(ScannedMedicine med) async {
@@ -239,13 +240,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     );
     if (!mounted) return;
     if (save != true) {
-      _say('تم إلغاء الإضافة');
+      _say(context.l10n.scanAddCancelled);
       return;
     }
     await ref.read(cameraActionsProvider.notifier).addMedicine(med);
     if (!mounted) return;
     setState(() => _image = null);
-    _say('تم التعرف على: ${med.name}');
+    _say(context.l10n.scanRecognized(med.name));
   }
 
   Future<void> _receiptError() => showDialog<void>(
@@ -254,20 +255,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       final scheme = Theme.of(c).colorScheme;
       return AlertDialog(
         icon: Icon(Icons.error_outline, color: scheme.error),
-        title: const Text(
-          'تعذّرت قراءة الفاتورة',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          c.l10n.scanReceiptErrorTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'لم نتمكن من قراءة الفاتورة، يرجى المحاولة بصورة أوضح',
-        ),
+        content: Text(c.l10n.scanReceiptUnreadable),
         actions: <Widget>[
           FilledButton(
             onPressed: () {
               Navigator.of(c).pop();
               setState(() => _image = null);
             },
-            child: const Text('حسناً'),
+            child: Text(c.l10n.scanReceiptErrorOk),
           ),
         ],
       );
@@ -280,8 +279,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       builder: (_) => _ReceiptConfirmDialog(receipt: parsed, money: _money),
     );
     if (!mounted) return;
+    final l10n = context.l10n;
     if (receipt == null) {
-      _say('تم إلغاء الفاتورة');
+      _say(l10n.scanReceiptCancelled);
       return;
     }
     setState(() => _image = null);
@@ -289,18 +289,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     final total = _money(receipt.total);
     if (receipt.type == ReceiptType.pharmacy) {
       await actions.savePharmacyReceipt(receipt);
-      _say('تم تسجيل فاتورة ${receipt.storeName} ($total) في الصيدلية!');
+      _say(l10n.scanPharmacyReceiptSaved(receipt.storeName, total));
     } else if (isHouseholdReceipt(receipt)) {
-      _say('تم تسجيل فاتورة ${receipt.storeName} ($total) وتحديث المخزون!');
+      _say(l10n.scanHouseholdReceiptSaved(receipt.storeName, total));
       final summary = await actions.saveHouseholdReceipt(receipt);
-      _say('فاتورة ${receipt.storeName}: $summary');
+      _say(l10n.scanReceiptResult(receipt.storeName, summary));
     } else {
-      _say(
-        'تم تسجيل فاتورة ${receipt.storeName} بقيمة $total والمنتجات في '
-        'المخزون!',
-      );
+      _say(l10n.scanReceiptSaving(receipt.storeName, total));
       final summary = await actions.saveReceipt(receipt);
-      _say('فاتورة ${receipt.storeName} ($total): $summary');
+      _say(l10n.scanReceiptResultTotal(receipt.storeName, total, summary));
     }
   }
 
@@ -310,13 +307,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       builder: (_) => const _ManualInventoryDialog(),
     );
     if (items == null || items.isEmpty || !mounted) return;
+    final l10n = context.l10n;
     await ref.read(cameraActionsProvider.notifier).injectPantry(items);
-    _say('تمت إضافة ${items.length} منتجات يدوياً!');
+    _say(l10n.scanManualAdded(items.length));
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    final status = _status ?? l10n.scanCameraIntro;
     final bg = Theme.of(context).scaffoldBackgroundColor;
     final pharmacy =
         _mode == CameraMode.pharmacy ||
@@ -331,9 +331,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
           backgroundColor: bg,
           appBar: AppBar(
             backgroundColor: bg,
-            title: const Text(
-              '  الماسح الذكي',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: Text(
+              l10n.scanScreenTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             // A scan costs two attempts; the balance is where the cost is
             // paid (ZAD_PLAN ٠.٤).
@@ -363,7 +363,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                           Image.memory(
                             _image!,
                             fit: BoxFit.contain,
-                            semanticLabel: 'الصورة الملتقطة',
+                            semanticLabel: l10n.scanCapturedPhoto,
                           )
                         else
                           Column(
@@ -378,7 +378,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'التقط صورة للمخزون أو الفاتورة',
+                                l10n.scanPrompt,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: scheme.onSurfaceVariant,
@@ -386,7 +386,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'سيقوم AI باستخراج المنتجات تلقائياً',
+                                l10n.scanPromptHint,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: scheme.onSurfaceVariant.withValues(
@@ -408,9 +408,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                   height: 96,
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'جاري التحليل...',
-                                  style: TextStyle(
+                                Text(
+                                  l10n.scanAnalyzing,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -436,9 +436,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                 ? null
                                 : () => _shoot(CameraMode.pharmacy),
                             icon: const Icon(Icons.medication, size: 22),
-                            label: const Text(
-                              '   مسح علبة دواء',
-                              style: TextStyle(
+                            label: Text(
+                              l10n.scanMedicineBox,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -456,9 +456,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                 ? null
                                 : () => _shoot(CameraMode.inventory),
                             icon: const Icon(Icons.camera_alt, size: 22),
-                            label: const Text(
-                              '   مسح المخزون',
-                              style: TextStyle(
+                            label: Text(
+                              l10n.scanPantryButton,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -476,9 +476,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                 ? null
                                 : () => _shoot(CameraMode.receipt),
                             icon: const Icon(Icons.receipt, size: 22),
-                            label: const Text(
-                              '   مسح الفاتورة',
-                              style: TextStyle(
+                            label: Text(
+                              l10n.scanReceiptButton,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -502,9 +502,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                     ),
                     onPressed: _manual,
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text(
-                      '   إضافة منتجات يدوياً',
-                      style: TextStyle(
+                    label: Text(
+                      l10n.scanAddManually,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
                       ),
@@ -514,10 +514,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 const SizedBox(height: 16),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
-                  child: _status.isEmpty
+                  child: status.isEmpty
                       ? const SizedBox.shrink()
                       : Container(
-                          key: ValueKey<String>(_status),
+                          key: ValueKey<String>(status),
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -527,7 +527,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                           child: Column(
                             children: <Widget>[
                               Text(
-                                _status,
+                                status,
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: scheme.onSurface),
@@ -552,9 +552,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                                     }
                                   },
                                   icon: const Icon(Icons.settings, size: 18),
-                                  label: const Text(
-                                    'افتح إعدادات التطبيق',
-                                    style: TextStyle(
+                                  label: Text(
+                                    l10n.scanOpenSettings,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -607,9 +607,9 @@ class _PantryConfirmDialogState extends State<_PantryConfirmDialog> {
     final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
       icon: const Text('  ', style: TextStyle(fontSize: 24)),
-      title: const Text(
-        'تأكيد المخزون المستخرج',
-        style: TextStyle(fontWeight: FontWeight.bold),
+      title: Text(
+        context.l10n.scanConfirmPantryTitle,
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 400),
@@ -618,7 +618,7 @@ class _PantryConfirmDialogState extends State<_PantryConfirmDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              'تم استخراج المنتجات التالية. يمكنك مراجعتها قبل الحفظ:',
+              context.l10n.scanConfirmPantryHint,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -646,13 +646,13 @@ class _PantryConfirmDialogState extends State<_PantryConfirmDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: scheme.primary),
           onPressed: () => Navigator.of(context).pop(_list),
           icon: const Icon(Icons.check, size: 18),
-          label: const Text('   حقن في المخزون'),
+          label: Text(context.l10n.scanAddToPantry),
         ),
       ],
     );
@@ -702,7 +702,7 @@ class _ItemTile extends StatelessWidget {
           ),
           ...trailing,
           IconButton(
-            tooltip: 'حذف',
+            tooltip: context.l10n.commonDelete,
             onPressed: onDelete,
             icon: Icon(Icons.delete, color: scheme.error),
           ),
@@ -725,7 +725,7 @@ class _MedicineConfirmDialog extends StatelessWidget {
     return AlertDialog(
       icon: Icon(Icons.medication, size: 28, color: scheme.primary),
       title: Text(
-        'مسح علبة دواء',
+        context.l10n.scanMedicineBox,
         style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       ),
       content: Column(
@@ -755,9 +755,11 @@ class _MedicineConfirmDialog extends StatelessWidget {
           if (expiry != null) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              'تاريخ الانتهاء: ${expiry.year.toString().padLeft(4, '0')}-'
-              '${expiry.month.toString().padLeft(2, '0')}-'
-              '${expiry.day.toString().padLeft(2, '0')}',
+              context.l10n.scanExpiry(
+                '${expiry.year.toString().padLeft(4, '0')}-'
+                '${expiry.month.toString().padLeft(2, '0')}-'
+                '${expiry.day.toString().padLeft(2, '0')}',
+              ),
               style: text.labelSmall?.copyWith(
                 color: context.zadExt.textTertiary,
               ),
@@ -768,12 +770,12 @@ class _MedicineConfirmDialog extends StatelessWidget {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton.icon(
           onPressed: () => Navigator.of(context).pop(true),
           icon: const Icon(Icons.check, size: 18),
-          label: const Text('   حفظ في الصيدلية'),
+          label: Text(context.l10n.scanSaveToPharmacy),
         ),
       ],
     );
@@ -812,9 +814,9 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
     final text = Theme.of(context).textTheme;
     return AlertDialog(
       icon: const Icon(Icons.receipt),
-      title: const Text(
-        'تأكيد الفاتورة المستخرجة',
-        style: TextStyle(fontWeight: FontWeight.bold),
+      title: Text(
+        context.l10n.scanConfirmReceiptTitle,
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 420),
@@ -827,24 +829,24 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text(
-              'راجع المنتجات قبل التسجيل في المصروفات والمخزون:',
-              style: text.bodySmall,
-            ),
+            Text(context.l10n.scanConfirmReceiptHint, style: text.bodySmall),
             const SizedBox(height: 12),
             Text(
-              'نوع الفاتورة (زاد صنّفها تلقائياً، وتقدر تغيّرها):',
+              context.l10n.scanReceiptTypeHint,
               style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,
               children: <Widget>[
-                for (final (value, label) in _receiptTypes)
+                for (final value in _receiptTypes)
                   FilterChip(
                     selected: _type == value,
                     onSelected: (_) => setState(() => _type = value),
-                    label: Text(label, style: text.labelSmall),
+                    label: Text(
+                      context.l10n.scanReceiptType(value.name),
+                      style: text.labelSmall,
+                    ),
                   ),
               ],
             ),
@@ -865,7 +867,7 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
                             dimension: 32,
                             child: IconButton(
                               padding: EdgeInsets.zero,
-                              tooltip: 'إنقاص الكمية',
+                              tooltip: context.l10n.scanQtyDown,
                               onPressed: () => setState(() {
                                 final q = _items[idx].quantity - 1;
                                 _items[idx] = _withQty(
@@ -889,7 +891,7 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
                             dimension: 32,
                             child: IconButton(
                               padding: EdgeInsets.zero,
-                              tooltip: 'زيادة الكمية',
+                              tooltip: context.l10n.scanQtyUp,
                               onPressed: () => setState(() {
                                 _items[idx] = _withQty(
                                   _items[idx],
@@ -913,13 +915,13 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton.icon(
           onPressed: () =>
               Navigator.of(context).pop(r.copyWith(type: _type, items: _items)),
           icon: const Icon(Icons.check, size: 18),
-          label: const Text('   تسجيل الفاتورة'),
+          label: Text(context.l10n.scanSaveReceipt),
         ),
       ],
     );
@@ -929,8 +931,8 @@ class _ReceiptConfirmDialogState extends State<_ReceiptConfirmDialog> {
 class _ManualRow {
   String name = '';
   int quantity = 1;
-  String unit = 'قطعة';
-  String category = 'عام';
+  String unit = 'قطعة'; // l10n: data
+  String category = 'عام'; // l10n: data
 }
 
 class _ManualInventoryDialog extends StatefulWidget {
@@ -949,9 +951,9 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
     final valid = _rows.where((r) => r.name.trim().isNotEmpty).toList();
     return AlertDialog(
       icon: const Text('  ', style: TextStyle(fontSize: 24)),
-      title: const Text(
-        'إضافة منتجات يدوياً',
-        style: TextStyle(fontWeight: FontWeight.bold),
+      title: Text(
+        context.l10n.scanAddManually,
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 500),
@@ -973,7 +975,7 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
             TextButton.icon(
               onPressed: () => setState(() => _rows.add(_ManualRow())),
               icon: const Icon(Icons.add),
-              label: const Text('   إضافة منتج آخر'),
+              label: Text(context.l10n.scanAddAnother),
             ),
           ],
         ),
@@ -981,7 +983,7 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton.icon(
           onPressed: valid.isEmpty
@@ -996,7 +998,7 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
                     ),
                 ]),
           icon: const Icon(Icons.check, size: 18),
-          label: Text('حفظ (${valid.length})'),
+          label: Text(context.l10n.scanSaveCount(valid.length)),
         ),
       ],
     );
@@ -1024,16 +1026,16 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
               Expanded(
                 child: TextFormField(
                   initialValue: row.name,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم المنتج',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.scanItemName,
+                    border: const OutlineInputBorder(),
                   ),
                   onChanged: (v) => setState(() => row.name = v),
                 ),
               ),
               if (_rows.length > 1)
                 IconButton(
-                  tooltip: 'حذف',
+                  tooltip: context.l10n.commonDelete,
                   onPressed: () => setState(() => _rows.removeAt(idx)),
                   icon: Icon(Icons.close, color: scheme.error),
                 ),
@@ -1047,9 +1049,9 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
                 child: TextFormField(
                   initialValue: '${row.quantity}',
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'الكمية',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.scanQuantity,
+                    border: const OutlineInputBorder(),
                   ),
                   onChanged: (v) => row.quantity = int.tryParse(v) ?? 0,
                 ),
@@ -1060,9 +1062,9 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
                 child: DropdownButtonFormField<String>(
                   initialValue: row.unit,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'الوحدة',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.scanUnit,
+                    border: const OutlineInputBorder(),
                   ),
                   items: <DropdownMenuItem<String>>[
                     for (final u in _units)
@@ -1076,9 +1078,9 @@ class _ManualInventoryDialogState extends State<_ManualInventoryDialog> {
                 child: DropdownButtonFormField<String>(
                   initialValue: row.category,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'التصنيف',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: context.l10n.scanCategory,
+                    border: const OutlineInputBorder(),
                   ),
                   items: <DropdownMenuItem<String>>[
                     for (final c in _manualCategories)

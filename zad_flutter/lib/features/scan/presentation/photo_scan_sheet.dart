@@ -85,11 +85,12 @@ class PhotoScanSheet extends ConsumerWidget {
           ScanStage.ready when !isPantry => const _Working(),
           ScanStage.unreadable => _Retry(
             kind: kind,
-            title: isPantry ? 'مالقيتش أصناف في الصورة' : 'مقدرتش أقرا العلبة',
+            title: isPantry
+                ? context.l10n.scanNoPantryItems
+                : context.l10n.scanBoxUnreadable,
             message: isPantry
-                ? 'قرّب أكتر وخلّي الأصناف والكلام اللي عليها باين، والإضاءة '
-                      'كويسة.'
-                : 'صوّر وش العلبة اللي عليه اسم الدواء، قريب ومن غير لمعة.',
+                ? context.l10n.scanPantryPhotoHint
+                : context.l10n.scanBoxPhotoHint,
             tone: ZadEmptyTone.waiting,
           ),
           ScanStage.failed => Column(
@@ -97,8 +98,8 @@ class PhotoScanSheet extends ConsumerWidget {
             children: <Widget>[
               _Retry(
                 kind: kind,
-                title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
-                message: refusal?.message ?? 'جرب تاني لما النت يرجع.',
+                title: refusal?.title ?? context.l10n.scanServerUnreachable,
+                message: refusal?.message ?? context.l10n.scanTryWhenOnline,
                 tone: refusal != null
                     ? ZadEmptyTone.waiting
                     : ZadEmptyTone.problem,
@@ -132,29 +133,25 @@ class _Pick extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          isPantry ? 'صوّر المخزن' : 'صوّر علبة الدواء',
+          isPantry ? context.l10n.scanPantryTitle : context.l10n.scanBoxTitle,
           style: ZadType.titleMedium,
         ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
-          isPantry
-              ? 'الرف أو التلاجة أو شنطة المشتريات — هقرا الأصناف وكمياتها، '
-                    'وأوريهالك تختار منها قبل ما تدخل المخزن.'
-              : 'هقرا الاسم والعدد والجرعة والانتهاء، وأفتحلك فورم الإضافة '
-                    'متعبّي تراجعه قبل الحفظ.',
+          isPantry ? context.l10n.scanPantryIntro : context.l10n.scanBoxIntro,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.xl),
         FilledButton.icon(
           onPressed: () => controller.scan(kind, ReceiptImageSource.camera),
           icon: const Icon(ZadIcons.scan),
-          label: const Text('افتح الكاميرا'),
+          label: Text(context.l10n.scanOpenCamera),
         ),
         const SizedBox(height: ZadSpacing.md),
         OutlinedButton.icon(
           onPressed: () => controller.scan(kind, ReceiptImageSource.gallery),
           icon: const Icon(ZadIcons.inventory),
-          label: const Text('اختار من الصور'),
+          label: Text(context.l10n.scanPickFromGallery),
         ),
       ],
     );
@@ -172,7 +169,7 @@ class _Working extends StatelessWidget {
       const CircularProgressIndicator(),
       const SizedBox(height: ZadSpacing.lg),
       Text(
-        'بقرا الصورة…',
+        context.l10n.scanReadingPhoto,
         style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
       ),
       const SizedBox(height: ZadSpacing.xl),
@@ -220,12 +217,12 @@ class _Retry extends ConsumerWidget {
           onPressed: () => ref
               .read(photoScanControllerProvider.notifier)
               .scan(kind, ReceiptImageSource.camera),
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: ref.read(photoScanControllerProvider.notifier).reset,
-          child: const Text('اختار صورة تانية'),
+          child: Text(context.l10n.scanPickAnother),
         ),
       ],
     );
@@ -248,11 +245,13 @@ class _PantryReading extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('لقيت ${view.items.length} صنف', style: ZadType.titleMedium),
+        Text(
+          context.l10n.scanFoundItems(view.items.length),
+          style: ZadType.titleMedium,
+        ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
-          'شيل علامة أي حاجة غلط. اللي موجود هتزيد كميته، واللي في قايمة '
-          'المشتريات هيتشال منها.',
+          context.l10n.scanFoundItemsHint,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.md),
@@ -294,12 +293,12 @@ class _PantryReading extends ConsumerWidget {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text('ضيف للمخزن ($count)'),
+              : Text(context.l10n.scanAddToPantryCount(count)),
         ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: busy ? null : controller.reset,
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
       ],
     );
@@ -309,10 +308,12 @@ class _PantryReading extends ConsumerWidget {
     final messenger = ScaffoldMessenger.maybeOf(context);
     final navigator = Navigator.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
+    final l10n = context.l10n;
     final saved = await save();
     // Said on the screen underneath, which outlives this sheet.
     final said = pantryPhotoMessage(
       container.read(photoScanControllerProvider).lastIntake,
+      l10n,
     );
     if (said != null) messenger?.showSnackBar(SnackBar(content: Text(said)));
     if (saved) await HapticFeedback.mediumImpact();
@@ -320,17 +321,17 @@ class _PantryReading extends ConsumerWidget {
   }
 }
 
-/// What a pantry photo did, in one line.
-String? pantryPhotoMessage(PantryIntakeResult? intake) {
+/// What a pantry photo did, in one line — in [l10n]'s language, Arabic by
+/// default.
+String? pantryPhotoMessage(PantryIntakeResult? intake, [ZadL10n? l10n]) {
   if (intake == null) return null;
-  if (intake.failed) {
-    return 'الأصناف مادخلتش المخزن كلها — راجع المخزن وضيف الناقص بإيدك.';
-  }
+  final t = l10n ?? zadL10nArabic;
+  if (intake.failed) return t.scanPantryPartial;
   final parts = <String>[
-    if (intake.added > 0) '${intake.added} جديد',
-    if (intake.toppedUp > 0) '${intake.toppedUp} زادت كميته',
-    if (intake.ticked > 0) '${intake.ticked} اتشال من المشتريات',
+    if (intake.added > 0) t.scanPartNew(intake.added),
+    if (intake.toppedUp > 0) t.scanPartToppedUp(intake.toppedUp),
+    if (intake.ticked > 0) t.scanPartTicked(intake.ticked),
   ];
   if (parts.isEmpty) return null;
-  return 'المخزن: ${parts.join('، ')}.';
+  return t.scanPantryResult(parts.reduce(t.scanPartsJoin));
 }

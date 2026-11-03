@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_shell_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Kotlin's `onSurfaceVariant` / `textSecondary`.
 Color get _textSecondary => ZadColors.inkMuted;
@@ -52,9 +53,9 @@ class _CameraSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const Text(
-            'زاد الذكي بالكاميرا',
-            style: TextStyle(
+          Text(
+            context.l10n.scanSheetTitle,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: kShellTextPrimary,
@@ -80,7 +81,7 @@ class _CameraSheet extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: _SheetButton(
-                  text: 'مسح مخزون',
+                  text: context.l10n.scanSheetPantry,
                   container: kShellPrimary,
                   content: Colors.white,
                   onTap: () =>
@@ -90,7 +91,7 @@ class _CameraSheet extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _SheetButton(
-                  text: 'مسح فاتورة',
+                  text: context.l10n.scanSheetReceipt,
                   container: kShellPrimary.withValues(alpha: 0.06),
                   content: kShellTextPrimary,
                   onTap: () =>
@@ -104,7 +105,7 @@ class _CameraSheet extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: _SheetButton(
-                  text: 'روشتة',
+                  text: context.l10n.scanSheetPrescription,
                   container: kShellPrimary.withValues(alpha: 0.06),
                   content: kShellTextPrimary,
                   onTap: () =>
@@ -114,7 +115,7 @@ class _CameraSheet extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _SheetButton(
-                  text: 'جدول حصص',
+                  text: context.l10n.scanSheetTimetable,
                   container: kShellPrimary.withValues(alpha: 0.06),
                   content: kShellTextPrimary,
                   onTap: () =>
@@ -137,7 +138,7 @@ class _CameraSheet extends StatelessWidget {
                     vertical: 10,
                   ),
                   child: Text(
-                    'إلغاء',
+                    context.l10n.commonCancel,
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,

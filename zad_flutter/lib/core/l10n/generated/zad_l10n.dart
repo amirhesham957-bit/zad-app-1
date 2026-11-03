@@ -11927,6 +11927,1596 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'إرسال'**
   String get questionSend;
+
+  /// Pantry intake summary part: new items added.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} منتج جديد'**
+  String scanSummaryAdded(int count);
+
+  /// Pantry intake summary part: existing items whose quantity went up.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث كمية {count}'**
+  String scanSummaryToppedUp(int count);
+
+  /// Pantry intake summary part: shopping-list items ticked off.
+  ///
+  /// In ar, this message translates to:
+  /// **'شُطب {count} من النواقص ✅'**
+  String scanSummaryTicked(int count);
+
+  /// Pantry intake summary when nothing changed.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تغييرات'**
+  String get scanSummaryNone;
+
+  /// Receipt saved offline; the pantry fills once online.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصناف هتدخل المخزن أول ما النت يرجع'**
+  String get scanQueuedOffline;
+
+  /// Camera choice sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد الذكي بالكاميرا'**
+  String get scanSheetTitle;
+
+  /// Camera choice: scan the pantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح مخزون'**
+  String get scanSheetPantry;
+
+  /// Camera choice: scan a receipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح فاتورة'**
+  String get scanSheetReceipt;
+
+  /// Camera choice: scan a prescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'روشتة'**
+  String get scanSheetPrescription;
+
+  /// Camera choice: scan a school timetable.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول حصص'**
+  String get scanSheetTimetable;
+
+  /// Camera screen's first status line.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقط صورة للثلاجة أو أكياس البقالة أو الفاتورة وسيستخرجها الذكاء الاصطناعي!'**
+  String get scanCameraIntro;
+
+  /// Camera permission permanently denied.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاحية الكاميرا ممنوعة نهائياً — افتح الإعدادات وفعّلها عشان تقدر تصوّر'**
+  String get scanCameraBlocked;
+
+  /// Camera permission denied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج صلاحية الكاميرا للمسح. يمكنك الإضافة يدوياً'**
+  String get scanCameraDenied;
+
+  /// No camera app could be opened.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر فتح الكاميرا. ثبّت تطبيق كاميرا أو استخدم الإدخال اليدوي'**
+  String get scanCameraUnavailable;
+
+  /// Status while the photo is analysed.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تحليل الصورة بالذكاء الاصطناعي...'**
+  String get scanAnalyzingPhoto;
+
+  /// A medicine box was recognised.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التعرف على: {name}'**
+  String scanRecognized(String name);
+
+  /// Medicine box not readable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'**
+  String get scanMedicineUnreadable;
+
+  /// Pantry photo read.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج {count} منتج! راجعها وأكّد'**
+  String scanItemsFound(int count);
+
+  /// Pantry photo had nothing readable.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتعرف AI على منتجات واضحة. جرب تصوير أقرب أو بإضاءة أفضل، أو أضفها يدوياً'**
+  String get scanNoItems;
+
+  /// Receipt read.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج فاتورة {store}! راجعها وأكّد'**
+  String scanReceiptFound(String store);
+
+  /// Receipt not readable.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتمكن من قراءة الفاتورة، يرجى المحاولة بصورة أوضح'**
+  String get scanReceiptUnreadable;
+
+  /// Analysis threw.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء التحليل. جرب مرة أخرى'**
+  String get scanAnalysisFailed;
+
+  /// The customer cancelled the review dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الإضافة'**
+  String get scanAddCancelled;
+
+  /// Status while items go into the pantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري حقن {count} منتجات في المخزون...'**
+  String scanAddingItems(int count);
+
+  /// Pantry intake done, with the summary.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحقن: {summary}'**
+  String scanAddedSummary(String summary);
+
+  /// Receipt error dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الفاتورة'**
+  String get scanReceiptErrorTitle;
+
+  /// Receipt error dialog button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسناً'**
+  String get scanReceiptErrorOk;
+
+  /// The customer cancelled the receipt review.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الفاتورة'**
+  String get scanReceiptCancelled;
+
+  /// Pharmacy receipt saved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل فاتورة {store} ({total}) في الصيدلية!'**
+  String scanPharmacyReceiptSaved(String store, String total);
+
+  /// Household receipt saved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل فاتورة {store} ({total}) وتحديث المخزون!'**
+  String scanHouseholdReceiptSaved(String store, String total);
+
+  /// Receipt saved, with the pantry summary.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة {store}: {summary}'**
+  String scanReceiptResult(String store, String summary);
+
+  /// Receipt saved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل فاتورة {store} بقيمة {total} والمنتجات في المخزون!'**
+  String scanReceiptSaving(String store, String total);
+
+  /// Receipt saved, with total and pantry summary.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة {store} ({total}): {summary}'**
+  String scanReceiptResultTotal(String store, String total, String summary);
+
+  /// Manual items added.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة {count} منتجات يدوياً!'**
+  String scanManualAdded(int count);
+
+  /// Camera screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الماسح الذكي'**
+  String get scanScreenTitle;
+
+  /// Semantic label of the captured photo.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة الملتقطة'**
+  String get scanCapturedPhoto;
+
+  /// Camera placeholder title.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقط صورة للمخزون أو الفاتورة'**
+  String get scanPrompt;
+
+  /// Camera placeholder subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيقوم AI باستخراج المنتجات تلقائياً'**
+  String get scanPromptHint;
+
+  /// Overlay while analysing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري التحليل...'**
+  String get scanAnalyzing;
+
+  /// Button / dialog title: scan a medicine box.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح علبة دواء'**
+  String get scanMedicineBox;
+
+  /// Camera screen button.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح المخزون'**
+  String get scanPantryButton;
+
+  /// Camera screen button.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الفاتورة'**
+  String get scanReceiptButton;
+
+  /// Button / dialog title for manual entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتجات يدوياً'**
+  String get scanAddManually;
+
+  /// Button after a refused camera permission.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح إعدادات التطبيق'**
+  String get scanOpenSettings;
+
+  /// Pantry review dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد المخزون المستخرج'**
+  String get scanConfirmPantryTitle;
+
+  /// Pantry review dialog hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج المنتجات التالية. يمكنك مراجعتها قبل الحفظ:'**
+  String get scanConfirmPantryHint;
+
+  /// Pantry review dialog confirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حقن في المخزون'**
+  String get scanAddToPantry;
+
+  /// Medicine expiry date line.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء: {date}'**
+  String scanExpiry(String date);
+
+  /// Medicine dialog confirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ في الصيدلية'**
+  String get scanSaveToPharmacy;
+
+  /// Receipt review dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الفاتورة المستخرجة'**
+  String get scanConfirmReceiptTitle;
+
+  /// Receipt review dialog hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع المنتجات قبل التسجيل في المصروفات والمخزون:'**
+  String get scanConfirmReceiptHint;
+
+  /// Receipt type chips heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الفاتورة (زاد صنّفها تلقائياً، وتقدر تغيّرها):'**
+  String get scanReceiptTypeHint;
+
+  /// Receipt type chip, by ReceiptType name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{type, select, pharmacy{صيدلية} grocery{سوبرماركت} other{مصاريف عامة}}'**
+  String scanReceiptType(String type);
+
+  /// Tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص الكمية'**
+  String get scanQtyDown;
+
+  /// Tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة الكمية'**
+  String get scanQtyUp;
+
+  /// Receipt review dialog confirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الفاتورة'**
+  String get scanSaveReceipt;
+
+  /// Manual dialog: add a row.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج آخر'**
+  String get scanAddAnother;
+
+  /// Manual dialog save with the row count.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ ({count})'**
+  String scanSaveCount(int count);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المنتج'**
+  String get scanItemName;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get scanQuantity;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get scanUnit;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get scanCategory;
+
+  /// Receipt sheet: unreadable photo title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقرا الفاتورة'**
+  String get scanReceiptUnreadableTitle;
+
+  /// Receipt sheet: unreadable photo advice.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرب صورة أوضح — الورقة مفرودة، الإضاءة كويسة، والمبلغ الأخير ظاهر في الصورة.'**
+  String get scanReceiptUnreadableHint;
+
+  /// Receipt sheet: network failure title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر'**
+  String get scanServerUnreachable;
+
+  /// Receipt sheet: network failure message.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة لسه معاك. جرب تاني لما النت يرجع.'**
+  String get scanServerUnreachableHint;
+
+  /// Receipt sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة'**
+  String get scanPickTitle;
+
+  /// Receipt sheet intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'هقرا المحل والمبلغ والأصناف، وأوريهملك تتأكد منهم قبل ما أسجّل أي حاجة.'**
+  String get scanPickHint;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الكاميرا'**
+  String get scanOpenCamera;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار من الصور'**
+  String get scanPickFromGallery;
+
+  /// Receipt sheet: balance screenshots work too.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر كمان تختار صورة إشعار رصيد أو راتب، وهعرض عليك تخليه ميزانيتك.'**
+  String get scanPickBalanceHint;
+
+  /// Receipt sheet: working.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الفاتورة…'**
+  String get scanReadingReceipt;
+
+  /// Button: retake the photo.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر تاني'**
+  String get scanRetake;
+
+  /// Receipt sheet: review title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من الفاتورة'**
+  String get scanCheckReceipt;
+
+  /// Receipt sheet: a balance card was read.
+  ///
+  /// In ar, this message translates to:
+  /// **'دي مش فاتورة شراء'**
+  String get scanNotAPurchase;
+
+  /// Receipt sheet: review hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع المبلغ والفئة قبل ما تحفظ. لسه ماتسجّلش حاجة.'**
+  String get scanCheckReceiptHint;
+
+  /// Receipt sheet: balance card hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'دي شكلها صورة رصيد أو راتب، مش حاجة اتصرفت. أقدر أخلي الرقم ده ميزانيتك بدل ما أسجّله مصروف.'**
+  String get scanNotAPurchaseHint;
+
+  /// Receipt sheet: the receipt's own date.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الفاتورة {date} — هتتسجل على يومها وشهرها.'**
+  String scanReceiptDate(String date);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get scanAmount;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get scanBalance;
+
+  /// Receipt sheet: category chips heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get scanCategoryHeading;
+
+  /// Receipt sheet: payment heading when unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'**
+  String get scanPaidHowUnknown;
+
+  /// Receipt sheet: payment heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفعت'**
+  String get scanPaid;
+
+  /// Receipt sheet: the bank already logged this payment. bank is ' (Name)' or empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ده اتسجل من البنك{bank}: {amount} — «{title}»'**
+  String scanBankTwin(String bank, String amount, String title);
+
+  /// Chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفس العملية'**
+  String get scanSamePayment;
+
+  /// Chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملية تانية'**
+  String get scanOtherPayment;
+
+  /// Receipt sheet switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الأصناف للمخزن ({count})'**
+  String scanAddItemsToPantry(int count);
+
+  /// Receipt sheet switch subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.'**
+  String get scanAddItemsToPantryHint;
+
+  /// Receipt sheet switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الأدوية للصيدلية ({count})'**
+  String scanAddMedicines(int count);
+
+  /// Receipt sheet switch subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي عندك هيزيد رصيده بالحباية مش بالعلبة، والجديد هيتسجل. دوس على العدد لو عايز تعدّله.'**
+  String get scanAddMedicinesHint;
+
+  /// Receipt sheet: review-only items.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصناف اللي قريتها ({count}) — للمراجعة بس'**
+  String scanItemsReadOnly(int count);
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ كمصروف'**
+  String get scanSaveExpense;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ وضيف للمخزن'**
+  String get scanSaveAndPantry;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ وضيف للصيدلية'**
+  String get scanSaveAndPharmacy;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'خليها ميزانيتي'**
+  String get scanMakeBudget;
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.'**
+  String get scanSavedQueued;
+
+  /// Intake part.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} جديد'**
+  String scanPartNew(int count);
+
+  /// Pantry intake part.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} زادت كميته'**
+  String scanPartToppedUp(int count);
+
+  /// Intake part.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} اتشال من المشتريات'**
+  String scanPartTicked(int count);
+
+  /// Pharmacy intake part.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} زاد رصيده'**
+  String scanPartRestocked(int count);
+
+  /// Pharmacy intake part.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} من غير عدد مازادش'**
+  String scanPartUncounted(int count);
+
+  /// Joins two summary parts.
+  ///
+  /// In ar, this message translates to:
+  /// **'{a}، {b}'**
+  String scanPartsJoin(String a, String b);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجل المصروف — المخزن: {parts}.'**
+  String scanSavedPantry(String parts);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.'**
+  String get scanPharmacyPartial;
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجل المصروف — الصيدلية: {parts}.'**
+  String scanSavedPharmacy(String parts);
+
+  /// Medicine row: which medicine it restocks.
+  ///
+  /// In ar, this message translates to:
+  /// **'يزيد: {name}'**
+  String scanAddsTo(String name);
+
+  /// Medicine row.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديد في الصيدلية'**
+  String get scanNewInPharmacy;
+
+  /// Count prompt; unit is the stored unit.
+  ///
+  /// In ar, this message translates to:
+  /// **'كام {unit}؟'**
+  String scanHowMany(String unit);
+
+  /// Count dialog hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — عدد العلب × اللي في العلبة الواحدة.'**
+  String scanCountHint(String name);
+
+  /// Count dialog confirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام'**
+  String get scanCountOk;
+
+  /// Payment chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيزا / بطاقة'**
+  String get scanWalletCard;
+
+  /// Payment chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'كاش'**
+  String get scanWalletCash;
+
+  /// Prescription line could not be read.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش واضحة في الصورة — صحّحها أو شيلها'**
+  String get scanLineIllegible;
+
+  /// Prescription line taken as needed.
+  ///
+  /// In ar, this message translates to:
+  /// **'عند اللزوم — من غير مواعيد'**
+  String get scanLineAsNeeded;
+
+  /// Prescription line frequency.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مرات في اليوم'**
+  String scanLineTimesPerDay(int count);
+
+  /// Prescription line duration.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمدة {days} يوم'**
+  String scanLineForDays(int days);
+
+  /// Separator between dose times / subjects in a list (with its trailing space).
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get scanTimesSeparator;
+
+  /// Prescription line without a schedule.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرات مش مكتوبة — حددها في الصيدلية'**
+  String get scanLineNoTimes;
+
+  /// Document sheet error title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقرا الروشتة'**
+  String get scanPrescriptionUnreadable;
+
+  /// Document sheet error title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقرا الجدول'**
+  String get scanTimetableUnreadable;
+
+  /// Document sheet error advice.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الورقة كلها قريب، من غير لمعة وفي إضاءة كويسة.'**
+  String get scanPaperHint;
+
+  /// Document sheet failure title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أكمّل'**
+  String get scanCouldNotFinish;
+
+  /// Document sheet failure message.
+  ///
+  /// In ar, this message translates to:
+  /// **'النت أو السيرفر — جرب تاني كمان شوية.'**
+  String get scanCouldNotFinishHint;
+
+  /// Document sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الروشتة'**
+  String get scanPrescriptionTitle;
+
+  /// Document sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر جدول الحصص'**
+  String get scanTimetableTitle;
+
+  /// Document sheet intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنقل الأدوية والجرعات زي ما هي مكتوبة، وتراجعها قبل ما تدخل الصيدلية بمواعيدها.'**
+  String get scanPrescriptionIntro;
+
+  /// Document sheet intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'هقرا الأيام والحصص، وتراجعها قبل ما أحفظها — وبالليل أفكّرك بشنطة بكرة.'**
+  String get scanTimetableIntro;
+
+  /// Document sheet working.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الورقة…'**
+  String get scanReadingPaper;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار صورة تانية'**
+  String get scanPickAnother;
+
+  /// Prescription review title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لقيت {count} دوا'**
+  String scanFoundMedicines(int count);
+
+  /// Prescription review caution.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بينقل اللي مكتوب في الروشتة بس — راجع الجرعات والمواعيد مع الصيدلي أو الدكتور.'**
+  String get scanPrescriptionCaution;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الروشتة لمين؟'**
+  String get scanPrescriptionFor;
+
+  /// Field hint with the printed patient name.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتوب عليها: {name} — فاضي = ليك'**
+  String scanPrescriptionForNamed(String name);
+
+  /// Field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضي = ليك'**
+  String get scanPrescriptionForYou;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف للصيدلية ({count})'**
+  String scanAddToPharmacyCount(int count);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتضاف {count} دوا للصيدلية بمواعيدهم.'**
+  String scanMedicinesAdded(int count);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'مااتضافش حاجة — راجع الصيدلية وضيف بإيدك.'**
+  String get scanMedicinesNoneAdded;
+
+  /// Timetable review title.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول {count} أيام'**
+  String scanTimetableDays(int count);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجدول ده لمين؟'**
+  String get scanTimetableFor;
+
+  /// Field hint with the printed class.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل {name}'**
+  String scanTimetableClass(String name);
+
+  /// Field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الطفل'**
+  String get scanChildName;
+
+  /// Disabled button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمه الأول'**
+  String get scanNameFirst;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ جدول {name}'**
+  String scanSaveTimetable(String name);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ الجدول ({count} حصة) — هفكّرك بشنطة بكرة بالليل.'**
+  String scanTimetableSaved(int count);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'مااتحفظش الجدول — جرب تاني.'**
+  String get scanTimetableNotSaved;
+
+  /// Photo sheet error title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالقيتش أصناف في الصورة'**
+  String get scanNoPantryItems;
+
+  /// Photo sheet error title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقرا العلبة'**
+  String get scanBoxUnreadable;
+
+  /// Photo sheet error advice.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرّب أكتر وخلّي الأصناف والكلام اللي عليها باين، والإضاءة كويسة.'**
+  String get scanPantryPhotoHint;
+
+  /// Photo sheet error advice.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر وش العلبة اللي عليه اسم الدواء، قريب ومن غير لمعة.'**
+  String get scanBoxPhotoHint;
+
+  /// Photo sheet failure message.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرب تاني لما النت يرجع.'**
+  String get scanTryWhenOnline;
+
+  /// Photo sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر المخزن'**
+  String get scanPantryTitle;
+
+  /// Photo sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر علبة الدواء'**
+  String get scanBoxTitle;
+
+  /// Photo sheet intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرف أو التلاجة أو شنطة المشتريات — هقرا الأصناف وكمياتها، وأوريهالك تختار منها قبل ما تدخل المخزن.'**
+  String get scanPantryIntro;
+
+  /// Photo sheet intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'هقرا الاسم والعدد والجرعة والانتهاء، وأفتحلك فورم الإضافة متعبّي تراجعه قبل الحفظ.'**
+  String get scanBoxIntro;
+
+  /// Photo sheet working.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الصورة…'**
+  String get scanReadingPhoto;
+
+  /// Photo review title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لقيت {count} صنف'**
+  String scanFoundItems(int count);
+
+  /// Photo review hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل علامة أي حاجة غلط. اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.'**
+  String get scanFoundItemsHint;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف للمخزن ({count})'**
+  String scanAddToPantryCount(int count);
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصناف مادخلتش المخزن كلها — راجع المخزن وضيف الناقص بإيدك.'**
+  String get scanPantryPartial;
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن: {parts}.'**
+  String scanPantryResult(String parts);
+
+  /// Statement import: unreadable file.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف'**
+  String get statementUnreadableFile;
+
+  /// Statement import: file too large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات'**
+  String get statementTooBig;
+
+  /// Statement import: nothing read.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو ملف PDF من تطبيق البنك'**
+  String get statementNoRows;
+
+  /// Statement import: network failure.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني'**
+  String get statementServerDown;
+
+  /// Statement import done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استيراد {imported} معاملة، تجاهل {skipped} مكررة'**
+  String statementImported(int imported, int skipped);
+
+  /// Screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد كشف حساب'**
+  String get statementTitle;
+
+  /// Statement import intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.'**
+  String get statementIntro;
+
+  /// Statement import: working.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الكشف… الكشف الطويل بياخد دقيقة'**
+  String get statementReading;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار الكشف'**
+  String get statementPick;
+
+  /// CSV mapping hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك'**
+  String get statementMapHint;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التاريخ'**
+  String get statementColDate;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود الوصف/العنوان'**
+  String get statementColTitle;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود المبلغ'**
+  String get statementColAmount;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التصنيف (اختياري)'**
+  String get statementColCategory;
+
+  /// Switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)'**
+  String get statementInvert;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة للمراجعة'**
+  String get statementContinue;
+
+  /// Optional column picker hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get statementNone;
+
+  /// A column with no header.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود {n}'**
+  String statementColumnN(int n);
+
+  /// Preview header.
+  ///
+  /// In ar, this message translates to:
+  /// **'{rows} صف — {checked} محدد للاستيراد'**
+  String statementRowsSummary(int rows, int checked);
+
+  /// Empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لقيتش أي معاملة في الملف'**
+  String get statementEmptyTitle;
+
+  /// Empty state message.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.'**
+  String get statementEmptyMessage;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد {count} معاملة'**
+  String statementImportCount(int count);
+
+  /// Row error.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'**
+  String get statementRowError;
+
+  /// Row warning.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ'**
+  String get statementRowMismatch;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام متطابقة مع رصيد الكشف'**
+  String get statementBalanced;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها'**
+  String get statementMismatch;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد'**
+  String get statementUnknown;
+
+  /// Check banner with rows left out.
+  ///
+  /// In ar, this message translates to:
+  /// **'{text}. وفي {count} صف ماقدرتش أقراه.'**
+  String statementDropped(String text, int count);
+
+  /// Cost stat label: the period's health spending.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرف الصحة الشهر ده'**
+  String get pharmacyCostHealth;
+
+  /// Cost stat label: the boxes' prices added up.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار علب الأدوية'**
+  String get pharmacyCostBoxes;
+
+  /// FAB tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get pharmacyAdd;
+
+  /// Stat label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام بالجرعات'**
+  String get pharmacyAdherence;
+
+  /// Stat value before any dose.
+  ///
+  /// In ar, this message translates to:
+  /// **'في انتظار أول جرعة'**
+  String get pharmacyAdherenceWaiting;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأدوية'**
+  String get pharmacyTotal;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء'**
+  String get pharmacyExpiringSoon;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون منخفض'**
+  String get pharmacyLowStock;
+
+  /// Banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} دواء منتهي الصلاحية — تخلص منه بأمان'**
+  String pharmacyExpiredBanner(int count);
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء — تخلص منها بأمان'**
+  String get pharmacyExpiringHeading;
+
+  /// Expiry badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي خلال {days} يوم'**
+  String pharmacyExpiresIn(int days);
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات النهارده'**
+  String get pharmacyTodayDoses;
+
+  /// Today section empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات فاضلة النهارده.'**
+  String get pharmacyNoDosesLeft;
+
+  /// Today section empty, nothing scheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.'**
+  String get pharmacyNoSchedules;
+
+  /// Empty state title on error.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الأدوية'**
+  String get pharmacyLoadFailed;
+
+  /// Empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أدوية مسجلة بعد'**
+  String get pharmacyEmptyTitle;
+
+  /// Empty state message on error.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get pharmacyPullToRetry;
+
+  /// Empty state message.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه بالزرار، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.'**
+  String get pharmacyEmptyMessage;
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوية'**
+  String get pharmacyMedicines;
+
+  /// A dose's state, by DoseState name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{state, select, taken{اتاخدت} due{وقتها دلوقتي} missed{فاتت} other{جاية}}'**
+  String pharmacyDoseState(String state);
+
+  /// Dose snoozed.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأجلت شوية'**
+  String get pharmacySnoozed;
+
+  /// Snooze button.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعدين'**
+  String get pharmacyLater;
+
+  /// Dose taken button.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدته'**
+  String get pharmacyTook;
+
+  /// Whose medicine it is.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{name}'**
+  String pharmacyForPerson(String name);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكورس خلص ✓'**
+  String get pharmacyCourseDone;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي منذ {days} يوم'**
+  String pharmacyExpiredAgo(int days);
+
+  /// Badge; unit is the stored unit, maybe empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي {count} {unit}'**
+  String pharmacyRemaining(String count, String unit);
+
+  /// Warning.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت جرعة مش مفهوم — عدّله'**
+  String get pharmacyBadDoseTime;
+
+  /// Warning.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالوش مواعيد — مش هفكّرك بيه'**
+  String get pharmacyNoTimes;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد مواعيده'**
+  String get pharmacySetTimes;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'يكفي {days} يوم'**
+  String pharmacySupplyDays(int days);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية محتاجة تأكيد'**
+  String get pharmacyConfirmQty;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تناول جرعة'**
+  String get pharmacyTakeDose;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد الطلب'**
+  String get pharmacyRefill;
+
+  /// Button / dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل قد إيه فعلاً؟'**
+  String get pharmacyHowMuchLeft;
+
+  /// Delete dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{name}» من الصيدلية؟'**
+  String pharmacyDeleteConfirm(String name);
+
+  /// Confirm quantity dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — الكمية الحالية المسجلة: {count} {unit}'**
+  String pharmacyCurrentQty(String name, int count, String unit);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة الواحدة كام {unit}؟'**
+  String pharmacyUnitsPerDose(String unit);
+
+  /// Field helper.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم'**
+  String get pharmacyUnitsPerDoseHelp;
+
+  /// Refill dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد طلب {name}'**
+  String pharmacyRefillTitle(String name);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المضافة ({unit})'**
+  String pharmacyAddedQty(String unit);
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get pharmacyPrice;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get pharmacyExpiryDate;
+
+  /// Snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج بيانات الدواء بنجاح'**
+  String get pharmacyScanOk;
+
+  /// Time picker title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ميعاد الجرعة'**
+  String get pharmacyPickDoseTime;
+
+  /// Sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دواء'**
+  String get pharmacyAddMedicine;
+
+  /// Sheet title after a scan.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الدواء'**
+  String get pharmacyReviewMedicine;
+
+  /// Sheet hint after a scan.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.'**
+  String get pharmacyReadFromBox;
+
+  /// Scanning.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري قراءة علبة الدواء بالذكاء الاصطناعي...'**
+  String get pharmacyReadingBox;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح العبوة بالكاميرا'**
+  String get pharmacyScanBox;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدواء'**
+  String get pharmacyName;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟ (سيبها فاضية لو ليك)'**
+  String get pharmacyWhoFor;
+
+  /// Field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماما، بابا، يوسف…'**
+  String get pharmacyWhoForHint;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المتبقية'**
+  String get pharmacyRemainingQty;
+
+  /// Heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get pharmacyUnit;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات اليوم'**
+  String get pharmacyDailyDoses;
+
+  /// Heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعة (اختياري)'**
+  String get pharmacyDoseTimesOptional;
+
+  /// Chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة ميعاد'**
+  String get pharmacyAddTime;
+
+  /// Hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مواعيد مضافة — مقترح: {times}'**
+  String pharmacySuggestedTimes(String times);
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء — اضغط لاختيار التاريخ'**
+  String get pharmacyExpiryPick;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get pharmacyAmount;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({currency})'**
+  String pharmacyAmountIn(String currency);
+
+  /// Toggle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل إضافية (اختياري)'**
+  String get pharmacyExtras;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة الفعالة'**
+  String get pharmacyIngredient;
+
+  /// Field label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة (مثال: قرص كل 8 ساعات)'**
+  String get pharmacyDosageHint;
+
+  /// Checkbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'دواء مزمن / روشتة متجددة شهرياً'**
+  String get pharmacyRecurring;
+
+  /// Dropdown label.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين في العائلة'**
+  String get pharmacyFamilyMember;
+
+  /// Dropdown option.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get pharmacyNoMember;
+
+  /// Dose time preset chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'{slot, select, morning{🌅 صباحاً} noon{☀️ ظهراً} evening{🌙 مساءً} other{🛌 قبل النوم}}'**
+  String pharmacyPreset(String slot);
+
+  /// Times sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد {name}'**
+  String pharmacyTimesOf(String name);
+
+  /// Times sheet hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.'**
+  String get pharmacyTimesHint;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ المواعيد'**
+  String get pharmacySaveTimes;
+
+  /// Toggle tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوية العيلة'**
+  String get pharmacyFamilyTooltip;
+
+  /// Family empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أدوية تقدر تشوفها'**
+  String get pharmacyFamilyEmptyTitle;
+
+  /// Family empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»'**
+  String get pharmacyFamilyEmptyMessage;
+
+  /// Avatar letter when the name is empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'؟'**
+  String get pharmacyNoInitial;
+
+  /// Exact alarm hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة'**
+  String get pharmacyExactAlarm;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
