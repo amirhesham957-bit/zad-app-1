@@ -95,7 +95,7 @@ export function postponeForSuppression(
 // ورده بيرجع في الـHTTP response والتطبيق بيتجاهله — لا تليجرام ولا رؤية. القايمة هنا
 // بتتبني من البيانات مباشرة (قايمة الشراء + المخزون الناقص + الأدوية القربت)، من غير موديل.
 
-export type StoreCategory = "supermarket" | "mall" | "pharmacy";
+export type StoreCategory = "supermarket" | "mall" | "pharmacy" | "restaurant";
 
 /** ساعات بين رسالتين لنفس المحل، وأقصى عدد رسايل في ٢٤ ساعة — عشان التنقل في مول مايبقاش سبام. */
 export const STORE_ARRIVAL_SAME_STORE_HOURS = 6;
@@ -104,7 +104,7 @@ const STORE_ARRIVAL_MAX_LISTED = 10;
 
 export function normalizeStoreCategory(raw: unknown): StoreCategory | null {
   const v = String(raw ?? "").trim().toLowerCase();
-  return v === "supermarket" || v === "mall" || v === "pharmacy" ? v : null;
+  return v === "supermarket" || v === "mall" || v === "pharmacy" || v === "restaurant" ? v : null;
 }
 
 /** اسم محل أو صنف جاي من الجهاز: نص بس، من غير control chars ولا «»، بطول معقول. */
@@ -307,7 +307,8 @@ export type PlaceReminderPlace = typeof PLACE_REMINDER_PLACES[number];
 
 /** أنواع التذكيرات اللي تتقال لما العميل يوصل محل من النوع ده. */
 export function placesMatchingArrival(category: StoreCategory): PlaceReminderPlace[] {
-  return [category, "any"];
+  // المطعم مش مكان شرا: تذكيرات «لما أكون في محل» مابتطلعش فيه (ZAD_PLAN ٤.١٨).
+  return category === "restaurant" ? [] : [category, "any"];
 }
 
 /** مفتاح منع التكرار للحظة الصوت: نفس التذكيرات = نفس اللحظة حتى لو الحدث وصل مرتين. */
@@ -388,6 +389,18 @@ export function buildStoreArrivalMessage(input: {
     ...(dealLines.length > 0 ? [`🏷️ عليه عرض هنا: ${dealLines.join("، ")} — ممكن يكون خلص`] : []),
   ].join("\n");
   return { title, body, itemCount: items.length };
+}
+
+/**
+ * «انت جنب المطعم» (ZAD_PLAN ٤.١٨): المطعم مالوش نواقص، فالرسالة عروضه السارية بس — ومن غير عرض مفيش رسالة.
+ */
+export function buildRestaurantArrivalMessage(storeName: string, deals: readonly DealHere[]): { title: string; body: string; itemCount: number } | null {
+  if (deals.length === 0) return null;
+  const store = sanitizeStoreName(storeName) || "مطعم قريب";
+  const lines = deals.slice(0, 3).map((d) =>
+    `• ${cleanText(d.item, 40)} بـ${d.price}${d.price_before ? ` بدل ${d.price_before}` : ""}${d.until ? ` لحد ${d.until}` : ""} (${DEAL_SOURCE_LABEL[d.source_kind] ?? "مصدر عام"})`
+  );
+  return { title: `🍽️ أنت جنب «${store}»`, body: ["🏷️ عليه عرض هنا:", ...lines, "ممكن يكون خلص — اتأكد منهم قبل ما تطلب."].join("\n"), itemCount: lines.length };
 }
 
 /** عرض ساري من zad_deals في المحل ده على صنف ناقص (ZAD_PLAN ٤.٩). */

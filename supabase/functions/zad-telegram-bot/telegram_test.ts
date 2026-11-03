@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import * as telegramModule from "./telegram.ts";
 import {
+  dealPhotoUrl, dealSourceRow,
   normalizeBindingCode, parseDismissCallback, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
   checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
@@ -523,9 +524,11 @@ import { dealKeyboard, dealReply, parseDealCallback } from "./telegram.ts";
 
 Deno.test("deal buttons: add / not interested round-trip, under Telegram's 64-byte limit", () => {
   const id = "0f8b6c9e-1234-4abc-9def-001122334455";
-  const [[add, no]] = dealKeyboard(id);
-  assertEquals(parseDealCallback(add.callback_data!), { momentId: id, add: true });
-  assertEquals(parseDealCallback(no.callback_data!), { momentId: id, add: false });
+  const [[add, no], [wrong]] = dealKeyboard(id);
+  assertEquals(parseDealCallback(add.callback_data!), { momentId: id, add: true, wrong: false });
+  assertEquals(parseDealCallback(no.callback_data!), { momentId: id, add: false, wrong: false });
+  assertEquals(parseDealCallback(wrong.callback_data!), { momentId: id, add: false, wrong: true });
+  assertEquals(parseDealCallback(`dl:${id}:x`), null);
   assert(new TextEncoder().encode(add.callback_data!).length <= 64);
   assertEquals(parseDealCallback("dl:not-a-uuid:a"), null);
   assertEquals(parseDealCallback(`sal:${id}:y`), null);
@@ -536,6 +539,7 @@ Deno.test("deal buttons: the reply says what happened, and a failed write is sai
   assertEquals(dealReply({ ok: true, answer: "add", item: "زيت", already_listed: true }), "«زيت» كان في قايمتك أصلاً ✅");
   assertEquals(dealReply({ ok: true, answer: "no", item: "شاي" }), "تمام، مش هعرض عليك «شاي» تاني الشهر ده.");
   assertEquals(dealReply({ ok: false }), "العرض ده مابقاش موجود.");
+  assert(dealReply({ ok: true, answer: "wrong", item: "زيت" }).includes("مراجعة العروض"));
   assert(dealReply(null).includes("ماقدرتش"));
 });
 
@@ -657,4 +661,21 @@ Deno.test("categorising the expense answers «كان على إيه؟» — loggi
   assertEquals(pendingQuestionAnswered(["update_transaction", "add_inventory_item"]), true);
   assertEquals(pendingQuestionAnswered(["log_transaction"]), false);
   assertEquals(pendingQuestionAnswered([]), false);
+});
+
+Deno.test("deal link (ZAD_PLAN 4.20): a button per source, https only, none for a receipt deal", () => {
+  assertEquals(dealSourceRow({ kind: "youtube", url: "https://www.youtube.com/watch?v=abc123" }), [{ text: "▶️ الفيديو", url: "https://www.youtube.com/watch?v=abc123" }]);
+  assertEquals(dealSourceRow({ kind: "instagram", url: "https://www.instagram.com/p/AbC/" })?.[0].text, "📸 البوست");
+  assertEquals(dealSourceRow({ kind: "search", url: "https://shop.example/offers" })?.[0].text, "🔗 صفحة العرض");
+  assertEquals(dealSourceRow({ kind: "receipt", url: null }), null);
+  assertEquals(dealSourceRow({ kind: "search", url: "http://plain.example" }), null);
+  assertEquals(dealSourceRow({ kind: "search", url: "javascript:alert(1)" }), null);
+  assertEquals(dealSourceRow(undefined), null);
+});
+
+Deno.test("deal photo (ZAD_PLAN 4.20): a YouTube deal shows its thumbnail, nothing else gets a picture", () => {
+  assertEquals(dealPhotoUrl({ kind: "youtube", url: "https://www.youtube.com/watch?v=abc123" }), "https://i.ytimg.com/vi/abc123/hqdefault.jpg");
+  assertEquals(dealPhotoUrl({ kind: "youtube", url: "https://evil.example/watch?v=abc123" }), null);
+  assertEquals(dealPhotoUrl({ kind: "instagram", url: "https://www.instagram.com/p/AbC/" }), null);
+  assertEquals(dealPhotoUrl(null), null);
 });

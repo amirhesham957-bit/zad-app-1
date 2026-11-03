@@ -61,6 +61,10 @@ export interface TasteDeal {
   stock?: boolean;
   /** المشوار بالعربية للمحل ده من نقطته (٤.١٠) — بس لو المحل ليه إحداثيات وسعر البنزين معروف. */
   trip?: Trip;
+  /** «العرض الناري» (٤.٨): خصم كبير أو ١+١ على حاجة البيت بيشتريها ومش في القايمة. */
+  fire?: boolean;
+  /** العرض ١+١ أو «اشتري اتنين» (deal_kind = multi_buy). */
+  multi_buy?: boolean;
   /** الحاجة زي ما العميل قالها في «عايز أشتري …» (ZAD_PLAN ٥.٨ (٣)) — العرض ده على نية مش على احتياج. */
   intent?: string;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
@@ -234,6 +238,7 @@ export function pickDeal(
       nearby: nearby.some((n) => sameName(n, store)),
       brand: offerBrand(item, brands),
       ...(d?.trip && typeof d.trip === "object" ? { trip: d.trip as Trip } : {}),
+      ...(d?.deal_kind === "multi_buy" ? { multi_buy: true } : {}),
       ...(tight ? { tight: true } : {}),
       ...(!tight && (hasBefore || hasDiscount) && stockable.has(brandWords(item).group ?? -1) ? { stock: true } : {}),
     });
@@ -260,6 +265,7 @@ export interface StoredDealRow {
   source_kind: string;
   source_url: string | null;
   valid_until: string | null;
+  deal_kind?: string | null;
 }
 
 /**
@@ -280,8 +286,55 @@ export function storedDeals(
     out.push({
       item: r.item_name, store: r.store, price, price_before: Number.isFinite(before) ? before : null, discount_percent: discount, note: null,
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
+      ...(r.deal_kind ? { deal_kind: r.deal_kind } : {}),
       ...(t ? { trip: t } : {}),
     });
+  }
+  return out;
+}
+
+/** «العرض الناري» (٤.٨): خصم ٤٠٪ أو أكتر، أو ١+١. */
+export const FIRE_DISCOUNT_PERCENT = 40;
+
+export function isFireDeal(d: Record<string, unknown>): boolean {
+  const discount = Number(d?.discount_percent);
+  return d?.deal_kind === "multi_buy" || (Number.isFinite(discount) && discount >= FIRE_DISCOUNT_PERCENT && discount < 100);
+}
+
+/**
+ * «العرض الناري» (٤.٨): بيعدّي شرط «في القايمة» لو البيت اشترى الصنف قبل كده ([bought] = أسامي المخزن). عمره ما بيتقال
+ * والفلوس ضيقة — اللي بينادي مابينادهوش ساعتها، وهنا كمان [tight] = ولا حاجة.
+ */
+export function pickFireDeal(
+  raw: unknown,
+  bought: readonly string[],
+  favorites: readonly string[],
+  skip: ReadonlySet<string>,
+  nearby: readonly string[] = [],
+  tight = false,
+  brands: ReadonlyMap<number, string> = new Map(),
+): TasteDeal | null {
+  if (tight || !Array.isArray(raw)) return null;
+  const fire = (raw as Array<Record<string, unknown>>).filter(isFireDeal);
+  if (fire.length === 0) return null;
+  const picked = pickDeal(fire, tasteItems(bought, [], 200), favorites, skip, nearby, false, brands);
+  return picked ? { ...picked, fire: true } : null;
+}
+
+/** «انت جنب المطعم» (ZAD_PLAN ٤.١٨): أي عرض ساري في المكان ده، الأحدث تاريخاً الأول، ٣ بالكتير، صنف واحد مرة. */
+export function dealsAtPlace(rows: readonly StoredDealRow[] | null | undefined, storeName: string): DealHere[] {
+  const out: DealHere[] = [];
+  const taken = new Set<string>();
+  for (const r of rows ?? []) {
+    const price = Number(r.price);
+    if (!(price > 0) || !sameStore(r.store, storeName) || taken.has(itemKey(r.item_name))) continue;
+    taken.add(itemKey(r.item_name));
+    const before = Number(r.price_before);
+    out.push({
+      item: r.item_name, price, price_before: Number.isFinite(before) && before > price ? before : null,
+      until: r.valid_until ? r.valid_until.slice(0, 10) : null, source_kind: r.source_kind,
+    });
+    if (out.length === 3) break;
   }
   return out;
 }
@@ -358,7 +411,8 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?
     if (typeof key !== "string" || !key) continue;
     const at = Date.parse(String(r?.created_at ?? ""));
     const age = Number.isFinite(at) ? nowMs - at : 0;
-    if (age <= DEAL_REPEAT_DAYS * 86_400_000) keys.add(key);
+    // «العرض ده غلط» (٤.١٩): نفس العرض مايتقالش تاني شهر، مش أسبوع بس.
+    if (age <= (deal?.answer === "wrong" ? DEAL_DECLINED_DAYS : DEAL_REPEAT_DAYS) * 86_400_000) keys.add(key);
     const need = key.split(":")[1];
     if (deal?.answer === "no" && need && age <= DEAL_DECLINED_DAYS * 86_400_000) keys.add(`need:${need}`);
   }
@@ -407,10 +461,11 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       : tasteItems([...wants, ...shopping, ...runningOut], Array.isArray(interests) ? interests.map(String) : []);
     // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
-    if (items.length === 0 || !/^[A-Z]{2}$/.test(country)) return null;
+    const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "");
+    // من غير احتياج ممكن يبقى فيه عرض ناري (٤.٨) على حاجة اتشرت قبل كده — مش والفلوس ضيقة.
+    if (!/^[A-Z]{2}$/.test(country) || (items.length === 0 && (tight || boughtNames.length === 0))) return null;
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
     const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
-    const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "");
     const saidNotes = ((said ?? []) as Array<{ note: string | null; valid_until?: string | null }>)
       .filter((m) => !m.valid_until || Date.parse(m.valid_until) > now).map((m) => m.note ?? "");
     const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidNotes)]);
@@ -425,7 +480,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       : [];
     const [{ data: stored, error: storedErr }, { data: fuelRow }] = await Promise.all([
       sb.from("zad_deals")
-        .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng")
+        .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind")
         .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300),
       sb.from("zad_fuel_prices").select("price,currency,found_at").eq("country", country).maybeSingle(),
     ]);
@@ -439,10 +494,16 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     // ٤.١٠: المشوار من نقطته (مقرّبة لكيلو) للمحل اللي ليه إحداثيات، بسعر بنزين بلده.
     const tripOf = (r: StoredDealRow & { currency?: string | null }) =>
       tripCost(point, r, usableFuel(fuelRow as { price?: number; currency?: string; found_at?: string } | null, r.currency ?? null, now));
-    const fromStore = pick(storedDeals(stored as StoredDealRow[] | null, tripOf));
+    const storedRaw = storedDeals(stored as StoredDealRow[] | null, tripOf);
+    const fromStore = items.length ? pick(storedRaw) : null;
     if (fromStore) return fromStore;
-    const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-    return pick((res as { deals?: unknown } | null)?.deals);
+    if (items.length) {
+      const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
+      const live = pick((res as { deals?: unknown } | null)?.deals);
+      if (live) return live;
+    }
+    // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة.
+    return pickFireDeal(storedRaw, boughtNames, favorites, skip, nearby, tight, brands);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;

@@ -287,6 +287,14 @@ Deno.test("declined: «not interested» quiets that need for 30 days at any stor
   assertEquals(pickDeal(deals, ["زيت", "رز"], [], keys)?.item, "رز مصري");
 });
 
+Deno.test("reported wrong (4.19): the same deal stays quiet for 30 days, the need does not", () => {
+  const now = Date.parse("2026-11-03T08:00:00Z");
+  const keys = askedDealKeys([
+    { facts: { taste_deal: { key: "deal:زيت:كيو", answer: "wrong" } }, created_at: new Date(now - 20 * 86_400_000).toISOString() },
+  ], now);
+  assertEquals([...keys], ["deal:زيت:كيو"]);
+});
+
 Deno.test("deal buttons ride only on a morning greeting that carries a deal", () => {
   assert(hasDealButtons("morning_greeting", { taste_deal: { item: "زيت" } }));
   assert(!hasDealButtons("morning_greeting", { weather: {} }));
@@ -344,4 +352,29 @@ Deno.test("house brand: the brand they said in chat beats the one counted from p
   assertEquals(offerBrand("شاي العروسة 40 فتلة", brands), "عروسه");
   assertEquals(offerBrand("شاي بروك 100 جم", brands), null);
   assertEquals(offerBrand("نادك حليب كامل الدسم 1 لتر", brands), "نادك");
+});
+
+// ZAD_PLAN ٤.٨: «العرض الناري».
+import { isFireDeal, pickFireDeal } from "./tasteDeals.ts";
+
+Deno.test("fire deal: 40% off or 1+1 on something the house bought — never when money is tight", () => {
+  const raw = storedDeals([
+    { store: "كيو", item_name: "زيت عافية 1.5 لتر", price: 15, price_before: 30, source_kind: "search", source_url: "https://q.example", valid_until: null },
+    { store: "كيو", item_name: "شاي ليبتون", price: 20, price_before: 25, source_kind: "search", source_url: "https://q.example", valid_until: null },
+    { store: "بنده", item_name: "مكرونة", price: 10, price_before: null, source_kind: "instagram", source_url: "https://www.instagram.com/p/x/", valid_until: null, deal_kind: "multi_buy" },
+    { store: "بنده", item_name: "شوكولاتة", price: 5, price_before: 20, source_kind: "search", source_url: "https://b.example", valid_until: null },
+  ]);
+  assert(isFireDeal(raw[0]) && !isFireDeal(raw[1]) && isFireDeal(raw[2]));
+  const bought = ["زيت عافيه", "شاي", "مكرونه"];
+  const fire = pickFireDeal(raw, bought, [], new Set());
+  assertEquals(fire?.fire, true);
+  assertEquals(fire?.item, "زيت عافية 1.5 لتر");
+  assertEquals(pickFireDeal(raw, bought, [], new Set(), [], true), null);
+  // the chocolate is 75% off but never bought: not a fire deal for this house.
+  assertEquals(pickFireDeal(raw, ["شوكولاته"].slice(1), [], new Set()), null);
+  // 1+1 rides when the oil was already said this week.
+  const multi = pickFireDeal(raw, bought, [], new Set(["deal:زيت عافيه:كيو"]));
+  assertEquals([multi?.item, multi?.multi_buy], ["مكرونة", true]);
+  // a «not interested» on the need quiets the fire deal too.
+  assertEquals(pickFireDeal(raw, ["مكرونه"], [], new Set(["need:مكرونه"])), null);
 });
