@@ -8173,4 +8173,312 @@ class ZadL10nEn extends ZadL10n {
     );
     return '$text. $_temp0';
   }
+
+  @override
+  String get pharmacyCostHealth => 'Health spending this month';
+
+  @override
+  String get pharmacyCostBoxes => 'Medicine box prices';
+
+  @override
+  String get pharmacyAdd => 'Add';
+
+  @override
+  String get pharmacyAdherence => 'Doses taken on time';
+
+  @override
+  String get pharmacyAdherenceWaiting => 'Waiting for the first dose';
+
+  @override
+  String get pharmacyTotal => 'Medicines';
+
+  @override
+  String get pharmacyExpiringSoon => 'Expiring soon';
+
+  @override
+  String get pharmacyLowStock => 'Running low';
+
+  @override
+  String pharmacyExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines have expired — dispose of them safely',
+      one: '1 medicine has expired — dispose of it safely',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyExpiringHeading =>
+      'Expiring soon — dispose of them safely';
+
+  @override
+  String pharmacyExpiresIn(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expires in $days days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyTodayDoses => 'Today\'s doses';
+
+  @override
+  String get pharmacyNoDosesLeft => 'No doses left today.';
+
+  @override
+  String get pharmacyNoSchedules =>
+      'No medicine has set times yet — set times for one below and I\'ll remind you.';
+
+  @override
+  String get pharmacyLoadFailed => 'I couldn\'t load your medicines';
+
+  @override
+  String get pharmacyEmptyTitle => 'No medicines yet';
+
+  @override
+  String get pharmacyPullToRetry => 'Pull down to try again.';
+
+  @override
+  String get pharmacyEmptyMessage =>
+      'Add one with the button, or tell Zad: \"I take one Concor tablet morning and night\" and it\'ll log it with its times.';
+
+  @override
+  String get pharmacyMedicines => 'Medicines';
+
+  @override
+  String pharmacyDoseState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'taken': 'Taken',
+      'due': 'Due now',
+      'missed': 'Missed',
+      'other': 'Coming up',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacySnoozed => 'Snoozed for a bit';
+
+  @override
+  String get pharmacyLater => 'Later';
+
+  @override
+  String get pharmacyTook => 'Took it';
+
+  @override
+  String pharmacyForPerson(String name) {
+    return 'for $name';
+  }
+
+  @override
+  String get pharmacyCourseDone => 'Course finished ✓';
+
+  @override
+  String pharmacyExpiredAgo(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expired $days days ago',
+      one: 'Expired 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyRemaining(String count, String unit) {
+    return '$count $unit left';
+  }
+
+  @override
+  String get pharmacyBadDoseTime => 'A dose time doesn\'t make sense — fix it';
+
+  @override
+  String get pharmacyNoTimes => 'No set times — I won\'t remind you';
+
+  @override
+  String get pharmacySetTimes => 'Set times';
+
+  @override
+  String pharmacySupplyDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Lasts $days days',
+      one: 'Lasts 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyConfirmQty => 'Confirm the quantity';
+
+  @override
+  String get pharmacyTakeDose => 'Take a dose';
+
+  @override
+  String get pharmacyRefill => 'Refill';
+
+  @override
+  String get pharmacyHowMuchLeft => 'How much is really left?';
+
+  @override
+  String pharmacyDeleteConfirm(String name) {
+    return 'Remove “$name” from the pharmacy?';
+  }
+
+  @override
+  String pharmacyCurrentQty(String name, int count, String unit) {
+    return '$name — logged quantity now: $count $unit';
+  }
+
+  @override
+  String pharmacyUnitsPerDose(String unit) {
+    return 'How many ($unit) per dose?';
+  }
+
+  @override
+  String get pharmacyUnitsPerDoseHelp =>
+      'Without this I can\'t work out how many days your supply will last';
+
+  @override
+  String pharmacyRefillTitle(String name) {
+    return 'Refill $name';
+  }
+
+  @override
+  String pharmacyAddedQty(String unit) {
+    return 'Amount added ($unit)';
+  }
+
+  @override
+  String get pharmacyPrice => 'Price';
+
+  @override
+  String get pharmacyExpiryDate => 'Expiry date';
+
+  @override
+  String get pharmacyScanOk => 'Got the medicine\'s details';
+
+  @override
+  String get pharmacyPickDoseTime => 'Pick a dose time';
+
+  @override
+  String get pharmacyAddMedicine => 'Add a medicine';
+
+  @override
+  String get pharmacyReviewMedicine => 'Check the medicine';
+
+  @override
+  String get pharmacyReadFromBox =>
+      'I read this off the box — fix anything wrong before saving.';
+
+  @override
+  String get pharmacyReadingBox => 'Reading the medicine box…';
+
+  @override
+  String get pharmacyScanBox => 'Scan the box';
+
+  @override
+  String get pharmacyName => 'Medicine name';
+
+  @override
+  String get pharmacyWhoFor => 'Who\'s it for? (leave empty if it\'s yours)';
+
+  @override
+  String get pharmacyWhoForHint => 'Mum, Dad, Youssef…';
+
+  @override
+  String get pharmacyRemainingQty => 'Quantity left';
+
+  @override
+  String get pharmacyUnit => 'Unit';
+
+  @override
+  String get pharmacyDailyDoses => 'Doses a day';
+
+  @override
+  String get pharmacyDoseTimesOptional => 'Dose times (optional)';
+
+  @override
+  String get pharmacyAddTime => 'Add a time';
+
+  @override
+  String pharmacySuggestedTimes(String times) {
+    return 'No times added yet — suggested: $times';
+  }
+
+  @override
+  String get pharmacyExpiryPick => 'Expiry date — tap to choose';
+
+  @override
+  String get pharmacyAmount => 'Price';
+
+  @override
+  String pharmacyAmountIn(String currency) {
+    return 'Price ($currency)';
+  }
+
+  @override
+  String get pharmacyExtras => 'More details (optional)';
+
+  @override
+  String get pharmacyIngredient => 'Active ingredient';
+
+  @override
+  String get pharmacyDosageHint => 'Dose (e.g. one tablet every 8 hours)';
+
+  @override
+  String get pharmacyRecurring =>
+      'Ongoing medicine / monthly repeat prescription';
+
+  @override
+  String get pharmacyFamilyMember => 'Which family member';
+
+  @override
+  String get pharmacyNoMember => 'No one';
+
+  @override
+  String pharmacyPreset(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'morning': '🌅 Morning',
+      'noon': '☀️ Midday',
+      'evening': '🌙 Evening',
+      'other': '🛌 Bedtime',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyTimesOf(String name) {
+    return '$name\'s times';
+  }
+
+  @override
+  String get pharmacyTimesHint =>
+      'I\'ll remind you at each time, and you can log the dose with one tap.';
+
+  @override
+  String get pharmacySaveTimes => 'Save times';
+
+  @override
+  String get pharmacyFamilyTooltip => 'Family medicines';
+
+  @override
+  String get pharmacyFamilyEmptyTitle => 'No medicines you can see yet';
+
+  @override
+  String get pharmacyFamilyEmptyMessage =>
+      'Each person\'s medicines show here once they agree — ask to follow from their page in “My family”';
+
+  @override
+  String get pharmacyNoInitial => '?';
+
+  @override
+  String get pharmacyExactAlarm =>
+      'Turn on \"Alarms & reminders\" in Settings so your dose reminders ring on time';
 }

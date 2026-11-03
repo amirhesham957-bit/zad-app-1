@@ -8219,5 +8219,402 @@
         "type": "int"
       }
     }
+  },
+  "pharmacyCostHealth": "صرف الصحة الشهر ده",
+  "@pharmacyCostHealth": {
+    "description": "Cost stat label: the period's health spending."
+  },
+  "pharmacyCostBoxes": "أسعار علب الأدوية",
+  "@pharmacyCostBoxes": {
+    "description": "Cost stat label: the boxes' prices added up."
+  },
+  "pharmacyAdd": "إضافة",
+  "@pharmacyAdd": {
+    "description": "FAB tooltip."
+  },
+  "pharmacyAdherence": "الالتزام بالجرعات",
+  "@pharmacyAdherence": {
+    "description": "Stat label."
+  },
+  "pharmacyAdherenceWaiting": "في انتظار أول جرعة",
+  "@pharmacyAdherenceWaiting": {
+    "description": "Stat value before any dose."
+  },
+  "pharmacyTotal": "إجمالي الأدوية",
+  "@pharmacyTotal": {
+    "description": "Count label."
+  },
+  "pharmacyExpiringSoon": "قرب الانتهاء",
+  "@pharmacyExpiringSoon": {
+    "description": "Count label."
+  },
+  "pharmacyLowStock": "مخزون منخفض",
+  "@pharmacyLowStock": {
+    "description": "Count label."
+  },
+  "pharmacyExpiredBanner": "{count} دواء منتهي الصلاحية — تخلص منه بأمان",
+  "@pharmacyExpiredBanner": {
+    "description": "Banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyExpiringHeading": "قرب الانتهاء — تخلص منها بأمان",
+  "@pharmacyExpiringHeading": {
+    "description": "Section heading."
+  },
+  "pharmacyExpiresIn": "تنتهي خلال {days} يوم",
+  "@pharmacyExpiresIn": {
+    "description": "Expiry badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyTodayDoses": "جرعات النهارده",
+  "@pharmacyTodayDoses": {
+    "description": "Section heading."
+  },
+  "pharmacyNoDosesLeft": "مفيش جرعات فاضلة النهارده.",
+  "@pharmacyNoDosesLeft": {
+    "description": "Today section empty."
+  },
+  "pharmacyNoSchedules": "ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.",
+  "@pharmacyNoSchedules": {
+    "description": "Today section empty, nothing scheduled."
+  },
+  "pharmacyLoadFailed": "مقدرتش أجيب الأدوية",
+  "@pharmacyLoadFailed": {
+    "description": "Empty state title on error."
+  },
+  "pharmacyEmptyTitle": "لا توجد أدوية مسجلة بعد",
+  "@pharmacyEmptyTitle": {
+    "description": "Empty state title."
+  },
+  "pharmacyPullToRetry": "اسحب لتحت نجرب تاني.",
+  "@pharmacyPullToRetry": {
+    "description": "Empty state message on error."
+  },
+  "pharmacyEmptyMessage": "ضيفه بالزرار، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.",
+  "@pharmacyEmptyMessage": {
+    "description": "Empty state message."
+  },
+  "pharmacyMedicines": "الأدوية",
+  "@pharmacyMedicines": {
+    "description": "Section heading."
+  },
+  "pharmacyDoseState": "{state, select, taken{اتاخدت} due{وقتها دلوقتي} missed{فاتت} other{جاية}}",
+  "@pharmacyDoseState": {
+    "description": "A dose's state, by DoseState name.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacySnoozed": "اتأجلت شوية",
+  "@pharmacySnoozed": {
+    "description": "Dose snoozed."
+  },
+  "pharmacyLater": "بعدين",
+  "@pharmacyLater": {
+    "description": "Snooze button."
+  },
+  "pharmacyTook": "خدته",
+  "@pharmacyTook": {
+    "description": "Dose taken button."
+  },
+  "pharmacyForPerson": "لـ{name}",
+  "@pharmacyForPerson": {
+    "description": "Whose medicine it is.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyCourseDone": "الكورس خلص ✓",
+  "@pharmacyCourseDone": {
+    "description": "Badge."
+  },
+  "pharmacyExpiredAgo": "منتهي منذ {days} يوم",
+  "@pharmacyExpiredAgo": {
+    "description": "Badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyRemaining": "متبقي {count} {unit}",
+  "@pharmacyRemaining": {
+    "description": "Badge; unit is the stored unit, maybe empty.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyBadDoseTime": "وقت جرعة مش مفهوم — عدّله",
+  "@pharmacyBadDoseTime": {
+    "description": "Warning."
+  },
+  "pharmacyNoTimes": "مالوش مواعيد — مش هفكّرك بيه",
+  "@pharmacyNoTimes": {
+    "description": "Warning."
+  },
+  "pharmacySetTimes": "حدد مواعيده",
+  "@pharmacySetTimes": {
+    "description": "Button."
+  },
+  "pharmacySupplyDays": "يكفي {days} يوم",
+  "@pharmacySupplyDays": {
+    "description": "Badge.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pharmacyConfirmQty": "الكمية محتاجة تأكيد",
+  "@pharmacyConfirmQty": {
+    "description": "Badge."
+  },
+  "pharmacyTakeDose": "تناول جرعة",
+  "@pharmacyTakeDose": {
+    "description": "Button."
+  },
+  "pharmacyRefill": "تجديد الطلب",
+  "@pharmacyRefill": {
+    "description": "Button."
+  },
+  "pharmacyHowMuchLeft": "فاضل قد إيه فعلاً؟",
+  "@pharmacyHowMuchLeft": {
+    "description": "Button / dialog title."
+  },
+  "pharmacyDeleteConfirm": "حذف «{name}» من الصيدلية؟",
+  "@pharmacyDeleteConfirm": {
+    "description": "Delete dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyCurrentQty": "{name} — الكمية الحالية المسجلة: {count} {unit}",
+  "@pharmacyCurrentQty": {
+    "description": "Confirm quantity dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyUnitsPerDose": "الجرعة الواحدة كام {unit}؟",
+  "@pharmacyUnitsPerDose": {
+    "description": "Field label.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyUnitsPerDoseHelp": "من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم",
+  "@pharmacyUnitsPerDoseHelp": {
+    "description": "Field helper."
+  },
+  "pharmacyRefillTitle": "تجديد طلب {name}",
+  "@pharmacyRefillTitle": {
+    "description": "Refill dialog title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyAddedQty": "الكمية المضافة ({unit})",
+  "@pharmacyAddedQty": {
+    "description": "Field label.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyPrice": "السعر",
+  "@pharmacyPrice": {
+    "description": "Field label."
+  },
+  "pharmacyExpiryDate": "تاريخ الانتهاء",
+  "@pharmacyExpiryDate": {
+    "description": "Button."
+  },
+  "pharmacyScanOk": "تم استخراج بيانات الدواء بنجاح",
+  "@pharmacyScanOk": {
+    "description": "Snackbar."
+  },
+  "pharmacyPickDoseTime": "اختر ميعاد الجرعة",
+  "@pharmacyPickDoseTime": {
+    "description": "Time picker title."
+  },
+  "pharmacyAddMedicine": "إضافة دواء",
+  "@pharmacyAddMedicine": {
+    "description": "Sheet title."
+  },
+  "pharmacyReviewMedicine": "راجع الدواء",
+  "@pharmacyReviewMedicine": {
+    "description": "Sheet title after a scan."
+  },
+  "pharmacyReadFromBox": "قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.",
+  "@pharmacyReadFromBox": {
+    "description": "Sheet hint after a scan."
+  },
+  "pharmacyReadingBox": "جاري قراءة علبة الدواء بالذكاء الاصطناعي...",
+  "@pharmacyReadingBox": {
+    "description": "Scanning."
+  },
+  "pharmacyScanBox": "مسح العبوة بالكاميرا",
+  "@pharmacyScanBox": {
+    "description": "Button."
+  },
+  "pharmacyName": "اسم الدواء",
+  "@pharmacyName": {
+    "description": "Field label."
+  },
+  "pharmacyWhoFor": "لمين؟ (سيبها فاضية لو ليك)",
+  "@pharmacyWhoFor": {
+    "description": "Field label."
+  },
+  "pharmacyWhoForHint": "ماما، بابا، يوسف…",
+  "@pharmacyWhoForHint": {
+    "description": "Field hint."
+  },
+  "pharmacyRemainingQty": "الكمية المتبقية",
+  "@pharmacyRemainingQty": {
+    "description": "Field label."
+  },
+  "pharmacyUnit": "الوحدة",
+  "@pharmacyUnit": {
+    "description": "Heading."
+  },
+  "pharmacyDailyDoses": "جرعات اليوم",
+  "@pharmacyDailyDoses": {
+    "description": "Field label."
+  },
+  "pharmacyDoseTimesOptional": "مواعيد الجرعة (اختياري)",
+  "@pharmacyDoseTimesOptional": {
+    "description": "Heading."
+  },
+  "pharmacyAddTime": "إضافة ميعاد",
+  "@pharmacyAddTime": {
+    "description": "Chip."
+  },
+  "pharmacySuggestedTimes": "لسه مفيش مواعيد مضافة — مقترح: {times}",
+  "@pharmacySuggestedTimes": {
+    "description": "Hint.",
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyExpiryPick": "تاريخ الانتهاء — اضغط لاختيار التاريخ",
+  "@pharmacyExpiryPick": {
+    "description": "Button."
+  },
+  "pharmacyAmount": "المبلغ",
+  "@pharmacyAmount": {
+    "description": "Field label."
+  },
+  "pharmacyAmountIn": "المبلغ ({currency})",
+  "@pharmacyAmountIn": {
+    "description": "Field label.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyExtras": "تفاصيل إضافية (اختياري)",
+  "@pharmacyExtras": {
+    "description": "Toggle."
+  },
+  "pharmacyIngredient": "المادة الفعالة",
+  "@pharmacyIngredient": {
+    "description": "Field label."
+  },
+  "pharmacyDosageHint": "الجرعة (مثال: قرص كل 8 ساعات)",
+  "@pharmacyDosageHint": {
+    "description": "Field label."
+  },
+  "pharmacyRecurring": "دواء مزمن / روشتة متجددة شهرياً",
+  "@pharmacyRecurring": {
+    "description": "Checkbox."
+  },
+  "pharmacyFamilyMember": "لمين في العائلة",
+  "@pharmacyFamilyMember": {
+    "description": "Dropdown label."
+  },
+  "pharmacyNoMember": "بدون",
+  "@pharmacyNoMember": {
+    "description": "Dropdown option."
+  },
+  "pharmacyPreset": "{slot, select, morning{🌅 صباحاً} noon{☀️ ظهراً} evening{🌙 مساءً} other{🛌 قبل النوم}}",
+  "@pharmacyPreset": {
+    "description": "Dose time preset chip.",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyTimesOf": "مواعيد {name}",
+  "@pharmacyTimesOf": {
+    "description": "Times sheet title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pharmacyTimesHint": "هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.",
+  "@pharmacyTimesHint": {
+    "description": "Times sheet hint."
+  },
+  "pharmacySaveTimes": "احفظ المواعيد",
+  "@pharmacySaveTimes": {
+    "description": "Button."
+  },
+  "pharmacyFamilyTooltip": "أدوية العيلة",
+  "@pharmacyFamilyTooltip": {
+    "description": "Toggle tooltip."
+  },
+  "pharmacyFamilyEmptyTitle": "لسه مفيش أدوية تقدر تشوفها",
+  "@pharmacyFamilyEmptyTitle": {
+    "description": "Family empty state."
+  },
+  "pharmacyFamilyEmptyMessage": "أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»",
+  "@pharmacyFamilyEmptyMessage": {
+    "description": "Family empty state."
+  },
+  "pharmacyNoInitial": "؟",
+  "@pharmacyNoInitial": {
+    "description": "Avatar letter when the name is empty."
+  },
+  "pharmacyExactAlarm": "فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة",
+  "@pharmacyExactAlarm": {
+    "description": "Exact alarm hint."
   }
 }

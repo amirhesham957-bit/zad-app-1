@@ -7908,4 +7908,287 @@ class ZadL10nAr extends ZadL10n {
   String statementDropped(String text, int count) {
     return '$text. وفي $count صف ماقدرتش أقراه.';
   }
+
+  @override
+  String get pharmacyCostHealth => 'صرف الصحة الشهر ده';
+
+  @override
+  String get pharmacyCostBoxes => 'أسعار علب الأدوية';
+
+  @override
+  String get pharmacyAdd => 'إضافة';
+
+  @override
+  String get pharmacyAdherence => 'الالتزام بالجرعات';
+
+  @override
+  String get pharmacyAdherenceWaiting => 'في انتظار أول جرعة';
+
+  @override
+  String get pharmacyTotal => 'إجمالي الأدوية';
+
+  @override
+  String get pharmacyExpiringSoon => 'قرب الانتهاء';
+
+  @override
+  String get pharmacyLowStock => 'مخزون منخفض';
+
+  @override
+  String pharmacyExpiredBanner(int count) {
+    return '$count دواء منتهي الصلاحية — تخلص منه بأمان';
+  }
+
+  @override
+  String get pharmacyExpiringHeading => 'قرب الانتهاء — تخلص منها بأمان';
+
+  @override
+  String pharmacyExpiresIn(int days) {
+    return 'تنتهي خلال $days يوم';
+  }
+
+  @override
+  String get pharmacyTodayDoses => 'جرعات النهارده';
+
+  @override
+  String get pharmacyNoDosesLeft => 'مفيش جرعات فاضلة النهارده.';
+
+  @override
+  String get pharmacyNoSchedules =>
+      'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.';
+
+  @override
+  String get pharmacyLoadFailed => 'مقدرتش أجيب الأدوية';
+
+  @override
+  String get pharmacyEmptyTitle => 'لا توجد أدوية مسجلة بعد';
+
+  @override
+  String get pharmacyPullToRetry => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get pharmacyEmptyMessage =>
+      'ضيفه بالزرار، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.';
+
+  @override
+  String get pharmacyMedicines => 'الأدوية';
+
+  @override
+  String pharmacyDoseState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'taken': 'اتاخدت',
+      'due': 'وقتها دلوقتي',
+      'missed': 'فاتت',
+      'other': 'جاية',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacySnoozed => 'اتأجلت شوية';
+
+  @override
+  String get pharmacyLater => 'بعدين';
+
+  @override
+  String get pharmacyTook => 'خدته';
+
+  @override
+  String pharmacyForPerson(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get pharmacyCourseDone => 'الكورس خلص ✓';
+
+  @override
+  String pharmacyExpiredAgo(int days) {
+    return 'منتهي منذ $days يوم';
+  }
+
+  @override
+  String pharmacyRemaining(String count, String unit) {
+    return 'متبقي $count $unit';
+  }
+
+  @override
+  String get pharmacyBadDoseTime => 'وقت جرعة مش مفهوم — عدّله';
+
+  @override
+  String get pharmacyNoTimes => 'مالوش مواعيد — مش هفكّرك بيه';
+
+  @override
+  String get pharmacySetTimes => 'حدد مواعيده';
+
+  @override
+  String pharmacySupplyDays(int days) {
+    return 'يكفي $days يوم';
+  }
+
+  @override
+  String get pharmacyConfirmQty => 'الكمية محتاجة تأكيد';
+
+  @override
+  String get pharmacyTakeDose => 'تناول جرعة';
+
+  @override
+  String get pharmacyRefill => 'تجديد الطلب';
+
+  @override
+  String get pharmacyHowMuchLeft => 'فاضل قد إيه فعلاً؟';
+
+  @override
+  String pharmacyDeleteConfirm(String name) {
+    return 'حذف «$name» من الصيدلية؟';
+  }
+
+  @override
+  String pharmacyCurrentQty(String name, int count, String unit) {
+    return '$name — الكمية الحالية المسجلة: $count $unit';
+  }
+
+  @override
+  String pharmacyUnitsPerDose(String unit) {
+    return 'الجرعة الواحدة كام $unit؟';
+  }
+
+  @override
+  String get pharmacyUnitsPerDoseHelp =>
+      'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم';
+
+  @override
+  String pharmacyRefillTitle(String name) {
+    return 'تجديد طلب $name';
+  }
+
+  @override
+  String pharmacyAddedQty(String unit) {
+    return 'الكمية المضافة ($unit)';
+  }
+
+  @override
+  String get pharmacyPrice => 'السعر';
+
+  @override
+  String get pharmacyExpiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get pharmacyScanOk => 'تم استخراج بيانات الدواء بنجاح';
+
+  @override
+  String get pharmacyPickDoseTime => 'اختر ميعاد الجرعة';
+
+  @override
+  String get pharmacyAddMedicine => 'إضافة دواء';
+
+  @override
+  String get pharmacyReviewMedicine => 'راجع الدواء';
+
+  @override
+  String get pharmacyReadFromBox =>
+      'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.';
+
+  @override
+  String get pharmacyReadingBox =>
+      'جاري قراءة علبة الدواء بالذكاء الاصطناعي...';
+
+  @override
+  String get pharmacyScanBox => 'مسح العبوة بالكاميرا';
+
+  @override
+  String get pharmacyName => 'اسم الدواء';
+
+  @override
+  String get pharmacyWhoFor => 'لمين؟ (سيبها فاضية لو ليك)';
+
+  @override
+  String get pharmacyWhoForHint => 'ماما، بابا، يوسف…';
+
+  @override
+  String get pharmacyRemainingQty => 'الكمية المتبقية';
+
+  @override
+  String get pharmacyUnit => 'الوحدة';
+
+  @override
+  String get pharmacyDailyDoses => 'جرعات اليوم';
+
+  @override
+  String get pharmacyDoseTimesOptional => 'مواعيد الجرعة (اختياري)';
+
+  @override
+  String get pharmacyAddTime => 'إضافة ميعاد';
+
+  @override
+  String pharmacySuggestedTimes(String times) {
+    return 'لسه مفيش مواعيد مضافة — مقترح: $times';
+  }
+
+  @override
+  String get pharmacyExpiryPick => 'تاريخ الانتهاء — اضغط لاختيار التاريخ';
+
+  @override
+  String get pharmacyAmount => 'المبلغ';
+
+  @override
+  String pharmacyAmountIn(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get pharmacyExtras => 'تفاصيل إضافية (اختياري)';
+
+  @override
+  String get pharmacyIngredient => 'المادة الفعالة';
+
+  @override
+  String get pharmacyDosageHint => 'الجرعة (مثال: قرص كل 8 ساعات)';
+
+  @override
+  String get pharmacyRecurring => 'دواء مزمن / روشتة متجددة شهرياً';
+
+  @override
+  String get pharmacyFamilyMember => 'لمين في العائلة';
+
+  @override
+  String get pharmacyNoMember => 'بدون';
+
+  @override
+  String pharmacyPreset(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'morning': '🌅 صباحاً',
+      'noon': '☀️ ظهراً',
+      'evening': '🌙 مساءً',
+      'other': '🛌 قبل النوم',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyTimesOf(String name) {
+    return 'مواعيد $name';
+  }
+
+  @override
+  String get pharmacyTimesHint =>
+      'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.';
+
+  @override
+  String get pharmacySaveTimes => 'احفظ المواعيد';
+
+  @override
+  String get pharmacyFamilyTooltip => 'أدوية العيلة';
+
+  @override
+  String get pharmacyFamilyEmptyTitle => 'لسه مفيش أدوية تقدر تشوفها';
+
+  @override
+  String get pharmacyFamilyEmptyMessage =>
+      'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»';
+
+  @override
+  String get pharmacyNoInitial => '؟';
+
+  @override
+  String get pharmacyExactAlarm =>
+      'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة';
 }

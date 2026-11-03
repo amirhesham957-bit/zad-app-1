@@ -18,6 +18,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -73,7 +74,7 @@ class FamilyPharmacyToggleRow extends ConsumerWidget {
       child: Align(
         alignment: AlignmentDirectional.centerEnd,
         child: IconButton(
-          tooltip: 'أدوية العيلة',
+          tooltip: context.l10n.pharmacyFamilyTooltip,
           onPressed: () =>
               ref.read(pharmacyFamilyViewProvider.notifier).toggle(),
           icon: Icon(
@@ -111,16 +112,14 @@ class PharmacyFamilyBody extends ConsumerWidget {
               (m, list),
         ];
         if (byMember.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
             child: KtEmptyState(
               icon: Icons.local_pharmacy,
-              title: 'لسه مفيش أدوية تقدر تشوفها',
+              title: context.l10n.pharmacyFamilyEmptyTitle,
               // Since 20261001130000 a member's medicines show only after they
               // agreed to it; the old text promised everyone's.
-              subtitle:
-                  'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من '
-                  'صفحته في «عيلتي»',
+              subtitle: context.l10n.pharmacyFamilyEmptyMessage,
             ),
           );
         }
@@ -163,7 +162,9 @@ class _MemberHeader extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Text(
-            initial.isEmpty ? '؟' : initial.characters.first.toUpperCase(),
+            initial.isEmpty
+                ? context.l10n.pharmacyNoInitial
+                : initial.characters.first.toUpperCase(),
             style: ZadType.labelSmall.copyWith(
               fontWeight: FontWeight.bold,
               color: scheme.primary,
@@ -252,6 +253,7 @@ class _FamilyItemRow extends StatelessWidget {
 
 /// Kotlin's `PharmacyDoseText` frequency patterns — **match data**, compared
 /// against the customer's and the model's words (CLAUDE.md i18n rule).
+// l10n: data-begin
 final List<RegExp> _frequencyPatterns = <RegExp>[
   RegExp(r'كل\s*[٠-٩\d]*\s*(ساعات|ساعة|أيام|يومين|يوم|أسابيع|أسبوع)'),
   RegExp(r'[٠-٩\d]+\s*مرا?ت\s*(يومي(?:ا|اً|ًا)?|في\s*اليوم|بالي(?:و|ـو)م)?'),
@@ -265,6 +267,7 @@ final List<RegExp> _frequencyPatterns = <RegExp>[
     caseSensitive: false,
   ),
 ];
+// l10n: data-end
 
 /// Kotlin's `PharmacyDoseText.sanitizeDosageNote`: the note without any
 /// frequency written into it, or null when only the frequency was there.
@@ -278,7 +281,7 @@ String? sanitizeDosageNote(String? text) {
   final cleaned = stripped
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim()
-      .replaceAll(RegExp(r'^[،,\-–—./ ]+|[،,\-–—./ ]+$'), '')
+      .replaceAll(RegExp(r'^[،,\-–—./ ]+|[،,\-–—./ ]+$'), '') // l10n: data
       .trim();
   return cleaned.isEmpty ? null : cleaned;
 }
@@ -346,8 +349,7 @@ class _ExactAlarmHintState extends ConsumerState<ExactAlarmHint>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'فعّل "المنبهات الدقيقة" من الإعدادات عشان تنبيهات مواعيد '
-                    'الدواء تشتغل بدقة',
+                    context.l10n.pharmacyExactAlarm,
                     style: ZadType.bodySmall.copyWith(
                       color: warning,
                       fontWeight: FontWeight.w600,
