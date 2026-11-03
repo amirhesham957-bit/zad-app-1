@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/data/report_pdf.dart';
 import 'package:zad/features/intelligence/domain/brain_report.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -27,9 +28,13 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 
 /// The month's report, built on the phone from what is cached: the figures
 /// and the text the PDF carries.
+/// [l10n]: the screen's language. The PDF always asks for Arabic: it is laid
+/// out right to left with Arabic shaping (report_pdf.dart), so English text
+/// in it would come out scrambled.
 ({BrainReport report, String text, DateTime today}) _buildReport(
-  WidgetRef ref,
-) {
+  WidgetRef ref, {
+  ZadL10n? l10n,
+}) {
   final zone = tz.getLocation(ref.read(accountTimeZoneProvider));
   final now = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
   final today = DateTime.utc(now.year, now.month, now.day);
@@ -50,10 +55,11 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
     local: (t) => tz.TZDateTime.from(t.toUtc(), zone),
     predictDaysLeft: learner.predictDaysLeft,
     money: money,
+    l10n: l10n,
   );
   return (
     report: report,
-    text: buildExportText(report, today: today, money: money),
+    text: buildExportText(report, today: today, money: money, l10n: l10n),
     today: today,
   );
 }
@@ -61,13 +67,13 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 /// Builds the month's report, writes Kotlin's PDF and hands it to the share
 /// sheet — for the family, or anyone.
 Future<void> shareBrainReportPdf(WidgetRef ref) async {
-  final built = _buildReport(ref);
+  final built = _buildReport(ref, l10n: zadL10nArabic);
   final file = await buildReportPdf(built.text, today: built.today);
   await SharePlus.instance.share(
     ShareParams(
       files: <XFile>[XFile(file.path, mimeType: 'application/pdf')],
-      subject: 'تقرير زاد المالي',
-      title: 'مشاركة تقرير زاد',
+      subject: zadL10nArabic.reportShareSubject,
+      title: zadL10nArabic.reportShareTitle,
     ),
   );
 }
@@ -76,7 +82,7 @@ Future<void> shareBrainReportPdf(WidgetRef ref) async {
 /// (owner, 2026-10-01: «لازم أعمل شير عشان يطلع تقرير»). Sharing is a
 /// button on it.
 Future<void> showBrainReport(BuildContext context, WidgetRef ref) {
-  final built = _buildReport(ref);
+  final built = _buildReport(ref, l10n: context.l10n);
   return Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       builder: (_) => _ReportScreen(report: built.report, text: built.text),
@@ -112,17 +118,18 @@ class _ReportScreenState extends ConsumerState<_ReportScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final r = widget.report;
     final lines = widget.text
         .split('\n')
         .where((l) => l.trim().isNotEmpty)
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('تقرير زاد الشهري')),
+      appBar: AppBar(title: Text(l.reportScreenTitle)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _sharing ? null : () => unawaited(_share()),
         icon: const Icon(Icons.ios_share),
-        label: const Text('شارك مع العيلة'),
+        label: Text(l.reportShareFamily),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
@@ -151,7 +158,7 @@ class _ReportScreenState extends ConsumerState<_ReportScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        const Text('الصحة المالية', style: ZadType.labelLarge),
+                        Text(l.reportHealthHeading, style: ZadType.labelLarge),
                         Text(r.healthLabel, style: ZadType.titleMedium),
                       ],
                     ),
@@ -231,7 +238,7 @@ class _ExportState extends ConsumerState<ExportReportButton> {
                 ),
               const SizedBox(width: 8),
               Text(
-                'التقرير الشهري',
+                context.l10n.reportButton,
                 style: ZadType.titleSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.onPrimaryContainer,

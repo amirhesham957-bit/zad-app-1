@@ -3281,5 +3281,395 @@
   "brainFamilyFamily": "العائلة",
   "@brainFamilyFamily": {
     "description": "Brain & family tab: the family side."
+  },
+  "reportDaySaturday": "السبت",
+  "@reportDaySaturday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDaySunday": "الأحد",
+  "@reportDaySunday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDayMonday": "الاثنين",
+  "@reportDayMonday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDayTuesday": "الثلاثاء",
+  "@reportDayTuesday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDayWednesday": "الأربعاء",
+  "@reportDayWednesday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDayThursday": "الخميس",
+  "@reportDayThursday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportDayFriday": "الجمعة",
+  "@reportDayFriday": {
+    "description": "Monthly report: a weekday."
+  },
+  "reportHealthExcellent": "ممتاز 🌟",
+  "@reportHealthExcellent": {
+    "description": "Monthly report: health label."
+  },
+  "reportHealthGood": "جيد 👍",
+  "@reportHealthGood": {
+    "description": "Monthly report: health label."
+  },
+  "reportHealthWatch": "يحتاج انتباه ⚠️",
+  "@reportHealthWatch": {
+    "description": "Monthly report: health label."
+  },
+  "reportDanger": "خطر 🚨",
+  "@reportDanger": {
+    "description": "Monthly report: health or spending-power label."
+  },
+  "reportTopSpend": "أعلى إنفاقك هذا الشهر: {category} ({amount})",
+  "@reportTopSpend": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportOverBudget": "⛔ تجاوزت ميزانية {category} بـ{amount}",
+  "@reportOverBudget": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSubsCost": "اشتراكاتك النشطة تكلفك {monthly} شهرياً ({yearly} سنوياً)",
+  "@reportSubsCost": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "monthly": {
+        "type": "String"
+      },
+      "yearly": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSubsShare": "💡 اشتراكاتك {percent}% من ميزانيتك — راجع {title} ({amount}) لو مش مستخدمه",
+  "@reportSubsShare": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStreams": "📺 عندك {count} خدمات بث — إلغاء واحدة يوفر لك {amount} شهرياً",
+  "@reportStreams": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportRunningOut": "🛒 {name} متوقع يخلص خلال {days} يوم",
+  "@reportRunningOut": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportRunway": "بمعدل إنفاقك الحالي ({perDay}/يوم)، الرصيد يكفي {days} يوم",
+  "@reportRunway": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "perDay": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportPowerUnknown": "غير محدد",
+  "@reportPowerUnknown": {
+    "description": "Monthly report: spending power with no budget."
+  },
+  "reportPowerStrong": "قوي 💪",
+  "@reportPowerStrong": {
+    "description": "Monthly report: spending power."
+  },
+  "reportPowerBalanced": "متوازن ⚖️",
+  "@reportPowerBalanced": {
+    "description": "Monthly report: spending power."
+  },
+  "reportPowerWeak": "ضعيف ⚠️",
+  "@reportPowerWeak": {
+    "description": "Monthly report: spending power."
+  },
+  "reportDayUnknown": "غير معروف",
+  "@reportDayUnknown": {
+    "description": "Monthly report: no top spending day."
+  },
+  "reportTooFast": "⚡ معدل صرفك اليومي ({current}) أعلى من الآمن ({safe}) — خفف شوية",
+  "@reportTooFast": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "safe": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSpentLess": "🎉 صرفت {percent}% أقل من نفس الفترة الشهر الماضي — وفرت {amount}!",
+  "@reportSpentLess": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSpentMore": "📈 صرفك زاد {percent}% عن نفس الفترة الشهر الماضي",
+  "@reportSpentMore": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "reportImpulse": "🛍️ {count} مشتريات اندفاعية آخر 30 يوم (أكبر من ضعف متوسطك)",
+  "@reportImpulse": {
+    "description": "Monthly report insight.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportExportUnknown": "لسه غير محدد",
+  "@reportExportUnknown": {
+    "description": "Report export: a figure not known yet."
+  },
+  "reportExportTitle": "📊 تقرير زاد المالي — {month}",
+  "@reportExportTitle": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportHealth": "الصحة المالية: {score}/100 ({label})",
+  "@reportExportHealth": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportPower": "قوة الصرف: {status} — الآمن يومياً: {safe}",
+  "@reportExportPower": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "safe": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportNumbers": "💰 الأرقام:",
+  "@reportExportNumbers": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportBudget": "• الميزانية: {amount}",
+  "@reportExportBudget": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportSpent": "• المصروف: {amount}",
+  "@reportExportSpent": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportIncome": "• الدخل: {amount}",
+  "@reportExportIncome": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportLeft": "• المتبقي: {amount}",
+  "@reportExportLeft": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportSubs": "• الاشتراكات: {amount}/شهر",
+  "@reportExportSubs": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportCompare": "📅 مقارنة بالشهر الماضي (نفس الفترة):",
+  "@reportExportCompare": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportCompareLine": "• هذا الشهر: {now} | الماضي: {before} ({delta}%)",
+  "@reportExportCompareLine": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "now": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportByCategory": "🗂️ حسب الفئة:",
+  "@reportExportByCategory": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportOfBudget": " من {budget} ({percent}%)",
+  "@reportExportOfBudget": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "budget": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "reportExportTopMerchants": "🏪 أعلى الجهات:",
+  "@reportExportTopMerchants": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportBehaviour": "🧠 سلوكك المالي:",
+  "@reportExportBehaviour": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportTopDay": "• أكثر يوم صرف: {day}",
+  "@reportExportTopDay": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportWeekend": "• صرف الويكند: {percent}% من الإجمالي",
+  "@reportExportWeekend": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "reportExportAvgTxn": "• متوسط المعاملة: {amount}",
+  "@reportExportAvgTxn": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExportImpulse": "• مشتريات اندفاعية (30 يوم): {count}",
+  "@reportExportImpulse": {
+    "description": "Monthly report: the shared text export.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportExportNotes": "💡 ملاحظات زاد:",
+  "@reportExportNotes": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportExportFooter": "— تقرير من تطبيق زاد 🥕",
+  "@reportExportFooter": {
+    "description": "Monthly report: the shared text export."
+  },
+  "reportScreenTitle": "تقرير زاد الشهري",
+  "@reportScreenTitle": {
+    "description": "Monthly report screen title."
+  },
+  "reportShareFamily": "شارك مع العيلة",
+  "@reportShareFamily": {
+    "description": "Monthly report: share the PDF."
+  },
+  "reportHealthHeading": "الصحة المالية",
+  "@reportHealthHeading": {
+    "description": "Monthly report: the score card heading."
+  },
+  "reportButton": "التقرير الشهري",
+  "@reportButton": {
+    "description": "The button that opens the monthly report."
+  },
+  "reportShareSubject": "تقرير زاد المالي",
+  "@reportShareSubject": {
+    "description": "Monthly report PDF: share subject (the PDF is Arabic)."
+  },
+  "reportShareTitle": "مشاركة تقرير زاد",
+  "@reportShareTitle": {
+    "description": "Monthly report PDF: share sheet title (the PDF is Arabic)."
   }
 }

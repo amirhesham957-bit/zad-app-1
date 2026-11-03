@@ -3544,4 +3544,219 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get brainFamilyFamily => 'العائلة';
+
+  @override
+  String get reportDaySaturday => 'السبت';
+
+  @override
+  String get reportDaySunday => 'الأحد';
+
+  @override
+  String get reportDayMonday => 'الاثنين';
+
+  @override
+  String get reportDayTuesday => 'الثلاثاء';
+
+  @override
+  String get reportDayWednesday => 'الأربعاء';
+
+  @override
+  String get reportDayThursday => 'الخميس';
+
+  @override
+  String get reportDayFriday => 'الجمعة';
+
+  @override
+  String get reportHealthExcellent => 'ممتاز 🌟';
+
+  @override
+  String get reportHealthGood => 'جيد 👍';
+
+  @override
+  String get reportHealthWatch => 'يحتاج انتباه ⚠️';
+
+  @override
+  String get reportDanger => 'خطر 🚨';
+
+  @override
+  String reportTopSpend(String category, String amount) {
+    return 'أعلى إنفاقك هذا الشهر: $category ($amount)';
+  }
+
+  @override
+  String reportOverBudget(String category, String amount) {
+    return '⛔ تجاوزت ميزانية $category بـ$amount';
+  }
+
+  @override
+  String reportSubsCost(String monthly, String yearly) {
+    return 'اشتراكاتك النشطة تكلفك $monthly شهرياً ($yearly سنوياً)';
+  }
+
+  @override
+  String reportSubsShare(int percent, String title, String amount) {
+    return '💡 اشتراكاتك $percent% من ميزانيتك — راجع $title ($amount) لو مش مستخدمه';
+  }
+
+  @override
+  String reportStreams(int count, String amount) {
+    return '📺 عندك $count خدمات بث — إلغاء واحدة يوفر لك $amount شهرياً';
+  }
+
+  @override
+  String reportRunningOut(String name, int days) {
+    return '🛒 $name متوقع يخلص خلال $days يوم';
+  }
+
+  @override
+  String reportRunway(String perDay, int days) {
+    return 'بمعدل إنفاقك الحالي ($perDay/يوم)، الرصيد يكفي $days يوم';
+  }
+
+  @override
+  String get reportPowerUnknown => 'غير محدد';
+
+  @override
+  String get reportPowerStrong => 'قوي 💪';
+
+  @override
+  String get reportPowerBalanced => 'متوازن ⚖️';
+
+  @override
+  String get reportPowerWeak => 'ضعيف ⚠️';
+
+  @override
+  String get reportDayUnknown => 'غير معروف';
+
+  @override
+  String reportTooFast(String current, String safe) {
+    return '⚡ معدل صرفك اليومي ($current) أعلى من الآمن ($safe) — خفف شوية';
+  }
+
+  @override
+  String reportSpentLess(int percent, String amount) {
+    return '🎉 صرفت $percent% أقل من نفس الفترة الشهر الماضي — وفرت $amount!';
+  }
+
+  @override
+  String reportSpentMore(int percent) {
+    return '📈 صرفك زاد $percent% عن نفس الفترة الشهر الماضي';
+  }
+
+  @override
+  String reportImpulse(int count) {
+    return '🛍️ $count مشتريات اندفاعية آخر 30 يوم (أكبر من ضعف متوسطك)';
+  }
+
+  @override
+  String get reportExportUnknown => 'لسه غير محدد';
+
+  @override
+  String reportExportTitle(String month) {
+    return '📊 تقرير زاد المالي — $month';
+  }
+
+  @override
+  String reportExportHealth(int score, String label) {
+    return 'الصحة المالية: $score/100 ($label)';
+  }
+
+  @override
+  String reportExportPower(String status, String safe) {
+    return 'قوة الصرف: $status — الآمن يومياً: $safe';
+  }
+
+  @override
+  String get reportExportNumbers => '💰 الأرقام:';
+
+  @override
+  String reportExportBudget(String amount) {
+    return '• الميزانية: $amount';
+  }
+
+  @override
+  String reportExportSpent(String amount) {
+    return '• المصروف: $amount';
+  }
+
+  @override
+  String reportExportIncome(String amount) {
+    return '• الدخل: $amount';
+  }
+
+  @override
+  String reportExportLeft(String amount) {
+    return '• المتبقي: $amount';
+  }
+
+  @override
+  String reportExportSubs(String amount) {
+    return '• الاشتراكات: $amount/شهر';
+  }
+
+  @override
+  String get reportExportCompare => '📅 مقارنة بالشهر الماضي (نفس الفترة):';
+
+  @override
+  String reportExportCompareLine(String now, String before, String delta) {
+    return '• هذا الشهر: $now | الماضي: $before ($delta%)';
+  }
+
+  @override
+  String get reportExportByCategory => '🗂️ حسب الفئة:';
+
+  @override
+  String reportExportOfBudget(String budget, int percent) {
+    return ' من $budget ($percent%)';
+  }
+
+  @override
+  String get reportExportTopMerchants => '🏪 أعلى الجهات:';
+
+  @override
+  String get reportExportBehaviour => '🧠 سلوكك المالي:';
+
+  @override
+  String reportExportTopDay(String day) {
+    return '• أكثر يوم صرف: $day';
+  }
+
+  @override
+  String reportExportWeekend(int percent) {
+    return '• صرف الويكند: $percent% من الإجمالي';
+  }
+
+  @override
+  String reportExportAvgTxn(String amount) {
+    return '• متوسط المعاملة: $amount';
+  }
+
+  @override
+  String reportExportImpulse(int count) {
+    return '• مشتريات اندفاعية (30 يوم): $count';
+  }
+
+  @override
+  String get reportExportNotes => '💡 ملاحظات زاد:';
+
+  @override
+  String get reportExportFooter => '— تقرير من تطبيق زاد 🥕';
+
+  @override
+  String get reportScreenTitle => 'تقرير زاد الشهري';
+
+  @override
+  String get reportShareFamily => 'شارك مع العيلة';
+
+  @override
+  String get reportHealthHeading => 'الصحة المالية';
+
+  @override
+  String get reportButton => 'التقرير الشهري';
+
+  @override
+  String get reportShareSubject => 'تقرير زاد المالي';
+
+  @override
+  String get reportShareTitle => 'مشاركة تقرير زاد';
 }

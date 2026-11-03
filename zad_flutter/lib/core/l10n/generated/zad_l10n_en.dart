@@ -3616,4 +3616,219 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get brainFamilyFamily => 'Family';
+
+  @override
+  String get reportDaySaturday => 'Saturday';
+
+  @override
+  String get reportDaySunday => 'Sunday';
+
+  @override
+  String get reportDayMonday => 'Monday';
+
+  @override
+  String get reportDayTuesday => 'Tuesday';
+
+  @override
+  String get reportDayWednesday => 'Wednesday';
+
+  @override
+  String get reportDayThursday => 'Thursday';
+
+  @override
+  String get reportDayFriday => 'Friday';
+
+  @override
+  String get reportHealthExcellent => 'Excellent 🌟';
+
+  @override
+  String get reportHealthGood => 'Good 👍';
+
+  @override
+  String get reportHealthWatch => 'Needs attention ⚠️';
+
+  @override
+  String get reportDanger => 'Danger 🚨';
+
+  @override
+  String reportTopSpend(String category, String amount) {
+    return 'Your biggest spend this month: $category ($amount)';
+  }
+
+  @override
+  String reportOverBudget(String category, String amount) {
+    return '⛔ You went over the $category budget by $amount';
+  }
+
+  @override
+  String reportSubsCost(String monthly, String yearly) {
+    return 'Your active subscriptions cost you $monthly a month ($yearly a year)';
+  }
+
+  @override
+  String reportSubsShare(int percent, String title, String amount) {
+    return '💡 Subscriptions are $percent% of your budget — check $title ($amount) if you don\'t use it';
+  }
+
+  @override
+  String reportStreams(int count, String amount) {
+    return '📺 You have $count streaming services — cancelling one saves you $amount a month';
+  }
+
+  @override
+  String reportRunningOut(String name, int days) {
+    return '🛒 $name is expected to run out within $days days';
+  }
+
+  @override
+  String reportRunway(String perDay, int days) {
+    return 'At your current pace ($perDay/day), the balance lasts $days days';
+  }
+
+  @override
+  String get reportPowerUnknown => 'Not set';
+
+  @override
+  String get reportPowerStrong => 'Strong 💪';
+
+  @override
+  String get reportPowerBalanced => 'Balanced ⚖️';
+
+  @override
+  String get reportPowerWeak => 'Weak ⚠️';
+
+  @override
+  String get reportDayUnknown => 'Unknown';
+
+  @override
+  String reportTooFast(String current, String safe) {
+    return '⚡ Your daily spending ($current) is above the safe pace ($safe) — ease off a bit';
+  }
+
+  @override
+  String reportSpentLess(int percent, String amount) {
+    return '🎉 You spent $percent% less than the same point last month — you saved $amount!';
+  }
+
+  @override
+  String reportSpentMore(int percent) {
+    return '📈 Your spending is up $percent% on the same point last month';
+  }
+
+  @override
+  String reportImpulse(int count) {
+    return '🛍️ $count impulse buys in the last 30 days (more than twice your average)';
+  }
+
+  @override
+  String get reportExportUnknown => 'Not set yet';
+
+  @override
+  String reportExportTitle(String month) {
+    return '📊 Zad money report — $month';
+  }
+
+  @override
+  String reportExportHealth(int score, String label) {
+    return 'Financial health: $score/100 ($label)';
+  }
+
+  @override
+  String reportExportPower(String status, String safe) {
+    return 'Spending power: $status — safe per day: $safe';
+  }
+
+  @override
+  String get reportExportNumbers => '💰 The numbers:';
+
+  @override
+  String reportExportBudget(String amount) {
+    return '• Budget: $amount';
+  }
+
+  @override
+  String reportExportSpent(String amount) {
+    return '• Spent: $amount';
+  }
+
+  @override
+  String reportExportIncome(String amount) {
+    return '• Income: $amount';
+  }
+
+  @override
+  String reportExportLeft(String amount) {
+    return '• Left: $amount';
+  }
+
+  @override
+  String reportExportSubs(String amount) {
+    return '• Subscriptions: $amount/month';
+  }
+
+  @override
+  String get reportExportCompare => '📅 Compared with last month (same point):';
+
+  @override
+  String reportExportCompareLine(String now, String before, String delta) {
+    return '• This month: $now | last: $before ($delta%)';
+  }
+
+  @override
+  String get reportExportByCategory => '🗂️ By category:';
+
+  @override
+  String reportExportOfBudget(String budget, int percent) {
+    return ' of $budget ($percent%)';
+  }
+
+  @override
+  String get reportExportTopMerchants => '🏪 Top places:';
+
+  @override
+  String get reportExportBehaviour => '🧠 Your money habits:';
+
+  @override
+  String reportExportTopDay(String day) {
+    return '• Top spending day: $day';
+  }
+
+  @override
+  String reportExportWeekend(int percent) {
+    return '• Weekend spending: $percent% of the total';
+  }
+
+  @override
+  String reportExportAvgTxn(String amount) {
+    return '• Average transaction: $amount';
+  }
+
+  @override
+  String reportExportImpulse(int count) {
+    return '• Impulse buys (30 days): $count';
+  }
+
+  @override
+  String get reportExportNotes => '💡 Zad\'s notes:';
+
+  @override
+  String get reportExportFooter => '— A report from the Zad app 🥕';
+
+  @override
+  String get reportScreenTitle => 'Zad\'s monthly report';
+
+  @override
+  String get reportShareFamily => 'Share with the family';
+
+  @override
+  String get reportHealthHeading => 'Financial health';
+
+  @override
+  String get reportButton => 'Monthly report';
+
+  @override
+  String get reportShareSubject => 'Zad money report';
+
+  @override
+  String get reportShareTitle => 'Share Zad report';
 }

@@ -17,36 +17,44 @@ import 'package:zad/shared/transactions/domain/transaction.dart';
 enum FamilyGroup {
   /// Groceries, bills, rent, cleaning, upkeep.
   house('مصاريف البيت', <String>[
+    // l10n: data-begin — matched against the category, title, merchant.
     'بقالة', 'البقالة', 'بقاله', 'سوبرماركت', 'سوبر ماركت', 'هايبر', //
     'تموين', 'خضار', 'فاكهة', 'فواكه', 'لحوم', 'لحمة', 'فراخ', 'خبز',
     'عيش', 'منظفات', 'فواتير', 'الفواتير', 'كهرب', 'مياه', 'غاز', 'إيجار',
     'ايجار', 'صيانة', 'سباك', 'كهربائي', 'انترنت', 'إنترنت', 'نت',
     'منزل', 'البيت', 'بيت', 'أدوات منزلية', 'مطبخ', 'grocery',
     'supermarket', 'carrefour', 'panda', 'lulu',
+    // l10n: data-end
   ]),
 
   /// School, nursery, diapers, formula, toys, pocket money.
   kids('مستلزمات الأطفال', <String>[
+    // l10n: data-begin — matched against the category, title, merchant.
     'أطفال', 'اطفال', 'الأطفال', 'طفل', 'الطفل', 'ولاد', 'العيال', //
     'مدرسة', 'مدرسه', 'مدارس', 'المدرسة', 'التعليم', 'تعليم', 'حضانة',
     'دروس', 'درس خصوصي', 'كتب', 'أدوات مدرسية', 'زي مدرسي', 'يونيفورم',
     'حفاض', 'حفاضات', 'بامبرز', 'pampers', 'لبن أطفال', 'حليب أطفال',
     'سيريلاك', 'ألعاب', 'لعب', 'لعبة', 'مصروف', 'kids', 'school', 'toys',
+    // l10n: data-end
   ]),
 
   /// Pharmacy, medicine, doctors.
   pharmacy('الأدوية والصيدلية', <String>[
+    // l10n: data-begin — matched against the category, title, merchant.
     'صيدلية', 'صيدليه', 'الصيدلية', 'دواء', 'الدواء', 'أدوية', 'ادوية', //
     'علاج', 'الرعاية الصحية', 'صحة', 'مستشفى', 'عيادة', 'طبيب', 'دكتور',
     'تحاليل', 'أشعة', 'النهدي', 'nahdi', 'pharmacy', 'hospital', 'clinic',
+    // l10n: data-end
   ]),
 
   /// Outings, restaurants, clubs, trips.
   activities('الأنشطة والخروجات العائلية', <String>[
+    // l10n: data-begin — matched against the category, title, merchant.
     'ترفيه', 'خروج', 'خروجة', 'فسحة', 'نزهة', 'رحلة', 'مصيف', 'سفر', //
     'نادي', 'النادي', 'سينما', 'ملاهي', 'حديقة', 'مطعم', 'مطاعم', 'المطاعم',
     'كافيه', 'أكل برا', 'الأكل برا', 'وجبات', 'توصيل طعام', 'طلبات',
     'هدايا', 'هدية', 'عيد ميلاد', 'restaurant', 'cafe', 'cinema',
+    // l10n: data-end
   ]);
 
   new(this.label, this.keywords);
@@ -70,6 +78,7 @@ enum FamilyGroup {
 }
 
 /// Transport, for the costly-trips alert. Matching data — see the header.
+// l10n: data-begin — matching keywords, see the header.
 const List<String> _transportKeywords = <String>[
   'مواصلات', 'المواصلات', 'أوبر', 'اوبر', 'كريم', 'تاكسي', 'تكسي', //
   'بنزين', 'وقود', 'بترول', 'محطة وقود', 'باص', 'اتوبيس', 'أتوبيس', 'قطار',
@@ -77,14 +86,17 @@ const List<String> _transportKeywords = <String>[
   'موقف', 'uber', 'careem', 'taxi', 'indrive', 'didi', 'bolt', 'fuel',
   'parking',
 ];
+// l10n: data-end
 
 /// Categories a cap must not cut: medicine, bills, rent, instalments,
 /// school fees. Zad never suggests trimming a fixed obligation.
+// l10n: data-begin — matching keywords, see the header.
 const List<String> _essentialKeywords = <String>[
   'صيدلية', 'دواء', 'أدوية', 'علاج', 'الرعاية الصحية', 'مستشفى', 'طبيب', //
   'فواتير', 'الفواتير', 'كهرب', 'مياه', 'غاز', 'إيجار', 'ايجار', 'قسط',
   'أقساط', 'الأقساط', 'التعليم', 'مدرسة', 'مدارس', 'حضانة', 'تأمين',
 ];
+// l10n: data-end
 
 String _haystack(ZadTransaction t) => <String?>[
   t.category,
@@ -98,7 +110,7 @@ bool _matches(String text, List<String> keywords) =>
 /// The category a transaction is filed under, `أخرى` when it has none.
 String categoryOf(ZadTransaction t) {
   final c = t.category?.trim() ?? '';
-  return c.isEmpty ? 'أخرى' : c;
+  return c.isEmpty ? 'أخرى' : c; // l10n: data — the stored «other» bucket.
 }
 
 /// One card of section 1.
@@ -574,10 +586,10 @@ String _percent(double v) => '${(v * 100).round()}%';
 String _normalize(String s) => s
     .trim()
     .toLowerCase()
-    .replaceAll(RegExp('[أإآ]'), 'ا')
-    .replaceAll('ة', 'ه')
-    .replaceAll('ى', 'ي')
-    .replaceAll(RegExp(r'[\d٠-٩.,]+'), '')
+    .replaceAll(RegExp('[أإآ]'), 'ا') // l10n: data
+    .replaceAll('ة', 'ه') // l10n: data
+    .replaceAll('ى', 'ي') // l10n: data
+    .replaceAll(RegExp(r'[\d٠-٩.,]+'), '') // l10n: data
     .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
 

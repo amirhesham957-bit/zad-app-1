@@ -10,6 +10,7 @@
 library;
 
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -170,6 +171,7 @@ class BrainReport {
   final bool hasEnoughData;
 }
 
+// l10n: data-begin — matched against a subscription's category and title.
 const List<String> _fixedKeywords = <String>[
   'إيجار',
   'ايجار',
@@ -181,6 +183,7 @@ const List<String> _fixedKeywords = <String>[
   'mortgage',
   'loan',
 ];
+// l10n: data-end
 
 bool _isFixed(Subscription s) {
   if (s.type == 'bill' || s.type == 'installment' || s.type == 'rent') {
@@ -213,14 +216,15 @@ int financialHealthScore({
   return score.clamp(0, 100);
 }
 
-const Map<int, String> _arabicDays = <int, String>{
-  DateTime.saturday: 'السبت',
-  DateTime.sunday: 'الأحد',
-  DateTime.monday: 'الاثنين',
-  DateTime.tuesday: 'الثلاثاء',
-  DateTime.wednesday: 'الأربعاء',
-  DateTime.thursday: 'الخميس',
-  DateTime.friday: 'الجمعة',
+String _dayName(int weekday, ZadL10n l) => switch (weekday) {
+  DateTime.saturday => l.reportDaySaturday,
+  DateTime.sunday => l.reportDaySunday,
+  DateTime.monday => l.reportDayMonday,
+  DateTime.tuesday => l.reportDayTuesday,
+  DateTime.wednesday => l.reportDayWednesday,
+  DateTime.thursday => l.reportDayThursday,
+  DateTime.friday => l.reportDayFriday,
+  _ => '',
 };
 
 /// Builds the report. [local] converts an instant to the account's wall
@@ -237,7 +241,9 @@ BrainReport buildBrainReport({
   required DateTime Function(DateTime) local,
   required int? Function(String) predictDaysLeft,
   required String Function(double) money,
+  ZadL10n? l10n,
 }) {
+  final l10nOrAr = l10n ?? zadL10nArabic;
   DateTime day(ZadTransaction t) {
     final l = local(t.createdAt);
     return DateTime.utc(l.year, l.month, l.day);
@@ -255,7 +261,7 @@ BrainReport buildBrainReport({
 
   final spentByCategory = <String, double>{};
   for (final t in monthTx.where((t) => t.kind == TxnKind.expense)) {
-    final c = t.category ?? 'أخرى';
+    final c = t.category ?? 'أخرى'; // l10n: data — the stored «other» bucket.
     spentByCategory[c] = (spentByCategory[c] ?? 0) + t.amount;
   }
   final breakdown =
@@ -311,37 +317,41 @@ BrainReport buildBrainReport({
     discretionaryMonthlyCost: discretionaryCost,
   );
   final label = score >= 85
-      ? 'ممتاز 🌟'
+      ? l10nOrAr.reportHealthExcellent
       : score >= 65
-      ? 'جيد 👍'
+      ? l10nOrAr.reportHealthGood
       : score >= 40
-      ? 'يحتاج انتباه ⚠️'
-      : 'خطر 🚨';
+      ? l10nOrAr.reportHealthWatch
+      : l10nOrAr.reportDanger;
 
   final insights = <String>[];
   if (breakdown.isNotEmpty) {
     final top = breakdown.first;
-    insights.add(
-      'أعلى إنفاقك هذا الشهر: ${top.category} (${money(top.spent)})',
-    );
+    insights.add(l10nOrAr.reportTopSpend(top.category, money(top.spent)));
   }
   for (final c in breakdown.where((c) => c.isOverBudget)) {
     insights.add(
-      '⛔ تجاوزت ميزانية ${c.category} بـ${money(c.spent - c.budget)}',
+      l10nOrAr.reportOverBudget(c.category, money(c.spent - c.budget)),
     );
   }
   if (discretionaryCost > 0) {
     insights.add(
-      'اشتراكاتك النشطة تكلفك ${money(discretionaryCost)} شهرياً '
-      '(${money(discretionaryCost * 12)} سنوياً)',
+      l10nOrAr.reportSubsCost(
+        money(discretionaryCost),
+        money(discretionaryCost * 12),
+      ),
     );
     if (budget > 0 && discretionaryCost > budget * 0.2) {
       final most = discretionary.reduce((a, b) => a.amount >= b.amount ? a : b);
       insights.add(
-        '💡 اشتراكاتك ${(discretionaryCost / budget * 100).toInt()}% من '
-        'ميزانيتك — راجع ${most.title} (${money(most.amount)}) لو مش مستخدمه',
+        l10nOrAr.reportSubsShare(
+          (discretionaryCost / budget * 100).toInt(),
+          most.title,
+          money(most.amount),
+        ),
       );
     }
+    // l10n: data-begin — matched against a subscription's title.
     const streaming = <String>[
       'netflix',
       'نتفلكس',
@@ -351,6 +361,7 @@ BrainReport buildBrainReport({
       'prime',
       'disney',
     ];
+    // l10n: data-end
     final streams = subscriptions
         .where(
           (s) =>
@@ -361,14 +372,13 @@ BrainReport buildBrainReport({
     if (streams.length >= 2) {
       final cheapest = streams.reduce((a, b) => a.amount <= b.amount ? a : b);
       insights.add(
-        '📺 عندك ${streams.length} خدمات بث — إلغاء واحدة يوفر لك '
-        '${money(cheapest.amount)} شهرياً',
+        l10nOrAr.reportStreams(streams.length, money(cheapest.amount)),
       );
     }
   }
   for (final (name, days) in forecasts) {
     if (days <= 2) {
-      insights.add('🛒 $name متوقع يخلص خلال ${days < 0 ? 0 : days} يوم');
+      insights.add(l10nOrAr.reportRunningOut(name, days < 0 ? 0 : days));
       break;
     }
   }
@@ -378,8 +388,7 @@ BrainReport buildBrainReport({
       : spentDays.reduce((a, b) => a + b) / spentDays.length;
   if (avgDaily > 0 && remaining != null && remaining > 0) {
     insights.add(
-      'بمعدل إنفاقك الحالي (${money(avgDaily)}/يوم)، الرصيد يكفي '
-      '${(remaining / avgDaily).toInt()} يوم',
+      l10nOrAr.reportRunway(money(avgDaily), (remaining / avgDaily).toInt()),
     );
   }
 
@@ -398,11 +407,11 @@ BrainReport buildBrainReport({
     daysLeftInMonth: daysLeft,
     powerPct: powerPct,
     status: switch (powerPct) {
-      null => 'غير محدد',
-      >= 60 => 'قوي 💪',
-      >= 35 => 'متوازن ⚖️',
-      >= 15 => 'ضعيف ⚠️',
-      _ => 'خطر 🚨',
+      null => l10nOrAr.reportPowerUnknown,
+      >= 60 => l10nOrAr.reportPowerStrong,
+      >= 35 => l10nOrAr.reportPowerBalanced,
+      >= 15 => l10nOrAr.reportPowerWeak,
+      _ => l10nOrAr.reportDanger,
     },
   );
 
@@ -423,7 +432,9 @@ BrainReport buildBrainReport({
         : byDay.entries.reduce((a, b) => a.value >= b.value ? a : b);
     final since = today.subtract(const Duration(days: 30));
     profile = BehaviorProfile(
-      topSpendingDay: top == null ? 'غير معروف' : _arabicDays[top.key]!,
+      topSpendingDay: top == null
+          ? l10nOrAr.reportDayUnknown
+          : _dayName(top.key, l10nOrAr),
       weekendSharePct: (weekend / (total > 0 ? total : 1) * 100).toInt(),
       avgTransaction: avg,
       impulsePurchases: expenses
@@ -459,29 +470,24 @@ BrainReport buildBrainReport({
   if (dailySafe != null && dailySafe > 0 && currentDailyAvg > dailySafe) {
     insights.insert(
       0,
-      '⚡ معدل صرفك اليومي (${money(currentDailyAvg)}) أعلى من الآمن '
-      '(${money(dailySafe)}) — خفف شوية',
+      l10nOrAr.reportTooFast(money(currentDailyAvg), money(dailySafe)),
     );
   }
   if (comparison != null) {
     if (comparison.deltaPct <= -10) {
       insights.insert(
         0,
-        '🎉 صرفت ${-comparison.deltaPct}% أقل من نفس الفترة الشهر الماضي — '
-        'وفرت ${money(comparison.lastMonthSpent - comparison.thisMonthSpent)}!',
+        l10nOrAr.reportSpentLess(
+          -comparison.deltaPct,
+          money(comparison.lastMonthSpent - comparison.thisMonthSpent),
+        ),
       );
     } else if (comparison.deltaPct >= 15) {
-      insights.insert(
-        0,
-        '📈 صرفك زاد ${comparison.deltaPct}% عن نفس الفترة الشهر الماضي',
-      );
+      insights.insert(0, l10nOrAr.reportSpentMore(comparison.deltaPct));
     }
   }
   if (profile != null && profile.impulsePurchases >= 3) {
-    insights.add(
-      '🛍️ ${profile.impulsePurchases} مشتريات اندفاعية آخر 30 يوم (أكبر من '
-      'ضعف متوسطك)',
-    );
+    insights.add(l10nOrAr.reportImpulse(profile.impulsePurchases));
   }
 
   return BrainReport(
@@ -507,47 +513,53 @@ String buildExportText(
   BrainReport r, {
   required DateTime today,
   required String Function(double) money,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final number = NumberFormat('#,##0.##', 'en');
-  const unknown = 'لسه غير محدد';
+  final unknown = l.reportExportUnknown;
   final safe = r.spendingPower.dailySafeSpend;
   final b = StringBuffer()
-    ..writeln('📊 تقرير زاد المالي — ${today.month}/${today.year}')
+    ..writeln(l.reportExportTitle('${today.month}/${today.year}'))
     ..writeln('═══════════════════════════')
-    ..writeln('الصحة المالية: ${r.healthScore}/100 (${r.healthLabel})')
+    ..writeln(l.reportExportHealth(r.healthScore, r.healthLabel))
     ..writeln(
-      'قوة الصرف: ${r.spendingPower.status} — الآمن يومياً: '
-      '${safe == null ? unknown : money(safe)}',
+      l.reportExportPower(
+        r.spendingPower.status,
+        safe == null ? unknown : money(safe),
+      ),
     )
     ..writeln()
-    ..writeln('💰 الأرقام:')
-    ..writeln('• الميزانية: ${money(r.budget)}')
-    ..writeln('• المصروف: ${money(r.totalSpent)}')
-    ..writeln('• الدخل: ${money(r.totalIncome)}')
+    ..writeln(l.reportExportNumbers)
+    ..writeln(l.reportExportBudget(money(r.budget)))
+    ..writeln(l.reportExportSpent(money(r.totalSpent)))
+    ..writeln(l.reportExportIncome(money(r.totalIncome)))
     ..writeln(
-      '• المتبقي: ${r.remaining == null ? unknown : money(r.remaining!)}',
+      l.reportExportLeft(r.remaining == null ? unknown : money(r.remaining!)),
     );
   if (r.subscriptionsMonthlyCost > 0) {
-    b.writeln('• الاشتراكات: ${money(r.subscriptionsMonthlyCost)}/شهر');
+    b.writeln(l.reportExportSubs(money(r.subscriptionsMonthlyCost)));
   }
   if (r.monthComparison case final mc?) {
     b
       ..writeln()
-      ..writeln('📅 مقارنة بالشهر الماضي (نفس الفترة):')
+      ..writeln(l.reportExportCompare)
       ..writeln(
-        '• هذا الشهر: ${money(mc.thisMonthSpent)} | الماضي: '
-        '${money(mc.lastMonthSpent)} (${mc.deltaPct >= 0 ? '+' : ''}'
-        '${mc.deltaPct}%)',
+        l.reportExportCompareLine(
+          money(mc.thisMonthSpent),
+          money(mc.lastMonthSpent),
+          '${mc.deltaPct >= 0 ? '+' : ''}${mc.deltaPct}',
+        ),
       );
   }
   if (r.categoryBreakdown.isNotEmpty) {
     b
       ..writeln()
-      ..writeln('🗂️ حسب الفئة:');
+      ..writeln(l.reportExportByCategory);
     for (final c in r.categoryBreakdown) {
       b.write('• ${c.category}: ${money(c.spent)}');
       if (c.budget > 0) {
-        b.write(' من ${number.format(c.budget)} (${c.pctUsed}%)');
+        b.write(l.reportExportOfBudget(number.format(c.budget), c.pctUsed));
       }
       b.writeln();
     }
@@ -555,7 +567,7 @@ String buildExportText(
   if (r.topMerchants.isNotEmpty) {
     b
       ..writeln()
-      ..writeln('🏪 أعلى الجهات:');
+      ..writeln(l.reportExportTopMerchants);
     for (final (name, amount) in r.topMerchants) {
       b.writeln('• $name: ${money(amount)}');
     }
@@ -563,24 +575,24 @@ String buildExportText(
   if (r.behaviorProfile case final bp?) {
     b
       ..writeln()
-      ..writeln('🧠 سلوكك المالي:')
-      ..writeln('• أكثر يوم صرف: ${bp.topSpendingDay}')
-      ..writeln('• صرف الويكند: ${bp.weekendSharePct}% من الإجمالي')
-      ..writeln('• متوسط المعاملة: ${money(bp.avgTransaction)}');
+      ..writeln(l.reportExportBehaviour)
+      ..writeln(l.reportExportTopDay(bp.topSpendingDay))
+      ..writeln(l.reportExportWeekend(bp.weekendSharePct))
+      ..writeln(l.reportExportAvgTxn(money(bp.avgTransaction)));
     if (bp.impulsePurchases > 0) {
-      b.writeln('• مشتريات اندفاعية (30 يوم): ${bp.impulsePurchases}');
+      b.writeln(l.reportExportImpulse(bp.impulsePurchases));
     }
   }
   if (r.insights.isNotEmpty) {
     b
       ..writeln()
-      ..writeln('💡 ملاحظات زاد:');
+      ..writeln(l.reportExportNotes);
     for (final i in r.insights.take(6)) {
       b.writeln('• $i');
     }
   }
   b
     ..writeln()
-    ..writeln('— تقرير من تطبيق زاد 🥕');
+    ..writeln(l.reportExportFooter);
   return b.toString();
 }

@@ -6366,6 +6366,336 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'العائلة'**
   String get brainFamilyFamily;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبت'**
+  String get reportDaySaturday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأحد'**
+  String get reportDaySunday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاثنين'**
+  String get reportDayMonday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الثلاثاء'**
+  String get reportDayTuesday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأربعاء'**
+  String get reportDayWednesday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخميس'**
+  String get reportDayThursday;
+
+  /// Monthly report: a weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجمعة'**
+  String get reportDayFriday;
+
+  /// Monthly report: health label.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز 🌟'**
+  String get reportHealthExcellent;
+
+  /// Monthly report: health label.
+  ///
+  /// In ar, this message translates to:
+  /// **'جيد 👍'**
+  String get reportHealthGood;
+
+  /// Monthly report: health label.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج انتباه ⚠️'**
+  String get reportHealthWatch;
+
+  /// Monthly report: health or spending-power label.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطر 🚨'**
+  String get reportDanger;
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعلى إنفاقك هذا الشهر: {category} ({amount})'**
+  String reportTopSpend(String category, String amount);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'⛔ تجاوزت ميزانية {category} بـ{amount}'**
+  String reportOverBudget(String category, String amount);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكاتك النشطة تكلفك {monthly} شهرياً ({yearly} سنوياً)'**
+  String reportSubsCost(String monthly, String yearly);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'💡 اشتراكاتك {percent}% من ميزانيتك — راجع {title} ({amount}) لو مش مستخدمه'**
+  String reportSubsShare(int percent, String title, String amount);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'📺 عندك {count} خدمات بث — إلغاء واحدة يوفر لك {amount} شهرياً'**
+  String reportStreams(int count, String amount);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'🛒 {name} متوقع يخلص خلال {days} يوم'**
+  String reportRunningOut(String name, int days);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'بمعدل إنفاقك الحالي ({perDay}/يوم)، الرصيد يكفي {days} يوم'**
+  String reportRunway(String perDay, int days);
+
+  /// Monthly report: spending power with no budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير محدد'**
+  String get reportPowerUnknown;
+
+  /// Monthly report: spending power.
+  ///
+  /// In ar, this message translates to:
+  /// **'قوي 💪'**
+  String get reportPowerStrong;
+
+  /// Monthly report: spending power.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوازن ⚖️'**
+  String get reportPowerBalanced;
+
+  /// Monthly report: spending power.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضعيف ⚠️'**
+  String get reportPowerWeak;
+
+  /// Monthly report: no top spending day.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير معروف'**
+  String get reportDayUnknown;
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚡ معدل صرفك اليومي ({current}) أعلى من الآمن ({safe}) — خفف شوية'**
+  String reportTooFast(String current, String safe);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'🎉 صرفت {percent}% أقل من نفس الفترة الشهر الماضي — وفرت {amount}!'**
+  String reportSpentLess(int percent, String amount);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'📈 صرفك زاد {percent}% عن نفس الفترة الشهر الماضي'**
+  String reportSpentMore(int percent);
+
+  /// Monthly report insight.
+  ///
+  /// In ar, this message translates to:
+  /// **'🛍️ {count} مشتريات اندفاعية آخر 30 يوم (أكبر من ضعف متوسطك)'**
+  String reportImpulse(int count);
+
+  /// Report export: a figure not known yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه غير محدد'**
+  String get reportExportUnknown;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 تقرير زاد المالي — {month}'**
+  String reportExportTitle(String month);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحة المالية: {score}/100 ({label})'**
+  String reportExportHealth(int score, String label);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'قوة الصرف: {status} — الآمن يومياً: {safe}'**
+  String reportExportPower(String status, String safe);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 الأرقام:'**
+  String get reportExportNumbers;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الميزانية: {amount}'**
+  String reportExportBudget(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• المصروف: {amount}'**
+  String reportExportSpent(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الدخل: {amount}'**
+  String reportExportIncome(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• المتبقي: {amount}'**
+  String reportExportLeft(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الاشتراكات: {amount}/شهر'**
+  String reportExportSubs(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 مقارنة بالشهر الماضي (نفس الفترة):'**
+  String get reportExportCompare;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• هذا الشهر: {now} | الماضي: {before} ({delta}%)'**
+  String reportExportCompareLine(String now, String before, String delta);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗂️ حسب الفئة:'**
+  String get reportExportByCategory;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **' من {budget} ({percent}%)'**
+  String reportExportOfBudget(String budget, int percent);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏪 أعلى الجهات:'**
+  String get reportExportTopMerchants;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧠 سلوكك المالي:'**
+  String get reportExportBehaviour;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• أكثر يوم صرف: {day}'**
+  String reportExportTopDay(String day);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• صرف الويكند: {percent}% من الإجمالي'**
+  String reportExportWeekend(int percent);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• متوسط المعاملة: {amount}'**
+  String reportExportAvgTxn(String amount);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'• مشتريات اندفاعية (30 يوم): {count}'**
+  String reportExportImpulse(int count);
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'💡 ملاحظات زاد:'**
+  String get reportExportNotes;
+
+  /// Monthly report: the shared text export.
+  ///
+  /// In ar, this message translates to:
+  /// **'— تقرير من تطبيق زاد 🥕'**
+  String get reportExportFooter;
+
+  /// Monthly report screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير زاد الشهري'**
+  String get reportScreenTitle;
+
+  /// Monthly report: share the PDF.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك مع العيلة'**
+  String get reportShareFamily;
+
+  /// Monthly report: the score card heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحة المالية'**
+  String get reportHealthHeading;
+
+  /// The button that opens the monthly report.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير الشهري'**
+  String get reportButton;
+
+  /// Monthly report PDF: share subject (the PDF is Arabic).
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير زاد المالي'**
+  String get reportShareSubject;
+
+  /// Monthly report PDF: share sheet title (the PDF is Arabic).
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة تقرير زاد'**
+  String get reportShareTitle;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
