@@ -439,7 +439,7 @@ export function nearbyPoint(
  * ٤.٣: عروض مدينته الأول وبعدها البلد كله (''). عرض في مدينة تانية بيتشال، ونفس المحل والصنف في مدينته بيغلب
  * صف البلد. من غير مدينة = الصفوف زي ما هي (زي الأول).
  */
-export function dealsForCity<T extends { city?: string | null; store?: string | null; item_name?: string | null }>(
+export function dealsForCity<T extends { city?: string | null; store?: string | null; item_name?: string | null; source_kind?: string | null }>(
   rows: T[] | null | undefined,
   city: string,
 ): T[] {
@@ -447,7 +447,10 @@ export function dealsForCity<T extends { city?: string | null; store?: string | 
   const key = (r: T) => `${itemKey(r.store ?? "")}|${itemKey(r.item_name ?? "")}`;
   const mine = (rows ?? []).filter((r) => (r.city ?? "") === city);
   const local = new Set(mine.map(key));
-  return [...mine, ...(rows ?? []).filter((r) => (r.city ?? "") === "" && !local.has(key(r)))];
+  // مدينة الفاتورة كلام حر من الكشف («غير محدد»، «القاهرة»)، والعرض ليه إحداثيات والمشوار بيحكم عليه — فبس صفوف
+  // البحث في مدينة تانية هي اللي بتتشال.
+  const other = (r: T) => (r.city ?? "") !== "" && (r.city ?? "") !== city;
+  return [...mine, ...(rows ?? []).filter((r) => (r.city ?? "") !== city && !(other(r) && r.source_kind === "search") && !local.has(key(r)))];
 }
 
 /** مدينة العميل (zad_user_city) لو في نفس بلد العرض؛ وإلا ''. فشل = ''. */
