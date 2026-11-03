@@ -98,3 +98,9 @@ Deno.test("a silent profile write does not cancel the forced log", () => {
   assertEquals(shouldForceLog(m, r, ["update_customer_profile", "add_obligation"], 0), false);
   assertEquals(shouldForceLog(m, r, [], 1), false);
 });
+
+Deno.test("an order to log is a money verb (eval 3/11, log_voice_style on Groq)", () => {
+  assertEquals(wantsForcedLog("اه سجلي يا زاد ٣٠٠ جنيه خضار من السوق", "أبغى أتأكد إنك صرفت ٣٠٠ جنيه على خضار من السوق، صح؟ 🙏"), true);
+  // أمر تسجيل لميعاد أو تذكير مش فلوس.
+  assertEquals(wantsForcedLog("سجلي ميعاد الدكتور الساعة 5", "تمام"), false);
+});
