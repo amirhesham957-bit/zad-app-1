@@ -293,13 +293,18 @@ export function videoDealsPrompt(
   return { system, user };
 }
 
-/** البوستات اللي تستاهل تتقري: بتذكر المحل وكلام عرض، فيها نص أو صورة. نفس فلتر فيديوهات يوتيوب. */
-export function instagramDealPosts<T extends { caption: string; image_url: string | null }>(posts: T[], store: string, max = 3): T[] {
+/**
+ * البوستات اللي تستاهل تتقري: بتذكر المحل وكلام عرض، فيها نص أو صورة. نفس فلتر فيديوهات يوتيوب. بوستات أكونت المحل
+ * نفسه ([ownAccount]) مش لازم تذكر اسمه — المحل هو اللي كاتبها، وكتير منها بالإنجليزي أو من غير اسم.
+ */
+export function instagramDealPosts<T extends { caption: string; image_url: string | null }>(
+  posts: T[], store: string, max = 3, ownAccount = false,
+): T[] {
   const name = arabicKey(searchStoreName(store));
   if (name.length < 2) return [];
   return posts.filter((p) => {
     const caption = arabicKey(p.caption);
-    return caption.includes(name) && OFFER_TITLE.test(caption) && (p.image_url !== null || caption.length >= 20);
+    return (ownAccount || caption.includes(name)) && OFFER_TITLE.test(caption) && (p.image_url !== null || caption.length >= 20);
   }).slice(0, max);
 }
 
