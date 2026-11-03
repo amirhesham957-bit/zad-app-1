@@ -679,3 +679,58 @@ Deno.test("deal photo (ZAD_PLAN 4.20): a YouTube deal shows its thumbnail, nothi
   assertEquals(dealPhotoUrl({ kind: "instagram", url: "https://www.instagram.com/p/AbC/" }), null);
   assertEquals(dealPhotoUrl(null), null);
 });
+
+// نشرات المحلات من شات الأدمن (طلب المالك ٣/١١).
+import { flyerDealPayload, flyerReply, isFlyerPhoto, parseFlyerCaption, pickFlyerStore } from "./telegram.ts";
+
+Deno.test("flyer: only the admin chat, and a linked admin chat only with «نشرة/عروض»", () => {
+  assert(isFlyerPhoto(-100, -100, false, null));
+  assert(!isFlyerPhoto(5, -100, false, "نشرة كيو"));
+  assert(!isFlyerPhoto(5, null, false, "نشرة كيو"));
+  assert(!isFlyerPhoto(7, 7, true, "فاتورة كارفور"));
+  assert(isFlyerPhoto(7, 7, true, "نشرة كيو"));
+  assert(isFlyerPhoto(7, 7, true, "عروض بنده"));
+});
+
+Deno.test("flyer caption: the store and the country, fillers dropped", () => {
+  assertEquals(parseFlyerCaption("نشرة كيو السعودية"), { store: "كيو", country: "SA" });
+  assertEquals(parseFlyerCaption("كارفور مصر"), { store: "كارفور", country: "EG" });
+  assertEquals(parseFlyerCaption("«خير زمان»"), { store: "خير زمان", country: null });
+  assertEquals(parseFlyerCaption("نشرة"), null);
+  assertEquals(parseFlyerCaption(undefined), null);
+});
+
+Deno.test("flyer store: from the seed list, the country settles a shop in two markets", () => {
+  const rows = [
+    { country: "SA", store: "كيو", currency: "SAR" },
+    { country: "SA", store: "نون", currency: "SAR" },
+    { country: "EG", store: "نون", currency: "EGP" },
+    { country: "EG", store: "كارفور", currency: "EGP" },
+  ];
+  assertEquals(pickFlyerStore(rows, { store: "كيو", country: null }), rows[0]);
+  assertEquals(pickFlyerStore(rows, { store: "نون", country: null }), { error: "ambiguous" });
+  assertEquals(pickFlyerStore(rows, { store: "نون", country: "EG" }), rows[2]);
+  assertEquals(pickFlyerStore(rows, { store: "الكارفور", country: null }), rows[3]);
+  assertEquals(pickFlyerStore(rows, { store: "بقالة الحي", country: "EG" }), { country: "EG", store: "بقالة الحي", currency: "EGP" });
+  assertEquals(pickFlyerStore(rows, { store: "بقالة الحي", country: null }), { error: "unknown" });
+});
+
+Deno.test("flyer deal: a flyer row with the picture as its source", () => {
+  const p = flyerDealPayload({ country: "SA", store: "كيو", currency: "SAR" },
+    { item_name: "زيت عافية 1.5 لتر", price: 22, price_before: 29, valid_until: "2026-11-07T23:59:59.000Z" }, "https://x/zad-flyers/a.jpg");
+  assertEquals([p.source_kind, p.source_url, p.deal_kind, p.currency, p.confidence], ["flyer", "https://x/zad-flyers/a.jpg", "discount", "SAR", 0.7]);
+});
+
+Deno.test("flyer reply: what was saved, until when, and an honest nothing", () => {
+  const ok = flyerReply("كيو", { read: true, put: 2, refused: 1, items: ["زيت بـ22 بدل 29", "رز بـ40"], until: "2026-11-07" });
+  assert(ok.includes("سجّلت 2 عرض لحد 2026-11-07") && ok.includes("• زيت بـ22 بدل 29") && ok.includes("اترفضوا"));
+  assert(flyerReply("كيو", { read: true, put: 0, refused: 0, items: [], until: null }).includes("مالقيتش"));
+  assert(flyerReply("كيو", { read: false, put: 0, refused: 0, items: [], until: null }).includes("ماقدرتش"));
+});
+
+Deno.test("deal photo: a flyer deal shows the flyer, only from Zad's own bucket", () => {
+  const prefix = "https://p.supabase.co/storage/v1/object/public/zad-flyers/";
+  assertEquals(dealPhotoUrl({ kind: "flyer", url: `${prefix}SA/2026-11-03/a.jpg` }, prefix), `${prefix}SA/2026-11-03/a.jpg`);
+  assertEquals(dealPhotoUrl({ kind: "flyer", url: "https://evil.example/a.jpg" }, prefix), null);
+  assertEquals(dealPhotoUrl({ kind: "flyer", url: `${prefix}a.jpg` }), null);
+});
