@@ -44,7 +44,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
-  exchangeLongLivedToken, instagramHashtagPosts, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
+  exchangeLongLivedToken, instagramHashtagPosts, metaAppKeys, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
@@ -1700,10 +1700,11 @@ async function handle(req: Request): Promise<Response> {
         instagramToken().then(async (t) => {
           const probe = await instagramProbe(t, Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID"));
           if (!t) return probe;
-          const info = await instagramTokenInfo(t, Deno.env.get("META_APP_ID"), Deno.env.get("META_APP_SECRET"));
+          const meta = metaAppKeys(Deno.env.toObject());
+          const info = await instagramTokenInfo(t, meta.id, meta.secret);
           return {
             ...probe,
-            token_expiry: info.ok ? { days_left: tokenDaysLeft(info), auto_refresh: Boolean(Deno.env.get("META_APP_ID") && Deno.env.get("META_APP_SECRET")) } : { ok: false, reason: info.reason },
+            token_expiry: info.ok ? { days_left: tokenDaysLeft(info), auto_refresh: Boolean(meta.id && meta.secret) } : { ok: false, reason: info.reason },
           };
         }),
         // ٤.١٤: احتياطي البحث موجود وبيرد؟ (بحث واحد من الألف في الشهر لكل نشر)
@@ -2905,15 +2906,20 @@ async function handle(req: Request): Promise<Response> {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
         const token = await instagramToken();
         if (!token) return jsonResponse({ ok: false, reason: "no_key" });
-        const appId = Deno.env.get("META_APP_ID");
-        const appSecret = Deno.env.get("META_APP_SECRET");
+        const keys = metaAppKeys(Deno.env.toObject());
+        const appId = keys.id;
+        const appSecret = keys.secret;
+        // الأسامي بس: بيقول المالك حط المفاتيح بأنهي اسم، ولو التحقق بيهم فشل يبقوا مش مفاتيح التطبيق اللي عمل التوكن.
+        const app_keys = { id_name: keys.idName ?? null, secret_name: keys.secretName ?? null };
         const info = await instagramTokenInfo(token, appId, appSecret);
-        if (!info.ok) return jsonResponse({ ok: false, reason: info.reason ?? "check_failed", status: info.status });
+        if (!info.ok) return jsonResponse({ ok: false, reason: info.reason ?? "check_failed", status: info.status, app_keys });
         const daysLeft = tokenDaysLeft(info);
-        if (!tokenNeedsRefresh(info)) return jsonResponse({ ok: true, refreshed: false, days_left: daysLeft });
-        if (!appId || !appSecret) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: "no_app_keys" });
+        if (!tokenNeedsRefresh(info)) {
+          return jsonResponse({ ok: true, refreshed: false, days_left: daysLeft, app_keys, app_keys_checked: Boolean(appId && appSecret) });
+        }
+        if (!appId || !appSecret) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: "no_app_keys", app_keys });
         const swapped = await exchangeLongLivedToken(token, appId, appSecret);
-        if (!swapped.ok || !swapped.token) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: swapped.reason });
+        if (!swapped.ok || !swapped.token) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: swapped.reason, app_keys });
         const { data: saved, error: saveErr } = await supabase.rpc("zad_instagram_token_save", {
           p_token: swapped.token, p_expires_at: swapped.expires_at ?? null,
         });
