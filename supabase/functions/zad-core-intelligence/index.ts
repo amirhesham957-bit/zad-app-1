@@ -43,7 +43,10 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
-import { instagramHashtagPosts, instagramProbe, storeHashtag, youtubeProbe, youtubeSearch } from "./socialSources.ts";
+import {
+  exchangeLongLivedToken, instagramHashtagPosts, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
+  youtubeProbe, youtubeSearch,
+} from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -477,6 +480,15 @@ async function callGroqPool(opts: {
 }
 
 /** صورة بوست عام كـdata URL للقراية بس (ZAD_PLAN ٤.١٢): ٤ ميجا بالكتير، صور بس، وأي فشل = البوست بيتقري من كلامه. */
+/** توكن إنستجرام (٤.١٢): المتجدد في الـVault الأول، وبعده السر. */
+async function instagramToken(): Promise<string | undefined> {
+  try {
+    const { data } = await supabase.rpc("zad_instagram_token");
+    if (typeof data === "string" && data.length >= 20) return data;
+  } catch { /* السر */ }
+  return Deno.env.get("INSTAGRAM_ACCESS_TOKEN") || undefined;
+}
+
 async function pictureAsDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
@@ -1684,7 +1696,16 @@ async function handle(req: Request): Promise<Response> {
           : Promise.resolve("skipped — pass payload.deep=true (spends TTS quota)"),
         // ٤.١١/٤.١٢: المفتاح موجود وبيشتغل؟ (يوتيوب ١٠٠ وحدة لكل نشر؛ إنستجرام: الحساب والبحث بالهاشتاج)
         youtubeProbe(Deno.env.get("YOUTUBE_API_KEY")),
-        instagramProbe(Deno.env.get("INSTAGRAM_ACCESS_TOKEN"), Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")),
+        // والتوكن فاضله كام يوم (null = مالوش انتهاء) — instagram-token-daily بيجدده لوحده.
+        instagramToken().then(async (t) => {
+          const probe = await instagramProbe(t, Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID"));
+          if (!t) return probe;
+          const info = await instagramTokenInfo(t, Deno.env.get("META_APP_ID"), Deno.env.get("META_APP_SECRET"));
+          return {
+            ...probe,
+            token_expiry: info.ok ? { days_left: tokenDaysLeft(info), auto_refresh: Boolean(Deno.env.get("META_APP_ID") && Deno.env.get("META_APP_SECRET")) } : { ok: false, reason: info.reason },
+          };
+        }),
         // ٤.١٤: احتياطي البحث موجود وبيرد؟ (بحث واحد من الألف في الشهر لكل نشر)
         tavilyProbe(Deno.env.get("TAVILY_API_KEY")),
       ]);
@@ -2842,7 +2863,7 @@ async function handle(req: Request): Promise<Response> {
       // ──────────────────────────────────────────────
       case "store_deals_instagram": {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
-        const igToken = Deno.env.get("INSTAGRAM_ACCESS_TOKEN");
+        const igToken = await instagramToken();
         const igAccount = Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID");
         if (!igToken || !igAccount) return jsonResponse({ ok: false, reason: "no_key" });
         const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
@@ -2872,6 +2893,32 @@ async function handle(req: Request): Promise<Response> {
           deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
         }
         return jsonResponse({ ok: true, deals, hits: found.items.length, posts: posts.length, read, tag, source: "instagram" });
+      }
+
+      // ──────────────────────────────────────────────
+      // INSTAGRAM_TOKEN_REFRESH — keeps the Instagram token alive with no hand step (ZAD_PLAN 4.12, owner 2026-11-04:
+      // deals 100% automatic). Service role only: zad-brain's daily instagram_token_run. A token with no expiry (a Page
+      // token) is left alone; one with less than TOKEN_REFRESH_DAYS left is exchanged for a new long-lived one when the
+      // app's keys (META_APP_ID + META_APP_SECRET) are set, and the new token goes to the Vault. The token never leaves.
+      // ──────────────────────────────────────────────
+      case "instagram_token_refresh": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const token = await instagramToken();
+        if (!token) return jsonResponse({ ok: false, reason: "no_key" });
+        const appId = Deno.env.get("META_APP_ID");
+        const appSecret = Deno.env.get("META_APP_SECRET");
+        const info = await instagramTokenInfo(token, appId, appSecret);
+        if (!info.ok) return jsonResponse({ ok: false, reason: info.reason ?? "check_failed", status: info.status });
+        const daysLeft = tokenDaysLeft(info);
+        if (!tokenNeedsRefresh(info)) return jsonResponse({ ok: true, refreshed: false, days_left: daysLeft });
+        if (!appId || !appSecret) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: "no_app_keys" });
+        const swapped = await exchangeLongLivedToken(token, appId, appSecret);
+        if (!swapped.ok || !swapped.token) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: swapped.reason });
+        const { data: saved, error: saveErr } = await supabase.rpc("zad_instagram_token_save", {
+          p_token: swapped.token, p_expires_at: swapped.expires_at ?? null,
+        });
+        if (saveErr || saved !== true) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: "save_failed" });
+        return jsonResponse({ ok: true, refreshed: true, expires_at: swapped.expires_at ?? null });
       }
 
       // ──────────────────────────────────────────────

@@ -9140,6 +9140,19 @@ async function handleRequest(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
     }
 
+    // توكن إنستجرام بيتجدد لوحده (ZAD_PLAN ٤.١٢، قرار ٤/١١): كرون instagram-token-daily ⇐ instagram_token_refresh في
+    // zad-core-intelligence. فشل التجديد بيتسجل في اللوج وprovider_health بيقول الأيام الفاضلة.
+    if (body.action === "instagram_token_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const reply = await callCoreIntel("instagram_token_refresh", {}, "instagram_token_run", 40_000);
+      const line = JSON.stringify(reply ?? { ok: false, reason: "no_reply" });
+      if (reply?.ok) console.log("[instagram_token_run]", line);
+      else console.error("[instagram_token_run]", line);
+      return new Response(line, { headers: CORS_HEADERS });
+    }
+
     // سعر البنزين الشهري (tripCost.ts، ZAD_PLAN ٤.١٠): لكل بلد فيها عملاء ومااتبحثتش آخر ٢٥ يوم، بحث واحد في
     // zad-core-intelligence (fuel_price)، والرقم بمصدره في zad_fuel_prices. فشل البحث = البلد بتتجرب الشهر الجاي.
     if (body.action === "fuel_price_run") {

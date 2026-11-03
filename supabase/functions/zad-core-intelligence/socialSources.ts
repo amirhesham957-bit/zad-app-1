@@ -175,3 +175,74 @@ export async function instagramHashtagPosts(
   posts.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
   return { ok: true, status: 200, items: posts.slice(0, Math.min(Math.max(opts.max ?? 6, 1), 25)) };
 }
+
+// ── التوكن بيتجدد لوحده (٤.١٢، قرار ٤/١١: مفيش خطوة يدوية) ──────────────────────────────────────────────────────
+// توكن فيسبوك طويل العمر بيخلص بعد ٦٠ يوم؛ توكن الصفحة المتاخد منه مالوش انتهاء. debug_token بيقول أنهي، والتبديل
+// (fb_exchange_token) محتاج مفاتيح التطبيق. التوكن الجديد بيتخزن في الـVault (zad_instagram_token_save).
+
+/** قبل الانتهاء بالمدة دي التوكن بيتبدّل. */
+export const TOKEN_REFRESH_DAYS = 20;
+
+export interface TokenInfo {
+  ok: boolean;
+  status: number;
+  /** ثواني يونكس؛ ٠ = مالوش انتهاء. */
+  expires_at?: number;
+  reason?: string;
+}
+
+/** تاريخ انتهاء التوكن من Meta. من غير مفاتيح التطبيق التوكن بيفحص نفسه (صاحب التطبيق). */
+export async function instagramTokenInfo(token: string, appId?: string, appSecret?: string): Promise<TokenInfo> {
+  const checker = appId && appSecret ? `${appId}|${appSecret}` : token;
+  try {
+    const res = await fetch(
+      `${GRAPH}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(checker)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    const body = await res.json().catch(() => null) as (ApiError & { data?: { is_valid?: unknown; expires_at?: unknown } }) | null;
+    if (res.status !== 200 || !body?.data) {
+      const e = body?.error;
+      return { ok: false, status: res.status, reason: e ? `${String(e.type ?? "error").slice(0, 40)}${e.code ? `/${e.code}` : ""}` : "no_data" };
+    }
+    if (body.data.is_valid === false) return { ok: false, status: 200, reason: "invalid" };
+    const exp = Number(body.data.expires_at);
+    return { ok: true, status: 200, expires_at: Number.isFinite(exp) && exp >= 0 ? exp : undefined };
+  } catch (e) {
+    return { ok: false, status: 0, reason: String((e as Error)?.message ?? e).slice(0, 60) };
+  }
+}
+
+/** التوكن محتاج يتبدّل؟ مالوش انتهاء (٠) أو تاريخ مش معروف = لأ؛ فاضل أقل من [TOKEN_REFRESH_DAYS] = آه. */
+export function tokenNeedsRefresh(info: TokenInfo, nowMs = Date.now()): boolean {
+  if (!info.ok || !info.expires_at) return false;
+  return info.expires_at * 1000 - nowMs < TOKEN_REFRESH_DAYS * DAY_MS;
+}
+
+/** الأيام الفاضلة (مقرّبة لتحت)، أو null لو مالوش انتهاء أو مش معروف. */
+export function tokenDaysLeft(info: TokenInfo, nowMs = Date.now()): number | null {
+  if (!info.ok || !info.expires_at) return null;
+  return Math.floor((info.expires_at * 1000 - nowMs) / DAY_MS);
+}
+
+/** توكن طويل جديد مكان [token] (fb_exchange_token). */
+export async function exchangeLongLivedToken(
+  token: string,
+  appId: string,
+  appSecret: string,
+  nowMs = Date.now(),
+): Promise<{ ok: boolean; token?: string; expires_at?: string | null; reason?: string }> {
+  try {
+    const url = `${GRAPH}/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(appId)}` +
+      `&client_secret=${encodeURIComponent(appSecret)}&fb_exchange_token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    const body = await res.json().catch(() => null) as (ApiError & { access_token?: unknown; expires_in?: unknown }) | null;
+    if (res.status !== 200 || typeof body?.access_token !== "string" || body.access_token.length < 20) {
+      const e = body?.error;
+      return { ok: false, reason: e ? `${String(e.type ?? "error").slice(0, 40)}${e.code ? `/${e.code}` : ""}` : `status_${res.status}` };
+    }
+    const secs = Number(body.expires_in);
+    return { ok: true, token: body.access_token, expires_at: secs > 0 ? new Date(nowMs + secs * 1000).toISOString() : null };
+  } catch (e) {
+    return { ok: false, reason: String((e as Error)?.message ?? e).slice(0, 60) };
+  }
+}
