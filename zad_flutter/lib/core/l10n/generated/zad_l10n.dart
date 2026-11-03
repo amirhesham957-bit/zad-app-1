@@ -9839,6 +9839,396 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'إحنا مش بنضمن ولا بنتحمل مسؤولية دقة أي رصيد أو فئة مصروف أو حالة اشتراك أو مستوى مخزون أو تنبيه نقص أو توقع ميزانية معروض في التطبيق. وإحنا مش بنضمن إن الاكتشاف التلقائي للمعاملات هيلتقط كل معاملة، ولا إنه هيكون صح دايمًا لما يلتقطها.\n\nباستخدامك لزاد، إنت مقر بإن:\n- إحنا أداة تنظيم معلومات سلبية، مش طرف فاعل في قراراتك المالية؛\n- أي خسارة مالية أو دفعة فاتت أو إسراف في الإنفاق أو تلف مخزون أو خلاف عائلي أو أي نتيجة سلبية تانية ناتجة عن استخدامك أو اعتمادك على التطبيق هي مسؤوليتك وحدك؛\n- إحنا مش هنتحمل أي مسؤولية، مالية أو غيرها، عن النتايج دي، لأقصى حد يسمح بيه القانون.'**
   String get supportTerms7Body;
+
+  /// Profile value shown to the customer (gender: female).
+  ///
+  /// In ar, this message translates to:
+  /// **'أنثى'**
+  String get profileLabelGenderFemale;
+
+  /// Profile value shown to the customer (gender: male).
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكر'**
+  String get profileLabelGenderMale;
+
+  /// Profile value shown to the customer (zadVoice: boy).
+  ///
+  /// In ar, this message translates to:
+  /// **'صوت ولد'**
+  String get profileLabelZadvoiceBoy;
+
+  /// Profile value shown to the customer (zadVoice: girl).
+  ///
+  /// In ar, this message translates to:
+  /// **'صوت بنت'**
+  String get profileLabelZadvoiceGirl;
+
+  /// Profile value shown to the customer (role: father).
+  ///
+  /// In ar, this message translates to:
+  /// **'أب'**
+  String get profileLabelRoleFather;
+
+  /// Profile value shown to the customer (role: mother).
+  ///
+  /// In ar, this message translates to:
+  /// **'أم'**
+  String get profileLabelRoleMother;
+
+  /// Profile value shown to the customer (role: husband).
+  ///
+  /// In ar, this message translates to:
+  /// **'زوج'**
+  String get profileLabelRoleHusband;
+
+  /// Profile value shown to the customer (role: wife).
+  ///
+  /// In ar, this message translates to:
+  /// **'زوجة'**
+  String get profileLabelRoleWife;
+
+  /// Profile value shown to the customer (role: son).
+  ///
+  /// In ar, this message translates to:
+  /// **'ابن'**
+  String get profileLabelRoleSon;
+
+  /// Profile value shown to the customer (role: daughter).
+  ///
+  /// In ar, this message translates to:
+  /// **'بنت'**
+  String get profileLabelRoleDaughter;
+
+  /// Profile value shown to the customer (role: single).
+  ///
+  /// In ar, this message translates to:
+  /// **'عايش لوحدي'**
+  String get profileLabelRoleSingle;
+
+  /// Profile value shown to the customer (role: student).
+  ///
+  /// In ar, this message translates to:
+  /// **'طالب'**
+  String get profileLabelRoleStudent;
+
+  /// Profile value shown to the customer (role: grandparent).
+  ///
+  /// In ar, this message translates to:
+  /// **'جد/جدة'**
+  String get profileLabelRoleGrandparent;
+
+  /// Profile value shown to the customer (role: default).
+  ///
+  /// In ar, this message translates to:
+  /// **'غير كده'**
+  String get profileLabelRoleDefault;
+
+  /// Profile value shown to the customer (age: under_18).
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل من ١٨'**
+  String get profileLabelAgeUnder18;
+
+  /// Profile value shown to the customer (age: 18_24).
+  ///
+  /// In ar, this message translates to:
+  /// **'١٨–٢٤'**
+  String get profileLabelAge1824;
+
+  /// Profile value shown to the customer (age: 25_34).
+  ///
+  /// In ar, this message translates to:
+  /// **'٢٥–٣٤'**
+  String get profileLabelAge2534;
+
+  /// Profile value shown to the customer (age: 35_44).
+  ///
+  /// In ar, this message translates to:
+  /// **'٣٥–٤٤'**
+  String get profileLabelAge3544;
+
+  /// Profile value shown to the customer (age: 45_54).
+  ///
+  /// In ar, this message translates to:
+  /// **'٤٥–٥٤'**
+  String get profileLabelAge4554;
+
+  /// Profile value shown to the customer (age: default).
+  ///
+  /// In ar, this message translates to:
+  /// **'٥٥ وأكبر'**
+  String get profileLabelAgeDefault;
+
+  /// Profile value shown to the customer (frequency: weekly).
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوعي'**
+  String get profileLabelFrequencyWeekly;
+
+  /// Profile value shown to the customer (frequency: biweekly).
+  ///
+  /// In ar, this message translates to:
+  /// **'كل أسبوعين'**
+  String get profileLabelFrequencyBiweekly;
+
+  /// Profile value shown to the customer (frequency: daily).
+  ///
+  /// In ar, this message translates to:
+  /// **'يومي'**
+  String get profileLabelFrequencyDaily;
+
+  /// Profile value shown to the customer (frequency: irregular).
+  ///
+  /// In ar, this message translates to:
+  /// **'مش ثابت'**
+  String get profileLabelFrequencyIrregular;
+
+  /// Profile value shown to the customer (frequency: default).
+  ///
+  /// In ar, this message translates to:
+  /// **'شهري'**
+  String get profileLabelFrequencyDefault;
+
+  /// Profile value shown to the customer (caresFor: children).
+  ///
+  /// In ar, this message translates to:
+  /// **'أولادي'**
+  String get profileLabelCaresforChildren;
+
+  /// Profile value shown to the customer (caresFor: parents).
+  ///
+  /// In ar, this message translates to:
+  /// **'أبويا أو أمي'**
+  String get profileLabelCaresforParents;
+
+  /// Profile value shown to the customer (caresFor: spouse).
+  ///
+  /// In ar, this message translates to:
+  /// **'زوجي أو زوجتي'**
+  String get profileLabelCaresforSpouse;
+
+  /// Profile value shown to the customer (caresFor: siblings).
+  ///
+  /// In ar, this message translates to:
+  /// **'إخواتي'**
+  String get profileLabelCaresforSiblings;
+
+  /// Profile value shown to the customer (caresFor: grandparents).
+  ///
+  /// In ar, this message translates to:
+  /// **'جدي أو جدتي'**
+  String get profileLabelCaresforGrandparents;
+
+  /// Profile value shown to the customer (dialect: SA).
+  ///
+  /// In ar, this message translates to:
+  /// **'سعودي'**
+  String get profileLabelDialectSa;
+
+  /// Profile value shown to the customer (dialect: GULF).
+  ///
+  /// In ar, this message translates to:
+  /// **'خليجي'**
+  String get profileLabelDialectGulf;
+
+  /// Profile value shown to the customer (dialect: LEVANT).
+  ///
+  /// In ar, this message translates to:
+  /// **'شامي'**
+  String get profileLabelDialectLevant;
+
+  /// Profile value shown to the customer (dialect: IQ).
+  ///
+  /// In ar, this message translates to:
+  /// **'عراقي'**
+  String get profileLabelDialectIq;
+
+  /// Profile value shown to the customer (dialect: MA).
+  ///
+  /// In ar, this message translates to:
+  /// **'مغربي'**
+  String get profileLabelDialectMa;
+
+  /// Profile value shown to the customer (dialect: TN).
+  ///
+  /// In ar, this message translates to:
+  /// **'تونسي'**
+  String get profileLabelDialectTn;
+
+  /// Profile value shown to the customer (dialect: DZ).
+  ///
+  /// In ar, this message translates to:
+  /// **'جزائري'**
+  String get profileLabelDialectDz;
+
+  /// Profile value shown to the customer (dialect: LY).
+  ///
+  /// In ar, this message translates to:
+  /// **'ليبي'**
+  String get profileLabelDialectLy;
+
+  /// Profile value shown to the customer (dialect: SD).
+  ///
+  /// In ar, this message translates to:
+  /// **'سوداني'**
+  String get profileLabelDialectSd;
+
+  /// Profile value shown to the customer (dialect: YE).
+  ///
+  /// In ar, this message translates to:
+  /// **'يمني'**
+  String get profileLabelDialectYe;
+
+  /// Profile value shown to the customer (dialect: default).
+  ///
+  /// In ar, this message translates to:
+  /// **'مصري'**
+  String get profileLabelDialectDefault;
+
+  /// Memory: a write the server did not keep.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحفظ ده، جرب تاني'**
+  String get memoryWriteNotSaved;
+
+  /// Home: the quiet-alerts banner during exams.
+  ///
+  /// In ar, this message translates to:
+  /// **'فترة امتحانات — زاد مهدّي التنبيهات لحد {until}'**
+  String quietBannerExams(String until);
+
+  /// Home: the quiet-alerts banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مهدّي التنبيهات لحد {until} — الجرعات والمواعيد زي ما هي'**
+  String quietBannerOther(String until);
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنك'**
+  String get memoryScopeGeneral;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك'**
+  String get memoryScopeSpending;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة القبض'**
+  String get memoryScopeCycle;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص الأسبوع'**
+  String get memoryScopeWeekly;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقة البيانات'**
+  String get memoryScopeDataQuality;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه رفضته'**
+  String get memoryScopeDismissal;
+
+  /// Memory: the chip naming what a note is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get memoryScopeOther;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'يناير'**
+  String get monthJan;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'فبراير'**
+  String get monthFeb;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'مارس'**
+  String get monthMar;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبريل'**
+  String get monthApr;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'مايو'**
+  String get monthMay;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'يونيو'**
+  String get monthJun;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوليو'**
+  String get monthJul;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'أغسطس'**
+  String get monthAug;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبتمبر'**
+  String get monthSep;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتوبر'**
+  String get monthOct;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوفمبر'**
+  String get monthNov;
+
+  /// A month name.
+  ///
+  /// In ar, this message translates to:
+  /// **'ديسمبر'**
+  String get monthDec;
+
+  /// Daily brief: a dose was taken.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدتها'**
+  String get briefTookIt;
+
+  /// Daily brief: add items to the list.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفهم'**
+  String get briefAddThem;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

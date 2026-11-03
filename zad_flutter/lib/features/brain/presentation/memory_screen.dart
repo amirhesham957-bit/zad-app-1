@@ -97,7 +97,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     final failure = await ref
         .read(memoryControllerProvider.notifier)
         .forget(note);
-    if (mounted) _say(failure?.message ?? l.memoryForgotten);
+    if (mounted) _say(failure?.message(l) ?? l.memoryForgotten);
   }
 
   Future<void> _clearOutings() async {
@@ -111,7 +111,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     final failure = await ref
         .read(memoryControllerProvider.notifier)
         .clearOutings();
-    if (mounted) _say(failure?.message ?? l.memoryOutingsCleared);
+    if (mounted) _say(failure?.message(l) ?? l.memoryOutingsCleared);
   }
 
   Future<void> _editProfile(CustomerProfile? current) async {
@@ -121,7 +121,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     final failure = await ref
         .read(memoryControllerProvider.notifier)
         .saveProfile(edited);
-    if (mounted) _say(failure?.message ?? l.memorySaved);
+    if (mounted) _say(failure?.message(l) ?? l.memorySaved);
   }
 
   @override
@@ -316,7 +316,7 @@ class _ProfileCard extends StatelessWidget {
     final pay = switch (p.payDay) {
       final int day => <String>[
         l.memoryPayDay(day),
-        if (p.payFrequency case final String f) ProfileLabels.frequency(f),
+        if (p.payFrequency case final String f) ProfileLabels.frequency(f, l),
       ].join(' · '),
       null => unknown,
     };
@@ -345,15 +345,16 @@ class _ProfileCard extends StatelessWidget {
           _Line(l.memoryLineName, p.preferredName ?? unknown),
           _Line(
             l.memoryLineGender,
-            p.gender.labelled(ProfileLabels.gender) ?? unknown,
+            p.gender.labelled((v) => ProfileLabels.gender(v, l)) ?? unknown,
           ),
           _Line(
             l.memoryLineRole,
-            p.householdRole.labelled(ProfileLabels.role) ?? unknown,
+            p.householdRole.labelled((v) => ProfileLabels.role(v, l)) ??
+                unknown,
           ),
           _Line(
             l.memoryLineAge,
-            p.ageRange.labelled(ProfileLabels.age) ?? unknown,
+            p.ageRange.labelled((v) => ProfileLabels.age(v, l)) ?? unknown,
           ),
           _Line(l.memoryLineJob, p.occupation ?? unknown),
           _Line(l.memoryLinePay, pay),
@@ -361,11 +362,12 @@ class _ProfileCard extends StatelessWidget {
           _Line(l.memoryLineCity, p.city ?? unknown),
           _Line(
             l.memoryLineDialect,
-            p.dialect.labelled(ProfileLabels.dialect) ?? l.memoryDialectDefault,
+            p.dialect.labelled((v) => ProfileLabels.dialect(v, l)) ??
+                l.memoryDialectDefault,
           ),
           _Line(
             l.memoryLineVoice,
-            ProfileLabels.zadVoice(p.zadVoice ?? 'female'),
+            ProfileLabels.zadVoice(p.zadVoice ?? 'female', l),
           ),
         ],
       ),
@@ -518,7 +520,7 @@ class _NoteCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       child: Text(
-                        memoryScopeLabel(note.scope),
+                        memoryScopeLabel(note.scope, context.l10n),
                         style: ZadType.labelSmall.copyWith(
                           color: ZadColors.green700,
                         ),

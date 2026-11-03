@@ -5607,4 +5607,203 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get supportTerms7Body =>
       'إحنا مش بنضمن ولا بنتحمل مسؤولية دقة أي رصيد أو فئة مصروف أو حالة اشتراك أو مستوى مخزون أو تنبيه نقص أو توقع ميزانية معروض في التطبيق. وإحنا مش بنضمن إن الاكتشاف التلقائي للمعاملات هيلتقط كل معاملة، ولا إنه هيكون صح دايمًا لما يلتقطها.\n\nباستخدامك لزاد، إنت مقر بإن:\n- إحنا أداة تنظيم معلومات سلبية، مش طرف فاعل في قراراتك المالية؛\n- أي خسارة مالية أو دفعة فاتت أو إسراف في الإنفاق أو تلف مخزون أو خلاف عائلي أو أي نتيجة سلبية تانية ناتجة عن استخدامك أو اعتمادك على التطبيق هي مسؤوليتك وحدك؛\n- إحنا مش هنتحمل أي مسؤولية، مالية أو غيرها، عن النتايج دي، لأقصى حد يسمح بيه القانون.';
+
+  @override
+  String get profileLabelGenderFemale => 'أنثى';
+
+  @override
+  String get profileLabelGenderMale => 'ذكر';
+
+  @override
+  String get profileLabelZadvoiceBoy => 'صوت ولد';
+
+  @override
+  String get profileLabelZadvoiceGirl => 'صوت بنت';
+
+  @override
+  String get profileLabelRoleFather => 'أب';
+
+  @override
+  String get profileLabelRoleMother => 'أم';
+
+  @override
+  String get profileLabelRoleHusband => 'زوج';
+
+  @override
+  String get profileLabelRoleWife => 'زوجة';
+
+  @override
+  String get profileLabelRoleSon => 'ابن';
+
+  @override
+  String get profileLabelRoleDaughter => 'بنت';
+
+  @override
+  String get profileLabelRoleSingle => 'عايش لوحدي';
+
+  @override
+  String get profileLabelRoleStudent => 'طالب';
+
+  @override
+  String get profileLabelRoleGrandparent => 'جد/جدة';
+
+  @override
+  String get profileLabelRoleDefault => 'غير كده';
+
+  @override
+  String get profileLabelAgeUnder18 => 'أقل من ١٨';
+
+  @override
+  String get profileLabelAge1824 => '١٨–٢٤';
+
+  @override
+  String get profileLabelAge2534 => '٢٥–٣٤';
+
+  @override
+  String get profileLabelAge3544 => '٣٥–٤٤';
+
+  @override
+  String get profileLabelAge4554 => '٤٥–٥٤';
+
+  @override
+  String get profileLabelAgeDefault => '٥٥ وأكبر';
+
+  @override
+  String get profileLabelFrequencyWeekly => 'أسبوعي';
+
+  @override
+  String get profileLabelFrequencyBiweekly => 'كل أسبوعين';
+
+  @override
+  String get profileLabelFrequencyDaily => 'يومي';
+
+  @override
+  String get profileLabelFrequencyIrregular => 'مش ثابت';
+
+  @override
+  String get profileLabelFrequencyDefault => 'شهري';
+
+  @override
+  String get profileLabelCaresforChildren => 'أولادي';
+
+  @override
+  String get profileLabelCaresforParents => 'أبويا أو أمي';
+
+  @override
+  String get profileLabelCaresforSpouse => 'زوجي أو زوجتي';
+
+  @override
+  String get profileLabelCaresforSiblings => 'إخواتي';
+
+  @override
+  String get profileLabelCaresforGrandparents => 'جدي أو جدتي';
+
+  @override
+  String get profileLabelDialectSa => 'سعودي';
+
+  @override
+  String get profileLabelDialectGulf => 'خليجي';
+
+  @override
+  String get profileLabelDialectLevant => 'شامي';
+
+  @override
+  String get profileLabelDialectIq => 'عراقي';
+
+  @override
+  String get profileLabelDialectMa => 'مغربي';
+
+  @override
+  String get profileLabelDialectTn => 'تونسي';
+
+  @override
+  String get profileLabelDialectDz => 'جزائري';
+
+  @override
+  String get profileLabelDialectLy => 'ليبي';
+
+  @override
+  String get profileLabelDialectSd => 'سوداني';
+
+  @override
+  String get profileLabelDialectYe => 'يمني';
+
+  @override
+  String get profileLabelDialectDefault => 'مصري';
+
+  @override
+  String get memoryWriteNotSaved => 'مقدرتش أحفظ ده، جرب تاني';
+
+  @override
+  String quietBannerExams(String until) {
+    return 'فترة امتحانات — زاد مهدّي التنبيهات لحد $until';
+  }
+
+  @override
+  String quietBannerOther(String until) {
+    return 'زاد مهدّي التنبيهات لحد $until — الجرعات والمواعيد زي ما هي';
+  }
+
+  @override
+  String get memoryScopeGeneral => 'عنك';
+
+  @override
+  String get memoryScopeSpending => 'صرفك';
+
+  @override
+  String get memoryScopeCycle => 'دورة القبض';
+
+  @override
+  String get memoryScopeWeekly => 'ملخص الأسبوع';
+
+  @override
+  String get memoryScopeDataQuality => 'دقة البيانات';
+
+  @override
+  String get memoryScopeDismissal => 'تنبيه رفضته';
+
+  @override
+  String get memoryScopeOther => 'ملاحظة';
+
+  @override
+  String get monthJan => 'يناير';
+
+  @override
+  String get monthFeb => 'فبراير';
+
+  @override
+  String get monthMar => 'مارس';
+
+  @override
+  String get monthApr => 'أبريل';
+
+  @override
+  String get monthMay => 'مايو';
+
+  @override
+  String get monthJun => 'يونيو';
+
+  @override
+  String get monthJul => 'يوليو';
+
+  @override
+  String get monthAug => 'أغسطس';
+
+  @override
+  String get monthSep => 'سبتمبر';
+
+  @override
+  String get monthOct => 'أكتوبر';
+
+  @override
+  String get monthNov => 'نوفمبر';
+
+  @override
+  String get monthDec => 'ديسمبر';
+
+  @override
+  String get briefTookIt => 'خدتها';
+
+  @override
+  String get briefAddThem => 'ضيفهم';
 }

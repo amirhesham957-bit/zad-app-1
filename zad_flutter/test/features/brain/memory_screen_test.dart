@@ -186,7 +186,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('انساها'));
     await tester.pumpAndSettle();
-    expect(find.text(MemoryWriteFailure.offline.message), findsOneWidget);
+    expect(find.text(MemoryWriteFailure.offline.message()), findsOneWidget);
     expect(find.text('اتنسيت'), findsNothing);
   });
 

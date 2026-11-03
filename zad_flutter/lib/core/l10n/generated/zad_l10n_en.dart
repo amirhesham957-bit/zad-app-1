@@ -5746,4 +5746,203 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get supportTerms7Body =>
       'We do not guarantee, and take no responsibility for, the accuracy of any balance, expense category, subscription status, stock level, low-stock alert or budget forecast shown in the app. Nor do we guarantee that automatic transaction detection will catch every transaction, or that it will always be right when it does.\n\nBy using Zad, you acknowledge that:\n- we are a passive information-organising tool, not an active party to your financial decisions;\n- any financial loss, missed payment, overspending, spoiled stock, family disagreement or other negative outcome arising from your use of or reliance on the app is your responsibility alone;\n- we will accept no liability, financial or otherwise, for those outcomes, to the fullest extent permitted by law.';
+
+  @override
+  String get profileLabelGenderFemale => 'Female';
+
+  @override
+  String get profileLabelGenderMale => 'Male';
+
+  @override
+  String get profileLabelZadvoiceBoy => 'A boy\'s voice';
+
+  @override
+  String get profileLabelZadvoiceGirl => 'A girl\'s voice';
+
+  @override
+  String get profileLabelRoleFather => 'Father';
+
+  @override
+  String get profileLabelRoleMother => 'Mother';
+
+  @override
+  String get profileLabelRoleHusband => 'Husband';
+
+  @override
+  String get profileLabelRoleWife => 'Wife';
+
+  @override
+  String get profileLabelRoleSon => 'Son';
+
+  @override
+  String get profileLabelRoleDaughter => 'Daughter';
+
+  @override
+  String get profileLabelRoleSingle => 'Living alone';
+
+  @override
+  String get profileLabelRoleStudent => 'Student';
+
+  @override
+  String get profileLabelRoleGrandparent => 'Grandparent';
+
+  @override
+  String get profileLabelRoleDefault => 'Something else';
+
+  @override
+  String get profileLabelAgeUnder18 => 'Under 18';
+
+  @override
+  String get profileLabelAge1824 => '18–24';
+
+  @override
+  String get profileLabelAge2534 => '25–34';
+
+  @override
+  String get profileLabelAge3544 => '35–44';
+
+  @override
+  String get profileLabelAge4554 => '45–54';
+
+  @override
+  String get profileLabelAgeDefault => '55 and over';
+
+  @override
+  String get profileLabelFrequencyWeekly => 'Weekly';
+
+  @override
+  String get profileLabelFrequencyBiweekly => 'Every two weeks';
+
+  @override
+  String get profileLabelFrequencyDaily => 'Daily';
+
+  @override
+  String get profileLabelFrequencyIrregular => 'Irregular';
+
+  @override
+  String get profileLabelFrequencyDefault => 'Monthly';
+
+  @override
+  String get profileLabelCaresforChildren => 'My children';
+
+  @override
+  String get profileLabelCaresforParents => 'My father or mother';
+
+  @override
+  String get profileLabelCaresforSpouse => 'My husband or wife';
+
+  @override
+  String get profileLabelCaresforSiblings => 'My siblings';
+
+  @override
+  String get profileLabelCaresforGrandparents => 'My grandparents';
+
+  @override
+  String get profileLabelDialectSa => 'Saudi';
+
+  @override
+  String get profileLabelDialectGulf => 'Gulf';
+
+  @override
+  String get profileLabelDialectLevant => 'Levantine';
+
+  @override
+  String get profileLabelDialectIq => 'Iraqi';
+
+  @override
+  String get profileLabelDialectMa => 'Moroccan';
+
+  @override
+  String get profileLabelDialectTn => 'Tunisian';
+
+  @override
+  String get profileLabelDialectDz => 'Algerian';
+
+  @override
+  String get profileLabelDialectLy => 'Libyan';
+
+  @override
+  String get profileLabelDialectSd => 'Sudanese';
+
+  @override
+  String get profileLabelDialectYe => 'Yemeni';
+
+  @override
+  String get profileLabelDialectDefault => 'Egyptian';
+
+  @override
+  String get memoryWriteNotSaved => 'I couldn\'t save that, try again';
+
+  @override
+  String quietBannerExams(String until) {
+    return 'Exam season — Zad has quietened alerts until $until';
+  }
+
+  @override
+  String quietBannerOther(String until) {
+    return 'Zad has quietened alerts until $until — doses and appointments still come';
+  }
+
+  @override
+  String get memoryScopeGeneral => 'About you';
+
+  @override
+  String get memoryScopeSpending => 'Your spending';
+
+  @override
+  String get memoryScopeCycle => 'Pay cycle';
+
+  @override
+  String get memoryScopeWeekly => 'Week summary';
+
+  @override
+  String get memoryScopeDataQuality => 'Data accuracy';
+
+  @override
+  String get memoryScopeDismissal => 'An alert you turned down';
+
+  @override
+  String get memoryScopeOther => 'Note';
+
+  @override
+  String get monthJan => 'January';
+
+  @override
+  String get monthFeb => 'February';
+
+  @override
+  String get monthMar => 'March';
+
+  @override
+  String get monthApr => 'April';
+
+  @override
+  String get monthMay => 'May';
+
+  @override
+  String get monthJun => 'June';
+
+  @override
+  String get monthJul => 'July';
+
+  @override
+  String get monthAug => 'August';
+
+  @override
+  String get monthSep => 'September';
+
+  @override
+  String get monthOct => 'October';
+
+  @override
+  String get monthNov => 'November';
+
+  @override
+  String get monthDec => 'December';
+
+  @override
+  String get briefTookIt => 'Took it';
+
+  @override
+  String get briefAddThem => 'Add them';
 }

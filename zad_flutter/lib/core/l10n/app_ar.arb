@@ -5095,5 +5095,275 @@
   "supportTerms6Title": "٦. السلوك الممنوع",
   "supportTerms6Body": "ممنوع تعمل هندسة عكسية أو اختراق أو تستخدم زاد في أي نشاط غير قانوني.",
   "supportTerms7Title": "٧. إحنا بنوفر الأداة — وإنت المسؤول عن النتيجة",
-  "supportTerms7Body": "إحنا مش بنضمن ولا بنتحمل مسؤولية دقة أي رصيد أو فئة مصروف أو حالة اشتراك أو مستوى مخزون أو تنبيه نقص أو توقع ميزانية معروض في التطبيق. وإحنا مش بنضمن إن الاكتشاف التلقائي للمعاملات هيلتقط كل معاملة، ولا إنه هيكون صح دايمًا لما يلتقطها.\n\nباستخدامك لزاد، إنت مقر بإن:\n- إحنا أداة تنظيم معلومات سلبية، مش طرف فاعل في قراراتك المالية؛\n- أي خسارة مالية أو دفعة فاتت أو إسراف في الإنفاق أو تلف مخزون أو خلاف عائلي أو أي نتيجة سلبية تانية ناتجة عن استخدامك أو اعتمادك على التطبيق هي مسؤوليتك وحدك؛\n- إحنا مش هنتحمل أي مسؤولية، مالية أو غيرها، عن النتايج دي، لأقصى حد يسمح بيه القانون."
+  "supportTerms7Body": "إحنا مش بنضمن ولا بنتحمل مسؤولية دقة أي رصيد أو فئة مصروف أو حالة اشتراك أو مستوى مخزون أو تنبيه نقص أو توقع ميزانية معروض في التطبيق. وإحنا مش بنضمن إن الاكتشاف التلقائي للمعاملات هيلتقط كل معاملة، ولا إنه هيكون صح دايمًا لما يلتقطها.\n\nباستخدامك لزاد، إنت مقر بإن:\n- إحنا أداة تنظيم معلومات سلبية، مش طرف فاعل في قراراتك المالية؛\n- أي خسارة مالية أو دفعة فاتت أو إسراف في الإنفاق أو تلف مخزون أو خلاف عائلي أو أي نتيجة سلبية تانية ناتجة عن استخدامك أو اعتمادك على التطبيق هي مسؤوليتك وحدك؛\n- إحنا مش هنتحمل أي مسؤولية، مالية أو غيرها، عن النتايج دي، لأقصى حد يسمح بيه القانون.",
+  "profileLabelGenderFemale": "أنثى",
+  "@profileLabelGenderFemale": {
+    "description": "Profile value shown to the customer (gender: female)."
+  },
+  "profileLabelGenderMale": "ذكر",
+  "@profileLabelGenderMale": {
+    "description": "Profile value shown to the customer (gender: male)."
+  },
+  "profileLabelZadvoiceBoy": "صوت ولد",
+  "@profileLabelZadvoiceBoy": {
+    "description": "Profile value shown to the customer (zadVoice: boy)."
+  },
+  "profileLabelZadvoiceGirl": "صوت بنت",
+  "@profileLabelZadvoiceGirl": {
+    "description": "Profile value shown to the customer (zadVoice: girl)."
+  },
+  "profileLabelRoleFather": "أب",
+  "@profileLabelRoleFather": {
+    "description": "Profile value shown to the customer (role: father)."
+  },
+  "profileLabelRoleMother": "أم",
+  "@profileLabelRoleMother": {
+    "description": "Profile value shown to the customer (role: mother)."
+  },
+  "profileLabelRoleHusband": "زوج",
+  "@profileLabelRoleHusband": {
+    "description": "Profile value shown to the customer (role: husband)."
+  },
+  "profileLabelRoleWife": "زوجة",
+  "@profileLabelRoleWife": {
+    "description": "Profile value shown to the customer (role: wife)."
+  },
+  "profileLabelRoleSon": "ابن",
+  "@profileLabelRoleSon": {
+    "description": "Profile value shown to the customer (role: son)."
+  },
+  "profileLabelRoleDaughter": "بنت",
+  "@profileLabelRoleDaughter": {
+    "description": "Profile value shown to the customer (role: daughter)."
+  },
+  "profileLabelRoleSingle": "عايش لوحدي",
+  "@profileLabelRoleSingle": {
+    "description": "Profile value shown to the customer (role: single)."
+  },
+  "profileLabelRoleStudent": "طالب",
+  "@profileLabelRoleStudent": {
+    "description": "Profile value shown to the customer (role: student)."
+  },
+  "profileLabelRoleGrandparent": "جد/جدة",
+  "@profileLabelRoleGrandparent": {
+    "description": "Profile value shown to the customer (role: grandparent)."
+  },
+  "profileLabelRoleDefault": "غير كده",
+  "@profileLabelRoleDefault": {
+    "description": "Profile value shown to the customer (role: default)."
+  },
+  "profileLabelAgeUnder18": "أقل من ١٨",
+  "@profileLabelAgeUnder18": {
+    "description": "Profile value shown to the customer (age: under_18)."
+  },
+  "profileLabelAge1824": "١٨–٢٤",
+  "@profileLabelAge1824": {
+    "description": "Profile value shown to the customer (age: 18_24)."
+  },
+  "profileLabelAge2534": "٢٥–٣٤",
+  "@profileLabelAge2534": {
+    "description": "Profile value shown to the customer (age: 25_34)."
+  },
+  "profileLabelAge3544": "٣٥–٤٤",
+  "@profileLabelAge3544": {
+    "description": "Profile value shown to the customer (age: 35_44)."
+  },
+  "profileLabelAge4554": "٤٥–٥٤",
+  "@profileLabelAge4554": {
+    "description": "Profile value shown to the customer (age: 45_54)."
+  },
+  "profileLabelAgeDefault": "٥٥ وأكبر",
+  "@profileLabelAgeDefault": {
+    "description": "Profile value shown to the customer (age: default)."
+  },
+  "profileLabelFrequencyWeekly": "أسبوعي",
+  "@profileLabelFrequencyWeekly": {
+    "description": "Profile value shown to the customer (frequency: weekly)."
+  },
+  "profileLabelFrequencyBiweekly": "كل أسبوعين",
+  "@profileLabelFrequencyBiweekly": {
+    "description": "Profile value shown to the customer (frequency: biweekly)."
+  },
+  "profileLabelFrequencyDaily": "يومي",
+  "@profileLabelFrequencyDaily": {
+    "description": "Profile value shown to the customer (frequency: daily)."
+  },
+  "profileLabelFrequencyIrregular": "مش ثابت",
+  "@profileLabelFrequencyIrregular": {
+    "description": "Profile value shown to the customer (frequency: irregular)."
+  },
+  "profileLabelFrequencyDefault": "شهري",
+  "@profileLabelFrequencyDefault": {
+    "description": "Profile value shown to the customer (frequency: default)."
+  },
+  "profileLabelCaresforChildren": "أولادي",
+  "@profileLabelCaresforChildren": {
+    "description": "Profile value shown to the customer (caresFor: children)."
+  },
+  "profileLabelCaresforParents": "أبويا أو أمي",
+  "@profileLabelCaresforParents": {
+    "description": "Profile value shown to the customer (caresFor: parents)."
+  },
+  "profileLabelCaresforSpouse": "زوجي أو زوجتي",
+  "@profileLabelCaresforSpouse": {
+    "description": "Profile value shown to the customer (caresFor: spouse)."
+  },
+  "profileLabelCaresforSiblings": "إخواتي",
+  "@profileLabelCaresforSiblings": {
+    "description": "Profile value shown to the customer (caresFor: siblings)."
+  },
+  "profileLabelCaresforGrandparents": "جدي أو جدتي",
+  "@profileLabelCaresforGrandparents": {
+    "description": "Profile value shown to the customer (caresFor: grandparents)."
+  },
+  "profileLabelDialectSa": "سعودي",
+  "@profileLabelDialectSa": {
+    "description": "Profile value shown to the customer (dialect: SA)."
+  },
+  "profileLabelDialectGulf": "خليجي",
+  "@profileLabelDialectGulf": {
+    "description": "Profile value shown to the customer (dialect: GULF)."
+  },
+  "profileLabelDialectLevant": "شامي",
+  "@profileLabelDialectLevant": {
+    "description": "Profile value shown to the customer (dialect: LEVANT)."
+  },
+  "profileLabelDialectIq": "عراقي",
+  "@profileLabelDialectIq": {
+    "description": "Profile value shown to the customer (dialect: IQ)."
+  },
+  "profileLabelDialectMa": "مغربي",
+  "@profileLabelDialectMa": {
+    "description": "Profile value shown to the customer (dialect: MA)."
+  },
+  "profileLabelDialectTn": "تونسي",
+  "@profileLabelDialectTn": {
+    "description": "Profile value shown to the customer (dialect: TN)."
+  },
+  "profileLabelDialectDz": "جزائري",
+  "@profileLabelDialectDz": {
+    "description": "Profile value shown to the customer (dialect: DZ)."
+  },
+  "profileLabelDialectLy": "ليبي",
+  "@profileLabelDialectLy": {
+    "description": "Profile value shown to the customer (dialect: LY)."
+  },
+  "profileLabelDialectSd": "سوداني",
+  "@profileLabelDialectSd": {
+    "description": "Profile value shown to the customer (dialect: SD)."
+  },
+  "profileLabelDialectYe": "يمني",
+  "@profileLabelDialectYe": {
+    "description": "Profile value shown to the customer (dialect: YE)."
+  },
+  "profileLabelDialectDefault": "مصري",
+  "@profileLabelDialectDefault": {
+    "description": "Profile value shown to the customer (dialect: default)."
+  },
+  "memoryWriteNotSaved": "مقدرتش أحفظ ده، جرب تاني",
+  "@memoryWriteNotSaved": {
+    "description": "Memory: a write the server did not keep."
+  },
+  "quietBannerExams": "فترة امتحانات — زاد مهدّي التنبيهات لحد {until}",
+  "@quietBannerExams": {
+    "description": "Home: the quiet-alerts banner during exams.",
+    "placeholders": {
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "quietBannerOther": "زاد مهدّي التنبيهات لحد {until} — الجرعات والمواعيد زي ما هي",
+  "@quietBannerOther": {
+    "description": "Home: the quiet-alerts banner.",
+    "placeholders": {
+      "until": {
+        "type": "String"
+      }
+    }
+  },
+  "memoryScopeGeneral": "عنك",
+  "@memoryScopeGeneral": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeSpending": "صرفك",
+  "@memoryScopeSpending": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeCycle": "دورة القبض",
+  "@memoryScopeCycle": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeWeekly": "ملخص الأسبوع",
+  "@memoryScopeWeekly": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeDataQuality": "دقة البيانات",
+  "@memoryScopeDataQuality": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeDismissal": "تنبيه رفضته",
+  "@memoryScopeDismissal": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "memoryScopeOther": "ملاحظة",
+  "@memoryScopeOther": {
+    "description": "Memory: the chip naming what a note is about."
+  },
+  "monthJan": "يناير",
+  "@monthJan": {
+    "description": "A month name."
+  },
+  "monthFeb": "فبراير",
+  "@monthFeb": {
+    "description": "A month name."
+  },
+  "monthMar": "مارس",
+  "@monthMar": {
+    "description": "A month name."
+  },
+  "monthApr": "أبريل",
+  "@monthApr": {
+    "description": "A month name."
+  },
+  "monthMay": "مايو",
+  "@monthMay": {
+    "description": "A month name."
+  },
+  "monthJun": "يونيو",
+  "@monthJun": {
+    "description": "A month name."
+  },
+  "monthJul": "يوليو",
+  "@monthJul": {
+    "description": "A month name."
+  },
+  "monthAug": "أغسطس",
+  "@monthAug": {
+    "description": "A month name."
+  },
+  "monthSep": "سبتمبر",
+  "@monthSep": {
+    "description": "A month name."
+  },
+  "monthOct": "أكتوبر",
+  "@monthOct": {
+    "description": "A month name."
+  },
+  "monthNov": "نوفمبر",
+  "@monthNov": {
+    "description": "A month name."
+  },
+  "monthDec": "ديسمبر",
+  "@monthDec": {
+    "description": "A month name."
+  },
+  "briefTookIt": "خدتها",
+  "@briefTookIt": {
+    "description": "Daily brief: a dose was taken."
+  },
+  "briefAddThem": "ضيفهم",
+  "@briefAddThem": {
+    "description": "Daily brief: add items to the list."
+  }
 }
