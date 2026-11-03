@@ -2032,7 +2032,7 @@ abstract class ZadL10n {
   /// No description provided for @voiceOutToday.
   ///
   /// In ar, this message translates to:
-  /// **'خلصت أسئلتك الصوتية النهارده (٣ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.'**
+  /// **'خلصت أسئلتك الصوتية النهارده (٦ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.'**
   String get voiceOutToday;
 
   /// No description provided for @voiceRecord.
@@ -2236,7 +2236,7 @@ abstract class ZadL10n {
   /// No description provided for @voiceSheetOutToday.
   ///
   /// In ar, this message translates to:
-  /// **'خلصت أسئلتك الصوتية النهارده — ٣ في اليوم، وبترجع بكرة'**
+  /// **'خلصت أسئلتك الصوتية النهارده — ٦ في اليوم، وبترجع بكرة'**
   String get voiceSheetOutToday;
 
   /// No description provided for @voiceSheetTooShort.

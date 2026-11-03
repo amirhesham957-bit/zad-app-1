@@ -23,10 +23,22 @@ class TasbihaRemote {
     return <GardenTree>[for (final r in rows) GardenTree.fromJson(r)];
   }
 
+  /// [userId]'s own trees outside any family (`family_id` null — migration
+  /// 20261103220000). 21 of 22 accounts had no family on 2026-11-03, and
+  /// without these the counter never moved.
+  Future<List<GardenTree>> personalTrees(String userId) async {
+    final rows = await _client
+        .from('family_tasbiha')
+        .select()
+        .eq('user_id', userId)
+        .isFilter('family_id', null);
+    return <GardenTree>[for (final r in rows) GardenTree.fromJson(r)];
+  }
+
   /// A new tree — Kotlin's `createNewTree`: the garden takes the name, the
-  /// tree starts as «شجرة جديدة».
+  /// tree starts as «شجرة جديدة». No [familyId] = a personal tree.
   Future<GardenTree> createTree({
-    required String familyId,
+    required String? familyId,
     required String userId,
     required String gardenName,
     String treeName = 'شجرة جديدة',

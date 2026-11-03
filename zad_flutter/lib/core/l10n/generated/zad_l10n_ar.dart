@@ -1145,7 +1145,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceOutToday =>
-      'خلصت أسئلتك الصوتية النهارده (٣ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
+      'خلصت أسئلتك الصوتية النهارده (٦ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
 
   @override
   String get voiceRecord => 'سجّل صوت';
@@ -1253,7 +1253,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceSheetOutToday =>
-      'خلصت أسئلتك الصوتية النهارده — ٣ في اليوم، وبترجع بكرة';
+      'خلصت أسئلتك الصوتية النهارده — ٦ في اليوم، وبترجع بكرة';
 
   @override
   String get voiceSheetTooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى';
