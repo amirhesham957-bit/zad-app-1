@@ -12,7 +12,8 @@
 // first run should be one.
 //
 // Only the official API DCM's support sent (dcm.ts). The portal-session route stays frozen (owner's
-// decision, 2026-10-26). No cron calls this yet: one dry run first (net.http_post with ?dry=1 and the proactive secret).
+// decision, 2026-10-26). The first dry run (3/11): 0 coupons, 83 offers ⇒ 337 rows, 69 waiting on terms; the weekly
+// cron dcm-sync-weekly (20261103160000) writes from then on.
 
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { secretMatches } from "../_shared/cronSecret.ts";
