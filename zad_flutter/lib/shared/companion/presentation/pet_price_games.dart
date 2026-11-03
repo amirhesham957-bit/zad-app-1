@@ -14,6 +14,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/application/price_games_provider.dart';
 import 'package:zad/shared/companion/domain/price_games.dart';
@@ -57,26 +58,25 @@ class _WithFacts extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currency = ref.watch(priceGameCurrencyProvider);
     final given = facts;
-    if (given != null) return _orEmpty(given, currency);
+    if (given != null) return _orEmpty(context, given, currency);
     return ref
         .watch(petPriceFactsProvider)
         .when(
-          data: (f) => _orEmpty(f, currency),
+          data: (f) => _orEmpty(context, f, currency),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => _orEmpty(const <PriceFact>[], currency),
+          error: (_, _) => _orEmpty(context, const <PriceFact>[], currency),
         );
   }
 
-  Widget _orEmpty(List<PriceFact> f, String currency) => enough(f)
+  Widget _orEmpty(BuildContext context, List<PriceFact> f, String currency) =>
+      enough(f)
       ? builder(f, currency)
       : Center(
           child: ZadEmptyState(
             key: const ValueKey<String>('price-game-empty'),
             icon: Icons.sell_outlined,
-            title: 'لسه مفيش أسعار كفاية',
-            message:
-                'سجّل كام مصروف أو بلّغ عن سعر في «أسعار الناس»، '
-                'و$name هيلعب معاك بيها.',
+            title: context.l10n.petGamesNoPrices,
+            message: context.l10n.petGamesNoPricesBody(name),
           ),
         );
 }
@@ -104,7 +104,7 @@ class _EndButtons extends StatelessWidget {
               builder: (_) => again(),
             ),
           ),
-          child: const Text('🔁 تاني'),
+          child: Text(context.l10n.petGameAgain),
         ),
       ),
       const SizedBox(width: ZadSpacing.md),
@@ -115,7 +115,7 @@ class _EndButtons extends StatelessWidget {
             minimumSize: const Size.fromHeight(52),
           ),
           onPressed: () => Navigator.of(context).pop(result),
-          child: const Text('خلصت'),
+          child: Text(context.l10n.petGameDone),
         ),
       ),
     ],
@@ -181,16 +181,20 @@ class _PetGuessGameState extends ConsumerState<PetGuessGame> {
   }
 
   String _verdict(int total) {
-    if (_right == total) return 'كلهم صح! ${widget.name} مش مصدّق 🏆';
-    if (_right * 2 >= total) return 'برافو! عينك على الأسعار 🤩';
-    if (_right > 0) return 'مش وحش! ${widget.name} اتبسط 😊';
-    return 'الأسعار غلبتنا المرة دي 😅 تاني؟';
+    final tier = _right == total
+        ? 'all'
+        : _right * 2 >= total
+        ? 'half'
+        : _right > 0
+        ? 'some'
+        : 'none';
+    return context.l10n.petGuessVerdict(tier, widget.name);
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: ZadColors.surface,
-    appBar: AppBar(title: const Text('💰 خمّن السعر')),
+    appBar: AppBar(title: Text(context.l10n.petGuessTitle)),
     body: SafeArea(
       child: _WithFacts(
         name: widget.name,
@@ -219,8 +223,8 @@ class _PetGuessGameState extends ConsumerState<PetGuessGame> {
         children: <Widget>[
           Text(
             _over
-                ? '$_right من ${rounds.length}'
-                : 'سؤال ${_at + 1} من ${rounds.length} · صح $_right',
+                ? context.l10n.petGuessScore(_right, rounds.length)
+                : context.l10n.petGuessProgress(_at + 1, rounds.length, _right),
             key: const ValueKey<String>('guess-progress'),
             textAlign: TextAlign.center,
             style: ZadType.labelLarge.copyWith(color: ZadColors.textTertiary),
@@ -237,7 +241,7 @@ class _PetGuessGameState extends ConsumerState<PetGuessGame> {
             )
           else ...<Widget>[
             Text(
-              'بكام «${round.fact.label}»؟',
+              context.l10n.petGuessQuestion(round.fact.label),
               key: const ValueKey<String>('guess-question'),
               textAlign: TextAlign.center,
               style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
@@ -247,7 +251,7 @@ class _PetGuessGameState extends ConsumerState<PetGuessGame> {
               opacity: picked == null ? 0 : 1,
               duration: ZadDuration.quick,
               child: Text(
-                '${round.fact.source.label}: '
+                '${round.fact.source.label(context.l10n)}: '
                 '${_withCurrency(round.fact.price, currency)}',
                 key: const ValueKey<String>('guess-source'),
                 textAlign: TextAlign.center,
@@ -286,7 +290,11 @@ class _PetGuessGameState extends ConsumerState<PetGuessGame> {
                 minimumSize: const Size.fromHeight(52),
               ),
               onPressed: picked == null ? null : () => _next(rounds.length),
-              child: Text(_at + 1 >= rounds.length ? 'النتيجة' : 'اللي بعده'),
+              child: Text(
+                _at + 1 >= rounds.length
+                    ? context.l10n.petGuessResult
+                    : context.l10n.petGuessNext,
+              ),
             ),
           ],
         ],
@@ -398,16 +406,20 @@ class _PetMemoryGameState extends ConsumerState<PetMemoryGame> {
     });
   }
 
-  String _verdict(int pairs) => _moves <= pairs + 1
-      ? 'ذاكرة حديد! ${widget.name} مبهور 🏆'
-      : _moves <= pairs * 2
-      ? 'برافو! خلصتها في $_moves محاولات 🤩'
-      : 'خلصناها في $_moves محاولات، ${widget.name} اتبسط 😊';
+  String _verdict(int pairs) => context.l10n.petMemoryVerdict(
+    _moves <= pairs + 1
+        ? 'iron'
+        : _moves <= pairs * 2
+        ? 'good'
+        : 'ok',
+    widget.name,
+    _moves,
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: ZadColors.surface,
-    appBar: AppBar(title: const Text('🧠 ذاكرة الأسعار')),
+    appBar: AppBar(title: Text(context.l10n.petMemoryTitle)),
     body: SafeArea(
       child: _WithFacts(
         name: widget.name,
@@ -439,7 +451,7 @@ class _PetMemoryGameState extends ConsumerState<PetMemoryGame> {
               child: Text(
                 _over
                     ? _verdict(deck.length ~/ 2)
-                    : 'وصّل كل حاجة بسعرها · محاولات $_moves',
+                    : context.l10n.petMemoryHint(_moves),
                 key: const ValueKey<String>('memory-status'),
                 style: ZadType.titleMedium,
               ),

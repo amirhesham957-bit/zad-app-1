@@ -11081,6 +11081,552 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'مفيش إعلان دلوقتي. جرّب كمان شوية.'**
   String get adNoneNow;
+
+  /// Companion: a character's temperament, by id.
+  ///
+  /// In ar, this message translates to:
+  /// **'{id, select, basbous{حنين وبيحب الحلو والتوفير} fella{رقيقة وبتهدّي البيت} felfool{نشيط وبيحب التحديات} mishmish{منفوش ودافي، بيحب القعدة في البيت} toota{شقية وفنانة، بترسم الخطط} fanoos{بيظهر في رمضان} maamoul{بيظهر في العيد} other{هادي وبيحب البيت المترتب}}'**
+  String companionPersonaTrait(String id);
+
+  /// Companion: what a character says when you meet it, by id.
+  ///
+  /// In ar, this message translates to:
+  /// **'{id, select, basbous{وفّرنا النهارده؟ يبقى نستاهل حتة بسبوسة.} fella{البيت ريحته فل لما كل حاجة متسجلة في مكانها.} felfool{يلا يا بطل! تحدي الأسبوع: نوفّر ١٠٠ ونكسب.} mishmish{التلاجة مليانة والبيت دافي؟ يبقى أنا مبسوط.} toota{تعالى نرسم خطة الشهر سوا.} fanoos{رمضان كريم! جهزت لك قائمة السحور.} maamoul{عيدكم مبارك! العيدية اتسجلت؟} other{أهلاً! أنا زادو، معاك في أي حاجة تخص البيت.}}'**
+  String companionPersonaLine(String id);
+
+  /// Companion: a growth stage's name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{stage, select, seed{بذرة} sprout{بُرعم} little{صغيّر} sage{حكيم} other{رفيق}}'**
+  String companionStageLabel(String stage);
+
+  /// Companion: what changed at a growth stage.
+  ///
+  /// In ar, this message translates to:
+  /// **'{stage, select, seed{لسه في قشرته، وعينيه كبيرة.} sprout{خرج من القشرة وطلع له إيدين.} little{طلع له رجلين، وبقى يلبس كل حاجة.} sage{هالة دهب ونجوم بتلف حواليه.} other{هالة نور حواليه، وبيرقص لما تفرح.}}'**
+  String companionStageDescription(String stage);
+
+  /// Companion: an outfit's name, by enum name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{outfit, select, sunglasses{نضارة شمس} winterHat{طاقية شتوي} chefHat{طاقية الشيف} shemagh{شماغ} gradCap{طاقية التخرج} other{}}'**
+  String companionOutfitLabel(String outfit);
+
+  /// Companion: a studio background's name, by id.
+  ///
+  /// In ar, this message translates to:
+  /// **'{bg, select, night{بالليل} garden{الجنينة} kitchen{المطبخ} stars{سما النجوم} shilla{الشلة} other{الصبح}}'**
+  String companionBackgroundLabel(String bg);
+
+  /// Wardrobe: opens at a level.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتفتح عند لفل {level}'**
+  String offerOpensAtLevel(int level);
+
+  /// Wardrobe: opens with invited friends.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يتفتح لما صاحب يسجّل} other{يتفتح لما {count} صحاب يسجّلوا}}'**
+  String offerOpensFriends(int count);
+
+  /// Wardrobe: comes with Plus.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدية مع اشتراك بلس'**
+  String get offerPlusGift;
+
+  /// Wardrobe: seasonal.
+  ///
+  /// In ar, this message translates to:
+  /// **'في رمضان بس'**
+  String get offerRamadanOnly;
+
+  /// Wardrobe: seasonal.
+  ///
+  /// In ar, this message translates to:
+  /// **'في العيد بس'**
+  String get offerEidOnly;
+
+  /// Pet, poked 12+ times in a row.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلاص! {count} مرة؟ هشتكيك لزاد 😂'**
+  String petPokedMany(int count);
+
+  /// Pet, poked 8–11 times; i picks one of two lines.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{إنت بتعدّ ولا إيه؟ دي {count} مرة 😵‍💫} other{الشاشة هتتعب مني ومنك 😅 {count} دوسة!}}'**
+  String petPokedLots(String i, int count);
+
+  /// Pet, poked 5–7 times; i picks one of three lines.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{بتدغدغني! 🤭 كفاية…} i1{أنا مش زرار على فكرة 😤} other{{name} اتزغلل من كتر الدوس 😵}}'**
+  String petPokedSome(String i, String name);
+
+  /// Pet, the customer back after a day.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{بقالك يوم كامل مش هنا! فكرتك نسيتني 🥺} other{يوم بحاله؟ كنت قاعد أعدّ البلاط 🥲}}'**
+  String petBackDay(String i);
+
+  /// Pet, the customer back after 6–23 hours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{غبت {hours} ساعة… مش إنك وحشتني ولا حاجة 😌} other{رجعت! {hours} ساعة وأنا باصص على الباب 👀}}'**
+  String petBackHours(String i, int hours);
+
+  /// Pet, in the small hours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{الساعة {hour} بالليل! بتعمل إيه صاحي؟ 👀} other{إحنا الاتنين صاحيين الساعة {hour}… سرّنا 🤫}}'**
+  String petClockNight(String i, int hour);
+
+  /// Pet, early morning.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{صاحي بدري… ولا لسه مانمتش؟ 🌅} other{الفجر لسه طالع وإنت هنا؟ برافو 🌄}}'**
+  String petClockDawn(String i);
+
+  /// Pet beside the plans.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{أنا شايفك بتبص على الأسعار 👀 خد وقتك} i1{مش هضغط عليك… بس {name} هيفرح أوي 🥹} other{متقلقش، أنا معاك في الحالتين 💚}}'**
+  String petPaywall(String i, String name);
+
+  /// Pet's dream about yesterday's biggest expense (grown pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'حلمت بالليل إن «{what}» قعد يحكيلي عن امبارح… وفهمت إنك كنت محتاجه 🌙'**
+  String petDreamTalked(String what);
+
+  /// Pet's dream about yesterday's biggest expense (grown pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'حلمت إني ماشي في سوق كبير، وكل محل اسمه «{what}» 😄 امبارح كان يومه'**
+  String petDreamMarket(String what);
+
+  /// Pet's dream about yesterday's biggest expense (young pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'حلمت بالليل إن «{what}» بيجري ورايا 😱🌙'**
+  String petDreamChased(String what);
+
+  /// Pet's dream about yesterday's biggest expense (young pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'حلمت إني بلعب مع «{what}» 🤭 هو كان أكبر حاجة امبارح'**
+  String petDreamPlayed(String what);
+
+  /// Pet's weekly word: the goal met (grown pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} أيام من ٧ الأسبوع ده… ده بيت بيعرف طريقه 💚'**
+  String petWeekGoalGrown(int days);
+
+  /// Pet's weekly word: the goal met (young pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} أيام الأسبوع ده! أنا كبرت من الفرحة 🎉'**
+  String petWeekGoalYoung(int days);
+
+  /// Pet's weekly word: some days logged (grown pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلنا {days} أيام الأسبوع ده. خطوة خطوة بنوصل 🌱'**
+  String petWeekSomeGrown(int days);
+
+  /// Pet's weekly word: some days logged (young pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} أيام سجّلناهم سوا! نكمّل؟ 🥰'**
+  String petWeekSomeYoung(int days);
+
+  /// Pet's weekly word: nothing logged (grown pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوع جديد، صفحة بيضا. أنا هنا لما تحب 💚'**
+  String get petWeekNoneGrown;
+
+  /// Pet's weekly word: nothing logged (young pet).
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوع جديد! نلعب لعبة «سجّل مصروف»؟ 🌱'**
+  String get petWeekNoneYoung;
+
+  /// Pet, hungry.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{بطني بتصوصو… تأكّلني؟ 🍎} i1{جعان أوي 🥺 حاجة صغيرة بس} other{شامم ريحة أكل؟ لأ ده أنا اللي جعان 😅}}'**
+  String petMoodHungry(String i);
+
+  /// Pet, thirsty.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{عطشان… شوية مية؟ 💧} i1{ريقي ناشف 🥵 اسقيني} other{كوباية مية واحدة وأبقى زي الفل 💧}}'**
+  String petMoodThirsty(String i);
+
+  /// Pet, sleepy.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{نعسان… 😴 تصبح على خير} i1{هاااه 🥱 نكمّل بكرة؟} other{عيني بتقفل لوحدها… 💤}}'**
+  String petMoodSleepy(String i);
+
+  /// Pet, sad.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{وحشتني… ونسيت أكلي وميتي 🥺} other{{name} زعلان شوية… تعالى نقعد سوا 💔}}'**
+  String petMoodSad(String i, String name);
+
+  /// Pet, happy.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{أنا مبسوط معاك 💚} i1{شكراً إنك فاكرني 🥰} other{إنت أحلى صاحب 🤗}}'**
+  String petMoodHappy(String i);
+
+  /// Pet, idle, the day already logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{يومك عامل إيه؟ ✨} i1{أنا هنا لو احتجتني 💚} other{سجّلت النهارده — برافو عليك 👏}}'**
+  String petMoodLogged(String i);
+
+  /// Pet, idle, nothing logged today.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{سجّلت مصروفاتك النهارده؟ 📝} other{مصروف واحد بس وأفرح بيك 🌱}}'**
+  String petMoodNudge(String i);
+
+  /// Pet, after a meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{يمّ يمّ! 😋} i1{تسلم إيدك 🍎} other{أحلى أكلة 🤤}}'**
+  String petFed(String i);
+
+  /// Pet, offered food when full.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{شبعان خلاص 🤭} other{مش قادر آكل تاني 😅}}'**
+  String petFull(String i);
+
+  /// Pet, after a drink.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{آآه انتعشت! 💧} other{كده أحسن بكتير 😌}}'**
+  String petWatered(String i);
+
+  /// Pet, offered water when not thirsty.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{مش عايز مية دلوقتي 🙈} other{شربت كفاية 😄}}'**
+  String petWaterFull(String i);
+
+  /// Pet, after a pat.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{هيهي بتزغزغني 🤭} i1{كمان! كمان! 🥰} other{بحبك 💚}}'**
+  String petPetted(String i);
+
+  /// Price game: where a price came from.
+  ///
+  /// In ar, this message translates to:
+  /// **'{source, select, yours{انت دفعت} other{متوسط الناس في مدينتك}}'**
+  String priceSourceLabel(String source);
+
+  /// Pet wake-up moment, awake.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحشتني! 💚'**
+  String get petMomentMissedYou;
+
+  /// Pet wake-up moment, asleep.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} كان نايم مستنيك…'**
+  String petMomentWasSleeping(String name);
+
+  /// Pet wake-up moment with seeds.
+  ///
+  /// In ar, this message translates to:
+  /// **'جبت لك {seeds} 🌱 هدية رجوعك. يلا نكمّل سوا!'**
+  String petMomentGift(int seeds);
+
+  /// Pet wake-up moment.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا نكمّل سوا!'**
+  String get petMomentKeepGoing;
+
+  /// Pet wake-up moment after days away.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقالك {days} أيام مش هنا، فنام تحت البطانية. دوس عليه يصحى.'**
+  String petMomentAwayDays(int days);
+
+  /// Pet wake-up moment.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس عليه يصحى.'**
+  String get petMomentTapToWake;
+
+  /// Pet wake-up moment button.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا بينا'**
+  String get petMomentLetsGo;
+
+  /// Pet wake-up moment button.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحّيه 👋'**
+  String get petMomentWake;
+
+  /// Pet evolved to a new stage.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} كبر! بقى {stage} ✨'**
+  String petMomentGrew(String name, String stage);
+
+  /// Pet evolving.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} بيتحوّل…'**
+  String petMomentChanging(String name);
+
+  /// Pet reached a level.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفل {level}! 🎉'**
+  String petMomentLevel(int level);
+
+  /// Pet evolving.
+  ///
+  /// In ar, this message translates to:
+  /// **'استنى… فيه حاجة بتحصل!'**
+  String get petMomentSomething;
+
+  /// Pet reached a level.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حاجة سجّلتها كبّرت {name}.'**
+  String petMomentLevelBody(String name);
+
+  /// Pet celebration button.
+  ///
+  /// In ar, this message translates to:
+  /// **'يا سلام!'**
+  String get petMomentWow;
+
+  /// An expense dropped on the pet, pet full.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجّل ✓ بس أنا شبعان خلاص 🤭'**
+  String get petLoggedFull;
+
+  /// An expense dropped on the pet.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجّل ✓ يمّ يمّ! 😋'**
+  String get petLoggedYum;
+
+  /// Screen reader label of the pet.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — {mood}. اضغط علشان تأكّله وتسقيه'**
+  String petOrbSemantics(String name, String mood);
+
+  /// Pet care streak.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔥 {days} يوم رعاية'**
+  String petCareStreak(int days);
+
+  /// Screen reader label of the pet in the care sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'دلّع {name}'**
+  String petPamper(String name);
+
+  /// Pet care meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشبع'**
+  String get petMeterFull;
+
+  /// Pet care meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'الريّ'**
+  String get petMeterWater;
+
+  /// Pet care meter.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعادة'**
+  String get petMeterHappy;
+
+  /// Pet care sheet hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط على {name} علشان تدلّعه'**
+  String petTapToPamper(String name);
+
+  /// Pet care button.
+  ///
+  /// In ar, this message translates to:
+  /// **'🍎 أكّله'**
+  String get petFeedButton;
+
+  /// Pet care button.
+  ///
+  /// In ar, this message translates to:
+  /// **'💧 اسقيه'**
+  String get petWaterButton;
+
+  /// After the ball game.
+  ///
+  /// In ar, this message translates to:
+  /// **'لعبنا وجبت {score}! 🏆'**
+  String petPlayedScore(int score);
+
+  /// Pet care button.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚽ العب معاه'**
+  String get petPlayButton;
+
+  /// After the price-guess game.
+  ///
+  /// In ar, this message translates to:
+  /// **'خمّنت {right} صح! 💰'**
+  String petGuessedRight(int right);
+
+  /// Price-guess game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 خمّن السعر'**
+  String get petGuessTitle;
+
+  /// After the price-memory game.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصنا الذاكرة في {moves} محاولات! 🧠'**
+  String petMemoryDone(int moves);
+
+  /// Price-memory game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧠 ذاكرة الأسعار'**
+  String get petMemoryTitle;
+
+  /// Pet care button.
+  ///
+  /// In ar, this message translates to:
+  /// **'👗 استوديو الرفيق'**
+  String get petStudioButton;
+
+  /// Ball game verdict by score tier.
+  ///
+  /// In ar, this message translates to:
+  /// **'{tier, select, none{{name} مستني تلعب معاه تاني 🥺} some{حلو! {name} اتبسط 😊} lots{برافو! {name} طاير من الفرحة 🤩} other{أسطورة! {name} مش مصدّق 🏆}}'**
+  String petBallVerdict(String tier, String name);
+
+  /// Ball game title.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب مع {name}'**
+  String petBallTitle(String name);
+
+  /// Ball game score.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقط: {score}'**
+  String petBallScore(int score);
+
+  /// Ball game hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد الكورة قبل ما تهرب!'**
+  String get petBallHint;
+
+  /// Pet game: play again.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔁 تاني'**
+  String get petGameAgain;
+
+  /// Pet game: close.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت'**
+  String get petGameDone;
+
+  /// Price games empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أسعار كفاية'**
+  String get petGamesNoPrices;
+
+  /// Price games empty state body.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل كام مصروف أو بلّغ عن سعر في «أسعار الناس»، و{name} هيلعب معاك بيها.'**
+  String petGamesNoPricesBody(String name);
+
+  /// Price-guess verdict by tier.
+  ///
+  /// In ar, this message translates to:
+  /// **'{tier, select, all{كلهم صح! {name} مش مصدّق 🏆} half{برافو! عينك على الأسعار 🤩} some{مش وحش! {name} اتبسط 😊} other{الأسعار غلبتنا المرة دي 😅 تاني؟}}'**
+  String petGuessVerdict(String tier, String name);
+
+  /// Price-guess final score.
+  ///
+  /// In ar, this message translates to:
+  /// **'{right} من {total}'**
+  String petGuessScore(int right, int total);
+
+  /// Price-guess progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال {at} من {total} · صح {right}'**
+  String petGuessProgress(int at, int total, int right);
+
+  /// Price-guess question.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكام «{item}»؟'**
+  String petGuessQuestion(String item);
+
+  /// Price-guess: to the result.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة'**
+  String get petGuessResult;
+
+  /// Price-guess: next question.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بعده'**
+  String get petGuessNext;
+
+  /// Price-memory verdict by tier.
+  ///
+  /// In ar, this message translates to:
+  /// **'{tier, select, iron{ذاكرة حديد! {name} مبهور 🏆} good{برافو! خلصتها في {moves} محاولات 🤩} other{خلصناها في {moves} محاولات، {name} اتبسط 😊}}'**
+  String petMemoryVerdict(String tier, String name, int moves);
+
+  /// Price-memory hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصّل كل حاجة بسعرها · محاولات {moves}'**
+  String petMemoryHint(int moves);
+
+  /// A pet care meter's value.
+  ///
+  /// In ar, this message translates to:
+  /// **'{percent}٪'**
+  String petMeterPercent(int percent);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

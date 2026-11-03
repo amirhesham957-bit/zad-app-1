@@ -6533,4 +6533,584 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get adNoneNow => 'No ad right now. Try again in a little while.';
+
+  @override
+  String companionPersonaTrait(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'Kind, loves sweets and saving',
+      'fella': 'Gentle, calms the house',
+      'felfool': 'Lively, loves a challenge',
+      'mishmish': 'Fluffy and warm, loves staying in',
+      'toota': 'Cheeky and artistic, draws the plans',
+      'fanoos': 'Comes out in Ramadan',
+      'maamoul': 'Comes out at Eid',
+      'other': 'Calm, loves a tidy home',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionPersonaLine(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'Saved today? Then we\'ve earned a piece of basbousa.',
+      'fella':
+          'The house smells of jasmine when everything\'s logged in its place.',
+      'felfool': 'Come on, champ! This week\'s challenge: save 100 and win.',
+      'mishmish': 'Full fridge and a warm house? Then I\'m happy.',
+      'toota': 'Come, let\'s draw this month\'s plan together.',
+      'fanoos': 'Ramadan Kareem! I\'ve got your suhoor list ready.',
+      'maamoul': 'Eid Mubarak! Did the Eid money get logged?',
+      'other': 'Hi! I\'m Zado, here for anything about the house.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageLabel(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'Seed',
+      'sprout': 'Sprout',
+      'little': 'Little one',
+      'sage': 'Sage',
+      'other': 'Companion',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageDescription(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'Still in its shell, with big eyes.',
+      'sprout': 'Out of its shell, with two little hands.',
+      'little': 'It has feet now, and can wear everything.',
+      'sage': 'A gold halo, with stars circling it.',
+      'other': 'A soft light around it, and it dances when you\'re happy.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionOutfitLabel(String outfit) {
+    String _temp0 = intl.Intl.selectLogic(outfit, {
+      'sunglasses': 'Sunglasses',
+      'winterHat': 'Winter hat',
+      'chefHat': 'Chef\'s hat',
+      'shemagh': 'Shemagh',
+      'gradCap': 'Graduation cap',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionBackgroundLabel(String bg) {
+    String _temp0 = intl.Intl.selectLogic(bg, {
+      'night': 'Night',
+      'garden': 'The garden',
+      'kitchen': 'The kitchen',
+      'stars': 'Starry sky',
+      'shilla': 'The gang',
+      'other': 'Morning',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String offerOpensAtLevel(int level) {
+    return 'Opens at level $level';
+  }
+
+  @override
+  String offerOpensFriends(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Opens when $count friends sign up',
+      one: 'Opens when a friend signs up',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offerPlusGift => 'A gift with the Plus plan';
+
+  @override
+  String get offerRamadanOnly => 'Ramadan only';
+
+  @override
+  String get offerEidOnly => 'Eid only';
+
+  @override
+  String petPokedMany(int count) {
+    return 'Enough! $count times? I\'m telling Zad on you 😂';
+  }
+
+  @override
+  String petPokedLots(String i, int count) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Are you counting or what? That\'s $count times 😵‍💫',
+      'other': 'The screen\'s getting tired of us 😅 $count taps!',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPokedSome(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'That tickles! 🤭 Stop…',
+      'i1': 'I\'m not a button, you know 😤',
+      'other': '$name is seeing stars from all the tapping 😵',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackDay(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'A whole day away! I thought you forgot me 🥺',
+      'other': 'A full day? I sat here counting floor tiles 🥲',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackHours(String i, int hours) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Gone $hours hours… not that I missed you or anything 😌',
+      'other': 'You\'re back! $hours hours of me staring at the door 👀',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockNight(String i, int hour) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'It\'s $hour at night! What are you doing up? 👀',
+      'other': 'Both of us awake at $hour… our secret 🤫',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockDawn(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Up early… or still not asleep? 🌅',
+      'other': 'Dawn\'s barely here and so are you? Bravo 🌄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPaywall(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I see you looking at the prices 👀 Take your time',
+      'i1': 'No pressure… but $name would be so happy 🥹',
+      'other': 'Don\'t worry, I\'m with you either way 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petDreamTalked(String what) {
+    return 'Last night I dreamt “$what” told me all about yesterday… and I got that you needed it 🌙';
+  }
+
+  @override
+  String petDreamMarket(String what) {
+    return 'I dreamt I walked through a big market and every shop was called “$what” 😄 Yesterday was its day';
+  }
+
+  @override
+  String petDreamChased(String what) {
+    return 'Last night I dreamt “$what” was chasing me 😱🌙';
+  }
+
+  @override
+  String petDreamPlayed(String what) {
+    return 'I dreamt I was playing with “$what” 🤭 It was the biggest thing yesterday';
+  }
+
+  @override
+  String petWeekGoalGrown(int days) {
+    return '$days days out of 7 this week… this house knows its way 💚';
+  }
+
+  @override
+  String petWeekGoalYoung(int days) {
+    return '$days days this week! I grew from sheer joy 🎉';
+  }
+
+  @override
+  String petWeekSomeGrown(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'We logged $days days this week. Step by step we get there 🌱',
+      one: 'We logged 1 day this week. Step by step we get there 🌱',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String petWeekSomeYoung(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days logged together! Keep going? 🥰',
+      one: '1 day logged together! Keep going? 🥰',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get petWeekNoneGrown =>
+      'A new week, a blank page. I\'m here whenever you like 💚';
+
+  @override
+  String get petWeekNoneYoung =>
+      'A new week! Want to play “log an expense”? 🌱';
+
+  @override
+  String petMoodHungry(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'My tummy\'s rumbling… feed me? 🍎',
+      'i1': 'So hungry 🥺 just a little something',
+      'other': 'Smell food? Nope, that\'s just me being hungry 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodThirsty(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Thirsty… a little water? 💧',
+      'i1': 'My mouth\'s so dry 🥵 water me',
+      'other': 'One glass of water and I\'ll be perfect 💧',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSleepy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Sleepy… 😴 good night',
+      'i1': 'Yaaawn 🥱 continue tomorrow?',
+      'other': 'My eyes are closing on their own… 💤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSad(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I missed you… and you forgot my food and water 🥺',
+      'other': '$name is a bit sad… come sit with me 💔',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodHappy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I\'m happy with you 💚',
+      'i1': 'Thanks for remembering me 🥰',
+      'other': 'You\'re the best friend 🤗',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodLogged(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'How\'s your day going? ✨',
+      'i1': 'I\'m here if you need me 💚',
+      'other': 'You logged today — well done 👏',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodNudge(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Logged your expenses today? 📝',
+      'other': 'Just one expense and I\'ll be so proud 🌱',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFed(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Yum yum! 😋',
+      'i1': 'Thank you 🍎',
+      'other': 'Best meal ever 🤤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I\'m full 🤭',
+      'other': 'Can\'t eat another bite 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWatered(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Aah, refreshing! 💧',
+      'other': 'Much better now 😌',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWaterFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I don\'t want water right now 🙈',
+      'other': 'I\'ve had enough to drink 😄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPetted(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Hehe, that tickles 🤭',
+      'i1': 'More! More! 🥰',
+      'other': 'Love you 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String priceSourceLabel(String source) {
+    String _temp0 = intl.Intl.selectLogic(source, {
+      'yours': 'You paid',
+      'other': 'Average in your city',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get petMomentMissedYou => 'I missed you! 💚';
+
+  @override
+  String petMomentWasSleeping(String name) {
+    return '$name was asleep, waiting for you…';
+  }
+
+  @override
+  String petMomentGift(int seeds) {
+    return 'I brought you $seeds 🌱 as a welcome-back gift. Let\'s keep going together!';
+  }
+
+  @override
+  String get petMomentKeepGoing => 'Let\'s keep going together!';
+
+  @override
+  String petMomentAwayDays(int days) {
+    return 'You\'ve been away $days days, so it fell asleep under the blanket. Tap it to wake it up.';
+  }
+
+  @override
+  String get petMomentTapToWake => 'Tap it to wake it up.';
+
+  @override
+  String get petMomentLetsGo => 'Let\'s go';
+
+  @override
+  String get petMomentWake => 'Wake it 👋';
+
+  @override
+  String petMomentGrew(String name, String stage) {
+    return '$name grew! Now a $stage ✨';
+  }
+
+  @override
+  String petMomentChanging(String name) {
+    return '$name is changing…';
+  }
+
+  @override
+  String petMomentLevel(int level) {
+    return 'Level $level! 🎉';
+  }
+
+  @override
+  String get petMomentSomething => 'Wait… something\'s happening!';
+
+  @override
+  String petMomentLevelBody(String name) {
+    return 'Everything you logged helped $name grow.';
+  }
+
+  @override
+  String get petMomentWow => 'Wow!';
+
+  @override
+  String get petLoggedFull => 'Logged ✓ but I\'m full 🤭';
+
+  @override
+  String get petLoggedYum => 'Logged ✓ yum yum! 😋';
+
+  @override
+  String petOrbSemantics(String name, String mood) {
+    return '$name — $mood. Tap to feed and water it';
+  }
+
+  @override
+  String petCareStreak(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '🔥 $days days of care',
+      one: '🔥 1 day of care',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String petPamper(String name) {
+    return 'Pamper $name';
+  }
+
+  @override
+  String get petMeterFull => 'Fullness';
+
+  @override
+  String get petMeterWater => 'Water';
+
+  @override
+  String get petMeterHappy => 'Happiness';
+
+  @override
+  String petTapToPamper(String name) {
+    return 'Tap $name to pamper it';
+  }
+
+  @override
+  String get petFeedButton => '🍎 Feed';
+
+  @override
+  String get petWaterButton => '💧 Water';
+
+  @override
+  String petPlayedScore(int score) {
+    return 'We played and you scored $score! 🏆';
+  }
+
+  @override
+  String get petPlayButton => '⚽ Play with it';
+
+  @override
+  String petGuessedRight(int right) {
+    return 'You guessed $right right! 💰';
+  }
+
+  @override
+  String get petGuessTitle => '💰 Guess the price';
+
+  @override
+  String petMemoryDone(int moves) {
+    return 'We finished the memory game in $moves moves! 🧠';
+  }
+
+  @override
+  String get petMemoryTitle => '🧠 Price memory';
+
+  @override
+  String get petStudioButton => '👗 Companion studio';
+
+  @override
+  String petBallVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'none': '$name is waiting for you to play again 🥺',
+      'some': 'Nice! $name had fun 😊',
+      'lots': 'Bravo! $name is over the moon 🤩',
+      'other': 'Legend! $name can\'t believe it 🏆',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBallTitle(String name) {
+    return 'Play with $name';
+  }
+
+  @override
+  String petBallScore(int score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get petBallHint => 'Catch the ball before it gets away!';
+
+  @override
+  String get petGameAgain => '🔁 Again';
+
+  @override
+  String get petGameDone => 'Done';
+
+  @override
+  String get petGamesNoPrices => 'Not enough prices yet';
+
+  @override
+  String petGamesNoPricesBody(String name) {
+    return 'Log a few expenses or report a price in “Crowd prices”, and $name will play with them.';
+  }
+
+  @override
+  String petGuessVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'all': 'All right! $name can\'t believe it 🏆',
+      'half': 'Bravo! You\'ve got an eye for prices 🤩',
+      'some': 'Not bad! $name had fun 😊',
+      'other': 'The prices beat us this time 😅 Again?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petGuessScore(int right, int total) {
+    return '$right of $total';
+  }
+
+  @override
+  String petGuessProgress(int at, int total, int right) {
+    return 'Question $at of $total · $right right';
+  }
+
+  @override
+  String petGuessQuestion(String item) {
+    return 'How much is “$item”?';
+  }
+
+  @override
+  String get petGuessResult => 'Result';
+
+  @override
+  String get petGuessNext => 'Next';
+
+  @override
+  String petMemoryVerdict(String tier, String name, int moves) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'iron': 'Memory of steel! $name is amazed 🏆',
+      'good': 'Bravo! Done in $moves moves 🤩',
+      'other': 'We did it in $moves moves, $name had fun 😊',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMemoryHint(int moves) {
+    return 'Match each item with its price · $moves moves';
+  }
+
+  @override
+  String petMeterPercent(int percent) {
+    return '$percent%';
+  }
 }

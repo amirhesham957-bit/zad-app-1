@@ -14,6 +14,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 
 /// What came of a feed or a drink.
@@ -237,7 +238,7 @@ class PetCare {
   };
 }
 
-/// What the pet says. Display text, Arabic for the launch.
+/// What the pet says, in [ZadL10n]'s language (Arabic by default).
 abstract final class PetLines {
   /// A line for [mood]. [loggedToday] nudges toward the day's habit when
   /// nothing is wrong.
@@ -246,81 +247,45 @@ abstract final class PetLines {
     required String name,
     required bool loggedToday,
     math.Random? rng,
+    ZadL10n? l10n,
   }) {
     final r = rng ?? math.Random();
-    final lines = switch (mood) {
-      CompanionState.hungry => const <String>[
-        'بطني بتصوصو… تأكّلني؟ 🍎',
-        'جعان أوي 🥺 حاجة صغيرة بس',
-        'شامم ريحة أكل؟ لأ ده أنا اللي جعان 😅',
-      ],
-      CompanionState.thirsty => const <String>[
-        'عطشان… شوية مية؟ 💧',
-        'ريقي ناشف 🥵 اسقيني',
-        'كوباية مية واحدة وأبقى زي الفل 💧',
-      ],
-      CompanionState.sleepy => const <String>[
-        'نعسان… 😴 تصبح على خير',
-        'هاااه 🥱 نكمّل بكرة؟',
-        'عيني بتقفل لوحدها… 💤',
-      ],
-      CompanionState.sad => <String>[
-        'وحشتني… ونسيت أكلي وميتي 🥺',
-        '$name زعلان شوية… تعالى نقعد سوا 💔',
-      ],
-      CompanionState.happy || CompanionState.celebrating => const <String>[
-        'أنا مبسوط معاك 💚',
-        'شكراً إنك فاكرني 🥰',
-        'إنت أحلى صاحب 🤗',
-      ],
-      _ =>
-        loggedToday
-            ? const <String>[
-                'يومك عامل إيه؟ ✨',
-                'أنا هنا لو احتجتني 💚',
-                'سجّلت النهارده — برافو عليك 👏',
-              ]
-            : const <String>[
-                'سجّلت مصروفاتك النهارده؟ 📝',
-                'مصروف واحد بس وأفرح بيك 🌱',
-              ],
+    final l = l10n ?? zadL10nArabic;
+    String i(int n) => 'i${r.nextInt(n)}';
+    return switch (mood) {
+      CompanionState.hungry => l.petMoodHungry(i(3)),
+      CompanionState.thirsty => l.petMoodThirsty(i(3)),
+      CompanionState.sleepy => l.petMoodSleepy(i(3)),
+      CompanionState.sad => l.petMoodSad(i(2), name),
+      CompanionState.happy ||
+      CompanionState.celebrating => l.petMoodHappy(i(3)),
+      _ => loggedToday ? l.petMoodLogged(i(3)) : l.petMoodNudge(i(2)),
     };
-    return lines[r.nextInt(lines.length)];
   }
 
   /// After a meal.
-  static String fed(PetCareOutcome o, {math.Random? rng}) => _pick(switch (o) {
-    PetCareOutcome.done => const <String>[
-      'يمّ يمّ! 😋',
-      'تسلم إيدك 🍎',
-      'أحلى أكلة 🤤',
-    ],
-    PetCareOutcome.full => const <String>[
-      'شبعان خلاص 🤭',
-      'مش قادر آكل تاني 😅',
-    ],
-  }, rng);
+  static String fed(PetCareOutcome o, {math.Random? rng, ZadL10n? l10n}) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (o) {
+      PetCareOutcome.done => l.petFed(_i(3, rng)),
+      PetCareOutcome.full => l.petFull(_i(2, rng)),
+    };
+  }
 
   /// After a drink.
-  static String watered(PetCareOutcome o, {math.Random? rng}) =>
-      _pick(switch (o) {
-        PetCareOutcome.done => const <String>[
-          'آآه انتعشت! 💧',
-          'كده أحسن بكتير 😌',
-        ],
-        PetCareOutcome.full => const <String>[
-          'مش عايز مية دلوقتي 🙈',
-          'شربت كفاية 😄',
-        ],
-      }, rng);
+  static String watered(PetCareOutcome o, {math.Random? rng, ZadL10n? l10n}) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (o) {
+      PetCareOutcome.done => l.petWatered(_i(2, rng)),
+      PetCareOutcome.full => l.petWaterFull(_i(2, rng)),
+    };
+  }
 
   /// After a pat.
-  static String petted({math.Random? rng}) => _pick(const <String>[
-    'هيهي بتزغزغني 🤭',
-    'كمان! كمان! 🥰',
-    'بحبك 💚',
-  ], rng);
+  static String petted({math.Random? rng, ZadL10n? l10n}) =>
+      (l10n ?? zadL10nArabic).petPetted(_i(3, rng));
 
-  static String _pick(List<String> l, math.Random? rng) =>
-      l[(rng ?? math.Random()).nextInt(l.length)];
+  /// One of [n] lines, as the ARB's select key.
+  static String _i(int n, math.Random? rng) =>
+      'i${(rng ?? math.Random()).nextInt(n)}';
 }

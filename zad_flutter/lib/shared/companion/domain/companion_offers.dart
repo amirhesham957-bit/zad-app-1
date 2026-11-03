@@ -6,6 +6,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 
 /// The kinds of thing in the wardrobe.
 enum OfferKind {
@@ -79,21 +81,33 @@ class CompanionOffer {
   /// Its price on Google Play, in US dollars.
   final double? usdPrice;
 
-  /// What opens it, said plainly; null for a free item.
-  String? get howToOpen => switch (unlock) {
-    OfferUnlock.free => null,
-    OfferUnlock.level => 'يتفتح عند لفل ${unlockValue ?? 0}',
-    OfferUnlock.invite =>
-      (unlockValue ?? 1) == 1
-          ? 'يتفتح لما صاحب يسجّل'
-          : 'يتفتح لما $unlockValue صحاب يسجّلوا',
-    OfferUnlock.plus => 'هدية مع اشتراك بلس',
-    OfferUnlock.season => season == 'ramadan' ? 'في رمضان بس' : 'في العيد بس',
-    OfferUnlock.seeds => null,
+  /// Its name as the screen says it, in [l10n]'s language (Arabic by
+  /// default) — the catalog's, so [name] stays the server's spelling.
+  String label([ZadL10n? l10n]) => switch (kind) {
+    OfferKind.persona => CompanionPersona.byId(id).displayName(l10n),
+    OfferKind.outfit => CompanionOutfit.byId(id).label(l10n),
+    OfferKind.background => CompanionBackground.byId(id).label(l10n),
   };
+
+  /// What opens it, said plainly; null for a free item.
+  String? howToOpen([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (unlock) {
+      OfferUnlock.free => null,
+      OfferUnlock.level => l.offerOpensAtLevel(unlockValue ?? 0),
+      OfferUnlock.invite => l.offerOpensFriends(unlockValue ?? 1),
+      OfferUnlock.plus => l.offerPlusGift,
+      OfferUnlock.season =>
+        season == 'ramadan' ? l.offerRamadanOnly : l.offerEidOnly,
+      OfferUnlock.seeds => null,
+    };
+  }
 }
 
 /// Everything in the wardrobe, in the studio's order.
+// The server's own spellings (zad_companion_items.name); the screen shows
+// [CompanionOffer.label].
+// l10n: data-begin
 const List<CompanionOffer> companionOffers = <CompanionOffer>[
   CompanionOffer('zado', OfferKind.persona, 'زادو', OfferUnlock.free),
   CompanionOffer(
@@ -243,3 +257,4 @@ const List<CompanionOffer> companionOffers = <CompanionOffer>[
     usdPrice: 0.99,
   ),
 ];
+// l10n: data-end

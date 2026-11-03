@@ -6201,5 +6201,724 @@
   "adNoneNow": "مفيش إعلان دلوقتي. جرّب كمان شوية.",
   "@adNoneNow": {
     "description": "No rewarded ad available."
+  },
+  "companionPersonaTrait": "{id, select, basbous{حنين وبيحب الحلو والتوفير} fella{رقيقة وبتهدّي البيت} felfool{نشيط وبيحب التحديات} mishmish{منفوش ودافي، بيحب القعدة في البيت} toota{شقية وفنانة، بترسم الخطط} fanoos{بيظهر في رمضان} maamoul{بيظهر في العيد} other{هادي وبيحب البيت المترتب}}",
+  "@companionPersonaTrait": {
+    "description": "Companion: a character's temperament, by id.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "companionPersonaLine": "{id, select, basbous{وفّرنا النهارده؟ يبقى نستاهل حتة بسبوسة.} fella{البيت ريحته فل لما كل حاجة متسجلة في مكانها.} felfool{يلا يا بطل! تحدي الأسبوع: نوفّر ١٠٠ ونكسب.} mishmish{التلاجة مليانة والبيت دافي؟ يبقى أنا مبسوط.} toota{تعالى نرسم خطة الشهر سوا.} fanoos{رمضان كريم! جهزت لك قائمة السحور.} maamoul{عيدكم مبارك! العيدية اتسجلت؟} other{أهلاً! أنا زادو، معاك في أي حاجة تخص البيت.}}",
+  "@companionPersonaLine": {
+    "description": "Companion: what a character says when you meet it, by id.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "companionStageLabel": "{stage, select, seed{بذرة} sprout{بُرعم} little{صغيّر} sage{حكيم} other{رفيق}}",
+  "@companionStageLabel": {
+    "description": "Companion: a growth stage's name.",
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "companionStageDescription": "{stage, select, seed{لسه في قشرته، وعينيه كبيرة.} sprout{خرج من القشرة وطلع له إيدين.} little{طلع له رجلين، وبقى يلبس كل حاجة.} sage{هالة دهب ونجوم بتلف حواليه.} other{هالة نور حواليه، وبيرقص لما تفرح.}}",
+  "@companionStageDescription": {
+    "description": "Companion: what changed at a growth stage.",
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "companionOutfitLabel": "{outfit, select, sunglasses{نضارة شمس} winterHat{طاقية شتوي} chefHat{طاقية الشيف} shemagh{شماغ} gradCap{طاقية التخرج} other{}}",
+  "@companionOutfitLabel": {
+    "description": "Companion: an outfit's name, by enum name.",
+    "placeholders": {
+      "outfit": {
+        "type": "String"
+      }
+    }
+  },
+  "companionBackgroundLabel": "{bg, select, night{بالليل} garden{الجنينة} kitchen{المطبخ} stars{سما النجوم} shilla{الشلة} other{الصبح}}",
+  "@companionBackgroundLabel": {
+    "description": "Companion: a studio background's name, by id.",
+    "placeholders": {
+      "bg": {
+        "type": "String"
+      }
+    }
+  },
+  "offerOpensAtLevel": "يتفتح عند لفل {level}",
+  "@offerOpensAtLevel": {
+    "description": "Wardrobe: opens at a level.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "offerOpensFriends": "{count, plural, =1{يتفتح لما صاحب يسجّل} other{يتفتح لما {count} صحاب يسجّلوا}}",
+  "@offerOpensFriends": {
+    "description": "Wardrobe: opens with invited friends.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offerPlusGift": "هدية مع اشتراك بلس",
+  "@offerPlusGift": {
+    "description": "Wardrobe: comes with Plus."
+  },
+  "offerRamadanOnly": "في رمضان بس",
+  "@offerRamadanOnly": {
+    "description": "Wardrobe: seasonal."
+  },
+  "offerEidOnly": "في العيد بس",
+  "@offerEidOnly": {
+    "description": "Wardrobe: seasonal."
+  },
+  "petPokedMany": "خلاص! {count} مرة؟ هشتكيك لزاد 😂",
+  "@petPokedMany": {
+    "description": "Pet, poked 12+ times in a row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "petPokedLots": "{i, select, i0{إنت بتعدّ ولا إيه؟ دي {count} مرة 😵‍💫} other{الشاشة هتتعب مني ومنك 😅 {count} دوسة!}}",
+  "@petPokedLots": {
+    "description": "Pet, poked 8–11 times; i picks one of two lines.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "petPokedSome": "{i, select, i0{بتدغدغني! 🤭 كفاية…} i1{أنا مش زرار على فكرة 😤} other{{name} اتزغلل من كتر الدوس 😵}}",
+  "@petPokedSome": {
+    "description": "Pet, poked 5–7 times; i picks one of three lines.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petBackDay": "{i, select, i0{بقالك يوم كامل مش هنا! فكرتك نسيتني 🥺} other{يوم بحاله؟ كنت قاعد أعدّ البلاط 🥲}}",
+  "@petBackDay": {
+    "description": "Pet, the customer back after a day.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petBackHours": "{i, select, i0{غبت {hours} ساعة… مش إنك وحشتني ولا حاجة 😌} other{رجعت! {hours} ساعة وأنا باصص على الباب 👀}}",
+  "@petBackHours": {
+    "description": "Pet, the customer back after 6–23 hours.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "petClockNight": "{i, select, i0{الساعة {hour} بالليل! بتعمل إيه صاحي؟ 👀} other{إحنا الاتنين صاحيين الساعة {hour}… سرّنا 🤫}}",
+  "@petClockNight": {
+    "description": "Pet, in the small hours.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "petClockDawn": "{i, select, i0{صاحي بدري… ولا لسه مانمتش؟ 🌅} other{الفجر لسه طالع وإنت هنا؟ برافو 🌄}}",
+  "@petClockDawn": {
+    "description": "Pet, early morning.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petPaywall": "{i, select, i0{أنا شايفك بتبص على الأسعار 👀 خد وقتك} i1{مش هضغط عليك… بس {name} هيفرح أوي 🥹} other{متقلقش، أنا معاك في الحالتين 💚}}",
+  "@petPaywall": {
+    "description": "Pet beside the plans.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petDreamTalked": "حلمت بالليل إن «{what}» قعد يحكيلي عن امبارح… وفهمت إنك كنت محتاجه 🌙",
+  "@petDreamTalked": {
+    "description": "Pet's dream about yesterday's biggest expense (grown pet).",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "petDreamMarket": "حلمت إني ماشي في سوق كبير، وكل محل اسمه «{what}» 😄 امبارح كان يومه",
+  "@petDreamMarket": {
+    "description": "Pet's dream about yesterday's biggest expense (grown pet).",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "petDreamChased": "حلمت بالليل إن «{what}» بيجري ورايا 😱🌙",
+  "@petDreamChased": {
+    "description": "Pet's dream about yesterday's biggest expense (young pet).",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "petDreamPlayed": "حلمت إني بلعب مع «{what}» 🤭 هو كان أكبر حاجة امبارح",
+  "@petDreamPlayed": {
+    "description": "Pet's dream about yesterday's biggest expense (young pet).",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "petWeekGoalGrown": "{days} أيام من ٧ الأسبوع ده… ده بيت بيعرف طريقه 💚",
+  "@petWeekGoalGrown": {
+    "description": "Pet's weekly word: the goal met (grown pet).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petWeekGoalYoung": "{days} أيام الأسبوع ده! أنا كبرت من الفرحة 🎉",
+  "@petWeekGoalYoung": {
+    "description": "Pet's weekly word: the goal met (young pet).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petWeekSomeGrown": "سجّلنا {days} أيام الأسبوع ده. خطوة خطوة بنوصل 🌱",
+  "@petWeekSomeGrown": {
+    "description": "Pet's weekly word: some days logged (grown pet).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petWeekSomeYoung": "{days} أيام سجّلناهم سوا! نكمّل؟ 🥰",
+  "@petWeekSomeYoung": {
+    "description": "Pet's weekly word: some days logged (young pet).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petWeekNoneGrown": "أسبوع جديد، صفحة بيضا. أنا هنا لما تحب 💚",
+  "@petWeekNoneGrown": {
+    "description": "Pet's weekly word: nothing logged (grown pet)."
+  },
+  "petWeekNoneYoung": "أسبوع جديد! نلعب لعبة «سجّل مصروف»؟ 🌱",
+  "@petWeekNoneYoung": {
+    "description": "Pet's weekly word: nothing logged (young pet)."
+  },
+  "petMoodHungry": "{i, select, i0{بطني بتصوصو… تأكّلني؟ 🍎} i1{جعان أوي 🥺 حاجة صغيرة بس} other{شامم ريحة أكل؟ لأ ده أنا اللي جعان 😅}}",
+  "@petMoodHungry": {
+    "description": "Pet, hungry.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodThirsty": "{i, select, i0{عطشان… شوية مية؟ 💧} i1{ريقي ناشف 🥵 اسقيني} other{كوباية مية واحدة وأبقى زي الفل 💧}}",
+  "@petMoodThirsty": {
+    "description": "Pet, thirsty.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodSleepy": "{i, select, i0{نعسان… 😴 تصبح على خير} i1{هاااه 🥱 نكمّل بكرة؟} other{عيني بتقفل لوحدها… 💤}}",
+  "@petMoodSleepy": {
+    "description": "Pet, sleepy.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodSad": "{i, select, i0{وحشتني… ونسيت أكلي وميتي 🥺} other{{name} زعلان شوية… تعالى نقعد سوا 💔}}",
+  "@petMoodSad": {
+    "description": "Pet, sad.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodHappy": "{i, select, i0{أنا مبسوط معاك 💚} i1{شكراً إنك فاكرني 🥰} other{إنت أحلى صاحب 🤗}}",
+  "@petMoodHappy": {
+    "description": "Pet, happy.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodLogged": "{i, select, i0{يومك عامل إيه؟ ✨} i1{أنا هنا لو احتجتني 💚} other{سجّلت النهارده — برافو عليك 👏}}",
+  "@petMoodLogged": {
+    "description": "Pet, idle, the day already logged.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petMoodNudge": "{i, select, i0{سجّلت مصروفاتك النهارده؟ 📝} other{مصروف واحد بس وأفرح بيك 🌱}}",
+  "@petMoodNudge": {
+    "description": "Pet, idle, nothing logged today.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petFed": "{i, select, i0{يمّ يمّ! 😋} i1{تسلم إيدك 🍎} other{أحلى أكلة 🤤}}",
+  "@petFed": {
+    "description": "Pet, after a meal.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petFull": "{i, select, i0{شبعان خلاص 🤭} other{مش قادر آكل تاني 😅}}",
+  "@petFull": {
+    "description": "Pet, offered food when full.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petWatered": "{i, select, i0{آآه انتعشت! 💧} other{كده أحسن بكتير 😌}}",
+  "@petWatered": {
+    "description": "Pet, after a drink.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petWaterFull": "{i, select, i0{مش عايز مية دلوقتي 🙈} other{شربت كفاية 😄}}",
+  "@petWaterFull": {
+    "description": "Pet, offered water when not thirsty.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "petPetted": "{i, select, i0{هيهي بتزغزغني 🤭} i1{كمان! كمان! 🥰} other{بحبك 💚}}",
+  "@petPetted": {
+    "description": "Pet, after a pat.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "priceSourceLabel": "{source, select, yours{انت دفعت} other{متوسط الناس في مدينتك}}",
+  "@priceSourceLabel": {
+    "description": "Price game: where a price came from.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "petMomentMissedYou": "وحشتني! 💚",
+  "@petMomentMissedYou": {
+    "description": "Pet wake-up moment, awake."
+  },
+  "petMomentWasSleeping": "{name} كان نايم مستنيك…",
+  "@petMomentWasSleeping": {
+    "description": "Pet wake-up moment, asleep.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petMomentGift": "جبت لك {seeds} 🌱 هدية رجوعك. يلا نكمّل سوا!",
+  "@petMomentGift": {
+    "description": "Pet wake-up moment with seeds.",
+    "placeholders": {
+      "seeds": {
+        "type": "int"
+      }
+    }
+  },
+  "petMomentKeepGoing": "يلا نكمّل سوا!",
+  "@petMomentKeepGoing": {
+    "description": "Pet wake-up moment."
+  },
+  "petMomentAwayDays": "بقالك {days} أيام مش هنا، فنام تحت البطانية. دوس عليه يصحى.",
+  "@petMomentAwayDays": {
+    "description": "Pet wake-up moment after days away.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petMomentTapToWake": "دوس عليه يصحى.",
+  "@petMomentTapToWake": {
+    "description": "Pet wake-up moment."
+  },
+  "petMomentLetsGo": "يلا بينا",
+  "@petMomentLetsGo": {
+    "description": "Pet wake-up moment button."
+  },
+  "petMomentWake": "صحّيه 👋",
+  "@petMomentWake": {
+    "description": "Pet wake-up moment button."
+  },
+  "petMomentGrew": "{name} كبر! بقى {stage} ✨",
+  "@petMomentGrew": {
+    "description": "Pet evolved to a new stage.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "petMomentChanging": "{name} بيتحوّل…",
+  "@petMomentChanging": {
+    "description": "Pet evolving.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petMomentLevel": "لفل {level}! 🎉",
+  "@petMomentLevel": {
+    "description": "Pet reached a level.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "petMomentSomething": "استنى… فيه حاجة بتحصل!",
+  "@petMomentSomething": {
+    "description": "Pet evolving."
+  },
+  "petMomentLevelBody": "كل حاجة سجّلتها كبّرت {name}.",
+  "@petMomentLevelBody": {
+    "description": "Pet reached a level.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petMomentWow": "يا سلام!",
+  "@petMomentWow": {
+    "description": "Pet celebration button."
+  },
+  "petLoggedFull": "اتسجّل ✓ بس أنا شبعان خلاص 🤭",
+  "@petLoggedFull": {
+    "description": "An expense dropped on the pet, pet full."
+  },
+  "petLoggedYum": "اتسجّل ✓ يمّ يمّ! 😋",
+  "@petLoggedYum": {
+    "description": "An expense dropped on the pet."
+  },
+  "petOrbSemantics": "{name} — {mood}. اضغط علشان تأكّله وتسقيه",
+  "@petOrbSemantics": {
+    "description": "Screen reader label of the pet.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "petCareStreak": "🔥 {days} يوم رعاية",
+  "@petCareStreak": {
+    "description": "Pet care streak.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "petPamper": "دلّع {name}",
+  "@petPamper": {
+    "description": "Screen reader label of the pet in the care sheet.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petMeterFull": "الشبع",
+  "@petMeterFull": {
+    "description": "Pet care meter."
+  },
+  "petMeterWater": "الريّ",
+  "@petMeterWater": {
+    "description": "Pet care meter."
+  },
+  "petMeterHappy": "السعادة",
+  "@petMeterHappy": {
+    "description": "Pet care meter."
+  },
+  "petTapToPamper": "اضغط على {name} علشان تدلّعه",
+  "@petTapToPamper": {
+    "description": "Pet care sheet hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petFeedButton": "🍎 أكّله",
+  "@petFeedButton": {
+    "description": "Pet care button."
+  },
+  "petWaterButton": "💧 اسقيه",
+  "@petWaterButton": {
+    "description": "Pet care button."
+  },
+  "petPlayedScore": "لعبنا وجبت {score}! 🏆",
+  "@petPlayedScore": {
+    "description": "After the ball game.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "petPlayButton": "⚽ العب معاه",
+  "@petPlayButton": {
+    "description": "Pet care button."
+  },
+  "petGuessedRight": "خمّنت {right} صح! 💰",
+  "@petGuessedRight": {
+    "description": "After the price-guess game.",
+    "placeholders": {
+      "right": {
+        "type": "int"
+      }
+    }
+  },
+  "petGuessTitle": "💰 خمّن السعر",
+  "@petGuessTitle": {
+    "description": "Price-guess game name."
+  },
+  "petMemoryDone": "خلصنا الذاكرة في {moves} محاولات! 🧠",
+  "@petMemoryDone": {
+    "description": "After the price-memory game.",
+    "placeholders": {
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "petMemoryTitle": "🧠 ذاكرة الأسعار",
+  "@petMemoryTitle": {
+    "description": "Price-memory game name."
+  },
+  "petStudioButton": "👗 استوديو الرفيق",
+  "@petStudioButton": {
+    "description": "Pet care button."
+  },
+  "petBallVerdict": "{tier, select, none{{name} مستني تلعب معاه تاني 🥺} some{حلو! {name} اتبسط 😊} lots{برافو! {name} طاير من الفرحة 🤩} other{أسطورة! {name} مش مصدّق 🏆}}",
+  "@petBallVerdict": {
+    "description": "Ball game verdict by score tier.",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petBallTitle": "العب مع {name}",
+  "@petBallTitle": {
+    "description": "Ball game title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petBallScore": "النقط: {score}",
+  "@petBallScore": {
+    "description": "Ball game score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "petBallHint": "اصطاد الكورة قبل ما تهرب!",
+  "@petBallHint": {
+    "description": "Ball game hint."
+  },
+  "petGameAgain": "🔁 تاني",
+  "@petGameAgain": {
+    "description": "Pet game: play again."
+  },
+  "petGameDone": "خلصت",
+  "@petGameDone": {
+    "description": "Pet game: close."
+  },
+  "petGamesNoPrices": "لسه مفيش أسعار كفاية",
+  "@petGamesNoPrices": {
+    "description": "Price games empty state title."
+  },
+  "petGamesNoPricesBody": "سجّل كام مصروف أو بلّغ عن سعر في «أسعار الناس»، و{name} هيلعب معاك بيها.",
+  "@petGamesNoPricesBody": {
+    "description": "Price games empty state body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petGuessVerdict": "{tier, select, all{كلهم صح! {name} مش مصدّق 🏆} half{برافو! عينك على الأسعار 🤩} some{مش وحش! {name} اتبسط 😊} other{الأسعار غلبتنا المرة دي 😅 تاني؟}}",
+  "@petGuessVerdict": {
+    "description": "Price-guess verdict by tier.",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "petGuessScore": "{right} من {total}",
+  "@petGuessScore": {
+    "description": "Price-guess final score.",
+    "placeholders": {
+      "right": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "petGuessProgress": "سؤال {at} من {total} · صح {right}",
+  "@petGuessProgress": {
+    "description": "Price-guess progress.",
+    "placeholders": {
+      "at": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "right": {
+        "type": "int"
+      }
+    }
+  },
+  "petGuessQuestion": "بكام «{item}»؟",
+  "@petGuessQuestion": {
+    "description": "Price-guess question.",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "petGuessResult": "النتيجة",
+  "@petGuessResult": {
+    "description": "Price-guess: to the result."
+  },
+  "petGuessNext": "اللي بعده",
+  "@petGuessNext": {
+    "description": "Price-guess: next question."
+  },
+  "petMemoryVerdict": "{tier, select, iron{ذاكرة حديد! {name} مبهور 🏆} good{برافو! خلصتها في {moves} محاولات 🤩} other{خلصناها في {moves} محاولات، {name} اتبسط 😊}}",
+  "@petMemoryVerdict": {
+    "description": "Price-memory verdict by tier.",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "petMemoryHint": "وصّل كل حاجة بسعرها · محاولات {moves}",
+  "@petMemoryHint": {
+    "description": "Price-memory hint.",
+    "placeholders": {
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "petMeterPercent": "{percent}٪",
+  "@petMeterPercent": {
+    "description": "A pet care meter's value.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
   }
 }

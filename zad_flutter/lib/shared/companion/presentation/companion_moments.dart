@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
@@ -220,7 +221,8 @@ class _WelcomeDialogState extends ConsumerState<_WelcomeDialog> {
   @override
   Widget build(BuildContext context) {
     final s = widget.status;
-    final name = s.persona.name;
+    final l10n = context.l10n;
+    final name = s.persona.displayName(l10n);
     final days = (s.awayHours / 24).floor();
     return _MomentCard(
       confetti: _awake,
@@ -231,15 +233,15 @@ class _WelcomeDialogState extends ConsumerState<_WelcomeDialog> {
         size: 150,
         onTap: _awake ? null : _wake,
       ),
-      title: _awake ? 'وحشتني! 💚' : '$name كان نايم مستنيك…',
+      title: _awake ? l10n.petMomentMissedYou : l10n.petMomentWasSleeping(name),
       body: _awake
           ? (s.welcomeBack > 0
-                ? 'جبت لك ${s.welcomeBack} 🌱 هدية رجوعك. يلا نكمّل سوا!'
-                : 'يلا نكمّل سوا!')
+                ? l10n.petMomentGift(s.welcomeBack)
+                : l10n.petMomentKeepGoing)
           : days >= 2
-          ? 'بقالك $days أيام مش هنا، فنام تحت البطانية. دوس عليه يصحى.'
-          : 'دوس عليه يصحى.',
-      action: _awake ? 'يلا بينا' : 'صحّيه 👋',
+          ? l10n.petMomentAwayDays(days)
+          : l10n.petMomentTapToWake,
+      action: _awake ? l10n.petMomentLetsGo : l10n.petMomentWake,
       onAction: _awake ? _close : _wake,
     );
   }
@@ -312,19 +314,21 @@ class _CelebrationDialogState extends State<_CelebrationDialog> {
         size: 150,
       ),
     );
+    final l10n = context.l10n;
+    final name = s.persona.displayName(l10n);
     return _MomentCard(
       confetti: _grown,
       orb: orb,
       title: m.evolved
           ? (_grown
-                ? '${s.persona.name} كبر! بقى ${m.toStage.label} ✨'
-                : '${s.persona.name} بيتحوّل…')
-          : 'لفل ${m.toLevel}! 🎉',
+                ? l10n.petMomentGrew(name, m.toStage.label(l10n))
+                : l10n.petMomentChanging(name))
+          : l10n.petMomentLevel(m.toLevel),
       body: m.evolved
-          ? (_grown ? m.toStage.description : 'استنى… فيه حاجة بتحصل!')
-          : 'كل حاجة سجّلتها كبّرت ${s.persona.name}.',
+          ? (_grown ? m.toStage.description(l10n) : l10n.petMomentSomething)
+          : l10n.petMomentLevelBody(name),
       seeds: _grown && m.seeds > 0 ? m.seeds : null,
-      action: 'يا سلام!',
+      action: l10n.petMomentWow,
       onAction: _grown ? () => Navigator.of(context).pop() : null,
     );
   }

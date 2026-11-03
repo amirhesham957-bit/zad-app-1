@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -123,18 +124,18 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
     });
   }
 
-  String get _verdict => switch (_score) {
-    0 => '${widget.name} مستني تلعب معاه تاني 🥺',
-    < 8 => 'حلو! ${widget.name} اتبسط 😊',
-    < 15 => 'برافو! ${widget.name} طاير من الفرحة 🤩',
-    _ => 'أسطورة! ${widget.name} مش مصدّق 🏆',
-  };
+  String get _verdict => context.l10n.petBallVerdict(switch (_score) {
+    0 => 'none',
+    < 8 => 'some',
+    < 15 => 'lots',
+    _ => 'legend',
+  }, widget.name);
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: ZadColors.surface,
     appBar: AppBar(
-      title: Text('العب مع ${widget.name}'),
+      title: Text(context.l10n.petBallTitle(widget.name)),
       actions: <Widget>[
         Center(
           child: Padding(
@@ -153,7 +154,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
         children: <Widget>[
           const SizedBox(height: ZadSpacing.sm),
           Text(
-            'النقط: $_score',
+            context.l10n.petBallScore(_score),
             key: const ValueKey<String>('pet-game-score'),
             style: ZadType.headlineMedium.copyWith(
               fontWeight: FontWeight.w800,
@@ -162,7 +163,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            _over ? _verdict : 'اصطاد الكورة قبل ما تهرب!',
+            _over ? _verdict : context.l10n.petBallHint,
             textAlign: TextAlign.center,
             style: ZadType.bodyMedium.copyWith(color: ZadColors.textTertiary),
           ),
@@ -231,7 +232,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
                           builder: (_) => PetBallGame(name: widget.name),
                         ),
                       ),
-                      child: const Text('🔁 تاني'),
+                      child: Text(context.l10n.petGameAgain),
                     ),
                   ),
                   const SizedBox(width: ZadSpacing.md),
@@ -241,7 +242,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
                         minimumSize: const Size.fromHeight(52),
                       ),
                       onPressed: () => Navigator.of(context).pop(_score),
-                      child: const Text('خلصت'),
+                      child: Text(context.l10n.petGameDone),
                     ),
                   ),
                 ],

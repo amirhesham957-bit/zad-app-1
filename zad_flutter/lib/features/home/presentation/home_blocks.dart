@@ -287,7 +287,7 @@ class HomeCompanionHeader extends ConsumerWidget {
 
 String _companionLine(CompanionStatus c, ZadL10n l10n) {
   final streak = c.streak > 0 ? ' · 🔥 ${c.streak}' : '';
-  return '${l10n.shellCompanionTag(c.persona.name, c.level)}'
+  return '${l10n.shellCompanionTag(c.persona.displayName(l10n), c.level)}'
       '$streak · 🌱 ${c.seeds}';
 }
 

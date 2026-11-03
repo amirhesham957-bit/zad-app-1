@@ -10,6 +10,8 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// A pause this long ends a burst of taps.
 const Duration tapBurstWindow = Duration(seconds: 4);
 
@@ -20,67 +22,54 @@ const int tapBurstMin = 5;
 /// (`companion_moments.dart`) takes over from 48 hours.
 const Duration awayMin = Duration(hours: 6);
 
-/// What the pet says to each of these, or null when nothing applies.
+/// What the pet says to each of these, or null when nothing applies. In
+/// [ZadL10n]'s language, Arabic by default.
 abstract final class FourthWall {
   /// [count] taps in a row: from [tapBurstMin] on, it says so, with the
   /// number.
-  static String? poked(int count, {required String name, math.Random? rng}) {
+  static String? poked(
+    int count, {
+    required String name,
+    math.Random? rng,
+    ZadL10n? l10n,
+  }) {
     if (count < tapBurstMin) return null;
-    if (count >= 12) return 'خلاص! $count مرة؟ هشتكيك لزاد 😂';
-    final lines = count >= 8
-        ? <String>[
-            'إنت بتعدّ ولا إيه؟ دي $count مرة 😵‍💫',
-            'الشاشة هتتعب مني ومنك 😅 $count دوسة!',
-          ]
-        : <String>[
-            'بتدغدغني! 🤭 كفاية…',
-            'أنا مش زرار على فكرة 😤',
-            '$name اتزغلل من كتر الدوس 😵',
-          ];
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
+    final l = l10n ?? zadL10nArabic;
+    if (count >= 12) return l.petPokedMany(count);
+    final r = rng ?? math.Random();
+    return count >= 8
+        ? l.petPokedLots('i${r.nextInt(2)}', count)
+        : l.petPokedSome('i${r.nextInt(3)}', name);
   }
 
   /// Back after [away] (the phone's last sight of the pet): six hours to two
   /// days. Shorter is nothing; longer is the sleep moment's.
-  static String? back(Duration away, {math.Random? rng}) {
+  static String? back(Duration away, {math.Random? rng, ZadL10n? l10n}) {
     if (away < awayMin || away >= const Duration(hours: 48)) return null;
+    final l = l10n ?? zadL10nArabic;
+    final i = 'i${(rng ?? math.Random()).nextInt(2)}';
     final hours = away.inHours;
-    final lines = hours >= 24
-        ? <String>[
-            'بقالك يوم كامل مش هنا! فكرتك نسيتني 🥺',
-            'يوم بحاله؟ كنت قاعد أعدّ البلاط 🥲',
-          ]
-        : <String>[
-            'غبت $hours ساعة… مش إنك وحشتني ولا حاجة 😌',
-            'رجعت! $hours ساعة وأنا باصص على الباب 👀',
-          ];
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
+    return hours >= 24 ? l.petBackDay(i) : l.petBackHours(i, hours);
   }
 
   /// The account's [hour] (0–23): the small hours and the early morning.
-  static String? clock(int hour, {math.Random? rng}) {
-    final lines = switch (hour) {
-      >= 0 && < 4 => <String>[
-        'الساعة $hour بالليل! بتعمل إيه صاحي؟ 👀',
-        'إحنا الاتنين صاحيين الساعة $hour… سرّنا 🤫',
-      ],
-      >= 4 && < 7 => <String>[
-        'صاحي بدري… ولا لسه مانمتش؟ 🌅',
-        'الفجر لسه طالع وإنت هنا؟ برافو 🌄',
-      ],
+  static String? clock(int hour, {math.Random? rng, ZadL10n? l10n}) {
+    final l = l10n ?? zadL10nArabic;
+    final i = 'i${(rng ?? math.Random()).nextInt(2)}';
+    return switch (hour) {
+      >= 0 && < 4 => l.petClockNight(i, hour),
+      >= 4 && < 7 => l.petClockDawn(i),
       _ => null,
     };
-    if (lines == null) return null;
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
   }
 
   /// On the subscription screen.
-  static String paywall({required String name, math.Random? rng}) {
-    final lines = <String>[
-      'أنا شايفك بتبص على الأسعار 👀 خد وقتك',
-      'مش هضغط عليك… بس $name هيفرح أوي 🥹',
-      'متقلقش، أنا معاك في الحالتين 💚',
-    ];
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
-  }
+  static String paywall({
+    required String name,
+    math.Random? rng,
+    ZadL10n? l10n,
+  }) => (l10n ?? zadL10nArabic).petPaywall(
+    'i${(rng ?? math.Random()).nextInt(3)}',
+    name,
+  );
 }

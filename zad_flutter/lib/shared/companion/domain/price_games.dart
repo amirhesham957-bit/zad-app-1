@@ -10,21 +10,21 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/prices/domain/prices.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Where a price came from.
 enum PriceSource {
   /// The average people in the city reported.
-  crowd('متوسط الناس في مدينتك'),
+  crowd,
 
   /// What the household paid.
-  yours('انت دفعت');
+  yours;
 
-  new(this.label);
-
-  /// Said under the answer.
-  final String label;
+  /// Said under the answer, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).priceSourceLabel(name);
 }
 
 /// One real price.

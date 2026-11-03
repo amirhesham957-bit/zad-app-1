@@ -7,6 +7,7 @@ library;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// What sits on a character's head (or at its side) and makes it itself.
 enum PersonaCrest {
@@ -40,25 +41,21 @@ enum CompanionPersona {
   /// The one everyone starts with.
   zado(
     'zado',
-    'زادو',
+    'زادو', // l10n: data
     'Zado',
     Color(0xFF37C98E),
     Color(0xFF0B6B4E),
     PersonaCrest.sprout,
-    'هادي وبيحب البيت المترتب',
-    'أهلاً! أنا زادو، معاك في أي حاجة تخص البيت.',
   ),
 
   /// Round and kind.
   basbous(
     'basbous',
-    'بسبوس',
+    'بسبوس', // l10n: data
     'Basbous',
     Color(0xFFF2B23E),
     Color(0xFFB7791F),
     PersonaCrest.syrup,
-    'حنين وبيحب الحلو والتوفير',
-    'وفّرنا النهارده؟ يبقى نستاهل حتة بسبوسة.',
     width: 1.1,
     height: 0.92,
   ),
@@ -66,25 +63,21 @@ enum CompanionPersona {
   /// Gentle, smells of jasmine.
   fella(
     'fella',
-    'فلة',
+    'فلة', // l10n: data
     'Fella',
     Color(0xFFFFC2D6),
     Color(0xFFD9467E),
     PersonaCrest.jasmine,
-    'رقيقة وبتهدّي البيت',
-    'البيت ريحته فل لما كل حاجة متسجلة في مكانها.',
   ),
 
   /// Lively, loves a challenge.
   felfool(
     'felfool',
-    'فلفول',
+    'فلفول', // l10n: data
     'Felfool',
     Color(0xFFEE4634),
     Color(0xFF9F1D12),
     PersonaCrest.pepper,
-    'نشيط وبيحب التحديات',
-    'يلا يا بطل! تحدي الأسبوع: نوفّر ١٠٠ ونكسب.',
     width: 0.92,
     height: 1.1,
   ),
@@ -92,37 +85,31 @@ enum CompanionPersona {
   /// Fluffy and warm.
   mishmish(
     'mishmish',
-    'مشمش',
+    'مشمش', // l10n: data
     'Mishmish',
     Color(0xFFFF9B52),
     Color(0xFFC2541B),
     PersonaCrest.leaf,
-    'منفوش ودافي، بيحب القعدة في البيت',
-    'التلاجة مليانة والبيت دافي؟ يبقى أنا مبسوط.',
   ),
 
   /// Cheeky, draws the plans.
   toota(
     'toota',
-    'توتة',
+    'توتة', // l10n: data
     'Toota',
     Color(0xFF9A6BFF),
     Color(0xFF4C2A9E),
     PersonaCrest.beret,
-    'شقية وفنانة، بترسم الخطط',
-    'تعالى نرسم خطة الشهر سوا.',
   ),
 
   /// Ramadan's.
   fanoos(
     'fanoos',
-    'فانوس',
+    'فانوس', // l10n: data
     'Fanoos',
     Color(0xFF6E56E8),
     Color(0xFF2B1C7A),
     PersonaCrest.crescent,
-    'بيظهر في رمضان',
-    'رمضان كريم! جهزت لك قائمة السحور.',
     season: 'ramadan',
     glows: true,
   ),
@@ -130,13 +117,11 @@ enum CompanionPersona {
   /// The Eid's.
   maamoul(
     'maamoul',
-    'معمول',
+    'معمول', // l10n: data
     'Maamoul',
     Color(0xFFE9C28E),
     Color(0xFFA77B3F),
     PersonaCrest.sugar,
-    'بيظهر في العيد',
-    'عيدكم مبارك! العيدية اتسجلت؟',
     season: 'eid',
     width: 1.12,
     height: 0.88,
@@ -148,9 +133,7 @@ enum CompanionPersona {
     this.latin,
     this.body,
     this.deep,
-    this.crest,
-    this.trait,
-    this.line, {
+    this.crest, {
     this.width = 1,
     this.height = 1,
     this.season,
@@ -175,11 +158,18 @@ enum CompanionPersona {
   /// What makes it itself.
   final PersonaCrest crest;
 
-  /// Its temperament, in a few words.
-  final String trait;
+  /// Its temperament, in a few words, in [l10n]'s language (Arabic by
+  /// default).
+  String trait([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionPersonaTrait(id);
 
   /// What it says when you meet it.
-  final String line;
+  String line([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionPersonaLine(id);
+
+  /// Its name as the screen says it: [name] in Arabic, [latin] otherwise.
+  String displayName([ZadL10n? l10n]) =>
+      l10n == null || l10n.localeName == 'ar' ? name : latin;
 
   /// Its build: wider than round above 1.
   final double width;
@@ -201,30 +191,32 @@ enum CompanionPersona {
 /// Five stages: a level and an age, both (the server decides).
 enum CompanionStage {
   /// Still in its shell.
-  seed('بذرة', 0.80, 'لسه في قشرته، وعينيه كبيرة.'),
+  seed(0.80),
 
   /// Out, with two little hands.
-  sprout('بُرعم', 0.87, 'خرج من القشرة وطلع له إيدين.'),
+  sprout(0.87),
 
   /// Feet, and the full outfit.
-  little('صغيّر', 0.93, 'طلع له رجلين، وبقى يلبس كل حاجة.'),
+  little(0.93),
 
   /// A soft light around it.
-  companion('رفيق', 1, 'هالة نور حواليه، وبيرقص لما تفرح.'),
+  companion(1),
 
   /// A gold halo and stars.
-  sage('حكيم', 1.05, 'هالة دهب ونجوم بتلف حواليه.');
+  sage(1.05);
 
-  new(this.label, this.scale, this.description);
+  new(this.scale);
 
-  /// Its Arabic name.
-  final String label;
+  /// Its name, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionStageLabel(name);
 
   /// Its size against a grown companion.
   final double scale;
 
   /// What changed, said plainly.
-  final String description;
+  String description([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionStageDescription(name);
 
   /// The stage numbered [i] (0–4).
   static CompanionStage at(int i) => values[i.clamp(0, values.length - 1)];
@@ -233,30 +225,31 @@ enum CompanionStage {
 /// Something worn.
 enum CompanionOutfit {
   /// Nothing.
-  none('none', ''),
+  none('none'),
 
   /// Dark lenses.
-  sunglasses('sunglasses', 'نضارة شمس'),
+  sunglasses('sunglasses'),
 
   /// A knitted cap with a pompom.
-  winterHat('winter_hat', 'طاقية شتوي'),
+  winterHat('winter_hat'),
 
   /// A chef's toque.
-  chefHat('chef_hat', 'طاقية الشيف'),
+  chefHat('chef_hat'),
 
   /// A red-and-white shemagh with its agal.
-  shemagh('shemagh', 'شماغ'),
+  shemagh('shemagh'),
 
   /// A mortarboard with its tassel.
-  gradCap('grad_cap', 'طاقية التخرج');
+  gradCap('grad_cap');
 
-  new(this.id, this.label);
+  new(this.id);
 
   /// The server's id.
   final String id;
 
-  /// Its name.
-  final String label;
+  /// Its name, in [l10n]'s language (Arabic by default); empty for [none].
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionOutfitLabel(name);
 
   /// Covers the top of the head, so the character's crest is hidden.
   bool get coversHead => this != none && this != sunglasses;
@@ -269,30 +262,31 @@ enum CompanionOutfit {
 /// Behind the companion in its studio.
 enum CompanionBackground {
   /// Morning light.
-  morning('morning', 'الصبح', <Color>[Color(0xFFEAF4FF), Color(0xFFFFF2E4)]),
+  morning('morning', <Color>[Color(0xFFEAF4FF), Color(0xFFFFF2E4)]),
 
   /// A warm evening.
-  night('night', 'بالليل', <Color>[Color(0xFF191530), Color(0xFF3A2A22)]),
+  night('night', <Color>[Color(0xFF191530), Color(0xFF3A2A22)]),
 
   /// Green and fresh.
-  garden('garden', 'الجنينة', <Color>[Color(0xFFDDF6E4), Color(0xFFB7E4C7)]),
+  garden('garden', <Color>[Color(0xFFDDF6E4), Color(0xFFB7E4C7)]),
 
   /// The kitchen's warm tiles.
-  kitchen('kitchen', 'المطبخ', <Color>[Color(0xFFFFF3D6), Color(0xFFF6D7B0)]),
+  kitchen('kitchen', <Color>[Color(0xFFFFF3D6), Color(0xFFF6D7B0)]),
 
   /// A sky of stars.
-  stars('stars', 'سما النجوم', <Color>[Color(0xFF0B1033), Color(0xFF2B1F5C)]),
+  stars('stars', <Color>[Color(0xFF0B1033), Color(0xFF2B1F5C)]),
 
   /// Friends together.
-  shilla('shilla', 'الشلة', <Color>[Color(0xFFFFE1EC), Color(0xFFE3E0FF)]);
+  shilla('shilla', <Color>[Color(0xFFFFE1EC), Color(0xFFE3E0FF)]);
 
-  new(this.id, this.label, this.colors);
+  new(this.id, this.colors);
 
   /// The server's id.
   final String id;
 
-  /// Its name.
-  final String label;
+  /// Its name, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).companionBackgroundLabel(id);
 
   /// Top to bottom.
   final List<Color> colors;

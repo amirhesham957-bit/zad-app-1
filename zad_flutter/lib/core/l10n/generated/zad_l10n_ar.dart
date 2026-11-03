@@ -6411,4 +6411,563 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get adNoneNow => 'مفيش إعلان دلوقتي. جرّب كمان شوية.';
+
+  @override
+  String companionPersonaTrait(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'حنين وبيحب الحلو والتوفير',
+      'fella': 'رقيقة وبتهدّي البيت',
+      'felfool': 'نشيط وبيحب التحديات',
+      'mishmish': 'منفوش ودافي، بيحب القعدة في البيت',
+      'toota': 'شقية وفنانة، بترسم الخطط',
+      'fanoos': 'بيظهر في رمضان',
+      'maamoul': 'بيظهر في العيد',
+      'other': 'هادي وبيحب البيت المترتب',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionPersonaLine(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'وفّرنا النهارده؟ يبقى نستاهل حتة بسبوسة.',
+      'fella': 'البيت ريحته فل لما كل حاجة متسجلة في مكانها.',
+      'felfool': 'يلا يا بطل! تحدي الأسبوع: نوفّر ١٠٠ ونكسب.',
+      'mishmish': 'التلاجة مليانة والبيت دافي؟ يبقى أنا مبسوط.',
+      'toota': 'تعالى نرسم خطة الشهر سوا.',
+      'fanoos': 'رمضان كريم! جهزت لك قائمة السحور.',
+      'maamoul': 'عيدكم مبارك! العيدية اتسجلت؟',
+      'other': 'أهلاً! أنا زادو، معاك في أي حاجة تخص البيت.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageLabel(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'بذرة',
+      'sprout': 'بُرعم',
+      'little': 'صغيّر',
+      'sage': 'حكيم',
+      'other': 'رفيق',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageDescription(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'لسه في قشرته، وعينيه كبيرة.',
+      'sprout': 'خرج من القشرة وطلع له إيدين.',
+      'little': 'طلع له رجلين، وبقى يلبس كل حاجة.',
+      'sage': 'هالة دهب ونجوم بتلف حواليه.',
+      'other': 'هالة نور حواليه، وبيرقص لما تفرح.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionOutfitLabel(String outfit) {
+    String _temp0 = intl.Intl.selectLogic(outfit, {
+      'sunglasses': 'نضارة شمس',
+      'winterHat': 'طاقية شتوي',
+      'chefHat': 'طاقية الشيف',
+      'shemagh': 'شماغ',
+      'gradCap': 'طاقية التخرج',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionBackgroundLabel(String bg) {
+    String _temp0 = intl.Intl.selectLogic(bg, {
+      'night': 'بالليل',
+      'garden': 'الجنينة',
+      'kitchen': 'المطبخ',
+      'stars': 'سما النجوم',
+      'shilla': 'الشلة',
+      'other': 'الصبح',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String offerOpensAtLevel(int level) {
+    return 'يتفتح عند لفل $level';
+  }
+
+  @override
+  String offerOpensFriends(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يتفتح لما $count صحاب يسجّلوا',
+      one: 'يتفتح لما صاحب يسجّل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offerPlusGift => 'هدية مع اشتراك بلس';
+
+  @override
+  String get offerRamadanOnly => 'في رمضان بس';
+
+  @override
+  String get offerEidOnly => 'في العيد بس';
+
+  @override
+  String petPokedMany(int count) {
+    return 'خلاص! $count مرة؟ هشتكيك لزاد 😂';
+  }
+
+  @override
+  String petPokedLots(String i, int count) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'إنت بتعدّ ولا إيه؟ دي $count مرة 😵‍💫',
+      'other': 'الشاشة هتتعب مني ومنك 😅 $count دوسة!',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPokedSome(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'بتدغدغني! 🤭 كفاية…',
+      'i1': 'أنا مش زرار على فكرة 😤',
+      'other': '$name اتزغلل من كتر الدوس 😵',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackDay(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'بقالك يوم كامل مش هنا! فكرتك نسيتني 🥺',
+      'other': 'يوم بحاله؟ كنت قاعد أعدّ البلاط 🥲',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackHours(String i, int hours) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'غبت $hours ساعة… مش إنك وحشتني ولا حاجة 😌',
+      'other': 'رجعت! $hours ساعة وأنا باصص على الباب 👀',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockNight(String i, int hour) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'الساعة $hour بالليل! بتعمل إيه صاحي؟ 👀',
+      'other': 'إحنا الاتنين صاحيين الساعة $hour… سرّنا 🤫',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockDawn(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'صاحي بدري… ولا لسه مانمتش؟ 🌅',
+      'other': 'الفجر لسه طالع وإنت هنا؟ برافو 🌄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPaywall(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'أنا شايفك بتبص على الأسعار 👀 خد وقتك',
+      'i1': 'مش هضغط عليك… بس $name هيفرح أوي 🥹',
+      'other': 'متقلقش، أنا معاك في الحالتين 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petDreamTalked(String what) {
+    return 'حلمت بالليل إن «$what» قعد يحكيلي عن امبارح… وفهمت إنك كنت محتاجه 🌙';
+  }
+
+  @override
+  String petDreamMarket(String what) {
+    return 'حلمت إني ماشي في سوق كبير، وكل محل اسمه «$what» 😄 امبارح كان يومه';
+  }
+
+  @override
+  String petDreamChased(String what) {
+    return 'حلمت بالليل إن «$what» بيجري ورايا 😱🌙';
+  }
+
+  @override
+  String petDreamPlayed(String what) {
+    return 'حلمت إني بلعب مع «$what» 🤭 هو كان أكبر حاجة امبارح';
+  }
+
+  @override
+  String petWeekGoalGrown(int days) {
+    return '$days أيام من ٧ الأسبوع ده… ده بيت بيعرف طريقه 💚';
+  }
+
+  @override
+  String petWeekGoalYoung(int days) {
+    return '$days أيام الأسبوع ده! أنا كبرت من الفرحة 🎉';
+  }
+
+  @override
+  String petWeekSomeGrown(int days) {
+    return 'سجّلنا $days أيام الأسبوع ده. خطوة خطوة بنوصل 🌱';
+  }
+
+  @override
+  String petWeekSomeYoung(int days) {
+    return '$days أيام سجّلناهم سوا! نكمّل؟ 🥰';
+  }
+
+  @override
+  String get petWeekNoneGrown => 'أسبوع جديد، صفحة بيضا. أنا هنا لما تحب 💚';
+
+  @override
+  String get petWeekNoneYoung => 'أسبوع جديد! نلعب لعبة «سجّل مصروف»؟ 🌱';
+
+  @override
+  String petMoodHungry(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'بطني بتصوصو… تأكّلني؟ 🍎',
+      'i1': 'جعان أوي 🥺 حاجة صغيرة بس',
+      'other': 'شامم ريحة أكل؟ لأ ده أنا اللي جعان 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodThirsty(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'عطشان… شوية مية؟ 💧',
+      'i1': 'ريقي ناشف 🥵 اسقيني',
+      'other': 'كوباية مية واحدة وأبقى زي الفل 💧',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSleepy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'نعسان… 😴 تصبح على خير',
+      'i1': 'هاااه 🥱 نكمّل بكرة؟',
+      'other': 'عيني بتقفل لوحدها… 💤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSad(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'وحشتني… ونسيت أكلي وميتي 🥺',
+      'other': '$name زعلان شوية… تعالى نقعد سوا 💔',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodHappy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'أنا مبسوط معاك 💚',
+      'i1': 'شكراً إنك فاكرني 🥰',
+      'other': 'إنت أحلى صاحب 🤗',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodLogged(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'يومك عامل إيه؟ ✨',
+      'i1': 'أنا هنا لو احتجتني 💚',
+      'other': 'سجّلت النهارده — برافو عليك 👏',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodNudge(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'سجّلت مصروفاتك النهارده؟ 📝',
+      'other': 'مصروف واحد بس وأفرح بيك 🌱',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFed(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'يمّ يمّ! 😋',
+      'i1': 'تسلم إيدك 🍎',
+      'other': 'أحلى أكلة 🤤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'شبعان خلاص 🤭',
+      'other': 'مش قادر آكل تاني 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWatered(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'آآه انتعشت! 💧',
+      'other': 'كده أحسن بكتير 😌',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWaterFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'مش عايز مية دلوقتي 🙈',
+      'other': 'شربت كفاية 😄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPetted(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'هيهي بتزغزغني 🤭',
+      'i1': 'كمان! كمان! 🥰',
+      'other': 'بحبك 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String priceSourceLabel(String source) {
+    String _temp0 = intl.Intl.selectLogic(source, {
+      'yours': 'انت دفعت',
+      'other': 'متوسط الناس في مدينتك',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get petMomentMissedYou => 'وحشتني! 💚';
+
+  @override
+  String petMomentWasSleeping(String name) {
+    return '$name كان نايم مستنيك…';
+  }
+
+  @override
+  String petMomentGift(int seeds) {
+    return 'جبت لك $seeds 🌱 هدية رجوعك. يلا نكمّل سوا!';
+  }
+
+  @override
+  String get petMomentKeepGoing => 'يلا نكمّل سوا!';
+
+  @override
+  String petMomentAwayDays(int days) {
+    return 'بقالك $days أيام مش هنا، فنام تحت البطانية. دوس عليه يصحى.';
+  }
+
+  @override
+  String get petMomentTapToWake => 'دوس عليه يصحى.';
+
+  @override
+  String get petMomentLetsGo => 'يلا بينا';
+
+  @override
+  String get petMomentWake => 'صحّيه 👋';
+
+  @override
+  String petMomentGrew(String name, String stage) {
+    return '$name كبر! بقى $stage ✨';
+  }
+
+  @override
+  String petMomentChanging(String name) {
+    return '$name بيتحوّل…';
+  }
+
+  @override
+  String petMomentLevel(int level) {
+    return 'لفل $level! 🎉';
+  }
+
+  @override
+  String get petMomentSomething => 'استنى… فيه حاجة بتحصل!';
+
+  @override
+  String petMomentLevelBody(String name) {
+    return 'كل حاجة سجّلتها كبّرت $name.';
+  }
+
+  @override
+  String get petMomentWow => 'يا سلام!';
+
+  @override
+  String get petLoggedFull => 'اتسجّل ✓ بس أنا شبعان خلاص 🤭';
+
+  @override
+  String get petLoggedYum => 'اتسجّل ✓ يمّ يمّ! 😋';
+
+  @override
+  String petOrbSemantics(String name, String mood) {
+    return '$name — $mood. اضغط علشان تأكّله وتسقيه';
+  }
+
+  @override
+  String petCareStreak(int days) {
+    return '🔥 $days يوم رعاية';
+  }
+
+  @override
+  String petPamper(String name) {
+    return 'دلّع $name';
+  }
+
+  @override
+  String get petMeterFull => 'الشبع';
+
+  @override
+  String get petMeterWater => 'الريّ';
+
+  @override
+  String get petMeterHappy => 'السعادة';
+
+  @override
+  String petTapToPamper(String name) {
+    return 'اضغط على $name علشان تدلّعه';
+  }
+
+  @override
+  String get petFeedButton => '🍎 أكّله';
+
+  @override
+  String get petWaterButton => '💧 اسقيه';
+
+  @override
+  String petPlayedScore(int score) {
+    return 'لعبنا وجبت $score! 🏆';
+  }
+
+  @override
+  String get petPlayButton => '⚽ العب معاه';
+
+  @override
+  String petGuessedRight(int right) {
+    return 'خمّنت $right صح! 💰';
+  }
+
+  @override
+  String get petGuessTitle => '💰 خمّن السعر';
+
+  @override
+  String petMemoryDone(int moves) {
+    return 'خلصنا الذاكرة في $moves محاولات! 🧠';
+  }
+
+  @override
+  String get petMemoryTitle => '🧠 ذاكرة الأسعار';
+
+  @override
+  String get petStudioButton => '👗 استوديو الرفيق';
+
+  @override
+  String petBallVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'none': '$name مستني تلعب معاه تاني 🥺',
+      'some': 'حلو! $name اتبسط 😊',
+      'lots': 'برافو! $name طاير من الفرحة 🤩',
+      'other': 'أسطورة! $name مش مصدّق 🏆',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBallTitle(String name) {
+    return 'العب مع $name';
+  }
+
+  @override
+  String petBallScore(int score) {
+    return 'النقط: $score';
+  }
+
+  @override
+  String get petBallHint => 'اصطاد الكورة قبل ما تهرب!';
+
+  @override
+  String get petGameAgain => '🔁 تاني';
+
+  @override
+  String get petGameDone => 'خلصت';
+
+  @override
+  String get petGamesNoPrices => 'لسه مفيش أسعار كفاية';
+
+  @override
+  String petGamesNoPricesBody(String name) {
+    return 'سجّل كام مصروف أو بلّغ عن سعر في «أسعار الناس»، و$name هيلعب معاك بيها.';
+  }
+
+  @override
+  String petGuessVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'all': 'كلهم صح! $name مش مصدّق 🏆',
+      'half': 'برافو! عينك على الأسعار 🤩',
+      'some': 'مش وحش! $name اتبسط 😊',
+      'other': 'الأسعار غلبتنا المرة دي 😅 تاني؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petGuessScore(int right, int total) {
+    return '$right من $total';
+  }
+
+  @override
+  String petGuessProgress(int at, int total, int right) {
+    return 'سؤال $at من $total · صح $right';
+  }
+
+  @override
+  String petGuessQuestion(String item) {
+    return 'بكام «$item»؟';
+  }
+
+  @override
+  String get petGuessResult => 'النتيجة';
+
+  @override
+  String get petGuessNext => 'اللي بعده';
+
+  @override
+  String petMemoryVerdict(String tier, String name, int moves) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'iron': 'ذاكرة حديد! $name مبهور 🏆',
+      'good': 'برافو! خلصتها في $moves محاولات 🤩',
+      'other': 'خلصناها في $moves محاولات، $name اتبسط 😊',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMemoryHint(int moves) {
+    return 'وصّل كل حاجة بسعرها · محاولات $moves';
+  }
+
+  @override
+  String petMeterPercent(int percent) {
+    return '$percent٪';
+  }
 }
