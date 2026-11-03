@@ -1,4 +1,4 @@
-/// The form behind "إنت مين عند زاد": the fields the customer can correct.
+/// The form behind l.memoryProfileTitle: the fields the customer can correct.
 ///
 /// Returns the edited profile, normalised to what the table accepts, or null
 /// when dismissed. Nothing is autofocused — a sheet with a blinking cursor
@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 
 /// Opens the form over [current].
@@ -111,6 +112,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final l = context.l10n;
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: ConstrainedBox(
@@ -127,53 +129,51 @@ class _ProfileSheetState extends State<ProfileSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('إنت مين عند زاد', style: ZadType.titleMedium),
+              Text(l.memoryProfileTitle, style: ZadType.titleMedium),
               const SizedBox(height: ZadSpacing.lg),
               TextField(
                 controller: _name,
                 maxLength: 40,
-                decoration: const InputDecoration(labelText: 'بتحب أناديك'),
+                decoration: InputDecoration(labelText: l.memoryLineName),
               ),
               _Chips(
-                title: 'النوع',
+                title: l.memoryLineGender,
                 options: ProfileOptions.genders,
                 selected: _gender,
-                label: ProfileLabels.gender,
+                label: (v) => ProfileLabels.gender(v, context.l10n),
                 onChanged: (v) => setState(() => _gender = v),
               ),
               _Chips(
-                title: 'دورك في البيت',
+                title: l.memoryLineRole,
                 options: ProfileOptions.roles,
                 selected: _role,
-                label: ProfileLabels.role,
+                label: (v) => ProfileLabels.role(v, context.l10n),
                 onChanged: (v) => setState(() => _role = v),
               ),
               _Chips(
-                title: 'العمر',
+                title: l.memoryLineAge,
                 options: ProfileOptions.ageRanges,
                 selected: _age,
-                label: ProfileLabels.age,
+                label: (v) => ProfileLabels.age(v, context.l10n),
                 onChanged: (v) => setState(() => _age = v),
               ),
               const SizedBox(height: ZadSpacing.md),
               TextField(
                 controller: _occupation,
                 maxLength: 80,
-                decoration: const InputDecoration(labelText: 'شغلك'),
+                decoration: InputDecoration(labelText: l.memoryLineJob),
               ),
               TextField(
                 controller: _payDay,
                 keyboardType: TextInputType.number,
                 maxLength: 2,
-                decoration: const InputDecoration(
-                  labelText: 'بتقبض يوم كام في الشهر؟',
-                ),
+                decoration: InputDecoration(labelText: l.profileSheetPayDay),
               ),
               _Chips(
-                title: 'بتقبض كل قد إيه',
+                title: l.profileSheetPayFrequency,
                 options: ProfileOptions.payFrequencies,
                 selected: _frequency,
-                label: ProfileLabels.frequency,
+                label: (v) => ProfileLabels.frequency(v, context.l10n),
                 onChanged: (v) => setState(() => _frequency = v),
               ),
               const SizedBox(height: ZadSpacing.md),
@@ -184,8 +184,8 @@ class _ProfileSheetState extends State<ProfileSheet> {
                       controller: _household,
                       keyboardType: TextInputType.number,
                       maxLength: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'عدد اللي في البيت',
+                      decoration: InputDecoration(
+                        labelText: l.profileSheetHouseholdSize,
                       ),
                     ),
                   ),
@@ -195,8 +195,8 @@ class _ProfileSheetState extends State<ProfileSheet> {
                       controller: _kids,
                       keyboardType: TextInputType.number,
                       maxLength: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'عدد العيال',
+                      decoration: InputDecoration(
+                        labelText: l.profileSheetKids,
                       ),
                     ),
                   ),
@@ -205,22 +205,22 @@ class _ProfileSheetState extends State<ProfileSheet> {
               TextField(
                 controller: _city,
                 maxLength: 60,
-                decoration: const InputDecoration(labelText: 'المدينة'),
+                decoration: InputDecoration(labelText: l.memoryLineCity),
               ),
               _Chips(
-                title: 'اللهجة',
+                title: l.memoryLineDialect,
                 options: ProfileOptions.dialects,
                 selected: _dialect,
-                label: ProfileLabels.dialect,
+                label: (v) => ProfileLabels.dialect(v, context.l10n),
                 onChanged: (v) => setState(() => _dialect = v),
               ),
               // Always one of the two: a voice that was never chosen is a
               // girl's, and tapping the chosen one keeps it.
               _Chips(
-                title: 'صوت زاد',
+                title: l.memoryLineVoice,
                 options: ProfileOptions.zadVoices,
                 selected: _voice ?? 'female',
-                label: ProfileLabels.zadVoice,
+                label: (v) => ProfileLabels.zadVoice(v, context.l10n),
                 onChanged: (v) => setState(() => _voice = v ?? _voice),
               ),
               const SizedBox(height: ZadSpacing.xl),
@@ -229,7 +229,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
-                child: const Text('احفظ'),
+                child: Text(l.profileSheetSave),
               ),
             ],
           ),

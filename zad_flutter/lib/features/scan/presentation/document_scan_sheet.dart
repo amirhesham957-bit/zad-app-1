@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/scan/application/document_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
@@ -39,18 +40,18 @@ Future<void> showDocumentScanSheet(BuildContext context, DocumentKind kind) {
   );
 }
 
-/// What a schedule line says, in words.
-String scheduleText(PrescriptionLine m) {
-  if (!m.legible) return 'مش واضحة في الصورة — صحّحها أو شيلها';
-  if (m.asNeeded) return 'عند اللزوم — من غير مواعيد';
+/// What a schedule line says, in words — in [l10n]'s language, Arabic by
+/// default.
+String scheduleText(PrescriptionLine m, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  if (!m.legible) return l.scanLineIllegible;
+  if (m.asNeeded) return l.scanLineAsNeeded;
   final parts = <String>[
-    if (m.timesPerDay case final n?) '$n مرات في اليوم',
-    if (m.suggestedTimes case final t?) t.replaceAll(',', '، '),
-    if (m.durationDays case final d?) 'لمدة $d يوم',
+    if (m.timesPerDay case final n?) l.scanLineTimesPerDay(n),
+    if (m.suggestedTimes case final t?) t.replaceAll(',', l.scanTimesSeparator),
+    if (m.durationDays case final d?) l.scanLineForDays(d),
   ];
-  return parts.isEmpty
-      ? 'المرات مش مكتوبة — حددها في الصيدلية'
-      : parts.join(' · ');
+  return parts.isEmpty ? l.scanLineNoTimes : parts.join(' · ');
 }
 
 /// The sheet.
@@ -66,7 +67,7 @@ class DocumentScanSheet extends ConsumerWidget {
     final view = ref.watch(documentScanControllerProvider);
     final isPrescription = kind == DocumentKind.prescription;
     // The balance or the pace, said as the server said it (meter.ts).
-    final refusal = serverRefusal(view.error);
+    final refusal = serverRefusal(view.error, context.l10n);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
@@ -77,9 +78,9 @@ class DocumentScanSheet extends ConsumerWidget {
           ScanStage.unreadable => _Retry(
             kind: kind,
             title: isPrescription
-                ? 'مقدرتش أقرا الروشتة'
-                : 'مقدرتش أقرا الجدول',
-            message: 'صوّر الورقة كلها قريب، من غير لمعة وفي إضاءة كويسة.',
+                ? context.l10n.scanPrescriptionUnreadable
+                : context.l10n.scanTimetableUnreadable,
+            message: context.l10n.scanPaperHint,
             tone: ZadEmptyTone.waiting,
           ),
           ScanStage.failed => Column(
@@ -87,9 +88,9 @@ class DocumentScanSheet extends ConsumerWidget {
             children: <Widget>[
               _Retry(
                 kind: kind,
-                title: refusal?.title ?? 'مقدرتش أكمّل',
+                title: refusal?.title ?? context.l10n.scanCouldNotFinish,
                 message:
-                    refusal?.message ?? 'النت أو السيرفر — جرب تاني كمان شوية.',
+                    refusal?.message ?? context.l10n.scanCouldNotFinishHint,
                 tone: refusal != null
                     ? ZadEmptyTone.waiting
                     : ZadEmptyTone.problem,
@@ -125,23 +126,23 @@ class _Pick extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          isPrescription ? 'صوّر الروشتة' : 'صوّر جدول الحصص',
+          isPrescription
+              ? context.l10n.scanPrescriptionTitle
+              : context.l10n.scanTimetableTitle,
           style: ZadType.titleMedium,
         ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
           isPrescription
-              ? 'هنقل الأدوية والجرعات زي ما هي مكتوبة، وتراجعها قبل ما '
-                    'تدخل الصيدلية بمواعيدها.'
-              : 'هقرا الأيام والحصص، وتراجعها قبل ما أحفظها — وبالليل '
-                    'أفكّرك بشنطة بكرة.',
+              ? context.l10n.scanPrescriptionIntro
+              : context.l10n.scanTimetableIntro,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.xl),
         FilledButton.icon(
           onPressed: () => controller.scan(kind, ReceiptImageSource.camera),
           icon: const Icon(ZadIcons.scan),
-          label: const Text('افتح الكاميرا'),
+          label: Text(context.l10n.scanOpenCamera),
         ),
         const SizedBox(height: ZadSpacing.md),
         OutlinedButton.icon(
@@ -149,7 +150,7 @@ class _Pick extends ConsumerWidget {
           icon: Icon(
             isPrescription ? ZadIcons.prescription : ZadIcons.timetable,
           ),
-          label: const Text('اختار من الصور'),
+          label: Text(context.l10n.scanPickFromGallery),
         ),
       ],
     );
@@ -167,7 +168,7 @@ class _Working extends StatelessWidget {
       const CircularProgressIndicator(),
       const SizedBox(height: ZadSpacing.lg),
       Text(
-        'بقرا الورقة…',
+        context.l10n.scanReadingPaper,
         style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
       ),
       const SizedBox(height: ZadSpacing.xl),
@@ -213,12 +214,12 @@ class _Retry extends ConsumerWidget {
         const SizedBox(height: ZadSpacing.xl),
         FilledButton(
           onPressed: () => controller.scan(kind, ReceiptImageSource.camera),
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: controller.reset,
-          child: const Text('اختار صورة تانية'),
+          child: Text(context.l10n.scanPickAnother),
         ),
       ],
     );
@@ -272,7 +273,10 @@ class _PrescriptionReview extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('لقيت ${p.medicines.length} دوا', style: ZadType.titleMedium),
+        Text(
+          context.l10n.scanFoundMedicines(p.medicines.length),
+          style: ZadType.titleMedium,
+        ),
         const SizedBox(height: ZadSpacing.sm),
         Container(
           padding: const EdgeInsets.all(ZadSpacing.md),
@@ -281,17 +285,16 @@ class _PrescriptionReview extends ConsumerWidget {
             borderRadius: BorderRadius.circular(ZadRadii.chip),
           ),
           child: Text(
-            'زاد بينقل اللي مكتوب في الروشتة بس — راجع الجرعات والمواعيد '
-            'مع الصيدلي أو الدكتور.',
+            context.l10n.scanPrescriptionCaution,
             style: ZadType.bodySmall.copyWith(color: ZadColors.ink),
           ),
         ),
         const SizedBox(height: ZadSpacing.md),
         _PersonField(
-          label: 'الروشتة لمين؟',
+          label: context.l10n.scanPrescriptionFor,
           hint: p.patientName != null
-              ? 'مكتوب عليها: ${p.patientName} — فاضي = ليك'
-              : 'فاضي = ليك',
+              ? context.l10n.scanPrescriptionForNamed(p.patientName!)
+              : context.l10n.scanPrescriptionForYou,
           initial: view.person,
         ),
         for (final (i, m) in p.medicines.indexed)
@@ -310,7 +313,7 @@ class _PrescriptionReview extends ConsumerWidget {
             subtitle: Text(
               <String>[
                 if (m.instructions case final t? when t.isNotEmpty) '«$t»',
-                scheduleText(m),
+                scheduleText(m, context.l10n),
               ].join('\n'),
               style: ZadType.labelSmall.copyWith(
                 color: m.legible
@@ -324,12 +327,14 @@ class _PrescriptionReview extends ConsumerWidget {
           onPressed: busy || count == 0
               ? null
               : () => _save(context, controller.savePrescription),
-          child: busy ? const _Spinner() : Text('ضيف للصيدلية ($count)'),
+          child: busy
+              ? const _Spinner()
+              : Text(context.l10n.scanAddToPharmacyCount(count)),
         ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: busy ? null : controller.reset,
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
       ],
     );
@@ -338,13 +343,14 @@ class _PrescriptionReview extends ConsumerWidget {
   Future<void> _save(BuildContext context, Future<int> Function() save) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
     final navigator = Navigator.of(context);
+    final l10n = context.l10n;
     final added = await save();
     messenger?.showSnackBar(
       SnackBar(
         content: Text(
           added > 0
-              ? 'اتضاف $added دوا للصيدلية بمواعيدهم.'
-              : 'مااتضافش حاجة — راجع الصيدلية وضيف بإيدك.',
+              ? l10n.scanMedicinesAdded(added)
+              : l10n.scanMedicinesNoneAdded,
         ),
       ),
     );
@@ -368,11 +374,16 @@ class _TimetableReview extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('جدول ${t.days.length} أيام', style: ZadType.titleMedium),
+        Text(
+          context.l10n.scanTimetableDays(t.days.length),
+          style: ZadType.titleMedium,
+        ),
         const SizedBox(height: ZadSpacing.md),
         _PersonField(
-          label: 'الجدول ده لمين؟',
-          hint: t.className != null ? 'فصل ${t.className}' : 'اسم الطفل',
+          label: context.l10n.scanTimetableFor,
+          hint: t.className != null
+              ? context.l10n.scanTimetableClass(t.className!)
+              : context.l10n.scanChildName,
           initial: view.person,
         ),
         for (final d in t.days)
@@ -384,13 +395,18 @@ class _TimetableReview extends ConsumerWidget {
                 SizedBox(
                   width: 72,
                   child: Text(
-                    kWeekdayNames[d.weekday],
+                    // 0 = Sunday here; weekdayName counts from Monday.
+                    context.l10n.weekdayName(
+                      d.weekday == 0 ? 'd7' : 'd${d.weekday}',
+                    ),
                     style: ZadType.labelLarge,
                   ),
                 ),
                 Expanded(
                   child: Text(
-                    d.periods.map((p) => p.subject).join('، '),
+                    d.periods
+                        .map((p) => p.subject)
+                        .join(context.l10n.scanTimesSeparator),
                     style: ZadType.bodySmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -406,12 +422,16 @@ class _TimetableReview extends ConsumerWidget {
               : () => _save(context, controller.saveTimetable),
           child: busy
               ? const _Spinner()
-              : Text(person.isEmpty ? 'اكتب اسمه الأول' : 'احفظ جدول $person'),
+              : Text(
+                  person.isEmpty
+                      ? context.l10n.scanNameFirst
+                      : context.l10n.scanSaveTimetable(person),
+                ),
         ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: busy ? null : controller.reset,
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
       ],
     );
@@ -420,13 +440,12 @@ class _TimetableReview extends ConsumerWidget {
   Future<void> _save(BuildContext context, Future<int> Function() save) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
     final navigator = Navigator.of(context);
+    final l10n = context.l10n;
     final kept = await save();
     messenger?.showSnackBar(
       SnackBar(
         content: Text(
-          kept > 0
-              ? 'اتحفظ الجدول ($kept حصة) — هفكّرك بشنطة بكرة بالليل.'
-              : 'مااتحفظش الجدول — جرب تاني.',
+          kept > 0 ? l10n.scanTimetableSaved(kept) : l10n.scanTimetableNotSaved,
         ),
       ),
     );

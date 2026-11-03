@@ -12,6 +12,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -50,6 +52,7 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
     familyNeeds: needs,
     rates: rates ?? const {},
     max: 1 << 20,
+    l10n: ref.watch(zadL10nProvider),
   );
 });
 
@@ -70,7 +73,9 @@ final familyNeedsProvider = Provider<List<FamilyNeed>>((ref) {
 
 /// «ماما قال في شات العيلة…» → «ماما», as zad-brain wrote it.
 String? _whoOf(String body) {
-  final at = body.indexOf(' قال في شات العيلة');
+  final at = body.indexOf(
+    ' قال في شات العيلة',
+  ); // l10n: data — the server's text.
   return at > 0 ? body.substring(0, at).trim() : null;
 }
 
@@ -201,7 +206,7 @@ class _Line extends StatelessWidget {
                     minimumSize: const Size(0, 44),
                     shape: const StadiumBorder(),
                   ),
-                  child: const Text('خدتها'),
+                  child: Text(context.l10n.briefTookIt),
                 ),
               if (onAdd != null)
                 FilledButton(
@@ -210,7 +215,7 @@ class _Line extends StatelessWidget {
                     minimumSize: const Size(0, 44),
                     shape: const StadiumBorder(),
                   ),
-                  child: const Text('ضيفهم'),
+                  child: Text(context.l10n.briefAddThem),
                 ),
             ],
           ),

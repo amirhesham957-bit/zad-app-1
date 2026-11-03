@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -26,12 +27,12 @@ import 'package:zad/shared/nearby/data/location_source.dart';
 import 'package:zad/shared/places/application/child_zones.dart';
 import 'package:zad/shared/places/data/background_location.dart';
 
-String _aliasOf(WidgetRef ref, String userId) {
+String _aliasOf(BuildContext context, WidgetRef ref, String userId) {
   final members = ref.read(familyControllerProvider).family?.members;
   for (final m in members ?? const <FamilyMember>[]) {
     if (m.userId == userId && m.alias.isNotEmpty) return m.alias;
   }
-  return 'حد من العيلة';
+  return context.l10n.familySomeoneInFamily;
 }
 
 void _say(BuildContext context, String text) =>
@@ -42,13 +43,8 @@ void _say(BuildContext context, String text) =>
 /// Play's prominent disclosure for background location, said plainly: what
 /// is shared, that it works with the app closed, what is not shared, the
 /// notice that stays up, and how to stop.
-String locationDisclosure(String asker) =>
-    'زاد هيعرف لما تدخل أو تخرج من الأماكن اللي $asker يحددها (زي المدرسة) '
-    '— حتى والتطبيق مقفول — ويقوله لو خرجت في المواعيد اللي حددها. '
-    'مش هيتبعت مكانك طول الوقت ولا خط سيرك. '
-    'هيفضل فيه إشعار ظاهر طول ما المشاركة شغالة، '
-    'وتقدر توقفها من «عيلتي» في أي وقت. '
-    'في الخطوة الجاية اختار «السماح طول الوقت».';
+String locationDisclosure(String asker, {ZadL10n? l10n}) =>
+    (l10n ?? zadL10nArabic).familyLocationDisclosure(asker);
 
 /// While-in-use, then "all the time": what zones need to fire with the app
 /// closed. True when both are granted.
@@ -94,7 +90,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
       ref.invalidate(familySharesProvider);
       if (context.mounted) _say(context, done);
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
+      if (context.mounted) _say(context, context.l10n.familyServerUnreachable);
     }
   }
 
@@ -108,16 +104,21 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
     final agreed = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: const Text('مشاركة دخولك وخروجك'),
-        content: Text(locationDisclosure(_aliasOf(ref, share.viewerId))),
+        title: Text(context.l10n.familyShareComingGoingTitle),
+        content: Text(
+          locationDisclosure(
+            _aliasOf(context, ref, share.viewerId),
+            l10n: context.l10n,
+          ),
+        ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(false),
-            child: const Text('مش دلوقتي'),
+            child: Text(context.l10n.familyNotNow),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialog).pop(true),
-            child: const Text('موافق، كمّل'),
+            child: Text(context.l10n.familyAgreeContinue),
           ),
         ],
       ),
@@ -127,7 +128,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
       await ref.read(familySharesRemoteProvider).answer(share.id, accept: true);
       ref.invalidate(familySharesProvider);
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
+      if (context.mounted) _say(context, context.l10n.familyServerUnreachable);
       return;
     }
     final always = await _askLocationAlways(ref);
@@ -136,11 +137,10 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
     _say(
       context,
       !always
-          ? 'وافقت، بس محتاج «السماح طول الوقت» للموقع '
-                'عشان يشتغل والتطبيق مقفول.'
+          ? context.l10n.familyAcceptedNeedAlways
           : synced
-          ? 'وافقت — هيشتغل على الأماكن اللي هيحددها.'
-          : 'وافقت. هكمّل لما النت يرجع.',
+          ? context.l10n.familyAcceptedZones
+          : context.l10n.familyAcceptedOffline,
     );
   }
 
@@ -169,10 +169,13 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (asked.isNotEmpty) ...<Widget>[
-              const Text('طلبات متابعة', style: ZadType.titleSmall),
+              Text(
+                context.l10n.familyFollowRequests,
+                style: ZadType.titleSmall,
+              ),
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                'محدش بيشوف حاجة غير بموافقتك، وتقدر تلغي في أي وقت.',
+                context.l10n.familyFollowRequestsHint,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.sm),
@@ -183,7 +186,11 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          shareAskText(s.scope, _aliasOf(ref, s.viewerId)),
+                          shareAskText(
+                            s.scope,
+                            _aliasOf(context, ref, s.viewerId),
+                            context.l10n,
+                          ),
                           style: ZadType.bodyMedium,
                         ),
                       ),
@@ -193,10 +200,10 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                             context,
                             ref,
                             (r) => r.answer(s.id, accept: false),
-                            'تمام، مش هيشوفها.',
+                            context.l10n.familyDeclinedFollow,
                           ),
                         ),
-                        child: const Text('لأ'),
+                        child: Text(context.l10n.familyNo),
                       ),
                       FilledButton(
                         onPressed: () => unawaited(
@@ -206,13 +213,15 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                                   context,
                                   ref,
                                   (r) => r.answer(s.id, accept: true),
-                                  'وافقت — يقدر يتابع ${s.scope.label}.',
+                                  context.l10n.familyAcceptedScope(
+                                    s.scope.label(context.l10n),
+                                  ),
                                 ),
                         ),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 44),
                         ),
-                        child: const Text('وافق'),
+                        child: Text(context.l10n.familyAgree),
                       ),
                     ],
                   ),
@@ -220,14 +229,15 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
             ],
             if (following.isNotEmpty) ...<Widget>[
               if (asked.isNotEmpty) const SizedBox(height: ZadSpacing.md),
-              const Text('مين بيتابعك', style: ZadType.titleSmall),
+              Text(context.l10n.familyWhoFollowsYou, style: ZadType.titleSmall),
               const SizedBox(height: ZadSpacing.sm),
               for (final s in following)
                 Row(
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        '${_aliasOf(ref, s.viewerId)} — ${s.scope.label}',
+                        '${_aliasOf(context, ref, s.viewerId)} — '
+                        '${s.scope.label(context.l10n)}',
                         style: ZadType.bodyMedium,
                       ),
                     ),
@@ -237,14 +247,14 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                           context,
                           ref,
                           (r) => r.revoke(s.id),
-                          'اتلغت المتابعة.',
+                          context.l10n.familyFollowStopped,
                         );
                         // The zones and the notice come off this phone too.
                         if (s.scope == FamilyShareScope.location) {
                           await _syncZones(ref);
                         }
                       }()),
-                      child: const Text('إلغاء'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ],
                 ),
@@ -286,10 +296,12 @@ class MemberFollowSection extends ConsumerWidget {
       await ref.read(familySharesRemoteProvider).request(ownerId, chosen);
       ref.invalidate(followedMemberProvider(ownerId));
       if (context.mounted) {
-        _say(context, 'اتبعت الطلب — هيظهرلك لما يوافق.');
+        _say(context, context.l10n.familyFollowRequestSent);
       }
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أبعت الطلب. جرّب تاني.');
+      if (context.mounted) {
+        _say(context, context.l10n.familyFollowRequestFailed);
+      }
     }
   }
 
@@ -304,15 +316,15 @@ class MemberFollowSection extends ConsumerWidget {
           children: <Widget>[
             Icon(ZadIcons.family, size: 18, color: ZadColors.forestEmerald),
             const SizedBox(width: 6),
-            const Text('المتابعة', style: ZadType.titleSmall),
+            Text(context.l10n.familyFollowing, style: ZadType.titleSmall),
           ],
         ),
         const SizedBox(height: ZadSpacing.sm),
         if (view == null)
           Text(
             async.hasError
-                ? 'مقدرتش أجيب المتابعة دلوقتي.'
-                : 'بجيب اللي متشارك…',
+                ? context.l10n.familyFollowLoadFailed
+                : context.l10n.familyFollowLoading,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           )
         else ...<Widget>[
@@ -323,13 +335,20 @@ class MemberFollowSection extends ConsumerWidget {
               for (final scope in view.followable)
                 Chip(
                   label: Text(
-                    '${scope.label}: ${switch (view.statusOf(scope)) {
-                      null => 'مش متطلبة',
-                      FamilyShareStatus.pending => 'مستني موافقته',
-                      FamilyShareStatus.granted => 'وافق ✅',
-                      FamilyShareStatus.declined => 'رفض',
-                      FamilyShareStatus.revoked => 'اتلغت',
-                    }}',
+                    context.l10n.familyScopeStatus(
+                      scope.label(context.l10n),
+                      switch (view.statusOf(scope)) {
+                        null => context.l10n.familyShareNotAsked,
+                        FamilyShareStatus.pending =>
+                          context.l10n.familySharePending,
+                        FamilyShareStatus.granted =>
+                          context.l10n.familyShareGranted,
+                        FamilyShareStatus.declined =>
+                          context.l10n.familyShareDeclined,
+                        FamilyShareStatus.revoked =>
+                          context.l10n.familyShareRevoked,
+                      },
+                    ),
                     style: ZadType.labelSmall,
                   ),
                 ),
@@ -343,7 +362,7 @@ class MemberFollowSection extends ConsumerWidget {
               child: TextButton.icon(
                 onPressed: () => unawaited(_ask(context, ref, view)),
                 icon: const Icon(Icons.person_add_alt, size: 18),
-                label: const Text('اطلب متابعة'),
+                label: Text(context.l10n.familyAskToFollow),
               ),
             ),
           if (view.medicines case final meds?) _Medicines(meds: meds),
@@ -385,10 +404,10 @@ class _AskSheetState extends State<_AskSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const Text('عايز تتابع إيه؟', style: ZadType.titleMedium),
+          Text(context.l10n.familyWhatToFollow, style: ZadType.titleMedium),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'هيوصله طلب ويختار هو. مفيش حاجة هتبان قبل موافقته.',
+            context.l10n.familyWhatToFollowHint,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -398,7 +417,7 @@ class _AskSheetState extends State<_AskSheet> {
               onChanged: (v) => setState(
                 () => (v ?? false) ? _chosen.add(s) : _chosen.remove(s),
               ),
-              title: Text(s.label),
+              title: Text(s.label(context.l10n)),
               contentPadding: EdgeInsets.zero,
             ),
           const SizedBox(height: ZadSpacing.md),
@@ -407,7 +426,7 @@ class _AskSheetState extends State<_AskSheet> {
                 ? null
                 : () => Navigator.of(context).pop(_chosen),
             style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-            child: const Text('ابعت الطلب'),
+            child: Text(context.l10n.familySendRequest),
           ),
         ],
       ),
@@ -415,18 +434,18 @@ class _AskSheetState extends State<_AskSheet> {
   );
 }
 
-String _doseMark(FollowedDoseState state) => switch (state) {
+String _doseMark(ZadL10n l10n, FollowedDoseState state) => switch (state) {
   FollowedDoseState.taken => '✅',
   FollowedDoseState.skipped => '⏭',
-  FollowedDoseState.missed => '❌ فاتت',
-  FollowedDoseState.due => '⏰ وقتها',
+  FollowedDoseState.missed => l10n.familyDoseMissed,
+  FollowedDoseState.due => l10n.familyDoseDue,
   FollowedDoseState.upcoming => '…',
 };
 
 /// «فيتامين: 08:00 ✅ · 20:00 …».
-String _doseLine(FollowedMedicine m) {
-  if (m.today.isEmpty) return '${m.name}: من غير مواعيد';
-  final slots = m.today.map((t) => '${t.time} ${_doseMark(t.state)}');
+String _doseLine(ZadL10n l10n, FollowedMedicine m) {
+  if (m.today.isEmpty) return l10n.familyDoseNoTimes(m.name);
+  final slots = m.today.map((t) => '${t.time} ${_doseMark(l10n, t.state)}');
   return '${m.name}: ${slots.join(' · ')}';
 }
 
@@ -441,17 +460,17 @@ class _Medicines extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('الأدوية النهارده', style: ZadType.labelLarge),
+        Text(context.l10n.familyMedicinesToday, style: ZadType.labelLarge),
         const SizedBox(height: ZadSpacing.xs),
         if (meds.isEmpty)
           Text(
-            'مفيش أدوية متسجلة.',
+            context.l10n.familyNoMedicines,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
         for (final m in meds)
           Padding(
             padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
-            child: Text(_doseLine(m), style: ZadType.bodyMedium),
+            child: Text(_doseLine(context.l10n, m), style: ZadType.bodyMedium),
           ),
       ],
     ),
@@ -474,7 +493,7 @@ class _Spending extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('المصروف آخر ٣٠ يوم', style: ZadType.labelLarge),
+        Text(context.l10n.familySpendingLast30, style: ZadType.labelLarge),
         const SizedBox(height: ZadSpacing.xs),
         Text(_money(spent), style: ZadType.titleMedium),
         if (top.isNotEmpty)
@@ -499,10 +518,15 @@ class _Tasks extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('المهام والمواعيد', style: ZadType.labelLarge),
+        Text(
+          context.l10n.familyTasksAndAppointments,
+          style: ZadType.labelLarge,
+        ),
         const SizedBox(height: ZadSpacing.xs),
         Text(
-          choresOpen == 0 ? 'مفيش مهام مفتوحة' : '$choresOpen مهام لسه مفتوحة',
+          choresOpen == 0
+              ? context.l10n.familyNoOpenTasks
+              : context.l10n.familyOpenTasksStill(choresOpen),
           style: ZadType.bodyMedium,
         ),
         for (final a in appointments)
@@ -517,8 +541,13 @@ class _Tasks extends StatelessWidget {
 
 /// «تقرير العيلة» in one line per member — what [view] shows of them, or what
 /// is still to be asked. Pure, so it can be tested without a server.
-String familyReportLine(FollowedMember? view, String currency) {
-  if (view == null) return 'بجيب…';
+String familyReportLine(
+  FollowedMember? view,
+  String currency, {
+  ZadL10n? l10n,
+}) {
+  final l = l10n ?? zadL10nArabic;
+  if (view == null) return l.familyReportLoading;
   final parts = <String>[];
   if (view.medicines case final meds?) {
     final slots = [for (final m in meds) ...m.today];
@@ -526,43 +555,45 @@ String familyReportLine(FollowedMember? view, String currency) {
     final missed = slots
         .where((s) => s.state == FollowedDoseState.missed)
         .length;
-    final late = missed > 0 ? ' — $missed فاتت' : '';
+    final late = missed > 0 ? l.familyReportMissedSuffix(missed) : '';
     parts.add(
       slots.isEmpty
-          ? 'مفيش جرعات النهارده'
-          : 'جرعات: $taken من ${slots.length}$late',
+          ? l.familyReportNoDosesToday
+          : l.familyReportDoses(taken, slots.length, late),
     );
   }
   if (view.spent30d case final spent?) {
     parts.add(
-      'صرف ٣٠ يوم: ${NumberFormat('#,##0', 'en').format(spent)} $currency'
-          .trim(),
+      l.familyReportSpent30(
+        '${NumberFormat('#,##0', 'en').format(spent)} $currency'.trim(),
+      ),
     );
   }
   if (view.choresOpen case final open?) {
-    parts.add(open == 0 ? 'مفيش مهام مفتوحة' : '$open مهام مفتوحة');
+    parts.add(open == 0 ? l.familyNoOpenTasks : l.familyReportOpenTasks(open));
   }
   if (view.zones case final zones? when zones.isNotEmpty) {
     parts.add(
       zones
           .map(
             (z) => switch (z.state) {
-              ZoneState.inside => 'جوه ${z.label}',
-              ZoneState.left => 'خرج من ${z.label}',
-              ZoneState.unknown => '${z.label}: لسه',
+              ZoneState.inside => l.familyZoneInside(z.label),
+              ZoneState.left => l.familyZoneLeft(z.label),
+              ZoneState.unknown => l.familyZoneUnknown(z.label),
             },
           )
-          .join('، '),
+          .join(l.familyListSeparator),
     );
   }
-  if (parts.isEmpty) return 'لسه ماوافقش على أي متابعة';
+  if (parts.isEmpty) return l.familyReportNothingShared;
   final missing = <String>[
     for (final s in view.followable)
-      if (view.statusOf(s) != FamilyShareStatus.granted) s.label,
+      if (view.statusOf(s) != FamilyShareStatus.granted) s.label(l),
   ];
   return [
     ...parts,
-    if (missing.isNotEmpty) 'مش متشارك: ${missing.join('، ')}',
+    if (missing.isNotEmpty)
+      l.familyReportNotShared(missing.join(l.familyListSeparator)),
   ].join(' · ');
 }
 
@@ -596,16 +627,16 @@ class _FamilyReportSheet extends ConsumerWidget {
         controller: scroll,
         padding: const EdgeInsets.all(ZadSpacing.xl),
         children: <Widget>[
-          const Text('تقرير العيلة', style: ZadType.titleLarge),
+          Text(context.l10n.familyReport, style: ZadType.titleLarge),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'اللي كل فرد وافق يشاركه بس — والباقي بيبان بعد موافقته.',
+            context.l10n.familyReportHint,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.lg),
           if (members.isEmpty)
             Text(
-              'لسه محدش انضم للعيلة. ابعت كود الدعوة من «عيلتي».',
+              context.l10n.familyReportNoMembers,
               style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
             ),
           for (final m in members)
@@ -616,7 +647,9 @@ class _FamilyReportSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      m.alias.isEmpty ? 'فرد من العيلة' : m.alias,
+                      m.alias.isEmpty
+                          ? context.l10n.familyMemberFallback
+                          : m.alias,
                       style: ZadType.titleSmall,
                     ),
                     const SizedBox(height: ZadSpacing.xs),
@@ -624,6 +657,7 @@ class _FamilyReportSheet extends ConsumerWidget {
                       familyReportLine(
                         ref.watch(followedMemberProvider(m.userId)).value,
                         currency,
+                        l10n: context.l10n,
                       ),
                       style: ZadType.bodySmall.copyWith(
                         color: ZadColors.inkMuted,
@@ -639,30 +673,31 @@ class _FamilyReportSheet extends ConsumerWidget {
   }
 }
 
-const List<String> _weekdays = <String>[
-  'الأحد',
-  'الاتنين',
-  'التلات',
-  'الأربع',
-  'الخميس',
-  'الجمعة',
-  'السبت',
-];
+/// The weekday's name, Sunday = 0 (extract(dow)).
+String _weekday(ZadL10n l10n, int day) => l10n.familyWeekday('d$day');
 
 /// «جوه من 7:45» / «خرج 11:20» / «خرج امبارح 13:10» — the zone's last state,
 /// in the account's market zone. Pure, for tests.
-String zoneStateLine(FollowedZone z, tz.Location zone, DateTime now) {
+String zoneStateLine(
+  FollowedZone z,
+  tz.Location zone,
+  DateTime now, {
+  ZadL10n? l10n,
+}) {
+  final l = l10n ?? zadL10nArabic;
   final since = z.since;
   if (z.state == ZoneState.unknown || since == null) {
-    return 'لسه مفيش دخول ولا خروج';
+    return l.familyZoneNoMoves;
   }
   final at = tz.TZDateTime.from(since.toUtc(), zone);
   final today = tz.TZDateTime.from(now.toUtc(), zone);
   final time = DateFormat('HH:mm').format(at);
   final sameDay =
       at.year == today.year && at.month == today.month && at.day == today.day;
-  final day = sameDay ? '' : '${_weekdays[at.weekday % 7]} ';
-  return z.state == ZoneState.inside ? 'جوه من $day$time' : 'خرج $day$time';
+  final day = sameDay ? '' : '${_weekday(l, at.weekday % 7)} ';
+  return z.state == ZoneState.inside
+      ? l.familyZoneInsideSince(day, time)
+      : l.familyZoneLeftAt(day, time);
 }
 
 /// The parent's view of a child's zones: each one's last state, «شيل», and
@@ -697,10 +732,10 @@ class _Zones extends ConsumerWidget {
           );
       ref.invalidate(followedMemberProvider(memberId));
       if (context.mounted) {
-        _say(context, 'اتحفظ «${draft.label}» — هيوصله إشعار بيه.');
+        _say(context, context.l10n.familyZoneSaved(draft.label));
       }
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أحفظ النطاق. جرّب تاني.');
+      if (context.mounted) _say(context, context.l10n.familyZoneSaveFailed);
     }
   }
 
@@ -712,9 +747,11 @@ class _Zones extends ConsumerWidget {
     try {
       await ref.read(familySharesRemoteProvider).deleteZone(z.id);
       ref.invalidate(followedMemberProvider(memberId));
-      if (context.mounted) _say(context, 'اتشال «${z.label}».');
+      if (context.mounted) {
+        _say(context, context.l10n.familyZoneRemoved(z.label));
+      }
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أشيله. جرّب تاني.');
+      if (context.mounted) _say(context, context.l10n.familyZoneRemoveFailed);
     }
   }
 
@@ -727,11 +764,11 @@ class _Zones extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text('الأماكن', style: ZadType.labelLarge),
+          Text(context.l10n.familyPlaces, style: ZadType.labelLarge),
           const SizedBox(height: ZadSpacing.xs),
           if (zones.isEmpty)
             Text(
-              'لسه مفيش نطاقات. وانت في المدرسة نفسها، دوس «ضيف نطاق».',
+              context.l10n.familyNoZones,
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
           for (final z in zones)
@@ -753,7 +790,7 @@ class _Zones extends ConsumerWidget {
                     children: <Widget>[
                       Text(z.label, style: ZadType.bodyMedium),
                       Text(
-                        zoneStateLine(z, zone, now),
+                        zoneStateLine(z, zone, now, l10n: context.l10n),
                         style: ZadType.bodySmall.copyWith(
                           color: ZadColors.inkMuted,
                         ),
@@ -763,7 +800,7 @@ class _Zones extends ConsumerWidget {
                 ),
                 IconButton(
                   onPressed: () => unawaited(_remove(context, ref, z)),
-                  tooltip: 'شيل النطاق',
+                  tooltip: context.l10n.familyRemoveZone,
                   icon: const Icon(ZadIcons.dismiss, size: 18),
                 ),
               ],
@@ -774,7 +811,7 @@ class _Zones extends ConsumerWidget {
               child: TextButton.icon(
                 onPressed: () => unawaited(_add(context, ref)),
                 icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                label: const Text('ضيف نطاق'),
+                label: Text(context.l10n.familyAddZone),
               ),
             ),
         ],
@@ -795,12 +832,13 @@ typedef _ZoneDraft = ({
   String to,
 });
 
-const List<({String kind, String label})> _zoneKinds =
+/// The zone kinds: the key is what is stored, the label is shown.
+List<({String kind, String label})> _zoneKinds(ZadL10n l10n) =>
     <({String kind, String label})>[
-      (kind: 'school', label: 'مدرسة'),
-      (kind: 'club', label: 'نادي'),
-      (kind: 'home', label: 'البيت'),
-      (kind: 'other', label: 'مكان تاني'),
+      (kind: 'school', label: l10n.familyZoneSchool),
+      (kind: 'club', label: l10n.familyZoneClub),
+      (kind: 'home', label: l10n.familyZoneHome),
+      (kind: 'other', label: l10n.familyZoneOther),
     ];
 
 /// A new zone: its name, the parent's own position as its centre (they stand
@@ -851,9 +889,7 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
     setState(() {
       _locating = false;
       _point = fix == null ? _point : (lat: fix.at.lat, lon: fix.at.lon);
-      _problem = fix == null
-          ? 'مقدرتش أعرف مكانك. شغّل الموقع وجرّب تاني.'
-          : null;
+      _problem = fix == null ? context.l10n.familyLocationFailed : null;
     });
   }
 
@@ -886,11 +922,10 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text('نطاق جديد', style: ZadType.titleMedium),
+              Text(context.l10n.familyNewZone, style: ZadType.titleMedium),
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                'هيوصلك تنبيه لو خرج منه في الأيام والساعات دي. '
-                'برّاها بيتسجل من غير تنبيه.',
+                context.l10n.familyNewZoneHint,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.md),
@@ -898,15 +933,15 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                 controller: _label,
                 maxLength: 40,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  labelText: 'اسمه',
-                  hintText: 'مدرسة النيل',
+                decoration: InputDecoration(
+                  labelText: context.l10n.familyZoneNameLabel,
+                  hintText: context.l10n.familyZoneNameHint,
                 ),
               ),
               Wrap(
                 spacing: ZadSpacing.sm,
                 children: <Widget>[
-                  for (final k in _zoneKinds)
+                  for (final k in _zoneKinds(context.l10n))
                     ChoiceChip(
                       label: Text(k.label),
                       selected: _kind == k.kind,
@@ -926,12 +961,12 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                     : const Icon(Icons.my_location, size: 18),
                 label: Text(
                   point == null
-                      ? 'استخدم المكان اللي أنا فيه دلوقتي'
-                      : 'اتحدد المكان ✓ — دوس تاني لو اتحركت',
+                      ? context.l10n.familyUseMyLocation
+                      : context.l10n.familyLocationSet,
                 ),
               ),
               Text(
-                _problem ?? 'لازم تكون في المكان نفسه وانت بتحدده.',
+                _problem ?? context.l10n.familyBeThere,
                 style: ZadType.bodySmall.copyWith(
                   color: _problem == null
                       ? ZadColors.inkMuted
@@ -939,26 +974,26 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                 ),
               ),
               const SizedBox(height: ZadSpacing.md),
-              const Text('قد إيه حواليه', style: ZadType.labelLarge),
+              Text(context.l10n.familyZoneRadius, style: ZadType.labelLarge),
               Wrap(
                 spacing: ZadSpacing.sm,
                 children: <Widget>[
                   for (final r in const <int>[150, 300, 500])
                     ChoiceChip(
-                      label: Text('$r م'),
+                      label: Text(context.l10n.familyMeters(r)),
                       selected: _radius == r,
                       onSelected: (_) => setState(() => _radius = r),
                     ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.md),
-              const Text('أيام التنبيه', style: ZadType.labelLarge),
+              Text(context.l10n.familyAlertDays, style: ZadType.labelLarge),
               Wrap(
                 spacing: ZadSpacing.xs,
                 children: <Widget>[
                   for (var d = 0; d < 7; d++)
                     FilterChip(
-                      label: Text(_weekdays[d]),
+                      label: Text(_weekday(context.l10n, d)),
                       selected: _days.contains(d),
                       onSelected: (on) =>
                           setState(() => on ? _days.add(d) : _days.remove(d)),
@@ -966,7 +1001,7 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                 ],
               ),
               const SizedBox(height: ZadSpacing.md),
-              const Text('ساعات التنبيه', style: ZadType.labelLarge),
+              Text(context.l10n.familyAlertHours, style: ZadType.labelLarge),
               Row(
                 children: <Widget>[
                   Expanded(
@@ -975,7 +1010,7 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 48),
                       ),
-                      child: Text('من ${_hhmm(_from)}'),
+                      child: Text(context.l10n.familyFromTime(_hhmm(_from))),
                     ),
                   ),
                   const SizedBox(width: ZadSpacing.sm),
@@ -985,14 +1020,14 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 48),
                       ),
-                      child: Text('لحد ${_hhmm(_to)}'),
+                      child: Text(context.l10n.familyToTime(_hhmm(_to))),
                     ),
                   ),
                 ],
               ),
               if (!_hoursOk)
                 Text(
-                  'ساعة البداية لازم تبقى قبل النهاية.',
+                  context.l10n.familyHoursOrder,
                   style: ZadType.bodySmall.copyWith(
                     color: ZadColors.terracottaRust,
                   ),
@@ -1012,7 +1047,7 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
                         to: _hhmm(_to),
                       )),
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
-                child: const Text('احفظ النطاق'),
+                child: Text(context.l10n.familySaveZone),
               ),
             ],
           ),
@@ -1025,11 +1060,8 @@ class _AddZoneSheetState extends ConsumerState<_AddZoneSheet> {
 /// What a writer reads before letting زاد read their family-chat messages:
 /// whose messages, what for, that they go to an AI model, that the family
 /// sees the yes, and how to stop.
-const String chatReadingDisclosure =
-    'زاد هيقرا رسايلك انت بس في شات العيلة — مش رسايل حد تاني ماوافقش — '
-    'عشان يفهم طلبات البيت زي «محتاجين عيش» ويرد لو حد من العيلة سأله عن '
-    'اللي اتقال. الرسايل بتتبعت لموديل ذكاء اصطناعي (Google Gemini) عشان '
-    'تتفهم. العيلة كلها هتشوف إنك موافق، وتقدر توقف في أي وقت من هنا.';
+String chatReadingDisclosure({ZadL10n? l10n}) =>
+    (l10n ?? zadL10nArabic).familyChatReadingDisclosure;
 
 /// «زاد بيقرا رسايل: بابا، ماما» at the top of the family chat, with this
 /// account's own switch (migration 20261003120000). Nothing while it loads
@@ -1043,16 +1075,16 @@ class FamilyChatConsentStrip extends ConsumerWidget {
       final agreed = await showDialog<bool>(
         context: context,
         builder: (dialog) => AlertDialog(
-          title: const Text('زاد يقرا رسايلك؟'),
-          content: const Text(chatReadingDisclosure),
+          title: Text(context.l10n.familyChatReadingTitle),
+          content: Text(chatReadingDisclosure(l10n: context.l10n)),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialog).pop(false),
-              child: const Text('مش دلوقتي'),
+              child: Text(context.l10n.familyNotNow),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialog).pop(true),
-              child: const Text('موافق'),
+              child: Text(context.l10n.familyAgreeShort),
             ),
           ],
         ),
@@ -1065,11 +1097,13 @@ class FamilyChatConsentStrip extends ConsumerWidget {
       if (context.mounted) {
         _say(
           context,
-          on ? 'تمام — زاد هيقرا رسايلك.' : 'وقفت — زاد مش هيقرا رسايلك.',
+          on
+              ? context.l10n.familyChatReadingOn
+              : context.l10n.familyChatReadingOff,
         );
       }
     } on Object {
-      if (context.mounted) _say(context, 'مقدرتش أوصل للسيرفر. جرّب تاني.');
+      if (context.mounted) _say(context, context.l10n.familyServerUnreachable);
     }
   }
 
@@ -1091,15 +1125,21 @@ class FamilyChatConsentStrip extends ConsumerWidget {
           Expanded(
             child: Text(
               consent.readers.isEmpty
-                  ? 'زاد مش بيقرا رسايل الشات'
-                  : 'زاد بيقرا رسايل: ${consent.readers.join('، ')}',
+                  ? context.l10n.familyChatReadingNone
+                  : context.l10n.familyChatReadingWho(
+                      consent.readers.join(context.l10n.familyListSeparator),
+                    ),
               style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
             ),
           ),
           TextButton(
             onPressed: () => unawaited(_set(context, ref, !consent.mine)),
             style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
-            child: Text(consent.mine ? 'وقّف لرسايلي' : 'خلّيه يقرا رسايلي'),
+            child: Text(
+              consent.mine
+                  ? context.l10n.familyChatReadingStopMine
+                  : context.l10n.familyChatReadingAllowMine,
+            ),
           ),
         ],
       ),

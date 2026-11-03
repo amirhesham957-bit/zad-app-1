@@ -14,6 +14,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/domain/spending_series.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -21,13 +22,14 @@ import 'package:zad/shared/transactions/domain/transaction.dart';
 String _money(double v) => NumberFormat('#,##0', 'en').format(v);
 
 /// «القهوة زادت ٤٠٪» / «جديد الشهر ده» / «قلّت ٢٠٪».
-String changeLine((String, double, double) c) {
+String changeLine((String, double, double) c, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
   final (name, now, before) = c;
-  if (before <= 0) return '$name: جديد الشهر ده (${_money(now)})';
+  if (before <= 0) return l.behaviourNew(name, _money(now));
   final pct = ((now - before) / before * 100).round();
   return pct >= 0
-      ? '$name: زادت $pct٪ (${_money(before)} ← ${_money(now)})'
-      : '$name: قلّت ${-pct}٪ (${_money(before)} ← ${_money(now)})';
+      ? l.behaviourUp(name, pct, _money(before), _money(now))
+      : l.behaviourDown(name, -pct, _money(before), _money(now));
 }
 
 /// The card.
@@ -47,7 +49,8 @@ class BehaviorCard extends ConsumerWidget {
     DateTime local(DateTime utc) => tz.TZDateTime.from(utc.toUtc(), zone);
     final now = local(ref.read(nowProvider)());
     final today = DateTime.utc(now.year, now.month, now.day);
-    final week = weekdayAverages(rows, today: today, local: local);
+    final l = context.l10n;
+    final week = weekdayAverages(rows, today: today, local: local, l10n: l);
     final monthAgo = today.subtract(const Duration(days: 29));
     final places = topPlaces(
       rows.where((t) => !local(t.createdAt).isBefore(monthAgo)),
@@ -71,12 +74,13 @@ class BehaviorCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('سلوكك في الصرف', style: ZadType.titleMedium),
+              Text(l.behaviourTitle, style: ZadType.titleMedium),
               if (hasWeek) ...<Widget>[
                 Text(
-                  'أكتر يوم بتصرف فيه: ${peak.$1} — متوسط '
-                          '${_money(peak.$2)} $currency'
-                      .trim(),
+                  l.behaviourPeakDay(
+                    peak.$1,
+                    '${_money(peak.$2)} $currency'.trim(),
+                  ),
                   style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.md),
@@ -123,7 +127,7 @@ class BehaviorCard extends ConsumerWidget {
               ],
               if (places.isNotEmpty) ...<Widget>[
                 const SizedBox(height: ZadSpacing.lg),
-                const Text('أكتر أماكن بتصرف فيها', style: ZadType.labelLarge),
+                Text(l.behaviourTopPlaces, style: ZadType.labelLarge),
                 const SizedBox(height: ZadSpacing.xs),
                 for (final (name, total, count) in places)
                   Padding(
@@ -139,7 +143,10 @@ class BehaviorCard extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '${_money(total)} $currency · $count مرة'.trim(),
+                          l.behaviourPlaceLine(
+                            '${_money(total)} $currency'.trim(),
+                            count,
+                          ),
                           style: ZadType.bodySmall.copyWith(
                             color: ZadColors.inkMuted,
                           ),
@@ -150,15 +157,12 @@ class BehaviorCard extends ConsumerWidget {
               ],
               if (changes.isNotEmpty) ...<Widget>[
                 const SizedBox(height: ZadSpacing.lg),
-                const Text(
-                  'اتغيّر إيه عن الشهر اللي فات',
-                  style: ZadType.labelLarge,
-                ),
+                Text(l.behaviourChanges, style: ZadType.labelLarge),
                 const SizedBox(height: ZadSpacing.xs),
                 for (final c in changes)
                   Padding(
                     padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
-                    child: Text(changeLine(c), style: ZadType.bodyMedium),
+                    child: Text(changeLine(c, l), style: ZadType.bodyMedium),
                   ),
               ],
             ],

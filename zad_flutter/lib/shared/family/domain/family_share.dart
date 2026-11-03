@@ -7,31 +7,40 @@
 library;
 
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/places/domain/places.dart' show ChildZone;
 
 /// What can be followed.
 enum FamilyShareScope {
   /// Medicines and today's doses.
-  medicines('medicines', 'الأدوية'),
+  medicines('medicines'),
 
   /// The last 30 days' spending, as a total and top categories.
-  spending('spending', 'المصروف'),
+  spending('spending'),
 
   /// Upcoming appointments and open chores.
-  tasks('tasks', 'المهام والمواعيد'),
+  tasks('tasks'),
 
   /// Coming to and leaving the zones a parent sets (school, club) — for a
   /// child only. Google Play forbids following an adult's location, a
   /// spouse's included, even with their yes (migration 20261003110000).
-  location('location', 'الأماكن (المدرسة…)');
+  location('location');
 
-  new(this.wire, this.label);
+  new(this.wire);
 
   /// The server's name for it.
   final String wire;
 
-  /// What the screen calls it.
-  final String label;
+  /// What the screen calls it, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (this) {
+      medicines => l.familyScopeMedicines,
+      spending => l.familyScopeSpending,
+      tasks => l.familyScopeTasks,
+      location => l.familyScopeLocation,
+    };
+  }
 
   /// The scope named [wire], or null.
   static FamilyShareScope? fromWire(String? wire) {
@@ -70,11 +79,13 @@ enum FamilyShareStatus {
 
 /// What the member is asked, in full, before they answer: the scope's label
 /// is too short to agree to.
-String shareAskText(FamilyShareScope scope, String asker) => switch (scope) {
-  FamilyShareScope.location =>
-    '$asker عايز يعرف لما تدخل أو تخرج من أماكن هو يحددها (زي المدرسة)',
-  _ => '$asker عايز يتابع ${scope.label}',
-};
+String shareAskText(FamilyShareScope scope, String asker, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (scope) {
+    FamilyShareScope.location => l.familyShareAskLocation(asker),
+    _ => l.familyShareAsk(asker, scope.label(l)),
+  };
+}
 
 /// One row: [ownerId]'s [scope], followed by [viewerId].
 class FamilyShare {

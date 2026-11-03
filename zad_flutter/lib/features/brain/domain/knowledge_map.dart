@@ -255,6 +255,7 @@ class KnowledgeMap {
 /// `dedupe_key`, `about_item`, `title` and `body` are free text — so this is a
 /// guess from the same vocabulary the areas are labelled with, not a tag the
 /// server guarantees. The legend says "live insight", not more.
+// l10n: data-begin — matched against the insight's own Arabic text.
 const Map<MapDomainKey, List<String>> kInsightKeywords =
     <MapDomainKey, List<String>>{
       MapDomainKey.budget: <String>[
@@ -284,6 +285,7 @@ const Map<MapDomainKey, List<String>> kInsightKeywords =
         'warranty',
       ],
     };
+// l10n: data-end
 
 /// The areas one insight is about.
 Set<MapDomainKey> insightDomains(MapInsight insight) {

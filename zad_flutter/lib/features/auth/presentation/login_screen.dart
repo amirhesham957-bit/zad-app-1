@@ -553,7 +553,8 @@ class _SignUpViewState extends ConsumerState<_SignUpView> {
               child: Text(
                 switch (market) {
                   null => context.l10n.authPickCountry,
-                  final m => '${m.flag}  ${m.nameAr} · ${m.currencySymbol}',
+                  final m =>
+                    '${m.flag}  ${m.name(context.l10n)} · ${m.currencySymbol}',
                 },
                 style: TextStyle(
                   color: market == null

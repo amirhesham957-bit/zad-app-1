@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Which kind.
 enum MemoryOccasionKind {
@@ -96,11 +97,21 @@ class MemoryOccasion {
   int get hashCode => Object.hash(kind, md, forName);
 }
 
-const List<String> _months = <String>[
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', //
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+List<String> _months(ZadL10n l) => <String>[
+  l.monthJan,
+  l.monthFeb,
+  l.monthMar,
+  l.monthApr,
+  l.monthMay,
+  l.monthJun,
+  l.monthJul,
+  l.monthAug,
+  l.monthSep,
+  l.monthOct,
+  l.monthNov,
+  l.monthDec,
 ];
 
 /// «8 أكتوبر».
-String occasionDateLabel(DateTime day) =>
-    '${day.day} ${_months[day.month - 1]}';
+String occasionDateLabel(DateTime day, [ZadL10n? l10n]) =>
+    '${day.day} ${_months(l10n ?? zadL10nArabic)[day.month - 1]}';

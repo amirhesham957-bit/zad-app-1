@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/insights/domain/insight.dart';
 
 /// Kotlin's `ZadQuestionCard` (`ui/widgets/ZadQuestionCard.kt`): a brain
@@ -111,16 +112,23 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
               SizedBox(
                 height: 32,
                 child: FilledButton(
-                  onPressed: () => widget.onAnswer('أيوة'),
-                  child: const Text('أيوة', style: ZadType.labelSmall),
+                  // The answer reaches the brain in Arabic.
+                  onPressed: () => widget.onAnswer('أيوة'), // l10n: data
+                  child: Text(
+                    context.l10n.questionYes,
+                    style: ZadType.labelSmall,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               SizedBox(
                 height: 32,
                 child: OutlinedButton(
-                  onPressed: () => widget.onAnswer('لأ'),
-                  child: const Text('لأ', style: ZadType.labelSmall),
+                  onPressed: () => widget.onAnswer('لأ'), // l10n: data
+                  child: Text(
+                    context.l10n.questionNo,
+                    style: ZadType.labelSmall,
+                  ),
                 ),
               ),
             ],
@@ -133,7 +141,10 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
             child: FilledButton.icon(
               onPressed: widget.onOpenCamera,
               icon: const Icon(Icons.camera_alt, size: 16),
-              label: const Text('افتح الكاميرا', style: ZadType.labelSmall),
+              label: Text(
+                context.l10n.questionOpenCamera,
+                style: ZadType.labelSmall,
+              ),
             ),
           ),
         ];
@@ -181,7 +192,7 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
                         : _value.text;
                     widget.onAnswer(text);
                   },
-            child: const Text('إرسال', style: ZadType.labelSmall),
+            child: Text(context.l10n.questionSend, style: ZadType.labelSmall),
           ),
         ),
       ],

@@ -214,14 +214,3 @@ class ScannedTimetable {
   /// The school days.
   final List<TimetableDay> days;
 }
-
-/// Arabic day names, 0 = الأحد. Display text.
-const List<String> kWeekdayNames = <String>[
-  'الأحد',
-  'الإثنين',
-  'الثلاثاء',
-  'الأربعاء',
-  'الخميس',
-  'الجمعة',
-  'السبت',
-];

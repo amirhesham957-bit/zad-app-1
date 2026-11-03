@@ -14,6 +14,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/family/presentation/family_chat_tab.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_tabs.dart';
@@ -53,8 +54,9 @@ class FamilyScreen extends ConsumerWidget {
       familyControllerProvider.select((v) => v.failure),
       (_, failure) {
         if (failure == null) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(failure.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
       },
     );
 
@@ -69,7 +71,7 @@ class FamilyScreen extends ConsumerWidget {
         ),
         final status => Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: AppBar(title: const Text('العيلة')),
+          appBar: AppBar(title: Text(context.l10n.familyTitle)),
           body: RefreshIndicator(
             onRefresh: ref.read(familyControllerProvider.notifier).refresh,
             child: status is NoFamily
@@ -81,14 +83,14 @@ class FamilyScreen extends ConsumerWidget {
                         height: 420,
                         child: ZadEmptyState(
                           icon: ZadIcons.family,
-                          title: 'بنشوف عيلتك',
-                          message: 'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.',
+                          title: context.l10n.familyLoadingTitle,
+                          message: context.l10n.familyLoadingMessage,
                           tone: ZadEmptyTone.waiting,
                           action: TextButton(
                             onPressed: ref
                                 .read(familyControllerProvider.notifier)
                                 .refresh,
-                            child: const Text('جرّب تاني'),
+                            child: Text(context.l10n.familyRetry),
                           ),
                         ),
                       ),
@@ -150,15 +152,14 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
           ),
         ),
         const SizedBox(height: ZadSpacing.xl),
-        const Text(
-          'أهلاً بك في عائلة زاد',
+        Text(
+          context.l10n.familyWelcomeTitle,
           textAlign: TextAlign.center,
           style: ZadType.headlineMedium,
         ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
-          'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة '
-          'موجودة عبر كود الدعوة.',
+          context.l10n.familyWelcomeBody,
           textAlign: TextAlign.center,
           style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
         ),
@@ -175,7 +176,7 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
                         : _alias.text.trim(),
                   ),
             icon: const Icon(ZadIcons.add),
-            label: const Text('إنشاء عائلة جديدة كمدير (Admin)'),
+            label: Text(context.l10n.familyCreateAsAdmin),
           ),
         ),
         const SizedBox(height: 14),
@@ -190,12 +191,12 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
                 ? null
                 : () => unawaited(showJoinFamilyDialog(context, ref)),
             icon: const Icon(ZadIcons.joinFamily),
-            label: const Text('الانضمام للعائلة'),
+            label: Text(context.l10n.familyJoin),
           ),
         ),
         const SizedBox(height: ZadSpacing.xl),
         Text(
-          'أو',
+          context.l10n.familyOr,
           textAlign: TextAlign.center,
           style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
         ),
@@ -203,9 +204,9 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
         TextField(
           controller: _alias,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'اسمك في العيلة (اختياري)',
-            hintText: 'مثال: الابن أحمد',
+          decoration: InputDecoration(
+            labelText: context.l10n.familyAliasLabel,
+            hintText: context.l10n.familyAliasHint,
           ),
           onChanged: (_) => setState(() {}),
         ),
@@ -215,9 +216,9 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
           textDirection: TextDirection.ltr,
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'كود الدعوة',
-            hintText: 'مثال: ZAD-1234',
+          decoration: InputDecoration(
+            labelText: context.l10n.familyInviteCodeLabel,
+            hintText: context.l10n.familyInviteCodeHint,
           ),
           onChanged: (v) {
             final code = extractInviteCode(v);
@@ -242,7 +243,7 @@ class _NoFamilyState extends ConsumerState<_NoFamily> {
                     alias: _alias.text.trim(),
                   ),
             icon: const Icon(ZadIcons.forward),
-            label: const Text('الانضمام للعائلة'),
+            label: Text(context.l10n.familyJoin),
           ),
         ),
       ],
@@ -291,14 +292,15 @@ class _ActiveFamilyState extends ConsumerState<_ActiveFamily> {
       },
     );
 
+    final l10n = context.l10n;
     final tabs = <(IconData, String)>[
-      (ZadIcons.ask, 'الشات'),
-      (ZadIcons.chore, 'المهام'),
-      (ZadIcons.family, 'الأعضاء'),
-      (ZadIcons.shopping, 'البقالة'),
+      (ZadIcons.ask, l10n.familyTabChat),
+      (ZadIcons.chore, l10n.familyTabTasks),
+      (ZadIcons.family, l10n.familyTabMembers),
+      (ZadIcons.shopping, l10n.familyTabGroceries),
       if (isParent) ...<(IconData, String)>[
-        (ZadIcons.wallet, 'الأبناء'),
-        (ZadIcons.savings, 'الأهداف'),
+        (ZadIcons.wallet, l10n.familyTabKids),
+        (ZadIcons.savings, l10n.familyTabGoals),
       ],
     ];
     final tab = _tab.clamp(0, tabs.length - 1);
@@ -409,13 +411,13 @@ class _Header extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'عائلة $code',
+                          context.l10n.familyHeaderTitle(code),
                           style: ZadType.titleMedium.copyWith(
                             color: Colors.white,
                           ),
                         ),
                         Text(
-                          '${members.length} أفراد',
+                          context.l10n.familyMemberCount(members.length),
                           style: ZadType.bodySmall.copyWith(
                             color: Colors.white.withValues(alpha: 0.9),
                           ),
@@ -424,33 +426,31 @@ class _Header extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'الرجاء الانتباه، حالة طوارئ!',
+                    tooltip: context.l10n.familySosTooltip,
                     onPressed: () => unawaited(confirmAndSendSos(context, ref)),
                     icon: const Icon(ZadIcons.sos, color: Colors.white),
                   ),
                   IconButton(
-                    tooltip: 'الانضمام للعائلة',
+                    tooltip: context.l10n.familyJoin,
                     onPressed: () =>
                         unawaited(showJoinFamilyDialog(context, ref)),
                     icon: const Icon(ZadIcons.joinFamily, color: Colors.white),
                   ),
                   IconButton(
-                    tooltip: 'دعوة أفراد جدد',
+                    tooltip: context.l10n.familyInviteNew,
                     onPressed: () => unawaited(showInviteDialog(context, code)),
                     icon: const Icon(ZadIcons.invite, color: Colors.white),
                   ),
                   IconButton(
-                    tooltip: 'مشاركة الدعوة',
+                    tooltip: context.l10n.familyShareInvite,
                     onPressed: () => unawaited(
                       SharePlus.instance.share(
                         ShareParams(
-                          subject: 'مشاركة الدعوة',
-                          text:
-                              '🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n'
-                              '📲 اضغط على الرابط التالي للانضمام فوراً وفتح '
-                              'التطبيق:\nhttps://zad.app/invite?code=$code\n\n'
-                              '🔑 كود الدعوة المباشر:\n$code\n\n'
-                              '🔗 رابط التطبيق المباشر:\n${inviteLink(code)}',
+                          subject: context.l10n.familyShareInvite,
+                          text: context.l10n.familyShareInviteText(
+                            code,
+                            inviteLink(code),
+                          ),
                         ),
                       ),
                     ),

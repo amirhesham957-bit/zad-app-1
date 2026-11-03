@@ -10,6 +10,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/memory_occasion.dart';
 
 /// Which occasion.
@@ -102,9 +103,10 @@ String _iso(DateTime d) =>
 
 /// The occasion on [day] (the account's local calendar day), in the
 /// market's dialect, or null.
-Occasion? occasionOn(DateTime day, {String? country}) {
+Occasion? occasionOn(DateTime day, {String? country, ZadL10n? l10n}) {
+  final l = l10n ?? zadL10nArabic;
   final date = _iso(day);
-  final gulf = _gulf.contains(country?.toUpperCase());
+  final dialect = _gulf.contains(country?.toUpperCase()) ? 'gulf' : 'other';
   final kind = switch ((day.month, day.day)) {
     (1, 1) => OccasionKind.newYear,
     (3, 21) => OccasionKind.mothersDay,
@@ -122,70 +124,50 @@ Occasion? occasionOn(DateTime day, {String? country}) {
     OccasionKind.newYear => Occasion(
       kind: kind,
       id: id,
-      title: 'سنة جديدة سعيدة! 🎉',
-      question: gulf
-          ? 'تبي زاد يجهّز لك خطة أهدافك المالية لسنة $year بضغطة وحدة؟'
-          : 'حابب زاد يجهّزلك خطة أهدافك المالية لسنة $year بنقرة واحدة؟',
-      actionLabel: 'جهّزها',
-      prompt:
-          'جهّزلي خطة أهداف مالية لسنة $year من أرقامي ومصاريفي الفعلية، '
-          'واقترح عليا الأهداف أأكدها أنا.',
+      title: l.occasionNewYearTitle,
+      question: l.occasionNewYearQuestion(dialect, year),
+      actionLabel: l.occasionNewYearActionLabel,
+      prompt: l.occasionNewYearPrompt(year),
     ),
     OccasionKind.ramadan => Occasion(
       kind: kind,
       id: id,
-      title: 'رمضان كريم 🌙',
-      question: gulf
-          ? 'أجهّز لك قائمة مقاضي رمضان من الناقص في البيت؟'
-          : 'أجهّزلك قايمة مشتريات رمضان من اللي ناقص في البيت؟',
-      actionLabel: 'جهّز القايمة',
-      prompt:
-          'جهّزلي قايمة مشتريات رمضان من اللي ناقص في البيت فعلاً، وضيفها '
-          'لقايمة التسوق في حدود الميزانية.',
+      title: l.occasionRamadanTitle,
+      question: l.occasionRamadanQuestion(dialect),
+      actionLabel: l.occasionRamadanActionLabel,
+      prompt: l.occasionRamadanPrompt,
     ),
     OccasionKind.eidFitr => Occasion(
       kind: kind,
       id: id,
-      title: 'عيد فطر سعيد! 🎈',
-      question: gulf
-          ? 'أسوي لك ميزانية العيد (عيدية ولبس وعزايم) من المتاح؟'
-          : 'أعملك ميزانية للعيد (عيدية ولبس وعزومات) من المتاح؟',
-      actionLabel: 'اعملها',
-      prompt:
-          'اعملي ميزانية لعيد الفطر: عيدية ولبس وعزومات، من المتاح عندي '
-          'من غير ما تعدّي الميزانية.',
+      title: l.occasionEidFitrTitle,
+      question: l.occasionEidFitrQuestion(dialect),
+      actionLabel: l.occasionEidFitrActionLabel,
+      prompt: l.occasionEidFitrPrompt,
     ),
     OccasionKind.eidAdha => Occasion(
       kind: kind,
       id: id,
-      title: 'عيد أضحى مبارك! 🐑',
-      question: gulf
-          ? 'أسوي لك ميزانية العيد من المتاح؟'
-          : 'أعملك ميزانية للعيد من المتاح؟',
-      actionLabel: 'اعملها',
-      prompt:
-          'اعملي ميزانية لعيد الأضحى من المتاح عندي — العيدية والعزومات، '
-          'والأضحية لو بنضحّي.',
+      title: l.occasionEidAdhaTitle,
+      question: l.occasionEidAdhaQuestion(dialect),
+      actionLabel: l.occasionEidAdhaActionLabel,
+      prompt: l.occasionEidAdhaPrompt,
     ),
     OccasionKind.hijriNewYear => Occasion(
       kind: kind,
       id: id,
-      title: 'سنة هجرية سعيدة 🌙',
-      question: gulf
-          ? 'نراجع أهدافك ونشوف وين وصلت؟'
-          : 'نراجع أهدافك ونشوف ماشية إزاي؟',
-      actionLabel: 'راجعها',
-      prompt: 'راجع أهدافي وقولّي كل هدف ماشي إزاي، واقترح خطوة صغيرة للمتأخر.',
+      title: l.occasionHijriTitle,
+      question: l.occasionHijriQuestion(dialect),
+      actionLabel: l.occasionHijriActionLabel,
+      prompt: l.occasionHijriPrompt,
     ),
     OccasionKind.mothersDay => Occasion(
       kind: kind,
       id: id,
-      title: 'كل سنة وكل أم بخير 💐',
-      question: gulf
-          ? 'تبي أقترح لك هدية لعيد الأم في حدود الميزانية؟'
-          : 'تحب أقترح عليك هدية لعيد الأم جوه الميزانية؟',
-      actionLabel: 'اقترح',
-      prompt: 'اقترح عليا هدية لعيد الأم جوه الميزانية.',
+      title: l.occasionMothersDayTitle,
+      question: l.occasionMothersDayQuestion(dialect),
+      actionLabel: l.occasionMothersDayActionLabel,
+      prompt: l.occasionMothersDayPrompt,
     ),
     OccasionKind.birthday || OccasionKind.anniversary => null,
   };
@@ -199,8 +181,10 @@ Occasion? personalOccasionOn(
   DateTime day,
   List<MemoryOccasion> remembered, {
   String? country,
+  ZadL10n? l10n,
 }) {
-  final gulf = _gulf.contains(country?.toUpperCase());
+  final l = l10n ?? zadL10nArabic;
+  final dialect = _gulf.contains(country?.toUpperCase()) ? 'gulf' : 'other';
   MemoryOccasion? pick(int inDays) => remembered
       .where(
         (o) =>
@@ -213,7 +197,7 @@ Occasion? personalOccasionOn(
   final o = today ?? soon;
   if (o == null) return null;
   final on = o.nextFrom(day);
-  final label = occasionDateLabel(on);
+  final label = occasionDateLabel(on, l);
   final when = today != null ? 'day' : 'before';
   final id = '${o.kind.name}:${o.forName ?? 'self'}:${_iso(on)}:$when';
   final ownAnniversary = o.isOwn && o.kind == MemoryOccasionKind.anniversary;
@@ -222,54 +206,41 @@ Occasion? personalOccasionOn(
         ? Occasion(
             kind: OccasionKind.anniversary,
             id: id,
-            title: 'كل سنة وإنتو طيبين 💍',
-            question: gulf
-                ? 'تبي أقترح لكم طلعة الليلة في حدود الميزانية؟'
-                : 'أقترحلكم خروجة الليلة في حدود الميزانية؟',
-            actionLabel: 'اقترح',
-            prompt:
-                'النهارده ذكرى جوازنا — اقترحلي خروجة الليلة في حدود ميزانيتي.',
+            title: l.occasionAnnivTodayTitle,
+            question: l.occasionAnnivTodayQuestion(dialect),
+            actionLabel: l.occasionAnnivTodayActionLabel,
+            prompt: l.occasionAnnivTodayPrompt,
           )
         : Occasion(
             kind: OccasionKind.anniversary,
             id: id,
-            title: 'ذكرى جوازكم بعد ٣ أيام 💍',
-            question: gulf
-                ? 'تبي أقترح لك هدية أو طلعة في حدود الميزانية؟'
-                : 'أقترحلك هدية أو خروجة في حدود الميزانية؟',
-            actionLabel: 'اقترح',
-            prompt:
-                'ذكرى جوازنا يوم $label. اقترحلي هدية أو خروجة في حدود '
-                'ميزانيتي.',
+            title: l.occasionAnnivSoonTitle,
+            question: l.occasionAnnivSoonQuestion(dialect),
+            actionLabel: l.occasionAnnivSoonActionLabel,
+            prompt: l.occasionAnnivSoonPrompt(label),
           );
   }
   final kind = o.kind == MemoryOccasionKind.birthday
       ? OccasionKind.birthday
       : OccasionKind.anniversary;
   final what = o.kind == MemoryOccasionKind.birthday
-      ? 'عيد ميلاد ${o.forName}'
-      : 'ذكرى جواز ${o.forName}';
+      ? l.occasionBirthdayOf(o.forName ?? '')
+      : l.occasionAnniversaryOf(o.forName ?? '');
   return today != null
       ? Occasion(
           kind: kind,
           id: id,
-          title: 'النهارده $what 🎂',
-          question: gulf
-              ? 'أكتب لك رسالة تهنئة ترسلها؟'
-              : 'أكتبلك رسالة تهنئة حلوة تبعتها؟',
-          actionLabel: 'اكتبها',
-          prompt: 'النهارده $what — اكتبلي رسالة تهنئة قصيرة ودافية أبعتها.',
+          title: l.occasionPersonTodayTitle(what),
+          question: l.occasionPersonTodayQuestion(dialect),
+          actionLabel: l.occasionPersonTodayActionLabel,
+          prompt: l.occasionPersonTodayPrompt(what),
         )
       : Occasion(
           kind: kind,
           id: id,
-          title: '$what بعد ٣ أيام 🎁',
-          question: gulf
-              ? 'تبي أقترح لك هدية في حدود الميزانية وأحجز مبلغها؟'
-              : 'أقترحلك هدية في حدود الميزانية وأحجز مبلغها؟',
-          actionLabel: 'اقترح هدية',
-          prompt:
-              '$what يوم $label. اقترحلي فكرتين هدية في حدود ميزانيتي، ولو '
-              'وافقت احجز مبلغها كهدف لحد يومها.',
+          title: l.occasionPersonSoonTitle(what),
+          question: l.occasionPersonSoonQuestion(dialect),
+          actionLabel: l.occasionPersonSoonActionLabel,
+          prompt: l.occasionPersonSoonPrompt(what, label),
         );
 }

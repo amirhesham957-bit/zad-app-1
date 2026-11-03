@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
@@ -179,7 +180,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
               title: 'إنت مين في البيت؟',
               child: _Chips(
                 options: ProfileOptions.roles,
-                label: ProfileLabels.role,
+                label: (v) => ProfileLabels.role(v, context.l10n),
                 selected: <String>{?_role},
                 onTap: _pickRole,
               ),
@@ -192,7 +193,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                 children: <Widget>[
                   _Chips(
                     options: ProfileOptions.caresFor,
-                    label: ProfileLabels.caresFor,
+                    label: (v) => ProfileLabels.caresFor(v, context.l10n),
                     selected: _caresFor ?? const <String>{},
                     onTap: _toggleCare,
                   ),

@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// A note.
 @immutable
@@ -82,12 +83,15 @@ class MemoryNote {
 ///
 /// Every scope on the live project on 2026-09-21. Kotlin printed the scope
 /// itself on the chip, so the customer read `spending_pattern`.
-String memoryScopeLabel(String scope) => switch (scope) {
-  'general' => 'عنك',
-  'spending_pattern' => 'صرفك',
-  'cycle_pattern' => 'دورة القبض',
-  'weekly_synthesis' => 'ملخص الأسبوع',
-  'data_quality' => 'دقة البيانات',
-  'dismissal' || 'proactive_dismissal' => 'تنبيه رفضته',
-  _ => 'ملاحظة',
-};
+String memoryScopeLabel(String scope, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (scope) {
+    'general' => l.memoryScopeGeneral,
+    'spending_pattern' => l.memoryScopeSpending,
+    'cycle_pattern' => l.memoryScopeCycle,
+    'weekly_synthesis' => l.memoryScopeWeekly,
+    'data_quality' => l.memoryScopeDataQuality,
+    'dismissal' || 'proactive_dismissal' => l.memoryScopeDismissal,
+    _ => l.memoryScopeOther,
+  };
+}

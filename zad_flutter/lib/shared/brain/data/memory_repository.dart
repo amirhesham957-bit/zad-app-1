@@ -19,6 +19,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/data/memory_remote.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
 import 'package:zad/shared/brain/domain/habits.dart';
@@ -72,15 +73,19 @@ class MemorySnapshot {
 /// Why a write did not happen.
 enum MemoryWriteFailure {
   /// No answer from the server.
-  offline('مفيش اتصال دلوقتي — جرب لما النت يرجع'),
+  offline,
 
   /// The server answered and the change is not there.
-  notSaved('مقدرتش أحفظ ده، جرب تاني');
+  notSaved;
 
-  new(this.message);
-
-  /// What the customer reads.
-  final String message;
+  /// What the customer reads, in [l10n]'s language (Arabic by default).
+  String message([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (this) {
+      offline => l.undoFailureOffline,
+      notSaved => l.memoryWriteNotSaved,
+    };
+  }
 }
 
 /// Holds it.

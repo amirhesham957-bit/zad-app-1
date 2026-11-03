@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rive/rive.dart' as rive;
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/mascot/domain/mascot_contract.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
@@ -176,7 +177,7 @@ class _RiveMascotState extends ConsumerState<_RiveMascot> {
               widget.onTap?.call();
             },
             child: Semantics(
-              label: widget.state.description,
+              label: widget.state.description(context.l10n),
               // Fit.contain, the default: the whole of Zad, never cropped.
               child: rive.RiveWidget(controller: controller),
             ),

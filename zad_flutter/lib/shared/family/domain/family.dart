@@ -8,25 +8,33 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// A member's role, as `family_members.role` stores it.
 enum FamilyRole {
   /// Runs the family: invites, roles, limits.
-  admin('admin', 'مسؤول'),
+  admin('admin'),
 
   /// An adult member.
-  member('member', 'فرد'),
+  member('member'),
 
   /// A child account — a different assistant voice, and limits a parent sets.
-  child('child', 'طفل');
+  child('child');
 
-  new(this.wireName, this.label);
+  new(this.wireName);
 
   /// The stored value.
   final String wireName;
 
-  /// What the screen calls it.
-  final String label;
+  /// What the screen calls it, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (this) {
+      admin => l.familyRoleLabelAdmin,
+      member => l.familyRoleLabelMember,
+      child => l.familyRoleLabelChild,
+    };
+  }
 
   /// Reads a stored role; anything unknown is an ordinary member, never an
   /// admin.
@@ -171,30 +179,39 @@ class Family {
 /// Why a family action did not happen.
 enum FamilyFailure {
   /// No family has that code.
-  invalidCode('الكود ده مش صح. خده تاني من صاحب العيلة.'),
+  invalidCode,
 
   /// Ten wrong codes in the last hour.
-  tooManyAttempts('جربت أكواد كتير. استنى ساعة وجرّب تاني.'),
+  tooManyAttempts,
 
   /// One family per account.
-  alreadyInFamily('إنت بالفعل في عيلة. اخرج منها الأول.'),
+  alreadyInFamily,
 
   /// The last admin tried to leave or step down while others remain.
-  lastAdmin('إنت آخر مسؤول. خلّي حد تاني مسؤول الأول.'),
+  lastAdmin,
 
   /// Something only an admin may do.
-  notAllowed('ده للمسؤول بس.'),
+  notAllowed,
 
   /// No network — joining is the server checking a code, it cannot wait.
-  offline('محتاج نت عشان ده.'),
+  offline,
 
   /// The server answered, but not as asked.
-  unknown('حصلت مشكلة. جرّب تاني.');
+  unknown;
 
-  new(this.message);
-
-  /// What to tell the customer.
-  final String message;
+  /// What to tell the customer, in [l10n]'s language (Arabic by default).
+  String message([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (this) {
+      invalidCode => l.familyFailureInvalidCode,
+      tooManyAttempts => l.familyFailureTooManyAttempts,
+      alreadyInFamily => l.familyFailureAlreadyInFamily,
+      lastAdmin => l.familyFailureLastAdmin,
+      notAllowed => l.familyFailureNotAllowed,
+      offline => l.familyFailureOffline,
+      unknown => l.familyFailureUnknown,
+    };
+  }
 
   /// Reads a server reason string.
   static FamilyFailure fromReason(String? reason) => switch (reason) {

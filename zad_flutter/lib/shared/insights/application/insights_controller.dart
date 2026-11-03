@@ -88,11 +88,14 @@ class InsightsController extends Notifier<InsightsView> {
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
+    // An event for the brain, in its language.
+    // l10n: data-begin
     final message = StringBuffer(
       'العميل جاوب على سؤال: "${question.title} — ${question.body}"',
     );
     if (question.aboutItem case final item?) message.write(' (بخصوص: $item)');
     message.write('. الإجابة: $text');
+    // l10n: data-end
     try {
       await client.functions.invoke(
         'zad-brain',

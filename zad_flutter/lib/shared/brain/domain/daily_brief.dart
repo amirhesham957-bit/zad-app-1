@@ -10,6 +10,7 @@
 library;
 
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
@@ -96,11 +97,11 @@ String _money(double v, String currency) {
   return '${NumberFormat(pattern, 'en').format(v)} $currency'.trim();
 }
 
-String _whenIn(int days) => switch (days) {
-  <= 0 => 'النهارده',
-  1 => 'بكرة',
-  2 => 'بعد بكرة',
-  _ => 'بعد $days أيام',
+String _whenIn(int days, ZadL10n l) => switch (days) {
+  <= 0 => l.briefToday,
+  1 => l.briefTomorrow,
+  2 => l.briefDayAfter,
+  _ => l.briefInDays(days),
 };
 
 /// The brief for [today] (a civil date in the account's zone) at [now], most
@@ -118,7 +119,9 @@ List<BriefItem> dailyBrief({
   int renewalWithinDays = 3,
   int runOutWithinDays = 3,
   int max = 5,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final items = <BriefItem>[];
 
   // Doses first: a missed tablet costs more than a missed discount.
@@ -138,8 +141,8 @@ List<BriefItem> dailyBrief({
     items.add(
       BriefItem(
         kind: BriefKind.doseDue,
-        title: 'وقت جرعة ${due.medicine.name}',
-        detail: 'ميعادها ${due.time} — دوس «خدتها» لما تاخدها',
+        title: l.briefDoseDue(due.medicine.name),
+        detail: l.briefDoseDueDetail('${due.time}'),
         dose: due,
       ),
     );
@@ -148,8 +151,8 @@ List<BriefItem> dailyBrief({
     items.add(
       BriefItem(
         kind: BriefKind.dosesMissed,
-        title: missed == 1 ? 'جرعة فاتت' : '$missed جرعات فاتوا',
-        detail: 'افتح الصيدلية وسجّل اللي اتاخد',
+        title: l.briefDosesMissed(missed),
+        detail: l.briefDosesMissedDetail,
       ),
     );
   }
@@ -158,8 +161,8 @@ List<BriefItem> dailyBrief({
     items.add(
       BriefItem(
         kind: BriefKind.overspent,
-        title: 'صرفت أكتر من المتاح بـ${_money(-spendable, currency)}',
-        detail: 'شوف فلوسي — زاد يقدر يقترح تقلل منين',
+        title: l.briefOverspent(_money(-spendable, currency)),
+        detail: l.briefOverspentDetail,
       ),
     );
   }
@@ -178,8 +181,8 @@ List<BriefItem> dailyBrief({
       BriefItem(
         kind: BriefKind.renewal,
         title: bnpl != null
-            ? 'قسط ${bnpl.name} ${_whenIn(days)}'
-            : '${s.title} ${_whenIn(days)}',
+            ? l.briefInstalment(bnpl.name, _whenIn(days, l))
+            : '${s.title} ${_whenIn(days, l)}',
         detail: _money(s.amount, currency),
       ),
     );
@@ -200,13 +203,13 @@ List<BriefItem> dailyBrief({
   }
   runningOut.sort((a, b) => a.$2.compareTo(b.$2));
   if (short.isNotEmpty) {
-    final named = short.take(3).join('، ');
-    final more = short.length > 3 ? ' و${short.length - 3} كمان' : '';
+    final named = short.take(3).join(l.mutationListSeparator);
+    final more = short.length > 3 ? l.briefAndMore(short.length - 3) : '';
     items.add(
       BriefItem(
         kind: BriefKind.shortage,
-        title: 'ناقصك $named$more',
-        detail: 'افتح بيتي وضيفهم لقايمة التسوق',
+        title: l.briefShort('$named$more'),
+        detail: l.briefShortDetail,
       ),
     );
   }
@@ -214,24 +217,33 @@ List<BriefItem> dailyBrief({
   if (runningOut.isNotEmpty) {
     final named = runningOut
         .take(3)
-        .map((r) => '${r.$1} ${r.$3 ? 'حوالي ' : ''}${_whenIn(r.$2)}')
-        .join('، ');
-    final more = runningOut.length > 3 ? ' و${runningOut.length - 3} كمان' : '';
+        .map(
+          (r) => r.$3
+              ? l.briefAboutWhen(r.$1, _whenIn(r.$2, l))
+              : '${r.$1} ${_whenIn(r.$2, l)}',
+        )
+        .join(l.mutationListSeparator);
+    final more = runningOut.length > 3
+        ? l.briefAndMore(runningOut.length - 3)
+        : '';
     items.add(
       BriefItem(
         kind: BriefKind.runningOut,
-        title: 'هيخلص قريب: $named$more',
+        title: l.briefRunningOut('$named$more'),
         detail: runningOut.any((r) => r.$3)
-            ? 'تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟'
-            : 'من معدل استهلاكك — ضيفهم لقايمة التسوق؟',
+            ? l.briefRunningOutEstimate
+            : l.briefRunningOutRate,
       ),
     );
   }
 
   if (familyNeeds.isNotEmpty) {
-    final named = familyNeeds.take(3).map((n) => n.item).join('، ');
+    final named = familyNeeds
+        .take(3)
+        .map((n) => n.item)
+        .join(l.mutationListSeparator);
     final more = familyNeeds.length > 3
-        ? ' و${familyNeeds.length - 3} كمان'
+        ? l.briefAndMore(familyNeeds.length - 3)
         : '';
     final who = <String>{
       for (final n in familyNeeds)
@@ -240,11 +252,10 @@ List<BriefItem> dailyBrief({
     items.add(
       BriefItem(
         kind: BriefKind.familyNeed,
-        title: 'من شات العيلة: $named$more',
+        title: l.briefFamilyChat('$named$more'),
         detail: who.isEmpty
-            ? 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟'
-            : '${who.join(' و')} ${who.length == 1 ? 'قال' : 'قالوا'} إنهم '
-                  'ناقصين — ضيفهم لقايمة التسوق؟',
+            ? l.briefFamilySaid
+            : l.briefFamilyWhoSaid(who.join(l.briefAnd), who.length),
         needs: familyNeeds,
       ),
     );

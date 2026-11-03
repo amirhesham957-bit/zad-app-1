@@ -23,6 +23,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/data/memory_graph_remote.dart';
 import 'package:zad/features/brain/domain/memory_graph.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart'
@@ -38,6 +39,7 @@ Future<void> showMemoryGraph(BuildContext context) => Navigator.of(context)
 /// Writes the vault's files to a fresh folder and hands them to the share
 /// sheet, where the customer saves them into an Obsidian vault folder.
 Future<void> shareVaultFiles(Map<String, String> files) async {
+  final l = zadL10nArabic;
   final root = await getTemporaryDirectory();
   final dir = Directory('${root.path}/zad_vault');
   if (dir.existsSync()) dir.deleteSync(recursive: true);
@@ -51,8 +53,8 @@ Future<void> shareVaultFiles(Map<String, String> files) async {
   await SharePlus.instance.share(
     ShareParams(
       files: written,
-      subject: 'شبكة زاد — أوبسيديان',
-      title: 'صدّر شبكة زاد',
+      subject: l.graphShareSubject,
+      title: l.graphShareTitle,
     ),
   );
 }
@@ -98,7 +100,7 @@ class _MemoryGraphScreenState extends ConsumerState<MemoryGraphScreen> {
     } on Object {
       if (mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          const SnackBar(content: Text('مقدرتش أجهّز الملفات. جرّب تاني.')),
+          SnackBar(content: Text(context.l10n.graphExportFailed)),
         );
       }
     } finally {
@@ -122,18 +124,19 @@ class _MemoryGraphScreenState extends ConsumerState<MemoryGraphScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(memoryGraphProvider);
     final graph = async.value;
+    final l = context.l10n;
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('شبكة زاد'),
+          title: Text(l.brainGraphTitle),
           actions: <Widget>[
             IconButton(
               onPressed: graph == null || graph.isEmpty || _exporting
                   ? null
                   : () => unawaited(_export(graph)),
-              tooltip: 'صدّر لأوبسيديان',
+              tooltip: l.graphExport,
               icon: _exporting
                   ? const SizedBox.square(
                       dimension: 18,
@@ -144,15 +147,13 @@ class _MemoryGraphScreenState extends ConsumerState<MemoryGraphScreen> {
           ],
         ),
         body: switch (async) {
-          AsyncValue(:final value?) when value.isEmpty => const Padding(
-            padding: EdgeInsets.all(ZadSpacing.xl),
+          AsyncValue(:final value?) when value.isEmpty => Padding(
+            padding: const EdgeInsets.all(ZadSpacing.xl),
             child: Center(
               child: ZadEmptyState(
                 icon: ZadIcons.memoryGraph,
-                title: 'لسه مفيش شبكة',
-                message:
-                    'كل ما تكلّم زاد عن ناسك وأماكنك وحاجاتك، '
-                    'هيظهروا هنا ويترابطوا ببعض.',
+                title: l.graphEmptyTitle,
+                message: l.graphEmptyBody,
               ),
             ),
           ),
@@ -165,12 +166,12 @@ class _MemoryGraphScreenState extends ConsumerState<MemoryGraphScreen> {
             child: Center(
               child: ZadEmptyState(
                 icon: ZadIcons.memoryGraph,
-                title: 'مقدرتش أجيب الشبكة',
-                message: 'اتأكد من النت وجرّب تاني.',
+                title: l.graphLoadFailed,
+                message: l.graphCheckNet,
                 action: FilledButton(
                   onPressed: () => ref.invalidate(memoryGraphProvider),
                   style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                  child: const Text('جرّب تاني'),
+                  child: Text(l.graphRetry),
                 ),
               ),
             ),
@@ -251,9 +252,9 @@ class _GraphBodyState extends State<_GraphBody> {
                           if (e != null) widget.onOpen(e);
                         },
                         child: Semantics(
-                          label:
-                              'شبكة فيها ${graph.entities.length} — '
-                              'القايمة تحتها فيها نفس الحاجات',
+                          label: context.l10n.graphSemantics(
+                            graph.entities.length,
+                          ),
                           child: CustomPaint(
                             size: Size.square(side),
                             painter: _GraphPainter(
@@ -292,7 +293,7 @@ class _GraphBodyState extends State<_GraphBody> {
                   ),
                   const SizedBox(width: ZadSpacing.xs),
                   Text(
-                    kind.plural,
+                    kind.pluralIn(context.l10n),
                     style: ZadType.labelSmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -318,8 +319,10 @@ class _GraphBodyState extends State<_GraphBody> {
                 const SizedBox(width: ZadSpacing.sm),
                 Expanded(child: Text(e.name, style: ZadType.bodyMedium)),
                 Text(
-                  '${e.kind.singular} · '
-                  '${graph.notesAbout(e.id).length} ملاحظة',
+                  [
+                    e.kind.singularIn(context.l10n),
+                    context.l10n.graphNotesCount(graph.notesAbout(e.id).length),
+                  ].join(' · '),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ],
@@ -424,13 +427,13 @@ class _EntitySheet extends StatelessWidget {
         children: <Widget>[
           Text(entity.name, style: ZadType.titleLarge),
           Text(
-            entity.kind.singular,
+            entity.kind.singularIn(context.l10n),
             style: ZadType.labelSmall.copyWith(color: entityColor(entity.kind)),
           ),
           const SizedBox(height: ZadSpacing.md),
           if (notes.isEmpty)
             Text(
-              'لسه مفيش ملاحظات عن ${entity.name}.',
+              context.l10n.graphNoNotesAbout(entity.name),
               style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
             ),
           for (final n in notes)

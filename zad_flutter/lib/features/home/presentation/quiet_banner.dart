@@ -67,7 +67,7 @@ class _QuietModeBannerState extends ConsumerState<QuietModeBanner> {
             const SizedBox(width: ZadSpacing.sm),
             Expanded(
               child: Text(
-                quiet.banner(localEnd),
+                quiet.banner(localEnd, context.l10n),
                 style: ZadType.bodySmall.copyWith(color: ZadColors.ink),
               ),
             ),

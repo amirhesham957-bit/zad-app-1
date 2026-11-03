@@ -123,7 +123,7 @@ class _TravelBannerSlotState extends ConsumerState<TravelBannerSlot> {
             Expanded(
               child: Text(
                 context.l10n.travelSwitch(
-                  suggested.nameAr,
+                  suggested.name(context.l10n),
                   suggested.currencySymbol,
                 ),
                 style: ZadType.bodySmall.copyWith(

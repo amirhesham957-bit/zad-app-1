@@ -2595,4 +2595,5959 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'Most of it left';
+
+  @override
+  String get agentToolLogTransaction => 'Logged a transaction';
+
+  @override
+  String get agentToolUpdateTransaction => 'Edited a transaction';
+
+  @override
+  String get agentToolDeleteTransaction => 'Deleted a transaction';
+
+  @override
+  String get agentToolSetTransactionCategory => 'Categorised a transaction';
+
+  @override
+  String get agentToolMergeDuplicateExpense => 'Merged a duplicate expense';
+
+  @override
+  String get agentToolReconcileCashBalance => 'Settled the cash balance';
+
+  @override
+  String get agentToolParseNotificationPayload => 'Read a bank message';
+
+  @override
+  String get agentToolSetMonthlyLimit => 'Changed the budget limit';
+
+  @override
+  String get agentToolConfirmCycleStart => 'Confirmed the pay cycle';
+
+  @override
+  String get agentToolSetMarket => 'Changed country and currency';
+
+  @override
+  String get agentToolAddObligation => 'Added a commitment';
+
+  @override
+  String get agentToolConfirmObligation => 'Confirmed a commitment';
+
+  @override
+  String get agentToolUpdateObligation => 'Edited a commitment';
+
+  @override
+  String get agentToolDeleteObligation => 'Deleted a commitment';
+
+  @override
+  String get agentToolAddSubscription => 'Added a subscription';
+
+  @override
+  String get agentToolUpdateSubscription => 'Edited a subscription';
+
+  @override
+  String get agentToolDeleteSubscription => 'Deleted a subscription';
+
+  @override
+  String get agentToolAddDebt => 'Added a debt';
+
+  @override
+  String get agentToolUpdateDebt => 'Edited a debt';
+
+  @override
+  String get agentToolDeleteDebt => 'Deleted a debt';
+
+  @override
+  String get agentToolAddInventoryItem => 'Added an item to the pantry';
+
+  @override
+  String get agentToolUpdateInventoryQty => 'Changed a pantry quantity';
+
+  @override
+  String get agentToolDeleteInventoryItem => 'Removed an item from the pantry';
+
+  @override
+  String get agentToolAddShoppingItem => 'Added to the shopping list';
+
+  @override
+  String get agentToolCompleteShoppingItem => 'Ticked off the shopping list';
+
+  @override
+  String get agentToolDeleteShoppingItem => 'Removed from the shopping list';
+
+  @override
+  String get agentToolAddPharmacyItem => 'Added a medicine';
+
+  @override
+  String get agentToolUpdatePharmacyItem => 'Edited a medicine';
+
+  @override
+  String get agentToolDeletePharmacyItem => 'Removed a medicine';
+
+  @override
+  String get agentToolLogPharmacyDose => 'Logged a dose';
+
+  @override
+  String get agentToolAddMaintenanceItem => 'Added an appliance to maintenance';
+
+  @override
+  String get agentToolUpdateMaintenanceItem => 'Edited an appliance';
+
+  @override
+  String get agentToolDeleteMaintenanceItem => 'Removed an appliance';
+
+  @override
+  String get agentToolSaveDocument => 'Saved a document';
+
+  @override
+  String get agentToolDeleteDocument => 'Removed a document';
+
+  @override
+  String get agentToolAddGatheringToList =>
+      'Added a gathering\'s items to the list';
+
+  @override
+  String get agentToolAddAppointment => 'Added an appointment';
+
+  @override
+  String get agentToolUpdateAppointment => 'Edited an appointment';
+
+  @override
+  String get agentToolAddPlaceReminder => 'Set a place reminder';
+
+  @override
+  String get agentToolCancelPlaceReminder => 'Cancelled a place reminder';
+
+  @override
+  String get agentToolScheduleTask => 'Scheduled a reminder';
+
+  @override
+  String get agentToolRemember => 'Saved a note about you';
+
+  @override
+  String get agentToolLinkMemory => 'Linked notes';
+
+  @override
+  String get agentToolUpdateCustomerProfile => 'Updated your profile';
+
+  @override
+  String get agentToolSetLifeGoal => 'New goal';
+
+  @override
+  String get agentToolSetBrokeMode => 'Tight-month mode';
+
+  @override
+  String get agentToolStartSavingsChallenge => 'Started a savings challenge';
+
+  @override
+  String get agentToolStopSavingsChallenge => 'Stopped a savings challenge';
+
+  @override
+  String get agentToolUpdateEmergencyFundBalance =>
+      'Updated the emergency fund';
+
+  @override
+  String get agentToolAllocateIncome => 'Allocated income';
+
+  @override
+  String get agentToolSetSleepWindow => 'Your sleep hours';
+
+  @override
+  String get agentToolLearnSkill => 'Learned a skill';
+
+  @override
+  String get agentToolSaveTrustedTechnician => 'Saved a technician';
+
+  @override
+  String get agentToolOpenSupportTicket => 'Opened a support request';
+
+  @override
+  String get agentToolAnswerSameProduct => 'Matched a product';
+
+  @override
+  String get agentToolOther => 'A change by Zad';
+
+  @override
+  String get agentSourceAppChat => 'App chat';
+
+  @override
+  String get agentSourceTelegram => 'Telegram';
+
+  @override
+  String get agentSourceVoice => 'Voice message';
+
+  @override
+  String get agentSourceConfirm => 'Confirmed by you';
+
+  @override
+  String get agentSourceDaily => 'Daily review';
+
+  @override
+  String get agentSourceEvent => 'Automatic event';
+
+  @override
+  String get agentSourceOther => 'Zad';
+
+  @override
+  String get undoFailureNewerActionExists =>
+      'There\'s a newer change to the same thing — undo that one first';
+
+  @override
+  String get undoFailureAlreadyUndone => 'This was already undone';
+
+  @override
+  String get undoFailureNeverApplied =>
+      'This never went through, so there\'s nothing to undo';
+
+  @override
+  String get undoFailureNotUndoable => 'This can\'t be undone';
+
+  @override
+  String get undoFailureTargetMissing =>
+      'That\'s been deleted or isn\'t there any more';
+
+  @override
+  String get undoFailureNotAllowed =>
+      'There\'s a sign-in problem — sign out and back in';
+
+  @override
+  String get undoFailureOffline =>
+      'No connection right now — try when you\'re back online';
+
+  @override
+  String get undoFailureUnknown => 'I couldn\'t undo it, try again';
+
+  @override
+  String actionLogUndoAsk(String tool) {
+    return 'Undo “$tool”?';
+  }
+
+  @override
+  String get actionLogUndoWarning =>
+      'Zad will put this back the way it was before the change. You won\'t be able to undo this later.';
+
+  @override
+  String get actionLogWait => 'Wait';
+
+  @override
+  String get actionLogUndo => 'Undo';
+
+  @override
+  String actionLogUndone(String tool) {
+    return 'Undid “$tool”';
+  }
+
+  @override
+  String get actionLogTitle => 'Zad\'s change log';
+
+  @override
+  String get actionLogLoadFailed => 'Couldn\'t load the log';
+
+  @override
+  String get actionLogEmptyTitle => 'No changes yet';
+
+  @override
+  String get actionLogPullRetry => 'Pull down to try again.';
+
+  @override
+  String get actionLogEmptyBody =>
+      'Anything Zad logs or changes for you will show up here.';
+
+  @override
+  String get actionLogApplied => 'Done';
+
+  @override
+  String get actionLogUndoneStatus => 'Undone';
+
+  @override
+  String get actionLogRejected => 'Refused';
+
+  @override
+  String get mutationFieldAmount => 'Amount';
+
+  @override
+  String get mutationFieldQuantity => 'Quantity';
+
+  @override
+  String get mutationFieldRemainingQuantity => 'Quantity left';
+
+  @override
+  String get mutationFieldRemainingBalance => 'Remaining';
+
+  @override
+  String get mutationFieldPrice => 'Price';
+
+  @override
+  String get mutationFieldUnit => 'Unit';
+
+  @override
+  String get mutationFieldCategory => 'Category';
+
+  @override
+  String get mutationFieldKind => 'Type';
+
+  @override
+  String get mutationFieldStatus => 'Status';
+
+  @override
+  String get mutationFieldStartsAt => 'Time';
+
+  @override
+  String get mutationFieldTaskDescription => 'Reminder';
+
+  @override
+  String get mutationFieldRecurrence => 'Repeats';
+
+  @override
+  String get mutationFieldDosage => 'Dose';
+
+  @override
+  String get mutationFieldDoseTimes => 'Dose times';
+
+  @override
+  String get mutationFieldDailyDoseCount => 'Doses a day';
+
+  @override
+  String get mutationFieldExpiryDate => 'Expiry';
+
+  @override
+  String get mutationFieldRenewalDate => 'Renewal';
+
+  @override
+  String get mutationFieldDueDay => 'Due day';
+
+  @override
+  String get mutationFieldBillingCycle => 'Cycle';
+
+  @override
+  String get mutationFieldIsActive => 'Active';
+
+  @override
+  String get mutationFieldForPerson => 'For whom';
+
+  @override
+  String get mutationFieldPlace => 'Place';
+
+  @override
+  String get mutationFieldNote => 'Note';
+
+  @override
+  String get mutationFieldNotes => 'Notes';
+
+  @override
+  String get mutationFieldExpectedCost => 'Expected cost';
+
+  @override
+  String get mutationFieldCurrency => 'Currency';
+
+  @override
+  String get mutationFieldCountry => 'Country';
+
+  @override
+  String get mutationFieldPayDay => 'Payday';
+
+  @override
+  String get mutationFieldBed => 'Bedtime';
+
+  @override
+  String get mutationFieldWake => 'Wake-up';
+
+  @override
+  String get mutationFieldDailyCap => 'Daily cap';
+
+  @override
+  String get mutationFieldLengthDays => 'Length in days';
+
+  @override
+  String get mutationFieldTrade => 'Trade';
+
+  @override
+  String get mutationFieldMetric => 'Measure';
+
+  @override
+  String get mutationStatusUpcoming => 'Upcoming';
+
+  @override
+  String get mutationStatusDone => 'Done';
+
+  @override
+  String get mutationStatusCancelled => 'Cancelled';
+
+  @override
+  String get mutationStatusActive => 'Active';
+
+  @override
+  String get mutationStatusAbandoned => 'Stopped';
+
+  @override
+  String get mutationEdited => 'Edited';
+
+  @override
+  String get mutationRemoved => 'Removed';
+
+  @override
+  String mutationFieldChange(String field, String before, String after) {
+    return '$field: $before → $after';
+  }
+
+  @override
+  String mutationValueChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String mutationMore(String shown, int count) {
+    return '$shown • and $count more';
+  }
+
+  @override
+  String get mutationYes => 'Yes';
+
+  @override
+  String get mutationNo => 'No';
+
+  @override
+  String mutationItems(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get mutationListSeparator => ', ';
+
+  @override
+  String get whyChangedTitle => 'Latest changes';
+
+  @override
+  String get whyChangedSubtitle =>
+      'Zad\'s automatic edits to your data — what changed, and when';
+
+  @override
+  String get whyChangedEmpty => 'No automatic edits recorded yet';
+
+  @override
+  String get whyChangedNow => 'Now';
+
+  @override
+  String whyChangedMinutesAgo(int minutes) {
+    return '$minutes min ago';
+  }
+
+  @override
+  String whyChangedHoursAgo(int hours) {
+    return '$hours h ago';
+  }
+
+  @override
+  String whyChangedDaysAgo(int days) {
+    return '$days d ago';
+  }
+
+  @override
+  String get memoryForgetAsk => 'Forget this note?';
+
+  @override
+  String get memoryForgetBody =>
+      'Zad won\'t bring it up again in any future reply.';
+
+  @override
+  String get memoryForgetYes => 'Forget it';
+
+  @override
+  String get memoryForgotten => 'Forgotten';
+
+  @override
+  String get memoryClearOutingsAsk => 'Clear your outings?';
+
+  @override
+  String get memoryClearYes => 'Clear them';
+
+  @override
+  String get memoryOutingsCleared => 'Your outings were cleared';
+
+  @override
+  String get memorySaved => 'Saved';
+
+  @override
+  String get memoryTitle => 'What Zad knows about me';
+
+  @override
+  String get memoryStaleBanner =>
+      'Couldn\'t fetch the latest — this is what was last saved here.';
+
+  @override
+  String get memoryNotesHeading => 'What Zad remembers about you';
+
+  @override
+  String get memoryEmptyTitle => 'No memories yet';
+
+  @override
+  String get memoryProfileTitle => 'Who you are to Zad';
+
+  @override
+  String get memoryProfileSubtitle =>
+      'Zad talks to you based on this — edit it whenever you like';
+
+  @override
+  String get memoryEdit => 'Edit';
+
+  @override
+  String get memoryLineName => 'What I call you';
+
+  @override
+  String get memoryLineGender => 'Gender';
+
+  @override
+  String get memoryLineRole => 'Your role at home';
+
+  @override
+  String get memoryLineAge => 'Age';
+
+  @override
+  String get memoryLineJob => 'Your work';
+
+  @override
+  String get memoryLinePay => 'Payday';
+
+  @override
+  String get memoryLineHousehold => 'Household';
+
+  @override
+  String get memoryLineCity => 'City';
+
+  @override
+  String get memoryLineDialect => 'Dialect';
+
+  @override
+  String get memoryDialectDefault => 'Like your country and how you talk';
+
+  @override
+  String get memoryLineVoice => 'Zad\'s voice';
+
+  @override
+  String get memoryHabitsTitle => 'Your habits and outings';
+
+  @override
+  String get memoryHabitsSubtitle =>
+      'From your spending and outings — no places or coordinates';
+
+  @override
+  String get memoryHabitsEmpty =>
+      'Still learning your habits — log your spending and they\'ll show up here.';
+
+  @override
+  String get memoryHabitWeekly => 'Average weekly spending';
+
+  @override
+  String get memoryHabitTopCategories => 'What you spend most on';
+
+  @override
+  String get memoryHabitBusiestDay => 'Your biggest spending day';
+
+  @override
+  String get memoryHabitSubscriptions => 'Subscriptions a month';
+
+  @override
+  String get memoryHabitOutings => 'Outings, last 30 days';
+
+  @override
+  String get memoryHabitPerOuting => 'Average spend per outing';
+
+  @override
+  String get memoryHabitTopPlaces => 'Places you go most';
+
+  @override
+  String get memoryClearOutingsBody =>
+      'We\'ll clear every recorded outing (times, spending and places). The expenses themselves stay.';
+
+  @override
+  String get memoryEmptyBody =>
+      'Zad will learn about you bit by bit from what you say and how you use the app.';
+
+  @override
+  String get memoryUnknown => 'Don\'t know yet';
+
+  @override
+  String memoryHouseholdSize(int count) {
+    return '$count people';
+  }
+
+  @override
+  String memoryKidsCount(int count) {
+    return '$count kids';
+  }
+
+  @override
+  String memoryPayDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String memoryOutingsCount(int count) {
+    return '$count outings';
+  }
+
+  @override
+  String get memoryClearOutings => 'Clear my outings';
+
+  @override
+  String memoryConfirmedTimes(int count) {
+    return 'Confirmed $count times';
+  }
+
+  @override
+  String memoryAbout(String names) {
+    return 'About: $names';
+  }
+
+  @override
+  String get memoryForgetThis => 'Forget this';
+
+  @override
+  String memoryUntil(String date) {
+    return 'Until $date';
+  }
+
+  @override
+  String get brainHealthTitle => 'Zad\'s brain health';
+
+  @override
+  String get brainHealthRefresh => 'Refresh';
+
+  @override
+  String get brainHealthCannotSeeTitle => 'Can\'t see the brain right now';
+
+  @override
+  String get brainHealthRetry => 'Try again';
+
+  @override
+  String get brainHealthActivity => 'Activity';
+
+  @override
+  String get brainHealthLastProactive => 'Last proactive alert';
+
+  @override
+  String get brainHealthRuns7d => 'Runs, last 7 days';
+
+  @override
+  String get brainHealthRunsFailed => 'Of which failed';
+
+  @override
+  String get brainHealthInsights7d => 'Insights, last 7 days';
+
+  @override
+  String get brainHealthInsightsUnseen => 'Insights you haven\'t seen';
+
+  @override
+  String get brainHealthLastFailure => 'Last failure type';
+
+  @override
+  String get brainHealthFailureBusy => 'Provider busy';
+
+  @override
+  String get brainHealthFailureConfig => 'Setup problem';
+
+  @override
+  String get brainHealthFailureOther => 'Unknown';
+
+  @override
+  String get brainHealthTasks => 'Tasks and queue';
+
+  @override
+  String get brainHealthTasksStuck => 'Stuck or late tasks';
+
+  @override
+  String get brainHealthTasksPending => 'Tasks waiting their turn';
+
+  @override
+  String get brainHealthTasksFailed7d => 'Failed tasks, last 7 days';
+
+  @override
+  String get brainHealthNotRetried => 'Requests not retried';
+
+  @override
+  String get brainHealthChatUse => 'Chat use';
+
+  @override
+  String get brainHealthRequests => 'Requests';
+
+  @override
+  String get brainHealthTokens => 'Reply size';
+
+  @override
+  String get brainHealthLearning => 'Learning';
+
+  @override
+  String get brainHealthGoals => 'Goals Zad is working on';
+
+  @override
+  String get brainHealthDrift => 'Unexpected actions by Zad, last 7 days';
+
+  @override
+  String get brainHealthHealthy => 'The brain is working fine';
+
+  @override
+  String get brainHealthQuiet => 'Something\'s worth a look';
+
+  @override
+  String get brainHealthStalled => 'The brain has stopped and needs attention';
+
+  @override
+  String get brainHealthAllClear =>
+      'No problems spotted. Zad works in the background and logs every step.';
+
+  @override
+  String brainHealthDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brainHealthHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainHealthNever => 'Never';
+
+  @override
+  String get brainHealthJustNow => 'Just now';
+
+  @override
+  String get brainHealthReasonNoProactiveYet =>
+      'Zad is still getting to know you, and will start sending proactive alerts after a little use';
+
+  @override
+  String brainHealthReasonProactiveSilent(String duration) {
+    return 'Zad hasn\'t sent a proactive alert for $duration';
+  }
+
+  @override
+  String brainHealthReasonTasksBackedUp(int count) {
+    return 'Stuck or late tasks: $count';
+  }
+
+  @override
+  String brainHealthReasonRunsFailing(int failed, int total) {
+    return 'Failed runs: $failed of $total';
+  }
+
+  @override
+  String brainHealthReasonTasksFailed(int count) {
+    return 'Failed tasks: $count';
+  }
+
+  @override
+  String brainHealthReasonNotRetried(int count) {
+    return 'Requests not retried: $count';
+  }
+
+  @override
+  String brainHealthReasonQuotaNear(int percent) {
+    return 'Chat use is close to the daily limit ($percent%) — replies may stop until tomorrow';
+  }
+
+  @override
+  String get brainHealthCannotSee =>
+      'I couldn\'t read the brain\'s state right now. That doesn\'t mean everything\'s fine — it means I can\'t see.';
+
+  @override
+  String brainHealthOf(int used, int limit) {
+    return '$used of $limit';
+  }
+
+  @override
+  String get brainHealthQuotaNote =>
+      'This allowance is for chat replies only and resets every day at midnight GMT — it has nothing to do with Zad\'s background work';
+
+  @override
+  String get staffTitle => 'Zad\'s team';
+
+  @override
+  String get brainHubStaffSubtitle =>
+      'What the team noticed on the morning round of your home, money and family';
+
+  @override
+  String get brainHubMemorySubtitle =>
+      'What Zad remembers about you and talks to you by — correct it or have it forget';
+
+  @override
+  String get brainGraphTitle => 'Zad\'s network';
+
+  @override
+  String get brainMapTitle => 'Zad\'s map';
+
+  @override
+  String get brainHubMapSubtitle =>
+      'How your budget, subscriptions and home connect';
+
+  @override
+  String get brainHubLogSubtitle =>
+      'Everything Zad logged or changed for you, with an undo if it was wrong';
+
+  @override
+  String get brainHubHealthSubtitle =>
+      'Is Zad working in the background or stuck — and if stuck, why';
+
+  @override
+  String get brainHubTitle => 'Zad\'s brain';
+
+  @override
+  String get brainHubGraphSubtitle =>
+      'The people, places and things Zad knows and how they connect — and export it to Obsidian';
+
+  @override
+  String get staffRolePantry => 'Pantry keeper';
+
+  @override
+  String get staffRolePharmacy => 'The nurse';
+
+  @override
+  String get staffRoleFinance => 'The accountant';
+
+  @override
+  String get staffRoleFamily => 'Family secretary';
+
+  @override
+  String get staffRoleHome => 'Home manager';
+
+  @override
+  String get staffRoleResearch => 'The researcher';
+
+  @override
+  String get staffRoleCoach => 'Setup coach';
+
+  @override
+  String get staffIntro =>
+      'Every morning the team does a round of your home: pantry, pharmacy, money, family and settings — and tells Zad what needs attention.';
+
+  @override
+  String get staffEmptyTitle => 'The team found nothing worth flagging';
+
+  @override
+  String get staffEmptyBody =>
+      'The next round is in the morning — anything they find will show up here.';
+
+  @override
+  String get staffLoadFailed => 'Couldn\'t load the team\'s notes';
+
+  @override
+  String get profileSheetPayDay => 'What day of the month do you get paid?';
+
+  @override
+  String get profileSheetPayFrequency => 'How often you get paid';
+
+  @override
+  String get profileSheetHouseholdSize => 'People at home';
+
+  @override
+  String get profileSheetKids => 'Number of kids';
+
+  @override
+  String get profileSheetSave => 'Save';
+
+  @override
+  String get entityPerson => 'Person';
+
+  @override
+  String get entityPlace => 'Place';
+
+  @override
+  String get entityItem => 'Item';
+
+  @override
+  String get entityOrg => 'Organisation';
+
+  @override
+  String get entityPeople => 'People';
+
+  @override
+  String get entityPlaces => 'Places';
+
+  @override
+  String get entityItems => 'Items';
+
+  @override
+  String get entityOrgs => 'Organisations';
+
+  @override
+  String graphNotesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count notes',
+      one: '1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String graphNoNotesAbout(String name) {
+    return 'No notes about $name yet.';
+  }
+
+  @override
+  String graphSemantics(int count) {
+    return 'A network of $count — the list below has the same things';
+  }
+
+  @override
+  String get graphExportFailed => 'Couldn\'t prepare the files. Try again.';
+
+  @override
+  String get graphShareSubject => 'Zad\'s network — Obsidian';
+
+  @override
+  String get graphShareTitle => 'Export Zad\'s network';
+
+  @override
+  String get graphExport => 'Export to Obsidian';
+
+  @override
+  String get graphEmptyTitle => 'No network yet';
+
+  @override
+  String get graphLoadFailed => 'Couldn\'t load the network';
+
+  @override
+  String get graphCheckNet => 'Check your connection and try again.';
+
+  @override
+  String get graphEmptyBody =>
+      'Whenever you tell Zad about your people, places and things, they show up here, connected.';
+
+  @override
+  String get graphRetry => 'Try again';
+
+  @override
+  String mapPerMonth(String amount) {
+    return '$amount/month';
+  }
+
+  @override
+  String mapLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String get mapDomainBudget => 'Budget';
+
+  @override
+  String get mapDomainObligations => 'Commitments';
+
+  @override
+  String get mapDomainSubscriptions => 'Subscriptions and instalments';
+
+  @override
+  String get mapDomainDebts => 'Debts';
+
+  @override
+  String get mapDomainPantry => 'Pantry';
+
+  @override
+  String get mapDomainShopping => 'Shopping list';
+
+  @override
+  String get mapDomainPharmacy => 'Family pharmacy';
+
+  @override
+  String get mapDomainMaintenance => 'Maintenance';
+
+  @override
+  String mapAskAbout(String label) {
+    return 'Tell me more about $label';
+  }
+
+  @override
+  String mapNodeCount(int count) {
+    return '$count connected items';
+  }
+
+  @override
+  String get mapLegendComputed => 'A link actually computed';
+
+  @override
+  String get mapLegendNotYet => 'Not counted yet';
+
+  @override
+  String get mapLegendLive => 'Zad has a live insight here now';
+
+  @override
+  String get mapZoomIn => 'Zoom in';
+
+  @override
+  String get mapZoomOut => 'Zoom out';
+
+  @override
+  String get mapReset => 'Reset';
+
+  @override
+  String get mapReserved => 'Reserved';
+
+  @override
+  String get mapAvailable => 'Available';
+
+  @override
+  String get mapAskZad => 'Ask Zad';
+
+  @override
+  String get mapNothingHere => 'Nothing here right now';
+
+  @override
+  String get mapOpenScreen => 'Open the screen';
+
+  @override
+  String get brainFamilySavingsPots => 'Savings pots';
+
+  @override
+  String get brainFamilyAchievements => 'Achievements and ranks';
+
+  @override
+  String get brainFamilyTasbiha => 'Tasbiha';
+
+  @override
+  String get brainFamilyFamily => 'Family';
+
+  @override
+  String get reportDaySaturday => 'Saturday';
+
+  @override
+  String get reportDaySunday => 'Sunday';
+
+  @override
+  String get reportDayMonday => 'Monday';
+
+  @override
+  String get reportDayTuesday => 'Tuesday';
+
+  @override
+  String get reportDayWednesday => 'Wednesday';
+
+  @override
+  String get reportDayThursday => 'Thursday';
+
+  @override
+  String get reportDayFriday => 'Friday';
+
+  @override
+  String get reportHealthExcellent => 'Excellent 🌟';
+
+  @override
+  String get reportHealthGood => 'Good 👍';
+
+  @override
+  String get reportHealthWatch => 'Needs attention ⚠️';
+
+  @override
+  String get reportDanger => 'Danger 🚨';
+
+  @override
+  String reportTopSpend(String category, String amount) {
+    return 'Your biggest spend this month: $category ($amount)';
+  }
+
+  @override
+  String reportOverBudget(String category, String amount) {
+    return '⛔ You went over the $category budget by $amount';
+  }
+
+  @override
+  String reportSubsCost(String monthly, String yearly) {
+    return 'Your active subscriptions cost you $monthly a month ($yearly a year)';
+  }
+
+  @override
+  String reportSubsShare(int percent, String title, String amount) {
+    return '💡 Subscriptions are $percent% of your budget — check $title ($amount) if you don\'t use it';
+  }
+
+  @override
+  String reportStreams(int count, String amount) {
+    return '📺 You have $count streaming services — cancelling one saves you $amount a month';
+  }
+
+  @override
+  String reportRunningOut(String name, int days) {
+    return '🛒 $name is expected to run out within $days days';
+  }
+
+  @override
+  String reportRunway(String perDay, int days) {
+    return 'At your current pace ($perDay/day), the balance lasts $days days';
+  }
+
+  @override
+  String get reportPowerUnknown => 'Not set';
+
+  @override
+  String get reportPowerStrong => 'Strong 💪';
+
+  @override
+  String get reportPowerBalanced => 'Balanced ⚖️';
+
+  @override
+  String get reportPowerWeak => 'Weak ⚠️';
+
+  @override
+  String get reportDayUnknown => 'Unknown';
+
+  @override
+  String reportTooFast(String current, String safe) {
+    return '⚡ Your daily spending ($current) is above the safe pace ($safe) — ease off a bit';
+  }
+
+  @override
+  String reportSpentLess(int percent, String amount) {
+    return '🎉 You spent $percent% less than the same point last month — you saved $amount!';
+  }
+
+  @override
+  String reportSpentMore(int percent) {
+    return '📈 Your spending is up $percent% on the same point last month';
+  }
+
+  @override
+  String reportImpulse(int count) {
+    return '🛍️ $count impulse buys in the last 30 days (more than twice your average)';
+  }
+
+  @override
+  String get reportExportUnknown => 'Not set yet';
+
+  @override
+  String reportExportTitle(String month) {
+    return '📊 Zad money report — $month';
+  }
+
+  @override
+  String reportExportHealth(int score, String label) {
+    return 'Financial health: $score/100 ($label)';
+  }
+
+  @override
+  String reportExportPower(String status, String safe) {
+    return 'Spending power: $status — safe per day: $safe';
+  }
+
+  @override
+  String get reportExportNumbers => '💰 The numbers:';
+
+  @override
+  String reportExportBudget(String amount) {
+    return '• Budget: $amount';
+  }
+
+  @override
+  String reportExportSpent(String amount) {
+    return '• Spent: $amount';
+  }
+
+  @override
+  String reportExportIncome(String amount) {
+    return '• Income: $amount';
+  }
+
+  @override
+  String reportExportLeft(String amount) {
+    return '• Left: $amount';
+  }
+
+  @override
+  String reportExportSubs(String amount) {
+    return '• Subscriptions: $amount/month';
+  }
+
+  @override
+  String get reportExportCompare => '📅 Compared with last month (same point):';
+
+  @override
+  String reportExportCompareLine(String now, String before, String delta) {
+    return '• This month: $now | last: $before ($delta%)';
+  }
+
+  @override
+  String get reportExportByCategory => '🗂️ By category:';
+
+  @override
+  String reportExportOfBudget(String budget, int percent) {
+    return ' of $budget ($percent%)';
+  }
+
+  @override
+  String get reportExportTopMerchants => '🏪 Top places:';
+
+  @override
+  String get reportExportBehaviour => '🧠 Your money habits:';
+
+  @override
+  String reportExportTopDay(String day) {
+    return '• Top spending day: $day';
+  }
+
+  @override
+  String reportExportWeekend(int percent) {
+    return '• Weekend spending: $percent% of the total';
+  }
+
+  @override
+  String reportExportAvgTxn(String amount) {
+    return '• Average transaction: $amount';
+  }
+
+  @override
+  String reportExportImpulse(int count) {
+    return '• Impulse buys (30 days): $count';
+  }
+
+  @override
+  String get reportExportNotes => '💡 Zad\'s notes:';
+
+  @override
+  String get reportExportFooter => '— A report from the Zad app 🥕';
+
+  @override
+  String get reportScreenTitle => 'Zad\'s monthly report';
+
+  @override
+  String get reportShareFamily => 'Share with the family';
+
+  @override
+  String get reportHealthHeading => 'Financial health';
+
+  @override
+  String get reportButton => 'Monthly report';
+
+  @override
+  String get reportShareSubject => 'Zad money report';
+
+  @override
+  String get reportShareTitle => 'Share Zad report';
+
+  @override
+  String get intelPromptAnalyse => 'Analyse my spending 📊';
+
+  @override
+  String get intelPromptForecast => 'Forecast next month\'s spending 🔮';
+
+  @override
+  String get intelPromptLunch => 'Suggest a lunch 🍲';
+
+  @override
+  String get intelPromptSafe => 'Am I financially safe? 💰';
+
+  @override
+  String intelSosFrom(String name) {
+    return 'Emergency call from $name!';
+  }
+
+  @override
+  String get intelNeedThreeBody =>
+      'Zad\'s brain needs at least 3 expenses to analyse your spending properly and build resilience reports.';
+
+  @override
+  String intelLoggedOfThree(int count) {
+    return '$count of 3 expenses logged';
+  }
+
+  @override
+  String get intelReportSubtitle =>
+      'An instant, detailed analysis of all your transactions and spending by AI models';
+
+  @override
+  String get intelReportWorking =>
+      'Analysing transactions and building the AI report...';
+
+  @override
+  String intelCoverageDays(int days) {
+    return '$days days covered';
+  }
+
+  @override
+  String intelTargetDays(int days) {
+    return 'Goal: $days days';
+  }
+
+  @override
+  String intelSaveToReach(String amount) {
+    return 'Save $amount a month to reach the goal';
+  }
+
+  @override
+  String intelTopCategory(String category, int percent) {
+    return '💡 Your biggest category is [$category] at $percent% of your spending';
+  }
+
+  @override
+  String get intelHeroTitle => 'Zad\'s smart brain';
+
+  @override
+  String get intelHeroBusy => 'Zad is analysing your data now 🧠✨';
+
+  @override
+  String get intelHeroReady =>
+      'Connected and ready to help with your money and home ⚡';
+
+  @override
+  String get intelNoAnswer => 'Zad couldn\'t answer right now — try again.';
+
+  @override
+  String get intelAnalysing => 'Zad is analysing...';
+
+  @override
+  String get intelExplain => 'Explain with AI';
+
+  @override
+  String get intelNeedThreeTitle =>
+      'Log your first 3 expenses to switch on Zad\'s analysis';
+
+  @override
+  String get intelTalkNow => 'Talk to Zad now 💬';
+
+  @override
+  String get intelReportTitle => 'Build the full AI report';
+
+  @override
+  String get intelSharePdf => 'Share the report as PDF';
+
+  @override
+  String get intelSaveFailed =>
+      'Couldn\'t save the changes — check your connection and try again';
+
+  @override
+  String get intelRetry => 'Retry';
+
+  @override
+  String get intelRefreshReport => 'Refresh the report 🔄';
+
+  @override
+  String get intelUpdateBalance => 'Update the balance';
+
+  @override
+  String get intelFundBalance => 'Emergency fund balance';
+
+  @override
+  String get intelCancel => 'Cancel';
+
+  @override
+  String get intelSave => 'Save';
+
+  @override
+  String get intelStatusCritical => 'Critical';
+
+  @override
+  String get intelStatusLow => 'Low';
+
+  @override
+  String get intelStatusHealthy => 'Healthy';
+
+  @override
+  String get intelStressTitle => 'Financial resilience test';
+
+  @override
+  String get intelStressQuestion =>
+      'How many days could you last if your income stopped?';
+
+  @override
+  String get intelAvailableNoFund =>
+      'Your available balance (no emergency fund set yet)';
+
+  @override
+  String get intelDailyAverage => 'Average daily spending';
+
+  @override
+  String get intelDistributionTitle => 'Spending breakdown and habits';
+
+  @override
+  String get intelDistributionSubtitle =>
+      'How your spending splits across categories, with smart habit notes';
+
+  @override
+  String dossierIssued(String date) {
+    return 'Issued: $date';
+  }
+
+  @override
+  String get dossierSafeDailyUnknown =>
+      '• Safe daily spending: needs a set budget and balance to work out.';
+
+  @override
+  String dossierSafeDaily(String amount) {
+    return '• Recommended safe daily spending: $amount/day.';
+  }
+
+  @override
+  String dossierSpentCycle(String amount) {
+    return '• Total actually spent this cycle: $amount.';
+  }
+
+  @override
+  String dossierFamilyMembers(int count) {
+    return '• The family\'s shared brain: $count members connected and synced live.';
+  }
+
+  @override
+  String dossierLowStock(int count) {
+    return '• Pantry items running low: $count.';
+  }
+
+  @override
+  String dossierAdherence(int percent) {
+    return '• Medicine adherence this week: $percent%.';
+  }
+
+  @override
+  String get dossierAdherenceUnknown =>
+      '• Medicine adherence: not enough doses logged yet to work out a rate.';
+
+  @override
+  String get dossierShareHeading => '📄 Zad\'s brain report:';
+
+  @override
+  String dossierShareSpent(String amount) {
+    return '• Total spent: $amount';
+  }
+
+  @override
+  String dossierShareAdherence(int percent) {
+    return '• Medicine adherence: $percent%';
+  }
+
+  @override
+  String get dossierTitle => 'Zad\'s full strategic report';
+
+  @override
+  String get dossierSection1 => '1. Next month\'s forecasts and cash flow';
+
+  @override
+  String get dossierSection2 => '2. How well the home and family are run';
+
+  @override
+  String get dossierShareTitle => 'Share Zad\'s brain report';
+
+  @override
+  String get dossierShare => '📤 Share the report';
+
+  @override
+  String get dossierClose => 'Close the report';
+
+  @override
+  String get weekdaySat => 'Sat';
+
+  @override
+  String get weekdaySun => 'Sun';
+
+  @override
+  String get weekdayMon => 'Mon';
+
+  @override
+  String get weekdayTue => 'Tue';
+
+  @override
+  String get weekdayWed => 'Wed';
+
+  @override
+  String get weekdayThu => 'Thu';
+
+  @override
+  String get weekdayFri => 'Fri';
+
+  @override
+  String behaviourNew(String name, String amount) {
+    return '$name: new this month ($amount)';
+  }
+
+  @override
+  String behaviourUp(String name, int percent, String before, String after) {
+    return '$name: up $percent% ($before → $after)';
+  }
+
+  @override
+  String behaviourDown(String name, int percent, String before, String after) {
+    return '$name: down $percent% ($before → $after)';
+  }
+
+  @override
+  String behaviourPeakDay(String day, String amount) {
+    return 'Your biggest spending day: $day — average $amount';
+  }
+
+  @override
+  String behaviourPlaceLine(String amount, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times',
+      one: 'once',
+    );
+    return '$amount · $_temp0';
+  }
+
+  @override
+  String get behaviourTitle => 'Your spending habits';
+
+  @override
+  String get behaviourTopPlaces => 'Where you spend most';
+
+  @override
+  String get behaviourChanges => 'What changed since last month';
+
+  @override
+  String get chartsTwoWeeks => 'Your spending, last two weeks';
+
+  @override
+  String chartsTotals(String total, String daily) {
+    return 'Total $total · daily average $daily';
+  }
+
+  @override
+  String get chartsWhere => 'Where your money went (last month)';
+
+  @override
+  String get reportsRowFailed => 'Couldn\'t prepare the report right now';
+
+  @override
+  String get reportsRowMonthly => 'Export the monthly report';
+
+  @override
+  String get reportsRowStrategic => 'The strategic report';
+
+  @override
+  String get familyTitle => 'Family';
+
+  @override
+  String get familyLoadingTitle => 'Finding your family';
+
+  @override
+  String get familyLoadingMessage =>
+      'The first time needs internet. Pull down if it takes a while.';
+
+  @override
+  String get familyRetry => 'Try again';
+
+  @override
+  String get familyWelcomeTitle => 'Welcome to Zad Family';
+
+  @override
+  String get familyWelcomeBody =>
+      'Start a new family and run it yourself, or join one you already have with its invite code.';
+
+  @override
+  String get familyCreateAsAdmin => 'Start a new family as admin';
+
+  @override
+  String get familyJoin => 'Join a family';
+
+  @override
+  String get familyOr => 'or';
+
+  @override
+  String get familyAliasLabel => 'Your name in the family (optional)';
+
+  @override
+  String get familyAliasHint => 'e.g. Ahmed (son)';
+
+  @override
+  String get familyInviteCodeLabel => 'Invite code';
+
+  @override
+  String get familyInviteCodeHint => 'e.g. ZAD-1234';
+
+  @override
+  String get familyTabChat => 'Chat';
+
+  @override
+  String get familyTabTasks => 'Tasks';
+
+  @override
+  String get familyTabMembers => 'Members';
+
+  @override
+  String get familyTabGroceries => 'Groceries';
+
+  @override
+  String get familyTabKids => 'Kids';
+
+  @override
+  String get familyTabGoals => 'Goals';
+
+  @override
+  String familyHeaderTitle(String code) {
+    return 'Family $code';
+  }
+
+  @override
+  String familyMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familySosTooltip => 'Emergency — alert everyone!';
+
+  @override
+  String get familyInviteNew => 'Invite new members';
+
+  @override
+  String get familyShareInvite => 'Share invite';
+
+  @override
+  String familyShareInviteText(String code, String link) {
+    return '🌱 Join my family on Zad\n\n📲 Tap this link to join right away and open the app:\nhttps://zad.app/invite?code=$code\n\n🔑 Invite code:\n$code\n\n🔗 Direct app link:\n$link';
+  }
+
+  @override
+  String get familySosConfirmTitle => 'Send an emergency alert?';
+
+  @override
+  String get familySosConfirmBody =>
+      'Everyone in the family gets an instant alert that you need help. Are you sure?';
+
+  @override
+  String get familySosSend => 'Send alert';
+
+  @override
+  String familyInviteShareText(String code, String link) {
+    return 'Join my family on Zad!\nInvite code: $code\nOr open the link: $link';
+  }
+
+  @override
+  String familyInviteShareQr(String link) {
+    return 'Join my family on Zad! Scan the code: $link';
+  }
+
+  @override
+  String familyInviteShareLink(String link) {
+    return 'Join my family on Zad!\nInvite link: $link';
+  }
+
+  @override
+  String familyInviteShareCode(String code) {
+    return 'Join my family on Zad!\nInvite code: $code';
+  }
+
+  @override
+  String get familyInviteMethodLink => 'Link';
+
+  @override
+  String get familyInviteMethodCode => 'Code';
+
+  @override
+  String get familyInviteMethodWhatsapp => 'WhatsApp';
+
+  @override
+  String get familyInviteScanToJoin => 'Scan to join:';
+
+  @override
+  String get familyInviteLinkLabel => 'Invite link:';
+
+  @override
+  String get familyCopy => 'Copy';
+
+  @override
+  String get familyInviteCodeColon => 'Invite code:';
+
+  @override
+  String get familyInviteShareWhatsapp => 'Share on WhatsApp:';
+
+  @override
+  String get familyInviteAllApps => 'All apps';
+
+  @override
+  String get familyShare => 'Share';
+
+  @override
+  String get familyPasteInvite => 'Paste the invite link or code';
+
+  @override
+  String get familyAddTaskTitle => 'New task';
+
+  @override
+  String get familyTaskNameLabel => 'Task';
+
+  @override
+  String get familyTaskNameHint => 'e.g. Tidy the room';
+
+  @override
+  String get familyReward => 'Reward';
+
+  @override
+  String familyRewardIn(String currency) {
+    return 'Reward ($currency)';
+  }
+
+  @override
+  String get familyAssignee => 'Who does it:';
+
+  @override
+  String get familyDueDateOptional => 'Due date (optional)';
+
+  @override
+  String get familyQuickGroceryTitle => 'Add to the shopping list';
+
+  @override
+  String get familyQuickGroceryHint => 'e.g. Milk';
+
+  @override
+  String get familyMoneyRequestTitle => 'Ask for money or a purchase';
+
+  @override
+  String get familyMoneyRequestWhat => 'What do you want to buy?';
+
+  @override
+  String get familyMoneyRequestAmount => 'Amount';
+
+  @override
+  String familyMoneyRequestAmountIn(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String get familyMoneyRequestSend => 'Send request';
+
+  @override
+  String get familySpendLimitTitle => 'Spending limit';
+
+  @override
+  String familySpendLimitBody(String name) {
+    return 'Set the most $name can spend a day or a week. Leave it empty for no limit.';
+  }
+
+  @override
+  String familyDailyLimitIn(String currency) {
+    return 'Daily limit ($currency)';
+  }
+
+  @override
+  String familyWeeklyLimitIn(String currency) {
+    return 'Weekly limit ($currency)';
+  }
+
+  @override
+  String get familyPollClosesTomorrow => 'Tomorrow';
+
+  @override
+  String get familyPollClosesTwoDays => 'In 2 days';
+
+  @override
+  String get familyPollClosesWeek => 'In a week';
+
+  @override
+  String get familyPollClosesByHand => 'I\'ll close it';
+
+  @override
+  String get familyPollTitle => 'Family poll';
+
+  @override
+  String get familyPollQuestion => 'Question';
+
+  @override
+  String familyPollOption(int n) {
+    return 'Option $n';
+  }
+
+  @override
+  String get familyPollAddOption => '+ Add option';
+
+  @override
+  String get familyPollClosesWhen => 'Closes when?';
+
+  @override
+  String get familyPollSend => 'Send poll';
+
+  @override
+  String get familyTasksHeading => 'Family tasks';
+
+  @override
+  String familyTasksDoneOf(int done, int total) {
+    return '$done/$total done';
+  }
+
+  @override
+  String get familyFilterAll => 'All';
+
+  @override
+  String get familyFilterPending => 'Upcoming';
+
+  @override
+  String get familyFilterDone => 'Done';
+
+  @override
+  String get familyNoTasksTitle => 'No tasks yet';
+
+  @override
+  String get familyNoTasksMessage => 'Add a task so the family can pitch in';
+
+  @override
+  String get familyMembersHeading => 'Family members';
+
+  @override
+  String get familyMembersHint => 'Tap anyone to see what they\'ve done';
+
+  @override
+  String get familyReport => 'Family report';
+
+  @override
+  String get familyDeleteAndRecreate => 'Delete the family and start over';
+
+  @override
+  String get familyLeave => 'Leave the family';
+
+  @override
+  String get familyDeleteForeverTitle => 'Delete the family for good';
+
+  @override
+  String get familyLeaveConfirmTitle => 'Leave the family?';
+
+  @override
+  String get familyDeleteForeverBody =>
+      'You\'re the last one in this family. Deleting it wipes the chat, the tasks and all its data for good — there\'s no getting it back. You can start a new family afterwards.';
+
+  @override
+  String get familyLeaveConfirmBody =>
+      'You\'ll lose the family chat, the tasks and the shared balances. Are you sure you want to leave?';
+
+  @override
+  String get familyDeleteForever => 'Delete for good';
+
+  @override
+  String get familyLeaveShort => 'Leave';
+
+  @override
+  String familyTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '1 task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyTasbihaCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasbihs',
+      one: '1 tasbih',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familySavingsGoal => 'Savings goal';
+
+  @override
+  String get familyRoleAdminShort => 'Admin';
+
+  @override
+  String get familyRoleChild => 'Child';
+
+  @override
+  String get familyRoleAdminLong => 'Family admin';
+
+  @override
+  String get familyRoleMember => 'Member';
+
+  @override
+  String get familyBalance => 'Balance';
+
+  @override
+  String get familyGoal => 'Goal';
+
+  @override
+  String get familyTrees => 'Trees';
+
+  @override
+  String familyDoneTasksTitle(int count) {
+    return 'Done ($count)';
+  }
+
+  @override
+  String get familyNoDoneTasks => 'Nothing done yet';
+
+  @override
+  String familyUpcomingTasksTitle(int count) {
+    return 'Upcoming ($count)';
+  }
+
+  @override
+  String get familyNoUpcomingTasks => 'Nothing coming up';
+
+  @override
+  String familyTreesTitle(int count) {
+    return 'Tasbih trees ($count)';
+  }
+
+  @override
+  String get familyDaily => 'Daily';
+
+  @override
+  String get familyWeekly => 'Weekly';
+
+  @override
+  String get familyRoleInFamily => 'Role in the family';
+
+  @override
+  String familyRemoveMemberTitle(String name) {
+    return 'Remove $name from the family?';
+  }
+
+  @override
+  String get familyRemoveMemberShort => 'Remove';
+
+  @override
+  String get familyRemoveMember => 'Remove from the family';
+
+  @override
+  String familyRewardAmount(String amount) {
+    return 'Reward: $amount';
+  }
+
+  @override
+  String get familyNoLimit => 'No limit';
+
+  @override
+  String get familyGroceriesHeading => 'Shared groceries';
+
+  @override
+  String get familyGroceriesHint =>
+      'What the family added to the shopping list, or Zad suggested.';
+
+  @override
+  String get familyNoGroceriesTitle => 'Nothing on the grocery list.';
+
+  @override
+  String get familyNoGroceriesMessage =>
+      'Type \"add milk\" in the chat, or tap + above.';
+
+  @override
+  String get familyKidsHeading => 'Kids\' spending';
+
+  @override
+  String get familyKidsHint => 'Your kids\' balances and requests at a glance';
+
+  @override
+  String get familyNoKidsTitle => 'No kids added yet';
+
+  @override
+  String get familyNoKidsMessage =>
+      'In the Members tab, set anyone as a \"child\".';
+
+  @override
+  String get familyPauseTitle => '24-hour think-it-over';
+
+  @override
+  String get familyPauseBody =>
+      'A purchase request can\'t be approved until a day after it was sent. You can still say no anytime, and allowance requests aren\'t affected.';
+
+  @override
+  String familyAllowanceFor(String name) {
+    return 'Allowance for $name';
+  }
+
+  @override
+  String familyAmountIn(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String get familyAllowanceHelper => 'Goes straight into their balance';
+
+  @override
+  String get familyTransfer => 'Send';
+
+  @override
+  String familyBalanceIs(String amount) {
+    return 'Balance: $amount';
+  }
+
+  @override
+  String familyGoalIs(String amount) {
+    return 'Goal: $amount';
+  }
+
+  @override
+  String familyKidTasksDoneOf(int done, int total) {
+    return '$done/$total tasks';
+  }
+
+  @override
+  String get familySendAllowance => 'Send allowance';
+
+  @override
+  String get familyMonthlySpending => 'Monthly spending';
+
+  @override
+  String familyPendingRequests(int count) {
+    return 'Waiting for you ($count)';
+  }
+
+  @override
+  String get familyApprove => 'Approve';
+
+  @override
+  String get familyReject => 'Decline';
+
+  @override
+  String get familyBudgetRewardsHeading => 'Budget and rewards';
+
+  @override
+  String get familySavingsGoalTitle => 'Family savings goal';
+
+  @override
+  String get familyNoSavingsGoal => 'No savings goal for this month yet';
+
+  @override
+  String get familySuggestGoal => 'Suggest a goal with AI';
+
+  @override
+  String get familyNoKidsStatsTitle => 'No kids added to show stats for.';
+
+  @override
+  String get familyKidsBalanceStats => 'Kids\' balances';
+
+  @override
+  String get familyTotalRewardsPaid => 'Total rewards paid';
+
+  @override
+  String familyGoalSuggestionBody(String amount, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Goal: $amount in $days days',
+      one: 'Goal: $amount in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyApproveGoal => 'Set this goal';
+
+  @override
+  String get familyChatEmptyTitle => 'No messages yet';
+
+  @override
+  String get familyChatEmptyMessage =>
+      'Say hi — send your family the first message';
+
+  @override
+  String get familyChatAddTasks => 'Add tasks';
+
+  @override
+  String get familyChatAskGroceries => 'Ask for groceries';
+
+  @override
+  String get familyChatAskZad => 'Ask @Zad';
+
+  @override
+  String get familyZadName => 'Zad';
+
+  @override
+  String get familyVoiceMessage => 'Voice message';
+
+  @override
+  String get familyUnpin => 'Unpin';
+
+  @override
+  String get familyPin => 'Pin';
+
+  @override
+  String get familyReact => 'React';
+
+  @override
+  String familySosFrom(String name) {
+    return 'Emergency alert from $name!';
+  }
+
+  @override
+  String familyPurchaseRequestFrom(String name) {
+    return 'Purchase request from $name';
+  }
+
+  @override
+  String get familyApproveAndDeduct => 'Approve and deduct';
+
+  @override
+  String get familyApproved => 'Approved';
+
+  @override
+  String get familyRejected => 'Declined';
+
+  @override
+  String familyPollFrom(String name) {
+    return 'Poll from $name';
+  }
+
+  @override
+  String familyPollTimeCloses(String time, String when) {
+    return '$time · closes $when';
+  }
+
+  @override
+  String get familyPollClose => 'Close poll';
+
+  @override
+  String get familyPollClosedNoVotes => 'Closed with no votes';
+
+  @override
+  String get familyPollClosedTie => 'Closed on a tie — it\'s your call';
+
+  @override
+  String familyPollAdultsAgreed(String option) {
+    return 'All the grown-ups agreed on “$option” ✅';
+  }
+
+  @override
+  String familyPollMajority(String option) {
+    return 'Most picked “$option”';
+  }
+
+  @override
+  String get familyClosesWithinHour => 'within the hour';
+
+  @override
+  String familyClosesInHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'in $hours hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyClosesTomorrow => 'tomorrow';
+
+  @override
+  String familyClosesInDays(int days) {
+    return 'in $days days';
+  }
+
+  @override
+  String get familyQuickReplies => 'Quick replies';
+
+  @override
+  String get familySosShort => 'Emergency alert';
+
+  @override
+  String get familyAskMoney => 'Ask for money';
+
+  @override
+  String get familyPollShort => 'Poll';
+
+  @override
+  String get familyChatHint => 'Write a message or @Zad...';
+
+  @override
+  String get familySend => 'Send';
+
+  @override
+  String get familySomeoneInFamily => 'someone in the family';
+
+  @override
+  String familyLocationDisclosure(String asker) {
+    return 'Zad will know when you arrive at or leave the places $asker sets (like school) — even with the app closed — and tell them if you leave during the hours they chose. Your location isn\'t sent all the time, and neither is your route. A notification stays visible the whole time sharing is on, and you can stop it from “My family” anytime. On the next step, choose “Allow all the time”.';
+  }
+
+  @override
+  String get familyServerUnreachable =>
+      'Couldn\'t reach the server. Try again.';
+
+  @override
+  String get familyShareComingGoingTitle =>
+      'Share your arrivals and departures';
+
+  @override
+  String get familyNotNow => 'Not now';
+
+  @override
+  String get familyAgreeContinue => 'OK, continue';
+
+  @override
+  String get familyAcceptedNeedAlways =>
+      'You agreed, but location needs “Allow all the time” to work with the app closed.';
+
+  @override
+  String get familyAcceptedZones =>
+      'You agreed — it\'ll work on the places they set.';
+
+  @override
+  String get familyAcceptedOffline =>
+      'You agreed. I\'ll finish when the internet\'s back.';
+
+  @override
+  String get familyFollowRequests => 'Follow requests';
+
+  @override
+  String get familyFollowRequestsHint =>
+      'Nobody sees anything without your yes, and you can stop anytime.';
+
+  @override
+  String get familyDeclinedFollow => 'OK, they won\'t see it.';
+
+  @override
+  String get familyNo => 'No';
+
+  @override
+  String familyAcceptedScope(String scope) {
+    return 'Done — they can follow: $scope.';
+  }
+
+  @override
+  String get familyAgree => 'Agree';
+
+  @override
+  String get familyWhoFollowsYou => 'Who follows you';
+
+  @override
+  String get familyFollowStopped => 'Following stopped.';
+
+  @override
+  String get familyFollowRequestSent =>
+      'Request sent — you\'ll see it once they agree.';
+
+  @override
+  String get familyFollowRequestFailed =>
+      'Couldn\'t send the request. Try again.';
+
+  @override
+  String get familyFollowing => 'Following';
+
+  @override
+  String get familyFollowLoadFailed =>
+      'Couldn\'t load what\'s shared right now.';
+
+  @override
+  String get familyFollowLoading => 'Loading what\'s shared…';
+
+  @override
+  String familyScopeStatus(String scope, String status) {
+    return '$scope: $status';
+  }
+
+  @override
+  String get familyShareNotAsked => 'not asked';
+
+  @override
+  String get familySharePending => 'waiting for their yes';
+
+  @override
+  String get familyShareGranted => 'agreed ✅';
+
+  @override
+  String get familyShareDeclined => 'declined';
+
+  @override
+  String get familyShareRevoked => 'stopped';
+
+  @override
+  String get familyAskToFollow => 'Ask to follow';
+
+  @override
+  String get familyWhatToFollow => 'What do you want to follow?';
+
+  @override
+  String get familyWhatToFollowHint =>
+      'They get a request and choose. Nothing shows before they say yes.';
+
+  @override
+  String get familySendRequest => 'Send request';
+
+  @override
+  String get familyDoseMissed => '❌ missed';
+
+  @override
+  String get familyDoseDue => '⏰ due now';
+
+  @override
+  String familyDoseNoTimes(String name) {
+    return '$name: no set times';
+  }
+
+  @override
+  String get familyMedicinesToday => 'Medicines today';
+
+  @override
+  String get familyNoMedicines => 'No medicines saved.';
+
+  @override
+  String get familySpendingLast30 => 'Spending, last 30 days';
+
+  @override
+  String get familyTasksAndAppointments => 'Tasks and appointments';
+
+  @override
+  String get familyNoOpenTasks => 'No open tasks';
+
+  @override
+  String familyOpenTasksStill(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks still open',
+      one: '1 task still open',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyReportLoading => 'Loading…';
+
+  @override
+  String familyReportMissedSuffix(int count) {
+    return ' — $count missed';
+  }
+
+  @override
+  String get familyReportNoDosesToday => 'No doses today';
+
+  @override
+  String familyReportDoses(int taken, int total, String late) {
+    return 'Doses: $taken of $total$late';
+  }
+
+  @override
+  String familyReportSpent30(String amount) {
+    return 'Spent in 30 days: $amount';
+  }
+
+  @override
+  String familyReportOpenTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open tasks',
+      one: '1 open task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyZoneInside(String place) {
+    return 'at $place';
+  }
+
+  @override
+  String familyZoneLeft(String place) {
+    return 'left $place';
+  }
+
+  @override
+  String familyZoneUnknown(String place) {
+    return '$place: nothing yet';
+  }
+
+  @override
+  String get familyReportNothingShared =>
+      'Hasn\'t agreed to share anything yet';
+
+  @override
+  String familyReportNotShared(String scopes) {
+    return 'Not shared: $scopes';
+  }
+
+  @override
+  String get familyListSeparator => ', ';
+
+  @override
+  String get familyReportHint =>
+      'Only what each person agreed to share — the rest shows once they say yes.';
+
+  @override
+  String get familyReportNoMembers =>
+      'Nobody has joined yet. Send the invite code from “My family”.';
+
+  @override
+  String get familyMemberFallback => 'Family member';
+
+  @override
+  String familyWeekday(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      'd0': 'Sun',
+      'd1': 'Mon',
+      'd2': 'Tue',
+      'd3': 'Wed',
+      'd4': 'Thu',
+      'd5': 'Fri',
+      'd6': 'Sat',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get familyZoneNoMoves => 'No arrivals or departures yet';
+
+  @override
+  String familyZoneInsideSince(String day, String time) {
+    return 'In since $day$time';
+  }
+
+  @override
+  String familyZoneLeftAt(String day, String time) {
+    return 'Left $day$time';
+  }
+
+  @override
+  String familyZoneSaved(String place) {
+    return 'Saved “$place” — they\'ll get a notification about it.';
+  }
+
+  @override
+  String get familyZoneSaveFailed => 'Couldn\'t save the place. Try again.';
+
+  @override
+  String familyZoneRemoved(String place) {
+    return 'Removed “$place”.';
+  }
+
+  @override
+  String get familyZoneRemoveFailed => 'Couldn\'t remove it. Try again.';
+
+  @override
+  String get familyPlaces => 'Places';
+
+  @override
+  String get familyNoZones =>
+      'No places yet. While you\'re at the school itself, tap “Add a place”.';
+
+  @override
+  String get familyRemoveZone => 'Remove place';
+
+  @override
+  String get familyAddZone => 'Add a place';
+
+  @override
+  String get familyZoneSchool => 'School';
+
+  @override
+  String get familyZoneClub => 'Club';
+
+  @override
+  String get familyZoneHome => 'Home';
+
+  @override
+  String get familyZoneOther => 'Somewhere else';
+
+  @override
+  String get familyLocationFailed =>
+      'Couldn\'t find where you are. Turn on location and try again.';
+
+  @override
+  String get familyNewZone => 'New place';
+
+  @override
+  String get familyNewZoneHint =>
+      'You get an alert if they leave it on these days and hours. Outside them it\'s logged without an alert.';
+
+  @override
+  String get familyZoneNameLabel => 'Name';
+
+  @override
+  String get familyZoneNameHint => 'Nile School';
+
+  @override
+  String get familyUseMyLocation => 'Use where I am right now';
+
+  @override
+  String get familyLocationSet => 'Place set ✓ — tap again if you moved';
+
+  @override
+  String get familyBeThere => 'You need to be at the place itself to set it.';
+
+  @override
+  String get familyZoneRadius => 'How far around it';
+
+  @override
+  String familyMeters(int meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get familyAlertDays => 'Alert days';
+
+  @override
+  String get familyAlertHours => 'Alert hours';
+
+  @override
+  String familyFromTime(String time) {
+    return 'From $time';
+  }
+
+  @override
+  String familyToTime(String time) {
+    return 'Until $time';
+  }
+
+  @override
+  String get familyHoursOrder => 'The start has to be before the end.';
+
+  @override
+  String get familySaveZone => 'Save place';
+
+  @override
+  String get familyChatReadingDisclosure =>
+      'Zad will read only your own messages in the family chat — never anyone else\'s who hasn\'t agreed — to pick up household requests like “we need bread” and answer if someone in the family asks about what was said. The messages are sent to an AI model (Google Gemini) to be understood. The whole family will see that you agreed, and you can stop anytime from here.';
+
+  @override
+  String get familyChatReadingTitle => 'Let Zad read your messages?';
+
+  @override
+  String get familyAgreeShort => 'I agree';
+
+  @override
+  String get familyChatReadingOn => 'Done — Zad will read your messages.';
+
+  @override
+  String get familyChatReadingOff => 'Stopped — Zad won\'t read your messages.';
+
+  @override
+  String get familyChatReadingNone => 'Zad isn\'t reading the chat';
+
+  @override
+  String familyChatReadingWho(String names) {
+    return 'Zad reads messages from: $names';
+  }
+
+  @override
+  String get familyChatReadingStopMine => 'Stop for mine';
+
+  @override
+  String get familyChatReadingAllowMine => 'Let it read mine';
+
+  @override
+  String get profileTitle => 'My account';
+
+  @override
+  String get profileSectionBrain => 'Zad\'s brain';
+
+  @override
+  String get profileMemoryTitle => 'What Zad knows about me';
+
+  @override
+  String get profileMemorySubtitle =>
+      'Zad learns from your spending and pantry to help you — see what it learnt and delete anything';
+
+  @override
+  String get profileActionLogTitle => 'Zad\'s change log';
+
+  @override
+  String get profileActionLogSubtitle =>
+      'Everything Zad saved or changed for you';
+
+  @override
+  String get profileAlertsTitle => 'Smart assistant alerts';
+
+  @override
+  String get profileAlertsSubtitle => 'Choose which smart alerts you get';
+
+  @override
+  String get profileNewGoalTitle => 'New life goal';
+
+  @override
+  String get profileNewGoalSubtitle =>
+      'Let Zad keep you on track with a savings goal or a habit';
+
+  @override
+  String get profileSectionMeFamily => 'Me and my family';
+
+  @override
+  String get profileEditTitle => 'Edit profile';
+
+  @override
+  String get profileEditSubtitle => 'Your name or nickname';
+
+  @override
+  String get profileFamilyManageTitle => 'Manage family';
+
+  @override
+  String get profileFamilyManageSubtitle => 'Members and roles';
+
+  @override
+  String get profileRegionalTitle => 'Region';
+
+  @override
+  String get profileRegionalSubtitle => 'Country and currency';
+
+  @override
+  String get profileSectionMoney => 'My money';
+
+  @override
+  String get profileBudgetPaymentTitle => 'Budget and payment';
+
+  @override
+  String get profileBudgetPaymentSubtitle => 'Monthly budget and bank link';
+
+  @override
+  String get profileStatementTitle => 'Import a statement';
+
+  @override
+  String get profileStatementSubtitle =>
+      'Import a CSV statement from your bank';
+
+  @override
+  String get profileSectionMyZad => 'My Zad';
+
+  @override
+  String get profileAchievementsTitle => 'Achievements and ranks';
+
+  @override
+  String get profileAchievementsSubtitle =>
+      'Points and badges for sharing prices';
+
+  @override
+  String get profileSectionHelp => 'Help';
+
+  @override
+  String get profileSupportTitle => 'Support';
+
+  @override
+  String get profileSupportSubtitle =>
+      'A complaint or a problem? Talk to the support team';
+
+  @override
+  String get profileTermsTitle => 'Terms and conditions';
+
+  @override
+  String get profileTermsSubtitle => 'Terms of use and privacy';
+
+  @override
+  String get profileSectionAccount => 'Account';
+
+  @override
+  String get profileDeleteAccountTitle => 'Delete account';
+
+  @override
+  String get profileDeleteAccountSubtitle => 'Delete your account for good';
+
+  @override
+  String get profileSignOut => 'Sign out';
+
+  @override
+  String get profileDeleteAccountBody =>
+      'Are you sure you want to delete your account for good? This can\'t be undone.';
+
+  @override
+  String get profileDeleteAccountConfirm => 'Yes, delete my account';
+
+  @override
+  String get profileDeleteAccountFailed =>
+      'Couldn\'t delete the account. Check your connection and try again.';
+
+  @override
+  String get profileSaved => 'Changes saved';
+
+  @override
+  String get profileSaveFailedRetry =>
+      'Couldn\'t save the changes — check your connection and try again';
+
+  @override
+  String get profileEditName => 'Edit name';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileGoalName => 'Goal';
+
+  @override
+  String get profileGoalMetricEgypt =>
+      'How do we measure it? (e.g. 500 EGP a month)';
+
+  @override
+  String get profileGoalMetricOther =>
+      'How do we measure it? (e.g. 500 SAR a month)';
+
+  @override
+  String get profileGoalDeadline => 'Deadline (optional)';
+
+  @override
+  String get profileGoalDeadlineHint => 'e.g. 2026-12-31';
+
+  @override
+  String get profileSaveShort => 'Save';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileAliasLabel => 'Name / nickname';
+
+  @override
+  String get profileAliasHint => 'e.g. Dad';
+
+  @override
+  String get profileSaveChanges => 'Save changes';
+
+  @override
+  String get profileCountry => 'Country';
+
+  @override
+  String get profileCurrency => 'Currency';
+
+  @override
+  String get profileCurrencyAuto =>
+      'The currency follows the country you pick above';
+
+  @override
+  String profileChangeCountryTitle(String country) {
+    return 'Change the country to $country?';
+  }
+
+  @override
+  String profileCurrencyWillBe(String symbol, String code) {
+    return 'The currency will be $symbol ($code).';
+  }
+
+  @override
+  String profileLimitConverts(
+    String from,
+    String fromSymbol,
+    String to,
+    String toSymbol,
+  ) {
+    return 'Your monthly cap changes from $from $fromSymbol to $to $toSymbol, and so do your category budgets.';
+  }
+
+  @override
+  String get profileChange => 'Change';
+
+  @override
+  String get profileNoRate =>
+      'I don\'t know the exchange rate, so your monthly cap keeps the same number — check it after the change.';
+
+  @override
+  String get profileKidsRelockTitle => 'Lock kids mode again';
+
+  @override
+  String get profileKidsRelockSubtitle => 'Puts the phone back in kids mode';
+
+  @override
+  String get profileKidsModeTitle => 'Switch to kids mode';
+
+  @override
+  String get profileKidsModeSubtitle =>
+      'When you hand the phone to your child for a bit — leaving needs the PIN';
+
+  @override
+  String get profileNoFamily => 'You\'re not in a family yet.';
+
+  @override
+  String get profileFamilyInviteCode => 'Family invite code';
+
+  @override
+  String get profileFamilyMembers => 'Family members';
+
+  @override
+  String get profileRoleAdmin => 'Family admin';
+
+  @override
+  String get profileRoleChild => 'Child';
+
+  @override
+  String get profileRoleMember => 'Member';
+
+  @override
+  String get profileKickFailed =>
+      'Couldn\'t remove the member. Please try again later.';
+
+  @override
+  String get profileRoleChangeFailed =>
+      'Couldn\'t change the role. Please try again later.';
+
+  @override
+  String get profileMakeAdmin => 'Make admin';
+
+  @override
+  String get profileMakeMember => 'Make member';
+
+  @override
+  String get profileMakeChild => 'Set as child';
+
+  @override
+  String get profileKick => 'Remove member';
+
+  @override
+  String get profilePaymentBudgetTitle => 'Payment and budget';
+
+  @override
+  String get profileCurrentMonthlyBudget => 'Current monthly budget';
+
+  @override
+  String get profileDiagNoPermission =>
+      '❌ Permission not granted — turn it on in notification access settings';
+
+  @override
+  String get profileDiagNotBound =>
+      '❌ The service isn\'t connected — tap retry';
+
+  @override
+  String get profileDiagNoNotifications =>
+      '❌ The service is connected but gets no notifications — try requestRebind';
+
+  @override
+  String get profileDiagWaitingTest =>
+      '⏳ Waiting for the test notification to reach the listener...';
+
+  @override
+  String get profileDiagAllWorking => '✅ Bank reading works end to end';
+
+  @override
+  String get profileDiagListenerWorking =>
+      '✅ The listener caught it and filtering works';
+
+  @override
+  String get profileDiagUnknown => '❓ Unknown state — try again';
+
+  @override
+  String profileParseOk(String amount, String kind) {
+    return 'Parsed ✓\nAmount: $amount\nMerchant: —\nType: $kind';
+  }
+
+  @override
+  String get profileParseCompleted => 'Completed transaction';
+
+  @override
+  String get profileParsePending => 'Pending';
+
+  @override
+  String get profileParseInfo => 'Information';
+
+  @override
+  String get profileParseServer => 'Checked on the server';
+
+  @override
+  String get profileParseFailed =>
+      'Parsing failed — no parser matched the sample message';
+
+  @override
+  String get profileTest => 'Test';
+
+  @override
+  String get profileOk => 'OK';
+
+  @override
+  String get profileBankReading => 'Reading bank notifications';
+
+  @override
+  String get profileBankReadingHint =>
+      'The real state of the permissions — if one was revoked in system settings, you\'ll see it here right away';
+
+  @override
+  String get profileEnable => 'Turn on';
+
+  @override
+  String get profileReaderConnection => 'Reading service connection';
+
+  @override
+  String get profileRetry => 'Retry';
+
+  @override
+  String profileLastConnected(String time) {
+    return 'Last connected: $time';
+  }
+
+  @override
+  String get profileNeverConnected =>
+      'The service hasn\'t connected yet, even if the permission is on';
+
+  @override
+  String get profileNotificationsArriving => 'Notifications reaching the phone';
+
+  @override
+  String profileLastNotification(String time) {
+    return 'Last notification seen: $time';
+  }
+
+  @override
+  String get profileNoNotificationYet =>
+      'No notification has reached the service yet';
+
+  @override
+  String profileLastParsed(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Last transaction read: $minutes minutes ago',
+      one: 'Last transaction read: 1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get profileNothingParsed => 'No transaction read yet';
+
+  @override
+  String get profileSendTestNotification => 'Test — send a sample transaction';
+
+  @override
+  String get profileRejectedTitle => 'Recently rejected messages';
+
+  @override
+  String get profileRejectedHint =>
+      'If a bank or wallet isn\'t being recorded, the reason is here (an OTP, a pending message, or text that wasn\'t understood).';
+
+  @override
+  String profileStatusOn(String label) {
+    return '$label: on ✓';
+  }
+
+  @override
+  String profileStatusOff(String label) {
+    return '$label: off';
+  }
+
+  @override
+  String get profileVoiceAlertsTitle => '🔔 Spoken alerts and doses';
+
+  @override
+  String get profileVoiceAlertsDesc =>
+      'Zad reads medicine and appointment reminders aloud while the app is open; when it\'s closed, the notification has a “Listen to Zad” button.';
+
+  @override
+  String get profileLowStockTitle => 'Low-stock alerts';
+
+  @override
+  String get profileLowStockDesc =>
+      'A notification when a staple is about to run out';
+
+  @override
+  String get profileBudgetOverrunTitle => 'Budget alerts';
+
+  @override
+  String get profileBudgetOverrunDesc =>
+      'An early heads-up when much of the budget is spent';
+
+  @override
+  String get profileTasbihTitle => 'Tasbih reminder';
+
+  @override
+  String get profileTasbihDesc =>
+      'A gentle reminder at 5 pm if you haven\'t done your tasbih today';
+
+  @override
+  String get profileCompanionNapTitle =>
+      'Zad\'s companion calls me if I\'m away';
+
+  @override
+  String get profileCompanionNapDesc =>
+      'One notification after two days away, and one more two days later — never more than once a day, and never at night';
+
+  @override
+  String get profileCompanionCareTitle =>
+      'Zad\'s companion reminds me to feed it';
+
+  @override
+  String get profileCompanionCareDesc =>
+      'One notification when it\'s hungry or thirsty, pushed back each time you feed or water it — and never at night';
+
+  @override
+  String get profileLearnSleepTitle => 'Zad learns my sleep hours';
+
+  @override
+  String get profileLearnSleepDesc =>
+      'From when the screen locks and unlocks at night, so alerts don\'t come while you sleep. Only your bedtime and wake-up hour are saved — not the moments themselves. Doses and emergencies still come as usual.';
+
+  @override
+  String get profileNotificationSound => 'Notification sound';
+
+  @override
+  String get profileNotificationSoundHint =>
+      'Pick any notification sound on your phone instead of the default';
+
+  @override
+  String get profileDefaultSound => 'Default sound';
+
+  @override
+  String get supportFallback =>
+      'I can\'t answer right now. Try again in a little while, and if it keeps happening, open the “Crash log” on this screen and send it to us — it has what we need to fix it.';
+
+  @override
+  String get supportFaqBank =>
+      'To let Zad read your bank messages: on Home, tap “Turn on bank notification reading” and follow the steps. If the switch is grey or you see “Restricted setting”: open “App info” → ⋮ at the top → “Allow restricted settings”, then come back and turn the permission on. On Xiaomi and Oppo, set the battery to “No restrictions” so it doesn\'t stop.';
+
+  @override
+  String get supportFaqAllowance =>
+      'In “Family” → “Kids\' spending” you\'ll find each child and their balance. “Send allowance” adds to it straight away. A child can ask for an “allowance” (added if you approve) or to “buy something” (deducted if you approve and the balance covers it).';
+
+  @override
+  String get supportFaqReceipt =>
+      'Snap the receipt with the camera button. Zad reads the total, the items and the receipt\'s date, and logs it on that day. Check the amount and the category before saving — you can add the items to the pantry in the same step.';
+
+  @override
+  String get supportFaqCountry =>
+      'Your country and currency are set when you sign up. To change them: “My account” → “Region”. Times and reminders follow the account\'s country.';
+
+  @override
+  String get supportFaqVoice =>
+      'Tap the mic in the chat and talk — Zad answers out loud. If the answer is slow or there\'s no sound, check your internet and try again; the written reply stays in the chat.';
+
+  @override
+  String get supportFaqAppointments =>
+      'Add appointments from “My appointments” → “New appointment”, or tell Zad in the chat “remind me of the doctor on Thursday at 5”. Medicines live in “Family pharmacy”, where you can say who in the family each one is for.';
+
+  @override
+  String get supportFaqFamily =>
+      'In “Family”, start a new family and send the code to your people, or tap “Join” and enter the code you got. Only the admin can change roles and rewards.';
+
+  @override
+  String get supportFaqPassword =>
+      'On the sign-in screen, tap “Forgot password” and enter your email — you\'ll get a link to change it.';
+
+  @override
+  String get supportFaqDeleteAccount =>
+      'Delete your account from “My account” → “Delete account”. It erases all your data for good, with no way back.';
+
+  @override
+  String get supportWelcome =>
+      'Hi! I\'m Zad\'s help assistant — I can explain any feature or sort out a technical problem. If your question is about your own data (spending, balance, subscriptions), ask the \"Zad\'s brain\" chat instead: it\'s the only one that sees your actual account.';
+
+  @override
+  String get supportContactTeam => 'Contact support';
+
+  @override
+  String get supportContactHint =>
+      'Describe the problem or complaint — it goes straight to the support team, and they\'ll reply by email.';
+
+  @override
+  String get supportSubject => 'Subject';
+
+  @override
+  String get supportSubjectHint => 'e.g. The pharmacy page is empty';
+
+  @override
+  String get supportDetails => 'Details';
+
+  @override
+  String get supportAttachLog =>
+      'Attach the crash log (helps us fix it faster)';
+
+  @override
+  String get supportSend => 'Send';
+
+  @override
+  String get supportSentByEmail =>
+      'Your message reached the support team ✅ — they\'ll reply by email as soon as they can.';
+
+  @override
+  String get supportMailOpened =>
+      'Your email app is open — tap send and it reaches the support team';
+
+  @override
+  String supportWriteTo(String email) {
+    return 'Write to us at $email';
+  }
+
+  @override
+  String get supportCrashLog => 'Crash log';
+
+  @override
+  String get supportShareLog => 'Share log';
+
+  @override
+  String get supportShare => '📤 Share';
+
+  @override
+  String get supportClear => '🗑️ Clear';
+
+  @override
+  String get supportClose => 'Close';
+
+  @override
+  String get supportTitle => 'App help';
+
+  @override
+  String get supportSubtitle => 'General questions — no access to your account';
+
+  @override
+  String get supportComplaintBanner =>
+      'A complaint or a problem? Contact support';
+
+  @override
+  String get supportInputHint => 'Type your message...';
+
+  @override
+  String get supportTyping => 'Typing...';
+
+  @override
+  String get supportTermsTitle => 'Terms and conditions';
+
+  @override
+  String get supportTermsHeading => 'Terms of Use and User Agreement';
+
+  @override
+  String get supportTermsIntro =>
+      'Last updated: July 2026\n\nPlease read these terms of use carefully before using Zad.';
+
+  @override
+  String get supportTerms1Title => '1. Accepting the terms';
+
+  @override
+  String get supportTerms1Body =>
+      'By creating an account or using Zad, you agree to these terms. If you don\'t agree, please don\'t use the app.';
+
+  @override
+  String get supportTerms2Title =>
+      '2. What the service is — a tool, not a responsible party';
+
+  @override
+  String get supportTerms2Body =>
+      'Zad is an organising and personal-assistance tool only. We provide software that helps you track, organise and view your own financial and household data. We do not manage your money, make decisions on your behalf, hold your funds, process payments, or act as a financial institution, financial adviser or fiduciary of any kind.\n\nEvery feature in the app — including budgeting, expense tracking, receipt scanning, pantry tracking, subscription tracking, transaction detection from notifications, and any \"smart\" or \"AI-based\" insight — exists only to help you organise information you already have or produce. We do not verify, guarantee or take responsibility for the accuracy of that information, or for any action you take based on it.\n\nYou, and only you, are responsible for:\n- every financial decision you make;\n- checking the accuracy of any data the app shows, calculates, detects or suggests;\n- the results of relying on any automated feature, including AI-generated insights or forecasts and detection from notifications;\n- every outcome relating to your budget, spending, savings or household management, whether or not the app\'s information is accurate.\n\nWe accept no responsibility or liability of any kind for the results of your use of the app. Using Zad does not create any advisory relationship, fiduciary duty or guarantee of any outcome between you and us. The app is offered purely as an organising and convenience tool — how you use the information it shows is entirely your responsibility.';
+
+  @override
+  String get supportTerms3Title => '3. Privacy and data';
+
+  @override
+  String get supportTerms3Body =>
+      'We respect your privacy. Your data is stored securely. We do not sell your personal financial data to any third party.';
+
+  @override
+  String get supportTerms4Title =>
+      '4. Third-party AI features — assistance only, not authoritative';
+
+  @override
+  String get supportTerms4Body =>
+      'Some features (receipt scanning, spending forecasts, subscription detection, behavioural insights, meal suggestions, voice input) use third-party AI services to process data and generate suggestions. These outputs are offered as a convenience only and must never be treated as accurate, complete, verified or authoritative. AI-generated content may be wrong, out of date or unsuitable for your situation.\n\nWe do not own or control the AI models used. We are not responsible for anything the AI generates, suggests, predicts or fails to detect. You must check any number, category or recommendation yourself before acting on it. Relying on any AI output as financial guidance is entirely at your own risk.';
+
+  @override
+  String get supportTerms5Title => '5. Family sharing';
+
+  @override
+  String get supportTerms5Body =>
+      'If you invite family members, you are responsible for their access to your household\'s data.';
+
+  @override
+  String get supportTerms6Title => '6. Prohibited conduct';
+
+  @override
+  String get supportTerms6Body =>
+      'You may not reverse-engineer or hack Zad, or use it for any unlawful activity.';
+
+  @override
+  String get supportTerms7Title =>
+      '7. We provide the tool — you are responsible for the outcome';
+
+  @override
+  String get supportTerms7Body =>
+      'We do not guarantee, and take no responsibility for, the accuracy of any balance, expense category, subscription status, stock level, low-stock alert or budget forecast shown in the app. Nor do we guarantee that automatic transaction detection will catch every transaction, or that it will always be right when it does.\n\nBy using Zad, you acknowledge that:\n- we are a passive information-organising tool, not an active party to your financial decisions;\n- any financial loss, missed payment, overspending, spoiled stock, family disagreement or other negative outcome arising from your use of or reliance on the app is your responsibility alone;\n- we will accept no liability, financial or otherwise, for those outcomes, to the fullest extent permitted by law.';
+
+  @override
+  String get profileLabelGenderFemale => 'Female';
+
+  @override
+  String get profileLabelGenderMale => 'Male';
+
+  @override
+  String get profileLabelZadvoiceBoy => 'A boy\'s voice';
+
+  @override
+  String get profileLabelZadvoiceGirl => 'A girl\'s voice';
+
+  @override
+  String get profileLabelRoleFather => 'Father';
+
+  @override
+  String get profileLabelRoleMother => 'Mother';
+
+  @override
+  String get profileLabelRoleHusband => 'Husband';
+
+  @override
+  String get profileLabelRoleWife => 'Wife';
+
+  @override
+  String get profileLabelRoleSon => 'Son';
+
+  @override
+  String get profileLabelRoleDaughter => 'Daughter';
+
+  @override
+  String get profileLabelRoleSingle => 'Living alone';
+
+  @override
+  String get profileLabelRoleStudent => 'Student';
+
+  @override
+  String get profileLabelRoleGrandparent => 'Grandparent';
+
+  @override
+  String get profileLabelRoleDefault => 'Something else';
+
+  @override
+  String get profileLabelAgeUnder18 => 'Under 18';
+
+  @override
+  String get profileLabelAge1824 => '18–24';
+
+  @override
+  String get profileLabelAge2534 => '25–34';
+
+  @override
+  String get profileLabelAge3544 => '35–44';
+
+  @override
+  String get profileLabelAge4554 => '45–54';
+
+  @override
+  String get profileLabelAgeDefault => '55 and over';
+
+  @override
+  String get profileLabelFrequencyWeekly => 'Weekly';
+
+  @override
+  String get profileLabelFrequencyBiweekly => 'Every two weeks';
+
+  @override
+  String get profileLabelFrequencyDaily => 'Daily';
+
+  @override
+  String get profileLabelFrequencyIrregular => 'Irregular';
+
+  @override
+  String get profileLabelFrequencyDefault => 'Monthly';
+
+  @override
+  String get profileLabelCaresforChildren => 'My children';
+
+  @override
+  String get profileLabelCaresforParents => 'My father or mother';
+
+  @override
+  String get profileLabelCaresforSpouse => 'My husband or wife';
+
+  @override
+  String get profileLabelCaresforSiblings => 'My siblings';
+
+  @override
+  String get profileLabelCaresforGrandparents => 'My grandparents';
+
+  @override
+  String get profileLabelDialectSa => 'Saudi';
+
+  @override
+  String get profileLabelDialectGulf => 'Gulf';
+
+  @override
+  String get profileLabelDialectLevant => 'Levantine';
+
+  @override
+  String get profileLabelDialectIq => 'Iraqi';
+
+  @override
+  String get profileLabelDialectMa => 'Moroccan';
+
+  @override
+  String get profileLabelDialectTn => 'Tunisian';
+
+  @override
+  String get profileLabelDialectDz => 'Algerian';
+
+  @override
+  String get profileLabelDialectLy => 'Libyan';
+
+  @override
+  String get profileLabelDialectSd => 'Sudanese';
+
+  @override
+  String get profileLabelDialectYe => 'Yemeni';
+
+  @override
+  String get profileLabelDialectDefault => 'Egyptian';
+
+  @override
+  String get memoryWriteNotSaved => 'I couldn\'t save that, try again';
+
+  @override
+  String quietBannerExams(String until) {
+    return 'Exam season — Zad has quietened alerts until $until';
+  }
+
+  @override
+  String quietBannerOther(String until) {
+    return 'Zad has quietened alerts until $until — doses and appointments still come';
+  }
+
+  @override
+  String get memoryScopeGeneral => 'About you';
+
+  @override
+  String get memoryScopeSpending => 'Your spending';
+
+  @override
+  String get memoryScopeCycle => 'Pay cycle';
+
+  @override
+  String get memoryScopeWeekly => 'Week summary';
+
+  @override
+  String get memoryScopeDataQuality => 'Data accuracy';
+
+  @override
+  String get memoryScopeDismissal => 'An alert you turned down';
+
+  @override
+  String get memoryScopeOther => 'Note';
+
+  @override
+  String get monthJan => 'January';
+
+  @override
+  String get monthFeb => 'February';
+
+  @override
+  String get monthMar => 'March';
+
+  @override
+  String get monthApr => 'April';
+
+  @override
+  String get monthMay => 'May';
+
+  @override
+  String get monthJun => 'June';
+
+  @override
+  String get monthJul => 'July';
+
+  @override
+  String get monthAug => 'August';
+
+  @override
+  String get monthSep => 'September';
+
+  @override
+  String get monthOct => 'October';
+
+  @override
+  String get monthNov => 'November';
+
+  @override
+  String get monthDec => 'December';
+
+  @override
+  String get briefTookIt => 'Took it';
+
+  @override
+  String get briefAddThem => 'Add them';
+
+  @override
+  String get occasionNewYearTitle => 'Happy New Year! 🎉';
+
+  @override
+  String occasionNewYearQuestion(String dialect, int year) {
+    return 'Want Zad to set up your money goals plan for $year in one tap?';
+  }
+
+  @override
+  String get occasionNewYearActionLabel => 'Set it up';
+
+  @override
+  String occasionNewYearPrompt(int year) {
+    return 'Make me a money goals plan for $year from my real numbers and spending, and suggest the goals for me to confirm.';
+  }
+
+  @override
+  String get occasionRamadanTitle => 'Ramadan Kareem 🌙';
+
+  @override
+  String occasionRamadanQuestion(String dialect) {
+    return 'Shall I make your Ramadan shopping list from what\'s missing at home?';
+  }
+
+  @override
+  String get occasionRamadanActionLabel => 'Make the list';
+
+  @override
+  String get occasionRamadanPrompt =>
+      'Make me a Ramadan shopping list from what\'s actually missing at home, and add it to the shopping list within the budget.';
+
+  @override
+  String get occasionEidFitrTitle => 'Happy Eid al-Fitr! 🎈';
+
+  @override
+  String occasionEidFitrQuestion(String dialect) {
+    return 'Shall I set an Eid budget (eidiya, clothes, gatherings) from what you have available?';
+  }
+
+  @override
+  String get occasionEidFitrActionLabel => 'Do it';
+
+  @override
+  String get occasionEidFitrPrompt =>
+      'Make me an Eid al-Fitr budget: eidiya, clothes and gatherings, from what I have available without going over the budget.';
+
+  @override
+  String get occasionEidAdhaTitle => 'Eid al-Adha Mubarak! 🐑';
+
+  @override
+  String occasionEidAdhaQuestion(String dialect) {
+    return 'Shall I set an Eid budget from what you have available?';
+  }
+
+  @override
+  String get occasionEidAdhaActionLabel => 'Do it';
+
+  @override
+  String get occasionEidAdhaPrompt =>
+      'Make me an Eid al-Adha budget from what I have available — eidiya and gatherings, and the sacrifice if we do one.';
+
+  @override
+  String get occasionHijriTitle => 'Happy Hijri New Year 🌙';
+
+  @override
+  String occasionHijriQuestion(String dialect) {
+    return 'Shall we review your goals and see how they\'re going?';
+  }
+
+  @override
+  String get occasionHijriActionLabel => 'Review them';
+
+  @override
+  String get occasionHijriPrompt =>
+      'Review my goals, tell me how each one is going, and suggest a small step for the ones behind.';
+
+  @override
+  String get occasionMothersDayTitle => 'Happy Mother\'s Day 💐';
+
+  @override
+  String occasionMothersDayQuestion(String dialect) {
+    return 'Want me to suggest a Mother\'s Day gift within the budget?';
+  }
+
+  @override
+  String get occasionMothersDayActionLabel => 'Suggest';
+
+  @override
+  String get occasionMothersDayPrompt =>
+      'Suggest a Mother\'s Day gift for me within the budget.';
+
+  @override
+  String get occasionAnnivTodayTitle => 'Happy anniversary 💍';
+
+  @override
+  String occasionAnnivTodayQuestion(String dialect) {
+    return 'Shall I suggest an outing tonight within the budget?';
+  }
+
+  @override
+  String get occasionAnnivTodayActionLabel => 'Suggest';
+
+  @override
+  String get occasionAnnivTodayPrompt =>
+      'Today is our wedding anniversary — suggest an outing tonight within my budget.';
+
+  @override
+  String get occasionAnnivSoonTitle => 'Your anniversary is in 3 days 💍';
+
+  @override
+  String occasionAnnivSoonQuestion(String dialect) {
+    return 'Shall I suggest a gift or an outing within the budget?';
+  }
+
+  @override
+  String get occasionAnnivSoonActionLabel => 'Suggest';
+
+  @override
+  String occasionAnnivSoonPrompt(String date) {
+    return 'Our wedding anniversary is on $date. Suggest a gift or an outing within my budget.';
+  }
+
+  @override
+  String occasionPersonTodayTitle(String what) {
+    return 'Today is $what 🎂';
+  }
+
+  @override
+  String occasionPersonTodayQuestion(String dialect) {
+    return 'Shall I write a congratulations message for you to send?';
+  }
+
+  @override
+  String get occasionPersonTodayActionLabel => 'Write it';
+
+  @override
+  String occasionPersonTodayPrompt(String what) {
+    return 'Today is $what — write me a short, warm congratulations message to send.';
+  }
+
+  @override
+  String occasionPersonSoonTitle(String what) {
+    return '$what is in 3 days 🎁';
+  }
+
+  @override
+  String occasionPersonSoonQuestion(String dialect) {
+    return 'Shall I suggest a gift within the budget and set aside its amount?';
+  }
+
+  @override
+  String get occasionPersonSoonActionLabel => 'Suggest a gift';
+
+  @override
+  String occasionPersonSoonPrompt(String what, String date) {
+    return '$what is on $date. Suggest two gift ideas within my budget, and if I agree, set the amount aside as a goal until the day.';
+  }
+
+  @override
+  String occasionBirthdayOf(String name) {
+    return '$name\'s birthday';
+  }
+
+  @override
+  String occasionAnniversaryOf(String name) {
+    return '$name\'s wedding anniversary';
+  }
+
+  @override
+  String get briefToday => 'today';
+
+  @override
+  String get briefTomorrow => 'tomorrow';
+
+  @override
+  String get briefDayAfter => 'the day after tomorrow';
+
+  @override
+  String briefInDays(int days) {
+    return 'in $days days';
+  }
+
+  @override
+  String briefDoseDue(String name) {
+    return 'Time for $name';
+  }
+
+  @override
+  String briefDoseDueDetail(String time) {
+    return 'Due at $time — tap “Took it” when you take it';
+  }
+
+  @override
+  String briefDosesMissed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count doses were missed',
+      one: 'A dose was missed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get briefDosesMissedDetail =>
+      'Open the pharmacy and log what was taken';
+
+  @override
+  String briefOverspent(String amount) {
+    return 'You spent $amount more than available';
+  }
+
+  @override
+  String get briefOverspentDetail =>
+      'See My money — Zad can suggest where to cut';
+
+  @override
+  String briefInstalment(String name, String when) {
+    return '$name instalment $when';
+  }
+
+  @override
+  String briefAndMore(int count) {
+    return ' and $count more';
+  }
+
+  @override
+  String briefShort(String items) {
+    return 'You\'re out of $items';
+  }
+
+  @override
+  String get briefShortDetail =>
+      'Open My home and add them to the shopping list';
+
+  @override
+  String briefAboutWhen(String item, String when) {
+    return '$item around $when';
+  }
+
+  @override
+  String briefRunningOut(String items) {
+    return 'Running out soon: $items';
+  }
+
+  @override
+  String get briefRunningOutEstimate =>
+      'An estimate from your use so far — add them to the shopping list?';
+
+  @override
+  String get briefRunningOutRate =>
+      'From your usage rate — add them to the shopping list?';
+
+  @override
+  String briefFamilyChat(String items) {
+    return 'From the family chat: $items';
+  }
+
+  @override
+  String get briefFamilySaid =>
+      'Someone said they\'re out — add them to the shopping list?';
+
+  @override
+  String briefFamilyWhoSaid(String names, int count) {
+    return '$names said they\'re out — add them to the shopping list?';
+  }
+
+  @override
+  String get briefAnd => ' and ';
+
+  @override
+  String get familyRoleLabelAdmin => 'Admin';
+
+  @override
+  String get familyRoleLabelMember => 'Member';
+
+  @override
+  String get familyRoleLabelChild => 'Child';
+
+  @override
+  String get familyFailureInvalidCode =>
+      'That code isn\'t right. Get it again from the family\'s owner.';
+
+  @override
+  String get familyFailureTooManyAttempts =>
+      'You\'ve tried too many codes. Wait an hour and try again.';
+
+  @override
+  String get familyFailureAlreadyInFamily =>
+      'You\'re already in a family. Leave it first.';
+
+  @override
+  String get familyFailureLastAdmin =>
+      'You\'re the last admin. Make someone else an admin first.';
+
+  @override
+  String get familyFailureNotAllowed => 'Only an admin can do this.';
+
+  @override
+  String get familyFailureOffline => 'This needs an internet connection.';
+
+  @override
+  String get familyFailureUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get familyScopeMedicines => 'Medicines';
+
+  @override
+  String get familyScopeSpending => 'Spending';
+
+  @override
+  String get familyScopeTasks => 'Tasks and appointments';
+
+  @override
+  String get familyScopeLocation => 'Places (school…)';
+
+  @override
+  String familyShareAskLocation(String name) {
+    return '$name wants to know when you arrive at or leave places they set (like school)';
+  }
+
+  @override
+  String familyShareAsk(String name, String what) {
+    return '$name wants to follow your $what';
+  }
+
+  @override
+  String get familyNoticeLoadFailed =>
+      'Couldn\'t load the family\'s data. Pull down to try again.';
+
+  @override
+  String get familyNoticeNotSent =>
+      'The message wasn\'t sent — check your connection.';
+
+  @override
+  String get familyNoticeCoolingAdmin =>
+      'Only an admin can change the thinking pause.';
+
+  @override
+  String get familyNoticeCoolingFailed =>
+      'Couldn\'t change the thinking pause. Try again.';
+
+  @override
+  String get familyNoticeServer => 'Couldn\'t reach the server. Try again.';
+
+  @override
+  String get familyNoticeAllowanceAdmin =>
+      'Only an admin can send pocket money.';
+
+  @override
+  String get familyNoticeAmountPositive => 'Enter an amount above zero.';
+
+  @override
+  String get familyNoticeAllowanceFailed =>
+      'Couldn\'t send the pocket money. Try again.';
+
+  @override
+  String get familyNoticeDecisionAdmin => 'Only an admin can decide this.';
+
+  @override
+  String get familyNoticeDecisionFailed =>
+      'Couldn\'t save the decision. Try again.';
+
+  @override
+  String get familyNoticePollClosed => 'The poll is already closed.';
+
+  @override
+  String get familyNoticeVoteFailed => 'Your vote wasn\'t saved. Try again.';
+
+  @override
+  String get familyNoticePollCloseWho =>
+      'Only whoever opened the poll or an admin can close it.';
+
+  @override
+  String get familyNoticePollCloseFailed =>
+      'Couldn\'t close the poll. Try again.';
+
+  @override
+  String get familyNoticeEditNotSaved => 'The change wasn\'t saved.';
+
+  @override
+  String get familyNoticeRewardAdmin => 'Only an admin sets the reward.';
+
+  @override
+  String get familyNoticeChoreFailed => 'The task wasn\'t added. Try again.';
+
+  @override
+  String get familyNoticeReopenAdmin =>
+      'Only an admin can undo a finished task.';
+
+  @override
+  String get familyNoticeNotYours => 'That\'s someone else\'s task.';
+
+  @override
+  String get familyNoticeChoreUpdateFailed => 'Couldn\'t update the task.';
+
+  @override
+  String get familyNoticeItemFailed => 'The item wasn\'t added. Try again.';
+
+  @override
+  String get familyNoticeLimitsAdmin => 'Only an admin sets spending limits.';
+
+  @override
+  String get familyNoticeLimitsFailed =>
+      'The limits weren\'t saved. Try again.';
+
+  @override
+  String get familyNoticeGoalSuggestFailed =>
+      'Zad couldn\'t suggest a goal right now. Try again.';
+
+  @override
+  String get familyNoticeGoalFailed => 'The goal wasn\'t saved. Try again.';
+
+  @override
+  String get familyNoticeBalanceShort =>
+      'Their balance doesn\'t cover this request — send pocket money first with “Send pocket money”, then approve.';
+
+  @override
+  String familyNoticeChoreDone(String amount) {
+    return 'Great work! 🌟 $amount added to the balance.';
+  }
+
+  @override
+  String get familyCoolingWaiting =>
+      'The thinking pause is on: the request isn\'t 24 hours old yet — or turn it down now if you\'re not convinced.';
+
+  @override
+  String get familyCoolingWithinHour =>
+      'Thinking pause: you can approve within an hour — or turn it down now if you\'re not convinced.';
+
+  @override
+  String familyCoolingAfterHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours hours',
+      one: '1 hour',
+    );
+    return 'Thinking pause: you can approve in $_temp0 — or turn it down now if you\'re not convinced.';
+  }
+
+  @override
+  String attemptsCount(num count, String digits) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$digits attempts',
+      one: '1 attempt',
+      zero: 'no attempts',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsPlanName(String tier) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'starter': 'Basic',
+      'plus': 'Plus',
+      'pro': 'Family',
+      'other': 'Free',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String attemptsRefillPlan(String plan) {
+    return 'Your $plan plan';
+  }
+
+  @override
+  String attemptsRefillPlanOn(String plan, String day, String month) {
+    return 'Your $plan plan — renews on $month $day';
+  }
+
+  @override
+  String get attemptsRefillFull => 'Your balance is full';
+
+  @override
+  String get attemptsRefillNow => 'Your balance is coming back now';
+
+  @override
+  String attemptsRefillAt(String count, String clock) {
+    return '$count come back at $clock';
+  }
+
+  @override
+  String attemptsRefillTomorrowAt(String count, String clock) {
+    return '$count come back tomorrow at $clock';
+  }
+
+  @override
+  String get attemptsClockAm => 'AM';
+
+  @override
+  String get attemptsClockPm => 'PM';
+
+  @override
+  String attemptsChipSemantics(String attempts) {
+    return 'Your balance: $attempts';
+  }
+
+  @override
+  String get attemptsSheetTitle => 'Zad\'s energy';
+
+  @override
+  String attemptsSheetBalance(String attempts) {
+    return 'You have $attempts';
+  }
+
+  @override
+  String get attemptsCostLog => 'Logging an expense or income';
+
+  @override
+  String get attemptsCostFree => 'Free';
+
+  @override
+  String get attemptsCostChat => 'A chat message';
+
+  @override
+  String get attemptsCostScan => 'Scanning a receipt or photo';
+
+  @override
+  String get attemptsCostBrain => 'A deep analysis or plan';
+
+  @override
+  String get attemptsSubscribeNoAds => 'Subscribe, no ads';
+
+  @override
+  String get attemptsSeePlans => 'See the plans';
+
+  @override
+  String get refusalNoAttemptsTitle => 'Not enough attempts';
+
+  @override
+  String get refusalSlowDownTitle => 'Wait a little';
+
+  @override
+  String adWeekTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You watched $count ads this week',
+      one: 'You watched 1 ad this week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adWeekBody(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes',
+      one: '1 minute',
+    );
+    return 'That\'s about $_temp0 of your time. A plan has no ads at all, and more attempts.';
+  }
+
+  @override
+  String get adsCappedToday => 'No more ads today';
+
+  @override
+  String get adNextInAMinute => 'Next ad in a minute';
+
+  @override
+  String adWatchFor(String attempts) {
+    return 'Watch an ad, get $attempts';
+  }
+
+  @override
+  String adOpensBox(String bonus) {
+    return 'This ad opens the box: +$bonus extra';
+  }
+
+  @override
+  String adBoxProgress(String done) {
+    return 'Every third ad opens a box — $done of 3';
+  }
+
+  @override
+  String get adRewardOnTheWay => 'Your reward is on its way to your balance…';
+
+  @override
+  String get adClosedEarly => 'The ad closed before the reward.';
+
+  @override
+  String get adNoneNow => 'No ad right now. Try again in a little while.';
+
+  @override
+  String companionPersonaTrait(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'Kind, loves sweets and saving',
+      'fella': 'Gentle, calms the house',
+      'felfool': 'Lively, loves a challenge',
+      'mishmish': 'Fluffy and warm, loves staying in',
+      'toota': 'Cheeky and artistic, draws the plans',
+      'fanoos': 'Comes out in Ramadan',
+      'maamoul': 'Comes out at Eid',
+      'other': 'Calm, loves a tidy home',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionPersonaLine(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'basbous': 'Saved today? Then we\'ve earned a piece of basbousa.',
+      'fella':
+          'The house smells of jasmine when everything\'s logged in its place.',
+      'felfool': 'Come on, champ! This week\'s challenge: save 100 and win.',
+      'mishmish': 'Full fridge and a warm house? Then I\'m happy.',
+      'toota': 'Come, let\'s draw this month\'s plan together.',
+      'fanoos': 'Ramadan Kareem! I\'ve got your suhoor list ready.',
+      'maamoul': 'Eid Mubarak! Did the Eid money get logged?',
+      'other': 'Hi! I\'m Zado, here for anything about the house.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageLabel(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'Seed',
+      'sprout': 'Sprout',
+      'little': 'Little one',
+      'sage': 'Sage',
+      'other': 'Companion',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionStageDescription(String stage) {
+    String _temp0 = intl.Intl.selectLogic(stage, {
+      'seed': 'Still in its shell, with big eyes.',
+      'sprout': 'Out of its shell, with two little hands.',
+      'little': 'It has feet now, and can wear everything.',
+      'sage': 'A gold halo, with stars circling it.',
+      'other': 'A soft light around it, and it dances when you\'re happy.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionOutfitLabel(String outfit) {
+    String _temp0 = intl.Intl.selectLogic(outfit, {
+      'sunglasses': 'Sunglasses',
+      'winterHat': 'Winter hat',
+      'chefHat': 'Chef\'s hat',
+      'shemagh': 'Shemagh',
+      'gradCap': 'Graduation cap',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String companionBackgroundLabel(String bg) {
+    String _temp0 = intl.Intl.selectLogic(bg, {
+      'night': 'Night',
+      'garden': 'The garden',
+      'kitchen': 'The kitchen',
+      'stars': 'Starry sky',
+      'shilla': 'The gang',
+      'other': 'Morning',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String offerOpensAtLevel(int level) {
+    return 'Opens at level $level';
+  }
+
+  @override
+  String offerOpensFriends(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Opens when $count friends sign up',
+      one: 'Opens when a friend signs up',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offerPlusGift => 'A gift with the Plus plan';
+
+  @override
+  String get offerRamadanOnly => 'Ramadan only';
+
+  @override
+  String get offerEidOnly => 'Eid only';
+
+  @override
+  String petPokedMany(int count) {
+    return 'Enough! $count times? I\'m telling Zad on you 😂';
+  }
+
+  @override
+  String petPokedLots(String i, int count) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Are you counting or what? That\'s $count times 😵‍💫',
+      'other': 'The screen\'s getting tired of us 😅 $count taps!',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPokedSome(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'That tickles! 🤭 Stop…',
+      'i1': 'I\'m not a button, you know 😤',
+      'other': '$name is seeing stars from all the tapping 😵',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackDay(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'A whole day away! I thought you forgot me 🥺',
+      'other': 'A full day? I sat here counting floor tiles 🥲',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBackHours(String i, int hours) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Gone $hours hours… not that I missed you or anything 😌',
+      'other': 'You\'re back! $hours hours of me staring at the door 👀',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockNight(String i, int hour) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'It\'s $hour at night! What are you doing up? 👀',
+      'other': 'Both of us awake at $hour… our secret 🤫',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petClockDawn(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Up early… or still not asleep? 🌅',
+      'other': 'Dawn\'s barely here and so are you? Bravo 🌄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPaywall(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I see you looking at the prices 👀 Take your time',
+      'i1': 'No pressure… but $name would be so happy 🥹',
+      'other': 'Don\'t worry, I\'m with you either way 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petDreamTalked(String what) {
+    return 'Last night I dreamt “$what” told me all about yesterday… and I got that you needed it 🌙';
+  }
+
+  @override
+  String petDreamMarket(String what) {
+    return 'I dreamt I walked through a big market and every shop was called “$what” 😄 Yesterday was its day';
+  }
+
+  @override
+  String petDreamChased(String what) {
+    return 'Last night I dreamt “$what” was chasing me 😱🌙';
+  }
+
+  @override
+  String petDreamPlayed(String what) {
+    return 'I dreamt I was playing with “$what” 🤭 It was the biggest thing yesterday';
+  }
+
+  @override
+  String petWeekGoalGrown(int days) {
+    return '$days days out of 7 this week… this house knows its way 💚';
+  }
+
+  @override
+  String petWeekGoalYoung(int days) {
+    return '$days days this week! I grew from sheer joy 🎉';
+  }
+
+  @override
+  String petWeekSomeGrown(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'We logged $days days this week. Step by step we get there 🌱',
+      one: 'We logged 1 day this week. Step by step we get there 🌱',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String petWeekSomeYoung(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days logged together! Keep going? 🥰',
+      one: '1 day logged together! Keep going? 🥰',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get petWeekNoneGrown =>
+      'A new week, a blank page. I\'m here whenever you like 💚';
+
+  @override
+  String get petWeekNoneYoung =>
+      'A new week! Want to play “log an expense”? 🌱';
+
+  @override
+  String petMoodHungry(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'My tummy\'s rumbling… feed me? 🍎',
+      'i1': 'So hungry 🥺 just a little something',
+      'other': 'Smell food? Nope, that\'s just me being hungry 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodThirsty(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Thirsty… a little water? 💧',
+      'i1': 'My mouth\'s so dry 🥵 water me',
+      'other': 'One glass of water and I\'ll be perfect 💧',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSleepy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Sleepy… 😴 good night',
+      'i1': 'Yaaawn 🥱 continue tomorrow?',
+      'other': 'My eyes are closing on their own… 💤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodSad(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I missed you… and you forgot my food and water 🥺',
+      'other': '$name is a bit sad… come sit with me 💔',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodHappy(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I\'m happy with you 💚',
+      'i1': 'Thanks for remembering me 🥰',
+      'other': 'You\'re the best friend 🤗',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodLogged(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'How\'s your day going? ✨',
+      'i1': 'I\'m here if you need me 💚',
+      'other': 'You logged today — well done 👏',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMoodNudge(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Logged your expenses today? 📝',
+      'other': 'Just one expense and I\'ll be so proud 🌱',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFed(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Yum yum! 😋',
+      'i1': 'Thank you 🍎',
+      'other': 'Best meal ever 🤤',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I\'m full 🤭',
+      'other': 'Can\'t eat another bite 😅',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWatered(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Aah, refreshing! 💧',
+      'other': 'Much better now 😌',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petWaterFull(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'I don\'t want water right now 🙈',
+      'other': 'I\'ve had enough to drink 😄',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petPetted(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Hehe, that tickles 🤭',
+      'i1': 'More! More! 🥰',
+      'other': 'Love you 💚',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String priceSourceLabel(String source) {
+    String _temp0 = intl.Intl.selectLogic(source, {
+      'yours': 'You paid',
+      'other': 'Average in your city',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get petMomentMissedYou => 'I missed you! 💚';
+
+  @override
+  String petMomentWasSleeping(String name) {
+    return '$name was asleep, waiting for you…';
+  }
+
+  @override
+  String petMomentGift(int seeds) {
+    return 'I brought you $seeds 🌱 as a welcome-back gift. Let\'s keep going together!';
+  }
+
+  @override
+  String get petMomentKeepGoing => 'Let\'s keep going together!';
+
+  @override
+  String petMomentAwayDays(int days) {
+    return 'You\'ve been away $days days, so it fell asleep under the blanket. Tap it to wake it up.';
+  }
+
+  @override
+  String get petMomentTapToWake => 'Tap it to wake it up.';
+
+  @override
+  String get petMomentLetsGo => 'Let\'s go';
+
+  @override
+  String get petMomentWake => 'Wake it 👋';
+
+  @override
+  String petMomentGrew(String name, String stage) {
+    return '$name grew! Now a $stage ✨';
+  }
+
+  @override
+  String petMomentChanging(String name) {
+    return '$name is changing…';
+  }
+
+  @override
+  String petMomentLevel(int level) {
+    return 'Level $level! 🎉';
+  }
+
+  @override
+  String get petMomentSomething => 'Wait… something\'s happening!';
+
+  @override
+  String petMomentLevelBody(String name) {
+    return 'Everything you logged helped $name grow.';
+  }
+
+  @override
+  String get petMomentWow => 'Wow!';
+
+  @override
+  String get petLoggedFull => 'Logged ✓ but I\'m full 🤭';
+
+  @override
+  String get petLoggedYum => 'Logged ✓ yum yum! 😋';
+
+  @override
+  String petOrbSemantics(String name, String mood) {
+    return '$name — $mood. Tap to feed and water it';
+  }
+
+  @override
+  String petCareStreak(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '🔥 $days days of care',
+      one: '🔥 1 day of care',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String petPamper(String name) {
+    return 'Pamper $name';
+  }
+
+  @override
+  String get petMeterFull => 'Fullness';
+
+  @override
+  String get petMeterWater => 'Water';
+
+  @override
+  String get petMeterHappy => 'Happiness';
+
+  @override
+  String petTapToPamper(String name) {
+    return 'Tap $name to pamper it';
+  }
+
+  @override
+  String get petFeedButton => '🍎 Feed';
+
+  @override
+  String get petWaterButton => '💧 Water';
+
+  @override
+  String petPlayedScore(int score) {
+    return 'We played and you scored $score! 🏆';
+  }
+
+  @override
+  String get petPlayButton => '⚽ Play with it';
+
+  @override
+  String petGuessedRight(int right) {
+    return 'You guessed $right right! 💰';
+  }
+
+  @override
+  String get petGuessTitle => '💰 Guess the price';
+
+  @override
+  String petMemoryDone(int moves) {
+    return 'We finished the memory game in $moves moves! 🧠';
+  }
+
+  @override
+  String get petMemoryTitle => '🧠 Price memory';
+
+  @override
+  String get petStudioButton => '👗 Companion studio';
+
+  @override
+  String petBallVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'none': '$name is waiting for you to play again 🥺',
+      'some': 'Nice! $name had fun 😊',
+      'lots': 'Bravo! $name is over the moon 🤩',
+      'other': 'Legend! $name can\'t believe it 🏆',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petBallTitle(String name) {
+    return 'Play with $name';
+  }
+
+  @override
+  String petBallScore(int score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get petBallHint => 'Catch the ball before it gets away!';
+
+  @override
+  String get petGameAgain => '🔁 Again';
+
+  @override
+  String get petGameDone => 'Done';
+
+  @override
+  String get petGamesNoPrices => 'Not enough prices yet';
+
+  @override
+  String petGamesNoPricesBody(String name) {
+    return 'Log a few expenses or report a price in “Crowd prices”, and $name will play with them.';
+  }
+
+  @override
+  String petGuessVerdict(String tier, String name) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'all': 'All right! $name can\'t believe it 🏆',
+      'half': 'Bravo! You\'ve got an eye for prices 🤩',
+      'some': 'Not bad! $name had fun 😊',
+      'other': 'The prices beat us this time 😅 Again?',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petGuessScore(int right, int total) {
+    return '$right of $total';
+  }
+
+  @override
+  String petGuessProgress(int at, int total, int right) {
+    return 'Question $at of $total · $right right';
+  }
+
+  @override
+  String petGuessQuestion(String item) {
+    return 'How much is “$item”?';
+  }
+
+  @override
+  String get petGuessResult => 'Result';
+
+  @override
+  String get petGuessNext => 'Next';
+
+  @override
+  String petMemoryVerdict(String tier, String name, int moves) {
+    String _temp0 = intl.Intl.selectLogic(tier, {
+      'iron': 'Memory of steel! $name is amazed 🏆',
+      'good': 'Bravo! Done in $moves moves 🤩',
+      'other': 'We did it in $moves moves, $name had fun 😊',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String petMemoryHint(int moves) {
+    return 'Match each item with its price · $moves moves';
+  }
+
+  @override
+  String petMeterPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String documentKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'passport': 'Passport',
+      'nationalId': 'National ID',
+      'residence': 'Residence permit',
+      'drivingLicense': 'Driving licence',
+      'vehicleLicense': 'Vehicle licence',
+      'other': 'Other document',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetThirstyTitle(String name) {
+    return '💧 $name is thirsty';
+  }
+
+  @override
+  String reminderPetHungryTitle(String name) {
+    return '🍎 $name is hungry';
+  }
+
+  @override
+  String get reminderPetThirstyBody =>
+      'One glass of water and it\'s back to playing — come water it';
+
+  @override
+  String get reminderPetHungryBody =>
+      'Waiting for you to feed it… it misses you 🥺';
+
+  @override
+  String reminderPetCallTitle(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': '🥺 $name is still waiting for you',
+      'i1': '🍎 $name is asking about you',
+      'i2': '😢 $name is sad',
+      'i3': '💔 $name misses you so much',
+      'i4': '😭 $name is weak with hunger',
+      'other': '🌧️ $name is sitting all alone',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetCallBody(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Its tummy\'s been rumbling since morning… just one bite?',
+      'i1': 'Sitting by an empty bowl — come feed and water it',
+      'i2': 'A day without food… it looks a mess and it\'s waiting for you',
+      'i3': 'It won\'t play without you — one minute makes it happy again',
+      'i4': 'Two days without food or water… it\'s still waiting for you',
+      'other': 'Every day it watches the door — come and reassure it',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderNapTitle(String name) {
+    return '😴 $name fell asleep waiting for you';
+  }
+
+  @override
+  String get reminderNapBody =>
+      'You\'ve been away two days — come wake it up, it has welcome-back seeds for you 🌱';
+
+  @override
+  String reminderNapAgainTitle(String name) {
+    return '$name is still asleep…';
+  }
+
+  @override
+  String get reminderNapAgainBody =>
+      'Log just one expense and it\'ll wake up happy, and the streak starts again 🔥';
+
+  @override
+  String get reminderChannelDoses => 'Zad — medicine times';
+
+  @override
+  String get reminderChannelTasbih => 'Zad — tasbih reminder';
+
+  @override
+  String get reminderChannelCompanion => 'Zad\'s companion';
+
+  @override
+  String get reminderChannelSeasons => 'Zad — upcoming occasions';
+
+  @override
+  String get reminderChannelDocuments => 'Zad — documents before they expire';
+
+  @override
+  String get reminderDoseTaken => 'Taken ✅';
+
+  @override
+  String get reminderDoseSnooze => 'Snooze';
+
+  @override
+  String get reminderDoseTitle => 'Medicine time';
+
+  @override
+  String reminderDoseBody(String name) {
+    return 'Time for your dose of $name';
+  }
+
+  @override
+  String get reminderTasbihTitle => '🌱 Tasbih time';
+
+  @override
+  String get reminderTasbihBody =>
+      'Your tree is waiting — say some tasbih and help it grow';
+
+  @override
+  String reminderSeasonName(String slug) {
+    String _temp0 = intl.Intl.selectLogic(slug, {
+      'ramadan': 'Ramadan',
+      'eid_al_fitr': 'Eid al-Fitr',
+      'eid_al_adha': 'Eid al-Adha',
+      'back_to_school': 'Back to school',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderSeasonTitle(String name) {
+    return '📅 $name is coming';
+  }
+
+  @override
+  String reminderSeasonBody(String name) {
+    return 'Get ready for $name expenses — start saving now';
+  }
+
+  @override
+  String reminderDocumentWho(String document, String holder) {
+    return '$holder\'s $document';
+  }
+
+  @override
+  String reminderDocumentToday(String document) {
+    return '🪪 $document expires today';
+  }
+
+  @override
+  String reminderDocumentInDays(String document, int days) {
+    return '🪪 $document expires in $days days';
+  }
+
+  @override
+  String get reminderDocumentPassport =>
+      'Many countries want a passport valid for 6 months to travel — if a trip is coming, renew it early.';
+
+  @override
+  String reminderDocumentLastDay(String date) {
+    return 'Last day $date — start the renewal early.';
+  }
+
+  @override
+  String marketCountryName(String country) {
+    String _temp0 = intl.Intl.selectLogic(country, {
+      'SA': 'Saudi Arabia',
+      'EG': 'Egypt',
+      'AE': 'UAE',
+      'KW': 'Kuwait',
+      'QA': 'Qatar',
+      'BH': 'Bahrain',
+      'OM': 'Oman',
+      'JO': 'Jordan',
+      'LB': 'Lebanon',
+      'IQ': 'Iraq',
+      'SY': 'Syria',
+      'YE': 'Yemen',
+      'PS': 'Palestine',
+      'LY': 'Libya',
+      'SD': 'Sudan',
+      'MA': 'Morocco',
+      'TN': 'Tunisia',
+      'DZ': 'Algeria',
+      'TR': 'Turkey',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get marketSearchHint => 'Search your country or currency';
+
+  @override
+  String orbMood(String mood) {
+    String _temp0 = intl.Intl.selectLogic(mood, {
+      'listening': 'Zad: listening',
+      'focused': 'Zad: thinking',
+      'speaking': 'Zad: speaking',
+      'happy': 'Zad: pleased',
+      'alert': 'Zad: alert',
+      'celebrating': 'Zad: celebrating',
+      'sad': 'Zad: sad',
+      'hungry': 'Zad: hungry',
+      'thirsty': 'Zad: thirsty',
+      'sleepy': 'Zad: sleepy',
+      'other': 'Zad: calm',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String orbAccessoryLabel(String accessory) {
+    String _temp0 = intl.Intl.selectLogic(accessory, {
+      'bow': 'Bow',
+      'glasses': 'Glasses',
+      'flower': 'Flower',
+      'crown': 'Crown',
+      'other': 'None',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String orbPetAsleep(String name) {
+    return '$name is asleep';
+  }
+
+  @override
+  String orbPetMood(String name, String mood) {
+    return '$name: $mood';
+  }
+
+  @override
+  String insightKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'question': 'Question',
+      'alert': 'Alert',
+      'other': 'Info',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String insightDismissReason(String reason) {
+    String _temp0 = intl.Intl.selectLogic(reason, {
+      'notRelevant': 'Not relevant to me',
+      'wrongData': 'The number is wrong',
+      'other': 'I already knew',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String localInsightBudgetTitle(String category) {
+    return 'Your $category budget is almost used up';
+  }
+
+  @override
+  String localInsightBudgetBody(String spent, String budget, String category) {
+    return 'You\'ve spent $spent of $budget on $category this month.';
+  }
+
+  @override
+  String localInsightUnusedTitle(String name) {
+    return 'Unused subscription: $name';
+  }
+
+  @override
+  String localInsightUnusedBody(String name, String yearly) {
+    return 'We haven\'t seen any activity on $name lately. Cancelling could save $yearly a year.';
+  }
+
+  @override
+  String localInsightCostlyTitle(String name) {
+    return 'Costly subscription: $name';
+  }
+
+  @override
+  String localInsightCostlyBody(String yearly) {
+    return 'This subscription costs you $yearly a year. Is it worth keeping?';
+  }
+
+  @override
+  String get localInsightWelcomeTitle => 'Welcome to Zad';
+
+  @override
+  String get localInsightWelcomeBody =>
+      'Add transactions or pantry items so we can analyse your data and make smart suggestions.';
+
+  @override
+  String get questionYes => 'Yes';
+
+  @override
+  String get questionNo => 'No';
+
+  @override
+  String get questionOpenCamera => 'Open the camera';
+
+  @override
+  String get questionSend => 'Send';
+
+  @override
+  String scanSummaryAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new items',
+      one: '1 new item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanSummaryToppedUp(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count restocked',
+      one: '1 restocked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanSummaryTicked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ticked off the shopping list ✅',
+      one: '1 ticked off the shopping list ✅',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanSummaryNone => 'Nothing changed';
+
+  @override
+  String get scanQueuedOffline =>
+      'The items will go into your pantry as soon as you\'re back online';
+
+  @override
+  String get scanSheetTitle => 'Zad\'s smart camera';
+
+  @override
+  String get scanSheetPantry => 'Scan pantry';
+
+  @override
+  String get scanSheetReceipt => 'Scan receipt';
+
+  @override
+  String get scanSheetPrescription => 'Prescription';
+
+  @override
+  String get scanSheetTimetable => 'School timetable';
+
+  @override
+  String get scanCameraIntro =>
+      'Snap your fridge, your grocery bags or a receipt and Zad will read it for you!';
+
+  @override
+  String get scanCameraBlocked =>
+      'Camera access is turned off — open Settings and allow it so you can take photos';
+
+  @override
+  String get scanCameraDenied =>
+      'We need the camera to scan. You can still add items by hand';
+
+  @override
+  String get scanCameraUnavailable =>
+      'Couldn\'t open the camera. Install a camera app or add items by hand';
+
+  @override
+  String get scanAnalyzingPhoto => 'Reading your photo…';
+
+  @override
+  String scanRecognized(String name) {
+    return 'Found: $name';
+  }
+
+  @override
+  String get scanMedicineUnreadable =>
+      'Couldn\'t read the box clearly — try again from a better angle';
+
+  @override
+  String scanItemsFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count items! Check them and confirm',
+      one: 'Found 1 item! Check it and confirm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanNoItems =>
+      'No clear items spotted. Try a closer shot or better light, or add them by hand';
+
+  @override
+  String scanReceiptFound(String store) {
+    return 'Read the $store receipt! Check it and confirm';
+  }
+
+  @override
+  String get scanReceiptUnreadable =>
+      'We couldn\'t read the receipt — please try a clearer photo';
+
+  @override
+  String get scanAnalysisFailed =>
+      'Something went wrong while reading. Try again';
+
+  @override
+  String get scanAddCancelled => 'Nothing was added';
+
+  @override
+  String scanAddingItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Adding $count items to your pantry…',
+      one: 'Adding 1 item to your pantry…',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanAddedSummary(String summary) {
+    return 'Done: $summary';
+  }
+
+  @override
+  String get scanReceiptErrorTitle => 'Couldn\'t read the receipt';
+
+  @override
+  String get scanReceiptErrorOk => 'OK';
+
+  @override
+  String get scanReceiptCancelled => 'Receipt discarded';
+
+  @override
+  String scanPharmacyReceiptSaved(String store, String total) {
+    return 'Saved the $store receipt ($total) to your pharmacy!';
+  }
+
+  @override
+  String scanHouseholdReceiptSaved(String store, String total) {
+    return 'Saved the $store receipt ($total) and updated your pantry!';
+  }
+
+  @override
+  String scanReceiptResult(String store, String summary) {
+    return '$store receipt: $summary';
+  }
+
+  @override
+  String scanReceiptSaving(String store, String total) {
+    return 'Saved the $store receipt for $total, and the items are in your pantry!';
+  }
+
+  @override
+  String scanReceiptResultTotal(String store, String total, String summary) {
+    return '$store receipt ($total): $summary';
+  }
+
+  @override
+  String scanManualAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count items by hand!',
+      one: 'Added 1 item by hand!',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanScreenTitle => 'Smart scanner';
+
+  @override
+  String get scanCapturedPhoto => 'The photo you took';
+
+  @override
+  String get scanPrompt => 'Snap your pantry or a receipt';
+
+  @override
+  String get scanPromptHint => 'Zad will pick out the items for you';
+
+  @override
+  String get scanAnalyzing => 'Reading…';
+
+  @override
+  String get scanMedicineBox => 'Scan a medicine box';
+
+  @override
+  String get scanPantryButton => 'Scan pantry';
+
+  @override
+  String get scanReceiptButton => 'Scan receipt';
+
+  @override
+  String get scanAddManually => 'Add items by hand';
+
+  @override
+  String get scanOpenSettings => 'Open app settings';
+
+  @override
+  String get scanConfirmPantryTitle => 'Check what we found';
+
+  @override
+  String get scanConfirmPantryHint =>
+      'Here\'s what we found. Review it before saving:';
+
+  @override
+  String get scanAddToPantry => 'Add to pantry';
+
+  @override
+  String scanExpiry(String date) {
+    return 'Expires: $date';
+  }
+
+  @override
+  String get scanSaveToPharmacy => 'Save to pharmacy';
+
+  @override
+  String get scanConfirmReceiptTitle => 'Check the receipt';
+
+  @override
+  String get scanConfirmReceiptHint =>
+      'Review the items before they go into your spending and pantry:';
+
+  @override
+  String get scanReceiptTypeHint =>
+      'Receipt type (Zad picked one, you can change it):';
+
+  @override
+  String scanReceiptType(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'pharmacy': 'Pharmacy',
+      'grocery': 'Supermarket',
+      'other': 'General spending',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get scanQtyDown => 'Decrease quantity';
+
+  @override
+  String get scanQtyUp => 'Increase quantity';
+
+  @override
+  String get scanSaveReceipt => 'Save receipt';
+
+  @override
+  String get scanAddAnother => 'Add another item';
+
+  @override
+  String scanSaveCount(int count) {
+    return 'Save ($count)';
+  }
+
+  @override
+  String get scanItemName => 'Item name';
+
+  @override
+  String get scanQuantity => 'Quantity';
+
+  @override
+  String get scanUnit => 'Unit';
+
+  @override
+  String get scanCategory => 'Category';
+
+  @override
+  String get scanReceiptUnreadableTitle => 'I couldn\'t read the receipt';
+
+  @override
+  String get scanReceiptUnreadableHint =>
+      'Try a clearer photo — paper flat, good light, and the total in the shot.';
+
+  @override
+  String get scanServerUnreachable => 'I couldn\'t reach the server';
+
+  @override
+  String get scanServerUnreachableHint =>
+      'Your photo is still here. Try again once you\'re back online.';
+
+  @override
+  String get scanPickTitle => 'Snap the receipt';
+
+  @override
+  String get scanPickHint =>
+      'I\'ll read the shop, the total and the items, and show you before saving anything.';
+
+  @override
+  String get scanOpenCamera => 'Open camera';
+
+  @override
+  String get scanPickFromGallery => 'Choose from photos';
+
+  @override
+  String get scanPickBalanceHint =>
+      'You can also pick a screenshot of a balance or salary message, and I\'ll offer to make it your budget.';
+
+  @override
+  String get scanReadingReceipt => 'Reading the receipt…';
+
+  @override
+  String get scanRetake => 'Take another';
+
+  @override
+  String get scanCheckReceipt => 'Check the receipt';
+
+  @override
+  String get scanNotAPurchase => 'This isn\'t a purchase receipt';
+
+  @override
+  String get scanCheckReceiptHint =>
+      'Check the amount and category before saving. Nothing\'s saved yet.';
+
+  @override
+  String get scanNotAPurchaseHint =>
+      'This looks like a balance or salary, not money spent. I can make this figure your budget instead of logging it as spending.';
+
+  @override
+  String scanReceiptDate(String date) {
+    return 'Receipt date $date — it\'ll be logged on that day and month.';
+  }
+
+  @override
+  String get scanAmount => 'Amount';
+
+  @override
+  String get scanBalance => 'Balance';
+
+  @override
+  String get scanCategoryHeading => 'Category';
+
+  @override
+  String get scanPaidHowUnknown =>
+      'How did you pay? (The receipt doesn\'t say)';
+
+  @override
+  String get scanPaid => 'Paid with';
+
+  @override
+  String scanBankTwin(String bank, String amount, String title) {
+    return 'This amount was already logged from your bank$bank: $amount — “$title”';
+  }
+
+  @override
+  String get scanSamePayment => 'Same payment';
+
+  @override
+  String get scanOtherPayment => 'A different one';
+
+  @override
+  String scanAddItemsToPantry(int count) {
+    return 'Add the items to the pantry ($count)';
+  }
+
+  @override
+  String get scanAddItemsToPantryHint =>
+      'What you have gets topped up, and anything on your shopping list is ticked off.';
+
+  @override
+  String scanAddMedicines(int count) {
+    return 'Add the medicines to the pharmacy ($count)';
+  }
+
+  @override
+  String get scanAddMedicinesHint =>
+      'Medicines you have are topped up by the dose, not the box, and new ones are added. Tap a count to change it.';
+
+  @override
+  String scanItemsReadOnly(int count) {
+    return 'Items I read ($count) — just for a look';
+  }
+
+  @override
+  String get scanSaveExpense => 'Save as spending';
+
+  @override
+  String get scanSaveAndPantry => 'Save and add to pantry';
+
+  @override
+  String get scanSaveAndPharmacy => 'Save and add to pharmacy';
+
+  @override
+  String get scanMakeBudget => 'Make it my budget';
+
+  @override
+  String get scanSavedQueued =>
+      'Spending saved. The items will go in once you\'re back online.';
+
+  @override
+  String scanPartNew(int count) {
+    return '$count new';
+  }
+
+  @override
+  String scanPartToppedUp(int count) {
+    return '$count topped up';
+  }
+
+  @override
+  String scanPartTicked(int count) {
+    return '$count off the shopping list';
+  }
+
+  @override
+  String scanPartRestocked(int count) {
+    return '$count restocked';
+  }
+
+  @override
+  String scanPartUncounted(int count) {
+    return '$count not added (no count)';
+  }
+
+  @override
+  String scanPartsJoin(String a, String b) {
+    return '$a, $b';
+  }
+
+  @override
+  String scanSavedPantry(String parts) {
+    return 'Spending saved — pantry: $parts.';
+  }
+
+  @override
+  String get scanPharmacyPartial =>
+      'Spending saved, but not every medicine made it into the pharmacy. Check them from home.';
+
+  @override
+  String scanSavedPharmacy(String parts) {
+    return 'Spending saved — pharmacy: $parts.';
+  }
+
+  @override
+  String scanAddsTo(String name) {
+    return 'Adds to: $name';
+  }
+
+  @override
+  String get scanNewInPharmacy => 'New in your pharmacy';
+
+  @override
+  String scanHowMany(String unit) {
+    return 'How many ($unit)?';
+  }
+
+  @override
+  String scanCountHint(String name) {
+    return '$name — boxes × how many in each box.';
+  }
+
+  @override
+  String get scanCountOk => 'OK';
+
+  @override
+  String get scanWalletCard => 'Card';
+
+  @override
+  String get scanWalletCash => 'Cash';
+
+  @override
+  String get scanLineIllegible =>
+      'Not clear in the photo — fix it or remove it';
+
+  @override
+  String get scanLineAsNeeded => 'As needed — no set times';
+
+  @override
+  String scanLineTimesPerDay(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times a day',
+      two: 'twice a day',
+      one: 'once a day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String scanLineForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'for $days days',
+      one: 'for 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimesSeparator => ', ';
+
+  @override
+  String get scanLineNoTimes =>
+      'Times aren\'t written — set them in the pharmacy';
+
+  @override
+  String get scanPrescriptionUnreadable => 'I couldn\'t read the prescription';
+
+  @override
+  String get scanTimetableUnreadable => 'I couldn\'t read the timetable';
+
+  @override
+  String get scanPaperHint =>
+      'Get the whole page in, up close, with no glare and good light.';
+
+  @override
+  String get scanCouldNotFinish => 'I couldn\'t finish';
+
+  @override
+  String get scanCouldNotFinishHint =>
+      'The connection or the server — try again in a bit.';
+
+  @override
+  String get scanPrescriptionTitle => 'Snap the prescription';
+
+  @override
+  String get scanTimetableTitle => 'Snap the school timetable';
+
+  @override
+  String get scanPrescriptionIntro =>
+      'I\'ll copy the medicines and doses exactly as written, and you check them before they go into the pharmacy with their times.';
+
+  @override
+  String get scanTimetableIntro =>
+      'I\'ll read the days and classes and you check them before I save — then each evening I\'ll remind you to pack tomorrow\'s bag.';
+
+  @override
+  String get scanReadingPaper => 'Reading the page…';
+
+  @override
+  String get scanPickAnother => 'Choose another photo';
+
+  @override
+  String scanFoundMedicines(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count medicines',
+      one: 'Found 1 medicine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanPrescriptionCaution =>
+      'Zad only copies what\'s on the prescription — check doses and times with your pharmacist or doctor.';
+
+  @override
+  String get scanPrescriptionFor => 'Who\'s the prescription for?';
+
+  @override
+  String scanPrescriptionForNamed(String name) {
+    return 'It says: $name — leave empty for you';
+  }
+
+  @override
+  String get scanPrescriptionForYou => 'Leave empty for you';
+
+  @override
+  String scanAddToPharmacyCount(int count) {
+    return 'Add to pharmacy ($count)';
+  }
+
+  @override
+  String scanMedicinesAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count medicines to your pharmacy with their times.',
+      one: 'Added 1 medicine to your pharmacy with its times.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanMedicinesNoneAdded =>
+      'Nothing was added — check your pharmacy and add them by hand.';
+
+  @override
+  String scanTimetableDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'A $count-day timetable',
+      one: 'A 1-day timetable',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimetableFor => 'Whose timetable is this?';
+
+  @override
+  String scanTimetableClass(String name) {
+    return 'Class $name';
+  }
+
+  @override
+  String get scanChildName => 'Child\'s name';
+
+  @override
+  String get scanNameFirst => 'Enter their name first';
+
+  @override
+  String scanSaveTimetable(String name) {
+    return 'Save $name\'s timetable';
+  }
+
+  @override
+  String scanTimetableSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Timetable saved ($count classes) — I\'ll remind you about tomorrow\'s bag each evening.',
+      one: 'Timetable saved (1 class) — I\'ll remind you about tomorrow\'s bag each evening.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanTimetableNotSaved =>
+      'The timetable wasn\'t saved — try again.';
+
+  @override
+  String get scanNoPantryItems => 'I didn\'t spot any items';
+
+  @override
+  String get scanBoxUnreadable => 'I couldn\'t read the box';
+
+  @override
+  String get scanPantryPhotoHint =>
+      'Get closer so the items and their labels show, in good light.';
+
+  @override
+  String get scanBoxPhotoHint =>
+      'Snap the side of the box with the medicine\'s name, up close and without glare.';
+
+  @override
+  String get scanTryWhenOnline => 'Try again once you\'re back online.';
+
+  @override
+  String get scanPantryTitle => 'Snap your pantry';
+
+  @override
+  String get scanBoxTitle => 'Snap the medicine box';
+
+  @override
+  String get scanPantryIntro =>
+      'A shelf, the fridge or a shopping bag — I\'ll read the items and amounts and let you pick before they go into the pantry.';
+
+  @override
+  String get scanBoxIntro =>
+      'I\'ll read the name, count, dose and expiry, and open the add form filled in for you to check.';
+
+  @override
+  String get scanReadingPhoto => 'Reading the photo…';
+
+  @override
+  String scanFoundItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Found $count items',
+      one: 'Found 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scanFoundItemsHint =>
+      'Untick anything that\'s wrong. What you have gets topped up, and anything on your shopping list is ticked off.';
+
+  @override
+  String scanAddToPantryCount(int count) {
+    return 'Add to pantry ($count)';
+  }
+
+  @override
+  String get scanPantryPartial =>
+      'Not every item made it into the pantry — check it and add the rest by hand.';
+
+  @override
+  String scanPantryResult(String parts) {
+    return 'Pantry: $parts.';
+  }
+
+  @override
+  String get statementUnreadableFile =>
+      'Couldn\'t read that file — send a CSV, a PDF or a photo of the statement';
+
+  @override
+  String get statementTooBig =>
+      'The file is over 10 MB — send one month at a time or photograph the pages';
+
+  @override
+  String get statementNoRows =>
+      'I couldn\'t find any transactions I can read in this statement — try a clearer photo or a PDF from your bank\'s app';
+
+  @override
+  String get statementServerDown =>
+      'I couldn\'t reach the server — check your connection and try again';
+
+  @override
+  String statementImported(int imported, int skipped) {
+    String _temp0 = intl.Intl.pluralLogic(
+      imported,
+      locale: localeName,
+      other: 'Imported $imported transactions',
+      one: 'Imported 1 transaction',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      skipped,
+      locale: localeName,
+      other: 'skipped $skipped duplicates',
+      one: 'skipped 1 duplicate',
+      zero: 'no duplicates',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get statementTitle => 'Import a bank statement';
+
+  @override
+  String get statementIntro =>
+      'Pick your statement: a PDF from your bank\'s app, a photo, or a CSV file. Zad reads the transactions and checks them against the statement\'s balance, and nothing is saved until you\'ve reviewed it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPick => 'Choose statement';
+
+  @override
+  String get statementMapHint =>
+      'Tell me which column holds what — every bank\'s file is different';
+
+  @override
+  String get statementColDate => 'Date column';
+
+  @override
+  String get statementColTitle => 'Description column';
+
+  @override
+  String get statementColAmount => 'Amount column';
+
+  @override
+  String get statementColCategory => 'Category column (optional)';
+
+  @override
+  String get statementInvert =>
+      'Flip the amount\'s sign (if negative means money in, not spending)';
+
+  @override
+  String get statementContinue => 'Continue to review';
+
+  @override
+  String get statementNone => 'None';
+
+  @override
+  String statementColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementRowsSummary(int rows, int checked) {
+    String _temp0 = intl.Intl.pluralLogic(
+      rows,
+      locale: localeName,
+      other: '$rows rows',
+      one: '1 row',
+    );
+    return '$_temp0 — $checked selected to import';
+  }
+
+  @override
+  String get statementEmptyTitle => 'No transactions in this file';
+
+  @override
+  String get statementEmptyMessage =>
+      'The file opened but has no rows I can import — make sure it\'s a bank statement in CSV or a readable PDF.';
+
+  @override
+  String statementImportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $count transactions',
+      one: 'Import 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementRowError =>
+      'Couldn\'t read the date or amount in this row';
+
+  @override
+  String get statementRowMismatch =>
+      'The statement\'s balance doesn\'t match this row — check the amount';
+
+  @override
+  String get statementBalanced => 'The figures match the statement\'s balance';
+
+  @override
+  String get statementMismatch =>
+      'Some figures don\'t match the statement\'s balance — those rows are unticked, check them';
+
+  @override
+  String get statementUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rows couldn\'t be read.',
+      one: '1 row couldn\'t be read.',
+    );
+    return '$text. $_temp0';
+  }
+
+  @override
+  String get pharmacyCostHealth => 'Health spending this month';
+
+  @override
+  String get pharmacyCostBoxes => 'Medicine box prices';
+
+  @override
+  String get pharmacyAdd => 'Add';
+
+  @override
+  String get pharmacyAdherence => 'Doses taken on time';
+
+  @override
+  String get pharmacyAdherenceWaiting => 'Waiting for the first dose';
+
+  @override
+  String get pharmacyTotal => 'Medicines';
+
+  @override
+  String get pharmacyExpiringSoon => 'Expiring soon';
+
+  @override
+  String get pharmacyLowStock => 'Running low';
+
+  @override
+  String pharmacyExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines have expired — dispose of them safely',
+      one: '1 medicine has expired — dispose of it safely',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyExpiringHeading =>
+      'Expiring soon — dispose of them safely';
+
+  @override
+  String pharmacyExpiresIn(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expires in $days days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyTodayDoses => 'Today\'s doses';
+
+  @override
+  String get pharmacyNoDosesLeft => 'No doses left today.';
+
+  @override
+  String get pharmacyNoSchedules =>
+      'No medicine has set times yet — set times for one below and I\'ll remind you.';
+
+  @override
+  String get pharmacyLoadFailed => 'I couldn\'t load your medicines';
+
+  @override
+  String get pharmacyEmptyTitle => 'No medicines yet';
+
+  @override
+  String get pharmacyPullToRetry => 'Pull down to try again.';
+
+  @override
+  String get pharmacyEmptyMessage =>
+      'Add one with the button, or tell Zad: \"I take one Concor tablet morning and night\" and it\'ll log it with its times.';
+
+  @override
+  String get pharmacyMedicines => 'Medicines';
+
+  @override
+  String pharmacyDoseState(String state) {
+    String _temp0 = intl.Intl.selectLogic(state, {
+      'taken': 'Taken',
+      'due': 'Due now',
+      'missed': 'Missed',
+      'other': 'Coming up',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacySnoozed => 'Snoozed for a bit';
+
+  @override
+  String get pharmacyLater => 'Later';
+
+  @override
+  String get pharmacyTook => 'Took it';
+
+  @override
+  String pharmacyForPerson(String name) {
+    return 'for $name';
+  }
+
+  @override
+  String get pharmacyCourseDone => 'Course finished ✓';
+
+  @override
+  String pharmacyExpiredAgo(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Expired $days days ago',
+      one: 'Expired 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyRemaining(String count, String unit) {
+    return '$count $unit left';
+  }
+
+  @override
+  String get pharmacyBadDoseTime => 'A dose time doesn\'t make sense — fix it';
+
+  @override
+  String get pharmacyNoTimes => 'No set times — I won\'t remind you';
+
+  @override
+  String get pharmacySetTimes => 'Set times';
+
+  @override
+  String pharmacySupplyDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Lasts $days days',
+      one: 'Lasts 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pharmacyConfirmQty => 'Confirm the quantity';
+
+  @override
+  String get pharmacyTakeDose => 'Take a dose';
+
+  @override
+  String get pharmacyRefill => 'Refill';
+
+  @override
+  String get pharmacyHowMuchLeft => 'How much is really left?';
+
+  @override
+  String pharmacyDeleteConfirm(String name) {
+    return 'Remove “$name” from the pharmacy?';
+  }
+
+  @override
+  String pharmacyCurrentQty(String name, int count, String unit) {
+    return '$name — logged quantity now: $count $unit';
+  }
+
+  @override
+  String pharmacyUnitsPerDose(String unit) {
+    return 'How many ($unit) per dose?';
+  }
+
+  @override
+  String get pharmacyUnitsPerDoseHelp =>
+      'Without this I can\'t work out how many days your supply will last';
+
+  @override
+  String pharmacyRefillTitle(String name) {
+    return 'Refill $name';
+  }
+
+  @override
+  String pharmacyAddedQty(String unit) {
+    return 'Amount added ($unit)';
+  }
+
+  @override
+  String get pharmacyPrice => 'Price';
+
+  @override
+  String get pharmacyExpiryDate => 'Expiry date';
+
+  @override
+  String get pharmacyScanOk => 'Got the medicine\'s details';
+
+  @override
+  String get pharmacyPickDoseTime => 'Pick a dose time';
+
+  @override
+  String get pharmacyAddMedicine => 'Add a medicine';
+
+  @override
+  String get pharmacyReviewMedicine => 'Check the medicine';
+
+  @override
+  String get pharmacyReadFromBox =>
+      'I read this off the box — fix anything wrong before saving.';
+
+  @override
+  String get pharmacyReadingBox => 'Reading the medicine box…';
+
+  @override
+  String get pharmacyScanBox => 'Scan the box';
+
+  @override
+  String get pharmacyName => 'Medicine name';
+
+  @override
+  String get pharmacyWhoFor => 'Who\'s it for? (leave empty if it\'s yours)';
+
+  @override
+  String get pharmacyWhoForHint => 'Mum, Dad, Youssef…';
+
+  @override
+  String get pharmacyRemainingQty => 'Quantity left';
+
+  @override
+  String get pharmacyUnit => 'Unit';
+
+  @override
+  String get pharmacyDailyDoses => 'Doses a day';
+
+  @override
+  String get pharmacyDoseTimesOptional => 'Dose times (optional)';
+
+  @override
+  String get pharmacyAddTime => 'Add a time';
+
+  @override
+  String pharmacySuggestedTimes(String times) {
+    return 'No times added yet — suggested: $times';
+  }
+
+  @override
+  String get pharmacyExpiryPick => 'Expiry date — tap to choose';
+
+  @override
+  String get pharmacyAmount => 'Price';
+
+  @override
+  String pharmacyAmountIn(String currency) {
+    return 'Price ($currency)';
+  }
+
+  @override
+  String get pharmacyExtras => 'More details (optional)';
+
+  @override
+  String get pharmacyIngredient => 'Active ingredient';
+
+  @override
+  String get pharmacyDosageHint => 'Dose (e.g. one tablet every 8 hours)';
+
+  @override
+  String get pharmacyRecurring =>
+      'Ongoing medicine / monthly repeat prescription';
+
+  @override
+  String get pharmacyFamilyMember => 'Which family member';
+
+  @override
+  String get pharmacyNoMember => 'No one';
+
+  @override
+  String pharmacyPreset(String slot) {
+    String _temp0 = intl.Intl.selectLogic(slot, {
+      'morning': '🌅 Morning',
+      'noon': '☀️ Midday',
+      'evening': '🌙 Evening',
+      'other': '🛌 Bedtime',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String pharmacyTimesOf(String name) {
+    return '$name\'s times';
+  }
+
+  @override
+  String get pharmacyTimesHint =>
+      'I\'ll remind you at each time, and you can log the dose with one tap.';
+
+  @override
+  String get pharmacySaveTimes => 'Save times';
+
+  @override
+  String get pharmacyFamilyTooltip => 'Family medicines';
+
+  @override
+  String get pharmacyFamilyEmptyTitle => 'No medicines you can see yet';
+
+  @override
+  String get pharmacyFamilyEmptyMessage =>
+      'Each person\'s medicines show here once they agree — ask to follow from their page in “My family”';
+
+  @override
+  String get pharmacyNoInitial => '?';
+
+  @override
+  String get pharmacyExactAlarm =>
+      'Turn on \"Alarms & reminders\" in Settings so your dose reminders ring on time';
 }

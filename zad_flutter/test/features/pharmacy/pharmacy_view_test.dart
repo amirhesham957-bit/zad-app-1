@@ -9,11 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/generated/zad_l10n_en.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_repository.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as pc;
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
@@ -191,6 +193,34 @@ void main() {
       ], const <ZadTransaction>[]),
       'أسعار علب الأدوية',
     );
+    // ZAD_PLAN 8.8: the same choice in English.
+    final en = ZadL10nEn();
+    expect(
+      pharmacyCostLabel(<Medicine>[_m('a')], <ZadTransaction>[clinic], en),
+      'Health spending this month',
+    );
+    expect(
+      pharmacyCostLabel(
+        <Medicine>[_m('a', price: 80)],
+        const <ZadTransaction>[],
+        en,
+      ),
+      'Medicine box prices',
+    );
+  });
+
+  test('the dose presets and states are distinct English words', () {
+    final en = ZadL10nEn();
+    final arabic = RegExp('[؀-ۿ]');
+    final presets = <String>{
+      for (final (_, slot) in kDoseTimePresets) en.pharmacyPreset(slot),
+    };
+    final states = <String>{
+      for (final s in DoseState.values) en.pharmacyDoseState(s.name),
+    };
+    expect(presets, hasLength(kDoseTimePresets.length));
+    expect(states, hasLength(DoseState.values.length));
+    expect(<String>{...presets, ...states}.any(arabic.hasMatch), isFalse);
   });
 
   test('a finished course is done, not short', () {

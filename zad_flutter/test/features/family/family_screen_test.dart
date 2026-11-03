@@ -137,7 +137,7 @@ void main() {
       expect(fake.calls, <String>['join:ZAD-1A2B3C4D5E']);
       // The refusal is said.
       await tester.pump();
-      expect(find.text(FamilyFailure.invalidCode.message), findsOneWidget);
+      expect(find.text(FamilyFailure.invalidCode.message()), findsOneWidget);
     },
   );
 

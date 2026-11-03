@@ -28,6 +28,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
@@ -53,11 +54,12 @@ Future<void> showIntelligenceScreen(BuildContext context) =>
       MaterialPageRoute<void>(builder: (_) => const IntelligenceScreen()),
     );
 
-const List<String> _quickPrompts = <String>[
-  'حلل مصاريفي 📊',
-  'توقع مصاريف الشهر القادم 🔮',
-  'اقترح وجبة للغداء 🍲',
-  'هل وضعي المالي آمن؟ 💰',
+/// The chips the customer taps to send a question, in their language.
+List<String> _quickPrompts(ZadL10n l) => <String>[
+  l.intelPromptAnalyse,
+  l.intelPromptForecast,
+  l.intelPromptLunch,
+  l.intelPromptSafe,
 ];
 
 const List<Color> _palette = <Color>[
@@ -108,7 +110,9 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
             (end == null || t.createdAt.isBefore(end)));
     final categories = <String, double>{};
     for (final t in expenses.where(inCycle)) {
-      final c = (t.category ?? '').trim().isEmpty ? 'أخرى' : t.category!;
+      final c = (t.category ?? '').trim().isEmpty
+          ? 'أخرى'
+          : t.category!; // l10n: data — the stored «other» bucket.
       categories[c] = (categories[c] ?? 0) + t.amount;
     }
     final categoryList = categories.entries.toList()
@@ -119,7 +123,9 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: embedded ? null : AppBar(title: const Text('عقل زاد')),
+        appBar: embedded
+            ? null
+            : AppBar(title: Text(context.l10n.brainHubTitle)),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
             ZadSpacing.lg,
@@ -226,7 +232,7 @@ class _SosBanner extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'نداء طوارئ من $alias!',
+                  context.l10n.intelSosFrom(alias),
                   style: ZadType.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: ZadColors.terracottaRust,
@@ -283,7 +289,7 @@ class _Hero extends ConsumerWidget {
             CompanionOrb(state: ref.watch(companionMoodProvider), onTap: onOrb),
             const SizedBox(height: 14),
             Text(
-              'عقل زاد الذكي',
+              context.l10n.intelHeroTitle,
               style: ZadType.titleLarge.copyWith(
                 fontWeight: FontWeight.w800,
                 color: ZadColors.green800,
@@ -291,9 +297,7 @@ class _Hero extends ConsumerWidget {
             ),
             const SizedBox(height: ZadSpacing.xs),
             Text(
-              typing
-                  ? 'زاد يحلل بياناتك الآن 🧠✨'
-                  : 'متصل ومستعد لمساعدتك في إدارتك المالية والمنزلية ⚡',
+              typing ? context.l10n.intelHeroBusy : context.l10n.intelHeroReady,
               textAlign: TextAlign.center,
               style: ZadType.bodySmall.copyWith(
                 fontWeight: FontWeight.w600,
@@ -305,16 +309,16 @@ class _Hero extends ConsumerWidget {
               height: 44,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: _quickPrompts.length,
+                itemCount: _quickPrompts(context.l10n).length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(width: ZadSpacing.sm),
                 itemBuilder: (context, i) => ActionChip(
-                  onPressed: () => onPrompt(_quickPrompts[i]),
+                  onPressed: () => onPrompt(_quickPrompts(context.l10n)[i]),
                   backgroundColor: ZadColors.green800.withValues(alpha: 0.12),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
                   label: Text(
-                    _quickPrompts[i],
+                    _quickPrompts(context.l10n)[i],
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -430,9 +434,8 @@ class _NarrativeState extends ConsumerState<_Narrative> {
       _loading = false;
     });
     if (text == null) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(content: Text('زاد مقدرش يرد دلوقتي — جرّب تاني.')),
-      );
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(context.l10n.intelNoAnswer)));
     }
   }
 
@@ -447,7 +450,7 @@ class _NarrativeState extends ConsumerState<_Narrative> {
           ),
           const SizedBox(width: ZadSpacing.sm),
           Text(
-            'زاد يقوم بالتحليل...',
+            context.l10n.intelAnalysing,
             style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
           ),
         ],
@@ -482,9 +485,9 @@ class _NarrativeState extends ConsumerState<_Narrative> {
       child: TextButton.icon(
         onPressed: () => unawaited(_explain()),
         icon: const Icon(ZadIcons.assistant, size: 14),
-        label: const Text(
-          'اشرح بالذكاء الاصطناعي',
-          style: TextStyle(fontSize: 12),
+        label: Text(
+          context.l10n.intelExplain,
+          style: const TextStyle(fontSize: 12),
         ),
       ),
     );
@@ -525,14 +528,13 @@ class _NotEnough extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          'سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي',
+          context.l10n.intelNeedThreeTitle,
           textAlign: TextAlign.center,
           style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
-          'يحتاج عقل زاد إلى 3 مصاريف على الأقل لتحليل سلوكك المالي بدقة '
-          'وتوليد تقارير الصمود المالي.',
+          context.l10n.intelNeedThreeBody,
           textAlign: TextAlign.center,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
@@ -550,7 +552,7 @@ class _NotEnough extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        'تم تسجيل $count من 3 مصاريف',
+                        context.l10n.intelLoggedOfThree(count),
                         style: ZadType.labelSmall.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -590,7 +592,7 @@ class _NotEnough extends StatelessWidget {
             ),
             onPressed: onTalk,
             icon: const Icon(ZadIcons.ask, size: 18),
-            label: const Text('تحدث مع زاد الآن 💬'),
+            label: Text(context.l10n.intelTalkNow),
           ),
         ),
       ],
@@ -658,7 +660,9 @@ class _ReportState extends ConsumerState<_ReportCard> {
                 .join(', '),
             'transaction_count': tx.length,
             'transactions': recent
-                .map((t) => '${t.title}:${t.amount}:${t.category ?? 'أخرى'}')
+                .map(
+                  (t) => '${t.title}:${t.amount}:${t.category ?? 'أخرى'}',
+                ) // l10n: data
                 .join(', '),
           },
         },
@@ -738,10 +742,8 @@ class _ReportState extends ConsumerState<_ReportCard> {
         children: <Widget>[
           _Header(
             icon: ZadIcons.assistant,
-            title: 'توليد تقرير الذكاء الاصطناعي الشامل',
-            subtitle:
-                'تحليل فوري دقيق لجميع حركاتك ومصروفاتك عبر نماذج الذكاء '
-                'الاصطناعي',
+            title: context.l10n.intelReportTitle,
+            subtitle: context.l10n.intelReportSubtitle,
             trailing: report == null
                 ? null
                 : _sharing
@@ -753,7 +755,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
                     ),
                   )
                 : IconButton(
-                    tooltip: 'مشاركة التقرير PDF',
+                    tooltip: context.l10n.intelSharePdf,
                     onPressed: () => unawaited(_share(report)),
                     icon: const Icon(ZadIcons.share, color: ZadColors.green700),
                   ),
@@ -776,8 +778,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
                     const SizedBox(width: ZadSpacing.md),
                     Expanded(
                       child: Text(
-                        'جاري تحليل الحركات وتوليد التقرير بالذكاء '
-                        'الاصطناعي...',
+                        context.l10n.intelReportWorking,
                         style: ZadType.bodySmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: ZadColors.green700,
@@ -790,7 +791,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
             )
           else if (_failed) ...<Widget>[
             Text(
-              'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى',
+              context.l10n.intelSaveFailed,
               style: ZadType.bodySmall.copyWith(
                 color: ZadColors.terracottaRust,
               ),
@@ -800,7 +801,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => unawaited(_generate()),
-                child: const Text('إعادة المحاولة'),
+                child: Text(context.l10n.intelRetry),
               ),
             ),
           ] else if (report == null)
@@ -815,7 +816,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
                 ),
                 onPressed: () => unawaited(_generate()),
                 icon: const Icon(ZadIcons.assistant, size: 18),
-                label: const Text('توليد تقرير الذكاء الاصطناعي الشامل'),
+                label: Text(context.l10n.intelReportTitle),
               ),
             )
           else ...<Widget>[
@@ -864,7 +865,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
               child: OutlinedButton.icon(
                 onPressed: () => unawaited(_generate()),
                 icon: const Icon(ZadIcons.retry, size: 16),
-                label: const Text('تحديث التقرير 🔄'),
+                label: Text(context.l10n.intelRefreshReport),
               ),
             ),
           ],
@@ -949,28 +950,28 @@ class _StressState extends ConsumerState<_StressTestCard> {
       initial: <String>[if (_fund > 0) '$_fund' else ''],
       builder: (dialogContext, fields) => AlertDialog(
         title: Text(
-          'تحديث الرصيد',
+          context.l10n.intelUpdateBalance,
           style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w700),
         ),
         content: TextField(
           controller: fields[0],
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'رصيد صندوق الطوارئ',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.intelFundBalance,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.intelCancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.of(dialogContext)
                     .pop(double.tryParse(fields[0].text.trim()) ?? 0),
-            child: const Text('حفظ'),
+            child: Text(context.l10n.intelSave),
           ),
         ],
       ),
@@ -1020,10 +1021,14 @@ class _StressState extends ConsumerState<_StressTestCard> {
     final gap = (targetDays - coverage).clamp(0, targetDays);
     final suggested = daily > 0 && gap > 0 ? gap * daily / 6 : 0.0;
     final (color, label, status) = coverage < 30
-        ? (ZadColors.terracottaRust, 'حرج', 'CRITICAL')
+        ? (
+            ZadColors.terracottaRust,
+            context.l10n.intelStatusCritical,
+            'CRITICAL',
+          )
         : coverage < targetDays
-        ? (const Color(0xFFD97706), 'منخفض', 'LOW')
-        : (ZadColors.green600, 'صحي', 'HEALTHY');
+        ? (const Color(0xFFD97706), context.l10n.intelStatusLow, 'LOW')
+        : (ZadColors.green600, context.l10n.intelStatusHealthy, 'HEALTHY');
 
     return _Card(
       child: Column(
@@ -1035,7 +1040,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
               const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
-                  'اختبار الصمود المالي',
+                  context.l10n.intelStressTitle,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -1043,21 +1048,21 @@ class _StressState extends ConsumerState<_StressTestCard> {
               ),
               TextButton(
                 onPressed: () => unawaited(_editFund()),
-                child: const Text(
-                  'تحديث الرصيد',
-                  style: TextStyle(fontSize: 12),
+                child: Text(
+                  context.l10n.intelUpdateBalance,
+                  style: const TextStyle(fontSize: 12),
                 ),
               ),
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'كم يوماً تستطيع الصمود لو توقف دخلك؟',
+            context.l10n.intelStressQuestion,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            '$coverage يوم تغطية',
+            context.l10n.intelCoverageDays(coverage),
             style: ZadType.headlineMedium.copyWith(
               fontWeight: FontWeight.w700,
               color: color,
@@ -1065,7 +1070,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'الهدف: $targetDays يوم',
+            context.l10n.intelTargetDays(targetDays),
             style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: 10),
@@ -1092,8 +1097,8 @@ class _StressState extends ConsumerState<_StressTestCard> {
                   children: <Widget>[
                     Text(
                       usingAvailable
-                          ? 'رصيدك المتاح حالياً (لسه محددتش صندوق طوارئ)'
-                          : 'رصيد صندوق الطوارئ',
+                          ? context.l10n.intelAvailableNoFund
+                          : context.l10n.intelFundBalance,
                       style: ZadType.labelSmall.copyWith(
                         color: ZadColors.inkMuted,
                       ),
@@ -1131,7 +1136,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  'متوسط الصرف اليومي',
+                  context.l10n.intelDailyAverage,
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ),
@@ -1144,7 +1149,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
           if (suggested > 0) ...<Widget>[
             const SizedBox(height: 10),
             Text(
-              'وفّر ${_money(ref, suggested)} شهرياً للوصول للهدف',
+              context.l10n.intelSaveToReach(_money(ref, suggested)),
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
           ],
@@ -1152,6 +1157,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
           _Narrative(
             topic: ZadExplainTopic.resilience,
             user: () =>
+                // l10n: data-begin — the figures sent to the model.
                 '=== بيانات اختبار الصمود المالي ===\n'
                 'أيام التغطية عند الطوارئ: $coverage\n'
                 'متوسط الصرف اليومي: $safeDaily\n'
@@ -1160,6 +1166,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
                 'التوفير الشهري المقترح للوصول للهدف: $suggested\n'
                 'الحالة: $status\n'
                 '=== نهاية البيانات ===',
+            // l10n: data-end
           ),
         ],
       ),
@@ -1188,8 +1195,8 @@ class _DistributionCard extends ConsumerWidget {
         children: <Widget>[
           _Header(
             icon: Icons.pie_chart,
-            title: 'توزيع المصروفات والملاحظات السلوكية',
-            subtitle: 'تحليل نسب الصرف على الفئات والملاحظات السلوكية الذكية',
+            title: context.l10n.intelDistributionTitle,
+            subtitle: context.l10n.intelDistributionSubtitle,
             trailing: Text(
               _money(ref, total),
               style: ZadType.titleMedium.copyWith(
@@ -1208,9 +1215,10 @@ class _DistributionCard extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Text(
-                  '💡 أعلى استهلاك في فئة [${categories.first.key}] بنسبة '
-                  '${(categories.first.value / safeTotal * 100).toInt()}% من '
-                  'إجمالي مصروفاتك',
+                  context.l10n.intelTopCategory(
+                    categories.first.key,
+                    (categories.first.value / safeTotal * 100).toInt(),
+                  ),
                   style: ZadType.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -1262,11 +1270,13 @@ class _DistributionCard extends ConsumerWidget {
           _Narrative(
             topic: ZadExplainTopic.spendingBehavior,
             user: () =>
+                // l10n: data-begin — the figures sent to the model.
                 '=== بيانات توزيع المصروفات ===\n'
                 'إجمالي المصروفات: $total\n'
                 'توزيع الفئات:\n'
                 '${_summary(categories)}\n'
                 '=== نهاية البيانات ===',
+            // l10n: data-end
           ),
         ],
       ),

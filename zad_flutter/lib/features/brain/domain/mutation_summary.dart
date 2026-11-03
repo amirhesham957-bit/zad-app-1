@@ -9,6 +9,8 @@ library;
 
 import 'dart:convert';
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// What changed: the thing's name, and the change itself.
 typedef MutationSummary = ({String? subject, String? change});
 
@@ -23,99 +25,152 @@ const List<String> _subjectKeys = <String>[
   'merchant',
 ];
 
-/// Fields shown, by their Arabic names. Anything else in a row is plumbing
-/// (ids, timestamps, flags) and is left out.
-const Map<String, String> _fieldLabels = <String, String>{
-  'amount': 'المبلغ',
-  'quantity': 'الكمية',
-  'qty': 'الكمية',
-  'remaining_quantity': 'الكمية المتبقية',
-  'remaining_balance': 'المتبقي',
-  'price': 'السعر',
-  'unit': 'الوحدة',
-  'category': 'الفئة',
-  'kind': 'النوع',
-  'status': 'الحالة',
-  'starts_at': 'الميعاد',
-  'run_at': 'الميعاد',
-  'task_description': 'التذكير',
-  'recurrence': 'التكرار',
-  'dosage': 'الجرعة',
-  'dose_times': 'مواعيد الجرعات',
-  'daily_dose_count': 'جرعات اليوم',
-  'expiry_date': 'الصلاحية',
-  'expires_on': 'الصلاحية',
-  'renewal_date': 'التجديد',
-  'due_day': 'يوم الاستحقاق',
-  'billing_cycle': 'الدورة',
-  'is_active': 'شغّال',
-  'for_person': 'لمين',
-  'place': 'المكان',
-  'place_label': 'المكان',
-  'note': 'ملاحظة',
-  'notes': 'ملاحظات',
-  'expected_cost': 'التكلفة المتوقعة',
-  'currency': 'العملة',
-  'country': 'البلد',
-  'pay_day': 'يوم القبض',
-  'bed': 'النوم',
-  'wake': 'الصحيان',
-  'daily_cap': 'سقف اليوم',
-  'length_days': 'المدة بالأيام',
-  'trade': 'الصنعة',
-  'metric': 'المقياس',
+/// Fields shown, in the order they are listed. Anything else in a row is
+/// plumbing (ids, timestamps, flags) and is left out.
+const List<String> _fieldKeys = <String>[
+  'amount',
+  'quantity',
+  'qty',
+  'remaining_quantity',
+  'remaining_balance',
+  'price',
+  'unit',
+  'category',
+  'kind',
+  'status',
+  'starts_at',
+  'run_at',
+  'task_description',
+  'recurrence',
+  'dosage',
+  'dose_times',
+  'daily_dose_count',
+  'expiry_date',
+  'expires_on',
+  'renewal_date',
+  'due_day',
+  'billing_cycle',
+  'is_active',
+  'for_person',
+  'place',
+  'place_label',
+  'note',
+  'notes',
+  'expected_cost',
+  'currency',
+  'country',
+  'pay_day',
+  'bed',
+  'wake',
+  'daily_cap',
+  'length_days',
+  'trade',
+  'metric',
+];
+
+String _fieldLabel(String key, ZadL10n l) => switch (key) {
+  'amount' => l.mutationFieldAmount,
+  'quantity' => l.mutationFieldQuantity,
+  'qty' => l.mutationFieldQuantity,
+  'remaining_quantity' => l.mutationFieldRemainingQuantity,
+  'remaining_balance' => l.mutationFieldRemainingBalance,
+  'price' => l.mutationFieldPrice,
+  'unit' => l.mutationFieldUnit,
+  'category' => l.mutationFieldCategory,
+  'kind' => l.mutationFieldKind,
+  'status' => l.mutationFieldStatus,
+  'starts_at' => l.mutationFieldStartsAt,
+  'run_at' => l.mutationFieldStartsAt,
+  'task_description' => l.mutationFieldTaskDescription,
+  'recurrence' => l.mutationFieldRecurrence,
+  'dosage' => l.mutationFieldDosage,
+  'dose_times' => l.mutationFieldDoseTimes,
+  'daily_dose_count' => l.mutationFieldDailyDoseCount,
+  'expiry_date' => l.mutationFieldExpiryDate,
+  'expires_on' => l.mutationFieldExpiryDate,
+  'renewal_date' => l.mutationFieldRenewalDate,
+  'due_day' => l.mutationFieldDueDay,
+  'billing_cycle' => l.mutationFieldBillingCycle,
+  'is_active' => l.mutationFieldIsActive,
+  'for_person' => l.mutationFieldForPerson,
+  'place' => l.mutationFieldPlace,
+  'place_label' => l.mutationFieldPlace,
+  'note' => l.mutationFieldNote,
+  'notes' => l.mutationFieldNotes,
+  'expected_cost' => l.mutationFieldExpectedCost,
+  'currency' => l.mutationFieldCurrency,
+  'country' => l.mutationFieldCountry,
+  'pay_day' => l.mutationFieldPayDay,
+  'bed' => l.mutationFieldBed,
+  'wake' => l.mutationFieldWake,
+  'daily_cap' => l.mutationFieldDailyCap,
+  'length_days' => l.mutationFieldLengthDays,
+  'trade' => l.mutationFieldTrade,
+  'metric' => l.mutationFieldMetric,
+  _ => key,
 };
 
-const Map<String, String> _statusLabels = <String, String>{
-  'upcoming': 'جاي',
-  'done': 'خلص',
-  'cancelled': 'اتلغى',
-  'active': 'شغّال',
-  'abandoned': 'اتوقف',
+String? _statusLabel(String status, ZadL10n l) => switch (status) {
+  'upcoming' => l.mutationStatusUpcoming,
+  'done' => l.mutationStatusDone,
+  'cancelled' => l.mutationStatusCancelled,
+  'active' => l.mutationStatusActive,
+  'abandoned' => l.mutationStatusAbandoned,
+  _ => null,
 };
 
 /// At most this many fields on one line.
 const int _maxFields = 3;
 
 /// The readable form of one mutation. [toLocal] turns a UTC instant into the
-/// account's civil time.
+/// account's civil time. [l10n] = the customer's language (Arabic when
+/// absent).
 MutationSummary summarizeMutation(
   Object? old,
   Object? next, {
   required DateTime Function(DateTime utc) toLocal,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   String value(Object? v, [String? key]) =>
-      _value(v, key: key, toLocal: toLocal);
+      _value(v, key: key, toLocal: toLocal, l: l);
 
   final subject = _subjectOf(next) ?? _subjectOf(old);
 
   // A row on each side: only what differs.
   if (old is Map && next is Map) {
-    String diff(String key) =>
-        '${_fieldLabels[key]}: ${value(old[key], key)} ← '
-        '${value(next[key], key)}';
+    String diff(String key) => l.mutationFieldChange(
+      _fieldLabel(key, l),
+      value(old[key], key),
+      value(next[key], key),
+    );
     final changed = <String>[
-      for (final key in _fieldLabels.keys)
+      for (final key in _fieldKeys)
         if ((old.containsKey(key) || next.containsKey(key)) &&
             jsonEncode(old[key]) != jsonEncode(next[key]))
           diff(key),
     ];
-    return (subject: subject, change: _join(changed) ?? 'اتعدّل');
+    return (subject: subject, change: _join(changed, l) ?? l.mutationEdited);
   }
 
   // Something new: what it was created with.
   if (old == null && next is Map) {
-    return (subject: subject, change: _join(_fields(next, value)));
+    return (subject: subject, change: _join(_fields(next, value, l), l));
   }
 
   // Something removed.
-  if (old is Map && next == null) return (subject: subject, change: 'اتشال');
+  if (old is Map && next == null) {
+    return (subject: subject, change: l.mutationRemoved);
+  }
 
   // A plain value on at least one side; a row on the other side is read as
   // its one field that is not its name (`{item, qty}` → the qty).
-  String side(Object? v) => v is Map ? _soleValue(v, value) : value(v);
+  String side(Object? v) => v is Map ? _soleValue(v, value, l) : value(v);
   if (old == null) return (subject: subject, change: side(next));
-  return (subject: subject, change: '${side(old)} ← ${side(next)}');
+  return (
+    subject: subject,
+    change: l.mutationValueChange(side(old), side(next)),
+  );
 }
 
 String? _subjectOf(Object? v) {
@@ -130,45 +185,47 @@ String? _subjectOf(Object? v) {
 List<String> _fields(
   Map<dynamic, dynamic> row,
   String Function(Object?, [String?]) value,
+  ZadL10n l,
 ) => <String>[
-  for (final key in _fieldLabels.keys)
-    if (row[key] != null) '${_fieldLabels[key]}: ${value(row[key], key)}',
+  for (final key in _fieldKeys)
+    if (row[key] != null) '${_fieldLabel(key, l)}: ${value(row[key], key)}',
 ];
 
 String _soleValue(
   Map<dynamic, dynamic> row,
   String Function(Object?, [String?]) value,
+  ZadL10n l,
 ) {
   final rest = <MapEntry<dynamic, dynamic>>[
     for (final e in row.entries)
       if (!_subjectKeys.contains(e.key) && e.value != null) e,
   ];
   if (rest.length == 1) return value(rest.single.value, '${rest.single.key}');
-  return _join(_fields(row, value)) ?? '—';
+  return _join(_fields(row, value, l), l) ?? '—';
 }
 
-String? _join(List<String> parts) {
+String? _join(List<String> parts, ZadL10n l) {
   if (parts.isEmpty) return null;
   final shown = parts.take(_maxFields).join(' • ');
   final more = parts.length - _maxFields;
-  return more > 0 ? '$shown • و$more كمان' : shown;
+  return more > 0 ? l.mutationMore(shown, more) : shown;
 }
 
 String _value(
   Object? v, {
   required DateTime Function(DateTime utc) toLocal,
+  required ZadL10n l,
   String? key,
 }) => switch (v) {
   null => '—',
-  true => 'أيوه',
-  false => 'لأ',
+  true => l.mutationYes,
+  false => l.mutationNo,
   final num n => n == n.roundToDouble() ? '${n.toInt()}' : '$n',
-  final String s when key == 'status' => _statusLabels[s] ?? s,
+  final String s when key == 'status' => _statusLabel(s, l) ?? s,
   final String s => _instant(s, toLocal) ?? _clip(s),
-  final List<dynamic> l when l.every((e) => e is String || e is num) => _clip(
-    l.join('، '),
-  ),
-  final List<dynamic> l => '${l.length} عناصر',
+  final List<dynamic> items when items.every((e) => e is String || e is num) =>
+    _clip(items.join(l.mutationListSeparator)),
+  final List<dynamic> items => l.mutationItems(items.length),
   final Map<dynamic, dynamic> m => _subjectOf(m) ?? '…',
   _ => '…',
 };

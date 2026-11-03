@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
@@ -302,7 +303,7 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
                       child: TextButton.icon(
                         onPressed: _takeOff,
                         icon: const Icon(Icons.close_rounded),
-                        label: Text('اقلع ${s.outfit.label}'),
+                        label: Text('اقلع ${s.outfit.label(context.l10n)}'),
                       ),
                     ),
                   _Wardrobe(
@@ -394,7 +395,9 @@ class _Hero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(ZadRadii.card),
                 ),
                 child: Text(
-                  look.asleep ? 'زززز… دوس عليّ أصحى.' : look.persona.line,
+                  look.asleep
+                      ? 'زززز… دوس عليّ أصحى.'
+                      : look.persona.line(context.l10n),
                   style: ZadType.bodyMedium.copyWith(color: ZadColors.ink),
                 ),
               ),
@@ -482,7 +485,7 @@ class _LevelCard extends StatelessWidget {
               ),
               const SizedBox(width: ZadSpacing.sm),
               Text(
-                '· ${s.stage.label}',
+                '· ${s.stage.label(context.l10n)}',
                 style: ZadType.titleMedium.copyWith(color: ZadColors.slate),
               ),
               const Spacer(),
@@ -666,7 +669,7 @@ class _Evolution extends StatelessWidget {
                         animated: false,
                       ),
                       Text(
-                        st.label,
+                        st.label(context.l10n),
                         style: ZadType.labelSmall.copyWith(
                           fontWeight: st == s.stage
                               ? FontWeight.w800
@@ -686,8 +689,8 @@ class _Evolution extends StatelessWidget {
             next == null
                 ? '${s.persona.name} وصل لأعلى مرحلة. حكيم البيت 👑'
                 : wait.isEmpty
-                ? 'هيكبر ويبقى ${next.label} قريب جداً!'
-                : 'عشان يبقى ${next.label}: ${wait.join(' و')}.',
+                ? 'هيكبر ويبقى ${next.label(context.l10n)} قريب جداً!'
+                : 'عشان يبقى ${next.label(context.l10n)}: ${wait.join(' و')}.',
             style: ZadType.bodyMedium.copyWith(color: ZadColors.slate),
           ),
         ],
@@ -812,7 +815,7 @@ class _ItemCard extends StatelessWidget {
         ),
       ),
     };
-    final hint = o.howToOpen;
+    final hint = o.howToOpen(context.l10n);
     final affordable = (o.seedPrice ?? 1 << 30) <= status.seeds;
     Widget action;
     if (busy) {

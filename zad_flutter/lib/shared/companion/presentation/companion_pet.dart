@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
@@ -50,8 +51,15 @@ CompanionState petMood(WidgetRef ref, PetCare care, DateTime now) {
   return care.mood(now, hour: petWallClock(zone, now).hour);
 }
 
-String _petName(WidgetRef ref) =>
-    ref.watch(companionProvider).value?.persona.name ?? 'زادو';
+/// The pet's name as the screen says it (زادو until the server answers).
+String _petName(WidgetRef ref, ZadL10n l10n) =>
+    (ref.watch(companionProvider).value?.persona ?? CompanionPersona.zado)
+        .displayName(l10n);
+
+/// [_petName], read once (outside a build).
+String _petNameNow(WidgetRef ref, ZadL10n l10n) =>
+    (ref.read(companionProvider).value?.persona ?? CompanionPersona.zado)
+        .displayName(l10n);
 
 /// The badge a need wears over the head; null without one (sleepy has Zs).
 String? _needBadge(CompanionState mood) => switch (mood) {
@@ -175,7 +183,11 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
           final d = petWallClock(zone, t.createdAt);
           return d.year == y.year && d.month == y.month && d.day == y.day;
         }).toList();
-        final dream = PetStories.dream(yesterday: yesterday, stage: stage);
+        final dream = PetStories.dream(
+          yesterday: yesterday,
+          stage: stage,
+          l10n: context.l10n,
+        );
         if (dream != null) {
           unawaited(box.put(CompanionHeaderPet.dreamDayKey, today));
           return dream;
@@ -197,6 +209,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
           days: week.days,
           goal: week.goal,
           stage: stage,
+          l10n: context.l10n,
         );
       }
     } on Object catch (e) {
@@ -224,7 +237,8 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     // ZAD_PLAN ٥.٢: time away, then the clock — quietly, no sound.
     final hour = petWallClock(ref.read(accountTimeZoneProvider), now).hour;
     final aside =
-        (away == null ? null : FourthWall.back(away)) ?? FourthWall.clock(hour);
+        (away == null ? null : FourthWall.back(away, l10n: context.l10n)) ??
+        FourthWall.clock(hour, l10n: context.l10n);
     final story = aside ?? _story(now);
     if (story != null) {
       _lastNudge = now;
@@ -238,8 +252,9 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _say(
       PetLines.forMood(
         mood,
-        name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+        name: _petNameNow(ref, context.l10n),
         loggedToday: true,
+        l10n: context.l10n,
       ),
     );
   }
@@ -268,7 +283,8 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _burstEnd = Timer(tapBurstWindow, () => _burst = 0);
     final poked = FourthWall.poked(
       _burst,
-      name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+      name: _petNameNow(ref, context.l10n),
+      l10n: context.l10n,
     );
     if (poked != null) {
       // A burst: it says so instead of opening the sheet (ZAD_PLAN ٥.٢).
@@ -296,8 +312,9 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _say(
       PetLines.forMood(
         mood,
-        name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
+        name: _petNameNow(ref, context.l10n),
         loggedToday: true,
+        l10n: context.l10n,
       ),
     );
   }
@@ -318,7 +335,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     if (care == null) return const SizedBox.shrink();
     final mood = petMood(ref, care, ref.watch(petClockProvider)());
     final badge = _needBadge(mood);
-    final name = _petName(ref);
+    final name = _petName(ref, context.l10n);
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return CompositedTransformTarget(
       link: _link,
@@ -368,14 +385,14 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _hop.forward(from: 0);
     _say(
       outcome == PetCareOutcome.full
-          ? 'اتسجّل ✓ بس أنا شبعان خلاص 🤭'
-          : 'اتسجّل ✓ يمّ يمّ! 😋',
+          ? context.l10n.petLoggedFull
+          : context.l10n.petLoggedYum,
     );
   }
 
   Widget _body(CompanionState mood, String? badge, String name) => Semantics(
     button: true,
-    label: '$name — ${mood.description}. اضغط علشان تأكّله وتسقيه',
+    label: context.l10n.petOrbSemantics(name, mood.description(context.l10n)),
     excludeSemantics: true,
     child: SizedBox.square(
       dimension: widget.size,
@@ -748,14 +765,14 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
       unawaited(HapticFeedback.mediumImpact());
       _react(
         CompanionState.celebrating,
-        PetLines.fed(outcome),
+        PetLines.fed(outcome, l10n: context.l10n),
         '🍎',
         PetSound.munch,
       );
     } else {
       _react(
         CompanionState.happy,
-        PetLines.fed(outcome),
+        PetLines.fed(outcome, l10n: context.l10n),
         '😋',
         PetSound.cuteSqueak,
       );
@@ -768,14 +785,14 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
       unawaited(HapticFeedback.mediumImpact());
       _react(
         CompanionState.celebrating,
-        PetLines.watered(outcome),
+        PetLines.watered(outcome, l10n: context.l10n),
         '💧',
         PetSound.gulp,
       );
     } else {
       _react(
         CompanionState.happy,
-        PetLines.watered(outcome),
+        PetLines.watered(outcome, l10n: context.l10n),
         '🙈',
         PetSound.cuteSqueak,
       );
@@ -785,7 +802,12 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
   void _pat() {
     ref.read(petCareProvider.notifier).pet();
     unawaited(HapticFeedback.lightImpact());
-    _react(CompanionState.happy, PetLines.petted(), '💚', PetSound.purr);
+    _react(
+      CompanionState.happy,
+      PetLines.petted(l10n: context.l10n),
+      '💚',
+      PetSound.purr,
+    );
   }
 
   @override
@@ -794,12 +816,14 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
     if (care == null) return const SizedBox.shrink();
     final now = ref.watch(petClockProvider)();
     final mood = petMood(ref, care, now);
-    final name = _petName(ref);
+    final l10n = context.l10n;
+    final name = _petName(ref, l10n);
     final logged = ref.watch(companionProvider).value?.missions.logged ?? true;
     final line = _line ??= PetLines.forMood(
       mood,
       name: name,
       loggedToday: logged,
+      l10n: l10n,
     );
     return SafeArea(
       top: false,
@@ -839,7 +863,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 ),
                 if (care.careStreak > 0)
                   Text(
-                    '🔥 ${care.careStreak} يوم رعاية',
+                    l10n.petCareStreak(care.careStreak),
                     key: const ValueKey<String>('pet-care-streak'),
                     style: ZadType.labelLarge.copyWith(
                       color: ZadColors.mustardOchre,
@@ -858,7 +882,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 children: <Widget>[
                   Semantics(
                     button: true,
-                    label: 'دلّع $name',
+                    label: l10n.petPamper(name),
                     child: CompanionOrb(
                       key: const ValueKey<String>('pet-care-orb'),
                       state: _reaction ?? mood,
@@ -899,27 +923,27 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
             const SizedBox(height: ZadSpacing.md),
             _Meter(
               emoji: '🍎',
-              label: 'الشبع',
+              label: l10n.petMeterFull,
               value: care.fullness(now),
               color: CompanionState.hungry.deep,
             ),
             const SizedBox(height: ZadSpacing.sm),
             _Meter(
               emoji: '💧',
-              label: 'الريّ',
+              label: l10n.petMeterWater,
               value: care.hydration(now),
               color: CompanionState.thirsty.deep,
             ),
             const SizedBox(height: ZadSpacing.sm),
             _Meter(
               emoji: '💚',
-              label: 'السعادة',
+              label: l10n.petMeterHappy,
               value: care.joy(now),
               color: ZadColors.forestEmerald,
             ),
             const SizedBox(height: ZadSpacing.xs),
             Text(
-              'اضغط على $name علشان تدلّعه',
+              l10n.petTapToPamper(name),
               textAlign: TextAlign.center,
               style: ZadType.labelSmall.copyWith(color: ZadColors.textTertiary),
             ),
@@ -934,7 +958,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                       minimumSize: const Size.fromHeight(52),
                       backgroundColor: CompanionState.hungry.deep,
                     ),
-                    child: const Text('🍎 أكّله'),
+                    child: Text(l10n.petFeedButton),
                   ),
                 ),
                 const SizedBox(width: ZadSpacing.md),
@@ -946,7 +970,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                       minimumSize: const Size.fromHeight(52),
                       backgroundColor: CompanionState.thirsty.deep,
                     ),
-                    child: const Text('💧 اسقيه'),
+                    child: Text(l10n.petWaterButton),
                   ),
                 ),
               ],
@@ -962,12 +986,12 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 if (!mounted || score == null) return;
                 _react(
                   CompanionState.celebrating,
-                  'لعبنا وجبت $score! 🏆',
+                  l10n.petPlayedScore(score),
                   '⚽',
                   PetSound.purr,
                 );
               },
-              child: const Text('⚽ العب معاه'),
+              child: Text(l10n.petPlayButton),
             ),
             const SizedBox(height: ZadSpacing.sm),
             // ZAD_PLAN ٥.٤: two price games on real prices.
@@ -984,12 +1008,12 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                       if (!mounted || right == null) return;
                       _react(
                         CompanionState.celebrating,
-                        'خمّنت $right صح! 💰',
+                        l10n.petGuessedRight(right),
                         '💰',
                         PetSound.purr,
                       );
                     },
-                    child: const Text('💰 خمّن السعر'),
+                    child: Text(l10n.petGuessTitle),
                   ),
                 ),
                 const SizedBox(width: ZadSpacing.sm),
@@ -1007,12 +1031,12 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                       if (!mounted || moves == null) return;
                       _react(
                         CompanionState.celebrating,
-                        'خلصنا الذاكرة في $moves محاولات! 🧠',
+                        l10n.petMemoryDone(moves),
                         '🧠',
                         PetSound.purr,
                       );
                     },
-                    child: const Text('🧠 ذاكرة الأسعار'),
+                    child: Text(l10n.petMemoryTitle),
                   ),
                 ),
               ],
@@ -1025,7 +1049,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
                 nav.pop();
                 unawaited(ZadScreens.showCompanionStudio(host));
               },
-              child: const Text('👗 استوديو الرفيق'),
+              child: Text(l10n.petStudioButton),
             ),
           ],
         ),
@@ -1129,7 +1153,7 @@ class _Meter extends StatelessWidget {
     final low = value < PetCare.needBelow;
     final bar = low ? ZadColors.terracottaRust : color;
     return Semantics(
-      label: '$label ${(value * 100).round()}٪',
+      label: '$label ${context.l10n.petMeterPercent((value * 100).round())}',
       excludeSemantics: true,
       child: Row(
         children: <Widget>[
@@ -1165,7 +1189,7 @@ class _Meter extends StatelessWidget {
           SizedBox(
             width: 40,
             child: Text(
-              '${(value * 100).round()}٪',
+              context.l10n.petMeterPercent((value * 100).round()),
               textAlign: TextAlign.end,
               style: ZadType.labelMedium.copyWith(
                 color: low ? ZadColors.terracottaRust : ZadColors.slate,

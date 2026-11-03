@@ -103,7 +103,7 @@ List<ScannedPantryItem> pantryItemsFrom(Map<String, dynamic> data) =>
                 .clamp(1, 999),
             unit: (raw['unit'] as String?)?.trim().isNotEmpty ?? false
                 ? (raw['unit'] as String).trim()
-                : 'قطعة',
+                : 'قطعة', // l10n: data
             category: raw['category'] as String?,
           ),
     ];
@@ -120,9 +120,9 @@ ScannedMedicine? medicineFrom(Map<String, dynamic> data) {
     name: name,
     activeIngredient: med['active_ingredient'] as String?,
     dosage: med['dosage'] as String?,
-    category: med['category'] as String? ?? 'عام',
+    category: med['category'] as String? ?? 'عام', // l10n: data
     quantity: (med['quantity'] as num?)?.toInt() ?? 1,
-    unit: med['unit'] as String? ?? 'قرص',
+    unit: med['unit'] as String? ?? 'قرص', // l10n: data
     expiryDate: expiry is String ? packExpiry(expiry) : null,
     dailyDoseCount: (med['daily_dose_count'] as num?)?.toInt() ?? 1,
     doseTimes: times is List ? times.join(',') : med['dose_times'] as String?,

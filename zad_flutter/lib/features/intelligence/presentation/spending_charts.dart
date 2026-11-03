@@ -14,6 +14,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/domain/spending_series.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -66,11 +67,13 @@ class SpendingCharts extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('صرفك آخر أسبوعين', style: ZadType.titleMedium),
+            Text(context.l10n.chartsTwoWeeks, style: ZadType.titleMedium),
             Text(
-              'الإجمالي ${NumberFormat('#,##0', 'en').format(spent14)} '
-              '$currency · متوسط اليوم '
-              '${NumberFormat('#,##0', 'en').format(spent14 / 14)}',
+              context.l10n.chartsTotals(
+                '${NumberFormat('#,##0', 'en').format(spent14)} $currency'
+                    .trim(),
+                NumberFormat('#,##0', 'en').format(spent14 / 14),
+              ),
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -134,7 +137,7 @@ class SpendingCharts extends ConsumerWidget {
             ),
             if (total > 0) ...<Widget>[
               const SizedBox(height: ZadSpacing.xl),
-              const Text('صرفك راح فين (آخر شهر)', style: ZadType.titleMedium),
+              Text(context.l10n.chartsWhere, style: ZadType.titleMedium),
               const SizedBox(height: ZadSpacing.md),
               Row(
                 children: <Widget>[

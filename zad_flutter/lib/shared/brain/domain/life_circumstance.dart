@@ -5,6 +5,8 @@
 /// circumstance is.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// One quiet period.
 class LifeCircumstance {
   /// Creates a circumstance.
@@ -34,10 +36,11 @@ class LifeCircumstance {
   final DateTime endsAt;
 
   /// The banner's line, in the account's local time [localEnd].
-  String banner(DateTime localEnd) {
+  String banner(DateTime localEnd, [ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
     final until = '${localEnd.day}/${localEnd.month}';
     return kind == 'exams'
-        ? 'فترة امتحانات — زاد مهدّي التنبيهات لحد $until'
-        : 'زاد مهدّي التنبيهات لحد $until — الجرعات والمواعيد زي ما هي';
+        ? l.quietBannerExams(until)
+        : l.quietBannerOther(until);
   }
 }

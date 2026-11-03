@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -176,6 +178,26 @@ void main() {
         wateredAt: wall.subtract(const Duration(days: 2)),
       );
       expect(companionCareTime(c, wall).at, wall.add(const Duration(hours: 3)));
+    });
+
+    test('the calls in English: the name, no Arabic, six follow-ups', () {
+      final wall = tz.TZDateTime(cairo, 2026, 10, 13, 11);
+      final c = PetCare(
+        fedAt: wall.subtract(const Duration(days: 2)),
+        wateredAt: wall.subtract(const Duration(days: 2)),
+      );
+      final calls = companionCareCalls(
+        c,
+        wall,
+        name: 'Zado',
+        l10n: lookupZadL10n(const Locale('en')),
+      );
+      expect(calls, hasLength(7));
+      expect(calls.map((c) => c.title).toSet(), hasLength(7));
+      for (final call in calls) {
+        expect(call.title, contains('Zado'));
+        expect('${call.title}${call.body}', isNot(contains(RegExp('[ء-ي]'))));
+      }
     });
 
     test('a pet left alone keeps calling, mornings and evenings', () {

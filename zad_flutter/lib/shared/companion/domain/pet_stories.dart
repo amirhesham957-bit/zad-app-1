@@ -8,6 +8,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -17,7 +18,7 @@ bool isDreamHour(int hour) => hour >= 5 && hour < 12;
 /// A pet from this stage on talks like a grown one.
 bool isGrown(CompanionStage stage) => stage.index >= 2;
 
-/// What the pet says.
+/// What the pet says, in [ZadL10n]'s language (Arabic by default).
 abstract final class PetStories {
   /// Last night's dream, from [yesterday]'s biggest expense; null without
   /// one — no dream is made up about a day with nothing logged.
@@ -25,6 +26,7 @@ abstract final class PetStories {
     required List<ZadTransaction> yesterday,
     required CompanionStage stage,
     math.Random? rng,
+    ZadL10n? l10n,
   }) {
     final spent = yesterday
         .where((t) => t.kind == TxnKind.expense && t.isExpense && t.amount > 0)
@@ -36,16 +38,12 @@ abstract final class PetStories {
         ? top.merchantName!.trim()
         : top.title.trim();
     if (what.isEmpty) return null;
-    const told = 'وفهمت إنك كنت محتاجه 🌙';
-    final talked = 'حلمت بالليل إن «$what» قعد يحكيلي عن امبارح… $told';
-    final market = 'حلمت إني ماشي في سوق كبير، وكل محل اسمه «$what» 😄';
-    final lines = isGrown(stage)
-        ? <String>[talked, '$market امبارح كان يومه']
-        : <String>[
-            'حلمت بالليل إن «$what» بيجري ورايا 😱🌙',
-            'حلمت إني بلعب مع «$what» 🤭 هو كان أكبر حاجة امبارح',
-          ];
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
+    final l = l10n ?? zadL10nArabic;
+    final first = (rng ?? math.Random()).nextInt(2) == 0;
+    if (isGrown(stage)) {
+      return first ? l.petDreamTalked(what) : l.petDreamMarket(what);
+    }
+    return first ? l.petDreamChased(what) : l.petDreamPlayed(what);
   }
 
   /// The weekly word: [days] of [goal] days logged this week.
@@ -54,22 +52,16 @@ abstract final class PetStories {
     required int goal,
     required CompanionStage stage,
     math.Random? rng,
+    ZadL10n? l10n,
   }) {
+    final l = l10n ?? zadL10nArabic;
     final grown = isGrown(stage);
-    final List<String> lines;
     if (days >= goal) {
-      lines = grown
-          ? <String>['$days أيام من ٧ الأسبوع ده… ده بيت بيعرف طريقه 💚']
-          : <String>['$days أيام الأسبوع ده! أنا كبرت من الفرحة 🎉'];
-    } else if (days > 0) {
-      lines = grown
-          ? <String>['سجّلنا $days أيام الأسبوع ده. خطوة خطوة بنوصل 🌱']
-          : <String>['$days أيام سجّلناهم سوا! نكمّل؟ 🥰'];
-    } else {
-      lines = grown
-          ? <String>['أسبوع جديد، صفحة بيضا. أنا هنا لما تحب 💚']
-          : <String>['أسبوع جديد! نلعب لعبة «سجّل مصروف»؟ 🌱'];
+      return grown ? l.petWeekGoalGrown(days) : l.petWeekGoalYoung(days);
     }
-    return lines[(rng ?? math.Random()).nextInt(lines.length)];
+    if (days > 0) {
+      return grown ? l.petWeekSomeGrown(days) : l.petWeekSomeYoung(days);
+    }
+    return grown ? l.petWeekNoneGrown : l.petWeekNoneYoung;
   }
 }

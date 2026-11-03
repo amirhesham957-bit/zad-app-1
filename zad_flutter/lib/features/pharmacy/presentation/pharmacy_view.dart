@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_family.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -37,6 +38,7 @@ import 'package:zad/shared/transactions/domain/transaction.dart';
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// Kotlin's categories and units — stored values, kept Arabic.
+// l10n: data-begin
 const List<String> kMedicineCategories = <String>[
   'عام',
   'مسكن',
@@ -61,6 +63,7 @@ const List<String> kMedicineUnits = <String>[
   'أمبول',
   'علبة',
 ];
+// l10n: data-end
 
 /// Kotlin's `suggestDoseTimes`: the doses spread over 08:00–22:00.
 String suggestDoseTimes(int count) {
@@ -91,12 +94,14 @@ double pharmacyMonthlyCost(
 /// medicines' cost, while the figure was the period's health spending —
 /// clinic visits included — or the boxes' prices (2026-10-10: 1,356.5 over
 /// three medicines priced at zero).
+/// In [l10n]'s language, Arabic by default.
 String pharmacyCostLabel(
   Iterable<Medicine> medicines,
-  Iterable<ZadTransaction> periodRows,
-) => _healthSpending(periodRows) > _boxes(medicines)
-    ? 'صرف الصحة الشهر ده'
-    : 'أسعار علب الأدوية';
+  Iterable<ZadTransaction> periodRows, [
+  ZadL10n? l10n,
+]) => _healthSpending(periodRows) > _boxes(medicines)
+    ? (l10n ?? zadL10nArabic).pharmacyCostHealth
+    : (l10n ?? zadL10nArabic).pharmacyCostBoxes;
 
 double _boxes(Iterable<Medicine> medicines) =>
     medicines.fold<double>(0, (s, m) => s + m.price);
@@ -106,9 +111,12 @@ double _healthSpending(Iterable<ZadTransaction> periodRows) {
   for (final t in periodRows) {
     if (t.kind != TxnKind.expense) continue;
     final c = t.category;
+    // Stored category keys.
+    // l10n: data-begin
     if (c == 'الرعاية الصحية' ||
         c == 'صيدلية' ||
         c == 'أدوية' ||
+        // l10n: data-end
         t.sourceType == 'pharmacy') {
       spent += t.amount;
     }
@@ -161,7 +169,7 @@ class PharmacyView extends ConsumerWidget {
     );
     final periodRows = ref.watch(transactionsControllerProvider).rows;
     final cost = pharmacyMonthlyCost(medicines, periodRows);
-    final costLabel = pharmacyCostLabel(medicines, periodRows);
+    final costLabel = pharmacyCostLabel(medicines, periodRows, context.l10n);
 
     final familyView = ref.watch(pharmacyFamilyViewProvider);
 
@@ -173,7 +181,7 @@ class PharmacyView extends ConsumerWidget {
           : FloatingActionButton(
               heroTag: 'pharmacy-add',
               onPressed: () => unawaited(showAddMedicineSheet(context)),
-              tooltip: 'إضافة',
+              tooltip: context.l10n.pharmacyAdd,
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               child: const Icon(Icons.add),
@@ -195,9 +203,9 @@ class PharmacyView extends ConsumerWidget {
                 children: <Widget>[
                   Expanded(
                     child: _Stat(
-                      label: 'الالتزام بالجرعات',
+                      label: context.l10n.pharmacyAdherence,
                       value: view.adherence == null
-                          ? 'في انتظار أول جرعة'
+                          ? context.l10n.pharmacyAdherenceWaiting
                           : '${view.adherence}%',
                       color: switch (view.adherence) {
                         null => ZadColors.inkMuted,
@@ -223,22 +231,28 @@ class PharmacyView extends ConsumerWidget {
                 spacing: ZadSpacing.lg,
                 runSpacing: ZadSpacing.xs,
                 children: <Widget>[
-                  _Count(n: medicines.length, label: 'إجمالي الأدوية'),
-                  _Count(n: expiringSoon.length, label: 'قرب الانتهاء'),
-                  _Count(n: low, label: 'مخزون منخفض'),
+                  _Count(
+                    n: medicines.length,
+                    label: context.l10n.pharmacyTotal,
+                  ),
+                  _Count(
+                    n: expiringSoon.length,
+                    label: context.l10n.pharmacyExpiringSoon,
+                  ),
+                  _Count(n: low, label: context.l10n.pharmacyLowStock),
                 ],
               ),
               if (expired > 0) ...<Widget>[
                 const SizedBox(height: ZadSpacing.md),
                 _Banner(
-                  text: '$expired دواء منتهي الصلاحية — تخلص منه بأمان',
+                  text: context.l10n.pharmacyExpiredBanner(expired),
                   color: ZadColors.terracottaRust,
                 ),
               ],
               if (expiringSoon.isNotEmpty) ...<Widget>[
                 const SizedBox(height: ZadSpacing.md),
-                const Text(
-                  'قرب الانتهاء — تخلص منها بأمان',
+                Text(
+                  context.l10n.pharmacyExpiringHeading,
                   style: ZadType.titleSmall,
                 ),
                 const SizedBox(height: ZadSpacing.sm),
@@ -248,7 +262,7 @@ class PharmacyView extends ConsumerWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: expiringSoon.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) {
+                    itemBuilder: (context, i) {
                       final m = expiringSoon[i];
                       final d = daysTo(m)!;
                       final c = d <= 7
@@ -272,7 +286,7 @@ class PharmacyView extends ConsumerWidget {
                               style: ZadType.titleSmall,
                             ),
                             Text(
-                              'تنتهي خلال $d يوم',
+                              context.l10n.pharmacyExpiresIn(d),
                               style: ZadType.labelSmall.copyWith(color: c),
                             ),
                           ],
@@ -285,7 +299,7 @@ class PharmacyView extends ConsumerWidget {
               if (view.today.isNotEmpty || medicines.isNotEmpty) ...<Widget>[
                 const SizedBox(height: ZadSpacing.lg),
                 Text(
-                  'جرعات النهارده',
+                  context.l10n.pharmacyTodayDoses,
                   style: ZadType.labelMedium.copyWith(
                     color: ZadColors.inkMuted,
                   ),
@@ -300,9 +314,8 @@ class PharmacyView extends ConsumerWidget {
                 if (view.today.isEmpty)
                   Text(
                     medicines.any((m) => m.doseTimes.isNotEmpty)
-                        ? 'مفيش جرعات فاضلة النهارده.'
-                        : 'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت '
-                              'عشان أفكّرك بيه.',
+                        ? context.l10n.pharmacyNoDosesLeft
+                        : context.l10n.pharmacyNoSchedules,
                     style: ZadType.bodySmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -313,19 +326,18 @@ class PharmacyView extends ConsumerWidget {
                 ZadEmptyState(
                   icon: ZadIcons.pharmacy,
                   title: view.error != null
-                      ? 'مقدرتش أجيب الأدوية'
-                      : 'لا توجد أدوية مسجلة بعد',
+                      ? context.l10n.pharmacyLoadFailed
+                      : context.l10n.pharmacyEmptyTitle,
                   message: view.error != null
-                      ? 'اسحب لتحت نجرب تاني.'
-                      : 'ضيفه بالزرار، أو قول لزاد: "باخد كونكور قرص الصبح '
-                            'وبالليل" وهو يسجّله بمواعيده.',
+                      ? context.l10n.pharmacyPullToRetry
+                      : context.l10n.pharmacyEmptyMessage,
                   tone: view.error != null
                       ? ZadEmptyTone.problem
                       : ZadEmptyTone.calm,
                 )
               else ...<Widget>[
                 Text(
-                  'الأدوية',
+                  context.l10n.pharmacyMedicines,
                   style: ZadType.labelMedium.copyWith(
                     color: ZadColors.inkMuted,
                   ),
@@ -438,12 +450,13 @@ class _DoseRow extends ConsumerWidget {
     final state = slot.stateAt(now);
     final snoozed = controller.isSnoozed(slot);
 
-    final (accent, status) = switch (state) {
-      DoseState.taken => (ZadColors.green600, 'اتاخدت'),
-      DoseState.due => (ZadColors.mustardOchre, 'وقتها دلوقتي'),
-      DoseState.missed => (ZadColors.terracottaRust, 'فاتت'),
-      DoseState.upcoming => (ZadColors.inkMuted, 'جاية'),
+    final accent = switch (state) {
+      DoseState.taken => ZadColors.green600,
+      DoseState.due => ZadColors.mustardOchre,
+      DoseState.missed => ZadColors.terracottaRust,
+      DoseState.upcoming => ZadColors.inkMuted,
     };
+    final status = context.l10n.pharmacyDoseState(state.name);
 
     return ZadCard(
       padding: const EdgeInsets.all(ZadSpacing.md),
@@ -465,7 +478,7 @@ class _DoseRow extends ConsumerWidget {
               children: <Widget>[
                 Text(slot.medicine.name, style: ZadType.titleSmall),
                 Text(
-                  snoozed ? 'اتأجلت شوية' : status,
+                  snoozed ? context.l10n.pharmacySnoozed : status,
                   style: ZadType.labelSmall.copyWith(color: accent),
                 ),
               ],
@@ -475,14 +488,14 @@ class _DoseRow extends ConsumerWidget {
             if (!snoozed)
               TextButton(
                 onPressed: () => unawaited(controller.snooze(slot)),
-                child: const Text('بعدين'),
+                child: Text(context.l10n.pharmacyLater),
               ),
             FilledButton(
               onPressed: () {
                 unawaited(HapticFeedback.mediumImpact());
                 unawaited(controller.take(slot));
               },
-              child: const Text('خدته'),
+              child: Text(context.l10n.pharmacyTook),
             ),
           ] else if (state == DoseState.taken)
             const Icon(ZadIcons.synced, color: ZadColors.green600),
@@ -532,14 +545,18 @@ class _MedicineCard extends ConsumerWidget {
             .where((m) => m.id == medicine.familyMemberId)
             .firstOrNull
             ?.alias ??
-        (medicine.forPerson == null ? null : 'لـ${medicine.forPerson}');
+        (medicine.forPerson == null
+            ? null
+            : context.l10n.pharmacyForPerson(medicine.forPerson!));
     final badge = finished
-        ? 'الكورس خلص ✓'
+        ? context.l10n.pharmacyCourseDone
         : expired
-        ? 'منتهي منذ ${-d} يوم'
+        ? context.l10n.pharmacyExpiredAgo(-d)
         : expiringSoon
-        ? 'تنتهي خلال $d يوم'
-        : 'متبقي $remaining ${medicine.unit ?? ''}'.trim();
+        ? context.l10n.pharmacyExpiresIn(d)
+        : context.l10n
+              .pharmacyRemaining('$remaining', medicine.unit ?? '')
+              .trim();
     final invalid =
         medicine.hasUnreadableDoseTime || medicine.serverSaysInvalidDoseTime;
     final dosage = medicine.dosage;
@@ -610,7 +627,7 @@ class _MedicineCard extends ConsumerWidget {
                         IconButton(
                           onPressed: () =>
                               unawaited(_confirmDelete(context, ref, medicine)),
-                          tooltip: 'حذف',
+                          tooltip: context.l10n.commonDelete,
                           icon: Icon(
                             ZadIcons.delete,
                             size: 18,
@@ -644,7 +661,7 @@ class _MedicineCard extends ConsumerWidget {
                             vertical: ZadSpacing.sm,
                           ),
                           child: Text(
-                            'وقت جرعة مش مفهوم — عدّله',
+                            context.l10n.pharmacyBadDoseTime,
                             style: ZadType.labelSmall.copyWith(
                               color: ZadColors.terracottaRust,
                             ),
@@ -656,7 +673,7 @@ class _MedicineCard extends ConsumerWidget {
                         children: <Widget>[
                           Expanded(
                             child: Text(
-                              'مالوش مواعيد — مش هفكّرك بيه',
+                              context.l10n.pharmacyNoTimes,
                               style: ZadType.labelSmall.copyWith(
                                 color: ZadColors.mustardOchre,
                               ),
@@ -666,7 +683,7 @@ class _MedicineCard extends ConsumerWidget {
                             onPressed: () => unawaited(
                               showDoseTimesSheet(context, medicine),
                             ),
-                            child: const Text('حدد مواعيده'),
+                            child: Text(context.l10n.pharmacySetTimes),
                           ),
                         ],
                       ),
@@ -678,7 +695,7 @@ class _MedicineCard extends ConsumerWidget {
                         _Badge(text: badge, color: status),
                         if (!expired && supply != null)
                           _Badge(
-                            text: 'يكفي $supply يوم',
+                            text: context.l10n.pharmacySupplyDays(supply),
                             color: ZadColors.inkMuted,
                           )
                         else if (!expired &&
@@ -689,7 +706,7 @@ class _MedicineCard extends ConsumerWidget {
                               _showConfirmQuantity(context, ref, medicine),
                             ),
                             child: _Badge(
-                              text: 'الكمية محتاجة تأكيد',
+                              text: context.l10n.pharmacyConfirmQty,
                               color: ZadColors.mustardOchre,
                             ),
                           ),
@@ -707,19 +724,19 @@ class _MedicineCard extends ConsumerWidget {
                               unawaited(HapticFeedback.mediumImpact());
                               unawaited(controller.takeNow(medicine));
                             },
-                            child: const Text('تناول جرعة'),
+                            child: Text(context.l10n.pharmacyTakeDose),
                           ),
                         FilledButton.icon(
                           onPressed: () =>
                               unawaited(_showRefill(context, ref, medicine)),
                           icon: const Icon(ZadIcons.retry, size: 14),
-                          label: const Text('تجديد الطلب'),
+                          label: Text(context.l10n.pharmacyRefill),
                         ),
                         TextButton(
                           onPressed: () => unawaited(
                             _showConfirmQuantity(context, ref, medicine),
                           ),
-                          child: const Text('فاضل قد إيه فعلاً؟'),
+                          child: Text(context.l10n.pharmacyHowMuchLeft),
                         ),
                       ],
                     ),
@@ -765,19 +782,19 @@ Future<void> _confirmDelete(
   final ok = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: const Text('حذف'),
-      content: Text('حذف «${medicine.name}» من الصيدلية؟'),
+      title: Text(c.l10n.commonDelete),
+      content: Text(c.l10n.pharmacyDeleteConfirm(medicine.name)),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(c.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(c).pop(true),
           style: TextButton.styleFrom(
             foregroundColor: ZadColors.terracottaRust,
           ),
-          child: const Text('حذف'),
+          child: Text(c.l10n.commonDelete),
         ),
       ],
     ),
@@ -794,7 +811,7 @@ Future<void> _showConfirmQuantity(
   WidgetRef ref,
   Medicine medicine,
 ) async {
-  final unit = medicine.unit ?? 'قرص';
+  final unit = medicine.unit ?? 'قرص'; // l10n: data
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -807,14 +824,17 @@ Future<void> _showConfirmQuantity(
         '${medicine.unitsPerDose}',
     ],
     builder: (c, fields) => AlertDialog(
-      title: const Text('فاضل قد إيه فعلاً؟'),
+      title: Text(c.l10n.pharmacyHowMuchLeft),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            '${medicine.name} — الكمية الحالية المسجلة: '
-            '${medicine.remainingQuantity ?? 0} $unit',
+            c.l10n.pharmacyCurrentQty(
+              medicine.name,
+              medicine.remainingQuantity ?? 0,
+              unit,
+            ),
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -830,8 +850,8 @@ Future<void> _showConfirmQuantity(
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
-              labelText: 'الجرعة الواحدة كام $unit؟',
-              helperText: 'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم',
+              labelText: c.l10n.pharmacyUnitsPerDose(unit),
+              helperText: c.l10n.pharmacyUnitsPerDoseHelp,
               helperMaxLines: 2,
             ),
           ),
@@ -840,18 +860,21 @@ Future<void> _showConfirmQuantity(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إلغاء'),
+          child: Text(c.l10n.commonCancel),
         ),
         TextButton(
           onPressed: () {
             final raw = fields[0].text.trim();
-            final n = raw == '0' || raw == '٠'
+            final n =
+                raw == '0' ||
+                    raw ==
+                        '٠' // l10n: data
                 ? 0
                 : parseMoneyInput(raw)?.round();
             if (n == null) return;
             Navigator.of(c).pop((n, parseMoneyInput(fields[1].text)));
           },
-          child: const Text('تأكيد'),
+          child: Text(c.l10n.commonConfirm),
         ),
       ],
     ),
@@ -870,7 +893,7 @@ Future<void> _showRefill(
   Medicine medicine,
 ) async {
   DateTime? expiry;
-  final unit = medicine.unit ?? 'قرص';
+  final unit = medicine.unit ?? 'قرص'; // l10n: data
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -879,7 +902,7 @@ Future<void> _showRefill(
     ],
     builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) => AlertDialog(
-        title: Text('تجديد طلب ${medicine.name}'),
+        title: Text(c.l10n.pharmacyRefillTitle(medicine.name)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -887,7 +910,9 @@ Future<void> _showRefill(
               controller: fields[0],
               keyboardType: TextInputType.number,
               textDirection: TextDirection.ltr,
-              decoration: InputDecoration(labelText: 'الكمية المضافة ($unit)'),
+              decoration: InputDecoration(
+                labelText: c.l10n.pharmacyAddedQty(unit),
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -897,7 +922,7 @@ Future<void> _showRefill(
                 decimal: true,
               ),
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'السعر'),
+              decoration: InputDecoration(labelText: c.l10n.pharmacyPrice),
             ),
             const SizedBox(height: ZadSpacing.md),
             OutlinedButton.icon(
@@ -922,8 +947,8 @@ Future<void> _showRefill(
               icon: const Icon(ZadIcons.duration, size: 16),
               label: Text(
                 expiry == null
-                    ? 'تاريخ الانتهاء'
-                    : DateFormat('d MMMM y', 'ar').format(expiry!),
+                    ? c.l10n.pharmacyExpiryDate
+                    : DateFormat('d MMMM y', c.dateLocale).format(expiry!),
               ),
             ),
           ],
@@ -931,7 +956,7 @@ Future<void> _showRefill(
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(),
-            child: const Text('إلغاء'),
+            child: Text(c.l10n.commonCancel),
           ),
           TextButton(
             onPressed: (parseMoneyInput(fields[0].text)?.round() ?? 0) > 0
@@ -940,7 +965,7 @@ Future<void> _showRefill(
                     parseMoneyInput(fields[1].text),
                   ))
                 : null,
-            child: const Text('حفظ'),
+            child: Text(c.l10n.commonSave),
           ),
         ],
       ),
@@ -1013,6 +1038,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
     final userId = ref.read(signedInUserIdProvider)();
     if (userId == null || _scanning) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
     final image = await ref
         .read(receiptCameraProvider)
         .capture(ReceiptImageSource.camera);
@@ -1025,21 +1051,15 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
       if (!mounted) return;
       if (result != null && result.name.trim().isNotEmpty) {
         setState(() => _fill(result));
-        messenger?.showSnackBar(
-          const SnackBar(content: Text('تم استخراج بيانات الدواء بنجاح')),
-        );
+        messenger?.showSnackBar(SnackBar(content: Text(l10n.pharmacyScanOk)));
       } else {
         messenger?.showSnackBar(
-          const SnackBar(
-            content: Text('تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'),
-          ),
+          SnackBar(content: Text(l10n.scanMedicineUnreadable)),
         );
       }
     } on Object {
       messenger?.showSnackBar(
-        const SnackBar(
-          content: Text('تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'),
-        ),
+        SnackBar(content: Text(l10n.scanMedicineUnreadable)),
       );
     } finally {
       if (mounted) setState(() => _scanning = false);
@@ -1090,7 +1110,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'اختر ميعاد الجرعة',
+      helpText: context.l10n.pharmacyPickDoseTime,
     );
     if (picked == null) return;
     final t =
@@ -1145,13 +1165,15 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              widget.scanned == null ? 'إضافة دواء' : 'راجع الدواء',
+              widget.scanned == null
+                  ? context.l10n.pharmacyAddMedicine
+                  : context.l10n.pharmacyReviewMedicine,
               style: ZadType.titleMedium,
             ),
             if (widget.scanned != null) ...<Widget>[
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.',
+                context.l10n.pharmacyReadFromBox,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
             ],
@@ -1173,15 +1195,15 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'جاري قراءة علبة الدواء بالذكاء الاصطناعي...',
+                    Text(
+                      context.l10n.pharmacyReadingBox,
                       style: ZadType.labelMedium,
                     ),
                   ] else ...<Widget>[
                     const Icon(Icons.camera_alt, size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      'مسح العبوة بالكاميرا',
+                      context.l10n.pharmacyScanBox,
                       style: ZadType.labelMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -1194,16 +1216,16 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
             TextField(
               controller: _name,
               autofocus: widget.scanned == null,
-              decoration: const InputDecoration(labelText: 'اسم الدواء'),
+              decoration: InputDecoration(labelText: context.l10n.pharmacyName),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
             TextField(
               controller: _forPerson,
               maxLength: 40,
-              decoration: const InputDecoration(
-                labelText: 'لمين؟ (سيبها فاضية لو ليك)',
-                hintText: 'ماما، بابا، يوسف…',
+              decoration: InputDecoration(
+                labelText: context.l10n.pharmacyWhoFor,
+                hintText: context.l10n.pharmacyWhoForHint,
                 counterText: '',
               ),
             ),
@@ -1212,12 +1234,14 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               controller: _qty,
               keyboardType: TextInputType.number,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'الكمية المتبقية'),
+              decoration: InputDecoration(
+                labelText: context.l10n.pharmacyRemainingQty,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'الوحدة',
+              context.l10n.pharmacyUnit,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xs),
@@ -1243,12 +1267,14 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               controller: _daily,
               keyboardType: TextInputType.number,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'جرعات اليوم'),
+              decoration: InputDecoration(
+                labelText: context.l10n.pharmacyDailyDoses,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'مواعيد الجرعة (اختياري)',
+              context.l10n.pharmacyDoseTimesOptional,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.xs),
@@ -1256,9 +1282,9 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               spacing: ZadSpacing.sm,
               runSpacing: ZadSpacing.xs,
               children: <Widget>[
-                for (final (t, label) in _presets)
+                for (final (t, slot) in _presets)
                   FilterChip(
-                    label: Text(label),
+                    label: Text(context.l10n.pharmacyPreset(slot)),
                     selected: _times.contains(t),
                     onSelected: (on) =>
                         setState(() => on ? _times.add(t) : _times.remove(t)),
@@ -1272,7 +1298,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
                   ),
                 ActionChip(
                   avatar: const Icon(ZadIcons.add, size: 16),
-                  label: const Text('إضافة ميعاد'),
+                  label: Text(context.l10n.pharmacyAddTime),
                   onPressed: () => unawaited(_addTime()),
                 ),
               ],
@@ -1281,8 +1307,9 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: ZadSpacing.xs),
                 child: Text(
-                  'لسه مفيش مواعيد مضافة — مقترح: '
-                  '${_suggested.isEmpty ? '09:00' : _suggested}',
+                  context.l10n.pharmacySuggestedTimes(
+                    _suggested.isEmpty ? '09:00' : _suggested,
+                  ),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ),
@@ -1309,8 +1336,11 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               icon: const Icon(ZadIcons.duration, size: 16),
               label: Text(
                 _expiry == null
-                    ? 'تاريخ الانتهاء — اضغط لاختيار التاريخ'
-                    : DateFormat('d MMMM y', 'ar').format(_expiry!),
+                    ? context.l10n.pharmacyExpiryPick
+                    : DateFormat(
+                        'd MMMM y',
+                        context.dateLocale,
+                      ).format(_expiry!),
               ),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -1321,41 +1351,47 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               ),
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(
-                labelText: currency.isEmpty ? 'المبلغ' : 'المبلغ ($currency)',
+                labelText: currency.isEmpty
+                    ? context.l10n.pharmacyAmount
+                    : context.l10n.pharmacyAmountIn(currency),
               ),
             ),
             const SizedBox(height: ZadSpacing.md),
             TextButton(
               onPressed: () => setState(() => _extras = !_extras),
-              child: const Text('تفاصيل إضافية (اختياري)'),
+              child: Text(context.l10n.pharmacyExtras),
             ),
             if (_extras) ...<Widget>[
               TextField(
                 controller: _ingredient,
-                decoration: const InputDecoration(labelText: 'المادة الفعالة'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.pharmacyIngredient,
+                ),
               ),
               const SizedBox(height: ZadSpacing.md),
               TextField(
                 controller: _dosage,
-                decoration: const InputDecoration(
-                  labelText: 'الجرعة (مثال: قرص كل 8 ساعات)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.pharmacyDosageHint,
                 ),
               ),
               CheckboxListTile(
                 value: _recurring,
                 onChanged: (v) => setState(() => _recurring = v ?? false),
-                title: const Text('دواء مزمن / روشتة متجددة شهرياً'),
+                title: Text(context.l10n.pharmacyRecurring),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
               ),
               if (members.length > 1)
                 DropdownButtonFormField<String?>(
                   initialValue: _member,
-                  decoration: const InputDecoration(
-                    labelText: 'لمين في العائلة',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.pharmacyFamilyMember,
                   ),
                   items: <DropdownMenuItem<String?>>[
-                    const DropdownMenuItem<String?>(child: Text('بدون')),
+                    DropdownMenuItem<String?>(
+                      child: Text(context.l10n.pharmacyNoMember),
+                    ),
                     for (final m in members)
                       DropdownMenuItem<String?>(
                         value: m.id,
@@ -1380,7 +1416,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
             const SizedBox(height: ZadSpacing.xl),
             FilledButton(
               onPressed: _canSave ? () => unawaited(_save()) : null,
-              child: const Text('حفظ'),
+              child: Text(context.l10n.commonSave),
             ),
           ],
         ),
@@ -1398,12 +1434,13 @@ List<String> scannedDoseTimes(String? raw) {
   return <String>{for (final t in times) t.wireName}.toList();
 }
 
-/// The four quick choices, shared by the add form and the times sheet.
+/// The four quick choices, shared by the add form and the times sheet: the
+/// time, and its `pharmacyPreset` slot.
 const List<(String, String)> kDoseTimePresets = <(String, String)>[
-  ('08:00', '🌅 صباحاً'),
-  ('14:00', '☀️ ظهراً'),
-  ('20:00', '🌙 مساءً'),
-  ('23:00', '🛌 قبل النوم'),
+  ('08:00', 'morning'),
+  ('14:00', 'noon'),
+  ('20:00', 'evening'),
+  ('23:00', 'bedtime'),
 ];
 
 /// "حدد مواعيده": the times of one medicine that has none, or one whose
@@ -1436,7 +1473,7 @@ class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
     final picked = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'اختر ميعاد الجرعة',
+      helpText: context.l10n.pharmacyPickDoseTime,
     );
     if (picked == null) return;
     final t =
@@ -1465,10 +1502,13 @@ class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text('مواعيد ${widget.medicine.name}', style: ZadType.titleMedium),
+        Text(
+          context.l10n.pharmacyTimesOf(widget.medicine.name),
+          style: ZadType.titleMedium,
+        ),
         const SizedBox(height: ZadSpacing.xs),
         Text(
-          'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.',
+          context.l10n.pharmacyTimesHint,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.md),
@@ -1476,9 +1516,9 @@ class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
           spacing: ZadSpacing.sm,
           runSpacing: ZadSpacing.xs,
           children: <Widget>[
-            for (final (t, label) in kDoseTimePresets)
+            for (final (t, slot) in kDoseTimePresets)
               FilterChip(
-                label: Text(label),
+                label: Text(context.l10n.pharmacyPreset(slot)),
                 selected: _times.contains(t),
                 onSelected: (on) =>
                     setState(() => on ? _times.add(t) : _times.remove(t)),
@@ -1492,7 +1532,7 @@ class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
               ),
             ActionChip(
               avatar: const Icon(ZadIcons.add, size: 16),
-              label: const Text('إضافة ميعاد'),
+              label: Text(context.l10n.pharmacyAddTime),
               onPressed: () => unawaited(_addTime()),
             ),
           ],
@@ -1500,7 +1540,7 @@ class _DoseTimesSheetState extends ConsumerState<_DoseTimesSheet> {
         const SizedBox(height: ZadSpacing.lg),
         FilledButton(
           onPressed: _times.isEmpty ? null : () => unawaited(_save()),
-          child: const Text('احفظ المواعيد'),
+          child: Text(context.l10n.pharmacySaveTimes),
         ),
       ],
     ),

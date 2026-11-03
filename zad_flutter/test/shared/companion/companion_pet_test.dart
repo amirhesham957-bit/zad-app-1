@@ -248,7 +248,10 @@ void main() {
         );
         await tester.pump();
         final source = find.byKey(const ValueKey<String>('guess-source'));
-        expect(tester.widget<Text>(source).data, contains(r.fact.source.label));
+        expect(
+          tester.widget<Text>(source).data,
+          contains(r.fact.source.label()),
+        );
         await tester.tap(find.byKey(const ValueKey<String>('guess-next')));
         await tester.pump();
       }

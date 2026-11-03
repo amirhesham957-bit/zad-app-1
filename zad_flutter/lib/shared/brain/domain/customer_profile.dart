@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Allowed values, copied from the table's check constraints (read off the
 /// live project 2026-09-21).
@@ -274,68 +275,91 @@ class CustomerProfile {
 /// Display text for the fixed values.
 abstract final class ProfileLabels {
   /// `gender`.
-  static String gender(String v) => v == 'female' ? 'أنثى' : 'ذكر';
+  static String gender(String v, [ZadL10n? l10n]) =>
+      _gender(v, l10n ?? zadL10nArabic);
+
+  static String _gender(String v, ZadL10n l) =>
+      v == 'female' ? l.profileLabelGenderFemale : l.profileLabelGenderMale;
 
   /// `zad_voice`.
-  static String zadVoice(String v) => v == 'male' ? 'صوت ولد' : 'صوت بنت';
+  static String zadVoice(String v, [ZadL10n? l10n]) =>
+      _zadVoice(v, l10n ?? zadL10nArabic);
+
+  static String _zadVoice(String v, ZadL10n l) =>
+      v == 'male' ? l.profileLabelZadvoiceBoy : l.profileLabelZadvoiceGirl;
 
   /// `household_role`.
-  static String role(String v) => switch (v) {
-    'father' => 'أب',
-    'mother' => 'أم',
-    'husband' => 'زوج',
-    'wife' => 'زوجة',
-    'son' => 'ابن',
-    'daughter' => 'بنت',
-    'single' => 'عايش لوحدي',
-    'student' => 'طالب',
-    'grandparent' => 'جد/جدة',
-    _ => 'غير كده',
+  static String role(String v, [ZadL10n? l10n]) =>
+      _role(v, l10n ?? zadL10nArabic);
+
+  static String _role(String v, ZadL10n l) => switch (v) {
+    'father' => l.profileLabelRoleFather,
+    'mother' => l.profileLabelRoleMother,
+    'husband' => l.profileLabelRoleHusband,
+    'wife' => l.profileLabelRoleWife,
+    'son' => l.profileLabelRoleSon,
+    'daughter' => l.profileLabelRoleDaughter,
+    'single' => l.profileLabelRoleSingle,
+    'student' => l.profileLabelRoleStudent,
+    'grandparent' => l.profileLabelRoleGrandparent,
+    _ => l.profileLabelRoleDefault,
   };
 
   /// `age_range`.
-  static String age(String v) => switch (v) {
-    'under_18' => 'أقل من ١٨',
-    '18_24' => '١٨–٢٤',
-    '25_34' => '٢٥–٣٤',
-    '35_44' => '٣٥–٤٤',
-    '45_54' => '٤٥–٥٤',
-    _ => '٥٥ وأكبر',
+  static String age(String v, [ZadL10n? l10n]) =>
+      _age(v, l10n ?? zadL10nArabic);
+
+  static String _age(String v, ZadL10n l) => switch (v) {
+    'under_18' => l.profileLabelAgeUnder18,
+    '18_24' => l.profileLabelAge1824,
+    '25_34' => l.profileLabelAge2534,
+    '35_44' => l.profileLabelAge3544,
+    '45_54' => l.profileLabelAge4554,
+    _ => l.profileLabelAgeDefault,
   };
 
   /// `pay_frequency`.
-  static String frequency(String v) => switch (v) {
-    'weekly' => 'أسبوعي',
-    'biweekly' => 'كل أسبوعين',
-    'daily' => 'يومي',
-    'irregular' => 'مش ثابت',
-    _ => 'شهري',
+  static String frequency(String v, [ZadL10n? l10n]) =>
+      _frequency(v, l10n ?? zadL10nArabic);
+
+  static String _frequency(String v, ZadL10n l) => switch (v) {
+    'weekly' => l.profileLabelFrequencyWeekly,
+    'biweekly' => l.profileLabelFrequencyBiweekly,
+    'daily' => l.profileLabelFrequencyDaily,
+    'irregular' => l.profileLabelFrequencyIrregular,
+    _ => l.profileLabelFrequencyDefault,
   };
 
   /// `cares_for`.
-  static String caresFor(String v) => switch (v) {
-    'children' => 'أولادي',
-    'parents' => 'أبويا أو أمي',
-    'spouse' => 'زوجي أو زوجتي',
-    'siblings' => 'إخواتي',
-    'grandparents' => 'جدي أو جدتي',
+  static String caresFor(String v, [ZadL10n? l10n]) =>
+      _caresFor(v, l10n ?? zadL10nArabic);
+
+  static String _caresFor(String v, ZadL10n l) => switch (v) {
+    'children' => l.profileLabelCaresforChildren,
+    'parents' => l.profileLabelCaresforParents,
+    'spouse' => l.profileLabelCaresforSpouse,
+    'siblings' => l.profileLabelCaresforSiblings,
+    'grandparents' => l.profileLabelCaresforGrandparents,
     _ => v,
   };
 
   /// `dialect`.
-  static String dialect(String v) => switch (v) {
-    'SA' => 'سعودي',
-    'GULF' => 'خليجي',
-    'LEVANT' => 'شامي',
-    'IQ' => 'عراقي',
-    'MA' => 'مغربي',
-    'TN' => 'تونسي',
-    'DZ' => 'جزائري',
-    'LY' => 'ليبي',
-    'SD' => 'سوداني',
-    'YE' => 'يمني',
+  static String dialect(String v, [ZadL10n? l10n]) =>
+      _dialect(v, l10n ?? zadL10nArabic);
+
+  static String _dialect(String v, ZadL10n l) => switch (v) {
+    'SA' => l.profileLabelDialectSa,
+    'GULF' => l.profileLabelDialectGulf,
+    'LEVANT' => l.profileLabelDialectLevant,
+    'IQ' => l.profileLabelDialectIq,
+    'MA' => l.profileLabelDialectMa,
+    'TN' => l.profileLabelDialectTn,
+    'DZ' => l.profileLabelDialectDz,
+    'LY' => l.profileLabelDialectLy,
+    'SD' => l.profileLabelDialectSd,
+    'YE' => l.profileLabelDialectYe,
     'TR' => 'Türkçe',
     'EN' => 'English',
-    _ => 'مصري',
+    _ => l.profileLabelDialectDefault,
   };
 }
