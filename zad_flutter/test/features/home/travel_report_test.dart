@@ -46,4 +46,28 @@ void main() {
     addTearDown(c.dispose);
     await expectLater(c.read(travelReportProvider.future), completes);
   });
+
+  ProviderContainer banner({String? network, String? trip, String? phone}) =>
+      ProviderContainer(
+        overrides: [
+          networkCountryProvider.overrideWith((ref) async => network),
+          serverTravelCountryProvider.overrideWith((ref) async => trip),
+          detectedCountryProvider.overrideWith((ref) async => phone),
+        ],
+      );
+
+  test('the banner: network first, then the trip from the location, then '
+      'the phone language', () async {
+    final onWifi = banner(trip: 'EG', phone: 'SA');
+    addTearDown(onWifi.dispose);
+    expect(await onWifi.read(bannerCountryProvider.future), 'EG');
+
+    final roaming = banner(network: 'ae', trip: 'EG', phone: 'SA');
+    addTearDown(roaming.dispose);
+    expect(await roaming.read(bannerCountryProvider.future), 'AE');
+
+    final nothing = banner(phone: 'sa');
+    addTearDown(nothing.dispose);
+    expect(await nothing.read(bannerCountryProvider.future), 'SA');
+  });
 }
