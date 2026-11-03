@@ -317,8 +317,13 @@ class CampaignParticlesLayer extends StatefulWidget {
     required this.tint,
     this.intensity = CampaignIntensity.medium,
     this.still = false,
+    this.ink,
     super.key,
   });
+
+  /// The particles' own colour on a light surface (the shared header);
+  /// null draws them white, for the occasion's dark gradient.
+  final Color? ink;
 
   /// Which effect.
   final CampaignParticles kind;
@@ -374,6 +379,7 @@ class _CampaignParticlesLayerState extends State<CampaignParticlesLayer>
         widget.tint,
         kParticleCounts[widget.intensity]!,
         _loop,
+        ink: widget.ink,
       ),
     ),
   );
@@ -400,31 +406,35 @@ final List<_Seed> _seeds = List<_Seed>.generate(30, (i) {
 }, growable: false);
 
 class _ParticlesPainter extends CustomPainter {
-  new(this.kind, this.tint, this.count, this.progress)
+  new(this.kind, this.tint, this.count, this.progress, {this.ink})
     : super(repaint: progress);
 
   final CampaignParticles kind;
   final Color tint;
   final int count;
   final Animation<double> progress;
+  final Color? ink;
 
   @override
   void paint(Canvas canvas, Size size) {
     final t = progress.value;
     final paint = Paint();
     const tau = 2 * math.pi;
-    final confetti = <Color>[
-      Colors.white,
-      Color.lerp(tint, Colors.white, 0.55)!,
-      Color.lerp(tint, Colors.white, 0.8)!,
-    ];
+    final light = ink ?? Colors.white;
+    final confetti = ink == null
+        ? <Color>[
+            Colors.white,
+            Color.lerp(tint, Colors.white, 0.55)!,
+            Color.lerp(tint, Colors.white, 0.8)!,
+          ]
+        : <Color>[ink!, Color.lerp(ink, Colors.white, 0.35)!, tint];
     for (var i = 0; i < count; i++) {
       final s = _seeds[i];
       switch (kind) {
         case CampaignParticles.snow:
           final y = (s.y + t * (0.6 + 0.4 * s.size)) % 1;
           final x = s.x + 0.02 * math.sin(tau * (2 * t + s.phase));
-          paint.color = Colors.white.withValues(alpha: 0.5);
+          paint.color = light.withValues(alpha: 0.5);
           canvas.drawCircle(
             Offset(x * size.width, y * size.height),
             1.2 + 1.8 * s.size,
@@ -444,7 +454,7 @@ class _ParticlesPainter extends CustomPainter {
           final r = 2 + 2 * s.size;
           final c = Offset(s.x * size.width, s.y * size.height);
           paint
-            ..color = Colors.white.withValues(alpha: 0.15 + 0.5 * glow)
+            ..color = light.withValues(alpha: 0.15 + 0.5 * glow)
             ..strokeWidth = 1.2
             ..strokeCap = StrokeCap.round;
           canvas
@@ -461,5 +471,6 @@ class _ParticlesPainter extends CustomPainter {
       old.kind != kind ||
       old.tint != tint ||
       old.count != count ||
-      old.progress != progress;
+      old.progress != progress ||
+      old.ink != ink;
 }

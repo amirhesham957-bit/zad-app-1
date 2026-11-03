@@ -57,6 +57,30 @@ String? _pick(
 )?.campaign.id;
 
 void main() {
+  // ZAD_PLAN 8b.4 (20261103140000): winter fills the season at -10, like
+  // autumn, and every dated occasion beats it on its own days.
+  group('winter fills the gaps, occasions win their days', () {
+    final catalog = _catalog(<Map<String, dynamic>>[
+      _row('winter', from: '11-01', to: '02-28', priority: -10),
+      _row('white_friday', from: '11-20', to: '11-30'),
+      _row('new_year', from: '12-28', to: '01-03'),
+      _row('founding', country: 'SA', from: '02-20', to: '02-23'),
+    ]);
+
+    test('from November to the end of February', () {
+      expect(_pick(catalog, '2026-10-31'), isNull);
+      expect(_pick(catalog, '2026-11-03'), 'winter');
+      expect(_pick(catalog, '2026-11-25'), 'white_friday');
+      expect(_pick(catalog, '2026-12-10'), 'winter');
+      expect(_pick(catalog, '2027-01-01'), 'new_year');
+      expect(_pick(catalog, '2027-01-04'), 'winter');
+      expect(_pick(catalog, '2027-02-21', country: 'SA'), 'founding');
+      expect(_pick(catalog, '2027-02-21', country: 'EG'), 'winter');
+      expect(_pick(catalog, '2027-02-28'), 'winter');
+      expect(_pick(catalog, '2027-03-01'), isNull);
+    });
+  });
+
   group('the window', () {
     final halloween = _catalog(<Map<String, dynamic>>[_row('h')]);
 
