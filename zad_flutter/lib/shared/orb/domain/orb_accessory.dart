@@ -3,24 +3,26 @@
 /// a member who actually joined is the proof.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// One accessory and the family size that unlocks it.
 enum OrbAccessory {
   /// Bare.
-  none('none', 1, 'من غير'),
+  none('none', 1),
 
   /// A bow.
-  bow('bow', 2, 'فيونكة'),
+  bow('bow', 2),
 
   /// Glasses.
-  glasses('glasses', 3, 'نضارة'),
+  glasses('glasses', 3),
 
   /// A flower.
-  flower('flower', 4, 'وردة'),
+  flower('flower', 4),
 
   /// A crown.
-  crown('crown', 5, 'تاج');
+  crown('crown', 5);
 
-  new(this.prefValue, this.familySizeNeeded, this.label);
+  new(this.prefValue, this.familySizeNeeded);
 
   /// What the device box stores.
   final String prefValue;
@@ -28,8 +30,9 @@ enum OrbAccessory {
   /// Family members needed, the user included.
   final int familySizeNeeded;
 
-  /// The Arabic name under the preview.
-  final String label;
+  /// The name under the preview, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).orbAccessoryLabel(name);
 
   /// Whether a family of [familySize] has it.
   bool isUnlocked(int familySize) => familySize >= familySizeNeeded;

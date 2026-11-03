@@ -11819,6 +11819,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'دوّر على بلدك أو عملتك'**
   String get marketSearchHint;
+
+  /// What TalkBack says for the orb's mood.
+  ///
+  /// In ar, this message translates to:
+  /// **'{mood, select, listening{زاد: بيسمع} focused{زاد: بيفكر} speaking{زاد: بيتكلم} happy{زاد: مبسوط} alert{زاد: تنبيه} celebrating{زاد: بيحتفل} sad{زاد: زعلان} hungry{زاد: جعان} thirsty{زاد: عطشان} sleepy{زاد: نعسان} other{زاد: هادئ}}'**
+  String orbMood(String mood);
+
+  /// The orb's accessory name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{accessory, select, bow{فيونكة} glasses{نضارة} flower{وردة} crown{تاج} other{من غير}}'**
+  String orbAccessoryLabel(String accessory);
+
+  /// TalkBack: the pet asleep.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} نايم'**
+  String orbPetAsleep(String name);
+
+  /// TalkBack: the pet and its mood.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: {mood}'**
+  String orbPetMood(String name, String mood);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

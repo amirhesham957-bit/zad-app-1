@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
@@ -366,10 +367,13 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
     if (widget.animated) {
       orb = Semantics(
         label: look == null
-            ? widget.state.description
+            ? widget.state.description(context.l10n)
             : look.asleep
-            ? '${look.persona.name} نايم'
-            : '${look.persona.name}: ${widget.state.description}',
+            ? context.l10n.orbPetAsleep(look.persona.displayName(context.l10n))
+            : context.l10n.orbPetMood(
+                look.persona.displayName(context.l10n),
+                widget.state.description(context.l10n),
+              ),
         child: orb,
       );
     }

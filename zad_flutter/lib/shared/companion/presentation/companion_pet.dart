@@ -392,7 +392,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
 
   Widget _body(CompanionState mood, String? badge, String name) => Semantics(
     button: true,
-    label: context.l10n.petOrbSemantics(name, mood.description),
+    label: context.l10n.petOrbSemantics(name, mood.description(context.l10n)),
     excludeSemantics: true,
     child: SizedBox.square(
       dimension: widget.size,

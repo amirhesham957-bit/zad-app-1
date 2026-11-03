@@ -1952,5 +1952,9 @@
   "reminderDocumentPassport": "Many countries want a passport valid for 6 months to travel — if a trip is coming, renew it early.",
   "reminderDocumentLastDay": "Last day {date} — start the renewal early.",
   "marketCountryName": "{country, select, SA{Saudi Arabia} EG{Egypt} AE{UAE} KW{Kuwait} QA{Qatar} BH{Bahrain} OM{Oman} JO{Jordan} LB{Lebanon} IQ{Iraq} SY{Syria} YE{Yemen} PS{Palestine} LY{Libya} SD{Sudan} MA{Morocco} TN{Tunisia} DZ{Algeria} TR{Turkey} other{}}",
-  "marketSearchHint": "Search your country or currency"
+  "marketSearchHint": "Search your country or currency",
+  "orbMood": "{mood, select, listening{Zad: listening} focused{Zad: thinking} speaking{Zad: speaking} happy{Zad: pleased} alert{Zad: alert} celebrating{Zad: celebrating} sad{Zad: sad} hungry{Zad: hungry} thirsty{Zad: thirsty} sleepy{Zad: sleepy} other{Zad: calm}}",
+  "orbAccessoryLabel": "{accessory, select, bow{Bow} glasses{Glasses} flower{Flower} crown{Crown} other{None}}",
+  "orbPetAsleep": "{name} is asleep",
+  "orbPetMood": "{name}: {mood}"
 }

@@ -7155,4 +7155,44 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get marketSearchHint => 'دوّر على بلدك أو عملتك';
+
+  @override
+  String orbMood(String mood) {
+    String _temp0 = intl.Intl.selectLogic(mood, {
+      'listening': 'زاد: بيسمع',
+      'focused': 'زاد: بيفكر',
+      'speaking': 'زاد: بيتكلم',
+      'happy': 'زاد: مبسوط',
+      'alert': 'زاد: تنبيه',
+      'celebrating': 'زاد: بيحتفل',
+      'sad': 'زاد: زعلان',
+      'hungry': 'زاد: جعان',
+      'thirsty': 'زاد: عطشان',
+      'sleepy': 'زاد: نعسان',
+      'other': 'زاد: هادئ',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String orbAccessoryLabel(String accessory) {
+    String _temp0 = intl.Intl.selectLogic(accessory, {
+      'bow': 'فيونكة',
+      'glasses': 'نضارة',
+      'flower': 'وردة',
+      'crown': 'تاج',
+      'other': 'من غير',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String orbPetAsleep(String name) {
+    return '$name نايم';
+  }
+
+  @override
+  String orbPetMood(String name, String mood) {
+    return '$name: $mood';
+  }
 }

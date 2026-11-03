@@ -7137,5 +7137,44 @@
   "marketSearchHint": "دوّر على بلدك أو عملتك",
   "@marketSearchHint": {
     "description": "Market picker search hint."
+  },
+  "orbMood": "{mood, select, listening{زاد: بيسمع} focused{زاد: بيفكر} speaking{زاد: بيتكلم} happy{زاد: مبسوط} alert{زاد: تنبيه} celebrating{زاد: بيحتفل} sad{زاد: زعلان} hungry{زاد: جعان} thirsty{زاد: عطشان} sleepy{زاد: نعسان} other{زاد: هادئ}}",
+  "@orbMood": {
+    "description": "What TalkBack says for the orb's mood.",
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "orbAccessoryLabel": "{accessory, select, bow{فيونكة} glasses{نضارة} flower{وردة} crown{تاج} other{من غير}}",
+  "@orbAccessoryLabel": {
+    "description": "The orb's accessory name.",
+    "placeholders": {
+      "accessory": {
+        "type": "String"
+      }
+    }
+  },
+  "orbPetAsleep": "{name} نايم",
+  "@orbPetAsleep": {
+    "description": "TalkBack: the pet asleep.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "orbPetMood": "{name}: {mood}",
+  "@orbPetMood": {
+    "description": "TalkBack: the pet and its mood.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      }
+    }
   }
 }
