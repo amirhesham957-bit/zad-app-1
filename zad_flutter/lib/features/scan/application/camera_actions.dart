@@ -6,6 +6,8 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/scan/application/receipt_purchase.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
@@ -21,23 +23,27 @@ import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
-/// Kotlin's `InjectionResult.summary`.
-String intakeSummary(PantryIntakeResult r) {
+/// Kotlin's `InjectionResult.summary`, in [l10n]'s language (Arabic by
+/// default).
+String intakeSummary(PantryIntakeResult r, [ZadL10n? l10n]) {
+  final t = l10n ?? zadL10nArabic;
   final parts = <String>[
-    if (r.added > 0) '${r.added} منتج جديد',
-    if (r.toppedUp > 0) 'تحديث كمية ${r.toppedUp}',
-    if (r.ticked > 0) 'شُطب ${r.ticked} من النواقص ✅',
+    if (r.added > 0) t.scanSummaryAdded(r.added),
+    if (r.toppedUp > 0) t.scanSummaryToppedUp(r.toppedUp),
+    if (r.ticked > 0) t.scanSummaryTicked(r.ticked),
   ];
-  return parts.isEmpty ? 'لا تغييرات' : parts.join(' + ');
+  return parts.isEmpty ? t.scanSummaryNone : parts.join(' + ');
 }
 
 /// Kotlin's household receipt test: every line cleaning, household or
-/// maintenance.
+/// maintenance. The names are stored category keys.
 bool isHouseholdReceipt(ScannedReceipt r) =>
     r.items.isNotEmpty &&
     r.items.every(
       (i) =>
+          // l10n: data-begin
           const <String>{'تنظيف', 'أدوات منزلية', 'صيانة'}.contains(i.category),
+      // l10n: data-end
     );
 
 /// The camera screen's writes.
@@ -46,8 +52,10 @@ class CameraActions extends Notifier<void> {
   void build() {}
 
   /// Kotlin's `injectScannedItems`.
-  Future<String> injectPantry(List<IntakeLine> lines) async =>
-      intakeSummary(await intakeIntoPantry(ref, lines));
+  Future<String> injectPantry(List<IntakeLine> lines) async => intakeSummary(
+    await intakeIntoPantry(ref, lines),
+    ref.read(zadL10nProvider),
+  );
 
   /// Kotlin's `addPharmacyItem` from a scanned box.
   Future<void> addMedicine(ScannedMedicine m) => ref
@@ -84,7 +92,8 @@ class CameraActions extends Notifier<void> {
     final store = (merchantName?.trim().isEmpty ?? true)
         ? null
         : merchantName!.trim();
-    final name = title.trim().isEmpty ? 'فاتورة' : title.trim();
+    // The stored transaction title the brain reads back.
+    final name = title.trim().isEmpty ? 'فاتورة' : title.trim(); // l10n: data
     ZadTransaction? twin;
     try {
       twin = bankTwinOf(
@@ -144,8 +153,9 @@ class CameraActions extends Notifier<void> {
       lines: lines,
     );
     await afterReceiptPurchase(ref, lines: lines);
-    if (outcome == null) return 'الأصناف هتدخل المخزن أول ما النت يرجع';
-    return intakeSummary(pantryResultOf(outcome));
+    final l10n = ref.read(zadL10nProvider);
+    if (outcome == null) return l10n.scanQueuedOffline;
+    return intakeSummary(pantryResultOf(outcome), l10n);
   }
 
   List<IntakeLine> _lines(ScannedReceipt r) => <IntakeLine>[
@@ -170,9 +180,12 @@ class CameraActions extends Notifier<void> {
       await _restockOnly(pharmacy.plan);
     } else {
       await _purchase(
+        // Stored title and category key.
+        // l10n: data-begin
         title: r.storeName.trim().isEmpty ? 'صيدلية' : r.storeName,
         amount: total,
         category: 'الرعاية الصحية',
+        // l10n: data-end
         sourceType: 'pharmacy',
         lines: pharmacy.lines,
       );
@@ -208,7 +221,7 @@ class CameraActions extends Notifier<void> {
   /// A household receipt: one أدوات منزلية expense, and the lines into the
   /// pantry. Returns the pantry summary.
   Future<String> saveHouseholdReceipt(ScannedReceipt r) =>
-      _pantryReceipt(r, category: 'أدوات منزلية');
+      _pantryReceipt(r, category: 'أدوات منزلية'); // l10n: data
 
   /// Any other receipt: the expense in its category, and the lines into the
   /// pantry. Returns the pantry summary.

@@ -82,21 +82,18 @@ class ReceiptScanSheet extends ConsumerWidget {
         child: switch (view.stage) {
           ScanStage.idle => const _Pick(),
           ScanStage.working => const _Working(),
-          ScanStage.unreadable => const _Retry(
-            title: 'مقدرتش أقرا الفاتورة',
-            message:
-                'جرب صورة أوضح — الورقة مفرودة، الإضاءة كويسة، والمبلغ '
-                'الأخير ظاهر في الصورة.',
+          ScanStage.unreadable => _Retry(
+            title: context.l10n.scanReceiptUnreadableTitle,
+            message: context.l10n.scanReceiptUnreadableHint,
             tone: ZadEmptyTone.waiting,
           ),
           ScanStage.failed => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               _Retry(
-                title: refusal?.title ?? 'مقدرتش أوصل للسيرفر',
+                title: refusal?.title ?? context.l10n.scanServerUnreachable,
                 message:
-                    refusal?.message ??
-                    'الصورة لسه معاك. جرب تاني لما النت يرجع.',
+                    refusal?.message ?? context.l10n.scanServerUnreachableHint,
                 tone: refusal != null
                     ? ZadEmptyTone.waiting
                     : ZadEmptyTone.problem,
@@ -127,31 +124,30 @@ class _Pick extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('صوّر الفاتورة', style: ZadType.titleMedium),
+        Text(context.l10n.scanPickTitle, style: ZadType.titleMedium),
         const SizedBox(height: ZadSpacing.sm),
         Text(
-          'هقرا المحل والمبلغ والأصناف، وأوريهملك تتأكد منهم قبل ما أسجّل '
-          'أي حاجة.',
+          context.l10n.scanPickHint,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.xl),
         FilledButton.icon(
           onPressed: () => controller.scan(ReceiptImageSource.camera),
           icon: const Icon(ZadIcons.scan),
-          label: const Text('افتح الكاميرا'),
+          label: Text(context.l10n.scanOpenCamera),
         ),
         const SizedBox(height: ZadSpacing.md),
         OutlinedButton.icon(
           onPressed: () => controller.scan(ReceiptImageSource.gallery),
           icon: const Icon(ZadIcons.inventory),
-          label: const Text('اختار من الصور'),
+          label: Text(context.l10n.scanPickFromGallery),
         ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
           // Said here because it is the non-obvious half: the same reader
           // handles a screenshot of a bank notification, and offers to make it
           // the budget rather than an expense.
-          'تقدر كمان تختار صورة إشعار رصيد أو راتب، وهعرض عليك تخليه ميزانيتك.',
+          context.l10n.scanPickBalanceHint,
           style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
         ),
       ],
@@ -170,7 +166,7 @@ class _Working extends StatelessWidget {
       const CircularProgressIndicator(),
       const SizedBox(height: ZadSpacing.lg),
       Text(
-        'بقرا الفاتورة…',
+        context.l10n.scanReadingReceipt,
         style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
       ),
       const SizedBox(height: ZadSpacing.xl),
@@ -212,7 +208,7 @@ class _Retry extends ConsumerWidget {
           onPressed: () => ref
               .read(scanControllerProvider.notifier)
               .scan(ReceiptImageSource.camera),
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
       ],
     );
@@ -248,23 +244,25 @@ class _ReadingState extends ConsumerState<_Reading> {
     final view = ref.watch(scanControllerProvider);
     final controller = ref.read(scanControllerProvider.notifier);
     final busy = view.isSaving;
+    final l10n = context.l10n;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          receipt.type.isPurchase ? 'اتأكد من الفاتورة' : 'دي مش فاتورة شراء',
+          receipt.type.isPurchase
+              ? l10n.scanCheckReceipt
+              : l10n.scanNotAPurchase,
           style: ZadType.titleMedium,
         ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
           receipt.type.isPurchase
-              ? 'راجع المبلغ والفئة قبل ما تحفظ. لسه ماتسجّلش حاجة.'
+              ? l10n.scanCheckReceiptHint
               // The distinction that stops a salary notice being recorded as
               // spending — which is what the Kotlin screen does today.
-              : 'دي شكلها صورة رصيد أو راتب، مش حاجة اتصرفت. أقدر أخلي الرقم '
-                    'ده ميزانيتك بدل ما أسجّله مصروف.',
+              : l10n.scanNotAPurchaseHint,
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.lg),
@@ -275,9 +273,10 @@ class _ReadingState extends ConsumerState<_Reading> {
         ],
         if (receipt.type.isPurchase && receipt.purchasedOn != null) ...<Widget>[
           Text(
-            'تاريخ الفاتورة ${receipt.purchasedOn!.day}/'
-            '${receipt.purchasedOn!.month}/${receipt.purchasedOn!.year} — '
-            'هتتسجل على يومها وشهرها.',
+            l10n.scanReceiptDate(
+              '${receipt.purchasedOn!.day}/'
+              '${receipt.purchasedOn!.month}/${receipt.purchasedOn!.year}',
+            ),
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -289,7 +288,9 @@ class _ReadingState extends ConsumerState<_Reading> {
           textDirection: TextDirection.ltr,
           style: ZadType.figure(26),
           decoration: InputDecoration(
-            labelText: receipt.type.isPurchase ? 'المبلغ' : 'الرصيد',
+            labelText: receipt.type.isPurchase
+                ? l10n.scanAmount
+                : l10n.scanBalance,
           ),
           onChanged: (_) {
             setState(() {});
@@ -301,7 +302,7 @@ class _ReadingState extends ConsumerState<_Reading> {
         if (receipt.type.isPurchase) ...<Widget>[
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            'الفئة',
+            l10n.scanCategoryHeading,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.sm),
@@ -325,9 +326,7 @@ class _ReadingState extends ConsumerState<_Reading> {
 
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            receipt.paidWith == null
-                ? 'اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)'
-                : 'اتدفعت',
+            receipt.paidWith == null ? l10n.scanPaidHowUnknown : l10n.scanPaid,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.sm),
@@ -363,9 +362,11 @@ class _ReadingState extends ConsumerState<_Reading> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'المبلغ ده اتسجل من البنك'
-                      '${twin.bankName == null ? '' : ' (${twin.bankName})'}: '
-                      '${_plain(twin.amount)} — «${twin.title}»',
+                      l10n.scanBankTwin(
+                        twin.bankName == null ? '' : ' (${twin.bankName})',
+                        _plain(twin.amount),
+                        twin.title,
+                      ),
                       style: ZadType.bodyMedium,
                     ),
                     const SizedBox(height: ZadSpacing.sm),
@@ -373,14 +374,14 @@ class _ReadingState extends ConsumerState<_Reading> {
                       spacing: ZadSpacing.sm,
                       children: <Widget>[
                         ChoiceChip(
-                          label: const Text('نفس العملية'),
+                          label: Text(l10n.scanSamePayment),
                           selected: view.mergeWithBank,
                           onSelected: busy
                               ? null
                               : (_) => controller.setMergeWithBank(value: true),
                         ),
                         ChoiceChip(
-                          label: const Text('عملية تانية'),
+                          label: Text(l10n.scanOtherPayment),
                           selected: !view.mergeWithBank,
                           onSelected: busy
                               ? null
@@ -404,13 +405,13 @@ class _ReadingState extends ConsumerState<_Reading> {
                   ? null
                   : (v) => controller.setAddToPantry(value: v),
               title: Text(
-                'ضيف الأصناف للمخزن '
-                '(${receipt.items.length - view.excludedItems.length})',
+                l10n.scanAddItemsToPantry(
+                  receipt.items.length - view.excludedItems.length,
+                ),
                 style: ZadType.titleSmall,
               ),
               subtitle: Text(
-                'اللي موجود هتزيد كميته، واللي في قايمة المشتريات '
-                'هيتشال منها.',
+                l10n.scanAddItemsToPantryHint,
                 style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
               ),
             ),
@@ -440,15 +441,15 @@ class _ReadingState extends ConsumerState<_Reading> {
                   ? null
                   : (v) => controller.setAddToPharmacy(value: v),
               title: Text(
-                'ضيف الأدوية للصيدلية '
-                '(${receipt.items.length - view.excludedItems.length})',
+                l10n.scanAddMedicines(
+                  receipt.items.length - view.excludedItems.length,
+                ),
                 style: ZadType.titleSmall,
               ),
               subtitle: Text(
                 // Said because it is the one thing that surprises: the count
                 // is in what a dose takes, not in boxes.
-                'اللي عندك هيزيد رصيده بالحباية مش بالعلبة، والجديد هيتسجل. '
-                'دوس على العدد لو عايز تعدّله.',
+                l10n.scanAddMedicinesHint,
                 style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
               ),
             ),
@@ -477,7 +478,7 @@ class _ReadingState extends ConsumerState<_Reading> {
             Text(
               // Groceries go into the pantry and medicines into the
               // pharmacy; a restaurant bill's lines are meals.
-              'الأصناف اللي قريتها (${receipt.items.length}) — للمراجعة بس',
+              l10n.scanItemsReadOnly(receipt.items.length),
               style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -504,12 +505,12 @@ class _ReadingState extends ConsumerState<_Reading> {
                 ? const _ButtonSpinner()
                 : Text(switch (view) {
                     _ when view.excludedItems.length >= receipt.items.length =>
-                      'احفظ كمصروف',
+                      l10n.scanSaveExpense,
                     _ when view.offersPantry && view.addToPantry =>
-                      'احفظ وضيف للمخزن',
+                      l10n.scanSaveAndPantry,
                     _ when view.offersPharmacy && view.addToPharmacy =>
-                      'احفظ وضيف للصيدلية',
-                    _ => 'احفظ كمصروف',
+                      l10n.scanSaveAndPharmacy,
+                    _ => l10n.scanSaveExpense,
                   }),
           )
         else
@@ -517,12 +518,12 @@ class _ReadingState extends ConsumerState<_Reading> {
             onPressed: busy || _parsedTotal == null
                 ? null
                 : () => _save(controller.useAsMonthlyLimit),
-            child: busy ? const _ButtonSpinner() : const Text('خليها ميزانيتي'),
+            child: busy ? const _ButtonSpinner() : Text(l10n.scanMakeBudget),
           ),
         const SizedBox(height: ZadSpacing.sm),
         TextButton(
           onPressed: busy ? null : controller.reset,
-          child: const Text('صوّر تاني'),
+          child: Text(context.l10n.scanRetake),
         ),
       ],
     );
@@ -530,15 +531,16 @@ class _ReadingState extends ConsumerState<_Reading> {
 
   Future<void> _save(Future<bool> Function() write) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
     final saved = await write();
     if (!mounted) return;
     if (saved) {
       // Said on the screen underneath, which outlives this sheet.
       final after = ref.read(scanControllerProvider);
       final said = after.savedQueued
-          ? 'اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.'
-          : _intakeMessage(after.lastIntake) ??
-                _pharmacyMessage(after.lastPharmacyIntake);
+          ? l10n.scanSavedQueued
+          : receiptIntakeMessage(after.lastIntake, l10n) ??
+                receiptPharmacyMessage(after.lastPharmacyIntake, l10n);
       if (said != null) {
         messenger?.showSnackBar(SnackBar(content: Text(said)));
       }
@@ -546,34 +548,6 @@ class _ReadingState extends ConsumerState<_Reading> {
       await HapticFeedback.mediumImpact();
       if (mounted) Navigator.of(context).pop();
     }
-  }
-
-  /// What the pantry got, in one line — or that it got nothing.
-  static String? _intakeMessage(PantryIntakeResult? intake) {
-    if (intake == null) return null;
-    final parts = <String>[
-      if (intake.added > 0) '${intake.added} جديد',
-      if (intake.toppedUp > 0) '${intake.toppedUp} زادت كميته',
-      if (intake.ticked > 0) '${intake.ticked} اتشال من المشتريات',
-    ];
-    if (parts.isEmpty) return null;
-    return 'اتسجل المصروف — المخزن: ${parts.join('، ')}.';
-  }
-
-  /// What the pharmacy got, in one line — including what it did not.
-  static String? _pharmacyMessage(PharmacyIntakeResult? intake) {
-    if (intake == null) return null;
-    if (intake.failed) {
-      return 'المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.';
-    }
-    final parts = <String>[
-      if (intake.added > 0) '${intake.added} جديد',
-      if (intake.toppedUp > 0) '${intake.toppedUp} زاد رصيده',
-      if (intake.ticked > 0) '${intake.ticked} اتشال من المشتريات',
-      if (intake.uncounted > 0) '${intake.uncounted} من غير عدد مازادش',
-    ];
-    if (parts.isEmpty) return null;
-    return 'اتسجل المصروف — الصيدلية: ${parts.join('، ')}.';
   }
 
   /// Asks how many units a line adds, and keeps the answer.
@@ -627,8 +601,8 @@ class _MedicineRow extends StatelessWidget {
                   // Which medicine it adds to, so a wrong match can be
                   // unticked before it changes somebody's count.
                   switch (proposal.medicine) {
-                    final m? => 'يزيد: ${m.name}',
-                    null => 'جديد في الصيدلية',
+                    final m? => context.l10n.scanAddsTo(m.name),
+                    null => context.l10n.scanNewInPharmacy,
                   },
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -647,7 +621,7 @@ class _MedicineRow extends StatelessWidget {
             ),
             child: Text(
               needsCount
-                  ? 'كام ${proposal.unit}؟'
+                  ? context.l10n.scanHowMany(proposal.unit)
                   : '+${proposal.count} ${proposal.unit}',
             ),
           ),
@@ -691,13 +665,13 @@ class _CountDialogState extends State<_CountDialog> {
   Widget build(BuildContext context) {
     final p = widget.proposal;
     return AlertDialog(
-      title: Text('كام ${p.unit}؟', style: ZadType.titleMedium),
+      title: Text(context.l10n.scanHowMany(p.unit), style: ZadType.titleMedium),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            '${p.line.name} — عدد العلب × اللي في العلبة الواحدة.',
+            context.l10n.scanCountHint(p.line.name),
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -714,13 +688,13 @@ class _CountDialogState extends State<_CountDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _parsed == null
               ? null
               : () => Navigator.of(context).pop(_parsed),
-          child: const Text('تمام'),
+          child: Text(context.l10n.scanCountOk),
         ),
       ],
     );
@@ -777,6 +751,35 @@ class _ButtonSpinner extends StatelessWidget {
   );
 }
 
+/// What the pantry got, in one line — or null when it got nothing. In
+/// [l10n]'s language, Arabic by default.
+String? receiptIntakeMessage(PantryIntakeResult? intake, [ZadL10n? l10n]) {
+  if (intake == null) return null;
+  final t = l10n ?? zadL10nArabic;
+  final parts = <String>[
+    if (intake.added > 0) t.scanPartNew(intake.added),
+    if (intake.toppedUp > 0) t.scanPartToppedUp(intake.toppedUp),
+    if (intake.ticked > 0) t.scanPartTicked(intake.ticked),
+  ];
+  if (parts.isEmpty) return null;
+  return t.scanSavedPantry(parts.reduce(t.scanPartsJoin));
+}
+
+/// What the pharmacy got, in one line — including what it did not.
+String? receiptPharmacyMessage(PharmacyIntakeResult? intake, [ZadL10n? l10n]) {
+  if (intake == null) return null;
+  final t = l10n ?? zadL10nArabic;
+  if (intake.failed) return t.scanPharmacyPartial;
+  final parts = <String>[
+    if (intake.added > 0) t.scanPartNew(intake.added),
+    if (intake.toppedUp > 0) t.scanPartRestocked(intake.toppedUp),
+    if (intake.ticked > 0) t.scanPartTicked(intake.ticked),
+    if (intake.uncounted > 0) t.scanPartUncounted(intake.uncounted),
+  ];
+  if (parts.isEmpty) return null;
+  return t.scanSavedPharmacy(parts.reduce(t.scanPartsJoin));
+}
+
 /// A figure with no grouping separators, for an editable field.
 String _plain(double value) {
   final rounded = value.asMoney;
@@ -790,7 +793,7 @@ String _plain(double value) {
 /// is the account's market's (InstaPay in Egypt, STC Pay in Saudi Arabia).
 List<(Wallet, String)> receiptWallets(ZadL10n l, String? country) =>
     <(Wallet, String)>[
-      (Wallet.card, 'فيزا / بطاقة'),
-      (Wallet.cash, 'كاش'),
+      (Wallet.card, l.scanWalletCard),
+      (Wallet.cash, l.scanWalletCash),
       (Wallet.bank, bankWalletLabel(l, country)),
     ];

@@ -54,6 +54,10 @@ const Set<String> _dataFiles = <String>{
   // A medicine's stored category and unit (zad_medicines), and the words a
   // receipt line is matched by: units, strengths, fees and totals.
   'shared/pharmacy/domain/pharmacy_intake.dart',
+  // The eleven stored transaction categories the server clamps a receipt to,
+  // the server's stored unit/category defaults, and the stored fallback
+  // title «فاتورة».
+  'shared/scan/domain/scanned_receipt.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';

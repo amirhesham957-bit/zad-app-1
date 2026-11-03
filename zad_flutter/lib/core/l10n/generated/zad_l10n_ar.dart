@@ -7195,4 +7195,612 @@ class ZadL10nAr extends ZadL10n {
   String orbPetMood(String name, String mood) {
     return '$name: $mood';
   }
+
+  @override
+  String scanSummaryAdded(int count) {
+    return '$count منتج جديد';
+  }
+
+  @override
+  String scanSummaryToppedUp(int count) {
+    return 'تحديث كمية $count';
+  }
+
+  @override
+  String scanSummaryTicked(int count) {
+    return 'شُطب $count من النواقص ✅';
+  }
+
+  @override
+  String get scanSummaryNone => 'لا تغييرات';
+
+  @override
+  String get scanQueuedOffline => 'الأصناف هتدخل المخزن أول ما النت يرجع';
+
+  @override
+  String get scanSheetTitle => 'زاد الذكي بالكاميرا';
+
+  @override
+  String get scanSheetPantry => 'مسح مخزون';
+
+  @override
+  String get scanSheetReceipt => 'مسح فاتورة';
+
+  @override
+  String get scanSheetPrescription => 'روشتة';
+
+  @override
+  String get scanSheetTimetable => 'جدول حصص';
+
+  @override
+  String get scanCameraIntro =>
+      'التقط صورة للثلاجة أو أكياس البقالة أو الفاتورة وسيستخرجها الذكاء الاصطناعي!';
+
+  @override
+  String get scanCameraBlocked =>
+      'صلاحية الكاميرا ممنوعة نهائياً — افتح الإعدادات وفعّلها عشان تقدر تصوّر';
+
+  @override
+  String get scanCameraDenied =>
+      'نحتاج صلاحية الكاميرا للمسح. يمكنك الإضافة يدوياً';
+
+  @override
+  String get scanCameraUnavailable =>
+      'تعذر فتح الكاميرا. ثبّت تطبيق كاميرا أو استخدم الإدخال اليدوي';
+
+  @override
+  String get scanAnalyzingPhoto => 'جاري تحليل الصورة بالذكاء الاصطناعي...';
+
+  @override
+  String scanRecognized(String name) {
+    return 'تم التعرف على: $name';
+  }
+
+  @override
+  String get scanMedicineUnreadable =>
+      'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح';
+
+  @override
+  String scanItemsFound(int count) {
+    return 'تم استخراج $count منتج! راجعها وأكّد';
+  }
+
+  @override
+  String get scanNoItems =>
+      'لم يتعرف AI على منتجات واضحة. جرب تصوير أقرب أو بإضاءة أفضل، أو أضفها يدوياً';
+
+  @override
+  String scanReceiptFound(String store) {
+    return 'تم استخراج فاتورة $store! راجعها وأكّد';
+  }
+
+  @override
+  String get scanReceiptUnreadable =>
+      'لم نتمكن من قراءة الفاتورة، يرجى المحاولة بصورة أوضح';
+
+  @override
+  String get scanAnalysisFailed => 'حدث خطأ أثناء التحليل. جرب مرة أخرى';
+
+  @override
+  String get scanAddCancelled => 'تم إلغاء الإضافة';
+
+  @override
+  String scanAddingItems(int count) {
+    return 'جاري حقن $count منتجات في المخزون...';
+  }
+
+  @override
+  String scanAddedSummary(String summary) {
+    return 'تم الحقن: $summary';
+  }
+
+  @override
+  String get scanReceiptErrorTitle => 'تعذّرت قراءة الفاتورة';
+
+  @override
+  String get scanReceiptErrorOk => 'حسناً';
+
+  @override
+  String get scanReceiptCancelled => 'تم إلغاء الفاتورة';
+
+  @override
+  String scanPharmacyReceiptSaved(String store, String total) {
+    return 'تم تسجيل فاتورة $store ($total) في الصيدلية!';
+  }
+
+  @override
+  String scanHouseholdReceiptSaved(String store, String total) {
+    return 'تم تسجيل فاتورة $store ($total) وتحديث المخزون!';
+  }
+
+  @override
+  String scanReceiptResult(String store, String summary) {
+    return 'فاتورة $store: $summary';
+  }
+
+  @override
+  String scanReceiptSaving(String store, String total) {
+    return 'تم تسجيل فاتورة $store بقيمة $total والمنتجات في المخزون!';
+  }
+
+  @override
+  String scanReceiptResultTotal(String store, String total, String summary) {
+    return 'فاتورة $store ($total): $summary';
+  }
+
+  @override
+  String scanManualAdded(int count) {
+    return 'تمت إضافة $count منتجات يدوياً!';
+  }
+
+  @override
+  String get scanScreenTitle => 'الماسح الذكي';
+
+  @override
+  String get scanCapturedPhoto => 'الصورة الملتقطة';
+
+  @override
+  String get scanPrompt => 'التقط صورة للمخزون أو الفاتورة';
+
+  @override
+  String get scanPromptHint => 'سيقوم AI باستخراج المنتجات تلقائياً';
+
+  @override
+  String get scanAnalyzing => 'جاري التحليل...';
+
+  @override
+  String get scanMedicineBox => 'مسح علبة دواء';
+
+  @override
+  String get scanPantryButton => 'مسح المخزون';
+
+  @override
+  String get scanReceiptButton => 'مسح الفاتورة';
+
+  @override
+  String get scanAddManually => 'إضافة منتجات يدوياً';
+
+  @override
+  String get scanOpenSettings => 'افتح إعدادات التطبيق';
+
+  @override
+  String get scanConfirmPantryTitle => 'تأكيد المخزون المستخرج';
+
+  @override
+  String get scanConfirmPantryHint =>
+      'تم استخراج المنتجات التالية. يمكنك مراجعتها قبل الحفظ:';
+
+  @override
+  String get scanAddToPantry => 'حقن في المخزون';
+
+  @override
+  String scanExpiry(String date) {
+    return 'تاريخ الانتهاء: $date';
+  }
+
+  @override
+  String get scanSaveToPharmacy => 'حفظ في الصيدلية';
+
+  @override
+  String get scanConfirmReceiptTitle => 'تأكيد الفاتورة المستخرجة';
+
+  @override
+  String get scanConfirmReceiptHint =>
+      'راجع المنتجات قبل التسجيل في المصروفات والمخزون:';
+
+  @override
+  String get scanReceiptTypeHint =>
+      'نوع الفاتورة (زاد صنّفها تلقائياً، وتقدر تغيّرها):';
+
+  @override
+  String scanReceiptType(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'pharmacy': 'صيدلية',
+      'grocery': 'سوبرماركت',
+      'other': 'مصاريف عامة',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get scanQtyDown => 'إنقاص الكمية';
+
+  @override
+  String get scanQtyUp => 'زيادة الكمية';
+
+  @override
+  String get scanSaveReceipt => 'تسجيل الفاتورة';
+
+  @override
+  String get scanAddAnother => 'إضافة منتج آخر';
+
+  @override
+  String scanSaveCount(int count) {
+    return 'حفظ ($count)';
+  }
+
+  @override
+  String get scanItemName => 'اسم المنتج';
+
+  @override
+  String get scanQuantity => 'الكمية';
+
+  @override
+  String get scanUnit => 'الوحدة';
+
+  @override
+  String get scanCategory => 'التصنيف';
+
+  @override
+  String get scanReceiptUnreadableTitle => 'مقدرتش أقرا الفاتورة';
+
+  @override
+  String get scanReceiptUnreadableHint =>
+      'جرب صورة أوضح — الورقة مفرودة، الإضاءة كويسة، والمبلغ الأخير ظاهر في الصورة.';
+
+  @override
+  String get scanServerUnreachable => 'مقدرتش أوصل للسيرفر';
+
+  @override
+  String get scanServerUnreachableHint =>
+      'الصورة لسه معاك. جرب تاني لما النت يرجع.';
+
+  @override
+  String get scanPickTitle => 'صوّر الفاتورة';
+
+  @override
+  String get scanPickHint =>
+      'هقرا المحل والمبلغ والأصناف، وأوريهملك تتأكد منهم قبل ما أسجّل أي حاجة.';
+
+  @override
+  String get scanOpenCamera => 'افتح الكاميرا';
+
+  @override
+  String get scanPickFromGallery => 'اختار من الصور';
+
+  @override
+  String get scanPickBalanceHint =>
+      'تقدر كمان تختار صورة إشعار رصيد أو راتب، وهعرض عليك تخليه ميزانيتك.';
+
+  @override
+  String get scanReadingReceipt => 'بقرا الفاتورة…';
+
+  @override
+  String get scanRetake => 'صوّر تاني';
+
+  @override
+  String get scanCheckReceipt => 'اتأكد من الفاتورة';
+
+  @override
+  String get scanNotAPurchase => 'دي مش فاتورة شراء';
+
+  @override
+  String get scanCheckReceiptHint =>
+      'راجع المبلغ والفئة قبل ما تحفظ. لسه ماتسجّلش حاجة.';
+
+  @override
+  String get scanNotAPurchaseHint =>
+      'دي شكلها صورة رصيد أو راتب، مش حاجة اتصرفت. أقدر أخلي الرقم ده ميزانيتك بدل ما أسجّله مصروف.';
+
+  @override
+  String scanReceiptDate(String date) {
+    return 'تاريخ الفاتورة $date — هتتسجل على يومها وشهرها.';
+  }
+
+  @override
+  String get scanAmount => 'المبلغ';
+
+  @override
+  String get scanBalance => 'الرصيد';
+
+  @override
+  String get scanCategoryHeading => 'الفئة';
+
+  @override
+  String get scanPaidHowUnknown => 'اتدفعت إزاي؟ (الفاتورة مش مكتوب عليها)';
+
+  @override
+  String get scanPaid => 'اتدفعت';
+
+  @override
+  String scanBankTwin(String bank, String amount, String title) {
+    return 'المبلغ ده اتسجل من البنك$bank: $amount — «$title»';
+  }
+
+  @override
+  String get scanSamePayment => 'نفس العملية';
+
+  @override
+  String get scanOtherPayment => 'عملية تانية';
+
+  @override
+  String scanAddItemsToPantry(int count) {
+    return 'ضيف الأصناف للمخزن ($count)';
+  }
+
+  @override
+  String get scanAddItemsToPantryHint =>
+      'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.';
+
+  @override
+  String scanAddMedicines(int count) {
+    return 'ضيف الأدوية للصيدلية ($count)';
+  }
+
+  @override
+  String get scanAddMedicinesHint =>
+      'اللي عندك هيزيد رصيده بالحباية مش بالعلبة، والجديد هيتسجل. دوس على العدد لو عايز تعدّله.';
+
+  @override
+  String scanItemsReadOnly(int count) {
+    return 'الأصناف اللي قريتها ($count) — للمراجعة بس';
+  }
+
+  @override
+  String get scanSaveExpense => 'احفظ كمصروف';
+
+  @override
+  String get scanSaveAndPantry => 'احفظ وضيف للمخزن';
+
+  @override
+  String get scanSaveAndPharmacy => 'احفظ وضيف للصيدلية';
+
+  @override
+  String get scanMakeBudget => 'خليها ميزانيتي';
+
+  @override
+  String get scanSavedQueued =>
+      'اتسجل المصروف، والأصناف هتدخل أول ما النت يرجع.';
+
+  @override
+  String scanPartNew(int count) {
+    return '$count جديد';
+  }
+
+  @override
+  String scanPartToppedUp(int count) {
+    return '$count زادت كميته';
+  }
+
+  @override
+  String scanPartTicked(int count) {
+    return '$count اتشال من المشتريات';
+  }
+
+  @override
+  String scanPartRestocked(int count) {
+    return '$count زاد رصيده';
+  }
+
+  @override
+  String scanPartUncounted(int count) {
+    return '$count من غير عدد مازادش';
+  }
+
+  @override
+  String scanPartsJoin(String a, String b) {
+    return '$a، $b';
+  }
+
+  @override
+  String scanSavedPantry(String parts) {
+    return 'اتسجل المصروف — المخزن: $parts.';
+  }
+
+  @override
+  String get scanPharmacyPartial =>
+      'المصروف اتسجل، بس مش كل الأدوية دخلت الصيدلية. راجعها من البيت.';
+
+  @override
+  String scanSavedPharmacy(String parts) {
+    return 'اتسجل المصروف — الصيدلية: $parts.';
+  }
+
+  @override
+  String scanAddsTo(String name) {
+    return 'يزيد: $name';
+  }
+
+  @override
+  String get scanNewInPharmacy => 'جديد في الصيدلية';
+
+  @override
+  String scanHowMany(String unit) {
+    return 'كام $unit؟';
+  }
+
+  @override
+  String scanCountHint(String name) {
+    return '$name — عدد العلب × اللي في العلبة الواحدة.';
+  }
+
+  @override
+  String get scanCountOk => 'تمام';
+
+  @override
+  String get scanWalletCard => 'فيزا / بطاقة';
+
+  @override
+  String get scanWalletCash => 'كاش';
+
+  @override
+  String get scanLineIllegible => 'مش واضحة في الصورة — صحّحها أو شيلها';
+
+  @override
+  String get scanLineAsNeeded => 'عند اللزوم — من غير مواعيد';
+
+  @override
+  String scanLineTimesPerDay(int count) {
+    return '$count مرات في اليوم';
+  }
+
+  @override
+  String scanLineForDays(int days) {
+    return 'لمدة $days يوم';
+  }
+
+  @override
+  String get scanTimesSeparator => '، ';
+
+  @override
+  String get scanLineNoTimes => 'المرات مش مكتوبة — حددها في الصيدلية';
+
+  @override
+  String get scanPrescriptionUnreadable => 'مقدرتش أقرا الروشتة';
+
+  @override
+  String get scanTimetableUnreadable => 'مقدرتش أقرا الجدول';
+
+  @override
+  String get scanPaperHint =>
+      'صوّر الورقة كلها قريب، من غير لمعة وفي إضاءة كويسة.';
+
+  @override
+  String get scanCouldNotFinish => 'مقدرتش أكمّل';
+
+  @override
+  String get scanCouldNotFinishHint => 'النت أو السيرفر — جرب تاني كمان شوية.';
+
+  @override
+  String get scanPrescriptionTitle => 'صوّر الروشتة';
+
+  @override
+  String get scanTimetableTitle => 'صوّر جدول الحصص';
+
+  @override
+  String get scanPrescriptionIntro =>
+      'هنقل الأدوية والجرعات زي ما هي مكتوبة، وتراجعها قبل ما تدخل الصيدلية بمواعيدها.';
+
+  @override
+  String get scanTimetableIntro =>
+      'هقرا الأيام والحصص، وتراجعها قبل ما أحفظها — وبالليل أفكّرك بشنطة بكرة.';
+
+  @override
+  String get scanReadingPaper => 'بقرا الورقة…';
+
+  @override
+  String get scanPickAnother => 'اختار صورة تانية';
+
+  @override
+  String scanFoundMedicines(int count) {
+    return 'لقيت $count دوا';
+  }
+
+  @override
+  String get scanPrescriptionCaution =>
+      'زاد بينقل اللي مكتوب في الروشتة بس — راجع الجرعات والمواعيد مع الصيدلي أو الدكتور.';
+
+  @override
+  String get scanPrescriptionFor => 'الروشتة لمين؟';
+
+  @override
+  String scanPrescriptionForNamed(String name) {
+    return 'مكتوب عليها: $name — فاضي = ليك';
+  }
+
+  @override
+  String get scanPrescriptionForYou => 'فاضي = ليك';
+
+  @override
+  String scanAddToPharmacyCount(int count) {
+    return 'ضيف للصيدلية ($count)';
+  }
+
+  @override
+  String scanMedicinesAdded(int count) {
+    return 'اتضاف $count دوا للصيدلية بمواعيدهم.';
+  }
+
+  @override
+  String get scanMedicinesNoneAdded =>
+      'مااتضافش حاجة — راجع الصيدلية وضيف بإيدك.';
+
+  @override
+  String scanTimetableDays(int count) {
+    return 'جدول $count أيام';
+  }
+
+  @override
+  String get scanTimetableFor => 'الجدول ده لمين؟';
+
+  @override
+  String scanTimetableClass(String name) {
+    return 'فصل $name';
+  }
+
+  @override
+  String get scanChildName => 'اسم الطفل';
+
+  @override
+  String get scanNameFirst => 'اكتب اسمه الأول';
+
+  @override
+  String scanSaveTimetable(String name) {
+    return 'احفظ جدول $name';
+  }
+
+  @override
+  String scanTimetableSaved(int count) {
+    return 'اتحفظ الجدول ($count حصة) — هفكّرك بشنطة بكرة بالليل.';
+  }
+
+  @override
+  String get scanTimetableNotSaved => 'مااتحفظش الجدول — جرب تاني.';
+
+  @override
+  String get scanNoPantryItems => 'مالقيتش أصناف في الصورة';
+
+  @override
+  String get scanBoxUnreadable => 'مقدرتش أقرا العلبة';
+
+  @override
+  String get scanPantryPhotoHint =>
+      'قرّب أكتر وخلّي الأصناف والكلام اللي عليها باين، والإضاءة كويسة.';
+
+  @override
+  String get scanBoxPhotoHint =>
+      'صوّر وش العلبة اللي عليه اسم الدواء، قريب ومن غير لمعة.';
+
+  @override
+  String get scanTryWhenOnline => 'جرب تاني لما النت يرجع.';
+
+  @override
+  String get scanPantryTitle => 'صوّر المخزن';
+
+  @override
+  String get scanBoxTitle => 'صوّر علبة الدواء';
+
+  @override
+  String get scanPantryIntro =>
+      'الرف أو التلاجة أو شنطة المشتريات — هقرا الأصناف وكمياتها، وأوريهالك تختار منها قبل ما تدخل المخزن.';
+
+  @override
+  String get scanBoxIntro =>
+      'هقرا الاسم والعدد والجرعة والانتهاء، وأفتحلك فورم الإضافة متعبّي تراجعه قبل الحفظ.';
+
+  @override
+  String get scanReadingPhoto => 'بقرا الصورة…';
+
+  @override
+  String scanFoundItems(int count) {
+    return 'لقيت $count صنف';
+  }
+
+  @override
+  String get scanFoundItemsHint =>
+      'شيل علامة أي حاجة غلط. اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها.';
+
+  @override
+  String scanAddToPantryCount(int count) {
+    return 'ضيف للمخزن ($count)';
+  }
+
+  @override
+  String get scanPantryPartial =>
+      'الأصناف مادخلتش المخزن كلها — راجع المخزن وضيف الناقص بإيدك.';
+
+  @override
+  String scanPantryResult(String parts) {
+    return 'المخزن: $parts.';
+  }
 }
