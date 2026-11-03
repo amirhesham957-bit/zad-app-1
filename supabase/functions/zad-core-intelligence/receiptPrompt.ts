@@ -17,6 +17,10 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "or restaurant the order came from as shown; use the app's own name only when the app itself is the shop. " +
   "Delivery fees, service fees, tips, discounts and promo-code lines are NOT items — never list them in `items`; " +
   "`total` is still what was paid in the end. Never copy a promo code anywhere. " +
+  // ٤.١٠: رسوم التوصيل نفسها في حقل لوحده — هي اللي بتقارن «المشوار ولا التوصيل».
+  "`deliveryApp` is the delivery app's name when this is an order from one, else \"\". `deliveryFee` is the delivery " +
+  "fee alone as printed (not the service fee, not a tip, before any discount on it); 0 when there is none, it is free, " +
+  "or this is not an app order. " +
   "`total` is the final amount actually paid (after VAT and any discount), as a number with no currency symbol. " +
   "If a field is genuinely unreadable, leave it empty or 0 rather than guessing. " +
   // `category` used to be an open string, and an open string is an invitation to
@@ -48,4 +52,4 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "فودافون كاش/InstaPay/إنستاباي/Fawry/a mobile wallet; \"\" when the receipt does not say — " +
   "never guess. " +
   "Return ONLY a JSON object, no markdown and no commentary: " +
-  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
+  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"deliveryApp\":\"\",\"deliveryFee\":0,\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";

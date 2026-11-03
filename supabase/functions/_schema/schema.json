@@ -1518,6 +1518,17 @@
     "source",
     "store_key"
   ],
+  "zad_delivery_fees": [
+    "app",
+    "app_key",
+    "country",
+    "created_at",
+    "currency",
+    "fee",
+    "home_key",
+    "id",
+    "seen_on"
+  ],
   "zad_deal_seed_stores": [
     "active",
     "country",
