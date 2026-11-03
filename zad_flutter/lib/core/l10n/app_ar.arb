@@ -3153,5 +3153,133 @@
   "graphRetry": "جرّب تاني",
   "@graphRetry": {
     "description": "Memory graph: retry after a failed load."
+  },
+  "mapPerMonth": "{amount}/شهر",
+  "@mapPerMonth": {
+    "description": "Knowledge map: a subscription per month.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mapLeft": "فاضل {amount}",
+  "@mapLeft": {
+    "description": "Knowledge map: what is left of a debt or a medicine.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mapDomainBudget": "الميزانية",
+  "@mapDomainBudget": {
+    "description": "Knowledge map: the budget area."
+  },
+  "mapDomainObligations": "الالتزامات",
+  "@mapDomainObligations": {
+    "description": "Knowledge map: the obligations area."
+  },
+  "mapDomainSubscriptions": "الاشتراكات والأقساط",
+  "@mapDomainSubscriptions": {
+    "description": "Knowledge map: the subscriptions area."
+  },
+  "mapDomainDebts": "الديون",
+  "@mapDomainDebts": {
+    "description": "Knowledge map: the debts area."
+  },
+  "mapDomainPantry": "المخزون",
+  "@mapDomainPantry": {
+    "description": "Knowledge map: the pantry area."
+  },
+  "mapDomainShopping": "قائمة التسوق",
+  "@mapDomainShopping": {
+    "description": "Knowledge map: the shopping area."
+  },
+  "mapDomainPharmacy": "صيدلية العيلة",
+  "@mapDomainPharmacy": {
+    "description": "Knowledge map: the pharmacy area."
+  },
+  "mapDomainMaintenance": "الصيانة",
+  "@mapDomainMaintenance": {
+    "description": "Knowledge map: the maintenance area."
+  },
+  "mapAskAbout": "وضّحلي أكتر عن {label}",
+  "@mapAskAbout": {
+    "description": "Knowledge map: the question put in the chat box, which the customer sends.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNodeCount": "{count} عنصر متصل",
+  "@mapNodeCount": {
+    "description": "Knowledge map: how many nodes are on it.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapLegendComputed": "علاقة محسوبة فعليًا",
+  "@mapLegendComputed": {
+    "description": "Knowledge map legend: a solid line."
+  },
+  "mapLegendNotYet": "لسه برا الحساب",
+  "@mapLegendNotYet": {
+    "description": "Knowledge map legend: a dashed line."
+  },
+  "mapLegendLive": "فيه رؤية حية من زاد الآن",
+  "@mapLegendLive": {
+    "description": "Knowledge map legend: a highlighted area."
+  },
+  "mapZoomIn": "تكبير",
+  "@mapZoomIn": {
+    "description": "Knowledge map: control."
+  },
+  "mapZoomOut": "تصغير",
+  "@mapZoomOut": {
+    "description": "Knowledge map: control."
+  },
+  "mapReset": "إعادة ضبط",
+  "@mapReset": {
+    "description": "Knowledge map: control."
+  },
+  "mapReserved": "محجوز",
+  "@mapReserved": {
+    "description": "Knowledge map budget card: money already committed."
+  },
+  "mapAvailable": "متاح",
+  "@mapAvailable": {
+    "description": "Knowledge map budget card: money available."
+  },
+  "mapAskZad": "اسأل زاد",
+  "@mapAskZad": {
+    "description": "Knowledge map: ask Zad about an area."
+  },
+  "mapNothingHere": "لا يوجد عناصر هنا حالياً",
+  "@mapNothingHere": {
+    "description": "Knowledge map: an empty area."
+  },
+  "mapOpenScreen": "فتح الشاشة",
+  "@mapOpenScreen": {
+    "description": "Knowledge map: open the area's own screen."
+  },
+  "brainFamilySavingsPots": "صناديق التجميع",
+  "@brainFamilySavingsPots": {
+    "description": "Brain & family tab: opens the family savings pots."
+  },
+  "brainFamilyAchievements": "الإنجازات والرتب",
+  "@brainFamilyAchievements": {
+    "description": "Brain & family tab: opens achievements."
+  },
+  "brainFamilyTasbiha": "تسبيحة",
+  "@brainFamilyTasbiha": {
+    "description": "Brain & family tab: opens the tasbiha tree."
+  },
+  "brainFamilyFamily": "العائلة",
+  "@brainFamilyFamily": {
+    "description": "Brain & family tab: the family side."
   }
 }

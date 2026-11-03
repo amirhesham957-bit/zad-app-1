@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/data/knowledge_map_repository.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
@@ -31,7 +33,9 @@ MapInputs mapInputsFrom({
   required List<ShoppingItem> shopping,
   required List<Medicine> medicines,
   required MapExtras extras,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final limit = budget != null && budget.limitConfirmed
       ? budget.openingBalance
       : null;
@@ -43,11 +47,11 @@ MapInputs mapInputsFrom({
     subscriptions: <MapLine>[
       for (final s in subscriptions)
         if (s.isActive)
-          MapLine(s.title, s.amount, detail: '${_n(s.amount)}/شهر'),
+          MapLine(s.title, s.amount, detail: l.mapPerMonth(_n(s.amount))),
     ],
     debts: <MapLine>[
       for (final d in extras.debts)
-        MapLine(d.name, d.amount, detail: 'فاضل ${_n(d.amount)}'),
+        MapLine(d.name, d.amount, detail: l.mapLeft(_n(d.amount))),
     ],
     lowPantry: <MapStock>[
       for (final i in pantry)
@@ -67,7 +71,7 @@ MapInputs mapInputsFrom({
         if (!m.isFinishedCourse && (m.isRunningOut || m.isOutOfStock))
           MapStock(
             m.name,
-            'فاضل ${m.remainingQuantity ?? 0} ${m.unit ?? ''}'.trim(),
+            l.mapLeft('${m.remainingQuantity ?? 0} ${m.unit ?? ''}'.trim()),
           ),
     ],
     maintenance: extras.maintenance,
@@ -118,6 +122,7 @@ class KnowledgeMapController extends Notifier<KnowledgeMapView> {
       pantry: ref.read(inventoryRepositoryProvider).cached(),
       shopping: ref.read(shoppingListRepositoryProvider).cached(),
       medicines: ref.read(pharmacyRepositoryProvider).cached(),
+      l10n: ref.read(zadL10nProvider),
       extras: extras,
     ),
   );

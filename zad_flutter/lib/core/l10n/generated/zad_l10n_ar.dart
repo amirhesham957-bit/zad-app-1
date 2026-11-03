@@ -3455,4 +3455,93 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get graphRetry => 'جرّب تاني';
+
+  @override
+  String mapPerMonth(String amount) {
+    return '$amount/شهر';
+  }
+
+  @override
+  String mapLeft(String amount) {
+    return 'فاضل $amount';
+  }
+
+  @override
+  String get mapDomainBudget => 'الميزانية';
+
+  @override
+  String get mapDomainObligations => 'الالتزامات';
+
+  @override
+  String get mapDomainSubscriptions => 'الاشتراكات والأقساط';
+
+  @override
+  String get mapDomainDebts => 'الديون';
+
+  @override
+  String get mapDomainPantry => 'المخزون';
+
+  @override
+  String get mapDomainShopping => 'قائمة التسوق';
+
+  @override
+  String get mapDomainPharmacy => 'صيدلية العيلة';
+
+  @override
+  String get mapDomainMaintenance => 'الصيانة';
+
+  @override
+  String mapAskAbout(String label) {
+    return 'وضّحلي أكتر عن $label';
+  }
+
+  @override
+  String mapNodeCount(int count) {
+    return '$count عنصر متصل';
+  }
+
+  @override
+  String get mapLegendComputed => 'علاقة محسوبة فعليًا';
+
+  @override
+  String get mapLegendNotYet => 'لسه برا الحساب';
+
+  @override
+  String get mapLegendLive => 'فيه رؤية حية من زاد الآن';
+
+  @override
+  String get mapZoomIn => 'تكبير';
+
+  @override
+  String get mapZoomOut => 'تصغير';
+
+  @override
+  String get mapReset => 'إعادة ضبط';
+
+  @override
+  String get mapReserved => 'محجوز';
+
+  @override
+  String get mapAvailable => 'متاح';
+
+  @override
+  String get mapAskZad => 'اسأل زاد';
+
+  @override
+  String get mapNothingHere => 'لا يوجد عناصر هنا حالياً';
+
+  @override
+  String get mapOpenScreen => 'فتح الشاشة';
+
+  @override
+  String get brainFamilySavingsPots => 'صناديق التجميع';
+
+  @override
+  String get brainFamilyAchievements => 'الإنجازات والرتب';
+
+  @override
+  String get brainFamilyTasbiha => 'تسبيحة';
+
+  @override
+  String get brainFamilyFamily => 'العائلة';
 }

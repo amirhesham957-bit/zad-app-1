@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -63,37 +64,38 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
   @override
   Widget build(BuildContext context) {
     final intelligence = _tab == BrainFamilyTab.intelligence;
+    final l = context.l10n;
     final side = intelligence
         ? <Widget>[
-            _side(
-              Icons.psychology,
-              'زاد عارف عني إيه',
-              ZadScreens.showMemoryScreen,
-            ),
-            _side(Icons.hub, 'خريطة زاد', ZadScreens.showKnowledgeMap),
+            _side(Icons.psychology, l.memoryTitle, ZadScreens.showMemoryScreen),
+            _side(Icons.hub, l.brainMapTitle, ZadScreens.showKnowledgeMap),
             _side(
               Icons.history,
-              'سجل تعديلات زاد',
+              l.actionLogTitle,
               ZadScreens.showAgentActionLog,
             ),
             _side(
               Icons.monitor_heart,
-              'صحة عقل زاد',
+              l.brainHealthTitle,
               ZadScreens.showBrainHealth,
             ),
           ]
         : <Widget>[
             _side(
               ZadIcons.savings,
-              'صناديق التجميع',
+              l.brainFamilySavingsPots,
               ZadScreens.showFamilySavingsScreen,
             ),
             _side(
               ZadIcons.leaderboard,
-              'الإنجازات والرتب',
+              l.brainFamilyAchievements,
               ZadScreens.showAchievementsScreen,
             ),
-            _side(ZadIcons.tree, 'تسبيحة', ZadScreens.showTasbihaScreen),
+            _side(
+              ZadIcons.tree,
+              l.brainFamilyTasbiha,
+              ZadScreens.showTasbihaScreen,
+            ),
           ];
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
@@ -102,7 +104,9 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
         appBar: widget.embedded
             ? null
             : AppBar(
-                title: Text(intelligence ? 'عقل زاد' : 'العائلة'),
+                title: Text(
+                  intelligence ? l.brainHubTitle : l.brainFamilyFamily,
+                ),
                 actions: side,
               ),
         body: Column(
@@ -116,16 +120,16 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
                 width: double.infinity,
                 child: SegmentedButton<BrainFamilyTab>(
                   showSelectedIcon: false,
-                  segments: const <ButtonSegment<BrainFamilyTab>>[
+                  segments: <ButtonSegment<BrainFamilyTab>>[
                     ButtonSegment<BrainFamilyTab>(
                       value: BrainFamilyTab.intelligence,
-                      icon: Icon(ZadIcons.brain, size: 18),
-                      label: Text('عقل زاد'),
+                      icon: const Icon(ZadIcons.brain, size: 18),
+                      label: Text(l.brainHubTitle),
                     ),
                     ButtonSegment<BrainFamilyTab>(
                       value: BrainFamilyTab.family,
-                      icon: Icon(ZadIcons.family, size: 18),
-                      label: Text('العائلة'),
+                      icon: const Icon(ZadIcons.family, size: 18),
+                      label: Text(l.brainFamilyFamily),
                     ),
                   ],
                   selected: <BrainFamilyTab>{_tab},

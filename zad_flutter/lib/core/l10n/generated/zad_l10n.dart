@@ -6204,6 +6204,168 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جرّب تاني'**
   String get graphRetry;
+
+  /// Knowledge map: a subscription per month.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount}/شهر'**
+  String mapPerMonth(String amount);
+
+  /// Knowledge map: what is left of a debt or a medicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {amount}'**
+  String mapLeft(String amount);
+
+  /// Knowledge map: the budget area.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية'**
+  String get mapDomainBudget;
+
+  /// Knowledge map: the obligations area.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزامات'**
+  String get mapDomainObligations;
+
+  /// Knowledge map: the subscriptions area.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراكات والأقساط'**
+  String get mapDomainSubscriptions;
+
+  /// Knowledge map: the debts area.
+  ///
+  /// In ar, this message translates to:
+  /// **'الديون'**
+  String get mapDomainDebts;
+
+  /// Knowledge map: the pantry area.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get mapDomainPantry;
+
+  /// Knowledge map: the shopping area.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة التسوق'**
+  String get mapDomainShopping;
+
+  /// Knowledge map: the pharmacy area.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيدلية العيلة'**
+  String get mapDomainPharmacy;
+
+  /// Knowledge map: the maintenance area.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة'**
+  String get mapDomainMaintenance;
+
+  /// Knowledge map: the question put in the chat box, which the customer sends.
+  ///
+  /// In ar, this message translates to:
+  /// **'وضّحلي أكتر عن {label}'**
+  String mapAskAbout(String label);
+
+  /// Knowledge map: how many nodes are on it.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} عنصر متصل'**
+  String mapNodeCount(int count);
+
+  /// Knowledge map legend: a solid line.
+  ///
+  /// In ar, this message translates to:
+  /// **'علاقة محسوبة فعليًا'**
+  String get mapLegendComputed;
+
+  /// Knowledge map legend: a dashed line.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه برا الحساب'**
+  String get mapLegendNotYet;
+
+  /// Knowledge map legend: a highlighted area.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه رؤية حية من زاد الآن'**
+  String get mapLegendLive;
+
+  /// Knowledge map: control.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكبير'**
+  String get mapZoomIn;
+
+  /// Knowledge map: control.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصغير'**
+  String get mapZoomOut;
+
+  /// Knowledge map: control.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة ضبط'**
+  String get mapReset;
+
+  /// Knowledge map budget card: money already committed.
+  ///
+  /// In ar, this message translates to:
+  /// **'محجوز'**
+  String get mapReserved;
+
+  /// Knowledge map budget card: money available.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح'**
+  String get mapAvailable;
+
+  /// Knowledge map: ask Zad about an area.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل زاد'**
+  String get mapAskZad;
+
+  /// Knowledge map: an empty area.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد عناصر هنا حالياً'**
+  String get mapNothingHere;
+
+  /// Knowledge map: open the area's own screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الشاشة'**
+  String get mapOpenScreen;
+
+  /// Brain & family tab: opens the family savings pots.
+  ///
+  /// In ar, this message translates to:
+  /// **'صناديق التجميع'**
+  String get brainFamilySavingsPots;
+
+  /// Brain & family tab: opens achievements.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات والرتب'**
+  String get brainFamilyAchievements;
+
+  /// Brain & family tab: opens the tasbiha tree.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get brainFamilyTasbiha;
+
+  /// Brain & family tab: the family side.
+  ///
+  /// In ar, this message translates to:
+  /// **'العائلة'**
+  String get brainFamilyFamily;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -22,6 +22,7 @@ import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -51,16 +52,19 @@ Future<void> showKnowledgeMap(BuildContext context) => Navigator.of(context)
     );
 
 /// Kotlin's domain labels.
-String mapDomainLabel(MapDomainKey key) => switch (key) {
-  MapDomainKey.budget => 'الميزانية',
-  MapDomainKey.obligations => 'الالتزامات',
-  MapDomainKey.subscriptions => 'الاشتراكات والأقساط',
-  MapDomainKey.debts => 'الديون',
-  MapDomainKey.pantry => 'المخزون',
-  MapDomainKey.shopping => 'قائمة التسوق',
-  MapDomainKey.pharmacy => 'صيدلية العيلة',
-  MapDomainKey.maintenance => 'الصيانة',
-};
+String mapDomainLabel(MapDomainKey key, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (key) {
+    MapDomainKey.budget => l.mapDomainBudget,
+    MapDomainKey.obligations => l.mapDomainObligations,
+    MapDomainKey.subscriptions => l.mapDomainSubscriptions,
+    MapDomainKey.debts => l.mapDomainDebts,
+    MapDomainKey.pantry => l.mapDomainPantry,
+    MapDomainKey.shopping => l.mapDomainShopping,
+    MapDomainKey.pharmacy => l.mapDomainPharmacy,
+    MapDomainKey.maintenance => l.mapDomainMaintenance,
+  };
+}
 
 IconData _icon(MapDomainKey key) => switch (key) {
   MapDomainKey.budget => Icons.account_balance_wallet,
@@ -165,7 +169,9 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
   /// Kotlin's `askZadAbout`: the question in زاد's composer, the customer
   /// sends it.
   void _ask(String label) {
-    ref.read(chatPrefillProvider.notifier).offer('وضّحلي أكتر عن $label');
+    ref
+        .read(chatPrefillProvider.notifier)
+        .offer(context.l10n.mapAskAbout(label));
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
     );
@@ -232,8 +238,8 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                           Flexible(
                             child: Text(
                               selected == null
-                                  ? 'خريطة زاد'
-                                  : mapDomainLabel(selected.key),
+                                  ? context.l10n.brainMapTitle
+                                  : mapDomainLabel(selected.key, context.l10n),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: ZadType.titleMedium.copyWith(
@@ -277,7 +283,7 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                       Padding(
                         padding: const EdgeInsetsDirectional.only(start: 48),
                         child: Text(
-                          '${map.nodeCount} عنصر متصل',
+                          context.l10n.mapNodeCount(map.nodeCount),
                           style: ZadType.labelSmall.copyWith(
                             fontFamily: _mono,
                             color: _textDim,
@@ -313,13 +319,15 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                         key: const ValueKey<String>('budget'),
                         inputs: inputs,
                         currency: view.currency,
-                        onAsk: () => _ask(mapDomainLabel(MapDomainKey.budget)),
+                        onAsk: () => _ask(
+                          mapDomainLabel(MapDomainKey.budget, context.l10n),
+                        ),
                       ),
                       final d => _ItemRing(
                         key: ValueKey<MapDomainKey>(d.key),
                         domain: d,
                         onOpen: _opener(d.key),
-                        onAsk: () => _ask(mapDomainLabel(d.key)),
+                        onAsk: () => _ask(mapDomainLabel(d.key, context.l10n)),
                       ),
                     },
                   ),
@@ -330,20 +338,20 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                     spacing: 16,
                     runSpacing: 6,
                     children: <Widget>[
-                      const _LegendDot(
+                      _LegendDot(
                         color: _textDim,
                         dashed: false,
-                        label: 'علاقة محسوبة فعليًا',
+                        label: context.l10n.mapLegendComputed,
                       ),
-                      const _LegendDot(
+                      _LegendDot(
                         color: _textDim,
                         dashed: true,
-                        label: 'لسه برا الحساب',
+                        label: context.l10n.mapLegendNotYet,
                       ),
                       _LegendDot(
                         color: context.zadExt.primaryLight,
                         dashed: false,
-                        label: 'فيه رؤية حية من زاد الآن',
+                        label: context.l10n.mapLegendLive,
                       ),
                     ],
                   ),
@@ -784,7 +792,7 @@ class _DomainRingState extends State<_DomainRing> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    'زاد',
+                    context.l10n.agentSourceOther,
                     style: ZadType.titleSmall.copyWith(
                       fontFamily: _mono,
                       fontWeight: FontWeight.w900,
@@ -819,21 +827,21 @@ class _DomainRingState extends State<_DomainRing> {
             children: <Widget>[
               _RoundControl(
                 icon: Icons.add,
-                label: 'تكبير',
+                label: context.l10n.mapZoomIn,
                 color: _cyan,
                 onTap: () => setState(() => _zoom = math.min(_zoom * 1.2, 2.2)),
               ),
               const SizedBox(height: 8),
               _RoundControl(
                 icon: Icons.remove,
-                label: 'تصغير',
+                label: context.l10n.mapZoomOut,
                 color: _cyan,
                 onTap: () => setState(() => _zoom = math.max(_zoom / 1.2, 0.7)),
               ),
               const SizedBox(height: 8),
               _RoundControl(
                 icon: Icons.restart_alt,
-                label: 'إعادة ضبط',
+                label: context.l10n.mapReset,
                 color: _emerald,
                 onTap: () => setState(() {
                   _rotX = 14;
@@ -1089,7 +1097,7 @@ class _NodeCard extends StatelessWidget {
                     border: Border.all(color: c.withValues(alpha: 0.45)),
                   ),
                   child: Text(
-                    mapDomainLabel(d.key),
+                    mapDomainLabel(d.key, context.l10n),
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     style: ZadType.labelSmall.copyWith(
@@ -1233,10 +1241,13 @@ class _BudgetPanel extends StatelessWidget {
                 size: 40,
               ),
               const SizedBox(height: 12),
-              row('الميزانية', _money(inputs.limit ?? 0, currency)),
-              row('محجوز', _money(inputs.committed, currency)),
               row(
-                'متاح',
+                context.l10n.mapDomainBudget,
+                _money(inputs.limit ?? 0, currency),
+              ),
+              row(context.l10n.mapReserved, _money(inputs.committed, currency)),
+              row(
+                context.l10n.mapAvailable,
                 inputs.available == null
                     ? '—'
                     : _money(inputs.available!, currency),
@@ -1244,7 +1255,7 @@ class _BudgetPanel extends StatelessWidget {
               const SizedBox(height: 16),
               _ActionButton(
                 icon: Icons.chat,
-                label: 'اسأل زاد',
+                label: context.l10n.mapAskZad,
                 color: _banking,
                 onTap: onAsk,
               ),
@@ -1277,7 +1288,7 @@ class _ItemRing extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: KtEmptyState(
           icon: _icon(domain.key),
-          title: 'لا يوجد عناصر هنا حالياً',
+          title: context.l10n.mapNothingHere,
         ),
       );
     }
@@ -1304,7 +1315,7 @@ class _ItemRing extends StatelessWidget {
                 if (onOpen != null) ...<Widget>[
                   _ActionButton(
                     icon: Icons.open_in_new,
-                    label: 'فتح الشاشة',
+                    label: context.l10n.mapOpenScreen,
                     color: c,
                     onTap: onOpen!,
                   ),
@@ -1312,7 +1323,7 @@ class _ItemRing extends StatelessWidget {
                 ],
                 _ActionButton(
                   icon: Icons.chat,
-                  label: 'اسأل زاد',
+                  label: context.l10n.mapAskZad,
                   color: c,
                   onTap: onAsk,
                 ),

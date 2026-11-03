@@ -3527,4 +3527,93 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get graphRetry => 'Try again';
+
+  @override
+  String mapPerMonth(String amount) {
+    return '$amount/month';
+  }
+
+  @override
+  String mapLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String get mapDomainBudget => 'Budget';
+
+  @override
+  String get mapDomainObligations => 'Commitments';
+
+  @override
+  String get mapDomainSubscriptions => 'Subscriptions and instalments';
+
+  @override
+  String get mapDomainDebts => 'Debts';
+
+  @override
+  String get mapDomainPantry => 'Pantry';
+
+  @override
+  String get mapDomainShopping => 'Shopping list';
+
+  @override
+  String get mapDomainPharmacy => 'Family pharmacy';
+
+  @override
+  String get mapDomainMaintenance => 'Maintenance';
+
+  @override
+  String mapAskAbout(String label) {
+    return 'Tell me more about $label';
+  }
+
+  @override
+  String mapNodeCount(int count) {
+    return '$count connected items';
+  }
+
+  @override
+  String get mapLegendComputed => 'A link actually computed';
+
+  @override
+  String get mapLegendNotYet => 'Not counted yet';
+
+  @override
+  String get mapLegendLive => 'Zad has a live insight here now';
+
+  @override
+  String get mapZoomIn => 'Zoom in';
+
+  @override
+  String get mapZoomOut => 'Zoom out';
+
+  @override
+  String get mapReset => 'Reset';
+
+  @override
+  String get mapReserved => 'Reserved';
+
+  @override
+  String get mapAvailable => 'Available';
+
+  @override
+  String get mapAskZad => 'Ask Zad';
+
+  @override
+  String get mapNothingHere => 'Nothing here right now';
+
+  @override
+  String get mapOpenScreen => 'Open the screen';
+
+  @override
+  String get brainFamilySavingsPots => 'Savings pots';
+
+  @override
+  String get brainFamilyAchievements => 'Achievements and ranks';
+
+  @override
+  String get brainFamilyTasbiha => 'Tasbiha';
+
+  @override
+  String get brainFamilyFamily => 'Family';
 }
