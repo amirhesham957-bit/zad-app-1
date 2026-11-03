@@ -10229,6 +10229,390 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ضيفهم'**
   String get briefAddThem;
+
+  /// Occasion card (NewYear): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة جديدة سعيدة! 🎉'**
+  String get occasionNewYearTitle;
+
+  /// Occasion card (NewYear): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{تبي زاد يجهّز لك خطة أهدافك المالية لسنة {year} بضغطة وحدة؟} other{حابب زاد يجهّزلك خطة أهدافك المالية لسنة {year} بنقرة واحدة؟}}'**
+  String occasionNewYearQuestion(String dialect, int year);
+
+  /// Occasion card (NewYear): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّزها'**
+  String get occasionNewYearActionLabel;
+
+  /// Occasion card (NewYear): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّزلي خطة أهداف مالية لسنة {year} من أرقامي ومصاريفي الفعلية، واقترح عليا الأهداف أأكدها أنا.'**
+  String occasionNewYearPrompt(int year);
+
+  /// Occasion card (Ramadan): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمضان كريم 🌙'**
+  String get occasionRamadanTitle;
+
+  /// Occasion card (Ramadan): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{أجهّز لك قائمة مقاضي رمضان من الناقص في البيت؟} other{أجهّزلك قايمة مشتريات رمضان من اللي ناقص في البيت؟}}'**
+  String occasionRamadanQuestion(String dialect);
+
+  /// Occasion card (Ramadan): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز القايمة'**
+  String get occasionRamadanActionLabel;
+
+  /// Occasion card (Ramadan): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّزلي قايمة مشتريات رمضان من اللي ناقص في البيت فعلاً، وضيفها لقايمة التسوق في حدود الميزانية.'**
+  String get occasionRamadanPrompt;
+
+  /// Occasion card (EidFitr): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيد فطر سعيد! 🎈'**
+  String get occasionEidFitrTitle;
+
+  /// Occasion card (EidFitr): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{أسوي لك ميزانية العيد (عيدية ولبس وعزايم) من المتاح؟} other{أعملك ميزانية للعيد (عيدية ولبس وعزومات) من المتاح؟}}'**
+  String occasionEidFitrQuestion(String dialect);
+
+  /// Occasion card (EidFitr): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعملها'**
+  String get occasionEidFitrActionLabel;
+
+  /// Occasion card (EidFitr): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعملي ميزانية لعيد الفطر: عيدية ولبس وعزومات، من المتاح عندي من غير ما تعدّي الميزانية.'**
+  String get occasionEidFitrPrompt;
+
+  /// Occasion card (EidAdha): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيد أضحى مبارك! 🐑'**
+  String get occasionEidAdhaTitle;
+
+  /// Occasion card (EidAdha): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{أسوي لك ميزانية العيد من المتاح؟} other{أعملك ميزانية للعيد من المتاح؟}}'**
+  String occasionEidAdhaQuestion(String dialect);
+
+  /// Occasion card (EidAdha): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعملها'**
+  String get occasionEidAdhaActionLabel;
+
+  /// Occasion card (EidAdha): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعملي ميزانية لعيد الأضحى من المتاح عندي — العيدية والعزومات، والأضحية لو بنضحّي.'**
+  String get occasionEidAdhaPrompt;
+
+  /// Occasion card (Hijri): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنة هجرية سعيدة 🌙'**
+  String get occasionHijriTitle;
+
+  /// Occasion card (Hijri): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{نراجع أهدافك ونشوف وين وصلت؟} other{نراجع أهدافك ونشوف ماشية إزاي؟}}'**
+  String occasionHijriQuestion(String dialect);
+
+  /// Occasion card (Hijri): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجعها'**
+  String get occasionHijriActionLabel;
+
+  /// Occasion card (Hijri): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع أهدافي وقولّي كل هدف ماشي إزاي، واقترح خطوة صغيرة للمتأخر.'**
+  String get occasionHijriPrompt;
+
+  /// Occasion card (MothersDay): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سنة وكل أم بخير 💐'**
+  String get occasionMothersDayTitle;
+
+  /// Occasion card (MothersDay): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{تبي أقترح لك هدية لعيد الأم في حدود الميزانية؟} other{تحب أقترح عليك هدية لعيد الأم جوه الميزانية؟}}'**
+  String occasionMothersDayQuestion(String dialect);
+
+  /// Occasion card (MothersDay): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح'**
+  String get occasionMothersDayActionLabel;
+
+  /// Occasion card (MothersDay): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح عليا هدية لعيد الأم جوه الميزانية.'**
+  String get occasionMothersDayPrompt;
+
+  /// Occasion card (AnnivToday): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سنة وإنتو طيبين 💍'**
+  String get occasionAnnivTodayTitle;
+
+  /// Occasion card (AnnivToday): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{تبي أقترح لكم طلعة الليلة في حدود الميزانية؟} other{أقترحلكم خروجة الليلة في حدود الميزانية؟}}'**
+  String occasionAnnivTodayQuestion(String dialect);
+
+  /// Occasion card (AnnivToday): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح'**
+  String get occasionAnnivTodayActionLabel;
+
+  /// Occasion card (AnnivToday): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده ذكرى جوازنا — اقترحلي خروجة الليلة في حدود ميزانيتي.'**
+  String get occasionAnnivTodayPrompt;
+
+  /// Occasion card (AnnivSoon): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكرى جوازكم بعد ٣ أيام 💍'**
+  String get occasionAnnivSoonTitle;
+
+  /// Occasion card (AnnivSoon): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{تبي أقترح لك هدية أو طلعة في حدود الميزانية؟} other{أقترحلك هدية أو خروجة في حدود الميزانية؟}}'**
+  String occasionAnnivSoonQuestion(String dialect);
+
+  /// Occasion card (AnnivSoon): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح'**
+  String get occasionAnnivSoonActionLabel;
+
+  /// Occasion card (AnnivSoon): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكرى جوازنا يوم {date}. اقترحلي هدية أو خروجة في حدود ميزانيتي.'**
+  String occasionAnnivSoonPrompt(String date);
+
+  /// Occasion card (PersonToday): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده {what} 🎂'**
+  String occasionPersonTodayTitle(String what);
+
+  /// Occasion card (PersonToday): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{أكتب لك رسالة تهنئة ترسلها؟} other{أكتبلك رسالة تهنئة حلوة تبعتها؟}}'**
+  String occasionPersonTodayQuestion(String dialect);
+
+  /// Occasion card (PersonToday): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتبها'**
+  String get occasionPersonTodayActionLabel;
+
+  /// Occasion card (PersonToday): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده {what} — اكتبلي رسالة تهنئة قصيرة ودافية أبعتها.'**
+  String occasionPersonTodayPrompt(String what);
+
+  /// Occasion card (PersonSoon): title. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{what} بعد ٣ أيام 🎁'**
+  String occasionPersonSoonTitle(String what);
+
+  /// Occasion card (PersonSoon): question. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{dialect, select, gulf{تبي أقترح لك هدية في حدود الميزانية وأحجز مبلغها؟} other{أقترحلك هدية في حدود الميزانية وأحجز مبلغها؟}}'**
+  String occasionPersonSoonQuestion(String dialect);
+
+  /// Occasion card (PersonSoon): actionLabel. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح هدية'**
+  String get occasionPersonSoonActionLabel;
+
+  /// Occasion card (PersonSoon): prompt. The prompt is sent to the chat as the customer's own message.
+  ///
+  /// In ar, this message translates to:
+  /// **'{what} يوم {date}. اقترحلي فكرتين هدية في حدود ميزانيتي، ولو وافقت احجز مبلغها كهدف لحد يومها.'**
+  String occasionPersonSoonPrompt(String what, String date);
+
+  /// Occasion card: whose birthday.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيد ميلاد {name}'**
+  String occasionBirthdayOf(String name);
+
+  /// Occasion card: whose anniversary.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكرى جواز {name}'**
+  String occasionAnniversaryOf(String name);
+
+  /// Daily brief: when, today.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده'**
+  String get briefToday;
+
+  /// Daily brief: when, tomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكرة'**
+  String get briefTomorrow;
+
+  /// Daily brief: when, in two days.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد بكرة'**
+  String get briefDayAfter;
+
+  /// Daily brief: when, in some days.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد {days} أيام'**
+  String briefInDays(int days);
+
+  /// Daily brief: a dose is due.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت جرعة {name}'**
+  String briefDoseDue(String name);
+
+  /// Daily brief: a dose is due.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعادها {time} — دوس «خدتها» لما تاخدها'**
+  String briefDoseDueDetail(String time);
+
+  /// Daily brief: missed doses.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{جرعة فاتت} other{{count} جرعات فاتوا}}'**
+  String briefDosesMissed(int count);
+
+  /// Daily brief: missed doses.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الصيدلية وسجّل اللي اتاخد'**
+  String get briefDosesMissedDetail;
+
+  /// Daily brief: over the available money.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت أكتر من المتاح بـ{amount}'**
+  String briefOverspent(String amount);
+
+  /// Daily brief: over the available money.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف فلوسي — زاد يقدر يقترح تقلل منين'**
+  String get briefOverspentDetail;
+
+  /// Daily brief: an instalment coming.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط {name} {when}'**
+  String briefInstalment(String name, String when);
+
+  /// Daily brief: how many more after the first three.
+  ///
+  /// In ar, this message translates to:
+  /// **' و{count} كمان'**
+  String briefAndMore(int count);
+
+  /// Daily brief: items that ran low.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك {items}'**
+  String briefShort(String items);
+
+  /// Daily brief: items that ran low.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح بيتي وضيفهم لقايمة التسوق'**
+  String get briefShortDetail;
+
+  /// Daily brief: an estimated run-out day.
+  ///
+  /// In ar, this message translates to:
+  /// **'{item} حوالي {when}'**
+  String briefAboutWhen(String item, String when);
+
+  /// Daily brief: items about to run out.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيخلص قريب: {items}'**
+  String briefRunningOut(String items);
+
+  /// Daily brief: run-out from an estimate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟'**
+  String get briefRunningOutEstimate;
+
+  /// Daily brief: run-out from the rate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من معدل استهلاكك — ضيفهم لقايمة التسوق؟'**
+  String get briefRunningOutRate;
+
+  /// Daily brief: items the family said are missing.
+  ///
+  /// In ar, this message translates to:
+  /// **'من شات العيلة: {items}'**
+  String briefFamilyChat(String items);
+
+  /// Daily brief: family needs, no name.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟'**
+  String get briefFamilySaid;
+
+  /// Daily brief: family needs, who said it.
+  ///
+  /// In ar, this message translates to:
+  /// **'{names} {count, plural, =1{قال} other{قالوا}} إنهم ناقصين — ضيفهم لقايمة التسوق؟'**
+  String briefFamilyWhoSaid(String names, int count);
+
+  /// Daily brief: joins two names.
+  ///
+  /// In ar, this message translates to:
+  /// **' و'**
+  String get briefAnd;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

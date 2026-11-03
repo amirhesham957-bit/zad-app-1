@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -51,6 +52,7 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
     familyNeeds: needs,
     rates: rates ?? const {},
     max: 1 << 20,
+    l10n: ref.watch(zadL10nProvider),
   );
 });
 

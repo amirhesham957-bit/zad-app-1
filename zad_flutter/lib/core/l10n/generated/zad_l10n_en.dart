@@ -5945,4 +5945,274 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get briefAddThem => 'Add them';
+
+  @override
+  String get occasionNewYearTitle => 'Happy New Year! 🎉';
+
+  @override
+  String occasionNewYearQuestion(String dialect, int year) {
+    return 'Want Zad to set up your money goals plan for $year in one tap?';
+  }
+
+  @override
+  String get occasionNewYearActionLabel => 'Set it up';
+
+  @override
+  String occasionNewYearPrompt(int year) {
+    return 'Make me a money goals plan for $year from my real numbers and spending, and suggest the goals for me to confirm.';
+  }
+
+  @override
+  String get occasionRamadanTitle => 'Ramadan Kareem 🌙';
+
+  @override
+  String occasionRamadanQuestion(String dialect) {
+    return 'Shall I make your Ramadan shopping list from what\'s missing at home?';
+  }
+
+  @override
+  String get occasionRamadanActionLabel => 'Make the list';
+
+  @override
+  String get occasionRamadanPrompt =>
+      'Make me a Ramadan shopping list from what\'s actually missing at home, and add it to the shopping list within the budget.';
+
+  @override
+  String get occasionEidFitrTitle => 'Happy Eid al-Fitr! 🎈';
+
+  @override
+  String occasionEidFitrQuestion(String dialect) {
+    return 'Shall I set an Eid budget (eidiya, clothes, gatherings) from what you have available?';
+  }
+
+  @override
+  String get occasionEidFitrActionLabel => 'Do it';
+
+  @override
+  String get occasionEidFitrPrompt =>
+      'Make me an Eid al-Fitr budget: eidiya, clothes and gatherings, from what I have available without going over the budget.';
+
+  @override
+  String get occasionEidAdhaTitle => 'Eid al-Adha Mubarak! 🐑';
+
+  @override
+  String occasionEidAdhaQuestion(String dialect) {
+    return 'Shall I set an Eid budget from what you have available?';
+  }
+
+  @override
+  String get occasionEidAdhaActionLabel => 'Do it';
+
+  @override
+  String get occasionEidAdhaPrompt =>
+      'Make me an Eid al-Adha budget from what I have available — eidiya and gatherings, and the sacrifice if we do one.';
+
+  @override
+  String get occasionHijriTitle => 'Happy Hijri New Year 🌙';
+
+  @override
+  String occasionHijriQuestion(String dialect) {
+    return 'Shall we review your goals and see how they\'re going?';
+  }
+
+  @override
+  String get occasionHijriActionLabel => 'Review them';
+
+  @override
+  String get occasionHijriPrompt =>
+      'Review my goals, tell me how each one is going, and suggest a small step for the ones behind.';
+
+  @override
+  String get occasionMothersDayTitle => 'Happy Mother\'s Day 💐';
+
+  @override
+  String occasionMothersDayQuestion(String dialect) {
+    return 'Want me to suggest a Mother\'s Day gift within the budget?';
+  }
+
+  @override
+  String get occasionMothersDayActionLabel => 'Suggest';
+
+  @override
+  String get occasionMothersDayPrompt =>
+      'Suggest a Mother\'s Day gift for me within the budget.';
+
+  @override
+  String get occasionAnnivTodayTitle => 'Happy anniversary 💍';
+
+  @override
+  String occasionAnnivTodayQuestion(String dialect) {
+    return 'Shall I suggest an outing tonight within the budget?';
+  }
+
+  @override
+  String get occasionAnnivTodayActionLabel => 'Suggest';
+
+  @override
+  String get occasionAnnivTodayPrompt =>
+      'Today is our wedding anniversary — suggest an outing tonight within my budget.';
+
+  @override
+  String get occasionAnnivSoonTitle => 'Your anniversary is in 3 days 💍';
+
+  @override
+  String occasionAnnivSoonQuestion(String dialect) {
+    return 'Shall I suggest a gift or an outing within the budget?';
+  }
+
+  @override
+  String get occasionAnnivSoonActionLabel => 'Suggest';
+
+  @override
+  String occasionAnnivSoonPrompt(String date) {
+    return 'Our wedding anniversary is on $date. Suggest a gift or an outing within my budget.';
+  }
+
+  @override
+  String occasionPersonTodayTitle(String what) {
+    return 'Today is $what 🎂';
+  }
+
+  @override
+  String occasionPersonTodayQuestion(String dialect) {
+    return 'Shall I write a congratulations message for you to send?';
+  }
+
+  @override
+  String get occasionPersonTodayActionLabel => 'Write it';
+
+  @override
+  String occasionPersonTodayPrompt(String what) {
+    return 'Today is $what — write me a short, warm congratulations message to send.';
+  }
+
+  @override
+  String occasionPersonSoonTitle(String what) {
+    return '$what is in 3 days 🎁';
+  }
+
+  @override
+  String occasionPersonSoonQuestion(String dialect) {
+    return 'Shall I suggest a gift within the budget and set aside its amount?';
+  }
+
+  @override
+  String get occasionPersonSoonActionLabel => 'Suggest a gift';
+
+  @override
+  String occasionPersonSoonPrompt(String what, String date) {
+    return '$what is on $date. Suggest two gift ideas within my budget, and if I agree, set the amount aside as a goal until the day.';
+  }
+
+  @override
+  String occasionBirthdayOf(String name) {
+    return '$name\'s birthday';
+  }
+
+  @override
+  String occasionAnniversaryOf(String name) {
+    return '$name\'s wedding anniversary';
+  }
+
+  @override
+  String get briefToday => 'today';
+
+  @override
+  String get briefTomorrow => 'tomorrow';
+
+  @override
+  String get briefDayAfter => 'the day after tomorrow';
+
+  @override
+  String briefInDays(int days) {
+    return 'in $days days';
+  }
+
+  @override
+  String briefDoseDue(String name) {
+    return 'Time for $name';
+  }
+
+  @override
+  String briefDoseDueDetail(String time) {
+    return 'Due at $time — tap “Took it” when you take it';
+  }
+
+  @override
+  String briefDosesMissed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count doses were missed',
+      one: 'A dose was missed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get briefDosesMissedDetail =>
+      'Open the pharmacy and log what was taken';
+
+  @override
+  String briefOverspent(String amount) {
+    return 'You spent $amount more than available';
+  }
+
+  @override
+  String get briefOverspentDetail =>
+      'See My money — Zad can suggest where to cut';
+
+  @override
+  String briefInstalment(String name, String when) {
+    return '$name instalment $when';
+  }
+
+  @override
+  String briefAndMore(int count) {
+    return ' and $count more';
+  }
+
+  @override
+  String briefShort(String items) {
+    return 'You\'re out of $items';
+  }
+
+  @override
+  String get briefShortDetail =>
+      'Open My home and add them to the shopping list';
+
+  @override
+  String briefAboutWhen(String item, String when) {
+    return '$item around $when';
+  }
+
+  @override
+  String briefRunningOut(String items) {
+    return 'Running out soon: $items';
+  }
+
+  @override
+  String get briefRunningOutEstimate =>
+      'An estimate from your use so far — add them to the shopping list?';
+
+  @override
+  String get briefRunningOutRate =>
+      'From your usage rate — add them to the shopping list?';
+
+  @override
+  String briefFamilyChat(String items) {
+    return 'From the family chat: $items';
+  }
+
+  @override
+  String get briefFamilySaid =>
+      'Someone said they\'re out — add them to the shopping list?';
+
+  @override
+  String briefFamilyWhoSaid(String names, int count) {
+    return '$names said they\'re out — add them to the shopping list?';
+  }
+
+  @override
+  String get briefAnd => ' and ';
 }

@@ -18,6 +18,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/application/quiet_mode.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
@@ -35,6 +36,7 @@ final occasionTodayProvider = Provider<Occasion?>((ref) {
   return occasionOn(
     DateTime(local.year, local.month, local.day),
     country: country,
+    l10n: ref.watch(zadL10nProvider),
   );
 });
 
@@ -51,6 +53,7 @@ final personalOccasionProvider = Provider<Occasion?>((ref) {
     DateTime(local.year, local.month, local.day),
     remembered,
     country: ref.watch(settingsRepositoryProvider).cached()?.country,
+    l10n: ref.watch(zadL10nProvider),
   );
 });
 

@@ -75,8 +75,6 @@
   "shared/auth/application/auth_controller.dart": 2,
   "shared/bank/domain/bank_notification.dart": 6,
   "shared/billing/data/play_billing.dart": 7,
-  "shared/brain/domain/daily_brief.dart": 27,
-  "shared/brain/domain/occasion.dart": 58,
   "shared/brain/presentation/daily_brief_lines.dart": 1,
   "shared/companion/domain/companion_catalog.dart": 45,
   "shared/companion/domain/companion_offers.dart": 25,

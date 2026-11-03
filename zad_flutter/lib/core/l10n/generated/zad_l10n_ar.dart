@@ -5806,4 +5806,315 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get briefAddThem => 'ضيفهم';
+
+  @override
+  String get occasionNewYearTitle => 'سنة جديدة سعيدة! 🎉';
+
+  @override
+  String occasionNewYearQuestion(String dialect, int year) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'تبي زاد يجهّز لك خطة أهدافك المالية لسنة $year بضغطة وحدة؟',
+      'other': 'حابب زاد يجهّزلك خطة أهدافك المالية لسنة $year بنقرة واحدة؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionNewYearActionLabel => 'جهّزها';
+
+  @override
+  String occasionNewYearPrompt(int year) {
+    return 'جهّزلي خطة أهداف مالية لسنة $year من أرقامي ومصاريفي الفعلية، واقترح عليا الأهداف أأكدها أنا.';
+  }
+
+  @override
+  String get occasionRamadanTitle => 'رمضان كريم 🌙';
+
+  @override
+  String occasionRamadanQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'أجهّز لك قائمة مقاضي رمضان من الناقص في البيت؟',
+      'other': 'أجهّزلك قايمة مشتريات رمضان من اللي ناقص في البيت؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionRamadanActionLabel => 'جهّز القايمة';
+
+  @override
+  String get occasionRamadanPrompt =>
+      'جهّزلي قايمة مشتريات رمضان من اللي ناقص في البيت فعلاً، وضيفها لقايمة التسوق في حدود الميزانية.';
+
+  @override
+  String get occasionEidFitrTitle => 'عيد فطر سعيد! 🎈';
+
+  @override
+  String occasionEidFitrQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'أسوي لك ميزانية العيد (عيدية ولبس وعزايم) من المتاح؟',
+      'other': 'أعملك ميزانية للعيد (عيدية ولبس وعزومات) من المتاح؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionEidFitrActionLabel => 'اعملها';
+
+  @override
+  String get occasionEidFitrPrompt =>
+      'اعملي ميزانية لعيد الفطر: عيدية ولبس وعزومات، من المتاح عندي من غير ما تعدّي الميزانية.';
+
+  @override
+  String get occasionEidAdhaTitle => 'عيد أضحى مبارك! 🐑';
+
+  @override
+  String occasionEidAdhaQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'أسوي لك ميزانية العيد من المتاح؟',
+      'other': 'أعملك ميزانية للعيد من المتاح؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionEidAdhaActionLabel => 'اعملها';
+
+  @override
+  String get occasionEidAdhaPrompt =>
+      'اعملي ميزانية لعيد الأضحى من المتاح عندي — العيدية والعزومات، والأضحية لو بنضحّي.';
+
+  @override
+  String get occasionHijriTitle => 'سنة هجرية سعيدة 🌙';
+
+  @override
+  String occasionHijriQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'نراجع أهدافك ونشوف وين وصلت؟',
+      'other': 'نراجع أهدافك ونشوف ماشية إزاي؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionHijriActionLabel => 'راجعها';
+
+  @override
+  String get occasionHijriPrompt =>
+      'راجع أهدافي وقولّي كل هدف ماشي إزاي، واقترح خطوة صغيرة للمتأخر.';
+
+  @override
+  String get occasionMothersDayTitle => 'كل سنة وكل أم بخير 💐';
+
+  @override
+  String occasionMothersDayQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'تبي أقترح لك هدية لعيد الأم في حدود الميزانية؟',
+      'other': 'تحب أقترح عليك هدية لعيد الأم جوه الميزانية؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionMothersDayActionLabel => 'اقترح';
+
+  @override
+  String get occasionMothersDayPrompt =>
+      'اقترح عليا هدية لعيد الأم جوه الميزانية.';
+
+  @override
+  String get occasionAnnivTodayTitle => 'كل سنة وإنتو طيبين 💍';
+
+  @override
+  String occasionAnnivTodayQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'تبي أقترح لكم طلعة الليلة في حدود الميزانية؟',
+      'other': 'أقترحلكم خروجة الليلة في حدود الميزانية؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionAnnivTodayActionLabel => 'اقترح';
+
+  @override
+  String get occasionAnnivTodayPrompt =>
+      'النهارده ذكرى جوازنا — اقترحلي خروجة الليلة في حدود ميزانيتي.';
+
+  @override
+  String get occasionAnnivSoonTitle => 'ذكرى جوازكم بعد ٣ أيام 💍';
+
+  @override
+  String occasionAnnivSoonQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'تبي أقترح لك هدية أو طلعة في حدود الميزانية؟',
+      'other': 'أقترحلك هدية أو خروجة في حدود الميزانية؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionAnnivSoonActionLabel => 'اقترح';
+
+  @override
+  String occasionAnnivSoonPrompt(String date) {
+    return 'ذكرى جوازنا يوم $date. اقترحلي هدية أو خروجة في حدود ميزانيتي.';
+  }
+
+  @override
+  String occasionPersonTodayTitle(String what) {
+    return 'النهارده $what 🎂';
+  }
+
+  @override
+  String occasionPersonTodayQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'أكتب لك رسالة تهنئة ترسلها؟',
+      'other': 'أكتبلك رسالة تهنئة حلوة تبعتها؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionPersonTodayActionLabel => 'اكتبها';
+
+  @override
+  String occasionPersonTodayPrompt(String what) {
+    return 'النهارده $what — اكتبلي رسالة تهنئة قصيرة ودافية أبعتها.';
+  }
+
+  @override
+  String occasionPersonSoonTitle(String what) {
+    return '$what بعد ٣ أيام 🎁';
+  }
+
+  @override
+  String occasionPersonSoonQuestion(String dialect) {
+    String _temp0 = intl.Intl.selectLogic(dialect, {
+      'gulf': 'تبي أقترح لك هدية في حدود الميزانية وأحجز مبلغها؟',
+      'other': 'أقترحلك هدية في حدود الميزانية وأحجز مبلغها؟',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get occasionPersonSoonActionLabel => 'اقترح هدية';
+
+  @override
+  String occasionPersonSoonPrompt(String what, String date) {
+    return '$what يوم $date. اقترحلي فكرتين هدية في حدود ميزانيتي، ولو وافقت احجز مبلغها كهدف لحد يومها.';
+  }
+
+  @override
+  String occasionBirthdayOf(String name) {
+    return 'عيد ميلاد $name';
+  }
+
+  @override
+  String occasionAnniversaryOf(String name) {
+    return 'ذكرى جواز $name';
+  }
+
+  @override
+  String get briefToday => 'النهارده';
+
+  @override
+  String get briefTomorrow => 'بكرة';
+
+  @override
+  String get briefDayAfter => 'بعد بكرة';
+
+  @override
+  String briefInDays(int days) {
+    return 'بعد $days أيام';
+  }
+
+  @override
+  String briefDoseDue(String name) {
+    return 'وقت جرعة $name';
+  }
+
+  @override
+  String briefDoseDueDetail(String time) {
+    return 'ميعادها $time — دوس «خدتها» لما تاخدها';
+  }
+
+  @override
+  String briefDosesMissed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جرعات فاتوا',
+      one: 'جرعة فاتت',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get briefDosesMissedDetail => 'افتح الصيدلية وسجّل اللي اتاخد';
+
+  @override
+  String briefOverspent(String amount) {
+    return 'صرفت أكتر من المتاح بـ$amount';
+  }
+
+  @override
+  String get briefOverspentDetail => 'شوف فلوسي — زاد يقدر يقترح تقلل منين';
+
+  @override
+  String briefInstalment(String name, String when) {
+    return 'قسط $name $when';
+  }
+
+  @override
+  String briefAndMore(int count) {
+    return ' و$count كمان';
+  }
+
+  @override
+  String briefShort(String items) {
+    return 'ناقصك $items';
+  }
+
+  @override
+  String get briefShortDetail => 'افتح بيتي وضيفهم لقايمة التسوق';
+
+  @override
+  String briefAboutWhen(String item, String when) {
+    return '$item حوالي $when';
+  }
+
+  @override
+  String briefRunningOut(String items) {
+    return 'هيخلص قريب: $items';
+  }
+
+  @override
+  String get briefRunningOutEstimate =>
+      'تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟';
+
+  @override
+  String get briefRunningOutRate => 'من معدل استهلاكك — ضيفهم لقايمة التسوق؟';
+
+  @override
+  String briefFamilyChat(String items) {
+    return 'من شات العيلة: $items';
+  }
+
+  @override
+  String get briefFamilySaid => 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟';
+
+  @override
+  String briefFamilyWhoSaid(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قالوا',
+      one: 'قال',
+    );
+    return '$names $_temp0 إنهم ناقصين — ضيفهم لقايمة التسوق؟';
+  }
+
+  @override
+  String get briefAnd => ' و';
 }

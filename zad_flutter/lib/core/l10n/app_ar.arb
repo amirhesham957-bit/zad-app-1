@@ -5365,5 +5365,426 @@
   "briefAddThem": "ضيفهم",
   "@briefAddThem": {
     "description": "Daily brief: add items to the list."
+  },
+  "occasionNewYearTitle": "سنة جديدة سعيدة! 🎉",
+  "@occasionNewYearTitle": {
+    "description": "Occasion card (NewYear): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionNewYearQuestion": "{dialect, select, gulf{تبي زاد يجهّز لك خطة أهدافك المالية لسنة {year} بضغطة وحدة؟} other{حابب زاد يجهّزلك خطة أهدافك المالية لسنة {year} بنقرة واحدة؟}}",
+  "@occasionNewYearQuestion": {
+    "description": "Occasion card (NewYear): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "occasionNewYearActionLabel": "جهّزها",
+  "@occasionNewYearActionLabel": {
+    "description": "Occasion card (NewYear): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionNewYearPrompt": "جهّزلي خطة أهداف مالية لسنة {year} من أرقامي ومصاريفي الفعلية، واقترح عليا الأهداف أأكدها أنا.",
+  "@occasionNewYearPrompt": {
+    "description": "Occasion card (NewYear): prompt. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "occasionRamadanTitle": "رمضان كريم 🌙",
+  "@occasionRamadanTitle": {
+    "description": "Occasion card (Ramadan): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionRamadanQuestion": "{dialect, select, gulf{أجهّز لك قائمة مقاضي رمضان من الناقص في البيت؟} other{أجهّزلك قايمة مشتريات رمضان من اللي ناقص في البيت؟}}",
+  "@occasionRamadanQuestion": {
+    "description": "Occasion card (Ramadan): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionRamadanActionLabel": "جهّز القايمة",
+  "@occasionRamadanActionLabel": {
+    "description": "Occasion card (Ramadan): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionRamadanPrompt": "جهّزلي قايمة مشتريات رمضان من اللي ناقص في البيت فعلاً، وضيفها لقايمة التسوق في حدود الميزانية.",
+  "@occasionRamadanPrompt": {
+    "description": "Occasion card (Ramadan): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidFitrTitle": "عيد فطر سعيد! 🎈",
+  "@occasionEidFitrTitle": {
+    "description": "Occasion card (EidFitr): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidFitrQuestion": "{dialect, select, gulf{أسوي لك ميزانية العيد (عيدية ولبس وعزايم) من المتاح؟} other{أعملك ميزانية للعيد (عيدية ولبس وعزومات) من المتاح؟}}",
+  "@occasionEidFitrQuestion": {
+    "description": "Occasion card (EidFitr): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionEidFitrActionLabel": "اعملها",
+  "@occasionEidFitrActionLabel": {
+    "description": "Occasion card (EidFitr): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidFitrPrompt": "اعملي ميزانية لعيد الفطر: عيدية ولبس وعزومات، من المتاح عندي من غير ما تعدّي الميزانية.",
+  "@occasionEidFitrPrompt": {
+    "description": "Occasion card (EidFitr): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidAdhaTitle": "عيد أضحى مبارك! 🐑",
+  "@occasionEidAdhaTitle": {
+    "description": "Occasion card (EidAdha): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidAdhaQuestion": "{dialect, select, gulf{أسوي لك ميزانية العيد من المتاح؟} other{أعملك ميزانية للعيد من المتاح؟}}",
+  "@occasionEidAdhaQuestion": {
+    "description": "Occasion card (EidAdha): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionEidAdhaActionLabel": "اعملها",
+  "@occasionEidAdhaActionLabel": {
+    "description": "Occasion card (EidAdha): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionEidAdhaPrompt": "اعملي ميزانية لعيد الأضحى من المتاح عندي — العيدية والعزومات، والأضحية لو بنضحّي.",
+  "@occasionEidAdhaPrompt": {
+    "description": "Occasion card (EidAdha): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionHijriTitle": "سنة هجرية سعيدة 🌙",
+  "@occasionHijriTitle": {
+    "description": "Occasion card (Hijri): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionHijriQuestion": "{dialect, select, gulf{نراجع أهدافك ونشوف وين وصلت؟} other{نراجع أهدافك ونشوف ماشية إزاي؟}}",
+  "@occasionHijriQuestion": {
+    "description": "Occasion card (Hijri): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionHijriActionLabel": "راجعها",
+  "@occasionHijriActionLabel": {
+    "description": "Occasion card (Hijri): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionHijriPrompt": "راجع أهدافي وقولّي كل هدف ماشي إزاي، واقترح خطوة صغيرة للمتأخر.",
+  "@occasionHijriPrompt": {
+    "description": "Occasion card (Hijri): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionMothersDayTitle": "كل سنة وكل أم بخير 💐",
+  "@occasionMothersDayTitle": {
+    "description": "Occasion card (MothersDay): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionMothersDayQuestion": "{dialect, select, gulf{تبي أقترح لك هدية لعيد الأم في حدود الميزانية؟} other{تحب أقترح عليك هدية لعيد الأم جوه الميزانية؟}}",
+  "@occasionMothersDayQuestion": {
+    "description": "Occasion card (MothersDay): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionMothersDayActionLabel": "اقترح",
+  "@occasionMothersDayActionLabel": {
+    "description": "Occasion card (MothersDay): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionMothersDayPrompt": "اقترح عليا هدية لعيد الأم جوه الميزانية.",
+  "@occasionMothersDayPrompt": {
+    "description": "Occasion card (MothersDay): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivTodayTitle": "كل سنة وإنتو طيبين 💍",
+  "@occasionAnnivTodayTitle": {
+    "description": "Occasion card (AnnivToday): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivTodayQuestion": "{dialect, select, gulf{تبي أقترح لكم طلعة الليلة في حدود الميزانية؟} other{أقترحلكم خروجة الليلة في حدود الميزانية؟}}",
+  "@occasionAnnivTodayQuestion": {
+    "description": "Occasion card (AnnivToday): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionAnnivTodayActionLabel": "اقترح",
+  "@occasionAnnivTodayActionLabel": {
+    "description": "Occasion card (AnnivToday): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivTodayPrompt": "النهارده ذكرى جوازنا — اقترحلي خروجة الليلة في حدود ميزانيتي.",
+  "@occasionAnnivTodayPrompt": {
+    "description": "Occasion card (AnnivToday): prompt. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivSoonTitle": "ذكرى جوازكم بعد ٣ أيام 💍",
+  "@occasionAnnivSoonTitle": {
+    "description": "Occasion card (AnnivSoon): title. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivSoonQuestion": "{dialect, select, gulf{تبي أقترح لك هدية أو طلعة في حدود الميزانية؟} other{أقترحلك هدية أو خروجة في حدود الميزانية؟}}",
+  "@occasionAnnivSoonQuestion": {
+    "description": "Occasion card (AnnivSoon): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionAnnivSoonActionLabel": "اقترح",
+  "@occasionAnnivSoonActionLabel": {
+    "description": "Occasion card (AnnivSoon): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionAnnivSoonPrompt": "ذكرى جوازنا يوم {date}. اقترحلي هدية أو خروجة في حدود ميزانيتي.",
+  "@occasionAnnivSoonPrompt": {
+    "description": "Occasion card (AnnivSoon): prompt. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonTodayTitle": "النهارده {what} 🎂",
+  "@occasionPersonTodayTitle": {
+    "description": "Occasion card (PersonToday): title. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonTodayQuestion": "{dialect, select, gulf{أكتب لك رسالة تهنئة ترسلها؟} other{أكتبلك رسالة تهنئة حلوة تبعتها؟}}",
+  "@occasionPersonTodayQuestion": {
+    "description": "Occasion card (PersonToday): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonTodayActionLabel": "اكتبها",
+  "@occasionPersonTodayActionLabel": {
+    "description": "Occasion card (PersonToday): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionPersonTodayPrompt": "النهارده {what} — اكتبلي رسالة تهنئة قصيرة ودافية أبعتها.",
+  "@occasionPersonTodayPrompt": {
+    "description": "Occasion card (PersonToday): prompt. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonSoonTitle": "{what} بعد ٣ أيام 🎁",
+  "@occasionPersonSoonTitle": {
+    "description": "Occasion card (PersonSoon): title. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonSoonQuestion": "{dialect, select, gulf{تبي أقترح لك هدية في حدود الميزانية وأحجز مبلغها؟} other{أقترحلك هدية في حدود الميزانية وأحجز مبلغها؟}}",
+  "@occasionPersonSoonQuestion": {
+    "description": "Occasion card (PersonSoon): question. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "dialect": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionPersonSoonActionLabel": "اقترح هدية",
+  "@occasionPersonSoonActionLabel": {
+    "description": "Occasion card (PersonSoon): actionLabel. The prompt is sent to the chat as the customer's own message."
+  },
+  "occasionPersonSoonPrompt": "{what} يوم {date}. اقترحلي فكرتين هدية في حدود ميزانيتي، ولو وافقت احجز مبلغها كهدف لحد يومها.",
+  "@occasionPersonSoonPrompt": {
+    "description": "Occasion card (PersonSoon): prompt. The prompt is sent to the chat as the customer's own message.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionBirthdayOf": "عيد ميلاد {name}",
+  "@occasionBirthdayOf": {
+    "description": "Occasion card: whose birthday.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "occasionAnniversaryOf": "ذكرى جواز {name}",
+  "@occasionAnniversaryOf": {
+    "description": "Occasion card: whose anniversary.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "briefToday": "النهارده",
+  "@briefToday": {
+    "description": "Daily brief: when, today."
+  },
+  "briefTomorrow": "بكرة",
+  "@briefTomorrow": {
+    "description": "Daily brief: when, tomorrow."
+  },
+  "briefDayAfter": "بعد بكرة",
+  "@briefDayAfter": {
+    "description": "Daily brief: when, in two days."
+  },
+  "briefInDays": "بعد {days} أيام",
+  "@briefInDays": {
+    "description": "Daily brief: when, in some days.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "briefDoseDue": "وقت جرعة {name}",
+  "@briefDoseDue": {
+    "description": "Daily brief: a dose is due.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "briefDoseDueDetail": "ميعادها {time} — دوس «خدتها» لما تاخدها",
+  "@briefDoseDueDetail": {
+    "description": "Daily brief: a dose is due.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "briefDosesMissed": "{count, plural, =1{جرعة فاتت} other{{count} جرعات فاتوا}}",
+  "@briefDosesMissed": {
+    "description": "Daily brief: missed doses.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "briefDosesMissedDetail": "افتح الصيدلية وسجّل اللي اتاخد",
+  "@briefDosesMissedDetail": {
+    "description": "Daily brief: missed doses."
+  },
+  "briefOverspent": "صرفت أكتر من المتاح بـ{amount}",
+  "@briefOverspent": {
+    "description": "Daily brief: over the available money.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "briefOverspentDetail": "شوف فلوسي — زاد يقدر يقترح تقلل منين",
+  "@briefOverspentDetail": {
+    "description": "Daily brief: over the available money."
+  },
+  "briefInstalment": "قسط {name} {when}",
+  "@briefInstalment": {
+    "description": "Daily brief: an instalment coming.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "briefAndMore": " و{count} كمان",
+  "@briefAndMore": {
+    "description": "Daily brief: how many more after the first three.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "briefShort": "ناقصك {items}",
+  "@briefShort": {
+    "description": "Daily brief: items that ran low.",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "briefShortDetail": "افتح بيتي وضيفهم لقايمة التسوق",
+  "@briefShortDetail": {
+    "description": "Daily brief: items that ran low."
+  },
+  "briefAboutWhen": "{item} حوالي {when}",
+  "@briefAboutWhen": {
+    "description": "Daily brief: an estimated run-out day.",
+    "placeholders": {
+      "item": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "briefRunningOut": "هيخلص قريب: {items}",
+  "@briefRunningOut": {
+    "description": "Daily brief: items about to run out.",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "briefRunningOutEstimate": "تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟",
+  "@briefRunningOutEstimate": {
+    "description": "Daily brief: run-out from an estimate."
+  },
+  "briefRunningOutRate": "من معدل استهلاكك — ضيفهم لقايمة التسوق؟",
+  "@briefRunningOutRate": {
+    "description": "Daily brief: run-out from the rate."
+  },
+  "briefFamilyChat": "من شات العيلة: {items}",
+  "@briefFamilyChat": {
+    "description": "Daily brief: items the family said are missing.",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "briefFamilySaid": "اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟",
+  "@briefFamilySaid": {
+    "description": "Daily brief: family needs, no name."
+  },
+  "briefFamilyWhoSaid": "{names} {count, plural, =1{قال} other{قالوا}} إنهم ناقصين — ضيفهم لقايمة التسوق؟",
+  "@briefFamilyWhoSaid": {
+    "description": "Daily brief: family needs, who said it.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "briefAnd": " و",
+  "@briefAnd": {
+    "description": "Daily brief: joins two names."
   }
 }
