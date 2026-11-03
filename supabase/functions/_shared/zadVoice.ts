@@ -168,6 +168,12 @@ export const GEMINI_TTS_CHAIN: readonly string[] = [
 export const CHAT_VOICE_REPLY_MOMENT = "chat_voice_reply";
 export const CHAT_VOICE_REPLIES_PER_DAY = 4;
 
+/**
+ * الترحيب الصوتي في تليجرام أول ما العميل يربط (طلب المالك ٣/١١): مرة واحدة للحساب طول العمر، بمفتاح
+ * `telegram_welcome` في zad_voice_moments (`sent` من الأول)، ومابيتعدّش في السقف — ده رد على ربط العميل نفسه.
+ */
+export const TELEGRAM_WELCOME_MOMENT = "telegram_welcome";
+
 export const ZAD_VOICE = "Aoede";
 export const DEFAULT_VOICE = ZAD_VOICE;
 /**
