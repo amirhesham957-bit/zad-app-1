@@ -1,4 +1,4 @@
-/// "صحة عقل زاد": the screen that makes a stalled proactive brain visible.
+/// l.brainHealthTitle: the screen that makes a stalled proactive brain visible.
 ///
 /// The verdict is `domain/brain_health.dart`'s; this only puts it into words.
 /// The raw server error is never shown — only its kind — and "quiet" reads as
@@ -28,51 +28,48 @@ Future<void> showBrainHealth(BuildContext context) => Navigator.of(context)
       MaterialPageRoute<void>(builder: (_) => const BrainHealthScreen()),
     );
 
-/// "3 ساعات", "ساعتين", "يوم واحد" — Arabic counts agree with the number.
-String arabicCount(int n, {required bool days}) {
-  if (days) {
-    return switch (n) {
-      1 => 'يوم واحد',
-      2 => 'يومين',
-      >= 3 && <= 10 => '$n أيام',
-      _ => '$n يوم',
-    };
-  }
-  return switch (n) {
-    1 => 'ساعة واحدة',
-    2 => 'ساعتين',
-    >= 3 && <= 10 => '$n ساعات',
-    _ => '$n ساعة',
-  };
+/// "3 ساعات", "ساعتين", "يوم واحد" — counts agree with the number (ICU
+/// plurals in the ARB; Arabic when [l10n] is absent).
+String arabicCount(int n, {required bool days, ZadL10n? l10n}) {
+  final l = l10n ?? zadL10nArabic;
+  return days ? l.brainHealthDays(n) : l.brainHealthHours(n);
 }
 
 /// How long since the last proactive message, in words.
-String durationSince(int? hours) {
-  if (hours == null) return 'ولا مرة';
-  if (hours < 1) return 'دلوقتي';
-  if (hours < 24) return arabicCount(hours, days: false);
-  return arabicCount(hours ~/ 24, days: true);
+String durationSince(int? hours, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  if (hours == null) return l.brainHealthNever;
+  if (hours < 1) return l.brainHealthJustNow;
+  if (hours < 24) return arabicCount(hours, days: false, l10n: l);
+  return arabicCount(hours ~/ 24, days: true, l10n: l);
 }
 
 /// What a reason says, with its figures.
-String reasonText(BrainHealthReason reason, BrainHealth h) => switch (reason) {
-  BrainHealthReason.noProactiveYet =>
-    'زاد لسه بيتعرف عليك، وهيبدأ يبعتلك تنبيهات استباقية بعد شوية استخدام',
-  BrainHealthReason.proactiveSilent =>
-    'زاد بطّل يبعت تنبيهات استباقية من '
-        '${durationSince(h.hoursSinceLastProactive)}',
-  BrainHealthReason.tasksBackedUp =>
-    'عدد المهام الواقفة أو المتأخرة: ${h.tasksBackedUp}',
-  BrainHealthReason.runsFailing =>
-    'عدد التشغيلات الفاشلة: ${h.failedRunsLast7Days} من ${h.runsLast7Days}',
-  BrainHealthReason.tasksFailed =>
-    'عدد المهام اللي فشلت: ${h.failedTasksLast7Days}',
-  BrainHealthReason.requestsNotRetried =>
-    'عدد الطلبات اللي ماتعادتش: ${h.queueRowsLast7Days}',
-  BrainHealthReason.chatQuotaNearLimit =>
-    'استخدام الشات قرب من الحد اليومي '
-        '(${(h.chatQuotaRatio * 100).floor()}%) — ممكن الردود تقف لحد بكرة',
-};
+String reasonText(BrainHealthReason reason, BrainHealth h, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (reason) {
+    BrainHealthReason.noProactiveYet => l.brainHealthReasonNoProactiveYet,
+    BrainHealthReason.proactiveSilent => l.brainHealthReasonProactiveSilent(
+      durationSince(h.hoursSinceLastProactive, l),
+    ),
+    BrainHealthReason.tasksBackedUp => l.brainHealthReasonTasksBackedUp(
+      h.tasksBackedUp,
+    ),
+    BrainHealthReason.runsFailing => l.brainHealthReasonRunsFailing(
+      h.failedRunsLast7Days,
+      h.runsLast7Days,
+    ),
+    BrainHealthReason.tasksFailed => l.brainHealthReasonTasksFailed(
+      h.failedTasksLast7Days,
+    ),
+    BrainHealthReason.requestsNotRetried => l.brainHealthReasonNotRetried(
+      h.queueRowsLast7Days,
+    ),
+    BrainHealthReason.chatQuotaNearLimit => l.brainHealthReasonQuotaNear(
+      (h.chatQuotaRatio * 100).floor(),
+    ),
+  };
+}
 
 Color _statusColor(BrainHealthStatus s) => switch (s) {
   BrainHealthStatus.healthy => ZadColors.green600,
@@ -90,10 +87,6 @@ class BrainHealthScreen extends ConsumerStatefulWidget {
 }
 
 class _BrainHealthScreenState extends ConsumerState<BrainHealthScreen> {
-  static const String _cannotSee =
-      'معرفتش أقرا حالة العقل دلوقتي. ده مش معناه إن كل حاجة تمام — معناه '
-      'إني مش شايف.';
-
   @override
   void initState() {
     super.initState();
@@ -111,7 +104,9 @@ class _BrainHealthScreenState extends ConsumerState<BrainHealthScreen> {
     if (!ok && sayFailure && mounted) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(_cannotSee)));
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.brainHealthCannotSee)),
+        );
     }
   }
 
@@ -119,17 +114,18 @@ class _BrainHealthScreenState extends ConsumerState<BrainHealthScreen> {
   Widget build(BuildContext context) {
     final view = ref.watch(brainHealthControllerProvider);
     final health = view.health;
+    final l = context.l10n;
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('صحة عقل زاد'),
+          title: Text(l.brainHealthTitle),
           actions: <Widget>[
             IconButton(
               onPressed: view.isLoading ? null : _refresh,
-              tooltip: 'حدّث',
+              tooltip: l.brainHealthRefresh,
               icon: view.isLoading && health != null
                   ? const SizedBox.square(
                       dimension: 20,
@@ -145,12 +141,12 @@ class _BrainHealthScreenState extends ConsumerState<BrainHealthScreen> {
           ),
           null => ZadEmptyState(
             icon: ZadIcons.failed,
-            title: 'مش شايف العقل دلوقتي',
-            message: _cannotSee,
+            title: l.brainHealthCannotSeeTitle,
+            message: l.brainHealthCannotSee,
             tone: ZadEmptyTone.problem,
             action: FilledButton(
               onPressed: _refresh,
-              child: const Text('جرب تاني'),
+              child: Text(l.brainHealthRetry),
             ),
           ),
           final BrainHealth h => _Body(health: h),
@@ -174,6 +170,7 @@ class _Body extends StatelessWidget {
         : h.chatQuotaRatio >= BrainHealthLimits.chatQuotaWarnRatio / 2
         ? ZadColors.mustardOchre
         : ZadColors.green600;
+    final l = context.l10n;
 
     return ListView(
       padding: const EdgeInsets.all(ZadSpacing.gutter),
@@ -181,45 +178,45 @@ class _Body extends StatelessWidget {
         _StatusBanner(health: h),
         const SizedBox(height: ZadSpacing.md),
         _Section(
-          title: 'النشاط',
+          title: l.brainHealthActivity,
           children: <Widget>[
             _Metric(
-              'آخر تنبيه استباقي',
-              durationSince(h.hoursSinceLastProactive),
+              l.brainHealthLastProactive,
+              durationSince(h.hoursSinceLastProactive, l),
             ),
-            _Metric('تشغيلات آخر ٧ أيام', '${h.runsLast7Days}'),
+            _Metric(l.brainHealthRuns7d, '${h.runsLast7Days}'),
             _Metric(
-              'منها فشلت',
+              l.brainHealthRunsFailed,
               '${h.failedRunsLast7Days}',
               alarming: h.failedRunsLast7Days > 0,
             ),
-            _Metric('رؤى آخر ٧ أيام', '${h.insightsLast7Days}'),
-            _Metric('رؤى لسه مشوفتهاش', '${h.pendingInsights}'),
+            _Metric(l.brainHealthInsights7d, '${h.insightsLast7Days}'),
+            _Metric(l.brainHealthInsightsUnseen, '${h.pendingInsights}'),
             if (h.lastFailureKind case final BrainFailureKind kind)
-              _Metric('نوع آخر عطل', switch (kind) {
-                BrainFailureKind.providerBusy => 'المزوّد مشغول',
-                BrainFailureKind.configuration => 'مشكلة إعداد',
-                BrainFailureKind.other => 'غير معروف',
+              _Metric(l.brainHealthLastFailure, switch (kind) {
+                BrainFailureKind.providerBusy => l.brainHealthFailureBusy,
+                BrainFailureKind.configuration => l.brainHealthFailureConfig,
+                BrainFailureKind.other => l.brainHealthFailureOther,
               }),
           ],
         ),
         const SizedBox(height: ZadSpacing.md),
         _Section(
-          title: 'المهام والطابور',
+          title: l.brainHealthTasks,
           children: <Widget>[
             _Metric(
-              'مهام واقفة أو متأخرة',
+              l.brainHealthTasksStuck,
               '${h.tasksBackedUp}',
               alarming: h.tasksBackedUp > 0,
             ),
-            _Metric('مهام مستنية دورها', '${h.pendingTasksCount}'),
+            _Metric(l.brainHealthTasksPending, '${h.pendingTasksCount}'),
             _Metric(
-              'مهام فشلت آخر ٧ أيام',
+              l.brainHealthTasksFailed7d,
               '${h.failedTasksLast7Days}',
               alarming: h.failedTasksLast7Days > 0,
             ),
             _Metric(
-              'طلبات ماتعادتش',
+              l.brainHealthNotRetried,
               '${h.queueRowsLast7Days}',
               alarming: h.queueRowsLast7Days > 0,
             ),
@@ -227,15 +224,15 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: ZadSpacing.md),
         _Section(
-          title: 'استخدام الشات',
+          title: l.brainHealthChatUse,
           children: <Widget>[
             _Metric(
-              'الطلبات',
-              '${h.requestsToday} من ${BrainHealthLimits.dailyRequests}',
+              l.brainHealthRequests,
+              l.brainHealthOf(h.requestsToday, BrainHealthLimits.dailyRequests),
             ),
             _Metric(
-              'حجم الردود',
-              '${h.tokensToday} من ${BrainHealthLimits.dailyTokens}',
+              l.brainHealthTokens,
+              l.brainHealthOf(h.tokensToday, BrainHealthLimits.dailyTokens),
             ),
             const SizedBox(height: ZadSpacing.md),
             ClipRRect(
@@ -249,19 +246,18 @@ class _Body extends StatelessWidget {
             ),
             const SizedBox(height: ZadSpacing.sm),
             Text(
-              'الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — '
-              'مالوش علاقة بشغل زاد في الخلفية',
+              l.brainHealthQuotaNote,
               style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
             ),
           ],
         ),
         const SizedBox(height: ZadSpacing.md),
         _Section(
-          title: 'التعلّم',
+          title: l.brainHealthLearning,
           children: <Widget>[
-            _Metric('أهداف زاد شغال عليها', '${h.activeGoals}'),
+            _Metric(l.brainHealthGoals, '${h.activeGoals}'),
             _Metric(
-              'تصرفات غير متوقعة من زاد آخر ٧ أيام',
+              l.brainHealthDrift,
               '${h.driftLast7Days}',
               alarming: h.driftLast7Days > 0,
             ),
@@ -378,10 +374,11 @@ class _StatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = health.status;
     final tint = _statusColor(status);
+    final l = context.l10n;
     final (icon, title) = switch (status) {
-      BrainHealthStatus.healthy => (ZadIcons.selected, 'العقل شغال تمام'),
-      BrainHealthStatus.quiet => (ZadIcons.failed, 'فيه حاجة تستاهل نظرة'),
-      BrainHealthStatus.stalled => (ZadIcons.failed, 'العقل واقف ومحتاج تدخّل'),
+      BrainHealthStatus.healthy => (ZadIcons.selected, l.brainHealthHealthy),
+      BrainHealthStatus.quiet => (ZadIcons.failed, l.brainHealthQuiet),
+      BrainHealthStatus.stalled => (ZadIcons.failed, l.brainHealthStalled),
     };
 
     return DecoratedBox(
@@ -405,7 +402,7 @@ class _StatusBanner extends StatelessWidget {
             const SizedBox(height: ZadSpacing.md),
             if (health.reasons.isEmpty)
               Text(
-                'مفيش أي مشكلة مرصودة. زاد بيشتغل في الخلفية وبيسجّل كل خطوة.',
+                l.brainHealthAllClear,
                 style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
               )
             else

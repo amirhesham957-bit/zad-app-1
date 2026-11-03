@@ -2731,5 +2731,228 @@
         "type": "String"
       }
     }
+  },
+  "brainHealthTitle": "صحة عقل زاد",
+  "@brainHealthTitle": {
+    "description": "Brain health: screen title."
+  },
+  "brainHealthRefresh": "حدّث",
+  "@brainHealthRefresh": {
+    "description": "Brain health: refresh button tooltip."
+  },
+  "brainHealthCannotSeeTitle": "مش شايف العقل دلوقتي",
+  "@brainHealthCannotSeeTitle": {
+    "description": "Brain health: empty state when the read failed."
+  },
+  "brainHealthRetry": "جرب تاني",
+  "@brainHealthRetry": {
+    "description": "Brain health: retry."
+  },
+  "brainHealthActivity": "النشاط",
+  "@brainHealthActivity": {
+    "description": "Brain health: section title."
+  },
+  "brainHealthLastProactive": "آخر تنبيه استباقي",
+  "@brainHealthLastProactive": {
+    "description": "Brain health metric."
+  },
+  "brainHealthRuns7d": "تشغيلات آخر ٧ أيام",
+  "@brainHealthRuns7d": {
+    "description": "Brain health metric."
+  },
+  "brainHealthRunsFailed": "منها فشلت",
+  "@brainHealthRunsFailed": {
+    "description": "Brain health metric."
+  },
+  "brainHealthInsights7d": "رؤى آخر ٧ أيام",
+  "@brainHealthInsights7d": {
+    "description": "Brain health metric."
+  },
+  "brainHealthInsightsUnseen": "رؤى لسه مشوفتهاش",
+  "@brainHealthInsightsUnseen": {
+    "description": "Brain health metric."
+  },
+  "brainHealthLastFailure": "نوع آخر عطل",
+  "@brainHealthLastFailure": {
+    "description": "Brain health metric."
+  },
+  "brainHealthFailureBusy": "المزوّد مشغول",
+  "@brainHealthFailureBusy": {
+    "description": "Brain health: failure kind."
+  },
+  "brainHealthFailureConfig": "مشكلة إعداد",
+  "@brainHealthFailureConfig": {
+    "description": "Brain health: failure kind."
+  },
+  "brainHealthFailureOther": "غير معروف",
+  "@brainHealthFailureOther": {
+    "description": "Brain health: failure kind."
+  },
+  "brainHealthTasks": "المهام والطابور",
+  "@brainHealthTasks": {
+    "description": "Brain health: section title."
+  },
+  "brainHealthTasksStuck": "مهام واقفة أو متأخرة",
+  "@brainHealthTasksStuck": {
+    "description": "Brain health metric."
+  },
+  "brainHealthTasksPending": "مهام مستنية دورها",
+  "@brainHealthTasksPending": {
+    "description": "Brain health metric."
+  },
+  "brainHealthTasksFailed7d": "مهام فشلت آخر ٧ أيام",
+  "@brainHealthTasksFailed7d": {
+    "description": "Brain health metric."
+  },
+  "brainHealthNotRetried": "طلبات ماتعادتش",
+  "@brainHealthNotRetried": {
+    "description": "Brain health metric."
+  },
+  "brainHealthChatUse": "استخدام الشات",
+  "@brainHealthChatUse": {
+    "description": "Brain health: section title."
+  },
+  "brainHealthRequests": "الطلبات",
+  "@brainHealthRequests": {
+    "description": "Brain health metric."
+  },
+  "brainHealthTokens": "حجم الردود",
+  "@brainHealthTokens": {
+    "description": "Brain health metric: tokens used today."
+  },
+  "brainHealthLearning": "التعلّم",
+  "@brainHealthLearning": {
+    "description": "Brain health: section title."
+  },
+  "brainHealthGoals": "أهداف زاد شغال عليها",
+  "@brainHealthGoals": {
+    "description": "Brain health metric."
+  },
+  "brainHealthDrift": "تصرفات غير متوقعة من زاد آخر ٧ أيام",
+  "@brainHealthDrift": {
+    "description": "Brain health metric."
+  },
+  "brainHealthHealthy": "العقل شغال تمام",
+  "@brainHealthHealthy": {
+    "description": "Brain health: status banner."
+  },
+  "brainHealthQuiet": "فيه حاجة تستاهل نظرة",
+  "@brainHealthQuiet": {
+    "description": "Brain health: status banner."
+  },
+  "brainHealthStalled": "العقل واقف ومحتاج تدخّل",
+  "@brainHealthStalled": {
+    "description": "Brain health: status banner."
+  },
+  "brainHealthAllClear": "مفيش أي مشكلة مرصودة. زاد بيشتغل في الخلفية وبيسجّل كل خطوة.",
+  "@brainHealthAllClear": {
+    "description": "Brain health: no reasons."
+  },
+  "brainHealthDays": "{count, plural, =1{يوم واحد} =2{يومين} few{{count} أيام} other{{count} يوم}}",
+  "@brainHealthDays": {
+    "description": "Brain health: a number of days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthHours": "{count, plural, =1{ساعة واحدة} =2{ساعتين} few{{count} ساعات} other{{count} ساعة}}",
+  "@brainHealthHours": {
+    "description": "Brain health: a number of hours.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthNever": "ولا مرة",
+  "@brainHealthNever": {
+    "description": "Brain health: no proactive message ever."
+  },
+  "brainHealthJustNow": "دلوقتي",
+  "@brainHealthJustNow": {
+    "description": "Brain health: less than an hour ago."
+  },
+  "brainHealthReasonNoProactiveYet": "زاد لسه بيتعرف عليك، وهيبدأ يبعتلك تنبيهات استباقية بعد شوية استخدام",
+  "@brainHealthReasonNoProactiveYet": {
+    "description": "Brain health reason."
+  },
+  "brainHealthReasonProactiveSilent": "زاد بطّل يبعت تنبيهات استباقية من {duration}",
+  "@brainHealthReasonProactiveSilent": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "brainHealthReasonTasksBackedUp": "عدد المهام الواقفة أو المتأخرة: {count}",
+  "@brainHealthReasonTasksBackedUp": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthReasonRunsFailing": "عدد التشغيلات الفاشلة: {failed} من {total}",
+  "@brainHealthReasonRunsFailing": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "failed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthReasonTasksFailed": "عدد المهام اللي فشلت: {count}",
+  "@brainHealthReasonTasksFailed": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthReasonNotRetried": "عدد الطلبات اللي ماتعادتش: {count}",
+  "@brainHealthReasonNotRetried": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthReasonQuotaNear": "استخدام الشات قرب من الحد اليومي ({percent}%) — ممكن الردود تقف لحد بكرة",
+  "@brainHealthReasonQuotaNear": {
+    "description": "Brain health reason.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthCannotSee": "معرفتش أقرا حالة العقل دلوقتي. ده مش معناه إن كل حاجة تمام — معناه إني مش شايف.",
+  "@brainHealthCannotSee": {
+    "description": "Brain health: the read failed."
+  },
+  "brainHealthOf": "{used} من {limit}",
+  "@brainHealthOf": {
+    "description": "Brain health: used of the daily limit.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "brainHealthQuotaNote": "الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية",
+  "@brainHealthQuotaNote": {
+    "description": "Brain health: what the chat quota covers."
   }
 }

@@ -3205,4 +3205,167 @@ class ZadL10nEn extends ZadL10n {
   String memoryUntil(String date) {
     return 'Until $date';
   }
+
+  @override
+  String get brainHealthTitle => 'Zad\'s brain health';
+
+  @override
+  String get brainHealthRefresh => 'Refresh';
+
+  @override
+  String get brainHealthCannotSeeTitle => 'Can\'t see the brain right now';
+
+  @override
+  String get brainHealthRetry => 'Try again';
+
+  @override
+  String get brainHealthActivity => 'Activity';
+
+  @override
+  String get brainHealthLastProactive => 'Last proactive alert';
+
+  @override
+  String get brainHealthRuns7d => 'Runs, last 7 days';
+
+  @override
+  String get brainHealthRunsFailed => 'Of which failed';
+
+  @override
+  String get brainHealthInsights7d => 'Insights, last 7 days';
+
+  @override
+  String get brainHealthInsightsUnseen => 'Insights you haven\'t seen';
+
+  @override
+  String get brainHealthLastFailure => 'Last failure type';
+
+  @override
+  String get brainHealthFailureBusy => 'Provider busy';
+
+  @override
+  String get brainHealthFailureConfig => 'Setup problem';
+
+  @override
+  String get brainHealthFailureOther => 'Unknown';
+
+  @override
+  String get brainHealthTasks => 'Tasks and queue';
+
+  @override
+  String get brainHealthTasksStuck => 'Stuck or late tasks';
+
+  @override
+  String get brainHealthTasksPending => 'Tasks waiting their turn';
+
+  @override
+  String get brainHealthTasksFailed7d => 'Failed tasks, last 7 days';
+
+  @override
+  String get brainHealthNotRetried => 'Requests not retried';
+
+  @override
+  String get brainHealthChatUse => 'Chat use';
+
+  @override
+  String get brainHealthRequests => 'Requests';
+
+  @override
+  String get brainHealthTokens => 'Reply size';
+
+  @override
+  String get brainHealthLearning => 'Learning';
+
+  @override
+  String get brainHealthGoals => 'Goals Zad is working on';
+
+  @override
+  String get brainHealthDrift => 'Unexpected actions by Zad, last 7 days';
+
+  @override
+  String get brainHealthHealthy => 'The brain is working fine';
+
+  @override
+  String get brainHealthQuiet => 'Something\'s worth a look';
+
+  @override
+  String get brainHealthStalled => 'The brain has stopped and needs attention';
+
+  @override
+  String get brainHealthAllClear =>
+      'No problems spotted. Zad works in the background and logs every step.';
+
+  @override
+  String brainHealthDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brainHealthHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainHealthNever => 'Never';
+
+  @override
+  String get brainHealthJustNow => 'Just now';
+
+  @override
+  String get brainHealthReasonNoProactiveYet =>
+      'Zad is still getting to know you, and will start sending proactive alerts after a little use';
+
+  @override
+  String brainHealthReasonProactiveSilent(String duration) {
+    return 'Zad hasn\'t sent a proactive alert for $duration';
+  }
+
+  @override
+  String brainHealthReasonTasksBackedUp(int count) {
+    return 'Stuck or late tasks: $count';
+  }
+
+  @override
+  String brainHealthReasonRunsFailing(int failed, int total) {
+    return 'Failed runs: $failed of $total';
+  }
+
+  @override
+  String brainHealthReasonTasksFailed(int count) {
+    return 'Failed tasks: $count';
+  }
+
+  @override
+  String brainHealthReasonNotRetried(int count) {
+    return 'Requests not retried: $count';
+  }
+
+  @override
+  String brainHealthReasonQuotaNear(int percent) {
+    return 'Chat use is close to the daily limit ($percent%) — replies may stop until tomorrow';
+  }
+
+  @override
+  String get brainHealthCannotSee =>
+      'I couldn\'t read the brain\'s state right now. That doesn\'t mean everything\'s fine — it means I can\'t see.';
+
+  @override
+  String brainHealthOf(int used, int limit) {
+    return '$used of $limit';
+  }
+
+  @override
+  String get brainHealthQuotaNote =>
+      'This allowance is for chat replies only and resets every day at midnight GMT — it has nothing to do with Zad\'s background work';
 }

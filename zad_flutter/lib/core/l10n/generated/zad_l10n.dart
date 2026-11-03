@@ -5670,6 +5670,264 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'لحد {date}'**
   String memoryUntil(String date);
+
+  /// Brain health: screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحة عقل زاد'**
+  String get brainHealthTitle;
+
+  /// Brain health: refresh button tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث'**
+  String get brainHealthRefresh;
+
+  /// Brain health: empty state when the read failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش شايف العقل دلوقتي'**
+  String get brainHealthCannotSeeTitle;
+
+  /// Brain health: retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرب تاني'**
+  String get brainHealthRetry;
+
+  /// Brain health: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'النشاط'**
+  String get brainHealthActivity;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تنبيه استباقي'**
+  String get brainHealthLastProactive;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيلات آخر ٧ أيام'**
+  String get brainHealthRuns7d;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'منها فشلت'**
+  String get brainHealthRunsFailed;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'رؤى آخر ٧ أيام'**
+  String get brainHealthInsights7d;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'رؤى لسه مشوفتهاش'**
+  String get brainHealthInsightsUnseen;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع آخر عطل'**
+  String get brainHealthLastFailure;
+
+  /// Brain health: failure kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزوّد مشغول'**
+  String get brainHealthFailureBusy;
+
+  /// Brain health: failure kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشكلة إعداد'**
+  String get brainHealthFailureConfig;
+
+  /// Brain health: failure kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير معروف'**
+  String get brainHealthFailureOther;
+
+  /// Brain health: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام والطابور'**
+  String get brainHealthTasks;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام واقفة أو متأخرة'**
+  String get brainHealthTasksStuck;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام مستنية دورها'**
+  String get brainHealthTasksPending;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام فشلت آخر ٧ أيام'**
+  String get brainHealthTasksFailed7d;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات ماتعادتش'**
+  String get brainHealthNotRetried;
+
+  /// Brain health: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدام الشات'**
+  String get brainHealthChatUse;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلبات'**
+  String get brainHealthRequests;
+
+  /// Brain health metric: tokens used today.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الردود'**
+  String get brainHealthTokens;
+
+  /// Brain health: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعلّم'**
+  String get brainHealthLearning;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهداف زاد شغال عليها'**
+  String get brainHealthGoals;
+
+  /// Brain health metric.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصرفات غير متوقعة من زاد آخر ٧ أيام'**
+  String get brainHealthDrift;
+
+  /// Brain health: status banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'العقل شغال تمام'**
+  String get brainHealthHealthy;
+
+  /// Brain health: status banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه حاجة تستاهل نظرة'**
+  String get brainHealthQuiet;
+
+  /// Brain health: status banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'العقل واقف ومحتاج تدخّل'**
+  String get brainHealthStalled;
+
+  /// Brain health: no reasons.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش أي مشكلة مرصودة. زاد بيشتغل في الخلفية وبيسجّل كل خطوة.'**
+  String get brainHealthAllClear;
+
+  /// Brain health: a number of days.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{يوم واحد} =2{يومين} few{{count} أيام} other{{count} يوم}}'**
+  String brainHealthDays(int count);
+
+  /// Brain health: a number of hours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{ساعة واحدة} =2{ساعتين} few{{count} ساعات} other{{count} ساعة}}'**
+  String brainHealthHours(int count);
+
+  /// Brain health: no proactive message ever.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولا مرة'**
+  String get brainHealthNever;
+
+  /// Brain health: less than an hour ago.
+  ///
+  /// In ar, this message translates to:
+  /// **'دلوقتي'**
+  String get brainHealthJustNow;
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد لسه بيتعرف عليك، وهيبدأ يبعتلك تنبيهات استباقية بعد شوية استخدام'**
+  String get brainHealthReasonNoProactiveYet;
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بطّل يبعت تنبيهات استباقية من {duration}'**
+  String brainHealthReasonProactiveSilent(String duration);
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد المهام الواقفة أو المتأخرة: {count}'**
+  String brainHealthReasonTasksBackedUp(int count);
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد التشغيلات الفاشلة: {failed} من {total}'**
+  String brainHealthReasonRunsFailing(int failed, int total);
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد المهام اللي فشلت: {count}'**
+  String brainHealthReasonTasksFailed(int count);
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الطلبات اللي ماتعادتش: {count}'**
+  String brainHealthReasonNotRetried(int count);
+
+  /// Brain health reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدام الشات قرب من الحد اليومي ({percent}%) — ممكن الردود تقف لحد بكرة'**
+  String brainHealthReasonQuotaNear(int percent);
+
+  /// Brain health: the read failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرفتش أقرا حالة العقل دلوقتي. ده مش معناه إن كل حاجة تمام — معناه إني مش شايف.'**
+  String get brainHealthCannotSee;
+
+  /// Brain health: used of the daily limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'{used} من {limit}'**
+  String brainHealthOf(int used, int limit);
+
+  /// Brain health: what the chat quota covers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية'**
+  String get brainHealthQuotaNote;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

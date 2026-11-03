@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 import 'package:zad/features/brain/domain/mutation_summary.dart';
+import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 
 DateTime _utc(DateTime utc) => utc;
 
@@ -46,5 +47,12 @@ void main() {
     expect(UndoFailure.alreadyUndone.message(en), 'This was already undone');
     // No language given: Arabic, as before.
     expect(agentToolLabel('log_transaction'), 'تسجيل معاملة');
+  });
+
+  test('brain health durations are English plurals', () {
+    expect(durationSince(1, en), '1 hour');
+    expect(durationSince(5, en), '5 hours');
+    expect(durationSince(48, en), '2 days');
+    expect(durationSince(null, en), 'Never');
   });
 }

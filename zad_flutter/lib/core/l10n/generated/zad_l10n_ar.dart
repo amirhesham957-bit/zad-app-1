@@ -3135,4 +3135,171 @@ class ZadL10nAr extends ZadL10n {
   String memoryUntil(String date) {
     return 'لحد $date';
   }
+
+  @override
+  String get brainHealthTitle => 'صحة عقل زاد';
+
+  @override
+  String get brainHealthRefresh => 'حدّث';
+
+  @override
+  String get brainHealthCannotSeeTitle => 'مش شايف العقل دلوقتي';
+
+  @override
+  String get brainHealthRetry => 'جرب تاني';
+
+  @override
+  String get brainHealthActivity => 'النشاط';
+
+  @override
+  String get brainHealthLastProactive => 'آخر تنبيه استباقي';
+
+  @override
+  String get brainHealthRuns7d => 'تشغيلات آخر ٧ أيام';
+
+  @override
+  String get brainHealthRunsFailed => 'منها فشلت';
+
+  @override
+  String get brainHealthInsights7d => 'رؤى آخر ٧ أيام';
+
+  @override
+  String get brainHealthInsightsUnseen => 'رؤى لسه مشوفتهاش';
+
+  @override
+  String get brainHealthLastFailure => 'نوع آخر عطل';
+
+  @override
+  String get brainHealthFailureBusy => 'المزوّد مشغول';
+
+  @override
+  String get brainHealthFailureConfig => 'مشكلة إعداد';
+
+  @override
+  String get brainHealthFailureOther => 'غير معروف';
+
+  @override
+  String get brainHealthTasks => 'المهام والطابور';
+
+  @override
+  String get brainHealthTasksStuck => 'مهام واقفة أو متأخرة';
+
+  @override
+  String get brainHealthTasksPending => 'مهام مستنية دورها';
+
+  @override
+  String get brainHealthTasksFailed7d => 'مهام فشلت آخر ٧ أيام';
+
+  @override
+  String get brainHealthNotRetried => 'طلبات ماتعادتش';
+
+  @override
+  String get brainHealthChatUse => 'استخدام الشات';
+
+  @override
+  String get brainHealthRequests => 'الطلبات';
+
+  @override
+  String get brainHealthTokens => 'حجم الردود';
+
+  @override
+  String get brainHealthLearning => 'التعلّم';
+
+  @override
+  String get brainHealthGoals => 'أهداف زاد شغال عليها';
+
+  @override
+  String get brainHealthDrift => 'تصرفات غير متوقعة من زاد آخر ٧ أيام';
+
+  @override
+  String get brainHealthHealthy => 'العقل شغال تمام';
+
+  @override
+  String get brainHealthQuiet => 'فيه حاجة تستاهل نظرة';
+
+  @override
+  String get brainHealthStalled => 'العقل واقف ومحتاج تدخّل';
+
+  @override
+  String get brainHealthAllClear =>
+      'مفيش أي مشكلة مرصودة. زاد بيشتغل في الخلفية وبيسجّل كل خطوة.';
+
+  @override
+  String brainHealthDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count يوم',
+      few: '$count أيام',
+      two: 'يومين',
+      one: 'يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brainHealthHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ساعة',
+      few: '$count ساعات',
+      two: 'ساعتين',
+      one: 'ساعة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainHealthNever => 'ولا مرة';
+
+  @override
+  String get brainHealthJustNow => 'دلوقتي';
+
+  @override
+  String get brainHealthReasonNoProactiveYet =>
+      'زاد لسه بيتعرف عليك، وهيبدأ يبعتلك تنبيهات استباقية بعد شوية استخدام';
+
+  @override
+  String brainHealthReasonProactiveSilent(String duration) {
+    return 'زاد بطّل يبعت تنبيهات استباقية من $duration';
+  }
+
+  @override
+  String brainHealthReasonTasksBackedUp(int count) {
+    return 'عدد المهام الواقفة أو المتأخرة: $count';
+  }
+
+  @override
+  String brainHealthReasonRunsFailing(int failed, int total) {
+    return 'عدد التشغيلات الفاشلة: $failed من $total';
+  }
+
+  @override
+  String brainHealthReasonTasksFailed(int count) {
+    return 'عدد المهام اللي فشلت: $count';
+  }
+
+  @override
+  String brainHealthReasonNotRetried(int count) {
+    return 'عدد الطلبات اللي ماتعادتش: $count';
+  }
+
+  @override
+  String brainHealthReasonQuotaNear(int percent) {
+    return 'استخدام الشات قرب من الحد اليومي ($percent%) — ممكن الردود تقف لحد بكرة';
+  }
+
+  @override
+  String get brainHealthCannotSee =>
+      'معرفتش أقرا حالة العقل دلوقتي. ده مش معناه إن كل حاجة تمام — معناه إني مش شايف.';
+
+  @override
+  String brainHealthOf(int used, int limit) {
+    return '$used من $limit';
+  }
+
+  @override
+  String get brainHealthQuotaNote =>
+      'الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية';
 }
