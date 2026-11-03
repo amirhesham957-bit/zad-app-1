@@ -46,6 +46,9 @@ function fakeSb(rows: Record<string, unknown[]>) {
 const TZ = "UTC"; // ساعات الحالات بتتقري على الساعة المحلية — UTC عشان تبقى زي soon(h)
 const soon = (h: number) => {
   const d = new Date(Date.now() + 3 * 86_400_000);
+  // مواعيد شغل من غير أيام = كل الأسبوع غير الجمعة (scheduleGuard)؛ بعد ٣ أيام من يوم تلات بتبقى جمعة، والاختبار
+  // كان بيقع كل تلات (رن ٣/١١).
+  if (d.getUTCDay() === 5) d.setUTCDate(d.getUTCDate() + 1);
   d.setUTCHours(h, 0, 0, 0);
   return d.toISOString().replace(/\.\d+Z$/, "Z");
 };

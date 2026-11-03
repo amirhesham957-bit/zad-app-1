@@ -531,3 +531,50 @@ Deno.test("forceTool: Gemini is told to call that one tool, Groq gets tool_choic
     restore();
   }
 });
+
+Deno.test("نداء إجباري على جروك: حرارة صفر وسطر أخير صريح، و`tool_use_failed` بيتعاد مرة (التقييم ٣/١١)", async () => {
+  let groqTries = 0;
+  const s = stubFetch((url) => {
+    if (!url.includes("api.groq.com")) return quota429();
+    groqTries++;
+    if (groqTries === 1) {
+      return new Response(JSON.stringify({ error: { message: "Tool choice is required, but model did not call a tool", code: "tool_use_failed" } }), { status: 400 });
+    }
+    return new Response(JSON.stringify({
+      choices: [{ message: { content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "t", arguments: "{\"amount\":200}" } }] } }],
+      usage: { prompt_tokens: 3, completion_tokens: 1 },
+    }), { status: 200 });
+  });
+  try {
+    const reply = await callModel({ ...BASE, forceTool: "t" });
+    assertEquals(reply.toolCalls.map((c) => c.name), ["t"]);
+    assertEquals(groqTries, 2);
+    const body = s.calls.find((c) => c.url.includes("api.groq.com"))!.body;
+    assertEquals(body.temperature, 0);
+    assertEquals(body.reasoning_effort, "low");
+    assertEquals(body.tool_choice, { type: "function", function: { name: "t" } });
+    const last = body.messages[body.messages.length - 1];
+    assertEquals(last.role, "system");
+    assert(String(last.content).includes("نادِ أداة t"));
+  } finally {
+    s.restore();
+  }
+});
+
+Deno.test("من غير إجبار، جروك مابيتبعتلوش السطر ولا بيتعاد على 400", async () => {
+  let groqTries = 0;
+  const s = stubFetch((url) => {
+    if (!url.includes("api.groq.com")) return quota429();
+    groqTries++;
+    return new Response(JSON.stringify({ choices: [{ message: { content: "نص", tool_calls: [] } }], usage: {} }), { status: 200 });
+  });
+  try {
+    await callModel({ ...BASE });
+    assertEquals(groqTries, 1);
+    const body = s.calls.find((c) => c.url.includes("api.groq.com"))!.body;
+    assertEquals(body.temperature, 0.4);
+    assertEquals(body.messages.at(-1).role, "user");
+  } finally {
+    s.restore();
+  }
+});

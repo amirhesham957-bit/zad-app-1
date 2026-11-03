@@ -885,7 +885,14 @@ async function sendOpenAICompatible(o: {
     }
   }
 
-  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+  // نداء إجباري على جروك (التقييم الليلي ٣/١١ ٠٢:٠٣–٠٢:٣٣): جيميناي كله وقع، والإجبار راح لـgpt-oss-120b اللي
+  // رد «أبغى أتأكد… تبي أسجل؟» نص، فجروك رجّع 400 `tool_use_failed` في كل مرة — ١٧ حالة «سجّل» وقعت كده. تفكير
+  // قليل وحرارة صفر وسطر أخير صريح بيخلّوه ينادي الأداة؛ ولو كتب نص برضه، محاولة واحدة كمان.
+  const forced = Boolean(o.forceTool && o.tools.some((t) => t.name === o.forceTool));
+  if (forced) {
+    messages.push({ role: "system", content: `نادِ أداة ${o.forceTool} دلوقتي بالقيم اللي في رسالة العميل. ممنوع أي نص أو سؤال.` });
+  }
+  const send = () => fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -895,7 +902,7 @@ async function sendOpenAICompatible(o: {
     body: JSON.stringify({
       model: o.model,
       max_tokens: o.maxTokens ?? 1500,
-      temperature: o.responseSchema ? 0 : 0.4,
+      temperature: o.responseSchema || forced ? 0 : 0.4,
       // قايمة أدوات فاضية مالهاش لازمة، وفيه مزوّدين بيرفضوها ("[] is too short").
       ...(o.tools.length > 0 ? {
         tools: o.tools.map((t) => ({
@@ -911,10 +918,15 @@ async function sendOpenAICompatible(o: {
       // قرار مصنّف: JSON بس. gpt-oss بيفكر قبل ما يرد والتفكير من max_tokens — «low» بيسيب
       // مكان للإجابة (zad-core-intelligence اتقاس عليه: ٥٠ توكن = رد فاضي).
       ...(o.responseSchema ? { response_format: { type: "json_object" } } : {}),
-      ...(o.responseSchema && /gpt-oss/.test(o.model) ? { reasoning_effort: "low" } : {}),
+      ...((o.responseSchema || forced) && /gpt-oss/.test(o.model) ? { reasoning_effort: "low" } : {}),
       messages,
     }),
   });
+  let res = await send();
+  if (forced && res.status === 400) {
+    const body = await res.clone().text();
+    if (body.includes("tool_use_failed")) res = await send();
+  }
   await checkResponse(res, who);
   const d = await res.json();
 
