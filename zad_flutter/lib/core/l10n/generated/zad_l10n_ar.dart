@@ -6117,4 +6117,161 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get briefAnd => ' و';
+
+  @override
+  String get familyRoleLabelAdmin => 'مسؤول';
+
+  @override
+  String get familyRoleLabelMember => 'فرد';
+
+  @override
+  String get familyRoleLabelChild => 'طفل';
+
+  @override
+  String get familyFailureInvalidCode =>
+      'الكود ده مش صح. خده تاني من صاحب العيلة.';
+
+  @override
+  String get familyFailureTooManyAttempts =>
+      'جربت أكواد كتير. استنى ساعة وجرّب تاني.';
+
+  @override
+  String get familyFailureAlreadyInFamily =>
+      'إنت بالفعل في عيلة. اخرج منها الأول.';
+
+  @override
+  String get familyFailureLastAdmin =>
+      'إنت آخر مسؤول. خلّي حد تاني مسؤول الأول.';
+
+  @override
+  String get familyFailureNotAllowed => 'ده للمسؤول بس.';
+
+  @override
+  String get familyFailureOffline => 'محتاج نت عشان ده.';
+
+  @override
+  String get familyFailureUnknown => 'حصلت مشكلة. جرّب تاني.';
+
+  @override
+  String get familyScopeMedicines => 'الأدوية';
+
+  @override
+  String get familyScopeSpending => 'المصروف';
+
+  @override
+  String get familyScopeTasks => 'المهام والمواعيد';
+
+  @override
+  String get familyScopeLocation => 'الأماكن (المدرسة…)';
+
+  @override
+  String familyShareAskLocation(String name) {
+    return '$name عايز يعرف لما تدخل أو تخرج من أماكن هو يحددها (زي المدرسة)';
+  }
+
+  @override
+  String familyShareAsk(String name, String what) {
+    return '$name عايز يتابع $what';
+  }
+
+  @override
+  String get familyNoticeLoadFailed =>
+      'مقدرتش أجيب بيانات العيلة. اسحب لتحت نجرب تاني.';
+
+  @override
+  String get familyNoticeNotSent => 'الرسالة ماتبعتتش — اتأكد من النت.';
+
+  @override
+  String get familyNoticeCoolingAdmin => 'وقفة التفكير للمسؤول بس.';
+
+  @override
+  String get familyNoticeCoolingFailed =>
+      'مقدرتش أغيّر وقفة التفكير. جرّب تاني.';
+
+  @override
+  String get familyNoticeServer => 'مقدرتش أوصل للسيرفر. جرّب تاني.';
+
+  @override
+  String get familyNoticeAllowanceAdmin => 'تحويل المصروف للمسؤول بس.';
+
+  @override
+  String get familyNoticeAmountPositive => 'اكتب مبلغ أكبر من صفر.';
+
+  @override
+  String get familyNoticeAllowanceFailed => 'مقدرتش أحوّل المصروف. جرّب تاني.';
+
+  @override
+  String get familyNoticeDecisionAdmin => 'القرار ده للمسؤول بس.';
+
+  @override
+  String get familyNoticeDecisionFailed => 'مقدرتش أسجّل القرار. جرّب تاني.';
+
+  @override
+  String get familyNoticePollClosed => 'التصويت اتقفل خلاص.';
+
+  @override
+  String get familyNoticeVoteFailed => 'صوتك ماتسجلش. جرّب تاني.';
+
+  @override
+  String get familyNoticePollCloseWho =>
+      'اللي فتح التصويت أو المسؤول بس يقدر يقفله.';
+
+  @override
+  String get familyNoticePollCloseFailed => 'مقدرتش أقفل التصويت. جرّب تاني.';
+
+  @override
+  String get familyNoticeEditNotSaved => 'التعديل ماتحفظش.';
+
+  @override
+  String get familyNoticeRewardAdmin => 'المكافأة يحددها المسؤول بس.';
+
+  @override
+  String get familyNoticeChoreFailed => 'المهمة ماتضافتش. جرّب تاني.';
+
+  @override
+  String get familyNoticeReopenAdmin => 'إلغاء إنجاز المهمة للمسؤول بس.';
+
+  @override
+  String get familyNoticeNotYours => 'دي مهمة حد تاني.';
+
+  @override
+  String get familyNoticeChoreUpdateFailed => 'مقدرتش أحدّث المهمة.';
+
+  @override
+  String get familyNoticeItemFailed => 'الصنف ماتضافش. جرّب تاني.';
+
+  @override
+  String get familyNoticeLimitsAdmin => 'حدود الصرف يحطها المسؤول بس.';
+
+  @override
+  String get familyNoticeLimitsFailed => 'الحدود ماتحفظتش. جرّب تاني.';
+
+  @override
+  String get familyNoticeGoalSuggestFailed =>
+      'زاد ماقدرش يقترح هدف دلوقتي. جرّب تاني.';
+
+  @override
+  String get familyNoticeGoalFailed => 'الهدف ماتحفظش. جرّب تاني.';
+
+  @override
+  String get familyNoticeBalanceShort =>
+      'رصيده مايكفيش الطلب ده — حوّله مصروف الأول من «حوّل مصروف»، وبعدين وافق.';
+
+  @override
+  String familyNoticeChoreDone(String amount) {
+    return 'عمل رائع! 🌟 اتضاف $amount للرصيد.';
+  }
+
+  @override
+  String get familyCoolingWaiting =>
+      'وقفة التفكير شغالة: الطلب لسه ماكملش ٢٤ ساعة — أو ارفضه دلوقتي لو مش مقتنع.';
+
+  @override
+  String get familyCoolingWithinHour =>
+      'وقفة التفكير: تقدر توافق خلال ساعة — أو ارفضه دلوقتي لو مش مقتنع.';
+
+  @override
+  String familyCoolingAfterHours(int hours) {
+    return 'وقفة التفكير: تقدر توافق بعد $hours ساعة — أو ارفضه دلوقتي لو مش مقتنع.';
+  }
 }

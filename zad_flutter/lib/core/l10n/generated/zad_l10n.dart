@@ -10613,6 +10613,282 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **' و'**
   String get briefAnd;
+
+  /// Family: a member role.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسؤول'**
+  String get familyRoleLabelAdmin;
+
+  /// Family: a member role.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرد'**
+  String get familyRoleLabelMember;
+
+  /// Family: a member role.
+  ///
+  /// In ar, this message translates to:
+  /// **'طفل'**
+  String get familyRoleLabelChild;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود ده مش صح. خده تاني من صاحب العيلة.'**
+  String get familyFailureInvalidCode;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'جربت أكواد كتير. استنى ساعة وجرّب تاني.'**
+  String get familyFailureTooManyAttempts;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت بالفعل في عيلة. اخرج منها الأول.'**
+  String get familyFailureAlreadyInFamily;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت آخر مسؤول. خلّي حد تاني مسؤول الأول.'**
+  String get familyFailureLastAdmin;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده للمسؤول بس.'**
+  String get familyFailureNotAllowed;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاج نت عشان ده.'**
+  String get familyFailureOffline;
+
+  /// Family: why an action did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصلت مشكلة. جرّب تاني.'**
+  String get familyFailureUnknown;
+
+  /// Family follow: what can be followed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوية'**
+  String get familyScopeMedicines;
+
+  /// Family follow: what can be followed.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروف'**
+  String get familyScopeSpending;
+
+  /// Family follow: what can be followed.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام والمواعيد'**
+  String get familyScopeTasks;
+
+  /// Family follow: what can be followed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأماكن (المدرسة…)'**
+  String get familyScopeLocation;
+
+  /// Family follow: what a member is asked before sharing their places.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} عايز يعرف لما تدخل أو تخرج من أماكن هو يحددها (زي المدرسة)'**
+  String familyShareAskLocation(String name);
+
+  /// Family follow: what a member is asked before sharing.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} عايز يتابع {what}'**
+  String familyShareAsk(String name, String what);
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب بيانات العيلة. اسحب لتحت نجرب تاني.'**
+  String get familyNoticeLoadFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرسالة ماتبعتتش — اتأكد من النت.'**
+  String get familyNoticeNotSent;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفة التفكير للمسؤول بس.'**
+  String get familyNoticeCoolingAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أغيّر وقفة التفكير. جرّب تاني.'**
+  String get familyNoticeCoolingFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر. جرّب تاني.'**
+  String get familyNoticeServer;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل المصروف للمسؤول بس.'**
+  String get familyNoticeAllowanceAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب مبلغ أكبر من صفر.'**
+  String get familyNoticeAmountPositive;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحوّل المصروف. جرّب تاني.'**
+  String get familyNoticeAllowanceFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'القرار ده للمسؤول بس.'**
+  String get familyNoticeDecisionAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أسجّل القرار. جرّب تاني.'**
+  String get familyNoticeDecisionFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصويت اتقفل خلاص.'**
+  String get familyNoticePollClosed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوتك ماتسجلش. جرّب تاني.'**
+  String get familyNoticeVoteFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي فتح التصويت أو المسؤول بس يقدر يقفله.'**
+  String get familyNoticePollCloseWho;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقفل التصويت. جرّب تاني.'**
+  String get familyNoticePollCloseFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعديل ماتحفظش.'**
+  String get familyNoticeEditNotSaved;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكافأة يحددها المسؤول بس.'**
+  String get familyNoticeRewardAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهمة ماتضافتش. جرّب تاني.'**
+  String get familyNoticeChoreFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء إنجاز المهمة للمسؤول بس.'**
+  String get familyNoticeReopenAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'دي مهمة حد تاني.'**
+  String get familyNoticeNotYours;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحدّث المهمة.'**
+  String get familyNoticeChoreUpdateFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف ماتضافش. جرّب تاني.'**
+  String get familyNoticeItemFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدود الصرف يحطها المسؤول بس.'**
+  String get familyNoticeLimitsAdmin;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحدود ماتحفظتش. جرّب تاني.'**
+  String get familyNoticeLimitsFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد ماقدرش يقترح هدف دلوقتي. جرّب تاني.'**
+  String get familyNoticeGoalSuggestFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف ماتحفظش. جرّب تاني.'**
+  String get familyNoticeGoalFailed;
+
+  /// Family notice.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيده مايكفيش الطلب ده — حوّله مصروف الأول من «حوّل مصروف»، وبعدين وافق.'**
+  String get familyNoticeBalanceShort;
+
+  /// Family notice: a finished task paid out.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمل رائع! 🌟 اتضاف {amount} للرصيد.'**
+  String familyNoticeChoreDone(String amount);
+
+  /// Family: approving a request during the thinking pause.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفة التفكير شغالة: الطلب لسه ماكملش ٢٤ ساعة — أو ارفضه دلوقتي لو مش مقتنع.'**
+  String get familyCoolingWaiting;
+
+  /// Family: approving a request during the thinking pause.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفة التفكير: تقدر توافق خلال ساعة — أو ارفضه دلوقتي لو مش مقتنع.'**
+  String get familyCoolingWithinHour;
+
+  /// Family: approving a request during the thinking pause.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفة التفكير: تقدر توافق بعد {hours} ساعة — أو ارفضه دلوقتي لو مش مقتنع.'**
+  String familyCoolingAfterHours(int hours);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -6215,4 +6215,175 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get briefAnd => ' and ';
+
+  @override
+  String get familyRoleLabelAdmin => 'Admin';
+
+  @override
+  String get familyRoleLabelMember => 'Member';
+
+  @override
+  String get familyRoleLabelChild => 'Child';
+
+  @override
+  String get familyFailureInvalidCode =>
+      'That code isn\'t right. Get it again from the family\'s owner.';
+
+  @override
+  String get familyFailureTooManyAttempts =>
+      'You\'ve tried too many codes. Wait an hour and try again.';
+
+  @override
+  String get familyFailureAlreadyInFamily =>
+      'You\'re already in a family. Leave it first.';
+
+  @override
+  String get familyFailureLastAdmin =>
+      'You\'re the last admin. Make someone else an admin first.';
+
+  @override
+  String get familyFailureNotAllowed => 'Only an admin can do this.';
+
+  @override
+  String get familyFailureOffline => 'This needs an internet connection.';
+
+  @override
+  String get familyFailureUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get familyScopeMedicines => 'Medicines';
+
+  @override
+  String get familyScopeSpending => 'Spending';
+
+  @override
+  String get familyScopeTasks => 'Tasks and appointments';
+
+  @override
+  String get familyScopeLocation => 'Places (school…)';
+
+  @override
+  String familyShareAskLocation(String name) {
+    return '$name wants to know when you arrive at or leave places they set (like school)';
+  }
+
+  @override
+  String familyShareAsk(String name, String what) {
+    return '$name wants to follow your $what';
+  }
+
+  @override
+  String get familyNoticeLoadFailed =>
+      'Couldn\'t load the family\'s data. Pull down to try again.';
+
+  @override
+  String get familyNoticeNotSent =>
+      'The message wasn\'t sent — check your connection.';
+
+  @override
+  String get familyNoticeCoolingAdmin =>
+      'Only an admin can change the thinking pause.';
+
+  @override
+  String get familyNoticeCoolingFailed =>
+      'Couldn\'t change the thinking pause. Try again.';
+
+  @override
+  String get familyNoticeServer => 'Couldn\'t reach the server. Try again.';
+
+  @override
+  String get familyNoticeAllowanceAdmin =>
+      'Only an admin can send pocket money.';
+
+  @override
+  String get familyNoticeAmountPositive => 'Enter an amount above zero.';
+
+  @override
+  String get familyNoticeAllowanceFailed =>
+      'Couldn\'t send the pocket money. Try again.';
+
+  @override
+  String get familyNoticeDecisionAdmin => 'Only an admin can decide this.';
+
+  @override
+  String get familyNoticeDecisionFailed =>
+      'Couldn\'t save the decision. Try again.';
+
+  @override
+  String get familyNoticePollClosed => 'The poll is already closed.';
+
+  @override
+  String get familyNoticeVoteFailed => 'Your vote wasn\'t saved. Try again.';
+
+  @override
+  String get familyNoticePollCloseWho =>
+      'Only whoever opened the poll or an admin can close it.';
+
+  @override
+  String get familyNoticePollCloseFailed =>
+      'Couldn\'t close the poll. Try again.';
+
+  @override
+  String get familyNoticeEditNotSaved => 'The change wasn\'t saved.';
+
+  @override
+  String get familyNoticeRewardAdmin => 'Only an admin sets the reward.';
+
+  @override
+  String get familyNoticeChoreFailed => 'The task wasn\'t added. Try again.';
+
+  @override
+  String get familyNoticeReopenAdmin =>
+      'Only an admin can undo a finished task.';
+
+  @override
+  String get familyNoticeNotYours => 'That\'s someone else\'s task.';
+
+  @override
+  String get familyNoticeChoreUpdateFailed => 'Couldn\'t update the task.';
+
+  @override
+  String get familyNoticeItemFailed => 'The item wasn\'t added. Try again.';
+
+  @override
+  String get familyNoticeLimitsAdmin => 'Only an admin sets spending limits.';
+
+  @override
+  String get familyNoticeLimitsFailed =>
+      'The limits weren\'t saved. Try again.';
+
+  @override
+  String get familyNoticeGoalSuggestFailed =>
+      'Zad couldn\'t suggest a goal right now. Try again.';
+
+  @override
+  String get familyNoticeGoalFailed => 'The goal wasn\'t saved. Try again.';
+
+  @override
+  String get familyNoticeBalanceShort =>
+      'Their balance doesn\'t cover this request — send pocket money first with “Send pocket money”, then approve.';
+
+  @override
+  String familyNoticeChoreDone(String amount) {
+    return 'Great work! 🌟 $amount added to the balance.';
+  }
+
+  @override
+  String get familyCoolingWaiting =>
+      'The thinking pause is on: the request isn\'t 24 hours old yet — or turn it down now if you\'re not convinced.';
+
+  @override
+  String get familyCoolingWithinHour =>
+      'Thinking pause: you can approve within an hour — or turn it down now if you\'re not convinced.';
+
+  @override
+  String familyCoolingAfterHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: '$hours hours',
+      one: '1 hour',
+    );
+    return 'Thinking pause: you can approve in $_temp0 — or turn it down now if you\'re not convinced.';
+  }
 }

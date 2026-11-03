@@ -189,6 +189,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                           shareAskText(
                             s.scope,
                             _aliasOf(context, ref, s.viewerId),
+                            context.l10n,
                           ),
                           style: ZadType.bodyMedium,
                         ),
@@ -213,7 +214,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                                   ref,
                                   (r) => r.answer(s.id, accept: true),
                                   context.l10n.familyAcceptedScope(
-                                    s.scope.label,
+                                    s.scope.label(context.l10n),
                                   ),
                                 ),
                         ),
@@ -236,7 +237,7 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         '${_aliasOf(context, ref, s.viewerId)} — '
-                        '${s.scope.label}',
+                        '${s.scope.label(context.l10n)}',
                         style: ZadType.bodyMedium,
                       ),
                     ),
@@ -334,18 +335,20 @@ class MemberFollowSection extends ConsumerWidget {
               for (final scope in view.followable)
                 Chip(
                   label: Text(
-                    context.l10n.familyScopeStatus(scope.label, switch (view
-                        .statusOf(scope)) {
-                      null => context.l10n.familyShareNotAsked,
-                      FamilyShareStatus.pending =>
-                        context.l10n.familySharePending,
-                      FamilyShareStatus.granted =>
-                        context.l10n.familyShareGranted,
-                      FamilyShareStatus.declined =>
-                        context.l10n.familyShareDeclined,
-                      FamilyShareStatus.revoked =>
-                        context.l10n.familyShareRevoked,
-                    }),
+                    context.l10n.familyScopeStatus(
+                      scope.label(context.l10n),
+                      switch (view.statusOf(scope)) {
+                        null => context.l10n.familyShareNotAsked,
+                        FamilyShareStatus.pending =>
+                          context.l10n.familySharePending,
+                        FamilyShareStatus.granted =>
+                          context.l10n.familyShareGranted,
+                        FamilyShareStatus.declined =>
+                          context.l10n.familyShareDeclined,
+                        FamilyShareStatus.revoked =>
+                          context.l10n.familyShareRevoked,
+                      },
+                    ),
                     style: ZadType.labelSmall,
                   ),
                 ),
@@ -414,7 +417,7 @@ class _AskSheetState extends State<_AskSheet> {
               onChanged: (v) => setState(
                 () => (v ?? false) ? _chosen.add(s) : _chosen.remove(s),
               ),
-              title: Text(s.label),
+              title: Text(s.label(context.l10n)),
               contentPadding: EdgeInsets.zero,
             ),
           const SizedBox(height: ZadSpacing.md),
@@ -585,7 +588,7 @@ String familyReportLine(
   if (parts.isEmpty) return l.familyReportNothingShared;
   final missing = <String>[
     for (final s in view.followable)
-      if (view.statusOf(s) != FamilyShareStatus.granted) s.label,
+      if (view.statusOf(s) != FamilyShareStatus.granted) s.label(l),
   ];
   return [
     ...parts,

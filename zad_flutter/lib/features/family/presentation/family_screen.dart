@@ -54,8 +54,9 @@ class FamilyScreen extends ConsumerWidget {
       familyControllerProvider.select((v) => v.failure),
       (_, failure) {
         if (failure == null) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(failure.message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
       },
     );
 

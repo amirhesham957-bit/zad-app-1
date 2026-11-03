@@ -5786,5 +5786,212 @@
   "briefAnd": " و",
   "@briefAnd": {
     "description": "Daily brief: joins two names."
+  },
+  "familyRoleLabelAdmin": "مسؤول",
+  "@familyRoleLabelAdmin": {
+    "description": "Family: a member role."
+  },
+  "familyRoleLabelMember": "فرد",
+  "@familyRoleLabelMember": {
+    "description": "Family: a member role."
+  },
+  "familyRoleLabelChild": "طفل",
+  "@familyRoleLabelChild": {
+    "description": "Family: a member role."
+  },
+  "familyFailureInvalidCode": "الكود ده مش صح. خده تاني من صاحب العيلة.",
+  "@familyFailureInvalidCode": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureTooManyAttempts": "جربت أكواد كتير. استنى ساعة وجرّب تاني.",
+  "@familyFailureTooManyAttempts": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureAlreadyInFamily": "إنت بالفعل في عيلة. اخرج منها الأول.",
+  "@familyFailureAlreadyInFamily": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureLastAdmin": "إنت آخر مسؤول. خلّي حد تاني مسؤول الأول.",
+  "@familyFailureLastAdmin": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureNotAllowed": "ده للمسؤول بس.",
+  "@familyFailureNotAllowed": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureOffline": "محتاج نت عشان ده.",
+  "@familyFailureOffline": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyFailureUnknown": "حصلت مشكلة. جرّب تاني.",
+  "@familyFailureUnknown": {
+    "description": "Family: why an action did not happen."
+  },
+  "familyScopeMedicines": "الأدوية",
+  "@familyScopeMedicines": {
+    "description": "Family follow: what can be followed."
+  },
+  "familyScopeSpending": "المصروف",
+  "@familyScopeSpending": {
+    "description": "Family follow: what can be followed."
+  },
+  "familyScopeTasks": "المهام والمواعيد",
+  "@familyScopeTasks": {
+    "description": "Family follow: what can be followed."
+  },
+  "familyScopeLocation": "الأماكن (المدرسة…)",
+  "@familyScopeLocation": {
+    "description": "Family follow: what can be followed."
+  },
+  "familyShareAskLocation": "{name} عايز يعرف لما تدخل أو تخرج من أماكن هو يحددها (زي المدرسة)",
+  "@familyShareAskLocation": {
+    "description": "Family follow: what a member is asked before sharing their places.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShareAsk": "{name} عايز يتابع {what}",
+  "@familyShareAsk": {
+    "description": "Family follow: what a member is asked before sharing.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "familyNoticeLoadFailed": "مقدرتش أجيب بيانات العيلة. اسحب لتحت نجرب تاني.",
+  "@familyNoticeLoadFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeNotSent": "الرسالة ماتبعتتش — اتأكد من النت.",
+  "@familyNoticeNotSent": {
+    "description": "Family notice."
+  },
+  "familyNoticeCoolingAdmin": "وقفة التفكير للمسؤول بس.",
+  "@familyNoticeCoolingAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeCoolingFailed": "مقدرتش أغيّر وقفة التفكير. جرّب تاني.",
+  "@familyNoticeCoolingFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeServer": "مقدرتش أوصل للسيرفر. جرّب تاني.",
+  "@familyNoticeServer": {
+    "description": "Family notice."
+  },
+  "familyNoticeAllowanceAdmin": "تحويل المصروف للمسؤول بس.",
+  "@familyNoticeAllowanceAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeAmountPositive": "اكتب مبلغ أكبر من صفر.",
+  "@familyNoticeAmountPositive": {
+    "description": "Family notice."
+  },
+  "familyNoticeAllowanceFailed": "مقدرتش أحوّل المصروف. جرّب تاني.",
+  "@familyNoticeAllowanceFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeDecisionAdmin": "القرار ده للمسؤول بس.",
+  "@familyNoticeDecisionAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeDecisionFailed": "مقدرتش أسجّل القرار. جرّب تاني.",
+  "@familyNoticeDecisionFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticePollClosed": "التصويت اتقفل خلاص.",
+  "@familyNoticePollClosed": {
+    "description": "Family notice."
+  },
+  "familyNoticeVoteFailed": "صوتك ماتسجلش. جرّب تاني.",
+  "@familyNoticeVoteFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticePollCloseWho": "اللي فتح التصويت أو المسؤول بس يقدر يقفله.",
+  "@familyNoticePollCloseWho": {
+    "description": "Family notice."
+  },
+  "familyNoticePollCloseFailed": "مقدرتش أقفل التصويت. جرّب تاني.",
+  "@familyNoticePollCloseFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeEditNotSaved": "التعديل ماتحفظش.",
+  "@familyNoticeEditNotSaved": {
+    "description": "Family notice."
+  },
+  "familyNoticeRewardAdmin": "المكافأة يحددها المسؤول بس.",
+  "@familyNoticeRewardAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeChoreFailed": "المهمة ماتضافتش. جرّب تاني.",
+  "@familyNoticeChoreFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeReopenAdmin": "إلغاء إنجاز المهمة للمسؤول بس.",
+  "@familyNoticeReopenAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeNotYours": "دي مهمة حد تاني.",
+  "@familyNoticeNotYours": {
+    "description": "Family notice."
+  },
+  "familyNoticeChoreUpdateFailed": "مقدرتش أحدّث المهمة.",
+  "@familyNoticeChoreUpdateFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeItemFailed": "الصنف ماتضافش. جرّب تاني.",
+  "@familyNoticeItemFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeLimitsAdmin": "حدود الصرف يحطها المسؤول بس.",
+  "@familyNoticeLimitsAdmin": {
+    "description": "Family notice."
+  },
+  "familyNoticeLimitsFailed": "الحدود ماتحفظتش. جرّب تاني.",
+  "@familyNoticeLimitsFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeGoalSuggestFailed": "زاد ماقدرش يقترح هدف دلوقتي. جرّب تاني.",
+  "@familyNoticeGoalSuggestFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeGoalFailed": "الهدف ماتحفظش. جرّب تاني.",
+  "@familyNoticeGoalFailed": {
+    "description": "Family notice."
+  },
+  "familyNoticeBalanceShort": "رصيده مايكفيش الطلب ده — حوّله مصروف الأول من «حوّل مصروف»، وبعدين وافق.",
+  "@familyNoticeBalanceShort": {
+    "description": "Family notice."
+  },
+  "familyNoticeChoreDone": "عمل رائع! 🌟 اتضاف {amount} للرصيد.",
+  "@familyNoticeChoreDone": {
+    "description": "Family notice: a finished task paid out.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "familyCoolingWaiting": "وقفة التفكير شغالة: الطلب لسه ماكملش ٢٤ ساعة — أو ارفضه دلوقتي لو مش مقتنع.",
+  "@familyCoolingWaiting": {
+    "description": "Family: approving a request during the thinking pause."
+  },
+  "familyCoolingWithinHour": "وقفة التفكير: تقدر توافق خلال ساعة — أو ارفضه دلوقتي لو مش مقتنع.",
+  "@familyCoolingWithinHour": {
+    "description": "Family: approving a request during the thinking pause."
+  },
+  "familyCoolingAfterHours": "وقفة التفكير: تقدر توافق بعد {hours} ساعة — أو ارفضه دلوقتي لو مش مقتنع.",
+  "@familyCoolingAfterHours": {
+    "description": "Family: approving a request during the thinking pause.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
   }
 }

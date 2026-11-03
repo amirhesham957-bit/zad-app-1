@@ -10,6 +10,7 @@ library;
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 
 /// A chat message's kind, as `chat_messages.message_type` stores it.
@@ -477,8 +478,10 @@ class ChildSpending {
   final reason = what.trim();
   return (
     text: allowance
+        // l10n: data-begin — the chat message the family and the brain read.
         ? 'محتاج مصروف $value${reason.isEmpty ? '' : ' — $reason'}'
         : 'أحتاج $value لشراء $reason',
+    // l10n: data-end
     metadata: <String, dynamic>{
       'amount': amount,
       'status': 'PENDING',
@@ -490,13 +493,11 @@ class ChildSpending {
 /// The purchase pause's answer to an approval that came too early
 /// (20261005231147): how long until it may go through — or that it may be
 /// refused now. [readyAt] null (an old server) still says it waits.
-String coolingOffMessage(DateTime? readyAt, DateTime now) {
-  const tail = ' — أو ارفضه دلوقتي لو مش مقتنع.';
-  if (readyAt == null) {
-    return 'وقفة التفكير شغالة: الطلب لسه ماكملش ٢٤ ساعة$tail';
-  }
+String coolingOffMessage(DateTime? readyAt, DateTime now, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  if (readyAt == null) return l.familyCoolingWaiting;
   final left = readyAt.difference(now.toUtc());
   final hours = (left.inMinutes / 60).ceil();
-  if (hours <= 1) return 'وقفة التفكير: تقدر توافق خلال ساعة$tail';
-  return 'وقفة التفكير: تقدر توافق بعد $hours ساعة$tail';
+  if (hours <= 1) return l.familyCoolingWithinHour;
+  return l.familyCoolingAfterHours(hours);
 }

@@ -844,7 +844,7 @@ class _MemberSheet extends ConsumerWidget {
               children: <Widget>[
                 for (final role in FamilyRole.values)
                   ChoiceChip(
-                    label: Text(role.label),
+                    label: Text(role.label(context.l10n)),
                     selected: member.role == role,
                     onSelected: member.role == role
                         ? null

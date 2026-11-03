@@ -11,6 +11,8 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_life_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -100,6 +102,7 @@ class FamilyLifeView {
 }
 
 /// Kotlin's quick replies, in its order.
+// l10n: data-begin — sent as the member's own chat message, read by all.
 const List<(String, String)> kFamilyQuickReplies = <(String, String)>[
   ('👍', 'تمام'),
   ('🕒', 'سأصل قريباً'),
@@ -112,6 +115,7 @@ const List<(String, String)> kFamilyQuickReplies = <(String, String)>[
   ('😊', 'الله يسعدكم'),
   ('🔥', 'استمرار في التسبيحة!'),
 ];
+// l10n: data-end
 
 /// Holds the family's shared life and changes it.
 class FamilyLifeController extends Notifier<FamilyLifeView> {
@@ -198,7 +202,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       if (ref.mounted) {
         state = state.copyWith(
           isLoading: false,
-          notice: 'مقدرتش أجيب بيانات العيلة. اسحب لتحت نجرب تاني.',
+          notice: _l.familyNoticeLoadFailed,
         );
       }
     }
@@ -265,11 +269,12 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
         metadata: metadata,
       );
     } on Object {
-      _say('الرسالة ماتبعتتش — اتأكد من النت.');
+      _say(_l.familyNoticeNotSent);
       return false;
     }
     if (type != FamilyMessageType.text) return true;
 
+    // l10n: data-begin — chat commands matched, Zad's chat posts, model data.
     final mentionsZad = RegExp('@(Zad|زاد)', caseSensitive: false);
     final wantsGrocery = RegExp('(أضف|نقص|شراء)');
     if (mentionsZad.hasMatch(message)) {
@@ -387,6 +392,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       'المهام المعلقة (${pendingChores.length}): $choresLine',
       'عناصر التسوق المطلوبة (${pendingGroceries.length}): $groceriesLine',
       '=== نهاية البيانات ===',
+      // l10n: data-end
     ].join('\n');
   }
 
@@ -422,14 +428,14 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       if (result['ok'] != true) {
         _say(
           result['reason'] == 'not_an_admin'
-              ? 'وقفة التفكير للمسؤول بس.'
-              : 'مقدرتش أغيّر وقفة التفكير. جرّب تاني.',
+              ? _l.familyNoticeCoolingAdmin
+              : _l.familyNoticeCoolingFailed,
         );
         return null;
       }
       return (result['hours'] as num?)?.toInt() == 24;
     } on Object {
-      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      _say(_l.familyNoticeServer);
       return null;
     }
   }
@@ -440,17 +446,19 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       final result = await _remote.sendAllowance(member.id, amount);
       if (result['ok'] != true) {
         _say(switch (result['reason']) {
-          'not_an_admin' => 'تحويل المصروف للمسؤول بس.',
-          'invalid_input' => 'اكتب مبلغ أكبر من صفر.',
-          _ => 'مقدرتش أحوّل المصروف. جرّب تاني.',
+          'not_an_admin' => _l.familyNoticeAllowanceAdmin,
+          'invalid_input' => _l.familyNoticeAmountPositive,
+          _ => _l.familyNoticeAllowanceFailed,
         });
         return false;
       }
+      // l10n: data-begin — a chat message, stored and read by the family.
       await send('حوّلت لـ${member.alias} مصروف ${_plain(amount)} 💰');
+      // l10n: data-end
       unawaited(ref.read(familyControllerProvider.notifier).refresh());
       return true;
     } on Object {
-      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      _say(_l.familyNoticeServer);
       return false;
     }
   }
@@ -479,7 +487,9 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
 
   /// The SOS call.
   Future<bool> sendSos() =>
+      // l10n: data-begin — the SOS chat message.
       send('الرجاء الانتباه، حالة طوارئ!', type: FamilyMessageType.sos);
+  // l10n: data-end
 
   /// An admin's decision on a request. On approval the server adds an
   /// allowance to the sender's balance or takes a purchase off it (refusing a
@@ -489,27 +499,28 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       final result = await _remote.decideRequest(request.id, approve: approve);
       if (result['ok'] != true) {
         _say(switch (result['reason']) {
-          'not_an_admin' => 'القرار ده للمسؤول بس.',
-          'insufficient_balance' =>
-            'رصيده مايكفيش الطلب ده — حوّله مصروف الأول '
-                'من «حوّل مصروف»، وبعدين وافق.',
+          'not_an_admin' => _l.familyNoticeDecisionAdmin,
+          'insufficient_balance' => _l.familyNoticeBalanceShort,
           'cooling_off' => coolingOffMessage(
             DateTime.tryParse('${result['ready_at']}'),
             ref.read(nowProvider)(),
+            _l,
           ),
-          _ => 'مقدرتش أسجّل القرار. جرّب تاني.',
+          _ => _l.familyNoticeDecisionFailed,
         });
         return;
       }
       if (result['already'] == true) return;
       await send(
         approve
+            // l10n: data-begin — a chat message, stored and read by the family.
             ? 'تمت الموافقة على طلب: ${request.message}'
             : 'تم رفض طلب: ${request.message}',
+        // l10n: data-end
       );
       unawaited(ref.read(familyControllerProvider.notifier).refresh());
     } on Object {
-      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      _say(_l.familyNoticeServer);
     }
   }
 
@@ -557,8 +568,8 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     state = state.copyWith(
       messages: before,
       notice: reason == 'closed'
-          ? 'التصويت اتقفل خلاص.'
-          : 'صوتك ماتسجلش. جرّب تاني.',
+          ? _l.familyNoticePollClosed
+          : _l.familyNoticeVoteFailed,
     );
   }
 
@@ -569,12 +580,12 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       if (result['ok'] != true) {
         _say(
           result['reason'] == 'not_allowed'
-              ? 'اللي فتح التصويت أو المسؤول بس يقدر يقفله.'
-              : 'مقدرتش أقفل التصويت. جرّب تاني.',
+              ? _l.familyNoticePollCloseWho
+              : _l.familyNoticePollCloseFailed,
         );
       }
     } on Object {
-      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      _say(_l.familyNoticeServer);
     }
   }
 
@@ -590,7 +601,10 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       await write();
     } on Object {
       if (!ref.mounted) return;
-      state = state.copyWith(messages: before, notice: 'التعديل ماتحفظش.');
+      state = state.copyWith(
+        messages: before,
+        notice: _l.familyNoticeEditNotSaved,
+      );
     }
   }
 
@@ -618,8 +632,8 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     } on Object catch (e) {
       _say(
         '$e'.contains('only_admins_set_rewards')
-            ? 'المكافأة يحددها المسؤول بس.'
-            : 'المهمة ماتضافتش. جرّب تاني.',
+            ? _l.familyNoticeRewardAdmin
+            : _l.familyNoticeChoreFailed,
       );
       return false;
     }
@@ -634,20 +648,20 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
           : await _remote.completeChore(chore.id);
       if (result['ok'] != true) {
         _say(switch (result['reason']) {
-          'not_an_admin' => 'إلغاء إنجاز المهمة للمسؤول بس.',
-          'not_yours' => 'دي مهمة حد تاني.',
-          _ => 'مقدرتش أحدّث المهمة.',
+          'not_an_admin' => _l.familyNoticeReopenAdmin,
+          'not_yours' => _l.familyNoticeNotYours,
+          _ => _l.familyNoticeChoreUpdateFailed,
         });
         return;
       }
       final paid = (result['paid'] as num?)?.toDouble() ?? 0;
       if (!chore.isCompleted && paid > 0) {
-        _say('عمل رائع! 🌟 اتضاف $paid للرصيد.');
+        _say(_l.familyNoticeChoreDone('$paid'));
       }
       await refresh();
       unawaited(ref.read(familyControllerProvider.notifier).refresh());
     } on Object {
-      _say('مقدرتش أوصل للسيرفر. جرّب تاني.');
+      _say(_l.familyNoticeServer);
     }
   }
 
@@ -693,7 +707,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       _showGroceries();
       return true;
     } on Object {
-      if (!quiet) _say('الصنف ماتضافش. جرّب تاني.');
+      if (!quiet) _say(_l.familyNoticeItemFailed);
       return false;
     }
   }
@@ -706,7 +720,9 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
           .toggle(item.id, purchased: !item.isPurchased);
       _showGroceries();
     } on Object {
-      if (ref.mounted) state = state.copyWith(notice: 'التعديل ماتحفظش.');
+      if (ref.mounted) {
+        state = state.copyWith(notice: _l.familyNoticeEditNotSaved);
+      }
     }
   }
 
@@ -725,13 +741,13 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
         weekly: weekly,
       );
       if (row == null) {
-        _say('حدود الصرف يحطها المسؤول بس.');
+        _say(_l.familyNoticeLimitsAdmin);
         return false;
       }
       await ref.read(familyControllerProvider.notifier).refresh();
       return true;
     } on Object {
-      _say('الحدود ماتحفظتش. جرّب تاني.');
+      _say(_l.familyNoticeLimitsFailed);
       return false;
     }
   }
@@ -761,13 +777,13 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
           ? state.copyWith(isSuggesting: false, suggestion: suggestion)
           : state.copyWith(
               isSuggesting: false,
-              notice: 'زاد ماقدرش يقترح هدف دلوقتي. جرّب تاني.',
+              notice: _l.familyNoticeGoalSuggestFailed,
             );
     } on Object {
       if (ref.mounted) {
         state = state.copyWith(
           isSuggesting: false,
-          notice: 'زاد ماقدرش يقترح هدف دلوقتي. جرّب تاني.',
+          notice: _l.familyNoticeGoalSuggestFailed,
         );
       }
     }
@@ -794,9 +810,12 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
       state = state.copyWith(clearSuggestion: true);
       await refresh();
     } on Object {
-      _say('الهدف ماتحفظش. جرّب تاني.');
+      _say(_l.familyNoticeGoalFailed);
     }
   }
+
+  /// The person's own language, for the notices only they see.
+  ZadL10n get _l => ref.read(zadL10nProvider);
 
   void _say(String words) {
     if (ref.mounted) state = state.copyWith(notice: words);
@@ -804,7 +823,9 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
 }
 
 const String _contextHeader =
+    // l10n: data-begin — the data block sent to the model.
     '=== بيانات العائلة الحقيقية (استخدمها في إجابتك، متختلقش أرقام تانية) ===';
+// l10n: data-end
 
 String _plain(double v) =>
     v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
