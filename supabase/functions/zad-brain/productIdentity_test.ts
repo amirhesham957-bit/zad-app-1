@@ -65,9 +65,21 @@ Deno.test("offer matches need: another staple, a longer word, or a brand alone i
     ["زيت", "زيتون أخضر"],
     ["لبن", "لبن زبادي جهينة"],
     ["خبز بلدي طازج", "توست برانش"],
-    // الماركة لوحدها شك — مايتقالش في تحية الصبح (الأقرب في pgvector لما zad_deals يتملى).
-    ["حليب نادك ١ لتر", "نادك كامل الدسم ١٠٠٠ مل"],
+    // الماركة لوحدها شك — مايتقالش في تحية الصبح.
+    ["حليب نادك ١ لتر", "نادك عصير برتقال"],
+    // التلميح مابيغلبش كلمة أساسيات من عيلة تانية.
+    ["حليب نادك", "جبنة نادك قليلة الدسم"],
+    ["رز", "زيت بسمتي"],
     ["", "زيت عافية"],
   ];
   for (const [need, offer] of no) assertEquals(offerMatchesNeed(need, offer), false, `${need} | ${offer}`);
+});
+
+Deno.test("offer matches need: a word that names one family stands in for it when the offer has no staple word (4.6)", () => {
+  const yes: Array<[string, string]> = [
+    ["حليب نادك ١ لتر", "نادك كامل الدسم ١٠٠٠ مل"],
+    ["لبن", "المراعي قليل الدسم"],
+    ["رز بسمتي", "الوليمة بسمتي ٥ كيلو"],
+  ];
+  for (const [need, offer] of yes) assertEquals(offerMatchesNeed(need, offer), true, `${need} | ${offer}`);
 });

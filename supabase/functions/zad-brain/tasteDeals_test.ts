@@ -399,3 +399,32 @@ Deno.test("paused sources: rows from a source the customers keep calling wrong a
   assertEquals(withoutPausedSources(rows, new Set(["youtube"])).map((r) => r.n), [1, 3]);
   assertEquals(withoutPausedSources(null, new Set()), []);
 });
+
+// ٤.٨: العرض الناري بيعدّي بالفئة كمان — البيت بيشتري جبنة، فـ١+١ على نوع جبنة تاني يتقال.
+import { boughtFamilies } from "./tasteDeals.ts";
+
+Deno.test("fire deal: rides on the category the house buys, not only the exact item", () => {
+  assertEquals(boughtFamilies(["جبنة بيضا دومتي", "زيت عافيه", "شوكولاته", "جبنه رومي"]), ["جبنه", "زيت"]);
+  const raw = storedDeals([
+    { store: "كيو", item_name: "جبنة رومي", price: 40, price_before: null, source_kind: "search", source_url: "https://q.example", valid_until: null, deal_kind: "multi_buy" },
+    { store: "كيو", item_name: "زبادي", price: 5, price_before: 20, source_kind: "search", source_url: "https://q.example", valid_until: null },
+  ]);
+  const fire = pickFireDeal(raw, ["جبنة بيضا دومتي"], [], new Set());
+  assertEquals([fire?.item, fire?.fire], ["جبنة رومي", true]);
+  // a house that only buys cheese is not offered yoghurt, however big the discount.
+  assertEquals(pickFireDeal(raw.slice(1), ["جبنة بيضا دومتي"], [], new Set()), null);
+  // never when money is tight.
+  assertEquals(pickFireDeal(raw, ["جبنة بيضا دومتي"], [], new Set(), [], true), null);
+});
+
+// ٤.١٥: المحل اللي قاله في الشات بيتعدّ من محلاته.
+import { statedStores } from "./tasteDeals.ts";
+
+Deno.test("stated stores: the shop the customer named counts as theirs; a rejected one does not", () => {
+  assertEquals(statedStores(["كيو", "من بنده مش العثيم", "كيو", "مش كارفور", ""]), ["كيو", "بنده"]);
+  const raw = storedDeals([
+    { store: "العثيم", item_name: "زيت عافية", price: 20, price_before: 30, source_kind: "search", source_url: "https://a.example", valid_until: null },
+    { store: "كيو", item_name: "زيت عافية", price: 25, price_before: 30, source_kind: "search", source_url: "https://q.example", valid_until: null },
+  ]);
+  assertEquals(pickDeal(raw, ["زيت"], statedStores(["كيو"]), new Set())?.store, "كيو");
+});

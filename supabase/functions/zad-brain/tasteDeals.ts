@@ -15,7 +15,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { countryNameAr, type DealHere, itemKey, sameStore, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
-import { meaningfulWords, offerMatchesNeed, stapleGroup } from "./productIdentity.ts";
+import { meaningfulWords, offerMatchesNeed, stapleGroup, stapleHead } from "./productIdentity.ts";
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
 import { type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
 
@@ -145,6 +145,21 @@ export function statedBrands(notes: readonly string[]): Map<number, string> {
     const kept = String(note ?? "").split(/(?:^|\s)(?:مش|بدل|مو|ماشي|لا)(?:\s|$)/)[0];
     const { group, words } = brandWords(kept);
     if (group !== undefined && words[0] && !out.has(group)) out.set(group, words[0]);
+  }
+  return out;
+}
+
+/**
+ * المحل اللي العميل قال إنه بيشتري منه («إحنا بنجيب من كيو»، ٤.١٥) — ملاحظات remember بسكوب store_preference، الملاحظة
+ * اسم المحل بس. اللي بعد «مش/بدل/مو» اترفض. بيتعدّ من محلاته المتكررة وقبلها، لأنه قالها بنفسه.
+ */
+export const STORE_PREFERENCE_SCOPE = "store_preference";
+export function statedStores(notes: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const note of notes) {
+    const kept = String(note ?? "").split(/(?:^|\s)(?:مش|بدل|مو|ماشي|لا)(?:\s|$)/)[0]
+      .replace(/^\s*(?:من|محل|سوبر ?ماركت|هايبر)\s+/, "").replace(/\s+/g, " ").trim().slice(0, 60);
+    if (kept.length >= 2 && !out.some((s) => itemKey(s) === itemKey(kept))) out.push(kept);
   }
   return out;
 }
@@ -304,7 +319,21 @@ export function isFireDeal(d: Record<string, unknown>): boolean {
 }
 
 /**
- * «العرض الناري» (٤.٨): بيعدّي شرط «في القايمة» لو البيت اشترى الصنف قبل كده ([bought] = أسامي المخزن). عمره ما بيتقال
+ * فئات اللي اتشرى (٤.٨): عيلة الأساسيات لكل اسم في المخزن، باسم العيلة نفسها («جبنه»، «زيت»). «جبنة بيضا» اتشرت ⇒
+ * «جبنه» بتطابق «جبنة رومي» في [offerMatchesNeed]. الأسامي اللي برّه العيلات مالهاش فئة.
+ */
+export function boughtFamilies(names: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const name of names) {
+    const head = stapleHead(brandWords(name).group ?? -1);
+    if (head && !out.includes(head)) out.push(head);
+  }
+  return out;
+}
+
+/**
+ * «العرض الناري» (٤.٨): بيعدّي شرط «في القايمة» لو البيت اشترى الصنف أو فئته قبل كده ([bought] = أسامي المخزن) —
+ * الصنف نفسه الأول، وبعده الفئة. عمره ما بيتقال
  * والفلوس ضيقة — اللي بينادي مابينادهوش ساعتها، وهنا كمان [tight] = ولا حاجة.
  */
 export function pickFireDeal(
@@ -319,7 +348,7 @@ export function pickFireDeal(
   if (tight || !Array.isArray(raw)) return null;
   const fire = (raw as Array<Record<string, unknown>>).filter(isFireDeal);
   if (fire.length === 0) return null;
-  const picked = pickDeal(fire, tasteItems(bought, [], 200), favorites, skip, nearby, false, brands);
+  const picked = pickDeal(fire, tasteItems([...bought, ...boughtFamilies(bought)], [], 240), favorites, skip, nearby, false, brands);
   return picked ? { ...picked, fire: true } : null;
 }
 
@@ -470,7 +499,8 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       // ٤.١٥: اللي اتشرى قبل كده — منه ماركة البيت لكل صنف.
       sb.from("zad_inventory").select("item_name,created_at").or(householdFilter(userId, family)).limit(300),
       // ٤.١٥: الماركة اللي قالها في الشات — بتغلب اللي اتحسب من المشتريات.
-      sb.from("zad_memory").select("note,valid_until").eq("user_id", userId).eq("scope", BRAND_PREFERENCE_SCOPE)
+      // ٤.١٥: والمحل اللي قال إنه بيشتري منه.
+      sb.from("zad_memory").select("note,scope,valid_until").eq("user_id", userId).in("scope", [BRAND_PREFERENCE_SCOPE, STORE_PREFERENCE_SCOPE])
         .is("superseded_by", null).order("created_at", { ascending: false }).limit(20),
     ]);
     const tight = broke || opts.tight === true;
@@ -493,11 +523,15 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     // من غير احتياج ممكن يبقى فيه عرض ناري (٤.٨) على حاجة اتشرت قبل كده — مش والفلوس ضيقة.
     // من غير احتياج خالص: عرض أساسي (EVERYDAY_STAPLES) — مش والفلوس ضيقة.
     if (!/^[A-Z]{2}$/.test(country) || (items.length === 0 && tight)) return null;
-    const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
+    const saidRows = ((said ?? []) as Array<{ note: string | null; scope?: string | null; valid_until?: string | null }>)
+      .filter((m) => !m.valid_until || Date.parse(m.valid_until) > now);
+    const saidOf = (scope: string) => saidRows.filter((m) => (m.scope ?? BRAND_PREFERENCE_SCOPE) === scope).map((m) => m.note ?? "");
+    const favorites = [
+      ...statedStores(saidOf(STORE_PREFERENCE_SCOPE)),
+      ...favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
+    ].filter((name, i, all) => all.findIndex((o) => itemKey(o) === itemKey(name)) === i);
     const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
-    const saidNotes = ((said ?? []) as Array<{ note: string | null; valid_until?: string | null }>)
-      .filter((m) => !m.valid_until || Date.parse(m.valid_until) > now).map((m) => m.note ?? "");
-    const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidNotes)]);
+    const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidOf(BRAND_PREFERENCE_SCOPE))]);
     // ٤.٨: الفلوس مرتاحة ⇒ عرض على أساسي بيتخزّن واتشرى قبل كده بيتقال كفرصة تخزين.
     const stockable = opts.comfortable && !tight ? storableBought(boughtNames) : new Set<number>();
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
