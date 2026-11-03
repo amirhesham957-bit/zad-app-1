@@ -40,10 +40,16 @@ Deno.test("instagram probe: the account first, then whether hashtag search is al
   assertEquals(await instagramProbe(undefined, "1"), { configured: false, token: false, account_id: true });
   stubFetch([
     [/ig_hashtag_search/, 400, { error: { type: "OAuthException", code: 10 } }],
+    [/business_discovery/, 200, { business_discovery: { username: "zad", followers_count: 3 } }],
     [/graph\.facebook\.com\/v21\.0\/178/, 200, { username: "zad" }],
   ]);
   const r = await instagramProbe("TOKEN-SECRET", "178");
-  assertEquals(r, { configured: true, account: { ok: true, status: 200 }, hashtag_search: { ok: false, status: 400, reason: "OAuthException/10" } });
+  assertEquals(r, {
+    configured: true,
+    account: { ok: true, status: 200 },
+    hashtag_search: { ok: false, status: 400, reason: "OAuthException/10" },
+    business_discovery: { ok: true, status: 200 },
+  });
   assert(!JSON.stringify(r).includes("TOKEN-SECRET"));
   // توكن منتهي: ميتا بترجع 400 وكود 190.
   stubFetch([[/graph/, 400, { error: { type: "OAuthException", code: 190 } }]]);
@@ -125,4 +131,42 @@ Deno.test("meta app keys: found under any sensible name, META_ first, never the 
   assertEquals(metaAppKeys({ INSTA_ID: "7", INSTA_SECRET: "x", META_APP_ID: "8", META_APP_SECRET: "y" }).id, "8");
   assertEquals(metaAppKeys({ FB_APP_ID: "5", FB_APP_SECRET: "z" }).secretName, "FB_APP_SECRET");
   assertEquals(metaAppKeys({ INSTAGRAM_BUSINESS_ACCOUNT_ID: "999", META_APP_ID: " " }), { id: undefined, secret: undefined, idName: undefined, secretName: undefined });
+});
+
+import { instagramAccountPosts, instagramHandles, MIN_STORE_FOLLOWERS } from "./socialSources.ts";
+
+Deno.test("store accounts: handles from search links, never a post, a page of Instagram's own, or a repeat", () => {
+  assertEquals(instagramHandles([
+    "https://www.instagram.com/keeta.ksa/",
+    "https://instagram.com/Keeta.KSA?hl=ar",
+    "https://www.instagram.com/p/AbC1/",
+    "https://www.instagram.com/explore/tags/عروض/",
+    "https://www.instagram.com/reel/X/",
+    "https://m.instagram.com/ninja.sa",
+    "https://www.instagram.com/.bad/",
+    "https://example.com/instagram.com/fake",
+  ]), ["keeta.ksa", "ninja.sa"]);
+});
+
+Deno.test("store accounts: business_discovery gives the account and its recent posts — the token never leaks", async () => {
+  const seen = stubFetch([[/business_discovery/, 200, {
+    business_discovery: {
+      username: "keeta.ksa", followers_count: MIN_STORE_FOLLOWERS + 1,
+      media: { data: [
+        { id: "1", caption: "50% off", permalink: "https://www.instagram.com/p/K1/", timestamp: "2026-11-02T10:00:00+0000", media_type: "IMAGE", media_url: "https://scontent.cdninstagram.com/k.jpg" },
+        { id: "2", caption: "قديم", permalink: "https://www.instagram.com/p/K0/", timestamp: "2026-09-01T10:00:00+0000", media_type: "IMAGE", media_url: "https://x/o.jpg" },
+      ] },
+    },
+  }]]);
+  const r = await instagramAccountPosts("TOKEN-SECRET", "178", "keeta.ksa", { now: Date.parse("2026-11-04T00:00:00Z") });
+  assertEquals(r.account, { username: "keeta.ksa", followers: MIN_STORE_FOLLOWERS + 1 });
+  assertEquals(r.items.map((p) => p.permalink), ["https://www.instagram.com/p/K1/"]);
+  assert(decodeURIComponent(seen[0]).includes("business_discovery.username(keeta.ksa)"));
+  assert(!JSON.stringify(r).includes("TOKEN-SECRET"));
+  // أكونت شخصي أو مش موجود: ميتا بترجع 400 بكود، والسبب بيطلع من غير التوكن.
+  stubFetch([[/business_discovery/, 400, { error: { type: "OAuthException", code: 110 } }]]);
+  assertEquals(await instagramAccountPosts("TOKEN-SECRET", "178", "someone"), { ok: false, status: 400, reason: "OAuthException/110", items: [] });
+  // يوزرنيم فيه حاجة غير الحروف المسموحة مابيتبعتش أصلاً (مايكسرش الـfields).
+  assertEquals((await instagramAccountPosts("t", "178", "a){x}")).reason, "bad_username");
+  globalThis.fetch = realFetch;
 });

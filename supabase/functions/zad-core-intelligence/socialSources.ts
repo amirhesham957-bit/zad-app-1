@@ -100,10 +100,14 @@ export async function instagramProbe(token: string | undefined, accountId: strin
   const account = await call(`${encodeURIComponent(accountId)}?fields=username`);
   if (account.status !== 200) return { configured: true, account: { ok: false, status: account.status, reason: metaReason(account.body) } };
   const tag = await call(`ig_hashtag_search?user_id=${encodeURIComponent(accountId)}&q=${encodeURIComponent("عروض")}`);
+  // أكونت المحل (business_discovery) على حسابنا إحنا: نفس الصلاحية من غير ما نسمّي محل.
+  const own = String((account.body as { username?: unknown } | null)?.username ?? "");
+  const discovery = own ? await instagramAccountPosts(token, accountId, own, { media: 0 }) : { ok: false, status: 0, reason: "no_username" };
   return {
     configured: true,
     account: { ok: true, status: 200 },
     hashtag_search: { ok: tag.status === 200, status: tag.status, ...(tag.status === 200 ? {} : { reason: metaReason(tag.body) }) },
+    business_discovery: { ok: discovery.ok, status: discovery.status, ...(discovery.ok ? {} : { reason: discovery.reason }) },
   };
 }
 
@@ -156,9 +160,14 @@ export async function instagramHashtagPosts(
   const fields = "id,caption,permalink,timestamp,media_type,media_url";
   const media = await get(`${encodeURIComponent(first.id)}/top_media?user_id=${user}&fields=${fields}&limit=25`);
   if (media.status !== 200) return { ok: false, status: media.status, reason: reason(media.body), items: [] };
+  return { ok: true, status: 200, items: readMediaPosts(media.body?.data, opts) };
+}
+
+/** البوستات من رد ميديا Graph: الصالحة من آخر [days] يوم، الأحدث الأول، [max] بالكتير (١–٢٥). */
+function readMediaPosts(data: unknown, opts: { days?: number; max?: number; now?: number }): InstagramPost[] {
   const since = (opts.now ?? Date.now()) - (opts.days ?? 10) * DAY_MS;
   const posts: InstagramPost[] = [];
-  for (const m of (Array.isArray(media.body?.data) ? media.body!.data : []) as MediaItem[]) {
+  for (const m of (Array.isArray(data) ? data : []) as MediaItem[]) {
     if (typeof m?.id !== "string" || typeof m.permalink !== "string") continue;
     if (!/^https:\/\/www\.instagram\.com\/(p|reel)\/[\w-]+\/?$/.test(m.permalink)) continue;
     const at = Date.parse(String(m.timestamp ?? ""));
@@ -173,7 +182,68 @@ export async function instagramHashtagPosts(
     });
   }
   posts.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
-  return { ok: true, status: 200, items: posts.slice(0, Math.min(Math.max(opts.max ?? 6, 1), 25)) };
+  return posts.slice(0, Math.min(Math.max(opts.max ?? 6, 1), 25));
+}
+
+// ── أكونت المحل نفسه (Business Discovery، ٤.١٢) ─────────────────────────────────────────────────────────────────
+// بوستات أي أكونت Business أو Creator عام باليوزرنيم، من خلال حسابنا. مابياخدش من الـ٣٠ هاشتاج في الأسبوع، والبوست
+// من أكونت المحل نفسه. اليوزرنيم بيتلاقي من البحث، ومابيتقبلش غير لو Meta قالت إنه Business وعنده متابعين كفاية —
+// أكونت شخصي أو مقلّد صغير مابيعدّيش.
+
+/** أقل متابعين لأكونت نعتبره أكونت المحل الرسمي. */
+export const MIN_STORE_FOLLOWERS = 20_000;
+
+/** يوزرنيمز إنستجرام من روابط نتايج بحث (instagram.com/<user>)، من غير البوستات والصفحات العامة، بترتيبها ومن غير تكرار. */
+export function instagramHandles(urls: string[]): string[] {
+  const reserved = new Set(["p", "reel", "reels", "tv", "explore", "stories", "accounts", "about", "developer", "legal", "directory", "web"]);
+  const out: string[] = [];
+  for (const url of urls) {
+    const m = /^https?:\/\/(?:www\.|m\.)?instagram\.com\/([A-Za-z0-9._]{1,30})\/?(?:[?#].*)?$/.exec(url.trim());
+    if (!m) continue;
+    const name = m[1].toLowerCase();
+    if (reserved.has(name) || /^\.|\.$/.test(name) || out.includes(name)) continue;
+    out.push(name);
+  }
+  return out;
+}
+
+export interface StoreAccount {
+  username: string;
+  followers: number;
+}
+
+/** رد business_discovery من Meta: الأكونت والبوستات، أو السبب. */
+export async function instagramAccountPosts(
+  token: string,
+  accountId: string,
+  username: string,
+  opts: { days?: number; max?: number; now?: number; media?: number } = {},
+): Promise<SourceResult<InstagramPost> & { account?: StoreAccount }> {
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) return { ok: false, status: 0, reason: "bad_username", items: [] };
+  const media = opts.media ?? 25;
+  const inner = media > 0
+    ? `username,followers_count,media.limit(${media}){id,caption,permalink,timestamp,media_type,media_url}`
+    : "username,followers_count";
+  const fields = `business_discovery.username(${username}){${inner}}`;
+  let status = 0;
+  let body: (ApiError & { business_discovery?: { username?: unknown; followers_count?: unknown; media?: { data?: unknown } } }) | null;
+  try {
+    const res = await fetch(
+      `${GRAPH}/${encodeURIComponent(accountId)}?fields=${encodeURIComponent(fields)}&access_token=${encodeURIComponent(token)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    status = res.status;
+    body = await res.json().catch(() => null);
+  } catch (e) {
+    return { ok: false, status: 0, reason: String((e as Error)?.message ?? e).slice(0, 60), items: [] };
+  }
+  const found = body?.business_discovery;
+  if (status !== 200 || !found) {
+    const e = body?.error;
+    return { ok: false, status, reason: e ? `${String(e.type ?? "error").slice(0, 40)}${e.code ? `/${e.code}` : ""}` : "no_data", items: [] };
+  }
+  const account = { username: String(found.username ?? username), followers: Number(found.followers_count) || 0 };
+  return { ok: true, status: 200, account, items: media > 0 ? readMediaPosts(found.media?.data, opts) : [] };
 }
 
 // ── التوكن بيتجدد لوحده (٤.١٢، قرار ٤/١١: مفيش خطوة يدوية) ──────────────────────────────────────────────────────

@@ -44,7 +44,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
-  exchangeLongLivedToken, instagramHashtagPosts, metaAppKeys, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
+  exchangeLongLivedToken, instagramAccountPosts, instagramHandles, instagramHashtagPosts, metaAppKeys, MIN_STORE_FOLLOWERS, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
@@ -487,6 +487,37 @@ async function instagramToken(): Promise<string | undefined> {
     if (typeof data === "string" && data.length >= 20) return data;
   } catch { /* السر */ }
   return Deno.env.get("INSTAGRAM_ACCESS_TOKEN") || undefined;
+}
+
+/**
+ * يوزرنيم أكونت المحل الرسمي على إنستجرام (٤.١٢)، أو null. المتخزّن في zad_deal_store_accounts بيتقري ٣٠ يوم (حتى
+ * «مالوش»)، وبعدها بحث واحد «<المحل> instagram» وأول يوزرنيمين في النتايج بيتجربوا بـbusiness_discovery: الأول
+ * اللي Meta قالت إنه Business وعنده MIN_STORE_FOLLOWERS متابع بيتقبل. Meta رفضت كل الصلاحية = مابيتخزنش حاجة.
+ */
+async function storeInstagramAccount(
+  token: string, accountId: string, country: string, store: string, countryName: string,
+): Promise<string | null> {
+  const { data: known } = await supabase.from("zad_deal_store_accounts")
+    .select("username, checked_at").eq("country", country).eq("store", store).eq("platform", "instagram").maybeSingle();
+  if (known && Date.now() - Date.parse(String(known.checked_at)) < 30 * 86_400_000) return known.username ?? null;
+  const hits = await webSearchSnippets(`${searchStoreName(store)} instagram ${countryName}`, 8, country);
+  let username: string | null = null;
+  let followers: number | null = null;
+  for (const candidate of instagramHandles(hits.map((h) => h.url)).slice(0, 2)) {
+    const probe = await instagramAccountPosts(token, accountId, candidate, { media: 0 });
+    // 190/10/200 = التوكن أو الصلاحية، مش الأكونت: مانحكمش على المحل.
+    if (!probe.ok && /OAuthException\/(190|10|200)$/.test(probe.reason ?? "")) return known?.username ?? null;
+    if (probe.ok && probe.account && probe.account.followers >= MIN_STORE_FOLLOWERS) {
+      username = probe.account.username.toLowerCase();
+      followers = probe.account.followers;
+      break;
+    }
+  }
+  const { error } = await supabase.from("zad_deal_store_accounts").upsert({
+    country, store, platform: "instagram", username, followers, checked_at: new Date().toISOString(),
+  });
+  if (error) console.error("[storeInstagramAccount] save failed:", error.message);
+  return username;
 }
 
 async function pictureAsDataUrl(url: string): Promise<string | null> {
@@ -2871,10 +2902,16 @@ async function handle(req: Request): Promise<Response> {
         if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
         const market = marketOf(payload?.country);
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
+        const country = typeof payload?.country === "string" ? payload.country.toUpperCase() : market.code;
+        // أكونت المحل نفسه الأول (Business Discovery)، والهاشتاج لو المحل مالوش أكونت أو Meta رفضت.
+        const handle = await storeInstagramAccount(igToken, igAccount, country, store, market.name);
+        const own = handle ? await instagramAccountPosts(igToken, igAccount, handle, { days: 10, max: 15 }) : null;
+        if (own && !own.ok) console.warn(`[store_deals_instagram] @${handle}: ${own.reason ?? own.status} — hashtag instead`);
+        const via = own?.ok ? "account" : "hashtag";
         const tag = storeHashtag(searchStoreName(store));
-        const found = await instagramHashtagPosts(igToken, igAccount, tag, { days: 10, max: 15 });
+        const found = own?.ok ? own : await instagramHashtagPosts(igToken, igAccount, tag, { days: 10, max: 15 });
         if (!found.ok) return jsonResponse({ ok: false, reason: found.reason ?? `instagram_${found.status}` });
-        const posts = instagramDealPosts(found.items, store);
+        const posts = instagramDealPosts(found.items, store, 3, via === "account");
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
         let read = 0;
@@ -2893,7 +2930,10 @@ async function handle(req: Request): Promise<Response> {
           const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
           deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
         }
-        return jsonResponse({ ok: true, deals, hits: found.items.length, posts: posts.length, read, tag, source: "instagram" });
+        return jsonResponse({
+          ok: true, deals, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
+          ...(via === "account" ? { account: handle } : { tag }),
+        });
       }
 
       // ──────────────────────────────────────────────
