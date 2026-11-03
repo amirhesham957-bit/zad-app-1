@@ -749,6 +749,37 @@ export function dealKeyboard(momentId: string): InlineKeyboardButton[][] {
   ]];
 }
 
+/** The deal's own source as the morning greeting stored it (facts.taste_deal.source). */
+export type DealSource = { kind?: unknown; url?: unknown } | null | undefined;
+
+const DEAL_LINK_TEXT: Record<string, string> = {
+  youtube: "▶️ الفيديو",
+  instagram: "📸 البوست",
+  flyer: "📰 النشرة",
+  partner: "🔗 رابط الشراكة",
+};
+
+/**
+ * ZAD_PLAN 4.20: the deal's link as a button under the morning greeting — the post, the video, the flyer or the shop's
+ * page. https only; a receipt deal (bills from homes nearby) has no link and gets no button.
+ */
+export function dealSourceRow(source: DealSource): InlineKeyboardButton[] | null {
+  const url = typeof source?.url === "string" ? source.url.trim() : "";
+  if (!/^https:\/\/[^\s]{4,500}$/.test(url)) return null;
+  const kind = typeof source?.kind === "string" ? source.kind : "";
+  return [{ text: DEAL_LINK_TEXT[kind] ?? "🔗 صفحة العرض", url }];
+}
+
+/**
+ * ZAD_PLAN 4.20: a picture for the deal. A YouTube deal shows its video's thumbnail (public, by the video's id). An
+ * Instagram post's picture is never stored, so its link button carries it instead.
+ */
+export function dealPhotoUrl(source: DealSource): string | null {
+  if (source?.kind !== "youtube" || typeof source.url !== "string") return null;
+  const id = /^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{6,20})$/.exec(source.url.trim())?.[1];
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
 export function parseDealCallback(data: string): { momentId: string; add: boolean } | null {
   const parts = data.split(":");
   if (parts.length !== 3 || parts[0] !== "dl" || (parts[2] !== "a" && parts[2] !== "n")) return null;

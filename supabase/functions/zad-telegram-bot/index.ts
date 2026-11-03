@@ -53,7 +53,7 @@ import {
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
-  dealKeyboard, parseDealCallback, dealReply,
+  dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply,
   learningKeyboard, parseLearningCallback, learningReply,
   memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
   habitTrialBlock, parseHabitTrialCallback, habitTrialReply, type HabitTrial,
@@ -246,6 +246,17 @@ async function sendDuplicateProposalQuestion(
   });
   await sendTelegramMessage(chatId, clampForTelegram(text), duplicateProposalKeyboard(row.id));
   return true;
+}
+
+/** A picture by its public URL, ahead of the message it belongs to (ZAD_PLAN 4.20). */
+async function sendTelegramPhoto(chatId: number, photo: string, caption: string): Promise<void> {
+  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, photo, caption: caption.slice(0, 1000) }),
+  });
+  const result = await response.json().catch(() => null) as { ok?: boolean } | null;
+  if (!response.ok || result?.ok !== true) throw new Error(`Telegram sendPhoto failed (${response.status})`);
 }
 
 async function sendTelegramMessage(chatId: number, text: string, keyboard?: InlineKeyboardButton[][]): Promise<void> {
@@ -2968,6 +2979,19 @@ Deno.serve(async (req: Request) => {
           console.error("realtime_push: night questions failed:", e);
         }
       }
+      // عرض الصبح (ZAD_PLAN ٤.٢٠): رابط العرض زرار فوق «ضيفه / مش مهتم»، وصورته قبل الرسالة لو ليه صورة (فيديو يوتيوب).
+      // المصدر من صف اللحظة نفسها بملكية العميل؛ فشل القراية = الرسالة بأزرارها من غير رابط.
+      const dealSource: { row: InlineKeyboardButton[] | null; photo: string | null; caption: string } = { row: null, photo: null, caption: "" };
+      if (!dose_moment_id && !closeDay && !salary_moment_id && deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)) {
+        const { data: moment, error: momentErr } = await sb.from("zad_voice_moments")
+          .select("facts").eq("id", deal_moment_id).eq("user_id", user_id).maybeSingle();
+        if (momentErr) console.error("realtime_push: deal source lookup failed:", momentErr.message);
+        const deal = (moment as { facts?: { taste_deal?: { item?: unknown; store?: unknown; source?: { kind?: unknown; url?: unknown } } } } | null)
+          ?.facts?.taste_deal;
+        dealSource.row = dealSourceRow(deal?.source);
+        dealSource.photo = dealPhotoUrl(deal?.source);
+        dealSource.caption = `🏷️ ${String(deal?.item ?? "")}${deal?.store ? ` — ${String(deal.store)}` : ""}`;
+      }
       const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
         : closeDay
@@ -2975,11 +2999,15 @@ Deno.serve(async (req: Request) => {
         : salary_moment_id && /^[0-9a-fA-F-]{36}$/.test(salary_moment_id)
         ? salaryKeyboard(salary_moment_id)
         : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
-        ? dealKeyboard(deal_moment_id)
+        ? [...(dealSource.row ? [dealSource.row] : []), ...dealKeyboard(deal_moment_id)]
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...(memoryBlock?.rows ?? []), ...(habitBlock?.rows ?? []), ...dismissRows]
         : undefined;
       const shown = [body, memoryBlock?.text, habitBlock?.text].filter(Boolean).join("\n\n");
+      if (dealSource.photo) {
+        await sendTelegramPhoto(chatId, dealSource.photo, dealSource.caption)
+          .catch((e) => console.error("realtime_push: deal photo failed:", e));
+      }
       await sendTelegramMessage(chatId, nightMessage(`${title}\n\n${shown}`, nightQuestions?.text ?? null), keyboard);
       if (nightQuestions) await recordCheckinTurn(sb, user_id, nightQuestions.items);
       // تنبيه حرج (اللي بعته قال voice:true): فويس بصوت زاد بعد النص، في الخلفية.

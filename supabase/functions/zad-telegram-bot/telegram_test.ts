@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import * as telegramModule from "./telegram.ts";
 import {
+  dealPhotoUrl, dealSourceRow,
   normalizeBindingCode, parseDismissCallback, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
   checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
@@ -657,4 +658,21 @@ Deno.test("categorising the expense answers «كان على إيه؟» — loggi
   assertEquals(pendingQuestionAnswered(["update_transaction", "add_inventory_item"]), true);
   assertEquals(pendingQuestionAnswered(["log_transaction"]), false);
   assertEquals(pendingQuestionAnswered([]), false);
+});
+
+Deno.test("deal link (ZAD_PLAN 4.20): a button per source, https only, none for a receipt deal", () => {
+  assertEquals(dealSourceRow({ kind: "youtube", url: "https://www.youtube.com/watch?v=abc123" }), [{ text: "▶️ الفيديو", url: "https://www.youtube.com/watch?v=abc123" }]);
+  assertEquals(dealSourceRow({ kind: "instagram", url: "https://www.instagram.com/p/AbC/" })?.[0].text, "📸 البوست");
+  assertEquals(dealSourceRow({ kind: "search", url: "https://shop.example/offers" })?.[0].text, "🔗 صفحة العرض");
+  assertEquals(dealSourceRow({ kind: "receipt", url: null }), null);
+  assertEquals(dealSourceRow({ kind: "search", url: "http://plain.example" }), null);
+  assertEquals(dealSourceRow({ kind: "search", url: "javascript:alert(1)" }), null);
+  assertEquals(dealSourceRow(undefined), null);
+});
+
+Deno.test("deal photo (ZAD_PLAN 4.20): a YouTube deal shows its thumbnail, nothing else gets a picture", () => {
+  assertEquals(dealPhotoUrl({ kind: "youtube", url: "https://www.youtube.com/watch?v=abc123" }), "https://i.ytimg.com/vi/abc123/hqdefault.jpg");
+  assertEquals(dealPhotoUrl({ kind: "youtube", url: "https://evil.example/watch?v=abc123" }), null);
+  assertEquals(dealPhotoUrl({ kind: "instagram", url: "https://www.instagram.com/p/AbC/" }), null);
+  assertEquals(dealPhotoUrl(null), null);
 });
