@@ -18,3 +18,11 @@ Deno.test("receipt prompt: the rest of the contract is untouched", () => {
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "\"paymentMethod\":\"\"");
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Return ONLY a JSON object");
 });
+
+Deno.test("receipt prompt: a delivery-app order — fees and discounts are not items, the shop is the store, no promo code", () => {
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Delivery fees, service fees, tips, discounts and promo-code lines are NOT items");
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "`storeName` is the shop or restaurant the order came from");
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Never copy a promo code anywhere");
+  // العقد نفسه مااتغيرش: مفيش حقل جديد في الـJSON.
+  assert(!/promoCode|"platform"/.test(RECEIPT_SYSTEM_PROMPT));
+});

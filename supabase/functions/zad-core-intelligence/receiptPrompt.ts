@@ -10,6 +10,13 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "local currency (Egyptian pound, riyal, dirham…). Read every amount exactly as printed and never " +
   "convert it to another currency. " +
   "Read every line item with its own price; keep the item names exactly as printed. " +
+  // ZAD_PLAN ٤.٢ (٢٠٢٦-١١-٠٤): صورة طلب من تطبيق توصيل (نينجا، كيتا، هنقرستيشن، طلبات…) أسعار أصنافها بتروح
+  // للجمهور من باب الشرا، فرسوم التوصيل والخدمة وسطر الخصم ماينفعوش يبقوا «أصناف» بأسعار، والمحل هو اللي اتطلب منه.
+  // كود الخصم مابيتقريش عن قصد: ممكن يكون شخصي لصاحب الطلب، ومايتنشرش لبيوت تانية.
+  "For an order from a delivery app (Ninja, Keeta, HungerStation, Jahez, Talabat, Nana…): `storeName` is the shop " +
+  "or restaurant the order came from as shown; use the app's own name only when the app itself is the shop. " +
+  "Delivery fees, service fees, tips, discounts and promo-code lines are NOT items — never list them in `items`; " +
+  "`total` is still what was paid in the end. Never copy a promo code anywhere. " +
   "`total` is the final amount actually paid (after VAT and any discount), as a number with no currency symbol. " +
   "If a field is genuinely unreadable, leave it empty or 0 rather than guessing. " +
   // `category` used to be an open string, and an open string is an invitation to
