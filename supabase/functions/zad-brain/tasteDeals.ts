@@ -435,6 +435,28 @@ export function nearbyPoint(
   return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
 }
 
+/**
+ * ٤.٣: عروض مدينته الأول وبعدها البلد كله (''). عرض في مدينة تانية بيتشال، ونفس المحل والصنف في مدينته بيغلب
+ * صف البلد. من غير مدينة = الصفوف زي ما هي (زي الأول).
+ */
+export function dealsForCity<T extends { city?: string | null; store?: string | null; item_name?: string | null }>(
+  rows: T[] | null | undefined,
+  city: string,
+): T[] {
+  if (!city) return rows ?? [];
+  const key = (r: T) => `${itemKey(r.store ?? "")}|${itemKey(r.item_name ?? "")}`;
+  const mine = (rows ?? []).filter((r) => (r.city ?? "") === city);
+  const local = new Set(mine.map(key));
+  return [...mine, ...(rows ?? []).filter((r) => (r.city ?? "") === "" && !local.has(key(r)))];
+}
+
+/** مدينة العميل (zad_user_city) لو في نفس بلد العرض؛ وإلا ''. فشل = ''. */
+async function customerCity(sb: SupabaseClient, userId: string, country: string): Promise<string> {
+  const { data } = await sb.from("zad_user_city").select("country,city").eq("user_id", userId).maybeSingle();
+  const row = data as { country?: string | null; city?: string | null } | null;
+  return row && String(row.country ?? "").toUpperCase() === country ? String(row.city ?? "") : "";
+}
+
 /** أسامي المحلات من رد nearby_pois ({stores: [{name}]}). */
 export function nearbyStoreNames(raw: unknown): string[] {
   const stores = (raw as { stores?: unknown } | null)?.stores;
@@ -583,9 +605,11 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       : null;
     const nearby = nearbyStoreNames(nearbyRaw);
     const places = nearbyStorePlaces(nearbyRaw);
+    // ٤.٣: مدينته — بالتوازي مع القرايات اللي جاية.
+    const cityRead = customerCity(sb, userId, country).catch(() => "");
     const [{ data: storedAll, error: storedErr }, { data: fuelRow }, { data: pausedRows, error: pausedErr }] = await Promise.all([
       sb.from("zad_deals")
-        .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind")
+        .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind,city")
         .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300),
       sb.from("zad_fuel_prices").select("price,currency,found_at").eq("country", country).maybeSingle(),
       sb.rpc("zad_deal_paused_sources", { p_days: 14 }),
@@ -594,7 +618,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     // فشل قراية البوابة = من غير إيقاف (العرض لسه بمصدره وتاريخه و«ممكن يكون خلص»).
     if (pausedErr) console.warn("[taste_deal] paused sources read failed:", pausedErr.message);
     const paused = new Set(((pausedRows ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
-    const stored = withoutPausedSources(storedAll as StoredDealRow[] | null, paused);
+    const stored = withoutPausedSources(dealsForCity(storedAll as Array<StoredDealRow & { city?: string | null }> | null, await cityRead), paused);
     // النية الأول: عرض على حاجة قال إنه عايزها يغلب محله المعتاد على حاجة من القايمة.
     const pick = (raw: unknown): TasteDeal | null => {
       const wanted = wants.length ? pickDeal(raw, wants, favorites, skip, nearby, false, brands, stockable) : null;
