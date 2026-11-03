@@ -127,6 +127,22 @@ export function houseBrands(names: readonly string[]): Map<number, string> {
   return out;
 }
 
+/**
+ * الماركة اللي العميل قالها بنفسه («إحنا بنجيب نادك مش المراعي») — ملاحظات remember بسكوب brand_preference،
+ * مكتوبة «<الصنف> <الماركة>». اللي بعد «مش/بدل/مو» اترفض فمش ماركته. أول كلمة ماركة بس، وملاحظة مافيهاش صنف
+ * أساسي بتتساب.
+ */
+export const BRAND_PREFERENCE_SCOPE = "brand_preference";
+export function statedBrands(notes: readonly string[]): Map<number, string> {
+  const out = new Map<number, string>();
+  for (const note of notes) {
+    const kept = String(note ?? "").split(/(?:^|\s)(?:مش|بدل|مو|ماشي|لا)(?:\s|$)/)[0];
+    const { group, words } = brandWords(kept);
+    if (group !== undefined && words[0] && !out.has(group)) out.set(group, words[0]);
+  }
+  return out;
+}
+
 /** ماركة البيت في اسم العرض ده، أو null. */
 export function offerBrand(offered: string, brands: ReadonlyMap<number, string>): string | null {
   if (brands.size === 0) return null;
@@ -357,7 +373,7 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now(), opts: { tight?: boolean; comfortable?: boolean } = {}): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);
-    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }, { data: bought }] = await Promise.all([
+    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }, { data: bought }, { data: said }] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
@@ -371,6 +387,9 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle(),
       // ٤.١٥: اللي اتشرى قبل كده — منه ماركة البيت لكل صنف.
       sb.from("zad_inventory").select("item_name,created_at").or(householdFilter(userId, family)).limit(300),
+      // ٤.١٥: الماركة اللي قالها في الشات — بتغلب اللي اتحسب من المشتريات.
+      sb.from("zad_memory").select("note,valid_until").eq("user_id", userId).eq("scope", BRAND_PREFERENCE_SCOPE)
+        .is("superseded_by", null).order("created_at", { ascending: false }).limit(20),
     ]);
     const tight = broke || opts.tight === true;
     const interests = (profile as { interests?: unknown } | null)?.interests;
@@ -392,7 +411,9 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
     const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
     const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "");
-    const brands = houseBrands(boughtNames);
+    const saidNotes = ((said ?? []) as Array<{ note: string | null; valid_until?: string | null }>)
+      .filter((m) => !m.valid_until || Date.parse(m.valid_until) > now).map((m) => m.note ?? "");
+    const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidNotes)]);
     // ٤.٨: الفلوس مرتاحة ⇒ عرض على أساسي بيتخزّن واتشرى قبل كده بيتقال كفرصة تخزين.
     const stockable = opts.comfortable && !tight ? storableBought(boughtNames) : new Set<number>();
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
