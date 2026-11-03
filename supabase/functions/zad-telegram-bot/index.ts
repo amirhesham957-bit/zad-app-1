@@ -2060,9 +2060,9 @@ bot.on("callback_query:data", async (ctx) => {
   const deal = parseDealCallback(data);
   if (deal) {
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
-    const { data: result, error } = await sb.rpc("zad_deal_answer_service", {
-      p_user: userId, p_moment: deal.momentId, p_add: deal.add,
-    });
+    const { data: result, error } = deal.wrong
+      ? await sb.rpc("zad_deal_report_service", { p_user: userId, p_moment: deal.momentId })
+      : await sb.rpc("zad_deal_answer_service", { p_user: userId, p_moment: deal.momentId, p_add: deal.add });
     if (error) console.error("[deal_answer] rpc failed:", error.message);
     await ctx.reply(dealReply(error ? null : result as Parameters<typeof dealReply>[0]));
     return;

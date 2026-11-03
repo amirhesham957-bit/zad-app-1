@@ -358,7 +358,8 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?
     if (typeof key !== "string" || !key) continue;
     const at = Date.parse(String(r?.created_at ?? ""));
     const age = Number.isFinite(at) ? nowMs - at : 0;
-    if (age <= DEAL_REPEAT_DAYS * 86_400_000) keys.add(key);
+    // «العرض ده غلط» (٤.١٩): نفس العرض مايتقالش تاني شهر، مش أسبوع بس.
+    if (age <= (deal?.answer === "wrong" ? DEAL_DECLINED_DAYS : DEAL_REPEAT_DAYS) * 86_400_000) keys.add(key);
     const need = key.split(":")[1];
     if (deal?.answer === "no" && need && age <= DEAL_DECLINED_DAYS * 86_400_000) keys.add(`need:${need}`);
   }

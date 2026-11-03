@@ -746,6 +746,8 @@ export function dealKeyboard(momentId: string): InlineKeyboardButton[][] {
   return [[
     { text: "🛒 ضيفه لقايمتي", callback_data: `dl:${momentId}:a` },
     { text: "🙅 مش مهتم", callback_data: `dl:${momentId}:n` },
+  ], [
+    { text: "⚠️ العرض ده غلط", callback_data: `dl:${momentId}:w` },
   ]];
 }
 
@@ -780,11 +782,12 @@ export function dealPhotoUrl(source: DealSource): string | null {
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
 }
 
-export function parseDealCallback(data: string): { momentId: string; add: boolean } | null {
+/** `wrong` = «العرض ده غلط» (ZAD_PLAN ٤.١٩): بلاغ بيدخل قياس الدقة، مش جواب «ضيفه/مش مهتم». */
+export function parseDealCallback(data: string): { momentId: string; add: boolean; wrong: boolean } | null {
   const parts = data.split(":");
-  if (parts.length !== 3 || parts[0] !== "dl" || (parts[2] !== "a" && parts[2] !== "n")) return null;
+  if (parts.length !== 3 || parts[0] !== "dl" || !["a", "n", "w"].includes(parts[2])) return null;
   if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
-  return { momentId: parts[1], add: parts[2] === "a" };
+  return { momentId: parts[1], add: parts[2] === "a", wrong: parts[2] === "w" };
 }
 
 /** الرد بعد zad_deal_answer_service. `null` = الكتابة فشلت — يتقال صراحةً. */
@@ -793,6 +796,7 @@ export function dealReply(result: { ok?: boolean; already?: boolean; answer?: st
   if (!result.ok) return "العرض ده مابقاش موجود.";
   const item = result.item ?? "الصنف";
   if (result.already) return result.answer === "add" ? `«${item}» في قايمتك بالفعل ✅` : "تمام، اتسجّل قبل كده.";
+  if (result.answer === "wrong") return `شكراً إنك قلت 🙏 مش هعرض «${item}» ده تاني، والبلاغ بيدخل في مراجعة العروض.`;
   if (result.answer === "add") return result.already_listed ? `«${item}» كان في قايمتك أصلاً ✅` : `تمام ✅ ضفت «${item}» لقايمتك.`;
   return `تمام، مش هعرض عليك «${item}» تاني الشهر ده.`;
 }

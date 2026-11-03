@@ -287,6 +287,14 @@ Deno.test("declined: «not interested» quiets that need for 30 days at any stor
   assertEquals(pickDeal(deals, ["زيت", "رز"], [], keys)?.item, "رز مصري");
 });
 
+Deno.test("reported wrong (4.19): the same deal stays quiet for 30 days, the need does not", () => {
+  const now = Date.parse("2026-11-03T08:00:00Z");
+  const keys = askedDealKeys([
+    { facts: { taste_deal: { key: "deal:زيت:كيو", answer: "wrong" } }, created_at: new Date(now - 20 * 86_400_000).toISOString() },
+  ], now);
+  assertEquals([...keys], ["deal:زيت:كيو"]);
+});
+
 Deno.test("deal buttons ride only on a morning greeting that carries a deal", () => {
   assert(hasDealButtons("morning_greeting", { taste_deal: { item: "زيت" } }));
   assert(!hasDealButtons("morning_greeting", { weather: {} }));
