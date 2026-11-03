@@ -7406,6 +7406,8 @@ async function handleAgentTurnInLane(
       ...(body.surface === "support" ? ["open_support_ticket"] : []),
       // عرض هدية الصبح (occasions.ts): الموافقة بتتسجّل هدف بمبلغ وميعاد.
       ...(snap?.asked_this_morning?.kind === "gift" || snap?.asked_this_morning?.kind === "event_reserve" ? ["set_life_goal"] : []),
+      // تحدي شغال: «خلاص كفاية» لازم تلاقي أداة القفل حتى من غير كلمة «تحدي».
+      ...(snap?.savings_challenge ? ["stop_savings_challenge"] : []),
       // سؤال الصبح عن عيد ميلاد: «١٢ مارس» لوحدها مافيهاش نية تجيب الأداة.
       ...(snap?.asked_this_morning?.kind === "occasion" ? ["remember_occasion"] : []),
       // «روحت الدكتور امبارح؟» (ZAD_PLAN ٨ج.٦): «آه، قالي أرجع بعد أسبوعين» مافيهاش نية تجيب أدوات المواعيد.
@@ -8498,7 +8500,7 @@ function promptSnapshot(snap: any): Record<string, unknown> {
 }
 
 /** نسخة برومبت الشات (٣.٢): بتتسجل مع أحجام كل لفة، فتغيّر في الردود يتربط بتغيّر البرومبت. غيّرها مع أي تعديل في القواعد. */
-export const CHAT_PROMPT_VERSION = "2026-11-03.1";
+export const CHAT_PROMPT_VERSION = "2026-11-03.2";
 
 /**
  * [offered]: أسامي الأدوات المعروضة في اللفة دي. قاعدة عن أداة مش معروضة، أو عن جزء من البيت
