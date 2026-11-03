@@ -116,7 +116,8 @@ class _BudgetGateState extends ConsumerState<BudgetGateScreen> {
                               Text(
                                 market == null
                                     ? (view.settings?.currency ?? '—')
-                                    : '${market.nameAr} — ${market.currency}',
+                                    : '${market.name(context.l10n)} — '
+                                          '${market.currency}',
                                 style: ZadType.titleSmall.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),

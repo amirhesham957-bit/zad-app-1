@@ -900,7 +900,9 @@ class _RegionalSheet extends ConsumerWidget {
     final sure = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text(context.l10n.profileChangeCountryTitle(to.nameAr)),
+        title: Text(
+          context.l10n.profileChangeCountryTitle(to.name(context.l10n)),
+        ),
         content: Text(
           <String>[
             context.l10n.profileCurrencyWillBe(to.currencySymbol, to.currency),
@@ -971,7 +973,7 @@ class _MarketTile extends StatelessWidget {
           Text(market.flag, style: const TextStyle(fontSize: 22)),
           const SizedBox(height: 2),
           Text(
-            market.nameAr,
+            market.name(context.l10n),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: ZadType.labelMedium,

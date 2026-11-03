@@ -2,7 +2,9 @@
 // agreement: with the zone table that mirrors `zad_market_timezone`, and with
 // the code shapes `zad_users` holds.
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/core/period/market_calendar.dart';
 import 'package:zad/shared/market/domain/market.dart';
 
@@ -64,5 +66,16 @@ void main() {
     test('a query nothing matches is empty, not everything', () {
       expect(searchMarkets('zzz'), isEmpty);
     });
+  });
+
+  test('every country has its own name in both languages', () {
+    final en = lookupZadL10n(const Locale('en'));
+    final ar = lookupZadL10n(const Locale('ar'));
+    for (final m in kMarkets) {
+      expect(m.name(ar), m.nameAr, reason: m.country);
+      expect(m.name(en), isNotEmpty, reason: m.country);
+    }
+    expect(kMarkets.map((m) => m.name(en)).toSet(), hasLength(kMarkets.length));
+    expect(searchMarkets('egy', en).single.country, 'EG');
   });
 }

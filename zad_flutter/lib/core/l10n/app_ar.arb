@@ -7124,5 +7124,18 @@
         "type": "String"
       }
     }
+  },
+  "marketCountryName": "{country, select, SA{السعودية} EG{مصر} AE{الإمارات} KW{الكويت} QA{قطر} BH{البحرين} OM{عُمان} JO{الأردن} LB{لبنان} IQ{العراق} SY{سوريا} YE{اليمن} PS{فلسطين} LY{ليبيا} SD{السودان} MA{المغرب} TN{تونس} DZ{الجزائر} TR{تركيا} other{}}",
+  "@marketCountryName": {
+    "description": "A market's country name by ISO code.",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSearchHint": "دوّر على بلدك أو عملتك",
+  "@marketSearchHint": {
+    "description": "Market picker search hint."
   }
 }

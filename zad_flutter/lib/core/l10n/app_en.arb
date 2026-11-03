@@ -1950,5 +1950,7 @@
   "reminderDocumentToday": "🪪 {document} expires today",
   "reminderDocumentInDays": "🪪 {document} expires in {days} days",
   "reminderDocumentPassport": "Many countries want a passport valid for 6 months to travel — if a trip is coming, renew it early.",
-  "reminderDocumentLastDay": "Last day {date} — start the renewal early."
+  "reminderDocumentLastDay": "Last day {date} — start the renewal early.",
+  "marketCountryName": "{country, select, SA{Saudi Arabia} EG{Egypt} AE{UAE} KW{Kuwait} QA{Qatar} BH{Bahrain} OM{Oman} JO{Jordan} LB{Lebanon} IQ{Iraq} SY{Syria} YE{Yemen} PS{Palestine} LY{Libya} SD{Sudan} MA{Morocco} TN{Tunisia} DZ{Algeria} TR{Turkey} other{}}",
+  "marketSearchHint": "Search your country or currency"
 }

@@ -7270,4 +7270,34 @@ class ZadL10nEn extends ZadL10n {
   String reminderDocumentLastDay(String date) {
     return 'Last day $date — start the renewal early.';
   }
+
+  @override
+  String marketCountryName(String country) {
+    String _temp0 = intl.Intl.selectLogic(country, {
+      'SA': 'Saudi Arabia',
+      'EG': 'Egypt',
+      'AE': 'UAE',
+      'KW': 'Kuwait',
+      'QA': 'Qatar',
+      'BH': 'Bahrain',
+      'OM': 'Oman',
+      'JO': 'Jordan',
+      'LB': 'Lebanon',
+      'IQ': 'Iraq',
+      'SY': 'Syria',
+      'YE': 'Yemen',
+      'PS': 'Palestine',
+      'LY': 'Libya',
+      'SD': 'Sudan',
+      'MA': 'Morocco',
+      'TN': 'Tunisia',
+      'DZ': 'Algeria',
+      'TR': 'Turkey',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get marketSearchHint => 'Search your country or currency';
 }

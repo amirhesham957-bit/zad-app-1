@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/market/domain/market.dart';
 
 /// The picker.
@@ -37,6 +38,7 @@ class _MarketPickerGridState extends State<MarketPickerGrid> {
               .where(
                 (m) =>
                     m.nameAr.toLowerCase().contains(q) ||
+                    m.name(context.l10n).toLowerCase().contains(q) ||
                     m.currency.toLowerCase().contains(q) ||
                     m.currencySymbol.toLowerCase().contains(q),
               )
@@ -48,7 +50,7 @@ class _MarketPickerGridState extends State<MarketPickerGrid> {
         TextField(
           onChanged: (v) => setState(() => _query = v),
           decoration: InputDecoration(
-            hintText: 'دوّر على بلدك أو عملتك',
+            hintText: context.l10n.marketSearchHint,
             prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
@@ -117,7 +119,7 @@ class _MarketPickerGridState extends State<MarketPickerGrid> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            m.nameAr,
+                            m.name(context.l10n),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: ZadType.labelMedium.copyWith(

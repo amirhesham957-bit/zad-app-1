@@ -51,6 +51,9 @@ const Set<String> _dataFiles = <String>{
   // Kinship words a «لمين؟» is normalised by, stored in
   // zad_transactions.for_person and matched by the brain.
   'shared/transactions/domain/for_person.dart',
+  // A medicine's stored category and unit (zad_medicines), and the words a
+  // receipt line is matched by: units, strengths, fees and totals.
+  'shared/pharmacy/domain/pharmacy_intake.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';

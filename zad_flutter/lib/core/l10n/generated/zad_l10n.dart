@@ -11807,6 +11807,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'آخر يوم {date} — ابدأ التجديد بدري.'**
   String reminderDocumentLastDay(String date);
+
+  /// A market's country name by ISO code.
+  ///
+  /// In ar, this message translates to:
+  /// **'{country, select, SA{السعودية} EG{مصر} AE{الإمارات} KW{الكويت} QA{قطر} BH{البحرين} OM{عُمان} JO{الأردن} LB{لبنان} IQ{العراق} SY{سوريا} YE{اليمن} PS{فلسطين} LY{ليبيا} SD{السودان} MA{المغرب} TN{تونس} DZ{الجزائر} TR{تركيا} other{}}'**
+  String marketCountryName(String country);
+
+  /// Market picker search hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر على بلدك أو عملتك'**
+  String get marketSearchHint;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

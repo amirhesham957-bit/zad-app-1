@@ -15,6 +15,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// One market.
 @immutable
@@ -31,8 +32,12 @@ class Market {
   /// ISO 3166 alpha-2, upper case — what `zad_users.country` stores.
   final String country;
 
-  /// The name the picker shows.
+  /// The Arabic name — what is sent to the server as a location.
   final String nameAr;
+
+  /// The name the picker shows, in [l10n]'s language (Arabic by default).
+  String name([ZadL10n? l10n]) =>
+      l10n == null ? nameAr : l10n.marketCountryName(country);
 
   /// ISO 4217 — what `zad_users.currency` stores.
   final String currency;
@@ -57,133 +62,133 @@ class Market {
 const List<Market> kMarkets = <Market>[
   Market(
     country: 'SA',
-    nameAr: 'السعودية',
+    nameAr: 'السعودية', // l10n: data
     currency: 'SAR',
     currencySymbol: 'ر.س',
     flag: '🇸🇦',
   ),
   Market(
     country: 'EG',
-    nameAr: 'مصر',
+    nameAr: 'مصر', // l10n: data
     currency: 'EGP',
     currencySymbol: 'ج.م',
     flag: '🇪🇬',
   ),
   Market(
     country: 'AE',
-    nameAr: 'الإمارات',
+    nameAr: 'الإمارات', // l10n: data
     currency: 'AED',
     currencySymbol: 'د.إ',
     flag: '🇦🇪',
   ),
   Market(
     country: 'KW',
-    nameAr: 'الكويت',
+    nameAr: 'الكويت', // l10n: data
     currency: 'KWD',
     currencySymbol: 'د.ك',
     flag: '🇰🇼',
   ),
   Market(
     country: 'QA',
-    nameAr: 'قطر',
+    nameAr: 'قطر', // l10n: data
     currency: 'QAR',
     currencySymbol: 'ر.ق',
     flag: '🇶🇦',
   ),
   Market(
     country: 'BH',
-    nameAr: 'البحرين',
+    nameAr: 'البحرين', // l10n: data
     currency: 'BHD',
     currencySymbol: 'د.ب',
     flag: '🇧🇭',
   ),
   Market(
     country: 'OM',
-    nameAr: 'عُمان',
+    nameAr: 'عُمان', // l10n: data
     currency: 'OMR',
     currencySymbol: 'ر.ع',
     flag: '🇴🇲',
   ),
   Market(
     country: 'JO',
-    nameAr: 'الأردن',
+    nameAr: 'الأردن', // l10n: data
     currency: 'JOD',
     currencySymbol: 'د.أ',
     flag: '🇯🇴',
   ),
   Market(
     country: 'LB',
-    nameAr: 'لبنان',
+    nameAr: 'لبنان', // l10n: data
     currency: 'LBP',
     currencySymbol: 'ل.ل',
     flag: '🇱🇧',
   ),
   Market(
     country: 'IQ',
-    nameAr: 'العراق',
+    nameAr: 'العراق', // l10n: data
     currency: 'IQD',
     currencySymbol: 'د.ع',
     flag: '🇮🇶',
   ),
   Market(
     country: 'SY',
-    nameAr: 'سوريا',
+    nameAr: 'سوريا', // l10n: data
     currency: 'SYP',
     currencySymbol: 'ل.س',
     flag: '🇸🇾',
   ),
   Market(
     country: 'YE',
-    nameAr: 'اليمن',
+    nameAr: 'اليمن', // l10n: data
     currency: 'YER',
     currencySymbol: 'ر.ي',
     flag: '🇾🇪',
   ),
   Market(
     country: 'PS',
-    nameAr: 'فلسطين',
+    nameAr: 'فلسطين', // l10n: data
     currency: 'ILS',
     currencySymbol: '₪',
     flag: '🇵🇸',
   ),
   Market(
     country: 'LY',
-    nameAr: 'ليبيا',
+    nameAr: 'ليبيا', // l10n: data
     currency: 'LYD',
     currencySymbol: 'د.ل',
     flag: '🇱🇾',
   ),
   Market(
     country: 'SD',
-    nameAr: 'السودان',
+    nameAr: 'السودان', // l10n: data
     currency: 'SDG',
     currencySymbol: 'ج.س',
     flag: '🇸🇩',
   ),
   Market(
     country: 'MA',
-    nameAr: 'المغرب',
+    nameAr: 'المغرب', // l10n: data
     currency: 'MAD',
     currencySymbol: 'د.م',
     flag: '🇲🇦',
   ),
   Market(
     country: 'TN',
-    nameAr: 'تونس',
+    nameAr: 'تونس', // l10n: data
     currency: 'TND',
     currencySymbol: 'د.ت',
     flag: '🇹🇳',
   ),
   Market(
     country: 'DZ',
-    nameAr: 'الجزائر',
+    nameAr: 'الجزائر', // l10n: data
     currency: 'DZD',
     currencySymbol: 'د.ج',
     flag: '🇩🇿',
   ),
   Market(
     country: 'TR',
-    nameAr: 'تركيا',
+    nameAr: 'تركيا', // l10n: data
     currency: 'TRY',
     currencySymbol: '₺',
     flag: '🇹🇷',
@@ -207,17 +212,19 @@ Market? marketFor(String? country) {
 /// exists to get an account out of.
 bool isKnownMarket(String? country) => marketFor(country) != null;
 
-/// The markets whose name, currency code or symbol contains [query].
+/// The markets whose name, currency code or symbol contains [query] — the
+/// Arabic name, or the name in [l10n]'s language.
 ///
 /// Nineteen tiles are too many to scan by eye, which is why the Kotlin picker
 /// searches, and it searches the same three fields.
-List<Market> searchMarkets(String query) {
+List<Market> searchMarkets(String query, [ZadL10n? l10n]) {
   final q = query.trim().toLowerCase();
   if (q.isEmpty) return kMarkets;
   return kMarkets
       .where(
         (m) =>
             m.nameAr.contains(q) ||
+            m.name(l10n).toLowerCase().contains(q) ||
             m.currency.toLowerCase().contains(q) ||
             m.currencySymbol.contains(q),
       )
