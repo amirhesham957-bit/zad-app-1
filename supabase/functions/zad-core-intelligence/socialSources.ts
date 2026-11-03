@@ -106,3 +106,72 @@ export async function instagramProbe(token: string | undefined, accountId: strin
     hashtag_search: { ok: tag.status === 200, status: tag.status, ...(tag.status === 200 ? {} : { reason: metaReason(tag.body) }) },
   };
 }
+
+export interface InstagramPost {
+  id: string;
+  caption: string;
+  permalink: string;
+  timestamp: string;
+  /** صورة البوست (أو أول صورة في الألبوم) — للقراية بس، مابتتخزنش. null للفيديو. */
+  image_url: string | null;
+}
+
+type MediaItem = {
+  id?: unknown; caption?: unknown; permalink?: unknown; timestamp?: unknown; media_type?: unknown; media_url?: unknown;
+};
+
+/** الهاشتاج اللي بندوّر بيه على عروض محل: «عروض_كارفور». الهاشتاج مابيقبلش مسافات ولا رموز. */
+export function storeHashtag(store: string): string {
+  const name = store.replace(/[^\p{L}\p{N}\s]/gu, " ").trim().replace(/\s+/g, "_");
+  return `عروض_${name}`.slice(0, 60);
+}
+
+/**
+ * بوستات هاشتاج من آخر [days] يوم، الأحدث الأول (ZAD_PLAN ٤.١٢). Graph API الرسمي: ig_hashtag_search بيرجّع رقم الهاشتاج،
+ * وtop_media البوستات العامة عليه. كل هاشتاج جديد بيعدّ من ٣٠ في الأسبوع على الحساب — فالمحلات في الأسبوع محسوبة.
+ */
+export async function instagramHashtagPosts(
+  token: string,
+  accountId: string,
+  tag: string,
+  opts: { days?: number; max?: number; now?: number } = {},
+): Promise<SourceResult<InstagramPost>> {
+  const get = async (path: string): Promise<{ status: number; body: (ApiError & { data?: unknown }) | null }> => {
+    try {
+      const res = await fetch(`${GRAPH}/${path}&access_token=${encodeURIComponent(token)}`, { signal: AbortSignal.timeout(15000) });
+      return { status: res.status, body: await res.json().catch(() => null) };
+    } catch (e) {
+      return { status: 0, body: { error: { type: String((e as Error)?.message ?? e).slice(0, 60) } } };
+    }
+  };
+  const reason = (b: ApiError | null) => {
+    const e = b?.error;
+    return e ? `${String(e.type ?? "error").slice(0, 40)}${e.code ? `/${e.code}` : ""}` : undefined;
+  };
+  const user = encodeURIComponent(accountId);
+  const found = await get(`ig_hashtag_search?user_id=${user}&q=${encodeURIComponent(tag)}`);
+  if (found.status !== 200) return { ok: false, status: found.status, reason: reason(found.body), items: [] };
+  const first = (Array.isArray(found.body?.data) ? found.body!.data : [])[0] as { id?: unknown } | undefined;
+  if (typeof first?.id !== "string") return { ok: true, status: 200, items: [] };
+  const fields = "id,caption,permalink,timestamp,media_type,media_url";
+  const media = await get(`${encodeURIComponent(first.id)}/top_media?user_id=${user}&fields=${fields}&limit=25`);
+  if (media.status !== 200) return { ok: false, status: media.status, reason: reason(media.body), items: [] };
+  const since = (opts.now ?? Date.now()) - (opts.days ?? 10) * DAY_MS;
+  const posts: InstagramPost[] = [];
+  for (const m of (Array.isArray(media.body?.data) ? media.body!.data : []) as MediaItem[]) {
+    if (typeof m?.id !== "string" || typeof m.permalink !== "string") continue;
+    if (!/^https:\/\/www\.instagram\.com\/(p|reel)\/[\w-]+\/?$/.test(m.permalink)) continue;
+    const at = Date.parse(String(m.timestamp ?? ""));
+    if (!Number.isFinite(at) || at < since) continue;
+    const image = m.media_type === "IMAGE" || m.media_type === "CAROUSEL_ALBUM";
+    posts.push({
+      id: m.id,
+      caption: String(m.caption ?? "").slice(0, 1500),
+      permalink: m.permalink,
+      timestamp: String(m.timestamp),
+      image_url: image && typeof m.media_url === "string" && m.media_url.startsWith("https://") ? m.media_url : null,
+    });
+  }
+  posts.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  return { ok: true, status: 200, items: posts.slice(0, Math.min(Math.max(opts.max ?? 6, 1), 25)) };
+}

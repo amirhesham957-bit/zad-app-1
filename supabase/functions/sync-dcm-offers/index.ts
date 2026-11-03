@@ -12,7 +12,7 @@
 // first run should be one.
 //
 // Only the official API DCM's support sent (dcm.ts). The portal-session route stays frozen (owner's
-// decision, 2026-10-26). No cron calls this yet: one dry run first.
+// decision, 2026-10-26). No cron calls this yet: one dry run first (net.http_post with ?dry=1 and the proactive secret).
 
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { secretMatches } from "../_shared/cronSecret.ts";
@@ -92,9 +92,14 @@ function json(body: unknown, status = 200): Response {
 }
 
 Deno.serve(async (req) => {
-  if (!(await secretMatches(req.headers.get("X-Dcm-Cron-Secret"), "DCM_SYNC_CRON_SECRET"))) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  // The project's own cron secret works too (ZAD_PLAN 4.5, 3/11): it is already in the vault, so pg_cron and the first
+  // dry run can call this the way they call zad-brain, without a second secret copied by hand.
+  // Only the header that came is checked, so the other one's absence is not logged as a rejection.
+  const proactive = req.headers.get("ZAD-PROACTIVE-CRON-SECRET");
+  const authorized = proactive !== null
+    ? await secretMatches(proactive, "ZAD_PROACTIVE_CRON_SECRET")
+    : await secretMatches(req.headers.get("X-Dcm-Cron-Secret"), "DCM_SYNC_CRON_SECRET");
+  if (!authorized) return json({ error: "unauthorized" }, 401);
   const dry = new URL(req.url).searchParams.get("dry") === "1";
   const key = (Deno.env.get("DCM_API_KEY") || Deno.env.get("DCM_COUPONS_API_KEY") || "").trim();
   if (!key) return json({ error: "no_api_key" }, 500);

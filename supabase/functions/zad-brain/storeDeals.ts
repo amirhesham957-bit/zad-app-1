@@ -9,6 +9,12 @@ export const STORES_PER_RUN = 10;
 /** Stores read on YouTube in one run (ZAD_PLAN 4.11): a video read is tens of seconds, the run has 120. */
 export const YOUTUBE_STORES_PER_RUN = 3;
 
+/**
+ * Stores read on Instagram in one run (ZAD_PLAN 4.12): three posts a store with their pictures. The account may look
+ * up 30 new hashtags in 7 days and the probe spends one, so the weekly cron's six runs stop at 18 stores.
+ */
+export const INSTAGRAM_STORES_PER_RUN = 3;
+
 /** A searched offer is a web page read by a model: below a receipt floor (0.6 at 3 homes). */
 export const SEARCH_CONFIDENCE = 0.5;
 
@@ -22,7 +28,7 @@ export interface SearchedDeal {
   source_url: string;
 }
 
-export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" = "search"): Record<string, unknown> {
+export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" | "instagram" = "search"): Record<string, unknown> {
   return {
     country: target.country,
     city: "",
