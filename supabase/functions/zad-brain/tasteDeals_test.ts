@@ -378,3 +378,24 @@ Deno.test("fire deal: 40% off or 1+1 on something the house bought — never whe
   // a «not interested» on the need quiets the fire deal too.
   assertEquals(pickFireDeal(raw, ["مكرونه"], [], new Set(["need:مكرونه"])), null);
 });
+
+// قرار المالك ٣/١١: العروض توصل لوحدها — بيت من غير احتياج معروف، وبوابة الدقة أوتوماتيك.
+import { EVERYDAY_STAPLES, pickStapleDeal, withoutPausedSources } from "./tasteDeals.ts";
+
+Deno.test("staple deal: a home with no known need gets a stored deal on an everyday staple — never when money is tight", () => {
+  const raw = storedDeals([
+    { store: "كيو", item_name: "شاحن موبايل", price: 30, price_before: 60, source_kind: "search", source_url: "https://q.example", valid_until: null },
+    { store: "بنده", item_name: "زيت عافية 1.5 لتر", price: 22, price_before: 29, source_kind: "search", source_url: "https://b.example", valid_until: null },
+  ]);
+  const deal = pickStapleDeal(raw, [], new Set());
+  assertEquals([deal?.item, deal?.staple], ["زيت عافية 1.5 لتر", true]);
+  assertEquals(pickStapleDeal(raw, [], new Set(), [], true), null);
+  assertEquals(pickStapleDeal(raw, [], new Set(["deal:زيت:بنده"])), null);
+  assert(EVERYDAY_STAPLES.includes("رز") && !EVERYDAY_STAPLES.includes("شاحن"));
+});
+
+Deno.test("paused sources: rows from a source the customers keep calling wrong are left out", () => {
+  const rows = [{ source_kind: "search", n: 1 }, { source_kind: "youtube", n: 2 }, { source_kind: "receipt", n: 3 }];
+  assertEquals(withoutPausedSources(rows, new Set(["youtube"])).map((r) => r.n), [1, 3]);
+  assertEquals(withoutPausedSources(null, new Set()), []);
+});

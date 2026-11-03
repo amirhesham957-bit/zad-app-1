@@ -61,6 +61,8 @@ export interface TasteDeal {
   stock?: boolean;
   /** المشوار بالعربية للمحل ده من نقطته (٤.١٠) — بس لو المحل ليه إحداثيات وسعر البنزين معروف. */
   trip?: Trip;
+  /** بيت لسه مالوش قايمة ولا مخزن ولا اهتمامات: عرض على حاجة أساسية بيشتريها كل بيت (قرار المالك ٣/١١). */
+  staple?: boolean;
   /** «العرض الناري» (٤.٨): خصم كبير أو ١+١ على حاجة البيت بيشتريها ومش في القايمة. */
   fire?: boolean;
   /** العرض ١+١ أو «اشتري اتنين» (deal_kind = multi_buy). */
@@ -321,6 +323,32 @@ export function pickFireDeal(
   return picked ? { ...picked, fire: true } : null;
 }
 
+/** أساسيات كل بيت عربي — الاحتياج الافتراضي لبيت لسه زاد مايعرفش عنه حاجة. */
+export const EVERYDAY_STAPLES: readonly string[] = [
+  "زيت", "رز", "سكر", "شاي", "لبن", "بيض", "مكرونة", "عدس", "فول", "دقيق", "سمن", "قهوة", "مية", "صابون", "مناديل",
+];
+
+/**
+ * عرض أساسي (قرار المالك ٣/١١: العروض توصل لوحدها): بيت مالوش احتياج معروف بياخد عرض متخزّن على حاجة من
+ * [EVERYDAY_STAPLES]، من نفس قواعد الاختيار (محله، القريب، أكبر خصم). عمره ما بيتقال والفلوس ضيقة — الطوارئ = النواقص بس.
+ */
+export function pickStapleDeal(
+  raw: unknown,
+  favorites: readonly string[],
+  skip: ReadonlySet<string>,
+  nearby: readonly string[] = [],
+  tight = false,
+): TasteDeal | null {
+  if (tight) return null;
+  const picked = pickDeal(raw, EVERYDAY_STAPLES, favorites, skip, nearby, false);
+  return picked ? { ...picked, staple: true } : null;
+}
+
+/** صفوف zad_deals من غير المصادر اللي وقفت لوحدها على بلاغات العملاء (zad_deal_paused_sources، ٤.١٩). */
+export function withoutPausedSources<T extends { source_kind: string }>(rows: readonly T[] | null | undefined, paused: ReadonlySet<string>): T[] {
+  return (rows ?? []).filter((r) => !paused.has(r.source_kind));
+}
+
 /** «انت جنب المطعم» (ZAD_PLAN ٤.١٨): أي عرض ساري في المكان ده، الأحدث تاريخاً الأول، ٣ بالكتير، صنف واحد مرة. */
 export function dealsAtPlace(rows: readonly StoredDealRow[] | null | undefined, storeName: string): DealHere[] {
   const out: DealHere[] = [];
@@ -463,7 +491,8 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "");
     // من غير احتياج ممكن يبقى فيه عرض ناري (٤.٨) على حاجة اتشرت قبل كده — مش والفلوس ضيقة.
-    if (!/^[A-Z]{2}$/.test(country) || (items.length === 0 && (tight || boughtNames.length === 0))) return null;
+    // من غير احتياج خالص: عرض أساسي (EVERYDAY_STAPLES) — مش والفلوس ضيقة.
+    if (!/^[A-Z]{2}$/.test(country) || (items.length === 0 && tight)) return null;
     const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
     const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
     const saidNotes = ((said ?? []) as Array<{ note: string | null; valid_until?: string | null }>)
@@ -478,13 +507,18 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
         await nearbySource.search({ ...point, tag: "supermarket", radius_meters: NEARBY_RADIUS_METERS }, userId).catch(() => null),
       )
       : [];
-    const [{ data: stored, error: storedErr }, { data: fuelRow }] = await Promise.all([
+    const [{ data: storedAll, error: storedErr }, { data: fuelRow }, { data: pausedRows, error: pausedErr }] = await Promise.all([
       sb.from("zad_deals")
         .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind")
         .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300),
       sb.from("zad_fuel_prices").select("price,currency,found_at").eq("country", country).maybeSingle(),
+      sb.rpc("zad_deal_paused_sources", { p_days: 14 }),
     ]);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
+    // فشل قراية البوابة = من غير إيقاف (العرض لسه بمصدره وتاريخه و«ممكن يكون خلص»).
+    if (pausedErr) console.warn("[taste_deal] paused sources read failed:", pausedErr.message);
+    const paused = new Set(((pausedRows ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
+    const stored = withoutPausedSources(storedAll as StoredDealRow[] | null, paused);
     // النية الأول: عرض على حاجة قال إنه عايزها يغلب محله المعتاد على حاجة من القايمة.
     const pick = (raw: unknown): TasteDeal | null => {
       const wanted = wants.length ? pickDeal(raw, wants, favorites, skip, nearby, false, brands, stockable) : null;
@@ -502,8 +536,9 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       const live = pick((res as { deals?: unknown } | null)?.deals);
       if (live) return live;
     }
-    // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة.
-    return pickFireDeal(storedRaw, boughtNames, favorites, skip, nearby, tight, brands);
+    // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة، وبعده عرض أساسي لأي بيت.
+    return pickFireDeal(storedRaw, boughtNames, favorites, skip, nearby, tight, brands) ??
+      pickStapleDeal(storedRaw, favorites, skip, nearby, tight);
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;
