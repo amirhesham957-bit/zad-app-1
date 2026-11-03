@@ -6920,5 +6920,209 @@
         "type": "int"
       }
     }
+  },
+  "documentKindLabel": "{kind, select, passport{جواز السفر} nationalId{البطاقة الشخصية} residence{الإقامة} drivingLicense{رخصة القيادة} vehicleLicense{رخصة العربية} other{مستند تاني}}",
+  "@documentKindLabel": {
+    "description": "An important document's kind, by enum name.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPetThirstyTitle": "💧 {name} عطشان",
+  "@reminderPetThirstyTitle": {
+    "description": "Notification: the pet needs water.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPetHungryTitle": "🍎 {name} جعان",
+  "@reminderPetHungryTitle": {
+    "description": "Notification: the pet needs food.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPetThirstyBody": "كوباية مية واحدة ويرجع يلعب — تعالى اسقيه",
+  "@reminderPetThirstyBody": {
+    "description": "Notification: the pet needs water."
+  },
+  "reminderPetHungryBody": "مستنيك تأكّله… وحشته 🥺",
+  "@reminderPetHungryBody": {
+    "description": "Notification: the pet needs food."
+  },
+  "reminderPetCallTitle": "{i, select, i0{🥺 {name} لسه مستنيك} i1{🍎 {name} بيسأل عليك} i2{😢 {name} زعلان} i3{💔 {name} وحشته أوي} i4{😭 {name} تعبان من الجوع} other{🌧️ {name} قاعد لوحده}}",
+  "@reminderPetCallTitle": {
+    "description": "Notification: the pet's follow-up calls, sadder each time; i is the call's number.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPetCallBody": "{i, select, i0{بطنه بتصوصو من الصبح… لقمة واحدة بس؟} i1{قاعد جنب الطبق فاضي — تعالى أكّله وأسقيه} i2{بقاله يوم من غير أكل… شكله اتبهدل ومستنيك} i3{مش راضي يلعب من غيرك — دقيقة واحدة ترجّعه مبسوط} i4{يومين من غير أكل ولا مية… هو لسه مستنيك} other{كل يوم بيبص على الباب — تعالى طمّنه}}",
+  "@reminderPetCallBody": {
+    "description": "Notification: the pet's follow-up calls; i is the call's number.",
+    "placeholders": {
+      "i": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderNapTitle": "😴 {name} نام مستنيك",
+  "@reminderNapTitle": {
+    "description": "Notification: two days away.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderNapBody": "بقالك يومين مش هنا — ارجع صحّيه، ومعاه بذور هدية رجوعك 🌱",
+  "@reminderNapBody": {
+    "description": "Notification: two days away."
+  },
+  "reminderNapAgainTitle": "{name} لسه نايم…",
+  "@reminderNapAgainTitle": {
+    "description": "Notification: four days away.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderNapAgainBody": "سجّل مصروف واحد بس وهيصحى فرحان، والسلسلة تبدأ من جديد 🔥",
+  "@reminderNapAgainBody": {
+    "description": "Notification: four days away."
+  },
+  "reminderChannelDoses": "زاد — مواعيد الأدوية",
+  "@reminderChannelDoses": {
+    "description": "Android notification channel name."
+  },
+  "reminderChannelTasbih": "زاد — تذكير التسبيح",
+  "@reminderChannelTasbih": {
+    "description": "Android notification channel name."
+  },
+  "reminderChannelCompanion": "رفيق زاد",
+  "@reminderChannelCompanion": {
+    "description": "Android notification channel name."
+  },
+  "reminderChannelSeasons": "زاد — المناسبات القادمة",
+  "@reminderChannelSeasons": {
+    "description": "Android notification channel name."
+  },
+  "reminderChannelDocuments": "زاد — المستندات قبل ما تنتهي",
+  "@reminderChannelDocuments": {
+    "description": "Android notification channel name."
+  },
+  "reminderDoseTaken": "أخدتها ✅",
+  "@reminderDoseTaken": {
+    "description": "Dose notification button."
+  },
+  "reminderDoseSnooze": "أجّل",
+  "@reminderDoseSnooze": {
+    "description": "Dose notification button."
+  },
+  "reminderDoseTitle": "موعد الدواء",
+  "@reminderDoseTitle": {
+    "description": "Dose notification title."
+  },
+  "reminderDoseBody": "حان موعد جرعة {name}",
+  "@reminderDoseBody": {
+    "description": "Dose notification body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderTasbihTitle": "🌱 وقت التسبيح",
+  "@reminderTasbihTitle": {
+    "description": "Tasbih notification title."
+  },
+  "reminderTasbihBody": "شجرتك مستنياك — سبّح شوية ونمّيها",
+  "@reminderTasbihBody": {
+    "description": "Tasbih notification body."
+  },
+  "reminderSeasonName": "{slug, select, ramadan{رمضان} eid_al_fitr{عيد الفطر} eid_al_adha{عيد الأضحى} back_to_school{العودة للمدارس} other{}}",
+  "@reminderSeasonName": {
+    "description": "A season's name by its slug; empty for a slug without one.",
+    "placeholders": {
+      "slug": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderSeasonTitle": "📅 {name} قريباً",
+  "@reminderSeasonTitle": {
+    "description": "Season notification title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderSeasonBody": "استعد لمصاريف {name} — ابدأ التوفير الآن",
+  "@reminderSeasonBody": {
+    "description": "Season notification body.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDocumentWho": "{document} بتاع {holder}",
+  "@reminderDocumentWho": {
+    "description": "A document and whose it is.",
+    "placeholders": {
+      "document": {
+        "type": "String"
+      },
+      "holder": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDocumentToday": "🪪 {document} بينتهي النهارده",
+  "@reminderDocumentToday": {
+    "description": "Document notification title.",
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDocumentInDays": "🪪 {document} بينتهي بعد {days} يوم",
+  "@reminderDocumentInDays": {
+    "description": "Document notification title.",
+    "placeholders": {
+      "document": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderDocumentPassport": "دول كتير بتطلب الجواز صالح ٦ شهور للسفر — لو فيه سفر، جدّده بدري.",
+  "@reminderDocumentPassport": {
+    "description": "Document notification body, passport six months ahead."
+  },
+  "reminderDocumentLastDay": "آخر يوم {date} — ابدأ التجديد بدري.",
+  "@reminderDocumentLastDay": {
+    "description": "Document notification body.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

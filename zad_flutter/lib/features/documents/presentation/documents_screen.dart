@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -308,8 +309,8 @@ class _DocumentCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       doc.holder.isEmpty
-                          ? doc.title
-                          : '${doc.title} — ${doc.holder}',
+                          ? doc.title(context.l10n)
+                          : '${doc.title(context.l10n)} — ${doc.holder}',
                       style: ZadType.titleSmall,
                     ),
                     const SizedBox(height: ZadSpacing.xs),
@@ -441,7 +442,7 @@ class _DocumentDialogState extends State<_DocumentDialog> {
                   ChoiceChip(
                     selected: _kind == k,
                     onSelected: (_) => setState(() => _kind = k),
-                    label: Text(k.label),
+                    label: Text(k.label(context.l10n)),
                   ),
               ],
             ),

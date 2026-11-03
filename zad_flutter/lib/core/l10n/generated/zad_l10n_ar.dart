@@ -6970,4 +6970,159 @@ class ZadL10nAr extends ZadL10n {
   String petMeterPercent(int percent) {
     return '$percent٪';
   }
+
+  @override
+  String documentKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'passport': 'جواز السفر',
+      'nationalId': 'البطاقة الشخصية',
+      'residence': 'الإقامة',
+      'drivingLicense': 'رخصة القيادة',
+      'vehicleLicense': 'رخصة العربية',
+      'other': 'مستند تاني',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetThirstyTitle(String name) {
+    return '💧 $name عطشان';
+  }
+
+  @override
+  String reminderPetHungryTitle(String name) {
+    return '🍎 $name جعان';
+  }
+
+  @override
+  String get reminderPetThirstyBody =>
+      'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه';
+
+  @override
+  String get reminderPetHungryBody => 'مستنيك تأكّله… وحشته 🥺';
+
+  @override
+  String reminderPetCallTitle(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': '🥺 $name لسه مستنيك',
+      'i1': '🍎 $name بيسأل عليك',
+      'i2': '😢 $name زعلان',
+      'i3': '💔 $name وحشته أوي',
+      'i4': '😭 $name تعبان من الجوع',
+      'other': '🌧️ $name قاعد لوحده',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetCallBody(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'بطنه بتصوصو من الصبح… لقمة واحدة بس؟',
+      'i1': 'قاعد جنب الطبق فاضي — تعالى أكّله وأسقيه',
+      'i2': 'بقاله يوم من غير أكل… شكله اتبهدل ومستنيك',
+      'i3': 'مش راضي يلعب من غيرك — دقيقة واحدة ترجّعه مبسوط',
+      'i4': 'يومين من غير أكل ولا مية… هو لسه مستنيك',
+      'other': 'كل يوم بيبص على الباب — تعالى طمّنه',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderNapTitle(String name) {
+    return '😴 $name نام مستنيك';
+  }
+
+  @override
+  String get reminderNapBody =>
+      'بقالك يومين مش هنا — ارجع صحّيه، ومعاه بذور هدية رجوعك 🌱';
+
+  @override
+  String reminderNapAgainTitle(String name) {
+    return '$name لسه نايم…';
+  }
+
+  @override
+  String get reminderNapAgainBody =>
+      'سجّل مصروف واحد بس وهيصحى فرحان، والسلسلة تبدأ من جديد 🔥';
+
+  @override
+  String get reminderChannelDoses => 'زاد — مواعيد الأدوية';
+
+  @override
+  String get reminderChannelTasbih => 'زاد — تذكير التسبيح';
+
+  @override
+  String get reminderChannelCompanion => 'رفيق زاد';
+
+  @override
+  String get reminderChannelSeasons => 'زاد — المناسبات القادمة';
+
+  @override
+  String get reminderChannelDocuments => 'زاد — المستندات قبل ما تنتهي';
+
+  @override
+  String get reminderDoseTaken => 'أخدتها ✅';
+
+  @override
+  String get reminderDoseSnooze => 'أجّل';
+
+  @override
+  String get reminderDoseTitle => 'موعد الدواء';
+
+  @override
+  String reminderDoseBody(String name) {
+    return 'حان موعد جرعة $name';
+  }
+
+  @override
+  String get reminderTasbihTitle => '🌱 وقت التسبيح';
+
+  @override
+  String get reminderTasbihBody => 'شجرتك مستنياك — سبّح شوية ونمّيها';
+
+  @override
+  String reminderSeasonName(String slug) {
+    String _temp0 = intl.Intl.selectLogic(slug, {
+      'ramadan': 'رمضان',
+      'eid_al_fitr': 'عيد الفطر',
+      'eid_al_adha': 'عيد الأضحى',
+      'back_to_school': 'العودة للمدارس',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderSeasonTitle(String name) {
+    return '📅 $name قريباً';
+  }
+
+  @override
+  String reminderSeasonBody(String name) {
+    return 'استعد لمصاريف $name — ابدأ التوفير الآن';
+  }
+
+  @override
+  String reminderDocumentWho(String document, String holder) {
+    return '$document بتاع $holder';
+  }
+
+  @override
+  String reminderDocumentToday(String document) {
+    return '🪪 $document بينتهي النهارده';
+  }
+
+  @override
+  String reminderDocumentInDays(String document, int days) {
+    return '🪪 $document بينتهي بعد $days يوم';
+  }
+
+  @override
+  String get reminderDocumentPassport =>
+      'دول كتير بتطلب الجواز صالح ٦ شهور للسفر — لو فيه سفر، جدّده بدري.';
+
+  @override
+  String reminderDocumentLastDay(String date) {
+    return 'آخر يوم $date — ابدأ التجديد بدري.';
+  }
 }

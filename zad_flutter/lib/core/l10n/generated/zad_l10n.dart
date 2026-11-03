@@ -11627,6 +11627,186 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{percent}٪'**
   String petMeterPercent(int percent);
+
+  /// An important document's kind, by enum name.
+  ///
+  /// In ar, this message translates to:
+  /// **'{kind, select, passport{جواز السفر} nationalId{البطاقة الشخصية} residence{الإقامة} drivingLicense{رخصة القيادة} vehicleLicense{رخصة العربية} other{مستند تاني}}'**
+  String documentKindLabel(String kind);
+
+  /// Notification: the pet needs water.
+  ///
+  /// In ar, this message translates to:
+  /// **'💧 {name} عطشان'**
+  String reminderPetThirstyTitle(String name);
+
+  /// Notification: the pet needs food.
+  ///
+  /// In ar, this message translates to:
+  /// **'🍎 {name} جعان'**
+  String reminderPetHungryTitle(String name);
+
+  /// Notification: the pet needs water.
+  ///
+  /// In ar, this message translates to:
+  /// **'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه'**
+  String get reminderPetThirstyBody;
+
+  /// Notification: the pet needs food.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنيك تأكّله… وحشته 🥺'**
+  String get reminderPetHungryBody;
+
+  /// Notification: the pet's follow-up calls, sadder each time; i is the call's number.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{🥺 {name} لسه مستنيك} i1{🍎 {name} بيسأل عليك} i2{😢 {name} زعلان} i3{💔 {name} وحشته أوي} i4{😭 {name} تعبان من الجوع} other{🌧️ {name} قاعد لوحده}}'**
+  String reminderPetCallTitle(String i, String name);
+
+  /// Notification: the pet's follow-up calls; i is the call's number.
+  ///
+  /// In ar, this message translates to:
+  /// **'{i, select, i0{بطنه بتصوصو من الصبح… لقمة واحدة بس؟} i1{قاعد جنب الطبق فاضي — تعالى أكّله وأسقيه} i2{بقاله يوم من غير أكل… شكله اتبهدل ومستنيك} i3{مش راضي يلعب من غيرك — دقيقة واحدة ترجّعه مبسوط} i4{يومين من غير أكل ولا مية… هو لسه مستنيك} other{كل يوم بيبص على الباب — تعالى طمّنه}}'**
+  String reminderPetCallBody(String i);
+
+  /// Notification: two days away.
+  ///
+  /// In ar, this message translates to:
+  /// **'😴 {name} نام مستنيك'**
+  String reminderNapTitle(String name);
+
+  /// Notification: two days away.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقالك يومين مش هنا — ارجع صحّيه، ومعاه بذور هدية رجوعك 🌱'**
+  String get reminderNapBody;
+
+  /// Notification: four days away.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} لسه نايم…'**
+  String reminderNapAgainTitle(String name);
+
+  /// Notification: four days away.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف واحد بس وهيصحى فرحان، والسلسلة تبدأ من جديد 🔥'**
+  String get reminderNapAgainBody;
+
+  /// Android notification channel name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد — مواعيد الأدوية'**
+  String get reminderChannelDoses;
+
+  /// Android notification channel name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد — تذكير التسبيح'**
+  String get reminderChannelTasbih;
+
+  /// Android notification channel name.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get reminderChannelCompanion;
+
+  /// Android notification channel name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد — المناسبات القادمة'**
+  String get reminderChannelSeasons;
+
+  /// Android notification channel name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد — المستندات قبل ما تنتهي'**
+  String get reminderChannelDocuments;
+
+  /// Dose notification button.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخدتها ✅'**
+  String get reminderDoseTaken;
+
+  /// Dose notification button.
+  ///
+  /// In ar, this message translates to:
+  /// **'أجّل'**
+  String get reminderDoseSnooze;
+
+  /// Dose notification title.
+  ///
+  /// In ar, this message translates to:
+  /// **'موعد الدواء'**
+  String get reminderDoseTitle;
+
+  /// Dose notification body.
+  ///
+  /// In ar, this message translates to:
+  /// **'حان موعد جرعة {name}'**
+  String reminderDoseBody(String name);
+
+  /// Tasbih notification title.
+  ///
+  /// In ar, this message translates to:
+  /// **'🌱 وقت التسبيح'**
+  String get reminderTasbihTitle;
+
+  /// Tasbih notification body.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرتك مستنياك — سبّح شوية ونمّيها'**
+  String get reminderTasbihBody;
+
+  /// A season's name by its slug; empty for a slug without one.
+  ///
+  /// In ar, this message translates to:
+  /// **'{slug, select, ramadan{رمضان} eid_al_fitr{عيد الفطر} eid_al_adha{عيد الأضحى} back_to_school{العودة للمدارس} other{}}'**
+  String reminderSeasonName(String slug);
+
+  /// Season notification title.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 {name} قريباً'**
+  String reminderSeasonTitle(String name);
+
+  /// Season notification body.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعد لمصاريف {name} — ابدأ التوفير الآن'**
+  String reminderSeasonBody(String name);
+
+  /// A document and whose it is.
+  ///
+  /// In ar, this message translates to:
+  /// **'{document} بتاع {holder}'**
+  String reminderDocumentWho(String document, String holder);
+
+  /// Document notification title.
+  ///
+  /// In ar, this message translates to:
+  /// **'🪪 {document} بينتهي النهارده'**
+  String reminderDocumentToday(String document);
+
+  /// Document notification title.
+  ///
+  /// In ar, this message translates to:
+  /// **'🪪 {document} بينتهي بعد {days} يوم'**
+  String reminderDocumentInDays(String document, int days);
+
+  /// Document notification body, passport six months ahead.
+  ///
+  /// In ar, this message translates to:
+  /// **'دول كتير بتطلب الجواز صالح ٦ شهور للسفر — لو فيه سفر، جدّده بدري.'**
+  String get reminderDocumentPassport;
+
+  /// Document notification body.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر يوم {date} — ابدأ التجديد بدري.'**
+  String reminderDocumentLastDay(String date);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

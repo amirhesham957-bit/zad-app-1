@@ -7,33 +7,36 @@
 /// بيرن إشعار محلي يوم كل مرحلة. لو غيّرت واحد غيّر التاني.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
+
 /// The kinds `zad_documents.kind` accepts.
 enum DocumentKind {
   /// جواز السفر.
-  passport('passport', 'جواز السفر'),
+  passport('passport'),
 
   /// البطاقة الشخصية.
-  nationalId('national_id', 'البطاقة الشخصية'),
+  nationalId('national_id'),
 
   /// الإقامة.
-  residence('residence', 'الإقامة'),
+  residence('residence'),
 
   /// رخصة القيادة.
-  drivingLicense('driving_license', 'رخصة القيادة'),
+  drivingLicense('driving_license'),
 
   /// رخصة العربية.
-  vehicleLicense('vehicle_license', 'رخصة العربية'),
+  vehicleLicense('vehicle_license'),
 
   /// غيره — محتاج اسم.
-  other('other', 'مستند تاني');
+  other('other');
 
-  new(this.wire, this.label);
+  new(this.wire);
 
   /// The value in the column.
   final String wire;
 
-  /// What the screen calls it.
-  final String label;
+  /// What the screen calls it, in [l10n]'s language (Arabic by default).
+  String label([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).documentKindLabel(name);
 
   /// The kind named [wire], or null for one this build does not know.
   static DocumentKind? fromWire(Object? wire) {
@@ -94,9 +97,10 @@ class ImportantDocument {
   /// The name of an [DocumentKind.other].
   final String label;
 
-  /// «جواز السفر» or the name given to an other one.
-  String get title =>
-      kind == DocumentKind.other && label.isNotEmpty ? label : kind.label;
+  /// «جواز السفر» or the name given to an other one, in [l10n]'s language
+  /// (Arabic by default).
+  String title([ZadL10n? l10n]) =>
+      kind == DocumentKind.other && label.isNotEmpty ? label : kind.label(l10n);
 
   static DateTime _day(DateTime d) => DateTime.utc(d.year, d.month, d.day);
 

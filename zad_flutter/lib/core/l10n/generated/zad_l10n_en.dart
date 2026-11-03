@@ -7113,4 +7113,161 @@ class ZadL10nEn extends ZadL10n {
   String petMeterPercent(int percent) {
     return '$percent%';
   }
+
+  @override
+  String documentKindLabel(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'passport': 'Passport',
+      'nationalId': 'National ID',
+      'residence': 'Residence permit',
+      'drivingLicense': 'Driving licence',
+      'vehicleLicense': 'Vehicle licence',
+      'other': 'Other document',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetThirstyTitle(String name) {
+    return '💧 $name is thirsty';
+  }
+
+  @override
+  String reminderPetHungryTitle(String name) {
+    return '🍎 $name is hungry';
+  }
+
+  @override
+  String get reminderPetThirstyBody =>
+      'One glass of water and it\'s back to playing — come water it';
+
+  @override
+  String get reminderPetHungryBody =>
+      'Waiting for you to feed it… it misses you 🥺';
+
+  @override
+  String reminderPetCallTitle(String i, String name) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': '🥺 $name is still waiting for you',
+      'i1': '🍎 $name is asking about you',
+      'i2': '😢 $name is sad',
+      'i3': '💔 $name misses you so much',
+      'i4': '😭 $name is weak with hunger',
+      'other': '🌧️ $name is sitting all alone',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderPetCallBody(String i) {
+    String _temp0 = intl.Intl.selectLogic(i, {
+      'i0': 'Its tummy\'s been rumbling since morning… just one bite?',
+      'i1': 'Sitting by an empty bowl — come feed and water it',
+      'i2': 'A day without food… it looks a mess and it\'s waiting for you',
+      'i3': 'It won\'t play without you — one minute makes it happy again',
+      'i4': 'Two days without food or water… it\'s still waiting for you',
+      'other': 'Every day it watches the door — come and reassure it',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderNapTitle(String name) {
+    return '😴 $name fell asleep waiting for you';
+  }
+
+  @override
+  String get reminderNapBody =>
+      'You\'ve been away two days — come wake it up, it has welcome-back seeds for you 🌱';
+
+  @override
+  String reminderNapAgainTitle(String name) {
+    return '$name is still asleep…';
+  }
+
+  @override
+  String get reminderNapAgainBody =>
+      'Log just one expense and it\'ll wake up happy, and the streak starts again 🔥';
+
+  @override
+  String get reminderChannelDoses => 'Zad — medicine times';
+
+  @override
+  String get reminderChannelTasbih => 'Zad — tasbih reminder';
+
+  @override
+  String get reminderChannelCompanion => 'Zad\'s companion';
+
+  @override
+  String get reminderChannelSeasons => 'Zad — upcoming occasions';
+
+  @override
+  String get reminderChannelDocuments => 'Zad — documents before they expire';
+
+  @override
+  String get reminderDoseTaken => 'Taken ✅';
+
+  @override
+  String get reminderDoseSnooze => 'Snooze';
+
+  @override
+  String get reminderDoseTitle => 'Medicine time';
+
+  @override
+  String reminderDoseBody(String name) {
+    return 'Time for your dose of $name';
+  }
+
+  @override
+  String get reminderTasbihTitle => '🌱 Tasbih time';
+
+  @override
+  String get reminderTasbihBody =>
+      'Your tree is waiting — say some tasbih and help it grow';
+
+  @override
+  String reminderSeasonName(String slug) {
+    String _temp0 = intl.Intl.selectLogic(slug, {
+      'ramadan': 'Ramadan',
+      'eid_al_fitr': 'Eid al-Fitr',
+      'eid_al_adha': 'Eid al-Adha',
+      'back_to_school': 'Back to school',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reminderSeasonTitle(String name) {
+    return '📅 $name is coming';
+  }
+
+  @override
+  String reminderSeasonBody(String name) {
+    return 'Get ready for $name expenses — start saving now';
+  }
+
+  @override
+  String reminderDocumentWho(String document, String holder) {
+    return '$holder\'s $document';
+  }
+
+  @override
+  String reminderDocumentToday(String document) {
+    return '🪪 $document expires today';
+  }
+
+  @override
+  String reminderDocumentInDays(String document, int days) {
+    return '🪪 $document expires in $days days';
+  }
+
+  @override
+  String get reminderDocumentPassport =>
+      'Many countries want a passport valid for 6 months to travel — if a trip is coming, renew it early.';
+
+  @override
+  String reminderDocumentLastDay(String date) {
+    return 'Last day $date — start the renewal early.';
+  }
 }

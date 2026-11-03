@@ -24,10 +24,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -104,41 +107,42 @@ typedef CompanionCareCall = ({tz.TZDateTime at, String title, String body});
 /// (19:00) for three days, sadder each time — one call left unanswered no
 /// longer means silence. Each feed, drink and return reschedules them all,
 /// so they only ring for a pet really left waiting. It is sad, never sick or
-/// gone (the companion's mercy rule).
+/// gone (the companion's mercy rule). In [l10n]'s language, Arabic by
+/// default.
 List<CompanionCareCall> companionCareCalls(
   PetCare care,
   tz.TZDateTime now, {
   required String name,
+  ZadL10n? l10n,
 }) {
+  final l = l10n ?? zadL10nArabic;
   final first = companionCareTime(care, now);
   final calls = <CompanionCareCall>[
     (
       at: first.at,
-      title: first.thirsty ? '💧 $name عطشان' : '🍎 $name جعان',
-      body: first.thirsty
-          ? 'كوباية مية واحدة ويرجع يلعب — تعالى اسقيه'
-          : 'مستنيك تأكّله… وحشته 🥺',
+      title: first.thirsty
+          ? l.reminderPetThirstyTitle(name)
+          : l.reminderPetHungryTitle(name),
+      body: first.thirsty ? l.reminderPetThirstyBody : l.reminderPetHungryBody,
     ),
   ];
-  const lines = <(String, String)>[
-    ('🥺 {n} لسه مستنيك', 'بطنه بتصوصو من الصبح… لقمة واحدة بس؟'),
-    ('🍎 {n} بيسأل عليك', 'قاعد جنب الطبق فاضي — تعالى أكّله وأسقيه'),
-    ('😢 {n} زعلان', 'بقاله يوم من غير أكل… شكله اتبهدل ومستنيك'),
-    ('💔 {n} وحشته أوي', 'مش راضي يلعب من غيرك — دقيقة واحدة ترجّعه مبسوط'),
-    ('😭 {n} تعبان من الجوع', 'يومين من غير أكل ولا مية… هو لسه مستنيك'),
-    ('🌧️ {n} قاعد لوحده', 'كل يوم بيبص على الباب — تعالى طمّنه'),
-  ];
+  // The follow-ups, sadder each time: reminderPetCall*'s six arms.
+  const followUps = 6;
   final zone = now.location;
   var day = tz.TZDateTime(zone, first.at.year, first.at.month, first.at.day);
   var i = 0;
-  while (i < lines.length) {
+  while (i < followUps) {
     for (final hour in const <int>[10, 19]) {
-      if (i >= lines.length) break;
+      if (i >= followUps) break;
       final at = tz.TZDateTime(zone, day.year, day.month, day.day, hour);
       // At least six hours after the call before it.
       if (at.isBefore(calls.last.at.add(const Duration(hours: 6)))) continue;
-      final (title, body) = lines[i++];
-      calls.add((at: at, title: title.replaceAll('{n}', name), body: body));
+      final arm = 'i${i++}';
+      calls.add((
+        at: at,
+        title: l.reminderPetCallTitle(arm, name),
+        body: l.reminderPetCallBody(arm),
+      ));
     }
     day = tz.TZDateTime(zone, day.year, day.month, day.day + 1);
   }
@@ -179,6 +183,14 @@ class LocalReminders {
 
   tz.Location get _zone => tz.getLocation(_ref.read(accountTimeZoneProvider));
 
+  /// The reminders speak the app's language as it is when they are set.
+  ZadL10n get _l => _ref.read(zadL10nProvider);
+
+  /// The pet's name as the app says it.
+  String get _petName =>
+      (_ref.read(companionProvider).value?.persona ?? CompanionPersona.zado)
+          .displayName(_l);
+
   /// Whether Android lets reminders ring on time («المنبهات الدقيقة»).
   Future<bool> canScheduleExact() async =>
       await _android?.canScheduleExactNotifications() ?? true;
@@ -198,30 +210,25 @@ class LocalReminders {
   Future<void> _channels() async {
     final android = _android;
     if (android == null) return;
+    final l = _l;
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         _doseChannel,
-        'زاد — مواعيد الأدوية',
+        l.reminderChannelDoses,
         importance: Importance.high,
       ),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(_tasbihChannel, 'زاد — تذكير التسبيح'),
+      AndroidNotificationChannel(_tasbihChannel, l.reminderChannelTasbih),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(_companionChannel, 'رفيق زاد'),
+      AndroidNotificationChannel(_companionChannel, l.reminderChannelCompanion),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _seasonChannel,
-        'زاد — المناسبات القادمة',
-      ),
+      AndroidNotificationChannel(_seasonChannel, l.reminderChannelSeasons),
     );
     await android.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _documentChannel,
-        'زاد — المستندات قبل ما تنتهي',
-      ),
+      AndroidNotificationChannel(_documentChannel, l.reminderChannelDocuments),
     );
   }
 
@@ -244,16 +251,16 @@ class LocalReminders {
   /// Kotlin's PharmacyReminderReceiver buttons. showsUserInterface: logging
   /// a dose needs the signed-in session, which lives in the app, so a press
   /// brings it up and the dose is settled there (AlertsController).
-  static const List<AndroidNotificationAction> _doseActions =
+  List<AndroidNotificationAction> get _doseActions =>
       <AndroidNotificationAction>[
         AndroidNotificationAction(
           kDoseTakenActionId,
-          'أخدتها ✅',
+          _l.reminderDoseTaken,
           showsUserInterface: true,
         ),
         AndroidNotificationAction(
           kDoseSnoozeActionId,
-          'أجّل',
+          _l.reminderDoseSnooze,
           showsUserInterface: true,
         ),
       ];
@@ -298,12 +305,12 @@ class LocalReminders {
         try {
           await _plugin.zonedSchedule(
             id: id,
-            title: 'موعد الدواء',
-            body: 'حان موعد جرعة ${m.name}',
+            title: _l.reminderDoseTitle,
+            body: _l.reminderDoseBody(m.name),
             scheduledDate: at,
             notificationDetails: _details(
               _doseChannel,
-              'زاد — مواعيد الأدوية',
+              _l.reminderChannelDoses,
               high: true,
               actions: _doseActions,
             ),
@@ -344,17 +351,12 @@ class LocalReminders {
         .isEnabledUnlessOff(AlertPrefs.companionNap)) {
       return;
     }
-    final name = _ref.read(companionProvider).value?.persona.name ?? 'زادو';
+    final l = _l;
+    final name = _petName;
     final times = companionNapTimes(tz.TZDateTime.now(_zone));
     final texts = <(String, String)>[
-      (
-        '😴 $name نام مستنيك',
-        'بقالك يومين مش هنا — ارجع صحّيه، ومعاه بذور هدية رجوعك 🌱',
-      ),
-      (
-        '$name لسه نايم…',
-        'سجّل مصروف واحد بس وهيصحى فرحان، والسلسلة تبدأ من جديد 🔥',
-      ),
+      (l.reminderNapTitle(name), l.reminderNapBody),
+      (l.reminderNapAgainTitle(name), l.reminderNapAgainBody),
     ];
     for (var i = 0; i < times.length; i++) {
       await _plugin.zonedSchedule(
@@ -362,7 +364,10 @@ class LocalReminders {
         title: texts[i].$1,
         body: texts[i].$2,
         scheduledDate: times[i],
-        notificationDetails: _details(_companionChannel, 'رفيق زاد'),
+        notificationDetails: _details(
+          _companionChannel,
+          _l.reminderChannelCompanion,
+        ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: payloadFor(AlertDestination.home),
       );
@@ -382,11 +387,11 @@ class LocalReminders {
               .isEnabledUnlessOff(AlertPrefs.companionCare)) {
         return;
       }
-      final name = _ref.read(companionProvider).value?.persona.name ?? 'زادو';
       final calls = companionCareCalls(
         care,
         tz.TZDateTime.now(_zone),
-        name: name,
+        name: _petName,
+        l10n: _l,
       );
       final ids = <int>[_careId, ..._careFollowUpIds];
       for (var i = 0; i < calls.length && i < ids.length; i++) {
@@ -395,7 +400,10 @@ class LocalReminders {
           title: calls[i].title,
           body: calls[i].body,
           scheduledDate: calls[i].at,
-          notificationDetails: _details(_companionChannel, 'رفيق زاد'),
+          notificationDetails: _details(
+            _companionChannel,
+            _l.reminderChannelCompanion,
+          ),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           payload: payloadFor(AlertDestination.home),
         );
@@ -447,10 +455,10 @@ class LocalReminders {
     if (done || !at.isAfter(now)) at = at.add(const Duration(days: 1));
     await _plugin.zonedSchedule(
       id: _tasbihId,
-      title: '🌱 وقت التسبيح',
-      body: 'شجرتك مستنياك — سبّح شوية ونمّيها',
+      title: _l.reminderTasbihTitle,
+      body: _l.reminderTasbihBody,
       scheduledDate: at,
-      notificationDetails: _details(_tasbihChannel, 'زاد — تذكير التسبيح'),
+      notificationDetails: _details(_tasbihChannel, _l.reminderChannelTasbih),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: payloadFor(AlertDestination.home),
     );
@@ -485,13 +493,8 @@ class LocalReminders {
       if (start == null || !start.isAfter(now)) continue;
       final key = '$_seasonKeyPrefix$id-${start.year}';
       if (device.get(key) != null) continue;
-      final name = switch (e['slug']) {
-        'ramadan' => 'رمضان',
-        'eid_al_fitr' => 'عيد الفطر',
-        'eid_al_adha' => 'عيد الأضحى',
-        'back_to_school' => 'العودة للمدارس',
-        _ => '${e['name']}',
-      };
+      final known = _l.reminderSeasonName('${e['slug']}');
+      final name = known.isEmpty ? '${e['name']}' : known;
       final from = tz.TZDateTime.from(
         start,
         zone,
@@ -503,12 +506,12 @@ class LocalReminders {
       }
       await _plugin.zonedSchedule(
         id: _stableId(key),
-        title: '📅 $name قريباً',
-        body: 'استعد لمصاريف $name — ابدأ التوفير الآن',
+        title: _l.reminderSeasonTitle(name),
+        body: _l.reminderSeasonBody(name),
         scheduledDate: at,
         notificationDetails: _details(
           _seasonChannel,
-          'زاد — المناسبات القادمة',
+          _l.reminderChannelSeasons,
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: payloadFor(AlertDestination.home),
@@ -548,28 +551,30 @@ class LocalReminders {
         if (!at.isAfter(now)) continue;
         // The date is in the key: a renewal's reminders replace the old ones.
         final id = _stableId('document|${d.id}|${d.expiresOnIso}|$stage');
-        final who = d.holder.isEmpty ? '' : ' بتاع ${d.holder}';
+        final l = _l;
+        final document = d.holder.isEmpty
+            ? d.title(l)
+            : l.reminderDocumentWho(d.title(l), d.holder);
         try {
           await _plugin.zonedSchedule(
             id: id,
             title: stage == 0
-                ? '🪪 ${d.title}$who بينتهي النهارده'
-                : '🪪 ${d.title}$who بينتهي بعد $stage يوم',
+                ? l.reminderDocumentToday(document)
+                : l.reminderDocumentInDays(document, stage),
             body: stage == 180
-                ? 'دول كتير بتطلب الجواز صالح ٦ شهور للسفر — '
-                      'لو فيه سفر، جدّده بدري.'
-                : 'آخر يوم ${d.expiresOnIso} — ابدأ التجديد بدري.',
+                ? l.reminderDocumentPassport
+                : l.reminderDocumentLastDay(d.expiresOnIso),
             scheduledDate: at,
             notificationDetails: _details(
               _documentChannel,
-              'زاد — المستندات قبل ما تنتهي',
+              l.reminderChannelDocuments,
             ),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
             payload: payloadFor(AlertDestination.home),
           );
           scheduled.add(id);
         } on Object catch (e) {
-          debugPrint('document reminder ${d.title} $stage failed: $e');
+          debugPrint('document reminder ${d.kind.wire} $stage failed: $e');
         }
       }
     }
