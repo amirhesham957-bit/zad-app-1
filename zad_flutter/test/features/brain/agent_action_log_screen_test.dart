@@ -145,7 +145,7 @@ void main() {
     await tester.tap(find.text('ارجع فيه').last);
     await tester.pumpAndSettle();
 
-    expect(find.text(UndoFailure.newerActionExists.message), findsOneWidget);
+    expect(find.text(UndoFailure.newerActionExists.message()), findsOneWidget);
   });
 
   testWidgets('the hub opens the log', (tester) async {

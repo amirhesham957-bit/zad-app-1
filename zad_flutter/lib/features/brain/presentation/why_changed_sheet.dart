@@ -13,15 +13,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 import 'package:zad/features/brain/domain/mutation_summary.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
-/// Kotlin's `BrainMutationEntry`, with the change already put into words.
+/// Kotlin's `BrainMutationEntry`. Put into words by the row, in the
+/// customer's language (summarizeMutation).
 typedef BrainMutation = ({
-  String toolLabel,
-  String? subject,
-  String? change,
+  String tool,
+  Object? old,
+  Object? next,
   String trigger,
   DateTime? at,
 });
@@ -30,8 +32,6 @@ typedef BrainMutation = ({
 final FutureProvider<List<BrainMutation>> recentBrainMutationsProvider =
     FutureProvider.autoDispose<List<BrainMutation>>((ref) async {
       final client = ref.watch(supabaseClientProvider);
-      final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
-      DateTime toLocal(DateTime utc) => tz.TZDateTime.from(utc, zone);
       final userId = client.auth.currentUser?.id;
       if (userId == null) return const <BrainMutation>[];
       try {
@@ -47,15 +47,10 @@ final FutureProvider<List<BrainMutation>> recentBrainMutationsProvider =
           if (mutations is! List) continue;
           for (final m in mutations) {
             if (m is! Map) continue;
-            final summary = summarizeMutation(
-              m['old'],
-              m['new'],
-              toLocal: toLocal,
-            );
             out.add((
-              toolLabel: agentToolLabel((m['tool'] as String?) ?? '?'),
-              subject: summary.subject,
-              change: summary.change,
+              tool: (m['tool'] as String?) ?? '?',
+              old: m['old'],
+              next: m['new'],
               trigger: (row['trigger'] as String?) ?? '',
               at: DateTime.tryParse('${row['started_at']}'),
             ));
@@ -89,6 +84,9 @@ class _WhyChangedSheet extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final mutations = ref.watch(recentBrainMutationsProvider);
     final now = ref.read(nowProvider)();
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    DateTime toLocal(DateTime utc) => tz.TZDateTime.from(utc, zone);
+    final l = context.l10n;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -96,7 +94,7 @@ class _WhyChangedSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              'آخر التغييرات',
+              l.whyChangedTitle,
               style: ZadType.titleLarge.copyWith(
                 fontWeight: FontWeight.bold,
                 color: scheme.onSurface,
@@ -104,7 +102,7 @@ class _WhyChangedSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'تعديلات زاد الآلية على بياناتك — إيه اتغيّر، وإمتى',
+              l.whyChangedSubtitle,
               style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
@@ -121,7 +119,7 @@ class _WhyChangedSheet extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'مفيش تعديلات آلية مسجلة لسه',
+                        l.whyChangedEmpty,
                         style: ZadType.bodyMedium.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -132,7 +130,7 @@ class _WhyChangedSheet extends ConsumerWidget {
               ],
               AsyncData(:final value) => <Widget>[
                 for (final m in value) ...<Widget>[
-                  _MutationRow(m: m, now: now),
+                  _MutationRow(m: m, now: now, toLocal: toLocal),
                   const SizedBox(height: 4),
                 ],
               ],
@@ -157,25 +155,28 @@ class _WhyChangedSheet extends ConsumerWidget {
 }
 
 class _MutationRow extends StatelessWidget {
-  const new({required this.m, required this.now});
+  const new({required this.m, required this.now, required this.toLocal});
 
   final BrainMutation m;
   final DateTime now;
+  final DateTime Function(DateTime utc) toLocal;
 
   /// Kotlin's `relativeTime`.
-  String _relative() {
+  String _relative(ZadL10n l) {
     final at = m.at;
     if (at == null) return '';
     final minutes = now.difference(at).inMinutes;
-    if (minutes < 1) return 'الآن';
-    if (minutes < 60) return 'منذ $minutes د';
-    if (minutes < 1440) return 'منذ ${minutes ~/ 60} س';
-    return 'منذ ${minutes ~/ 1440} يوم';
+    if (minutes < 1) return l.whyChangedNow;
+    if (minutes < 60) return l.whyChangedMinutesAgo(minutes);
+    if (minutes < 1440) return l.whyChangedHoursAgo(minutes ~/ 60);
+    return l.whyChangedDaysAgo(minutes ~/ 1440);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
+    final summary = summarizeMutation(m.old, m.next, toLocal: toLocal, l10n: l);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -189,22 +190,22 @@ class _MutationRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  m.toolLabel,
+                  agentToolLabel(m.tool, l),
                   style: ZadType.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                     color: scheme.onSurface,
                   ),
                 ),
-                if (m.subject != null)
+                if (summary.subject case final subject?)
                   Text(
-                    m.subject!,
+                    subject,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: ZadType.bodySmall.copyWith(color: scheme.onSurface),
                   ),
-                if (m.change != null)
+                if (summary.change case final change?)
                   Text(
-                    m.change!,
+                    change,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: ZadType.bodySmall.copyWith(
@@ -215,7 +216,7 @@ class _MutationRow extends StatelessWidget {
             ),
           ),
           Text(
-            _relative(),
+            _relative(l),
             style: ZadType.labelSmall.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],

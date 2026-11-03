@@ -2532,4 +2532,607 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'فاضل كتير';
+
+  @override
+  String get agentToolLogTransaction => 'تسجيل معاملة';
+
+  @override
+  String get agentToolUpdateTransaction => 'تعديل معاملة';
+
+  @override
+  String get agentToolDeleteTransaction => 'حذف معاملة';
+
+  @override
+  String get agentToolSetTransactionCategory => 'تصنيف معاملة';
+
+  @override
+  String get agentToolMergeDuplicateExpense => 'دمج معاملة مكررة';
+
+  @override
+  String get agentToolReconcileCashBalance => 'تسوية الكاش';
+
+  @override
+  String get agentToolParseNotificationPayload => 'قراءة رسالة بنك';
+
+  @override
+  String get agentToolSetMonthlyLimit => 'تعديل سقف الميزانية';
+
+  @override
+  String get agentToolConfirmCycleStart => 'تأكيد دورة الراتب';
+
+  @override
+  String get agentToolSetMarket => 'تعديل البلد والعملة';
+
+  @override
+  String get agentToolAddObligation => 'تسجيل التزام';
+
+  @override
+  String get agentToolConfirmObligation => 'تأكيد التزام';
+
+  @override
+  String get agentToolUpdateObligation => 'تعديل التزام';
+
+  @override
+  String get agentToolDeleteObligation => 'حذف التزام';
+
+  @override
+  String get agentToolAddSubscription => 'إضافة اشتراك';
+
+  @override
+  String get agentToolUpdateSubscription => 'تعديل اشتراك';
+
+  @override
+  String get agentToolDeleteSubscription => 'حذف اشتراك';
+
+  @override
+  String get agentToolAddDebt => 'تسجيل دين';
+
+  @override
+  String get agentToolUpdateDebt => 'تعديل دين';
+
+  @override
+  String get agentToolDeleteDebt => 'حذف دين';
+
+  @override
+  String get agentToolAddInventoryItem => 'إضافة صنف للمخزون';
+
+  @override
+  String get agentToolUpdateInventoryQty => 'تعديل كمية مخزون';
+
+  @override
+  String get agentToolDeleteInventoryItem => 'حذف صنف من المخزون';
+
+  @override
+  String get agentToolAddShoppingItem => 'إضافة لقايمة المشتريات';
+
+  @override
+  String get agentToolCompleteShoppingItem => 'شطب من قايمة المشتريات';
+
+  @override
+  String get agentToolDeleteShoppingItem => 'حذف من قايمة المشتريات';
+
+  @override
+  String get agentToolAddPharmacyItem => 'إضافة دواء';
+
+  @override
+  String get agentToolUpdatePharmacyItem => 'تعديل دواء';
+
+  @override
+  String get agentToolDeletePharmacyItem => 'حذف دواء';
+
+  @override
+  String get agentToolLogPharmacyDose => 'تسجيل جرعة دواء';
+
+  @override
+  String get agentToolAddMaintenanceItem => 'إضافة جهاز للصيانة';
+
+  @override
+  String get agentToolUpdateMaintenanceItem => 'تعديل جهاز';
+
+  @override
+  String get agentToolDeleteMaintenanceItem => 'حذف جهاز';
+
+  @override
+  String get agentToolSaveDocument => 'تسجيل مستند';
+
+  @override
+  String get agentToolDeleteDocument => 'شيل مستند';
+
+  @override
+  String get agentToolAddGatheringToList => 'سطور عزومة للقايمة';
+
+  @override
+  String get agentToolAddAppointment => 'إضافة ميعاد';
+
+  @override
+  String get agentToolUpdateAppointment => 'تعديل ميعاد';
+
+  @override
+  String get agentToolAddPlaceReminder => 'تذكير عند مكان';
+
+  @override
+  String get agentToolCancelPlaceReminder => 'إلغاء تذكير مكان';
+
+  @override
+  String get agentToolScheduleTask => 'جدولة تذكير';
+
+  @override
+  String get agentToolRemember => 'حفظ ملاحظة عنك';
+
+  @override
+  String get agentToolLinkMemory => 'ربط ملاحظات';
+
+  @override
+  String get agentToolUpdateCustomerProfile => 'تحديث ملفك';
+
+  @override
+  String get agentToolSetLifeGoal => 'هدف جديد';
+
+  @override
+  String get agentToolSetBrokeMode => 'وضع التقشف';
+
+  @override
+  String get agentToolStartSavingsChallenge => 'بدء تحدي توفير';
+
+  @override
+  String get agentToolStopSavingsChallenge => 'إيقاف تحدي توفير';
+
+  @override
+  String get agentToolUpdateEmergencyFundBalance => 'تحديث صندوق الطوارئ';
+
+  @override
+  String get agentToolAllocateIncome => 'توزيع الدخل';
+
+  @override
+  String get agentToolSetSleepWindow => 'مواعيد نومك';
+
+  @override
+  String get agentToolLearnSkill => 'تعلّم مهارة';
+
+  @override
+  String get agentToolSaveTrustedTechnician => 'حفظ صنايعي';
+
+  @override
+  String get agentToolOpenSupportTicket => 'فتح طلب دعم';
+
+  @override
+  String get agentToolAnswerSameProduct => 'مطابقة منتج';
+
+  @override
+  String get agentToolOther => 'تعديل من زاد';
+
+  @override
+  String get agentSourceAppChat => 'شات التطبيق';
+
+  @override
+  String get agentSourceTelegram => 'تليجرام';
+
+  @override
+  String get agentSourceVoice => 'رسالة صوتية';
+
+  @override
+  String get agentSourceConfirm => 'بتأكيد منك';
+
+  @override
+  String get agentSourceDaily => 'مراجعة يومية';
+
+  @override
+  String get agentSourceEvent => 'حدث تلقائي';
+
+  @override
+  String get agentSourceOther => 'زاد';
+
+  @override
+  String get undoFailureNewerActionExists =>
+      'فيه تعديل أحدث على نفس الحاجة — ارجع فيه هو الأول';
+
+  @override
+  String get undoFailureAlreadyUndone => 'ده اترجع فيه قبل كده';
+
+  @override
+  String get undoFailureNeverApplied =>
+      'ده ماتنفذش أصلاً، فمفيش حاجة ترجع فيها';
+
+  @override
+  String get undoFailureNotUndoable => 'ده مينفعش يترجع فيه';
+
+  @override
+  String get undoFailureTargetMissing => 'الحاجة دي اتمسحت أو مش موجودة دلوقتي';
+
+  @override
+  String get undoFailureNotAllowed => 'فيه مشكلة في الدخول — اطلع وادخل تاني';
+
+  @override
+  String get undoFailureOffline => 'مفيش اتصال دلوقتي — جرب لما النت يرجع';
+
+  @override
+  String get undoFailureUnknown => 'معرفتش أرجع فيه، جرب تاني';
+
+  @override
+  String actionLogUndoAsk(String tool) {
+    return 'ترجع في «$tool»؟';
+  }
+
+  @override
+  String get actionLogUndoWarning =>
+      'زاد هيرجّع الحاجة دي زي ما كانت قبل التعديل. مش هتقدر ترجع في الرجوع ده بعدين.';
+
+  @override
+  String get actionLogWait => 'استنى';
+
+  @override
+  String get actionLogUndo => 'ارجع فيه';
+
+  @override
+  String actionLogUndone(String tool) {
+    return 'رجعت في «$tool»';
+  }
+
+  @override
+  String get actionLogTitle => 'سجل تعديلات زاد';
+
+  @override
+  String get actionLogLoadFailed => 'مقدرتش أجيب السجل';
+
+  @override
+  String get actionLogEmptyTitle => 'لسه مفيش تعديلات';
+
+  @override
+  String get actionLogPullRetry => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get actionLogEmptyBody =>
+      'أي حاجة زاد يسجّلها أو يعدّلها لك هتظهر هنا.';
+
+  @override
+  String get actionLogApplied => 'اتنفذ';
+
+  @override
+  String get actionLogUndoneStatus => 'اترجع فيه';
+
+  @override
+  String get actionLogRejected => 'اترفض';
+
+  @override
+  String get mutationFieldAmount => 'المبلغ';
+
+  @override
+  String get mutationFieldQuantity => 'الكمية';
+
+  @override
+  String get mutationFieldRemainingQuantity => 'الكمية المتبقية';
+
+  @override
+  String get mutationFieldRemainingBalance => 'المتبقي';
+
+  @override
+  String get mutationFieldPrice => 'السعر';
+
+  @override
+  String get mutationFieldUnit => 'الوحدة';
+
+  @override
+  String get mutationFieldCategory => 'الفئة';
+
+  @override
+  String get mutationFieldKind => 'النوع';
+
+  @override
+  String get mutationFieldStatus => 'الحالة';
+
+  @override
+  String get mutationFieldStartsAt => 'الميعاد';
+
+  @override
+  String get mutationFieldTaskDescription => 'التذكير';
+
+  @override
+  String get mutationFieldRecurrence => 'التكرار';
+
+  @override
+  String get mutationFieldDosage => 'الجرعة';
+
+  @override
+  String get mutationFieldDoseTimes => 'مواعيد الجرعات';
+
+  @override
+  String get mutationFieldDailyDoseCount => 'جرعات اليوم';
+
+  @override
+  String get mutationFieldExpiryDate => 'الصلاحية';
+
+  @override
+  String get mutationFieldRenewalDate => 'التجديد';
+
+  @override
+  String get mutationFieldDueDay => 'يوم الاستحقاق';
+
+  @override
+  String get mutationFieldBillingCycle => 'الدورة';
+
+  @override
+  String get mutationFieldIsActive => 'شغّال';
+
+  @override
+  String get mutationFieldForPerson => 'لمين';
+
+  @override
+  String get mutationFieldPlace => 'المكان';
+
+  @override
+  String get mutationFieldNote => 'ملاحظة';
+
+  @override
+  String get mutationFieldNotes => 'ملاحظات';
+
+  @override
+  String get mutationFieldExpectedCost => 'التكلفة المتوقعة';
+
+  @override
+  String get mutationFieldCurrency => 'العملة';
+
+  @override
+  String get mutationFieldCountry => 'البلد';
+
+  @override
+  String get mutationFieldPayDay => 'يوم القبض';
+
+  @override
+  String get mutationFieldBed => 'النوم';
+
+  @override
+  String get mutationFieldWake => 'الصحيان';
+
+  @override
+  String get mutationFieldDailyCap => 'سقف اليوم';
+
+  @override
+  String get mutationFieldLengthDays => 'المدة بالأيام';
+
+  @override
+  String get mutationFieldTrade => 'الصنعة';
+
+  @override
+  String get mutationFieldMetric => 'المقياس';
+
+  @override
+  String get mutationStatusUpcoming => 'جاي';
+
+  @override
+  String get mutationStatusDone => 'خلص';
+
+  @override
+  String get mutationStatusCancelled => 'اتلغى';
+
+  @override
+  String get mutationStatusActive => 'شغّال';
+
+  @override
+  String get mutationStatusAbandoned => 'اتوقف';
+
+  @override
+  String get mutationEdited => 'اتعدّل';
+
+  @override
+  String get mutationRemoved => 'اتشال';
+
+  @override
+  String mutationFieldChange(String field, String before, String after) {
+    return '$field: $before ← $after';
+  }
+
+  @override
+  String mutationValueChange(String before, String after) {
+    return '$before ← $after';
+  }
+
+  @override
+  String mutationMore(String shown, int count) {
+    return '$shown • و$count كمان';
+  }
+
+  @override
+  String get mutationYes => 'أيوه';
+
+  @override
+  String get mutationNo => 'لأ';
+
+  @override
+  String mutationItems(int count) {
+    return '$count عناصر';
+  }
+
+  @override
+  String get mutationListSeparator => '، ';
+
+  @override
+  String get whyChangedTitle => 'آخر التغييرات';
+
+  @override
+  String get whyChangedSubtitle =>
+      'تعديلات زاد الآلية على بياناتك — إيه اتغيّر، وإمتى';
+
+  @override
+  String get whyChangedEmpty => 'مفيش تعديلات آلية مسجلة لسه';
+
+  @override
+  String get whyChangedNow => 'الآن';
+
+  @override
+  String whyChangedMinutesAgo(int minutes) {
+    return 'منذ $minutes د';
+  }
+
+  @override
+  String whyChangedHoursAgo(int hours) {
+    return 'منذ $hours س';
+  }
+
+  @override
+  String whyChangedDaysAgo(int days) {
+    return 'منذ $days يوم';
+  }
+
+  @override
+  String get memoryForgetAsk => 'تنسى الملاحظة دي؟';
+
+  @override
+  String get memoryForgetBody => 'زاد مش هيفتكرها تاني في أي رد جاي.';
+
+  @override
+  String get memoryForgetYes => 'انساها';
+
+  @override
+  String get memoryForgotten => 'اتنسيت';
+
+  @override
+  String get memoryClearOutingsAsk => 'تمسح خروجاتك؟';
+
+  @override
+  String get memoryClearYes => 'امسحها';
+
+  @override
+  String get memoryOutingsCleared => 'اتمسحت خروجاتك';
+
+  @override
+  String get memorySaved => 'اتحفظ';
+
+  @override
+  String get memoryTitle => 'زاد عارف عني إيه';
+
+  @override
+  String get memoryStaleBanner =>
+      'مقدرتش أجيب آخر نسخة — اللي قدامك آخر حاجة اتحفظت هنا.';
+
+  @override
+  String get memoryNotesHeading => 'اللي زاد فاكره عنك';
+
+  @override
+  String get memoryEmptyTitle => 'لسه مفيش ذكريات';
+
+  @override
+  String get memoryProfileTitle => 'إنت مين عند زاد';
+
+  @override
+  String get memoryProfileSubtitle => 'زاد بيكلمك على أساس ده — عدّله براحتك';
+
+  @override
+  String get memoryEdit => 'تعديل';
+
+  @override
+  String get memoryLineName => 'بتحب أناديك';
+
+  @override
+  String get memoryLineGender => 'النوع';
+
+  @override
+  String get memoryLineRole => 'دورك في البيت';
+
+  @override
+  String get memoryLineAge => 'العمر';
+
+  @override
+  String get memoryLineJob => 'شغلك';
+
+  @override
+  String get memoryLinePay => 'القبض';
+
+  @override
+  String get memoryLineHousehold => 'البيت';
+
+  @override
+  String get memoryLineCity => 'المدينة';
+
+  @override
+  String get memoryLineDialect => 'اللهجة';
+
+  @override
+  String get memoryDialectDefault => 'زي بلدك وكلامك';
+
+  @override
+  String get memoryLineVoice => 'صوت زاد';
+
+  @override
+  String get memoryHabitsTitle => 'عاداتك وتحركاتك';
+
+  @override
+  String get memoryHabitsSubtitle =>
+      'من صرفك وخروجاتك — من غير أماكن ولا إحداثيات';
+
+  @override
+  String get memoryHabitsEmpty =>
+      'لسه بيتعلم عاداتك — سجّل مصاريفك وهتبان هنا.';
+
+  @override
+  String get memoryHabitWeekly => 'متوسط صرفك في الأسبوع';
+
+  @override
+  String get memoryHabitTopCategories => 'أكتر حاجات بتصرف عليها';
+
+  @override
+  String get memoryHabitBusiestDay => 'أكتر يوم بتصرف فيه';
+
+  @override
+  String get memoryHabitSubscriptions => 'اشتراكاتك في الشهر';
+
+  @override
+  String get memoryHabitOutings => 'خروجاتك آخر ٣٠ يوم';
+
+  @override
+  String get memoryHabitPerOuting => 'متوسط صرف الخروجة';
+
+  @override
+  String get memoryHabitTopPlaces => 'أكتر أماكن بتروحها';
+
+  @override
+  String get memoryClearOutingsBody =>
+      'هنمسح كل الخروجات المتسجلة (أوقات وصرف ومحلات). المصاريف نفسها مش هتتمسح.';
+
+  @override
+  String get memoryEmptyBody =>
+      'زاد هيتعلم عنك تدريجيًا من كلامك واستخدامك للتطبيق.';
+
+  @override
+  String get memoryUnknown => 'لسه مش عارفاه';
+
+  @override
+  String memoryHouseholdSize(int count) {
+    return '$count أفراد';
+  }
+
+  @override
+  String memoryKidsCount(int count) {
+    return '$count عيال';
+  }
+
+  @override
+  String memoryPayDay(int day) {
+    return 'يوم $day';
+  }
+
+  @override
+  String memoryOutingsCount(int count) {
+    return '$count خروجة';
+  }
+
+  @override
+  String get memoryClearOutings => 'امسح خروجاتي';
+
+  @override
+  String memoryConfirmedTimes(int count) {
+    return 'اتأكدت $count مرة';
+  }
+
+  @override
+  String memoryAbout(String names) {
+    return 'عن: $names';
+  }
+
+  @override
+  String get memoryForgetThis => 'انسى دي';
+
+  @override
+  String memoryUntil(String date) {
+    return 'لحد $date';
+  }
 }

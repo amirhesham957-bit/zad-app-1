@@ -2595,4 +2595,614 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'Most of it left';
+
+  @override
+  String get agentToolLogTransaction => 'Logged a transaction';
+
+  @override
+  String get agentToolUpdateTransaction => 'Edited a transaction';
+
+  @override
+  String get agentToolDeleteTransaction => 'Deleted a transaction';
+
+  @override
+  String get agentToolSetTransactionCategory => 'Categorised a transaction';
+
+  @override
+  String get agentToolMergeDuplicateExpense => 'Merged a duplicate expense';
+
+  @override
+  String get agentToolReconcileCashBalance => 'Settled the cash balance';
+
+  @override
+  String get agentToolParseNotificationPayload => 'Read a bank message';
+
+  @override
+  String get agentToolSetMonthlyLimit => 'Changed the budget limit';
+
+  @override
+  String get agentToolConfirmCycleStart => 'Confirmed the pay cycle';
+
+  @override
+  String get agentToolSetMarket => 'Changed country and currency';
+
+  @override
+  String get agentToolAddObligation => 'Added a commitment';
+
+  @override
+  String get agentToolConfirmObligation => 'Confirmed a commitment';
+
+  @override
+  String get agentToolUpdateObligation => 'Edited a commitment';
+
+  @override
+  String get agentToolDeleteObligation => 'Deleted a commitment';
+
+  @override
+  String get agentToolAddSubscription => 'Added a subscription';
+
+  @override
+  String get agentToolUpdateSubscription => 'Edited a subscription';
+
+  @override
+  String get agentToolDeleteSubscription => 'Deleted a subscription';
+
+  @override
+  String get agentToolAddDebt => 'Added a debt';
+
+  @override
+  String get agentToolUpdateDebt => 'Edited a debt';
+
+  @override
+  String get agentToolDeleteDebt => 'Deleted a debt';
+
+  @override
+  String get agentToolAddInventoryItem => 'Added an item to the pantry';
+
+  @override
+  String get agentToolUpdateInventoryQty => 'Changed a pantry quantity';
+
+  @override
+  String get agentToolDeleteInventoryItem => 'Removed an item from the pantry';
+
+  @override
+  String get agentToolAddShoppingItem => 'Added to the shopping list';
+
+  @override
+  String get agentToolCompleteShoppingItem => 'Ticked off the shopping list';
+
+  @override
+  String get agentToolDeleteShoppingItem => 'Removed from the shopping list';
+
+  @override
+  String get agentToolAddPharmacyItem => 'Added a medicine';
+
+  @override
+  String get agentToolUpdatePharmacyItem => 'Edited a medicine';
+
+  @override
+  String get agentToolDeletePharmacyItem => 'Removed a medicine';
+
+  @override
+  String get agentToolLogPharmacyDose => 'Logged a dose';
+
+  @override
+  String get agentToolAddMaintenanceItem => 'Added an appliance to maintenance';
+
+  @override
+  String get agentToolUpdateMaintenanceItem => 'Edited an appliance';
+
+  @override
+  String get agentToolDeleteMaintenanceItem => 'Removed an appliance';
+
+  @override
+  String get agentToolSaveDocument => 'Saved a document';
+
+  @override
+  String get agentToolDeleteDocument => 'Removed a document';
+
+  @override
+  String get agentToolAddGatheringToList =>
+      'Added a gathering\'s items to the list';
+
+  @override
+  String get agentToolAddAppointment => 'Added an appointment';
+
+  @override
+  String get agentToolUpdateAppointment => 'Edited an appointment';
+
+  @override
+  String get agentToolAddPlaceReminder => 'Set a place reminder';
+
+  @override
+  String get agentToolCancelPlaceReminder => 'Cancelled a place reminder';
+
+  @override
+  String get agentToolScheduleTask => 'Scheduled a reminder';
+
+  @override
+  String get agentToolRemember => 'Saved a note about you';
+
+  @override
+  String get agentToolLinkMemory => 'Linked notes';
+
+  @override
+  String get agentToolUpdateCustomerProfile => 'Updated your profile';
+
+  @override
+  String get agentToolSetLifeGoal => 'New goal';
+
+  @override
+  String get agentToolSetBrokeMode => 'Tight-month mode';
+
+  @override
+  String get agentToolStartSavingsChallenge => 'Started a savings challenge';
+
+  @override
+  String get agentToolStopSavingsChallenge => 'Stopped a savings challenge';
+
+  @override
+  String get agentToolUpdateEmergencyFundBalance =>
+      'Updated the emergency fund';
+
+  @override
+  String get agentToolAllocateIncome => 'Allocated income';
+
+  @override
+  String get agentToolSetSleepWindow => 'Your sleep hours';
+
+  @override
+  String get agentToolLearnSkill => 'Learned a skill';
+
+  @override
+  String get agentToolSaveTrustedTechnician => 'Saved a technician';
+
+  @override
+  String get agentToolOpenSupportTicket => 'Opened a support request';
+
+  @override
+  String get agentToolAnswerSameProduct => 'Matched a product';
+
+  @override
+  String get agentToolOther => 'A change by Zad';
+
+  @override
+  String get agentSourceAppChat => 'App chat';
+
+  @override
+  String get agentSourceTelegram => 'Telegram';
+
+  @override
+  String get agentSourceVoice => 'Voice message';
+
+  @override
+  String get agentSourceConfirm => 'Confirmed by you';
+
+  @override
+  String get agentSourceDaily => 'Daily review';
+
+  @override
+  String get agentSourceEvent => 'Automatic event';
+
+  @override
+  String get agentSourceOther => 'Zad';
+
+  @override
+  String get undoFailureNewerActionExists =>
+      'There\'s a newer change to the same thing — undo that one first';
+
+  @override
+  String get undoFailureAlreadyUndone => 'This was already undone';
+
+  @override
+  String get undoFailureNeverApplied =>
+      'This never went through, so there\'s nothing to undo';
+
+  @override
+  String get undoFailureNotUndoable => 'This can\'t be undone';
+
+  @override
+  String get undoFailureTargetMissing =>
+      'That\'s been deleted or isn\'t there any more';
+
+  @override
+  String get undoFailureNotAllowed =>
+      'There\'s a sign-in problem — sign out and back in';
+
+  @override
+  String get undoFailureOffline =>
+      'No connection right now — try when you\'re back online';
+
+  @override
+  String get undoFailureUnknown => 'I couldn\'t undo it, try again';
+
+  @override
+  String actionLogUndoAsk(String tool) {
+    return 'Undo “$tool”?';
+  }
+
+  @override
+  String get actionLogUndoWarning =>
+      'Zad will put this back the way it was before the change. You won\'t be able to undo this later.';
+
+  @override
+  String get actionLogWait => 'Wait';
+
+  @override
+  String get actionLogUndo => 'Undo';
+
+  @override
+  String actionLogUndone(String tool) {
+    return 'Undid “$tool”';
+  }
+
+  @override
+  String get actionLogTitle => 'Zad\'s change log';
+
+  @override
+  String get actionLogLoadFailed => 'Couldn\'t load the log';
+
+  @override
+  String get actionLogEmptyTitle => 'No changes yet';
+
+  @override
+  String get actionLogPullRetry => 'Pull down to try again.';
+
+  @override
+  String get actionLogEmptyBody =>
+      'Anything Zad logs or changes for you will show up here.';
+
+  @override
+  String get actionLogApplied => 'Done';
+
+  @override
+  String get actionLogUndoneStatus => 'Undone';
+
+  @override
+  String get actionLogRejected => 'Refused';
+
+  @override
+  String get mutationFieldAmount => 'Amount';
+
+  @override
+  String get mutationFieldQuantity => 'Quantity';
+
+  @override
+  String get mutationFieldRemainingQuantity => 'Quantity left';
+
+  @override
+  String get mutationFieldRemainingBalance => 'Remaining';
+
+  @override
+  String get mutationFieldPrice => 'Price';
+
+  @override
+  String get mutationFieldUnit => 'Unit';
+
+  @override
+  String get mutationFieldCategory => 'Category';
+
+  @override
+  String get mutationFieldKind => 'Type';
+
+  @override
+  String get mutationFieldStatus => 'Status';
+
+  @override
+  String get mutationFieldStartsAt => 'Time';
+
+  @override
+  String get mutationFieldTaskDescription => 'Reminder';
+
+  @override
+  String get mutationFieldRecurrence => 'Repeats';
+
+  @override
+  String get mutationFieldDosage => 'Dose';
+
+  @override
+  String get mutationFieldDoseTimes => 'Dose times';
+
+  @override
+  String get mutationFieldDailyDoseCount => 'Doses a day';
+
+  @override
+  String get mutationFieldExpiryDate => 'Expiry';
+
+  @override
+  String get mutationFieldRenewalDate => 'Renewal';
+
+  @override
+  String get mutationFieldDueDay => 'Due day';
+
+  @override
+  String get mutationFieldBillingCycle => 'Cycle';
+
+  @override
+  String get mutationFieldIsActive => 'Active';
+
+  @override
+  String get mutationFieldForPerson => 'For whom';
+
+  @override
+  String get mutationFieldPlace => 'Place';
+
+  @override
+  String get mutationFieldNote => 'Note';
+
+  @override
+  String get mutationFieldNotes => 'Notes';
+
+  @override
+  String get mutationFieldExpectedCost => 'Expected cost';
+
+  @override
+  String get mutationFieldCurrency => 'Currency';
+
+  @override
+  String get mutationFieldCountry => 'Country';
+
+  @override
+  String get mutationFieldPayDay => 'Payday';
+
+  @override
+  String get mutationFieldBed => 'Bedtime';
+
+  @override
+  String get mutationFieldWake => 'Wake-up';
+
+  @override
+  String get mutationFieldDailyCap => 'Daily cap';
+
+  @override
+  String get mutationFieldLengthDays => 'Length in days';
+
+  @override
+  String get mutationFieldTrade => 'Trade';
+
+  @override
+  String get mutationFieldMetric => 'Measure';
+
+  @override
+  String get mutationStatusUpcoming => 'Upcoming';
+
+  @override
+  String get mutationStatusDone => 'Done';
+
+  @override
+  String get mutationStatusCancelled => 'Cancelled';
+
+  @override
+  String get mutationStatusActive => 'Active';
+
+  @override
+  String get mutationStatusAbandoned => 'Stopped';
+
+  @override
+  String get mutationEdited => 'Edited';
+
+  @override
+  String get mutationRemoved => 'Removed';
+
+  @override
+  String mutationFieldChange(String field, String before, String after) {
+    return '$field: $before → $after';
+  }
+
+  @override
+  String mutationValueChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String mutationMore(String shown, int count) {
+    return '$shown • and $count more';
+  }
+
+  @override
+  String get mutationYes => 'Yes';
+
+  @override
+  String get mutationNo => 'No';
+
+  @override
+  String mutationItems(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get mutationListSeparator => ', ';
+
+  @override
+  String get whyChangedTitle => 'Latest changes';
+
+  @override
+  String get whyChangedSubtitle =>
+      'Zad\'s automatic edits to your data — what changed, and when';
+
+  @override
+  String get whyChangedEmpty => 'No automatic edits recorded yet';
+
+  @override
+  String get whyChangedNow => 'Now';
+
+  @override
+  String whyChangedMinutesAgo(int minutes) {
+    return '$minutes min ago';
+  }
+
+  @override
+  String whyChangedHoursAgo(int hours) {
+    return '$hours h ago';
+  }
+
+  @override
+  String whyChangedDaysAgo(int days) {
+    return '$days d ago';
+  }
+
+  @override
+  String get memoryForgetAsk => 'Forget this note?';
+
+  @override
+  String get memoryForgetBody =>
+      'Zad won\'t bring it up again in any future reply.';
+
+  @override
+  String get memoryForgetYes => 'Forget it';
+
+  @override
+  String get memoryForgotten => 'Forgotten';
+
+  @override
+  String get memoryClearOutingsAsk => 'Clear your outings?';
+
+  @override
+  String get memoryClearYes => 'Clear them';
+
+  @override
+  String get memoryOutingsCleared => 'Your outings were cleared';
+
+  @override
+  String get memorySaved => 'Saved';
+
+  @override
+  String get memoryTitle => 'What Zad knows about me';
+
+  @override
+  String get memoryStaleBanner =>
+      'Couldn\'t fetch the latest — this is what was last saved here.';
+
+  @override
+  String get memoryNotesHeading => 'What Zad remembers about you';
+
+  @override
+  String get memoryEmptyTitle => 'No memories yet';
+
+  @override
+  String get memoryProfileTitle => 'Who you are to Zad';
+
+  @override
+  String get memoryProfileSubtitle =>
+      'Zad talks to you based on this — edit it whenever you like';
+
+  @override
+  String get memoryEdit => 'Edit';
+
+  @override
+  String get memoryLineName => 'What I call you';
+
+  @override
+  String get memoryLineGender => 'Gender';
+
+  @override
+  String get memoryLineRole => 'Your role at home';
+
+  @override
+  String get memoryLineAge => 'Age';
+
+  @override
+  String get memoryLineJob => 'Your work';
+
+  @override
+  String get memoryLinePay => 'Payday';
+
+  @override
+  String get memoryLineHousehold => 'Household';
+
+  @override
+  String get memoryLineCity => 'City';
+
+  @override
+  String get memoryLineDialect => 'Dialect';
+
+  @override
+  String get memoryDialectDefault => 'Like your country and how you talk';
+
+  @override
+  String get memoryLineVoice => 'Zad\'s voice';
+
+  @override
+  String get memoryHabitsTitle => 'Your habits and outings';
+
+  @override
+  String get memoryHabitsSubtitle =>
+      'From your spending and outings — no places or coordinates';
+
+  @override
+  String get memoryHabitsEmpty =>
+      'Still learning your habits — log your spending and they\'ll show up here.';
+
+  @override
+  String get memoryHabitWeekly => 'Average weekly spending';
+
+  @override
+  String get memoryHabitTopCategories => 'What you spend most on';
+
+  @override
+  String get memoryHabitBusiestDay => 'Your biggest spending day';
+
+  @override
+  String get memoryHabitSubscriptions => 'Subscriptions a month';
+
+  @override
+  String get memoryHabitOutings => 'Outings, last 30 days';
+
+  @override
+  String get memoryHabitPerOuting => 'Average spend per outing';
+
+  @override
+  String get memoryHabitTopPlaces => 'Places you go most';
+
+  @override
+  String get memoryClearOutingsBody =>
+      'We\'ll clear every recorded outing (times, spending and places). The expenses themselves stay.';
+
+  @override
+  String get memoryEmptyBody =>
+      'Zad will learn about you bit by bit from what you say and how you use the app.';
+
+  @override
+  String get memoryUnknown => 'Don\'t know yet';
+
+  @override
+  String memoryHouseholdSize(int count) {
+    return '$count people';
+  }
+
+  @override
+  String memoryKidsCount(int count) {
+    return '$count kids';
+  }
+
+  @override
+  String memoryPayDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String memoryOutingsCount(int count) {
+    return '$count outings';
+  }
+
+  @override
+  String get memoryClearOutings => 'Clear my outings';
+
+  @override
+  String memoryConfirmedTimes(int count) {
+    return 'Confirmed $count times';
+  }
+
+  @override
+  String memoryAbout(String names) {
+    return 'About: $names';
+  }
+
+  @override
+  String get memoryForgetThis => 'Forget this';
+
+  @override
+  String memoryUntil(String date) {
+    return 'Until $date';
+  }
 }

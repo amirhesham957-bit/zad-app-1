@@ -1891,5 +1891,845 @@
   "appointmentGuardKeep": "احفظه برضه",
   "qtyLeftLittle": "فاضل قليل",
   "qtyLeftHalf": "فاضل نصه",
-  "qtyLeftMost": "فاضل كتير"
+  "qtyLeftMost": "فاضل كتير",
+  "agentToolLogTransaction": "تسجيل معاملة",
+  "@agentToolLogTransaction": {
+    "description": "Action log: what Zad did, for the tool log_transaction."
+  },
+  "agentToolUpdateTransaction": "تعديل معاملة",
+  "@agentToolUpdateTransaction": {
+    "description": "Action log: what Zad did, for the tool update_transaction."
+  },
+  "agentToolDeleteTransaction": "حذف معاملة",
+  "@agentToolDeleteTransaction": {
+    "description": "Action log: what Zad did, for the tool delete_transaction."
+  },
+  "agentToolSetTransactionCategory": "تصنيف معاملة",
+  "@agentToolSetTransactionCategory": {
+    "description": "Action log: what Zad did, for the tool set_transaction_category."
+  },
+  "agentToolMergeDuplicateExpense": "دمج معاملة مكررة",
+  "@agentToolMergeDuplicateExpense": {
+    "description": "Action log: what Zad did, for the tool merge_duplicate_expense."
+  },
+  "agentToolReconcileCashBalance": "تسوية الكاش",
+  "@agentToolReconcileCashBalance": {
+    "description": "Action log: what Zad did, for the tool reconcile_cash_balance."
+  },
+  "agentToolParseNotificationPayload": "قراءة رسالة بنك",
+  "@agentToolParseNotificationPayload": {
+    "description": "Action log: what Zad did, for the tool parse_notification_payload."
+  },
+  "agentToolSetMonthlyLimit": "تعديل سقف الميزانية",
+  "@agentToolSetMonthlyLimit": {
+    "description": "Action log: what Zad did, for the tool set_monthly_limit."
+  },
+  "agentToolConfirmCycleStart": "تأكيد دورة الراتب",
+  "@agentToolConfirmCycleStart": {
+    "description": "Action log: what Zad did, for the tool confirm_cycle_start."
+  },
+  "agentToolSetMarket": "تعديل البلد والعملة",
+  "@agentToolSetMarket": {
+    "description": "Action log: what Zad did, for the tool set_market."
+  },
+  "agentToolAddObligation": "تسجيل التزام",
+  "@agentToolAddObligation": {
+    "description": "Action log: what Zad did, for the tool add_obligation."
+  },
+  "agentToolConfirmObligation": "تأكيد التزام",
+  "@agentToolConfirmObligation": {
+    "description": "Action log: what Zad did, for the tool confirm_obligation."
+  },
+  "agentToolUpdateObligation": "تعديل التزام",
+  "@agentToolUpdateObligation": {
+    "description": "Action log: what Zad did, for the tool update_obligation."
+  },
+  "agentToolDeleteObligation": "حذف التزام",
+  "@agentToolDeleteObligation": {
+    "description": "Action log: what Zad did, for the tool delete_obligation."
+  },
+  "agentToolAddSubscription": "إضافة اشتراك",
+  "@agentToolAddSubscription": {
+    "description": "Action log: what Zad did, for the tool add_subscription."
+  },
+  "agentToolUpdateSubscription": "تعديل اشتراك",
+  "@agentToolUpdateSubscription": {
+    "description": "Action log: what Zad did, for the tool update_subscription."
+  },
+  "agentToolDeleteSubscription": "حذف اشتراك",
+  "@agentToolDeleteSubscription": {
+    "description": "Action log: what Zad did, for the tool delete_subscription."
+  },
+  "agentToolAddDebt": "تسجيل دين",
+  "@agentToolAddDebt": {
+    "description": "Action log: what Zad did, for the tool add_debt."
+  },
+  "agentToolUpdateDebt": "تعديل دين",
+  "@agentToolUpdateDebt": {
+    "description": "Action log: what Zad did, for the tool update_debt."
+  },
+  "agentToolDeleteDebt": "حذف دين",
+  "@agentToolDeleteDebt": {
+    "description": "Action log: what Zad did, for the tool delete_debt."
+  },
+  "agentToolAddInventoryItem": "إضافة صنف للمخزون",
+  "@agentToolAddInventoryItem": {
+    "description": "Action log: what Zad did, for the tool add_inventory_item."
+  },
+  "agentToolUpdateInventoryQty": "تعديل كمية مخزون",
+  "@agentToolUpdateInventoryQty": {
+    "description": "Action log: what Zad did, for the tool update_inventory_qty."
+  },
+  "agentToolDeleteInventoryItem": "حذف صنف من المخزون",
+  "@agentToolDeleteInventoryItem": {
+    "description": "Action log: what Zad did, for the tool delete_inventory_item."
+  },
+  "agentToolAddShoppingItem": "إضافة لقايمة المشتريات",
+  "@agentToolAddShoppingItem": {
+    "description": "Action log: what Zad did, for the tool add_shopping_item."
+  },
+  "agentToolCompleteShoppingItem": "شطب من قايمة المشتريات",
+  "@agentToolCompleteShoppingItem": {
+    "description": "Action log: what Zad did, for the tool complete_shopping_item."
+  },
+  "agentToolDeleteShoppingItem": "حذف من قايمة المشتريات",
+  "@agentToolDeleteShoppingItem": {
+    "description": "Action log: what Zad did, for the tool delete_shopping_item."
+  },
+  "agentToolAddPharmacyItem": "إضافة دواء",
+  "@agentToolAddPharmacyItem": {
+    "description": "Action log: what Zad did, for the tool add_pharmacy_item."
+  },
+  "agentToolUpdatePharmacyItem": "تعديل دواء",
+  "@agentToolUpdatePharmacyItem": {
+    "description": "Action log: what Zad did, for the tool update_pharmacy_item."
+  },
+  "agentToolDeletePharmacyItem": "حذف دواء",
+  "@agentToolDeletePharmacyItem": {
+    "description": "Action log: what Zad did, for the tool delete_pharmacy_item."
+  },
+  "agentToolLogPharmacyDose": "تسجيل جرعة دواء",
+  "@agentToolLogPharmacyDose": {
+    "description": "Action log: what Zad did, for the tool log_pharmacy_dose."
+  },
+  "agentToolAddMaintenanceItem": "إضافة جهاز للصيانة",
+  "@agentToolAddMaintenanceItem": {
+    "description": "Action log: what Zad did, for the tool add_maintenance_item."
+  },
+  "agentToolUpdateMaintenanceItem": "تعديل جهاز",
+  "@agentToolUpdateMaintenanceItem": {
+    "description": "Action log: what Zad did, for the tool update_maintenance_item."
+  },
+  "agentToolDeleteMaintenanceItem": "حذف جهاز",
+  "@agentToolDeleteMaintenanceItem": {
+    "description": "Action log: what Zad did, for the tool delete_maintenance_item."
+  },
+  "agentToolSaveDocument": "تسجيل مستند",
+  "@agentToolSaveDocument": {
+    "description": "Action log: what Zad did, for the tool save_document."
+  },
+  "agentToolDeleteDocument": "شيل مستند",
+  "@agentToolDeleteDocument": {
+    "description": "Action log: what Zad did, for the tool delete_document."
+  },
+  "agentToolAddGatheringToList": "سطور عزومة للقايمة",
+  "@agentToolAddGatheringToList": {
+    "description": "Action log: what Zad did, for the tool add_gathering_to_list."
+  },
+  "agentToolAddAppointment": "إضافة ميعاد",
+  "@agentToolAddAppointment": {
+    "description": "Action log: what Zad did, for the tool add_appointment."
+  },
+  "agentToolUpdateAppointment": "تعديل ميعاد",
+  "@agentToolUpdateAppointment": {
+    "description": "Action log: what Zad did, for the tool update_appointment."
+  },
+  "agentToolAddPlaceReminder": "تذكير عند مكان",
+  "@agentToolAddPlaceReminder": {
+    "description": "Action log: what Zad did, for the tool add_place_reminder."
+  },
+  "agentToolCancelPlaceReminder": "إلغاء تذكير مكان",
+  "@agentToolCancelPlaceReminder": {
+    "description": "Action log: what Zad did, for the tool cancel_place_reminder."
+  },
+  "agentToolScheduleTask": "جدولة تذكير",
+  "@agentToolScheduleTask": {
+    "description": "Action log: what Zad did, for the tool schedule_task."
+  },
+  "agentToolRemember": "حفظ ملاحظة عنك",
+  "@agentToolRemember": {
+    "description": "Action log: what Zad did, for the tool remember."
+  },
+  "agentToolLinkMemory": "ربط ملاحظات",
+  "@agentToolLinkMemory": {
+    "description": "Action log: what Zad did, for the tool link_memory."
+  },
+  "agentToolUpdateCustomerProfile": "تحديث ملفك",
+  "@agentToolUpdateCustomerProfile": {
+    "description": "Action log: what Zad did, for the tool update_customer_profile."
+  },
+  "agentToolSetLifeGoal": "هدف جديد",
+  "@agentToolSetLifeGoal": {
+    "description": "Action log: what Zad did, for the tool set_life_goal."
+  },
+  "agentToolSetBrokeMode": "وضع التقشف",
+  "@agentToolSetBrokeMode": {
+    "description": "Action log: what Zad did, for the tool set_broke_mode."
+  },
+  "agentToolStartSavingsChallenge": "بدء تحدي توفير",
+  "@agentToolStartSavingsChallenge": {
+    "description": "Action log: what Zad did, for the tool start_savings_challenge."
+  },
+  "agentToolStopSavingsChallenge": "إيقاف تحدي توفير",
+  "@agentToolStopSavingsChallenge": {
+    "description": "Action log: what Zad did, for the tool stop_savings_challenge."
+  },
+  "agentToolUpdateEmergencyFundBalance": "تحديث صندوق الطوارئ",
+  "@agentToolUpdateEmergencyFundBalance": {
+    "description": "Action log: what Zad did, for the tool update_emergency_fund_balance."
+  },
+  "agentToolAllocateIncome": "توزيع الدخل",
+  "@agentToolAllocateIncome": {
+    "description": "Action log: what Zad did, for the tool allocate_income."
+  },
+  "agentToolSetSleepWindow": "مواعيد نومك",
+  "@agentToolSetSleepWindow": {
+    "description": "Action log: what Zad did, for the tool set_sleep_window."
+  },
+  "agentToolLearnSkill": "تعلّم مهارة",
+  "@agentToolLearnSkill": {
+    "description": "Action log: what Zad did, for the tool learn_skill."
+  },
+  "agentToolSaveTrustedTechnician": "حفظ صنايعي",
+  "@agentToolSaveTrustedTechnician": {
+    "description": "Action log: what Zad did, for the tool save_trusted_technician."
+  },
+  "agentToolOpenSupportTicket": "فتح طلب دعم",
+  "@agentToolOpenSupportTicket": {
+    "description": "Action log: what Zad did, for the tool open_support_ticket."
+  },
+  "agentToolAnswerSameProduct": "مطابقة منتج",
+  "@agentToolAnswerSameProduct": {
+    "description": "Action log: what Zad did, for the tool answer_same_product."
+  },
+  "agentToolOther": "تعديل من زاد",
+  "@agentToolOther": {
+    "description": "Action log: a tool with no label of its own."
+  },
+  "agentSourceAppChat": "شات التطبيق",
+  "@agentSourceAppChat": {
+    "description": "Action log: which door the turn came in by (app_chat)."
+  },
+  "agentSourceTelegram": "تليجرام",
+  "@agentSourceTelegram": {
+    "description": "Action log: which door the turn came in by (telegram)."
+  },
+  "agentSourceVoice": "رسالة صوتية",
+  "@agentSourceVoice": {
+    "description": "Action log: which door the turn came in by (voice)."
+  },
+  "agentSourceConfirm": "بتأكيد منك",
+  "@agentSourceConfirm": {
+    "description": "Action log: which door the turn came in by (confirm)."
+  },
+  "agentSourceDaily": "مراجعة يومية",
+  "@agentSourceDaily": {
+    "description": "Action log: which door the turn came in by (daily)."
+  },
+  "agentSourceEvent": "حدث تلقائي",
+  "@agentSourceEvent": {
+    "description": "Action log: which door the turn came in by (event)."
+  },
+  "agentSourceOther": "زاد",
+  "@agentSourceOther": {
+    "description": "Action log: an unknown source."
+  },
+  "undoFailureNewerActionExists": "فيه تعديل أحدث على نفس الحاجة — ارجع فيه هو الأول",
+  "@undoFailureNewerActionExists": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureAlreadyUndone": "ده اترجع فيه قبل كده",
+  "@undoFailureAlreadyUndone": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureNeverApplied": "ده ماتنفذش أصلاً، فمفيش حاجة ترجع فيها",
+  "@undoFailureNeverApplied": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureNotUndoable": "ده مينفعش يترجع فيه",
+  "@undoFailureNotUndoable": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureTargetMissing": "الحاجة دي اتمسحت أو مش موجودة دلوقتي",
+  "@undoFailureTargetMissing": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureNotAllowed": "فيه مشكلة في الدخول — اطلع وادخل تاني",
+  "@undoFailureNotAllowed": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureOffline": "مفيش اتصال دلوقتي — جرب لما النت يرجع",
+  "@undoFailureOffline": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "undoFailureUnknown": "معرفتش أرجع فيه، جرب تاني",
+  "@undoFailureUnknown": {
+    "description": "Action log: why an undo did not happen."
+  },
+  "actionLogUndoAsk": "ترجع في «{tool}»؟",
+  "@actionLogUndoAsk": {
+    "description": "Action log: confirm dialog title before an undo.",
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "actionLogUndoWarning": "زاد هيرجّع الحاجة دي زي ما كانت قبل التعديل. مش هتقدر ترجع في الرجوع ده بعدين.",
+  "@actionLogUndoWarning": {
+    "description": "Action log: confirm dialog body before an undo."
+  },
+  "actionLogWait": "استنى",
+  "@actionLogWait": {
+    "description": "Action log: cancel the undo."
+  },
+  "actionLogUndo": "ارجع فيه",
+  "@actionLogUndo": {
+    "description": "Action log: the undo button and confirm."
+  },
+  "actionLogUndone": "رجعت في «{tool}»",
+  "@actionLogUndone": {
+    "description": "Action log: snackbar after an undo.",
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      }
+    }
+  },
+  "actionLogTitle": "سجل تعديلات زاد",
+  "@actionLogTitle": {
+    "description": "Action log: screen title."
+  },
+  "actionLogLoadFailed": "مقدرتش أجيب السجل",
+  "@actionLogLoadFailed": {
+    "description": "Action log: empty state when loading failed."
+  },
+  "actionLogEmptyTitle": "لسه مفيش تعديلات",
+  "@actionLogEmptyTitle": {
+    "description": "Action log: empty state title."
+  },
+  "actionLogPullRetry": "اسحب لتحت نجرب تاني.",
+  "@actionLogPullRetry": {
+    "description": "Action log: empty state after a failure."
+  },
+  "actionLogEmptyBody": "أي حاجة زاد يسجّلها أو يعدّلها لك هتظهر هنا.",
+  "@actionLogEmptyBody": {
+    "description": "Action log: empty state guidance."
+  },
+  "actionLogApplied": "اتنفذ",
+  "@actionLogApplied": {
+    "description": "Action log: status chip, the action ran."
+  },
+  "actionLogUndoneStatus": "اترجع فيه",
+  "@actionLogUndoneStatus": {
+    "description": "Action log: status chip, the action was taken back."
+  },
+  "actionLogRejected": "اترفض",
+  "@actionLogRejected": {
+    "description": "Action log: status chip, the action was refused."
+  },
+  "mutationFieldAmount": "المبلغ",
+  "@mutationFieldAmount": {
+    "description": "Why-changed sheet: the name of a changed field (amount)."
+  },
+  "mutationFieldQuantity": "الكمية",
+  "@mutationFieldQuantity": {
+    "description": "Why-changed sheet: the name of a changed field (quantity)."
+  },
+  "mutationFieldRemainingQuantity": "الكمية المتبقية",
+  "@mutationFieldRemainingQuantity": {
+    "description": "Why-changed sheet: the name of a changed field (remaining_quantity)."
+  },
+  "mutationFieldRemainingBalance": "المتبقي",
+  "@mutationFieldRemainingBalance": {
+    "description": "Why-changed sheet: the name of a changed field (remaining_balance)."
+  },
+  "mutationFieldPrice": "السعر",
+  "@mutationFieldPrice": {
+    "description": "Why-changed sheet: the name of a changed field (price)."
+  },
+  "mutationFieldUnit": "الوحدة",
+  "@mutationFieldUnit": {
+    "description": "Why-changed sheet: the name of a changed field (unit)."
+  },
+  "mutationFieldCategory": "الفئة",
+  "@mutationFieldCategory": {
+    "description": "Why-changed sheet: the name of a changed field (category)."
+  },
+  "mutationFieldKind": "النوع",
+  "@mutationFieldKind": {
+    "description": "Why-changed sheet: the name of a changed field (kind)."
+  },
+  "mutationFieldStatus": "الحالة",
+  "@mutationFieldStatus": {
+    "description": "Why-changed sheet: the name of a changed field (status)."
+  },
+  "mutationFieldStartsAt": "الميعاد",
+  "@mutationFieldStartsAt": {
+    "description": "Why-changed sheet: the name of a changed field (starts_at)."
+  },
+  "mutationFieldTaskDescription": "التذكير",
+  "@mutationFieldTaskDescription": {
+    "description": "Why-changed sheet: the name of a changed field (task_description)."
+  },
+  "mutationFieldRecurrence": "التكرار",
+  "@mutationFieldRecurrence": {
+    "description": "Why-changed sheet: the name of a changed field (recurrence)."
+  },
+  "mutationFieldDosage": "الجرعة",
+  "@mutationFieldDosage": {
+    "description": "Why-changed sheet: the name of a changed field (dosage)."
+  },
+  "mutationFieldDoseTimes": "مواعيد الجرعات",
+  "@mutationFieldDoseTimes": {
+    "description": "Why-changed sheet: the name of a changed field (dose_times)."
+  },
+  "mutationFieldDailyDoseCount": "جرعات اليوم",
+  "@mutationFieldDailyDoseCount": {
+    "description": "Why-changed sheet: the name of a changed field (daily_dose_count)."
+  },
+  "mutationFieldExpiryDate": "الصلاحية",
+  "@mutationFieldExpiryDate": {
+    "description": "Why-changed sheet: the name of a changed field (expiry_date)."
+  },
+  "mutationFieldRenewalDate": "التجديد",
+  "@mutationFieldRenewalDate": {
+    "description": "Why-changed sheet: the name of a changed field (renewal_date)."
+  },
+  "mutationFieldDueDay": "يوم الاستحقاق",
+  "@mutationFieldDueDay": {
+    "description": "Why-changed sheet: the name of a changed field (due_day)."
+  },
+  "mutationFieldBillingCycle": "الدورة",
+  "@mutationFieldBillingCycle": {
+    "description": "Why-changed sheet: the name of a changed field (billing_cycle)."
+  },
+  "mutationFieldIsActive": "شغّال",
+  "@mutationFieldIsActive": {
+    "description": "Why-changed sheet: the name of a changed field (is_active)."
+  },
+  "mutationFieldForPerson": "لمين",
+  "@mutationFieldForPerson": {
+    "description": "Why-changed sheet: the name of a changed field (for_person)."
+  },
+  "mutationFieldPlace": "المكان",
+  "@mutationFieldPlace": {
+    "description": "Why-changed sheet: the name of a changed field (place)."
+  },
+  "mutationFieldNote": "ملاحظة",
+  "@mutationFieldNote": {
+    "description": "Why-changed sheet: the name of a changed field (note)."
+  },
+  "mutationFieldNotes": "ملاحظات",
+  "@mutationFieldNotes": {
+    "description": "Why-changed sheet: the name of a changed field (notes)."
+  },
+  "mutationFieldExpectedCost": "التكلفة المتوقعة",
+  "@mutationFieldExpectedCost": {
+    "description": "Why-changed sheet: the name of a changed field (expected_cost)."
+  },
+  "mutationFieldCurrency": "العملة",
+  "@mutationFieldCurrency": {
+    "description": "Why-changed sheet: the name of a changed field (currency)."
+  },
+  "mutationFieldCountry": "البلد",
+  "@mutationFieldCountry": {
+    "description": "Why-changed sheet: the name of a changed field (country)."
+  },
+  "mutationFieldPayDay": "يوم القبض",
+  "@mutationFieldPayDay": {
+    "description": "Why-changed sheet: the name of a changed field (pay_day)."
+  },
+  "mutationFieldBed": "النوم",
+  "@mutationFieldBed": {
+    "description": "Why-changed sheet: the name of a changed field (bed)."
+  },
+  "mutationFieldWake": "الصحيان",
+  "@mutationFieldWake": {
+    "description": "Why-changed sheet: the name of a changed field (wake)."
+  },
+  "mutationFieldDailyCap": "سقف اليوم",
+  "@mutationFieldDailyCap": {
+    "description": "Why-changed sheet: the name of a changed field (daily_cap)."
+  },
+  "mutationFieldLengthDays": "المدة بالأيام",
+  "@mutationFieldLengthDays": {
+    "description": "Why-changed sheet: the name of a changed field (length_days)."
+  },
+  "mutationFieldTrade": "الصنعة",
+  "@mutationFieldTrade": {
+    "description": "Why-changed sheet: the name of a changed field (trade)."
+  },
+  "mutationFieldMetric": "المقياس",
+  "@mutationFieldMetric": {
+    "description": "Why-changed sheet: the name of a changed field (metric)."
+  },
+  "mutationStatusUpcoming": "جاي",
+  "@mutationStatusUpcoming": {
+    "description": "Why-changed sheet: a status value (upcoming)."
+  },
+  "mutationStatusDone": "خلص",
+  "@mutationStatusDone": {
+    "description": "Why-changed sheet: a status value (done)."
+  },
+  "mutationStatusCancelled": "اتلغى",
+  "@mutationStatusCancelled": {
+    "description": "Why-changed sheet: a status value (cancelled)."
+  },
+  "mutationStatusActive": "شغّال",
+  "@mutationStatusActive": {
+    "description": "Why-changed sheet: a status value (active)."
+  },
+  "mutationStatusAbandoned": "اتوقف",
+  "@mutationStatusAbandoned": {
+    "description": "Why-changed sheet: a status value (abandoned)."
+  },
+  "mutationEdited": "اتعدّل",
+  "@mutationEdited": {
+    "description": "Why-changed sheet: a row changed but no shown field did."
+  },
+  "mutationRemoved": "اتشال",
+  "@mutationRemoved": {
+    "description": "Why-changed sheet: a row was removed."
+  },
+  "mutationFieldChange": "{field}: {before} ← {after}",
+  "@mutationFieldChange": {
+    "description": "Why-changed sheet: one field before and after. The arrow points from old to new in reading order.",
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "mutationValueChange": "{before} ← {after}",
+  "@mutationValueChange": {
+    "description": "Why-changed sheet: a value before and after.",
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "mutationMore": "{shown} • و{count} كمان",
+  "@mutationMore": {
+    "description": "Why-changed sheet: the first fields, and how many more were left out.",
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mutationYes": "أيوه",
+  "@mutationYes": {
+    "description": "Why-changed sheet: a true value."
+  },
+  "mutationNo": "لأ",
+  "@mutationNo": {
+    "description": "Why-changed sheet: a false value."
+  },
+  "mutationItems": "{count} عناصر",
+  "@mutationItems": {
+    "description": "Why-changed sheet: a list of values, counted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mutationListSeparator": "، ",
+  "@mutationListSeparator": {
+    "description": "Why-changed sheet: what joins a list of values."
+  },
+  "whyChangedTitle": "آخر التغييرات",
+  "@whyChangedTitle": {
+    "description": "Why-changed sheet: title."
+  },
+  "whyChangedSubtitle": "تعديلات زاد الآلية على بياناتك — إيه اتغيّر، وإمتى",
+  "@whyChangedSubtitle": {
+    "description": "Why-changed sheet: subtitle."
+  },
+  "whyChangedEmpty": "مفيش تعديلات آلية مسجلة لسه",
+  "@whyChangedEmpty": {
+    "description": "Why-changed sheet: nothing to show."
+  },
+  "whyChangedNow": "الآن",
+  "@whyChangedNow": {
+    "description": "Why-changed sheet: less than a minute ago."
+  },
+  "whyChangedMinutesAgo": "منذ {minutes} د",
+  "@whyChangedMinutesAgo": {
+    "description": "Why-changed sheet: minutes ago.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "whyChangedHoursAgo": "منذ {hours} س",
+  "@whyChangedHoursAgo": {
+    "description": "Why-changed sheet: hours ago.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "whyChangedDaysAgo": "منذ {days} يوم",
+  "@whyChangedDaysAgo": {
+    "description": "Why-changed sheet: days ago.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryForgetAsk": "تنسى الملاحظة دي؟",
+  "@memoryForgetAsk": {
+    "description": "Memory: confirm before forgetting a note."
+  },
+  "memoryForgetBody": "زاد مش هيفتكرها تاني في أي رد جاي.",
+  "@memoryForgetBody": {
+    "description": "Memory: what forgetting a note means."
+  },
+  "memoryForgetYes": "انساها",
+  "@memoryForgetYes": {
+    "description": "Memory: confirm forgetting."
+  },
+  "memoryForgotten": "اتنسيت",
+  "@memoryForgotten": {
+    "description": "Memory: snackbar after forgetting a note."
+  },
+  "memoryClearOutingsAsk": "تمسح خروجاتك؟",
+  "@memoryClearOutingsAsk": {
+    "description": "Memory: confirm before clearing outings."
+  },
+  "memoryClearYes": "امسحها",
+  "@memoryClearYes": {
+    "description": "Memory: confirm clearing outings."
+  },
+  "memoryOutingsCleared": "اتمسحت خروجاتك",
+  "@memoryOutingsCleared": {
+    "description": "Memory: snackbar after clearing outings."
+  },
+  "memorySaved": "اتحفظ",
+  "@memorySaved": {
+    "description": "Memory: snackbar after saving the profile."
+  },
+  "memoryTitle": "زاد عارف عني إيه",
+  "@memoryTitle": {
+    "description": "Memory: screen title."
+  },
+  "memoryStaleBanner": "مقدرتش أجيب آخر نسخة — اللي قدامك آخر حاجة اتحفظت هنا.",
+  "@memoryStaleBanner": {
+    "description": "Memory: banner when the refresh failed."
+  },
+  "memoryNotesHeading": "اللي زاد فاكره عنك",
+  "@memoryNotesHeading": {
+    "description": "Memory: heading over the notes."
+  },
+  "memoryEmptyTitle": "لسه مفيش ذكريات",
+  "@memoryEmptyTitle": {
+    "description": "Memory: empty state title."
+  },
+  "memoryProfileTitle": "إنت مين عند زاد",
+  "@memoryProfileTitle": {
+    "description": "Memory: the profile card title."
+  },
+  "memoryProfileSubtitle": "زاد بيكلمك على أساس ده — عدّله براحتك",
+  "@memoryProfileSubtitle": {
+    "description": "Memory: the profile card subtitle."
+  },
+  "memoryEdit": "تعديل",
+  "@memoryEdit": {
+    "description": "Memory: edit the profile."
+  },
+  "memoryLineName": "بتحب أناديك",
+  "@memoryLineName": {
+    "description": "Memory profile line: preferred name."
+  },
+  "memoryLineGender": "النوع",
+  "@memoryLineGender": {
+    "description": "Memory profile line: gender."
+  },
+  "memoryLineRole": "دورك في البيت",
+  "@memoryLineRole": {
+    "description": "Memory profile line: household role."
+  },
+  "memoryLineAge": "العمر",
+  "@memoryLineAge": {
+    "description": "Memory profile line: age range."
+  },
+  "memoryLineJob": "شغلك",
+  "@memoryLineJob": {
+    "description": "Memory profile line: occupation."
+  },
+  "memoryLinePay": "القبض",
+  "@memoryLinePay": {
+    "description": "Memory profile line: pay day and frequency."
+  },
+  "memoryLineHousehold": "البيت",
+  "@memoryLineHousehold": {
+    "description": "Memory profile line: household size and kids."
+  },
+  "memoryLineCity": "المدينة",
+  "@memoryLineCity": {
+    "description": "Memory profile line: city."
+  },
+  "memoryLineDialect": "اللهجة",
+  "@memoryLineDialect": {
+    "description": "Memory profile line: dialect."
+  },
+  "memoryDialectDefault": "زي بلدك وكلامك",
+  "@memoryDialectDefault": {
+    "description": "Memory profile line: dialect not chosen."
+  },
+  "memoryLineVoice": "صوت زاد",
+  "@memoryLineVoice": {
+    "description": "Memory profile line: the voice Zad speaks in."
+  },
+  "memoryHabitsTitle": "عاداتك وتحركاتك",
+  "@memoryHabitsTitle": {
+    "description": "Memory: the habits card title."
+  },
+  "memoryHabitsSubtitle": "من صرفك وخروجاتك — من غير أماكن ولا إحداثيات",
+  "@memoryHabitsSubtitle": {
+    "description": "Memory: the habits card subtitle."
+  },
+  "memoryHabitsEmpty": "لسه بيتعلم عاداتك — سجّل مصاريفك وهتبان هنا.",
+  "@memoryHabitsEmpty": {
+    "description": "Memory: no habits yet."
+  },
+  "memoryHabitWeekly": "متوسط صرفك في الأسبوع",
+  "@memoryHabitWeekly": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitTopCategories": "أكتر حاجات بتصرف عليها",
+  "@memoryHabitTopCategories": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitBusiestDay": "أكتر يوم بتصرف فيه",
+  "@memoryHabitBusiestDay": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitSubscriptions": "اشتراكاتك في الشهر",
+  "@memoryHabitSubscriptions": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitOutings": "خروجاتك آخر ٣٠ يوم",
+  "@memoryHabitOutings": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitPerOuting": "متوسط صرف الخروجة",
+  "@memoryHabitPerOuting": {
+    "description": "Memory habit line."
+  },
+  "memoryHabitTopPlaces": "أكتر أماكن بتروحها",
+  "@memoryHabitTopPlaces": {
+    "description": "Memory habit line."
+  },
+  "memoryClearOutingsBody": "هنمسح كل الخروجات المتسجلة (أوقات وصرف ومحلات). المصاريف نفسها مش هتتمسح.",
+  "@memoryClearOutingsBody": {
+    "description": "Memory: what clearing outings does."
+  },
+  "memoryEmptyBody": "زاد هيتعلم عنك تدريجيًا من كلامك واستخدامك للتطبيق.",
+  "@memoryEmptyBody": {
+    "description": "Memory: empty state guidance."
+  },
+  "memoryUnknown": "لسه مش عارفاه",
+  "@memoryUnknown": {
+    "description": "Memory profile line: a field Zad doesn't know yet."
+  },
+  "memoryHouseholdSize": "{count} أفراد",
+  "@memoryHouseholdSize": {
+    "description": "Memory profile line: household size.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryKidsCount": "{count} عيال",
+  "@memoryKidsCount": {
+    "description": "Memory profile line: number of kids.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryPayDay": "يوم {day}",
+  "@memoryPayDay": {
+    "description": "Memory profile line: the day of the month pay comes.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryOutingsCount": "{count} خروجة",
+  "@memoryOutingsCount": {
+    "description": "Memory habit line: outings counted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryClearOutings": "امسح خروجاتي",
+  "@memoryClearOutings": {
+    "description": "Memory: the button that clears outings."
+  },
+  "memoryConfirmedTimes": "اتأكدت {count} مرة",
+  "@memoryConfirmedTimes": {
+    "description": "Memory note: how many times it was confirmed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memoryAbout": "عن: {names}",
+  "@memoryAbout": {
+    "description": "Memory note: who or what it is about.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "memoryForgetThis": "انسى دي",
+  "@memoryForgetThis": {
+    "description": "Memory note: the forget button's tooltip."
+  },
+  "memoryUntil": "لحد {date}",
+  "@memoryUntil": {
+    "description": "Memory note: the last day a temporary note holds.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

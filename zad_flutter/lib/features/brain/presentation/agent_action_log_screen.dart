@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/when_label.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
@@ -58,22 +59,21 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
   Future<void> _undo(AgentAction action) async {
     // Asked first: undoing an "add" deletes the row, and there is no undo of
     // an undo on the server.
+    final l = context.l10n;
+    final tool = agentToolLabel(action.toolName, l);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('ترجع في «${agentToolLabel(action.toolName)}»؟'),
-        content: const Text(
-          'زاد هيرجّع الحاجة دي زي ما كانت قبل التعديل. مش هتقدر ترجع في '
-          'الرجوع ده بعدين.',
-        ),
+        title: Text(l.actionLogUndoAsk(tool)),
+        content: Text(l.actionLogUndoWarning),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('استنى'),
+            child: Text(l.actionLogWait),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('ارجع فيه'),
+            child: Text(l.actionLogUndo),
           ),
         ],
       ),
@@ -85,8 +85,8 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
         .undo(action);
     if (outcome == null || !mounted) return;
     final message = switch (outcome) {
-      Undone() => 'رجعت في «${agentToolLabel(action.toolName)}»',
-      UndoRefused(:final failure) => failure.message,
+      Undone() => l.actionLogUndone(tool),
+      UndoRefused(:final failure) => failure.message(l),
     };
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -98,12 +98,13 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
     final view = ref.watch(agentActionsControllerProvider);
     final now = ref.read(nowProvider)();
     final zone = ref.read(accountTimeZoneProvider);
+    final l = context.l10n;
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('سجل تعديلات زاد')),
+        appBar: AppBar(title: Text(l.actionLogTitle)),
         body: RefreshIndicator(
           onRefresh: ref.read(agentActionsControllerProvider.notifier).refresh,
           child: CustomScrollView(
@@ -119,11 +120,11 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
                               ? ZadIcons.failed
                               : ZadIcons.actionLog,
                           title: view.error != null
-                              ? 'مقدرتش أجيب السجل'
-                              : 'لسه مفيش تعديلات',
+                              ? l.actionLogLoadFailed
+                              : l.actionLogEmptyTitle,
                           message: view.error != null
-                              ? 'اسحب لتحت نجرب تاني.'
-                              : 'أي حاجة زاد يسجّلها أو يعدّلها لك هتظهر هنا.',
+                              ? l.actionLogPullRetry
+                              : l.actionLogEmptyBody,
                           tone: view.error != null
                               ? ZadEmptyTone.problem
                               : ZadEmptyTone.calm,
@@ -174,10 +175,11 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final (statusText, statusColor) = switch (action.status) {
-      'applied' => ('اتنفذ', ZadColors.green700),
-      'undone' => ('اترجع فيه', ZadColors.inkMuted),
-      'rejected' => ('اترفض', ZadColors.terracottaRust),
+      'applied' => (l.actionLogApplied, ZadColors.green700),
+      'undone' => (l.actionLogUndoneStatus, ZadColors.inkMuted),
+      'rejected' => (l.actionLogRejected, ZadColors.terracottaRust),
       _ => ('', ZadColors.inkMuted),
     };
     final summary = action.resultSummary?.trim() ?? '';
@@ -194,12 +196,12 @@ class _ActionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      agentToolLabel(action.toolName),
+                      agentToolLabel(action.toolName, l),
                       style: ZadType.titleSmall,
                     ),
                     const SizedBox(height: ZadSpacing.xs),
                     Text(
-                      '${agentSourceLabel(action.source)} · $when',
+                      '${agentSourceLabel(action.source, l)} · $when',
                       style: ZadType.labelSmall.copyWith(
                         color: ZadColors.inkMuted,
                       ),
@@ -246,7 +248,7 @@ class _ActionCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(ZadIcons.undo, size: 16),
-                label: const Text('ارجع فيه'),
+                label: Text(l.actionLogUndo),
               ),
             ),
           ],

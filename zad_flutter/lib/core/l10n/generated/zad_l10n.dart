@@ -4548,6 +4548,1128 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'فاضل كتير'**
   String get qtyLeftMost;
+
+  /// Action log: what Zad did, for the tool log_transaction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل معاملة'**
+  String get agentToolLogTransaction;
+
+  /// Action log: what Zad did, for the tool update_transaction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل معاملة'**
+  String get agentToolUpdateTransaction;
+
+  /// Action log: what Zad did, for the tool delete_transaction.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف معاملة'**
+  String get agentToolDeleteTransaction;
+
+  /// Action log: what Zad did, for the tool set_transaction_category.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصنيف معاملة'**
+  String get agentToolSetTransactionCategory;
+
+  /// Action log: what Zad did, for the tool merge_duplicate_expense.
+  ///
+  /// In ar, this message translates to:
+  /// **'دمج معاملة مكررة'**
+  String get agentToolMergeDuplicateExpense;
+
+  /// Action log: what Zad did, for the tool reconcile_cash_balance.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية الكاش'**
+  String get agentToolReconcileCashBalance;
+
+  /// Action log: what Zad did, for the tool parse_notification_payload.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسالة بنك'**
+  String get agentToolParseNotificationPayload;
+
+  /// Action log: what Zad did, for the tool set_monthly_limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل سقف الميزانية'**
+  String get agentToolSetMonthlyLimit;
+
+  /// Action log: what Zad did, for the tool confirm_cycle_start.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد دورة الراتب'**
+  String get agentToolConfirmCycleStart;
+
+  /// Action log: what Zad did, for the tool set_market.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل البلد والعملة'**
+  String get agentToolSetMarket;
+
+  /// Action log: what Zad did, for the tool add_obligation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل التزام'**
+  String get agentToolAddObligation;
+
+  /// Action log: what Zad did, for the tool confirm_obligation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد التزام'**
+  String get agentToolConfirmObligation;
+
+  /// Action log: what Zad did, for the tool update_obligation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل التزام'**
+  String get agentToolUpdateObligation;
+
+  /// Action log: what Zad did, for the tool delete_obligation.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف التزام'**
+  String get agentToolDeleteObligation;
+
+  /// Action log: what Zad did, for the tool add_subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة اشتراك'**
+  String get agentToolAddSubscription;
+
+  /// Action log: what Zad did, for the tool update_subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل اشتراك'**
+  String get agentToolUpdateSubscription;
+
+  /// Action log: what Zad did, for the tool delete_subscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف اشتراك'**
+  String get agentToolDeleteSubscription;
+
+  /// Action log: what Zad did, for the tool add_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل دين'**
+  String get agentToolAddDebt;
+
+  /// Action log: what Zad did, for the tool update_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل دين'**
+  String get agentToolUpdateDebt;
+
+  /// Action log: what Zad did, for the tool delete_debt.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف دين'**
+  String get agentToolDeleteDebt;
+
+  /// Action log: what Zad did, for the tool add_inventory_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة صنف للمخزون'**
+  String get agentToolAddInventoryItem;
+
+  /// Action log: what Zad did, for the tool update_inventory_qty.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل كمية مخزون'**
+  String get agentToolUpdateInventoryQty;
+
+  /// Action log: what Zad did, for the tool delete_inventory_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف صنف من المخزون'**
+  String get agentToolDeleteInventoryItem;
+
+  /// Action log: what Zad did, for the tool add_shopping_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة لقايمة المشتريات'**
+  String get agentToolAddShoppingItem;
+
+  /// Action log: what Zad did, for the tool complete_shopping_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'شطب من قايمة المشتريات'**
+  String get agentToolCompleteShoppingItem;
+
+  /// Action log: what Zad did, for the tool delete_shopping_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف من قايمة المشتريات'**
+  String get agentToolDeleteShoppingItem;
+
+  /// Action log: what Zad did, for the tool add_pharmacy_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دواء'**
+  String get agentToolAddPharmacyItem;
+
+  /// Action log: what Zad did, for the tool update_pharmacy_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل دواء'**
+  String get agentToolUpdatePharmacyItem;
+
+  /// Action log: what Zad did, for the tool delete_pharmacy_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف دواء'**
+  String get agentToolDeletePharmacyItem;
+
+  /// Action log: what Zad did, for the tool log_pharmacy_dose.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل جرعة دواء'**
+  String get agentToolLogPharmacyDose;
+
+  /// Action log: what Zad did, for the tool add_maintenance_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة جهاز للصيانة'**
+  String get agentToolAddMaintenanceItem;
+
+  /// Action log: what Zad did, for the tool update_maintenance_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل جهاز'**
+  String get agentToolUpdateMaintenanceItem;
+
+  /// Action log: what Zad did, for the tool delete_maintenance_item.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف جهاز'**
+  String get agentToolDeleteMaintenanceItem;
+
+  /// Action log: what Zad did, for the tool save_document.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل مستند'**
+  String get agentToolSaveDocument;
+
+  /// Action log: what Zad did, for the tool delete_document.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل مستند'**
+  String get agentToolDeleteDocument;
+
+  /// Action log: what Zad did, for the tool add_gathering_to_list.
+  ///
+  /// In ar, this message translates to:
+  /// **'سطور عزومة للقايمة'**
+  String get agentToolAddGatheringToList;
+
+  /// Action log: what Zad did, for the tool add_appointment.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة ميعاد'**
+  String get agentToolAddAppointment;
+
+  /// Action log: what Zad did, for the tool update_appointment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل ميعاد'**
+  String get agentToolUpdateAppointment;
+
+  /// Action log: what Zad did, for the tool add_place_reminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير عند مكان'**
+  String get agentToolAddPlaceReminder;
+
+  /// Action log: what Zad did, for the tool cancel_place_reminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء تذكير مكان'**
+  String get agentToolCancelPlaceReminder;
+
+  /// Action log: what Zad did, for the tool schedule_task.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدولة تذكير'**
+  String get agentToolScheduleTask;
+
+  /// Action log: what Zad did, for the tool remember.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ ملاحظة عنك'**
+  String get agentToolRemember;
+
+  /// Action log: what Zad did, for the tool link_memory.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربط ملاحظات'**
+  String get agentToolLinkMemory;
+
+  /// Action log: what Zad did, for the tool update_customer_profile.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث ملفك'**
+  String get agentToolUpdateCustomerProfile;
+
+  /// Action log: what Zad did, for the tool set_life_goal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف جديد'**
+  String get agentToolSetLifeGoal;
+
+  /// Action log: what Zad did, for the tool set_broke_mode.
+  ///
+  /// In ar, this message translates to:
+  /// **'وضع التقشف'**
+  String get agentToolSetBrokeMode;
+
+  /// Action log: what Zad did, for the tool start_savings_challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء تحدي توفير'**
+  String get agentToolStartSavingsChallenge;
+
+  /// Action log: what Zad did, for the tool stop_savings_challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف تحدي توفير'**
+  String get agentToolStopSavingsChallenge;
+
+  /// Action log: what Zad did, for the tool update_emergency_fund_balance.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث صندوق الطوارئ'**
+  String get agentToolUpdateEmergencyFundBalance;
+
+  /// Action log: what Zad did, for the tool allocate_income.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع الدخل'**
+  String get agentToolAllocateIncome;
+
+  /// Action log: what Zad did, for the tool set_sleep_window.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد نومك'**
+  String get agentToolSetSleepWindow;
+
+  /// Action log: what Zad did, for the tool learn_skill.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعلّم مهارة'**
+  String get agentToolLearnSkill;
+
+  /// Action log: what Zad did, for the tool save_trusted_technician.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ صنايعي'**
+  String get agentToolSaveTrustedTechnician;
+
+  /// Action log: what Zad did, for the tool open_support_ticket.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح طلب دعم'**
+  String get agentToolOpenSupportTicket;
+
+  /// Action log: what Zad did, for the tool answer_same_product.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطابقة منتج'**
+  String get agentToolAnswerSameProduct;
+
+  /// Action log: a tool with no label of its own.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل من زاد'**
+  String get agentToolOther;
+
+  /// Action log: which door the turn came in by (app_chat).
+  ///
+  /// In ar, this message translates to:
+  /// **'شات التطبيق'**
+  String get agentSourceAppChat;
+
+  /// Action log: which door the turn came in by (telegram).
+  ///
+  /// In ar, this message translates to:
+  /// **'تليجرام'**
+  String get agentSourceTelegram;
+
+  /// Action log: which door the turn came in by (voice).
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة صوتية'**
+  String get agentSourceVoice;
+
+  /// Action log: which door the turn came in by (confirm).
+  ///
+  /// In ar, this message translates to:
+  /// **'بتأكيد منك'**
+  String get agentSourceConfirm;
+
+  /// Action log: which door the turn came in by (daily).
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة يومية'**
+  String get agentSourceDaily;
+
+  /// Action log: which door the turn came in by (event).
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث تلقائي'**
+  String get agentSourceEvent;
+
+  /// Action log: an unknown source.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد'**
+  String get agentSourceOther;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه تعديل أحدث على نفس الحاجة — ارجع فيه هو الأول'**
+  String get undoFailureNewerActionExists;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده اترجع فيه قبل كده'**
+  String get undoFailureAlreadyUndone;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده ماتنفذش أصلاً، فمفيش حاجة ترجع فيها'**
+  String get undoFailureNeverApplied;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده مينفعش يترجع فيه'**
+  String get undoFailureNotUndoable;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحاجة دي اتمسحت أو مش موجودة دلوقتي'**
+  String get undoFailureTargetMissing;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه مشكلة في الدخول — اطلع وادخل تاني'**
+  String get undoFailureNotAllowed;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اتصال دلوقتي — جرب لما النت يرجع'**
+  String get undoFailureOffline;
+
+  /// Action log: why an undo did not happen.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرفتش أرجع فيه، جرب تاني'**
+  String get undoFailureUnknown;
+
+  /// Action log: confirm dialog title before an undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترجع في «{tool}»؟'**
+  String actionLogUndoAsk(String tool);
+
+  /// Action log: confirm dialog body before an undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هيرجّع الحاجة دي زي ما كانت قبل التعديل. مش هتقدر ترجع في الرجوع ده بعدين.'**
+  String get actionLogUndoWarning;
+
+  /// Action log: cancel the undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'استنى'**
+  String get actionLogWait;
+
+  /// Action log: the undo button and confirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع فيه'**
+  String get actionLogUndo;
+
+  /// Action log: snackbar after an undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجعت في «{tool}»'**
+  String actionLogUndone(String tool);
+
+  /// Action log: screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل تعديلات زاد'**
+  String get actionLogTitle;
+
+  /// Action log: empty state when loading failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب السجل'**
+  String get actionLogLoadFailed;
+
+  /// Action log: empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش تعديلات'**
+  String get actionLogEmptyTitle;
+
+  /// Action log: empty state after a failure.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get actionLogPullRetry;
+
+  /// Action log: empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'أي حاجة زاد يسجّلها أو يعدّلها لك هتظهر هنا.'**
+  String get actionLogEmptyBody;
+
+  /// Action log: status chip, the action ran.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنفذ'**
+  String get actionLogApplied;
+
+  /// Action log: status chip, the action was taken back.
+  ///
+  /// In ar, this message translates to:
+  /// **'اترجع فيه'**
+  String get actionLogUndoneStatus;
+
+  /// Action log: status chip, the action was refused.
+  ///
+  /// In ar, this message translates to:
+  /// **'اترفض'**
+  String get actionLogRejected;
+
+  /// Why-changed sheet: the name of a changed field (amount).
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get mutationFieldAmount;
+
+  /// Why-changed sheet: the name of a changed field (quantity).
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get mutationFieldQuantity;
+
+  /// Why-changed sheet: the name of a changed field (remaining_quantity).
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المتبقية'**
+  String get mutationFieldRemainingQuantity;
+
+  /// Why-changed sheet: the name of a changed field (remaining_balance).
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي'**
+  String get mutationFieldRemainingBalance;
+
+  /// Why-changed sheet: the name of a changed field (price).
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get mutationFieldPrice;
+
+  /// Why-changed sheet: the name of a changed field (unit).
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get mutationFieldUnit;
+
+  /// Why-changed sheet: the name of a changed field (category).
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get mutationFieldCategory;
+
+  /// Why-changed sheet: the name of a changed field (kind).
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get mutationFieldKind;
+
+  /// Why-changed sheet: the name of a changed field (status).
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get mutationFieldStatus;
+
+  /// Why-changed sheet: the name of a changed field (starts_at).
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد'**
+  String get mutationFieldStartsAt;
+
+  /// Why-changed sheet: the name of a changed field (task_description).
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير'**
+  String get mutationFieldTaskDescription;
+
+  /// Why-changed sheet: the name of a changed field (recurrence).
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار'**
+  String get mutationFieldRecurrence;
+
+  /// Why-changed sheet: the name of a changed field (dosage).
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة'**
+  String get mutationFieldDosage;
+
+  /// Why-changed sheet: the name of a changed field (dose_times).
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعات'**
+  String get mutationFieldDoseTimes;
+
+  /// Why-changed sheet: the name of a changed field (daily_dose_count).
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات اليوم'**
+  String get mutationFieldDailyDoseCount;
+
+  /// Why-changed sheet: the name of a changed field (expiry_date).
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية'**
+  String get mutationFieldExpiryDate;
+
+  /// Why-changed sheet: the name of a changed field (renewal_date).
+  ///
+  /// In ar, this message translates to:
+  /// **'التجديد'**
+  String get mutationFieldRenewalDate;
+
+  /// Why-changed sheet: the name of a changed field (due_day).
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الاستحقاق'**
+  String get mutationFieldDueDay;
+
+  /// Why-changed sheet: the name of a changed field (billing_cycle).
+  ///
+  /// In ar, this message translates to:
+  /// **'الدورة'**
+  String get mutationFieldBillingCycle;
+
+  /// Why-changed sheet: the name of a changed field (is_active).
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّال'**
+  String get mutationFieldIsActive;
+
+  /// Why-changed sheet: the name of a changed field (for_person).
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين'**
+  String get mutationFieldForPerson;
+
+  /// Why-changed sheet: the name of a changed field (place).
+  ///
+  /// In ar, this message translates to:
+  /// **'المكان'**
+  String get mutationFieldPlace;
+
+  /// Why-changed sheet: the name of a changed field (note).
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get mutationFieldNote;
+
+  /// Why-changed sheet: the name of a changed field (notes).
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get mutationFieldNotes;
+
+  /// Why-changed sheet: the name of a changed field (expected_cost).
+  ///
+  /// In ar, this message translates to:
+  /// **'التكلفة المتوقعة'**
+  String get mutationFieldExpectedCost;
+
+  /// Why-changed sheet: the name of a changed field (currency).
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة'**
+  String get mutationFieldCurrency;
+
+  /// Why-changed sheet: the name of a changed field (country).
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد'**
+  String get mutationFieldCountry;
+
+  /// Why-changed sheet: the name of a changed field (pay_day).
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم القبض'**
+  String get mutationFieldPayDay;
+
+  /// Why-changed sheet: the name of a changed field (bed).
+  ///
+  /// In ar, this message translates to:
+  /// **'النوم'**
+  String get mutationFieldBed;
+
+  /// Why-changed sheet: the name of a changed field (wake).
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحيان'**
+  String get mutationFieldWake;
+
+  /// Why-changed sheet: the name of a changed field (daily_cap).
+  ///
+  /// In ar, this message translates to:
+  /// **'سقف اليوم'**
+  String get mutationFieldDailyCap;
+
+  /// Why-changed sheet: the name of a changed field (length_days).
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة بالأيام'**
+  String get mutationFieldLengthDays;
+
+  /// Why-changed sheet: the name of a changed field (trade).
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنعة'**
+  String get mutationFieldTrade;
+
+  /// Why-changed sheet: the name of a changed field (metric).
+  ///
+  /// In ar, this message translates to:
+  /// **'المقياس'**
+  String get mutationFieldMetric;
+
+  /// Why-changed sheet: a status value (upcoming).
+  ///
+  /// In ar, this message translates to:
+  /// **'جاي'**
+  String get mutationStatusUpcoming;
+
+  /// Why-changed sheet: a status value (done).
+  ///
+  /// In ar, this message translates to:
+  /// **'خلص'**
+  String get mutationStatusDone;
+
+  /// Why-changed sheet: a status value (cancelled).
+  ///
+  /// In ar, this message translates to:
+  /// **'اتلغى'**
+  String get mutationStatusCancelled;
+
+  /// Why-changed sheet: a status value (active).
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّال'**
+  String get mutationStatusActive;
+
+  /// Why-changed sheet: a status value (abandoned).
+  ///
+  /// In ar, this message translates to:
+  /// **'اتوقف'**
+  String get mutationStatusAbandoned;
+
+  /// Why-changed sheet: a row changed but no shown field did.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعدّل'**
+  String get mutationEdited;
+
+  /// Why-changed sheet: a row was removed.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشال'**
+  String get mutationRemoved;
+
+  /// Why-changed sheet: one field before and after. The arrow points from old to new in reading order.
+  ///
+  /// In ar, this message translates to:
+  /// **'{field}: {before} ← {after}'**
+  String mutationFieldChange(String field, String before, String after);
+
+  /// Why-changed sheet: a value before and after.
+  ///
+  /// In ar, this message translates to:
+  /// **'{before} ← {after}'**
+  String mutationValueChange(String before, String after);
+
+  /// Why-changed sheet: the first fields, and how many more were left out.
+  ///
+  /// In ar, this message translates to:
+  /// **'{shown} • و{count} كمان'**
+  String mutationMore(String shown, int count);
+
+  /// Why-changed sheet: a true value.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيوه'**
+  String get mutationYes;
+
+  /// Why-changed sheet: a false value.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأ'**
+  String get mutationNo;
+
+  /// Why-changed sheet: a list of values, counted.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} عناصر'**
+  String mutationItems(int count);
+
+  /// Why-changed sheet: what joins a list of values.
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get mutationListSeparator;
+
+  /// Why-changed sheet: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر التغييرات'**
+  String get whyChangedTitle;
+
+  /// Why-changed sheet: subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديلات زاد الآلية على بياناتك — إيه اتغيّر، وإمتى'**
+  String get whyChangedSubtitle;
+
+  /// Why-changed sheet: nothing to show.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش تعديلات آلية مسجلة لسه'**
+  String get whyChangedEmpty;
+
+  /// Why-changed sheet: less than a minute ago.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآن'**
+  String get whyChangedNow;
+
+  /// Why-changed sheet: minutes ago.
+  ///
+  /// In ar, this message translates to:
+  /// **'منذ {minutes} د'**
+  String whyChangedMinutesAgo(int minutes);
+
+  /// Why-changed sheet: hours ago.
+  ///
+  /// In ar, this message translates to:
+  /// **'منذ {hours} س'**
+  String whyChangedHoursAgo(int hours);
+
+  /// Why-changed sheet: days ago.
+  ///
+  /// In ar, this message translates to:
+  /// **'منذ {days} يوم'**
+  String whyChangedDaysAgo(int days);
+
+  /// Memory: confirm before forgetting a note.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنسى الملاحظة دي؟'**
+  String get memoryForgetAsk;
+
+  /// Memory: what forgetting a note means.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مش هيفتكرها تاني في أي رد جاي.'**
+  String get memoryForgetBody;
+
+  /// Memory: confirm forgetting.
+  ///
+  /// In ar, this message translates to:
+  /// **'انساها'**
+  String get memoryForgetYes;
+
+  /// Memory: snackbar after forgetting a note.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسيت'**
+  String get memoryForgotten;
+
+  /// Memory: confirm before clearing outings.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح خروجاتك؟'**
+  String get memoryClearOutingsAsk;
+
+  /// Memory: confirm clearing outings.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسحها'**
+  String get memoryClearYes;
+
+  /// Memory: snackbar after clearing outings.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتمسحت خروجاتك'**
+  String get memoryOutingsCleared;
+
+  /// Memory: snackbar after saving the profile.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ'**
+  String get memorySaved;
+
+  /// Memory: screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد عارف عني إيه'**
+  String get memoryTitle;
+
+  /// Memory: banner when the refresh failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب آخر نسخة — اللي قدامك آخر حاجة اتحفظت هنا.'**
+  String get memoryStaleBanner;
+
+  /// Memory: heading over the notes.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد فاكره عنك'**
+  String get memoryNotesHeading;
+
+  /// Memory: empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ذكريات'**
+  String get memoryEmptyTitle;
+
+  /// Memory: the profile card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت مين عند زاد'**
+  String get memoryProfileTitle;
+
+  /// Memory: the profile card subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيكلمك على أساس ده — عدّله براحتك'**
+  String get memoryProfileSubtitle;
+
+  /// Memory: edit the profile.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get memoryEdit;
+
+  /// Memory profile line: preferred name.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتحب أناديك'**
+  String get memoryLineName;
+
+  /// Memory profile line: gender.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get memoryLineGender;
+
+  /// Memory profile line: household role.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورك في البيت'**
+  String get memoryLineRole;
+
+  /// Memory profile line: age range.
+  ///
+  /// In ar, this message translates to:
+  /// **'العمر'**
+  String get memoryLineAge;
+
+  /// Memory profile line: occupation.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغلك'**
+  String get memoryLineJob;
+
+  /// Memory profile line: pay day and frequency.
+  ///
+  /// In ar, this message translates to:
+  /// **'القبض'**
+  String get memoryLinePay;
+
+  /// Memory profile line: household size and kids.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت'**
+  String get memoryLineHousehold;
+
+  /// Memory profile line: city.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة'**
+  String get memoryLineCity;
+
+  /// Memory profile line: dialect.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللهجة'**
+  String get memoryLineDialect;
+
+  /// Memory profile line: dialect not chosen.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي بلدك وكلامك'**
+  String get memoryDialectDefault;
+
+  /// Memory profile line: the voice Zad speaks in.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوت زاد'**
+  String get memoryLineVoice;
+
+  /// Memory: the habits card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عاداتك وتحركاتك'**
+  String get memoryHabitsTitle;
+
+  /// Memory: the habits card subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'من صرفك وخروجاتك — من غير أماكن ولا إحداثيات'**
+  String get memoryHabitsSubtitle;
+
+  /// Memory: no habits yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه بيتعلم عاداتك — سجّل مصاريفك وهتبان هنا.'**
+  String get memoryHabitsEmpty;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط صرفك في الأسبوع'**
+  String get memoryHabitWeekly;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر حاجات بتصرف عليها'**
+  String get memoryHabitTopCategories;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر يوم بتصرف فيه'**
+  String get memoryHabitBusiestDay;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكاتك في الشهر'**
+  String get memoryHabitSubscriptions;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'خروجاتك آخر ٣٠ يوم'**
+  String get memoryHabitOutings;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط صرف الخروجة'**
+  String get memoryHabitPerOuting;
+
+  /// Memory habit line.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر أماكن بتروحها'**
+  String get memoryHabitTopPlaces;
+
+  /// Memory: what clearing outings does.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنمسح كل الخروجات المتسجلة (أوقات وصرف ومحلات). المصاريف نفسها مش هتتمسح.'**
+  String get memoryClearOutingsBody;
+
+  /// Memory: empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هيتعلم عنك تدريجيًا من كلامك واستخدامك للتطبيق.'**
+  String get memoryEmptyBody;
+
+  /// Memory profile line: a field Zad doesn't know yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مش عارفاه'**
+  String get memoryUnknown;
+
+  /// Memory profile line: household size.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أفراد'**
+  String memoryHouseholdSize(int count);
+
+  /// Memory profile line: number of kids.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} عيال'**
+  String memoryKidsCount(int count);
+
+  /// Memory profile line: the day of the month pay comes.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم {day}'**
+  String memoryPayDay(int day);
+
+  /// Memory habit line: outings counted.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} خروجة'**
+  String memoryOutingsCount(int count);
+
+  /// Memory: the button that clears outings.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح خروجاتي'**
+  String get memoryClearOutings;
+
+  /// Memory note: how many times it was confirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكدت {count} مرة'**
+  String memoryConfirmedTimes(int count);
+
+  /// Memory note: who or what it is about.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن: {names}'**
+  String memoryAbout(String names);
+
+  /// Memory note: the forget button's tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسى دي'**
+  String get memoryForgetThis;
+
+  /// Memory note: the last day a temporary note holds.
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد {date}'**
+  String memoryUntil(String date);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

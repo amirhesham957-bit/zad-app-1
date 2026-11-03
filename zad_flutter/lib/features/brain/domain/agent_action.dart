@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// The tables `zad_agent_undo` knows how to restore — read off the deployed
 /// function on 2026-09-21. Any other table answers `table_not_undoable`, so
@@ -103,106 +104,122 @@ class AgentAction {
 /// reads as a plain "a change by زاد" rather than the raw identifier — Kotlin
 /// fell back to the identifier, and five tools that do run on the live project
 /// (`add_obligation`, `add_appointment`, …) showed up as English snake case.
-String agentToolLabel(String tool) => switch (tool) {
-  'log_transaction' => 'تسجيل معاملة',
-  'update_transaction' => 'تعديل معاملة',
-  'delete_transaction' => 'حذف معاملة',
-  'set_transaction_category' => 'تصنيف معاملة',
-  'merge_duplicate_expense' => 'دمج معاملة مكررة',
-  'reconcile_cash_balance' => 'تسوية الكاش',
-  'parse_notification_payload' => 'قراءة رسالة بنك',
-  'set_monthly_limit' => 'تعديل سقف الميزانية',
-  'confirm_cycle_start' => 'تأكيد دورة الراتب',
-  'set_market' => 'تعديل البلد والعملة',
-  'add_obligation' => 'تسجيل التزام',
-  'confirm_obligation' => 'تأكيد التزام',
-  'update_obligation' => 'تعديل التزام',
-  'delete_obligation' => 'حذف التزام',
-  'add_subscription' => 'إضافة اشتراك',
-  'update_subscription' => 'تعديل اشتراك',
-  'delete_subscription' => 'حذف اشتراك',
-  'add_debt' => 'تسجيل دين',
-  'update_debt' => 'تعديل دين',
-  'delete_debt' => 'حذف دين',
-  'add_inventory_item' => 'إضافة صنف للمخزون',
-  'update_inventory_qty' => 'تعديل كمية مخزون',
-  'delete_inventory_item' => 'حذف صنف من المخزون',
-  'add_shopping_item' => 'إضافة لقايمة المشتريات',
-  'complete_shopping_item' => 'شطب من قايمة المشتريات',
-  'delete_shopping_item' => 'حذف من قايمة المشتريات',
-  'add_pharmacy_item' => 'إضافة دواء',
-  'update_pharmacy_item' => 'تعديل دواء',
-  'delete_pharmacy_item' => 'حذف دواء',
-  'log_pharmacy_dose' => 'تسجيل جرعة دواء',
-  'add_maintenance_item' => 'إضافة جهاز للصيانة',
-  'update_maintenance_item' => 'تعديل جهاز',
-  'delete_maintenance_item' => 'حذف جهاز',
-  'save_document' => 'تسجيل مستند',
-  'delete_document' => 'شيل مستند',
-  'add_gathering_to_list' => 'سطور عزومة للقايمة',
-  'add_appointment' => 'إضافة ميعاد',
-  'update_appointment' => 'تعديل ميعاد',
-  'add_place_reminder' => 'تذكير عند مكان',
-  'cancel_place_reminder' => 'إلغاء تذكير مكان',
-  'schedule_task' => 'جدولة تذكير',
-  'remember' => 'حفظ ملاحظة عنك',
-  'link_memory' => 'ربط ملاحظات',
-  'update_customer_profile' => 'تحديث ملفك',
-  'set_life_goal' => 'هدف جديد',
-  'set_broke_mode' => 'وضع التقشف',
-  'start_savings_challenge' => 'بدء تحدي توفير',
-  'stop_savings_challenge' => 'إيقاف تحدي توفير',
-  'update_emergency_fund_balance' => 'تحديث صندوق الطوارئ',
-  'allocate_income' => 'توزيع الدخل',
-  'set_sleep_window' => 'مواعيد نومك',
-  'learn_skill' => 'تعلّم مهارة',
-  'save_trusted_technician' => 'حفظ صنايعي',
-  'open_support_ticket' => 'فتح طلب دعم',
-  'answer_same_product' => 'مطابقة منتج',
-  _ => 'تعديل من زاد',
-};
+String agentToolLabel(String tool, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (tool) {
+    'log_transaction' => l.agentToolLogTransaction,
+    'update_transaction' => l.agentToolUpdateTransaction,
+    'delete_transaction' => l.agentToolDeleteTransaction,
+    'set_transaction_category' => l.agentToolSetTransactionCategory,
+    'merge_duplicate_expense' => l.agentToolMergeDuplicateExpense,
+    'reconcile_cash_balance' => l.agentToolReconcileCashBalance,
+    'parse_notification_payload' => l.agentToolParseNotificationPayload,
+    'set_monthly_limit' => l.agentToolSetMonthlyLimit,
+    'confirm_cycle_start' => l.agentToolConfirmCycleStart,
+    'set_market' => l.agentToolSetMarket,
+    'add_obligation' => l.agentToolAddObligation,
+    'confirm_obligation' => l.agentToolConfirmObligation,
+    'update_obligation' => l.agentToolUpdateObligation,
+    'delete_obligation' => l.agentToolDeleteObligation,
+    'add_subscription' => l.agentToolAddSubscription,
+    'update_subscription' => l.agentToolUpdateSubscription,
+    'delete_subscription' => l.agentToolDeleteSubscription,
+    'add_debt' => l.agentToolAddDebt,
+    'update_debt' => l.agentToolUpdateDebt,
+    'delete_debt' => l.agentToolDeleteDebt,
+    'add_inventory_item' => l.agentToolAddInventoryItem,
+    'update_inventory_qty' => l.agentToolUpdateInventoryQty,
+    'delete_inventory_item' => l.agentToolDeleteInventoryItem,
+    'add_shopping_item' => l.agentToolAddShoppingItem,
+    'complete_shopping_item' => l.agentToolCompleteShoppingItem,
+    'delete_shopping_item' => l.agentToolDeleteShoppingItem,
+    'add_pharmacy_item' => l.agentToolAddPharmacyItem,
+    'update_pharmacy_item' => l.agentToolUpdatePharmacyItem,
+    'delete_pharmacy_item' => l.agentToolDeletePharmacyItem,
+    'log_pharmacy_dose' => l.agentToolLogPharmacyDose,
+    'add_maintenance_item' => l.agentToolAddMaintenanceItem,
+    'update_maintenance_item' => l.agentToolUpdateMaintenanceItem,
+    'delete_maintenance_item' => l.agentToolDeleteMaintenanceItem,
+    'save_document' => l.agentToolSaveDocument,
+    'delete_document' => l.agentToolDeleteDocument,
+    'add_gathering_to_list' => l.agentToolAddGatheringToList,
+    'add_appointment' => l.agentToolAddAppointment,
+    'update_appointment' => l.agentToolUpdateAppointment,
+    'add_place_reminder' => l.agentToolAddPlaceReminder,
+    'cancel_place_reminder' => l.agentToolCancelPlaceReminder,
+    'schedule_task' => l.agentToolScheduleTask,
+    'remember' => l.agentToolRemember,
+    'link_memory' => l.agentToolLinkMemory,
+    'update_customer_profile' => l.agentToolUpdateCustomerProfile,
+    'set_life_goal' => l.agentToolSetLifeGoal,
+    'set_broke_mode' => l.agentToolSetBrokeMode,
+    'start_savings_challenge' => l.agentToolStartSavingsChallenge,
+    'stop_savings_challenge' => l.agentToolStopSavingsChallenge,
+    'update_emergency_fund_balance' => l.agentToolUpdateEmergencyFundBalance,
+    'allocate_income' => l.agentToolAllocateIncome,
+    'set_sleep_window' => l.agentToolSetSleepWindow,
+    'learn_skill' => l.agentToolLearnSkill,
+    'save_trusted_technician' => l.agentToolSaveTrustedTechnician,
+    'open_support_ticket' => l.agentToolOpenSupportTicket,
+    'answer_same_product' => l.agentToolAnswerSameProduct,
+    _ => l.agentToolOther,
+  };
+}
 
 /// Which door the turn came in by, in words.
-String agentSourceLabel(String source) => switch (source) {
-  'app_chat' => 'شات التطبيق',
-  'telegram' => 'تليجرام',
-  'voice' => 'رسالة صوتية',
-  'confirm' => 'بتأكيد منك',
-  'daily' => 'مراجعة يومية',
-  'event' => 'حدث تلقائي',
-  _ => 'زاد',
-};
+String agentSourceLabel(String source, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (source) {
+    'app_chat' => l.agentSourceAppChat,
+    'telegram' => l.agentSourceTelegram,
+    'voice' => l.agentSourceVoice,
+    'confirm' => l.agentSourceConfirm,
+    'daily' => l.agentSourceDaily,
+    'event' => l.agentSourceEvent,
+    _ => l.agentSourceOther,
+  };
+}
 
 /// Why an undo did not happen, as `zad_agent_undo` answers it.
 enum UndoFailure {
   /// Something newer changed the same row; that has to go first.
-  newerActionExists('فيه تعديل أحدث على نفس الحاجة — ارجع فيه هو الأول'),
+  newerActionExists,
 
   /// Already taken back.
-  alreadyUndone('ده اترجع فيه قبل كده'),
+  alreadyUndone,
 
   /// It was refused when it ran, so nothing happened to take back.
-  neverApplied('ده ماتنفذش أصلاً، فمفيش حاجة ترجع فيها'),
+  neverApplied,
 
   /// The server has no way to restore it.
-  notUndoable('ده مينفعش يترجع فيه'),
+  notUndoable,
 
   /// The row it wrote is gone.
-  targetMissing('الحاجة دي اتمسحت أو مش موجودة دلوقتي'),
+  targetMissing,
 
   /// The session or the ownership check failed.
-  notAllowed('فيه مشكلة في الدخول — اطلع وادخل تاني'),
+  notAllowed,
 
   /// No answer at all.
-  offline('مفيش اتصال دلوقتي — جرب لما النت يرجع'),
+  offline,
 
   /// Anything else.
-  unknown('معرفتش أرجع فيه، جرب تاني');
-
-  new(this.message);
+  unknown;
 
   /// What the customer reads.
-  final String message;
+  String message([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return switch (this) {
+      newerActionExists => l.undoFailureNewerActionExists,
+      alreadyUndone => l.undoFailureAlreadyUndone,
+      neverApplied => l.undoFailureNeverApplied,
+      notUndoable => l.undoFailureNotUndoable,
+      targetMissing => l.undoFailureTargetMissing,
+      notAllowed => l.undoFailureNotAllowed,
+      offline => l.undoFailureOffline,
+      unknown => l.undoFailureUnknown,
+    };
+  }
 
   /// Reads the function's `error` code.
   static UndoFailure fromCode(String? code) => switch (code) {
