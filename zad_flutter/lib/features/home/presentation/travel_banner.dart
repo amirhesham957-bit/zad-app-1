@@ -67,6 +67,40 @@ final travelReportProvider = FutureProvider<void>((ref) async {
   }
 });
 
+/// The trip the server knows from the phone's location (migration
+/// 20261103180000): on Wi-Fi or without a SIM the network says nothing, but
+/// the coarse point street alerts save still does. Read after this session's
+/// network report, so it is never staler than that.
+final serverTravelCountryProvider = FutureProvider<String?>((ref) async {
+  await ref.watch(travelReportProvider.future);
+  final client = ref.watch(supabaseClientProvider);
+  final id = client.auth.currentUser?.id;
+  if (id == null) return null;
+  try {
+    final row = await client
+        .from('zad_users')
+        .select('travel_country')
+        .eq('id', id)
+        .maybeSingle();
+    final code = row?['travel_country'];
+    return code is String && code.length == 2 ? code : null;
+  } on Object catch (e) {
+    debugPrint('[travel] server trip not read: $e');
+    return null;
+  }
+});
+
+/// The country the banner offers: the mobile network first, then the trip
+/// the server worked out from the location, and only then the phone's
+/// language.
+final bannerCountryProvider = FutureProvider<String?>((ref) async {
+  final network = await ref.watch(networkCountryProvider.future);
+  if (network != null) return network.toUpperCase();
+  final trip = await ref.watch(serverTravelCountryProvider.future);
+  if (trip != null) return trip;
+  return (await ref.watch(detectedCountryProvider.future))?.toUpperCase();
+});
+
 /// The banner, or nothing.
 class TravelBannerSlot extends ConsumerStatefulWidget {
   /// Creates the slot.
@@ -94,7 +128,7 @@ class _TravelBannerSlotState extends ConsumerState<TravelBannerSlot> {
   @override
   Widget build(BuildContext context) {
     ref.watch(travelReportProvider);
-    final detected = ref.watch(detectedCountryProvider).value;
+    final detected = ref.watch(bannerCountryProvider).value;
     final currentCountry = ref
         .watch(settingsRepositoryProvider)
         .cached()
