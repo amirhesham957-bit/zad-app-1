@@ -41,7 +41,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readStoreDeals, sameCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import { instagramHashtagPosts, instagramProbe, storeHashtag, youtubeProbe, youtubeSearch } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
@@ -2760,12 +2760,43 @@ async function handle(req: Request): Promise<Response> {
         if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
         const market = marketOf(payload?.country);
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
-        const hits = await webSearchSnippets(storeDealsQuery(store, market.name), 8, market.code);
+        // ٤.٣: مدينة الهدف لو معروفة ('' = البلد كله).
+        const city = cleanCity(payload?.city);
+        const hits = await webSearchSnippets(storeDealsQuery(store, market.name, city), 8, market.code);
         if (hits.length === 0) return jsonResponse({ ok: true, deals: [], hits: 0, source: lastWebSearchSource });
-        const { system, user } = storeDealsPrompt(store, market.name, currency, hits, new Date().toISOString().slice(0, 10));
+        const { system, user } = storeDealsPrompt(store, market.name, currency, hits, new Date().toISOString().slice(0, 10), city);
         const parsed = await callJsonModel(system, user, 1500, "routine");
         if (parsed === null) return jsonResponse({ ok: false, reason: "no_model", hits: hits.length, source: lastWebSearchSource });
         return jsonResponse({ ok: true, deals: readStoreDeals(parsed, hits, currency, new Date()), hits: hits.length, source: lastWebSearchSource });
+      }
+
+      // ──────────────────────────────────────────────
+      // PLACE_CITY — the city of a customer's coarse point, for the weekly search per city (ZAD_PLAN 4.3).
+      // Service role only: zad-brain's deals_search_run sends the point rounded to ~1 km and keeps the
+      // name only. LocationIQ reverse, the same key and provider as nearby_pois — no new secret.
+      // ──────────────────────────────────────────────
+      case "place_city": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const lat = Number(payload?.lat);
+        const lon = Number(payload?.lon);
+        const country = typeof payload?.country === "string" ? payload.country.toUpperCase() : "";
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || !/^[A-Z]{2}$/.test(country)) {
+          return jsonResponse({ ok: false, reason: "bad_point" }, 400);
+        }
+        if (!LOCATIONIQ_API_KEY) return jsonResponse({ ok: false, reason: "no_key" });
+        try {
+          const resp = await fetch(reverseCityUrl(LOCATIONIQ_API_KEY, lat, lon), { signal: AbortSignal.timeout(8000) });
+          // 404 = LocationIQ مالقاش عنوان للنقطة (بحر/صحرا): إجابة، مش عطل.
+          if (resp.status === 404) return jsonResponse({ ok: true, city: "", other_country: false });
+          if (!resp.ok) {
+            console.error(`[CoreIntel] place_city LocationIQ HTTP ${resp.status}`);
+            return jsonResponse({ ok: false, reason: `locationiq_${resp.status}` });
+          }
+          return jsonResponse({ ok: true, ...readReverseCity(await resp.json(), country) });
+        } catch (e) {
+          console.error("[CoreIntel] place_city FAILED:", (e as Error).message);
+          return jsonResponse({ ok: false, reason: "network" });
+        }
       }
 
       // ──────────────────────────────────────────────

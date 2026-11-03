@@ -115,8 +115,41 @@ export function readDeals(parsed: unknown): Array<{ item: string; store: string;
  * shared by every customer there. Each offer must point at the result it came from — zad_deal_put
  * refuses a row without a link — so the model answers the result's number, never a URL of its own.
  */
-export function storeDealsQuery(store: string, countryName: string): string {
-  return `عروض ${searchStoreName(store)} ${countryName} الأسبوع`.replace(/\s+/g, " ").trim();
+export function storeDealsQuery(store: string, countryName: string, city = ""): string {
+  // ٤.٣: المدينة لو معروفة («عروض كيو الرياض الأسبوع»)؛ البحث نفسه متقفل على البلد من market.code.
+  return `عروض ${searchStoreName(store)} ${cleanCity(city) || countryName} الأسبوع`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * اسم مدينة ينفع يدخل استعلام بحث وبرومبت (ZAD_PLAN ٤.٣): حروف ومسافات وشرطة بس، من غير «محافظة»/«منطقة»/«مدينة»
+ * في الأول. أي حاجة تانية = '' (البلد كله).
+ */
+export function cleanCity(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const name = raw.replace(/\s+/g, " ").trim()
+    .replace(/^(محافظة|محافظه|منطقة|منطقه|مدينة|مدينه|أمانة|امانة)\s+/, "")
+    .replace(/\s+(Governorate|Province|Region|City)$/i, "").trim();
+  if (name.length < 2 || name.length > 40) return "";
+  return /^[\p{L}\p{M}][\p{L}\p{M} '\-]*$/u.test(name) ? name : "";
+}
+
+/** LocationIQ reverse (نفس مفتاح nearby_pois): المدينة بالعربي، والقرية بتتعلّى لمدينتها (normalizecity). */
+export function reverseCityUrl(key: string, lat: number, lon: number): string {
+  return "https://us1.locationiq.com/v1/reverse?" + new URLSearchParams({
+    key, lat: lat.toFixed(2), lon: lon.toFixed(2), format: "json", "accept-language": "ar", normalizecity: "1",
+  }).toString();
+}
+
+/**
+ * المدينة من رد reverse، بس لو النقطة في بلد الحساب — نقطة برّه (سفر لسه ماتسجلش) مابتغيّرش مدينة البيت.
+ * other_country = سيب المدينة اللي فاتت زي ما هي.
+ */
+export function readReverseCity(raw: unknown, country: string): { city: string; other_country: boolean } {
+  const address = raw && typeof raw === "object" ? (raw as { address?: Record<string, unknown> }).address : null;
+  const code = String(address?.country_code ?? "").toUpperCase();
+  if (!address || !code) return { city: "", other_country: false };
+  if (code !== country.toUpperCase()) return { city: "", other_country: true };
+  return { city: cleanCity(address.city) || cleanCity(address.town) || cleanCity(address.state), other_country: false };
 }
 
 /**
@@ -132,9 +165,10 @@ export function searchStoreName(store: string): string {
 }
 
 export function storeDealsPrompt(
-  store: string, countryName: string, currency: string, hits: DealHit[], today: string,
+  store: string, countryName: string, currency: string, hits: DealHit[], today: string, city = "",
 ): { system: string; user: string } {
   store = searchStoreName(store);
+  city = cleanCity(city);
   const system =
     `أنت بتقرا نتايج بحث ويب وبتطلع منها عروض حالية لمحل «${store}» بس. ` +
     "خُد بس اللي مكتوب صراحة في نتيجة واحدة: اسم الصنف وسعره. ممنوع تخترع صنف أو سعر أو تاريخ، وممنوع تكمّل من معلوماتك، " +
@@ -144,7 +178,7 @@ export function storeDealsPrompt(
     'رد JSON بس: {"deals":[{"item":"","price":0,"price_before":null,"currency":"","valid_until":null,"source":1}]}. ' +
     'مفيش عرض حقيقي ⇒ {"deals":[]}.';
   const results = hits.map((h, i) => `[${i + 1}] ${h.title}\n${h.snippet}\n${h.url}`).join("\n\n");
-  const user = `المحل: ${store}\nالبلد: ${countryName}\nالعملة: ${currency}\nالنهارده: ${today}\n\n=== نتايج البحث ===\n${results}\n=== آخر النتايج ===`;
+  const user = `المحل: ${store}\nالبلد: ${countryName}\n${city ? `المدينة: ${city}\n` : ""}العملة: ${currency}\nالنهارده: ${today}\n\n=== نتايج البحث ===\n${results}\n=== آخر النتايج ===`;
   return { system, user };
 }
 

@@ -454,3 +454,32 @@ Deno.test("transport: «معندناش عربية» or getting around by bus mea
   for (const n of ["عندنا عربية", "عندنا سيارة وبنروح مشي ساعات", ""]) assert(!saysNoCar([n]), n);
   assert(!saysNoCar([]));
 });
+
+// ZAD_PLAN ٤.٣: عروض مدينته الأول، وبعدها البلد كله؛ مدينة تانية مالهاش لازمة.
+import { dealsForCity } from "./tasteDeals.ts";
+
+Deno.test("city: their city's row wins over the country's for the same store and item; another city's is left out", () => {
+  const rows = [
+    { store: "كارفور", item_name: "زيت", city: "الإسكندرية", source_kind: "search", n: 1 },
+    { store: "كارفور", item_name: "زيت", city: "", source_kind: "search", n: 2 },
+    { store: "كارفور", item_name: "زيت", city: "القاهرة", source_kind: "search", n: 3 },
+    { store: "بنده", item_name: "زيت", city: "", source_kind: "search", n: 4 },
+    // a receipt row's city is free text from the scan («غير محدد»): it stays, its coordinates and trip decide.
+    { store: "خير زمان", item_name: "رز", city: "غير محدد", source_kind: "receipt", n: 5 },
+  ];
+  assertEquals(dealsForCity(rows, "القاهرة").map((r) => r.n), [3, 4, 5]);
+  assertEquals(dealsForCity(rows, "").map((r) => r.n), [1, 2, 3, 4, 5]);
+  assertEquals(dealsForCity(null, "القاهرة"), []);
+});
+
+Deno.test("city: the morning deal reads their city's rows; with no city, or a city in another country, as before", async () => {
+  dealSource.search = () => Promise.resolve(null);
+  const oil = (price: number, city: string) => ({ ...STORED[0], item_name: "زيت عافية", price: String(price), price_before: "100", city, source_kind: "search" });
+  const deals = [oil(50, "الإسكندرية"), oil(72, ""), oil(80, "القاهرة")];
+  const inCairo = await loadTasteDeal(fakeSb({ ...TABLES, zad_deals: deals, zad_user_city: [{ country: "EG", city: "القاهرة" }] }), "u");
+  assertEquals(inCairo?.price, 80);
+  const noCity = await loadTasteDeal(fakeSb({ ...TABLES, zad_deals: deals }), "u");
+  const otherCountry = await loadTasteDeal(fakeSb({ ...TABLES, zad_deals: deals, zad_user_city: [{ country: "SA", city: "الرياض" }] }), "u");
+  assertEquals(noCity?.price, 50);
+  assertEquals(otherCountry?.price, 50);
+});

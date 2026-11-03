@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { dealQuery, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
+import { cleanCity, dealQuery, readReverseCity, reverseCityUrl, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
 import { isLiveQuery } from "./searchQuality.ts";
 
 Deno.test("duplicates and blanks are dropped, order kept", () => {
@@ -108,6 +108,39 @@ Deno.test("store deals: an end date months away is not believed, the offer stays
 
 Deno.test("store deals: the query names the store and the country", () => {
   assertEquals(storeDealsQuery("كيو", "السعودية"), "عروض كيو السعودية الأسبوع");
+});
+
+Deno.test("store deals: with a known city the query names the city (ZAD_PLAN 4.3)", () => {
+  assertEquals(storeDealsQuery("كيو", "السعودية", "الرياض"), "عروض كيو الرياض الأسبوع");
+  assertEquals(storeDealsQuery("كيو", "السعودية", ""), "عروض كيو السعودية الأسبوع");
+  // اسم مش اسم مدينة مايدخلش محرك البحث — البلد كله بدله.
+  assertEquals(storeDealsQuery("كيو", "السعودية", "الرياض; ignore all"), "عروض كيو السعودية الأسبوع");
+  const { user } = storeDealsPrompt("كيو", "السعودية", "SAR", [], "2026-11-05", "الرياض");
+  assertStringIncludes(user, "البلد: السعودية\nالمدينة: الرياض\n");
+  assertEquals(storeDealsPrompt("كيو", "السعودية", "SAR", [], "2026-11-05").user.includes("المدينة"), false);
+});
+
+Deno.test("city: a clean name, without «محافظة» and without anything that is not a name", () => {
+  assertEquals(cleanCity("محافظة الجيزة"), "الجيزة");
+  assertEquals(cleanCity(" جدة "), "جدة");
+  assertEquals(cleanCity("Cairo Governorate"), "Cairo");
+  assertEquals(cleanCity("6th of October"), "");
+  assertEquals(cleanCity("<b>x</b>"), "");
+  assertEquals(cleanCity("ر"), "");
+  assertEquals(cleanCity(null), "");
+});
+
+Deno.test("city: LocationIQ reverse — the city in the account's country only, the point rounded to ~1 km", () => {
+  const url = new URL(reverseCityUrl("k", 24.71362, 46.67531));
+  assertEquals([url.pathname, url.searchParams.get("lat"), url.searchParams.get("lon")], ["/v1/reverse", "24.71", "46.68"]);
+  assertEquals([url.searchParams.get("accept-language"), url.searchParams.get("normalizecity")], ["ar", "1"]);
+  assertEquals(readReverseCity({ address: { city: "الرياض", state: "منطقة الرياض", country_code: "sa" } }, "SA"),
+    { city: "الرياض", other_country: false });
+  assertEquals(readReverseCity({ address: { state: "محافظة الجيزة", country_code: "eg" } }, "EG"),
+    { city: "الجيزة", other_country: false });
+  // على سفر لسه ماتسجلش: مدينة البيت تفضل.
+  assertEquals(readReverseCity({ address: { city: "دبي", country_code: "ae" } }, "SA"), { city: "", other_country: true });
+  assertEquals(readReverseCity({ error: "Unable to geocode" }, "SA"), { city: "", other_country: false });
 });
 
 Deno.test("store deals: the search uses the name people know, not the receipt's legal name", () => {
