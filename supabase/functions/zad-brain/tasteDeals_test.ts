@@ -333,3 +333,15 @@ Deno.test("morning: a comfortable, confirmed budget turns a staple's deal into a
     assert(!momentFallback("morning_greeting", f).text.includes("تخزّن"), JSON.stringify(budget));
   }
 });
+
+Deno.test("house brand: the brand they said in chat beats the one counted from purchases (4.15)", async () => {
+  const { statedBrands } = await import("./tasteDeals.ts");
+  const said = statedBrands(["حليب نادك", "شاي العروسة مش بروك", "بيجيبوا من كارفور"]);
+  assertEquals([...said.values()].sort(), ["عروسه", "نادك"]);
+  // «مش المراعي» رفض مش ماركة.
+  assertEquals(statedBrands(["حليب مش المراعي"]).size, 0);
+  const brands = new Map([...houseBrands(BOUGHT), ...said]);
+  assertEquals(offerBrand("شاي العروسة 40 فتلة", brands), "عروسه");
+  assertEquals(offerBrand("شاي بروك 100 جم", brands), null);
+  assertEquals(offerBrand("نادك حليب كامل الدسم 1 لتر", brands), "نادك");
+});
