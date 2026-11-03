@@ -36,3 +36,14 @@ Deno.test("an agent with no money and no dose tool is spared both rules", () => 
   const all = rules(null).length, lean = rules(["add_shopping_item", "remember"]).length;
   assertEquals(all - lean > 800, true, `${all} → ${lean}`);
 });
+
+Deno.test("finance stays under 40 tools; the savings challenge comes by intent", async () => {
+  const { CHAT_TOOLS } = await import("./index.ts");
+  const { intentToolHints, scopeToolsForSpecialist } = await import("./specialists.ts");
+  const names = (msg: string) => scopeToolsForSpecialist(CHAT_TOOLS, "finance", null, intentToolHints(msg)).map((t) => t.name);
+  const hello = names("مرحبا");
+  assert(hello.length < 40, `${hello.length}`);
+  assert(!hello.includes("start_savings_challenge"));
+  assert(names("عايز اعمل تحدي توفير ٣٠ يوم").includes("start_savings_challenge"));
+  assert(names("وقف التحدي").includes("stop_savings_challenge"));
+});

@@ -157,7 +157,9 @@ const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلص�
 const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
 const NEARBY_INTENT = /اقرب|قريب مني|قريبه مني|جنبي|حواليا|فين الاقي|فين القي|محلات قريبه/;
 // «عاوز اتواصل مع موظف» ماكانتش بتعدّي (٢٠٢٦-١٠-٠٢ ٠١:٢٥): الأداة ماتعرضتش والموديل قال «فتحت لك تيكت» من غير تيكت.
-const SUPPORT_INTENT = /شكوي|اشتكي|اكلم حد|اكلم (موظف|مسؤول|انسان|بني ادم)|موظف|اتواصل|تواصل مع|الدعم|خدمه العملاء|التطبيق\s*(فيه مشكله|بايظ|واقف|مش شغال|بيقفل)|عطل في التطبيق|مشكله في (التطبيق|الصفحه|الشاشه)|بلاغ/;
+// «تحدي توفير ٣٠ يوم»، «ساعدني أوفّر»، «وقف التحدي» (قاعدة ١٣ في البرومبت).
+const SAVINGS_CHALLENGE_INTENT = /تحدي|ساعدني (ا|ن)وفر|عايز (ا|ن)وفر|عاوز (ا|ن)وفر|ابغي (ا|ن)وفر|ابي (ا|ن)وفر/;
+const SUPPORT_INTENT =/شكوي|اشتكي|اكلم حد|اكلم (موظف|مسؤول|انسان|بني ادم)|موظف|اتواصل|تواصل مع|الدعم|خدمه العملاء|التطبيق\s*(فيه مشكله|بايظ|واقف|مش شغال|بيقفل)|عطل في التطبيق|مشكله في (التطبيق|الصفحه|الشاشه)|بلاغ/;
 // «خلصت كافة ادويتي شلها من الليستة» — الأداة موجودة والموديل قال «مش بعرف أشيلها» (٢٠٢٦-١٠-٠٢ ٠١:٢٧).
 // حارس المستندات (الشريحة ٣٢). «جواز» لوحدها = زواج في المصري («جوازي»)، فلازم «سفر» أو كلام عن انتهاء/تجديد جنبها.
 const DOCUMENT_TIME = "(نتهي|انتهت|خلصت|تجديد|اجدد|جددت|صلاحي|لحد)";
@@ -229,6 +231,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
   if (BROKE_INTENT.test(norm)) tools.push("set_broke_mode");
+  if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
   if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
@@ -513,7 +516,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     // زيادة مع كل رسالة نزّلوا وكيل المال على Groq من ٤٢ أداة لـ٣٨ (promptBudget_test).
     "add_appointment", "update_appointment",
     "add_place_reminder", "cancel_place_reminder",
-    "start_savings_challenge", "stop_savings_challenge",
+    // start/stop_savings_challenge بيجوا بالنية (SAVINGS_CHALLENGE_INTENT) أو بتحدي شغال (index.ts) — صفر نداء
+    // في agent_actions من أول يوم، وكانوا التنين اللي بيخلّوا وكيل المال ٤١ أداة (رجيم ٣.٢، ٣/١١).
     // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
     "update_customer_profile",
     // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
