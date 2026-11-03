@@ -2532,4 +2532,977 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'فاضل كتير';
+
+  @override
+  String get familyTitle => 'العيلة';
+
+  @override
+  String get familyLoadingTitle => 'بنشوف عيلتك';
+
+  @override
+  String get familyLoadingMessage => 'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.';
+
+  @override
+  String get familyRetry => 'جرّب تاني';
+
+  @override
+  String get familyWelcomeTitle => 'أهلاً بك في عائلة زاد';
+
+  @override
+  String get familyWelcomeBody =>
+      'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.';
+
+  @override
+  String get familyCreateAsAdmin => 'إنشاء عائلة جديدة كمدير (Admin)';
+
+  @override
+  String get familyJoin => 'الانضمام للعائلة';
+
+  @override
+  String get familyOr => 'أو';
+
+  @override
+  String get familyAliasLabel => 'اسمك في العيلة (اختياري)';
+
+  @override
+  String get familyAliasHint => 'مثال: الابن أحمد';
+
+  @override
+  String get familyInviteCodeLabel => 'كود الدعوة';
+
+  @override
+  String get familyInviteCodeHint => 'مثال: ZAD-1234';
+
+  @override
+  String get familyTabChat => 'الشات';
+
+  @override
+  String get familyTabTasks => 'المهام';
+
+  @override
+  String get familyTabMembers => 'الأعضاء';
+
+  @override
+  String get familyTabGroceries => 'البقالة';
+
+  @override
+  String get familyTabKids => 'الأبناء';
+
+  @override
+  String get familyTabGoals => 'الأهداف';
+
+  @override
+  String familyHeaderTitle(String code) {
+    return 'عائلة $code';
+  }
+
+  @override
+  String familyMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أفراد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familySosTooltip => 'الرجاء الانتباه، حالة طوارئ!';
+
+  @override
+  String get familyInviteNew => 'دعوة أفراد جدد';
+
+  @override
+  String get familyShareInvite => 'مشاركة الدعوة';
+
+  @override
+  String familyShareInviteText(String code, String link) {
+    return '🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n📲 اضغط على الرابط التالي للانضمام فوراً وفتح التطبيق:\nhttps://zad.app/invite?code=$code\n\n🔑 كود الدعوة المباشر:\n$code\n\n🔗 رابط التطبيق المباشر:\n$link';
+  }
+
+  @override
+  String get familySosConfirmTitle => 'تأكيد نداء الطوارئ';
+
+  @override
+  String get familySosConfirmBody =>
+      'هيتبعت تنبيه فوري لكل أفراد العائلة إنك محتاج مساعدة. متأكد؟';
+
+  @override
+  String get familySosSend => 'أرسل النداء';
+
+  @override
+  String familyInviteShareText(String code, String link) {
+    return 'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: $code\nأو افتح الرابط: $link';
+  }
+
+  @override
+  String familyInviteShareQr(String link) {
+    return 'انضم إلى عائلتي في تطبيق زاد! امسح الرمز: $link';
+  }
+
+  @override
+  String familyInviteShareLink(String link) {
+    return 'انضم إلى عائلتي في تطبيق زاد!\nرابط الدعوة: $link';
+  }
+
+  @override
+  String familyInviteShareCode(String code) {
+    return 'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: $code';
+  }
+
+  @override
+  String get familyInviteMethodLink => 'رابط';
+
+  @override
+  String get familyInviteMethodCode => 'كود';
+
+  @override
+  String get familyInviteMethodWhatsapp => 'واتساب';
+
+  @override
+  String get familyInviteScanToJoin => 'مسح الرمز للانضمام:';
+
+  @override
+  String get familyInviteLinkLabel => 'رابط الدعوة:';
+
+  @override
+  String get familyCopy => 'انسخ';
+
+  @override
+  String get familyInviteCodeColon => 'كود الدعوة:';
+
+  @override
+  String get familyInviteShareWhatsapp => 'شارك عبر واتساب:';
+
+  @override
+  String get familyInviteAllApps => 'جميع التطبيقات';
+
+  @override
+  String get familyShare => 'مشاركة';
+
+  @override
+  String get familyPasteInvite => 'الصق رابط أو كود الدعوة';
+
+  @override
+  String get familyAddTaskTitle => 'إضافة مهمة جديدة';
+
+  @override
+  String get familyTaskNameLabel => 'اسم المهمة';
+
+  @override
+  String get familyTaskNameHint => 'مثال: ترتيب الغرفة';
+
+  @override
+  String get familyReward => 'المكافأة';
+
+  @override
+  String familyRewardIn(String currency) {
+    return 'المكافأة ($currency)';
+  }
+
+  @override
+  String get familyAssignee => 'المكلف بالمهمة:';
+
+  @override
+  String get familyDueDateOptional => 'تاريخ التسليم (اختياري)';
+
+  @override
+  String get familyQuickGroceryTitle => 'نزّلها في التسوق';
+
+  @override
+  String get familyQuickGroceryHint => 'مثلاً: حليب';
+
+  @override
+  String get familyMoneyRequestTitle => 'طلب مصروف أو مشتريات';
+
+  @override
+  String get familyMoneyRequestWhat => 'ماذا تريد أن تشتري؟';
+
+  @override
+  String get familyMoneyRequestAmount => 'المبلغ المطلوب';
+
+  @override
+  String familyMoneyRequestAmountIn(String currency) {
+    return 'المبلغ المطلوب ($currency)';
+  }
+
+  @override
+  String get familyMoneyRequestSend => 'إرسال الطلب';
+
+  @override
+  String get familySpendLimitTitle => 'حد الإنفاق';
+
+  @override
+  String familySpendLimitBody(String name) {
+    return 'حدد أقصى مبلغ يقدر $name يصرفه يومياً/أسبوعياً. اتركه فارغاً لإلغاء الحد.';
+  }
+
+  @override
+  String familyDailyLimitIn(String currency) {
+    return 'الحد اليومي ($currency)';
+  }
+
+  @override
+  String familyWeeklyLimitIn(String currency) {
+    return 'الحد الأسبوعي ($currency)';
+  }
+
+  @override
+  String get familyPollClosesTomorrow => 'بكرة';
+
+  @override
+  String get familyPollClosesTwoDays => 'بعد يومين';
+
+  @override
+  String get familyPollClosesWeek => 'بعد أسبوع';
+
+  @override
+  String get familyPollClosesByHand => 'أنا أقفله';
+
+  @override
+  String get familyPollTitle => 'تصويت عائلي';
+
+  @override
+  String get familyPollQuestion => 'السؤال';
+
+  @override
+  String familyPollOption(int n) {
+    return 'خيار $n';
+  }
+
+  @override
+  String get familyPollAddOption => '+ إضافة خيار';
+
+  @override
+  String get familyPollClosesWhen => 'يتقفل إمتى؟';
+
+  @override
+  String get familyPollSend => 'إرسال التصويت';
+
+  @override
+  String get familyTasksHeading => 'المهام العائلية';
+
+  @override
+  String familyTasksDoneOf(int done, int total) {
+    return '$done/$total منجزة';
+  }
+
+  @override
+  String get familyFilterAll => 'الكل';
+
+  @override
+  String get familyFilterPending => 'قادمة';
+
+  @override
+  String get familyFilterDone => 'منجزة';
+
+  @override
+  String get familyNoTasksTitle => 'لا توجد مهام';
+
+  @override
+  String get familyNoTasksMessage => 'ضيف مهمة عشان أفراد العائلة يشاركوا فيها';
+
+  @override
+  String get familyMembersHeading => 'أفراد العائلة';
+
+  @override
+  String get familyMembersHint => 'اضغط على أي عضو لتفاصيل إنجازاته';
+
+  @override
+  String get familyReport => 'تقرير العيلة';
+
+  @override
+  String get familyDeleteAndRecreate => 'حذف العائلة وإعادة الإنشاء';
+
+  @override
+  String get familyLeave => 'مغادرة العائلة';
+
+  @override
+  String get familyDeleteForeverTitle => 'حذف العائلة نهائياً';
+
+  @override
+  String get familyLeaveConfirmTitle => 'تأكيد المغادرة';
+
+  @override
+  String get familyDeleteForeverBody =>
+      'إنت آخر فرد في العائلة دي. حذفها هيمسح الشات والمهام وكل البيانات نهائياً ومينفعش ترجعها، وتقدر تنشئ عائلة جديدة بعد كده.';
+
+  @override
+  String get familyLeaveConfirmBody =>
+      'هتفقد الوصول لشات العائلة والمهام والأرصدة المشتركة. متأكد إنك عايز تغادر العائلة؟';
+
+  @override
+  String get familyDeleteForever => 'حذف نهائي';
+
+  @override
+  String get familyLeaveShort => 'مغادرة';
+
+  @override
+  String familyTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مهام',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyTasbihaCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تسبيحة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familySavingsGoal => 'هدف التوفير';
+
+  @override
+  String get familyRoleAdminShort => 'مدير';
+
+  @override
+  String get familyRoleChild => 'ابن/ابنة';
+
+  @override
+  String get familyRoleAdminLong => 'مدير العائلة';
+
+  @override
+  String get familyRoleMember => 'عضو';
+
+  @override
+  String get familyBalance => 'الرصيد';
+
+  @override
+  String get familyGoal => 'الهدف';
+
+  @override
+  String get familyTrees => 'الأشجار';
+
+  @override
+  String familyDoneTasksTitle(int count) {
+    return 'المهام المنجزة ($count)';
+  }
+
+  @override
+  String get familyNoDoneTasks => 'لا توجد مهام منجزة بعد';
+
+  @override
+  String familyUpcomingTasksTitle(int count) {
+    return 'المهام القادمة ($count)';
+  }
+
+  @override
+  String get familyNoUpcomingTasks => 'لا توجد مهام قادمة';
+
+  @override
+  String familyTreesTitle(int count) {
+    return 'أشجار التسبيحة ($count)';
+  }
+
+  @override
+  String get familyDaily => 'اليومي';
+
+  @override
+  String get familyWeekly => 'الأسبوعي';
+
+  @override
+  String get familyRoleInFamily => 'الدور في العيلة';
+
+  @override
+  String familyRemoveMemberTitle(String name) {
+    return 'تشيل $name من العيلة؟';
+  }
+
+  @override
+  String get familyRemoveMemberShort => 'شيله';
+
+  @override
+  String get familyRemoveMember => 'شيله من العيلة';
+
+  @override
+  String familyRewardAmount(String amount) {
+    return 'مكافأة: $amount';
+  }
+
+  @override
+  String get familyNoLimit => 'بدون حد';
+
+  @override
+  String get familyGroceriesHeading => 'البقالة المشتركة';
+
+  @override
+  String get familyGroceriesHint =>
+      'قائمة المشتريات التي تمت إضافتها من قبل أفراد العائلة أو اقترحها زاد.';
+
+  @override
+  String get familyNoGroceriesTitle => 'لا توجد طلبات بقالة حالياً.';
+
+  @override
+  String get familyNoGroceriesMessage =>
+      'اكتب في الشات \"أضف حليب\" أو دوس + فوق.';
+
+  @override
+  String get familyKidsHeading => 'مصاريف الأبناء';
+
+  @override
+  String get familyKidsHint => 'نظرة عامة على أرصدة وطلبات الأبناء';
+
+  @override
+  String get familyNoKidsTitle => 'لا يوجد أبناء مسجلين بعد';
+
+  @override
+  String get familyNoKidsMessage => 'من تاب الأعضاء خلّي أي فرد \"طفل\".';
+
+  @override
+  String get familyPauseTitle => 'وقفة تفكير ٢٤ ساعة';
+
+  @override
+  String get familyPauseBody =>
+      'طلب الشرا مايتوافقش عليه قبل يوم من ما اتبعت. الرفض في أي وقت، وطلب المصروف مش متأثر.';
+
+  @override
+  String familyAllowanceFor(String name) {
+    return 'مصروف لـ$name';
+  }
+
+  @override
+  String familyAmountIn(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get familyAllowanceHelper => 'بيتضاف لرصيده على طول';
+
+  @override
+  String get familyTransfer => 'حوّل';
+
+  @override
+  String familyBalanceIs(String amount) {
+    return 'الرصيد: $amount';
+  }
+
+  @override
+  String familyGoalIs(String amount) {
+    return 'الهدف: $amount';
+  }
+
+  @override
+  String familyKidTasksDoneOf(int done, int total) {
+    return '$done/$total مهام';
+  }
+
+  @override
+  String get familySendAllowance => 'حوّل مصروف';
+
+  @override
+  String get familyMonthlySpending => 'المصروف الشهري';
+
+  @override
+  String familyPendingRequests(int count) {
+    return 'الطلبات المعلقة ($count)';
+  }
+
+  @override
+  String get familyApprove => 'موافقة';
+
+  @override
+  String get familyReject => 'رفض';
+
+  @override
+  String get familyBudgetRewardsHeading => 'الميزانية والمكافآت';
+
+  @override
+  String get familySavingsGoalTitle => 'هدف الادخار العائلي';
+
+  @override
+  String get familyNoSavingsGoal => 'لسه مفيش هدف ادخار للشهر ده';
+
+  @override
+  String get familySuggestGoal => 'اقترح هدف بالذكاء الاصطناعي';
+
+  @override
+  String get familyNoKidsStatsTitle => 'لا يوجد أبناء مضافين لعرض إحصائياتهم.';
+
+  @override
+  String get familyKidsBalanceStats => 'إحصائيات أرصدة الأبناء';
+
+  @override
+  String get familyTotalRewardsPaid => 'إجمالي المكافآت المدفوعة';
+
+  @override
+  String familyGoalSuggestionBody(String amount, int days) {
+    return 'الهدف: $amount خلال $days يوم';
+  }
+
+  @override
+  String get familyApproveGoal => 'اعتماد الهدف';
+
+  @override
+  String get familyChatEmptyTitle => 'لا توجد رسائل بعد';
+
+  @override
+  String get familyChatEmptyMessage => 'ابدأ المحادثة بإرسال أول رسالة لعائلتك';
+
+  @override
+  String get familyChatAddTasks => 'أضف مهام';
+
+  @override
+  String get familyChatAskGroceries => 'اطلب بقالة';
+
+  @override
+  String get familyChatAskZad => 'استشر @Zad';
+
+  @override
+  String get familyZadName => 'زاد';
+
+  @override
+  String get familyVoiceMessage => 'رسالة صوتية';
+
+  @override
+  String get familyUnpin => 'إلغاء التثبيت';
+
+  @override
+  String get familyPin => 'تثبيت';
+
+  @override
+  String get familyReact => 'تفاعل';
+
+  @override
+  String familySosFrom(String name) {
+    return 'نداء طوارئ من $name!';
+  }
+
+  @override
+  String familyPurchaseRequestFrom(String name) {
+    return 'طلب شراء من $name';
+  }
+
+  @override
+  String get familyApproveAndDeduct => 'موافقة وخصم';
+
+  @override
+  String get familyApproved => 'تمت الموافقة';
+
+  @override
+  String get familyRejected => 'مرفوض';
+
+  @override
+  String familyPollFrom(String name) {
+    return 'تصويت من $name';
+  }
+
+  @override
+  String familyPollTimeCloses(String time, String when) {
+    return '$time · بيقفل $when';
+  }
+
+  @override
+  String get familyPollClose => 'اقفل التصويت';
+
+  @override
+  String get familyPollClosedNoVotes => 'اتقفل من غير أصوات';
+
+  @override
+  String get familyPollClosedTie => 'اتقفل بتعادل — القرار لكم';
+
+  @override
+  String familyPollAdultsAgreed(String option) {
+    return 'الكبار كلهم اتفقوا على «$option» ✅';
+  }
+
+  @override
+  String familyPollMajority(String option) {
+    return 'الأغلبية اختارت «$option»';
+  }
+
+  @override
+  String get familyClosesWithinHour => 'خلال ساعة';
+
+  @override
+  String familyClosesInHours(int hours) {
+    return 'بعد $hours ساعة';
+  }
+
+  @override
+  String get familyClosesTomorrow => 'بكرة';
+
+  @override
+  String familyClosesInDays(int days) {
+    return 'بعد $days أيام';
+  }
+
+  @override
+  String get familyQuickReplies => 'ردود سريعة';
+
+  @override
+  String get familySosShort => 'نداء طوارئ';
+
+  @override
+  String get familyAskMoney => 'طلب مصروف';
+
+  @override
+  String get familyPollShort => 'تصويت';
+
+  @override
+  String get familyChatHint => 'اكتب رسالة أو @Zad...';
+
+  @override
+  String get familySend => 'إرسال';
+
+  @override
+  String get familySomeoneInFamily => 'حد من العيلة';
+
+  @override
+  String familyLocationDisclosure(String asker) {
+    return 'زاد هيعرف لما تدخل أو تخرج من الأماكن اللي $asker يحددها (زي المدرسة) — حتى والتطبيق مقفول — ويقوله لو خرجت في المواعيد اللي حددها. مش هيتبعت مكانك طول الوقت ولا خط سيرك. هيفضل فيه إشعار ظاهر طول ما المشاركة شغالة، وتقدر توقفها من «عيلتي» في أي وقت. في الخطوة الجاية اختار «السماح طول الوقت».';
+  }
+
+  @override
+  String get familyServerUnreachable => 'مقدرتش أوصل للسيرفر. جرّب تاني.';
+
+  @override
+  String get familyShareComingGoingTitle => 'مشاركة دخولك وخروجك';
+
+  @override
+  String get familyNotNow => 'مش دلوقتي';
+
+  @override
+  String get familyAgreeContinue => 'موافق، كمّل';
+
+  @override
+  String get familyAcceptedNeedAlways =>
+      'وافقت، بس محتاج «السماح طول الوقت» للموقع عشان يشتغل والتطبيق مقفول.';
+
+  @override
+  String get familyAcceptedZones => 'وافقت — هيشتغل على الأماكن اللي هيحددها.';
+
+  @override
+  String get familyAcceptedOffline => 'وافقت. هكمّل لما النت يرجع.';
+
+  @override
+  String get familyFollowRequests => 'طلبات متابعة';
+
+  @override
+  String get familyFollowRequestsHint =>
+      'محدش بيشوف حاجة غير بموافقتك، وتقدر تلغي في أي وقت.';
+
+  @override
+  String get familyDeclinedFollow => 'تمام، مش هيشوفها.';
+
+  @override
+  String get familyNo => 'لأ';
+
+  @override
+  String familyAcceptedScope(String scope) {
+    return 'وافقت — يقدر يتابع $scope.';
+  }
+
+  @override
+  String get familyAgree => 'وافق';
+
+  @override
+  String get familyWhoFollowsYou => 'مين بيتابعك';
+
+  @override
+  String get familyFollowStopped => 'اتلغت المتابعة.';
+
+  @override
+  String get familyFollowRequestSent => 'اتبعت الطلب — هيظهرلك لما يوافق.';
+
+  @override
+  String get familyFollowRequestFailed => 'مقدرتش أبعت الطلب. جرّب تاني.';
+
+  @override
+  String get familyFollowing => 'المتابعة';
+
+  @override
+  String get familyFollowLoadFailed => 'مقدرتش أجيب المتابعة دلوقتي.';
+
+  @override
+  String get familyFollowLoading => 'بجيب اللي متشارك…';
+
+  @override
+  String familyScopeStatus(String scope, String status) {
+    return '$scope: $status';
+  }
+
+  @override
+  String get familyShareNotAsked => 'مش متطلبة';
+
+  @override
+  String get familySharePending => 'مستني موافقته';
+
+  @override
+  String get familyShareGranted => 'وافق ✅';
+
+  @override
+  String get familyShareDeclined => 'رفض';
+
+  @override
+  String get familyShareRevoked => 'اتلغت';
+
+  @override
+  String get familyAskToFollow => 'اطلب متابعة';
+
+  @override
+  String get familyWhatToFollow => 'عايز تتابع إيه؟';
+
+  @override
+  String get familyWhatToFollowHint =>
+      'هيوصله طلب ويختار هو. مفيش حاجة هتبان قبل موافقته.';
+
+  @override
+  String get familySendRequest => 'ابعت الطلب';
+
+  @override
+  String get familyDoseMissed => '❌ فاتت';
+
+  @override
+  String get familyDoseDue => '⏰ وقتها';
+
+  @override
+  String familyDoseNoTimes(String name) {
+    return '$name: من غير مواعيد';
+  }
+
+  @override
+  String get familyMedicinesToday => 'الأدوية النهارده';
+
+  @override
+  String get familyNoMedicines => 'مفيش أدوية متسجلة.';
+
+  @override
+  String get familySpendingLast30 => 'المصروف آخر ٣٠ يوم';
+
+  @override
+  String get familyTasksAndAppointments => 'المهام والمواعيد';
+
+  @override
+  String get familyNoOpenTasks => 'مفيش مهام مفتوحة';
+
+  @override
+  String familyOpenTasksStill(int count) {
+    return '$count مهام لسه مفتوحة';
+  }
+
+  @override
+  String get familyReportLoading => 'بجيب…';
+
+  @override
+  String familyReportMissedSuffix(int count) {
+    return ' — $count فاتت';
+  }
+
+  @override
+  String get familyReportNoDosesToday => 'مفيش جرعات النهارده';
+
+  @override
+  String familyReportDoses(int taken, int total, String late) {
+    return 'جرعات: $taken من $total$late';
+  }
+
+  @override
+  String familyReportSpent30(String amount) {
+    return 'صرف ٣٠ يوم: $amount';
+  }
+
+  @override
+  String familyReportOpenTasks(int count) {
+    return '$count مهام مفتوحة';
+  }
+
+  @override
+  String familyZoneInside(String place) {
+    return 'جوه $place';
+  }
+
+  @override
+  String familyZoneLeft(String place) {
+    return 'خرج من $place';
+  }
+
+  @override
+  String familyZoneUnknown(String place) {
+    return '$place: لسه';
+  }
+
+  @override
+  String get familyReportNothingShared => 'لسه ماوافقش على أي متابعة';
+
+  @override
+  String familyReportNotShared(String scopes) {
+    return 'مش متشارك: $scopes';
+  }
+
+  @override
+  String get familyListSeparator => '، ';
+
+  @override
+  String get familyReportHint =>
+      'اللي كل فرد وافق يشاركه بس — والباقي بيبان بعد موافقته.';
+
+  @override
+  String get familyReportNoMembers =>
+      'لسه محدش انضم للعيلة. ابعت كود الدعوة من «عيلتي».';
+
+  @override
+  String get familyMemberFallback => 'فرد من العيلة';
+
+  @override
+  String familyWeekday(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      'd0': 'الأحد',
+      'd1': 'الاتنين',
+      'd2': 'التلات',
+      'd3': 'الأربع',
+      'd4': 'الخميس',
+      'd5': 'الجمعة',
+      'd6': 'السبت',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get familyZoneNoMoves => 'لسه مفيش دخول ولا خروج';
+
+  @override
+  String familyZoneInsideSince(String day, String time) {
+    return 'جوه من $day$time';
+  }
+
+  @override
+  String familyZoneLeftAt(String day, String time) {
+    return 'خرج $day$time';
+  }
+
+  @override
+  String familyZoneSaved(String place) {
+    return 'اتحفظ «$place» — هيوصله إشعار بيه.';
+  }
+
+  @override
+  String get familyZoneSaveFailed => 'مقدرتش أحفظ النطاق. جرّب تاني.';
+
+  @override
+  String familyZoneRemoved(String place) {
+    return 'اتشال «$place».';
+  }
+
+  @override
+  String get familyZoneRemoveFailed => 'مقدرتش أشيله. جرّب تاني.';
+
+  @override
+  String get familyPlaces => 'الأماكن';
+
+  @override
+  String get familyNoZones =>
+      'لسه مفيش نطاقات. وانت في المدرسة نفسها، دوس «ضيف نطاق».';
+
+  @override
+  String get familyRemoveZone => 'شيل النطاق';
+
+  @override
+  String get familyAddZone => 'ضيف نطاق';
+
+  @override
+  String get familyZoneSchool => 'مدرسة';
+
+  @override
+  String get familyZoneClub => 'نادي';
+
+  @override
+  String get familyZoneHome => 'البيت';
+
+  @override
+  String get familyZoneOther => 'مكان تاني';
+
+  @override
+  String get familyLocationFailed =>
+      'مقدرتش أعرف مكانك. شغّل الموقع وجرّب تاني.';
+
+  @override
+  String get familyNewZone => 'نطاق جديد';
+
+  @override
+  String get familyNewZoneHint =>
+      'هيوصلك تنبيه لو خرج منه في الأيام والساعات دي. برّاها بيتسجل من غير تنبيه.';
+
+  @override
+  String get familyZoneNameLabel => 'اسمه';
+
+  @override
+  String get familyZoneNameHint => 'مدرسة النيل';
+
+  @override
+  String get familyUseMyLocation => 'استخدم المكان اللي أنا فيه دلوقتي';
+
+  @override
+  String get familyLocationSet => 'اتحدد المكان ✓ — دوس تاني لو اتحركت';
+
+  @override
+  String get familyBeThere => 'لازم تكون في المكان نفسه وانت بتحدده.';
+
+  @override
+  String get familyZoneRadius => 'قد إيه حواليه';
+
+  @override
+  String familyMeters(int meters) {
+    return '$meters م';
+  }
+
+  @override
+  String get familyAlertDays => 'أيام التنبيه';
+
+  @override
+  String get familyAlertHours => 'ساعات التنبيه';
+
+  @override
+  String familyFromTime(String time) {
+    return 'من $time';
+  }
+
+  @override
+  String familyToTime(String time) {
+    return 'لحد $time';
+  }
+
+  @override
+  String get familyHoursOrder => 'ساعة البداية لازم تبقى قبل النهاية.';
+
+  @override
+  String get familySaveZone => 'احفظ النطاق';
+
+  @override
+  String get familyChatReadingDisclosure =>
+      'زاد هيقرا رسايلك انت بس في شات العيلة — مش رسايل حد تاني ماوافقش — عشان يفهم طلبات البيت زي «محتاجين عيش» ويرد لو حد من العيلة سأله عن اللي اتقال. الرسايل بتتبعت لموديل ذكاء اصطناعي (Google Gemini) عشان تتفهم. العيلة كلها هتشوف إنك موافق، وتقدر توقف في أي وقت من هنا.';
+
+  @override
+  String get familyChatReadingTitle => 'زاد يقرا رسايلك؟';
+
+  @override
+  String get familyAgreeShort => 'موافق';
+
+  @override
+  String get familyChatReadingOn => 'تمام — زاد هيقرا رسايلك.';
+
+  @override
+  String get familyChatReadingOff => 'وقفت — زاد مش هيقرا رسايلك.';
+
+  @override
+  String get familyChatReadingNone => 'زاد مش بيقرا رسايل الشات';
+
+  @override
+  String familyChatReadingWho(String names) {
+    return 'زاد بيقرا رسايل: $names';
+  }
+
+  @override
+  String get familyChatReadingStopMine => 'وقّف لرسايلي';
+
+  @override
+  String get familyChatReadingAllowMine => 'خلّيه يقرا رسايلي';
 }

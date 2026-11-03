@@ -1891,5 +1891,729 @@
   "appointmentGuardKeep": "احفظه برضه",
   "qtyLeftLittle": "فاضل قليل",
   "qtyLeftHalf": "فاضل نصه",
-  "qtyLeftMost": "فاضل كتير"
+  "qtyLeftMost": "فاضل كتير",
+  "familyTitle": "العيلة",
+  "familyLoadingTitle": "بنشوف عيلتك",
+  "familyLoadingMessage": "أول مرة محتاجة نت. اسحب لتحت لو طوّلت.",
+  "familyRetry": "جرّب تاني",
+  "familyWelcomeTitle": "أهلاً بك في عائلة زاد",
+  "familyWelcomeBody": "يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.",
+  "familyCreateAsAdmin": "إنشاء عائلة جديدة كمدير (Admin)",
+  "familyJoin": "الانضمام للعائلة",
+  "familyOr": "أو",
+  "familyAliasLabel": "اسمك في العيلة (اختياري)",
+  "familyAliasHint": "مثال: الابن أحمد",
+  "familyInviteCodeLabel": "كود الدعوة",
+  "familyInviteCodeHint": "مثال: ZAD-1234",
+  "familyTabChat": "الشات",
+  "familyTabTasks": "المهام",
+  "familyTabMembers": "الأعضاء",
+  "familyTabGroceries": "البقالة",
+  "familyTabKids": "الأبناء",
+  "familyTabGoals": "الأهداف",
+  "familyHeaderTitle": "عائلة {code}",
+  "@familyHeaderTitle": {
+    "description": "Family header: the family's invite code is its name.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "familyMemberCount": "{count, plural, other{{count} أفراد}}",
+  "@familyMemberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familySosTooltip": "الرجاء الانتباه، حالة طوارئ!",
+  "familyInviteNew": "دعوة أفراد جدد",
+  "familyShareInvite": "مشاركة الدعوة",
+  "familyShareInviteText": "🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n📲 اضغط على الرابط التالي للانضمام فوراً وفتح التطبيق:\nhttps://zad.app/invite?code={code}\n\n🔑 كود الدعوة المباشر:\n{code}\n\n🔗 رابط التطبيق المباشر:\n{link}",
+  "@familyShareInviteText": {
+    "description": "Shared to another app from the family header.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "familySosConfirmTitle": "تأكيد نداء الطوارئ",
+  "familySosConfirmBody": "هيتبعت تنبيه فوري لكل أفراد العائلة إنك محتاج مساعدة. متأكد؟",
+  "familySosSend": "أرسل النداء",
+  "familyInviteShareText": "انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: {code}\nأو افتح الرابط: {link}",
+  "@familyInviteShareText": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "familyInviteShareQr": "انضم إلى عائلتي في تطبيق زاد! امسح الرمز: {link}",
+  "@familyInviteShareQr": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "familyInviteShareLink": "انضم إلى عائلتي في تطبيق زاد!\nرابط الدعوة: {link}",
+  "@familyInviteShareLink": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "familyInviteShareCode": "انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: {code}",
+  "@familyInviteShareCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "familyInviteMethodLink": "رابط",
+  "familyInviteMethodCode": "كود",
+  "familyInviteMethodWhatsapp": "واتساب",
+  "familyInviteScanToJoin": "مسح الرمز للانضمام:",
+  "familyInviteLinkLabel": "رابط الدعوة:",
+  "familyCopy": "انسخ",
+  "familyInviteCodeColon": "كود الدعوة:",
+  "familyInviteShareWhatsapp": "شارك عبر واتساب:",
+  "familyInviteAllApps": "جميع التطبيقات",
+  "familyShare": "مشاركة",
+  "familyPasteInvite": "الصق رابط أو كود الدعوة",
+  "familyAddTaskTitle": "إضافة مهمة جديدة",
+  "familyTaskNameLabel": "اسم المهمة",
+  "familyTaskNameHint": "مثال: ترتيب الغرفة",
+  "familyReward": "المكافأة",
+  "familyRewardIn": "المكافأة ({currency})",
+  "@familyRewardIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAssignee": "المكلف بالمهمة:",
+  "familyDueDateOptional": "تاريخ التسليم (اختياري)",
+  "familyQuickGroceryTitle": "نزّلها في التسوق",
+  "familyQuickGroceryHint": "مثلاً: حليب",
+  "familyMoneyRequestTitle": "طلب مصروف أو مشتريات",
+  "familyMoneyRequestWhat": "ماذا تريد أن تشتري؟",
+  "familyMoneyRequestAmount": "المبلغ المطلوب",
+  "familyMoneyRequestAmountIn": "المبلغ المطلوب ({currency})",
+  "@familyMoneyRequestAmountIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "familyMoneyRequestSend": "إرسال الطلب",
+  "familySpendLimitTitle": "حد الإنفاق",
+  "familySpendLimitBody": "حدد أقصى مبلغ يقدر {name} يصرفه يومياً/أسبوعياً. اتركه فارغاً لإلغاء الحد.",
+  "@familySpendLimitBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyDailyLimitIn": "الحد اليومي ({currency})",
+  "@familyDailyLimitIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "familyWeeklyLimitIn": "الحد الأسبوعي ({currency})",
+  "@familyWeeklyLimitIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPollClosesTomorrow": "بكرة",
+  "familyPollClosesTwoDays": "بعد يومين",
+  "familyPollClosesWeek": "بعد أسبوع",
+  "familyPollClosesByHand": "أنا أقفله",
+  "familyPollTitle": "تصويت عائلي",
+  "familyPollQuestion": "السؤال",
+  "familyPollOption": "خيار {n}",
+  "@familyPollOption": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "familyPollAddOption": "+ إضافة خيار",
+  "familyPollClosesWhen": "يتقفل إمتى؟",
+  "familyPollSend": "إرسال التصويت",
+  "familyTasksHeading": "المهام العائلية",
+  "familyTasksDoneOf": "{done}/{total} منجزة",
+  "@familyTasksDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "familyFilterAll": "الكل",
+  "familyFilterPending": "قادمة",
+  "familyFilterDone": "منجزة",
+  "familyNoTasksTitle": "لا توجد مهام",
+  "familyNoTasksMessage": "ضيف مهمة عشان أفراد العائلة يشاركوا فيها",
+  "familyMembersHeading": "أفراد العائلة",
+  "familyMembersHint": "اضغط على أي عضو لتفاصيل إنجازاته",
+  "familyReport": "تقرير العيلة",
+  "familyDeleteAndRecreate": "حذف العائلة وإعادة الإنشاء",
+  "familyLeave": "مغادرة العائلة",
+  "familyDeleteForeverTitle": "حذف العائلة نهائياً",
+  "familyLeaveConfirmTitle": "تأكيد المغادرة",
+  "familyDeleteForeverBody": "إنت آخر فرد في العائلة دي. حذفها هيمسح الشات والمهام وكل البيانات نهائياً ومينفعش ترجعها، وتقدر تنشئ عائلة جديدة بعد كده.",
+  "familyLeaveConfirmBody": "هتفقد الوصول لشات العائلة والمهام والأرصدة المشتركة. متأكد إنك عايز تغادر العائلة؟",
+  "familyDeleteForever": "حذف نهائي",
+  "familyLeaveShort": "مغادرة",
+  "familyTasksCount": "{count, plural, other{{count} مهام}}",
+  "@familyTasksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyTasbihaCount": "{count, plural, other{{count} تسبيحة}}",
+  "@familyTasbihaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familySavingsGoal": "هدف التوفير",
+  "familyRoleAdminShort": "مدير",
+  "familyRoleChild": "ابن/ابنة",
+  "familyRoleAdminLong": "مدير العائلة",
+  "familyRoleMember": "عضو",
+  "familyBalance": "الرصيد",
+  "familyGoal": "الهدف",
+  "familyTrees": "الأشجار",
+  "familyDoneTasksTitle": "المهام المنجزة ({count})",
+  "@familyDoneTasksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyNoDoneTasks": "لا توجد مهام منجزة بعد",
+  "familyUpcomingTasksTitle": "المهام القادمة ({count})",
+  "@familyUpcomingTasksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyNoUpcomingTasks": "لا توجد مهام قادمة",
+  "familyTreesTitle": "أشجار التسبيحة ({count})",
+  "@familyTreesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyDaily": "اليومي",
+  "familyWeekly": "الأسبوعي",
+  "familyRoleInFamily": "الدور في العيلة",
+  "familyRemoveMemberTitle": "تشيل {name} من العيلة؟",
+  "@familyRemoveMemberTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyRemoveMemberShort": "شيله",
+  "familyRemoveMember": "شيله من العيلة",
+  "familyRewardAmount": "مكافأة: {amount}",
+  "@familyRewardAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "familyNoLimit": "بدون حد",
+  "familyGroceriesHeading": "البقالة المشتركة",
+  "familyGroceriesHint": "قائمة المشتريات التي تمت إضافتها من قبل أفراد العائلة أو اقترحها زاد.",
+  "familyNoGroceriesTitle": "لا توجد طلبات بقالة حالياً.",
+  "familyNoGroceriesMessage": "اكتب في الشات \"أضف حليب\" أو دوس + فوق.",
+  "familyKidsHeading": "مصاريف الأبناء",
+  "familyKidsHint": "نظرة عامة على أرصدة وطلبات الأبناء",
+  "familyNoKidsTitle": "لا يوجد أبناء مسجلين بعد",
+  "familyNoKidsMessage": "من تاب الأعضاء خلّي أي فرد \"طفل\".",
+  "familyPauseTitle": "وقفة تفكير ٢٤ ساعة",
+  "familyPauseBody": "طلب الشرا مايتوافقش عليه قبل يوم من ما اتبعت. الرفض في أي وقت، وطلب المصروف مش متأثر.",
+  "familyAllowanceFor": "مصروف لـ{name}",
+  "@familyAllowanceFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAmountIn": "المبلغ ({currency})",
+  "@familyAmountIn": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAllowanceHelper": "بيتضاف لرصيده على طول",
+  "familyTransfer": "حوّل",
+  "familyBalanceIs": "الرصيد: {amount}",
+  "@familyBalanceIs": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "familyGoalIs": "الهدف: {amount}",
+  "@familyGoalIs": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "familyKidTasksDoneOf": "{done}/{total} مهام",
+  "@familyKidTasksDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "familySendAllowance": "حوّل مصروف",
+  "familyMonthlySpending": "المصروف الشهري",
+  "familyPendingRequests": "الطلبات المعلقة ({count})",
+  "@familyPendingRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyApprove": "موافقة",
+  "familyReject": "رفض",
+  "familyBudgetRewardsHeading": "الميزانية والمكافآت",
+  "familySavingsGoalTitle": "هدف الادخار العائلي",
+  "familyNoSavingsGoal": "لسه مفيش هدف ادخار للشهر ده",
+  "familySuggestGoal": "اقترح هدف بالذكاء الاصطناعي",
+  "familyNoKidsStatsTitle": "لا يوجد أبناء مضافين لعرض إحصائياتهم.",
+  "familyKidsBalanceStats": "إحصائيات أرصدة الأبناء",
+  "familyTotalRewardsPaid": "إجمالي المكافآت المدفوعة",
+  "familyGoalSuggestionBody": "الهدف: {amount} خلال {days} يوم",
+  "@familyGoalSuggestionBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "familyApproveGoal": "اعتماد الهدف",
+  "familyChatEmptyTitle": "لا توجد رسائل بعد",
+  "familyChatEmptyMessage": "ابدأ المحادثة بإرسال أول رسالة لعائلتك",
+  "familyChatAddTasks": "أضف مهام",
+  "familyChatAskGroceries": "اطلب بقالة",
+  "familyChatAskZad": "استشر @Zad",
+  "familyZadName": "زاد",
+  "@familyZadName": {
+    "description": "Zad's name over a poll it sent."
+  },
+  "familyVoiceMessage": "رسالة صوتية",
+  "familyUnpin": "إلغاء التثبيت",
+  "familyPin": "تثبيت",
+  "familyReact": "تفاعل",
+  "familySosFrom": "نداء طوارئ من {name}!",
+  "@familySosFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPurchaseRequestFrom": "طلب شراء من {name}",
+  "@familyPurchaseRequestFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyApproveAndDeduct": "موافقة وخصم",
+  "familyApproved": "تمت الموافقة",
+  "familyRejected": "مرفوض",
+  "familyPollFrom": "تصويت من {name}",
+  "@familyPollFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPollTimeCloses": "{time} · بيقفل {when}",
+  "@familyPollTimeCloses": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPollClose": "اقفل التصويت",
+  "familyPollClosedNoVotes": "اتقفل من غير أصوات",
+  "familyPollClosedTie": "اتقفل بتعادل — القرار لكم",
+  "familyPollAdultsAgreed": "الكبار كلهم اتفقوا على «{option}» ✅",
+  "@familyPollAdultsAgreed": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPollMajority": "الأغلبية اختارت «{option}»",
+  "@familyPollMajority": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "familyClosesWithinHour": "خلال ساعة",
+  "familyClosesInHours": "بعد {hours} ساعة",
+  "@familyClosesInHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "familyClosesTomorrow": "بكرة",
+  "familyClosesInDays": "بعد {days} أيام",
+  "@familyClosesInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "familyQuickReplies": "ردود سريعة",
+  "familySosShort": "نداء طوارئ",
+  "familyAskMoney": "طلب مصروف",
+  "familyPollShort": "تصويت",
+  "familyChatHint": "اكتب رسالة أو @Zad...",
+  "familySend": "إرسال",
+  "familySomeoneInFamily": "حد من العيلة",
+  "familyLocationDisclosure": "زاد هيعرف لما تدخل أو تخرج من الأماكن اللي {asker} يحددها (زي المدرسة) — حتى والتطبيق مقفول — ويقوله لو خرجت في المواعيد اللي حددها. مش هيتبعت مكانك طول الوقت ولا خط سيرك. هيفضل فيه إشعار ظاهر طول ما المشاركة شغالة، وتقدر توقفها من «عيلتي» في أي وقت. في الخطوة الجاية اختار «السماح طول الوقت».",
+  "@familyLocationDisclosure": {
+    "description": "Google Play's prominent disclosure for background location, read by the child before agreeing.",
+    "placeholders": {
+      "asker": {
+        "type": "String"
+      }
+    }
+  },
+  "familyServerUnreachable": "مقدرتش أوصل للسيرفر. جرّب تاني.",
+  "familyShareComingGoingTitle": "مشاركة دخولك وخروجك",
+  "familyNotNow": "مش دلوقتي",
+  "familyAgreeContinue": "موافق، كمّل",
+  "familyAcceptedNeedAlways": "وافقت، بس محتاج «السماح طول الوقت» للموقع عشان يشتغل والتطبيق مقفول.",
+  "familyAcceptedZones": "وافقت — هيشتغل على الأماكن اللي هيحددها.",
+  "familyAcceptedOffline": "وافقت. هكمّل لما النت يرجع.",
+  "familyFollowRequests": "طلبات متابعة",
+  "familyFollowRequestsHint": "محدش بيشوف حاجة غير بموافقتك، وتقدر تلغي في أي وقت.",
+  "familyDeclinedFollow": "تمام، مش هيشوفها.",
+  "familyNo": "لأ",
+  "familyAcceptedScope": "وافقت — يقدر يتابع {scope}.",
+  "@familyAcceptedScope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAgree": "وافق",
+  "familyWhoFollowsYou": "مين بيتابعك",
+  "familyFollowStopped": "اتلغت المتابعة.",
+  "familyFollowRequestSent": "اتبعت الطلب — هيظهرلك لما يوافق.",
+  "familyFollowRequestFailed": "مقدرتش أبعت الطلب. جرّب تاني.",
+  "familyFollowing": "المتابعة",
+  "familyFollowLoadFailed": "مقدرتش أجيب المتابعة دلوقتي.",
+  "familyFollowLoading": "بجيب اللي متشارك…",
+  "familyScopeStatus": "{scope}: {status}",
+  "@familyScopeStatus": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShareNotAsked": "مش متطلبة",
+  "familySharePending": "مستني موافقته",
+  "familyShareGranted": "وافق ✅",
+  "familyShareDeclined": "رفض",
+  "familyShareRevoked": "اتلغت",
+  "familyAskToFollow": "اطلب متابعة",
+  "familyWhatToFollow": "عايز تتابع إيه؟",
+  "familyWhatToFollowHint": "هيوصله طلب ويختار هو. مفيش حاجة هتبان قبل موافقته.",
+  "familySendRequest": "ابعت الطلب",
+  "familyDoseMissed": "❌ فاتت",
+  "familyDoseDue": "⏰ وقتها",
+  "familyDoseNoTimes": "{name}: من غير مواعيد",
+  "@familyDoseNoTimes": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyMedicinesToday": "الأدوية النهارده",
+  "familyNoMedicines": "مفيش أدوية متسجلة.",
+  "familySpendingLast30": "المصروف آخر ٣٠ يوم",
+  "familyTasksAndAppointments": "المهام والمواعيد",
+  "familyNoOpenTasks": "مفيش مهام مفتوحة",
+  "familyOpenTasksStill": "{count} مهام لسه مفتوحة",
+  "@familyOpenTasksStill": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyReportLoading": "بجيب…",
+  "familyReportMissedSuffix": " — {count} فاتت",
+  "@familyReportMissedSuffix": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyReportNoDosesToday": "مفيش جرعات النهارده",
+  "familyReportDoses": "جرعات: {taken} من {total}{late}",
+  "@familyReportDoses": {
+    "placeholders": {
+      "taken": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "late": {
+        "type": "String"
+      }
+    }
+  },
+  "familyReportSpent30": "صرف ٣٠ يوم: {amount}",
+  "@familyReportSpent30": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "familyReportOpenTasks": "{count} مهام مفتوحة",
+  "@familyReportOpenTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "familyZoneInside": "جوه {place}",
+  "@familyZoneInside": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneLeft": "خرج من {place}",
+  "@familyZoneLeft": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneUnknown": "{place}: لسه",
+  "@familyZoneUnknown": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "familyReportNothingShared": "لسه ماوافقش على أي متابعة",
+  "familyReportNotShared": "مش متشارك: {scopes}",
+  "@familyReportNotShared": {
+    "placeholders": {
+      "scopes": {
+        "type": "String"
+      }
+    }
+  },
+  "familyListSeparator": "، ",
+  "@familyListSeparator": {
+    "description": "Joins names or items in one line."
+  },
+  "familyReportHint": "اللي كل فرد وافق يشاركه بس — والباقي بيبان بعد موافقته.",
+  "familyReportNoMembers": "لسه محدش انضم للعيلة. ابعت كود الدعوة من «عيلتي».",
+  "familyMemberFallback": "فرد من العيلة",
+  "familyWeekday": "{day, select, d0{الأحد} d1{الاتنين} d2{التلات} d3{الأربع} d4{الخميس} d5{الجمعة} d6{السبت} other{}}",
+  "@familyWeekday": {
+    "description": "Weekday by d + its number, Sunday = d0.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneNoMoves": "لسه مفيش دخول ولا خروج",
+  "familyZoneInsideSince": "جوه من {day}{time}",
+  "@familyZoneInsideSince": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneLeftAt": "خرج {day}{time}",
+  "@familyZoneLeftAt": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneSaved": "اتحفظ «{place}» — هيوصله إشعار بيه.",
+  "@familyZoneSaved": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneSaveFailed": "مقدرتش أحفظ النطاق. جرّب تاني.",
+  "familyZoneRemoved": "اتشال «{place}».",
+  "@familyZoneRemoved": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "familyZoneRemoveFailed": "مقدرتش أشيله. جرّب تاني.",
+  "familyPlaces": "الأماكن",
+  "familyNoZones": "لسه مفيش نطاقات. وانت في المدرسة نفسها، دوس «ضيف نطاق».",
+  "familyRemoveZone": "شيل النطاق",
+  "familyAddZone": "ضيف نطاق",
+  "familyZoneSchool": "مدرسة",
+  "familyZoneClub": "نادي",
+  "familyZoneHome": "البيت",
+  "familyZoneOther": "مكان تاني",
+  "familyLocationFailed": "مقدرتش أعرف مكانك. شغّل الموقع وجرّب تاني.",
+  "familyNewZone": "نطاق جديد",
+  "familyNewZoneHint": "هيوصلك تنبيه لو خرج منه في الأيام والساعات دي. برّاها بيتسجل من غير تنبيه.",
+  "familyZoneNameLabel": "اسمه",
+  "familyZoneNameHint": "مدرسة النيل",
+  "familyUseMyLocation": "استخدم المكان اللي أنا فيه دلوقتي",
+  "familyLocationSet": "اتحدد المكان ✓ — دوس تاني لو اتحركت",
+  "familyBeThere": "لازم تكون في المكان نفسه وانت بتحدده.",
+  "familyZoneRadius": "قد إيه حواليه",
+  "familyMeters": "{meters} م",
+  "@familyMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "familyAlertDays": "أيام التنبيه",
+  "familyAlertHours": "ساعات التنبيه",
+  "familyFromTime": "من {time}",
+  "@familyFromTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "familyToTime": "لحد {time}",
+  "@familyToTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "familyHoursOrder": "ساعة البداية لازم تبقى قبل النهاية.",
+  "familySaveZone": "احفظ النطاق",
+  "familyChatReadingDisclosure": "زاد هيقرا رسايلك انت بس في شات العيلة — مش رسايل حد تاني ماوافقش — عشان يفهم طلبات البيت زي «محتاجين عيش» ويرد لو حد من العيلة سأله عن اللي اتقال. الرسايل بتتبعت لموديل ذكاء اصطناعي (Google Gemini) عشان تتفهم. العيلة كلها هتشوف إنك موافق، وتقدر توقف في أي وقت من هنا.",
+  "@familyChatReadingDisclosure": {
+    "description": "Disclosure before Zad reads the writer's family-chat messages."
+  },
+  "familyChatReadingTitle": "زاد يقرا رسايلك؟",
+  "familyAgreeShort": "موافق",
+  "familyChatReadingOn": "تمام — زاد هيقرا رسايلك.",
+  "familyChatReadingOff": "وقفت — زاد مش هيقرا رسايلك.",
+  "familyChatReadingNone": "زاد مش بيقرا رسايل الشات",
+  "familyChatReadingWho": "زاد بيقرا رسايل: {names}",
+  "@familyChatReadingWho": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "familyChatReadingStopMine": "وقّف لرسايلي",
+  "familyChatReadingAllowMine": "خلّيه يقرا رسايلي"
 }

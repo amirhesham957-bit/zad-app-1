@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
@@ -108,15 +109,15 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
               ? Center(
                   child: ZadEmptyState(
                     icon: ZadIcons.ask,
-                    title: 'لا توجد رسائل بعد',
-                    message: 'ابدأ المحادثة بإرسال أول رسالة لعائلتك',
+                    title: context.l10n.familyChatEmptyTitle,
+                    message: context.l10n.familyChatEmptyMessage,
                     action: Wrap(
                       spacing: ZadSpacing.sm,
                       alignment: WrapAlignment.center,
                       children: <Widget>[
                         ActionChip(
                           avatar: const Icon(ZadIcons.chore, size: 16),
-                          label: const Text('أضف مهام'),
+                          label: Text(context.l10n.familyChatAddTasks),
                           onPressed: () => unawaited(
                             showQuickTaskDialog(
                               context,
@@ -128,13 +129,13 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
                         ),
                         ActionChip(
                           avatar: const Icon(ZadIcons.shopping, size: 16),
-                          label: const Text('اطلب بقالة'),
+                          label: Text(context.l10n.familyChatAskGroceries),
                           onPressed: () =>
                               unawaited(showQuickGroceryDialog(context, ref)),
                         ),
                         ActionChip(
                           avatar: const Icon(ZadIcons.assistant, size: 16),
-                          label: const Text('استشر @Zad'),
+                          label: Text(context.l10n.familyChatAskZad),
                           onPressed: () => setState(() {
                             _text.text = '@Zad ';
                             _text.selection = TextSelection.collapsed(
@@ -214,9 +215,9 @@ class _DateChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = DateTime(now.year, now.month, now.day);
     final label = day == today
-        ? 'اليوم'
+        ? context.l10n.dayToday
         : day == today.subtract(const Duration(days: 1))
-        ? 'أمس'
+        ? context.l10n.dayYesterday
         : '${day.year}/${day.month.toString().padLeft(2, '0')}/'
               '${day.day.toString().padLeft(2, '0')}';
     return Padding(
@@ -280,7 +281,7 @@ class _MessageRow extends ConsumerWidget {
       ),
       FamilyMessageType.poll => _PollBubble(
         message: message,
-        alias: isAi ? 'زاد' : alias,
+        alias: isAi ? context.l10n.familyZadName : alias,
         myId: me.id,
         canClose: isMe || me.role == FamilyRole.admin,
       ),
@@ -459,7 +460,7 @@ class _TextBubble extends ConsumerWidget {
                       Icon(ZadIcons.play, size: 20, color: fg),
                       const SizedBox(width: ZadSpacing.sm),
                       Text(
-                        'رسالة صوتية',
+                        context.l10n.familyVoiceMessage,
                         style: ZadType.bodySmall.copyWith(color: fg),
                       ),
                     ],
@@ -493,7 +494,9 @@ class _TextBubble extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               IconButton(
-                tooltip: message.isPinned ? 'إلغاء التثبيت' : 'تثبيت',
+                tooltip: message.isPinned
+                    ? context.l10n.familyUnpin
+                    : context.l10n.familyPin,
                 visualDensity: VisualDensity.compact,
                 onPressed: () => unawaited(controller.togglePin(message)),
                 icon: Icon(
@@ -505,7 +508,7 @@ class _TextBubble extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'تفاعل',
+                tooltip: context.l10n.familyReact,
                 visualDensity: VisualDensity.compact,
                 onPressed: onTogglePicker,
                 icon: Icon(
@@ -573,7 +576,7 @@ class _SosBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'نداء طوارئ من $alias!',
+                  context.l10n.familySosFrom(alias),
                   style: ZadType.titleSmall.copyWith(
                     color: ZadColors.terracottaRust,
                   ),
@@ -628,7 +631,7 @@ class _RequestBubble extends ConsumerWidget {
                 const SizedBox(width: ZadSpacing.sm),
                 Expanded(
                   child: Text(
-                    'طلب شراء من $alias',
+                    context.l10n.familyPurchaseRequestFrom(alias),
                     style: ZadType.titleSmall.copyWith(
                       color: ZadColors.green700,
                     ),
@@ -648,7 +651,7 @@ class _RequestBubble extends ConsumerWidget {
                       unawaited(HapticFeedback.heavyImpact());
                       unawaited(controller.decide(message, approve: true));
                     },
-                    child: const Text('موافقة وخصم'),
+                    child: Text(context.l10n.familyApproveAndDeduct),
                   ),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
@@ -658,22 +661,22 @@ class _RequestBubble extends ConsumerWidget {
                       unawaited(HapticFeedback.selectionClick());
                       unawaited(controller.decide(message, approve: false));
                     },
-                    child: const Text('رفض'),
+                    child: Text(context.l10n.familyReject),
                   ),
                 ],
               ),
             ] else if (status == RequestStatus.approved) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
-              const _Status(
+              _Status(
                 icon: ZadIcons.selected,
-                text: 'تمت الموافقة',
+                text: context.l10n.familyApproved,
                 color: ZadColors.green700,
               ),
             ] else if (status == RequestStatus.rejected) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
               _Status(
                 icon: ZadIcons.rejected,
-                text: 'مرفوض',
+                text: context.l10n.familyRejected,
                 color: ZadColors.terracottaRust,
               ),
             ],
@@ -749,7 +752,7 @@ class _PollBubble extends ConsumerWidget {
                 Icon(ZadIcons.poll, color: ZadColors.mustardOchre),
                 const SizedBox(width: ZadSpacing.sm),
                 Text(
-                  'تصويت من $alias',
+                  context.l10n.familyPollFrom(alias),
                   style: ZadType.titleSmall.copyWith(
                     color: ZadColors.mustardOchre,
                   ),
@@ -830,7 +833,7 @@ class _PollBubble extends ConsumerWidget {
             if (closed) ...<Widget>[
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                _pollOutcome(message, winner, options),
+                _pollOutcome(context.l10n, message, winner, options),
                 style: ZadType.labelMedium.copyWith(
                   color: ZadColors.mustardOchre,
                 ),
@@ -842,8 +845,14 @@ class _PollBubble extends ConsumerWidget {
                   child: Text(
                     closed || closesAt == null
                         ? _time(message.createdAt)
-                        : '${_time(message.createdAt)} · بيقفل '
-                              '${_closesIn(closesAt, ref.read(nowProvider)())}',
+                        : context.l10n.familyPollTimeCloses(
+                            _time(message.createdAt),
+                            _closesIn(
+                              context.l10n,
+                              closesAt,
+                              ref.read(nowProvider)(),
+                            ),
+                          ),
                     style: ZadType.labelSmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -859,7 +868,7 @@ class _PollBubble extends ConsumerWidget {
                           .read(familyLifeControllerProvider.notifier)
                           .closePoll(message),
                     ),
-                    child: const Text('اقفل التصويت'),
+                    child: Text(context.l10n.familyPollClose),
                   ),
               ],
             ),
@@ -872,23 +881,28 @@ class _PollBubble extends ConsumerWidget {
 
 /// The closed poll's line: the winner and whether the adults agreed, a tie,
 /// or nobody voted.
-String _pollOutcome(FamilyMessage poll, int? winner, List<String> options) {
-  if (poll.pollVotes.isEmpty) return 'اتقفل من غير أصوات';
+String _pollOutcome(
+  ZadL10n l10n,
+  FamilyMessage poll,
+  int? winner,
+  List<String> options,
+) {
+  if (poll.pollVotes.isEmpty) return l10n.familyPollClosedNoVotes;
   if (winner == null || winner >= options.length) {
-    return 'اتقفل بتعادل — القرار لكم';
+    return l10n.familyPollClosedTie;
   }
   return poll.pollConsensus
-      ? 'الكبار كلهم اتفقوا على «${options[winner]}» ✅'
-      : 'الأغلبية اختارت «${options[winner]}»';
+      ? l10n.familyPollAdultsAgreed(options[winner])
+      : l10n.familyPollMajority(options[winner]);
 }
 
 /// How long until the poll closes, roughly.
-String _closesIn(DateTime closesAt, DateTime now) {
+String _closesIn(ZadL10n l10n, DateTime closesAt, DateTime now) {
   final left = closesAt.difference(now);
-  if (left.inMinutes < 60) return 'خلال ساعة';
-  if (left.inHours < 24) return 'بعد ${left.inHours} ساعة';
+  if (left.inMinutes < 60) return l10n.familyClosesWithinHour;
+  if (left.inHours < 24) return l10n.familyClosesInHours(left.inHours);
   final days = (left.inHours / 24).round();
-  return days == 1 ? 'بكرة' : 'بعد $days أيام';
+  return days == 1 ? l10n.familyClosesTomorrow : l10n.familyClosesInDays(days);
 }
 
 class _Composer extends StatelessWidget {
@@ -959,7 +973,7 @@ class _Composer extends StatelessWidget {
                     child: Row(
                       children: <Widget>[
                         IconButton(
-                          tooltip: 'ردود سريعة',
+                          tooltip: context.l10n.familyQuickReplies,
                           onPressed: onToggleQuickReplies,
                           icon: const Icon(
                             ZadIcons.add,
@@ -967,7 +981,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'نداء طوارئ',
+                          tooltip: context.l10n.familySosShort,
                           onPressed: onSos,
                           icon: Icon(
                             ZadIcons.sos,
@@ -975,7 +989,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'طلب مصروف',
+                          tooltip: context.l10n.familyAskMoney,
                           onPressed: onRequest,
                           icon: const Icon(
                             ZadIcons.shopping,
@@ -983,7 +997,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'تصويت',
+                          tooltip: context.l10n.familyPollShort,
                           onPressed: onPoll,
                           icon: Icon(
                             ZadIcons.poll,
@@ -991,7 +1005,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'المهام',
+                          tooltip: context.l10n.familyTabTasks,
                           onPressed: onTask,
                           icon: const Icon(
                             ZadIcons.chore,
@@ -999,7 +1013,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'البقالة',
+                          tooltip: context.l10n.familyTabGroceries,
                           onPressed: onGrocery,
                           icon: Icon(
                             ZadIcons.inventory,
@@ -1029,8 +1043,8 @@ class _Composer extends StatelessWidget {
                             maxLines: 4,
                             textInputAction: TextInputAction.send,
                             onSubmitted: (_) => onSend(),
-                            decoration: const InputDecoration(
-                              hintText: 'اكتب رسالة أو @Zad...',
+                            decoration: InputDecoration(
+                              hintText: context.l10n.familyChatHint,
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
@@ -1040,7 +1054,7 @@ class _Composer extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          tooltip: 'إرسال',
+                          tooltip: context.l10n.familySend,
                           onPressed: onSend,
                           icon: const CircleAvatar(
                             radius: 18,

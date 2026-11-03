@@ -4548,6 +4548,1638 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'فاضل كتير'**
   String get qtyLeftMost;
+
+  /// No description provided for @familyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get familyTitle;
+
+  /// No description provided for @familyLoadingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنشوف عيلتك'**
+  String get familyLoadingTitle;
+
+  /// No description provided for @familyLoadingMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.'**
+  String get familyLoadingMessage;
+
+  /// No description provided for @familyRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get familyRetry;
+
+  /// No description provided for @familyWelcomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بك في عائلة زاد'**
+  String get familyWelcomeTitle;
+
+  /// No description provided for @familyWelcomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.'**
+  String get familyWelcomeBody;
+
+  /// No description provided for @familyCreateAsAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء عائلة جديدة كمدير (Admin)'**
+  String get familyCreateAsAdmin;
+
+  /// No description provided for @familyJoin.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانضمام للعائلة'**
+  String get familyJoin;
+
+  /// No description provided for @familyOr.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو'**
+  String get familyOr;
+
+  /// No description provided for @familyAliasLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك في العيلة (اختياري)'**
+  String get familyAliasLabel;
+
+  /// No description provided for @familyAliasHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: الابن أحمد'**
+  String get familyAliasHint;
+
+  /// No description provided for @familyInviteCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الدعوة'**
+  String get familyInviteCodeLabel;
+
+  /// No description provided for @familyInviteCodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ZAD-1234'**
+  String get familyInviteCodeHint;
+
+  /// No description provided for @familyTabChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get familyTabChat;
+
+  /// No description provided for @familyTabTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام'**
+  String get familyTabTasks;
+
+  /// No description provided for @familyTabMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء'**
+  String get familyTabMembers;
+
+  /// No description provided for @familyTabGroceries.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة'**
+  String get familyTabGroceries;
+
+  /// No description provided for @familyTabKids.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأبناء'**
+  String get familyTabKids;
+
+  /// No description provided for @familyTabGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get familyTabGoals;
+
+  /// Family header: the family's invite code is its name.
+  ///
+  /// In ar, this message translates to:
+  /// **'عائلة {code}'**
+  String familyHeaderTitle(String code);
+
+  /// No description provided for @familyMemberCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, other{{count} أفراد}}'**
+  String familyMemberCount(int count);
+
+  /// No description provided for @familySosTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرجاء الانتباه، حالة طوارئ!'**
+  String get familySosTooltip;
+
+  /// No description provided for @familyInviteNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوة أفراد جدد'**
+  String get familyInviteNew;
+
+  /// No description provided for @familyShareInvite.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الدعوة'**
+  String get familyShareInvite;
+
+  /// Shared to another app from the family header.
+  ///
+  /// In ar, this message translates to:
+  /// **'🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n📲 اضغط على الرابط التالي للانضمام فوراً وفتح التطبيق:\nhttps://zad.app/invite?code={code}\n\n🔑 كود الدعوة المباشر:\n{code}\n\n🔗 رابط التطبيق المباشر:\n{link}'**
+  String familyShareInviteText(String code, String link);
+
+  /// No description provided for @familySosConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد نداء الطوارئ'**
+  String get familySosConfirmTitle;
+
+  /// No description provided for @familySosConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتبعت تنبيه فوري لكل أفراد العائلة إنك محتاج مساعدة. متأكد؟'**
+  String get familySosConfirmBody;
+
+  /// No description provided for @familySosSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل النداء'**
+  String get familySosSend;
+
+  /// No description provided for @familyInviteShareText.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: {code}\nأو افتح الرابط: {link}'**
+  String familyInviteShareText(String code, String link);
+
+  /// No description provided for @familyInviteShareQr.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم إلى عائلتي في تطبيق زاد! امسح الرمز: {link}'**
+  String familyInviteShareQr(String link);
+
+  /// No description provided for @familyInviteShareLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم إلى عائلتي في تطبيق زاد!\nرابط الدعوة: {link}'**
+  String familyInviteShareLink(String link);
+
+  /// No description provided for @familyInviteShareCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: {code}'**
+  String familyInviteShareCode(String code);
+
+  /// No description provided for @familyInviteMethodLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط'**
+  String get familyInviteMethodLink;
+
+  /// No description provided for @familyInviteMethodCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود'**
+  String get familyInviteMethodCode;
+
+  /// No description provided for @familyInviteMethodWhatsapp.
+  ///
+  /// In ar, this message translates to:
+  /// **'واتساب'**
+  String get familyInviteMethodWhatsapp;
+
+  /// No description provided for @familyInviteScanToJoin.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الرمز للانضمام:'**
+  String get familyInviteScanToJoin;
+
+  /// No description provided for @familyInviteLinkLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط الدعوة:'**
+  String get familyInviteLinkLabel;
+
+  /// No description provided for @familyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ'**
+  String get familyCopy;
+
+  /// No description provided for @familyInviteCodeColon.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الدعوة:'**
+  String get familyInviteCodeColon;
+
+  /// No description provided for @familyInviteShareWhatsapp.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك عبر واتساب:'**
+  String get familyInviteShareWhatsapp;
+
+  /// No description provided for @familyInviteAllApps.
+  ///
+  /// In ar, this message translates to:
+  /// **'جميع التطبيقات'**
+  String get familyInviteAllApps;
+
+  /// No description provided for @familyShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get familyShare;
+
+  /// No description provided for @familyPasteInvite.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصق رابط أو كود الدعوة'**
+  String get familyPasteInvite;
+
+  /// No description provided for @familyAddTaskTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مهمة جديدة'**
+  String get familyAddTaskTitle;
+
+  /// No description provided for @familyTaskNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المهمة'**
+  String get familyTaskNameLabel;
+
+  /// No description provided for @familyTaskNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ترتيب الغرفة'**
+  String get familyTaskNameHint;
+
+  /// No description provided for @familyReward.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكافأة'**
+  String get familyReward;
+
+  /// No description provided for @familyRewardIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكافأة ({currency})'**
+  String familyRewardIn(String currency);
+
+  /// No description provided for @familyAssignee.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكلف بالمهمة:'**
+  String get familyAssignee;
+
+  /// No description provided for @familyDueDateOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ التسليم (اختياري)'**
+  String get familyDueDateOptional;
+
+  /// No description provided for @familyQuickGroceryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نزّلها في التسوق'**
+  String get familyQuickGroceryTitle;
+
+  /// No description provided for @familyQuickGroceryHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثلاً: حليب'**
+  String get familyQuickGroceryHint;
+
+  /// No description provided for @familyMoneyRequestTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب مصروف أو مشتريات'**
+  String get familyMoneyRequestTitle;
+
+  /// No description provided for @familyMoneyRequestWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماذا تريد أن تشتري؟'**
+  String get familyMoneyRequestWhat;
+
+  /// No description provided for @familyMoneyRequestAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المطلوب'**
+  String get familyMoneyRequestAmount;
+
+  /// No description provided for @familyMoneyRequestAmountIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المطلوب ({currency})'**
+  String familyMoneyRequestAmountIn(String currency);
+
+  /// No description provided for @familyMoneyRequestSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال الطلب'**
+  String get familyMoneyRequestSend;
+
+  /// No description provided for @familySpendLimitTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد الإنفاق'**
+  String get familySpendLimitTitle;
+
+  /// No description provided for @familySpendLimitBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد أقصى مبلغ يقدر {name} يصرفه يومياً/أسبوعياً. اتركه فارغاً لإلغاء الحد.'**
+  String familySpendLimitBody(String name);
+
+  /// No description provided for @familyDailyLimitIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد اليومي ({currency})'**
+  String familyDailyLimitIn(String currency);
+
+  /// No description provided for @familyWeeklyLimitIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأسبوعي ({currency})'**
+  String familyWeeklyLimitIn(String currency);
+
+  /// No description provided for @familyPollClosesTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكرة'**
+  String get familyPollClosesTomorrow;
+
+  /// No description provided for @familyPollClosesTwoDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد يومين'**
+  String get familyPollClosesTwoDays;
+
+  /// No description provided for @familyPollClosesWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد أسبوع'**
+  String get familyPollClosesWeek;
+
+  /// No description provided for @familyPollClosesByHand.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا أقفله'**
+  String get familyPollClosesByHand;
+
+  /// No description provided for @familyPollTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصويت عائلي'**
+  String get familyPollTitle;
+
+  /// No description provided for @familyPollQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال'**
+  String get familyPollQuestion;
+
+  /// No description provided for @familyPollOption.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيار {n}'**
+  String familyPollOption(int n);
+
+  /// No description provided for @familyPollAddOption.
+  ///
+  /// In ar, this message translates to:
+  /// **'+ إضافة خيار'**
+  String get familyPollAddOption;
+
+  /// No description provided for @familyPollClosesWhen.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتقفل إمتى؟'**
+  String get familyPollClosesWhen;
+
+  /// No description provided for @familyPollSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال التصويت'**
+  String get familyPollSend;
+
+  /// No description provided for @familyTasksHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام العائلية'**
+  String get familyTasksHeading;
+
+  /// No description provided for @familyTasksDoneOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done}/{total} منجزة'**
+  String familyTasksDoneOf(int done, int total);
+
+  /// No description provided for @familyFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get familyFilterAll;
+
+  /// No description provided for @familyFilterPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'قادمة'**
+  String get familyFilterPending;
+
+  /// No description provided for @familyFilterDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'منجزة'**
+  String get familyFilterDone;
+
+  /// No description provided for @familyNoTasksTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مهام'**
+  String get familyNoTasksTitle;
+
+  /// No description provided for @familyNoTasksMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف مهمة عشان أفراد العائلة يشاركوا فيها'**
+  String get familyNoTasksMessage;
+
+  /// No description provided for @familyMembersHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفراد العائلة'**
+  String get familyMembersHeading;
+
+  /// No description provided for @familyMembersHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط على أي عضو لتفاصيل إنجازاته'**
+  String get familyMembersHint;
+
+  /// No description provided for @familyReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير العيلة'**
+  String get familyReport;
+
+  /// No description provided for @familyDeleteAndRecreate.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف العائلة وإعادة الإنشاء'**
+  String get familyDeleteAndRecreate;
+
+  /// No description provided for @familyLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغادرة العائلة'**
+  String get familyLeave;
+
+  /// No description provided for @familyDeleteForeverTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف العائلة نهائياً'**
+  String get familyDeleteForeverTitle;
+
+  /// No description provided for @familyLeaveConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد المغادرة'**
+  String get familyLeaveConfirmTitle;
+
+  /// No description provided for @familyDeleteForeverBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت آخر فرد في العائلة دي. حذفها هيمسح الشات والمهام وكل البيانات نهائياً ومينفعش ترجعها، وتقدر تنشئ عائلة جديدة بعد كده.'**
+  String get familyDeleteForeverBody;
+
+  /// No description provided for @familyLeaveConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هتفقد الوصول لشات العائلة والمهام والأرصدة المشتركة. متأكد إنك عايز تغادر العائلة؟'**
+  String get familyLeaveConfirmBody;
+
+  /// No description provided for @familyDeleteForever.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف نهائي'**
+  String get familyDeleteForever;
+
+  /// No description provided for @familyLeaveShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغادرة'**
+  String get familyLeaveShort;
+
+  /// No description provided for @familyTasksCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, other{{count} مهام}}'**
+  String familyTasksCount(int count);
+
+  /// No description provided for @familyTasbihaCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, other{{count} تسبيحة}}'**
+  String familyTasbihaCount(int count);
+
+  /// No description provided for @familySavingsGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف التوفير'**
+  String get familySavingsGoal;
+
+  /// No description provided for @familyRoleAdminShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدير'**
+  String get familyRoleAdminShort;
+
+  /// No description provided for @familyRoleChild.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابن/ابنة'**
+  String get familyRoleChild;
+
+  /// No description provided for @familyRoleAdminLong.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدير العائلة'**
+  String get familyRoleAdminLong;
+
+  /// No description provided for @familyRoleMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'عضو'**
+  String get familyRoleMember;
+
+  /// No description provided for @familyBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get familyBalance;
+
+  /// No description provided for @familyGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف'**
+  String get familyGoal;
+
+  /// No description provided for @familyTrees.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأشجار'**
+  String get familyTrees;
+
+  /// No description provided for @familyDoneTasksTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام المنجزة ({count})'**
+  String familyDoneTasksTitle(int count);
+
+  /// No description provided for @familyNoDoneTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مهام منجزة بعد'**
+  String get familyNoDoneTasks;
+
+  /// No description provided for @familyUpcomingTasksTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام القادمة ({count})'**
+  String familyUpcomingTasksTitle(int count);
+
+  /// No description provided for @familyNoUpcomingTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مهام قادمة'**
+  String get familyNoUpcomingTasks;
+
+  /// No description provided for @familyTreesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أشجار التسبيحة ({count})'**
+  String familyTreesTitle(int count);
+
+  /// No description provided for @familyDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليومي'**
+  String get familyDaily;
+
+  /// No description provided for @familyWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوعي'**
+  String get familyWeekly;
+
+  /// No description provided for @familyRoleInFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدور في العيلة'**
+  String get familyRoleInFamily;
+
+  /// No description provided for @familyRemoveMemberTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشيل {name} من العيلة؟'**
+  String familyRemoveMemberTitle(String name);
+
+  /// No description provided for @familyRemoveMemberShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيله'**
+  String get familyRemoveMemberShort;
+
+  /// No description provided for @familyRemoveMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيله من العيلة'**
+  String get familyRemoveMember;
+
+  /// No description provided for @familyRewardAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافأة: {amount}'**
+  String familyRewardAmount(String amount);
+
+  /// No description provided for @familyNoLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون حد'**
+  String get familyNoLimit;
+
+  /// No description provided for @familyGroceriesHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة المشتركة'**
+  String get familyGroceriesHeading;
+
+  /// No description provided for @familyGroceriesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة المشتريات التي تمت إضافتها من قبل أفراد العائلة أو اقترحها زاد.'**
+  String get familyGroceriesHint;
+
+  /// No description provided for @familyNoGroceriesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات بقالة حالياً.'**
+  String get familyNoGroceriesTitle;
+
+  /// No description provided for @familyNoGroceriesMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب في الشات \"أضف حليب\" أو دوس + فوق.'**
+  String get familyNoGroceriesMessage;
+
+  /// No description provided for @familyKidsHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريف الأبناء'**
+  String get familyKidsHeading;
+
+  /// No description provided for @familyKidsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'نظرة عامة على أرصدة وطلبات الأبناء'**
+  String get familyKidsHint;
+
+  /// No description provided for @familyNoKidsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد أبناء مسجلين بعد'**
+  String get familyNoKidsTitle;
+
+  /// No description provided for @familyNoKidsMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'من تاب الأعضاء خلّي أي فرد \"طفل\".'**
+  String get familyNoKidsMessage;
+
+  /// No description provided for @familyPauseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفة تفكير ٢٤ ساعة'**
+  String get familyPauseTitle;
+
+  /// No description provided for @familyPauseBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب الشرا مايتوافقش عليه قبل يوم من ما اتبعت. الرفض في أي وقت، وطلب المصروف مش متأثر.'**
+  String get familyPauseBody;
+
+  /// No description provided for @familyAllowanceFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف لـ{name}'**
+  String familyAllowanceFor(String name);
+
+  /// No description provided for @familyAmountIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({currency})'**
+  String familyAmountIn(String currency);
+
+  /// No description provided for @familyAllowanceHelper.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتضاف لرصيده على طول'**
+  String get familyAllowanceHelper;
+
+  /// No description provided for @familyTransfer.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوّل'**
+  String get familyTransfer;
+
+  /// No description provided for @familyBalanceIs.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد: {amount}'**
+  String familyBalanceIs(String amount);
+
+  /// No description provided for @familyGoalIs.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف: {amount}'**
+  String familyGoalIs(String amount);
+
+  /// No description provided for @familyKidTasksDoneOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done}/{total} مهام'**
+  String familyKidTasksDoneOf(int done, int total);
+
+  /// No description provided for @familySendAllowance.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوّل مصروف'**
+  String get familySendAllowance;
+
+  /// No description provided for @familyMonthlySpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروف الشهري'**
+  String get familyMonthlySpending;
+
+  /// No description provided for @familyPendingRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلبات المعلقة ({count})'**
+  String familyPendingRequests(int count);
+
+  /// No description provided for @familyApprove.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافقة'**
+  String get familyApprove;
+
+  /// No description provided for @familyReject.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get familyReject;
+
+  /// No description provided for @familyBudgetRewardsHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية والمكافآت'**
+  String get familyBudgetRewardsHeading;
+
+  /// No description provided for @familySavingsGoalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف الادخار العائلي'**
+  String get familySavingsGoalTitle;
+
+  /// No description provided for @familyNoSavingsGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش هدف ادخار للشهر ده'**
+  String get familyNoSavingsGoal;
+
+  /// No description provided for @familySuggestGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح هدف بالذكاء الاصطناعي'**
+  String get familySuggestGoal;
+
+  /// No description provided for @familyNoKidsStatsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد أبناء مضافين لعرض إحصائياتهم.'**
+  String get familyNoKidsStatsTitle;
+
+  /// No description provided for @familyKidsBalanceStats.
+  ///
+  /// In ar, this message translates to:
+  /// **'إحصائيات أرصدة الأبناء'**
+  String get familyKidsBalanceStats;
+
+  /// No description provided for @familyTotalRewardsPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المكافآت المدفوعة'**
+  String get familyTotalRewardsPaid;
+
+  /// No description provided for @familyGoalSuggestionBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف: {amount} خلال {days} يوم'**
+  String familyGoalSuggestionBody(String amount, int days);
+
+  /// No description provided for @familyApproveGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتماد الهدف'**
+  String get familyApproveGoal;
+
+  /// No description provided for @familyChatEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رسائل بعد'**
+  String get familyChatEmptyTitle;
+
+  /// No description provided for @familyChatEmptyMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ المحادثة بإرسال أول رسالة لعائلتك'**
+  String get familyChatEmptyMessage;
+
+  /// No description provided for @familyChatAddTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف مهام'**
+  String get familyChatAddTasks;
+
+  /// No description provided for @familyChatAskGroceries.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب بقالة'**
+  String get familyChatAskGroceries;
+
+  /// No description provided for @familyChatAskZad.
+  ///
+  /// In ar, this message translates to:
+  /// **'استشر @Zad'**
+  String get familyChatAskZad;
+
+  /// Zad's name over a poll it sent.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد'**
+  String get familyZadName;
+
+  /// No description provided for @familyVoiceMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة صوتية'**
+  String get familyVoiceMessage;
+
+  /// No description provided for @familyUnpin.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء التثبيت'**
+  String get familyUnpin;
+
+  /// No description provided for @familyPin.
+  ///
+  /// In ar, this message translates to:
+  /// **'تثبيت'**
+  String get familyPin;
+
+  /// No description provided for @familyReact.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاعل'**
+  String get familyReact;
+
+  /// No description provided for @familySosFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء طوارئ من {name}!'**
+  String familySosFrom(String name);
+
+  /// No description provided for @familyPurchaseRequestFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب شراء من {name}'**
+  String familyPurchaseRequestFrom(String name);
+
+  /// No description provided for @familyApproveAndDeduct.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافقة وخصم'**
+  String get familyApproveAndDeduct;
+
+  /// No description provided for @familyApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الموافقة'**
+  String get familyApproved;
+
+  /// No description provided for @familyRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرفوض'**
+  String get familyRejected;
+
+  /// No description provided for @familyPollFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصويت من {name}'**
+  String familyPollFrom(String name);
+
+  /// No description provided for @familyPollTimeCloses.
+  ///
+  /// In ar, this message translates to:
+  /// **'{time} · بيقفل {when}'**
+  String familyPollTimeCloses(String time, String when);
+
+  /// No description provided for @familyPollClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل التصويت'**
+  String get familyPollClose;
+
+  /// No description provided for @familyPollClosedNoVotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتقفل من غير أصوات'**
+  String get familyPollClosedNoVotes;
+
+  /// No description provided for @familyPollClosedTie.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتقفل بتعادل — القرار لكم'**
+  String get familyPollClosedTie;
+
+  /// No description provided for @familyPollAdultsAgreed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكبار كلهم اتفقوا على «{option}» ✅'**
+  String familyPollAdultsAgreed(String option);
+
+  /// No description provided for @familyPollMajority.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأغلبية اختارت «{option}»'**
+  String familyPollMajority(String option);
+
+  /// No description provided for @familyClosesWithinHour.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلال ساعة'**
+  String get familyClosesWithinHour;
+
+  /// No description provided for @familyClosesInHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد {hours} ساعة'**
+  String familyClosesInHours(int hours);
+
+  /// No description provided for @familyClosesTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكرة'**
+  String get familyClosesTomorrow;
+
+  /// No description provided for @familyClosesInDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد {days} أيام'**
+  String familyClosesInDays(int days);
+
+  /// No description provided for @familyQuickReplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'ردود سريعة'**
+  String get familyQuickReplies;
+
+  /// No description provided for @familySosShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء طوارئ'**
+  String get familySosShort;
+
+  /// No description provided for @familyAskMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب مصروف'**
+  String get familyAskMoney;
+
+  /// No description provided for @familyPollShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصويت'**
+  String get familyPollShort;
+
+  /// No description provided for @familyChatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رسالة أو @Zad...'**
+  String get familyChatHint;
+
+  /// No description provided for @familySend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get familySend;
+
+  /// No description provided for @familySomeoneInFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد من العيلة'**
+  String get familySomeoneInFamily;
+
+  /// Google Play's prominent disclosure for background location, read by the child before agreeing.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هيعرف لما تدخل أو تخرج من الأماكن اللي {asker} يحددها (زي المدرسة) — حتى والتطبيق مقفول — ويقوله لو خرجت في المواعيد اللي حددها. مش هيتبعت مكانك طول الوقت ولا خط سيرك. هيفضل فيه إشعار ظاهر طول ما المشاركة شغالة، وتقدر توقفها من «عيلتي» في أي وقت. في الخطوة الجاية اختار «السماح طول الوقت».'**
+  String familyLocationDisclosure(String asker);
+
+  /// No description provided for @familyServerUnreachable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر. جرّب تاني.'**
+  String get familyServerUnreachable;
+
+  /// No description provided for @familyShareComingGoingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة دخولك وخروجك'**
+  String get familyShareComingGoingTitle;
+
+  /// No description provided for @familyNotNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get familyNotNow;
+
+  /// No description provided for @familyAgreeContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافق، كمّل'**
+  String get familyAgreeContinue;
+
+  /// No description provided for @familyAcceptedNeedAlways.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافقت، بس محتاج «السماح طول الوقت» للموقع عشان يشتغل والتطبيق مقفول.'**
+  String get familyAcceptedNeedAlways;
+
+  /// No description provided for @familyAcceptedZones.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافقت — هيشتغل على الأماكن اللي هيحددها.'**
+  String get familyAcceptedZones;
+
+  /// No description provided for @familyAcceptedOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافقت. هكمّل لما النت يرجع.'**
+  String get familyAcceptedOffline;
+
+  /// No description provided for @familyFollowRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات متابعة'**
+  String get familyFollowRequests;
+
+  /// No description provided for @familyFollowRequestsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'محدش بيشوف حاجة غير بموافقتك، وتقدر تلغي في أي وقت.'**
+  String get familyFollowRequestsHint;
+
+  /// No description provided for @familyDeclinedFollow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، مش هيشوفها.'**
+  String get familyDeclinedFollow;
+
+  /// No description provided for @familyNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأ'**
+  String get familyNo;
+
+  /// No description provided for @familyAcceptedScope.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافقت — يقدر يتابع {scope}.'**
+  String familyAcceptedScope(String scope);
+
+  /// No description provided for @familyAgree.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافق'**
+  String get familyAgree;
+
+  /// No description provided for @familyWhoFollowsYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'مين بيتابعك'**
+  String get familyWhoFollowsYou;
+
+  /// No description provided for @familyFollowStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتلغت المتابعة.'**
+  String get familyFollowStopped;
+
+  /// No description provided for @familyFollowRequestSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتبعت الطلب — هيظهرلك لما يوافق.'**
+  String get familyFollowRequestSent;
+
+  /// No description provided for @familyFollowRequestFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أبعت الطلب. جرّب تاني.'**
+  String get familyFollowRequestFailed;
+
+  /// No description provided for @familyFollowing.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتابعة'**
+  String get familyFollowing;
+
+  /// No description provided for @familyFollowLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب المتابعة دلوقتي.'**
+  String get familyFollowLoadFailed;
+
+  /// No description provided for @familyFollowLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'بجيب اللي متشارك…'**
+  String get familyFollowLoading;
+
+  /// No description provided for @familyScopeStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'{scope}: {status}'**
+  String familyScopeStatus(String scope, String status);
+
+  /// No description provided for @familyShareNotAsked.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش متطلبة'**
+  String get familyShareNotAsked;
+
+  /// No description provided for @familySharePending.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستني موافقته'**
+  String get familySharePending;
+
+  /// No description provided for @familyShareGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافق ✅'**
+  String get familyShareGranted;
+
+  /// No description provided for @familyShareDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get familyShareDeclined;
+
+  /// No description provided for @familyShareRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتلغت'**
+  String get familyShareRevoked;
+
+  /// No description provided for @familyAskToFollow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب متابعة'**
+  String get familyAskToFollow;
+
+  /// No description provided for @familyWhatToFollow.
+  ///
+  /// In ar, this message translates to:
+  /// **'عايز تتابع إيه؟'**
+  String get familyWhatToFollow;
+
+  /// No description provided for @familyWhatToFollowHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيوصله طلب ويختار هو. مفيش حاجة هتبان قبل موافقته.'**
+  String get familyWhatToFollowHint;
+
+  /// No description provided for @familySendRequest.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت الطلب'**
+  String get familySendRequest;
+
+  /// No description provided for @familyDoseMissed.
+  ///
+  /// In ar, this message translates to:
+  /// **'❌ فاتت'**
+  String get familyDoseMissed;
+
+  /// No description provided for @familyDoseDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏰ وقتها'**
+  String get familyDoseDue;
+
+  /// No description provided for @familyDoseNoTimes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: من غير مواعيد'**
+  String familyDoseNoTimes(String name);
+
+  /// No description provided for @familyMedicinesToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوية النهارده'**
+  String get familyMedicinesToday;
+
+  /// No description provided for @familyNoMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش أدوية متسجلة.'**
+  String get familyNoMedicines;
+
+  /// No description provided for @familySpendingLast30.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروف آخر ٣٠ يوم'**
+  String get familySpendingLast30;
+
+  /// No description provided for @familyTasksAndAppointments.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام والمواعيد'**
+  String get familyTasksAndAppointments;
+
+  /// No description provided for @familyNoOpenTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مهام مفتوحة'**
+  String get familyNoOpenTasks;
+
+  /// No description provided for @familyOpenTasksStill.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مهام لسه مفتوحة'**
+  String familyOpenTasksStill(int count);
+
+  /// No description provided for @familyReportLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'بجيب…'**
+  String get familyReportLoading;
+
+  /// No description provided for @familyReportMissedSuffix.
+  ///
+  /// In ar, this message translates to:
+  /// **' — {count} فاتت'**
+  String familyReportMissedSuffix(int count);
+
+  /// No description provided for @familyReportNoDosesToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات النهارده'**
+  String get familyReportNoDosesToday;
+
+  /// No description provided for @familyReportDoses.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات: {taken} من {total}{late}'**
+  String familyReportDoses(int taken, int total, String late);
+
+  /// No description provided for @familyReportSpent30.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرف ٣٠ يوم: {amount}'**
+  String familyReportSpent30(String amount);
+
+  /// No description provided for @familyReportOpenTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مهام مفتوحة'**
+  String familyReportOpenTasks(int count);
+
+  /// No description provided for @familyZoneInside.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوه {place}'**
+  String familyZoneInside(String place);
+
+  /// No description provided for @familyZoneLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'خرج من {place}'**
+  String familyZoneLeft(String place);
+
+  /// No description provided for @familyZoneUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{place}: لسه'**
+  String familyZoneUnknown(String place);
+
+  /// No description provided for @familyReportNothingShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ماوافقش على أي متابعة'**
+  String get familyReportNothingShared;
+
+  /// No description provided for @familyReportNotShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش متشارك: {scopes}'**
+  String familyReportNotShared(String scopes);
+
+  /// Joins names or items in one line.
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get familyListSeparator;
+
+  /// No description provided for @familyReportHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي كل فرد وافق يشاركه بس — والباقي بيبان بعد موافقته.'**
+  String get familyReportHint;
+
+  /// No description provided for @familyReportNoMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه محدش انضم للعيلة. ابعت كود الدعوة من «عيلتي».'**
+  String get familyReportNoMembers;
+
+  /// No description provided for @familyMemberFallback.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرد من العيلة'**
+  String get familyMemberFallback;
+
+  /// Weekday by d + its number, Sunday = d0.
+  ///
+  /// In ar, this message translates to:
+  /// **'{day, select, d0{الأحد} d1{الاتنين} d2{التلات} d3{الأربع} d4{الخميس} d5{الجمعة} d6{السبت} other{}}'**
+  String familyWeekday(String day);
+
+  /// No description provided for @familyZoneNoMoves.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش دخول ولا خروج'**
+  String get familyZoneNoMoves;
+
+  /// No description provided for @familyZoneInsideSince.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوه من {day}{time}'**
+  String familyZoneInsideSince(String day, String time);
+
+  /// No description provided for @familyZoneLeftAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'خرج {day}{time}'**
+  String familyZoneLeftAt(String day, String time);
+
+  /// No description provided for @familyZoneSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ «{place}» — هيوصله إشعار بيه.'**
+  String familyZoneSaved(String place);
+
+  /// No description provided for @familyZoneSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحفظ النطاق. جرّب تاني.'**
+  String get familyZoneSaveFailed;
+
+  /// No description provided for @familyZoneRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشال «{place}».'**
+  String familyZoneRemoved(String place);
+
+  /// No description provided for @familyZoneRemoveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أشيله. جرّب تاني.'**
+  String get familyZoneRemoveFailed;
+
+  /// No description provided for @familyPlaces.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأماكن'**
+  String get familyPlaces;
+
+  /// No description provided for @familyNoZones.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش نطاقات. وانت في المدرسة نفسها، دوس «ضيف نطاق».'**
+  String get familyNoZones;
+
+  /// No description provided for @familyRemoveZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل النطاق'**
+  String get familyRemoveZone;
+
+  /// No description provided for @familyAddZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف نطاق'**
+  String get familyAddZone;
+
+  /// No description provided for @familyZoneSchool.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرسة'**
+  String get familyZoneSchool;
+
+  /// No description provided for @familyZoneClub.
+  ///
+  /// In ar, this message translates to:
+  /// **'نادي'**
+  String get familyZoneClub;
+
+  /// No description provided for @familyZoneHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت'**
+  String get familyZoneHome;
+
+  /// No description provided for @familyZoneOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكان تاني'**
+  String get familyZoneOther;
+
+  /// No description provided for @familyLocationFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أعرف مكانك. شغّل الموقع وجرّب تاني.'**
+  String get familyLocationFailed;
+
+  /// No description provided for @familyNewZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطاق جديد'**
+  String get familyNewZone;
+
+  /// No description provided for @familyNewZoneHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيوصلك تنبيه لو خرج منه في الأيام والساعات دي. برّاها بيتسجل من غير تنبيه.'**
+  String get familyNewZoneHint;
+
+  /// No description provided for @familyZoneNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمه'**
+  String get familyZoneNameLabel;
+
+  /// No description provided for @familyZoneNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرسة النيل'**
+  String get familyZoneNameHint;
+
+  /// No description provided for @familyUseMyLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم المكان اللي أنا فيه دلوقتي'**
+  String get familyUseMyLocation;
+
+  /// No description provided for @familyLocationSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحدد المكان ✓ — دوس تاني لو اتحركت'**
+  String get familyLocationSet;
+
+  /// No description provided for @familyBeThere.
+  ///
+  /// In ar, this message translates to:
+  /// **'لازم تكون في المكان نفسه وانت بتحدده.'**
+  String get familyBeThere;
+
+  /// No description provided for @familyZoneRadius.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد إيه حواليه'**
+  String get familyZoneRadius;
+
+  /// No description provided for @familyMeters.
+  ///
+  /// In ar, this message translates to:
+  /// **'{meters} م'**
+  String familyMeters(int meters);
+
+  /// No description provided for @familyAlertDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيام التنبيه'**
+  String get familyAlertDays;
+
+  /// No description provided for @familyAlertHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعات التنبيه'**
+  String get familyAlertHours;
+
+  /// No description provided for @familyFromTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {time}'**
+  String familyFromTime(String time);
+
+  /// No description provided for @familyToTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد {time}'**
+  String familyToTime(String time);
+
+  /// No description provided for @familyHoursOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة البداية لازم تبقى قبل النهاية.'**
+  String get familyHoursOrder;
+
+  /// No description provided for @familySaveZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ النطاق'**
+  String get familySaveZone;
+
+  /// Disclosure before Zad reads the writer's family-chat messages.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هيقرا رسايلك انت بس في شات العيلة — مش رسايل حد تاني ماوافقش — عشان يفهم طلبات البيت زي «محتاجين عيش» ويرد لو حد من العيلة سأله عن اللي اتقال. الرسايل بتتبعت لموديل ذكاء اصطناعي (Google Gemini) عشان تتفهم. العيلة كلها هتشوف إنك موافق، وتقدر توقف في أي وقت من هنا.'**
+  String get familyChatReadingDisclosure;
+
+  /// No description provided for @familyChatReadingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يقرا رسايلك؟'**
+  String get familyChatReadingTitle;
+
+  /// No description provided for @familyAgreeShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافق'**
+  String get familyAgreeShort;
+
+  /// No description provided for @familyChatReadingOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام — زاد هيقرا رسايلك.'**
+  String get familyChatReadingOn;
+
+  /// No description provided for @familyChatReadingOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفت — زاد مش هيقرا رسايلك.'**
+  String get familyChatReadingOff;
+
+  /// No description provided for @familyChatReadingNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مش بيقرا رسايل الشات'**
+  String get familyChatReadingNone;
+
+  /// No description provided for @familyChatReadingWho.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيقرا رسايل: {names}'**
+  String familyChatReadingWho(String names);
+
+  /// No description provided for @familyChatReadingStopMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف لرسايلي'**
+  String get familyChatReadingStopMine;
+
+  /// No description provided for @familyChatReadingAllowMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّيه يقرا رسايلي'**
+  String get familyChatReadingAllowMine;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
