@@ -8886,7 +8886,9 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const runId = night?.run_id ?? (typeof body.run_id === "string" && /^[0-9a-f-]{36}$/.test(body.run_id) ? body.run_id : crypto.randomUUID());
       const offset = night ? Math.max(0, night.next_offset ?? 0) : Math.max(0, Number(body.offset) || 0);
-      const limit = Math.min(20, Math.max(1, Number(body.limit) || (nightly ? 10 : 8)));
+      // الليلي ٦ في النداء مش ١٠ (ليلة ٣/١١): ١٠ حالات كل ٣ دقايق على ZAD_EVAL_KEY لوحده خلّصوا كل موديلات جيميناي
+      // الساعة ٠٢:٠٣ — ٦ `model_unavailable` (منهم فشل الأمان الوحيد) والباقي راح جروك. ٤٠ نداء في الشبّاك × ٦ = ٢٤٠ ≥ ٢٠١.
+      const limit = Math.min(20, Math.max(1, Number(body.limit) || (nightly ? 6 : 8)));
       const childId = (Deno.env.get("ZAD_EVAL_CHILD_USER_ID") ?? "").trim();
       // ٣.١١: بعد الـ٢٠٠، دروس العملاء (تصحيحات الفئة) — بنفس قايمة الليلة كلها (اللي اتسجل قبل بدايتها).
       // فشل القراية = الـ٢٠٠ بس. total في zad_eval_nights بيفضل الـ٢٠٠: الدروس برّه أخضر/أحمر.
