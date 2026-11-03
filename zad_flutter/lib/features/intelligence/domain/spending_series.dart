@@ -2,6 +2,7 @@
 /// category. Pure — the screen passes the rows, the day and the zone.
 library;
 
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
 /// Whether [t] is money spent that counts: an expense, not a transfer.
@@ -40,30 +41,34 @@ List<(String, double)> categoryShares(
   for (final t in rows) {
     if (!_spent(t)) continue;
     final c = (t.category ?? '').trim();
-    final key = c.isEmpty ? 'أخرى' : c;
+    final key = c.isEmpty ? 'أخرى' : c; // l10n: data — the «other» bucket.
     totals[key] = (totals[key] ?? 0) + t.amount;
   }
   final sorted = totals.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
-  final head = sorted.where((e) => e.key != 'أخرى').take(top).toList();
+  final head = sorted
+      .where((e) => e.key != 'أخرى')
+      .take(top)
+      .toList(); // l10n: data
   final rest = sorted
       .where((e) => !head.contains(e))
       .fold<double>(0, (sum, e) => sum + e.value);
   return <(String, double)>[
     for (final e in head) (e.key, e.value),
-    if (rest > 0) ('أخرى', rest),
+    if (rest > 0) ('أخرى', rest), // l10n: data
   ];
 }
 
-/// Arabic weekday names, Saturday first (the week as the region counts it).
-const List<String> kWeekdaysAr = <String>[
-  'السبت',
-  'الأحد',
-  'الاتنين',
-  'التلات',
-  'الأربع',
-  'الخميس',
-  'الجمعة',
+/// Weekday names, Saturday first (the week as the region counts it), in
+/// [l]'s language.
+List<String> weekdayNames(ZadL10n l) => <String>[
+  l.weekdaySat,
+  l.weekdaySun,
+  l.weekdayMon,
+  l.weekdayTue,
+  l.weekdayWed,
+  l.weekdayThu,
+  l.weekdayFri,
 ];
 
 /// The average spent on each weekday over the [weeks] weeks up to [today],
@@ -74,7 +79,9 @@ List<(String, double)> weekdayAverages(
   required DateTime today,
   required DateTime Function(DateTime utc) local,
   int weeks = 8,
+  ZadL10n? l10n,
 }) {
+  final names = weekdayNames(l10n ?? zadL10nArabic);
   final start = DateTime.utc(
     today.year,
     today.month,
@@ -90,7 +97,7 @@ List<(String, double)> weekdayAverages(
     sums[(day.weekday + 1) % 7] += t.amount;
   }
   return <(String, double)>[
-    for (var i = 0; i < 7; i++) (kWeekdaysAr[i], sums[i] / weeks),
+    for (var i = 0; i < 7; i++) (names[i], sums[i] / weeks),
   ];
 }
 
@@ -136,7 +143,9 @@ List<(String, double, double)> categoryChanges(
     if (!_spent(t)) continue;
     final l = local(t.createdAt);
     final day = DateTime.utc(l.year, l.month, l.day);
-    final c = (t.category ?? '').trim().isEmpty ? 'أخرى' : t.category!.trim();
+    final c = (t.category ?? '').trim().isEmpty
+        ? 'أخرى'
+        : t.category!.trim(); // l10n: data
     if (!day.isBefore(cut) && !day.isAfter(now)) {
       recent[c] = (recent[c] ?? 0) + t.amount;
     } else if (!day.isBefore(before) && day.isBefore(cut)) {

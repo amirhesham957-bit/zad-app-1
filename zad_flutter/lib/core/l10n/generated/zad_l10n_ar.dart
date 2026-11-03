@@ -3759,4 +3759,284 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get reportShareTitle => 'مشاركة تقرير زاد';
+
+  @override
+  String get intelPromptAnalyse => 'حلل مصاريفي 📊';
+
+  @override
+  String get intelPromptForecast => 'توقع مصاريف الشهر القادم 🔮';
+
+  @override
+  String get intelPromptLunch => 'اقترح وجبة للغداء 🍲';
+
+  @override
+  String get intelPromptSafe => 'هل وضعي المالي آمن؟ 💰';
+
+  @override
+  String intelSosFrom(String name) {
+    return 'نداء طوارئ من $name!';
+  }
+
+  @override
+  String get intelNeedThreeBody =>
+      'يحتاج عقل زاد إلى 3 مصاريف على الأقل لتحليل سلوكك المالي بدقة وتوليد تقارير الصمود المالي.';
+
+  @override
+  String intelLoggedOfThree(int count) {
+    return 'تم تسجيل $count من 3 مصاريف';
+  }
+
+  @override
+  String get intelReportSubtitle =>
+      'تحليل فوري دقيق لجميع حركاتك ومصروفاتك عبر نماذج الذكاء الاصطناعي';
+
+  @override
+  String get intelReportWorking =>
+      'جاري تحليل الحركات وتوليد التقرير بالذكاء الاصطناعي...';
+
+  @override
+  String intelCoverageDays(int days) {
+    return '$days يوم تغطية';
+  }
+
+  @override
+  String intelTargetDays(int days) {
+    return 'الهدف: $days يوم';
+  }
+
+  @override
+  String intelSaveToReach(String amount) {
+    return 'وفّر $amount شهرياً للوصول للهدف';
+  }
+
+  @override
+  String intelTopCategory(String category, int percent) {
+    return '💡 أعلى استهلاك في فئة [$category] بنسبة $percent% من إجمالي مصروفاتك';
+  }
+
+  @override
+  String get intelHeroTitle => 'عقل زاد الذكي';
+
+  @override
+  String get intelHeroBusy => 'زاد يحلل بياناتك الآن 🧠✨';
+
+  @override
+  String get intelHeroReady =>
+      'متصل ومستعد لمساعدتك في إدارتك المالية والمنزلية ⚡';
+
+  @override
+  String get intelNoAnswer => 'زاد مقدرش يرد دلوقتي — جرّب تاني.';
+
+  @override
+  String get intelAnalysing => 'زاد يقوم بالتحليل...';
+
+  @override
+  String get intelExplain => 'اشرح بالذكاء الاصطناعي';
+
+  @override
+  String get intelNeedThreeTitle => 'سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي';
+
+  @override
+  String get intelTalkNow => 'تحدث مع زاد الآن 💬';
+
+  @override
+  String get intelReportTitle => 'توليد تقرير الذكاء الاصطناعي الشامل';
+
+  @override
+  String get intelSharePdf => 'مشاركة التقرير PDF';
+
+  @override
+  String get intelSaveFailed =>
+      'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى';
+
+  @override
+  String get intelRetry => 'إعادة المحاولة';
+
+  @override
+  String get intelRefreshReport => 'تحديث التقرير 🔄';
+
+  @override
+  String get intelUpdateBalance => 'تحديث الرصيد';
+
+  @override
+  String get intelFundBalance => 'رصيد صندوق الطوارئ';
+
+  @override
+  String get intelCancel => 'إلغاء';
+
+  @override
+  String get intelSave => 'حفظ';
+
+  @override
+  String get intelStatusCritical => 'حرج';
+
+  @override
+  String get intelStatusLow => 'منخفض';
+
+  @override
+  String get intelStatusHealthy => 'صحي';
+
+  @override
+  String get intelStressTitle => 'اختبار الصمود المالي';
+
+  @override
+  String get intelStressQuestion => 'كم يوماً تستطيع الصمود لو توقف دخلك؟';
+
+  @override
+  String get intelAvailableNoFund =>
+      'رصيدك المتاح حالياً (لسه محددتش صندوق طوارئ)';
+
+  @override
+  String get intelDailyAverage => 'متوسط الصرف اليومي';
+
+  @override
+  String get intelDistributionTitle => 'توزيع المصروفات والملاحظات السلوكية';
+
+  @override
+  String get intelDistributionSubtitle =>
+      'تحليل نسب الصرف على الفئات والملاحظات السلوكية الذكية';
+
+  @override
+  String dossierIssued(String date) {
+    return 'تاريخ الإصدار: $date';
+  }
+
+  @override
+  String get dossierSafeDailyUnknown =>
+      '• معدل الصرف اليومي الآمن: محتاج ميزانية ورصيد محدّدين عشان يتحسب.';
+
+  @override
+  String dossierSafeDaily(String amount) {
+    return '• معدل الصرف اليومي الآمن الموصى به: $amount/يوم.';
+  }
+
+  @override
+  String dossierSpentCycle(String amount) {
+    return '• إجمالي الصرف الفعلي للدورة الحالية: $amount.';
+  }
+
+  @override
+  String dossierFamilyMembers(int count) {
+    return '• عقل العائلة المشترك: $count أفراد متصلين ومزامنين لحظياً.';
+  }
+
+  @override
+  String dossierLowStock(int count) {
+    return '• أصناف قاربت على النفاد في المخزون: $count صنف.';
+  }
+
+  @override
+  String dossierAdherence(int percent) {
+    return '• الالتزام الدوائي هذا الأسبوع: $percent%.';
+  }
+
+  @override
+  String get dossierAdherenceUnknown =>
+      '• الالتزام الدوائي: لسه مفيش جرعات كفاية مسجّلة لحساب نسبة.';
+
+  @override
+  String get dossierShareHeading => '📄 تقرير عقل زاد:';
+
+  @override
+  String dossierShareSpent(String amount) {
+    return '• إجمالي الصرف: $amount';
+  }
+
+  @override
+  String dossierShareAdherence(int percent) {
+    return '• الالتزام الدوائي: $percent%';
+  }
+
+  @override
+  String get dossierTitle => 'التقرير الاستراتيجي الشامل لعقل زاد';
+
+  @override
+  String get dossierSection1 => '1. التنبؤات والتدفق المالي للشهر القادم';
+
+  @override
+  String get dossierSection2 => '2. كفاءة إدارة المنزل والعائلة';
+
+  @override
+  String get dossierShareTitle => 'مشاركة تقرير عقل زاد';
+
+  @override
+  String get dossierShare => '📤 مشاركة التقرير';
+
+  @override
+  String get dossierClose => 'إغلاق التقرير';
+
+  @override
+  String get weekdaySat => 'السبت';
+
+  @override
+  String get weekdaySun => 'الأحد';
+
+  @override
+  String get weekdayMon => 'الاتنين';
+
+  @override
+  String get weekdayTue => 'التلات';
+
+  @override
+  String get weekdayWed => 'الأربع';
+
+  @override
+  String get weekdayThu => 'الخميس';
+
+  @override
+  String get weekdayFri => 'الجمعة';
+
+  @override
+  String behaviourNew(String name, String amount) {
+    return '$name: جديد الشهر ده ($amount)';
+  }
+
+  @override
+  String behaviourUp(String name, int percent, String before, String after) {
+    return '$name: زادت $percent٪ ($before ← $after)';
+  }
+
+  @override
+  String behaviourDown(String name, int percent, String before, String after) {
+    return '$name: قلّت $percent٪ ($before ← $after)';
+  }
+
+  @override
+  String behaviourPeakDay(String day, String amount) {
+    return 'أكتر يوم بتصرف فيه: $day — متوسط $amount';
+  }
+
+  @override
+  String behaviourPlaceLine(String amount, int count) {
+    return '$amount · $count مرة';
+  }
+
+  @override
+  String get behaviourTitle => 'سلوكك في الصرف';
+
+  @override
+  String get behaviourTopPlaces => 'أكتر أماكن بتصرف فيها';
+
+  @override
+  String get behaviourChanges => 'اتغيّر إيه عن الشهر اللي فات';
+
+  @override
+  String get chartsTwoWeeks => 'صرفك آخر أسبوعين';
+
+  @override
+  String chartsTotals(String total, String daily) {
+    return 'الإجمالي $total · متوسط اليوم $daily';
+  }
+
+  @override
+  String get chartsWhere => 'صرفك راح فين (آخر شهر)';
+
+  @override
+  String get reportsRowFailed => 'مقدرتش أجهّز التقرير دلوقتي';
+
+  @override
+  String get reportsRowMonthly => 'تصدير التقرير الشهري';
+
+  @override
+  String get reportsRowStrategic => 'التقرير الاستراتيجي';
 }

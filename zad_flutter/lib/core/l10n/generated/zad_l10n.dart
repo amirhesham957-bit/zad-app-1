@@ -6696,6 +6696,468 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'مشاركة تقرير زاد'**
   String get reportShareTitle;
+
+  /// Intelligence: a quick question the customer sends to the chat.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل مصاريفي 📊'**
+  String get intelPromptAnalyse;
+
+  /// Intelligence: a quick question the customer sends to the chat.
+  ///
+  /// In ar, this message translates to:
+  /// **'توقع مصاريف الشهر القادم 🔮'**
+  String get intelPromptForecast;
+
+  /// Intelligence: a quick question the customer sends to the chat.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح وجبة للغداء 🍲'**
+  String get intelPromptLunch;
+
+  /// Intelligence: a quick question the customer sends to the chat.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل وضعي المالي آمن؟ 💰'**
+  String get intelPromptSafe;
+
+  /// Intelligence: a family SOS banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء طوارئ من {name}!'**
+  String intelSosFrom(String name);
+
+  /// Intelligence: why it needs three expenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج عقل زاد إلى 3 مصاريف على الأقل لتحليل سلوكك المالي بدقة وتوليد تقارير الصمود المالي.'**
+  String get intelNeedThreeBody;
+
+  /// Intelligence: progress toward three expenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل {count} من 3 مصاريف'**
+  String intelLoggedOfThree(int count);
+
+  /// Intelligence: the AI report card subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل فوري دقيق لجميع حركاتك ومصروفاتك عبر نماذج الذكاء الاصطناعي'**
+  String get intelReportSubtitle;
+
+  /// Intelligence: the AI report is being built.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تحليل الحركات وتوليد التقرير بالذكاء الاصطناعي...'**
+  String get intelReportWorking;
+
+  /// Intelligence: days the savings would last.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} يوم تغطية'**
+  String intelCoverageDays(int days);
+
+  /// Intelligence: the coverage goal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف: {days} يوم'**
+  String intelTargetDays(int days);
+
+  /// Intelligence: suggested monthly saving.
+  ///
+  /// In ar, this message translates to:
+  /// **'وفّر {amount} شهرياً للوصول للهدف'**
+  String intelSaveToReach(String amount);
+
+  /// Intelligence: the top spending category.
+  ///
+  /// In ar, this message translates to:
+  /// **'💡 أعلى استهلاك في فئة [{category}] بنسبة {percent}% من إجمالي مصروفاتك'**
+  String intelTopCategory(String category, int percent);
+
+  /// Intelligence: hero title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقل زاد الذكي'**
+  String get intelHeroTitle;
+
+  /// Intelligence: hero while thinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يحلل بياناتك الآن 🧠✨'**
+  String get intelHeroBusy;
+
+  /// Intelligence: hero when idle.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل ومستعد لمساعدتك في إدارتك المالية والمنزلية ⚡'**
+  String get intelHeroReady;
+
+  /// Intelligence: the explanation failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مقدرش يرد دلوقتي — جرّب تاني.'**
+  String get intelNoAnswer;
+
+  /// Intelligence: explanation in progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يقوم بالتحليل...'**
+  String get intelAnalysing;
+
+  /// Intelligence: ask the model to explain a card.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرح بالذكاء الاصطناعي'**
+  String get intelExplain;
+
+  /// Intelligence: not enough data yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي'**
+  String get intelNeedThreeTitle;
+
+  /// Intelligence: open the chat.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدث مع زاد الآن 💬'**
+  String get intelTalkNow;
+
+  /// Intelligence: the AI report card title and button.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد تقرير الذكاء الاصطناعي الشامل'**
+  String get intelReportTitle;
+
+  /// Intelligence: share tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة التقرير PDF'**
+  String get intelSharePdf;
+
+  /// Intelligence: the report failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى'**
+  String get intelSaveFailed;
+
+  /// Intelligence: retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get intelRetry;
+
+  /// Intelligence: rebuild the report.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث التقرير 🔄'**
+  String get intelRefreshReport;
+
+  /// Intelligence: emergency fund balance dialog title and button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث الرصيد'**
+  String get intelUpdateBalance;
+
+  /// Intelligence: emergency fund field and label.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد صندوق الطوارئ'**
+  String get intelFundBalance;
+
+  /// Intelligence: cancel the dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get intelCancel;
+
+  /// Intelligence: save the dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get intelSave;
+
+  /// Intelligence: resilience status.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرج'**
+  String get intelStatusCritical;
+
+  /// Intelligence: resilience status.
+  ///
+  /// In ar, this message translates to:
+  /// **'منخفض'**
+  String get intelStatusLow;
+
+  /// Intelligence: resilience status.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحي'**
+  String get intelStatusHealthy;
+
+  /// Intelligence: the stress test card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار الصمود المالي'**
+  String get intelStressTitle;
+
+  /// Intelligence: the stress test question.
+  ///
+  /// In ar, this message translates to:
+  /// **'كم يوماً تستطيع الصمود لو توقف دخلك؟'**
+  String get intelStressQuestion;
+
+  /// Intelligence: the savings used when there is no fund.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك المتاح حالياً (لسه محددتش صندوق طوارئ)'**
+  String get intelAvailableNoFund;
+
+  /// Intelligence: stress test figure.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط الصرف اليومي'**
+  String get intelDailyAverage;
+
+  /// Intelligence: distribution card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع المصروفات والملاحظات السلوكية'**
+  String get intelDistributionTitle;
+
+  /// Intelligence: distribution card subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل نسب الصرف على الفئات والملاحظات السلوكية الذكية'**
+  String get intelDistributionSubtitle;
+
+  /// Strategic report: issue date.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الإصدار: {date}'**
+  String dossierIssued(String date);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• معدل الصرف اليومي الآمن: محتاج ميزانية ورصيد محدّدين عشان يتحسب.'**
+  String get dossierSafeDailyUnknown;
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• معدل الصرف اليومي الآمن الموصى به: {amount}/يوم.'**
+  String dossierSafeDaily(String amount);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• إجمالي الصرف الفعلي للدورة الحالية: {amount}.'**
+  String dossierSpentCycle(String amount);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• عقل العائلة المشترك: {count} أفراد متصلين ومزامنين لحظياً.'**
+  String dossierFamilyMembers(int count);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• أصناف قاربت على النفاد في المخزون: {count} صنف.'**
+  String dossierLowStock(int count);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الالتزام الدوائي هذا الأسبوع: {percent}%.'**
+  String dossierAdherence(int percent);
+
+  /// Strategic report line.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الالتزام الدوائي: لسه مفيش جرعات كفاية مسجّلة لحساب نسبة.'**
+  String get dossierAdherenceUnknown;
+
+  /// Strategic report: shared text heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'📄 تقرير عقل زاد:'**
+  String get dossierShareHeading;
+
+  /// Strategic report: shared text.
+  ///
+  /// In ar, this message translates to:
+  /// **'• إجمالي الصرف: {amount}'**
+  String dossierShareSpent(String amount);
+
+  /// Strategic report: shared text.
+  ///
+  /// In ar, this message translates to:
+  /// **'• الالتزام الدوائي: {percent}%'**
+  String dossierShareAdherence(int percent);
+
+  /// Strategic report: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير الاستراتيجي الشامل لعقل زاد'**
+  String get dossierTitle;
+
+  /// Strategic report: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'1. التنبؤات والتدفق المالي للشهر القادم'**
+  String get dossierSection1;
+
+  /// Strategic report: section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'2. كفاءة إدارة المنزل والعائلة'**
+  String get dossierSection2;
+
+  /// Strategic report: share sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة تقرير عقل زاد'**
+  String get dossierShareTitle;
+
+  /// Strategic report: share button.
+  ///
+  /// In ar, this message translates to:
+  /// **'📤 مشاركة التقرير'**
+  String get dossierShare;
+
+  /// Strategic report: close button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق التقرير'**
+  String get dossierClose;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبت'**
+  String get weekdaySat;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأحد'**
+  String get weekdaySun;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتنين'**
+  String get weekdayMon;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'التلات'**
+  String get weekdayTue;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأربع'**
+  String get weekdayWed;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخميس'**
+  String get weekdayThu;
+
+  /// Spending charts: a weekday, short.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجمعة'**
+  String get weekdayFri;
+
+  /// Spending habits: a category that is new this month.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: جديد الشهر ده ({amount})'**
+  String behaviourNew(String name, String amount);
+
+  /// Spending habits: a category that grew. Old to new in reading order.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: زادت {percent}٪ ({before} ← {after})'**
+  String behaviourUp(String name, int percent, String before, String after);
+
+  /// Spending habits: a category that shrank. Old to new in reading order.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: قلّت {percent}٪ ({before} ← {after})'**
+  String behaviourDown(String name, int percent, String before, String after);
+
+  /// Spending habits: the busiest weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر يوم بتصرف فيه: {day} — متوسط {amount}'**
+  String behaviourPeakDay(String day, String amount);
+
+  /// Spending habits: a place, total and visits.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} · {count} مرة'**
+  String behaviourPlaceLine(String amount, int count);
+
+  /// Spending habits: card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلوكك في الصرف'**
+  String get behaviourTitle;
+
+  /// Spending habits: places heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر أماكن بتصرف فيها'**
+  String get behaviourTopPlaces;
+
+  /// Spending habits: changes heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتغيّر إيه عن الشهر اللي فات'**
+  String get behaviourChanges;
+
+  /// Spending charts: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك آخر أسبوعين'**
+  String get chartsTwoWeeks;
+
+  /// Spending charts: totals line.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي {total} · متوسط اليوم {daily}'**
+  String chartsTotals(String total, String daily);
+
+  /// Spending charts: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك راح فين (آخر شهر)'**
+  String get chartsWhere;
+
+  /// Home reports row: building the report failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجهّز التقرير دلوقتي'**
+  String get reportsRowFailed;
+
+  /// Home reports row: button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير التقرير الشهري'**
+  String get reportsRowMonthly;
+
+  /// Home reports row: button.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير الاستراتيجي'**
+  String get reportsRowStrategic;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

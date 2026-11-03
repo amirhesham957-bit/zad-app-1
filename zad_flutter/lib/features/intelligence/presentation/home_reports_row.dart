@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/presentation/executive_dossier_sheet.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart'
     show showBrainReport;
@@ -53,9 +54,9 @@ class _HomeReportsRowState extends ConsumerState<HomeReportsRow> {
     } on Object catch (e) {
       debugPrint('PDF export failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('مقدرتش أجهّز التقرير دلوقتي')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.reportsRowFailed)));
       }
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -80,7 +81,7 @@ class _HomeReportsRowState extends ConsumerState<HomeReportsRow> {
     children: <Widget>[
       Expanded(
         child: _ReportButton(
-          label: 'تصدير التقرير الشهري',
+          label: context.l10n.reportsRowMonthly,
           icon: Icons.ios_share,
           busy: _exporting,
           onTap: () => unawaited(_exportMonthly()),
@@ -89,7 +90,7 @@ class _HomeReportsRowState extends ConsumerState<HomeReportsRow> {
       const SizedBox(width: ZadSpacing.md),
       Expanded(
         child: _ReportButton(
-          label: 'التقرير الاستراتيجي',
+          label: context.l10n.reportsRowStrategic,
           icon: Icons.workspace_premium_outlined,
           onTap: _openDossier,
         ),

@@ -3831,4 +3831,292 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get reportShareTitle => 'Share Zad report';
+
+  @override
+  String get intelPromptAnalyse => 'Analyse my spending 📊';
+
+  @override
+  String get intelPromptForecast => 'Forecast next month\'s spending 🔮';
+
+  @override
+  String get intelPromptLunch => 'Suggest a lunch 🍲';
+
+  @override
+  String get intelPromptSafe => 'Am I financially safe? 💰';
+
+  @override
+  String intelSosFrom(String name) {
+    return 'Emergency call from $name!';
+  }
+
+  @override
+  String get intelNeedThreeBody =>
+      'Zad\'s brain needs at least 3 expenses to analyse your spending properly and build resilience reports.';
+
+  @override
+  String intelLoggedOfThree(int count) {
+    return '$count of 3 expenses logged';
+  }
+
+  @override
+  String get intelReportSubtitle =>
+      'An instant, detailed analysis of all your transactions and spending by AI models';
+
+  @override
+  String get intelReportWorking =>
+      'Analysing transactions and building the AI report...';
+
+  @override
+  String intelCoverageDays(int days) {
+    return '$days days covered';
+  }
+
+  @override
+  String intelTargetDays(int days) {
+    return 'Goal: $days days';
+  }
+
+  @override
+  String intelSaveToReach(String amount) {
+    return 'Save $amount a month to reach the goal';
+  }
+
+  @override
+  String intelTopCategory(String category, int percent) {
+    return '💡 Your biggest category is [$category] at $percent% of your spending';
+  }
+
+  @override
+  String get intelHeroTitle => 'Zad\'s smart brain';
+
+  @override
+  String get intelHeroBusy => 'Zad is analysing your data now 🧠✨';
+
+  @override
+  String get intelHeroReady =>
+      'Connected and ready to help with your money and home ⚡';
+
+  @override
+  String get intelNoAnswer => 'Zad couldn\'t answer right now — try again.';
+
+  @override
+  String get intelAnalysing => 'Zad is analysing...';
+
+  @override
+  String get intelExplain => 'Explain with AI';
+
+  @override
+  String get intelNeedThreeTitle =>
+      'Log your first 3 expenses to switch on Zad\'s analysis';
+
+  @override
+  String get intelTalkNow => 'Talk to Zad now 💬';
+
+  @override
+  String get intelReportTitle => 'Build the full AI report';
+
+  @override
+  String get intelSharePdf => 'Share the report as PDF';
+
+  @override
+  String get intelSaveFailed =>
+      'Couldn\'t save the changes — check your connection and try again';
+
+  @override
+  String get intelRetry => 'Retry';
+
+  @override
+  String get intelRefreshReport => 'Refresh the report 🔄';
+
+  @override
+  String get intelUpdateBalance => 'Update the balance';
+
+  @override
+  String get intelFundBalance => 'Emergency fund balance';
+
+  @override
+  String get intelCancel => 'Cancel';
+
+  @override
+  String get intelSave => 'Save';
+
+  @override
+  String get intelStatusCritical => 'Critical';
+
+  @override
+  String get intelStatusLow => 'Low';
+
+  @override
+  String get intelStatusHealthy => 'Healthy';
+
+  @override
+  String get intelStressTitle => 'Financial resilience test';
+
+  @override
+  String get intelStressQuestion =>
+      'How many days could you last if your income stopped?';
+
+  @override
+  String get intelAvailableNoFund =>
+      'Your available balance (no emergency fund set yet)';
+
+  @override
+  String get intelDailyAverage => 'Average daily spending';
+
+  @override
+  String get intelDistributionTitle => 'Spending breakdown and habits';
+
+  @override
+  String get intelDistributionSubtitle =>
+      'How your spending splits across categories, with smart habit notes';
+
+  @override
+  String dossierIssued(String date) {
+    return 'Issued: $date';
+  }
+
+  @override
+  String get dossierSafeDailyUnknown =>
+      '• Safe daily spending: needs a set budget and balance to work out.';
+
+  @override
+  String dossierSafeDaily(String amount) {
+    return '• Recommended safe daily spending: $amount/day.';
+  }
+
+  @override
+  String dossierSpentCycle(String amount) {
+    return '• Total actually spent this cycle: $amount.';
+  }
+
+  @override
+  String dossierFamilyMembers(int count) {
+    return '• The family\'s shared brain: $count members connected and synced live.';
+  }
+
+  @override
+  String dossierLowStock(int count) {
+    return '• Pantry items running low: $count.';
+  }
+
+  @override
+  String dossierAdherence(int percent) {
+    return '• Medicine adherence this week: $percent%.';
+  }
+
+  @override
+  String get dossierAdherenceUnknown =>
+      '• Medicine adherence: not enough doses logged yet to work out a rate.';
+
+  @override
+  String get dossierShareHeading => '📄 Zad\'s brain report:';
+
+  @override
+  String dossierShareSpent(String amount) {
+    return '• Total spent: $amount';
+  }
+
+  @override
+  String dossierShareAdherence(int percent) {
+    return '• Medicine adherence: $percent%';
+  }
+
+  @override
+  String get dossierTitle => 'Zad\'s full strategic report';
+
+  @override
+  String get dossierSection1 => '1. Next month\'s forecasts and cash flow';
+
+  @override
+  String get dossierSection2 => '2. How well the home and family are run';
+
+  @override
+  String get dossierShareTitle => 'Share Zad\'s brain report';
+
+  @override
+  String get dossierShare => '📤 Share the report';
+
+  @override
+  String get dossierClose => 'Close the report';
+
+  @override
+  String get weekdaySat => 'Sat';
+
+  @override
+  String get weekdaySun => 'Sun';
+
+  @override
+  String get weekdayMon => 'Mon';
+
+  @override
+  String get weekdayTue => 'Tue';
+
+  @override
+  String get weekdayWed => 'Wed';
+
+  @override
+  String get weekdayThu => 'Thu';
+
+  @override
+  String get weekdayFri => 'Fri';
+
+  @override
+  String behaviourNew(String name, String amount) {
+    return '$name: new this month ($amount)';
+  }
+
+  @override
+  String behaviourUp(String name, int percent, String before, String after) {
+    return '$name: up $percent% ($before → $after)';
+  }
+
+  @override
+  String behaviourDown(String name, int percent, String before, String after) {
+    return '$name: down $percent% ($before → $after)';
+  }
+
+  @override
+  String behaviourPeakDay(String day, String amount) {
+    return 'Your biggest spending day: $day — average $amount';
+  }
+
+  @override
+  String behaviourPlaceLine(String amount, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times',
+      one: 'once',
+    );
+    return '$amount · $_temp0';
+  }
+
+  @override
+  String get behaviourTitle => 'Your spending habits';
+
+  @override
+  String get behaviourTopPlaces => 'Where you spend most';
+
+  @override
+  String get behaviourChanges => 'What changed since last month';
+
+  @override
+  String get chartsTwoWeeks => 'Your spending, last two weeks';
+
+  @override
+  String chartsTotals(String total, String daily) {
+    return 'Total $total · daily average $daily';
+  }
+
+  @override
+  String get chartsWhere => 'Where your money went (last month)';
+
+  @override
+  String get reportsRowFailed => 'Couldn\'t prepare the report right now';
+
+  @override
+  String get reportsRowMonthly => 'Export the monthly report';
+
+  @override
+  String get reportsRowStrategic => 'The strategic report';
 }

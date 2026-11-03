@@ -3671,5 +3671,446 @@
   "reportShareTitle": "مشاركة تقرير زاد",
   "@reportShareTitle": {
     "description": "Monthly report PDF: share sheet title (the PDF is Arabic)."
+  },
+  "intelPromptAnalyse": "حلل مصاريفي 📊",
+  "@intelPromptAnalyse": {
+    "description": "Intelligence: a quick question the customer sends to the chat."
+  },
+  "intelPromptForecast": "توقع مصاريف الشهر القادم 🔮",
+  "@intelPromptForecast": {
+    "description": "Intelligence: a quick question the customer sends to the chat."
+  },
+  "intelPromptLunch": "اقترح وجبة للغداء 🍲",
+  "@intelPromptLunch": {
+    "description": "Intelligence: a quick question the customer sends to the chat."
+  },
+  "intelPromptSafe": "هل وضعي المالي آمن؟ 💰",
+  "@intelPromptSafe": {
+    "description": "Intelligence: a quick question the customer sends to the chat."
+  },
+  "intelSosFrom": "نداء طوارئ من {name}!",
+  "@intelSosFrom": {
+    "description": "Intelligence: a family SOS banner.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "intelNeedThreeBody": "يحتاج عقل زاد إلى 3 مصاريف على الأقل لتحليل سلوكك المالي بدقة وتوليد تقارير الصمود المالي.",
+  "@intelNeedThreeBody": {
+    "description": "Intelligence: why it needs three expenses."
+  },
+  "intelLoggedOfThree": "تم تسجيل {count} من 3 مصاريف",
+  "@intelLoggedOfThree": {
+    "description": "Intelligence: progress toward three expenses.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "intelReportSubtitle": "تحليل فوري دقيق لجميع حركاتك ومصروفاتك عبر نماذج الذكاء الاصطناعي",
+  "@intelReportSubtitle": {
+    "description": "Intelligence: the AI report card subtitle."
+  },
+  "intelReportWorking": "جاري تحليل الحركات وتوليد التقرير بالذكاء الاصطناعي...",
+  "@intelReportWorking": {
+    "description": "Intelligence: the AI report is being built."
+  },
+  "intelCoverageDays": "{days} يوم تغطية",
+  "@intelCoverageDays": {
+    "description": "Intelligence: days the savings would last.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "intelTargetDays": "الهدف: {days} يوم",
+  "@intelTargetDays": {
+    "description": "Intelligence: the coverage goal.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "intelSaveToReach": "وفّر {amount} شهرياً للوصول للهدف",
+  "@intelSaveToReach": {
+    "description": "Intelligence: suggested monthly saving.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "intelTopCategory": "💡 أعلى استهلاك في فئة [{category}] بنسبة {percent}% من إجمالي مصروفاتك",
+  "@intelTopCategory": {
+    "description": "Intelligence: the top spending category.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "intelHeroTitle": "عقل زاد الذكي",
+  "@intelHeroTitle": {
+    "description": "Intelligence: hero title."
+  },
+  "intelHeroBusy": "زاد يحلل بياناتك الآن 🧠✨",
+  "@intelHeroBusy": {
+    "description": "Intelligence: hero while thinking."
+  },
+  "intelHeroReady": "متصل ومستعد لمساعدتك في إدارتك المالية والمنزلية ⚡",
+  "@intelHeroReady": {
+    "description": "Intelligence: hero when idle."
+  },
+  "intelNoAnswer": "زاد مقدرش يرد دلوقتي — جرّب تاني.",
+  "@intelNoAnswer": {
+    "description": "Intelligence: the explanation failed."
+  },
+  "intelAnalysing": "زاد يقوم بالتحليل...",
+  "@intelAnalysing": {
+    "description": "Intelligence: explanation in progress."
+  },
+  "intelExplain": "اشرح بالذكاء الاصطناعي",
+  "@intelExplain": {
+    "description": "Intelligence: ask the model to explain a card."
+  },
+  "intelNeedThreeTitle": "سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي",
+  "@intelNeedThreeTitle": {
+    "description": "Intelligence: not enough data yet."
+  },
+  "intelTalkNow": "تحدث مع زاد الآن 💬",
+  "@intelTalkNow": {
+    "description": "Intelligence: open the chat."
+  },
+  "intelReportTitle": "توليد تقرير الذكاء الاصطناعي الشامل",
+  "@intelReportTitle": {
+    "description": "Intelligence: the AI report card title and button."
+  },
+  "intelSharePdf": "مشاركة التقرير PDF",
+  "@intelSharePdf": {
+    "description": "Intelligence: share tooltip."
+  },
+  "intelSaveFailed": "تعذر حفظ التغييرات — تحقق من الاتصال وحاول مرة أخرى",
+  "@intelSaveFailed": {
+    "description": "Intelligence: the report failed."
+  },
+  "intelRetry": "إعادة المحاولة",
+  "@intelRetry": {
+    "description": "Intelligence: retry."
+  },
+  "intelRefreshReport": "تحديث التقرير 🔄",
+  "@intelRefreshReport": {
+    "description": "Intelligence: rebuild the report."
+  },
+  "intelUpdateBalance": "تحديث الرصيد",
+  "@intelUpdateBalance": {
+    "description": "Intelligence: emergency fund balance dialog title and button."
+  },
+  "intelFundBalance": "رصيد صندوق الطوارئ",
+  "@intelFundBalance": {
+    "description": "Intelligence: emergency fund field and label."
+  },
+  "intelCancel": "إلغاء",
+  "@intelCancel": {
+    "description": "Intelligence: cancel the dialog."
+  },
+  "intelSave": "حفظ",
+  "@intelSave": {
+    "description": "Intelligence: save the dialog."
+  },
+  "intelStatusCritical": "حرج",
+  "@intelStatusCritical": {
+    "description": "Intelligence: resilience status."
+  },
+  "intelStatusLow": "منخفض",
+  "@intelStatusLow": {
+    "description": "Intelligence: resilience status."
+  },
+  "intelStatusHealthy": "صحي",
+  "@intelStatusHealthy": {
+    "description": "Intelligence: resilience status."
+  },
+  "intelStressTitle": "اختبار الصمود المالي",
+  "@intelStressTitle": {
+    "description": "Intelligence: the stress test card title."
+  },
+  "intelStressQuestion": "كم يوماً تستطيع الصمود لو توقف دخلك؟",
+  "@intelStressQuestion": {
+    "description": "Intelligence: the stress test question."
+  },
+  "intelAvailableNoFund": "رصيدك المتاح حالياً (لسه محددتش صندوق طوارئ)",
+  "@intelAvailableNoFund": {
+    "description": "Intelligence: the savings used when there is no fund."
+  },
+  "intelDailyAverage": "متوسط الصرف اليومي",
+  "@intelDailyAverage": {
+    "description": "Intelligence: stress test figure."
+  },
+  "intelDistributionTitle": "توزيع المصروفات والملاحظات السلوكية",
+  "@intelDistributionTitle": {
+    "description": "Intelligence: distribution card title."
+  },
+  "intelDistributionSubtitle": "تحليل نسب الصرف على الفئات والملاحظات السلوكية الذكية",
+  "@intelDistributionSubtitle": {
+    "description": "Intelligence: distribution card subtitle."
+  },
+  "dossierIssued": "تاريخ الإصدار: {date}",
+  "@dossierIssued": {
+    "description": "Strategic report: issue date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierSafeDailyUnknown": "• معدل الصرف اليومي الآمن: محتاج ميزانية ورصيد محدّدين عشان يتحسب.",
+  "@dossierSafeDailyUnknown": {
+    "description": "Strategic report line."
+  },
+  "dossierSafeDaily": "• معدل الصرف اليومي الآمن الموصى به: {amount}/يوم.",
+  "@dossierSafeDaily": {
+    "description": "Strategic report line.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierSpentCycle": "• إجمالي الصرف الفعلي للدورة الحالية: {amount}.",
+  "@dossierSpentCycle": {
+    "description": "Strategic report line.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierFamilyMembers": "• عقل العائلة المشترك: {count} أفراد متصلين ومزامنين لحظياً.",
+  "@dossierFamilyMembers": {
+    "description": "Strategic report line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dossierLowStock": "• أصناف قاربت على النفاد في المخزون: {count} صنف.",
+  "@dossierLowStock": {
+    "description": "Strategic report line.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dossierAdherence": "• الالتزام الدوائي هذا الأسبوع: {percent}%.",
+  "@dossierAdherence": {
+    "description": "Strategic report line.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dossierAdherenceUnknown": "• الالتزام الدوائي: لسه مفيش جرعات كفاية مسجّلة لحساب نسبة.",
+  "@dossierAdherenceUnknown": {
+    "description": "Strategic report line."
+  },
+  "dossierShareHeading": "📄 تقرير عقل زاد:",
+  "@dossierShareHeading": {
+    "description": "Strategic report: shared text heading."
+  },
+  "dossierShareSpent": "• إجمالي الصرف: {amount}",
+  "@dossierShareSpent": {
+    "description": "Strategic report: shared text.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierShareAdherence": "• الالتزام الدوائي: {percent}%",
+  "@dossierShareAdherence": {
+    "description": "Strategic report: shared text.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dossierTitle": "التقرير الاستراتيجي الشامل لعقل زاد",
+  "@dossierTitle": {
+    "description": "Strategic report: title."
+  },
+  "dossierSection1": "1. التنبؤات والتدفق المالي للشهر القادم",
+  "@dossierSection1": {
+    "description": "Strategic report: section title."
+  },
+  "dossierSection2": "2. كفاءة إدارة المنزل والعائلة",
+  "@dossierSection2": {
+    "description": "Strategic report: section title."
+  },
+  "dossierShareTitle": "مشاركة تقرير عقل زاد",
+  "@dossierShareTitle": {
+    "description": "Strategic report: share sheet title."
+  },
+  "dossierShare": "📤 مشاركة التقرير",
+  "@dossierShare": {
+    "description": "Strategic report: share button."
+  },
+  "dossierClose": "إغلاق التقرير",
+  "@dossierClose": {
+    "description": "Strategic report: close button."
+  },
+  "weekdaySat": "السبت",
+  "@weekdaySat": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdaySun": "الأحد",
+  "@weekdaySun": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdayMon": "الاتنين",
+  "@weekdayMon": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdayTue": "التلات",
+  "@weekdayTue": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdayWed": "الأربع",
+  "@weekdayWed": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdayThu": "الخميس",
+  "@weekdayThu": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "weekdayFri": "الجمعة",
+  "@weekdayFri": {
+    "description": "Spending charts: a weekday, short."
+  },
+  "behaviourNew": "{name}: جديد الشهر ده ({amount})",
+  "@behaviourNew": {
+    "description": "Spending habits: a category that is new this month.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "behaviourUp": "{name}: زادت {percent}٪ ({before} ← {after})",
+  "@behaviourUp": {
+    "description": "Spending habits: a category that grew. Old to new in reading order.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "behaviourDown": "{name}: قلّت {percent}٪ ({before} ← {after})",
+  "@behaviourDown": {
+    "description": "Spending habits: a category that shrank. Old to new in reading order.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      },
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "behaviourPeakDay": "أكتر يوم بتصرف فيه: {day} — متوسط {amount}",
+  "@behaviourPeakDay": {
+    "description": "Spending habits: the busiest weekday.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "behaviourPlaceLine": "{amount} · {count} مرة",
+  "@behaviourPlaceLine": {
+    "description": "Spending habits: a place, total and visits.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "behaviourTitle": "سلوكك في الصرف",
+  "@behaviourTitle": {
+    "description": "Spending habits: card title."
+  },
+  "behaviourTopPlaces": "أكتر أماكن بتصرف فيها",
+  "@behaviourTopPlaces": {
+    "description": "Spending habits: places heading."
+  },
+  "behaviourChanges": "اتغيّر إيه عن الشهر اللي فات",
+  "@behaviourChanges": {
+    "description": "Spending habits: changes heading."
+  },
+  "chartsTwoWeeks": "صرفك آخر أسبوعين",
+  "@chartsTwoWeeks": {
+    "description": "Spending charts: title."
+  },
+  "chartsTotals": "الإجمالي {total} · متوسط اليوم {daily}",
+  "@chartsTotals": {
+    "description": "Spending charts: totals line.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "daily": {
+        "type": "String"
+      }
+    }
+  },
+  "chartsWhere": "صرفك راح فين (آخر شهر)",
+  "@chartsWhere": {
+    "description": "Spending charts: title."
+  },
+  "reportsRowFailed": "مقدرتش أجهّز التقرير دلوقتي",
+  "@reportsRowFailed": {
+    "description": "Home reports row: building the report failed."
+  },
+  "reportsRowMonthly": "تصدير التقرير الشهري",
+  "@reportsRowMonthly": {
+    "description": "Home reports row: button."
+  },
+  "reportsRowStrategic": "التقرير الاستراتيجي",
+  "@reportsRowStrategic": {
+    "description": "Home reports row: button."
   }
 }

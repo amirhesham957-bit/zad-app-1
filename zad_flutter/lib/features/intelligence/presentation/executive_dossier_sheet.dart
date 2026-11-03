@@ -25,6 +25,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/domain/safe_daily_spend.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -68,39 +69,45 @@ class ExecutiveDossier {
   String _money(double v) =>
       '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
 
-  /// «تاريخ الإصدار: yyyy-MM-dd».
-  String get issuedLine {
+  /// «تاريخ الإصدار: yyyy-MM-dd», in [l10n]'s language (Arabic by default).
+  String issuedLine([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
     final d = issuedOn;
     String two(int n) => n.toString().padLeft(2, '0');
-    return 'تاريخ الإصدار: ${d.year}-${two(d.month)}-${two(d.day)}';
+    return l.dossierIssued('${d.year}-${two(d.month)}-${two(d.day)}');
   }
 
   /// Section 1's text.
-  String get moneyText {
+  String moneyText([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
     final daily = safeDailySpend;
     final dailyLine = daily == null
-        ? '• معدل الصرف اليومي الآمن: '
-              'محتاج ميزانية ورصيد محدّدين عشان يتحسب.'
-        : '• معدل الصرف اليومي الآمن الموصى به: '
-              '${_money(daily < 0 ? 0 : daily)}/يوم.';
-    return '• إجمالي الصرف الفعلي للدورة الحالية: ${_money(totalSpent)}.\n'
-        '$dailyLine';
+        ? l.dossierSafeDailyUnknown
+        : l.dossierSafeDaily(_money(daily < 0 ? 0 : daily));
+    return '${l.dossierSpentCycle(_money(totalSpent))}\n$dailyLine';
   }
 
   /// Section 2's text.
-  String get householdText =>
-      '• عقل العائلة المشترك: $familyMembers أفراد متصلين ومزامنين لحظياً.\n'
-      '• أصناف قاربت على النفاد في المخزون: $lowStockItems صنف.\n'
-      '${switch (adherencePct) {
-        final int p => '• الالتزام الدوائي هذا الأسبوع: $p%.',
-        null => '• الالتزام الدوائي: لسه مفيش جرعات كفاية مسجّلة لحساب نسبة.',
-      }}';
+  String householdText([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return '${l.dossierFamilyMembers(familyMembers)}\n'
+        '${l.dossierLowStock(lowStockItems)}\n'
+        '${switch (adherencePct) {
+          final int p => l.dossierAdherence(p),
+          null => l.dossierAdherenceUnknown,
+        }}';
+  }
 
   /// What «📤 مشاركة التقرير» sends.
-  String get shareText =>
-      '📄 تقرير عقل زاد:\n'
-      '• إجمالي الصرف: ${_money(totalSpent)}\n'
-      '${adherencePct == null ? '' : '• الالتزام الدوائي: $adherencePct%\n'}';
+  String shareText([ZadL10n? l10n]) {
+    final l = l10n ?? zadL10nArabic;
+    return '${l.dossierShareHeading}\n'
+        '${l.dossierShareSpent(_money(totalSpent))}\n'
+        '${switch (adherencePct) {
+          final int p => '${l.dossierShareAdherence(p)}\n',
+          null => '',
+        }}';
+  }
 }
 
 /// Gathers the dossier: the money comes from the budget block that opens it,
@@ -182,7 +189,7 @@ class ExecutiveDossierSheet extends StatelessWidget {
                 const Text('👑', style: TextStyle(fontSize: 28)),
                 const SizedBox(height: 8),
                 Text(
-                  'التقرير الاستراتيجي الشامل لعقل زاد',
+                  context.l10n.dossierTitle,
                   textAlign: TextAlign.center,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.w800,
@@ -200,7 +207,7 @@ class ExecutiveDossierSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  dossier.issuedLine,
+                  dossier.issuedLine(context.l10n),
                   style: ZadType.labelMedium.copyWith(
                     color: _mintText.withValues(alpha: 0.85),
                   ),
@@ -211,16 +218,16 @@ class ExecutiveDossierSheet extends StatelessWidget {
           const SizedBox(height: 16),
           _Section(
             emoji: '🔮',
-            title: '1. التنبؤات والتدفق المالي للشهر القادم',
+            title: context.l10n.dossierSection1,
             tint: _amber,
-            text: dossier.moneyText,
+            text: dossier.moneyText(context.l10n),
           ),
           const SizedBox(height: 16),
           _Section(
             emoji: '🏡',
-            title: '2. كفاءة إدارة المنزل والعائلة',
+            title: context.l10n.dossierSection2,
             tint: _green,
-            text: dossier.householdText,
+            text: dossier.householdText(context.l10n),
           ),
           const SizedBox(height: 16),
           Row(
@@ -230,8 +237,8 @@ class ExecutiveDossierSheet extends StatelessWidget {
                   onPressed: () => unawaited(
                     SharePlus.instance.share(
                       ShareParams(
-                        text: dossier.shareText,
-                        title: 'مشاركة تقرير عقل زاد',
+                        text: dossier.shareText(context.l10n),
+                        title: context.l10n.dossierShareTitle,
                       ),
                     ),
                   ),
@@ -243,9 +250,9 @@ class ExecutiveDossierSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    '📤 مشاركة التقرير',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.l10n.dossierShare,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -263,9 +270,9 @@ class ExecutiveDossierSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'إغلاق التقرير',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.l10n.dossierClose,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
