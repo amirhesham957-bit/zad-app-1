@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
@@ -126,28 +127,30 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
         children: <Widget>[
           _heading(
             ZadIcons.chore,
-            'المهام العائلية',
+            context.l10n.familyTasksHeading,
             trailing: widget.isAdmin && widget.showFinancials
                 ? FilledButton.tonalIcon(
                     onPressed: () => unawaited(
                       showAddChoreDialog(context, ref, widget.family.members),
                     ),
                     icon: const Icon(ZadIcons.add, size: 18),
-                    label: const Text('إضافة'),
+                    label: Text(context.l10n.commonAdd),
                   )
                 : null,
           ),
           _subtitle(
-            '${chores.where((c) => c.isCompleted).length}/${chores.length} '
-            'منجزة',
+            context.l10n.familyTasksDoneOf(
+              chores.where((c) => c.isCompleted).length,
+              chores.length,
+            ),
           ),
           Wrap(
             spacing: ZadSpacing.sm,
             children: <Widget>[
               for (final (key, label) in <(String, String)>[
-                ('all', 'الكل'),
-                ('pending', 'قادمة'),
-                ('done', 'منجزة'),
+                ('all', context.l10n.familyFilterAll),
+                ('pending', context.l10n.familyFilterPending),
+                ('done', context.l10n.familyFilterDone),
               ])
                 FilterChip(
                   label: Text(label),
@@ -158,12 +161,12 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
           ),
           const SizedBox(height: ZadSpacing.lg),
           if (!anyVisible)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
               child: ZadEmptyState(
                 icon: ZadIcons.chore,
-                title: 'لا توجد مهام',
-                message: 'ضيف مهمة عشان أفراد العائلة يشاركوا فيها',
+                title: context.l10n.familyNoTasksTitle,
+                message: context.l10n.familyNoTasksMessage,
               ),
             ),
           for (final MapEntry(key: member, value: list) in byMember.entries)
@@ -326,8 +329,8 @@ class FamilyMembersTab extends ConsumerWidget {
         padding: _listPadding,
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[
-          const Text('أفراد العائلة', style: ZadType.titleLarge),
-          _subtitle('اضغط على أي عضو لتفاصيل إنجازاته'),
+          Text(context.l10n.familyMembersHeading, style: ZadType.titleLarge),
+          _subtitle(context.l10n.familyMembersHint),
           const FamilyFollowRequestsCard(),
           if (view.isAdmin && !sole)
             Padding(
@@ -335,7 +338,7 @@ class FamilyMembersTab extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => unawaited(showFamilyReport(context, currency)),
                 icon: const Icon(Icons.summarize_outlined, size: 18),
-                label: const Text('تقرير العيلة'),
+                label: Text(context.l10n.familyReport),
                 style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
               ),
             ),
@@ -371,7 +374,11 @@ class FamilyMembersTab extends ConsumerWidget {
                 ? null
                 : () => unawaited(_confirmLeave(context, ref, sole: sole)),
             icon: Icon(sole ? ZadIcons.delete : ZadIcons.leave, size: 18),
-            label: Text(sole ? 'حذف العائلة وإعادة الإنشاء' : 'مغادرة العائلة'),
+            label: Text(
+              sole
+                  ? context.l10n.familyDeleteAndRecreate
+                  : context.l10n.familyLeave,
+            ),
           ),
         ],
       ),
@@ -390,26 +397,31 @@ class FamilyMembersTab extends ConsumerWidget {
           sole ? ZadIcons.delete : ZadIcons.leave,
           color: ZadColors.terracottaRust,
         ),
-        title: Text(sole ? 'حذف العائلة نهائياً' : 'تأكيد المغادرة'),
+        title: Text(
+          sole
+              ? context.l10n.familyDeleteForeverTitle
+              : context.l10n.familyLeaveConfirmTitle,
+        ),
         content: Text(
           sole
-              ? 'إنت آخر فرد في العائلة دي. حذفها هيمسح الشات والمهام وكل '
-                    'البيانات نهائياً ومينفعش ترجعها، وتقدر تنشئ عائلة جديدة '
-                    'بعد كده.'
-              : 'هتفقد الوصول لشات العائلة والمهام والأرصدة المشتركة. متأكد '
-                    'إنك عايز تغادر العائلة؟',
+              ? context.l10n.familyDeleteForeverBody
+              : context.l10n.familyLeaveConfirmBody,
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: ZadColors.terracottaRust,
             ),
             onPressed: () => Navigator.of(c).pop(true),
-            child: Text(sole ? 'حذف نهائي' : 'مغادرة'),
+            child: Text(
+              sole
+                  ? context.l10n.familyDeleteForever
+                  : context.l10n.familyLeaveShort,
+            ),
           ),
         ],
       ),
@@ -484,10 +496,13 @@ class _MemberCard extends StatelessWidget {
                             icon: ZadIcons.coins,
                             text: familyMoney(member.balance, currency),
                           ),
-                        _StatPill(icon: ZadIcons.selected, text: '$done مهام'),
+                        _StatPill(
+                          icon: ZadIcons.selected,
+                          text: context.l10n.familyTasksCount(done),
+                        ),
                         _StatPill(
                           icon: ZadIcons.tree,
-                          text: '$treeScore تسبيحة',
+                          text: context.l10n.familyTasbihaCount(treeScore),
                         ),
                       ],
                     ),
@@ -502,7 +517,7 @@ class _MemberCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 Text(
-                  'هدف التوفير',
+                  context.l10n.familySavingsGoal,
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(width: ZadSpacing.sm),
@@ -560,7 +575,9 @@ class _RoleBadge extends StatelessWidget {
           Icon(admin ? ZadIcons.admin : ZadIcons.child, size: 14, color: color),
           const SizedBox(width: ZadSpacing.xs),
           Text(
-            admin ? 'مدير' : 'ابن/ابنة',
+            admin
+                ? context.l10n.familyRoleAdminShort
+                : context.l10n.familyRoleChild,
             style: ZadType.labelSmall.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
@@ -667,9 +684,9 @@ class _MemberSheet extends ConsumerWidget {
                     Text(member.alias, style: ZadType.headlineMedium),
                     Text(
                       switch (member.role) {
-                        FamilyRole.admin => 'مدير العائلة',
-                        FamilyRole.child => 'ابن/ابنة',
-                        FamilyRole.member => 'عضو',
+                        FamilyRole.admin => context.l10n.familyRoleAdminLong,
+                        FamilyRole.child => context.l10n.familyRoleChild,
+                        FamilyRole.member => context.l10n.familyRoleMember,
                       },
                       style: ZadType.bodyMedium.copyWith(
                         color: ZadColors.inkMuted,
@@ -686,17 +703,20 @@ class _MemberSheet extends ConsumerWidget {
             children: <Widget>[
               if (showFinancials) ...<Widget>[
                 _StatItem(
-                  label: 'الرصيد',
+                  label: context.l10n.familyBalance,
                   value: familyMoney(member.balance, currency),
                 ),
                 _StatItem(
-                  label: 'الهدف',
+                  label: context.l10n.familyGoal,
                   value: member.savingsGoal > 0
                       ? familyMoney(member.savingsGoal, currency)
                       : '---',
                 ),
               ],
-              _StatItem(label: 'الأشجار', value: '${trees.length}'),
+              _StatItem(
+                label: context.l10n.familyTrees,
+                value: '${trees.length}',
+              ),
             ],
           ),
           if (viewerIsAdmin && !isMe) ...<Widget>[
@@ -707,8 +727,8 @@ class _MemberSheet extends ConsumerWidget {
           _SheetSection(
             icon: ZadIcons.selected,
             color: ZadColors.green700,
-            title: 'المهام المنجزة (${done.length})',
-            empty: 'لا توجد مهام منجزة بعد',
+            title: context.l10n.familyDoneTasksTitle(done.length),
+            empty: context.l10n.familyNoDoneTasks,
             chores: done,
             currency: currency,
             showFinancials: showFinancials,
@@ -717,8 +737,8 @@ class _MemberSheet extends ConsumerWidget {
           _SheetSection(
             icon: ZadIcons.chore,
             color: ZadColors.mustardOchre,
-            title: 'المهام القادمة (${upcoming.length})',
-            empty: 'لا توجد مهام قادمة',
+            title: context.l10n.familyUpcomingTasksTitle(upcoming.length),
+            empty: context.l10n.familyNoUpcomingTasks,
             chores: upcoming,
             currency: currency,
             showFinancials: showFinancials,
@@ -730,7 +750,7 @@ class _MemberSheet extends ConsumerWidget {
                 const Icon(ZadIcons.tree, size: 18, color: ZadColors.green600),
                 const SizedBox(width: 6),
                 Text(
-                  'أشجار التسبيحة (${trees.length})',
+                  context.l10n.familyTreesTitle(trees.length),
                   style: ZadType.titleSmall,
                 ),
               ],
@@ -776,18 +796,21 @@ class _MemberSheet extends ConsumerWidget {
               children: <Widget>[
                 Icon(ZadIcons.wallet, size: 18, color: ZadColors.mustardOchre),
                 const SizedBox(width: 6),
-                const Expanded(
-                  child: Text('حد الإنفاق', style: ZadType.titleSmall),
+                Expanded(
+                  child: Text(
+                    context.l10n.familySpendLimitTitle,
+                    style: ZadType.titleSmall,
+                  ),
                 ),
                 TextButton(
                   onPressed: () =>
                       unawaited(showSpendLimitDialog(context, ref, member)),
-                  child: const Text('تعديل'),
+                  child: Text(context.l10n.commonEdit),
                 ),
               ],
             ),
             SpendLimitBar(
-              label: 'اليومي',
+              label: context.l10n.familyDaily,
               spent: approvedSpendSince(
                 life.messages,
                 member.id,
@@ -798,7 +821,7 @@ class _MemberSheet extends ConsumerWidget {
             ),
             const SizedBox(height: ZadSpacing.sm),
             SpendLimitBar(
-              label: 'الأسبوعي',
+              label: context.l10n.familyWeekly,
               spent: approvedSpendSince(
                 life.messages,
                 member.id,
@@ -812,7 +835,7 @@ class _MemberSheet extends ConsumerWidget {
             const SizedBox(height: ZadSpacing.xl),
             const Divider(color: ZadColors.hairline),
             Text(
-              'الدور في العيلة',
+              context.l10n.familyRoleInFamily,
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -842,16 +865,18 @@ class _MemberSheet extends ConsumerWidget {
                 final sure = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
-                    title: Text('تشيل ${member.alias} من العيلة؟'),
+                    title: Text(
+                      context.l10n.familyRemoveMemberTitle(member.alias),
+                    ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.of(c).pop(false),
-                        child: const Text('إلغاء'),
+                        child: Text(context.l10n.commonCancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(c).pop(true),
                         child: Text(
-                          'شيله',
+                          context.l10n.familyRemoveMemberShort,
                           style: TextStyle(color: ZadColors.terracottaRust),
                         ),
                       ),
@@ -866,7 +891,7 @@ class _MemberSheet extends ConsumerWidget {
                 if (removed && navigator.mounted) navigator.pop();
               },
               icon: const Icon(ZadIcons.delete, size: 18),
-              label: const Text('شيله من العيلة'),
+              label: Text(context.l10n.familyRemoveMember),
             ),
           ],
           const SizedBox(height: ZadSpacing.xl),
@@ -950,7 +975,9 @@ class _SheetSection extends StatelessWidget {
                       Text(c.title, style: ZadType.titleSmall),
                       if (showFinancials && c.rewardAmount > 0)
                         Text(
-                          'مكافأة: ${familyMoney(c.rewardAmount, currency)}',
+                          context.l10n.familyRewardAmount(
+                            familyMoney(c.rewardAmount, currency),
+                          ),
                           style: ZadType.labelSmall.copyWith(color: color),
                         ),
                     ],
@@ -995,7 +1022,7 @@ class SpendLimitBar extends StatelessWidget {
       return Row(
         children: <Widget>[
           Expanded(child: Text(label, style: muted)),
-          Text('بدون حد', style: muted),
+          Text(context.l10n.familyNoLimit, style: muted),
         ],
       );
     }
@@ -1052,24 +1079,21 @@ class FamilyGroceriesTab extends ConsumerWidget {
         children: <Widget>[
           _heading(
             ZadIcons.shopping,
-            'البقالة المشتركة',
+            context.l10n.familyGroceriesHeading,
             trailing: IconButton(
-              tooltip: 'نزّلها في التسوق',
+              tooltip: context.l10n.familyQuickGroceryTitle,
               onPressed: () => unawaited(showQuickGroceryDialog(context, ref)),
               icon: const Icon(ZadIcons.add, color: ZadColors.green700),
             ),
           ),
-          _subtitle(
-            'قائمة المشتريات التي تمت إضافتها من قبل أفراد العائلة أو '
-            'اقترحها زاد.',
-          ),
+          _subtitle(context.l10n.familyGroceriesHint),
           if (view.groceries.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
               child: ZadEmptyState(
                 icon: ZadIcons.shopping,
-                title: 'لا توجد طلبات بقالة حالياً.',
-                message: 'اكتب في الشات "أضف حليب" أو دوس + فوق.',
+                title: context.l10n.familyNoGroceriesTitle,
+                message: context.l10n.familyNoGroceriesMessage,
               ),
             ),
           for (final item in view.groceries)
@@ -1136,16 +1160,16 @@ class FamilyKidsTab extends ConsumerWidget {
         padding: _listPadding,
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[
-          _heading(ZadIcons.wallet, 'مصاريف الأبناء'),
-          _subtitle('نظرة عامة على أرصدة وطلبات الأبناء'),
+          _heading(ZadIcons.wallet, context.l10n.familyKidsHeading),
+          _subtitle(context.l10n.familyKidsHint),
           if (children.isNotEmpty) _PurchasePauseSwitch(familyId: family.id),
           if (children.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
               child: ZadEmptyState(
                 icon: ZadIcons.child,
-                title: 'لا يوجد أبناء مسجلين بعد',
-                message: 'من تاب الأعضاء خلّي أي فرد "طفل".',
+                title: context.l10n.familyNoKidsTitle,
+                message: context.l10n.familyNoKidsMessage,
               ),
             ),
           for (final child in children)
@@ -1220,11 +1244,8 @@ class _PurchasePauseState extends ConsumerState<_PurchasePauseSwitch> {
     contentPadding: EdgeInsets.zero,
     value: _on ?? false,
     onChanged: _on == null ? null : (v) => unawaited(_toggle(v)),
-    title: const Text('وقفة تفكير ٢٤ ساعة'),
-    subtitle: const Text(
-      'طلب الشرا مايتوافقش عليه قبل يوم من ما اتبعت. الرفض في أي وقت، '
-      'وطلب المصروف مش متأثر.',
-    ),
+    title: Text(context.l10n.familyPauseTitle),
+    subtitle: Text(context.l10n.familyPauseBody),
   );
 }
 
@@ -1253,28 +1274,28 @@ class _KidCard extends ConsumerWidget {
       context: context,
       initial: const <String>[''],
       builder: (dialogContext, fields) => AlertDialog(
-        title: Text('مصروف لـ${child.alias}'),
+        title: Text(context.l10n.familyAllowanceFor(child.alias)),
         content: TextField(
           controller: fields[0],
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: 'المبلغ ($currency)',
-            helperText: 'بيتضاف لرصيده على طول',
+            labelText: context.l10n.familyAmountIn(currency),
+            helperText: context.l10n.familyAllowanceHelper,
             border: const OutlineInputBorder(),
           ),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () {
               final value = parseMoneyInput(fields[0].text);
               if (value != null) Navigator.of(dialogContext).pop(value);
             },
-            child: const Text('حوّل'),
+            child: Text(context.l10n.familyTransfer),
           ),
         ],
       ),
@@ -1306,9 +1327,13 @@ class _KidCard extends ConsumerWidget {
                     Text(child.alias, style: ZadType.titleSmall),
                     Text(
                       <String>[
-                        'الرصيد: ${familyMoney(child.balance, currency)}',
+                        context.l10n.familyBalanceIs(
+                          familyMoney(child.balance, currency),
+                        ),
                         if (child.savingsGoal > 0)
-                          'الهدف: ${familyMoney(child.savingsGoal, currency)}',
+                          context.l10n.familyGoalIs(
+                            familyMoney(child.savingsGoal, currency),
+                          ),
                       ].join(' | '),
                       style: ZadType.labelSmall.copyWith(
                         color: ZadColors.inkMuted,
@@ -1327,7 +1352,7 @@ class _KidCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '$done/${chores.length} مهام',
+                  context.l10n.familyKidTasksDoneOf(done, chores.length),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.green700),
                 ),
               ),
@@ -1339,13 +1364,13 @@ class _KidCard extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: () => unawaited(_sendAllowance(context, controller)),
               icon: const Icon(ZadIcons.wallet, size: 16),
-              label: const Text('حوّل مصروف'),
+              label: Text(context.l10n.familySendAllowance),
             ),
           ),
           if ((child.dailyLimit ?? 0) > 0) ...<Widget>[
             const SizedBox(height: ZadSpacing.sm),
             SpendLimitBar(
-              label: 'اليومي',
+              label: context.l10n.familyDaily,
               spent: spentToday,
               limit: child.dailyLimit,
               currency: currency,
@@ -1354,7 +1379,7 @@ class _KidCard extends ConsumerWidget {
           if (spending case final s?) ...<Widget>[
             const SizedBox(height: ZadSpacing.sm),
             SpendLimitBar(
-              label: 'المصروف الشهري',
+              label: context.l10n.familyMonthlySpending,
               spent: s.monthlyTotal,
               limit: s.budgetCeiling,
               currency: currency,
@@ -1373,7 +1398,7 @@ class _KidCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'الطلبات المعلقة (${requests.length})',
+                    context.l10n.familyPendingRequests(requests.length),
                     style: ZadType.labelSmall.copyWith(
                       fontWeight: FontWeight.w700,
                       color: ZadColors.inkMuted,
@@ -1400,7 +1425,7 @@ class _KidCard extends ConsumerWidget {
                           onPressed: () =>
                               unawaited(controller.decide(r, approve: true)),
                           icon: const Icon(ZadIcons.selected, size: 14),
-                          label: const Text('موافقة'),
+                          label: Text(context.l10n.familyApprove),
                         ),
                         TextButton.icon(
                           style: TextButton.styleFrom(
@@ -1409,7 +1434,7 @@ class _KidCard extends ConsumerWidget {
                           onPressed: () =>
                               unawaited(controller.decide(r, approve: false)),
                           icon: const Icon(ZadIcons.rejected, size: 14),
-                          label: const Text('رفض'),
+                          label: Text(context.l10n.familyReject),
                         ),
                       ],
                     ),
@@ -1466,17 +1491,24 @@ class FamilyGoalsTab extends ConsumerWidget {
         padding: _listPadding,
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[
-          _heading(ZadIcons.coins, 'الميزانية والمكافآت'),
+          _heading(ZadIcons.coins, context.l10n.familyBudgetRewardsHeading),
           const SizedBox(height: ZadSpacing.lg),
           ZadCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Row(
+                Row(
                   children: <Widget>[
-                    Icon(ZadIcons.savings, size: 20, color: ZadColors.green700),
-                    SizedBox(width: 6),
-                    Text('هدف الادخار العائلي', style: ZadType.titleSmall),
+                    const Icon(
+                      ZadIcons.savings,
+                      size: 20,
+                      color: ZadColors.green700,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      context.l10n.familySavingsGoalTitle,
+                      style: ZadType.titleSmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: ZadSpacing.md),
@@ -1527,7 +1559,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                     ),
                 ] else ...<Widget>[
                   Text(
-                    'لسه مفيش هدف ادخار للشهر ده',
+                    context.l10n.familyNoSavingsGoal,
                     style: ZadType.bodySmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -1544,7 +1576,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(ZadIcons.assistant, size: 16),
-                    label: const Text('اقترح هدف بالذكاء الاصطناعي'),
+                    label: Text(context.l10n.familySuggestGoal),
                   ),
                 ],
               ],
@@ -1552,18 +1584,18 @@ class FamilyGoalsTab extends ConsumerWidget {
           ),
           const SizedBox(height: ZadSpacing.lg),
           if (kids.isEmpty)
-            const ZadEmptyState(
+            ZadEmptyState(
               icon: ZadIcons.child,
-              title: 'لا يوجد أبناء مضافين لعرض إحصائياتهم.',
-              message: 'من تاب الأعضاء خلّي أي فرد "طفل".',
+              title: context.l10n.familyNoKidsStatsTitle,
+              message: context.l10n.familyNoKidsMessage,
             )
           else ...<Widget>[
             ZadCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const Text(
-                    'إحصائيات أرصدة الأبناء',
+                  Text(
+                    context.l10n.familyKidsBalanceStats,
                     style: ZadType.titleSmall,
                   ),
                   const SizedBox(height: ZadSpacing.lg),
@@ -1641,7 +1673,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'إجمالي المكافآت المدفوعة',
+                        context.l10n.familyTotalRewardsPaid,
                         style: ZadType.bodyMedium.copyWith(
                           color: ZadColors.inkMuted,
                         ),
@@ -1679,8 +1711,10 @@ class FamilyGoalsTab extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'الهدف: ${familyMoney(s.targetAmount, currency)} خلال '
-              '${s.durationDays} يوم',
+              context.l10n.familyGoalSuggestionBody(
+                familyMoney(s.targetAmount, currency),
+                s.durationDays,
+              ),
             ),
             if (s.rewardSuggestion.isNotEmpty) ...<Widget>[
               const SizedBox(height: 6),
@@ -1704,11 +1738,11 @@ class FamilyGoalsTab extends ConsumerWidget {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(c).pop(true),
-            child: const Text('اعتماد الهدف'),
+            child: Text(context.l10n.familyApproveGoal),
           ),
         ],
       ),

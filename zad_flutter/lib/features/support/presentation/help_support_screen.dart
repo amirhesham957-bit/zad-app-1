@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/support/data/support_assistant.dart';
 import 'package:zad/features/support/data/support_tickets.dart';
 
@@ -30,15 +31,6 @@ Future<void> showHelpSupportScreen(BuildContext context) =>
 
 typedef _Message = ({String text, bool isUser});
 
-const _Message _welcome = (
-  text:
-      'أهلاً! أنا مساعد أسئلة استخدام تطبيق زاد — أقدر أساعدك تفهم أي ميزة '
-      'أو تحل مشكلة تقنية. لو سؤالك عن بياناتك الشخصية (مصاريفك، رصيدك، '
-      'اشتراكاتك)، الأفضل تسأل شات "عقل زاد" لأنه هو بس اللي شايف حسابك '
-      'الفعلي.',
-  isUser: false,
-);
-
 /// The support chat.
 class HelpSupportScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
@@ -49,7 +41,11 @@ class HelpSupportScreen extends ConsumerStatefulWidget {
 }
 
 class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
-  final List<_Message> _messages = <_Message>[_welcome];
+  // The welcome is the first message (and is left out of what is sent to
+  // the team, by `skip(1)`); read on first build, in the screen's language.
+  late final List<_Message> _messages = <_Message>[
+    (text: context.l10n.supportWelcome, isUser: false),
+  ];
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   bool _typing = false;
@@ -80,7 +76,9 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       _typing = true;
     });
     _toBottom();
-    final answer = await ref.read(supportAssistantProvider).ask(text);
+    final answer = await ref
+        .read(supportAssistantProvider)
+        .ask(text, l10n: context.l10n);
     if (!mounted) return;
     setState(() {
       _messages.add((text: answer, isUser: false));
@@ -97,24 +95,23 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       initial: const <String>['', ''],
       builder: (dialogContext, fields) => StatefulBuilder(
         builder: (dialogContext, setDialog) => AlertDialog(
-          title: const Text('كلّم فريق الدعم'),
+          title: Text(context.l10n.supportContactTeam),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'اكتب المشكلة أو الشكوى، وهيوصل لفريق الدعم على طول '
-                  'ويردوا عليك على إيميلك.',
+                  context.l10n.supportContactHint,
                   style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.md),
                 TextField(
                   controller: fields[0],
                   maxLength: 120,
-                  decoration: const InputDecoration(
-                    labelText: 'الموضوع',
-                    hintText: 'مثال: صفحة الصيدلية فاضية',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.supportSubject,
+                    hintText: context.l10n.supportSubjectHint,
                   ),
                 ),
                 const SizedBox(height: ZadSpacing.sm),
@@ -122,8 +119,8 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                   controller: fields[1],
                   minLines: 4,
                   maxLines: 8,
-                  decoration: const InputDecoration(
-                    labelText: 'التفاصيل',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.supportDetails,
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -131,7 +128,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                   contentPadding: EdgeInsets.zero,
                   value: attachLog,
                   onChanged: (v) => setDialog(() => attachLog = v ?? false),
-                  title: const Text('أرفق سجل الأعطال (يساعدنا نصلحها أسرع)'),
+                  title: Text(context.l10n.supportAttachLog),
                 ),
               ],
             ),
@@ -139,7 +136,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('إلغاء'),
+              child: Text(context.l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () {
@@ -147,11 +144,12 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                 final message = fields[1].text.trim();
                 if (message.isEmpty) return;
                 Navigator.of(dialogContext).pop((
-                  subject: subject.isEmpty ? 'طلب دعم' : subject,
+                  // The ticket's subject, read by the support team.
+                  subject: subject.isEmpty ? 'طلب دعم' : subject, // l10n: data
                   message: message,
                 ));
               },
-              child: const Text('إرسال'),
+              child: Text(context.l10n.supportSend),
             ),
           ],
         ),
@@ -181,9 +179,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     if (delivery == SupportDelivery.emailed) {
       setState(
         () => _messages.add((
-          text:
-              'وصلت رسالتك لفريق الدعم ✅ — هيردوا عليك على إيميلك في أقرب '
-              'وقت.',
+          text: context.l10n.supportSentByEmail,
           isUser: false,
         )),
       );
@@ -204,8 +200,8 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       SnackBar(
         content: Text(
           opened
-              ? 'فتحنالك الإيميل — دوس إرسال وهتوصل لفريق الدعم'
-              : 'ابعت لنا على ${SupportTickets.inbox}',
+              ? context.l10n.supportMailOpened
+              : context.l10n.supportWriteTo(SupportTickets.inbox),
         ),
       ),
     );
@@ -218,7 +214,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialog) => AlertDialog(
-          title: const Text('سجل الأعطال'),
+          title: Text(context.l10n.supportCrashLog),
           content: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Text(
@@ -230,21 +226,24 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
             TextButton(
               onPressed: () => unawaited(
                 SharePlus.instance.share(
-                  ShareParams(text: text, subject: 'مشاركة السجل'),
+                  ShareParams(
+                    text: text,
+                    subject: context.l10n.supportShareLog,
+                  ),
                 ),
               ),
-              child: const Text('📤 مشاركة'),
+              child: Text(context.l10n.supportShare),
             ),
             TextButton(
               onPressed: () async {
                 await log.clear();
                 setDialog(() => text = '');
               },
-              child: const Text('🗑️ مسح'),
+              child: Text(context.l10n.supportClear),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('إغلاق'),
+              child: Text(context.l10n.supportClose),
             ),
           ],
         ),
@@ -267,14 +266,14 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'مساعدة استخدام التطبيق',
+                  context.l10n.supportTitle,
                   style: ZadType.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: ZadColors.ink,
                   ),
                 ),
                 Text(
-                  'أسئلة عامة — مش وصل لحسابك الشخصي',
+                  context.l10n.supportSubtitle,
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ],
@@ -284,12 +283,12 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
       ),
       actions: <Widget>[
         IconButton(
-          tooltip: 'كلّم فريق الدعم',
+          tooltip: context.l10n.supportContactTeam,
           icon: Icon(Icons.mail_outline, color: ZadColors.inkMuted),
           onPressed: () => unawaited(_contactSupport()),
         ),
         IconButton(
-          tooltip: 'سجل الأعطال',
+          tooltip: context.l10n.supportCrashLog,
           icon: Icon(Icons.bug_report, color: ZadColors.inkMuted),
           onPressed: () => unawaited(_crashLog()),
         ),
@@ -317,7 +316,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                   const SizedBox(width: ZadSpacing.md),
                   Expanded(
                     child: Text(
-                      'عندك شكوى أو مشكلة؟ كلّم فريق الدعم',
+                      context.l10n.supportComplaintBanner,
                       style: ZadType.bodyMedium.copyWith(
                         fontWeight: FontWeight.w700,
                         color: ZadColors.green700,
@@ -363,7 +362,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => unawaited(_send()),
                       decoration: InputDecoration(
-                        hintText: 'اكتب رسالتك هنا...',
+                        hintText: context.l10n.supportInputHint,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: ZadSpacing.lg,
                           vertical: ZadSpacing.md,
@@ -387,7 +386,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
                   SizedBox.square(
                     dimension: 48,
                     child: IconButton.filled(
-                      tooltip: 'إرسال',
+                      tooltip: context.l10n.supportSend,
                       style: IconButton.styleFrom(
                         backgroundColor: ZadColors.green700,
                         foregroundColor: Colors.white,
@@ -495,7 +494,7 @@ class _Typing extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(ZadSpacing.md),
           child: Text(
-            'جاري الكتابة...',
+            context.l10n.supportTyping,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
         ),

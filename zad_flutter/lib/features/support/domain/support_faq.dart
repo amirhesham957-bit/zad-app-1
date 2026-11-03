@@ -4,12 +4,16 @@
 /// The support screen answered every question with «عذراً، لم أتمكن من
 /// معالجة طلبك» whenever the model was down or out of quota — exactly when
 /// people most need help. These are matched by keywords; the keyword lists
-/// are matching data and stay Arabic (CLAUDE.md, i18n).
+/// are matching data and stay Arabic (CLAUDE.md, i18n); the answers
+/// are in the ARB files.
 library;
 
-typedef _Faq = ({List<String> keys, String answer});
+import 'package:zad/core/l10n/l10n.dart';
 
-const List<_Faq> _faqs = <_Faq>[
+typedef _Faq = ({List<String> keys, String Function(ZadL10n) answer});
+
+// l10n: data-begin
+final List<_Faq> _faqs = <_Faq>[
   (
     keys: <String>[
       'إشعار',
@@ -22,11 +26,7 @@ const List<_Faq> _faqs = <_Faq>[
       'مقيّد',
       'رمادي',
     ],
-    answer:
-        'عشان زاد يقرا رسايل البنك: من الرئيسية دوس «فعّل قراءة إشعارات '
-        'البنك» وامشي على الخطوات. لو المفتاح رمادي أو ظهرت «إعداد مقيَّد»: '
-        'افتح «معلومات التطبيق» ← ⋮ فوق ← «السماح بالإعدادات المقيدة»، وارجع '
-        'فعّل الإذن. وعلى شاومي وأوبو خلي البطارية «بدون قيود» عشان مايقفش.',
+    answer: (l) => l.supportFaqBank,
   ),
   (
     keys: <String>[
@@ -38,61 +38,42 @@ const List<_Faq> _faqs = <_Faq>[
       'اطفال',
       'عيال',
     ],
-    answer:
-        'من «العائلة» ← «مصاريف الأبناء» تلاقي كل طفل ورصيده. «حوّل مصروف» '
-        'بيزوّد رصيده على طول. والطفل يقدر يطلب «مصروف» (بيتضاف لو وافقت) أو '
-        '«أشتري حاجة» (بيتخصم لو وافقت ورصيده يكفي).',
+    answer: (l) => l.supportFaqAllowance,
   ),
   (
     keys: <String>['فاتورة', 'فاتوره', 'كاميرا', 'مسح', 'صورة'],
-    answer:
-        'صوّر الفاتورة من زرار الكاميرا. زاد بيقرا المبلغ والأصناف وتاريخ '
-        'الفاتورة، وبيسجلها على يومها. راجع المبلغ والفئة قبل الحفظ، وتقدر '
-        'تضيف الأصناف للمخزن في نفس الخطوة.',
+    answer: (l) => l.supportFaqReceipt,
   ),
   (
     keys: <String>['بلد', 'دولة', 'عملة', 'السوق'],
-    answer:
-        'البلد والعملة بيتحددوا وقت التسجيل. لو محتاج تغيّرهم: «حسابي» ← '
-        '«الإعدادات» ← السوق. التوقيت ومواعيد التذكير بيمشوا على بلد الحساب.',
+    answer: (l) => l.supportFaqCountry,
   ),
   (
     keys: <String>['صوت', 'مايك', 'ميكروفون', 'بيرد', 'اتكلم', 'كلمته'],
-    answer:
-        'دوس على المايك في الشات واتكلم، وزاد بيرد بصوت. لو الرد اتأخر أو '
-        'ماجاش صوت، اتأكد من النت وجرّب تاني — والرد المكتوب بيفضل ظاهر في '
-        'الشات.',
+    answer: (l) => l.supportFaqVoice,
   ),
   (
     keys: <String>['ميعاد', 'مواعيد', 'تذكير', 'دكتور', 'دوا', 'دواء', 'جرعة'],
-    answer:
-        'المواعيد من «مواعيدي» ← «ميعاد جديد»، أو قول لزاد في الشات «فكرني '
-        'بميعاد الدكتور يوم الخميس الساعة ٥». الأدوية من «صيدلية العائلة»، '
-        'وتقدر تحدد الدوا لمين في العيلة.',
+    answer: (l) => l.supportFaqAppointments,
   ),
   (
     keys: <String>['العيلة', 'العائلة', 'انضم', 'كود', 'دعوة'],
-    answer:
-        'من «العائلة» اعمل عيلة جديدة وابعت الكود لأهلك، أو دوس «انضم» واكتب '
-        'الكود اللي وصلك. المسؤول بس هو اللي يقدر يغيّر الأدوار والمكافآت.',
+    answer: (l) => l.supportFaqFamily,
   ),
   (
     keys: <String>['باسورد', 'كلمة السر', 'كلمة المرور', 'نسيت'],
-    answer:
-        'من شاشة الدخول دوس «نسيت كلمة المرور» واكتب إيميلك، هيوصلك لينك '
-        'تغيّرها منه.',
+    answer: (l) => l.supportFaqPassword,
   ),
   (
     keys: <String>['حذف الحساب', 'احذف حسابي', 'الغي الحساب', 'امسح حسابي'],
-    answer:
-        'حذف الحساب من «حسابي» ← «حذف الحساب». ده بيمسح بياناتك كلها نهائياً '
-        'ومايترجعش.',
+    answer: (l) => l.supportFaqDeleteAccount,
   ),
 ];
+// l10n: data-end
 
 /// The built-in answer to [question], or null when none fits. The entry
 /// with the most keyword hits wins; a tie goes to the earlier entry.
-String? faqAnswer(String question) {
+String? faqAnswer(String question, {ZadL10n? l10n}) {
   final q = question.trim();
   if (q.isEmpty) return null;
   _Faq? best;
@@ -104,5 +85,5 @@ String? faqAnswer(String question) {
       bestHits = hits;
     }
   }
-  return best?.answer;
+  return best?.answer(l10n ?? zadL10nArabic);
 }

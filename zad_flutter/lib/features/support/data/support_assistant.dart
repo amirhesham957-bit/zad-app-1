@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/support/domain/support_faq.dart';
 
 /// Answers one usage question.
@@ -23,9 +24,8 @@ class SupportAssistant {
 
   /// What is left when neither the model nor a built-in answer helps: what
   /// to do next, instead of Kotlin's bare apology.
-  static const String fallback =
-      'مش قادر أرد دلوقتي. جرّب تاني كمان شوية، ولو المشكلة مستمرة افتح '
-      '«سجل الأعطال» من الشاشة دي وابعته لنا — فيه اللي نحتاجه عشان نصلحها.';
+  static String fallback([ZadL10n? l10n]) =>
+      (l10n ?? zadL10nArabic).supportFallback;
 
   /// Long enough for the server to walk its model chain; after that the
   /// customer gets [fallback] instead of a typing dot that never ends.
@@ -33,8 +33,10 @@ class SupportAssistant {
 
   /// The model's answer; when it cannot be had, the built-in answer to the
   /// question if one fits ([faqAnswer]), and only then [fallback].
-  Future<String> ask(String question) async =>
-      await _askModel(question) ?? faqAnswer(question) ?? fallback;
+  Future<String> ask(String question, {ZadL10n? l10n}) async =>
+      await _askModel(question) ??
+      faqAnswer(question, l10n: l10n) ??
+      fallback(l10n);
 
   Future<String?> _askModel(String question) async {
     try {

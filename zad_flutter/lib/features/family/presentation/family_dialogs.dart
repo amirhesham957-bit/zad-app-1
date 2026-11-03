@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
@@ -30,21 +31,19 @@ Future<bool> confirmAndSendSos(BuildContext context, WidgetRef ref) async {
     context: context,
     builder: (c) => AlertDialog(
       icon: Icon(ZadIcons.sos, color: ZadColors.terracottaRust),
-      title: const Text('تأكيد نداء الطوارئ'),
-      content: const Text(
-        'هيتبعت تنبيه فوري لكل أفراد العائلة إنك محتاج مساعدة. متأكد؟',
-      ),
+      title: Text(context.l10n.familySosConfirmTitle),
+      content: Text(context.l10n.familySosConfirmBody),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: ZadColors.terracottaRust,
           ),
           onPressed: () => Navigator.of(c).pop(true),
-          child: const Text('أرسل النداء'),
+          child: Text(context.l10n.familySosSend),
         ),
       ],
     ),
@@ -91,12 +90,11 @@ class _InviteDialogState extends State<_InviteDialog> {
   }
 
   String get _shareText =>
-      'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: ${widget.code}\n'
-      'أو افتح الرابط: ${inviteLink(widget.code)}';
+      context.l10n.familyInviteShareText(widget.code, inviteLink(widget.code));
 
   Future<void> _share(String text) async {
     await SharePlus.instance.share(
-      ShareParams(text: text, subject: 'مشاركة الدعوة'),
+      ShareParams(text: text, subject: context.l10n.familyShareInvite),
     );
     if (mounted) _flash();
   }
@@ -105,11 +103,11 @@ class _InviteDialogState extends State<_InviteDialog> {
   Widget build(BuildContext context) {
     final code = widget.code;
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: <Widget>[
-          Icon(ZadIcons.invite, color: ZadColors.green700),
-          SizedBox(width: ZadSpacing.sm),
-          Text('دعوة أفراد جدد'),
+          const Icon(ZadIcons.invite, color: ZadColors.green700),
+          const SizedBox(width: ZadSpacing.sm),
+          Text(context.l10n.familyInviteNew),
         ],
       ),
       content: SingleChildScrollView(
@@ -123,9 +121,9 @@ class _InviteDialogState extends State<_InviteDialog> {
               children: <Widget>[
                 for (final (i, label) in <String>[
                   'QR',
-                  'رابط',
-                  'كود',
-                  'واتساب',
+                  context.l10n.familyInviteMethodLink,
+                  context.l10n.familyInviteMethodCode,
+                  context.l10n.familyInviteMethodWhatsapp,
                 ].indexed)
                   FilterChip(
                     label: Text(label),
@@ -138,7 +136,7 @@ class _InviteDialogState extends State<_InviteDialog> {
             const SizedBox(height: ZadSpacing.lg),
             ...switch (_method) {
               0 => <Widget>[
-                _label('مسح الرمز للانضمام:'),
+                _label(context.l10n.familyInviteScanToJoin),
                 const SizedBox(height: ZadSpacing.sm),
                 Center(
                   child: Container(
@@ -160,7 +158,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 ),
               ],
               1 => <Widget>[
-                _label('رابط الدعوة:'),
+                _label(context.l10n.familyInviteLinkLabel),
                 const SizedBox(height: ZadSpacing.sm),
                 Container(
                   padding: const EdgeInsetsDirectional.only(
@@ -182,7 +180,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'انسخ',
+                        tooltip: context.l10n.familyCopy,
                         icon: const Icon(
                           ZadIcons.copy,
                           size: 18,
@@ -202,7 +200,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 ),
               ],
               2 => <Widget>[
-                _label('كود الدعوة:'),
+                _label(context.l10n.familyInviteCodeColon),
                 const SizedBox(height: ZadSpacing.sm),
                 Container(
                   padding: const EdgeInsets.all(ZadSpacing.lg),
@@ -222,7 +220,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 ),
               ],
               _ => <Widget>[
-                _label('شارك عبر واتساب:'),
+                _label(context.l10n.familyInviteShareWhatsapp),
                 const SizedBox(height: ZadSpacing.md),
                 Row(
                   children: <Widget>[
@@ -233,7 +231,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                         ),
                         onPressed: () => unawaited(_share(_shareText)),
                         icon: const Icon(ZadIcons.ask, size: 16),
-                        label: const Text('واتساب'),
+                        label: Text(context.l10n.familyInviteMethodWhatsapp),
                       ),
                     ),
                     const SizedBox(width: ZadSpacing.sm),
@@ -241,7 +239,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                       child: FilledButton.tonalIcon(
                         onPressed: () => unawaited(_share(_shareText)),
                         icon: const Icon(ZadIcons.share, size: 16),
-                        label: const Text('جميع التطبيقات'),
+                        label: Text(context.l10n.familyInviteAllApps),
                       ),
                     ),
                   ],
@@ -252,17 +250,13 @@ class _InviteDialogState extends State<_InviteDialog> {
             FilledButton.icon(
               onPressed: () => unawaited(
                 _share(switch (_method) {
-                  0 =>
-                    'انضم إلى عائلتي في تطبيق زاد! امسح الرمز: '
-                        '${inviteLink(code)}',
-                  1 =>
-                    'انضم إلى عائلتي في تطبيق زاد!\n'
-                        'رابط الدعوة: ${inviteLink(code)}',
-                  _ => 'انضم إلى عائلتي في تطبيق زاد!\nكود الدعوة: $code',
+                  0 => context.l10n.familyInviteShareQr(inviteLink(code)),
+                  1 => context.l10n.familyInviteShareLink(inviteLink(code)),
+                  _ => context.l10n.familyInviteShareCode(code),
                 }),
               ),
               icon: const Icon(ZadIcons.share, size: 18),
-              label: const Text('مشاركة'),
+              label: Text(context.l10n.familyShare),
             ),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
@@ -279,7 +273,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                           ),
                           const SizedBox(width: ZadSpacing.xs),
                           Text(
-                            'تم',
+                            context.l10n.commonDone,
                             style: ZadType.labelMedium.copyWith(
                               color: ZadColors.green700,
                             ),
@@ -295,7 +289,7 @@ class _InviteDialogState extends State<_InviteDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('تم'),
+          child: Text(context.l10n.commonDone),
         ),
       ],
     );
@@ -359,11 +353,11 @@ class _JoinDialogState extends State<_JoinDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Row(
+    title: Row(
       children: <Widget>[
-        Icon(ZadIcons.joinFamily, color: ZadColors.green700),
-        SizedBox(width: ZadSpacing.sm),
-        Text('الانضمام للعائلة'),
+        const Icon(ZadIcons.joinFamily, color: ZadColors.green700),
+        const SizedBox(width: ZadSpacing.sm),
+        Text(context.l10n.familyJoin),
       ],
     ),
     content: SingleChildScrollView(
@@ -372,9 +366,9 @@ class _JoinDialogState extends State<_JoinDialog> {
         children: <Widget>[
           TextField(
             controller: _alias,
-            decoration: const InputDecoration(
-              labelText: 'اسمك في العيلة (اختياري)',
-              hintText: 'مثال: الابن أحمد',
+            decoration: InputDecoration(
+              labelText: context.l10n.familyAliasLabel,
+              hintText: context.l10n.familyAliasHint,
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -384,9 +378,9 @@ class _JoinDialogState extends State<_JoinDialog> {
             textDirection: TextDirection.ltr,
             textCapitalization: TextCapitalization.characters,
             autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'كود الدعوة',
-              hintText: 'مثال: ZAD-1234',
+            decoration: InputDecoration(
+              labelText: context.l10n.familyInviteCodeLabel,
+              hintText: context.l10n.familyInviteCodeHint,
             ),
             onChanged: (v) {
               final code = extractInviteCode(v);
@@ -403,7 +397,7 @@ class _JoinDialogState extends State<_JoinDialog> {
           OutlinedButton.icon(
             onPressed: () => unawaited(_paste()),
             icon: const Icon(ZadIcons.copy, size: 18),
-            label: const Text('الصق رابط أو كود الدعوة'),
+            label: Text(context.l10n.familyPasteInvite),
           ),
         ],
       ),
@@ -411,7 +405,7 @@ class _JoinDialogState extends State<_JoinDialog> {
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       FilledButton(
         onPressed: _ready
@@ -419,7 +413,7 @@ class _JoinDialogState extends State<_JoinDialog> {
                   Navigator.of(context)
                       .pop((_code.text.trim(), _alias.text.trim()))
             : null,
-        child: const Text('الانضمام للعائلة'),
+        child: Text(context.l10n.familyJoin),
       ),
     ],
   );
@@ -487,7 +481,7 @@ class _AddChoreDialogState extends ConsumerState<_AddChoreDialog> {
   Widget build(BuildContext context) {
     final currency = familyCurrency(ref);
     return AlertDialog(
-      title: const Text('إضافة مهمة جديدة'),
+      title: Text(context.l10n.familyAddTaskTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -496,9 +490,9 @@ class _AddChoreDialogState extends ConsumerState<_AddChoreDialog> {
             TextField(
               controller: _title,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'اسم المهمة',
-                hintText: 'مثال: ترتيب الغرفة',
+              decoration: InputDecoration(
+                labelText: context.l10n.familyTaskNameLabel,
+                hintText: context.l10n.familyTaskNameHint,
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -511,12 +505,12 @@ class _AddChoreDialogState extends ConsumerState<_AddChoreDialog> {
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(
                 labelText: currency.isEmpty
-                    ? 'المكافأة'
-                    : 'المكافأة ($currency)',
+                    ? context.l10n.familyReward
+                    : context.l10n.familyRewardIn(currency),
               ),
             ),
             const SizedBox(height: ZadSpacing.md),
-            const Text('المكلف بالمهمة:', style: ZadType.labelMedium),
+            Text(context.l10n.familyAssignee, style: ZadType.labelMedium),
             const SizedBox(height: ZadSpacing.xs),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 150),
@@ -553,7 +547,7 @@ class _AddChoreDialogState extends ConsumerState<_AddChoreDialog> {
               icon: const Icon(ZadIcons.duration, size: 16),
               label: Text(
                 _due == null
-                    ? 'تاريخ التسليم (اختياري)'
+                    ? context.l10n.familyDueDateOptional
                     : '${_due!.year}/${_due!.month}/${_due!.day}',
               ),
             ),
@@ -563,13 +557,13 @@ class _AddChoreDialogState extends ConsumerState<_AddChoreDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _saving || _title.text.trim().isEmpty
               ? null
               : () => unawaited(_save()),
-          child: const Text('إضافة'),
+          child: Text(context.l10n.commonAdd),
         ),
       ],
     );
@@ -589,7 +583,7 @@ Future<void> showQuickTaskDialog(
     initial: const <String>[''],
     builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) => AlertDialog(
-        title: const Text('إضافة مهمة جديدة'),
+        title: Text(context.l10n.familyAddTaskTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -597,12 +591,16 @@ Future<void> showQuickTaskDialog(
             TextField(
               controller: fields[0],
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'اسم المهمة'),
+              decoration: InputDecoration(
+                labelText: context.l10n.familyTaskNameLabel,
+              ),
             ),
             const SizedBox(height: ZadSpacing.md),
             DropdownButtonFormField<String>(
               initialValue: assignee,
-              decoration: const InputDecoration(labelText: 'المكلف بالمهمة:'),
+              decoration: InputDecoration(
+                labelText: context.l10n.familyAssignee,
+              ),
               items: <DropdownMenuItem<String>>[
                 for (final m in members)
                   DropdownMenuItem<String>(value: m.id, child: Text(m.alias)),
@@ -614,14 +612,14 @@ Future<void> showQuickTaskDialog(
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () {
               final title = fields[0].text.trim();
               if (title.isNotEmpty) Navigator.of(c).pop((assignee, title));
             },
-            child: const Text('إضافة'),
+            child: Text(context.l10n.commonAdd),
           ),
         ],
       ),
@@ -637,9 +635,9 @@ Future<void> showQuickTaskDialog(
 Future<void> showQuickGroceryDialog(BuildContext context, WidgetRef ref) async {
   final name = await _askText(
     context,
-    title: 'نزّلها في التسوق',
-    hint: 'مثلاً: حليب',
-    action: 'إضافة',
+    title: context.l10n.familyQuickGroceryTitle,
+    hint: context.l10n.familyQuickGroceryHint,
+    action: context.l10n.commonAdd,
   );
   if (name == null) return;
   await ref.read(familyLifeControllerProvider.notifier).addGrocery(name);
@@ -664,7 +662,7 @@ Future<String?> _askText(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(c).pop(fields[0].text.trim()),
@@ -688,14 +686,16 @@ Future<void> showPurchaseRequestDialog(
     context: context,
     initial: const <String>['', ''],
     builder: (c, fields) => AlertDialog(
-      title: const Text('طلب مصروف أو مشتريات'),
+      title: Text(context.l10n.familyMoneyRequestTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           TextField(
             controller: fields[0],
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'ماذا تريد أن تشتري؟'),
+            decoration: InputDecoration(
+              labelText: context.l10n.familyMoneyRequestWhat,
+            ),
           ),
           const SizedBox(height: ZadSpacing.sm),
           TextField(
@@ -704,8 +704,8 @@ Future<void> showPurchaseRequestDialog(
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
               labelText: currency.isEmpty
-                  ? 'المبلغ المطلوب'
-                  : 'المبلغ المطلوب ($currency)',
+                  ? context.l10n.familyMoneyRequestAmount
+                  : context.l10n.familyMoneyRequestAmountIn(currency),
             ),
           ),
         ],
@@ -713,7 +713,7 @@ Future<void> showPurchaseRequestDialog(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -723,7 +723,7 @@ Future<void> showPurchaseRequestDialog(
               Navigator.of(c).pop((what, value));
             }
           },
-          child: const Text('إرسال الطلب'),
+          child: Text(context.l10n.familyMoneyRequestSend),
         ),
       ],
     ),
@@ -748,13 +748,12 @@ Future<void> showSpendLimitDialog(
     context: context,
     initial: <String>[initial(member.dailyLimit), initial(member.weeklyLimit)],
     builder: (c, fields) => AlertDialog(
-      title: const Text('حد الإنفاق'),
+      title: Text(context.l10n.familySpendLimitTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            'حدد أقصى مبلغ يقدر ${member.alias} يصرفه يومياً/أسبوعياً. '
-            'اتركه فارغاً لإلغاء الحد.',
+            context.l10n.familySpendLimitBody(member.alias),
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -762,28 +761,32 @@ Future<void> showSpendLimitDialog(
             controller: fields[0],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
-            decoration: InputDecoration(labelText: 'الحد اليومي ($currency)'),
+            decoration: InputDecoration(
+              labelText: context.l10n.familyDailyLimitIn(currency),
+            ),
           ),
           const SizedBox(height: ZadSpacing.sm),
           TextField(
             controller: fields[1],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
-            decoration: InputDecoration(labelText: 'الحد الأسبوعي ($currency)'),
+            decoration: InputDecoration(
+              labelText: context.l10n.familyWeeklyLimitIn(currency),
+            ),
           ),
         ],
       ),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(c).pop((
             parseMoneyInput(fields[0].text),
             parseMoneyInput(fields[1].text),
           )),
-          child: const Text('تم'),
+          child: Text(context.l10n.commonDone),
         ),
       ],
     ),
@@ -815,11 +818,11 @@ const int _pollQuestionMax = 200;
 const int _pollOptionMax = 60;
 
 /// When a poll closes on its own: a label and the duration (null = by hand).
-const List<(String, Duration?)> pollClosings = <(String, Duration?)>[
-  ('بكرة', Duration(days: 1)),
-  ('بعد يومين', Duration(days: 2)),
-  ('بعد أسبوع', Duration(days: 7)),
-  ('أنا أقفله', null),
+List<(String, Duration?)> pollClosings(ZadL10n l10n) => <(String, Duration?)>[
+  (l10n.familyPollClosesTomorrow, const Duration(days: 1)),
+  (l10n.familyPollClosesTwoDays, const Duration(days: 2)),
+  (l10n.familyPollClosesWeek, const Duration(days: 7)),
+  (l10n.familyPollClosesByHand, null),
 ];
 
 class _PollDialog extends StatefulWidget {
@@ -848,7 +851,7 @@ class _PollDialogState extends State<_PollDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('تصويت عائلي'),
+    title: Text(context.l10n.familyPollTitle),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -858,8 +861,8 @@ class _PollDialogState extends State<_PollDialog> {
             controller: _question,
             autofocus: true,
             maxLength: _pollQuestionMax,
-            decoration: const InputDecoration(
-              labelText: 'السؤال',
+            decoration: InputDecoration(
+              labelText: context.l10n.familyPollQuestion,
               counterText: '',
             ),
           ),
@@ -870,7 +873,7 @@ class _PollDialogState extends State<_PollDialog> {
                 controller: o,
                 maxLength: _pollOptionMax,
                 decoration: InputDecoration(
-                  labelText: 'خيار ${i + 1}',
+                  labelText: context.l10n.familyPollOption(i + 1),
                   counterText: '',
                 ),
               ),
@@ -881,17 +884,17 @@ class _PollDialogState extends State<_PollDialog> {
               child: TextButton(
                 onPressed: () =>
                     setState(() => _options.add(TextEditingController())),
-                child: const Text('+ إضافة خيار'),
+                child: Text(context.l10n.familyPollAddOption),
               ),
             ),
           const SizedBox(height: ZadSpacing.sm),
-          const Text('يتقفل إمتى؟', style: ZadType.labelMedium),
+          Text(context.l10n.familyPollClosesWhen, style: ZadType.labelMedium),
           const SizedBox(height: ZadSpacing.xs),
           Wrap(
             spacing: ZadSpacing.xs,
             runSpacing: ZadSpacing.xs,
             children: <Widget>[
-              for (final (i, c) in pollClosings.indexed)
+              for (final (i, c) in pollClosings(context.l10n).indexed)
                 ChoiceChip(
                   label: Text(c.$1),
                   selected: _closing == i,
@@ -905,7 +908,7 @@ class _PollDialogState extends State<_PollDialog> {
     actions: <Widget>[
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('إلغاء'),
+        child: Text(context.l10n.commonCancel),
       ),
       FilledButton(
         onPressed: () {
@@ -914,11 +917,14 @@ class _PollDialogState extends State<_PollDialog> {
               if (o.text.trim().isNotEmpty) o.text.trim(),
           }.toList();
           if (_question.text.trim().isNotEmpty && valid.length >= 2) {
-            Navigator.of(context)
-                .pop((_question.text.trim(), valid, pollClosings[_closing].$2));
+            Navigator.of(context).pop((
+              _question.text.trim(),
+              valid,
+              pollClosings(context.l10n)[_closing].$2,
+            ));
           }
         },
-        child: const Text('إرسال التصويت'),
+        child: Text(context.l10n.familyPollSend),
       ),
     ],
   );
