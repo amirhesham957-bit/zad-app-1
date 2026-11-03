@@ -17,7 +17,7 @@ import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { meaningfulWords, offerMatchesNeed, stapleGroup, stapleHead } from "./productIdentity.ts";
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
-import { type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
+import { haversineKm, type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -442,6 +442,48 @@ export function nearbyStoreNames(raw: unknown): string[] {
   return stores.map((s) => String((s as { name?: unknown })?.name ?? "").trim()).filter((n) => n.length >= 2).slice(0, 20);
 }
 
+/** المحلات حوالين نقطته بإحداثياتها (٤.٧) — من نفس رد nearby_pois. */
+export function nearbyStorePlaces(raw: unknown): Array<{ name: string; lat: number; lon: number }> {
+  const stores = (raw as { stores?: unknown } | null)?.stores;
+  if (!Array.isArray(stores)) return [];
+  const out: Array<{ name: string; lat: number; lon: number }> = [];
+  for (const s of stores as Array<{ name?: unknown; lat?: unknown; lon?: unknown }>) {
+    const name = String(s?.name ?? "").trim();
+    const lat = Number(s?.lat);
+    const lon = Number(s?.lon);
+    if (name.length >= 2 && Number.isFinite(lat) && Number.isFinite(lon)) out.push({ name, lat, lon });
+  }
+  return out.slice(0, 20);
+}
+
+/**
+ * فرع العرض (٤.٧): عرض البحث أو السوشيال مالوش إحداثيات، بس لو المحل ده من المحلات حوالين نقطته، الفرع هو أقرب
+ * واحد باسمه منها — فالمشوار (٤.١٠) يتحسب له. العرض اللي ليه إحداثيات (فاتورة) بيفضل زي ما هو.
+ */
+export function withBranch<T extends { store: string; lat?: number | string | null; lng?: number | string | null }>(
+  row: T,
+  places: ReadonlyArray<{ name: string; lat: number; lon: number }>,
+  home: { lat: number; lon: number } | null,
+): T {
+  if ((row.lat != null && row.lng != null) || !home) return row;
+  const near = places.filter((p) => sameName(p.name, row.store))
+    .sort((a, b) => haversineKm(home, a) - haversineKm(home, b))[0];
+  return near ? { ...row, lat: near.lat, lng: near.lon } : row;
+}
+
+/**
+ * «عندك عربية؟» (٤.١٠): ملاحظة remember بسكوب transport. «معندناش عربية» / «بنروح مواصلات» = مفيش سطر مشوار بالعربية
+ * ولا المشوار بيشيل العرض. من غير ملاحظة = زي الأول (العربية).
+ */
+export const TRANSPORT_SCOPE = "transport";
+export function saysNoCar(notes: readonly string[]): boolean {
+  return notes.some((n) => {
+    const t = String(n ?? "");
+    return /(?:مش|مفيش|معند|ماعند|من غير|بدون|ما\s*عند|ماعند)\S*\s*(?:\S+\s+)?(?:عربي|عربيه|عربية|سياره|سيارة|سيارات)/.test(t) ||
+      (/(?:مواصلات|تاكسي|اوبر|أوبر|كريم|مترو|باص|مشي)/.test(t) && !/عربي|سيار/.test(t));
+  });
+}
+
 /** اللي هيخلص خلال أسبوع من حالة البيت (pantry.running_out)، الأقرب الأول. */
 export function runningOutNames(state: unknown): string[] {
   const list = (state as { pantry?: { running_out?: unknown } } | null)?.pantry?.running_out;
@@ -500,7 +542,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_inventory").select("item_name,created_at").or(householdFilter(userId, family)).limit(300),
       // ٤.١٥: الماركة اللي قالها في الشات — بتغلب اللي اتحسب من المشتريات.
       // ٤.١٥: والمحل اللي قال إنه بيشتري منه.
-      sb.from("zad_memory").select("note,scope,valid_until").eq("user_id", userId).in("scope", [BRAND_PREFERENCE_SCOPE, STORE_PREFERENCE_SCOPE])
+      sb.from("zad_memory").select("note,scope,valid_until").eq("user_id", userId).in("scope", [BRAND_PREFERENCE_SCOPE, STORE_PREFERENCE_SCOPE, TRANSPORT_SCOPE])
         .is("superseded_by", null).order("created_at", { ascending: false }).limit(20),
     ]);
     const tight = broke || opts.tight === true;
@@ -536,11 +578,11 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const stockable = opts.comfortable && !tight ? storableBought(boughtNames) : new Set<number>();
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
     const point = nearbyPoint(user as { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null } | null, now);
-    const nearby = point
-      ? nearbyStoreNames(
-        await nearbySource.search({ ...point, tag: "supermarket", radius_meters: NEARBY_RADIUS_METERS }, userId).catch(() => null),
-      )
-      : [];
+    const nearbyRaw = point
+      ? await nearbySource.search({ ...point, tag: "supermarket", radius_meters: NEARBY_RADIUS_METERS }, userId).catch(() => null)
+      : null;
+    const nearby = nearbyStoreNames(nearbyRaw);
+    const places = nearbyStorePlaces(nearbyRaw);
     const [{ data: storedAll, error: storedErr }, { data: fuelRow }, { data: pausedRows, error: pausedErr }] = await Promise.all([
       sb.from("zad_deals")
         .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind")
@@ -560,8 +602,10 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       return pickDeal(raw, items, favorites, skip, nearby, tight, brands, stockable);
     };
     // ٤.١٠: المشوار من نقطته (مقرّبة لكيلو) للمحل اللي ليه إحداثيات، بسعر بنزين بلده.
+    // ٤.٧: عرض من غير إحداثيات بياخد أقرب فرع باسمه حوالين نقطته. ٤.١٠: «معندناش عربية» = مفيش مشوار بالعربية.
+    const noCar = saysNoCar(saidOf(TRANSPORT_SCOPE));
     const tripOf = (r: StoredDealRow & { currency?: string | null }) =>
-      tripCost(point, r, usableFuel(fuelRow as { price?: number; currency?: string; found_at?: string } | null, r.currency ?? null, now));
+      noCar ? null : tripCost(point, withBranch(r, places, point), usableFuel(fuelRow as { price?: number; currency?: string; found_at?: string } | null, r.currency ?? null, now));
     const storedRaw = storedDeals(stored as StoredDealRow[] | null, tripOf);
     const fromStore = items.length ? pick(storedRaw) : null;
     if (fromStore) return fromStore;

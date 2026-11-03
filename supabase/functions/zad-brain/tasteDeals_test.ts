@@ -428,3 +428,29 @@ Deno.test("stated stores: the shop the customer named counts as theirs; a reject
   ]);
   assertEquals(pickDeal(raw, ["زيت"], statedStores(["كيو"]), new Set())?.store, "كيو");
 });
+
+// ٤.٧ + ٤.١٠: فرع عرض البحث من المحلات حوالين نقطته، و«معندناش عربية».
+import { nearbyStorePlaces, saysNoCar, withBranch } from "./tasteDeals.ts";
+
+Deno.test("branch: a deal with no coordinates takes the nearest branch of that shop around the customer", () => {
+  const places = nearbyStorePlaces({ stores: [
+    { name: "كيو ماركت - العليا", lat: 24.70, lon: 46.68 },
+    { name: "كيو ماركت - النخيل", lat: 24.75, lon: 46.62 },
+    { name: "بنده", lat: 24.71, lon: 46.69 },
+    { name: "x" },
+  ] });
+  assertEquals(places.length, 3);
+  const home = { lat: 24.69, lon: 46.68 };
+  const row = { store: "كيو ماركت", lat: null, lng: null };
+  assertEquals([withBranch(row, places, home).lat, withBranch(row, places, home).lng], [24.70, 46.68]);
+  // a receipt deal keeps its own point; no point or no matching shop = unchanged.
+  assertEquals(withBranch({ store: "كيو ماركت", lat: 1, lng: 2 }, places, home).lat, 1);
+  assertEquals(withBranch(row, places, null).lat, null);
+  assertEquals(withBranch({ store: "العثيم", lat: null, lng: null }, places, home).lat, null);
+});
+
+Deno.test("transport: «معندناش عربية» or getting around by bus means no car trip; having a car does not", () => {
+  for (const n of ["معندناش عربية", "مش عندنا عربية", "ماعندناش سيارة", "بنروح مواصلات", "بنطلب أوبر"]) assert(saysNoCar([n]), n);
+  for (const n of ["عندنا عربية", "عندنا سيارة وبنروح مشي ساعات", ""]) assert(!saysNoCar([n]), n);
+  assert(!saysNoCar([]));
+});
