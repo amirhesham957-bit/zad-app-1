@@ -108,7 +108,7 @@ Deno.test("a free voice question within the day's three is charged, so an empty 
   assertEquals(db.calls[1].args, { p_user: "u1", p_kind: "voice", p_tz: "UTC" });
 });
 
-Deno.test("the fourth free voice question: 402 no_voice_today, in Zad's words", async () => {
+Deno.test("the seventh free voice question: 402 no_voice_today, in Zad's words", async () => {
   const db = fakeRpc({
     zad_rate_take: { data: { ok: true } },
     zad_entitlement_consume: { data: { allowed: false, reason: "voice_daily_cap", voice_daily: 3, voice_left: 0 } },
@@ -116,7 +116,7 @@ Deno.test("the fourth free voice question: 402 no_voice_today, in Zad's words", 
   const g = await openGate(db.rpc, "u1", meterFor("voice_agent")!);
   assertEquals(g.refusal?.status, 402);
   assertEquals(g.refusal?.body.error, "no_voice_today");
-  assert(String(g.refusal?.body.message).includes("٣ في اليوم"));
+  assert(String(g.refusal?.body.message).includes("٦ في اليوم"));
 });
 
 Deno.test("reading a reply aloud never calls consume", async () => {

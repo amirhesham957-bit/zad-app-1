@@ -7,14 +7,13 @@ function sbWith(responses: Record<string, unknown>) {
   };
 }
 
-Deno.test("المستخدم المجاني بيتقفل على الصوت والصور برسالة ترقية", async () => {
-  const sb = sbWith({ zad_entitlement_status: { telegram_media: false, tier: "free" } });
+Deno.test("المجاني: الصور برسالة ترقية، والفويس من عدّاد اليوم (قرار المالك ٣/١١)", async () => {
+  const sb = sbWith({
+    zad_entitlement_status: { telegram_media: false, tier: "free" },
+    zad_entitlement_consume: { allowed: true, reason: "quota", voice_daily: 6, voice_left: 5 },
+  });
 
-  const voice = await mediaGate(sb, "u1", "voice");
-  assertEquals(voice.allowed, false);
-  assertEquals(voice.reply!.includes("الصوتية"), true);
-  // لازم توضّح إن النص لسه مجاني — القفل ده تسويق مش طرد.
-  assertEquals(voice.reply!.includes("مجاناً"), true);
+  assertEquals(await mediaGate(sb, "u1", "voice"), { allowed: true });
 
   const photo = await mediaGate(sb, "u1", "scan");
   assertEquals(photo.allowed, false);
@@ -42,14 +41,14 @@ Deno.test("المشترك اللي رصيده خلص بياخد رسالة رص�
 
 // الفرق المقصود عن بوابة zad-brain: دي بتفشل مقفولة. لو الفحص وقع، الميزة المدفوعة
 // ماتبقاش مجانية لأي حد بيجرب في اللحظة دي.
-Deno.test("المجاني بتصريح الإعلان بعد ٣ أسئلة صوتية بياخد رسالة «بكرة» مش رسالة ترقية", async () => {
+Deno.test("المجاني بعد ٦ أسئلة صوتية بياخد رسالة «بكرة» مش رسالة ترقية", async () => {
   const sb = sbWith({
-    zad_entitlement_status: { telegram_media: true, tier: "free" },
-    zad_entitlement_consume: { allowed: false, reason: "voice_daily_cap", voice_daily: 3 },
+    zad_entitlement_status: { telegram_media: false, tier: "free" },
+    zad_entitlement_consume: { allowed: false, reason: "voice_daily_cap", voice_daily: 6 },
   });
   const r = await mediaGate(sb, "u1", "voice");
   assertEquals(r.allowed, false);
-  assertEquals(r.reply!.includes("٣ في اليوم"), true);
+  assertEquals(r.reply!.includes("٦ في اليوم"), true);
 });
 
 Deno.test("فشل الفحص بيقفل الوسائط، مش بيفتحها", async () => {

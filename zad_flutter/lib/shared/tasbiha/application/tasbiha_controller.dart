@@ -88,7 +88,7 @@ class TasbihaController extends Notifier<TasbihaView> {
   TasbihaView build() {
     // Captured here: a disposed notifier may not read providers, and the
     // last flush below runs exactly then.
-    final remote = _remote = TasbihaRemote(ref.read(supabaseClientProvider));
+    final remote = _remote = ref.read(tasbihaRemoteProvider);
     ref.onDispose(() {
       _flush?.cancel();
       final tree = _pendingTree;
@@ -124,16 +124,21 @@ class TasbihaController extends Notifier<TasbihaView> {
   String? get _familyId => ref.read(familyControllerProvider).family?.id;
   String get _userId => ref.read(familyControllerProvider).userId;
 
-  /// Kotlin's `loadTasbiha`.
+  /// Kotlin's `loadTasbiha`. With no family the garden is the member's own
+  /// trees (`family_id` null); with one, the family's trees plus those.
   Future<void> load() async {
     final familyId = _familyId;
-    if (familyId == null) {
+    if (_userId.isEmpty) {
       state = state.copyWith(isLoading: false);
       return;
     }
     try {
       final remote = _remote;
-      final family = await remote.familyTrees(familyId);
+      final personal = await remote.personalTrees(_userId);
+      final family = <GardenTree>[
+        if (familyId != null) ...await remote.familyTrees(familyId),
+        ...personal,
+      ];
       var mine = family.where((t) => t.userId == _userId).toList()
         ..sort((a, b) => b.score.compareTo(a.score));
       if (mine.isEmpty) {
@@ -147,7 +152,9 @@ class TasbihaController extends Notifier<TasbihaView> {
         mine = <GardenTree>[first];
         family.add(first);
       }
-      final challenges = await remote.activeChallenges(familyId);
+      final challenges = familyId == null
+          ? const <TasbihaChallenge>[]
+          : await remote.activeChallenges(familyId);
       final progress = await remote.myProgress(<String>[
         for (final c in challenges) c.id,
       ], _userId);
@@ -282,7 +289,10 @@ class TasbihaController extends Notifier<TasbihaView> {
       final familyId = _familyId;
       if (familyId != null) {
         final family = await _remote.familyTrees(familyId);
-        state = state.copyWith(familyTrees: family);
+        final personal = await _remote.personalTrees(_userId);
+        state = state.copyWith(
+          familyTrees: <GardenTree>[...family, ...personal],
+        );
       }
     } on Object catch (e) {
       // Put the taps back so the next flush still carries them.
@@ -330,7 +340,7 @@ class TasbihaController extends Notifier<TasbihaView> {
   /// Kotlin's `createNewTree`.
   Future<void> createTree(String gardenName) async {
     final familyId = _familyId;
-    if (familyId == null) return;
+    if (_userId.isEmpty) return;
     try {
       final tree = await _remote.createTree(
         familyId: familyId,
@@ -378,3 +388,8 @@ class TasbihaController extends Notifier<TasbihaView> {
 /// screen and the kids home can show the tree.
 final tasbihaControllerProvider =
     NotifierProvider<TasbihaController, TasbihaView>(TasbihaController.new);
+
+/// The garden's server side — a provider so tests hand in a fake.
+final tasbihaRemoteProvider = Provider<TasbihaRemote>(
+  (ref) => TasbihaRemote(ref.read(supabaseClientProvider)),
+);
