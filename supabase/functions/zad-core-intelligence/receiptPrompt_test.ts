@@ -23,6 +23,8 @@ Deno.test("receipt prompt: a delivery-app order — fees and discounts are not i
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Delivery fees, service fees, tips, discounts and promo-code lines are NOT items");
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "`storeName` is the shop or restaurant the order came from");
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Never copy a promo code anywhere");
-  // العقد نفسه مااتغيرش: مفيش حقل جديد في الـJSON.
   assert(!/promoCode|"platform"/.test(RECEIPT_SYSTEM_PROMPT));
+  // ٤.١٠: الرسوم نفسها في حقل لوحده، والخدمة والبقشيش لأ.
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "\"deliveryApp\":\"\",\"deliveryFee\":0");
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "not the service fee, not a tip");
 });

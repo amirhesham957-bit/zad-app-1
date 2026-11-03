@@ -18,6 +18,7 @@ import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { meaningfulWords, offerMatchesNeed, stapleGroup, stapleHead } from "./productIdentity.ts";
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
 import { haversineKm, type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
+import { deliveryApp } from "../_shared/deliveryApps.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -61,6 +62,8 @@ export interface TasteDeal {
   stock?: boolean;
   /** المشوار بالعربية للمحل ده من نقطته (٤.١٠) — بس لو المحل ليه إحداثيات وسعر البنزين معروف. */
   trip?: Trip;
+  /** العرض في تطبيق توصيل ورسومه المعتادة معروفة من فواتير العملاء (٤.١٠) — بدل المشوار. */
+  delivery?: Delivery;
   /** بيت لسه مالوش قايمة ولا مخزن ولا اهتمامات: عرض على حاجة أساسية بيشتريها كل بيت (قرار المالك ٣/١١). */
   staple?: boolean;
   /** «العرض الناري» (٤.٨): خصم كبير أو ١+١ على حاجة البيت بيشتريها ومش في القايمة. */
@@ -255,6 +258,7 @@ export function pickDeal(
       nearby: nearby.some((n) => sameName(n, store)),
       brand: offerBrand(item, brands),
       ...(d?.trip && typeof d.trip === "object" ? { trip: d.trip as Trip } : {}),
+      ...(d?.delivery && typeof d.delivery === "object" ? { delivery: d.delivery as Delivery } : {}),
       ...(d?.deal_kind === "multi_buy" ? { multi_buy: true } : {}),
       ...(tight ? { tight: true } : {}),
       ...(!tight && (hasBefore || hasDiscount) && stockable.has(brandWords(item).group ?? -1) ? { stock: true } : {}),
@@ -292,22 +296,50 @@ export interface StoredDealRow {
 export function storedDeals(
   rows: readonly StoredDealRow[] | null | undefined,
   trip: (r: StoredDealRow) => Trip | null = () => null,
+  delivery: (r: StoredDealRow) => Delivery | null = () => null,
 ): Array<Record<string, unknown>> {
   const out: Array<Record<string, unknown>> = [];
   for (const r of rows ?? []) {
     const price = Number(r.price);
     const before = Number(r.price_before);
     const discount = Number.isFinite(before) && before > price && price > 0 ? ((before - price) / before) * 100 : null;
-    const t = trip(r);
-    if (tripEatsSaving(t, Number.isFinite(before) && before > price ? before - price : null)) continue;
+    const saving = Number.isFinite(before) && before > price ? before - price : null;
+    // تطبيق توصيل: بيوصل، فمفيش مشوار؛ رسومه هي اللي بتتطرح من التوفير.
+    const del = delivery(r);
+    const t = del ? null : trip(r);
+    if (tripEatsSaving(t, saving)) continue;
+    if (del && saving !== null && del.fee >= saving) continue;
     out.push({
       item: r.item_name, store: r.store, price, price_before: Number.isFinite(before) ? before : null, discount_percent: discount, note: null,
       source: { kind: r.source_kind, url: r.source_url, until: r.valid_until },
       ...(r.deal_kind ? { deal_kind: r.deal_kind } : {}),
       ...(t ? { trip: t } : {}),
+      ...(del ? { delivery: del } : {}),
     });
   }
   return out;
+}
+
+/** رسوم التوصيل المعتادة لتطبيق (٤.١٠): الوسيط من فواتير العملاء. */
+export interface Delivery {
+  app: string;
+  fee: number;
+}
+
+/**
+ * رسوم العرض لو محله تطبيق توصيل ليه رسوم معروفة بنفس عملة العرض، وإلا null. [typical] = صفوف
+ * zad_delivery_fees_typical (الوسيط من قرايتين أو أكتر).
+ */
+export function deliveryOf(
+  typical: ReadonlyArray<{ app_key?: string; app?: string; fee?: number | string; currency?: string }> | null | undefined,
+  store: string,
+  currency: string | null | undefined,
+): Delivery | null {
+  const app = deliveryApp(store);
+  if (!app) return null;
+  const row = (typical ?? []).find((t) => t.app_key === app.key && (!currency || !t.currency || t.currency.toUpperCase() === currency.toUpperCase()));
+  const fee = Number(row?.fee);
+  return row && fee > 0 ? { app: app.name, fee: Math.round(fee * 100) / 100 } : null;
 }
 
 /** «العرض الناري» (٤.٨): خصم ٤٠٪ أو أكتر، أو ١+١. */
@@ -610,12 +642,13 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const places = nearbyStorePlaces(nearbyRaw);
     // ٤.٣: مدينته — بالتوازي مع القرايات اللي جاية.
     const cityRead = customerCity(sb, userId, country).catch(() => "");
-    const [{ data: storedAll, error: storedErr }, { data: fuelRow }, { data: pausedRows, error: pausedErr }] = await Promise.all([
+    const [{ data: storedAll, error: storedErr }, { data: fuelRow }, { data: pausedRows, error: pausedErr }, { data: feeRows, error: feeErr }] = await Promise.all([
       sb.from("zad_deals")
         .select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,lat,lng,deal_kind,city")
         .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(300),
       sb.from("zad_fuel_prices").select("price,currency,found_at").eq("country", country).maybeSingle(),
       sb.rpc("zad_deal_paused_sources", { p_days: 14 }),
+      sb.rpc("zad_delivery_fees_typical", { p_country: country }),
     ]);
     if (storedErr) console.warn("[taste_deal] zad_deals read failed:", storedErr.message);
     // فشل قراية البوابة = من غير إيقاف (العرض لسه بمصدره وتاريخه و«ممكن يكون خلص»).
@@ -633,7 +666,11 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const noCar = saysNoCar(saidOf(TRANSPORT_SCOPE));
     const tripOf = (r: StoredDealRow & { currency?: string | null }) =>
       noCar ? null : tripCost(point, withBranch(r, places, point), usableFuel(fuelRow as { price?: number; currency?: string; found_at?: string } | null, r.currency ?? null, now));
-    const storedRaw = storedDeals(stored as StoredDealRow[] | null, tripOf);
+    // ٤.١٠: عرض في تطبيق توصيل بيتطرح منه رسومه المعتادة. فشل القراية = من غير رسوم، زي الأول.
+    if (feeErr) console.warn("[taste_deal] delivery fees read failed:", feeErr.message);
+    const deliveryFor = (r: StoredDealRow & { currency?: string | null }) =>
+      deliveryOf(feeRows as Array<{ app_key?: string; fee?: number; currency?: string }> | null, r.store, r.currency ?? null);
+    const storedRaw = storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor);
     const fromStore = items.length ? pick(storedRaw) : null;
     if (fromStore) return fromStore;
     if (items.length) {

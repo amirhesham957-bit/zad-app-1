@@ -6,6 +6,7 @@ import { DeadKeys } from "../_shared/deadKeys.ts";
 import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
+import { deliveryApp, deliveryFee } from "../_shared/deliveryApps.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { redactForLog } from "./redact.ts";
 import { isServiceRoleToken, providerHealth, tokenSubject } from "./providerHealth.ts";
@@ -518,6 +519,31 @@ async function storeInstagramAccount(
   });
   if (error) console.error("[storeInstagramAccount] save failed:", error.message);
   return username;
+}
+
+/**
+ * رسوم توصيل من فاتورة طلب تطبيق (ZAD_PLAN ٤.١٠) في zad_delivery_fees: التطبيق من القايمة المقفولة بس، وبعملة بلد
+ * الحساب (أو بلد السفر)، ومن غير user_id — home_key هاش للعميل. أي فشل بيتسجل ومابيوقفش قراية الفاتورة.
+ */
+async function recordDeliveryFee(userId: string, appRaw: unknown, feeRaw: unknown): Promise<void> {
+  const app = deliveryApp(appRaw);
+  const fee = deliveryFee(feeRaw);
+  if (!app || fee === null) return;
+  try {
+    const { data: user } = await supabase.from("zad_users").select("country,travel_country").eq("id", userId).maybeSingle();
+    const country = String(user?.travel_country || user?.country || "").toUpperCase();
+    const market = marketOf(country);
+    if (market.code !== country) return; // بلد مش من أسواقنا: عملته مش معروفة
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`delivery-fee:${userId}`));
+    const homeKey = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+    const { error } = await supabase.from("zad_delivery_fees").upsert(
+      { country, app_key: app.key, app: app.name, fee, currency: market.currency, home_key: homeKey },
+      { onConflict: "home_key,app_key,seen_on,fee", ignoreDuplicates: true },
+    );
+    if (error) console.warn("[recordDeliveryFee] save failed:", error.message);
+  } catch (e) {
+    console.warn("[recordDeliveryFee] failed:", (e as Error)?.message);
+  }
 }
 
 async function pictureAsDataUrl(url: string): Promise<string | null> {
@@ -2404,6 +2430,10 @@ async function handle(req: Request): Promise<Response> {
           if (jsonMatch) {
             try {
               const parsed = JSON.parse(jsonMatch[0]);
+              const token = bearerToken(req);
+              const owner = tokenSubject(token) ??
+                (isServiceRoleToken(token, supabaseKey) && typeof user_id === "string" ? user_id : null);
+              if (owner) await recordDeliveryFee(owner, parsed?.deliveryApp, parsed?.deliveryFee);
               return jsonResponse({
                 total: parsed.total || 0,
                 // Prompted AND clamped. Telling the model the eleven allowed values is not

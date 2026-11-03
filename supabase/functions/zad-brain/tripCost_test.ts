@@ -50,7 +50,7 @@ Deno.test("trip: a deal whose trip eats its saving is dropped; the rest carry th
   assertEquals(storedDeals([{ ...ROWS[0], lat: 30.15 }], (r) => tripCost(HOME, r, FUEL)), []);
 });
 
-function fakeSb(tables: Record<string, unknown[]>): SupabaseClient {
+function fakeSb(tables: Record<string, unknown[]>, rpcs: Record<string, unknown> = {}): SupabaseClient {
   const chain = (data: unknown): unknown =>
     new Proxy({}, {
       get(_t, prop) {
@@ -59,7 +59,7 @@ function fakeSb(tables: Record<string, unknown[]>): SupabaseClient {
         return () => chain(data);
       },
     });
-  return { from: (t: string) => chain(tables[t] ?? []), rpc: () => chain(null) } as unknown as SupabaseClient;
+  return { from: (t: string) => chain(tables[t] ?? []), rpc: (name: string) => chain(rpcs[name] ?? null) } as unknown as SupabaseClient;
 }
 
 Deno.test("trip: the morning deal says the trip and the net saving", async () => {
@@ -74,4 +74,38 @@ Deno.test("trip: the morning deal says the trip and the net saving", async () =>
   assertEquals([d?.store, d?.trip], ["كارفور المعادي", { km: 8.7, cost: 13.2 }]);
   const line = momentFallback("morning_greeting", { taste_deal: d }).text;
   assertStringIncludes(line, "بـ80 بدل 100 (توفّر 20)، والمشوار بالعربية حوالي 8.7 كم رايح جاي بـ13.2 بنزين (يعني توفّر حوالي 6.8 صافي).");
+});
+
+// ٤.١٠: عرض في تطبيق توصيل — رسومه المعتادة من فواتير العملاء بتتطرح من التوفير، ومفيش مشوار.
+import { deliveryOf } from "./tasteDeals.ts";
+
+const FEES = [{ app_key: "ninja", app: "نينجا", fee: 9, currency: "SAR", readings: 3, homes: 2 }];
+const APP_DEAL = {
+  store: "Ninja", item_name: "زيت عافية", price: 20, price_before: 35, currency: "SAR", source_kind: "search",
+  source_url: "https://example.com/n", valid_until: null, lat: 24.7, lng: 46.7,
+};
+
+Deno.test("delivery: an app's usual fee comes off the saving, and a fee that eats it hides the deal", () => {
+  assertEquals(deliveryOf(FEES, "نينجا", "SAR"), { app: "نينجا", fee: 9 });
+  assertEquals(deliveryOf(FEES, "Ninja", "EGP"), null); // عملة تانية
+  assertEquals(deliveryOf(FEES, "كارفور", "SAR"), null); // مش تطبيق
+  assertEquals(deliveryOf(null, "Ninja", "SAR"), null);
+  const trip = () => ({ km: 5, cost: 4 });
+  const [kept] = storedDeals([APP_DEAL], trip, (r) => deliveryOf(FEES, r.store, "SAR"));
+  assertEquals([kept.delivery, kept.trip], [{ app: "نينجا", fee: 9 }, undefined]); // التطبيق بيوصل: مفيش مشوار
+  // توفير ٥ ورسوم ٩: العرض مايتقالش.
+  assertEquals(storedDeals([{ ...APP_DEAL, price: 30 }], trip, (r) => deliveryOf(FEES, r.store, "SAR")), []);
+});
+
+Deno.test("delivery: the morning deal says the app's usual fee and the net saving", async () => {
+  dealSource.search = () => Promise.resolve(null);
+  const d = await loadTasteDeal(fakeSb({
+    zad_users: [{ id: "u", country: "SA" }],
+    zad_shopping_list: [{ item_name: "زيت" }],
+    zad_customer_profile: [{ interests: [] }],
+    zad_deals: [APP_DEAL],
+  }, { zad_delivery_fees_typical: FEES }), "u");
+  assertEquals([d?.store, d?.delivery, d?.trip], ["Ninja", { app: "نينجا", fee: 9 }, undefined]);
+  const line = momentFallback("morning_greeting", { taste_deal: d }).text;
+  assertStringIncludes(line, "بـ20 بدل 35 (توفّر 15)، وتوصيل نينجا عادةً حوالي 9 (يعني توفّر حوالي 6 صافي).");
 });
