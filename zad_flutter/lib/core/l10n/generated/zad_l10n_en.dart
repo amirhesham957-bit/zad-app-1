@@ -8035,4 +8035,142 @@ class ZadL10nEn extends ZadL10n {
   String scanPantryResult(String parts) {
     return 'Pantry: $parts.';
   }
+
+  @override
+  String get statementUnreadableFile =>
+      'Couldn\'t read that file — send a CSV, a PDF or a photo of the statement';
+
+  @override
+  String get statementTooBig =>
+      'The file is over 10 MB — send one month at a time or photograph the pages';
+
+  @override
+  String get statementNoRows =>
+      'I couldn\'t find any transactions I can read in this statement — try a clearer photo or a PDF from your bank\'s app';
+
+  @override
+  String get statementServerDown =>
+      'I couldn\'t reach the server — check your connection and try again';
+
+  @override
+  String statementImported(int imported, int skipped) {
+    String _temp0 = intl.Intl.pluralLogic(
+      imported,
+      locale: localeName,
+      other: 'Imported $imported transactions',
+      one: 'Imported 1 transaction',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      skipped,
+      locale: localeName,
+      other: 'skipped $skipped duplicates',
+      one: 'skipped 1 duplicate',
+      zero: 'no duplicates',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get statementTitle => 'Import a bank statement';
+
+  @override
+  String get statementIntro =>
+      'Pick your statement: a PDF from your bank\'s app, a photo, or a CSV file. Zad reads the transactions and checks them against the statement\'s balance, and nothing is saved until you\'ve reviewed it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPick => 'Choose statement';
+
+  @override
+  String get statementMapHint =>
+      'Tell me which column holds what — every bank\'s file is different';
+
+  @override
+  String get statementColDate => 'Date column';
+
+  @override
+  String get statementColTitle => 'Description column';
+
+  @override
+  String get statementColAmount => 'Amount column';
+
+  @override
+  String get statementColCategory => 'Category column (optional)';
+
+  @override
+  String get statementInvert =>
+      'Flip the amount\'s sign (if negative means money in, not spending)';
+
+  @override
+  String get statementContinue => 'Continue to review';
+
+  @override
+  String get statementNone => 'None';
+
+  @override
+  String statementColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementRowsSummary(int rows, int checked) {
+    String _temp0 = intl.Intl.pluralLogic(
+      rows,
+      locale: localeName,
+      other: '$rows rows',
+      one: '1 row',
+    );
+    return '$_temp0 — $checked selected to import';
+  }
+
+  @override
+  String get statementEmptyTitle => 'No transactions in this file';
+
+  @override
+  String get statementEmptyMessage =>
+      'The file opened but has no rows I can import — make sure it\'s a bank statement in CSV or a readable PDF.';
+
+  @override
+  String statementImportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Import $count transactions',
+      one: 'Import 1 transaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementRowError =>
+      'Couldn\'t read the date or amount in this row';
+
+  @override
+  String get statementRowMismatch =>
+      'The statement\'s balance doesn\'t match this row — check the amount';
+
+  @override
+  String get statementBalanced => 'The figures match the statement\'s balance';
+
+  @override
+  String get statementMismatch =>
+      'Some figures don\'t match the statement\'s balance — those rows are unticked, check them';
+
+  @override
+  String get statementUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rows couldn\'t be read.',
+      one: '1 row couldn\'t be read.',
+    );
+    return '$text. $_temp0';
+  }
 }

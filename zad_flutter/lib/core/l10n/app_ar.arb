@@ -8073,5 +8073,151 @@
         "type": "String"
       }
     }
+  },
+  "statementUnreadableFile": "تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف",
+  "@statementUnreadableFile": {
+    "description": "Statement import: unreadable file."
+  },
+  "statementTooBig": "الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات",
+  "@statementTooBig": {
+    "description": "Statement import: file too large."
+  },
+  "statementNoRows": "ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو ملف PDF من تطبيق البنك",
+  "@statementNoRows": {
+    "description": "Statement import: nothing read."
+  },
+  "statementServerDown": "مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني",
+  "@statementServerDown": {
+    "description": "Statement import: network failure."
+  },
+  "statementImported": "تم استيراد {imported} معاملة، تجاهل {skipped} مكررة",
+  "@statementImported": {
+    "description": "Statement import done.",
+    "placeholders": {
+      "imported": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "statementTitle": "استيراد كشف حساب",
+  "@statementTitle": {
+    "description": "Screen title."
+  },
+  "statementIntro": "اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.",
+  "@statementIntro": {
+    "description": "Statement import intro."
+  },
+  "statementReading": "بقرا الكشف… الكشف الطويل بياخد دقيقة",
+  "@statementReading": {
+    "description": "Statement import: working."
+  },
+  "statementPick": "اختيار الكشف",
+  "@statementPick": {
+    "description": "Button."
+  },
+  "statementMapHint": "حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك",
+  "@statementMapHint": {
+    "description": "CSV mapping hint."
+  },
+  "statementColDate": "عمود التاريخ",
+  "@statementColDate": {
+    "description": "Column picker."
+  },
+  "statementColTitle": "عمود الوصف/العنوان",
+  "@statementColTitle": {
+    "description": "Column picker."
+  },
+  "statementColAmount": "عمود المبلغ",
+  "@statementColAmount": {
+    "description": "Column picker."
+  },
+  "statementColCategory": "عمود التصنيف (اختياري)",
+  "@statementColCategory": {
+    "description": "Column picker."
+  },
+  "statementInvert": "اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)",
+  "@statementInvert": {
+    "description": "Switch."
+  },
+  "statementContinue": "متابعة للمراجعة",
+  "@statementContinue": {
+    "description": "Button."
+  },
+  "statementNone": "بدون",
+  "@statementNone": {
+    "description": "Optional column picker hint."
+  },
+  "statementColumnN": "عمود {n}",
+  "@statementColumnN": {
+    "description": "A column with no header.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "statementRowsSummary": "{rows} صف — {checked} محدد للاستيراد",
+  "@statementRowsSummary": {
+    "description": "Preview header.",
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "statementEmptyTitle": "ما لقيتش أي معاملة في الملف",
+  "@statementEmptyTitle": {
+    "description": "Empty state title."
+  },
+  "statementEmptyMessage": "الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.",
+  "@statementEmptyMessage": {
+    "description": "Empty state message."
+  },
+  "statementImportCount": "استيراد {count} معاملة",
+  "@statementImportCount": {
+    "description": "Button.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statementRowError": "تعذّرت قراءة التاريخ أو المبلغ في هذا الصف",
+  "@statementRowError": {
+    "description": "Row error."
+  },
+  "statementRowMismatch": "الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ",
+  "@statementRowMismatch": {
+    "description": "Row warning."
+  },
+  "statementBalanced": "الأرقام متطابقة مع رصيد الكشف",
+  "@statementBalanced": {
+    "description": "Check banner."
+  },
+  "statementMismatch": "في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها",
+  "@statementMismatch": {
+    "description": "Check banner."
+  },
+  "statementUnknown": "الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
+  "@statementUnknown": {
+    "description": "Check banner."
+  },
+  "statementDropped": "{text}. وفي {count} صف ماقدرتش أقراه.",
+  "@statementDropped": {
+    "description": "Check banner with rows left out.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

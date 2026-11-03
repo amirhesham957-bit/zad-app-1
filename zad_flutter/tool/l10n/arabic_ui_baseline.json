@@ -56,8 +56,6 @@
   "features/savings/presentation/family_savings_screen.dart": 49,
   "features/settings/presentation/monthly_limit_sheet.dart": 17,
   "features/settings/presentation/settings_screen.dart": 33,
-  "features/statement/domain/statement_import.dart": 96,
-  "features/statement/presentation/statement_import_screen.dart": 32,
   "features/tasbiha/presentation/leaderboard_share.dart": 7,
   "features/tasbiha/presentation/tasbiha_screen.dart": 59,
   "features/telegram/presentation/telegram_binding.dart": 35,

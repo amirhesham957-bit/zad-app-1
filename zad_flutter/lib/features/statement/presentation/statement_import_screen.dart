@@ -22,6 +22,7 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -105,8 +106,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
     if (mounted) await _open(file.name, bytes);
   }
 
-  static const String _unreadableFile =
-      'تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف';
+  String get _unreadableFile => context.l10n.statementUnreadableFile;
 
   Future<void> _open(String name, Uint8List bytes) async {
     switch (statementFileKind(name)) {
@@ -140,13 +140,11 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
 
   Future<void> _scan(String name, Uint8List bytes) async {
     if (bytes.length > _maxScanBytes) {
-      setState(
-        () => _error =
-            'الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات',
-      );
+      setState(() => _error = context.l10n.statementTooBig);
       return;
     }
     final userId = ref.read(signedInUserIdProvider)() ?? '';
+    final l10n = context.l10n;
     setState(() {
       _error = null;
       _reading = true;
@@ -168,14 +166,10 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
               customCategory: ref.read(merchantCategoriesProvider).categoryFor,
             );
       if (scanned == null) {
-        error =
-            'ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو '
-            'ملف PDF من تطبيق البنك';
+        error = l10n.statementNoRows;
       }
     } on Object catch (e) {
-      error =
-          serverRefusal(e)?.message ??
-          'مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني';
+      error = serverRefusal(e, l10n)?.message ?? l10n.statementServerDown;
     }
     if (!mounted) return;
     setState(() {
@@ -261,7 +255,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
     unawaited(HapticFeedback.mediumImpact());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('تم استيراد $imported معاملة، تجاهل $skipped مكررة'),
+        content: Text(context.l10n.statementImported(imported, skipped)),
       ),
     );
     setState(() {
@@ -278,7 +272,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
     decoration: BoxDecoration(gradient: ZadColors.canvas),
     child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('استيراد كشف حساب')),
+      appBar: AppBar(title: Text(context.l10n.statementTitle)),
       body: switch (_step) {
         0 => _PickStep(error: _error, reading: _reading, onPick: _pick),
         1 => _MappingStep(
@@ -327,9 +321,7 @@ class _PickStep extends StatelessWidget {
           const Icon(Icons.upload_file, size: 56, color: ZadColors.green700),
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. '
-            'زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل '
-            'غير بعد ما تراجعها.',
+            context.l10n.statementIntro,
             textAlign: TextAlign.center,
             style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
           ),
@@ -348,7 +340,7 @@ class _PickStep extends StatelessWidget {
             const CircularProgressIndicator(),
             const SizedBox(height: ZadSpacing.md),
             Text(
-              'بقرا الكشف… الكشف الطويل بياخد دقيقة',
+              context.l10n.statementReading,
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
           ] else
@@ -358,7 +350,7 @@ class _PickStep extends StatelessWidget {
                 shape: const StadiumBorder(),
               ),
               onPressed: () => unawaited(onPick()),
-              child: const Text('اختيار الكشف'),
+              child: Text(context.l10n.statementPick),
             ),
         ],
       ),
@@ -402,18 +394,23 @@ class _MappingStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(
-          'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك',
+          context.l10n.statementMapHint,
           style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.lg),
-        _ColumnPicker('عمود التاريخ', headers, date, onDate),
+        _ColumnPicker(context.l10n.statementColDate, headers, date, onDate),
         const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود الوصف/العنوان', headers, title, onTitle),
-        const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود المبلغ', headers, amount, onAmount),
+        _ColumnPicker(context.l10n.statementColTitle, headers, title, onTitle),
         const SizedBox(height: ZadSpacing.md),
         _ColumnPicker(
-          'عمود التصنيف (اختياري)',
+          context.l10n.statementColAmount,
+          headers,
+          amount,
+          onAmount,
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        _ColumnPicker(
+          context.l10n.statementColCategory,
           headers,
           category,
           onCategory,
@@ -422,9 +419,9 @@ class _MappingStep extends StatelessWidget {
         const SizedBox(height: ZadSpacing.md),
         Row(
           children: <Widget>[
-            const Expanded(
+            Expanded(
               child: Text(
-                'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)',
+                context.l10n.statementInvert,
                 style: ZadType.bodyMedium,
               ),
             ),
@@ -440,7 +437,7 @@ class _MappingStep extends StatelessWidget {
           onPressed: date != null && title != null && amount != null
               ? onConfirm
               : null,
-          child: const Text('متابعة للمراجعة'),
+          child: Text(context.l10n.statementContinue),
         ),
       ],
     ),
@@ -467,13 +464,13 @@ class _ColumnPicker extends StatelessWidget {
     expandedInsets: EdgeInsets.zero,
     label: Text(label),
     initialSelection: selected,
-    hintText: optional ? 'بدون' : null,
+    hintText: optional ? context.l10n.statementNone : null,
     onSelected: (v) => v == null ? null : onSelect(v),
     dropdownMenuEntries: <DropdownMenuEntry<int>>[
       for (final (i, h) in headers.indexed)
         DropdownMenuEntry<int>(
           value: i,
-          label: h.trim().isEmpty ? 'عمود ${i + 1}' : h,
+          label: h.trim().isEmpty ? context.l10n.statementColumnN(i + 1) : h,
         ),
     ],
   );
@@ -506,21 +503,19 @@ class _PreviewStep extends StatelessWidget {
           vertical: ZadSpacing.sm,
         ),
         child: Text(
-          '${rows.length} صف — ${checked.length} محدد للاستيراد',
+          context.l10n.statementRowsSummary(rows.length, checked.length),
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
       ),
       if (scanned case final s?) _CheckBanner(scanned: s),
       Expanded(
         child: rows.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
                 child: ZadEmptyState(
                   icon: Icons.description,
-                  title: 'ما لقيتش أي معاملة في الملف',
-                  message:
-                      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه '
-                      'كشف حساب وإن صيغته CSV أو PDF مقروء.',
+                  title: context.l10n.statementEmptyTitle,
+                  message: context.l10n.statementEmptyMessage,
                 ),
               )
             : ListView.separated(
@@ -550,7 +545,7 @@ class _PreviewStep extends StatelessWidget {
               shape: const StadiumBorder(),
             ),
             onPressed: checked.isNotEmpty && !importing ? onImport : null,
-            child: Text('استيراد ${checked.length} معاملة'),
+            child: Text(context.l10n.statementImportCount(checked.length)),
           ),
         ),
       ),
@@ -595,7 +590,7 @@ class _RowCard extends StatelessWidget {
                 ),
                 Text(
                   row.hasError || date == null
-                      ? 'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'
+                      ? context.l10n.statementRowError
                       : '${DateFormat('yyyy-MM-dd', 'en').format(date)} · '
                             '${row.category}',
                   style: ZadType.labelSmall.copyWith(
@@ -606,7 +601,7 @@ class _RowCard extends StatelessWidget {
                 ),
                 if (row.balanceOk == false)
                   Text(
-                    'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ',
+                    context.l10n.statementRowMismatch,
                     style: ZadType.labelSmall.copyWith(
                       color: ZadColors.terracottaRust,
                     ),
@@ -640,17 +635,17 @@ class _CheckBanner extends StatelessWidget {
       StatementCheck.balanced => (
         Icons.verified_outlined,
         ZadColors.green600,
-        'الأرقام متطابقة مع رصيد الكشف',
+        context.l10n.statementBalanced,
       ),
       StatementCheck.mismatch => (
         Icons.error_outline,
         ZadColors.terracottaRust,
-        'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها',
+        context.l10n.statementMismatch,
       ),
       StatementCheck.unknown => (
         Icons.info_outline,
         ZadColors.inkMuted,
-        'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد',
+        context.l10n.statementUnknown,
       ),
     };
     final dropped = scanned.dropped;
@@ -670,7 +665,9 @@ class _CheckBanner extends StatelessWidget {
             const SizedBox(width: ZadSpacing.sm),
             Expanded(
               child: Text(
-                dropped > 0 ? '$text. وفي $dropped صف ماقدرتش أقراه.' : text,
+                dropped > 0
+                    ? context.l10n.statementDropped(text, dropped)
+                    : text,
                 style: ZadType.bodySmall.copyWith(color: tone),
               ),
             ),

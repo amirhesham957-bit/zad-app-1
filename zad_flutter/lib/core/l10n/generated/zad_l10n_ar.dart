@@ -7803,4 +7803,109 @@ class ZadL10nAr extends ZadL10n {
   String scanPantryResult(String parts) {
     return 'المخزن: $parts.';
   }
+
+  @override
+  String get statementUnreadableFile =>
+      'تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف';
+
+  @override
+  String get statementTooBig =>
+      'الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات';
+
+  @override
+  String get statementNoRows =>
+      'ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو ملف PDF من تطبيق البنك';
+
+  @override
+  String get statementServerDown =>
+      'مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني';
+
+  @override
+  String statementImported(int imported, int skipped) {
+    return 'تم استيراد $imported معاملة، تجاهل $skipped مكررة';
+  }
+
+  @override
+  String get statementTitle => 'استيراد كشف حساب';
+
+  @override
+  String get statementIntro =>
+      'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.';
+
+  @override
+  String get statementReading => 'بقرا الكشف… الكشف الطويل بياخد دقيقة';
+
+  @override
+  String get statementPick => 'اختيار الكشف';
+
+  @override
+  String get statementMapHint =>
+      'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك';
+
+  @override
+  String get statementColDate => 'عمود التاريخ';
+
+  @override
+  String get statementColTitle => 'عمود الوصف/العنوان';
+
+  @override
+  String get statementColAmount => 'عمود المبلغ';
+
+  @override
+  String get statementColCategory => 'عمود التصنيف (اختياري)';
+
+  @override
+  String get statementInvert =>
+      'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)';
+
+  @override
+  String get statementContinue => 'متابعة للمراجعة';
+
+  @override
+  String get statementNone => 'بدون';
+
+  @override
+  String statementColumnN(int n) {
+    return 'عمود $n';
+  }
+
+  @override
+  String statementRowsSummary(int rows, int checked) {
+    return '$rows صف — $checked محدد للاستيراد';
+  }
+
+  @override
+  String get statementEmptyTitle => 'ما لقيتش أي معاملة في الملف';
+
+  @override
+  String get statementEmptyMessage =>
+      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
+
+  @override
+  String statementImportCount(int count) {
+    return 'استيراد $count معاملة';
+  }
+
+  @override
+  String get statementRowError => 'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
+
+  @override
+  String get statementRowMismatch =>
+      'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ';
+
+  @override
+  String get statementBalanced => 'الأرقام متطابقة مع رصيد الكشف';
+
+  @override
+  String get statementMismatch =>
+      'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها';
+
+  @override
+  String get statementUnknown =>
+      'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
+
+  @override
+  String statementDropped(String text, int count) {
+    return '$text. وفي $count صف ماقدرتش أقراه.';
+  }
 }

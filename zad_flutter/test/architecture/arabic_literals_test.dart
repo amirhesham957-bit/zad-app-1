@@ -58,6 +58,10 @@ const Set<String> _dataFiles = <String>{
   // the server's stored unit/category defaults, and the stored fallback
   // title «فاتورة».
   'shared/scan/domain/scanned_receipt.dart',
+  // A statement's description matched by keyword to a stored category, the
+  // riyal mark stripped from amounts, and «معاملة مستوردة», the stored title
+  // of a blank row that duplicate detection compares against.
+  'features/statement/domain/statement_import.dart',
 };
 
 const String _baselinePath = 'tool/l10n/arabic_ui_baseline.json';

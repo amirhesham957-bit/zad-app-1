@@ -12803,6 +12803,174 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'المخزن: {parts}.'**
   String scanPantryResult(String parts);
+
+  /// Statement import: unreadable file.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الملف — ابعت ملف CSV أو PDF أو صورة للكشف'**
+  String get statementUnreadableFile;
+
+  /// Statement import: file too large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف أكبر من ١٠ ميجا — ابعت الكشف شهر شهر أو صوّر الصفحات'**
+  String get statementTooBig;
+
+  /// Statement import: nothing read.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لقيتش حركات أقدر أقراها في الكشف ده — جرّب صورة أوضح أو ملف PDF من تطبيق البنك'**
+  String get statementNoRows;
+
+  /// Statement import: network failure.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر — اتأكد من النت وجرّب تاني'**
+  String get statementServerDown;
+
+  /// Statement import done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استيراد {imported} معاملة، تجاهل {skipped} مكررة'**
+  String statementImported(int imported, int skipped);
+
+  /// Screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد كشف حساب'**
+  String get statementTitle;
+
+  /// Statement import intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.'**
+  String get statementIntro;
+
+  /// Statement import: working.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الكشف… الكشف الطويل بياخد دقيقة'**
+  String get statementReading;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار الكشف'**
+  String get statementPick;
+
+  /// CSV mapping hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك'**
+  String get statementMapHint;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التاريخ'**
+  String get statementColDate;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود الوصف/العنوان'**
+  String get statementColTitle;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود المبلغ'**
+  String get statementColAmount;
+
+  /// Column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التصنيف (اختياري)'**
+  String get statementColCategory;
+
+  /// Switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)'**
+  String get statementInvert;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة للمراجعة'**
+  String get statementContinue;
+
+  /// Optional column picker hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get statementNone;
+
+  /// A column with no header.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود {n}'**
+  String statementColumnN(int n);
+
+  /// Preview header.
+  ///
+  /// In ar, this message translates to:
+  /// **'{rows} صف — {checked} محدد للاستيراد'**
+  String statementRowsSummary(int rows, int checked);
+
+  /// Empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لقيتش أي معاملة في الملف'**
+  String get statementEmptyTitle;
+
+  /// Empty state message.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.'**
+  String get statementEmptyMessage;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد {count} معاملة'**
+  String statementImportCount(int count);
+
+  /// Row error.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'**
+  String get statementRowError;
+
+  /// Row warning.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ'**
+  String get statementRowMismatch;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام متطابقة مع رصيد الكشف'**
+  String get statementBalanced;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها'**
+  String get statementMismatch;
+
+  /// Check banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد'**
+  String get statementUnknown;
+
+  /// Check banner with rows left out.
+  ///
+  /// In ar, this message translates to:
+  /// **'{text}. وفي {count} صف ماقدرتش أقراه.'**
+  String statementDropped(String text, int count);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
