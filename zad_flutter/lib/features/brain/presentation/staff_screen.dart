@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Opens the page.
 Future<void> showStaffScreen(BuildContext context) => Navigator.of(context)
@@ -23,7 +24,7 @@ Future<void> showStaffScreen(BuildContext context) => Navigator.of(context)
 
 /// One note on the page.
 typedef StaffNote = ({
-  String role,
+  String sender,
   IconData icon,
   String subject,
   String detail,
@@ -32,15 +33,18 @@ typedef StaffNote = ({
 
 /// Who wrote it. The mailbox's senders are the staff's names; `brain` is the
 /// setup coach on the morning round.
-({String role, IconData icon}) staffMember(String sender) => switch (sender) {
-  'pantry' => (role: 'أمين المخزن', icon: ZadIcons.shopping),
-  'pharmacy' => (role: 'الممرضة', icon: ZadIcons.pharmacy),
-  'finance' => (role: 'المحاسب', icon: ZadIcons.wallet),
-  'family' => (role: 'سكرتير العيلة', icon: ZadIcons.family),
-  'home' => (role: 'مسؤول البيت', icon: ZadIcons.home),
-  'research' => (role: 'الباحث', icon: ZadIcons.search),
-  _ => (role: 'مدرّب الإعداد', icon: ZadIcons.assistant),
-};
+({String role, IconData icon}) staffMember(String sender, [ZadL10n? l10n]) {
+  final l = l10n ?? zadL10nArabic;
+  return switch (sender) {
+    'pantry' => (role: l.staffRolePantry, icon: ZadIcons.shopping),
+    'pharmacy' => (role: l.staffRolePharmacy, icon: ZadIcons.pharmacy),
+    'finance' => (role: l.staffRoleFinance, icon: ZadIcons.wallet),
+    'family' => (role: l.staffRoleFamily, icon: ZadIcons.family),
+    'home' => (role: l.staffRoleHome, icon: ZadIcons.home),
+    'research' => (role: l.staffRoleResearch, icon: ZadIcons.search),
+    _ => (role: l.staffRoleCoach, icon: ZadIcons.assistant),
+  };
+}
 
 /// The mailbox rows as notes, newest first. A tool's own receipt («نفّذ
 /// add_…», written after every action) is not a note: it is in «سجل تعديلات
@@ -50,10 +54,11 @@ List<StaffNote> staffFeed(Iterable<Map<String, dynamic>> rows) {
   for (final r in rows) {
     final subject = ((r['subject'] as String?) ?? '').trim();
     final at = DateTime.tryParse((r['created_at'] as String?) ?? '');
+    // l10n: data — the server's own receipt prefix.
     if (subject.isEmpty || at == null || subject.startsWith('نفّذ ')) continue;
     final who = staffMember((r['sender'] as String?) ?? '');
     notes.add((
-      role: who.role,
+      sender: (r['sender'] as String?) ?? '',
       icon: who.icon,
       subject: subject,
       detail: ((r['detail'] as String?) ?? '').trim(),
@@ -91,11 +96,12 @@ class StaffScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notes = ref.watch(staffNotesProvider);
+    final l = context.l10n;
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('فريق زاد')),
+        appBar: AppBar(title: Text(l.staffTitle)),
         body: RefreshIndicator(
           onRefresh: () async => ref.invalidate(staffNotesProvider),
           child: ListView(
@@ -103,17 +109,16 @@ class StaffScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(ZadSpacing.gutter),
             children: <Widget>[
               Text(
-                'كل صبح الفريق بيلف على بيتك: المخزن، الصيدلية، الفلوس، '
-                'العيلة، والإعدادات — ويبلّغ زاد باللي محتاج انتباه.',
+                l.staffIntro,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.lg),
               ...switch (notes) {
                 AsyncData(:final value) when value.isEmpty => <Widget>[
-                  const ZadEmptyState(
+                  ZadEmptyState(
                     icon: ZadIcons.selected,
-                    title: 'الفريق مالقاش حاجة تستاهل',
-                    message: 'الجولة الجاية الصبح — لو لقوا حاجة هتلاقيها هنا.',
+                    title: l.staffEmptyTitle,
+                    message: l.staffEmptyBody,
                   ),
                 ],
                 AsyncData(:final value) => <Widget>[
@@ -123,10 +128,10 @@ class StaffScreen extends ConsumerWidget {
                   ],
                 ],
                 AsyncError() => <Widget>[
-                  const ZadEmptyState(
+                  ZadEmptyState(
                     icon: ZadIcons.search,
-                    title: 'مقدرتش أجيب ملاحظات الفريق',
-                    message: 'اسحب لتحت نجرب تاني.',
+                    title: l.staffLoadFailed,
+                    message: l.actionLogPullRetry,
                     tone: ZadEmptyTone.problem,
                   ),
                 ],
@@ -140,7 +145,7 @@ class StaffScreen extends ConsumerWidget {
   }
 }
 
-final DateFormat _day = DateFormat('d/M', 'ar');
+final DateFormat _day = DateFormat('d/M');
 
 class _NoteCard extends StatelessWidget {
   const new({required this.note});
@@ -159,7 +164,8 @@ class _NoteCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                '${note.role} · ${_day.format(note.at.toLocal())}',
+                '${staffMember(note.sender, context.l10n).role} · '
+                '${_day.format(note.at.toLocal())}',
                 style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
               ),
               const SizedBox(height: ZadSpacing.xs),

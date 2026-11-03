@@ -2954,5 +2954,204 @@
   "brainHealthQuotaNote": "الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية",
   "@brainHealthQuotaNote": {
     "description": "Brain health: what the chat quota covers."
+  },
+  "staffTitle": "فريق زاد",
+  "@staffTitle": {
+    "description": "The staff screen and its entry in the brain hub."
+  },
+  "brainHubStaffSubtitle": "اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك",
+  "@brainHubStaffSubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "brainHubMemorySubtitle": "اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه",
+  "@brainHubMemorySubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "brainGraphTitle": "شبكة زاد",
+  "@brainGraphTitle": {
+    "description": "The memory graph screen and its entry in the brain hub."
+  },
+  "brainMapTitle": "خريطة زاد",
+  "@brainMapTitle": {
+    "description": "The knowledge map screen and its entry in the brain hub."
+  },
+  "brainHubMapSubtitle": "إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض",
+  "@brainHubMapSubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "brainHubLogSubtitle": "كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط",
+  "@brainHubLogSubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "brainHubHealthSubtitle": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه",
+  "@brainHubHealthSubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "brainHubTitle": "عقل زاد",
+  "@brainHubTitle": {
+    "description": "Brain hub screen title."
+  },
+  "brainHubGraphSubtitle": "الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان",
+  "@brainHubGraphSubtitle": {
+    "description": "Brain hub entry subtitle."
+  },
+  "staffRolePantry": "أمين المخزن",
+  "@staffRolePantry": {
+    "description": "Staff screen: who wrote a note (pantry)."
+  },
+  "staffRolePharmacy": "الممرضة",
+  "@staffRolePharmacy": {
+    "description": "Staff screen: who wrote a note (pharmacy)."
+  },
+  "staffRoleFinance": "المحاسب",
+  "@staffRoleFinance": {
+    "description": "Staff screen: who wrote a note (finance)."
+  },
+  "staffRoleFamily": "سكرتير العيلة",
+  "@staffRoleFamily": {
+    "description": "Staff screen: who wrote a note (family)."
+  },
+  "staffRoleHome": "مسؤول البيت",
+  "@staffRoleHome": {
+    "description": "Staff screen: who wrote a note (home)."
+  },
+  "staffRoleResearch": "الباحث",
+  "@staffRoleResearch": {
+    "description": "Staff screen: who wrote a note (research)."
+  },
+  "staffRoleCoach": "مدرّب الإعداد",
+  "@staffRoleCoach": {
+    "description": "Staff screen: a note from the setup coach."
+  },
+  "staffIntro": "كل صبح الفريق بيلف على بيتك: المخزن، الصيدلية، الفلوس، العيلة، والإعدادات — ويبلّغ زاد باللي محتاج انتباه.",
+  "@staffIntro": {
+    "description": "Staff screen: what the team does."
+  },
+  "staffEmptyTitle": "الفريق مالقاش حاجة تستاهل",
+  "@staffEmptyTitle": {
+    "description": "Staff screen: empty state title."
+  },
+  "staffEmptyBody": "الجولة الجاية الصبح — لو لقوا حاجة هتلاقيها هنا.",
+  "@staffEmptyBody": {
+    "description": "Staff screen: empty state guidance."
+  },
+  "staffLoadFailed": "مقدرتش أجيب ملاحظات الفريق",
+  "@staffLoadFailed": {
+    "description": "Staff screen: load failed."
+  },
+  "profileSheetPayDay": "بتقبض يوم كام في الشهر؟",
+  "@profileSheetPayDay": {
+    "description": "Profile sheet: pay day field."
+  },
+  "profileSheetPayFrequency": "بتقبض كل قد إيه",
+  "@profileSheetPayFrequency": {
+    "description": "Profile sheet: pay frequency choice."
+  },
+  "profileSheetHouseholdSize": "عدد اللي في البيت",
+  "@profileSheetHouseholdSize": {
+    "description": "Profile sheet: household size field."
+  },
+  "profileSheetKids": "عدد العيال",
+  "@profileSheetKids": {
+    "description": "Profile sheet: kids count field."
+  },
+  "profileSheetSave": "احفظ",
+  "@profileSheetSave": {
+    "description": "Profile sheet: save button."
+  },
+  "entityPerson": "شخص",
+  "@entityPerson": {
+    "description": "Memory graph: an entity kind."
+  },
+  "entityPlace": "مكان",
+  "@entityPlace": {
+    "description": "Memory graph: an entity kind."
+  },
+  "entityItem": "صنف",
+  "@entityItem": {
+    "description": "Memory graph: an entity kind."
+  },
+  "entityOrg": "جهة",
+  "@entityOrg": {
+    "description": "Memory graph: an entity kind."
+  },
+  "entityPeople": "الناس",
+  "@entityPeople": {
+    "description": "Memory graph legend: entity kind, plural."
+  },
+  "entityPlaces": "الأماكن",
+  "@entityPlaces": {
+    "description": "Memory graph legend: entity kind, plural."
+  },
+  "entityItems": "الأصناف",
+  "@entityItems": {
+    "description": "Memory graph legend: entity kind, plural."
+  },
+  "entityOrgs": "الجهات",
+  "@entityOrgs": {
+    "description": "Memory graph legend: entity kind, plural."
+  },
+  "graphNotesCount": "{count} ملاحظة",
+  "@graphNotesCount": {
+    "description": "Memory graph: notes about an entity.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "graphNoNotesAbout": "لسه مفيش ملاحظات عن {name}.",
+  "@graphNoNotesAbout": {
+    "description": "Memory graph: an entity with no notes.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "graphSemantics": "شبكة فيها {count} — القايمة تحتها فيها نفس الحاجات",
+  "@graphSemantics": {
+    "description": "Memory graph: screen-reader label of the drawing.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "graphExportFailed": "مقدرتش أجهّز الملفات. جرّب تاني.",
+  "@graphExportFailed": {
+    "description": "Memory graph: export failed."
+  },
+  "graphShareSubject": "شبكة زاد — أوبسيديان",
+  "@graphShareSubject": {
+    "description": "Memory graph: share sheet subject for the vault."
+  },
+  "graphShareTitle": "صدّر شبكة زاد",
+  "@graphShareTitle": {
+    "description": "Memory graph: share sheet title."
+  },
+  "graphExport": "صدّر لأوبسيديان",
+  "@graphExport": {
+    "description": "Memory graph: export button tooltip."
+  },
+  "graphEmptyTitle": "لسه مفيش شبكة",
+  "@graphEmptyTitle": {
+    "description": "Memory graph: empty state title."
+  },
+  "graphLoadFailed": "مقدرتش أجيب الشبكة",
+  "@graphLoadFailed": {
+    "description": "Memory graph: load failed."
+  },
+  "graphCheckNet": "اتأكد من النت وجرّب تاني.",
+  "@graphCheckNet": {
+    "description": "Memory graph: load failed guidance."
+  },
+  "graphEmptyBody": "كل ما تكلّم زاد عن ناسك وأماكنك وحاجاتك، هيظهروا هنا ويترابطوا ببعض.",
+  "@graphEmptyBody": {
+    "description": "Memory graph: empty state guidance."
+  },
+  "graphRetry": "جرّب تاني",
+  "@graphRetry": {
+    "description": "Memory graph: retry after a failed load."
   }
 }

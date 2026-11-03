@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
@@ -31,43 +32,42 @@ class BrainHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const entries = <_Entry>[
+    final l = context.l10n;
+    final entries = <_Entry>[
       _Entry(
         icon: ZadIcons.assistant,
-        title: 'فريق زاد',
-        subtitle: 'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك',
+        title: l.staffTitle,
+        subtitle: l.brainHubStaffSubtitle,
         open: showStaffScreen,
       ),
       _Entry(
         icon: ZadIcons.memory,
-        title: 'زاد عارف عني إيه',
-        subtitle: 'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه',
+        title: l.memoryTitle,
+        subtitle: l.brainHubMemorySubtitle,
         open: showMemoryScreen,
       ),
       _Entry(
         icon: ZadIcons.memoryGraph,
-        title: 'شبكة زاد',
-        subtitle:
-            'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي '
-            '— وصدّرها لأوبسيديان',
+        title: l.brainGraphTitle,
+        subtitle: l.brainHubGraphSubtitle,
         open: showMemoryGraph,
       ),
       _Entry(
         icon: ZadIcons.knowledgeMap,
-        title: 'خريطة زاد',
-        subtitle: 'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض',
+        title: l.brainMapTitle,
+        subtitle: l.brainHubMapSubtitle,
         open: showKnowledgeMap,
       ),
       _Entry(
         icon: ZadIcons.actionLog,
-        title: 'سجل تعديلات زاد',
-        subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط',
+        title: l.actionLogTitle,
+        subtitle: l.brainHubLogSubtitle,
         open: showAgentActionLog,
       ),
       _Entry(
         icon: ZadIcons.brainHealth,
-        title: 'صحة عقل زاد',
-        subtitle: 'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه',
+        title: l.brainHealthTitle,
+        subtitle: l.brainHubHealthSubtitle,
         open: showBrainHealth,
       ),
     ];
@@ -76,7 +76,7 @@ class BrainHubScreen extends StatelessWidget {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('عقل زاد')),
+        appBar: AppBar(title: Text(l.brainHubTitle)),
         body: ListView.separated(
           padding: const EdgeInsets.all(ZadSpacing.gutter),
           itemCount: entries.length,

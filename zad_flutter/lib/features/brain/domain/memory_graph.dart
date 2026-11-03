@@ -4,10 +4,12 @@
 /// Obsidian's graph view and exported as an Obsidian vault of `[[wikilinks]]`
 /// (docs/agent/ZAD_LIVING_BRAIN.md slice 5).
 ///
-/// Pure: no Flutter, no clock, no network.
+/// Pure: no clock, no network.
 library;
 
 import 'dart:math' as math;
+
+import 'package:zad/core/l10n/l10n.dart';
 
 /// What an entity is.
 enum EntityKind {
@@ -33,6 +35,24 @@ enum EntityKind {
 
   /// One of them.
   final String singular;
+
+  /// [singular] in the customer's language, for the screen. The vault keeps
+  /// the Arabic [singular]/[plural]: its file names and `[[links]]` are built
+  /// from them and must match each other.
+  String singularIn(ZadL10n l) => switch (this) {
+    person => l.entityPerson,
+    place => l.entityPlace,
+    item => l.entityItem,
+    org => l.entityOrg,
+  };
+
+  /// [plural] in the customer's language, for the screen's legend.
+  String pluralIn(ZadL10n l) => switch (this) {
+    person => l.entityPeople,
+    place => l.entityPlaces,
+    item => l.entityItems,
+    org => l.entityOrgs,
+  };
 
   /// The kind named [wire]; unknown kinds read as items.
   static EntityKind fromWire(Object? wire) =>

@@ -34,7 +34,10 @@ void main() {
 
   test('notes by who wrote them, newest first, receipts left out', () {
     final feed = staffFeed(rows);
-    expect(feed.map((n) => n.role), <String>['مدرّب الإعداد', 'الممرضة']);
+    expect(feed.map((n) => staffMember(n.sender).role), <String>[
+      'مدرّب الإعداد',
+      'الممرضة',
+    ]);
     expect(feed.any((n) => n.subject.startsWith('نفّذ')), isFalse);
     expect(staffMember('research').role, 'الباحث');
   });

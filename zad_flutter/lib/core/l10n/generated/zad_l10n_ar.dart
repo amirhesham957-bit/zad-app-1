@@ -3302,4 +3302,157 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get brainHealthQuotaNote =>
       'الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية';
+
+  @override
+  String get staffTitle => 'فريق زاد';
+
+  @override
+  String get brainHubStaffSubtitle =>
+      'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainHubMemorySubtitle =>
+      'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه';
+
+  @override
+  String get brainGraphTitle => 'شبكة زاد';
+
+  @override
+  String get brainMapTitle => 'خريطة زاد';
+
+  @override
+  String get brainHubMapSubtitle =>
+      'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض';
+
+  @override
+  String get brainHubLogSubtitle =>
+      'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط';
+
+  @override
+  String get brainHubHealthSubtitle =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
+
+  @override
+  String get brainHubTitle => 'عقل زاد';
+
+  @override
+  String get brainHubGraphSubtitle =>
+      'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان';
+
+  @override
+  String get staffRolePantry => 'أمين المخزن';
+
+  @override
+  String get staffRolePharmacy => 'الممرضة';
+
+  @override
+  String get staffRoleFinance => 'المحاسب';
+
+  @override
+  String get staffRoleFamily => 'سكرتير العيلة';
+
+  @override
+  String get staffRoleHome => 'مسؤول البيت';
+
+  @override
+  String get staffRoleResearch => 'الباحث';
+
+  @override
+  String get staffRoleCoach => 'مدرّب الإعداد';
+
+  @override
+  String get staffIntro =>
+      'كل صبح الفريق بيلف على بيتك: المخزن، الصيدلية، الفلوس، العيلة، والإعدادات — ويبلّغ زاد باللي محتاج انتباه.';
+
+  @override
+  String get staffEmptyTitle => 'الفريق مالقاش حاجة تستاهل';
+
+  @override
+  String get staffEmptyBody =>
+      'الجولة الجاية الصبح — لو لقوا حاجة هتلاقيها هنا.';
+
+  @override
+  String get staffLoadFailed => 'مقدرتش أجيب ملاحظات الفريق';
+
+  @override
+  String get profileSheetPayDay => 'بتقبض يوم كام في الشهر؟';
+
+  @override
+  String get profileSheetPayFrequency => 'بتقبض كل قد إيه';
+
+  @override
+  String get profileSheetHouseholdSize => 'عدد اللي في البيت';
+
+  @override
+  String get profileSheetKids => 'عدد العيال';
+
+  @override
+  String get profileSheetSave => 'احفظ';
+
+  @override
+  String get entityPerson => 'شخص';
+
+  @override
+  String get entityPlace => 'مكان';
+
+  @override
+  String get entityItem => 'صنف';
+
+  @override
+  String get entityOrg => 'جهة';
+
+  @override
+  String get entityPeople => 'الناس';
+
+  @override
+  String get entityPlaces => 'الأماكن';
+
+  @override
+  String get entityItems => 'الأصناف';
+
+  @override
+  String get entityOrgs => 'الجهات';
+
+  @override
+  String graphNotesCount(int count) {
+    return '$count ملاحظة';
+  }
+
+  @override
+  String graphNoNotesAbout(String name) {
+    return 'لسه مفيش ملاحظات عن $name.';
+  }
+
+  @override
+  String graphSemantics(int count) {
+    return 'شبكة فيها $count — القايمة تحتها فيها نفس الحاجات';
+  }
+
+  @override
+  String get graphExportFailed => 'مقدرتش أجهّز الملفات. جرّب تاني.';
+
+  @override
+  String get graphShareSubject => 'شبكة زاد — أوبسيديان';
+
+  @override
+  String get graphShareTitle => 'صدّر شبكة زاد';
+
+  @override
+  String get graphExport => 'صدّر لأوبسيديان';
+
+  @override
+  String get graphEmptyTitle => 'لسه مفيش شبكة';
+
+  @override
+  String get graphLoadFailed => 'مقدرتش أجيب الشبكة';
+
+  @override
+  String get graphCheckNet => 'اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get graphEmptyBody =>
+      'كل ما تكلّم زاد عن ناسك وأماكنك وحاجاتك، هيظهروا هنا ويترابطوا ببعض.';
+
+  @override
+  String get graphRetry => 'جرّب تاني';
 }

@@ -5928,6 +5928,282 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'الرصيد ده بتاع ردود الشات بس، وبيتصفّر كل يوم بتوقيت جرينتش — مالوش علاقة بشغل زاد في الخلفية'**
   String get brainHealthQuotaNote;
+
+  /// The staff screen and its entry in the brain hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'فريق زاد'**
+  String get staffTitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك'**
+  String get brainHubStaffSubtitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه'**
+  String get brainHubMemorySubtitle;
+
+  /// The memory graph screen and its entry in the brain hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة زاد'**
+  String get brainGraphTitle;
+
+  /// The knowledge map screen and its entry in the brain hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة زاد'**
+  String get brainMapTitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض'**
+  String get brainHubMapSubtitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط'**
+  String get brainHubLogSubtitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه'**
+  String get brainHubHealthSubtitle;
+
+  /// Brain hub screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقل زاد'**
+  String get brainHubTitle;
+
+  /// Brain hub entry subtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان'**
+  String get brainHubGraphSubtitle;
+
+  /// Staff screen: who wrote a note (pantry).
+  ///
+  /// In ar, this message translates to:
+  /// **'أمين المخزن'**
+  String get staffRolePantry;
+
+  /// Staff screen: who wrote a note (pharmacy).
+  ///
+  /// In ar, this message translates to:
+  /// **'الممرضة'**
+  String get staffRolePharmacy;
+
+  /// Staff screen: who wrote a note (finance).
+  ///
+  /// In ar, this message translates to:
+  /// **'المحاسب'**
+  String get staffRoleFinance;
+
+  /// Staff screen: who wrote a note (family).
+  ///
+  /// In ar, this message translates to:
+  /// **'سكرتير العيلة'**
+  String get staffRoleFamily;
+
+  /// Staff screen: who wrote a note (home).
+  ///
+  /// In ar, this message translates to:
+  /// **'مسؤول البيت'**
+  String get staffRoleHome;
+
+  /// Staff screen: who wrote a note (research).
+  ///
+  /// In ar, this message translates to:
+  /// **'الباحث'**
+  String get staffRoleResearch;
+
+  /// Staff screen: a note from the setup coach.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرّب الإعداد'**
+  String get staffRoleCoach;
+
+  /// Staff screen: what the team does.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل صبح الفريق بيلف على بيتك: المخزن، الصيدلية، الفلوس، العيلة، والإعدادات — ويبلّغ زاد باللي محتاج انتباه.'**
+  String get staffIntro;
+
+  /// Staff screen: empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفريق مالقاش حاجة تستاهل'**
+  String get staffEmptyTitle;
+
+  /// Staff screen: empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجولة الجاية الصبح — لو لقوا حاجة هتلاقيها هنا.'**
+  String get staffEmptyBody;
+
+  /// Staff screen: load failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب ملاحظات الفريق'**
+  String get staffLoadFailed;
+
+  /// Profile sheet: pay day field.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتقبض يوم كام في الشهر؟'**
+  String get profileSheetPayDay;
+
+  /// Profile sheet: pay frequency choice.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتقبض كل قد إيه'**
+  String get profileSheetPayFrequency;
+
+  /// Profile sheet: household size field.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد اللي في البيت'**
+  String get profileSheetHouseholdSize;
+
+  /// Profile sheet: kids count field.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد العيال'**
+  String get profileSheetKids;
+
+  /// Profile sheet: save button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get profileSheetSave;
+
+  /// Memory graph: an entity kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'شخص'**
+  String get entityPerson;
+
+  /// Memory graph: an entity kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكان'**
+  String get entityPlace;
+
+  /// Memory graph: an entity kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'صنف'**
+  String get entityItem;
+
+  /// Memory graph: an entity kind.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهة'**
+  String get entityOrg;
+
+  /// Memory graph legend: entity kind, plural.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس'**
+  String get entityPeople;
+
+  /// Memory graph legend: entity kind, plural.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأماكن'**
+  String get entityPlaces;
+
+  /// Memory graph legend: entity kind, plural.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصناف'**
+  String get entityItems;
+
+  /// Memory graph legend: entity kind, plural.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهات'**
+  String get entityOrgs;
+
+  /// Memory graph: notes about an entity.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} ملاحظة'**
+  String graphNotesCount(int count);
+
+  /// Memory graph: an entity with no notes.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ملاحظات عن {name}.'**
+  String graphNoNotesAbout(String name);
+
+  /// Memory graph: screen-reader label of the drawing.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة فيها {count} — القايمة تحتها فيها نفس الحاجات'**
+  String graphSemantics(int count);
+
+  /// Memory graph: export failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجهّز الملفات. جرّب تاني.'**
+  String get graphExportFailed;
+
+  /// Memory graph: share sheet subject for the vault.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة زاد — أوبسيديان'**
+  String get graphShareSubject;
+
+  /// Memory graph: share sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر شبكة زاد'**
+  String get graphShareTitle;
+
+  /// Memory graph: export button tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر لأوبسيديان'**
+  String get graphExport;
+
+  /// Memory graph: empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش شبكة'**
+  String get graphEmptyTitle;
+
+  /// Memory graph: load failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الشبكة'**
+  String get graphLoadFailed;
+
+  /// Memory graph: load failed guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني.'**
+  String get graphCheckNet;
+
+  /// Memory graph: empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل ما تكلّم زاد عن ناسك وأماكنك وحاجاتك، هيظهروا هنا ويترابطوا ببعض.'**
+  String get graphEmptyBody;
+
+  /// Memory graph: retry after a failed load.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get graphRetry;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

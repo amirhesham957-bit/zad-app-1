@@ -3368,4 +3368,163 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get brainHealthQuotaNote =>
       'This allowance is for chat replies only and resets every day at midnight GMT — it has nothing to do with Zad\'s background work';
+
+  @override
+  String get staffTitle => 'Zad\'s team';
+
+  @override
+  String get brainHubStaffSubtitle =>
+      'What the team noticed on the morning round of your home, money and family';
+
+  @override
+  String get brainHubMemorySubtitle =>
+      'What Zad remembers about you and talks to you by — correct it or have it forget';
+
+  @override
+  String get brainGraphTitle => 'Zad\'s network';
+
+  @override
+  String get brainMapTitle => 'Zad\'s map';
+
+  @override
+  String get brainHubMapSubtitle =>
+      'How your budget, subscriptions and home connect';
+
+  @override
+  String get brainHubLogSubtitle =>
+      'Everything Zad logged or changed for you, with an undo if it was wrong';
+
+  @override
+  String get brainHubHealthSubtitle =>
+      'Is Zad working in the background or stuck — and if stuck, why';
+
+  @override
+  String get brainHubTitle => 'Zad\'s brain';
+
+  @override
+  String get brainHubGraphSubtitle =>
+      'The people, places and things Zad knows and how they connect — and export it to Obsidian';
+
+  @override
+  String get staffRolePantry => 'Pantry keeper';
+
+  @override
+  String get staffRolePharmacy => 'The nurse';
+
+  @override
+  String get staffRoleFinance => 'The accountant';
+
+  @override
+  String get staffRoleFamily => 'Family secretary';
+
+  @override
+  String get staffRoleHome => 'Home manager';
+
+  @override
+  String get staffRoleResearch => 'The researcher';
+
+  @override
+  String get staffRoleCoach => 'Setup coach';
+
+  @override
+  String get staffIntro =>
+      'Every morning the team does a round of your home: pantry, pharmacy, money, family and settings — and tells Zad what needs attention.';
+
+  @override
+  String get staffEmptyTitle => 'The team found nothing worth flagging';
+
+  @override
+  String get staffEmptyBody =>
+      'The next round is in the morning — anything they find will show up here.';
+
+  @override
+  String get staffLoadFailed => 'Couldn\'t load the team\'s notes';
+
+  @override
+  String get profileSheetPayDay => 'What day of the month do you get paid?';
+
+  @override
+  String get profileSheetPayFrequency => 'How often you get paid';
+
+  @override
+  String get profileSheetHouseholdSize => 'People at home';
+
+  @override
+  String get profileSheetKids => 'Number of kids';
+
+  @override
+  String get profileSheetSave => 'Save';
+
+  @override
+  String get entityPerson => 'Person';
+
+  @override
+  String get entityPlace => 'Place';
+
+  @override
+  String get entityItem => 'Item';
+
+  @override
+  String get entityOrg => 'Organisation';
+
+  @override
+  String get entityPeople => 'People';
+
+  @override
+  String get entityPlaces => 'Places';
+
+  @override
+  String get entityItems => 'Items';
+
+  @override
+  String get entityOrgs => 'Organisations';
+
+  @override
+  String graphNotesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count notes',
+      one: '1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String graphNoNotesAbout(String name) {
+    return 'No notes about $name yet.';
+  }
+
+  @override
+  String graphSemantics(int count) {
+    return 'A network of $count — the list below has the same things';
+  }
+
+  @override
+  String get graphExportFailed => 'Couldn\'t prepare the files. Try again.';
+
+  @override
+  String get graphShareSubject => 'Zad\'s network — Obsidian';
+
+  @override
+  String get graphShareTitle => 'Export Zad\'s network';
+
+  @override
+  String get graphExport => 'Export to Obsidian';
+
+  @override
+  String get graphEmptyTitle => 'No network yet';
+
+  @override
+  String get graphLoadFailed => 'Couldn\'t load the network';
+
+  @override
+  String get graphCheckNet => 'Check your connection and try again.';
+
+  @override
+  String get graphEmptyBody =>
+      'Whenever you tell Zad about your people, places and things, they show up here, connected.';
+
+  @override
+  String get graphRetry => 'Try again';
 }
