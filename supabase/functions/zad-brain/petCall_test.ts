@@ -82,6 +82,7 @@ Deno.test("a hungry pet calls on Telegram and the phone, in its own name", async
   assertEquals(writes.some((w) => w.table === "app_notifications" && w.op === "insert"), true);
   assertEquals(String(telegram[0][2]).includes("بسبوس جعان"), true);
   assertEquals(telegram[0][3], "t1");
+  assertEquals(telegram[0][4], "hungry", "the bot shows [🍖 أكّله], not the generic dismiss buttons");
   assertEquals(device[0][3], { route: "home" });
 });
 

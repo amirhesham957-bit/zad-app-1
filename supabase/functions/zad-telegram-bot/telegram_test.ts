@@ -750,3 +750,19 @@ Deno.test("link welcome: by name, in the customer's dialect, whole within the st
   }
   assertEquals(speechLimitForMoment("telegram_welcome"), STORY_SPEECH_MAX_CHARS);
 });
+
+Deno.test("a pet call has its own buttons: feed or water it here, or stop the calls (owner 4/11)", () => {
+  const id = "123e4567-e89b-12d3-a456-426614174000";
+  const thirsty = telegramModule.petCallKeyboard(id, "thirsty");
+  assertEquals(thirsty.flat().map((b) => b.text), ["💧 اسقيه", "🔕 بلاش تفكرني بيه"]);
+  assertEquals(telegramModule.parsePetCareCallback((thirsty[0][0] as { callback_data: string }).callback_data), { taskId: id, care: "watered" });
+  // «بلاش تفكرني بيه» is the existing «not relevant» path, not a new one.
+  assertEquals(telegramModule.parseProactiveDismissCallback((thirsty[1][0] as { callback_data: string }).callback_data), { taskId: id, reason: "not_relevant" });
+  const hungry = telegramModule.petCallKeyboard(id, "hungry");
+  assertEquals(telegramModule.parsePetCareCallback((hungry[0][0] as { callback_data: string }).callback_data)?.care, "fed");
+  // No «الرقم غلط» / «عرفت خلاص» under a pet.
+  assert(!JSON.stringify([...thirsty, ...hungry]).includes("الرقم غلط"));
+  for (const b of [...thirsty, ...hungry].flat()) assert(new TextEncoder().encode((b as { callback_data: string }).callback_data).length <= 64);
+  assertEquals(telegramModule.parsePetCareCallback(`pc:${id}:x`), null);
+  assertEquals(telegramModule.parsePetCareCallback("pc:not-a-uuid:f"), null);
+});

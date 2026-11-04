@@ -48,7 +48,7 @@ export interface PetCallTask { id: string; user_id: string; task_description: st
 
 export interface PetCallDeps {
   pushDevice: (userId: string, title: string, body: string, data?: Record<string, string>) => Promise<unknown>;
-  pushTelegram: (userId: string, title: string, body: string, taskId: string) => Promise<unknown>;
+  pushTelegram: (userId: string, title: string, body: string, taskId: string, need: PetNeed) => Promise<unknown>;
   nowMs?: number;
 }
 
@@ -85,7 +85,7 @@ export async function deliverPetCall(sb: SupabaseClient, task: PetCallTask, deps
   if (turn.error) console.error(`[pet_call] zad_chat_turns failed for task ${task.id}:`, turn.error.message);
   const [device, telegram] = await Promise.all([
     deps.pushDevice(task.user_id, msg.title, msg.push, { route: "home" }),
-    deps.pushTelegram(task.user_id, msg.title, msg.body, task.id),
+    deps.pushTelegram(task.user_id, msg.title, msg.body, task.id, need),
   ]);
   console.log(`[pet_call] task ${task.id}: ${need} → device: ${device}, telegram: ${telegram}`);
   return "sent";

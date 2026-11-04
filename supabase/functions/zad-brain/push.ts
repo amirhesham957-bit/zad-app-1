@@ -244,6 +244,9 @@ export async function pushToTelegram(
   mapUrl?: string,
   // لينكات أمازون لصنف خلص (restockLink.ts) — البوت بيحط لكل واحد زرار «🛒 … على أمازون».
   amazonLinks?: Array<{ name: string; url: string }>,
+  // نداء الرفيق (petCall.ts): البوت بيحط [🍖 أكّله] أو [💧 اسقيه] و[🔕 بلاش تفكرني بيه] بدل أزرار الرفض
+  // العامة — «الرقم غلط» و«عرفت خلاص» مالهمش معنى تحت «زادو عطشان» (المالك ٤/١١).
+  petNeed?: "hungry" | "thirsty",
 ): Promise<TelegramDelivery> {
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
@@ -275,6 +278,7 @@ export async function pushToTelegram(
           : {}),
         ...(mapUrl ? { map_url: mapUrl } : {}),
         ...(amazonLinks?.length ? { amazon_links: amazonLinks } : {}),
+        ...(petNeed ? { pet_need: petNeed } : {}),
       }),
     });
     const text = await res.text();
