@@ -734,6 +734,7 @@
     "radius_m",
     "updated_at"
   ],
+  "zad_device_send_keys": ["key_hash", "user_id", "created_at", "last_used_at"],
   "zad_fcm_tokens": [
     "created_at",
     "id",
