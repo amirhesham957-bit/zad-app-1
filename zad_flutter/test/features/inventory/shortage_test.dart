@@ -8,6 +8,7 @@
 // answer either side of midnight.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
@@ -309,6 +310,94 @@ void main() {
           }).restockMode,
           isNull,
         );
+      },
+    );
+  });
+
+  group("running low by the house's own use (the owner, 2026-11-04)", () {
+    InventoryItem row(String name, double qty, {DateTime? created}) =>
+        InventoryItem(
+          id: 'i-$name',
+          userId: 'user-1',
+          itemName: name,
+          quantity: qty,
+          lowStockThreshold: 2,
+          createdAt: created,
+        );
+
+    test('a row added today is not running low yet: the customer just said '
+        'what the house has', () {
+      final milk = row(
+        'حليب',
+        1.5,
+        created: today.add(const Duration(hours: 15)),
+      );
+      expect(shortageReasonFor(milk, today: today), isNull);
+      final lastWeek = row('حليب', 1.5, created: DateTime.utc(2026, 9, 13));
+      expect(
+        shortageReasonFor(lastWeek, today: today),
+        ShortageReason.runningLow,
+      );
+    });
+
+    test('two bottles a day: four is two days, low; ten is not, whatever '
+        'the threshold', () {
+      const rate = (perDay: 2.0, known: true);
+      expect(
+        shortageReasonFor(row('مياه', 4), today: today, rate: rate),
+        ShortageReason.runningLow,
+      );
+      const big = InventoryItem(
+        id: 'w',
+        userId: 'user-1',
+        itemName: 'مياه',
+        quantity: 10,
+        lowStockThreshold: 12,
+      );
+      expect(shortageReasonFor(big, today: today, rate: rate), isNull);
+      // Fresh or not, the rate decides: four bottles at two a day are two days.
+      expect(
+        shortageReasonFor(
+          row('مياه', 4, created: today),
+          today: today,
+          rate: rate,
+        ),
+        ShortageReason.runningLow,
+      );
+    });
+
+    test(
+      'three brands of water are one stock, used at their rates together',
+      () {
+        final pantry = <InventoryItem>[
+          row('ايلانو', 3, created: DateTime.utc(2026, 9)),
+          row('نستله', 1, created: DateTime.utc(2026, 9)),
+          row('صافي', 1, created: DateTime.utc(2026, 9)),
+        ];
+        // Five bottles, threshold 2: not low by the threshold.
+        expect(shortagesIn(pantry, today: today), isEmpty);
+        // At two a day five bottles are two and a half days: not low yet.
+        expect(
+          shortagesIn(
+            pantry,
+            today: today,
+            rates: <String, ConsumptionRate>{
+              'مياه': (perDay: 2.0, known: true),
+            },
+          ),
+          isEmpty,
+        );
+        // At three a day (two of one brand, one of another) they are not.
+        final low = shortagesIn(
+          pantry,
+          today: today,
+          rates: <String, ConsumptionRate>{
+            'ايلانو': (perDay: 2.0, known: true),
+            'نستله': (perDay: 1.0, known: false),
+          },
+        );
+        expect(low.single.item.itemName, 'مياه');
+        expect(low.single.reason, ShortageReason.runningLow);
       },
     );
   });

@@ -16,9 +16,11 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
+import 'package:zad/shared/inventory/data/consumption_rates.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
@@ -256,6 +258,11 @@ class PantryController extends Notifier<PantryView> {
     return shortagesIn(
       items,
       today: DateTime.utc(local.year, local.month, local.day),
+      // The house's own use, when the server has learnt it. Not yet read is
+      // the threshold alone, as before.
+      rates:
+          ref.read(consumptionRatesProvider).value ??
+          const <String, ConsumptionRate>{},
     );
   }
 }
