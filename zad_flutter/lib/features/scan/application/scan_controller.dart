@@ -18,6 +18,7 @@ import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/purchases/domain/purchase.dart';
@@ -376,11 +377,20 @@ class ScanController extends Notifier<ScanView> {
       final pantry = state.offersPantry && state.addToPantry
           ? pantryLinesOf(receipt, excluded: state.excludedItems)
           : const <PurchaseLine>[];
+      final shopMedicines = state.offersPantry && state.addToPantry
+          ? groceryMedicineProposals(
+              ref,
+              receipt,
+              excluded: state.excludedItems,
+            )
+          : const <RestockProposal>[];
       final pharmacy = state.offersPharmacy && state.addToPharmacy
           ? pharmacyLinesOf(ref, <RestockProposal>[
               for (final (i, p) in state.pharmacyWithCounts.indexed)
                 if (!state.excludedItems.contains(i)) p,
             ])
+          : shopMedicines.isNotEmpty
+          ? pharmacyLinesOf(ref, shopMedicines)
           : null;
       final lines = <PurchaseLine>[...pantry, ...?pharmacy?.lines];
 
@@ -494,10 +504,42 @@ List<RestockProposal> pharmacyProposalsFor(Ref ref, ScannedReceipt receipt) {
   if (receipt.type != ReceiptType.pharmacy || receipt.items.isEmpty) {
     return const <RestockProposal>[];
   }
+  return _restockProposals(ref, receipt.items);
+}
+
+/// What the medicines on a shop's receipt (a supermarket's Panadol) would do
+/// to the pharmacy, leaving out the indices in [excluded]. They never go into
+/// the pantry (`pantryLinesOf`).
+List<RestockProposal> groceryMedicineProposals(
+  Ref ref,
+  ScannedReceipt receipt, {
+  Set<int> excluded = const <int>{},
+}) {
+  final lines = medicineLinesOf(receipt).difference(excluded);
+  if (lines.isEmpty) return const <RestockProposal>[];
+  // A pharmacy that cannot be read makes them new medicines: they are
+  // already out of the pantry, and must not vanish from both.
+  return _restockProposals(ref, <ScannedReceiptItem>[
+    for (final (i, item) in receipt.items.indexed)
+      if (lines.contains(i)) item,
+  ], unreadableIsEmpty: true);
+}
+
+List<RestockProposal> _restockProposals(
+  Ref ref,
+  List<ScannedReceiptItem> items, {
+  bool unreadableIsEmpty = false,
+}) {
   try {
-    final medicines = ref.read(pharmacyRepositoryProvider).cached();
+    List<Medicine> medicines;
+    try {
+      medicines = ref.read(pharmacyRepositoryProvider).cached();
+    } on Object {
+      if (!unreadableIsEmpty) rethrow;
+      medicines = const <Medicine>[];
+    }
     return <RestockProposal>[
-      for (final item in receipt.items)
+      for (final item in items)
         proposeRestock(
           PharmacyLine(
             name: item.name,

@@ -741,5 +741,7 @@
   "appointmentGuardKeep": "Save anyway",
   "qtyLeftLittle": "A little left",
   "qtyLeftHalf": "About half left",
-  "qtyLeftMost": "Most of it left"
+  "qtyLeftMost": "Most of it left",
+  "scanLineToPharmacy": "To pharmacy 💊",
+  "scanPantryWithMedicines": "What you have goes up, what's on the shopping list comes off it, and medicines go to the pharmacy."
 }

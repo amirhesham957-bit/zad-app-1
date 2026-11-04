@@ -28,3 +28,11 @@ Deno.test("receipt prompt: a delivery-app order — fees and discounts are not i
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "\"deliveryApp\":\"\",\"deliveryFee\":0");
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "not the service fee, not a tip");
 });
+
+Deno.test("receipt prompt: every line has a category from the pantry's groups or the medicines (the owner's Panadol, 2026-11-04)", () => {
+  for (const c of ["البقالة", "الخضار", "الفواكه", "اللحوم", "الألبان", "المشروبات", "العناية", "مسكن", "مضاد حيوي", "فيتامين", "مزمن", "دواء", "أخرى"]) {
+    assertStringIncludes(RECEIPT_SYSTEM_PROMPT, `"${c}"`);
+  }
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "A medicine is a medicine category even on a supermarket receipt");
+  assert(!RECEIPT_SYSTEM_PROMPT.includes('"category":"عام"'));
+});

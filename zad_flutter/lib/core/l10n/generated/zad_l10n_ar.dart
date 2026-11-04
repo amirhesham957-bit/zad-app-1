@@ -2532,4 +2532,11 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'فاضل كتير';
+
+  @override
+  String get scanLineToPharmacy => 'للصيدلية 💊';
+
+  @override
+  String get scanPantryWithMedicines =>
+      'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.';
 }

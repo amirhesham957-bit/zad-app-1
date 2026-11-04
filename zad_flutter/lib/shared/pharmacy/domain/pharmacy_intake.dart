@@ -125,6 +125,67 @@ String? medicineCategory(String? category) => switch (category?.trim()) {
   _ => null,
 };
 
+/// The category a receipt line carries when the reader saw a medicine on a
+/// shop's receipt (a supermarket's Panadol), besides [kMedicineCategories].
+const String kMedicineLineCategory = 'دواء'; // l10n: data
+
+/// The category the reader gives a line it did not classify.
+const String _defaultLineCategory = 'عام'; // l10n: data
+
+/// Medicine names a supermarket receipt prints, matched when the reader left
+/// the line's category at its default. Data, not display text: matched
+/// against the printed name.
+const List<String> _medicineWords = <String>[
+  'بنادول', // l10n: data
+  'panadol', // l10n: data
+  'باراسيتامول', // l10n: data
+  'paracetamol', // l10n: data
+  'بروفين', // l10n: data
+  'brufen', // l10n: data
+  'ايبوبروفين', // l10n: data
+  'ibuprofen', // l10n: data
+  'كونجستال', // l10n: data
+  'congestal', // l10n: data
+  'سيتال', // l10n: data
+  'cetal', // l10n: data
+  'ريفو', // l10n: data
+  'rivo', // l10n: data
+  'اسبرين', // l10n: data
+  'aspirin', // l10n: data
+  'فولتارين', // l10n: data
+  'voltaren', // l10n: data
+  'كتافلام', // l10n: data
+  'cataflam', // l10n: data
+  'نوفالجين', // l10n: data
+  'novalgin', // l10n: data
+  'ادفيل', // l10n: data
+  'advil', // l10n: data
+  'فيفادول', // l10n: data
+  'فيتامين', // l10n: data
+  'vitamin', // l10n: data
+  'شراب كحة', // l10n: data
+  'مضاد حيوي', // l10n: data
+  'اقراص', // l10n: data
+  'أقراص', // l10n: data
+  'كبسول', // l10n: data
+];
+
+/// Whether a line on a shop's receipt is a medicine, so it goes to the
+/// pharmacy rather than the pantry (the owner's Panadol, 2026-11-04). The
+/// default `عام` is not a medicine category here: every unclassified grocery
+/// line carries it.
+bool isMedicineLine(String name, String? category) {
+  final c = category?.trim() ?? '';
+  if (c == kMedicineLineCategory ||
+      (c != _defaultLineCategory && kMedicineCategories.contains(c))) {
+    return true;
+  }
+  final n = normalizeItemName(name).toLowerCase();
+  return _medicineWords.any(
+    (w) => n.contains(normalizeItemName(w).toLowerCase()),
+  );
+}
+
 /// The unit a new medicine is counted in when its box's contents are unknown.
 const String kPackUnit = 'علبة';
 

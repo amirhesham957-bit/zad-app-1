@@ -4548,6 +4548,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'فاضل كتير'**
   String get qtyLeftMost;
+
+  /// No description provided for @scanLineToPharmacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'للصيدلية 💊'**
+  String get scanLineToPharmacy;
+
+  /// No description provided for @scanPantryWithMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.'**
+  String get scanPantryWithMedicines;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

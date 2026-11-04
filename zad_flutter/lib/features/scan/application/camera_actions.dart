@@ -130,11 +130,16 @@ class CameraActions extends Notifier<void> {
   /// A receipt's lines into the pantry, through the purchase when it has a
   /// total. Returns the pantry summary.
   Future<String> _pantryReceipt(ScannedReceipt r, {String? category}) async {
-    final lines = pantryLinesOf(r);
+    final pantry = pantryLinesOf(r);
+    // A supermarket's Panadol goes to the pharmacy, not the pantry.
+    final medicines = groceryMedicineProposals(ref, r);
+    final pharmacy = medicines.isEmpty ? null : pharmacyLinesOf(ref, medicines);
     if (r.total <= 0) {
       // No figure to record: the lines alone, as before.
+      if (pharmacy != null) await _restockOnly(pharmacy.plan);
       return await injectPantry(_lines(r));
     }
+    final lines = <PurchaseLine>[...pantry, ...?pharmacy?.lines];
     final outcome = await _purchase(
       title: r.storeName,
       amount: r.total,
@@ -143,19 +148,20 @@ class CameraActions extends Notifier<void> {
       merchantName: r.storeName,
       lines: lines,
     );
-    await afterReceiptPurchase(ref, lines: lines);
+    await afterReceiptPurchase(ref, lines: lines, pharmacy: pharmacy?.plan);
     if (outcome == null) return 'الأصناف هتدخل المخزن أول ما النت يرجع';
     return intakeSummary(pantryResultOf(outcome));
   }
 
   List<IntakeLine> _lines(ScannedReceipt r) => <IntakeLine>[
-    for (final item in r.items)
-      IntakeLine(
-        name: item.name,
-        quantity: wholeCount(item.quantity),
-        unit: item.unit,
-        category: item.category,
-      ),
+    for (final (i, item) in r.items.indexed)
+      if (!medicineLinesOf(r).contains(i))
+        IntakeLine(
+          name: item.name,
+          quantity: wholeCount(item.quantity),
+          unit: item.unit,
+          category: item.category,
+        ),
   ];
 
   /// Kotlin's `injectPharmacyReceipt`: the medicines restocked, and the

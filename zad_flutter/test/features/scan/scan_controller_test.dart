@@ -449,6 +449,49 @@ void main() {
       expect(line['price'], 12.5, reason: 'the server divides by quantity');
     });
 
+    test(
+      "a supermarket's Panadol goes to the pharmacy, its shampoo to the pantry",
+      () async {
+        scanner.answer = _receipt(
+          items: <Object?>[
+            <String, dynamic>{
+              'name': 'شامبو بانتين',
+              'price': 95.0,
+              'quantity': 1.0,
+              'unit': 'عبوة',
+              'category': 'العناية',
+            },
+            // The reader left the default category: the name still says it.
+            <String, dynamic>{
+              'name': 'بنادول اكسترا',
+              'price': 60.0,
+              'quantity': 1.0,
+              'unit': 'علبة',
+              'category': 'عام',
+            },
+          ],
+        );
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        await controller.saveAsTransaction();
+
+        final lines = (queuedPurchase(container)['lines'] as List<Object?>)
+            .cast<Map<Object?, Object?>>();
+        expect(
+          <String, Object?>{
+            for (final l in lines) l['name']! as String: l['to'],
+          },
+          <String, Object?>{
+            'شامبو بانتين': 'pantry',
+            'بنادول اكسترا': 'pharmacy',
+          },
+        );
+      },
+    );
+
     test('a receipt with no store name names no shop', () async {
       scanner.answer = _receipt(storeName: '');
       final container = containerWith();
