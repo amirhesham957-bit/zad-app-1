@@ -24,6 +24,7 @@ import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal } from "./tasteDeals.ts";
+import { loadDealCode } from "./dealCodes.ts";
 import { budgetComfortable } from "./householdLoad.ts";
 import { familyTime, type FamilyTime, isWeekendEve, weekendOuting, type WeekendOuting } from "./familyTime.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
@@ -122,6 +123,19 @@ export const SALARY_CYCLE_MOMENT = "salary_cycle";
 
 /** لحظات بتتقال على الموبايل بس — تعليق على فاتورة لسه متصورة مالوش معنى كفويس تليجرام بعدين. */
 export const DEVICE_ONLY_MOMENTS: ReadonlySet<string> = new Set(["receipt_reaction"]);
+
+/** سطر كود الخصم (٤.٢٢) للنص الاحتياطي، من الحقائق بس. */
+export function codeLine(raw: unknown): string {
+  const c = raw as { store?: unknown; code?: unknown; discount_percent?: unknown; discount_amount?: unknown; min_order?: unknown; until?: unknown; source?: unknown } | null;
+  if (!c || typeof c.code !== "string" || typeof c.store !== "string") return "";
+  const off = Number(c.discount_percent) > 0 ? `${Number(c.discount_percent)}٪` : Number(c.discount_amount) > 0 ? `${Number(c.discount_amount)}` : "";
+  if (!off) return "";
+  const from = c.source === "youtube" ? "فيديو" : "بوست";
+  return `وفيه كود ${c.code} على ${c.store.slice(0, 40)} بخصم ${off}` +
+    (Number(c.min_order) > 0 ? ` على طلب ${Number(c.min_order)} أو أكتر` : "") +
+    (typeof c.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.until) ? ` لحد ${c.until}` : "") +
+    ` (من ${from} ${c.store.slice(0, 40)}، ممكن يكون خلص).`;
+}
 
 /** تحية صبح فيها عرض (ZAD_PLAN ٤.٢٠): البوت بيحط تحتها [🛒 ضيفه لقايمتي] [🙅 مش مهتم] بمعرّف الصف. */
 export function hasDealButtons(moment: string, facts: unknown): boolean {
@@ -232,6 +246,9 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "ولو فيه taste_deal.delivery: قولي إن توصيل delivery.app عادةً حوالي delivery.fee (من فواتير بيوت)، ولو فيه saving التوفير الصافي (saving − delivery.fee). " +
     "ولو فيه taste_deal.source: قولي جاي منين (search = صفحة المحل، flyer = نشرتهم، receipt = فواتير بيوت حواليك، partner = «رابط شراكة» — قوليها بالنص، زاد بياخد عمولة منه) " +
     "ولحد إمتى لو source.until موجود، وإنه ممكن يكون خلص. " +
+    "لو فيه deal_code: جملة واحدة في الآخر: كود deal_code.code على deal_code.store بخصم discount_percent٪ أو discount_amount " +
+    "(وأقل طلب min_order لو موجود، ولحد until لو موجود) — اكتبي الكود حرف بحرف زي ما هو، وقولي إنه من بوست أو فيديو المحل " +
+    "(source = instagram ⇒ بوست إنستجرام، youtube ⇒ فيديو يوتيوب) وإنه ممكن يكون خلص؛ معلومة مش دعوة لطلب. " +
     "لو فيه family_time: اقتراح خفيف لوقت العيلة بكرة بالجو والمبلغ اللي فيه بس (budget = null ⇒ أفكار ببلاش، من غير ما تقولي إن الفلوس قليلة) — " +
     "اقتراح مش واجب، ومن غير «إنتوا مش بتقعدوا مع بعض». " +
     "لو فيه weekend_outing: جملة واحدة في الآخر بدل العرض — خروجة أو عشا برّه بكرة في weekend_outing.city بالمبلغ اللي فيه بس " +
@@ -744,6 +761,7 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           (lines.length ? `صباح الخير! ${lines.join("، ")}.` : occasion.line || alert ? "" : "صباح الخير! يومك سعيد، وأنا معاك لو احتجت حاجة.") +
           (clothes ? ` ${clothes}` : "") +
           (deal ? ` ${deal}` : "") +
+          (codeLine(facts.deal_code) ? ` ${codeLine(facts.deal_code)}` : "") +
           (str((facts.family_time as { line?: string } | undefined)?.line, 200) ? ` ${str((facts.family_time as { line?: string }).line, 200)}` : "") +
           (str((facts.weekend_outing as { line?: string } | undefined)?.line, 200) ? ` ${str((facts.weekend_outing as { line?: string }).line, 200)}` : "") +
           (ask ? ` وسؤال صغير: ${ask}` : ""),
@@ -1407,6 +1425,9 @@ export async function morningFacts(
   // خروجته في family_time؛ الفرد لوحده بياخدها هنا.
   const outing = quiet || together || !comfortable ? null : await weekendOutingFor(sb, userId, local.date, budget, profile ?? null);
   const deal = comfortable && (outing || together) ? null : homeDeal;
+  // ٤.٢٢: كود خصم من بوست أو فيديو تطبيق/محل بيشتري منه — بس لما مفيش عرض في الرسالة (سطر عرض واحد)، ومش في
+  // ظرف ولا والفلوس في خطر.
+  const dealCode = quiet || deal || threat === "OVER" || threat === "DANGER" ? null : await loadDealCode(sb, userId);
   // بعد أول ٧٢ ساعة: دوا مالوش مواعيد بياخد الخانة (صحة قبل الملف والفضول) — مرة لكل دوا.
   // سؤال «امبارح» مايستناش؛ مواعيد الدوا تستنى يوم.
   const medAsk = quiet || gift || bigEvent || newcomer || followUp ? null : await doseTimesAsk(sb, userId);
@@ -1452,6 +1473,7 @@ export async function morningFacts(
     ...(alert ? { weather_alert: { kind: alert.kind, day: alert.day, line: alert.line } } : {}),
     ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
     ...(deal ? { taste_deal: deal } : {}),
+    ...(dealCode ? { deal_code: dealCode } : {}),
     ...(together ? { family_time: together } : {}),
     ...(outing ? { weekend_outing: outing } : {}),
     // آخر واحد: بيغطي على سؤال الملف والفضول والمناسبة (نفس الخانة، سؤال واحد في التحية).
