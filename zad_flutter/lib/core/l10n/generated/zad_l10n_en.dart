@@ -2694,4 +2694,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get dealsSourceOther => 'Source';
+
+  @override
+  String get bankTestLifeEvent => 'An appointment or event';
 }

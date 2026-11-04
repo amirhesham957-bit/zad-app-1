@@ -768,5 +768,6 @@
   "dealsSourceFlyer": "Store's flyer",
   "dealsSourceReceipts": "Receipts from homes near you",
   "dealsSourcePartner": "Partner link",
-  "dealsSourceOther": "Source"
+  "dealsSourceOther": "Source",
+  "bankTestLifeEvent": "An appointment or event"
 }

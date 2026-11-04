@@ -50,6 +50,8 @@ export function isVisit(a: Pick<FollowUpAppointment, "title" | "kind">): boolean
 /** السؤال: الطبي «قالك إيه؟»، والباقي «عدّى إزاي؟». العقل بيصيغه بلهجة العميل. */
 export function followUpQuestion(a: Pick<FollowUpAppointment, "title" | "kind">): string {
   const title = a.title.trim();
+  // تحليل/أشعة (غالباً من إشعار المعمل، ٢.٨): السؤال عن النتيجة، مش «قالك إيه».
+  if (/تحليل|تحاليل|معمل|مختبر|أشع|اشع|سونار|رنين|lab|x-?ray|mri/i.test(title)) return `${title} امبارح — النتيجة طلعت؟`;
   const medical = a.kind === "medical" || /دكتور|دكتورة|عياد|مستشف|أسنان|اسنان|كشف|doctor|clinic|dentist/i.test(title);
   return medical ? `روحت ${title} امبارح؟ قالك إيه؟` : `${title} امبارح عدّى إزاي؟`;
 }

@@ -1976,5 +1976,6 @@
   "dealsSourceFlyer": "نشرة المحل",
   "dealsSourceReceipts": "فواتير بيوت حواليك",
   "dealsSourcePartner": "رابط شراكة",
-  "dealsSourceOther": "المصدر"
+  "dealsSourceOther": "المصدر",
+  "bankTestLifeEvent": "ميعاد أو حدث"
 }

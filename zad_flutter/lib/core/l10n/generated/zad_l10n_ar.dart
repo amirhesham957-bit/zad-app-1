@@ -2630,4 +2630,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get dealsSourceOther => 'المصدر';
+
+  @override
+  String get bankTestLifeEvent => 'ميعاد أو حدث';
 }

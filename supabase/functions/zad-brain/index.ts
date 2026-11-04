@@ -110,6 +110,7 @@ import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
+import { appointmentKindFor, eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent, remindMinutesFor } from "./lifeEvents.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -8118,6 +8119,106 @@ async function deliverNotificationPrompt(
 /** مهلة بوابة «فلوس اتحركت فعلاً؟» — موديل خفيف بيرد في ثانية أو اتنين وقت الطبيعي. */
 const NOTIFICATION_GATE_TIMEOUT_MS = 15_000;
 
+/**
+ * حدث حياة من إشعار (٢.٨): نداء تاني للموديل يطلّع التفاصيل (لو وقع: الحدث بالنوع بس)، صف في zad_life_events،
+ * وكارت للعميل — سؤال «أسجّله وأفكرك؟» لو فيه ميعاد جاي، وإلا ملاحظة. مفيش ميعاد بيتعمل هنا (life_event_decide).
+ */
+async function recordLifeEvent(
+  sb: SupabaseClient,
+  userId: string,
+  ingestEventId: string,
+  kind: LifeKind,
+  title: string,
+  text: string,
+  rawText: string,
+): Promise<{ life_event_id: string | null; offered: boolean }> {
+  const tz = await accountTimeZone(sb, userId);
+  const now = localNowContext(tz);
+  let ev: LifeEvent | null = null;
+  try {
+    const p = lifeEventPrompt({ kind, title, text, todayLocal: `${now.date} ${now.time}`, weekday: now.weekday });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const reply = await Promise.race([
+      callModel({
+        model: MODEL_ROUTINE, system: p.system, tools: [], history: [{ role: "user", text: p.user }], maxTokens: 300,
+        responseSchema: LIFE_EVENT_SCHEMA, groqModel: DECISION_GROQ_MODEL,
+      }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("life event read timed out")), NOTIFICATION_GATE_TIMEOUT_MS);
+      }),
+    ]).finally(() => clearTimeout(timer));
+    ev = parseLifeEvent(reply.text ?? "", kind, rawText);
+  } catch (e) {
+    console.warn("[life_event] model unavailable:", (e as Error)?.message);
+  }
+  ev ??= parseLifeEvent("{}", kind, rawText)!;
+  const at = eventInstant(ev, now.utc_offset);
+  const offered = kind !== "result_ready" && at !== null && Date.parse(at) > Date.now() + 15 * 60_000;
+  const { data: row, error } = await sb.from("zad_life_events").upsert({
+    user_id: userId, ingest_event_id: ingestEventId, kind, title: ev.title, event_at: at,
+    place: ev.place, action_hint: ev.action, link: ev.link,
+  }, { onConflict: "user_id,ingest_event_id" }).select("id").maybeSingle();
+  if (error || !row) {
+    console.error("[life_event] insert failed:", error?.message ?? "no row");
+    return { life_event_id: null, offered: false };
+  }
+  const id = (row as { id: string }).id;
+  const hasTime = (ev.whenLocal ?? "").length > 10;
+  const whenText = at
+    ? new Date(at).toLocaleString("ar-EG", {
+      timeZone: tz, weekday: "long", day: "numeric", month: "long", ...(hasTime ? { hour: "numeric", minute: "2-digit" } : {}),
+    })
+    : null;
+  const card = lifeEventCard(ev, whenText, offered);
+  await sb.from("zad_insights").upsert({
+    user_id: userId, kind: offered ? "question" : "insight", surface: "home_card", priority: "normal",
+    title: card.title, body: card.body,
+    dedupe_key: `life_event_${id}`,
+    action_type: offered ? "yes_no" : null,
+    about_item: `life_event:${id}`,
+    status: "pending", updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id,dedupe_key" });
+  return { life_event_id: id, offered };
+}
+
+/** «أيوة/لأ» على كارت حدث حياة: أيوة ⇐ ميعاد بتذكير في zad_appointments (والمتابعة بعده من تحية الصبح). */
+async function decideLifeEvent(sb: SupabaseClient, userId: string, id: string, yes: boolean): Promise<{ ok: boolean; status: string; appointment_id?: string }> {
+  const { data: ev } = await sb.from("zad_life_events")
+    .select("id,kind,title,event_at,place,action_hint,link,status,appointment_id")
+    .eq("id", id).eq("user_id", userId).maybeSingle();
+  const row = ev as {
+    id: string; kind: LifeKind; title: string; event_at: string | null;
+    place: string | null; action_hint: string | null; link: string | null; status: string; appointment_id: string | null;
+  } | null;
+  if (!row) return { ok: false, status: "not_found" };
+  if (row.status !== "proposed") return { ok: true, status: row.status, ...(row.appointment_id ? { appointment_id: row.appointment_id } : {}) };
+  const decidedAt = new Date().toISOString();
+  if (!yes || !row.event_at || Date.parse(row.event_at) <= Date.now() || row.kind === "result_ready") {
+    await sb.from("zad_life_events").update({ status: "dismissed", decided_at: decidedAt }).eq("id", id).eq("user_id", userId).eq("status", "proposed");
+    return { ok: true, status: "dismissed" };
+  }
+  const notes = [row.action_hint, row.link].filter(Boolean).join(" — ").slice(0, 500) || null;
+  const { data: appt, error } = await sb.from("zad_appointments").insert({
+    user_id: userId,
+    title: row.title,
+    kind: appointmentKindFor(row),
+    starts_at: row.event_at,
+    place_label: row.place,
+    remind_minutes_before: remindMinutesFor(row.kind),
+    recurrence: "once",
+    source: "notification",
+    notes,
+  }).select("id").maybeSingle();
+  if (error || !appt) {
+    console.error("[life_event_decide] appointment insert failed:", error?.message ?? "no row");
+    return { ok: false, status: "appointment_failed" };
+  }
+  const apptId = (appt as { id: string }).id;
+  await sb.from("zad_life_events").update({ status: "confirmed", appointment_id: apptId, decided_at: decidedAt })
+    .eq("id", id).eq("user_id", userId).eq("status", "proposed");
+  return { ok: true, status: "confirmed", appointment_id: apptId };
+}
+
 async function handleNotificationIngest(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const packageName = String(body.package_name ?? "").trim();
   const title = String(body.title ?? "").trim();
@@ -8234,6 +8335,14 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     }, { onConflict: "user_id,dedupe_key" });
     await mark("ignored", gateTag);
     return new Response(JSON.stringify({ ok: true, status: "reminder", classification: "informational_only", gate: verdict.kind }), { headers: CORS_HEADERS });
+  }
+
+  if (gate === "life_event" && verdict) {
+    // ٢.٨: موعد/حكومي/نتيجة/شحنة — مش فلوس. الحدث بيتسجل مقترح، والعميل بيتسأل قبل أي ميعاد (lifeEvents.ts).
+    const kind = lifeKindOf(verdict.kind)!;
+    const res = await recordLifeEvent(sb, userId, ingestEventId, kind, title, text, rawText);
+    await mark("ignored", `life_event:${kind}`);
+    return new Response(JSON.stringify({ ok: true, status: "life_event", classification: "informational_only", gate: verdict.kind, ...res }), { headers: CORS_HEADERS });
   }
 
   const parsed = body.parsed ?? {};
@@ -9860,6 +9969,20 @@ async function handleRequest(req: Request): Promise<Response> {
     // رجع البيت (geofence البيت على الموبايل — مكان البيت نفسه مابيوصلش السيرفر). بنحسب صرف
     // نافذة الخروجة والمحلات اللي دخلها، بنسجل الخروجة (من غير إحداثيات)، ولو صرف حاجة زاد
     // بتقوله بصوتها "رجعت! روحت فين وصرفت إيه". مابنتكلمش على خروجة من غير صرف — ده تطفّل.
+    // ٢.٨: العميل ردّ على كارت حدث حياة (الموبايل). الهوية من JWT بس.
+    if (body.action === "life_event_decide") {
+      const lifeUserId = await resolveRequestUserId(req, body);
+      if (!lifeUserId) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const id = String(body.life_event_id ?? "");
+      if (!/^[0-9a-f-]{36}$/i.test(id)) {
+        return new Response(JSON.stringify({ ok: false, error: "invalid life_event_id" }), { status: 400, headers: CORS_HEADERS });
+      }
+      const out = await decideLifeEvent(createClient(SUPABASE_URL, SERVICE_ROLE_KEY), lifeUserId, id, body.yes === true);
+      return new Response(JSON.stringify(out), { status: out.ok ? 200 : out.status === "not_found" ? 404 : 500, headers: CORS_HEADERS });
+    }
+
     if (body.action === "place_event") {
       const placeUserId = await resolveRequestUserId(req, body);
       if (!placeUserId) {

@@ -12,6 +12,7 @@ import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
@@ -395,6 +396,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
     );
     final amount = verdict.amount;
     final ok = amount != null && verdict.reason == null;
+    final lifeEventLabel = context.l10n.bankTestLifeEvent;
     final result = ok
         ? 'نجح التحليل ✓\n'
               'المبلغ: $amount ${verdict.currency ?? ''}\n'
@@ -404,6 +406,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
                 BankNotificationClass.failedOrPendingTransaction => 'معلّقة',
                 BankNotificationClass.informationalOnly => 'معلومة',
                 BankNotificationClass.ambiguous => 'تتأكد على السيرفر',
+                BankNotificationClass.lifeEvent => lifeEventLabel,
               }}'
         : 'فشل التحليل — الرسالة العينة معملهاش parser';
     unawaited(
