@@ -392,7 +392,7 @@ async function deliverVoiceAlert(
  */
 async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }] = await Promise.all([
-    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,unit").eq("user_id", userId),
+    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,unit,created_at").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
     // حاجات على فترات مابتتسألش «لسه عندك؟» (ZAD_PLAN ٣.١٠).
@@ -407,11 +407,11 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   );
   const pendingItems = new Set(((pending ?? []) as Array<{ item_name: string }>).map((p) => p.item_name));
 
-  return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null; unit: string | null }>)
+  return ((inv ?? []) as Array<{ item_name: string; quantity: number; low_stock_threshold: number | null; unit: string | null; created_at: string | null }>)
     .filter((item) => {
       if (pendingItems.has(item.item_name)) return false;
       if (occasionalItems.has(item.item_name.trim())) return false;
-      return needsCheckIn(item.quantity, item.low_stock_threshold, consByItem.get(item.item_name)?.avg_daily_qty);
+      return needsCheckIn(item.quantity, item.low_stock_threshold, consByItem.get(item.item_name)?.avg_daily_qty, item.created_at);
     })
     .map((item) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit }));
 }

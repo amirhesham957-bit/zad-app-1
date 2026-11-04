@@ -7,6 +7,7 @@
 /// and the wrong answer by a whole day either side of midnight.
 library;
 
+import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
@@ -61,6 +62,7 @@ List<Shortage> shortagesIn(
   List<InventoryItem> items, {
   required DateTime today,
   int expiringWithinDays = 3,
+  Map<String, ConsumptionRate> rates = const <String, ConsumptionRate>{},
 }) {
   final shortages = <Shortage>[];
 
@@ -71,6 +73,7 @@ List<Shortage> shortagesIn(
         item,
         today: today,
         expiringWithinDays: expiringWithinDays,
+        rate: rates[rateKey(item.itemName)],
       );
       if (reason != null) shortages.add(Shortage(item: item, reason: reason));
       continue;
@@ -79,11 +82,21 @@ List<Shortage> shortagesIn(
     // runs out or runs low once, under the staple's name — eight bottles of
     // water across five brands are not five shortages. A date is still a
     // row's own: an expired bottle is that bottle.
+    final familyRate = _sumRates(<String>[
+      group.name,
+      for (final m in group.members) m.itemName,
+    ], rates);
     if (group.isShortOut) {
       shortages.add(
         Shortage(item: group.representative, reason: ShortageReason.outOfStock),
       );
-    } else if (group.isShortLow) {
+    } else if (!group.isOccasional &&
+        _isLow(
+          quantity: group.total,
+          threshold: group.threshold,
+          rate: familyRate,
+          fresh: group.members.any((m) => _addedOn(m, today)),
+        )) {
       shortages.add(
         Shortage(item: group.representative, reason: ShortageReason.runningLow),
       );
@@ -118,6 +131,7 @@ ShortageReason? shortageReasonFor(
   InventoryItem item, {
   required DateTime today,
   int expiringWithinDays = 3,
+  ConsumptionRate? rate,
 }) {
   if (item.quantity <= 0) {
     return item.isOccasional ? null : ShortageReason.outOfStock;
@@ -129,7 +143,15 @@ ShortageReason? shortageReasonFor(
   // are two of.
   if (days != null && days < 0) return ShortageReason.expired;
 
-  if (item.isLowStock && !item.isOccasional) return ShortageReason.runningLow;
+  if (!item.isOccasional &&
+      _isLow(
+        quantity: item.quantity,
+        threshold: item.effectiveThreshold,
+        rate: rate,
+        fresh: _addedOn(item, today),
+      )) {
+    return ShortageReason.runningLow;
+  }
   if (days != null && days <= expiringWithinDays) {
     return ShortageReason.expiringSoon;
   }
@@ -163,4 +185,54 @@ List<ShoppingItem> linesRestockedBy(
               sameProductFamily(line.itemName, item.itemName)))
         line,
   ];
+}
+
+/// How many days of use count as "running low" once the house's rate is known:
+/// what is left lasts this long or less.
+const double kLowStockDays = 2;
+
+/// Running low, by the house's own use when it is known (the owner drinks two
+/// bottles of water a day: four bottles is two days, low; ten is not), else
+/// by the threshold — but never on the day the row was added. The owner's
+/// milk went in at 1.5 with the default threshold of 2 and was on the
+/// shopping list half a second later (2026-11-03): the customer had just
+/// said what the house has, not that it is running out.
+bool _isLow({
+  required double quantity,
+  required double threshold,
+  required ConsumptionRate? rate,
+  required bool fresh,
+}) {
+  if (rate != null && rate.perDay > 0) {
+    return quantity / rate.perDay <= kLowStockDays;
+  }
+  return quantity <= threshold && !fresh;
+}
+
+/// Whether [item] was added on [today] (a civil date in the account's zone).
+/// Compared on the UTC date: a day either way only shortens the grace.
+bool _addedOn(InventoryItem item, DateTime today) {
+  final at = item.createdAt;
+  if (at == null) return false;
+  final d = at.toUtc();
+  return d.year == today.year && d.month == today.month && d.day == today.day;
+}
+
+/// One rate for a family: the brands' rates added up, or the staple's own.
+ConsumptionRate? _sumRates(
+  List<String> names,
+  Map<String, ConsumptionRate> rates,
+) {
+  var perDay = 0.0;
+  var known = false;
+  final seen = <String>{};
+  for (final n in names) {
+    final key = rateKey(n);
+    if (!seen.add(key)) continue;
+    final r = rates[key];
+    if (r == null) continue;
+    perDay += r.perDay;
+    known = known || r.known;
+  }
+  return perDay > 0 ? (perDay: perDay, known: known) : null;
 }

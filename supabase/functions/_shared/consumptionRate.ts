@@ -18,11 +18,21 @@ export function rateConfidence(avgDailyQty: number | null | undefined, rateKnown
  * يومين بأي معدل — المؤكد أو التقريبي، لأن السؤال نفسه هو التأكيد. نفس
  * `_inventory_needs_checkin` في SQL.
  */
-export function needsCheckIn(quantity: number, threshold: number | null | undefined, avgDailyQty: number | null | undefined): boolean {
+export function needsCheckIn(
+  quantity: number,
+  threshold: number | null | undefined,
+  avgDailyQty: number | null | undefined,
+  createdAt?: string | null,
+  now: number = Date.now(),
+): boolean {
   // اللي كميته صفر خلص فعلاً — مكانه قايمة الشرا، مش «لسه عندك؟». المالك ١/١١: «بيسألني على حاجات
   // خلصانة من شهرين» — مياه نستله اتسألت ٣ مرات وهي صفر.
   if (!(quantity > 0)) return false;
-  if (quantity <= (threshold ?? 2)) return true;
+  // المالك ٤/١١: لما معدل البيت معروف هو اللي بيحكم (يومين أو أقل)، مش الحد الثابت — لبن اتضاف بـ١٫٥
+  // كان بيتسأل عنه من أول دقيقة. ومن غير معدل: الحد، بس مش على صنف اتضاف في آخر ٢٤ ساعة — العميل لسه
+  // قايل عنده كام. نفس قاعدة الموبايل (shortage.dart) و_inventory_needs_checkin.
   const rate = Number(avgDailyQty);
-  return rate > 0 && quantity / rate <= 2;
+  if (rate > 0) return quantity / rate <= 2;
+  if (createdAt && now - Date.parse(createdAt) < 24 * 3600_000) return false;
+  return quantity <= (threshold ?? 2);
 }

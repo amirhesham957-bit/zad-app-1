@@ -25,3 +25,13 @@ Deno.test("needsCheckIn: an item already at zero is not asked about (2026-11-01)
   assertEquals(needsCheckIn(-1, 2, null), false);
   assertEquals(needsCheckIn(0.2, null, null), true, "a little left is still worth asking");
 });
+
+Deno.test("needsCheckIn: the house's rate decides when it is known, and a row added in the last day is not asked about (2026-11-04)", () => {
+  const now = Date.parse("2026-11-04T12:00:00Z");
+  // Milk added at 1.5 with the default threshold of 2: not «is it finished?» a minute later.
+  assertEquals(needsCheckIn(1.5, 2, null, "2026-11-04T11:59:00Z", now), false);
+  assertEquals(needsCheckIn(1.5, 2, null, "2026-11-02T10:00:00Z", now), true, "two days later the threshold applies");
+  // Two bottles a day: one bottle under a threshold of 2 is still asked, ten under a threshold of 12 is not.
+  assertEquals(needsCheckIn(10, 12, 2, null, now), false);
+  assertEquals(needsCheckIn(4, 1, 2, "2026-11-04T11:59:00Z", now), true, "the rate decides even on the first day");
+});
