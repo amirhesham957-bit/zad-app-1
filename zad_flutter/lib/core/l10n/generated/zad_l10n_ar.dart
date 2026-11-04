@@ -413,7 +413,7 @@ class ZadL10nAr extends ZadL10n {
   String get drawerDocuments => 'مستنداتي';
 
   @override
-  String get drawerNearby => 'المتاجر والأسواق القريبة';
+  String get drawerNearby => 'العروض والمحلات القريبة';
 
   @override
   String get drawerTips => 'نصايح زاد';
@@ -2539,4 +2539,95 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get scanPantryWithMedicines =>
       'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.';
+
+  @override
+  String get dealsTitle => 'العروض والمحلات القريبة';
+
+  @override
+  String get dealsTabDeals => 'العروض';
+
+  @override
+  String get dealsTabNearby => 'المحلات القريبة';
+
+  @override
+  String get dealsEmptyTitle => 'مفيش عروض لسه';
+
+  @override
+  String get dealsEmptyBody =>
+      'زاد بيدوّر كل أسبوع في صفحات المحلات وتطبيقات التوصيل وفواتير البيوت. أول ما يلاقي حاجة هتظهر هنا.';
+
+  @override
+  String get dealsFailedTitle => 'ماقدرناش نجيب العروض';
+
+  @override
+  String get dealsFailedBody => 'اتأكد من النت واسحب لتحت عشان تجرب تاني.';
+
+  @override
+  String get dealsCodesHeader => 'أكواد خصم';
+
+  @override
+  String get dealsStoresHeader => 'عروض المحلات';
+
+  @override
+  String get dealsFootnote =>
+      'العروض من مصادرها ومتعلَّم عليها بتاريخها — ممكن يكون العرض خلص. زرار أمازون بيفتح بحث في متجر بلدك، وزاد بياخد عمولة صغيرة منه.';
+
+  @override
+  String get dealsOnAmazon => 'على أمازون';
+
+  @override
+  String dealsCopied(String code) {
+    return 'اتنسخ $code';
+  }
+
+  @override
+  String dealsCodeTitle(String store, String off) {
+    return '$store — خصم $off';
+  }
+
+  @override
+  String dealsPercent(String n) {
+    return '$n٪';
+  }
+
+  @override
+  String dealsPrice(String store, String price, String currency) {
+    return '$store · $price $currency';
+  }
+
+  @override
+  String dealsWasPrice(String price) {
+    return 'بدل $price';
+  }
+
+  @override
+  String dealsMinOrder(String amount) {
+    return 'على طلب $amount أو أكتر';
+  }
+
+  @override
+  String dealsUntil(String date) {
+    return 'لحد $date';
+  }
+
+  @override
+  String get dealsSourceVideo => 'فيديو المحل';
+
+  @override
+  String get dealsSourcePost => 'بوست المحل';
+
+  @override
+  String get dealsSourcePage => 'صفحة المحل';
+
+  @override
+  String get dealsSourceFlyer => 'نشرة المحل';
+
+  @override
+  String get dealsSourceReceipts => 'فواتير بيوت حواليك';
+
+  @override
+  String get dealsSourcePartner => 'رابط شراكة';
+
+  @override
+  String get dealsSourceOther => 'المصدر';
 }

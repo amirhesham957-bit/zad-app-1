@@ -419,7 +419,7 @@ class ZadL10nEn extends ZadL10n {
   String get drawerDocuments => 'My documents';
 
   @override
-  String get drawerNearby => 'Shops and markets nearby';
+  String get drawerNearby => 'Deals and shops nearby';
 
   @override
   String get drawerTips => 'Zad\'s tips';
@@ -2602,4 +2602,96 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get scanPantryWithMedicines =>
       'What you have goes up, what\'s on the shopping list comes off it, and medicines go to the pharmacy.';
+
+  @override
+  String get dealsTitle => 'Deals and shops nearby';
+
+  @override
+  String get dealsTabDeals => 'Deals';
+
+  @override
+  String get dealsTabNearby => 'Shops nearby';
+
+  @override
+  String get dealsEmptyTitle => 'No deals yet';
+
+  @override
+  String get dealsEmptyBody =>
+      'Zad searches store pages, delivery apps and households\' receipts every week. Anything it finds shows up here.';
+
+  @override
+  String get dealsFailedTitle => 'Couldn\'t load the deals';
+
+  @override
+  String get dealsFailedBody =>
+      'Check your connection and pull down to try again.';
+
+  @override
+  String get dealsCodesHeader => 'Discount codes';
+
+  @override
+  String get dealsStoresHeader => 'Store deals';
+
+  @override
+  String get dealsFootnote =>
+      'Deals come from their sources with their dates — a deal may have ended. The Amazon button opens a search in your country\'s store, and Zad earns a small commission from it.';
+
+  @override
+  String get dealsOnAmazon => 'On Amazon';
+
+  @override
+  String dealsCopied(String code) {
+    return 'Copied $code';
+  }
+
+  @override
+  String dealsCodeTitle(String store, String off) {
+    return '$store — $off off';
+  }
+
+  @override
+  String dealsPercent(String n) {
+    return '$n%';
+  }
+
+  @override
+  String dealsPrice(String store, String price, String currency) {
+    return '$store · $price $currency';
+  }
+
+  @override
+  String dealsWasPrice(String price) {
+    return 'instead of $price';
+  }
+
+  @override
+  String dealsMinOrder(String amount) {
+    return 'on orders of $amount or more';
+  }
+
+  @override
+  String dealsUntil(String date) {
+    return 'until $date';
+  }
+
+  @override
+  String get dealsSourceVideo => 'Store\'s video';
+
+  @override
+  String get dealsSourcePost => 'Store\'s post';
+
+  @override
+  String get dealsSourcePage => 'Store\'s page';
+
+  @override
+  String get dealsSourceFlyer => 'Store\'s flyer';
+
+  @override
+  String get dealsSourceReceipts => 'Receipts from homes near you';
+
+  @override
+  String get dealsSourcePartner => 'Partner link';
+
+  @override
+  String get dealsSourceOther => 'Source';
 }
