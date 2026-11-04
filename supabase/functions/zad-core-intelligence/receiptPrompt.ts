@@ -36,6 +36,15 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "Pick \"البقالة\" for supermarkets and food shopping, \"المطاعم\" for restaurants and cafés, " +
   "\"الوقود\" for petrol stations, \"الرعاية الصحية\" for pharmacies and clinics. " +
   "If none of them genuinely fits, return \"أخرى\" — that is what it is for. " +
+  // ٢٠٢٦-١١-٠٤ (بلاغ المالك): فئة كل سطر كانت نص حر وبتيجي «عام»، فبنادول على بون سوبر ماركت دخل المخزن مع
+  // الشامبو. دلوقتي من قايمة: مجموعات المخزن نفسها (zad_inventory.category، pantry_categories.dart) والأدوية
+  // (pharmacy_intake.dart: مسكن/مضاد حيوي/فيتامين/مزمن/دواء). سطر دوا على بون محل بيروح الصيدلية مش المخزن.
+  "Each item's own `category` MUST be exactly one of these strings: \"البقالة\" (rice, oil, pasta, canned and dry food), " +
+  "\"الخضار\", \"الفواكه\", \"اللحوم\" (meat, chicken, fish), \"الألبان\" (milk, cheese, yoghurt, eggs), " +
+  "\"المشروبات\" (water, juice, soft drinks, tea, coffee), \"العناية\" (shampoo, soap, toothpaste, tissues, cleaning), " +
+  "\"مسكن\" (painkillers and fever medicine such as Panadol or Brufen), \"مضاد حيوي\", \"فيتامين\", " +
+  "\"مزمن\" (medicine for a chronic illness), \"دواء\" (any other medicine), or \"أخرى\". " +
+  "A medicine is a medicine category even on a supermarket receipt; shampoo and soap are \"العناية\", never a medicine. " +
   "Also classify `receiptType`: \"pharmacy\" if this is a pharmacy/drugstore receipt " +
   "(medicine names, dosages like 500mg, tablet/syrup/capsule units); \"budget_card\" if " +
   "this is NOT an itemized purchase receipt at all but a bank/salary/wallet balance " +
@@ -52,4 +61,4 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "فودافون كاش/InstaPay/إنستاباي/Fawry/a mobile wallet; \"\" when the receipt does not say — " +
   "never guess. " +
   "Return ONLY a JSON object, no markdown and no commentary: " +
-  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"deliveryApp\":\"\",\"deliveryFee\":0,\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"عام\"}]}";
+  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"deliveryApp\":\"\",\"deliveryFee\":0,\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"البقالة\"}]}";

@@ -2595,4 +2595,11 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get qtyLeftMost => 'Most of it left';
+
+  @override
+  String get scanLineToPharmacy => 'To pharmacy 💊';
+
+  @override
+  String get scanPantryWithMedicines =>
+      'What you have goes up, what\'s on the shopping list comes off it, and medicines go to the pharmacy.';
 }

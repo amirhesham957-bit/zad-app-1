@@ -26,6 +26,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/features/scan/application/receipt_purchase.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
@@ -409,8 +410,10 @@ class _ReadingState extends ConsumerState<_Reading> {
                 style: ZadType.titleSmall,
               ),
               subtitle: Text(
-                'اللي موجود هتزيد كميته، واللي في قايمة المشتريات '
-                'هيتشال منها.',
+                medicineLinesOf(receipt).isEmpty
+                    ? 'اللي موجود هتزيد كميته، واللي في قايمة المشتريات '
+                          'هيتشال منها.'
+                    : context.l10n.scanPantryWithMedicines,
                 style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
               ),
             ),
@@ -422,6 +425,7 @@ class _ReadingState extends ConsumerState<_Reading> {
                     for (final (i, item) in receipt.items.indexed)
                       _ItemRow(
                         item: item,
+                        toPharmacy: medicineLinesOf(receipt).contains(i),
                         checked: !view.excludedItems.contains(i),
                         onChanged: busy || !view.addToPantry
                             ? null
@@ -728,9 +732,17 @@ class _CountDialogState extends State<_CountDialog> {
 }
 
 class _ItemRow extends StatelessWidget {
-  const new({required this.item, this.checked, this.onChanged});
+  const new({
+    required this.item,
+    this.checked,
+    this.onChanged,
+    this.toPharmacy = false,
+  });
 
   final ScannedReceiptItem item;
+
+  /// A medicine on a shop's receipt: it goes to the pharmacy, not the pantry.
+  final bool toPharmacy;
 
   /// Whether the line goes into the pantry; null for a review-only row.
   final bool? checked;
@@ -756,6 +768,13 @@ class _ItemRow extends StatelessWidget {
             style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
           ),
         ),
+        if (toPharmacy) ...<Widget>[
+          const SizedBox(width: ZadSpacing.sm),
+          Text(
+            context.l10n.scanLineToPharmacy,
+            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+          ),
+        ],
         const SizedBox(width: ZadSpacing.sm),
         Text(
           _plain(item.price),

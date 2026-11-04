@@ -1891,5 +1891,7 @@
   "appointmentGuardKeep": "احفظه برضه",
   "qtyLeftLittle": "فاضل قليل",
   "qtyLeftHalf": "فاضل نصه",
-  "qtyLeftMost": "فاضل كتير"
+  "qtyLeftMost": "فاضل كتير",
+  "scanLineToPharmacy": "للصيدلية 💊",
+  "scanPantryWithMedicines": "اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية."
 }

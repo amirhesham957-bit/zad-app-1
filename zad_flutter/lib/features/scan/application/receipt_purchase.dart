@@ -22,13 +22,26 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 /// The most lines the function takes in one purchase.
 const int kMaxPurchaseLines = 100;
 
+/// The lines of a shop's receipt that are medicines: they go to the
+/// pharmacy, not the pantry. Empty for a pharmacy receipt (every line is a
+/// medicine and goes there anyway) and for a restaurant's or a service's.
+Set<int> medicineLinesOf(ScannedReceipt receipt) =>
+    receipt.type != ReceiptType.grocery
+    ? const <int>{}
+    : <int>{
+        for (final (i, item) in receipt.items.indexed)
+          if (isMedicineLine(item.name, item.category)) i,
+      };
+
 /// [receipt]'s lines for the pantry, except the indices in [excluded].
 List<PurchaseLine> pantryLinesOf(
   ScannedReceipt receipt, {
   Set<int> excluded = const <int>{},
 }) => <PurchaseLine>[
   for (final (i, item) in receipt.items.indexed)
-    if (!excluded.contains(i) && item.name.trim().isNotEmpty)
+    if (!excluded.contains(i) &&
+        item.name.trim().isNotEmpty &&
+        !medicineLinesOf(receipt).contains(i))
       PurchaseLine(
         name: item.name.trim(),
         to: PurchaseLineTo.pantry,
