@@ -36,3 +36,9 @@ Deno.test("receipt prompt: every line has a category from the pantry's groups or
   assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "A medicine is a medicine category even on a supermarket receipt");
   assert(!RECEIPT_SYSTEM_PROMPT.includes('"category":"عام"'));
 });
+
+Deno.test("receipt prompt: each line names the product without its brand, specific enough to be one stock (owner 2026-11-04)", () => {
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, "Each item also has `product`");
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, '"زيت عباد الشمس" (not just "زيت")');
+  assertStringIncludes(RECEIPT_SYSTEM_PROMPT, '"product":""');
+});

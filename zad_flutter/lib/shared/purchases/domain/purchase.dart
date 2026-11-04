@@ -36,6 +36,7 @@ class PurchaseLine {
     this.category,
     this.price,
     this.itemId,
+    this.product,
   });
 
   /// What was bought, as the receipt or the customer named it. The server
@@ -62,6 +63,11 @@ class PurchaseLine {
   /// The medicine this line restocks, for a pharmacy line the phone matched.
   final String? itemId;
 
+  /// What it is without the brand («مياه», «زيت عباد الشمس»), when the
+  /// receipt reader said. The pantry stocks it under this name — three brands
+  /// of water are one stock — while the crowd price keeps [name] (2026-11-04).
+  final String? product;
+
   /// The function's shape.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'name': name,
@@ -71,6 +77,7 @@ class PurchaseLine {
     'price': ?price,
     'to': to.wireName,
     'item_id': ?itemId,
+    'product': ?product,
   };
 }
 

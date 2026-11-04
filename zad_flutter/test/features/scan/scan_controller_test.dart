@@ -492,6 +492,44 @@ void main() {
       },
     );
 
+    test(
+      "the pantry stocks a line under what it is, the price keeps the brand",
+      () async {
+        scanner.answer = _receipt(
+          items: <Object?>[
+            <String, dynamic>{
+              'name': 'مياه ايلانو 600 مل',
+              'price': 30.0,
+              'quantity': 3.0,
+              'unit': 'زجاجة',
+              'category': 'المشروبات',
+              'product': 'مياه',
+            },
+            // An older server: no product, the line goes by its name.
+            <String, dynamic>{
+              'name': 'سكر الأسرة',
+              'price': 40.0,
+              'quantity': 1.0,
+              'unit': 'كيس',
+              'category': 'البقالة',
+            },
+          ],
+        );
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        await controller.saveAsTransaction();
+
+        final lines = (queuedPurchase(container)['lines'] as List<Object?>)
+            .cast<Map<Object?, Object?>>();
+        expect(lines.first['name'], 'مياه ايلانو 600 مل');
+        expect(lines.first['product'], 'مياه');
+        expect(lines.last.containsKey('product'), isFalse);
+      },
+    );
+
     test('a receipt with no store name names no shop', () async {
       scanner.answer = _receipt(storeName: '');
       final container = containerWith();
