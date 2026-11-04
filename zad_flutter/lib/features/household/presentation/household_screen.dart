@@ -90,7 +90,7 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.shopping,
-                  label: Text('التسوق'),
+                  label: Text('نواقص وتسوق'),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.pharmacy,
@@ -111,22 +111,34 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
           ),
           const SizedBox(height: ZadSpacing.sm),
           Expanded(
-            // IndexedStack, as the shell does: switching sections must not
-            // throw away a scrolled list or re-read Hive every time.
-            child: IndexedStack(
-              index: _section.index,
-              children: <Widget>[
-                for (final section in HouseholdSection.values)
-                  if (_opened.contains(section))
-                    switch (section) {
-                      HouseholdSection.pantry => ZadSlots.pantryView(),
-                      HouseholdSection.shopping => ZadSlots.shoppingListView(),
-                      HouseholdSection.pharmacy => ZadSlots.pharmacyView(),
-                      HouseholdSection.recipes => ZadSlots.recipesView(),
-                    }
-                  else
-                    const SizedBox.shrink(),
-              ],
+            // A section asks for another in place (the pantry's shortages
+            // banner opens «التسوق»).
+            child: NotificationListener<OpenHouseholdSection>(
+              onNotification: (n) {
+                setState(() {
+                  _section = n.section;
+                  _opened.add(n.section);
+                });
+                return true;
+              },
+              // IndexedStack, as the shell does: switching sections must not
+              // throw away a scrolled list or re-read Hive every time.
+              child: IndexedStack(
+                index: _section.index,
+                children: <Widget>[
+                  for (final section in HouseholdSection.values)
+                    if (_opened.contains(section))
+                      switch (section) {
+                        HouseholdSection.pantry => ZadSlots.pantryView(),
+                        HouseholdSection.shopping =>
+                          ZadSlots.shoppingListView(),
+                        HouseholdSection.pharmacy => ZadSlots.pharmacyView(),
+                        HouseholdSection.recipes => ZadSlots.recipesView(),
+                      }
+                    else
+                      const SizedBox.shrink(),
+                ],
+              ),
             ),
           ),
         ],
