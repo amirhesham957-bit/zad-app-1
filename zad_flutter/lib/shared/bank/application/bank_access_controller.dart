@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
+import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad/shared/session/product_events.dart';
 
@@ -209,6 +210,7 @@ class BankAccessController extends Notifier<BankAccessState> {
       );
       await marker.rememberAccess(granted: granted, connectedAt: connectedAt);
       _pulse();
+      if (granted) _ensureDeviceKey();
     } on Object {
       // The plugin is not there — a test host, or a platform without it. Not
       // an error worth showing anyone; it just means nothing is flowing.
@@ -241,6 +243,26 @@ class BankAccessController extends Notifier<BankAccessState> {
       }
     } on Object {
       // No session graph (a test host, a headless engine).
+    }
+  }
+
+  /// ٢.٧(ب): the key the closed app sends bank messages with. Registered here,
+  /// where the app already checks the channel on every open, and only while
+  /// reading is on — no key for a phone that sends nothing. Never fails the
+  /// reading: without a key the inbox simply waits for the next open.
+  void _ensureDeviceKey() {
+    if (!ref.mounted) return;
+    try {
+      final userId = ref.read(signedInUserIdProvider)();
+      if (userId == null) return;
+      unawaited(
+        ref
+            .read(deviceSendKeyProvider)
+            .ensureRegistered(userId)
+            .then((_) {}, onError: (Object _) {}),
+      );
+    } on Object {
+      // No session graph (a test host).
     }
   }
 

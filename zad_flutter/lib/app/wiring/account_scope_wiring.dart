@@ -13,6 +13,7 @@ import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/auth/application/auth_controller.dart';
+import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/application/category_budgets_controller.dart';
@@ -81,6 +82,15 @@ Future<void> _beforeSignOut(Ref ref) async {
   // While the session can still delete its own row: this phone stops
   // receiving the account's alerts. Never throws, never blocks long.
   await ref.read(pushRegistrarProvider).unregister();
+  // The same for the bank channel's send key (٢.٧ب): the next account on
+  // this phone must not send its bank messages into this one.
+  // Never in the way of a sign-out, whatever fails (no Supabase on a test
+  // host).
+  try {
+    await ref.read(deviceSendKeyProvider).forget();
+  } on Object {
+    // The key stays unheld on the server until pruning drops it.
+  }
   // Kotlin's PharmacyReminderScheduler.cancelAll: the next account on this
   // phone must not be reminded of the last one's medicines.
   await ref
