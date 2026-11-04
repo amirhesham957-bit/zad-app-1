@@ -1,6 +1,7 @@
 // specialists_test.ts — اختبارات توجيه الوكلاء المتخصصين.
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import {
+  LEDGER_EDIT_TOOLS,
   intentToolHints,
   routeSpecialist,
   routeSpecialists,
@@ -230,4 +231,22 @@ Deno.test("scopeToolsForSpecialist: a general message gets the core set plus wha
 Deno.test("intentToolHints: «آه» بعد «أفتكر إن …؟ صح؟» بتجيب remember (ZAD_PLAN ٥.٣)", () => {
   assertEquals(intentToolHints("آه", "سلامتها 🤍 أفتكر إن مراتك حامل في الشهر الرابع؟ صح؟").includes("remember"), true);
   assertEquals(intentToolHints("آه", "تحب أضيف الزيت للقايمة؟").includes("remember"), false);
+});
+
+Deno.test("context diet slice 2: ledger edit/delete tools come with a correction, not with every finance message (3.2)", () => {
+  const tools = [...LEDGER_EDIT_TOOLS, "log_transaction", "add_debt"].map((name) => ({ name }));
+  const plain = scopeToolsForSpecialist(tools, "finance", null, intentToolHints("صرفت 50 جنيه قهوة")).map((t) => t.name);
+  for (const t of LEDGER_EDIT_TOOLS) assert(!plain.includes(t), t);
+  assert(plain.includes("log_transaction") && plain.includes("add_debt"));
+  // every correction case of the eval, verbatim
+  for (const m of [
+    "لأ المبلغ كان 75 مش 50", "ده غلط انا ماصرفتش الفلوس دي", "المصروف بتاع امبارح مش أكل، ده مواصلات",
+    "الحركة دي مش بتاعتي", "ده كان دخل مش مصروف", "انت سجلت القهوة مرتين", "الحركة دي كانت امبارح مش النهارده",
+    "ارجع في آخر حاجة عملتها", "امسح الاشتراك بتاع نتفليكس", "الغي القسط بتاع العربية",
+  ]) {
+    const names = scopeToolsForSpecialist(tools, "finance", null, intentToolHints(m)).map((t) => t.name);
+    assert(names.includes("update_transaction") && names.includes("delete_subscription"), m);
+  }
+  // «آه» to Zad's own «أمسح المصروف ده؟»
+  assert(intentToolHints("آه", "أمسح المصروف ده من الحركات؟").includes("delete_transaction"));
 });
