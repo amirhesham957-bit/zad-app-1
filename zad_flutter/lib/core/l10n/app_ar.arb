@@ -231,7 +231,7 @@
   "drawerPharmacy": "صيدلية العائلة",
   "drawerMaintenance": "صيانة المنزل",
   "drawerDocuments": "مستنداتي",
-  "drawerNearby": "المتاجر والأسواق القريبة",
+  "drawerNearby": "العروض والمحلات القريبة",
   "drawerTips": "نصايح زاد",
   "drawerTasbiha": "تسبيحة",
   "drawerNotifications": "الإشعارات",
@@ -1893,5 +1893,88 @@
   "qtyLeftHalf": "فاضل نصه",
   "qtyLeftMost": "فاضل كتير",
   "scanLineToPharmacy": "للصيدلية 💊",
-  "scanPantryWithMedicines": "اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية."
+  "scanPantryWithMedicines": "اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.",
+  "dealsTitle": "العروض والمحلات القريبة",
+  "dealsTabDeals": "العروض",
+  "dealsTabNearby": "المحلات القريبة",
+  "dealsEmptyTitle": "مفيش عروض لسه",
+  "dealsEmptyBody": "زاد بيدوّر كل أسبوع في صفحات المحلات وتطبيقات التوصيل وفواتير البيوت. أول ما يلاقي حاجة هتظهر هنا.",
+  "dealsFailedTitle": "ماقدرناش نجيب العروض",
+  "dealsFailedBody": "اتأكد من النت واسحب لتحت عشان تجرب تاني.",
+  "dealsCodesHeader": "أكواد خصم",
+  "dealsStoresHeader": "عروض المحلات",
+  "dealsFootnote": "العروض من مصادرها ومتعلَّم عليها بتاريخها — ممكن يكون العرض خلص. زرار أمازون بيفتح بحث في متجر بلدك، وزاد بياخد عمولة صغيرة منه.",
+  "dealsOnAmazon": "على أمازون",
+  "dealsCopied": "اتنسخ {code}",
+  "@dealsCopied": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsCodeTitle": "{store} — خصم {off}",
+  "@dealsCodeTitle": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "off": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsPercent": "{n}٪",
+  "@dealsPercent": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsPrice": "{store} · {price} {currency}",
+  "@dealsPrice": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsWasPrice": "بدل {price}",
+  "@dealsWasPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsMinOrder": "على طلب {amount} أو أكتر",
+  "@dealsMinOrder": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsUntil": "لحد {date}",
+  "@dealsUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dealsSourceVideo": "فيديو المحل",
+  "dealsSourcePost": "بوست المحل",
+  "dealsSourcePage": "صفحة المحل",
+  "dealsSourceFlyer": "نشرة المحل",
+  "dealsSourceReceipts": "فواتير بيوت حواليك",
+  "dealsSourcePartner": "رابط شراكة",
+  "dealsSourceOther": "المصدر"
 }

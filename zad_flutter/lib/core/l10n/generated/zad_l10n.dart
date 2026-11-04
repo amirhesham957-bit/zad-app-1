@@ -826,7 +826,7 @@ abstract class ZadL10n {
   /// No description provided for @drawerNearby.
   ///
   /// In ar, this message translates to:
-  /// **'المتاجر والأسواق القريبة'**
+  /// **'العروض والمحلات القريبة'**
   String get drawerNearby;
 
   /// No description provided for @drawerTips.
@@ -4560,6 +4560,156 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.'**
   String get scanPantryWithMedicines;
+
+  /// No description provided for @dealsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العروض والمحلات القريبة'**
+  String get dealsTitle;
+
+  /// No description provided for @dealsTabDeals.
+  ///
+  /// In ar, this message translates to:
+  /// **'العروض'**
+  String get dealsTabDeals;
+
+  /// No description provided for @dealsTabNearby.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحلات القريبة'**
+  String get dealsTabNearby;
+
+  /// No description provided for @dealsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عروض لسه'**
+  String get dealsEmptyTitle;
+
+  /// No description provided for @dealsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيدوّر كل أسبوع في صفحات المحلات وتطبيقات التوصيل وفواتير البيوت. أول ما يلاقي حاجة هتظهر هنا.'**
+  String get dealsEmptyBody;
+
+  /// No description provided for @dealsFailedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نجيب العروض'**
+  String get dealsFailedTitle;
+
+  /// No description provided for @dealsFailedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت واسحب لتحت عشان تجرب تاني.'**
+  String get dealsFailedBody;
+
+  /// No description provided for @dealsCodesHeader.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكواد خصم'**
+  String get dealsCodesHeader;
+
+  /// No description provided for @dealsStoresHeader.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض المحلات'**
+  String get dealsStoresHeader;
+
+  /// No description provided for @dealsFootnote.
+  ///
+  /// In ar, this message translates to:
+  /// **'العروض من مصادرها ومتعلَّم عليها بتاريخها — ممكن يكون العرض خلص. زرار أمازون بيفتح بحث في متجر بلدك، وزاد بياخد عمولة صغيرة منه.'**
+  String get dealsFootnote;
+
+  /// No description provided for @dealsOnAmazon.
+  ///
+  /// In ar, this message translates to:
+  /// **'على أمازون'**
+  String get dealsOnAmazon;
+
+  /// No description provided for @dealsCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسخ {code}'**
+  String dealsCopied(String code);
+
+  /// No description provided for @dealsCodeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{store} — خصم {off}'**
+  String dealsCodeTitle(String store, String off);
+
+  /// No description provided for @dealsPercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n}٪'**
+  String dealsPercent(String n);
+
+  /// No description provided for @dealsPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'{store} · {price} {currency}'**
+  String dealsPrice(String store, String price, String currency);
+
+  /// No description provided for @dealsWasPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدل {price}'**
+  String dealsWasPrice(String price);
+
+  /// No description provided for @dealsMinOrder.
+  ///
+  /// In ar, this message translates to:
+  /// **'على طلب {amount} أو أكتر'**
+  String dealsMinOrder(String amount);
+
+  /// No description provided for @dealsUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد {date}'**
+  String dealsUntil(String date);
+
+  /// No description provided for @dealsSourceVideo.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيديو المحل'**
+  String get dealsSourceVideo;
+
+  /// No description provided for @dealsSourcePost.
+  ///
+  /// In ar, this message translates to:
+  /// **'بوست المحل'**
+  String get dealsSourcePost;
+
+  /// No description provided for @dealsSourcePage.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة المحل'**
+  String get dealsSourcePage;
+
+  /// No description provided for @dealsSourceFlyer.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشرة المحل'**
+  String get dealsSourceFlyer;
+
+  /// No description provided for @dealsSourceReceipts.
+  ///
+  /// In ar, this message translates to:
+  /// **'فواتير بيوت حواليك'**
+  String get dealsSourceReceipts;
+
+  /// No description provided for @dealsSourcePartner.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط شراكة'**
+  String get dealsSourcePartner;
+
+  /// No description provided for @dealsSourceOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصدر'**
+  String get dealsSourceOther;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
