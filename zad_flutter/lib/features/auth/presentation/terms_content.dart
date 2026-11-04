@@ -3,10 +3,10 @@
 library;
 
 /// `TermsContent.VERSION`.
-const String kTermsVersion = '2.0';
+const String kTermsVersion = '2.1';
 
 /// `TermsContent.LAST_UPDATED`.
-const String kTermsLastUpdated = 'July 2026';
+const String kTermsLastUpdated = 'November 2026';
 
 /// `TermsContent.TITLE`.
 const String kTermsTitle = 'Terms of Service & Privacy Policy';
@@ -14,7 +14,7 @@ const String kTermsTitle = 'Terms of Service & Privacy Policy';
 /// `TermsContent.FULL_TEXT`.
 const String kTermsFullText = '''
 ZAD — TERMS OF SERVICE & PRIVACY POLICY
-Version 2.0 — Last Updated: July 2026
+Version 2.1 — Last Updated: November 2026
 
 PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, ACCESSING, OR USING THE ZAD APPLICATION ("THE APP"), YOU AGREE TO BE LEGALLY BOUND BY THESE TERMS IN THEIR ENTIRETY. IF YOU DO NOT AGREE, DO NOT USE THE APP.
 
@@ -75,6 +75,8 @@ PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, AC
 5.4 SMS and notification reading happens only with your explicit device-level permission, which you may revoke at any time in your device settings. Revoking permissions may disable automatic tracking features.
 
 5.5 You may request deletion of your account and associated data at any time through the App's profile settings.
+
+5.6 When you confirm or reject a transaction that Zad suggested from a bank notification, Zad keeps that message's wording pattern, with every amount, date, number, name, card, account, phone number, email and link removed first, together with the sender's name, your country, and one vote from your account. A pattern helps read other customers' messages only after at least three different accounts agreed on it. Messages from chat apps (such as WhatsApp or Telegram) are never used for this. Your votes are deleted with your account.
 
 6. THIRD-PARTY SERVICES
 
