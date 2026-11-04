@@ -14,6 +14,7 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart'
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/navigation/destinations.dart';
 
 import '../../support/quiet_household.dart';
 
@@ -99,34 +100,43 @@ void main() {
       expiry: DateTime.utc(2026, 9, 27),
     );
 
-    Future<void> pump(WidgetTester tester, {QuietShopping? shopping}) =>
-        tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              nowProvider.overrideWithValue(() => _now),
-              pantry.pantryControllerProvider.overrideWith(
-                () => QuietPantry(
-                  pantry.PantryView(
-                    items: <InventoryItem>[milk, rice, yogurt],
-                    shortages: <Shortage>[
-                      Shortage(item: milk, reason: ShortageReason.outOfStock),
-                    ],
-                  ),
-                ),
-              ),
-              shoppingControllerProvider.overrideWith(
-                () => shopping ?? QuietShopping(),
-              ),
-            ],
-            child: MaterialApp(
-              theme: ZadTheme.light(),
-              home: const Directionality(
-                textDirection: TextDirection.rtl,
-                child: Scaffold(body: PantryView()),
+    Future<void> pump(
+      WidgetTester tester, {
+      QuietShopping? shopping,
+      List<HouseholdSection>? opened,
+    }) => tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          pantry.pantryControllerProvider.overrideWith(
+            () => QuietPantry(
+              pantry.PantryView(
+                items: <InventoryItem>[milk, rice, yogurt],
+                shortages: <Shortage>[
+                  Shortage(item: milk, reason: ShortageReason.outOfStock),
+                ],
               ),
             ),
           ),
-        );
+          shoppingControllerProvider.overrideWith(
+            () => shopping ?? QuietShopping(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: NotificationListener<OpenHouseholdSection>(
+              onNotification: (n) {
+                opened?.add(n.section);
+                return true;
+              },
+              child: const Scaffold(body: PantryView()),
+            ),
+          ),
+        ),
+      ),
+    );
 
     testWidgets('a category chip keeps only its rows', (tester) async {
       await pump(tester);
@@ -165,19 +175,18 @@ void main() {
       expect(find.text('اقتراح وصفة'), findsOneWidget);
     });
 
-    testWidgets('the shortages tab puts a row on the list', (tester) async {
+    testWidgets('the shortages are on the shopping list: the banner puts '
+        'them there and opens «نواقص وتسوق» (the owner, 2026-11-04)', (
+      tester,
+    ) async {
       final shopping = QuietShopping();
-      await pump(tester, shopping: shopping);
-      await tester.tap(find.text('النواقص (2)'));
-      // Not pumpAndSettle: Kotlin's emoji bob forever.
+      final opened = <HouseholdSection>[];
+      await pump(tester, shopping: shopping, opened: opened);
+      expect(find.text('النواقص (2)'), findsNothing, reason: 'no second tab');
+      await tester.tap(find.text('نزّلها في التسوق'));
       await tester.pump(const Duration(milliseconds: 500));
-
-      await tester.tap(
-        find.widgetWithText(FilledButton, 'نزّلها في التسوق').first,
-      );
-      await tester.pump();
       expect(shopping.added, <String>['لبن']);
-      expect(find.text('أُضيفت'), findsOneWidget);
+      expect(opened, <HouseholdSection>[HouseholdSection.shopping]);
     });
 
     testWidgets('the pencil opens «تعديل الصنف» on that row', (tester) async {
@@ -202,7 +211,14 @@ void main() {
 
     Future<_EditingPantry> pump(WidgetTester tester) async {
       final pantryCtl = _EditingPantry(
-        pantry.PantryView(items: <InventoryItem>[milk, herring]),
+        pantry.PantryView(
+          items: <InventoryItem>[milk, herring],
+          // The controller's own rule: an occasional item at zero is not short.
+          shortages: shortagesIn(<InventoryItem>[
+            milk,
+            herring,
+          ], today: DateTime.utc(_now.year, _now.month, _now.day)),
+        ),
       );
       await tester.pumpWidget(
         ProviderScope(

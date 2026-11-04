@@ -24,7 +24,6 @@ import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
-import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
@@ -34,7 +33,9 @@ import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/inventory/presentation/quantity_text.dart';
+import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
@@ -172,7 +173,6 @@ class PantryView extends ConsumerStatefulWidget {
 }
 
 class _PantryViewState extends ConsumerState<PantryView> {
-  late int _tab = widget.shortagesFirst ? 1 : 0;
   String _category = 'الكل';
   String _query = '';
   // Staples whose brands are open under their card. Closed by default: the
@@ -187,7 +187,14 @@ class _PantryViewState extends ConsumerState<PantryView> {
   /// Kotlin's `runAutoReplenish`: every low, non-stagnant item not already
   /// on the list goes onto it.
   Future<void> _replenish(List<InventoryItem> low) async {
-    final learner = ref.read(consumptionLearnerProvider);
+    // The on-device learner only filters out stagnant rows: one that cannot
+    // be read filters nothing, rather than leaving the list unwritten.
+    ConsumptionLearner? learner;
+    try {
+      learner = ref.read(consumptionLearnerProvider);
+    } on Object {
+      learner = null;
+    }
     final shopping = ref.read(shoppingControllerProvider.notifier);
     final onList = ref
         .read(shoppingControllerProvider)
@@ -195,7 +202,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
         .map((s) => s.itemName)
         .toSet();
     for (final i in low) {
-      if (learner.isStagnant(i) || onList.contains(i.itemName)) continue;
+      if ((learner?.isStagnant(i) ?? false) || onList.contains(i.itemName)) {
+        continue;
+      }
       await shopping.add(i.itemName);
     }
   }
@@ -225,21 +234,14 @@ class _PantryViewState extends ConsumerState<PantryView> {
       for (final i in all)
         if (i.daysUntilExpiry(today) case final d? when d <= 3) i,
     ];
-    // A staple under several brands is one stock (product_family.dart):
-    // low once, under the staple's name, when the whole house is low.
+    // What the controller counts as short — the house's own use when it is
+    // known, never on the day a row was added, a staple's brands as one
+    // stock (shortage.dart). The banner used to apply a threshold of its own.
     final low = <InventoryItem>[
-      for (final g in groupPantry(all))
-        if (g.isFamily
-            ? g.isShortLow
-            : !g.members.single.isOccasional &&
-                  g.members.single.quantity <=
-                      (g.members.single.lowStockThreshold ?? 2))
-          g.representative,
-    ];
-    final shortages = <InventoryItem>[
-      ...low,
-      for (final e in expiring)
-        if (!low.any((l) => l.id == e.id)) e,
+      for (final sh in view.shortages)
+        if (sh.reason == ShortageReason.outOfStock ||
+            sh.reason == ShortageReason.runningLow)
+          sh.item,
     ];
     final filtered = <InventoryItem>[
       for (final i in all)
@@ -263,19 +265,16 @@ class _PantryViewState extends ConsumerState<PantryView> {
     ];
 
     final header = <Widget>[
-      ZadSegmentedTabs(
-        tabs: <String>[
-          'كل المنتجات',
-          if (shortages.isEmpty) 'النواقص' else 'النواقص (${shortages.length})',
-        ],
-        selectedIndex: _tab,
-        onSelect: (i) => setState(() => _tab = i),
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      ),
       if (low.isNotEmpty)
         _LowStockBanner(
           count: low.length,
-          onShop: () => unawaited(_replenish(low)),
+          // The shortages live on the shopping list — one list, not a tab
+          // here and a list there (the owner, 2026-11-04).
+          onShop: () {
+            unawaited(_replenish(low));
+            const OpenHouseholdSection(HouseholdSection.shopping)
+                .dispatch(context);
+          },
         ),
       if (expiring.isNotEmpty)
         _ExpiringSoonSection(
@@ -286,81 +285,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
     ];
 
     final Widget body;
-    if (_tab == 1) {
-      body = shortages.isEmpty
-          ? ListView(
-              children: <Widget>[
-                ...header,
-                Padding(
-                  padding: const EdgeInsets.only(top: 48, bottom: 110),
-                  child: KtEmptyState(
-                    icon: Icons.check_circle,
-                    title: 'مفيش نواقص!',
-                    subtitle: 'كل احتياجاتك متوفرة بكميات كافية',
-                    iconTint: context.zadExt.success,
-                    iconBackground: context.zadExt.success.withValues(
-                      alpha: 0.1,
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : CustomScrollView(
-              slivers: <Widget>[
-                SliverList.list(children: header),
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    // Two lines at 1.3× text: 76 left the chip 3px short.
-                    height: 84,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: shortages.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 4),
-                      itemBuilder: (_, i) => _AmazonSearchChip(
-                        itemName: shortages[i].itemName,
-                        onTap: () => unawaited(
-                          openAmazonSearch(ref, shortages[i].itemName),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Two columns, each cell as tall as its content.
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-                  sliver: SliverList.separated(
-                    itemCount: (shortages.length + 1) ~/ 2,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (_, row) {
-                      Widget cell(int i) => i < shortages.length
-                          ? _ShortageItemCard(
-                              item: shortages[i],
-                              today: today,
-                              onAdd: () => unawaited(
-                                ref
-                                    .read(shoppingControllerProvider.notifier)
-                                    .add(shortages[i].itemName),
-                              ),
-                            )
-                          : const SizedBox.shrink();
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Expanded(child: cell(row * 2)),
-                          const SizedBox(width: 12),
-                          Expanded(child: cell(row * 2 + 1)),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-    } else {
+    {
       body = CustomScrollView(
         slivers: <Widget>[
           SliverList.list(
@@ -880,60 +805,6 @@ class _ExpiringSoonSection extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Kotlin's `ZadAmazonSearchChip` with «اشتريه من أمازون».
-class _AmazonSearchChip extends StatelessWidget {
-  const new({required this.itemName, required this.onTap});
-
-  final String itemName;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: context.zadExt.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.search, size: 16, color: context.zadExt.secondaryDark),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    itemName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ZadType.bodySmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    'اشتريه من أمازون',
-                    maxLines: 1,
-                    style: ZadType.labelSmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
