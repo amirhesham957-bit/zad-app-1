@@ -1158,3 +1158,103 @@ export function welcomeSpeech(name: string | null | undefined, dialect: "EG" | "
         "وكل يوم الصبح هقولك أهم حاجة في يومك، وأي عرض على حاجة ناقصة عندكم. اسألني في أي وقت.";
   }
 }
+
+// ── موسم العروض (الجمعة البيضاء، طلب المالك ٤/١١) ────────────────────────────────────────────────────────────────
+
+/** كارت عرض واحد كما بيبعته zad-brain (seasonDigest.ts). */
+export interface DigestCard {
+  item?: unknown;
+  store?: unknown;
+  price?: unknown;
+  price_before?: unknown;
+  currency?: unknown;
+  saving?: unknown;
+  why?: unknown;
+  url?: unknown;
+  source?: unknown;
+  photo?: unknown;
+  until?: unknown;
+}
+
+/** كود خصم كما بيبعته zad-brain. */
+export interface DigestCode {
+  store?: unknown;
+  code?: unknown;
+  discount_percent?: unknown;
+  discount_amount?: unknown;
+  currency?: unknown;
+  min_order?: unknown;
+  valid_until?: unknown;
+  source_kind?: unknown;
+  source_url?: unknown;
+}
+
+const text = (v: unknown, max: number) => typeof v === "string" ? v.trim().slice(0, max) : "";
+const amount = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+};
+const httpsUrl = (v: unknown) => typeof v === "string" && /^https:\/\/\S{4,500}$/.test(v.trim()) ? v.trim() : null;
+
+/** أول سطر في رسالة الموسم. */
+export function digestHeader(season: unknown, cards: number, codes: number): string {
+  const name = text(season, 40) || "موسم العروض";
+  const parts = [cards ? `${cards} ${cards === 1 ? "عرض" : "عروض"} على حاجات بيتك` : "", codes ? `${codes} ${codes === 1 ? "كود" : "أكواد"} خصم لتطبيقاتك` : ""]
+    .filter(Boolean);
+  return `🛍️ ${name}: لقيتلك ${parts.join(" و")}. الأسعار من مصادرها — ممكن العرض يخلص بسرعة في الموسم.`;
+}
+
+/** نص الكارت: الصنف والمحل والسعر والتوفير وليه اخترته، كله من الحقائق بس. */
+export function digestCaption(card: DigestCard): string {
+  const item = text(card.item, 80);
+  const store = text(card.store, 40);
+  const price = amount(card.price);
+  const before = amount(card.price_before);
+  const saving = amount(card.saving);
+  const currency = text(card.currency, 4);
+  const why = card.why === "need" ? "من قايمتك أو قرّب يخلص عندك" : card.why === "favorite" ? "في محل بتشتري منه" : card.why === "fire" ? "عرض قوي على حاجة بتجيبوها" : "";
+  const until = typeof card.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(card.until) ? card.until : "";
+  return [
+    `🏷️ ${item} — ${store}`,
+    price !== null
+      ? `${price}${currency ? ` ${currency}` : ""}${before !== null ? ` بدل ${before}` : ""}${saving !== null ? ` (−${saving}٪)` : ""}`
+      : "",
+    why ? `ليه: ${why}` : "",
+    until ? `لحد ${until}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+/** زرار رابط الكارت: البوست أو الفيديو أو صفحة العرض. مفيش رابط = مفيش زرار. */
+export function digestButtons(card: DigestCard): InlineKeyboardButton[][] {
+  const url = httpsUrl(card.url);
+  if (!url) return [];
+  const kind = text(card.source, 20);
+  return [[{ text: DEAL_LINK_TEXT[kind] ?? "🔗 صفحة العرض", url }]];
+}
+
+/** الصورة: غلاف فيديو يوتيوب بالـid بس (نفس dealPhotoUrl)، وأي حاجة تانية = من غير صورة. */
+export function digestPhoto(card: DigestCard): string | null {
+  const photo = typeof card.photo === "string" ? card.photo : "";
+  return /^https:\/\/i\.ytimg\.com\/vi\/[\w-]{6,20}\/hqdefault\.jpg$/.test(photo) ? photo : null;
+}
+
+/** رسالة الأكواد: كل كود حرف بحرف بخصمه ومصدره، وزرار لكل مصدر. */
+export function digestCodesMessage(codes: DigestCode[]): { text: string; rows: InlineKeyboardButton[][]; count: number } | null {
+  const lines: string[] = [];
+  const rows: InlineKeyboardButton[][] = [];
+  for (const c of codes.slice(0, 3)) {
+    const code = text(c.code, 24);
+    const store = text(c.store, 40);
+    if (!/^[A-Z0-9][A-Z0-9_-]{2,23}$/.test(code) || !store) continue;
+    const pct = amount(c.discount_percent);
+    const off = pct !== null ? `${pct}٪` : amount(c.discount_amount) !== null ? `${amount(c.discount_amount)}${text(c.currency, 4) ? ` ${text(c.currency, 4)}` : ""}` : "";
+    if (!off) continue;
+    const min = amount(c.min_order);
+    const until = typeof c.valid_until === "string" ? c.valid_until.slice(0, 10) : "";
+    lines.push(`🎟️ ${store}: ${code} — خصم ${off}${min !== null ? ` على طلب ${min} أو أكتر` : ""}${/^\d{4}-\d{2}-\d{2}$/.test(until) ? ` لحد ${until}` : ""}`);
+    const url = httpsUrl(c.source_url);
+    if (url) rows.push([{ text: `${c.source_kind === "youtube" ? "▶️" : "📸"} مصدر كود ${store}`.slice(0, 60), url }]);
+  }
+  if (!lines.length) return null;
+  return { text: `أكواد خصم من صفحات تطبيقاتك (اكتبها زي ما هي — ممكن تكون خلصت):\n${lines.join("\n")}`, rows, count: lines.length };
+}

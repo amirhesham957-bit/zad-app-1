@@ -54,6 +54,7 @@ import {
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
   dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply,
+  type DigestCard, type DigestCode, digestButtons, digestCaption, digestCodesMessage, digestHeader, digestPhoto,
   welcomeSpeech, isFlyerPhoto, parseFlyerCaption, pickFlyerStore, flyerDealPayload, flyerReply, FLYER_HOW_TO, FLYER_SAVE_FAILED, type FlyerStoreRow,
   learningKeyboard, parseLearningCallback, learningReply,
   memoryCheckBlock, parseMemoryCheckCallback, memoryCheckReply, type MemoryCheck,
@@ -247,6 +248,20 @@ async function sendDuplicateProposalQuestion(
   });
   await sendTelegramMessage(chatId, clampForTelegram(text), duplicateProposalKeyboard(row.id));
   return true;
+}
+
+/** A picture with its caption and buttons — one card of the season's deals message. */
+async function sendTelegramPhotoCard(chatId: number, photo: string, caption: string, keyboard: InlineKeyboardButton[][]): Promise<void> {
+  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId, photo, caption: caption.slice(0, 1000),
+      ...(keyboard.length ? { reply_markup: { inline_keyboard: keyboard } } : {}),
+    }),
+  });
+  const result = await response.json().catch(() => null) as { ok?: boolean } | null;
+  if (!response.ok || result?.ok !== true) throw new Error(`Telegram sendPhoto failed (${response.status})`);
 }
 
 /** A picture by its public URL, ahead of the message it belongs to (ZAD_PLAN 4.20). */
@@ -2954,6 +2969,48 @@ Deno.serve(async (req: Request) => {
   // فحص فويس التنبيهات من غير إرسال (٢٠٢٦-٠٩-١٤): «البوت مابيبعتش فويسات». النص بيوصل (delivery.telegram
   // = delivered) والصوت بيتعمل في الخلفية بعد الرد — أي فشل هناك بيتسجل في اللوج بس. هنا نفس الخطوات
   // (TTS بصوت زاد + تحويل MP3) بجملة ثابتة، بالتوقيت والحجم. مفيش بيانات عميل ولا إرسال.
+  // موسم العروض (الجمعة البيضاء، طلب المالك ٤/١١): zad-brain بيبعت أحسن العروض اللي البيت محتاجها (seasonDigest.ts).
+  // سطر عنوان، وبعده كل عرض كارت لوحده: صورة (غلاف فيديو يوتيوب) أو نص، وزرار رابطه؛ وبعدهم الأكواد. كل الكلام من
+  // الحقائق اللي جاية، مفيش موديل هنا. delivered = العنوان وصل؛ كارت فشل بيتسجل في اللوج بس.
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "deals_digest") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    if (!BOT_CONFIGURED) return Response.json({ ok: false, reason: "bot not configured" }, { status: 503 });
+    try {
+      const { user_id, season, cards, codes } = await req.json() as { user_id?: string; season?: unknown; cards?: unknown; codes?: unknown };
+      if (!user_id) return Response.json({ ok: false, reason: "missing user_id" }, { status: 400 });
+      const list = (Array.isArray(cards) ? cards : []).slice(0, 4) as DigestCard[];
+      const codeList = (Array.isArray(codes) ? codes : []) as DigestCode[];
+      const codesMessage = digestCodesMessage(codeList);
+      if (!list.length && !codesMessage) return Response.json({ ok: true, delivered: false, reason: "empty" });
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const chatId = await resolveChatId(sb, user_id);
+      if (chatId === null) return Response.json({ ok: true, delivered: false, reason: "not linked" });
+      await sendTelegramMessage(chatId, digestHeader(season, list.length, codesMessage?.count ?? 0));
+      for (const card of list) {
+        const caption = digestCaption(card);
+        const buttons = digestButtons(card);
+        const photo = digestPhoto(card);
+        try {
+          if (photo) await sendTelegramPhotoCard(chatId, photo, caption, buttons);
+          else await sendTelegramMessage(chatId, caption, buttons.length ? buttons : undefined);
+        } catch (e) {
+          console.error("deals_digest: card failed:", e);
+          if (photo) await sendTelegramMessage(chatId, caption, buttons.length ? buttons : undefined).catch(() => {});
+        }
+      }
+      if (codesMessage) {
+        await sendTelegramMessage(chatId, codesMessage.text, codesMessage.rows.length ? codesMessage.rows : undefined)
+          .catch((e) => console.error("deals_digest: codes failed:", e));
+      }
+      return Response.json({ ok: true, delivered: true, cards: list.length });
+    } catch (e) {
+      console.error("deals_digest failed:", e);
+      return Response.json({ ok: false, error: String(e) }, { status: 500 });
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "voice_selftest") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });
