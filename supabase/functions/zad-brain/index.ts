@@ -6855,7 +6855,8 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
       try {
         if (await deliverPetCall(sb, task, {
           pushDevice: (uid, title, text, data) => pushToDevice(sb, uid, title, text, data),
-          pushTelegram: (uid, title, text, taskId) => pushToTelegram(uid, title, text, fetch, taskId),
+          pushTelegram: (uid, title, text, taskId, need) =>
+            pushToTelegram(uid, title, text, fetch, taskId, false, undefined, undefined, undefined, undefined, undefined, undefined, need),
         }) === "sent") {
           processed++;
           (await deliveredFor(task.user_id)).push({ kind: task.kind, at: new Date().toISOString() });

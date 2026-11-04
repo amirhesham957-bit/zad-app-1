@@ -39,7 +39,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -2233,6 +2233,26 @@ bot.on("callback_query:data", async (ctx) => {
 
   // رفض مبادرة استباقية ← ذاكرة مهيكلة الماسح بيقراها (subject_kind/suppress_until).
   // الملكية بتتحقق جوه الدالة نفسها (المهمة لازم تكون بتاعة userId المحلول من الشات).
+  // نداء الرفيق: [🍖 أكّله] / [💧 اسقيه] بيكتب وقت الأكلة أو الشربة على السيرفر (zad_companion_care، اللي
+  // الموبايل بيسحب منه والسيرفر بيكسب — greatest()). last_care_at والسلسلة مابيتلمسوش: دول حساب الموبايل.
+  const petCare = parsePetCareCallback(data);
+  if (petCare) {
+    const now = new Date().toISOString();
+    const { data: careRow, error: careErr } = await sb.from("zad_companion_care")
+      .update(petCare.care === "fed" ? { fed_at: now, updated_at: now } : { watered_at: now, updated_at: now })
+      .eq("user_id", userId)
+      .select("user_id")
+      .maybeSingle();
+    if (careErr || !careRow) {
+      if (careErr) console.error("[pet_care] update failed:", careErr.message);
+      await ctx.reply("معرفتش أوصله دلوقتي — افتح زاد واهتم بيه من هناك 💛");
+      return;
+    }
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await ctx.reply(petCareReply(petCare.care));
+    return;
+  }
+
   const proactiveDismiss = parseProactiveDismissCallback(data);
   if (proactiveDismiss) {
     const { data: result, error } = await sb.rpc("zad_memory_record_proactive_dismissal", {
@@ -3017,8 +3037,10 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, deal_moment_id, map_url, amazon_links } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, deal_moment_id, map_url, amazon_links, pet_need } = payload as {
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
+        // اختياري: نداء الرفيق — أزراره هو ([🍖 أكّله]/[💧 اسقيه] [🔕 بلاش تفكرني بيه]) بدل أزرار الرفض.
+        pet_need?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
         // اختياري: تنبيه جرعة — معرّف صف zad_voice_moments، بيتحوّل لزرار «أخدت الجرعة».
@@ -3048,9 +3070,11 @@ Deno.serve(async (req: Request) => {
       // واحدة من غير ما يعدّي على فهم الموديل للكلام (سبب «بيشكرني ومابيسجلش»).
       const mapRow = mapButtonRow(map_url);
       const amazonRows = amazonButtonRows(amazon_links);
-      const dismissRows = dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id)
-        ? proactiveDismissKeyboard(dismiss_task_id)
+      const validTask = !!dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id);
+      const petRows = validTask && (pet_need === "hungry" || pet_need === "thirsty")
+        ? petCallKeyboard(dismiss_task_id!, pet_need)
         : [];
+      const dismissRows = validTask && !petRows.length ? proactiveDismissKeyboard(dismiss_task_id!) : [];
       // «اتعلمت إن» (٥.٢): الملخص الأسبوعي اللي قال نمط بياخد «صح / مش صح» فوق أزرار الرفض. فشل القراية = من غيرهم.
       const learningRows = dismissRows.length ? await learningRowsForTask(sb, user_id, dismiss_task_id!) : [];
       // مراجعة الذاكرة (٥.٣): الملاحظات مترقّمة تحت الرسالة وزرارين لكل واحدة — النص من الجدول، مش من الموديل.
@@ -3099,6 +3123,8 @@ Deno.serve(async (req: Request) => {
         ? salaryKeyboard(salary_moment_id)
         : deal_moment_id && /^[0-9a-fA-F-]{36}$/.test(deal_moment_id)
         ? [...(dealSource.row ? [dealSource.row] : []), ...dealKeyboard(deal_moment_id)]
+        : petRows.length
+        ? petRows
         : mapRow || amazonRows.length || dismissRows.length
         ? [...(mapRow ? [mapRow] : []), ...amazonRows, ...learningRows, ...(memoryBlock?.rows ?? []), ...(habitBlock?.rows ?? []), ...dismissRows]
         : undefined;

@@ -62,6 +62,35 @@ export function proactiveDismissKeyboard(taskId: string): InlineKeyboardButton[]
   }))];
 }
 
+/**
+ * أزرار نداء الرفيق («زادو عطشان»): الزرار بيعمل اللي الرسالة طالباه — أكّله أو اسقيه من تليجرام — وزرار
+ * بيوقف النداءات دي (`pd:…:n` نفس مسار «مش مهم»). المالك ٤/١١: التلات أزرار العامة كانوا تحتها، و«عرفت خلاص»
+ * و«الرقم غلط» مالهمش معنى لرفيق، وأي واحد فيهم كان بيرد «مش هكرر قبل ٣ أيام».
+ * `pc:` + uuid (36) + `:` + حرف = 41 بايت، تحت سقف تليجرام 64.
+ */
+export function petCallKeyboard(taskId: string, need: "hungry" | "thirsty"): InlineKeyboardButton[][] {
+  return [
+    [need === "hungry"
+      ? { text: "🍖 أكّله", callback_data: `pc:${taskId}:f` }
+      : { text: "💧 اسقيه", callback_data: `pc:${taskId}:w` }],
+    [{ text: "🔕 بلاش تفكرني بيه", callback_data: `pd:${taskId}:n` }],
+  ];
+}
+
+/** "pc:<task uuid>:<f|w>" — أي حاجة تانية null. */
+export function parsePetCareCallback(data: string): { taskId: string; care: "fed" | "watered" } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "pc") return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  if (parts[2] !== "f" && parts[2] !== "w") return null;
+  return { taskId: parts[1], care: parts[2] === "f" ? "fed" : "watered" };
+}
+
+/** الرد بعد ما العميل أكّل أو سقى الرفيق من تليجرام. */
+export function petCareReply(care: "fed" | "watered"): string {
+  return care === "fed" ? "🍖 أكلته، وهو مبسوط ومستنيك في زاد 💛" : "💧 شرب، ورجع يلعب 💛";
+}
+
 /** "pd:<task uuid>:<n|w|t>" — أي حاجة تانية null، عشان زرار مضروب مايوصلش للداتابيز. */
 export function parseProactiveDismissCallback(data: string): { taskId: string; reason: string } | null {
   const parts = data.split(":");
