@@ -86,6 +86,7 @@ import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.t
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
+import { loadSeasonDigest } from "./seasonDigest.ts";
 import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -9148,6 +9149,58 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       console.log(`[deals_instagram_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
+    }
+
+    // موسم العروض (الجمعة البيضاء، طلب المالك ٤/١١): كرون deals-season-digest مرة في اليوم وقت الموسم بس ⇐ لكل عميل
+    // مربوط بتليجرام أحسن العروض اللي بيته محتاجها بصورها وروابطها (seasonDigest.ts) ⇐ zad-telegram-bot?job=deals_digest.
+    // اللي اتبعت بيتسجل في zad_deal_digest_sent عشان مايتبعتش تاني في الموسم.
+    if (body.action === "deals_season_digest_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
+      if (!secret) return new Response(JSON.stringify({ ok: false, reason: "no_push_secret" }), { headers: CORS_HEADERS });
+      const sbSeason = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: linked, error: linkedErr } = await sbSeason.from("telegram_bindings").select("user_id")
+        .not("chat_id", "is", null).not("user_id", "is", null).limit(500);
+      if (linkedErr) {
+        console.error("[deals_season_digest_run] bindings failed:", linkedErr.message);
+        return new Response(JSON.stringify({ error: "bindings_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const started = Date.now();
+      const results: Array<Record<string, unknown>> = [];
+      for (const { user_id: uid } of (linked ?? []) as Array<{ user_id: string }>) {
+        if (Date.now() - started > 120_000) break;
+        try {
+          const digest = await loadSeasonDigest(sbSeason, uid);
+          if (!digest) {
+            results.push({ user: uid.slice(0, 8), sent: false });
+            continue;
+          }
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/zad-telegram-bot?job=deals_digest`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Realtime-Push-Secret": secret },
+            body: JSON.stringify({ user_id: uid, season: digest.season, cards: digest.cards, codes: digest.codes }),
+            signal: AbortSignal.timeout(60_000),
+          });
+          const reply = await res.json().catch(() => null) as { delivered?: boolean } | null;
+          const delivered = res.ok && reply?.delivered === true;
+          if (delivered) {
+            const rows = [
+              ...digest.cards.map((c) => ({ user_id: uid, deal_key: c.key })),
+              ...digest.codes.map((c) => ({ user_id: uid, deal_key: `code|${c.store_key}|${c.code}` })),
+            ];
+            const { error: logErr } = await sbSeason.from("zad_deal_digest_sent").upsert(rows, { onConflict: "user_id,deal_key" });
+            if (logErr) console.error("[deals_season_digest_run] log failed:", logErr.message);
+          }
+          results.push({ user: uid.slice(0, 8), sent: delivered, cards: digest.cards.length, codes: digest.codes.length });
+        } catch (e) {
+          console.error("[deals_season_digest_run] user failed:", (e as Error)?.message);
+          results.push({ user: uid.slice(0, 8), sent: false, error: true });
+        }
+      }
+      console.log(`[deals_season_digest_run] ${results.length} users`, JSON.stringify(results));
+      return new Response(JSON.stringify({ ok: true, users: results }), { headers: CORS_HEADERS });
     }
 
     // توكن إنستجرام بيتجدد لوحده (ZAD_PLAN ٤.١٢، قرار ٤/١١): كرون instagram-token-daily ⇐ instagram_token_refresh في
