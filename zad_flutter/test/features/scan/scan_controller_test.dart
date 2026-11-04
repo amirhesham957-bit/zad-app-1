@@ -493,7 +493,7 @@ void main() {
     );
 
     test(
-      "the pantry stocks a line under what it is, the price keeps the brand",
+      'the pantry stocks a line under what it is, the price keeps the brand',
       () async {
         scanner.answer = _receipt(
           items: <Object?>[

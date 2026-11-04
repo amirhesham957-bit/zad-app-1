@@ -60,6 +60,10 @@ String bankPulseEvent(BankAccessHealth health) => switch (health) {
 /// At most one pulse per state in this window, however often the app opens.
 const Duration kBankPulseEvery = Duration(hours: 12);
 
+/// Captured notifications waiting on the phone that count as a backlog: more
+/// than one drain's worth of ordinary traffic.
+const int kBankBacklogAt = 5;
+
 /// How long without any notification seen before the listener counts as
 /// stopped.
 const Duration kListenerStallAfter = Duration(days: 2);
@@ -218,12 +222,23 @@ class BankAccessController extends Notifier<BankAccessState> {
   void _pulse() {
     if (!ref.mounted) return;
     try {
+      final events = ref.read(productEventsProvider);
       unawaited(
-        ref
-            .read(productEventsProvider)
+        events
             .log(bankPulseEvent(state.health), every: kBankPulseEvery)
             .catchError((Object _) => false),
       );
+      // «flowing» says the listener sees notifications, not that they leave
+      // the phone. The owner's phone read «flowing» for two days while not
+      // one notification reached the server (2026-11-04): this is the line
+      // that would have said where they were.
+      if (state.pending >= kBankBacklogAt) {
+        unawaited(
+          events
+              .log('bank.backlog', every: kBankPulseEvery)
+              .catchError((Object _) => false),
+        );
+      }
     } on Object {
       // No session graph (a test host, a headless engine).
     }
