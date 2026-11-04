@@ -97,6 +97,7 @@ import { redactNotificationText } from "./redact.ts";
 import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply, quotaExempt } from "./entitlement.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
+import { resolveDeviceKeyUser } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
@@ -6291,6 +6292,15 @@ export const CHAT_TOOLS: ToolDef[] = [
  *    هنا أصلاً، فالتحقق هنا مش هيضيف أي حماية. البوت بيحدد المستخدم من جدول
  *    telegram_bindings (chat_id ↔ user_id)، وده الحارس الحقيقي في المسار ده.
  */
+/** «bank.bg_delivered»: إشعار بنك وصل بمفتاح الجهاز والتطبيق مقفول. إحصائية، عمرها ما بتوقّع الطلب. */
+async function recordDeviceKeyUse(sb: SupabaseClient, userId: string): Promise<void> {
+  const since = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+  const { data } = await sb.from("zad_product_events").select("id")
+    .eq("user_id", userId).eq("name", "bank.bg_delivered").gte("at", since).limit(1);
+  if (data && data.length > 0) return;
+  await sb.from("zad_product_events").insert({ user_id: userId, name: "bank.bg_delivered" });
+}
+
 async function resolveRequestUserId(req: Request, body: unknown): Promise<string | null> {
   return await resolveAuthedUserId(req, body, SERVICE_ROLE_KEY, async (token) => {
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -9950,7 +9960,23 @@ async function handleRequest(req: Request): Promise<Response> {
     }
 
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {
-      const authedUserId = await resolveRequestUserId(req, body);
+      // ٢.٧(ب): محرك الخلفية جلسته منتهية عن قصد (١.٣) — مفتاح الجهاز بيفتح
+      // notification_ingest بس، والحساب من صف المفتاح مش من الـbody.
+      const jwtUserId = await resolveRequestUserId(req, body);
+      const deviceUserId = jwtUserId ? null : await resolveDeviceKeyUser(req, body.action, async (keyHash) => {
+        const sbKey = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+        const { data } = await sbKey.from("zad_device_send_keys")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("key_hash", keyHash)
+          .select("user_id")
+          .maybeSingle();
+        return typeof data?.user_id === "string" ? data.user_id : null;
+      });
+      const authedUserId = jwtUserId ?? deviceUserId;
+      if (deviceUserId) {
+        // أثر من السيرفر إن الخلفية وصّلت (مرة كل ٦ ساعات بالكتير لكل حساب).
+        afterResponse("device key breadcrumb", recordDeviceKeyUse(createClient(SUPABASE_URL, SERVICE_ROLE_KEY), deviceUserId));
+      }
       if (!authedUserId) {
         return new Response(
           JSON.stringify({ error: "unauthorized: agent actions require a user JWT" }),

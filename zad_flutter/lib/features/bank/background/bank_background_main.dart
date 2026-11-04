@@ -8,11 +8,13 @@
 library;
 
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/features/bank/data/background_delivery.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/shared/auth/data/background_session.dart';
+import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/bank/domain/tracked_financial_apps.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
 
@@ -31,19 +33,16 @@ Future<void> bankBackgroundMain() async {
       // Read-only, never refreshed: background_session.dart says why.
       authOptions: backgroundAuthOptions(ZadEnv.supabaseUrl),
     );
-    // An expired token means the notification stays in the inbox for the
-    // app, which owns the session, to send on its next open.
-    final client = usableBackgroundClient(Supabase.instance.client);
-    if (client == null) return;
-    final userId = client.auth.currentUser?.id;
-    if (userId == null) return;
+    final route = await _backgroundRoute(Supabase.instance.client);
+    // No valid session and no device key: the notification stays in the
+    // inbox for the app, which owns the session, to send on its next open.
+    if (route == null) return;
 
-    final remote = SupabaseBankRemote(client);
     final report = await BackgroundBankDelivery(
       peek: (limit) => listener.peek(limit: limit),
       acknowledge: listener.acknowledge,
-      send: remote.ingestNotification,
-      userId: userId,
+      send: route.send,
+      userId: route.userId,
       isTrackedFinancialApp: isTrackedFinancialApp,
       // Parked natively, not written to the Hive log: see recordRejected.
       onRejected: (source, reason, rawText) => listener.recordRejected(
@@ -60,4 +59,32 @@ Future<void> bankBackgroundMain() async {
   } finally {
     await listener.backgroundDone();
   }
+}
+
+/// How this run sends: the session while it is still valid, else the
+/// device's send key (ZAD_PLAN ٢.٧ب) — never a refresh (١.٣).
+Future<({Future<Object?> Function(Map<String, dynamic>) send, String userId})?>
+_backgroundRoute(SupabaseClient supabase) async {
+  final client = usableBackgroundClient(supabase);
+  final sessionUser = client?.auth.currentUser?.id;
+  if (client != null && sessionUser != null) {
+    return (
+      send: SupabaseBankRemote(client).ingestNotification,
+      userId: sessionUser,
+    );
+  }
+  final key = await DeviceSendKey.stored(const SecureDeviceKeyVault());
+  if (key == null) return null;
+  final http_ = http.Client();
+  return (
+    send: (Map<String, dynamic> payload) => sendIngestWithDeviceKey(
+      client: http_,
+      supabaseUrl: ZadEnv.supabaseUrl,
+      anonKey: ZadEnv.supabaseAnonKey,
+      deviceKey: key,
+      payload: payload,
+    ),
+    // Informational only: the server takes the account from the key's row.
+    userId: supabase.auth.currentUser?.id ?? '',
+  );
 }
