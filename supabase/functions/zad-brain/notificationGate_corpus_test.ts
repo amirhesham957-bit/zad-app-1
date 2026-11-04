@@ -70,3 +70,38 @@ Deno.test("what the model reads is masked, but every amount it must find is stil
   }).map((c) => c.id);
   assertEquals(lost, []);
 });
+
+// نفس الرسالة بالطرق التانية اللي البنوك والموبايلات بتكتبها بيها: أرقام عربي، العملة بالشكل التاني، من غير فاصلة
+// الآلاف. بتتولّد هنا ومابتتخزنش في المجموعة، فالمجموعة فيها بس رسايل اتشافت أو شكلها معروف.
+function variants(text: string): Record<string, string> {
+  const out: Record<string, string> = {
+    "arabic digits": text.replace(/[0-9]/g, (d) => String.fromCharCode(0x0660 + Number(d))),
+    "no thousands separator": text.replace(/(\d),(\d{3})/g, "$1$2"),
+  };
+  const swaps: [string, string][] = [["SAR", "ر.س"], ["ر.س", "SAR"], ["ريال", "ر.س"], ["EGP", "ج.م"], ["ج.م", "EGP"], ["جنيه", "ج.م"]];
+  const swap = swaps.find(([from]) => text.includes(from));
+  if (swap) out[`${swap[0]} → ${swap[1]}`] = text.replaceAll(swap[0], swap[1]);
+  return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== text));
+}
+
+Deno.test("the other ways the same message is written: never dropped, and the model still sees the amount", () => {
+  const wrong: string[] = [];
+  let checked = 0;
+  for (const c of corpus.filter((c) => c.expect === "money")) {
+    const amount = (c as unknown as { amount: number | null }).amount;
+    for (const [how, text] of Object.entries(variants(c.text))) {
+      checked++;
+      const known = knownFinancialSender(c.package, c.title);
+      if (ruleGate(text) !== null) wrong.push(`${c.id} (${how}): the fixed rule removed it`);
+      if (decideGate(null, known, looksLikeMoneyMoved(text)) === "ignore") wrong.push(`${c.id} (${how}): dropped with the model down`);
+      if (amount != null) {
+        const { user } = gatePrompt({ packageName: c.package, title: c.title, text, knownSender: null });
+        const nums = [...user.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/٬/g, ",").matchAll(/[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?/g)]
+          .map((m) => Number(m[0].replace(/,/g, "")));
+        if (!nums.some((n) => Math.abs(n - amount) < 0.005)) wrong.push(`${c.id} (${how}): the amount is masked away`);
+      }
+    }
+  }
+  assertEquals(checked >= corpus.filter((c) => c.expect === "money").length, true);
+  assertEquals(wrong, []);
+});

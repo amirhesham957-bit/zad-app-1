@@ -33,6 +33,40 @@ bool _sent(Map<String, dynamic> c) {
   );
 }
 
+const _arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+/// The same real or shape message, written the other ways banks and phones
+/// write it: Arabic-Indic digits, the other spelling of the currency, no
+/// thousands separator. Generated here, never stored in the corpus, so the
+/// corpus keeps only messages that were seen or known.
+Map<String, String> _variants(String text) {
+  final out = <String, String>{
+    'arabic digits': text.replaceAllMapped(
+      RegExp('[0-9]'),
+      (m) => _arabicDigits[int.parse(m[0]!)],
+    ),
+    'no thousands separator': text.replaceAllMapped(
+      RegExp(r'(\d),(\d{3})'),
+      (m) => '${m[1]}${m[2]}',
+    ),
+  };
+  const swaps = {
+    'SAR': 'ر.س',
+    'ر.س': 'SAR',
+    'ريال': 'ر.س',
+    'EGP': 'ج.م',
+    'ج.م': 'EGP',
+    'جنيه': 'ج.م',
+  };
+  for (final e in swaps.entries) {
+    if (text.contains(e.key)) {
+      out['${e.key} → ${e.value}'] = text.replaceAll(e.key, e.value);
+      break;
+    }
+  }
+  return out..removeWhere((_, v) => v == text);
+}
+
 void main() {
   final corpus = _corpus();
 
@@ -70,6 +104,36 @@ void main() {
       ).amount;
       if (got != want.toDouble()) wrong.add('${c['id']}: got $got, want $want');
     }
+    expect(wrong, isEmpty);
+  });
+
+  test('the amount survives the other ways the same message is written', () {
+    final wrong = <String>[];
+    var checked = 0;
+    for (final c in corpus) {
+      final want = c['amount'] as num?;
+      if (want == null || c['expect'] != 'money') continue;
+      _variants(c['text'] as String).forEach((how, text) {
+        checked++;
+        final v = {...c, 'text': text};
+        final got = classifyBankNotification(
+          title: c['title'] as String,
+          text: text,
+        ).amount;
+        if (got != want.toDouble() || !_sent(v)) {
+          wrong.add('${c['id']} ($how): got $got, sent ${_sent(v)}');
+        }
+      });
+    }
+    // Every money case has digits, so each one yields at least one variant.
+    expect(
+      checked,
+      greaterThanOrEqualTo(
+        corpus
+            .where((c) => c['expect'] == 'money' && c['amount'] != null)
+            .length,
+      ),
+    );
     expect(wrong, isEmpty);
   });
 
