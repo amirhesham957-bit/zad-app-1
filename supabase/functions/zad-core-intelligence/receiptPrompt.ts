@@ -45,6 +45,12 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "\"مسكن\" (painkillers and fever medicine such as Panadol or Brufen), \"مضاد حيوي\", \"فيتامين\", " +
   "\"مزمن\" (medicine for a chronic illness), \"دواء\" (any other medicine), or \"أخرى\". " +
   "A medicine is a medicine category even on a supermarket receipt; shampoo and soap are \"العناية\", never a medicine. " +
+  // ٢٠٢٦-١١-٠٤ (المالك): «٣ مياه إيلانو و١ نستلة و١ صافي كلهم مياه». المخزون بيتسجل بالمنتج، والسعر بالاسم المطبوع
+  // (20261104170000_purchase_stock_by_product.sql).
+  "Each item also has `product`: what it is without the brand, in Arabic, specific enough that two lines with the same " +
+  "`product` can replace each other at home — \"مياه\" for any bottled water, \"زيت عباد الشمس\" (not just \"زيت\"), " +
+  "\"زيت زيتون\", \"أرز\", \"لبن\", \"شامبو\", \"بنادول\" for a medicine (its active name or best-known name). " +
+  "Never put a brand, a size or a flavour that does not change what it is used for in `product`. " +
   "Also classify `receiptType`: \"pharmacy\" if this is a pharmacy/drugstore receipt " +
   "(medicine names, dosages like 500mg, tablet/syrup/capsule units); \"budget_card\" if " +
   "this is NOT an itemized purchase receipt at all but a bank/salary/wallet balance " +
@@ -61,4 +67,4 @@ export const RECEIPT_SYSTEM_PROMPT = "You are a receipt-scanning AI for ZAD, a h
   "فودافون كاش/InstaPay/إنستاباي/Fawry/a mobile wallet; \"\" when the receipt does not say — " +
   "never guess. " +
   "Return ONLY a JSON object, no markdown and no commentary: " +
-  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"deliveryApp\":\"\",\"deliveryFee\":0,\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"البقالة\"}]}";
+  "{\"total\":0.0,\"category\":\"\",\"storeName\":\"\",\"purchaseDate\":\"\",\"paymentMethod\":\"\",\"receiptType\":\"grocery\",\"deliveryApp\":\"\",\"deliveryFee\":0,\"items\":[{\"name\":\"\",\"price\":0.0,\"quantity\":1.0,\"unit\":\"قطعة\",\"category\":\"البقالة\",\"product\":\"\"}]}";

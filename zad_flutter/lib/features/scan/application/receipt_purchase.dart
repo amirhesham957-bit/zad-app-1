@@ -49,6 +49,7 @@ List<PurchaseLine> pantryLinesOf(
         unit: item.unit.trim().isEmpty ? null : item.unit.trim(),
         category: item.category.trim().isEmpty ? null : item.category.trim(),
         price: item.price > 0 ? item.price : null,
+        product: item.product,
       ),
 ].take(kMaxPurchaseLines).toList();
 
@@ -104,7 +105,9 @@ Future<void> afterReceiptPurchase(
   try {
     final learner = ref.read(consumptionLearnerProvider);
     for (final line in lines) {
-      if (line.to == PurchaseLineTo.pantry) learner.recordPurchase(line.name);
+      if (line.to == PurchaseLineTo.pantry) {
+        learner.recordPurchase(line.product ?? line.name);
+      }
     }
   } on Object {
     // «هل خلص؟» learns from the next purchase instead.

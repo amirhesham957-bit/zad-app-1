@@ -83,6 +83,7 @@ class ScannedReceiptItem {
     required this.quantity,
     required this.unit,
     required this.category,
+    this.product,
   });
 
   /// Reads one entry of the server's `items`.
@@ -103,6 +104,10 @@ class ScannedReceiptItem {
       // inventory rows — so they stay Arabic here too.
       unit: (raw['unit'] as String?) ?? 'قطعة',
       category: (raw['category'] as String?) ?? 'عام',
+      product: switch ((raw['product'] as String?)?.trim()) {
+        final p? when p.isNotEmpty => p,
+        _ => null,
+      },
     );
   }
 
@@ -121,6 +126,10 @@ class ScannedReceiptItem {
 
   /// The item's own category, which is not the receipt's spending category.
   final String category;
+
+  /// What it is without the brand («مياه», «زيت عباد الشمس»), or null when
+  /// the reader did not say. Data: the pantry row is named by it.
+  final String? product;
 }
 
 /// One scanned receipt.
