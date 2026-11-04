@@ -4710,6 +4710,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'المصدر'**
   String get dealsSourceOther;
+
+  /// No description provided for @homeDealsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض على نواقصك'**
+  String get homeDealsTitle;
+
+  /// No description provided for @homeDealsSeeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل العروض'**
+  String get homeDealsSeeAll;
+
+  /// No description provided for @homeDealsWhyNeed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقص عندك'**
+  String get homeDealsWhyNeed;
+
+  /// No description provided for @homeDealsWhyFavorite.
+  ///
+  /// In ar, this message translates to:
+  /// **'من محلك'**
+  String get homeDealsWhyFavorite;
+
+  /// No description provided for @homeDealsWhyFire.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم كبير'**
+  String get homeDealsWhyFire;
+
+  /// No description provided for @homeDealsCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود {code}'**
+  String homeDealsCode(String code);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

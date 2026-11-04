@@ -134,6 +134,9 @@ class HomeScreen extends ConsumerWidget {
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
           const AdWeekCard(),
+          // «عروض على نواقصك» (owner 4/11): real deals on what the home is
+          // short of, with pictures, codes and the Amazon link.
+          ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeDealsCarousel()),
           // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
           // products (owner, 2026-10-05; the product row stays off home).
           const HomeAmazonStrip(),

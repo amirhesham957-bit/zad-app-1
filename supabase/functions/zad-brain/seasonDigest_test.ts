@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes } from "./seasonDigest.ts";
+import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals } from "./seasonDigest.ts";
 
 const row = (o: Partial<DigestDealRow>): DigestDealRow => ({
   store: "كارفور", item_name: "زيت عافية 1.5 لتر", price: 30, price_before: 40, currency: "EGP",
@@ -49,4 +49,40 @@ Deno.test("codes only for the house's own apps, not sent before", () => {
   ];
   assertEquals(pickDigestCodes(codes, ["Keeta"], new Set()).map((c) => c.code), ["KEETA30"]);
   assertEquals(pickDigestCodes(codes, ["Keeta"], new Set(["code|keeta|KEETA30"])), []);
+});
+
+const code = (o: Partial<DigestCodeRow>): DigestCodeRow => ({
+  store: "كارفور", store_key: "كارفور", code: "SAVE10", discount_percent: 10, discount_amount: null, currency: null,
+  min_order: null, valid_until: null, source_kind: "instagram", source_url: "https://www.instagram.com/p/x", ...o,
+});
+
+Deno.test("home strip: the need first, each card with its own store's code, codes for the cards' stores", () => {
+  const out = pickHomeDeals({
+    broke: false,
+    needs: ["لبن"],
+    favorites: [],
+    bought: [],
+    deals: [row({ item_name: "لبن جهينة 1 لتر", price: 35, price_before: 40 }), row({ item_name: "شيبسي", store: "بيم" })],
+    codes: [code({}), code({ store: "طلبات", store_key: "طلبات", code: "TB5" })],
+  });
+  assertEquals(out.cards.map((c) => [c.item, c.why, c.code?.code]), [["لبن جهينة 1 لتر", "need", "SAVE10"]]);
+  assertEquals(out.cards[0].code?.percent, 10);
+  assertEquals(out.codes.map((c) => c.code), ["SAVE10"]);
+});
+
+Deno.test("home strip in broke mode: only what the home needs, no codes, no store deals", () => {
+  const out = pickHomeDeals({
+    broke: true,
+    needs: ["لبن"],
+    favorites: ["بيم"],
+    bought: ["مكرونة"],
+    deals: [
+      row({ item_name: "لبن جهينة 1 لتر", price: 35, price_before: 40 }),
+      row({ item_name: "جبنة", store: "بيم", price: 50, price_before: 80 }),
+      row({ item_name: "مكرونة", store: "بيم", price: 5, price_before: 10 }),
+    ],
+    codes: [code({})],
+  });
+  assertEquals(out.cards.map((c) => [c.item, c.code]), [["لبن جهينة 1 لتر", null]]);
+  assertEquals(out.codes, []);
 });

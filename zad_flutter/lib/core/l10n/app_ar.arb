@@ -1976,5 +1976,18 @@
   "dealsSourceFlyer": "نشرة المحل",
   "dealsSourceReceipts": "فواتير بيوت حواليك",
   "dealsSourcePartner": "رابط شراكة",
-  "dealsSourceOther": "المصدر"
+  "dealsSourceOther": "المصدر",
+  "homeDealsTitle": "عروض على نواقصك",
+  "homeDealsSeeAll": "كل العروض",
+  "homeDealsWhyNeed": "ناقص عندك",
+  "homeDealsWhyFavorite": "من محلك",
+  "homeDealsWhyFire": "خصم كبير",
+  "homeDealsCode": "كود {code}",
+  "@homeDealsCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  }
 }

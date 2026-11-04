@@ -768,5 +768,11 @@
   "dealsSourceFlyer": "Store's flyer",
   "dealsSourceReceipts": "Receipts from homes near you",
   "dealsSourcePartner": "Partner link",
-  "dealsSourceOther": "Source"
+  "dealsSourceOther": "Source",
+  "homeDealsTitle": "Deals on what you're out of",
+  "homeDealsSeeAll": "All deals",
+  "homeDealsWhyNeed": "You're out",
+  "homeDealsWhyFavorite": "Your store",
+  "homeDealsWhyFire": "Big discount",
+  "homeDealsCode": "Code {code}"
 }

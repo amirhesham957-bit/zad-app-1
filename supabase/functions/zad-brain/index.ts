@@ -86,7 +86,7 @@ import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.t
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
-import { loadSeasonDigest } from "./seasonDigest.ts";
+import { loadHomeDeals, loadSeasonDigest } from "./seasonDigest.ts";
 import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -9860,6 +9860,17 @@ async function handleRequest(req: Request): Promise<Response> {
     // رجع البيت (geofence البيت على الموبايل — مكان البيت نفسه مابيوصلش السيرفر). بنحسب صرف
     // نافذة الخروجة والمحلات اللي دخلها، بنسجل الخروجة (من غير إحداثيات)، ولو صرف حاجة زاد
     // بتقوله بصوتها "رجعت! روحت فين وصرفت إيه". مابنتكلمش على خروجة من غير صرف — ده تطفّل.
+    // شريط العروض على الرئيسية (طلب المالك ٤/١١): عروض بلد العميل اللي على نواقص بيته (قايمة الشرا، اللي قرّب يخلص)
+    // ومحلاته، بنفس اختيار رسالة الموسم (seasonDigest.ts) — قراية بس، من غير أي موديل. الهوية من JWT بس.
+    if (body.action === "home_deals") {
+      const dealsUserId = await resolveRequestUserId(req, body);
+      if (!dealsUserId) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const result = await loadHomeDeals(createClient(SUPABASE_URL, SERVICE_ROLE_KEY), dealsUserId);
+      return new Response(JSON.stringify({ ok: true, ...result }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "place_event") {
       const placeUserId = await resolveRequestUserId(req, body);
       if (!placeUserId) {
