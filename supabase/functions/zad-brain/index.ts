@@ -85,6 +85,7 @@ import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
+import { dealCodeRows } from "./dealCodes.ts";
 import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -9084,7 +9085,13 @@ async function handleRequest(req: Request): Promise<Response> {
           if (!error && (data as { ok?: boolean } | null)?.ok) put++;
           else refused++;
         }
-        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, reason: reply?.reason ?? null });
+        // ٤.٢٢: أكواد الخصم (تطبيقات التوصيل مالهاش صنف وسعر). نفس الكود لنفس المحل بيتحدّث مش بيتكرر.
+        const codeRows = dealCodeRows(t, reply?.codes, "youtube");
+        if (codeRows.length) {
+          const { error: codeErr } = await sbDeals.from("zad_deal_codes").upsert(codeRows, { onConflict: "country,store_key,code" });
+          if (codeErr) console.error("[deals_youtube_run] codes failed:", codeErr.message);
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, reason: reply?.reason ?? null });
         if (reply?.ok) {
           const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({
             country: t.country, store_key: productNameKey(t.store), hits: Number(reply?.hits) || 0, put, source: "youtube",
@@ -9124,7 +9131,13 @@ async function handleRequest(req: Request): Promise<Response> {
           if (!error && (data as { ok?: boolean } | null)?.ok) put++;
           else refused++;
         }
-        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, posts: reply?.posts ?? 0, read: reply?.read ?? 0, put, refused, reason: reply?.reason ?? null });
+        // ٤.٢٢: أكواد الخصم (تطبيقات التوصيل مالهاش صنف وسعر). نفس الكود لنفس المحل بيتحدّث مش بيتكرر.
+        const codeRows = dealCodeRows(t, reply?.codes, "instagram");
+        if (codeRows.length) {
+          const { error: codeErr } = await sbDeals.from("zad_deal_codes").upsert(codeRows, { onConflict: "country,store_key,code" });
+          if (codeErr) console.error("[deals_instagram_run] codes failed:", codeErr.message);
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, posts: reply?.posts ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, reason: reply?.reason ?? null });
         // A hashtag that answered — even with no posts — has spent its slot this week: logged so it is not asked again.
         if (reply?.ok) {
           const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({

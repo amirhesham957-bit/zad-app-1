@@ -16,6 +16,8 @@ const APPS: Array<[key: string, name: string, pattern: RegExp]> = [
   ["rabbit", "رابيت", /^(rabbit|رابيت)$/],
   ["instashop", "إنستاشوب", /^(insta ?shop|انستا ?شوب|إنستا ?شوب)$/],
   ["careem", "كريم", /^(careem|careem food|careem quik|كريم)$/],
+  ["thechefz", "ذا شفز", /^(the ?chefz|ذا ?شفز|ذا ?شيفز)$/],
+  ["elmenus", "إلمنيوز", /^(elmenus|el ?menus|المنيوز|إلمنيوز)$/],
 ];
 
 /** مفتاح التطبيق واسمه بالعربي، أو null لو الاسم مش تطبيق توصيل معروف. */

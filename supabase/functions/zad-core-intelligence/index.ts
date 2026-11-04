@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt } from "./liveDeals.ts";
+import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
   exchangeLongLivedToken, instagramAccountPosts, instagramHandles, instagramHashtagPosts, metaAppKeys, MIN_STORE_FOLLOWERS, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
@@ -2900,6 +2900,7 @@ async function handle(req: Request): Promise<Response> {
         const videos = youtubeDealVideos(found.items, store);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
+        const codes: DealCode[] = [];
         let read = 0;
         for (const video of videos) {
           const { system, user } = videoDealsPrompt(store, market.name, currency, video.title, today);
@@ -2913,8 +2914,9 @@ async function handle(req: Request): Promise<Response> {
           read++;
           const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
           deals.push(...readStoreDeals(parsed, [{ title: video.title, url: video.url, snippet: "" }], currency, new Date()));
+          codes.push(...readDealCodes(parsed, video.url, new Date()));
         }
-        return jsonResponse({ ok: true, deals, hits: found.items.length, videos: videos.length, read, source: "youtube" });
+        return jsonResponse({ ok: true, deals, codes, hits: found.items.length, videos: videos.length, read, source: "youtube" });
       }
 
       // ──────────────────────────────────────────────
@@ -2944,6 +2946,7 @@ async function handle(req: Request): Promise<Response> {
         const posts = instagramDealPosts(found.items, store, 3, via === "account");
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
+        const codes: DealCode[] = [];
         let read = 0;
         for (const post of posts) {
           const { system, user } = postDealsPrompt(store, market.name, currency, post.caption, today);
@@ -2959,9 +2962,10 @@ async function handle(req: Request): Promise<Response> {
           read++;
           const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
           deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
+          codes.push(...readDealCodes(parsed, post.permalink, new Date()));
         }
         return jsonResponse({
-          ok: true, deals, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
+          ok: true, deals, codes, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
           ...(via === "account" ? { account: handle } : { tag }),
         });
       }
