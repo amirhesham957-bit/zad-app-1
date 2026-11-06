@@ -1989,5 +1989,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "bankTestLifeEvent": "ميعاد أو حدث"
 }

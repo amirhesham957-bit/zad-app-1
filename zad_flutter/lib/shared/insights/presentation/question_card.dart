@@ -111,7 +111,7 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
               SizedBox(
                 height: 32,
                 child: FilledButton(
-                  onPressed: () => widget.onAnswer('أيوة'),
+                  onPressed: () => widget.onAnswer(kYesAnswer),
                   child: const Text('أيوة', style: ZadType.labelSmall),
                 ),
               ),

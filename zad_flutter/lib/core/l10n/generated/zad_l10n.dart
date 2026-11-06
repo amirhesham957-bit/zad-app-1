@@ -4746,6 +4746,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'كود {code}'**
   String homeDealsCode(String code);
+
+  /// No description provided for @bankTestLifeEvent.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد أو حدث'**
+  String get bankTestLifeEvent;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

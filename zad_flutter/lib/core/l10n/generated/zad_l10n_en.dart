@@ -2714,4 +2714,7 @@ class ZadL10nEn extends ZadL10n {
   String homeDealsCode(String code) {
     return 'Code $code';
   }
+
+  @override
+  String get bankTestLifeEvent => 'An appointment or event';
 }

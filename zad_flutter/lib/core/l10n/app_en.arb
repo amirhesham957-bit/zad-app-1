@@ -774,5 +774,6 @@
   "homeDealsWhyNeed": "You're out",
   "homeDealsWhyFavorite": "Your store",
   "homeDealsWhyFire": "Big discount",
-  "homeDealsCode": "Code {code}"
+  "homeDealsCode": "Code {code}",
+  "bankTestLifeEvent": "An appointment or event"
 }

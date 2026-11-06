@@ -221,3 +221,14 @@ enum DismissReason {
 /// its own tools and the reply is on screen.
 String answerMessage(ZadInsight question, String answer) =>
     'ردًا على سؤالك «${question.title}»: ${answer.trim()}';
+
+/// The yes button's answer on a `yes_no` card (question_card.dart).
+const String kYesAnswer = 'أيوة'; // l10n: data
+
+/// The life event (ZAD_PLAN ٢.٨) a card asks about, from its `about_item`
+/// (`life_event:<uuid>`), or null for any other card.
+String? lifeEventIdOf(ZadInsight insight) {
+  final m = RegExp(r'^life_event:([0-9a-fA-F-]{36})$')
+      .firstMatch(insight.aboutItem ?? '');
+  return m?.group(1);
+}

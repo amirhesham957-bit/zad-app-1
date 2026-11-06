@@ -25,6 +25,7 @@ library;
 
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/bank/domain/bank_keywords.dart';
+import 'package:zad/shared/bank/domain/life_event_hint.dart';
 
 /// What the message is.
 enum BankNotificationClass {
@@ -42,6 +43,10 @@ enum BankNotificationClass {
   /// Looks financial and carries an amount, but nothing here can say what it
   /// was. The case that most needs the server.
   ambiguous,
+
+  /// No money, but a household life event — an appointment, a government
+  /// notice, a result, a parcel (ZAD_PLAN ٢.٨, `life_event_hint.dart`).
+  lifeEvent,
 }
 
 /// Why a message was set aside, for `zad_rejected_bank_messages`.
@@ -317,10 +322,20 @@ BankNotificationVerdict classifyBankNotification({
   required String title,
   required String text,
   String? marketCurrency,
+  String? packageName,
 }) {
   final full = '$title $text'.trim();
 
   final reason = bankRejectionReason(full);
+  // ٢.٨: an appointment, a government notice («انتهت صلاحية الإقامة» too), a
+  // result or a parcel — when no amount makes it a money question already.
+  if ((reason == null || reason == BankRejectReason.expired) &&
+      extractAmount(full) == null &&
+      looksLikeLifeEvent(full, packageName: packageName)) {
+    return const BankNotificationVerdict(
+      classification: BankNotificationClass.lifeEvent,
+    );
+  }
   if (reason != null) {
     return BankNotificationVerdict(
       classification:
@@ -359,6 +374,7 @@ bool shouldSendToBrain({
 }) => switch (classification) {
   BankNotificationClass.completedTransaction => false,
   BankNotificationClass.ambiguous => true,
+  BankNotificationClass.lifeEvent => true,
   BankNotificationClass.failedOrPendingTransaction => true,
   BankNotificationClass.informationalOnly =>
     reason == null && isTrackedFinancialApp,

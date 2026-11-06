@@ -60,6 +60,7 @@ String _wireName(BankNotificationClass c) => switch (c) {
     'failed_or_pending_transaction',
   BankNotificationClass.informationalOnly => 'informational_only',
   BankNotificationClass.ambiguous => 'ambiguous',
+  BankNotificationClass.lifeEvent => 'life_event',
 };
 
 /// Classifies a notification and queues it if it is worth sending.
@@ -82,6 +83,7 @@ Future<OutboxEntry?> ingestBankNotification({
     title: title,
     text: text,
     marketCurrency: marketCurrency,
+    packageName: packageName,
   );
 
   if (!shouldSendToBrain(

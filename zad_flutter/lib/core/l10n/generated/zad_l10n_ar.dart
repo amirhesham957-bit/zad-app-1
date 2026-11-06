@@ -2650,4 +2650,7 @@ class ZadL10nAr extends ZadL10n {
   String homeDealsCode(String code) {
     return 'كود $code';
   }
+
+  @override
+  String get bankTestLifeEvent => 'ميعاد أو حدث';
 }

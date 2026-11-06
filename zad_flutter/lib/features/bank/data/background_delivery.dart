@@ -111,6 +111,7 @@ class BackgroundBankDelivery {
           title: n.title,
           text: n.text,
           marketCurrency: _marketCurrency,
+          packageName: n.packageName,
         );
         if (!shouldSendToBrain(
           classification: verdict.classification,

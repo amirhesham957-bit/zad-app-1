@@ -144,7 +144,8 @@ Deno.test("model down: the old behaviour holds — phone's amount, and the sende
 
 Deno.test("the gate's schema lists exactly the kinds parseGateVerdict accepts, and nothing else passes", () => {
   const kinds = (GATE_RESPONSE_SCHEMA as { properties: { kind: { enum: string[] } } }).properties.kind.enum;
-  assertEquals(kinds.length, 13);
+  // ١٣ + أحداث الحياة الأربعة (٢.٨).
+  assertEquals(kinds.length, 17);
   for (const kind of kinds) {
     assertEquals(parseGateVerdict(JSON.stringify({ kind, confidence: 0.9 }))?.kind, kind);
   }
