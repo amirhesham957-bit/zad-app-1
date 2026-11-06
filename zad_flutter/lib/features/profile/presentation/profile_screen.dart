@@ -21,6 +21,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/profile/presentation/automation_diagnostics_screen.dart';
+import 'package:zad/features/profile/presentation/consumption_pattern_screen.dart';
 import 'package:zad/features/profile/presentation/profile_sub_screens.dart';
 import 'package:zad/shared/budget/data/category_budgets_store.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -161,6 +162,13 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
                 rows: <_MenuRow>[
+                  _MenuRow(
+                    icon: ZadIcons.inventory,
+                    title: context.l10n.patternTitle,
+                    subtitle: context.l10n.patternMenuSubtitle,
+                    onTap: () =>
+                        unawaited(showConsumptionPatternScreen(context)),
+                  ),
                   _MenuRow(
                     icon: ZadIcons.leaderboard,
                     title: 'الإنجازات والرتب',

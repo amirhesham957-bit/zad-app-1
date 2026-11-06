@@ -780,5 +780,91 @@
   "outOfAttemptsTitle": "You're out of attempts",
   "lowAttemptsTitle": "You're almost out of attempts",
   "outOfAttemptsBody": "Watch 3 ads to get an attempt, or subscribe.",
-  "outOfAttemptsPlans": "See the plans"
+  "outOfAttemptsPlans": "See the plans",
+  "patternTitle": "Your shopping pattern",
+  "patternMenuSubtitle": "Your stores, when you shop, and each item's cycle",
+  "patternLearningTitle": "Still learning",
+  "patternLearningMessage": "Zad works out your pattern every night from your receipts and spending. Scan a receipt or log a purchase and check back tomorrow.",
+  "patternReadFailed": "Couldn't read your pattern right now. Pull down to try again.",
+  "patternWeekly": "Your average weekly spending",
+  "patternStores": "Your stores",
+  "patternStoreLine": "{visits} visits · {share}% of your store spending",
+  "@patternStoreLine": {
+    "placeholders": {
+      "visits": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "patternWhen": "When you shop",
+  "patternWhenLine": "Usually on {day}, {part}",
+  "@patternWhenLine": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "part": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEvery": "A shopping trip about every {days} days",
+  "@patternEvery": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternWhenUnknown": "I need at least 4 shopping trips to know when you shop",
+  "patternPartMorning": "in the morning",
+  "patternPartNoon": "at midday",
+  "patternPartEvening": "in the evening",
+  "patternPartNight": "at night",
+  "patternItems": "Each item's cycle",
+  "patternItemsHint": "Tap an item to tell Zad how often you buy it",
+  "patternItemEvery": "Every {days} days",
+  "@patternItemEvery": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternSourceCustomer": "Set by you",
+  "patternSourceLearned": "From your purchases",
+  "patternSourceEstimate": "First estimate",
+  "patternDueNow": "Time to buy",
+  "patternDueIn": "Next purchase in {days} days",
+  "@patternDueIn": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEditTitle": "How often do you buy {item}?",
+  "@patternEditTitle": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEditField": "Days",
+  "patternEditInvalid": "Enter a number from 1 to 365",
+  "patternEditSave": "Save",
+  "patternEditReset": "Let Zad decide",
+  "patternEditNotInPantry": "This item isn't in your pantry right now",
+  "patternEditSaved": "Saved — Zad will plan {item} by that",
+  "@patternEditSaved": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  }
 }

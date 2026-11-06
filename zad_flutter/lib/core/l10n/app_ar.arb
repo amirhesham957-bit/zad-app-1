@@ -1995,5 +1995,91 @@
   "outOfAttemptsTitle": "محاولاتك خلصت",
   "lowAttemptsTitle": "محاولاتك قربت تخلص",
   "outOfAttemptsBody": "شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.",
-  "outOfAttemptsPlans": "شوف الباقات"
+  "outOfAttemptsPlans": "شوف الباقات",
+  "patternTitle": "نمط استهلاكك",
+  "patternMenuSubtitle": "محلاتك، ومواعيد شراك، ودورة كل صنف",
+  "patternLearningTitle": "لسه بتعلّم",
+  "patternLearningMessage": "زاد بيحسب نمطك كل ليلة من فواتيرك ومصروفك. صوّر فاتورة أو سجّل مصروف وارجع بكرة.",
+  "patternReadFailed": "مقدرتش أقرا نمطك دلوقتي. اسحب لتحت وجرّب تاني.",
+  "patternWeekly": "متوسط صرفك في الأسبوع",
+  "patternStores": "محلاتك",
+  "patternStoreLine": "{visits} زيارة · {share}٪ من صرفك فيهم",
+  "@patternStoreLine": {
+    "placeholders": {
+      "visits": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "patternWhen": "إمتى بتشتري",
+  "patternWhenLine": "غالباً يوم {day} {part}",
+  "@patternWhenLine": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "part": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEvery": "مشوار شرا كل {days} أيام تقريباً",
+  "@patternEvery": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternWhenUnknown": "محتاج ٤ مشاوير شرا على الأقل عشان أعرف إمتى بتشتري",
+  "patternPartMorning": "الصبح",
+  "patternPartNoon": "الضهر",
+  "patternPartEvening": "المسا",
+  "patternPartNight": "بالليل",
+  "patternItems": "دورة كل صنف",
+  "patternItemsHint": "دوس على صنف عشان تقول لزاد بتشتريه كل قد إيه",
+  "patternItemEvery": "كل {days} يوم",
+  "@patternItemEvery": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternSourceCustomer": "انت اللي حددتها",
+  "patternSourceLearned": "من مرات شراك",
+  "patternSourceEstimate": "تقدير مبدئي",
+  "patternDueNow": "وقت شراه",
+  "patternDueIn": "الشرا الجاي بعد {days} يوم",
+  "@patternDueIn": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEditTitle": "بتشتري {item} كل قد إيه؟",
+  "@patternEditTitle": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "patternEditField": "عدد الأيام",
+  "patternEditInvalid": "اكتب رقم من ١ لـ٣٦٥",
+  "patternEditSave": "حفظ",
+  "patternEditReset": "خلّي زاد يحكم",
+  "patternEditNotInPantry": "الصنف ده مش في مخزنك دلوقتي",
+  "patternEditSaved": "اتحفظ — زاد هيحسب {item} على كده",
+  "@patternEditSaved": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  }
 }

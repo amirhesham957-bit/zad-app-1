@@ -2733,4 +2733,116 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get outOfAttemptsPlans => 'See the plans';
+
+  @override
+  String get patternTitle => 'Your shopping pattern';
+
+  @override
+  String get patternMenuSubtitle =>
+      'Your stores, when you shop, and each item\'s cycle';
+
+  @override
+  String get patternLearningTitle => 'Still learning';
+
+  @override
+  String get patternLearningMessage =>
+      'Zad works out your pattern every night from your receipts and spending. Scan a receipt or log a purchase and check back tomorrow.';
+
+  @override
+  String get patternReadFailed =>
+      'Couldn\'t read your pattern right now. Pull down to try again.';
+
+  @override
+  String get patternWeekly => 'Your average weekly spending';
+
+  @override
+  String get patternStores => 'Your stores';
+
+  @override
+  String patternStoreLine(String visits, String share) {
+    return '$visits visits · $share% of your store spending';
+  }
+
+  @override
+  String get patternWhen => 'When you shop';
+
+  @override
+  String patternWhenLine(String day, String part) {
+    return 'Usually on $day, $part';
+  }
+
+  @override
+  String patternEvery(String days) {
+    return 'A shopping trip about every $days days';
+  }
+
+  @override
+  String get patternWhenUnknown =>
+      'I need at least 4 shopping trips to know when you shop';
+
+  @override
+  String get patternPartMorning => 'in the morning';
+
+  @override
+  String get patternPartNoon => 'at midday';
+
+  @override
+  String get patternPartEvening => 'in the evening';
+
+  @override
+  String get patternPartNight => 'at night';
+
+  @override
+  String get patternItems => 'Each item\'s cycle';
+
+  @override
+  String get patternItemsHint => 'Tap an item to tell Zad how often you buy it';
+
+  @override
+  String patternItemEvery(String days) {
+    return 'Every $days days';
+  }
+
+  @override
+  String get patternSourceCustomer => 'Set by you';
+
+  @override
+  String get patternSourceLearned => 'From your purchases';
+
+  @override
+  String get patternSourceEstimate => 'First estimate';
+
+  @override
+  String get patternDueNow => 'Time to buy';
+
+  @override
+  String patternDueIn(String days) {
+    return 'Next purchase in $days days';
+  }
+
+  @override
+  String patternEditTitle(String item) {
+    return 'How often do you buy $item?';
+  }
+
+  @override
+  String get patternEditField => 'Days';
+
+  @override
+  String get patternEditInvalid => 'Enter a number from 1 to 365';
+
+  @override
+  String get patternEditSave => 'Save';
+
+  @override
+  String get patternEditReset => 'Let Zad decide';
+
+  @override
+  String get patternEditNotInPantry =>
+      'This item isn\'t in your pantry right now';
+
+  @override
+  String patternEditSaved(String item) {
+    return 'Saved — Zad will plan $item by that';
+  }
 }

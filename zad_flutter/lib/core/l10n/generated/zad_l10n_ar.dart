@@ -2668,4 +2668,114 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get outOfAttemptsPlans => 'شوف الباقات';
+
+  @override
+  String get patternTitle => 'نمط استهلاكك';
+
+  @override
+  String get patternMenuSubtitle => 'محلاتك، ومواعيد شراك، ودورة كل صنف';
+
+  @override
+  String get patternLearningTitle => 'لسه بتعلّم';
+
+  @override
+  String get patternLearningMessage =>
+      'زاد بيحسب نمطك كل ليلة من فواتيرك ومصروفك. صوّر فاتورة أو سجّل مصروف وارجع بكرة.';
+
+  @override
+  String get patternReadFailed =>
+      'مقدرتش أقرا نمطك دلوقتي. اسحب لتحت وجرّب تاني.';
+
+  @override
+  String get patternWeekly => 'متوسط صرفك في الأسبوع';
+
+  @override
+  String get patternStores => 'محلاتك';
+
+  @override
+  String patternStoreLine(String visits, String share) {
+    return '$visits زيارة · $share٪ من صرفك فيهم';
+  }
+
+  @override
+  String get patternWhen => 'إمتى بتشتري';
+
+  @override
+  String patternWhenLine(String day, String part) {
+    return 'غالباً يوم $day $part';
+  }
+
+  @override
+  String patternEvery(String days) {
+    return 'مشوار شرا كل $days أيام تقريباً';
+  }
+
+  @override
+  String get patternWhenUnknown =>
+      'محتاج ٤ مشاوير شرا على الأقل عشان أعرف إمتى بتشتري';
+
+  @override
+  String get patternPartMorning => 'الصبح';
+
+  @override
+  String get patternPartNoon => 'الضهر';
+
+  @override
+  String get patternPartEvening => 'المسا';
+
+  @override
+  String get patternPartNight => 'بالليل';
+
+  @override
+  String get patternItems => 'دورة كل صنف';
+
+  @override
+  String get patternItemsHint => 'دوس على صنف عشان تقول لزاد بتشتريه كل قد إيه';
+
+  @override
+  String patternItemEvery(String days) {
+    return 'كل $days يوم';
+  }
+
+  @override
+  String get patternSourceCustomer => 'انت اللي حددتها';
+
+  @override
+  String get patternSourceLearned => 'من مرات شراك';
+
+  @override
+  String get patternSourceEstimate => 'تقدير مبدئي';
+
+  @override
+  String get patternDueNow => 'وقت شراه';
+
+  @override
+  String patternDueIn(String days) {
+    return 'الشرا الجاي بعد $days يوم';
+  }
+
+  @override
+  String patternEditTitle(String item) {
+    return 'بتشتري $item كل قد إيه؟';
+  }
+
+  @override
+  String get patternEditField => 'عدد الأيام';
+
+  @override
+  String get patternEditInvalid => 'اكتب رقم من ١ لـ٣٦٥';
+
+  @override
+  String get patternEditSave => 'حفظ';
+
+  @override
+  String get patternEditReset => 'خلّي زاد يحكم';
+
+  @override
+  String get patternEditNotInPantry => 'الصنف ده مش في مخزنك دلوقتي';
+
+  @override
+  String patternEditSaved(String item) {
+    return 'اتحفظ — زاد هيحسب $item على كده';
+  }
 }

@@ -63,6 +63,7 @@ List<Shortage> shortagesIn(
   required DateTime today,
   int expiringWithinDays = 3,
   Map<String, ConsumptionRate> rates = const <String, ConsumptionRate>{},
+  Set<String> notYetDue = const <String>{},
 }) {
   final shortages = <Shortage>[];
 
@@ -74,6 +75,7 @@ List<Shortage> shortagesIn(
         today: today,
         expiringWithinDays: expiringWithinDays,
         rate: rates[rateKey(item.itemName)],
+        notYetDue: notYetDue.contains(rateKey(item.itemName)),
       );
       if (reason != null) shortages.add(Shortage(item: item, reason: reason));
       continue;
@@ -96,6 +98,10 @@ List<Shortage> shortagesIn(
           threshold: group.threshold,
           rate: familyRate,
           fresh: group.members.any((m) => _addedOn(m, today)),
+          // One brand bought recently keeps the staple off the list.
+          notYetDue:
+              notYetDue.contains(rateKey(group.name)) ||
+              group.members.any((m) => notYetDue.contains(rateKey(m.itemName))),
         )) {
       shortages.add(
         Shortage(item: group.representative, reason: ShortageReason.runningLow),
@@ -132,6 +138,7 @@ ShortageReason? shortageReasonFor(
   required DateTime today,
   int expiringWithinDays = 3,
   ConsumptionRate? rate,
+  bool notYetDue = false,
 }) {
   if (item.quantity <= 0) {
     return item.isOccasional ? null : ShortageReason.outOfStock;
@@ -149,6 +156,7 @@ ShortageReason? shortageReasonFor(
         threshold: item.effectiveThreshold,
         rate: rate,
         fresh: _addedOn(item, today),
+        notYetDue: notYetDue,
       )) {
     return ShortageReason.runningLow;
   }
@@ -197,16 +205,22 @@ const double kLowStockDays = 2;
 /// milk went in at 1.5 with the default threshold of 2 and was on the
 /// shopping list half a second later (2026-11-03): the customer had just
 /// said what the house has, not that it is running out.
+///
+/// [notYetDue]: the server's nightly verdict from the item's purchase cycle
+/// (`restock_cycles.dart`) — the owner's ghee, bought at 1 against a
+/// threshold of 2, was back on the list the day after (2026-11-06). Zero is
+/// still out of stock either way; a known rate still wins.
 bool _isLow({
   required double quantity,
   required double threshold,
   required ConsumptionRate? rate,
   required bool fresh,
+  bool notYetDue = false,
 }) {
   if (rate != null && rate.perDay > 0) {
     return quantity / rate.perDay <= kLowStockDays;
   }
-  return quantity <= threshold && !fresh;
+  return quantity <= threshold && !fresh && !notYetDue;
 }
 
 /// Whether [item] was added on [today] (a civil date in the account's zone).

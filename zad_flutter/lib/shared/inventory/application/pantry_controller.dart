@@ -19,6 +19,7 @@ import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/consumption_rates.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/product_names_repository.dart';
+import 'package:zad/shared/inventory/data/restock_cycles.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/consumption_rate.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
@@ -107,6 +108,14 @@ class PantryController extends Notifier<PantryView> {
             .catchError((Object _) {}),
       );
       final items = await ref.read(inventoryRepositoryProvider).refresh();
+      if (!ref.mounted) return;
+      // The purchase-cycle verdict before settling: settling writes the
+      // shortages to the shopping list, and without it a fresh receipt item
+      // would go back on the list (best effort; offline = the threshold).
+      await ref
+          .read(notYetDueProvider.future)
+          .timeout(const Duration(seconds: 5), onTimeout: () => <String>{})
+          .catchError((Object _) => <String>{});
       if (!ref.mounted) return;
       _lastFetch = now;
       await _settle(items);
@@ -263,6 +272,9 @@ class PantryController extends Notifier<PantryView> {
       rates:
           ref.read(consumptionRatesProvider).value ??
           const <String, ConsumptionRate>{},
+      // The server's purchase-cycle verdict (phase 3). Not read yet = the
+      // threshold alone, as before.
+      notYetDue: ref.read(notYetDueProvider).value ?? const <String>{},
     );
   }
 }

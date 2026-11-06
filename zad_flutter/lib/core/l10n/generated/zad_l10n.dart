@@ -4782,6 +4782,192 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'شوف الباقات'**
   String get outOfAttemptsPlans;
+
+  /// No description provided for @patternTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نمط استهلاكك'**
+  String get patternTitle;
+
+  /// No description provided for @patternMenuSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محلاتك، ومواعيد شراك، ودورة كل صنف'**
+  String get patternMenuSubtitle;
+
+  /// No description provided for @patternLearningTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه بتعلّم'**
+  String get patternLearningTitle;
+
+  /// No description provided for @patternLearningMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيحسب نمطك كل ليلة من فواتيرك ومصروفك. صوّر فاتورة أو سجّل مصروف وارجع بكرة.'**
+  String get patternLearningMessage;
+
+  /// No description provided for @patternReadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أقرا نمطك دلوقتي. اسحب لتحت وجرّب تاني.'**
+  String get patternReadFailed;
+
+  /// No description provided for @patternWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط صرفك في الأسبوع'**
+  String get patternWeekly;
+
+  /// No description provided for @patternStores.
+  ///
+  /// In ar, this message translates to:
+  /// **'محلاتك'**
+  String get patternStores;
+
+  /// No description provided for @patternStoreLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{visits} زيارة · {share}٪ من صرفك فيهم'**
+  String patternStoreLine(String visits, String share);
+
+  /// No description provided for @patternWhen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إمتى بتشتري'**
+  String get patternWhen;
+
+  /// No description provided for @patternWhenLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'غالباً يوم {day} {part}'**
+  String patternWhenLine(String day, String part);
+
+  /// No description provided for @patternEvery.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشوار شرا كل {days} أيام تقريباً'**
+  String patternEvery(String days);
+
+  /// No description provided for @patternWhenUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاج ٤ مشاوير شرا على الأقل عشان أعرف إمتى بتشتري'**
+  String get patternWhenUnknown;
+
+  /// No description provided for @patternPartMorning.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصبح'**
+  String get patternPartMorning;
+
+  /// No description provided for @patternPartNoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضهر'**
+  String get patternPartNoon;
+
+  /// No description provided for @patternPartEvening.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسا'**
+  String get patternPartEvening;
+
+  /// No description provided for @patternPartNight.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالليل'**
+  String get patternPartNight;
+
+  /// No description provided for @patternItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة كل صنف'**
+  String get patternItems;
+
+  /// No description provided for @patternItemsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس على صنف عشان تقول لزاد بتشتريه كل قد إيه'**
+  String get patternItemsHint;
+
+  /// No description provided for @patternItemEvery.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل {days} يوم'**
+  String patternItemEvery(String days);
+
+  /// No description provided for @patternSourceCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'انت اللي حددتها'**
+  String get patternSourceCustomer;
+
+  /// No description provided for @patternSourceLearned.
+  ///
+  /// In ar, this message translates to:
+  /// **'من مرات شراك'**
+  String get patternSourceLearned;
+
+  /// No description provided for @patternSourceEstimate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدير مبدئي'**
+  String get patternSourceEstimate;
+
+  /// No description provided for @patternDueNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت شراه'**
+  String get patternDueNow;
+
+  /// No description provided for @patternDueIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشرا الجاي بعد {days} يوم'**
+  String patternDueIn(String days);
+
+  /// No description provided for @patternEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتشتري {item} كل قد إيه؟'**
+  String patternEditTitle(String item);
+
+  /// No description provided for @patternEditField.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأيام'**
+  String get patternEditField;
+
+  /// No description provided for @patternEditInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رقم من ١ لـ٣٦٥'**
+  String get patternEditInvalid;
+
+  /// No description provided for @patternEditSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get patternEditSave;
+
+  /// No description provided for @patternEditReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي زاد يحكم'**
+  String get patternEditReset;
+
+  /// No description provided for @patternEditNotInPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف ده مش في مخزنك دلوقتي'**
+  String get patternEditNotInPantry;
+
+  /// No description provided for @patternEditSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ — زاد هيحسب {item} على كده'**
+  String patternEditSaved(String item);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -26,6 +26,8 @@ class InventoryItem {
     this.familyId,
     this.createdAt,
     this.restockMode,
+    this.restockCycleDays,
+    this.clearsRestockCycle = false,
     this.occasionalByHistory = false,
     this.isPending = false,
   });
@@ -49,6 +51,11 @@ class InventoryItem {
       final String m when m == restockStaple || m == restockOccasional => m,
       _ => null,
     },
+    restockCycleDays: switch (json['restock_cycle_days']) {
+      final num n when n >= 1 && n <= 365 => n.round(),
+      _ => null,
+    },
+    clearsRestockCycle: json['_clears_cycle'] == true,
     occasionalByHistory: json['restock_occasional'] as bool? ?? false,
     isPending: json['_pending'] as bool? ?? false,
   );
@@ -94,6 +101,16 @@ class InventoryItem {
   /// The customer's word: [restockStaple], [restockOccasional], or null when
   /// they never said and the purchase history decides (ZAD_PLAN ٣.١٠).
   final String? restockMode;
+
+  /// The customer's own purchase cycle in days («الزيت عندي كل أسبوعين»,
+  /// `restock_cycle_days`), which beats Zad's guess and what it learned.
+  /// Null = Zad decides.
+  final int? restockCycleDays;
+
+  /// Set only by [withoutRestockCycle]: the next upsert sends an explicit
+  /// null. Otherwise an absent value is left out of the row, so an edit from
+  /// an older cached copy never wipes a cycle set on another device.
+  final bool clearsRestockCycle;
 
   /// The server's verdict from the purchase history (`restock_occasional`, a
   /// computed column): bought every month or more, or once long ago. Read
@@ -158,6 +175,7 @@ class InventoryItem {
     double? lowStockThreshold,
     DateTime? expiryDate,
     String? restockMode,
+    int? restockCycleDays,
     bool? isPending,
     bool clearExpiry = false,
   }) => InventoryItem(
@@ -172,8 +190,28 @@ class InventoryItem {
     familyId: familyId,
     createdAt: createdAt,
     restockMode: restockMode ?? this.restockMode,
+    restockCycleDays: restockCycleDays ?? this.restockCycleDays,
+    clearsRestockCycle: restockCycleDays == null && clearsRestockCycle,
     occasionalByHistory: occasionalByHistory,
     isPending: isPending ?? this.isPending,
+  );
+
+  /// A copy with the customer's cycle removed — Zad decides again.
+  InventoryItem withoutRestockCycle() => InventoryItem(
+    id: id,
+    userId: userId,
+    itemName: itemName,
+    quantity: quantity,
+    unit: unit,
+    category: category,
+    lowStockThreshold: lowStockThreshold,
+    expiryDate: expiryDate,
+    familyId: familyId,
+    createdAt: createdAt,
+    restockMode: restockMode,
+    clearsRestockCycle: true,
+    occasionalByHistory: occasionalByHistory,
+    isPending: isPending,
   );
 
   /// Marks the row queued, or settled.
@@ -194,6 +232,10 @@ class InventoryItem {
     if (lowStockThreshold != null) 'low_stock_threshold': lowStockThreshold,
     'expiry_date': expiryDate == null ? null : _iso(expiryDate!),
     if (restockMode != null) 'restock_mode': restockMode,
+    if (restockCycleDays != null)
+      'restock_cycle_days': restockCycleDays
+    else if (clearsRestockCycle)
+      'restock_cycle_days': null,
   };
 
   /// The row as the cache keeps it, pending flag and all.
@@ -202,6 +244,7 @@ class InventoryItem {
     if (familyId != null) 'family_id': familyId,
     if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     if (occasionalByHistory) 'restock_occasional': true,
+    if (clearsRestockCycle && isPending) '_clears_cycle': true,
     '_pending': isPending,
   };
 }
