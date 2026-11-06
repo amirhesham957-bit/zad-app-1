@@ -53,7 +53,7 @@ const Set<String> _kChatPackages = <String>{
   'com.discord',
 };
 
-final RegExp _digit = RegExp('[0-9٠-٩]');
+final RegExp _digit = RegExp('[0-9٠-٩]'); // l10n: data
 final RegExp _link = RegExp('https?://', caseSensitive: false);
 
 /// Whether [text] from [packageName] looks like a household life event worth

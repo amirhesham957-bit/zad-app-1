@@ -88,24 +88,6 @@ class InsightsController extends Notifier<InsightsView> {
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
-    // ٢.٨: a life event's card books the appointment itself, on the server —
-    // no model turn decides it.
-    if (lifeEventIdOf(question) case final id?) {
-      try {
-        await client.functions.invoke(
-          'zad-brain',
-          body: <String, dynamic>{
-            'action': 'life_event_decide',
-            'life_event_id': id,
-            'yes': text.trim() == kYesAnswer,
-          },
-        );
-      } on Object catch (e) {
-        debugPrint('life event decision failed: $e');
-      }
-      if (ref.mounted) unawaited(refresh(force: true));
-      return;
-    }
     final message = StringBuffer(
       'العميل جاوب على سؤال: "${question.title} — ${question.body}"',
     );
