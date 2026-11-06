@@ -267,13 +267,44 @@ const OFFER_TITLE = /(عروض|عرض|خصومات|خصم|تخفيضات|تخف�
  * الفيديوهات اللي تستاهل تتقري لمحل: عنوانها فيه اسم المحل (اسم البحث، من غير «شركة … ستورز») وكلمة عرض. الأحدث
  * الأول زي ما يوتيوب رتّبها، و[max] بالكتير: كل فيديو نداء جيميناي.
  */
-export function youtubeDealVideos<T extends { title: string; url: string }>(videos: T[], store: string, max = 2): T[] {
+export function youtubeDealVideos<T extends { title: string; url: string; channel?: string }>(
+  videos: T[], store: string, max = 2, country?: string,
+): T[] {
   const name = arabicKey(searchStoreName(store));
   if (name.length < 2) return [];
   return videos.filter((v) => {
     const title = arabicKey(v.title);
+    if (country && namesOtherCountry(`${v.title} ${v.channel ?? ""}`, country)) return false;
     return title.includes(name) && OFFER_TITLE.test(title) && /^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{6,20}$/.test(v.url);
   }).slice(0, max);
+}
+
+// كارفور والمحلات الكبيرة في بلاد كتير: «عروض كارفور» بـregionCode=EG رجّعت فيديو كارفور المغرب (٦/١١: «HUILE TABLE 5L»
+// اتسجل عرض في مصر). البرومبت بيقول «بلد تاني ⇒ فاضي» والموديل ماسمعش، فالعنوان واسم القناة بيتفحصوا هنا. بيانات مطابقة.
+const COUNTRY_NAMES: Record<string, RegExp> = {
+  EG: /مصر|egypt|\beg\b/i,
+  SA: /السعودي|السعوديه|السعودية|saudi|\bksa\b|الرياض|جدة|جده|الدمام/i,
+  AE: /الإمارات|الامارات|دبي|ابوظبي|أبوظبي|\buae\b|emirates|dubai|abu dhabi/i,
+  QA: /قطر|qatar|الدوحة|doha/i,
+  KW: /الكويت|kuwait/i,
+  BH: /البحرين|bahrain/i,
+  OM: /عمان|سلطنة|oman|muscat|مسقط/i,
+  JO: /الأردن|الاردن|jordan|عمّان/i,
+  MA: /المغرب|maroc|morocco|marjane|مرجان/i,
+  TN: /تونس|tunisie|tunisia/i,
+  DZ: /الجزائر|algérie|algerie|algeria/i,
+  LB: /لبنان|liban|lebanon/i,
+  IQ: /العراق|iraq/i,
+  TR: /türkiye|turkey|تركيا/i,
+};
+
+/** العنوان أو القناة بيسمّوا بلد غير [country]؟ (عمان بتتلخبط مع عمّان، فالأردن وعمان مابيتقارنوش ببعض.) */
+export function namesOtherCountry(text: string, country: string): boolean {
+  const own = country.toUpperCase();
+  return Object.entries(COUNTRY_NAMES).some(([code, re]) =>
+    code !== own && !(own === "JO" && code === "OM") && !(own === "OM" && code === "JO") && re.test(text) &&
+    !(COUNTRY_NAMES[own]?.test(text) ?? false)
+  );
 }
 
 /**

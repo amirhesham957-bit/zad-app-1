@@ -2717,4 +2717,17 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get bankTestLifeEvent => 'An appointment or event';
+
+  @override
+  String get outOfAttemptsTitle => 'You\'re out of attempts';
+
+  @override
+  String get lowAttemptsTitle => 'You\'re almost out of attempts';
+
+  @override
+  String get outOfAttemptsBody =>
+      'Watch 3 ads to get an attempt, or subscribe.';
+
+  @override
+  String get outOfAttemptsPlans => 'See the plans';
 }

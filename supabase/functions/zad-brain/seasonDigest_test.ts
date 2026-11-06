@@ -86,3 +86,14 @@ Deno.test("home strip in broke mode: only what the home needs, no codes, no stor
   assertEquals(out.cards.map((c) => [c.item, c.code]), [["لبن جهينة 1 لتر", null]]);
   assertEquals(out.codes, []);
 });
+
+Deno.test("nothing personal ⇒ the season's strongest real discounts, pictures first, never a deal without a before-price", async () => {
+  const { pickTopDeals } = await import("./seasonDigest.ts");
+  const top = pickTopDeals([
+    row({ item_name: "ارز غدير 5 ك", store: "خير زمان", price: 125, price_before: 150, source_kind: "youtube" }), // 17% بصورة
+    row({ item_name: "رمان 1 كيلو", store: "مترو", price: 44.99, price_before: 64.99, source_kind: "search", source_url: "https://x.example/a" }), // 31%
+    row({ item_name: "لحم", store: "أولاد رجب", price: 399, price_before: null }), // مفيش سعر قبل
+    row({ item_name: "قهوة", store: "بيم", price: 95, price_before: 100 }), // 5%
+  ], new Set());
+  assertEquals(top.map((c) => [c.item, c.why, c.saving]), [["ارز غدير 5 ك", "top", 17], ["رمان 1 كيلو", "top", 31]]);
+});

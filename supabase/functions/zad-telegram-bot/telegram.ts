@@ -1197,9 +1197,9 @@ const amount = (v: unknown) => {
 const httpsUrl = (v: unknown) => typeof v === "string" && /^https:\/\/\S{4,500}$/.test(v.trim()) ? v.trim() : null;
 
 /** أول سطر في رسالة الموسم. */
-export function digestHeader(season: unknown, cards: number, codes: number): string {
+export function digestHeader(season: unknown, cards: number, codes: number, top = false): string {
   const name = text(season, 40) || "موسم العروض";
-  const parts = [cards ? `${cards} ${cards === 1 ? "عرض" : "عروض"} على حاجات بيتك` : "", codes ? `${codes} ${codes === 1 ? "كود" : "أكواد"} خصم لتطبيقاتك` : ""]
+  const parts = [cards ? `${cards} ${cards === 1 ? "عرض" : "عروض"} ${top ? "من أقوى خصومات الموسم في بلدك" : "على حاجات بيتك"}` : "", codes ? `${codes} ${codes === 1 ? "كود" : "أكواد"} خصم لتطبيقاتك` : ""]
     .filter(Boolean);
   return `🛍️ ${name}: لقيتلك ${parts.join(" و")}. الأسعار من مصادرها — ممكن العرض يخلص بسرعة في الموسم.`;
 }
@@ -1212,7 +1212,7 @@ export function digestCaption(card: DigestCard): string {
   const before = amount(card.price_before);
   const saving = amount(card.saving);
   const currency = text(card.currency, 4);
-  const why = card.why === "need" ? "من قايمتك أو قرّب يخلص عندك" : card.why === "favorite" ? "في محل بتشتري منه" : card.why === "fire" ? "عرض قوي على حاجة بتجيبوها" : "";
+  const why = card.why === "need" ? "من قايمتك أو قرّب يخلص عندك" : card.why === "favorite" ? "في محل بتشتري منه" : card.why === "fire" ? "عرض قوي على حاجة بتجيبوها" : card.why === "top" ? "من أقوى خصومات الموسم" : "";
   const until = typeof card.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(card.until) ? card.until : "";
   return [
     `🏷️ ${item} — ${store}`,

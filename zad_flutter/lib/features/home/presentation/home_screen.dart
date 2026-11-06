@@ -53,6 +53,7 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/quota/presentation/ad_week_card.dart';
+import 'package:zad/shared/quota/presentation/out_of_attempts_card.dart';
 
 /// Home.
 ///
@@ -130,6 +131,8 @@ class HomeScreen extends ConsumerWidget {
           // 2026-10-13): the reminders come from Telegram.
           ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
           const SizedBox(height: 16),
+          // Attempts ran out: the ad button where it can be found (owner 6/11).
+          const OutOfAttemptsCard(),
           // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.

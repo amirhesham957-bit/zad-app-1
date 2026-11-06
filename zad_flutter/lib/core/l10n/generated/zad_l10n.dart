@@ -4752,6 +4752,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ميعاد أو حدث'**
   String get bankTestLifeEvent;
+
+  /// No description provided for @outOfAttemptsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولاتك خلصت'**
+  String get outOfAttemptsTitle;
+
+  /// No description provided for @lowAttemptsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولاتك قربت تخلص'**
+  String get lowAttemptsTitle;
+
+  /// No description provided for @outOfAttemptsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.'**
+  String get outOfAttemptsBody;
+
+  /// No description provided for @outOfAttemptsPlans.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف الباقات'**
+  String get outOfAttemptsPlans;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

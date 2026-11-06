@@ -1990,5 +1990,9 @@
       }
     }
   },
-  "bankTestLifeEvent": "ميعاد أو حدث"
+  "bankTestLifeEvent": "ميعاد أو حدث",
+  "outOfAttemptsTitle": "محاولاتك خلصت",
+  "lowAttemptsTitle": "محاولاتك قربت تخلص",
+  "outOfAttemptsBody": "شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.",
+  "outOfAttemptsPlans": "شوف الباقات"
 }

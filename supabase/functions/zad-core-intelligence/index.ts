@@ -2897,7 +2897,7 @@ async function handle(req: Request): Promise<Response> {
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
         const found = await youtubeSearch(ytKey, `عروض ${searchStoreName(store)}`, market.code, { days: 10, max: 10 });
         if (!found.ok) return jsonResponse({ ok: false, reason: found.reason ?? `youtube_${found.status}` });
-        const videos = youtubeDealVideos(found.items, store);
+        const videos = youtubeDealVideos(found.items, store, 2, market.code);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
         const codes: DealCode[] = [];

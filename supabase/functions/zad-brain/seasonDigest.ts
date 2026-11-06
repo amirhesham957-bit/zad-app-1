@@ -42,7 +42,7 @@ export interface DigestCard {
   price_before: number | null;
   currency: string;
   saving: number | null;
-  why: "need" | "favorite" | "fire";
+  why: "need" | "favorite" | "fire" | "top";
   url: string | null;
   source: string;
   photo: string | null;
@@ -129,6 +129,53 @@ export function pickDigest(
   return out;
 }
 
+/** أقل خصم يتبعت كـ«أقوى عروض الموسم» لبيت مالقيناش له حاجة شخصية. */
+export const TOP_MIN_SAVING = 15;
+export const TOP_MAX_DEALS = 3;
+
+/**
+ * لما مفيش ولا عرض على حاجة البيت أو محلاته (بيت جديد، قايمته أصناف بماركات مش في العروض، ومفيش معاملات تقول محلاته):
+ * الرسالة كانت بتتلغي خالص، فالمالك ماجالوش ولا عرض في الجمعة البيضاء (مراجعة ٦/١١). دلوقتي أقوى الخصومات الحقيقية في بلده
+ * (سعر قبل وبعد، ١٥٪ أو أكتر)، بنفس قواعد صنف مرة ومحلين بالكتير، واللي اتبعت مايتبعتش تاني.
+ */
+export function pickTopDeals(
+  rows: readonly DigestDealRow[] | null | undefined,
+  sent: ReadonlySet<string>,
+  max = TOP_MAX_DEALS,
+): DigestCard[] {
+  const scored: DigestCard[] = [];
+  for (const r of rows ?? []) {
+    const price = Number(r.price);
+    const before = Number(r.price_before);
+    if (!r.store || !r.item_name || !Number.isFinite(price) || price <= 0 || !Number.isFinite(before) || before <= price) continue;
+    const saving = Math.round((before - price) / before * 100);
+    if (saving < TOP_MIN_SAVING || saving >= 90) continue;
+    const key = digestKey(r.store, r.item_name, price);
+    if (sent.has(key)) continue;
+    const url = typeof r.source_url === "string" && /^https:\/\/\S{4,500}$/.test(r.source_url) ? r.source_url : null;
+    scored.push({
+      key, item: r.item_name, store: r.store, price, price_before: before, currency: String(r.currency ?? ""), saving,
+      why: "top", url, source: r.source_kind, photo: digestPhoto(r.source_kind, r.source_url),
+      until: r.valid_until ? r.valid_until.slice(0, 10) : null,
+    });
+  }
+  // الصورة الأول (كارت بصورة أوضح على البوت)، بعدها الخصم الأكبر.
+  scored.sort((a, b) => (b.photo ? 1 : 0) - (a.photo ? 1 : 0) || (b.saving ?? 0) - (a.saving ?? 0));
+  const out: DigestCard[] = [];
+  const items = new Set<string>();
+  const perStore = new Map<string, number>();
+  for (const card of scored) {
+    const ik = itemKey(card.item);
+    const sk = codeStoreKey(card.store);
+    if (items.has(ik) || (perStore.get(sk) ?? 0) >= 2) continue;
+    items.add(ik);
+    perStore.set(sk, (perStore.get(sk) ?? 0) + 1);
+    out.push(card);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 /** أكواد تطبيقات ومحلات البيت، الأحدث الأول، اللي ماتبعتتش في الموسم. */
 export function pickDigestCodes(
   rows: readonly DigestCodeRow[] | null | undefined,
@@ -200,7 +247,8 @@ export async function loadSeasonDigest(
   if (!input || input.broke) return null;
   const { data: season } = await sb.rpc("zad_deal_season_name", { p_country: input.country });
   if (typeof season !== "string" || !season) return null;
-  const cards = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent);
+  const personal = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent);
+  const cards = personal.length ? personal : pickTopDeals(input.deals, input.sent);
   const pickedCodes = pickDigestCodes(input.codes, input.favorites, input.sent);
   if (!cards.length && !pickedCodes.length) return null;
   return { season, cards, codes: pickedCodes };
@@ -229,7 +277,9 @@ export function pickHomeDeals(
   input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes">,
 ): { cards: HomeDealCard[]; codes: DigestCodeRow[] } {
   const none = new Set<string>();
-  const picked = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS);
+  const personal = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS);
+  // مفيش حاجة شخصية ⇒ أقوى الخصومات الحقيقية في البلد، عشان الشريط مايختفيش عن بيت جديد (مراجعة ٦/١١). «أنا مفلس» ⇒ لأ.
+  const picked = personal.length || input.broke ? personal : pickTopDeals(input.deals, none, HOME_MAX_DEALS);
   const cards = picked
     .filter((c) => !input.broke || c.why === "need")
     .map((c): HomeDealCard => {

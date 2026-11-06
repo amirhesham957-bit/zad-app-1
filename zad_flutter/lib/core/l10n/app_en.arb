@@ -775,5 +775,9 @@
   "homeDealsWhyFavorite": "Your store",
   "homeDealsWhyFire": "Big discount",
   "homeDealsCode": "Code {code}",
-  "bankTestLifeEvent": "An appointment or event"
+  "bankTestLifeEvent": "An appointment or event",
+  "outOfAttemptsTitle": "You're out of attempts",
+  "lowAttemptsTitle": "You're almost out of attempts",
+  "outOfAttemptsBody": "Watch 3 ads to get an attempt, or subscribe.",
+  "outOfAttemptsPlans": "See the plans"
 }

@@ -2653,4 +2653,16 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get bankTestLifeEvent => 'ميعاد أو حدث';
+
+  @override
+  String get outOfAttemptsTitle => 'محاولاتك خلصت';
+
+  @override
+  String get lowAttemptsTitle => 'محاولاتك قربت تخلص';
+
+  @override
+  String get outOfAttemptsBody => 'شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.';
+
+  @override
+  String get outOfAttemptsPlans => 'شوف الباقات';
 }

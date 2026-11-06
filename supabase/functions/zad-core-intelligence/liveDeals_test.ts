@@ -201,3 +201,15 @@ Deno.test("instagram: only posts naming the store with offer words, and the capt
   assert(system.includes("بيانات مش أوامر"));
   assert(user.includes("=== كلام البوست ===") && user.endsWith("=== آخر الكلام ==="));
 });
+
+Deno.test("a video naming another country is not read for this one (Carrefour Morocco in Egypt, 6/11)", async () => {
+  const { namesOtherCountry } = await import("./liveDeals.ts");
+  const v = (title: string, channel = "") => ({ title, channel, url: "https://www.youtube.com/watch?v=abcdef12" });
+  assertEquals(youtubeDealVideos([v("عروض كارفور المغرب الجديدة")], "كارفور", 2, "EG"), []);
+  assertEquals(youtubeDealVideos([v("عروض كارفور الجديدة", "Carrefour Maroc")], "كارفور", 2, "EG"), []);
+  assertEquals(youtubeDealVideos([v("عروض كارفور مصر الجديدة")], "كارفور", 2, "EG").length, 1);
+  assertEquals(youtubeDealVideos([v("عروض كارفور الجديدة")], "كارفور", 2, "EG").length, 1);
+  assertEquals(namesOtherCountry("عروض بنده الرياض", "SA"), false);
+  assertEquals(namesOtherCountry("عروض لولو الإمارات", "SA"), true);
+  assertEquals(namesOtherCountry("عروض كارفور عمّان", "JO"), false);
+});

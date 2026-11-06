@@ -2987,7 +2987,8 @@ Deno.serve(async (req: Request) => {
       const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const chatId = await resolveChatId(sb, user_id);
       if (chatId === null) return Response.json({ ok: true, delivered: false, reason: "not linked" });
-      await sendTelegramMessage(chatId, digestHeader(season, list.length, codesMessage?.count ?? 0));
+      const top = list.length > 0 && list.every((c) => (c as { why?: unknown }).why === "top");
+      await sendTelegramMessage(chatId, digestHeader(season, list.length, codesMessage?.count ?? 0, top));
       for (const card of list) {
         const caption = digestCaption(card);
         const buttons = digestButtons(card);

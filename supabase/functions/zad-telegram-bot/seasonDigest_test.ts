@@ -32,3 +32,7 @@ Deno.test("codes are written letter for letter with their source; junk codes are
 Deno.test("the header names the season and what was found", () => {
   assertStringIncludes(digestHeader("الجمعة البيضاء", 3, 1), "الجمعة البيضاء: لقيتلك 3 عروض على حاجات بيتك و1 كود خصم لتطبيقاتك");
 });
+
+Deno.test("a top-deals message says so, not «على حاجات بيتك»", () => {
+  assertStringIncludes(digestHeader("الجمعة البيضاء", 3, 0, true), "3 عروض من أقوى خصومات الموسم في بلدك");
+});
