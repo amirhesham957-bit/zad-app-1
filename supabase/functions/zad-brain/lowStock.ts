@@ -12,6 +12,8 @@ export interface PantryRow {
   item_name: string | null;
   quantity: number | string | null;
   low_stock_threshold?: number | string | null;
+  category?: string | null;
+  restock_mode?: string | null;
 }
 
 /** نفس تطبيع الأسماء اللي بيتقارن بيه: مسافات، حروف صغيرة، ألف/تاء مربوطة/ياء. */
@@ -82,11 +84,16 @@ export function lowStockToAdd(
   pantry: PantryRow[] | null | undefined,
   openShoppingNames: Array<string | null>,
   occasional: Iterable<string> = [],
+  /**
+   * «خلص فعلاً؟» (`_shared/restockCycle.ts`، بلاغ المالك ٦/١١): لو موجود بيحل محل «الكمية ≤ الحد». صنف لسه متشري
+   * مابيتعرضش ناقص، وسلعة بأكتر من ماركة مش ناقصة لو ماركة منهم لسه متشرية.
+   */
+  isDue?: (row: PantryRow) => boolean,
 ): string[] {
   const open = new Set(openShoppingNames.filter((n): n is string => !!n?.trim()).map(normalizeItemName));
   const skip = new Set([...occasional].filter((n) => !!n?.trim()).map(normalizeItemName));
   const out: string[] = [];
-  const families = new Map<string, { total: number; threshold: number }>();
+  const families = new Map<string, { total: number; threshold: number; due: boolean }>();
   const familyOrder: string[] = [];
   for (const row of pantry ?? []) {
     const name = row.item_name?.trim();
@@ -96,19 +103,21 @@ export function lowStockToAdd(
     if (!Number.isFinite(qty) || qty < 0) continue;
     const t = Number(row.low_stock_threshold);
     const threshold = Number.isFinite(t) && t > 0 ? t : 1;
+    const due = isDue ? isDue(row) : qty <= threshold;
     const family = productFamilyOf(name);
     if (family) {
       const f = families.get(family);
       if (f) {
         f.total += qty;
         f.threshold = Math.max(f.threshold, threshold);
+        f.due = f.due && due;
       } else {
-        families.set(family, { total: qty, threshold });
+        families.set(family, { total: qty, threshold, due });
         familyOrder.push(family);
       }
       continue;
     }
-    if (qty > threshold) continue;
+    if (!due) continue;
     const key = normalizeItemName(name);
     if (open.has(key)) continue;
     open.add(key);
@@ -116,7 +125,7 @@ export function lowStockToAdd(
   }
   for (const family of familyOrder) {
     const f = families.get(family)!;
-    if (f.total > f.threshold) continue;
+    if (isDue ? !f.due : f.total > f.threshold) continue;
     const key = normalizeItemName(family);
     if (open.has(key)) continue;
     open.add(key);

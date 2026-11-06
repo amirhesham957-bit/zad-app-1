@@ -137,6 +137,7 @@ import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
+import { loadRestockJudge } from "./restockJudge.ts";
 import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
@@ -6424,16 +6425,19 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     const { data: memberships } = await sb.from("family_members").select("family_id").eq("user_id", userId);
     const familyIds = ((memberships ?? []) as Array<{ family_id: string | null }>)
       .map((m) => m.family_id).filter((id): id is string => !!id);
-    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category").limit(200);
+    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category,restock_mode,created_at").limit(200);
     invQuery = familyIds.length > 0
       ? invQuery.or(`user_id.eq.${userId},family_id.in.(${familyIds.join(",")})`)
       : invQuery.eq("user_id", userId);
     const { data: inv, error: invErr } = await invQuery;
     if (invErr) console.error("[store_arrival] inventory lookup failed:", invErr.message);
-    const invRows = (inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null; category: string | null }>;
-    lowStock = invRows
-      .filter((i) => (i.quantity ?? 0) <= (i.low_stock_threshold ?? 1))
-      .map((i) => i.item_name);
+    const invRows = (inv ?? []) as Array<{ item_name: string; quantity: number | null; low_stock_threshold: number | null; category: string | null; restock_mode: string | null; created_at: string | null }>;
+    // نفس حكم الحلم الليلي (restockJudge.ts): اللي لسه متشري مش «ناقص في البيت».
+    const isDue = await loadRestockJudge(sb, userId, familyIds[0] ?? null);
+    lowStock = invRows.filter(isDue).map((i) => i.item_name);
+    // بند على القايمة والصنف نفسه في المخزن ولسه متشري = اتشرى خلاص؛ مابيتقالش «ناقص». البند نفسه مابيتمسحش.
+    const freshInPantry = new Set(invRows.filter((i) => !isDue(i)).map((i) => itemKey(i.item_name)));
+    shopping = shopping.filter((n) => !freshInPantry.has(itemKey(n)));
     // عطارة/جزارة/خضري/فرن بياخدوا أصناف قسمهم بس؛ السوبرماركت العادي القايمة كلها (storeFit.ts).
     const categoryByKey = new Map(invRows.map((i) => [itemKey(i.item_name), i.category]));
     const categoryOf = (item: string) => categoryByKey.get(itemKey(item));
@@ -9772,15 +9776,18 @@ async function handleRequest(req: Request): Promise<Response> {
           // وصنف الأم ضافته للقايمة مايتضافش تاني في حلم الأب.
           const dreamFamily = await householdFamilyId(sbDream, u.id);
           const [{ data: pantryItems }, { data: openShop }, { data: occasional, error: occErr }] = await Promise.all([
-            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold").or(householdFilter(u.id, dreamFamily)),
+            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold, category, restock_mode, created_at").or(householdFilter(u.id, dreamFamily)),
             sbDream.from("zad_shopping_list").select("item_name").or(householdFilter(u.id, dreamFamily)).eq("is_purchased", false),
             // حاجات على فترات (الرنجة كل شهرين) مابتنزلش القايمة لما تخلص (ZAD_PLAN ٣.١٠).
             sbDream.rpc("zad_occasional_items", { p_user: u.id }),
           ]);
           if (occErr) console.error(`[dream] occasional items failed for ${u.id}:`, occErr.message);
+          // «خلص فعلاً؟» بدورة شرا البيت، مش الكمية ≤ الحد (بلاغ المالك ٦/١١: اللي اتشرى الصبح نزل القايمة بالليل).
+          const isDue = await loadRestockJudge(sbDream, u.id, dreamFamily);
           const toAdd = lowStockToAdd(
             pantryItems, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name),
             Array.isArray(occasional) ? (occasional as string[]) : [],
+            isDue,
           );
           if (toAdd.length) {
             const { error: shopErr } = await sbDream.from("zad_shopping_list")
