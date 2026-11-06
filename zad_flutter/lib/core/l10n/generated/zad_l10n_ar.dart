@@ -2630,4 +2630,24 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get dealsSourceOther => 'المصدر';
+
+  @override
+  String get homeDealsTitle => 'عروض على نواقصك';
+
+  @override
+  String get homeDealsSeeAll => 'كل العروض';
+
+  @override
+  String get homeDealsWhyNeed => 'ناقص عندك';
+
+  @override
+  String get homeDealsWhyFavorite => 'من محلك';
+
+  @override
+  String get homeDealsWhyFire => 'خصم كبير';
+
+  @override
+  String homeDealsCode(String code) {
+    return 'كود $code';
+  }
 }

@@ -2694,4 +2694,24 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get dealsSourceOther => 'Source';
+
+  @override
+  String get homeDealsTitle => 'Deals on what you\'re out of';
+
+  @override
+  String get homeDealsSeeAll => 'All deals';
+
+  @override
+  String get homeDealsWhyNeed => 'You\'re out';
+
+  @override
+  String get homeDealsWhyFavorite => 'Your store';
+
+  @override
+  String get homeDealsWhyFire => 'Big discount';
+
+  @override
+  String homeDealsCode(String code) {
+    return 'Code $code';
+  }
 }

@@ -100,6 +100,10 @@ abstract final class ZadSlots {
   static late Widget Function({bool offerEntry, bool offerStop})
   savingsChallengeSlot;
 
+  // ── nearby
+  /// Home's «عروض على نواقصك» strip: deals on what the home is short of.
+  static late SlotBuilder homeDealsCarousel;
+
   // ── obligations
   /// Fixed obligations.
   static late SlotBuilder obligationsSection;

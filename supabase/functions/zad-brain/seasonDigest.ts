@@ -140,12 +140,19 @@ export function pickDigestCodes(
   return (rows ?? []).filter((r) => keys.has(r.store_key) && !sent.has(`code|${r.store_key}|${r.code}`)).slice(0, max);
 }
 
-/** كل اللي رسالة الموسم محتاجاه لعميل واحد، أو null (مفيش حاجة تستاهل، أو الفلوس ضيقة). */
-export async function loadSeasonDigest(
-  sb: SupabaseClient,
-  userId: string,
-  now = Date.now(),
-): Promise<{ season: string; cards: DigestCard[]; codes: DigestCodeRow[] } | null> {
+interface DealInputs {
+  country: string;
+  broke: boolean;
+  needs: string[];
+  favorites: string[];
+  bought: string[];
+  sent: Set<string>;
+  deals: DigestDealRow[];
+  codes: DigestCodeRow[];
+}
+
+/** اللي البيت محتاجه وبيشتري منه، وعروض وأكواد بلده الشغالة (من غير المصادر الموقوفة بالبلاغات، ٤.١٩). null = بلد مش معروف. */
+async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): Promise<DealInputs | null> {
   const family = await householdFamilyId(sb, userId);
   const [{ data: user }, { data: shop }, { data: home }, { data: txns }, { data: bought }, broke, { data: sentRows }] = await Promise.all([
     sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
@@ -158,18 +165,8 @@ export async function loadSeasonDigest(
       .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
     sb.from("zad_deal_digest_sent").select("deal_key").eq("user_id", userId).limit(500),
   ]);
-  if (broke) return null;
   const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
   if (!/^[A-Z]{2}$/.test(country)) return null;
-  const { data: season } = await sb.rpc("zad_deal_season_name", { p_country: country });
-  if (typeof season !== "string" || !season) return null;
-  const needs = [
-    ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
-    ...runningOutNames((home as { state?: unknown } | null)?.state),
-  ].filter(Boolean);
-  const favorites = favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>);
-  const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean);
-  const sent = new Set(((sentRows ?? []) as Array<{ deal_key: string }>).map((r) => r.deal_key));
   const [{ data: deals }, { data: paused }, { data: codes }] = await Promise.all([
     sb.from("zad_deals").select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(400),
@@ -178,9 +175,84 @@ export async function loadSeasonDigest(
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).order("found_at", { ascending: false }).limit(100),
   ]);
   const pausedKinds = new Set(((paused ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
-  const live = ((deals ?? []) as DigestDealRow[]).filter((d) => !pausedKinds.has(d.source_kind));
-  const cards = pickDigest(live, needs, favorites, boughtNames, sent);
-  const pickedCodes = pickDigestCodes(codes as DigestCodeRow[] | null, favorites, sent);
+  return {
+    country,
+    broke,
+    needs: [
+      ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
+      ...runningOutNames((home as { state?: unknown } | null)?.state),
+    ].filter(Boolean),
+    favorites: favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
+    bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
+    sent: new Set(((sentRows ?? []) as Array<{ deal_key: string }>).map((r) => r.deal_key)),
+    deals: ((deals ?? []) as DigestDealRow[]).filter((d) => !pausedKinds.has(d.source_kind)),
+    codes: (codes ?? []) as DigestCodeRow[],
+  };
+}
+
+/** كل اللي رسالة الموسم محتاجاه لعميل واحد، أو null (مفيش حاجة تستاهل، أو الفلوس ضيقة). */
+export async function loadSeasonDigest(
+  sb: SupabaseClient,
+  userId: string,
+  now = Date.now(),
+): Promise<{ season: string; cards: DigestCard[]; codes: DigestCodeRow[] } | null> {
+  const input = await loadDealInputs(sb, userId, now);
+  if (!input || input.broke) return null;
+  const { data: season } = await sb.rpc("zad_deal_season_name", { p_country: input.country });
+  if (typeof season !== "string" || !season) return null;
+  const cards = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent);
+  const pickedCodes = pickDigestCodes(input.codes, input.favorites, input.sent);
   if (!cards.length && !pickedCodes.length) return null;
   return { season, cards, codes: pickedCodes };
+}
+
+/** أقصى عدد كروت في شريط العروض على الرئيسية. */
+export const HOME_MAX_DEALS = 8;
+export const HOME_MAX_CODES = 4;
+
+/** كارت الرئيسية: عرض الكارت، ومعاه كود خصم المحل نفسه لو فيه واحد شغال. */
+export interface HomeDealCard extends DigestCard {
+  code: { code: string; percent: number | null; amount: number | null; currency: string | null } | null;
+}
+
+const numOrNull = (v: unknown) => {
+  const n = Number(v);
+  return v === null || v === undefined || v === "" || !Number.isFinite(n) ? null : n;
+};
+
+/**
+ * شريط العروض على الرئيسية (طلب المالك ٤/١١): نفس اختيار رسالة الموسم (pickDigest — الاحتياج الأول) بس طول السنة، ومن غير
+ * سجل «اتبعت» (الشريط بيتشاف كل مرة، مش رسالة بتتبعت مرة). كل كارت بياخد كود خصم محله لو فيه. «أنا مفلس» = عروض
+ * الحاجات اللي البيت محتاجها فعلاً بس، من غير أكواد ولا عروض محلات.
+ */
+export function pickHomeDeals(
+  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes">,
+): { cards: HomeDealCard[]; codes: DigestCodeRow[] } {
+  const none = new Set<string>();
+  const picked = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS);
+  const cards = picked
+    .filter((c) => !input.broke || c.why === "need")
+    .map((c): HomeDealCard => {
+      const k = input.broke ? undefined : input.codes.find((r) => sameStoreName(r.store, c.store));
+      return {
+        ...c,
+        code: k
+          ? { code: k.code, percent: numOrNull(k.discount_percent), amount: numOrNull(k.discount_amount), currency: k.currency }
+          : null,
+      };
+    });
+  if (input.broke) return { cards, codes: [] };
+  const stores = [...input.favorites, ...cards.map((c) => c.store)];
+  return { cards, codes: pickDigestCodes(input.codes, stores, none, HOME_MAX_CODES) };
+}
+
+/** شريط الرئيسية لعميل واحد. country null = بلده مش معروف (مفيش عروض تتعرض). */
+export async function loadHomeDeals(
+  sb: SupabaseClient,
+  userId: string,
+  now = Date.now(),
+): Promise<{ country: string | null; cards: HomeDealCard[]; codes: DigestCodeRow[] }> {
+  const input = await loadDealInputs(sb, userId, now);
+  if (!input) return { country: null, cards: [], codes: [] };
+  return { country: input.country, ...pickHomeDeals(input) };
 }
