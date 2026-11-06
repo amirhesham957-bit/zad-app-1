@@ -109,6 +109,10 @@ jobs:
         working-directory: supabase/functions/zad-fx-refresh
         run: deno test --allow-all
 
+      - name: Test update-behavior-profile
+        working-directory: supabase/functions/update-behavior-profile
+        run: deno test --allow-all
+
       - name: Test sync-admitad-offers
         working-directory: supabase/functions/sync-admitad-offers
         run: deno test --allow-all

@@ -1,6 +1,7 @@
 // deno-lint-ignore-file
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { observedWeeks } from "./profileMath.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -42,7 +43,10 @@ Deno.serve(async (req: Request) => {
 
       // Calculate avg_weekly_spending
       const totalSpent = txns.filter(t => t.is_expense).reduce((sum, t) => sum + (t.amount || 0), 0);
-      const weeks = Math.max(1, 90 / 7);
+      // اللي اتشاف فعلاً، مش ٩٠ يوم ثابتين (profileMath.ts).
+      const { data: firstTxn } = await supabase.from("zad_transactions").select("created_at")
+        .eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
+      const weeks = observedWeeks((firstTxn as { created_at?: string } | null)?.created_at);
       const avgWeeklySpending = totalSpent / weeks;
 
       // Calculate top_spending_categories
