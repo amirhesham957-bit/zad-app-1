@@ -4717,6 +4717,12 @@ abstract class ZadL10n {
   /// **'عروض على نواقصك'**
   String get homeDealsTitle;
 
+  /// No description provided for @recipesTrendingGroup.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترند دلوقتي'**
+  String get recipesTrendingGroup;
+
   /// No description provided for @homeDealsSeeAll.
   ///
   /// In ar, this message translates to:

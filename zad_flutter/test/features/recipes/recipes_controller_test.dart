@@ -37,13 +37,17 @@ class _Chef implements RecipesRemote {
   Exception? failWith;
   bool rateStores = true;
   final List<(String, bool)> rated = <(String, bool)>[];
+  final List<(bool, List<String>)> askedFresh = <(bool, List<String>)>[];
 
   @override
   Future<Map<String, dynamic>> suggest({
     required String userId,
     required String items,
+    bool fresh = false,
+    List<String> avoid = const <String>[],
   }) async {
     asked.add(items);
+    askedFresh.add((fresh, avoid));
     if (failWith case final e?) throw e;
     return answer;
   }
@@ -177,6 +181,39 @@ void main() {
       expect(reopened.suggestions, isNotNull);
       expect(chef.asked, hasLength(1));
     });
+
+    test(
+      '«اقتراحات جديدة» asks past the cache and names what was shown',
+      () async {
+        await pantry.add(itemName: 'طماطم', quantity: 3);
+        final c = container();
+        final controller = c.read(recipesControllerProvider.notifier);
+        await controller.ask();
+        chef.answer = <String, dynamic>{
+          'ok': true,
+          'text': 'جديدة.',
+          'recipes': <Object?>[
+            <String, dynamic>{
+              'recipe_name': 'كيكة الفستق',
+              'missing_ingredients_to_buy': <String>['فستق'],
+              'trending': true,
+            },
+          ],
+        };
+
+        await controller.ask(fresh: true);
+
+        expect(chef.askedFresh.first.$1, isFalse);
+        expect(chef.askedFresh.first.$2, isEmpty);
+        expect(chef.askedFresh.last.$1, isTrue);
+        expect(chef.askedFresh.last.$2, <String>['مكرونة بالصلصة']);
+        final view = c.read(recipesControllerProvider).suggestions!;
+        expect(view.trending.single.name, 'كيكة الفستق');
+        expect(view.needShopping, isEmpty);
+        // The trending flag survives the cache.
+        expect(recipes.cached()?.trending.single.name, 'كيكة الفستق');
+      },
+    );
 
     test('an empty pantry is not a question worth asking', () async {
       await pantry.add(itemName: 'لبن', quantity: 0);

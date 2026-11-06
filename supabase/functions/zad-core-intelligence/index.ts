@@ -49,6 +49,8 @@ import {
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
+import { avoidNames, chefPantryLine, type PantryRow, trendBlock, trendCacheKey, trendQuery } from "./chefInputs.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
 // ── Provider chain (2026-08-01): Gemini (5-key pool, native endpoint) primary, Groq
@@ -1979,7 +1981,21 @@ async function handle(req: Request): Promise<Response> {
       // MEAL_SUGGESTIONS — Suggest meals from inventory
       // ──────────────────────────────────────────────
       case "meal_suggestions": {
-        const { items } = payload || {};
+        // المخزن من السيرفر (chefInputs.ts): نسخة التطبيق المحلية ممكن تكون متأخرة — بلاغ المالك ٦/١١ شاف «حليب ومياه»
+        // والمخزن فيه ٨ أصناف. فشل القراية أو مخزن فاضي على السيرفر = نص التطبيق زي ما هو.
+        let items = String(payload?.items ?? "");
+        try {
+          const familyId = await householdFamilyId(supabase as never, user_id);
+          const { data: pantryRows } = await supabase.from("zad_inventory").select("item_name,quantity")
+            .or(householdFilter(user_id, familyId)).gt("quantity", 0).limit(200);
+          const serverLine = chefPantryLine((pantryRows ?? []) as PantryRow[]);
+          if (serverLine) items = serverLine;
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions pantry read failed:", (e as Error).message);
+        }
+        // «اقتراحات جديدة»: الكاش بيتعدّى، واللي اتعرض قبل كده مايتكررش.
+        const fresh = payload?.fresh === true;
+        const avoid = avoidNames(payload?.avoid);
         // الكاش بقى شخصي: الرد بقى فيه تفضيلات العميلة (تحت)، فمشاركته بين عملاء مختلف
         // مخزونهم زي بعضه كانت هتسرّب اقتراح مبني على حد تاني، أو تتجاهل تفضيلات العميلة
         // دي وترجّع رد حد تاني اتخزن الأول.
@@ -1996,8 +2012,27 @@ async function handle(req: Request): Promise<Response> {
         const cacheKey = mealSuggestionsCacheKey({
           userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: items || "",
         });
-        const cached = await getCachedAiResponse(cacheKey);
+        const cached = fresh ? null : await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
+
+        // الأكلات الرايجة: بحث ويب مجاني واحد في اليوم لكل بلد (ai_response_cache)، والنتايج قسم بيانات بس.
+        let trends = "";
+        try {
+          const { data: who } = await supabase.from("zad_users").select("country,travel_country").eq("id", user_id).maybeSingle();
+          const country = String((who as { travel_country?: string | null; country?: string | null } | null)?.travel_country ||
+            (who as { country?: string | null } | null)?.country || "").toUpperCase() || null;
+          const tKey = trendCacheKey(country);
+          const tCached = await getCachedAiResponse(tKey, 24 * 60 * 60 * 1000);
+          let hits = Array.isArray(tCached?.hits) ? tCached.hits as Array<{ title: string; snippet: string }> : null;
+          if (!hits) {
+            hits = (await webSearchSnippets(trendQuery(country), 6, country ?? undefined))
+              .map((h) => ({ title: h.title, snippet: h.snippet }));
+            if (hits.length) await setCachedAiResponse(tKey, "chef_trends", { hits });
+          }
+          trends = trendBlock(hits);
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions trends failed:", (e as Error).message);
+        }
 
         // تقوية شيف زاد: آخر آراء العميلة على وصفات قبل كده — إعجاب وعدم إعجاب بس، مش
         // تفصيل تاني. أي فشل هنا مايوقفش الاقتراح، بس بيرجع من غير تخصيص.
@@ -2077,6 +2112,10 @@ async function handle(req: Request): Promise<Response> {
           "`missing_ingredients_to_buy` فاضية تماماً (الملح والزيت والمية والبهارات الأساسية مش محسوبين ناقص).\n" +
           "٢. «وجبات تانية»: ٢ لـ٣ وجبات حلوة ينقصها صنف أو اتنين أو تلاتة بالكتير، رخاص ومتاحين — " +
           "واكتبي الناقص بالظبط في `missing_ingredients_to_buy`.\n" +
+          (trends
+            ? "٣. «ترند دلوقتي»: ١ لـ٢ وجبة من الأكلات اللي الناس بتعملها اليومين دول، من قسم === أكلات رايجة === — " +
+              "علّميها `\"trending\": true`، ولو ينفع تتعمل من المخزون يبقى أحسن. لو القسم مافيهوش أكلة واضحة، متعمليش المجموعة دي.\n"
+            : "") +
           "ابدئي بمجموعة «من مخزونك». نوّعي: حاجة سريعة، وحاجة أدسم، وحاجة اقتصادية — مش نفس الأكلة بأسامي مختلفة.\n" +
           "كل وصفة لازم يكون فيها تفاصيل حقيقية تنفع حد يطبخ بيها: خطوات مرتبة وواضحة " +
           "(٤ خطوات على الأقل)، وقت تحضير واقعي، وتكلفة تقديرية بعملة العميل. مفيش " +
@@ -2096,7 +2135,7 @@ async function handle(req: Request): Promise<Response> {
           "{\"text\":\"سطر أو اتنين ودودين للعرض\"," +
           "\"recipes\":[{\"recipe_name\":\"\",\"image_keyword_en\":\"\",\"prep_time_minutes\":0," +
           "\"cost_estimate\":0,\"available_ingredients_used\":[],\"missing_ingredients_to_buy\":[]," +
-          "\"cooking_instructions\":[]}]}\n" +
+          "\"cooking_instructions\":[],\"trending\":false}]}\n" +
           "لو المخزون فاضي خالص، سيبي `recipes` مصفوفة فاضية واشرحي في `text`.\n" +
           (likedNames.length > 0
             ? "العميل عجبته الأكلات دي قبل كده: " + likedNames.join("، ") + " — خدي بالك من نفس الروح لو مناسب، مش شرط تكرريها.\n"
@@ -2112,8 +2151,13 @@ async function handle(req: Request): Promise<Response> {
               "`missing_ingredients_to_buy` فاضية تماماً (الملح والزيت والمية والبهارات بس مسموحين). " +
               "لو مفيش وصفة كده، سيبي `recipes` فاضية وقولي بحنية إزاي يستغل الموجود، من غير ما تقترحي يشتري حاجة.\n"
             : "") +
+          (avoid.length > 0
+            ? "العميل شاف الوصفات دي وطلب اقتراحات جديدة — **متكرريش ولا واحدة منها ولا نفس الأكلة باسم تاني**: " +
+              avoid.join("، ") + ".\n"
+            : "") +
           `الشهر الحالي: ${seasonMonthAr} — لو فيه مناسبة موسمية معروفة (رمضان، الصيف، الشتاء، الأعياد) خدي بالك منها في اقتراحاتك، من غير ما تفرضيها لو المخزون مش مناسب.\n`;
-        const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===";
+        const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===" +
+          (trends ? "\n" + trends : "");
         const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
         // failure instead of baking in Arabic text that looks like a real AI reply. The Kotlin
@@ -2127,8 +2171,8 @@ async function handle(req: Request): Promise<Response> {
         // حارس فوق البرومبت: في وضع الطوارئ أي وصفة محتاجة شراء بتتشال، مش بتتعرض.
         const allowedRecipes = brokeMode ? rawRecipes.filter((r: { missing_ingredients_to_buy?: unknown }) => recipeNeedsNoShopping(r?.missing_ingredients_to_buy)) : rawRecipes;
         // «من مخزونك» الأول، وكل وصفة معلّمة: التطبيق بيعرض «مكتملة من مخزونك» أو «ناقصك …».
-        const flagged = allowedRecipes.map((r: { missing_ingredients_to_buy?: unknown }) => ({
-          ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy),
+        const flagged = allowedRecipes.map((r: { missing_ingredients_to_buy?: unknown; trending?: unknown }) => ({
+          ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
         const recipes = flagged.length ? await attachRecipeImages(flagged) : [];
         const response = { text: result?.text || null, recipes, ok: !!result?.text };

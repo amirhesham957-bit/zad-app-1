@@ -5,11 +5,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Asks for recipes and records opinions on them.
 abstract interface class RecipesRemote {
-  /// Calls `meal_suggestions` with the pantry as text. Throws on transport
-  /// failure; returns the answer, `ok: false` included, otherwise.
+  /// Calls `meal_suggestions` with the pantry as text. [fresh] skips the
+  /// server's cache and [avoid] names recipes already shown, so «اقتراحات
+  /// جديدة» brings new ones. Throws on transport failure; returns the
+  /// answer, `ok: false` included, otherwise.
   Future<Map<String, dynamic>> suggest({
     required String userId,
     required String items,
+    bool fresh = false,
+    List<String> avoid = const <String>[],
   });
 
   /// Calls `rate_recipe`. True when the server stored the opinion.
@@ -35,13 +39,19 @@ class SupabaseRecipesRemote implements RecipesRemote {
   Future<Map<String, dynamic>> suggest({
     required String userId,
     required String items,
+    bool fresh = false,
+    List<String> avoid = const <String>[],
   }) async {
     final response = await _client.functions.invoke(
       function,
       body: <String, dynamic>{
         'action': 'meal_suggestions',
         'user_id': userId,
-        'payload': <String, dynamic>{'items': items},
+        'payload': <String, dynamic>{
+          'items': items,
+          if (fresh) 'fresh': true,
+          if (avoid.isNotEmpty) 'avoid': avoid,
+        },
       },
     );
     final data = response.data;

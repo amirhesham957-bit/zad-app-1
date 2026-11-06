@@ -31,6 +31,7 @@ class Recipe {
     this.missing = const <String>[],
     this.steps = const <String>[],
     this.fromInventory = false,
+    this.trending = false,
   });
 
   /// Reads one recipe, or null when it has no name to show.
@@ -55,6 +56,7 @@ class Recipe {
         final bool b => b,
         _ => missing.isEmpty,
       },
+      trending: raw['trending'] == true,
     );
   }
 
@@ -85,6 +87,10 @@ class Recipe {
   /// Whether it can be made from the pantry alone.
   final bool fromInventory;
 
+  /// One of the dishes people are cooking these days (the server's web
+  /// search, owner 6/11) — its own group, «ترند دلوقتي».
+  final bool trending;
+
   /// The recipe as the cache keeps it — the server's field names, so one
   /// reader serves both.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -97,6 +103,7 @@ class Recipe {
     'missing_ingredients_to_buy': missing,
     'cooking_instructions': steps,
     'from_inventory': fromInventory,
+    'trending': trending,
   };
 }
 
@@ -153,11 +160,15 @@ class ChefSuggestions {
   bool get isUsable => recipes.isNotEmpty || (text?.isNotEmpty ?? false);
 
   /// Recipes that need nothing bought.
-  List<Recipe> get fromPantry => recipes.where((r) => r.fromInventory).toList();
+  List<Recipe> get fromPantry =>
+      recipes.where((r) => r.fromInventory && !r.trending).toList();
 
   /// Recipes that need a few things.
   List<Recipe> get needShopping =>
-      recipes.where((r) => !r.fromInventory).toList();
+      recipes.where((r) => !r.fromInventory && !r.trending).toList();
+
+  /// What people are cooking these days.
+  List<Recipe> get trending => recipes.where((r) => r.trending).toList();
 
   /// The answer as the cache keeps it.
   Map<String, dynamic> toJson() => <String, dynamic>{

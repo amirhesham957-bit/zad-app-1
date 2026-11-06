@@ -65,7 +65,8 @@ class RecipesController extends Notifier<RecipesView> {
   }
 
   /// Asks the chef about the pantry as it is now. A tap, never a build.
-  Future<void> ask() async {
+  /// [fresh]: «اقتراحات جديدة» — different recipes from the ones shown.
+  Future<void> ask({bool fresh = false}) async {
     if (!ref.mounted || state.isAsking) return;
     final pantry = _pantry();
     // Nothing to cook from is not a question worth a model call; the section
@@ -74,7 +75,9 @@ class RecipesController extends Notifier<RecipesView> {
 
     state = state.copyWith(isAsking: true, clearError: true);
     try {
-      final answer = await ref.read(recipesRepositoryProvider).suggest(pantry);
+      final answer = await ref
+          .read(recipesRepositoryProvider)
+          .suggest(pantry, fresh: fresh);
       if (!ref.mounted) return;
       state = state.copyWith(suggestions: answer, isAsking: false);
     } on Object catch (error) {

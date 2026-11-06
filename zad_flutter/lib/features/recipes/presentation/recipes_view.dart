@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
@@ -88,6 +89,10 @@ class RecipesView extends ConsumerWidget {
                     sliver: SliverToBoxAdapter(child: _ChefLine(text: text)),
                   ),
                 ..._group('من مخزونك', suggestions.fromPantry),
+                ..._group(
+                  context.l10n.recipesTrendingGroup,
+                  suggestions.trending,
+                ),
                 ..._group('وجبات تانية', suggestions.needShopping),
               ],
               const SliverToBoxAdapter(child: SizedBox(height: ZadSpacing.lg)),
@@ -108,7 +113,9 @@ class RecipesView extends ConsumerWidget {
               onPressed: view.isAsking || !hasStock
                   ? null
                   : () => unawaited(
-                      ref.read(recipesControllerProvider.notifier).ask(),
+                      ref
+                          .read(recipesControllerProvider.notifier)
+                          .ask(fresh: suggestions != null),
                     ),
               icon: view.isAsking
                   ? const SizedBox(

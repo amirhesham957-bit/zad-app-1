@@ -2635,6 +2635,9 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsTitle => 'عروض على نواقصك';
 
   @override
+  String get recipesTrendingGroup => 'ترند دلوقتي';
+
+  @override
   String get homeDealsSeeAll => 'كل العروض';
 
   @override

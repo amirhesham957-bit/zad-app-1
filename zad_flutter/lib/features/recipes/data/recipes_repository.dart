@@ -73,10 +73,21 @@ class RecipesRepository {
   /// Throws on transport failure, and [ChefUnavailable] when the server
   /// answered with nothing. Neither replaces the cached answer: yesterday's
   /// suggestions are more use than an error where they were.
-  Future<ChefSuggestions> suggest(List<InventoryItem> pantry) async {
+  ///
+  /// [fresh]: new recipes, not the ones on screen — the server skips its
+  /// cache and is told the names already shown.
+  Future<ChefSuggestions> suggest(
+    List<InventoryItem> pantry, {
+    bool fresh = false,
+  }) async {
+    final shown = fresh
+        ? <String>[for (final r in cached()?.recipes ?? <Recipe>[]) r.name]
+        : const <String>[];
     final response = await _remote.suggest(
       userId: _requireUserId(),
       items: pantryForChef(pantry),
+      fresh: fresh,
+      avoid: shown,
     );
     final answer = ChefSuggestions.fromResponse(
       response,

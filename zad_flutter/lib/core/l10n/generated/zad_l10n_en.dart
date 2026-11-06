@@ -2699,6 +2699,9 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsTitle => 'Deals on what you\'re out of';
 
   @override
+  String get recipesTrendingGroup => 'Trending now';
+
+  @override
   String get homeDealsSeeAll => 'All deals';
 
   @override

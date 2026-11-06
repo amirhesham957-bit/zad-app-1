@@ -30,7 +30,8 @@ class _Recipes extends RecipesController {
   RecipesView build() => initial;
 
   @override
-  Future<void> ask() async => calls.add('ask');
+  Future<void> ask({bool fresh = false}) async =>
+      calls.add(fresh ? 'ask:fresh' : 'ask');
 
   @override
   Future<void> rate(Recipe recipe, {required bool liked}) async =>
@@ -175,6 +176,17 @@ void main() {
     expect(find.text('اقتراحات جديدة'), findsOneWidget);
     // Current: no note that the pantry has moved on.
     expect(find.textContaining('مخزنك اتغيّر'), findsNothing);
+  });
+
+  testWidgets('«اقتراحات جديدة» asks for new ones, not the cached answer', (
+    tester,
+  ) async {
+    await pump(tester, pantry: _kitchen, suggestions: _answer());
+
+    await tester.tap(find.text('اقتراحات جديدة'));
+    await tester.pump();
+
+    expect(recipes.calls, <String>['ask:fresh']);
   });
 
   testWidgets('an answer about a different pantry says the pantry changed', (
