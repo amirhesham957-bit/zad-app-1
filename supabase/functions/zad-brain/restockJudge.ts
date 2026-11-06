@@ -2,7 +2,7 @@
 // الحلم الليلي (قايمة الشرا) وتنبيه «أنت جنب ماركت» بيسألوا نفس السؤال، فبقى ليهم جواب واحد.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey, restockVerdict } from "../_shared/restockCycle.ts";
+import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey, type RestockVerdict, restockVerdict } from "../_shared/restockCycle.ts";
 
 export interface JudgedRow {
   item_name: string | null;
@@ -31,6 +31,17 @@ export async function loadRestockJudge(
   familyId: string | null,
   now = Date.now(),
 ): Promise<(row: JudgedRow) => boolean> {
+  const verdict = await loadRestockVerdicts(sb, userId, familyId, now);
+  return (row) => verdict(row).due;
+}
+
+/** الحكم كامل (الدورة، الأيام من آخر شرا، السبب) — لـ«هيخلص قريب» في لقطة العقل. */
+export async function loadRestockVerdicts(
+  sb: SupabaseClient,
+  userId: string,
+  familyId: string | null,
+  now = Date.now(),
+): Promise<(row: JudgedRow) => RestockVerdict> {
   let days = new Map<string, string[]>();
   try {
     const users = await householdUserIds(sb, userId, familyId);
@@ -48,6 +59,6 @@ export async function loadRestockJudge(
     return restockVerdict({
       name, category: row.category, quantity: row.quantity, threshold: row.low_stock_threshold,
       restockMode: row.restock_mode, purchaseDays: bought,
-    }, now).due;
+    }, now);
   };
 }

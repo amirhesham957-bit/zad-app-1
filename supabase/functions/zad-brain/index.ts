@@ -137,7 +137,8 @@ import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
-import { loadRestockJudge } from "./restockJudge.ts";
+import { loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
+import { describeWhereToBuy, type WhereDeal, type WhereReport, WHERE_WINDOW_DAYS, whereToBuy } from "./whereToBuy.ts";
 import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
   ADVICE_BLOCKED_TOOLS, ADVICE_TOOL_RESULT, adviceQuestion, SCAM_REPLY, scamMessage, TRANSFER_NOT_DONE_REPLY, transferClaim, warnsScam,
@@ -841,7 +842,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
-      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at")
+      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode")
         .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
@@ -1231,10 +1232,20 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // الفجوة ٧ (20260930000000): معدل من أول دورة «اشتريت ← خلص» بيدي daysLeft كمان، بس
   // بـconfidence = approximate — يتقال «تقريباً». rateKnown ماتغيرش (٣ نزلات على يومين)،
   // فـstock_unknown تحت لسه بيشمل التقريبي عشان العقل يقدر يسأل ويأكده.
+  // من غير معدل من زرار «−» (أغلب الأصناف): دورة شرا البيت (restockCycle.ts) — «الزيت بيتشرى كل ~٣٠ يوم، واتشرى من
+  // ٢٥» ⇒ فاضل حوالي ٥ أيام. confidence = "cycle" فبيتقال «تقريباً» زي التقريبي (الملف السلوكي، المرحلة ٣).
+  const restockOf = await loadRestockVerdicts(sb, userId, householdFamily).catch(() => null);
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
-    const confidence = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
-    const daysLeft = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
+    let confidence: string = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
+    let daysLeft: number | null = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
+    if (daysLeft === null && restockOf) {
+      const v = restockOf(item);
+      if (v.cycleDays !== null && v.daysSinceBought !== null && v.reason !== "occasional") {
+        daysLeft = v.reason === "empty" ? 0 : Math.max(0, v.cycleDays - v.daysSinceBought);
+        confidence = "cycle";
+      }
+    }
     return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false };
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
@@ -4564,6 +4575,33 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return JSON.stringify(data);
     }
 
+    case "where_to_buy": {
+      // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
+      const item = String(input?.item_name ?? "").trim().slice(0, 60);
+      if (item.length < 2) return "المفروض تحط item_name";
+      const currency = snap?.currency ?? "";
+      const [{ data: me }, { data: profile }] = await Promise.all([
+        sb.from("zad_users").select("country,travel_country,travel_since").eq("id", userId).maybeSingle(),
+        sb.from("zad_customer_profile").select("city").eq("user_id", userId).maybeSingle(),
+      ]);
+      const country = dealCountry(me as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, Date.now());
+      const [{ data: reports, error: repErr }, { data: deals }] = await Promise.all([
+        sb.from("price_index").select("item_name,store_name,price,timestamp,user_id,location")
+          .eq("source", "crowdsource").eq("currency", currency).not("store_name", "is", null)
+          .gte("timestamp", new Date(Date.now() - WHERE_WINDOW_DAYS * 86_400_000).toISOString())
+          .order("timestamp", { ascending: false }).limit(1500),
+        /^[A-Z]{2}$/.test(country)
+          ? sb.from("zad_deals").select("store,item_name,price,price_before,valid_until")
+            .eq("country", country).gt("expires_at", new Date().toISOString()).limit(400)
+          : Promise.resolve({ data: [] as WhereDeal[] }),
+      ]);
+      if (repErr) return "مقدرتش أقرا الأسعار دلوقتي — قول للعميل كده.";
+      const rows = (reports ?? []) as WhereReport[];
+      const homes = await homeMap(sb, rows.map((r) => r.user_id ?? ""));
+      const city = (profile as { city?: string | null } | null)?.city ?? null;
+      return describeWhereToBuy(whereToBuy(item, rows, (deals ?? []) as WhereDeal[], Date.now(), homes, city), currency);
+    }
+
     case "get_nearby_deals": {
       const { item_category } = input;
       if (!item_category) return "المفروض تحط item_category";
@@ -6246,6 +6284,18 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
         days: { type: "number", description: "عدد الأيام للفحص. الافتراضي 30، الأقصى 90." },
       },
+      required: ["item_name"],
+    },
+  },
+  {
+    name: "where_to_buy",
+    description:
+      "فين يلاقي صنف معيّن بسعر كويس: العروض الشغالة عليه في محلات بلده، وفي أنهي محلات اتشاف في فواتير عملاء زاد في " +
+      "مدينته آخر ٣ أسابيع (بالسعر لو ٣ بيوت أو أكتر بلّغوا). نادِها لما يسأل «ألاقي X فين؟» أو «أرخص مكان لـX» أو لما " +
+      "صنف خلص عنده وبيسأل يجيبه منين. الأرقام من الأداة بس.",
+    input_schema: {
+      type: "object",
+      properties: { item_name: { type: "string", description: "اسم الصنف زي ما العميل قاله، مثلاً «زيت عافية»" } },
       required: ["item_name"],
     },
   },

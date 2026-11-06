@@ -140,6 +140,9 @@ const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|
 // سؤال عن سعر أو ترند حي — مكانه البحث على النت، مش أدوات التطبيق: «كم سعر الذهب اليوم»،
 // «كام سعر زجاجة المياه في السعودية» (تليجرام ٢٠٢٦-١٠-٠١). مصروف العميل نفسه («صرفت كام»،
 // «دفعت ٥٠») مش منها — دي فلوسه هو.
+/** «فين ألاقي الزيت؟»، «منين أجيب سكر رخيص؟»، «أرخص مكان للرز» (طلب المالك ٦/١١) ⇒ where_to_buy. */
+const WHERE_TO_BUY_INTENT = /(فين|وين|منين|من وين)\s*(الاقي|القي|اجيب|نجيب|اشتري|نشتري|يتباع|بيتباع)|(ارخص|أرخص)\s*(مكان|محل|سوبر)|(مكان|محل)\s*(فيه|عنده)\s*\S+.*(رخيص|بسعر)/;
+
 const WEB_PRICE_INTENT = /(كام|كم|بكام|بكم)\s*(سعر|تمن|ثمن)|سعر\s*\S+.*(النهارده|اليوم|دلوقتي|الحين)|(اسعار|أسعار)\s|ترند/;
 const OWN_MONEY = /صرفت|دفعت|اشتريت|قبضت/;
 // «سعر الدهب» من غير «النهارده» ماكانش بيعدّي WEB_PRICE_INTENT (٢٠٢٦-١٠-٠١ ٢٠:٠٥ تليجرام).
@@ -228,6 +231,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (OCCASION_INTENT.test(norm)) tools.push("remember_occasion");
   if (GOLD_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("gold_price");
   else if (FX_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("fetch_current_exchange_rate");
+  else if (WHERE_TO_BUY_INTENT.test(norm)) tools.push("where_to_buy", "find_nearby_stores");
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
   if (BROKE_INTENT.test(norm)) tools.push("set_broke_mode");
@@ -443,7 +447,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
   pantry: [
     "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
-    "suggest_product", "check_price_online", "find_nearby_stores", "web_search",
+    "suggest_product", "check_price_online", "find_nearby_stores", "web_search", "where_to_buy",
     "suggest_recipes", "area_trends", "plan_gathering", "add_gathering_to_list",
     "answer_same_product",
   ],
