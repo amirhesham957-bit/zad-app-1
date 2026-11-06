@@ -10,6 +10,7 @@ export interface JudgedRow {
   low_stock_threshold?: number | string | null;
   category?: string | null;
   restock_mode?: string | null;
+  restock_cycle_days?: number | null;
   created_at?: string | null;
 }
 
@@ -58,7 +59,7 @@ export async function loadRestockVerdicts(
     const bought = [...(days.get(restockKey(name)) ?? []), ...(row.created_at ? [row.created_at] : [])];
     return restockVerdict({
       name, category: row.category, quantity: row.quantity, threshold: row.low_stock_threshold,
-      restockMode: row.restock_mode, purchaseDays: bought,
+      restockMode: row.restock_mode, purchaseDays: bought, cycleOverride: row.restock_cycle_days,
     }, now);
   };
 }

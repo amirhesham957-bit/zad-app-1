@@ -67,3 +67,11 @@ Deno.test("purchase days are grouped by normalized name", () => {
   ]);
   assertEquals(m.get(restockKey("سمن شيراتون"))?.length, 2);
 });
+
+Deno.test("the customer's own cycle beats the guess and the learned one", () => {
+  // «الزيت عندي كل أسبوعين»: اتشرى من ١٢ يوم ⇒ مستحق (١٢ ≥ ١٤×٠٫٨٥)، من غير التصحيح كان لسه (الدورة ٣٠).
+  assertEquals(restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(12)], cycleOverride: 14 }, NOW).due, true);
+  assertEquals(restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(12)] }, NOW).due, false);
+  // قيمة غلط بتتجاهل.
+  assertEquals(restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(12)], cycleOverride: 0 }, NOW).cycleDays, 30);
+});

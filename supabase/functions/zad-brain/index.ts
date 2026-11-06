@@ -842,7 +842,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
-      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode")
+      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode,restock_cycle_days")
         .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
@@ -886,7 +886,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("user_id", userId),
       // ملف السلوك المحسوب سيرفر-سايد (update-behavior-profile) — متوسط الصرف الأسبوعي
       // وتوزيعه على أيام الأسبوع. رقم حقيقي محسوب من المعاملات، مش تخمين من الموديل.
-      sb.from("user_behavior_profile").select("avg_weekly_spending,top_spending_categories,spending_pattern_by_weekday,subscription_load_monthly")
+      sb.from("user_behavior_profile").select("avg_weekly_spending,top_spending_categories,spending_pattern_by_weekday,subscription_load_monthly,favorite_stores,shopping_rhythm")
         .eq("user_id", userId).maybeSingle(),
       // الجهة الخارجة: إيه اللي التطبيق قاله للمستخدم فعلاً آخر أسبوع. من غير ده العقل
       // بيقترح تنبيه المستخدم شافه بالفعل من مسار تاني (BudgetTracker/الووركرز).
@@ -1545,6 +1545,17 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         top_categories: behaviorRes.data.top_spending_categories,
         by_weekday: behaviorRes.data.spending_pattern_by_weekday,
         subscription_load_monthly: behaviorRes.data.subscription_load_monthly,
+        // الملف السلوكي (المرحلة ٣ الشريحة ٤): محلاته (أيام زيارة آخر ٩٠ يوم) ومعاد شراه المعتاد بتوقيت سوقه — مختصر عن
+        // قصد (رجيم السياق ٣.٢). top_weekday ٠=الأحد؛ null = لسه مفيش نمط (أقل من ٤ أيام شرا) — ماتخمّنش.
+        stores: (Array.isArray(behaviorRes.data.favorite_stores) ? behaviorRes.data.favorite_stores : [])
+          .slice(0, 3).map((f: { store?: string; visits?: number }) => ({ store: f.store, visits: f.visits })),
+        shopping: behaviorRes.data.shopping_rhythm && typeof behaviorRes.data.shopping_rhythm === "object"
+          ? {
+            top_weekday: behaviorRes.data.shopping_rhythm.top_weekday ?? null,
+            top_part: behaviorRes.data.shopping_rhythm.top_part ?? null,
+            every_days: behaviorRes.data.shopping_rhythm.typical_gap_days ?? null,
+          }
+          : null,
         // {weeks, enough, median_error_pct, within_25pct}: الوسيط = الفرق كنسبة من اللي اتصرف فعلاً.
         // enough=false أو null = لسه ماتقاسش (أقل من ٣ أسابيع)، فالمتوسط تقريبي.
         weekly_forecast_accuracy: forecastRes?.error ? null : forecastRes?.data ?? null,
@@ -6475,7 +6486,7 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
     const { data: memberships } = await sb.from("family_members").select("family_id").eq("user_id", userId);
     const familyIds = ((memberships ?? []) as Array<{ family_id: string | null }>)
       .map((m) => m.family_id).filter((id): id is string => !!id);
-    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category,restock_mode,created_at").limit(200);
+    let invQuery = sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category,restock_mode,restock_cycle_days,created_at").limit(200);
     invQuery = familyIds.length > 0
       ? invQuery.or(`user_id.eq.${userId},family_id.in.(${familyIds.join(",")})`)
       : invQuery.eq("user_id", userId);
@@ -9826,7 +9837,7 @@ async function handleRequest(req: Request): Promise<Response> {
           // وصنف الأم ضافته للقايمة مايتضافش تاني في حلم الأب.
           const dreamFamily = await householdFamilyId(sbDream, u.id);
           const [{ data: pantryItems }, { data: openShop }, { data: occasional, error: occErr }] = await Promise.all([
-            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold, category, restock_mode, created_at").or(householdFilter(u.id, dreamFamily)),
+            sbDream.from("zad_inventory").select("item_name, quantity, low_stock_threshold, category, restock_mode, restock_cycle_days, created_at").or(householdFilter(u.id, dreamFamily)),
             sbDream.from("zad_shopping_list").select("item_name").or(householdFilter(u.id, dreamFamily)).eq("is_purchased", false),
             // حاجات على فترات (الرنجة كل شهرين) مابتنزلش القايمة لما تخلص (ZAD_PLAN ٣.١٠).
             sbDream.rpc("zad_occasional_items", { p_user: u.id }),

@@ -2,6 +2,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { observedWeeks } from "./profileMath.ts";
+import { favoriteStores, itemCycles, shoppingRhythm } from "./habits.ts";
+import { PURCHASE_SOURCES, purchaseDaysByItem } from "../_shared/restockCycle.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -83,8 +85,31 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId);
       const subMonthly = (subs || []).reduce((sum, s) => sum + (s.amount || 0), 0);
 
+      // الشريحة ٤ (habits.ts): المحلات، ومواعيد الشرا، ودورة كل صنف — بتوقيت سوق الحساب، ومخزن البيت كله.
+      const { data: me } = await supabase.from("zad_users").select("country").eq("id", userId).maybeSingle();
+      const { data: tzData } = await supabase.rpc("zad_market_timezone", { p_country: (me as { country?: string } | null)?.country ?? null });
+      const tz = typeof tzData === "string" && tzData ? tzData : "UTC";
+      const { data: fam } = await supabase.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
+      const familyId = (fam as { family_id?: string } | null)?.family_id ?? null;
+      const { data: members } = familyId
+        ? await supabase.from("family_members").select("user_id").eq("family_id", familyId)
+        : { data: [] as Array<{ user_id: string }> };
+      const homeUsers = [...new Set([userId, ...((members ?? []) as Array<{ user_id: string | null }>).map((m) => m.user_id).filter((x): x is string => !!x)])];
+      const [{ data: pantry }, { data: obs }] = await Promise.all([
+        supabase.from("zad_inventory").select("item_name,quantity,low_stock_threshold,category,restock_mode,restock_cycle_days,created_at")
+          .or(familyId ? `user_id.eq.${userId},family_id.eq.${familyId}` : `user_id.eq.${userId}`).limit(300),
+        supabase.from("zad_inventory_observations").select("item_name,observed_at")
+          .in("user_id", homeUsers).in("source", [...PURCHASE_SOURCES])
+          .gte("observed_at", new Date(Date.now() - 240 * 86_400_000).toISOString()).limit(2000),
+      ]);
+      const habitTxns = txns as Array<{ amount: number | null; merchant_name: string | null; category: string | null; created_at: string | null; is_expense: boolean | null }>;
+
       // Upsert profile
       const { error: upsertError } = await supabase.from("user_behavior_profile").upsert({
+        favorite_stores: favoriteStores(habitTxns, tz),
+        shopping_rhythm: shoppingRhythm(habitTxns, tz),
+        item_cycles: itemCycles(pantry ?? [], purchaseDaysByItem(obs ?? [])),
+        timezone: tz,
         user_id: userId,
         avg_weekly_spending: Math.round(avgWeeklySpending * 100) / 100,
         top_spending_categories: topCategories,

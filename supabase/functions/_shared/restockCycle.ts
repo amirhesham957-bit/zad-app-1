@@ -82,6 +82,8 @@ export interface RestockInput {
   restockMode?: string | null;
   /** أيام شرا الصنف ده في البيت (ISO)، الأقدم الأول أو أي ترتيب. */
   purchaseDays: readonly string[];
+  /** تصحيح العميل (zad_inventory.restock_cycle_days) — بيغلب البداية والمتعلّم. */
+  cycleOverride?: number | string | null;
 }
 
 export interface RestockVerdict {
@@ -96,7 +98,10 @@ export function restockVerdict(input: RestockInput, now = Date.now()): RestockVe
   const qty = Number(input.quantity);
   const t = Number(input.threshold);
   const threshold = Number.isFinite(t) && t > 0 ? t : 1;
-  const cycle = cycleDays(priorCycleDays(input.name, input.category), input.purchaseDays);
+  const override = Number(input.cycleOverride);
+  const cycle = Number.isInteger(override) && override >= 1 && override <= 365
+    ? override
+    : cycleDays(priorCycleDays(input.name, input.category), input.purchaseDays);
   const last = input.purchaseDays.reduce((m, d) => Math.max(m, Date.parse(d) || 0), 0);
   const since = last > 0 ? Math.max(0, (now - last) / DAY_MS) : null;
   const out = (due: boolean, reason: RestockVerdict["reason"]): RestockVerdict =>
