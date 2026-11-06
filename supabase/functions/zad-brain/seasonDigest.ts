@@ -13,6 +13,7 @@ import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
 import { codeStoreKey } from "./dealCodes.ts";
+import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
 import { dealCountry, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
 
 /** أقصى عدد كروت في رسالة الموسم. */
@@ -304,5 +305,50 @@ export async function loadHomeDeals(
 ): Promise<{ country: string | null; cards: HomeDealCard[]; codes: DigestCodeRow[] }> {
   const input = await loadDealInputs(sb, userId, now);
   if (!input) return { country: null, cards: [], codes: [] };
-  return { country: input.country, ...pickHomeDeals(input) };
+  const picked = pickHomeDeals(input);
+  const others = input.deals.map((d) => d.source_url ?? "").filter((u) => u && !picked.cards.some((c) => c.url === u));
+  const cards = await withPagePreviews(sb, picked.cards, others);
+  return { country: input.country, ...picked, cards };
+}
+
+/** صفحة اتقرت ومالقيناش فيها صورة بتتقرا تاني بعد كده بس (الصفحة ممكن تتحدث). */
+const PREVIEW_RECHECK_MS = 7 * 86_400_000;
+/** صفحات زيادة من عروض البلد بتتقرا في الخلفية كل مرة، عشان صفحة العروض تلحق. */
+const PREVIEW_BACKGROUND = 8;
+
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
+/**
+ * الكروت من غير صورة بتاخد صورة صفحة عرضها (og:image، `_shared/pagePreview.ts`) من `zad_page_previews`، والصفحة اللي
+ * ماتقرتش بتتقرا دلوقتي (٤ ثواني بالكتير، مع بعض). [others] = روابط عروض تانية في البلد: أول [PREVIEW_BACKGROUND]
+ * منهم ماتقروش بيتقروا بعد الرد.
+ */
+export async function withPagePreviews(
+  sb: SupabaseClient,
+  cards: HomeDealCard[],
+  others: readonly string[] = [],
+  fetchImage: (url: string) => Promise<string | null> = (u) => fetchPreviewImage(u),
+  now = Date.now(),
+): Promise<HomeDealCard[]> {
+  const wanted = [...new Set(cards.filter((c) => !c.photo && previewableUrl(c.url)).map((c) => c.url as string))];
+  const extra = [...new Set(others.filter((u) => previewableUrl(u) && !wanted.includes(u)))].slice(0, 60);
+  if (wanted.length === 0 && extra.length === 0) return cards;
+  const { data } = await sb.from("zad_page_previews").select("url,image,checked_at").in("url", [...wanted, ...extra]);
+  const known = new Map(((data ?? []) as Array<{ url: string; image: string | null; checked_at: string }>).map((r) => [r.url, r]));
+  const stale = (u: string) => {
+    const r = known.get(u);
+    return !r || (!r.image && now - Date.parse(r.checked_at) > PREVIEW_RECHECK_MS);
+  };
+  const readAndStore = async (urls: string[]) => {
+    const rows = await Promise.all(urls.map(async (url) => ({ url, image: await fetchImage(url), checked_at: new Date(now).toISOString() })));
+    if (rows.length) await sb.from("zad_page_previews").upsert(rows, { onConflict: "url" }).then(() => {}, () => {});
+    return rows;
+  };
+  for (const r of await readAndStore(wanted.filter(stale))) known.set(r.url, r);
+  const later = extra.filter(stale).slice(0, PREVIEW_BACKGROUND);
+  if (later.length) {
+    const job = readAndStore(later).catch(() => []);
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(job);
+  }
+  return cards.map((c) => c.photo || !c.url ? c : { ...c, photo: known.get(c.url)?.image ?? null });
 }

@@ -1008,6 +1008,11 @@
     "total_installments",
     "user_id"
   ],
+  "zad_page_previews": [
+    "checked_at",
+    "image",
+    "url"
+  ],
   "zad_parent_digests": [
     "child_alias",
     "child_user_id",

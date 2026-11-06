@@ -3,10 +3,12 @@
 /// picture comes from.
 ///
 /// Pictures follow the rules the server already keeps: a YouTube deal shows
-/// the video's thumbnail by its id (as the bot does, ٤.٢٠); anything else
-/// shows Amazon's own photo of the same product when the affiliate catalogue
-/// has one (never a stock photo — `amazonImageOrNull`), else a tile. An
-/// Instagram post's picture is read once by the server and never stored.
+/// the video's thumbnail by its id (as the bot does, ٤.٢٠); a deal page's
+/// own preview picture (`og:image`, read by the server — owner 6/11) comes
+/// next; anything else shows Amazon's own photo of the same product when
+/// the affiliate catalogue has one (never a stock photo —
+/// `amazonImageOrNull`), else a tile. An Instagram post's picture is read
+/// once by the server and never stored.
 library;
 
 import 'package:intl/intl.dart' show NumberFormat;
@@ -25,6 +27,10 @@ typedef StoreDeal = ({
   String source,
   String url,
   DateTime? until,
+
+  /// The deal page's own preview picture (its `og:image`), read by the
+  /// server once per page — null when the page has none or was not read yet.
+  String? preview,
 });
 
 /// One discount code.
@@ -89,6 +95,9 @@ MyDeals myDealsFromJson(Object? raw) {
       source: _str(d['source_kind']),
       url: url,
       until: _date(d['valid_until']),
+      preview: _https(_str(d['preview_image']))
+          ? _str(d['preview_image'])
+          : null,
     ));
   }
   final codes = <DealCode>[];
@@ -153,7 +162,9 @@ String? catalogueImage(String item, List<AffiliateProduct> catalogue) {
 
 /// The card's picture, or null for a tile.
 String? dealImage(StoreDeal deal, List<AffiliateProduct> catalogue) =>
-    youtubeThumbnail(deal.url) ?? catalogueImage(deal.item, catalogue);
+    youtubeThumbnail(deal.url) ??
+    deal.preview ??
+    catalogueImage(deal.item, catalogue);
 
 /// Where a deal came from.
 enum DealSource {

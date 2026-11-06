@@ -110,4 +110,36 @@ void main() {
     expect(dealMoney(18.5), '18.5');
     expect(dealDay(DateTime.utc(2026, 11, 10, 23, 59)), '10/11');
   });
+
+  test(
+    "a deal page's preview picture is used after YouTube, http is dropped",
+    () {
+      final data = myDealsFromJson(<String, dynamic>{
+        'country': 'EG',
+        'deals': <Object?>[
+          <String, dynamic>{
+            'store': 'بيم',
+            'item_name': 'زيت',
+            'price': 80,
+            'source_kind': 'search',
+            'source_url': 'https://3orood.net/bim',
+            'preview_image': 'https://3orood.net/cover.webp',
+          },
+          <String, dynamic>{
+            'store': 'بيم',
+            'item_name': 'رز',
+            'price': 30,
+            'source_kind': 'search',
+            'source_url': 'https://3orood.net/bim2',
+            'preview_image': 'http://3orood.net/cover.webp',
+          },
+        ],
+      });
+      expect(
+        dealImage(data.deals.first, const <AffiliateProduct>[]),
+        'https://3orood.net/cover.webp',
+      );
+      expect(data.deals.last.preview, isNull);
+    },
+  );
 }
